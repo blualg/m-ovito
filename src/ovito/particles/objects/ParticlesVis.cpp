@@ -25,7 +25,6 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/data/DataObjectAccess.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
@@ -49,7 +48,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ParticlesVis, radiusScaleFactor, PercentPar
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ParticlesVis::ParticlesVis(ObjectCreationParams params) : DataVis(params),
+ParticlesVis::ParticlesVis(ObjectInitializationFlags flags) : DataVis(flags),
     _defaultParticleRadius(1.2),
     _radiusScaleFactor(1.0),
     _renderingQuality(ParticlePrimitive::AutoQuality),
@@ -102,7 +101,7 @@ Box3 ParticlesVis::boundingBox(AnimationTime time, const ConstDataObjectPath& pa
 /******************************************************************************
 * Computes the bounding box of the particles.
 ******************************************************************************/
-Box3 ParticlesVis::particleBoundingBox(ConstPropertyAccess<Point3> positionProperty, const PropertyObject* typeProperty, ConstPropertyAccess<FloatType> radiusProperty, ConstPropertyAccess<Vector3> shapeProperty, bool includeParticleRadius) const
+Box3 ParticlesVis::particleBoundingBox(BufferAccess<const Point3> positionProperty, const PropertyObject* typeProperty, BufferAccess<const GraphicsFloatType> radiusProperty, BufferAccess<const Vector3G> shapeProperty, bool includeParticleRadius) const
 {
     OVITO_ASSERT(typeProperty == nullptr || typeProperty->type() == ParticlesObject::TypeProperty);
     if(particleShape() != Sphere && particleShape() != Box && particleShape() != Cylinder && particleShape() != Spherocylinder)
@@ -143,15 +142,15 @@ Box3 ParticlesVis::particleBoundingBox(ConstPropertyAccess<Point3> positionPrope
         if(maxAtomRadius == 0)
             maxAtomRadius = defaultParticleRadius();
         if(shapeProperty) {
-            for(const Vector3& s : shapeProperty)
-                maxAtomRadius = std::max(maxAtomRadius, std::max(s.x(), std::max(s.y(), s.z())));
+            for(const Vector3G& s : shapeProperty)
+                maxAtomRadius = std::max(maxAtomRadius, static_cast<FloatType>(std::max(s.x(), std::max(s.y(), s.z()))));
             if(particleShape() == Spherocylinder)
                 maxAtomRadius *= 2;
         }
         if(radiusProperty && radiusProperty.size() != 0) {
             auto minmax = std::minmax_element(radiusProperty.cbegin(), radiusProperty.cend());
             if(*minmax.first <= 0)
-                maxAtomRadius = std::max(maxAtomRadius, *minmax.second);
+                maxAtomRadius = std::max(maxAtomRadius, static_cast<FloatType>(*minmax.second));
             else
                 maxAtomRadius = *minmax.second;
         }
@@ -160,9 +159,9 @@ Box3 ParticlesVis::particleBoundingBox(ConstPropertyAccess<Point3> positionPrope
         // Non-standard case - at least one user-defined particle shape assigned:
         std::map<int,FloatType> typeRadiusMap = ParticleType::typeRadiusMap(typeProperty);
         if(radiusProperty && radiusProperty.size() == typeProperty->size()) {
-            const FloatType* r = radiusProperty.cbegin();
-            ConstPropertyAccess<int> typeData(typeProperty);
-            for(int t : typeData) {
+            const auto* r = radiusProperty.cbegin();
+            BufferAccess<const int32_t> typeData(typeProperty);
+            for(int32_t t : typeData) {
                 // Determine effective radius of the current particle.
                 FloatType radius = *r++;
                 if(radius <= 0) radius = typeRadiusMap[t];
@@ -221,29 +220,29 @@ ConstPropertyPtr ParticlesVis::particleColors(const ParticlesObject* particles, 
     particles->verifyIntegrity();
 
     // Take particle colors directly from the 'Color' property if available.
-    DataObjectAccess<DataOORef, PropertyObject> output = particles->getProperty(ParticlesObject::ColorProperty);
+    ConstPropertyPtr output = particles->getProperty(ParticlesObject::ColorProperty);
     if(!output) {
         // Allocate new output color array.
-        output.reset(ParticlesObject::OOClass().createStandardProperty(particles->elementCount(), ParticlesObject::ColorProperty));
+        output.reset(ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), ParticlesObject::ColorProperty));
 
-        const Color defaultColor = defaultParticleColor();
+        const ColorG defaultColor = defaultParticleColor().toDataType<GraphicsFloatType>();
         if(const PropertyObject* typeProperty = getParticleTypeColorProperty(particles)) {
             OVITO_ASSERT(typeProperty->size() == output->size());
             // Assign colors based on particle types.
             // Generate a lookup map for particle type colors.
             const std::map<int,Color> colorMap = typeProperty->typeColorMap();
-            std::array<Color,16> colorArray;
+            std::array<ColorG,16> colorArray;
             // Check if all type IDs are within a small, non-negative range.
             // If yes, we can use an array lookup strategy. Otherwise we have to use a dictionary lookup strategy, which is slower.
             if(boost::algorithm::all_of(colorMap, [&colorArray](const std::map<int,Color>::value_type& i) { return i.first >= 0 && i.first < (int)colorArray.size(); })) {
                 colorArray.fill(defaultColor);
                 for(const auto& entry : colorMap)
-                    colorArray[entry.first] = entry.second;
+                    colorArray[entry.first] = entry.second.toDataType<GraphicsFloatType>();
                 // Fill color array.
-                ConstPropertyAccess<int> typeData(typeProperty);
-                const int* t = typeData.cbegin();
-                for(Color& c : PropertyAccess<Color>(output.makeMutable())) {
-                    if(*t >= 0 && *t < (int)colorArray.size())
+                BufferAccess<const int32_t> typeData(typeProperty);
+                const auto* t = typeData.cbegin();
+                for(auto& c : BufferAccess<ColorG>(output.makeMutableInplace())) {
+                    if(*t >= 0 && *t < (int32_t)colorArray.size())
                         c = colorArray[*t];
                     else
                         c = defaultColor;
@@ -252,11 +251,11 @@ ConstPropertyPtr ParticlesVis::particleColors(const ParticlesObject* particles, 
             }
             else {
                 // Fill color array.
-                ConstPropertyAccess<int> typeData(typeProperty);
-                const int* t = typeData.cbegin();
-                for(Color& c : PropertyAccess<Color>(output.makeMutable())) {
+                BufferAccess<const int32_t> typeData(typeProperty);
+                const auto* t = typeData.cbegin();
+                for(auto& c : BufferAccess<ColorG>(output.makeMutableInplace())) {
                     if(auto it = colorMap.find(*t); it != colorMap.end())
-                        c = it->second;
+                        c = it->second.toDataType<GraphicsFloatType>();
                     else
                         c = defaultColor;
                     ++t;
@@ -265,15 +264,15 @@ ConstPropertyPtr ParticlesVis::particleColors(const ParticlesObject* particles, 
         }
         else {
             // Assign a uniform color to all particles.
-            output.makeMutable()->fill(defaultColor);
+            output.makeMutableInplace()->fill<ColorG>(defaultColor);
         }
     }
 
     // Highlight selected particles with a special color.
     if(const PropertyObject* selectionProperty = highlightSelection ? particles->getProperty(ParticlesObject::SelectionProperty) : nullptr)
-        output.makeMutable()->fillSelected(selectionParticleColor(), *selectionProperty);
+        output.makeMutableInplace()->fillSelected<ColorG>(selectionParticleColor().toDataType<GraphicsFloatType>(), *selectionProperty);
 
-    return output.take();
+    return output;
 }
 
 /******************************************************************************
@@ -291,16 +290,16 @@ const PropertyObject* ParticlesVis::getParticleTypeRadiusProperty(const Particle
 ConstPropertyPtr ParticlesVis::particleRadii(const ParticlesObject* particles, bool includeGlobalScaleFactor) const
 {
     particles->verifyIntegrity();
-    FloatType defaultRadius = defaultParticleRadius();
+    GraphicsFloatType defaultRadius = defaultParticleRadius();
     if(includeGlobalScaleFactor)
         defaultRadius *= radiusScaleFactor();
 
     // Take particle radii directly from the 'Radius' property if available.
-    DataObjectAccess<DataOORef, PropertyObject> output = particles->getProperty(ParticlesObject::RadiusProperty);
+    ConstPropertyPtr output = particles->getProperty(ParticlesObject::RadiusProperty);
     if(output) {
         // Check if the radius array contains any zero entries.
-        ConstPropertyAccess<FloatType> radiusArray(output);
-        if(boost::find(radiusArray, FloatType(0)) != radiusArray.end()) {
+        BufferAccess<const GraphicsFloatType> radiusArray(output);
+        if(boost::find(radiusArray, GraphicsFloatType(0)) != radiusArray.end()) {
             radiusArray.reset();
 
             // Copy per-type radii to those particles whose "Radius" property value is zero.
@@ -310,9 +309,9 @@ ConstPropertyPtr ParticlesVis::particleRadii(const ParticlesObject* particles, b
                 // Skip the following loop if all per-type radii are zero.
                 if(boost::algorithm::any_of(radiusMap, [](const std::pair<int,FloatType>& it) { return it.second != 0; })) {
                     // Fill radius array.
-                    ConstPropertyAccess<int> typeArray(typeProperty);
-                    const int* type = typeArray.cbegin();
-                    for(FloatType& radius : PropertyAccess<FloatType>(output.makeMutable())) {
+                    BufferAccess<const int32_t> typeArray(typeProperty);
+                    const auto* type = typeArray.cbegin();
+                    for(auto& radius : BufferAccess<GraphicsFloatType>(output.makeMutableInplace())) {
                         if(radius <= 0) {
                             auto it = radiusMap.find(*type);
                             if(it != radiusMap.end())
@@ -324,17 +323,17 @@ ConstPropertyPtr ParticlesVis::particleRadii(const ParticlesObject* particles, b
             }
 
             // Replace remaining zero entries in the "Radius" array with the uniform default radius.
-            boost::replace(PropertyAccess<FloatType>(output.makeMutable()), FloatType(0), defaultParticleRadius());
+            boost::replace(BufferAccess<GraphicsFloatType>(output.makeMutableInplace()), GraphicsFloatType(0), static_cast<GraphicsFloatType>(defaultParticleRadius()));
         }
         // Apply global scaling factor.
         if(includeGlobalScaleFactor && radiusScaleFactor() != 1.0) {
-            for(FloatType& r : PropertyAccess<FloatType>(output.makeMutable()))
+            for(auto& r : BufferAccess<GraphicsFloatType>(output.makeMutableInplace()))
                 r *= radiusScaleFactor();
         }
     }
     else {
         // Allocate output array.
-        output.reset(ParticlesObject::OOClass().createStandardProperty(particles->elementCount(), ParticlesObject::RadiusProperty));
+        output.reset(ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), ParticlesObject::RadiusProperty));
 
         if(const PropertyObject* typeProperty = getParticleTypeRadiusProperty(particles)) {
             OVITO_ASSERT(typeProperty->size() == output->size());
@@ -350,45 +349,46 @@ ConstPropertyPtr ParticlesVis::particleRadii(const ParticlesObject* particles, b
                         p.second *= radiusScaleFactor();
                 }
                 // Fill radius array.
-                ConstPropertyAccess<int> typeData(typeProperty);
-                PropertyAccess<FloatType> radiusArray(output.makeMutable());
-                boost::transform(typeData, radiusArray.begin(), [&](int t) {
+                BufferAccess<const int32_t> typeData(typeProperty);
+                BufferAccess<GraphicsFloatType> radiusArray(output.makeMutableInplace());
+                boost::transform(typeData, radiusArray.begin(), [&](auto t) {
                     // Set particle radius only if the type's radius is non-zero.
                     if(auto it = radiusMap.find(t); it != radiusMap.end() && it->second != 0)
-                        return it->second;
+                        return static_cast<GraphicsFloatType>(it->second);
                     else
                         return defaultRadius;
                 });
             }
             else {
                 // Assign the uniform default radius to all particles.
-                output.makeMutable()->fill(defaultRadius);
+                output.makeMutableInplace()->fill<GraphicsFloatType>(defaultRadius);
             }
         }
         else {
             // Assign the uniform default radius to all particles.
-            output.makeMutable()->fill(defaultRadius);
+            output.makeMutableInplace()->fill<GraphicsFloatType>(defaultRadius);
         }
     }
 
-    return output.take();
+    return output;
 }
 
 /******************************************************************************
 * Determines the display radius of a single particle.
 ******************************************************************************/
-FloatType ParticlesVis::particleRadius(size_t particleIndex, ConstPropertyAccess<FloatType> radiusProperty, const PropertyObject* typeProperty) const
+GraphicsFloatType ParticlesVis::particleRadius(size_t particleIndex, BufferAccess<const GraphicsFloatType> radiusProperty, const PropertyObject* typeProperty) const
 {
     OVITO_ASSERT(typeProperty == nullptr || typeProperty->type() == ParticlesObject::TypeProperty);
 
     if(radiusProperty && radiusProperty.size() > particleIndex) {
         // Take particle radius directly from the radius property.
-        FloatType r = radiusProperty[particleIndex];
-        if(r > 0) return r * radiusScaleFactor();
+        GraphicsFloatType r = radiusProperty[particleIndex];
+        if(r > 0)
+            return r * radiusScaleFactor();
     }
     else if(typeProperty && typeProperty->size() > particleIndex) {
         // Assign radius based on particle types.
-        ConstPropertyAccess<int> typeData(typeProperty);
+        BufferAccess<const int32_t> typeData(typeProperty);
         const ParticleType* ptype = static_object_cast<ParticleType>(typeProperty->elementType(typeData[particleIndex]));
         if(ptype && ptype->radius() > 0)
             return ptype->radius() * radiusScaleFactor();
@@ -400,25 +400,25 @@ FloatType ParticlesVis::particleRadius(size_t particleIndex, ConstPropertyAccess
 /******************************************************************************
 * Determines the display color of a single particle.
 ******************************************************************************/
-Color ParticlesVis::particleColor(size_t particleIndex, ConstPropertyAccess<Color> colorProperty, const PropertyObject* typeProperty, ConstPropertyAccess<int> selectionProperty) const
+ColorG ParticlesVis::particleColor(size_t particleIndex, BufferAccess<const ColorG> colorProperty, const PropertyObject* typeProperty, BufferAccess<const SelectionIntType> selectionProperty) const
 {
     // Check if particle is selected.
     if(selectionProperty && selectionProperty.size() > particleIndex) {
         if(selectionProperty[particleIndex])
-            return selectionParticleColor();
+            return selectionParticleColor().toDataType<GraphicsFloatType>();
     }
 
-    Color c = defaultParticleColor();
+    ColorG c = defaultParticleColor().toDataType<GraphicsFloatType>();
     if(colorProperty && colorProperty.size() > particleIndex) {
         // Take particle color directly from the color property.
         c = colorProperty[particleIndex];
     }
     else if(typeProperty && typeProperty->size() > particleIndex) {
         // Return color based on particle types.
-        ConstPropertyAccess<int> typeData(typeProperty);
+        BufferAccess<const int32_t> typeData(typeProperty);
         const ElementType* ptype = typeProperty->elementType(typeData[particleIndex]);
         if(ptype)
-            c = ptype->color();
+            c = ptype->color().toDataType<GraphicsFloatType>();
     }
 
     return c;
@@ -577,9 +577,9 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
         struct MeshTypePerInstanceData {
             MeshTypePerInstanceData(DataBufferPtr tm, DataBufferPtr colors, DataBufferPtr indices) :
                 particleTMs(std::move(tm)), particleColors(std::move(colors)), particleIndices(std::move(indices)) {}
-            DataBufferAccessAndRef<AffineTransformation> particleTMs;   /// AffineTransformation of each particle to be rendered.
-            DataBufferAccessAndRef<ColorA> particleColors;  /// Color of each particle to be rendered.
-            DataBufferAccessAndRef<int> particleIndices;    /// Index of each particle to be rendered in the original particles list.
+            BufferAccessAndRef<AffineTransformationG> particleTMs;   /// AffineTransformation of each particle to be rendered.
+            BufferAccessAndRef<ColorAG> particleColors;  /// Color of each particle to be rendered.
+            BufferAccessAndRef<int32_t> particleIndices; /// Index of each particle to be rendered in the original particles list.
         };
         std::vector<MeshTypePerInstanceData> perInstanceData;
 
@@ -599,32 +599,34 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
             meshVisCache.push_back(std::move(meshType));
 
             perInstanceData.emplace_back(
-                DataBufferPtr::create(0, DataBuffer::Float, 12),    // <AffineTransformation> (particle orientations)
-                DataBufferPtr::create(0, DataBuffer::Float,  4),    // <ColorA> (particle colors)
-                DataBufferPtr::create(0, DataBuffer::Int)       // <int> (particle indices)
+                DataBufferPtr::create(0, DataBuffer::FloatGraphics, 12),    // <AffineTransformationG> (particle orientations)
+                DataBufferPtr::create(0, DataBuffer::FloatGraphics,  4),    // <ColorAG> (particle colors)
+                DataBufferPtr::create(0, DataBuffer::Int32)                 // <int> (particle indices)
             );
         }
 
         // Compile the per-instance particle data (positions, orientations, colors, etc) for each mesh-based particle type.
-        ConstPropertyAccessAndRef<Color> colors = particleColors(particles, renderer->isInteractive());
-        ConstPropertyAccessAndRef<FloatType> radii = particleRadii(particles, true);
-        ConstPropertyAccess<int> types(typeProperty);
-        ConstPropertyAccess<Point3> positions(positionProperty);
-        ConstPropertyAccess<Quaternion> orientations(orientationProperty);
-        ConstPropertyAccess<FloatType> transparencies(transparencyProperty);
+        BufferAccessAndRef<const ColorG> colors = particleColors(particles, renderer->isInteractive());
+        BufferAccessAndRef<const GraphicsFloatType> radii = particleRadii(particles, true);
+        BufferAccess<const int32_t> types(typeProperty);
+        BufferAccess<const Point3> positions(positionProperty);
+        BufferAccess<const QuaternionG> orientations(orientationProperty);
+        BufferAccess<const GraphicsFloatType> transparencies(transparencyProperty);
         size_t particleCount = particles->elementCount();
         for(size_t i = 0; i < particleCount; i++) {
-            if(radii[i] <= 0) continue;
+            if(radii[i] <= 0)
+                continue;
             auto iter = boost::find(shapeMeshParticleTypes, types[i]);
-            if(iter == shapeMeshParticleTypes.end()) continue;
+            if(iter == shapeMeshParticleTypes.end())
+                continue;
             size_t typeIndex = std::distance(shapeMeshParticleTypes.begin(), iter);
-            AffineTransformation tm = AffineTransformation::scaling(radii[i]);
+            AffineTransformationG tm = AffineTransformationG::scaling(radii[i]);
             if(positions)
-                tm.translation() = positions[i] - Point3::Origin();
+                tm.translation() = positions[i].toDataType<GraphicsFloatType>() - Point3G::Origin();
             if(orientations)
-                tm = tm * Matrix3::rotation(orientations[i].safelyNormalized());
+                tm = tm * Matrix_3<GraphicsFloatType>::rotation(orientations[i].safelyNormalized());
             perInstanceData[typeIndex].particleTMs.push_back(tm);
-            perInstanceData[typeIndex].particleColors.push_back(ColorA(colors[i], transparencies ? qBound(0.0, 1.0 - transparencies[i], 1.0) : 1.0));
+            perInstanceData[typeIndex].particleColors.push_back(ColorAG(colors[i], transparencies ? qBound<GraphicsFloatType>(0, 1 - transparencies[i], 1) : 1));
             perInstanceData[typeIndex].particleIndices.push_back(i);
         }
 
@@ -730,8 +732,9 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
         ConstDataBufferPtr& scaledShapes = renderer->visCache().get<ConstDataBufferPtr>(ParticleShapeCacheKey(asphericalShapeProperty, radiusScaleFactor()));
         if(!scaledShapes) {
             // Make a copy of the original aspherical shape array and multiple all vectors with the scaling factor.
-            DataBufferAccessAndRef<Vector3> values = ConstDataBufferPtr::makeCopy(asphericalShapeProperty);
-            for(Vector3& s : values) s *= radiusScaleFactor();
+            BufferAccessAndRef<Vector3G> values = ConstDataBufferPtr::makeCopy(asphericalShapeProperty);
+            for(Vector3G& s : values)
+                s *= radiusScaleFactor();
             scaledShapes = values.take();
         }
         primitive.setAsphericalShapes(scaledShapes);
@@ -774,9 +777,9 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
                 }
 
                 // Collect indices of all particles that have an active type.
-                DataBufferAccessAndRef<int> activeParticleIndices = DataBufferPtr::create(0, DataBuffer::Int);
+                BufferAccessAndRef<int32_t> activeParticleIndices = DataBufferPtr::create(0, DataBuffer::Int32);
                 size_t index = 0;
-                for(int t : ConstPropertyAccess<int>(typeProperty)) {
+                for(int32_t t : BufferAccess<const int32_t>(typeProperty)) {
                     if(boost::find(activeParticleTypes, t) != activeParticleTypes.cend())
                         activeParticleIndices.push_back(index);
                     index++;
@@ -836,12 +839,14 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
         if(renderer->isPicking()) {
             // Look up or create the pick info record with the latest particle data.
             OORef<ParticlePickInfo>& pickingInfo = renderer->visCache().get<OORef<ParticlePickInfo>>(ConstDataObjectRef(particles));
-            if(!pickingInfo) pickingInfo = OORef<ParticlePickInfo>::create(this, particles);
+            if(!pickingInfo)
+                pickingInfo = OORef<ParticlePickInfo>::create(this, particles);
             renderer->beginPickObject(contextNode, pickingInfo);
         }
         // Render the particle primitive.
         renderer->renderParticles(primitive);
-        if(renderer->isPicking()) renderer->endPickObject();
+        if(renderer->isPicking())
+            renderer->endPickObject();
     }
 }
 
@@ -941,7 +946,7 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
             visCache.isCreated = true;
 
             // Determine the set of particles to be rendered using the current shape.
-            DataBufferAccessAndRef<int> activeParticleIndices;
+            BufferAccessAndRef<int32_t> activeParticleIndices;
             if(uniformShape != shape) {
                 OVITO_ASSERT(typeProperty);
 
@@ -955,9 +960,9 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
                 }
 
                 // Collect indices of all particles that have an active type.
-                activeParticleIndices = DataBufferPtr::create(0, DataBuffer::Int);
+                activeParticleIndices = DataBufferPtr::create(0, DataBuffer::Int32);
                 size_t index = 0;
-                for(int t : ConstPropertyAccess<int>(typeProperty)) {
+                for(int32_t t : BufferAccess<const int32_t>(typeProperty)) {
                     if(boost::find(activeParticleTypes, t) != activeParticleTypes.cend())
                         activeParticleIndices.push_back(index);
                     index++;
@@ -986,25 +991,25 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
                 radiusBuffer = particleRadii(particles, false);
 
             // Allocate cylinder data buffers.
-            DataBufferAccessAndRef<Point3> cylinderBasePositions = DataBufferPtr::create(effectiveParticleCount, DataBuffer::Float, 3);
-            DataBufferAccessAndRef<Point3> cylinderHeadPositions = DataBufferPtr::create(effectiveParticleCount, DataBuffer::Float, 3);
-            DataBufferAccessAndRef<FloatType> cylinderWidths = DataBufferPtr::create(effectiveParticleCount, DataBuffer::Float);
-            DataBufferAccessAndRef<Color> cylinderColors = DataBufferPtr::create(effectiveParticleCount, DataBuffer::Float, 3);
-            DataBufferAccessAndRef<FloatType> cylinderTransparencies = transparencyProperty ? DataBufferPtr::create(effectiveParticleCount, DataBuffer::Float) : nullptr;
-            DataBufferAccessAndRef<FloatType> sphereRadii = (shape == ParticleShape::Spherocylinder) ? DataBufferPtr::create(effectiveParticleCount, DataBuffer::Float) : nullptr;
+            BufferAccessAndRef<Point3G> cylinderBasePositions = DataBufferPtr::create(effectiveParticleCount, DataBuffer::FloatGraphics, 3);
+            BufferAccessAndRef<Point3G> cylinderHeadPositions = DataBufferPtr::create(effectiveParticleCount, DataBuffer::FloatGraphics, 3);
+            BufferAccessAndRef<GraphicsFloatType> cylinderWidths = DataBufferPtr::create(effectiveParticleCount, DataBuffer::FloatGraphics);
+            BufferAccessAndRef<ColorG> cylinderColors = DataBufferPtr::create(effectiveParticleCount, DataBuffer::FloatGraphics, 3);
+            BufferAccessAndRef<GraphicsFloatType> cylinderTransparencies = transparencyProperty ? DataBufferPtr::create(effectiveParticleCount, DataBuffer::FloatGraphics) : nullptr;
+            BufferAccessAndRef<GraphicsFloatType> sphereRadii = (shape == ParticleShape::Spherocylinder) ? DataBufferPtr::create(effectiveParticleCount, DataBuffer::FloatGraphics) : nullptr;
 
             // Fill data buffers.
-            ConstPropertyAccess<Point3> positionArray(positionProperty);
-            ConstPropertyAccess<Vector3> asphericalShapeArray(asphericalShapeProperty);
-            ConstPropertyAccess<Quaternion> orientationArray(orientationProperty);
-            ConstPropertyAccess<Color> colorsArray(colorBuffer);
-            ConstPropertyAccess<FloatType> radiiArray(radiusBuffer);
-            ConstPropertyAccess<FloatType> transparencies(transparencyProperty);
-            const FloatType scalingFactor = radiusScaleFactor();
+            BufferAccess<const Point3> positionArray(positionProperty);
+            BufferAccess<const Vector3G> asphericalShapeArray(asphericalShapeProperty);
+            BufferAccess<const QuaternionG> orientationArray(orientationProperty);
+            BufferAccess<const ColorG> colorsArray(colorBuffer);
+            BufferAccess<const GraphicsFloatType> radiiArray(radiusBuffer);
+            BufferAccess<const GraphicsFloatType> transparencies(transparencyProperty);
+            const GraphicsFloatType scalingFactor = radiusScaleFactor();
             for(int index = 0; index < effectiveParticleCount; index++) {
                 int effectiveParticleIndex = activeParticleIndices ? activeParticleIndices[index] : index;
                 const Point3& center = positionArray[effectiveParticleIndex];
-                FloatType radius, length;
+                GraphicsFloatType radius, length;
                 if(asphericalShapeArray) {
                     radius = std::abs(asphericalShapeArray[effectiveParticleIndex].x()) * scalingFactor;
                     length = asphericalShapeArray[effectiveParticleIndex].z() * scalingFactor;
@@ -1013,11 +1018,11 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
                     radius = radiiArray[effectiveParticleIndex] * scalingFactor;
                     length = radius * 2;
                 }
-                Vector3 dir = Vector3(0, 0, length);
+                Vector3G dir(0, 0, length);
                 if(orientationArray) {
                     dir = orientationArray[effectiveParticleIndex].safelyNormalized() * dir;
                 }
-                Point3 p = center - (dir * FloatType(0.5));
+                Point3G p = center.toDataType<GraphicsFloatType>() - (dir * GraphicsFloatType(0.5));
                 cylinderBasePositions[index] = p;
                 cylinderHeadPositions[index] = p + dir;
                 cylinderWidths[index] = 2 * radius;
@@ -1114,7 +1119,7 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
         // Get the particle type.
         const ParticleType* ptype = nullptr;
         if(typeProperty && particleIndex < typeProperty->size()) {
-            ConstPropertyAccess<int> typeArray(typeProperty);
+            BufferAccess<const int32_t> typeArray(typeProperty);
             ptype = dynamic_object_cast<ParticleType>(typeProperty->elementType(typeArray[particleIndex]));
         }
 
@@ -1128,15 +1133,17 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
             shape = ptype->shape();
 
         // Determine position of the selected particle.
-        Point3 pos = ConstPropertyAccess<Point3>(posProperty)[particleIndex];
+        Point3 pos = BufferAccess<const Point3>(posProperty)[particleIndex];
 
         // Determine radius of selected particle.
-        FloatType radius = particleRadius(particleIndex, radiusProperty, typeProperty);
+        GraphicsFloatType radius = particleRadius(particleIndex, radiusProperty, typeProperty);
+
+        FloatType padding = renderer->viewport()->nonScalingSize(renderer->worldTransform() * pos) * FloatType(1e-1);
 
         // Determine the display color of selected particle.
-        Color color = particleColor(particleIndex, colorProperty, typeProperty, selectionProperty);
-        Color highlightColor = selectionParticleColor();
-        color = color * FloatType(0.5) + highlightColor * FloatType(0.5);
+        ColorG color = particleColor(particleIndex, colorProperty, typeProperty, selectionProperty);
+        ColorG highlightColor = selectionParticleColor().toDataType<GraphicsFloatType>();
+        color = color * GraphicsFloatType(0.5) + highlightColor * GraphicsFloatType(0.5);
 
         // Determine rendering quality used to render the particles.
         ParticlePrimitive::RenderingQuality renderQuality = effectiveRenderingQuality(renderer, particles);
@@ -1153,31 +1160,31 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
                 primitiveShadingMode = ParticlePrimitive::FlatShading;
 
             // Prepare data buffers.
-            DataBufferAccessAndRef<Point3> positionBuffer = DataBufferPtr::create(1, DataBuffer::Float, 3);
+            BufferAccessAndRef<Point3> positionBuffer = DataBufferPtr::create(1, DataBuffer::FloatDefault, 3);
             positionBuffer[0] = pos;
-            DataBufferAccessAndRef<Vector3> asphericalShapeBuffer;
-            DataBufferAccessAndRef<Vector3> asphericalShapeBufferHighlight;
+            BufferAccessAndRef<Vector3G> asphericalShapeBuffer;
+            BufferAccessAndRef<Vector3G> asphericalShapeBufferHighlight;
             if(shapeProperty) {
-                asphericalShapeBuffer = DataBufferPtr::create(1, DataBuffer::Float, 3);
-                asphericalShapeBufferHighlight = DataBufferPtr::create(1, DataBuffer::Float, 3);
-                asphericalShapeBufferHighlight[0] = asphericalShapeBuffer[0] = ConstPropertyAccess<Vector3>(shapeProperty)[particleIndex];
-                asphericalShapeBufferHighlight[0] += Vector3(renderer->viewport()->nonScalingSize(renderer->worldTransform() * pos) * FloatType(1e-1));
+                asphericalShapeBuffer = DataBufferPtr::create(1, DataBuffer::FloatGraphics, 3);
+                asphericalShapeBufferHighlight = DataBufferPtr::create(1, DataBuffer::FloatGraphics, 3);
+                asphericalShapeBufferHighlight[0] = asphericalShapeBuffer[0] = BufferAccess<const Vector3G>(shapeProperty)[particleIndex];
+                asphericalShapeBufferHighlight[0] += Vector3G(padding);
             }
-            DataBufferAccessAndRef<Quaternion> orientationBuffer;
+            BufferAccessAndRef<QuaternionG> orientationBuffer;
             if(orientationProperty) {
-                orientationBuffer = DataBufferPtr::create(1, DataBuffer::Float, 4);
-                orientationBuffer[0] = ConstPropertyAccess<Quaternion>(orientationProperty)[particleIndex];
+                orientationBuffer = DataBufferPtr::create(1, DataBuffer::FloatGraphics, 4);
+                orientationBuffer[0] = BufferAccess<const QuaternionG>(orientationProperty)[particleIndex];
             }
-            DataBufferAccessAndRef<Vector2> roundnessBuffer;
+            BufferAccessAndRef<Vector_2<GraphicsFloatType>> roundnessBuffer;
             if(roundnessProperty) {
-                roundnessBuffer = DataBufferPtr::create(1, DataBuffer::Float, 2);
-                roundnessBuffer[0] = ConstPropertyAccess<Vector2>(roundnessProperty)[particleIndex];
+                roundnessBuffer = DataBufferPtr::create(1, DataBuffer::FloatGraphics, 2);
+                roundnessBuffer[0] = BufferAccess<const Vector_2<GraphicsFloatType>>(roundnessProperty)[particleIndex];
             }
 
             particleBuffer.setParticleShape(primitiveParticleShape);
             particleBuffer.setShadingMode(primitiveShadingMode);
             particleBuffer.setRenderingQuality(renderQuality);
-            particleBuffer.setUniformColor(color);
+            particleBuffer.setUniformColor(color.toDataType<FloatType>());
             particleBuffer.setPositions(positionBuffer.take());
             particleBuffer.setUniformRadius(radius);
             particleBuffer.setAsphericalShapes(asphericalShapeBuffer.take());
@@ -1188,17 +1195,17 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
             highlightParticleBuffer.setParticleShape(primitiveParticleShape);
             highlightParticleBuffer.setShadingMode(primitiveShadingMode);
             highlightParticleBuffer.setRenderingQuality(renderQuality);
-            highlightParticleBuffer.setUniformColor(highlightColor);
+            highlightParticleBuffer.setUniformColor(highlightColor.toDataType<FloatType>());
             highlightParticleBuffer.setPositions(particleBuffer.positions());
-            highlightParticleBuffer.setUniformRadius(radius + renderer->viewport()->nonScalingSize(renderer->worldTransform() * pos) * FloatType(1e-1));
+            highlightParticleBuffer.setUniformRadius(radius + padding);
             highlightParticleBuffer.setAsphericalShapes(asphericalShapeBufferHighlight.take());
             highlightParticleBuffer.setOrientations(particleBuffer.orientations());
             highlightParticleBuffer.setRoundness(particleBuffer.roundness());
         }
         else if(shape == Cylinder || shape == Spherocylinder) {
-            FloatType radius, length;
+            GraphicsFloatType radius, length;
             if(shapeProperty) {
-                Vector3 shape = ConstPropertyAccess<Vector3>(shapeProperty)[particleIndex];
+                Vector3G shape = BufferAccess<const Vector3G>(shapeProperty)[particleIndex];
                 radius = std::abs(shape.x());
                 length = shape.z();
             }
@@ -1206,25 +1213,24 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
                 radius = defaultParticleRadius();
                 length = radius * 2;
             }
-            Vector3 dir = Vector3(0, 0, length);
+            Vector3G dir(0, 0, length);
             if(orientationProperty) {
-                Quaternion q = ConstPropertyAccess<Quaternion>(orientationProperty)[particleIndex];
+                QuaternionG q = BufferAccess<const QuaternionG>(orientationProperty)[particleIndex];
                 dir = q.safelyNormalized() * dir;
             }
-            DataBufferAccessAndRef<Point3> positionBuffer1 = DataBufferPtr::create(1, DataBuffer::Float, 3);
-            DataBufferAccessAndRef<Point3> positionBuffer2 = DataBufferPtr::create(1, DataBuffer::Float, 3);
-            DataBufferAccessAndRef<Point3> positionBufferSpheres = DataBufferPtr::create(2, DataBuffer::Float, 3);
-            positionBufferSpheres[0] = positionBuffer1[0] = pos - (dir * FloatType(0.5));
-            positionBufferSpheres[1] = positionBuffer2[0] = pos + (dir * FloatType(0.5));
+            BufferAccessAndRef<Point3G> positionBuffer1 = DataBufferPtr::create(1, DataBuffer::FloatGraphics, 3);
+            BufferAccessAndRef<Point3G> positionBuffer2 = DataBufferPtr::create(1, DataBuffer::FloatGraphics, 3);
+            BufferAccessAndRef<Point3G> positionBufferSpheres = DataBufferPtr::create(2, DataBuffer::FloatGraphics, 3);
+            positionBufferSpheres[0] = positionBuffer1[0] = pos.toDataType<GraphicsFloatType>() - (dir * GraphicsFloatType(0.5));
+            positionBufferSpheres[1] = positionBuffer2[0] = pos.toDataType<GraphicsFloatType>() + (dir * GraphicsFloatType(0.5));
             cylinderBuffer.setShape(CylinderPrimitive::CylinderShape);
             cylinderBuffer.setShadingMode(CylinderPrimitive::NormalShading);
             highlightCylinderBuffer.setShape(CylinderPrimitive::CylinderShape);
             highlightCylinderBuffer.setShadingMode(CylinderPrimitive::NormalShading);
-            cylinderBuffer.setUniformColor(color);
+            cylinderBuffer.setUniformColor(color.toDataType<FloatType>());
             cylinderBuffer.setUniformWidth(2 * radius);
             cylinderBuffer.setPositions(positionBuffer1.take(), positionBuffer2.take());
-            FloatType padding = renderer->viewport()->nonScalingSize(renderer->worldTransform() * pos) * FloatType(1e-1);
-            highlightCylinderBuffer.setUniformColor(highlightColor);
+            highlightCylinderBuffer.setUniformColor(highlightColor.toDataType<FloatType>());
             highlightCylinderBuffer.setUniformWidth(2 * (radius + padding));
             highlightCylinderBuffer.setPositions(cylinderBuffer.basePositions(), cylinderBuffer.headPositions());
             if(shape == Spherocylinder) {
@@ -1236,10 +1242,10 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
                 highlightParticleBuffer.setRenderingQuality(ParticlePrimitive::HighQuality);
                 particleBuffer.setPositions(positionBufferSpheres.take());
                 particleBuffer.setUniformRadius(radius);
-                particleBuffer.setUniformColor(color);
+                particleBuffer.setUniformColor(color.toDataType<FloatType>());
                 highlightParticleBuffer.setPositions(particleBuffer.positions());
                 highlightParticleBuffer.setUniformRadius(radius + padding);
-                highlightParticleBuffer.setUniformColor(highlightColor);
+                highlightParticleBuffer.setUniformColor(highlightColor.toDataType<FloatType>());
             }
         }
 
@@ -1275,23 +1281,24 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
             return;
 
         // Determine position of selected particle.
-        Point3 pos = ConstPropertyAccess<Point3>(posProperty)[particleIndex];
+        Point3 pos = BufferAccess<const Point3>(posProperty)[particleIndex];
 
         // Determine radius of selected particle.
-        FloatType radius = particleRadius(particleIndex, radiusProperty, typeProperty);
+        GraphicsFloatType radius = particleRadius(particleIndex, radiusProperty, typeProperty);
         if(shapeProperty) {
-            Vector3 shape = ConstPropertyAccess<Vector3>(shapeProperty)[particleIndex];
+            Vector3G shape = BufferAccess<const Vector3G>(shapeProperty)[particleIndex];
             radius = std::max(radius, shape.x());
             radius = std::max(radius, shape.y());
             radius = std::max(radius, shape.z());
             radius *= 2;
         }
 
+        FloatType padding = renderer->viewport()->nonScalingSize(renderer->worldTransform() * pos) * FloatType(1e-1);
+
         if(radius <= 0 || !renderer->viewport())
             return;
 
-        const AffineTransformation& tm = renderer->worldTransform();
-        renderer->addToLocalBoundingBox(Box3(pos, radius + renderer->viewport()->nonScalingSize(tm * pos) * FloatType(1e-1)));
+        renderer->addToLocalBoundingBox(Box3(pos, radius + padding));
     }
 }
 
@@ -1302,7 +1309,7 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
 size_t ParticlePickInfo::particleIndexFromSubObjectID(quint32 subobjID) const
 {
     if(_subobjectToParticleMapping && subobjID < _subobjectToParticleMapping->size())
-        return ConstDataBufferAccess<int>(_subobjectToParticleMapping)[subobjID];
+        return BufferAccess<const int32_t>(_subobjectToParticleMapping)[subobjID];
     return subobjID;
 }
 

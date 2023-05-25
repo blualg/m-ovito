@@ -40,7 +40,7 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(Modifier, title, ReferenceEvent::TitleChanged);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-Modifier::Modifier(ObjectCreationParams params) : RefTarget(params),
+Modifier::Modifier(ObjectInitializationFlags flags) : RefTarget(flags),
     _isEnabled(true)
 {
 }
@@ -72,8 +72,8 @@ OORef<ModifierApplication> Modifier::createModifierApplication()
 /******************************************************************************
 * Returns the number of animation frames this modifier provides.
 ******************************************************************************/
-int Modifier::numberOfOutputFrames(ModifierApplication* modApp) const 
-{ 
+int Modifier::numberOfOutputFrames(ModifierApplication* modApp) const
+{
     OVITO_ASSERT(modApp);
     if(PipelineObject* input = modApp->input())
         return input->numberOfSourceFrames();

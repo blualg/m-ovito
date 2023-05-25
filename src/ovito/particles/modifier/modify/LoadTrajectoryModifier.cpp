@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,12 +39,12 @@ SET_PROPERTY_FIELD_LABEL(LoadTrajectoryModifier, trajectorySource, "Trajectory s
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-LoadTrajectoryModifier::LoadTrajectoryModifier(ObjectCreationParams params) : Modifier(params)
+LoadTrajectoryModifier::LoadTrajectoryModifier(ObjectInitializationFlags flags) : Modifier(flags)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the file source object, which will be responsible for loading
         // and caching the trajectory data.
-        setTrajectorySource(OORef<FileSource>::create(params));
+        setTrajectorySource(OORef<FileSource>::create(flags));
     }
 }
 
@@ -121,7 +121,7 @@ void LoadTrajectoryModifier::evaluateSynchronous(const ModifierEvaluationRequest
 }
 
 /******************************************************************************
-* Transfers the particle positions from the trajectory frame to the current 
+* Transfers the particle positions from the trajectory frame to the current
 * pipeline input state.
 ******************************************************************************/
 void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, const PipelineFlowState& trajState)
@@ -146,27 +146,27 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 
         // Build particle-to-particle index map.
         std::vector<size_t> indexToIndexMap(particles->elementCount());
-        ConstPropertyAccess<qlonglong> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
-        ConstPropertyAccess<qlonglong> trajIdentifierProperty = trajectoryParticles->getProperty(ParticlesObject::IdentifierProperty);
+        BufferAccess<const IdentifierIntType> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+        BufferAccess<const IdentifierIntType> trajIdentifierProperty = trajectoryParticles->getProperty(ParticlesObject::IdentifierProperty);
         if(identifierProperty && trajIdentifierProperty) {
 
             // Build map of particle identifiers in trajectory dataset.
-            std::map<qlonglong, size_t> refMap;
+            std::map<IdentifierIntType, size_t> refMap;
             size_t index = 0;
-            for(qlonglong id : trajIdentifierProperty) {
+            for(auto id : trajIdentifierProperty) {
                 if(refMap.insert(std::make_pair(id, index++)).second == false)
                     throw Exception(tr("Particles with duplicate identifiers detected in trajectory dataset."));
             }
             trajIdentifierProperty.reset();
 
             // Check for duplicate identifiers in topology dataset.
-            std::vector<size_t> idSet(identifierProperty.cbegin(), identifierProperty.cend());
+            std::vector<IdentifierIntType> idSet(identifierProperty.cbegin(), identifierProperty.cend());
             boost::sort(idSet);
             if(boost::adjacent_find(idSet) != idSet.cend())
                 throw Exception(tr("Particles with duplicate identifiers detected in topology dataset."));
 
             // Used to keep track of which topology particles are going to be deleted.
-            boost::dynamic_bitset<> deletionMask; 
+            boost::dynamic_bitset<> deletionMask;
 
             // Build mapping of particle indices from the topology dataset to the corresponding indices in the trajectory dataset.
             auto mappedIndex = indexToIndexMap.begin();
@@ -176,7 +176,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
                 if(iter == refMap.end()) {
                     // Existing particle from topology dataset was not found in the trajectory dataset.
                     // Mark the particle for deletion.
-                    if(deletionMask.size() == 0) 
+                    if(deletionMask.size() == 0)
                         deletionMask = boost::dynamic_bitset<>(indexToIndexMap.size());
                     deletionMask.set(idx);
                 }
@@ -200,13 +200,13 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             OVITO_ASSERT(indexToIndexMap.size() == particles->elementCount());
 
             // Check if the trajectory dataset contains excess particles that are not present in the topology dataset yet.
-            if(!refMap.empty()) {               
+            if(!refMap.empty()) {
                 // Insert the new particles after the existing particles in the topology dataset.
                 particles->setElementCount(particles->elementCount() + refMap.size());
                 indexToIndexMap.reserve(indexToIndexMap.size() + refMap.size());
 
                 // Extend index mapping and particle identifier property.
-                PropertyAccess<qlonglong> identifierProperty = particles->expectMutableProperty(ParticlesObject::IdentifierProperty);
+                BufferAccess<IdentifierIntType> identifierProperty = particles->expectMutableProperty(ParticlesObject::IdentifierProperty);
                 auto id = identifierProperty.begin() + indexToIndexMap.size();
                 for(const auto& entry : refMap) {
                     *id++ = entry.first;
@@ -226,8 +226,8 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
                 // We make an exception if topology identifiers are in sorted order forming a consecutive sequence.
                 // Gromacs GRO files, for example, contain atom numbers (IDs) and Gromacs XTC files do not.
                 // This exception has been introduced to support this particular combination of topology & trajectory files.
-                qlonglong idx = 1;
-                for(const qlonglong& id : identifierProperty) {
+                IdentifierIntType idx = 1;
+                for(const auto& id : identifierProperty) {
                     if(id != idx++)
                         throw Exception(tr("Particles in the topology dataset have identifiers, but trajectory particles do not. This likely is a mistake. Please ensure the trajectory file contains identifiers too."));
                 }
@@ -250,15 +250,15 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             bool replacingProperty;
             if(property->type() != ParticlesObject::UserProperty) {
                 replacingProperty = (particles->getProperty(property->type()) != nullptr);
-                outputProperty = particles->createProperty(property->type(), DataBuffer::InitializeMemory);
+                outputProperty = particles->createProperty(DataBuffer::Initialized, property->type());
                 if(outputProperty->dataType() != property->dataType()
                     || outputProperty->componentCount() != property->componentCount())
                     continue; // Types of source property and output property are not compatible.
             }
             else {
                 replacingProperty = (particles->getProperty(property->name()) != nullptr);
-                outputProperty = particles->createProperty(property->name(),
-                    property->dataType(), property->componentCount(), DataBuffer::InitializeMemory);
+                outputProperty = particles->createProperty(DataBuffer::Initialized, property->name(),
+                    property->dataType(), property->componentCount());
             }
             OVITO_ASSERT(outputProperty->stride() == property->stride());
 
@@ -283,12 +283,12 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             // stored in wrapped coordinates, then it becomes necessary to fix bonds using the minimum image convention.
             std::array<bool, 3> pbc = topologyCell->pbcFlags();
             if((pbc[0] || pbc[1] || pbc[2]) && particles->bonds() && std::abs(simCell.determinant()) > FLOATTYPE_EPSILON) {
-                ConstPropertyAccess<Point3> outputPosProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+                BufferAccess<const Point3> outputPosProperty = particles->expectProperty(ParticlesObject::PositionProperty);
                 AffineTransformation inverseCellMatrix = simCell.inverse();
 
                 BondsObject* bonds = particles->makeBondsMutable();
-                if(ConstPropertyAccess<ParticleIndexPair> topologyProperty = bonds->getProperty(BondsObject::TopologyProperty)) {
-                    PropertyAccess<Vector3I> periodicImageProperty = bonds->createProperty(BondsObject::PeriodicImageProperty, DataBuffer::InitializeMemory);
+                if(BufferAccess<const ParticleIndexPair> topologyProperty = bonds->getProperty(BondsObject::TopologyProperty)) {
+                    BufferAccess<Vector3I> periodicImageProperty = bonds->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
 
                     // Wrap bonds crossing a periodic boundary by resetting their PBC shift vectors.
                     for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
@@ -308,7 +308,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             }
         }
     }
-    
+
     if(const BondsObject* trajectoryBonds = trajectoryParticles->bonds()) {
         trajectoryBonds->verifyIntegrity();
 
@@ -316,8 +316,8 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
         ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
         particles->verifyIntegrity();
 
-        // If the trajectory file contains a bond topology, completely replace all existing bonds 
-        // from the topology dataset with the new set of bonds. 
+        // If the trajectory file contains a bond topology, completely replace all existing bonds
+        // from the topology dataset with the new set of bonds.
         // The topology can be specified either in the form of the "Topology" bond property (two 0-based particle indices)
         // or in the form of the "Particle Identifiers" bond property (pairs of atom IDs).
         const PropertyObject* bondTopology = trajectoryBonds->getProperty(BondsObject::TopologyProperty);
@@ -325,7 +325,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 
         if(bondTopology || bondParticleIdentifiers) {
             if(particles->bonds()) {
-                // Replace the property arrays, but make sure that BondType instances  
+                // Replace the property arrays, but make sure that BondType instances
                 // as well as the visual elements from the topology dataset are preserved.
                 particles->makeBondsMutable()->setContent(trajectoryBonds->elementCount(), trajectoryBonds->properties());
             }
@@ -339,10 +339,10 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             // to corresponding particle indices and store them in the "Topology" bond property.
             if(bondParticleIdentifiers) {
                 // Build map from particle identifiers to particle indices.
-                std::map<qlonglong, size_t> idToIndexMap;
-                if(ConstPropertyAccess<qlonglong> particleIdentifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
+                std::map<IdentifierIntType, size_t> idToIndexMap;
+                if(BufferAccess<const IdentifierIntType> particleIdentifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
                     size_t index = 0;
-                    for(qlonglong id : particleIdentifierProperty) {
+                    for(auto id : particleIdentifierProperty) {
                         if(idToIndexMap.insert(std::make_pair(id, index++)).second == false)
                             throw Exception(tr("Duplicate particle identifier %1 detected. Please make sure particle identifiers are unique.").arg(id));
                     }
@@ -354,9 +354,9 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
                 }
 
                 // Perform lookup of particle IDs.
-                PropertyAccess<ParticleIndexPair> bondTopologyArray = particles->makeBondsMutable()->createProperty(BondsObject::TopologyProperty);
+                BufferAccess<ParticleIndexPair> bondTopologyArray = particles->makeBondsMutable()->createProperty(BondsObject::TopologyProperty);
                 auto t = bondTopologyArray.begin();
-                for(const ParticleIndexPair& bond : ConstPropertyAccess<ParticleIndexPair>(bondParticleIdentifiers)) {
+                for(const ParticleIndexPair& bond : BufferAccess<const ParticleIndexPair>(bondParticleIdentifiers)) {
                     auto iter1 = idToIndexMap.find(bond[0]);
                     auto iter2 = idToIndexMap.find(bond[1]);
                     if(iter1 == idToIndexMap.end())
@@ -373,14 +373,16 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             }
 
             // Compute the PBC shift vectors of the bonds based on current particle positions.
-            if(const SimulationCellObject* simCellObj = state.getObject<SimulationCellObject>()) {
-                if(simCellObj->pbcX() || simCellObj->pbcY() || simCellObj->pbcZ()) {
-                    particles->makeBondsMutable()->generatePeriodicImageProperty(particles, simCellObj);
+            if(!trajectoryBonds->getProperty(BondsObject::PeriodicImageProperty)) {
+                if(const SimulationCellObject* simCellObj = state.getObject<SimulationCellObject>()) {
+                    if(simCellObj->pbcX() || simCellObj->pbcY() || simCellObj->pbcZ()) {
+                        particles->makeBondsMutable()->generatePeriodicImageProperty(particles, simCellObj);
+                    }
                 }
             }
         }
         else if(particles->bonds()) {
-            // If the trajectory dataset doesn't contain the "Topology" nor the "Particle Identifiers" bond property, 
+            // If the trajectory dataset doesn't contain the "Topology" nor the "Particle Identifiers" bond property,
             // then add the bond properties to the existing bonds from the topology dataset.
             // This requires that the number of bonds remains constant.
             if(trajectoryBonds->elementCount() != particles->bonds()->elementCount()) {

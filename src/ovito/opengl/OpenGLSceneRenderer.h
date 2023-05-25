@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,7 +33,7 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLBuffer>
-#include <QOpenGLFramebufferObject> 
+#include <QOpenGLFramebufferObject>
 #include <QOpenGLFramebufferObjectFormat>
 
 namespace Ovito {
@@ -64,7 +64,7 @@ public:
 public:
 
     /// Constructor.
-    OpenGLSceneRenderer(ObjectCreationParams params);
+    OpenGLSceneRenderer(ObjectInitializationFlags flags);
 
     /// This may be called on a renderer before startRender() to control its supersampling level.
     virtual void setAntialiasingHint(int antialiasingLevel) override { _antialiasingLevel = antialiasingLevel; }
@@ -80,7 +80,7 @@ public:
 
     /// Renders the overlays/underlays of the viewport into the framebuffer.
     virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation) override;
-    
+
     /// This method is called after renderFrame() has been called.
     virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;
 
@@ -149,7 +149,13 @@ public:
     quint32 glversion() const { return _glversion; }
 
     /// Indicates whether OpenGL geometry shaders are supported.
-    bool useGeometryShaders() const { return QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry, glcontext()); }
+    bool useGeometryShaders() const { return !_disableGeometryShaders && QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Geometry, glcontext()); }
+
+    /// Indicates that we have OpenGL support for instanced arrays (requires OpenGL 3.3+).
+    bool useInstancedArrays() const { return !_disableInstancedArrays && glversion() >= QT_VERSION_CHECK(3, 3, 0); }
+
+    /// Indicates that we have OpenGL support for glMultiDrawArraysIndirect (requires OpenGL 4.3+).
+    bool useMultiDrawArraysIndirect() const { return !_disableMultiDrawArraysIndirect && glversion() >= QT_VERSION_CHECK(4, 3, 0); }
 
     /// Sets the primary framebuffer to be used by the renderer.
     void setPrimaryFramebuffer(GLuint primaryFramebuffer) { _primaryFramebuffer = primaryFramebuffer; }
@@ -217,7 +223,7 @@ private:
     /// Generates the wireframe line elements for the visible edges of a mesh.
     ConstDataBufferPtr generateMeshWireframeLines(const MeshPrimitive& primitive);
 
-    /// Prepares the OpenGL buffer with the per-instance transformation matrices for 
+    /// Prepares the OpenGL buffer with the per-instance transformation matrices for
     /// rendering a set of meshes.
     QOpenGLBuffer getMeshInstanceTMBuffer(const MeshPrimitive& primitive, OpenGLShaderHelper& shader);
 
@@ -276,6 +282,15 @@ private:
 
     /// Indicates that we are currently rendering the semi-transparent geometry of the scene.
     bool _isTransparencyPass = false;
+
+    /// Indicates that the use of geometry shaders has explicitly been disabled.
+    bool _disableGeometryShaders = (qEnvironmentVariableIntValue("OVITO_DISABLE_GEOMETRY_SHADERS") != 0);
+
+    /// Indicates that the use of OpenGL instanced arrays has explicitly been disabled.
+    bool _disableInstancedArrays = (qEnvironmentVariableIntValue("OVITO_DISABLE_INSTANCED_ARRAYS") != 0);
+
+    /// Indicates that the use of glMultiDrawArraysIndirect() has explicitly been disabled.
+    bool _disableMultiDrawArraysIndirect = (qEnvironmentVariableIntValue("OVITO_DISABLE_MULTI_DRAW_ARRAYS_INDIRECT") != 0);
 
     /// The primary framebuffer used by the renderer. The FBO's lifetime is managed by the subclass.
     /// It may be null when rendering to the system framebuffer provided by QOpenGLWidget.

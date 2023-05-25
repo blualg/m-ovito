@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,9 +26,9 @@
 // Inputs:
 in vec3 base;
 in vec3 head;
-in float radius;
-in vec4 color1;
-in vec4 color2;
+in float diameter;
+in vec3 color1;
+in float transparency1;
 uniform vec3 unit_box_triangle_strip[14];
 
 // Outputs:
@@ -41,6 +41,9 @@ const float cone_ratio = 1.8; // Ratio of height to radius of arrow head code.
 
 void main()
 {
+    // The radius of the current arrow (in object coordinates).
+    float radius = 0.5 * diameter;
+
     // The index of the box corner.
     int corner = <VertexID>;
 
@@ -71,10 +74,10 @@ void main()
 	// Apply model-view-projection matrix to box vertex position.
     gl_Position = modelview_projection_matrix * vec4(head - orientation_tm[2] + (orientation_tm * unit_box_triangle_strip[corner]), 1.0);
 
-    // Forward cylinder color to fragment shader.
-    color_fs = color1;
+    // Forward arrow color to fragment shader.
+    color_fs = vec4(color1, clamp(1.0 - transparency1, 0.0, 1.0));
 
-    // Apply additional scaling to cone radius due to model-view transformation. 
+    // Apply additional scaling to cone radius due to model-view transformation.
 	// Pass square of cylinder radius to fragment shader.
     cone_radius = arrowHeadRadius * length(modelview_matrix[0]);
 

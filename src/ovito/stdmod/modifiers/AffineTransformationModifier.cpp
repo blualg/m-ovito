@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -48,16 +48,16 @@ IMPLEMENT_OVITO_CLASS(SimulationCellAffineTransformationModifierDelegate);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-AffineTransformationModifier::AffineTransformationModifier(ObjectCreationParams params) : MultiDelegatingModifier(params),
+AffineTransformationModifier::AffineTransformationModifier(ObjectInitializationFlags flags) : MultiDelegatingModifier(flags),
     _selectionOnly(false),
     _transformationTM(AffineTransformation::Identity()),
     _targetCell(AffineTransformation::Zero()),
     _relativeMode(true),
     _translationReducedCoordinates(false)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Generate the list of delegate objects.
-        createModifierDelegates(AffineTransformationModifierDelegate::OOClass(), params);
+        createModifierDelegates(AffineTransformationModifierDelegate::OOClass());
     }
 }
 
@@ -79,7 +79,7 @@ void AffineTransformationModifier::initializeModifier(const ModifierInitializati
 
 /******************************************************************************
 * Returns the effective affine transformation matrix to be applied to points.
-* It depends on the linear matrix, the translation vector, relative/target cell mode, and 
+* It depends on the linear matrix, the translation vector, relative/target cell mode, and
 * whether the translation is specified in terms of reduced cell coordinates.
 * Thus, the affine transformation may depend on the current simulation cell shape.
 ******************************************************************************/
@@ -90,7 +90,7 @@ AffineTransformation AffineTransformationModifier::effectiveAffineTransformation
         tm = transformationTM();
         if(translationReducedCoordinates()) {
             tm.translation() = tm * (state.expectObject<SimulationCellObject>()->matrix() * tm.translation());
-        }   
+        }
     }
     else {
         const SimulationCellObject* simCell = state.getObject<SimulationCellObject>();

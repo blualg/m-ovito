@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -93,13 +93,13 @@ void RolloutContainer::updateRollouts()
 /******************************************************************************
 * Updates the size of all rollouts soon.
 ******************************************************************************/
-void RolloutContainer::updateRolloutsLater() 
+void RolloutContainer::updateRolloutsLater()
 {
     // Update widget layout once immediately.
     updateRollouts();
 
-    // Update layout a second time after some delay in case 
-    // the widgets are not up to date yet. 
+    // Update layout a second time after some delay in case
+    // the widgets are not up to date yet.
     if(!_updateGeometryTimer)
         _updateGeometryTimer = startTimer(80); // 80 millisecs
 }
@@ -109,7 +109,7 @@ void RolloutContainer::updateRolloutsLater()
 ******************************************************************************/
 Rollout* RolloutContainer::findRolloutFromWidget(QWidget* content) const
 {
-    for(Rollout* rollout : widget()->findChildren<Rollout*>(QString(), Qt::FindDirectChildrenOnly)) {
+    for(Rollout* rollout : widget()->findChildren<Rollout*>(Qt::FindDirectChildrenOnly)) {
         if(rollout->content() == content)
             return rollout;
     }
@@ -236,11 +236,11 @@ QSize Rollout::sizeHint() const
     }
     if(_useAvailableSpace) {
         int occupiedSpace = 0;
-        for(Rollout* rollout : parentWidget()->findChildren<Rollout*>()) {
+        for(Rollout* rollout : parentWidget()->findChildren<Rollout*>(Qt::FindDirectChildrenOnly)) {
             if(rollout->_useAvailableSpace) continue;
             occupiedSpace += rollout->sizeHint().height();
         }
-        occupiedSpace += parentWidget()->layout()->spacing() * (parentWidget()->findChildren<Rollout*>().size() - 1);
+        occupiedSpace += parentWidget()->layout()->spacing() * (parentWidget()->findChildren<Rollout*>(Qt::FindDirectChildrenOnly).size() - 1);
         int totalSpace = parentWidget()->parentWidget()->height();
         int availSpace = totalSpace - occupiedSpace;
         availSpace -= titleSize.height();
@@ -266,11 +266,11 @@ int Rollout::heightForWidth(int w) const
         contentSize += _noticeWidget->heightForWidth(w);
     if(_useAvailableSpace) {
         int occupiedSpace = 0;
-        for(Rollout* rollout : parentWidget()->findChildren<Rollout*>()) {
+        for(Rollout* rollout : parentWidget()->findChildren<Rollout*>(Qt::FindDirectChildrenOnly)) {
             if(rollout->_useAvailableSpace) continue;
             occupiedSpace += rollout->sizeHint().height();
         }
-        occupiedSpace += parentWidget()->layout()->spacing() * (parentWidget()->findChildren<Rollout*>().size() - 1);
+        occupiedSpace += parentWidget()->layout()->spacing() * (parentWidget()->findChildren<Rollout*>(Qt::FindDirectChildrenOnly).size() - 1);
         int totalSpace = parentWidget()->parentWidget()->height();
         int availSpace = totalSpace - occupiedSpace;
         availSpace -= titleSize;
@@ -297,11 +297,11 @@ void Rollout::resizeEvent(QResizeEvent* event)
     }
     if(_useAvailableSpace) {
         int occupiedSpace = 0;
-        for(Rollout* rollout : parentWidget()->findChildren<Rollout*>()) {
+        for(Rollout* rollout : parentWidget()->findChildren<Rollout*>(Qt::FindDirectChildrenOnly)) {
             if(rollout->_useAvailableSpace) continue;
             occupiedSpace += rollout->sizeHint().height();
         }
-        occupiedSpace += parentWidget()->layout()->spacing() * (parentWidget()->findChildren<Rollout*>().size() - 1);
+        occupiedSpace += parentWidget()->layout()->spacing() * (parentWidget()->findChildren<Rollout*>(Qt::FindDirectChildrenOnly).size() - 1);
         int totalSpace = parentWidget()->parentWidget()->height();
         int availSpace = totalSpace - occupiedSpace;
         availSpace -= titleHeight;

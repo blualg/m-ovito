@@ -44,7 +44,7 @@ class OVITO_STDOBJ_EXPORT StandardCameraObject : public AbstractCameraObject
         /// Inherit constructor from base class.
         using AbstractCameraObject::OOMetaClass::OOMetaClass;
 
-        /// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed from the class. 
+        /// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed from the class.
         /// This is needed for backward compatibility with OVITO 3.3.
         virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const override;
     };
@@ -56,7 +56,7 @@ class OVITO_STDOBJ_EXPORT StandardCameraObject : public AbstractCameraObject
 public:
 
     /// Constructor.
-    Q_INVOKABLE StandardCameraObject(ObjectCreationParams params);
+    Q_INVOKABLE StandardCameraObject(ObjectInitializationFlags flags);
 
     /// With a target camera, indicates the distance between the camera and its target.
     static FloatType getTargetDistance(AnimationTime time, const PipelineSceneNode* node);
@@ -101,7 +101,7 @@ class OVITO_STDOBJ_EXPORT CameraVis : public DataVis
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE CameraVis(ObjectCreationParams params) : DataVis(params) {}
+    Q_INVOKABLE CameraVis(ObjectInitializationFlags flags) : DataVis(flags) {}
 
     /// \brief Lets the vis element render a camera object.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;

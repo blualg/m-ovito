@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //  Copyright 2019 Henrik Andersen Sveinsson
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -39,17 +39,17 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ChillPlusModifier, cutoff, WorldParameterUn
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ChillPlusModifier::ChillPlusModifier(ObjectCreationParams params) : StructureIdentificationModifier(params),
+ChillPlusModifier::ChillPlusModifier(ObjectInitializationFlags flags) : StructureIdentificationModifier(flags),
     _cutoff(3.5)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the structure types.
-        createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, params);
-        createStructureType(HEXAGONAL_ICE, ParticleType::PredefinedStructureType::HEXAGONAL_ICE, params);
-        createStructureType(CUBIC_ICE, ParticleType::PredefinedStructureType::CUBIC_ICE, params);
-        createStructureType(INTERFACIAL_ICE, ParticleType::PredefinedStructureType::INTERFACIAL_ICE, params);
-        createStructureType(HYDRATE, ParticleType::PredefinedStructureType::HYDRATE, params);
-        createStructureType(INTERFACIAL_HYDRATE, ParticleType::PredefinedStructureType::INTERFACIAL_HYDRATE, params);
+        createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER);
+        createStructureType(HEXAGONAL_ICE, ParticleType::PredefinedStructureType::HEXAGONAL_ICE);
+        createStructureType(CUBIC_ICE, ParticleType::PredefinedStructureType::CUBIC_ICE);
+        createStructureType(INTERFACIAL_ICE, ParticleType::PredefinedStructureType::INTERFACIAL_ICE);
+        createStructureType(HYDRATE, ParticleType::PredefinedStructureType::HYDRATE);
+        createStructureType(INTERFACIAL_HYDRATE, ParticleType::PredefinedStructureType::INTERFACIAL_HYDRATE);
     }
 }
 
@@ -86,8 +86,8 @@ void ChillPlusModifier::ChillPlusEngine::perform()
     if(!neighborListBuilder.prepare(cutoff(), positions(), cell(), selection()))
         return;
 
-    PropertyAccess<int> output(structures());
-    ConstPropertyAccess<int> selectionData(selection());
+    BufferAccess<int32_t> output(structures());
+    BufferAccess<const SelectionIntType> selectionData(selection());
 
     // Find all relevant q_lm
     // create matrix of q_lm

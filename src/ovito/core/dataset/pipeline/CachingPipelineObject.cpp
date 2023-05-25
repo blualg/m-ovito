@@ -34,7 +34,7 @@ SET_PROPERTY_FIELD_LABEL(CachingPipelineObject, pipelineTrajectoryCachingEnabled
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-CachingPipelineObject::CachingPipelineObject(ObjectCreationParams params) : PipelineObject(params),
+CachingPipelineObject::CachingPipelineObject(ObjectInitializationFlags flags) : PipelineObject(flags),
     _pipelineCache(this, false),
     _pipelineTrajectoryCachingEnabled(false)
 {
@@ -47,13 +47,13 @@ TimeInterval CachingPipelineObject::validityInterval(const PipelineEvaluationReq
 {
     TimeInterval iv = PipelineObject::validityInterval(request);
 
-    // If the requested frame is available in the cache, restrict the returned validity interval to 
-    // the validity interval of the cached state. Otherwise, assume that a new pipeline computation 
+    // If the requested frame is available in the cache, restrict the returned validity interval to
+    // the validity interval of the cached state. Otherwise, assume that a new pipeline computation
     // will be performed and let the sub-class determine the actual validity interval.
     const PipelineFlowState& state = pipelineCache().getAt(request.time());
     if(state.stateValidity().contains(request.time()))
         iv.intersect(state.stateValidity());
-    
+
     return iv;
 }
 
@@ -81,7 +81,7 @@ void CachingPipelineObject::propertyChanged(const PropertyFieldDescriptor* field
     if(field == PROPERTY_FIELD(pipelineTrajectoryCachingEnabled)) {
         pipelineCache().setPrecomputeAllFrames(pipelineTrajectoryCachingEnabled());
 
-        // Send target changed event to trigger a new pipeline evaluation, which is 
+        // Send target changed event to trigger a new pipeline evaluation, which is
         // needed to start the precomputation process.
         if(pipelineTrajectoryCachingEnabled())
             notifyTargetChanged(PROPERTY_FIELD(pipelineTrajectoryCachingEnabled));

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ class OVITO_PARTICLES_EXPORT AnglesObject : public PropertyContainer
         using PropertyContainerClass::PropertyContainerClass;
 
         /// \brief Create a storage object for standard properties.
-        virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
+        virtual PropertyPtr createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const override;
 
         /// Generates a human-readable string representation of the data object reference.
         virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override { return this->displayName(); }
@@ -66,7 +66,7 @@ public:
     };
 
     /// \brief Constructor.
-    Q_INVOKABLE AnglesObject(ObjectCreationParams params);
+    Q_INVOKABLE AnglesObject(ObjectInitializationFlags flags);
 
     /// Convinience method that returns the angle topology property.
     const PropertyObject* getTopology() const { return getProperty(TopologyProperty); }
@@ -75,6 +75,6 @@ public:
 /**
  * The data type used for the 'Topology' angle property: three indices into the particles list.
  */
-using ParticleIndexTriplet = std::array<qlonglong, 3>;
+using ParticleIndexTriplet = std::array<int64_t, 3>;
 
 }   // End of namespace

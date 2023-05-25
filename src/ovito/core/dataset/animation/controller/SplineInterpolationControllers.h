@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,8 +43,8 @@ public:
     using typename BaseKeyClass::tangent_type;
 
     /// Constructor.
-    SplineAnimationKey(ObjectCreationParams params, AnimationTime time, const value_type& value)
-        : BaseKeyClass(params, time, value), _inTangent(nullvalue_type()), _outTangent(nullvalue_type()) {}
+    SplineAnimationKey(ObjectInitializationFlags flags, AnimationTime time, const value_type& value)
+        : BaseKeyClass(flags, time, value), _inTangent(nullvalue_type()), _outTangent(nullvalue_type()) {}
 
     /// \brief Returns the point that defines the incoming tangent.
     value_type inPoint() const { return this->value() + inTangent(); }
@@ -71,8 +71,8 @@ class OVITO_CORE_EXPORT FloatSplineAnimationKey : public SplineAnimationKey<Floa
 public:
 
     /// Constructor.
-    Q_INVOKABLE FloatSplineAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), FloatType value = 0) :
-        SplineAnimationKey<FloatAnimationKey>(params, time, value) {}
+    Q_INVOKABLE FloatSplineAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), FloatType value = 0) :
+        SplineAnimationKey<FloatAnimationKey>(flags, time, value) {}
 };
 
 /**
@@ -85,8 +85,8 @@ class OVITO_CORE_EXPORT PositionSplineAnimationKey : public SplineAnimationKey<P
 public:
 
     /// Constructor.
-    Q_INVOKABLE PositionSplineAnimationKey(ObjectCreationParams params, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero()) :
-        SplineAnimationKey<PositionAnimationKey>(params, time, value) {}
+    Q_INVOKABLE PositionSplineAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero()) :
+        SplineAnimationKey<PositionAnimationKey>(flags, time, value) {}
 };
 
 /**
@@ -113,8 +113,8 @@ class SplineControllerBase : public KeyframeControllerTemplate<KeyType, SplineKe
 public:
 
     /// Constructor.
-    SplineControllerBase(ObjectCreationParams params) :
-        KeyframeControllerTemplate<KeyType, SplineKeyInterpolator<KeyType>, ctrlType>(params) {}
+    SplineControllerBase(ObjectInitializationFlags flags) :
+        KeyframeControllerTemplate<KeyType, SplineKeyInterpolator<KeyType>, ctrlType>(flags) {}
 
 protected:
 
@@ -160,8 +160,8 @@ class OVITO_CORE_EXPORT SplinePositionController
 public:
 
     /// Constructor.
-    Q_INVOKABLE SplinePositionController(ObjectCreationParams params) :
-        SplineControllerBase<PositionSplineAnimationKey, Controller::ControllerTypePosition>(params) {}
+    Q_INVOKABLE SplinePositionController(ObjectInitializationFlags flags) :
+        SplineControllerBase<PositionSplineAnimationKey, Controller::ControllerTypePosition>(flags) {}
 
     /// \brief Gets the controller's value at a certain animation time.
     virtual void getPositionValue(AnimationTime time, Vector3& value, TimeInterval& validityInterval) override {

@@ -59,7 +59,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(FileExporter, floatOutputPrecision, IntegerPa
 /******************************************************************************
 * Constructs a new instance of the class.
 ******************************************************************************/
-FileExporter::FileExporter(ObjectCreationParams params) : RefTarget(params),
+FileExporter::FileExporter(ObjectInitializationFlags flags) : RefTarget(flags),
     _exportAnimation(false),
     _useWildcardFilename(false),
     _startFrame(0),

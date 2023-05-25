@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,7 +57,7 @@ class ParticlesReplicateModifierDelegate : public ReplicateModifierDelegate
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticlesReplicateModifierDelegate(ObjectCreationParams params) : ReplicateModifierDelegate(params) {}
+    Q_INVOKABLE ParticlesReplicateModifierDelegate(ObjectInitializationFlags flags) : ReplicateModifierDelegate(flags) {}
 
     /// Applies the modifier operation to the data in a pipeline flow state.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

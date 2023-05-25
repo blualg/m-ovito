@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -76,7 +76,7 @@ PropertyReferenceParameterUI::~PropertyReferenceParameterUI()
 /******************************************************************************
 * Sets the reference to the property container from which the user can select a property.
 ******************************************************************************/
-void PropertyReferenceParameterUI::setContainerRef(const PropertyContainerReference& containerRef) 
+void PropertyReferenceParameterUI::setContainerRef(const PropertyContainerReference& containerRef)
 {
     if(_containerRef != containerRef) {
         OVITO_ASSERT(!container());
@@ -98,8 +98,8 @@ void PropertyReferenceParameterUI::setContainerRef(const PropertyContainerRefere
 /******************************************************************************
 * Sets the concrete property container from which properties can be selected.
 ******************************************************************************/
-void PropertyReferenceParameterUI::setContainer(const PropertyContainer* container) 
-{ 
+void PropertyReferenceParameterUI::setContainer(const PropertyContainer* container)
+{
     if(_container != container) {
         OVITO_ASSERT(!containerRef());
 
@@ -169,7 +169,7 @@ void PropertyReferenceParameterUI::updateUI()
                     addItemsToComboBox(state);
                 }
             }
-    
+
             // Select the right item in the list box.
             int selIndex = _comboBox->propertyIndex(pref);
             static QIcon warningIcon(QStringLiteral(":/guibase/mainwin/status/status_warning.png"));
@@ -232,7 +232,7 @@ void PropertyReferenceParameterUI::addItemsToComboBox(const PropertyContainer* c
             continue;
 
         // Properties with a non-numeric data type cannot be used as source properties.
-        if(property->dataType() != PropertyObject::Int && property->dataType() != PropertyObject::Int64 && property->dataType() != PropertyObject::Float)
+        if(property->dataType() != PropertyObject::Int8 && property->dataType() != PropertyObject::Int32 && property->dataType() != PropertyObject::Int64 && property->dataType() != PropertyObject::Float32 && property->dataType() != PropertyObject::Float64)
             continue;
 
         if(_componentsMode != ShowOnlyComponents || (property->componentCount() <= 1 && property->componentNames().empty())) {
@@ -256,7 +256,7 @@ void PropertyReferenceParameterUI::setEnabled(bool enabled)
 {
     if(enabled == isEnabled()) return;
     PropertyParameterUI::setEnabled(enabled);
-    if(comboBox()) 
+    if(comboBox())
         comboBox()->setEnabled(editObject() != NULL && isEnabled());
 }
 

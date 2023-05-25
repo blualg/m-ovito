@@ -102,7 +102,7 @@ PropertyOutputWriter::PropertyOutputWriter(const OutputColumnMapping& mapping, c
                 for(int component = 0; component < property->componentCount(); component++) {
                     _properties.push_back(property);
                     _vectorComponents.push_back(component);
-                    _propertyArrays.push_back(ConstPropertyAccess<void,true>(property));
+                    _propertyArrays.push_back(BufferReadAccess(property));
                 }
                 continue;
             }
@@ -111,7 +111,7 @@ PropertyOutputWriter::PropertyOutputWriter(const OutputColumnMapping& mapping, c
         // Build internal list of property objects for fast look up during writing.
         _properties.push_back(property);
         _vectorComponents.push_back(std::max(0, pref.vectorComponent()));
-        _propertyArrays.push_back(ConstPropertyAccess<void,true>(property));
+        _propertyArrays.push_back(BufferReadAccess(property));
     }
 }
 
@@ -122,17 +122,17 @@ void PropertyOutputWriter::writeElement(size_t index, CompressedTextWriter& stre
 {
     QVector<const PropertyObject*>::const_iterator property = _properties.constBegin();
     QVector<int>::const_iterator vcomp = _vectorComponents.constBegin();
-    QVector<ConstPropertyAccess<void,true>>::const_iterator array = _propertyArrays.constBegin();
+    QVector<BufferReadAccess>::const_iterator array = _propertyArrays.constBegin();
     for(; property != _properties.constEnd(); ++property, ++vcomp, ++array) {
         if(property != _properties.constBegin()) stream << ' ';
         if(*property) {
-            if((*property)->dataType() == PropertyObject::Int) {
+            if((*property)->dataType() == PropertyObject::Int32) {
                 if(_typedPropertyMode == WriteNumericIds || (*property)->elementTypes().empty()) {
-                    stream << *reinterpret_cast<const int*>(array->cdata(index, *vcomp));
+                    stream << *reinterpret_cast<const int32_t*>(array->cdata(index, *vcomp));
                 }
                 else {
                     // Write type name instead of type number.
-                    int numericTypeId = *reinterpret_cast<const int*>(array->cdata(index, *vcomp));
+                    int32_t numericTypeId = *reinterpret_cast<const int32_t*>(array->cdata(index, *vcomp));
                     const ElementType* type = (*property)->elementType(numericTypeId);
                     if(type && !type->name().isEmpty()) {
                         if(_typedPropertyMode == WriteNamesUnmodified) {
@@ -157,10 +157,16 @@ void PropertyOutputWriter::writeElement(size_t index, CompressedTextWriter& stre
                 }
             }
             else if((*property)->dataType() == PropertyObject::Int64) {
-                stream << *reinterpret_cast<const qlonglong*>(array->cdata(index, *vcomp));
+                stream << static_cast<qint64>(*reinterpret_cast<const int64_t*>(array->cdata(index, *vcomp)));
             }
-            else if((*property)->dataType() == PropertyObject::Float) {
-                stream << *reinterpret_cast<const FloatType*>(array->cdata(index, *vcomp));
+            else if((*property)->dataType() == PropertyObject::Int8) {
+                stream << static_cast<qint32>(*reinterpret_cast<const int8_t*>(array->cdata(index, *vcomp)));
+            }
+            else if((*property)->dataType() == PropertyObject::Float32) {
+                stream << *reinterpret_cast<const float*>(array->cdata(index, *vcomp));
+            }
+            else if((*property)->dataType() == PropertyObject::Float64) {
+                stream << *reinterpret_cast<const double*>(array->cdata(index, *vcomp));
             }
             else {
                 throw Exception(tr("The property '%1' cannot be written to the output file, because it has a non-standard data type.").arg((*property)->name()));

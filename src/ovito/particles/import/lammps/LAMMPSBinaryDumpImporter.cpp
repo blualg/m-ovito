@@ -64,9 +64,9 @@ struct LAMMPSBinaryDumpHeader
             memset(tiltFactors, 0, sizeof(tiltFactors));
         }
 
-    qlonglong ntimestep;
+    int64_t ntimestep;
     int formatRevision = 0;
-    qlonglong natoms;
+    int64_t natoms;
     int boundaryFlags[3][2];
     double bbox[3][2];
     double tiltFactors[3];
@@ -107,18 +107,18 @@ struct LAMMPSBinaryDumpHeader
 
     // Parses a "big" LAMMPS integer (may be 32 or 64 bit, depending on currently selected data type).
     // A return value of -1 indicates a number overflow.
-    qlonglong readBigInt(QIODevice& input) {
+    int64_t readBigInt(QIODevice& input) {
         if(dataType == LAMMPS_SMALLSMALL) {
             return parseInt(input);
         }
         else {
-            qint64 val;
+            int64_t val;
             input.read(reinterpret_cast<char*>(&val), sizeof(val));
             if(endianess == LAMMPS_LITTLE_ENDIAN)
                 val = qFromLittleEndian(val);
             else
                 val = qFromBigEndian(val);
-            if(val > (qint64)std::numeric_limits<qlonglong>::max())
+            if(val > std::numeric_limits<int64_t>::max())
                 return -1;
             else
                 return val;
@@ -466,7 +466,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
         // Assume reduced coordinates if all particle coordinates are within the [-0.02,1.02] interval.
         // We allow coordinates to be slightly outside the [0,1] interval, because LAMMPS
         // wraps around particles at the periodic boundaries only occasionally.
-        if(ConstPropertyAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty)) {
+        if(BufferAccess<const Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty)) {
             // Compute bound box of particle positions.
             Box3 boundingBox;
             boundingBox.addPoints(posProperty);
@@ -478,7 +478,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
 
     if(reducedCoordinates) {
         // Convert all atom coordinates from reduced to absolute (Cartesian) format.
-        if(PropertyAccess<Point3> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty)) {
+        if(BufferAccess<Point3> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty)) {
             const AffineTransformation simCell = simulationCell()->cellMatrix();
             for(Point3& p : posProperty)
                 p = simCell * p;
@@ -490,9 +490,9 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
         // we need to divide values by two.
         for(int i = 0; i < (int)_columnMapping.size() && i < fileColumnNames.size(); i++) {
             if(_columnMapping[i].property.type() == ParticlesObject::RadiusProperty && fileColumnNames[i] == "diameter") {
-                if(PropertyAccess<FloatType> radiusProperty = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
-                    for(FloatType& r : radiusProperty)
-                        r *= 0.5;
+                if(BufferAccess<GraphicsFloatType> radiusProperty = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
+                    for(auto& r : radiusProperty)
+                        r *= 0.5f;
                 }
                 break;
             }
@@ -501,11 +501,11 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
         // Same for the "c_diameter[1..3]" columns being mapped to the "Aspherical Shape" property.
         for(int i = 0; i < (int)_columnMapping.size() && i < fileColumnNames.size(); i++) {
             if(_columnMapping[i].property.type() == ParticlesObject::AsphericalShapeProperty && (fileColumnNames[i] == "c_diameter[1]" || fileColumnNames[i] == "c_diameter[2]" || fileColumnNames[i] == "c_diameter[3]")) {
-                if(PropertyAccess<Vector3> shapeProperty = particles()->getMutableProperty(ParticlesObject::AsphericalShapeProperty)) {
-                    for(Vector3& s : shapeProperty) {
-                        s.x() *= 0.5;
-                        s.y() *= 0.5;
-                        s.z() *= 0.5;
+                if(BufferAccess<Vector3G> shapeProperty = particles()->getMutableProperty(ParticlesObject::AsphericalShapeProperty)) {
+                    for(auto& s : shapeProperty) {
+                        s.x() *= 0.5f;
+                        s.y() *= 0.5f;
+                        s.z() *= 0.5f;
                     }
                 }
                 break;

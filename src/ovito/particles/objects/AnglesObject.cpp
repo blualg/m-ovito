@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,7 +30,7 @@ IMPLEMENT_OVITO_CLASS(AnglesObject);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AnglesObject::AnglesObject(ObjectCreationParams params) : PropertyContainer(params)
+AnglesObject::AnglesObject(ObjectInitializationFlags flags) : PropertyContainer(flags)
 {
     // Assign the default data object identifier.
     setIdentifier(OOClass().pythonName());
@@ -39,14 +39,14 @@ AnglesObject::AnglesObject(ObjectCreationParams params) : PropertyContainer(para
 /******************************************************************************
 * Creates a storage object for standard properties.
 ******************************************************************************/
-PropertyPtr AnglesObject::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
+PropertyPtr AnglesObject::OOMetaClass::createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const
 {
     int dataType;
     size_t componentCount;
 
     switch(type) {
     case TypeProperty:
-        dataType = PropertyObject::Int;
+        dataType = PropertyObject::Int32;
         componentCount = 1;
         break;
     case TopologyProperty:
@@ -62,9 +62,9 @@ PropertyPtr AnglesObject::OOMetaClass::createStandardPropertyInternal(size_t ele
 
     OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-    PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
+    PropertyPtr property = PropertyPtr::create(DataBuffer::Uninitialized, elementCount, dataType, componentCount, propertyName, type, componentNames);
 
-    if(flags.testFlag(DataBuffer::InitializeMemory)) {
+    if(init == DataBuffer::Initialized) {
         // Default-initialize property values with zeros.
         property->fillZero();
     }
@@ -86,7 +86,7 @@ void AnglesObject::OOMetaClass::initialize()
     const QStringList emptyList;
     const QStringList abcList = QStringList() << "A" << "B" << "C";
 
-    registerStandardProperty(TypeProperty, tr("Angle Type"), PropertyObject::Int, emptyList, &ElementType::OOClass(), tr("Angle types"));
+    registerStandardProperty(TypeProperty, tr("Angle Type"), PropertyObject::Int32, emptyList, &ElementType::OOClass(), tr("Angle types"));
     registerStandardProperty(TopologyProperty, tr("Topology"), PropertyObject::Int64, abcList);
 }
 

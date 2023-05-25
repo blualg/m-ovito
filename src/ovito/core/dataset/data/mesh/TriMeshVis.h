@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ class OVITO_CORE_EXPORT TriMeshVis : public DataVis
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE TriMeshVis(ObjectCreationParams params);
+    Q_INVOKABLE TriMeshVis(ObjectInitializationFlags flags);
 
     /// \brief Lets the vis element render a data object.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
@@ -66,7 +66,7 @@ private:
     /// Controls whether the polygonal edges of the mesh should be highlighted.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, highlightEdges, setHighlightEdges);
 
-    /// Controls whether triangles facing away from the viewer are not rendered. 
+    /// Controls whether triangles facing away from the viewer are not rendered.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, backfaceCulling, setBackfaceCulling);
 };
 

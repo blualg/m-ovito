@@ -39,7 +39,7 @@ class OVITO_CORE_EXPORT AsynchronousModifierApplication : public ModifierApplica
 public:
 
     /// \brief Constructs a modifier application.
-    Q_INVOKABLE AsynchronousModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
+    Q_INVOKABLE AsynchronousModifierApplication(ObjectInitializationFlags flags) : ModifierApplication(flags) {}
 
     /// Returns the sequence of compute engines from a recent successfully completed modifier evaluation which are still valid.
     const std::vector<AsynchronousModifier::EnginePtr>& validStages() const { return _validStages; }

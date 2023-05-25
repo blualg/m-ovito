@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,7 +35,7 @@ namespace Ovito {
 ******************************************************************************/
 bool StandaloneApplication::initialize(int& argc, char** argv)
 {
-    if(!Application::initialize())
+    if(!Application::initialize(argc, argv))
         return false;
 
     // Set the application name.
@@ -55,15 +55,12 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
         QString arg = QString::fromLocal8Bit(argv[i]);
 #ifdef Q_OS_MACOS
         // When started from the macOS Finder, the OS may pass the 'process serial number' to the application.
-        // We are not interested in this command line parameter, so filter it out from the list.
+        // We are not interested in this parameter, so exclude it from our internal list.
         if(arg.startsWith(QStringLiteral("-psn")))
             continue;
 #endif
         arguments << std::move(arg);
     }
-#ifdef OVITO_DEBUG
-//  arguments << QStringLiteral("C:/Users/astuk/temp/test.ovito");
-#endif
 
     // Because they may collide with our own options, we should ignore script arguments though.
     QStringList filteredArguments;
@@ -101,6 +98,10 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 
     // Create Qt application object.
     createQtApplication(argc, argv);
+    OVITO_ASSERT(QCoreApplication::instance());
+
+    // When QCoreApplication begins to shutdown, also shutdown our own systems.
+    QObject::connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this, [this]() { shutdown(); });
 
     // Reactivate default "C" locale, which, in the meantime, may have been changed by QCoreApplication.
     std::setlocale(LC_NUMERIC, "C");
@@ -121,45 +122,65 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
         if(!_cmdLineParser.parse(arguments)) {
             qInfo().noquote() << "Error:" << _cmdLineParser.errorText();
             _consoleMode = true;
-            shutdown();
             return false;
         }
 
         // Handle --help command line option. Print list of command line options and quit.
         if(_cmdLineParser.isSet("help")) {
             std::cout << qPrintable(_cmdLineParser.helpText()) << std::endl;
-            shutdown();
             return true;
+        }
+
+        // Establish an execution context in which application initialization takes place.
+        ExecutionContext::Scope initExecScope(ExecutionContext::Type::Scripting, shared_from_this());
+
+        // Notify registered application services that application is initializing.
+        for(const auto& service : applicationServices()) {
+            // If any of the service callbacks returns false, stop application initialization and quit.
+            if(!service->applicationInitializing()) {
+                return false;
+            }
         }
 
         // Prepares the application to start running. Creates the global Qt application object.
         MainThreadOperation startupOperation = startupApplication();
         if(!startupOperation.isValid()) {
-            shutdown();
             return false;
         }
+        // We now should have a valid execution context and a UserInterface object.
+        OVITO_ASSERT(ExecutionContext::current().isValid());
+
+        // If the startup process gets canceled halfway through, shutdown the initial UI (typically the main window).
+        startupOperation.finally([ui=ExecutionContext::current().ui().shared_from_this()](Task& task) {
+            if(task.isCanceled())
+                ui->shutdown();
+        });
 
         // Notify registered application services that application is starting up.
         for(const auto& service : applicationServices()) {
-            // If any of the service callbacks returns false, abort the application startup process.
+            // If any of the service callbacks returns false, abort the application startup process and quit.
             if(!service->applicationStarting()) {
-                shutdown();
                 return false;
             }
         }
 
         // Complete the startup process by calling postStartupInitialization() once the main event loop is running.
         ObjectExecutor(this, true).execute([this, promise=Promise<>(std::move(startupOperation))]() {
+            OVITO_ASSERT(ExecutionContext::current().isValid());
             Task::Scope taskScope(promise.task());
             try {
-                // Let the application perform late initialization steps.
+                // Let the application perform further initialization steps.
                 postStartupInitialization();
 
-                // If someone has canceled the startup process, quit the application.
-                if(promise.isCanceled()) 
+                if(promise.isCanceled()) {
+                    // If someone has canceled the startup process, close the window and quit the application.
+                    ExecutionContext::current().ui().shutdown();
                     QCoreApplication::exit(1);
-                else
+                }
+                else {
+                    // Startup phase is completed.
                     promise.setFinished();
+                }
             }
             catch(const Exception& ex) {
                 // Shutdown with error exit code when running in scripting mode.
@@ -169,14 +190,31 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
                     reportError(ex);
             }
         });
+
+        // Make sure the main event loop is not yet running.
+        OVITO_ASSERT(QThread::currentThread()->loopLevel() == 0);
     }
     catch(const Exception& ex) {
         reportError(ex);
-        shutdown();
         return false;
     }
 
     return true;
+}
+
+/******************************************************************************
+* Destructor is called just before program exit.
+******************************************************************************/
+StandaloneApplication::~StandaloneApplication()
+{
+    // Destroy Qt application object (if there is one).
+    delete QCoreApplication::instance();
+
+    // Release application services.
+    _applicationServices.clear();
+
+    // Unload plugins.
+    PluginManager::shutdown();
 }
 
 /******************************************************************************
@@ -220,30 +258,6 @@ bool StandaloneApplication::processCommandLineParameters()
     }
 
     return true;
-}
-
-/******************************************************************************
-* Starts the main event loop.
-******************************************************************************/
-int StandaloneApplication::runApplication()
-{
-    // Enter the main event loop.
-    return QCoreApplication::exec();
-}
-
-/******************************************************************************
-* This is called on program shutdown.
-******************************************************************************/
-void StandaloneApplication::shutdown()
-{
-    // Destroy Qt application object.
-    delete QCoreApplication::instance();
-
-    // Release application services.
-    _applicationServices.clear();
-
-    // Unload plugins.
-    PluginManager::shutdown();
 }
 
 }   // End of namespace

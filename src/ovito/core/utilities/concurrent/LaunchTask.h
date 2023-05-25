@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/concurrent/ExecutionContext.h>
+#include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/app/UserInterface.h>
 
 namespace Ovito {
@@ -32,8 +33,8 @@ namespace Ovito {
 /**
  * Helper function which launches a task by invoking the task's call operator.
  * It returns a future to the task's results.
- * 
- * The task class must define a type named future_type, 
+ *
+ * The task class must define a type named future_type,
  * which specifies the type of Future to be returned
  * by the function.
 */

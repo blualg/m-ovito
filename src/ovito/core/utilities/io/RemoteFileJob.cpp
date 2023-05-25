@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,10 +26,13 @@
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/app/Application.h>
 #ifdef OVITO_SSH_CLIENT
-    #include <ovito/core/utilities/io/ssh/SshConnection.h>
-    #include <ovito/core/utilities/io/ssh/ScpChannel.h>
-    #include <ovito/core/utilities/io/ssh/LsChannel.h>
+    #include <ovito/core/utilities/io/ssh/libssh/LibsshConnection.h>
+    #include <ovito/core/utilities/io/ssh/libssh/ScpChannel.h>
+    #include <ovito/core/utilities/io/ssh/libssh/LsChannel.h>
 #endif
+#include <ovito/core/utilities/io/ssh/openssh/OpensshConnection.h>
+#include <ovito/core/utilities/io/ssh/openssh/DownloadRequest.h>
+#include <ovito/core/utilities/io/ssh/openssh/FileListingRequest.h>
 #include "RemoteFileJob.h"
 
 #ifndef Q_OS_WASM
@@ -38,9 +41,7 @@
 
 namespace Ovito {
 
-#ifdef OVITO_SSH_CLIENT
 using namespace Ovito::Ssh;
-#endif
 
 /// List SFTP jobs that are waiting to be executed.
 QQueue<RemoteFileJob*> RemoteFileJob::_queuedJobs;
@@ -99,7 +100,6 @@ void RemoteFileJob::start()
             QMetaObject::invokeMethod(this, "connectionCanceled");
     });
 
-#ifdef OVITO_SSH_CLIENT
     if(_url.scheme() == QStringLiteral("sftp")) {
         // Handle sftp URLs.
 
@@ -110,25 +110,29 @@ void RemoteFileJob::start()
         connectionParams.port = _url.port(0);
         _promise.setProgressText(tr("Connecting to remote host %1").arg(connectionParams.host));
 
-        // Open connection
+        // Open connection.
         _connection = Application::instance()->fileManager().acquireSshConnection(connectionParams);
-        OVITO_CHECK_POINTER(_connection);
+        if(!_connection) {
+            _promise.setException(std::make_exception_ptr(Exception(tr("This particular build of OVITO has no SSH connection support. Please use a different distribution of OVITO to access remote files via SSH."))));
+            shutdown(false);
+            return;
+        }
 
-        // Listen for signals of the connection.
+        // Listen for signals from the connection.
         connect(_connection, &SshConnection::error, this, &RemoteFileJob::connectionError);
         connect(_connection, &SshConnection::canceled, this, &RemoteFileJob::connectionCanceled);
         connect(_connection, &SshConnection::allAuthsFailed, this, &RemoteFileJob::authenticationFailed);
         if(_connection->isConnected()) {
+            // The connection may already be established at this point if it was chached by the FileManager.
             QTimer::singleShot(0, this, &RemoteFileJob::connectionEstablished);
             return;
         }
         connect(_connection, &SshConnection::connected, this, &RemoteFileJob::connectionEstablished);
 
-        // Start to connect.
+        // Start connecting to remote host.
         _connection->connectToHost();
     }
     else {
-#endif
         // Handle http(s) URLs.
 #ifndef Q_OS_WASM
         _promise.setProgressText(tr("Downloading file %1 from %2").arg(_url.fileName()).arg(_url.host()));
@@ -138,9 +142,7 @@ void RemoteFileJob::start()
         connect(_networkReply, &QNetworkReply::downloadProgress, this, &RemoteFileJob::networkReplyDownloadProgress);
         connect(_networkReply, &QNetworkReply::finished, this, &RemoteFileJob::networkReplyFinished);
 #endif
-#ifdef OVITO_SSH_CLIENT
     }
-#endif
 }
 
 /******************************************************************************
@@ -148,13 +150,11 @@ void RemoteFileJob::start()
 ******************************************************************************/
 void RemoteFileJob::shutdown(bool success)
 {
-#ifdef OVITO_SSH_CLIENT
     if(_connection) {
         disconnect(_connection, nullptr, this, nullptr);
         Application::instance()->fileManager().releaseSshConnection(_connection);
         _connection = nullptr;
     }
-#endif
 #ifndef Q_OS_WASM
     if(_networkReply) {
         disconnect(_networkReply, nullptr, this, nullptr);
@@ -188,26 +188,27 @@ void RemoteFileJob::shutdown(bool success)
     }
 }
 
-#ifdef OVITO_SSH_CLIENT
 /******************************************************************************
 * Handles SSH connection errors.
 ******************************************************************************/
 void RemoteFileJob::connectionError()
 {
-    QString errorMsg;
-    if(Application::instance()->guiMode()) {
-        errorMsg = tr("<p>Cannot access URL:</p><p><i>%1</i></p><p>SSH connection error: %2</p><p>See <a href=\"https://docs.ovito.org/advanced_topics/remote_file_access.html#troubleshooting-information\">troubleshooting information</a>.</p>")
-            .arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded).toHtmlEscaped())
-            .arg(_connection->errorMessage().toHtmlEscaped());
-    }
-    else {
-        errorMsg = tr("Accessing URL %1 failed due to SSH connection error: %2. "
-                    "See https://docs.ovito.org/advanced_topics/remote_file_access.html#troubleshooting-information for further information.")
-                    .arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded))
-                    .arg(_connection->errorMessage());
+    QStringList errorMessages = _connection->errorMessages();
+    if(errorMessages.size() != 0) {
+        if(Application::instance()->guiMode()) {
+            errorMessages[0] = tr("<p>Cannot access URL:</p><p><i>%1</i></p><p>SSH connection error: %2</p><p>See <a href=\"https://docs.ovito.org/advanced_topics/remote_file_access.html#troubleshooting-information\">troubleshooting information</a>.</p>")
+                .arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded).toHtmlEscaped())
+                .arg(errorMessages[0].toHtmlEscaped());
+        }
+        else {
+            errorMessages[0] = tr("Accessing URL %1 failed due to SSH connection error: %2. "
+                        "See https://docs.ovito.org/advanced_topics/remote_file_access.html#troubleshooting-information for further information.")
+                        .arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded))
+                        .arg(errorMessages[0]);
+        }
     }
 
-    _promise.setException(std::make_exception_ptr(Exception(std::move(errorMsg))));
+    _promise.setException(std::make_exception_ptr(Exception(std::move(errorMessages))));
 
     shutdown(false);
 }
@@ -222,7 +223,6 @@ void RemoteFileJob::authenticationFailed()
 
     shutdown(false);
 }
-#endif
 
 /******************************************************************************
 * Handles cancelation by the user.
@@ -253,16 +253,15 @@ void RemoteFileJob::networkReplyFinished()
 #endif
 }
 
-#ifdef OVITO_SSH_CLIENT
 /******************************************************************************
-* Handles closed SSH channel.
+* Handles closing of the SSH channel.
 ******************************************************************************/
 void DownloadRemoteFileJob::channelClosed()
 {
     if(!_promise.isFinished()) {
         _promise.setException(std::make_exception_ptr(
-            Exception(tr("Cannot access URL\n\n%1\n\nSSH channel closed: %2").arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded)).
-                arg(_scpChannel->errorMessage()))));
+            Exception(tr("Failed to download URL\n\n%1\n\nSSH channel was closed unexpectedly.")
+                .arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded)))));
     }
 
     shutdown(false);
@@ -278,68 +277,58 @@ void DownloadRemoteFileJob::connectionEstablished()
         return;
     }
 
-    // Open the SCP channel.
-    _promise.setProgressText(tr("Opening SCP channel to remote host %1").arg(_connection->hostname()));
-    _scpChannel = new ScpChannel(_connection, _url.path());
-    connect(_scpChannel, &ScpChannel::receivingFile, this, &DownloadRemoteFileJob::receivingFile);
-    connect(_scpChannel, &ScpChannel::receivedData, this, &DownloadRemoteFileJob::receivedData);
-    connect(_scpChannel, &ScpChannel::receivedFileComplete, this, &DownloadRemoteFileJob::receivedFileComplete);
-    connect(_scpChannel, &ScpChannel::error, this, &DownloadRemoteFileJob::channelError);
-    connect(_scpChannel, &ScpChannel::closed, this, &DownloadRemoteFileJob::channelClosed);
-    _scpChannel->openChannel();
+#ifdef OVITO_SSH_CLIENT
+    if(LibsshConnection* libsshConnection = qobject_cast<LibsshConnection*>(_connection)) {
+        _promise.setProgressText(tr("Opening SCP channel to remote host %1").arg(libsshConnection->hostname()));
+        Ovito::Ssh::ScpChannel* scpChannel = new ScpChannel(libsshConnection, _url.path());
+        connect(scpChannel, &ScpChannel::receivingFile, this, &DownloadRemoteFileJob::receivingFile);
+        connect(scpChannel, &ScpChannel::receivedData, this, &DownloadRemoteFileJob::receivedData);
+        connect(scpChannel, &ScpChannel::receivedFileComplete, this, &DownloadRemoteFileJob::receivedFileComplete);
+        connect(scpChannel, &ScpChannel::error, this, &DownloadRemoteFileJob::channelError);
+        connect(scpChannel, &ScpChannel::closed, this, &DownloadRemoteFileJob::channelClosed);
+        connect(this, &QObject::destroyed, scpChannel, &QObject::deleteLater);
+        scpChannel->openChannel();
+        return;
+    }
+#endif
+    if(OpensshConnection* opensshConnection = qobject_cast<OpensshConnection*>(_connection)) {
+        _promise.setProgressText(tr("Opening download channel to remote host %1").arg(opensshConnection->hostname()));
+        DownloadRequest* downloadRequest = new DownloadRequest(opensshConnection, _url.path());
+        connect(downloadRequest, &DownloadRequest::receivingFile, this, &DownloadRemoteFileJob::receivingFile);
+        connect(downloadRequest, &DownloadRequest::receivedData, this, &DownloadRemoteFileJob::receivedData);
+        connect(downloadRequest, &DownloadRequest::receivedFileComplete, this, &DownloadRemoteFileJob::receivedFileComplete);
+        connect(downloadRequest, &DownloadRequest::error, this, &DownloadRemoteFileJob::channelError);
+        connect(downloadRequest, &DownloadRequest::closed, this, &DownloadRemoteFileJob::channelClosed);
+        connect(this, &QObject::destroyed, downloadRequest, &DownloadRequest::deleteLater);
+        downloadRequest->submit();
+        return;
+    }
+    _promise.cancel();
+    shutdown(false);
 }
 
 /******************************************************************************
 * Is called when the SCP channel failed.
 ******************************************************************************/
-void DownloadRemoteFileJob::channelError()
+void DownloadRemoteFileJob::channelError(const QString& errorMessage)
 {
     _promise.setException(std::make_exception_ptr(
         Exception(tr("Cannot access remote URL\n\n%1\n\n%2")
             .arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded))
-            .arg(_scpChannel->errorMessage()))));
+            .arg(errorMessage))));
 
     shutdown(false);
 }
-#endif
 
 /******************************************************************************
 * Closes the network connection.
 ******************************************************************************/
 void DownloadRemoteFileJob::shutdown(bool success)
 {
-#ifdef OVITO_SSH_CLIENT
-    // Close file channel.
-    if(_scpChannel) {
-        disconnect(_scpChannel, nullptr, this, nullptr);
-        _scpChannel->closeChannel();
-        _scpChannel->deleteLater();
-        _scpChannel = nullptr;
-    }
-#endif
-
     // Write all received data to the local file.
     if(success)
         storeReceivedData();
 
-    // Close local file and clean up.
-    if(_localFile) {
-        // Make sure the received data was successfully written to the temporary file.
-        if(_fileMapping) {
-            if(!_localFile->unmap(_fileMapping)) {
-                _promise.setException(std::make_exception_ptr(Exception(
-                    tr("Failed to write to local file %1: %2").arg(_localFile->fileName()).arg(_localFile->errorString()))));
-                success = false;
-            }
-            _fileMapping = nullptr;
-        }
-        if(!_localFile->flush() || _localFile->error() != QFileDevice::NoError) {
-            _promise.setException(std::make_exception_ptr(Exception(
-                tr("Failed to write to local file %1: %2").arg(_localFile->fileName()).arg(_localFile->errorString()))));
-            success = false;
-        }
-        _localFile->close();
-    }
     if(_localFile && success)
         _promise.setResults(FileHandle(url(), _localFile->fileName()));
     else
@@ -348,11 +337,10 @@ void DownloadRemoteFileJob::shutdown(bool success)
     // Close network connection.
     RemoteFileJob::shutdown(success);
 
-    // Hand downloaded file over to FileManager cache.
+    // Hand downloaded file to FileManager cache.
     Application::instance()->fileManager().fileFetched(url(), _localFile.release());
 }
 
-#ifdef OVITO_SSH_CLIENT
 /******************************************************************************
 * Is called when the remote host starts sending the file.
 ******************************************************************************/
@@ -364,36 +352,18 @@ void DownloadRemoteFileJob::receivingFile(qint64 fileSize)
     }
     _promise.setProgressMaximum(fileSize);
     _promise.setProgressText(tr("Fetching remote file %1").arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded)));
-
-    // Create the destination file.
-    try {
-        _localFile = std::make_unique<QTemporaryFile>();
-        if(!_localFile->open() || !_localFile->resize(fileSize))
-            throw Exception(tr("Failed to create temporary file: %1").arg(_localFile->errorString()));
-
-        // Map the file to memory and let the SCP channel write the received data to the memory buffer.
-        if(fileSize) {
-            _fileMapping = _localFile->map(0, fileSize);
-            if(!_fileMapping)
-                throw Exception(tr("Failed to map temporary file to memory: %1").arg(_localFile->errorString()));
-        }
-        _scpChannel->setDestinationBuffer(reinterpret_cast<char*>(_fileMapping));
-    }
-    catch(Exception&) {
-        _promise.captureException();
-        shutdown(false);
-    }
 }
 
 /******************************************************************************
 * Is called after the file has been downloaded.
 ******************************************************************************/
-void DownloadRemoteFileJob::receivedFileComplete()
+void DownloadRemoteFileJob::receivedFileComplete(std::unique_ptr<QTemporaryFile>* localFile)
 {
     if(_promise.isCanceled()) {
         shutdown(false);
         return;
     }
+    _localFile = std::move(*localFile);
     shutdown(true);
 }
 
@@ -408,7 +378,6 @@ void DownloadRemoteFileJob::receivedData(qint64 totalReceivedBytes)
     }
     _promise.setProgressValue(totalReceivedBytes);
 }
-#endif
 
 /******************************************************************************
 * Handles QNetworkReply progress signals.
@@ -457,7 +426,6 @@ void DownloadRemoteFileJob::storeReceivedData()
 #endif
 }
 
-#ifdef OVITO_SSH_CLIENT
 /******************************************************************************
 * Is called when the SSH connection has been established.
 ******************************************************************************/
@@ -468,14 +436,33 @@ void ListRemoteDirectoryJob::connectionEstablished()
         return;
     }
 
-    // Open the SCP channel.
-    _promise.setProgressText(tr("Opening channel to remote host %1").arg(_connection->hostname()));
-    _lsChannel = new LsChannel(_connection, _url.path());
-    connect(_lsChannel, &LsChannel::error, this, &ListRemoteDirectoryJob::channelError);
-    connect(_lsChannel, &LsChannel::receivingDirectory, this, &ListRemoteDirectoryJob::receivingDirectory);
-    connect(_lsChannel, &LsChannel::receivedDirectoryComplete, this, &ListRemoteDirectoryJob::receivedDirectoryComplete);
-    connect(_lsChannel, &LsChannel::closed, this, &ListRemoteDirectoryJob::channelClosed);
-    _lsChannel->openChannel();
+#ifdef OVITO_SSH_CLIENT
+    if(LibsshConnection* libsshConnection = qobject_cast<LibsshConnection*>(_connection)) {
+        // Open the LS channel.
+        _promise.setProgressText(tr("Opening channel to remote host %1").arg(libsshConnection->hostname()));
+        LsChannel* lsChannel = new LsChannel(libsshConnection, _url.path());
+        connect(lsChannel, &LsChannel::error, this, &ListRemoteDirectoryJob::channelError);
+        connect(lsChannel, &LsChannel::receivingDirectory, this, &ListRemoteDirectoryJob::receivingDirectory);
+        connect(lsChannel, &LsChannel::receivedDirectoryComplete, this, &ListRemoteDirectoryJob::receivedDirectoryComplete);
+        connect(lsChannel, &LsChannel::closed, this, &ListRemoteDirectoryJob::channelClosed);
+        connect(this, &QObject::destroyed, lsChannel, &QObject::deleteLater);
+        lsChannel->openChannel();
+        return;
+    }
+#endif
+    if(OpensshConnection* opensshConnection = qobject_cast<OpensshConnection*>(_connection)) {
+        _promise.setProgressText(tr("Opening channel to remote host %1").arg(opensshConnection->hostname()));
+        FileListingRequest* listingRequest = new FileListingRequest(opensshConnection, _url.path());
+        connect(listingRequest, &FileListingRequest::error, this, &ListRemoteDirectoryJob::channelError);
+        connect(listingRequest, &FileListingRequest::receivingDirectory, this, &ListRemoteDirectoryJob::receivingDirectory);
+        connect(listingRequest, &FileListingRequest::receivedDirectoryComplete, this, &ListRemoteDirectoryJob::receivedDirectoryComplete);
+        connect(listingRequest, &FileListingRequest::closed, this, &ListRemoteDirectoryJob::channelClosed);
+        connect(this, &QObject::destroyed, listingRequest, &FileListingRequest::deleteLater);
+        listingRequest->submit();
+        return;
+    }
+    _promise.cancel();
+    shutdown(false);
 }
 
 /******************************************************************************
@@ -495,12 +482,12 @@ void ListRemoteDirectoryJob::receivingDirectory()
 /******************************************************************************
 * Is called when the SCP channel failed.
 ******************************************************************************/
-void ListRemoteDirectoryJob::channelError()
+void ListRemoteDirectoryJob::channelError(const QString& errorMessage)
 {
     _promise.setException(std::make_exception_ptr(
-        Exception(tr("Cannot access remote URL\n\n%1\n\n%2")
+        Exception(tr("Cannot access remote location:\n\n%1\n\n%2")
             .arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded))
-            .arg(_lsChannel->errorMessage()))));
+            .arg(errorMessage))));
 
     shutdown(false);
 }
@@ -518,39 +505,19 @@ void ListRemoteDirectoryJob::receivedDirectoryComplete(const QStringList& listin
     _promise.setResults(listing);
     shutdown(true);
 }
-#endif
 
 /******************************************************************************
-* Closes the SSH connection.
-******************************************************************************/
-void ListRemoteDirectoryJob::shutdown(bool success)
-{
-#ifdef OVITO_SSH_CLIENT
-    if(_lsChannel) {
-        disconnect(_lsChannel, nullptr, this, nullptr);
-        _lsChannel->closeChannel();
-        _lsChannel->deleteLater();
-        _lsChannel = nullptr;
-    }
-#endif
-
-    RemoteFileJob::shutdown(success);
-}
-
-#ifdef OVITO_SSH_CLIENT
-/******************************************************************************
-* Handles closed SSH channel.
+* Handles closing of the SSH channel.
 ******************************************************************************/
 void ListRemoteDirectoryJob::channelClosed()
 {
     if(!_promise.isFinished()) {
         _promise.setException(std::make_exception_ptr(
-            Exception(tr("Cannot access URL\n\n%1\n\nSSH channel closed: %2").arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded)).
-                arg(_lsChannel->errorMessage()))));
+            Exception(tr("Failed to list contents of:\n\n%1\n\nSSH channel was closed unexpectedly.")
+                .arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded)))));
     }
 
     shutdown(false);
 }
-#endif
 
 }   // End of namespace

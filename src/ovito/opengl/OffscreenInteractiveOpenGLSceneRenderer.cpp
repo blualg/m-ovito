@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -58,7 +58,7 @@ void OffscreenInteractiveOpenGLSceneRenderer::beginFrame(AnimationTime time, Sce
 
     // Prepare a functions table allowing us to call OpenGL functions in a platform-independent way.
     initializeOpenGLFunctions();
-    
+
     // Size of the viewport window in physical pixels.
     QSize size = vpWindow->viewportWindowDeviceSize();
 
@@ -84,7 +84,7 @@ void OffscreenInteractiveOpenGLSceneRenderer::beginFrame(AnimationTime time, Sce
     }
     else {
         // When running in a web browser environment which supports the WEBGL_depth_texture extension,
-        // create a custom framebuffer with attached color and and depth textures. 
+        // create a custom framebuffer with attached color and and depth textures.
 
         // Create a texture for storing the color buffer.
         glGenTextures(2, _framebufferTexturesGLES);
@@ -183,7 +183,7 @@ void OffscreenInteractiveOpenGLSceneRenderer::endFrame(bool renderingSuccessful,
     else {
         // Go back to using the default framebuffer.
         QOpenGLFramebufferObject::bindDefault();
-        
+
         // Delete framebuffer object.
         glDeleteFramebuffers(1, &_framebufferObjectGLES);
         _framebufferObjectGLES = 0;

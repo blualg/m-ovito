@@ -46,14 +46,14 @@ class OVITO_CORE_EXPORT ViewportConfiguration : public RefTarget
 public:
 
     /// Constructor.
-    Q_INVOKABLE ViewportConfiguration(ObjectCreationParams params);
+    Q_INVOKABLE ViewportConfiguration(ObjectInitializationFlags flags);
 
     /// Registers a viewport with the configuration object so that it takes part in the automatic viewport refresh mechanism.
     /// This method is currently used in the implementation of the Viewport.create_qt_widget() Python method.
     void registerViewport(Viewport* vp) {
         OVITO_ASSERT(vp);
         if(!viewports().contains(vp))
-            _viewports.push_back(this, PROPERTY_FIELD(viewports), vp); 
+            _viewports.push_back(this, PROPERTY_FIELD(viewports), vp);
     }
 
     /// Determines the effective rectangles for all the viewports in the layout hierarchy.
@@ -72,7 +72,7 @@ public Q_SLOTS:
     /// \brief Zooms to the extents of the scene.
     void zoomToSceneExtents();
 
-    /// \brief Zooms all viewports to the extents of the scene 
+    /// \brief Zooms all viewports to the extents of the scene
     ///        when all scene pipelines have been fully evaluated and the extents are known.
     void zoomToSceneExtentsWhenReady();
 
@@ -100,7 +100,7 @@ protected:
 
 private:
 
-    /// Rebuilds the linear list of all viewports that are part of the current viewport layout tree. 
+    /// Rebuilds the linear list of all viewports that are part of the current viewport layout tree.
     void updateListOfViewports();
 
     /// List of all viewports which get automatically refreshed whenever their scene changes.

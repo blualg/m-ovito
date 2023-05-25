@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -140,20 +140,21 @@ bool XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, co
                 nCols++;
 
             // Convert OVITO property data type to extended XYZ type code: 'I','R','S','L'
-            int dataType = property ? property->dataType() : PropertyObject::Int;
+            int dataType = property ? property->dataType() : PropertyObject::Int32;
             QString dataTypeStr;
-            if(dataType == PropertyObject::Float)
+            if(dataType == PropertyObject::Float32 || dataType == PropertyObject::Float64)
                 dataTypeStr = QStringLiteral("R");
-            else if(dataType == qMetaTypeId<char>() || pref.type() == ParticlesObject::TypeProperty)
+            else if(pref.type() == ParticlesObject::TypeProperty)
                 dataTypeStr = QStringLiteral("S");
-            else if(dataType == PropertyObject::Int || dataType == PropertyObject::Int64)
+            else if(dataType == PropertyObject::Int8 || dataType == PropertyObject::Int32 || dataType == PropertyObject::Int64)
                 dataTypeStr = QStringLiteral("I");
             else if(dataType == qMetaTypeId<bool>())
                 dataTypeStr = QStringLiteral("L");
             else
-                throw Exception(tr("Unexpected data type '%1' for property '%2'.").arg(getQtTypeNameFromId(dataType) ? getQtTypeNameFromId(dataType) : "unknown").arg(pref.name()));
+                throw Exception(tr("Unexpected data type '%1' for property '%2'.").arg(property ? property->dataTypeName() : "unknown").arg(pref.name()));
 
-            if(!propertiesStr.isEmpty()) propertiesStr += QStringLiteral(":");
+            if(!propertiesStr.isEmpty())
+                propertiesStr += QStringLiteral(":");
             propertiesStr += QStringLiteral("%1:%2:%3").arg(columnName).arg(dataTypeStr).arg(nCols);
         }
         textStream() << propertiesStr;

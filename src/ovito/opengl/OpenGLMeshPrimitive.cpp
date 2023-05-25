@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,12 +21,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include <ovito/core/dataset/data/DataBufferAccess.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/utilities/SortZipped.h>
 #include "OpenGLSceneRenderer.h"
 #include "OpenGLShaderHelper.h"
-
-#include <boost/range/irange.hpp>
 
 namespace Ovito {
 
@@ -126,7 +125,8 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     };
 
     // Upload vertex buffer to GPU memory.
-    QOpenGLBuffer meshBuffer = shader.createCachedBuffer(std::move(meshCacheKey), sizeof(MeshPrimitive::RenderVertex), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer) {
+    QOpenGLBuffer meshBuffer = shader.createCachedBuffer(std::move(meshCacheKey), sizeof(MeshPrimitive::RenderVertex), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer, BufferAccess<const int32_t> subset) {
+        OVITO_ASSERT(!subset);
         bool highlightSelectedFaces = isInteractive() && !isPicking();
         primitive.generateRenderableVertices(reinterpret_cast<MeshPrimitive::RenderVertex*>(buffer), highlightSelectedFaces, renderWithPseudoColorMapping);
     });
@@ -135,7 +135,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     shader.bindBuffer(meshBuffer, "position", GL_FLOAT, 3, sizeof(MeshPrimitive::RenderVertex), offsetof(MeshPrimitive::RenderVertex, position), OpenGLShaderHelper::PerVertex);
     if(!isPicking())
         shader.bindBuffer(meshBuffer, "normal",   GL_FLOAT, 3, sizeof(MeshPrimitive::RenderVertex), offsetof(MeshPrimitive::RenderVertex, normal),   OpenGLShaderHelper::PerVertex);
-        
+
     if(!renderWithPseudoColorMapping) {
         if(!isPicking() && (!primitive.useInstancedRendering() || !primitive.perInstanceColors())) {
             // Rendering with true RGBA colors.
@@ -144,7 +144,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     }
     else {
         OVITO_ASSERT(!isPicking());
-        
+
         // Rendering  with pseudo-colors and a color mapping function.
         shader.bindBuffer(meshBuffer, "pseudocolor", GL_FLOAT, 2, sizeof(MeshPrimitive::RenderVertex), offsetof(MeshPrimitive::RenderVertex, color), OpenGLShaderHelper::PerVertex);
         shader.setUniformValue("opacity", primitive.uniformColor().a());
@@ -152,7 +152,10 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         float minValue = primitive.pseudoColorMapping().minValue();
         float maxValue = primitive.pseudoColorMapping().maxValue();
         // Avoid division by zero due to degenerate value interval.
-        if(minValue == maxValue) maxValue = std::nextafter(maxValue, std::numeric_limits<float>::max());
+        if(minValue == maxValue) {
+            minValue = std::min(minValue - FloatTypeEpsilon<float>(), std::nextafter(minValue, std::numeric_limits<float>::lowest()));
+            maxValue = std::max(maxValue + FloatTypeEpsilon<float>(), std::nextafter(maxValue, std::numeric_limits<float>::max()));
+        }
         shader.setUniformValue("color_range_min", minValue);
         shader.setUniformValue("color_range_max", maxValue);
 
@@ -172,7 +175,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 
         if(primitive.perInstanceColors() && !isPicking()) {
             // Upload the per-instance colors to GPU memory.
-            QOpenGLBuffer instanceColorBuffer = shader.uploadDataBuffer(primitive.perInstanceColors(), OpenGLShaderHelper::PerInstance, QOpenGLBuffer::VertexBuffer);
+            QOpenGLBuffer instanceColorBuffer = shader.uploadDataBuffer(primitive.perInstanceColors(), OpenGLShaderHelper::PerInstance);
 
             // Bind buffer with the instance colors.
             shader.bindBuffer(instanceColorBuffer, "instance_color", GL_FLOAT, 4, sizeof(ColorAT<float>), 0, OpenGLShaderHelper::PerInstance);
@@ -181,12 +184,12 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 
     if(!useBlending) {
         // Draw triangles in regular storage order (not sorted).
-        shader.drawArrays(GL_TRIANGLES);
+        shader.draw(GL_TRIANGLES);
     }
     else if(primitive.depthSortingMode() == MeshPrimitive::ConvexShapeMode) {
         OVITO_ASSERT(!orderIndependentTransparency() && !isPicking());
 
-        // Assuming that the input mesh is convex, render semi-transparent triangles in two passes: 
+        // Assuming that the input mesh is convex, render semi-transparent triangles in two passes:
         // First, render triangles facing away from the viewer, then render triangles facing toward the viewer.
         // Each time we pass the entire triangle list to OpenGL and use OpenGL's backface/frontfrace culling
         // option to render the right subset of triangles.
@@ -194,17 +197,17 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
             // First pass is only needed if backface culling is not active.
             glCullFace(GL_FRONT);
             glEnable(GL_CULL_FACE);
-            shader.drawArrays(GL_TRIANGLES);
+            shader.draw(GL_TRIANGLES);
         }
         // Now render front-facing triangles only.
         glCullFace(GL_BACK);
         glEnable(GL_CULL_FACE);
-        shader.drawArrays(GL_TRIANGLES);
+        shader.draw(GL_TRIANGLES);
     }
     else if(!primitive.useInstancedRendering()) {
         OVITO_ASSERT(!orderIndependentTransparency() && !isPicking());
 
-        // Create a buffer for an indexed drawing command to render the triangles in back-to-front order. 
+        // Create a buffer for an indexed drawing command to render the triangles in back-to-front order.
 
         // Viewing direction in object space:
         const Vector3 direction = modelViewTM().inverse().column(2);
@@ -213,7 +216,8 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         RendererResourceKey<struct DepthSortingCache, DataOORef<const TriMeshObject>, Vector3> indexBufferCacheKey{ primitive.mesh(), direction };
 
         // Create index buffer with three entries per triangle face.
-        QOpenGLBuffer indexBuffer = shader.createCachedBuffer(std::move(indexBufferCacheKey), sizeof(GLsizei), QOpenGLBuffer::IndexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer) {
+        QOpenGLBuffer indexBuffer = shader.createCachedBuffer(std::move(indexBufferCacheKey), sizeof(GLsizei), QOpenGLBuffer::IndexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer, BufferAccess<const int32_t> subset) {
+            OVITO_ASSERT(!subset);
 
             // Compute each face's center point.
             std::vector<Vector_3<float>> faceCenters(mesh.faceCount());
@@ -223,9 +227,9 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
                 const auto& v1 = mesh.vertex(face->vertex(0));
                 const auto& v2 = mesh.vertex(face->vertex(1));
                 const auto& v3 = mesh.vertex(face->vertex(2));
-                tc->x() = (float)(v1.x() + v2.x() + v3.x()) / 3.0f;
-                tc->y() = (float)(v1.y() + v2.y() + v3.y()) / 3.0f;
-                tc->z() = (float)(v1.z() + v2.z() + v3.z()) / 3.0f;
+                tc->x() = static_cast<float>(v1.x() + v2.x() + v3.x()) / 3.0f;
+                tc->y() = static_cast<float>(v1.y() + v2.y() + v3.y()) / 3.0f;
+                tc->z() = static_cast<float>(v1.z() + v2.z() + v3.z()) / 3.0f;
             }
 
             // Next, compute distance of each face from the camera along the viewing direction (=camera z-axis).
@@ -244,7 +248,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
             });
 
             // Fill the index buffer with vertex indices to render.
-            GLsizei* dst = reinterpret_cast<GLsizei*>(buffer);
+            GLsizei* dst = static_cast<GLsizei*>(buffer);
             for(uint32_t index : sortedIndices) {
                 *dst++ = index * 3;
                 *dst++ = index * 3 + 1;
@@ -257,13 +261,13 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
             throw RendererException(QStringLiteral("Failed to bind OpenGL index buffer for shader '%1'.").arg(shader.shaderObject().objectName()));
 
         // Draw triangles in sorted order.
-        OVITO_CHECK_OPENGL(this, glDrawElements(GL_TRIANGLES, mesh.faceCount() * 3, GL_UNSIGNED_INT, nullptr));
+        OVITO_CHECK_OPENGL(this, this->glDrawElements(GL_TRIANGLES, mesh.faceCount() * 3, GL_UNSIGNED_INT, nullptr));
 
         indexBuffer.release();
     }
     else {
         OVITO_ASSERT(!orderIndependentTransparency() && !isPicking());
-        // Render the mesh instances in back-to-front order. 
+        // Render the mesh instances in back-to-front order.
 
         // Viewing direction in object space:
         const Vector3 direction = modelViewTM().inverse().column(2);
@@ -272,24 +276,27 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         RendererResourceKey<struct OrderingCache, ConstDataBufferPtr, Vector3> orderingCacheKey{ primitive.perInstanceTMs(), direction };
 
         // Render the primitives.
-        shader.drawArraysOrdered(GL_TRIANGLES, std::move(orderingCacheKey), [&]() {
+        shader.drawReordered(GL_TRIANGLES, std::move(orderingCacheKey), [&](span<GLuint> sortedIndices) {
+            OVITO_ASSERT(sortedIndices.size() == shader.instanceCount());
 
             // First, compute distance of each instance from the camera along the viewing direction (=camera z-axis).
-            std::vector<FloatType> distances(shader.instanceCount());
-            boost::transform(boost::irange<size_t>(0, shader.instanceCount()), distances.begin(), [direction, tmArray = ConstDataBufferAccess<AffineTransformation>(primitive.perInstanceTMs())](size_t i) {
-                return direction.dot(tmArray[i].translation());
-            });
-
-            // Create index array with all indices.
-            std::vector<uint32_t> sortedIndices(shader.instanceCount());
-            std::iota(sortedIndices.begin(), sortedIndices.end(), (uint32_t)0);
+            std::vector<GraphicsFloatType> distances(sortedIndices.size());
+            if(primitive.perInstanceTMs()->dataType() == DataBuffer::Float32) {
+                const Vector_3<float> directionFloat = direction.toDataType<float>();
+                boost::transform(sortedIndices, distances.begin(), [directionFloat, tmArray = BufferAccess<const AffineTransformationT<float>>(primitive.perInstanceTMs())](size_t i) {
+                    return directionFloat.dot(tmArray[i].translation());
+                });
+            }
+            else {
+                // Viewing direction in object space:
+                const Vector_3<double> directionDouble = direction.toDataType<double>();
+                boost::transform(sortedIndices, distances.begin(), [directionDouble, tmArray = BufferAccess<const AffineTransformationT<double>>(primitive.perInstanceTMs())](size_t i) {
+                    return directionDouble.dot(tmArray[i].translation());
+                });
+            }
 
             // Sort indices with respect to distance (back-to-front order).
-            std::sort(sortedIndices.begin(), sortedIndices.end(), [&](uint32_t a, uint32_t b) {
-                return distances[a] < distances[b];
-            });
-
-            return sortedIndices;
+            Ovito::sort_zipped(distances, sortedIndices);
         });
     }
 
@@ -305,7 +312,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 }
 
 /******************************************************************************
-* Prepares the OpenGL buffer with the per-instance transformation matrices for 
+* Prepares the OpenGL buffer with the per-instance transformation matrices for
 * rendering a set of meshes.
 ******************************************************************************/
 QOpenGLBuffer OpenGLSceneRenderer::getMeshInstanceTMBuffer(const MeshPrimitive& primitive, OpenGLShaderHelper& shader)
@@ -317,12 +324,22 @@ QOpenGLBuffer OpenGLSceneRenderer::getMeshInstanceTMBuffer(const MeshPrimitive& 
     RendererResourceKey<struct InstanceTMCache, ConstDataBufferPtr> cacheKey(primitive.perInstanceTMs());
 
     // Upload the per-instance TMs to GPU memory.
-    return shader.createCachedBuffer(std::move(cacheKey), 3 * sizeof(Vector_4<float>), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer) {
+    return shader.createCachedBuffer(std::move(cacheKey), 3 * sizeof(Vector_4<float>), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer, BufferAccess<const int32_t> subset) {
+        OVITO_ASSERT(!subset);
         Vector_4<float>* row = reinterpret_cast<Vector_4<float>*>(buffer);
-        for(const AffineTransformation& tm : ConstDataBufferAccess<AffineTransformation>(primitive.perInstanceTMs())) {
-            *row++ = tm.row(0).toDataType<float>();
-            *row++ = tm.row(1).toDataType<float>();
-            *row++ = tm.row(2).toDataType<float>();
+        if(primitive.perInstanceTMs()->dataType() == DataBuffer::Float32) {
+            for(const AffineTransformationT<float>& tm : BufferAccess<const AffineTransformationT<float>>(primitive.perInstanceTMs())) {
+                *row++ = tm.row(0);
+                *row++ = tm.row(1);
+                *row++ = tm.row(2);
+            }
+        }
+        else {
+            for(const AffineTransformationT<double>& tm : BufferAccess<const AffineTransformationT<double>>(primitive.perInstanceTMs())) {
+                *row++ = tm.row(0).toDataType<float>();
+                *row++ = tm.row(1).toDataType<float>();
+                *row++ = tm.row(2).toDataType<float>();
+            }
         }
     });
 }
@@ -377,7 +394,7 @@ void OpenGLSceneRenderer::renderMeshWireframeImplementation(const MeshPrimitive&
     }
 
     // Bind vertex buffer for wireframe vertex positions.
-    QOpenGLBuffer buffer = shader.uploadDataBuffer(wireframeLinesBuffer, OpenGLShaderHelper::PerVertex, QOpenGLBuffer::VertexBuffer);
+    QOpenGLBuffer buffer = shader.uploadDataBuffer(wireframeLinesBuffer, OpenGLShaderHelper::PerVertex);
     shader.bindBuffer(buffer, "position", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerVertex);
 
     // Bind vertex buffer for instance TMs.
@@ -391,7 +408,7 @@ void OpenGLSceneRenderer::renderMeshWireframeImplementation(const MeshPrimitive&
     }
 
     // Draw lines.
-    shader.drawArrays(GL_LINES);
+    shader.draw(GL_LINES);
 }
 
 }   // End of namespace

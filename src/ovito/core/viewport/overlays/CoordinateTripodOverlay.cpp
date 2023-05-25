@@ -76,7 +76,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CoordinateTripodOverlay, fontSize, FloatPar
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-CoordinateTripodOverlay::CoordinateTripodOverlay(ObjectCreationParams params) : ViewportOverlay(params),
+CoordinateTripodOverlay::CoordinateTripodOverlay(ObjectInitializationFlags flags) : ViewportOverlay(flags),
         _alignment(Qt::AlignLeft | Qt::AlignBottom),
         _tripodSize(0.075), _lineWidth(0.06), _offsetX(0), _offsetY(0),
         _fontSize(0.4),

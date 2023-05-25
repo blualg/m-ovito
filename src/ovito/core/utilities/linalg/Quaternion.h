@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -100,7 +100,7 @@ public:
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR QuaternionT(T x, T y, T z, T w) : std::array<T, 4>{{x,y,z,w}} {}
 #else
-    QuaternionT(T x, T y, T z, T w) { this->x() = x; this->y() = y; this->z() = z; this->w() = w; }
+    Q_DECL_CONSTEXPR QuaternionT(T x, T y, T z, T w) { this->x() = x; this->y() = y; this->z() = z; this->w() = w; }
 #endif
 
     /// \brief Constructs an identity quaternion.
@@ -108,28 +108,33 @@ public:
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR QuaternionT(Identity) : std::array<T, 4>{{ T(0), T(0), T(0), T(1) }} {}
 #else
-    QuaternionT(Identity) { this->x() = this->y() = this->z() = T(0); this->w() = T(1); }
+    Q_DECL_CONSTEXPR QuaternionT(Identity) { this->x() = this->y() = this->z() = T(0); this->w() = T(1); }
 #endif
 
     /// \brief Initializes the quaternion from a rotation matrix.
     /// \param tm A rotation matrix.
     ///
     /// It is assumed that \a tm is a pure rotation matrix.
-    explicit QuaternionT(const Matrix_3<T>& tm, T epsilon = T(FLOATTYPE_EPSILON));
+    Q_DECL_CONSTEXPR explicit QuaternionT(const Matrix_3<T>& tm, T epsilon = FloatTypeEpsilon<T>());
 
     /// Casts the quaternion to another component type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR QuaternionT<U> toDataType() const { return QuaternionT<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()), static_cast<U>(w())); }
+    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, QuaternionT<U>, const QuaternionT<T>&> {
+        if constexpr(!std::is_same_v<T,U>)
+            return QuaternionT<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()), static_cast<U>(w()));
+        else
+            return *this;  // When casting to the same type \a T, this method becomes a no-op.
+    }
 
     /// \brief Sets the quaternion to the identity quaternion.
-    QuaternionT& setIdentity() {
+    Q_DECL_CONSTEXPR QuaternionT& setIdentity() {
         z() = y() = x() = T(0);
         w() = T(1);
         return *this;
     }
 
     /// \brief Sets the quaternion to the identity quaternion.
-    QuaternionT& operator=(Identity) { return setIdentity(); }
+    Q_DECL_CONSTEXPR QuaternionT& operator=(Identity) { return setIdentity(); }
 
     ///////////////////////////// Component access ///////////////////////////////
 
@@ -146,16 +151,16 @@ public:
     Q_DECL_CONSTEXPR T w() const { return (*this)[3]; }
 
     /// \brief Returns a reference to the X component of this quaternion.
-    T& x() { return (*this)[0]; }
+    Q_DECL_CONSTEXPR T& x() { return (*this)[0]; }
 
     /// \brief Returns a reference to the Y component of this quaternion.
-    T& y() { return (*this)[1]; }
+    Q_DECL_CONSTEXPR T& y() { return (*this)[1]; }
 
     /// \brief Returns a reference to the Z component of this quaternion.
-    T& z() { return (*this)[2]; }
+    Q_DECL_CONSTEXPR T& z() { return (*this)[2]; }
 
     /// \brief Returns a reference to the W component of this quaternion.
-    T& w() { return (*this)[3]; }
+    Q_DECL_CONSTEXPR T& w() { return (*this)[3]; }
 
     /////////////////////////////// Unary operators //////////////////////////////
 
@@ -186,40 +191,40 @@ public:
     /// \brief Multiplies each component of the quaternion with a scalar value and stores the result in this quaternion.
     /// \param s The scalar value to multiply this quaternion with.
     /// \return A reference to \c this quaternion, which has been changed.
-    QuaternionT& operator*=(T s) { x() *= s; y() *= s; z() *= s; w() *= s; return *this; }
+    Q_DECL_CONSTEXPR QuaternionT& operator*=(T s) { x() *= s; y() *= s; z() *= s; w() *= s; return *this; }
 
     /// \brief Divides each component of the quaternion by a scalar value and stores the result in this quaternion.
     /// \param s The scalar value.
     /// \return A reference to \c this quaternion, which has been changed.
-    QuaternionT& operator/=(T s) { x() /= s; y() /= s; z() /= s; w() /= s; return *this; }
+    Q_DECL_CONSTEXPR QuaternionT& operator/=(T s) { x() /= s; y() /= s; z() /= s; w() /= s; return *this; }
 
     /// \brief Component-wise increment operator.
     /// \param q The quaternion to add to this quaternion.
     /// \return A reference to \c this quaternion, which has been changed.
-    QuaternionT& operator+=(const QuaternionT& q) { x() += q.x(); y() += q.y(); z() += q.z(); w() += q.w(); return *this; }
+    Q_DECL_CONSTEXPR QuaternionT& operator+=(const QuaternionT& q) { x() += q.x(); y() += q.y(); z() += q.z(); w() += q.w(); return *this; }
 
     /// \brief Component-wise decrement operator.
     /// \param q The quaternion to subtract from this quaternion.
     /// \return A reference to \c this quaternion, which has been changed.
-    QuaternionT& operator-=(const QuaternionT& q) { x() -= q.x(); y() -= q.y(); z() -= q.z(); w() -= q.w(); return *this; }
+    Q_DECL_CONSTEXPR QuaternionT& operator-=(const QuaternionT& q) { x() -= q.x(); y() -= q.y(); z() -= q.z(); w() -= q.w(); return *this; }
 
     /// \brief Computes the scalar product of two quaternions.
     Q_DECL_CONSTEXPR T dot(const QuaternionT& b) const { return x()*b.x() + y()*b.y() + z()*b.z() + w()*b.w(); }
 
     /// \brief Computes norm of quaternion.
-    inline T norm() const {
+    Q_DECL_CONSTEXPR inline T norm() const {
         return std::sqrt(dot(*this));
     }
 
     /// \brief Normalizes this quaternion to unit length.
-    inline void normalize() {
+    Q_DECL_CONSTEXPR inline void normalize() {
         T c = this->norm();
         OVITO_ASSERT_MSG(c > 0, "Quaternion::normalize", "Cannot normalize the null quaternion.");
         x() /= c; y() /= c; z() /= c; w() /= c;
     }
 
     /// \brief Normalizes this quaternion to unit length unless it's the null quaternion.
-    inline void normalizeSafely(T epsilon = T(FLOATTYPE_EPSILON)) {
+    Q_DECL_CONSTEXPR inline void normalizeSafely(T epsilon = FloatTypeEpsilon<T>()) {
         T c = this->norm();
         if(c > epsilon) {
             x() /= c; y() /= c; z() /= c; w() /= c;
@@ -227,14 +232,14 @@ public:
     }
 
     /// \brief Returns a nrmalized version of this quaternion.
-    inline QuaternionT normalized() const {
+    Q_DECL_CONSTEXPR inline QuaternionT normalized() const {
         T c = this->norm();
         OVITO_ASSERT_MSG(c > 0, "Quaternion::normalized", "Cannot normalize the null quaternion.");
         return { x() / c, y() / c, z() / c, w() / c };
     }
 
     /// \brief Returns a normalized version of this quaternion - unless its the null quaternion, then it returns the identity quaternion.
-    inline QuaternionT safelyNormalized(T epsilon = T(FLOATTYPE_EPSILON)) const {
+    Q_DECL_CONSTEXPR inline QuaternionT safelyNormalized(T epsilon = FloatTypeEpsilon<T>()) const {
         T c = this->norm();
         if(c > epsilon)
             return { x() / c, y() / c, z() / c, w() / c };
@@ -249,9 +254,9 @@ public:
     /// \param q2 The second rotation (must be normalized).
     /// \param alpha The parameter for the linear interpolation in the range [0,1].
     /// \return A linear interpolation between \a q1 and \a q2.
-    static QuaternionT interpolate(const QuaternionT& q1, const QuaternionT& q2, T alpha) {
-        OVITO_ASSERT_MSG(std::abs(q1.dot(q1) - T(1)) <= T(FLOATTYPE_EPSILON), "Quaternion::interpolate", "Quaternions must be normalized.");
-        OVITO_ASSERT_MSG(std::abs(q2.dot(q2) - T(1)) <= T(FLOATTYPE_EPSILON), "Quaternion::interpolate", "Quaternions must be normalized.");
+    Q_DECL_CONSTEXPR static QuaternionT interpolate(const QuaternionT& q1, const QuaternionT& q2, T alpha) {
+        OVITO_ASSERT_MSG(std::abs(q1.dot(q1) - T(1)) <= FloatTypeEpsilon<T>(), "Quaternion::interpolate", "Quaternions must be normalized.");
+        OVITO_ASSERT_MSG(std::abs(q2.dot(q2) - T(1)) <= FloatTypeEpsilon<T>(), "Quaternion::interpolate", "Quaternions must be normalized.");
 
         T cos_t = q1.dot(q2);
 
@@ -280,7 +285,7 @@ public:
     /// \param q2 The second rotation.
     /// \param alpha The parameter for the linear interpolation in the range [0,1].
     /// \return A linear interpolation between \a q1 and \a q2.
-    static QuaternionT interpolateSafely(const QuaternionT& q1, const QuaternionT& q2, T alpha) {
+    Q_DECL_CONSTEXPR static QuaternionT interpolateSafely(const QuaternionT& q1, const QuaternionT& q2, T alpha) {
         T q1dot = q1.dot(q1);
         T q2dot = q2.dot(q2);
         if(q1dot > T(FLOATTYPE_EPSILON*FLOATTYPE_EPSILON) && q2dot > T(FLOATTYPE_EPSILON*FLOATTYPE_EPSILON)) {
@@ -303,7 +308,7 @@ public:
     /// \param in Controls the tangential direction at \a q2.
     /// \param alpha The interpolation parameter in the range [0,1].
     /// \return The interpolated quaternion between \a q1 and \a q2.
-    static QuaternionT interpolateQuad(const QuaternionT& q1, const QuaternionT& q2, const QuaternionT& out, const QuaternionT& in, T alpha) {
+    Q_DECL_CONSTEXPR static QuaternionT interpolateQuad(const QuaternionT& q1, const QuaternionT& q2, const QuaternionT& out, const QuaternionT& in, T alpha) {
         QuaternionT slerpP = interpolate(q1, q2, alpha);
         QuaternionT slerpQ = interpolate(out, in, alpha);
         T Ti = T(2) * alpha * (T(1) - alpha);
@@ -312,7 +317,7 @@ public:
 
 
     /// \brief Constructs a quaternion from three Euler angles.
-    static QuaternionT fromEuler(T ai, T aj, T ak, typename Matrix_3<T>::EulerAxisSequence axisSequence);
+    Q_DECL_CONSTEXPR static QuaternionT fromEuler(T ai, T aj, T ak, typename Matrix_3<T>::EulerAxisSequence axisSequence);
 
     ////////////////////////////////// Utilities /////////////////////////////////
 
@@ -334,7 +339,7 @@ namespace Ovito {
 
 // Initializes the quaternion from a rotation matrix.
 template<typename T>
-inline QuaternionT<T>::QuaternionT(const Matrix_3<T>& tm, T epsilon)
+Q_DECL_CONSTEXPR inline QuaternionT<T>::QuaternionT(const Matrix_3<T>& tm, T epsilon)
 {
     // Make sure this is a pure rotation matrix.
     OVITO_ASSERT_MSG(tm.isRotationMatrix(epsilon), "Quaternion constructor" , "Quaternion::Quaternion(const Matrix3& tm) accepts only pure rotation matrices.");
@@ -351,7 +356,7 @@ inline QuaternionT<T>::QuaternionT(const Matrix_3<T>& tm, T epsilon)
         z() = (tm(1,0) - tm(0,1)) * root;
     }
     else {
-        static const typename Matrix_3<T>::size_type next[] = { 1, 2, 0 };
+        constexpr typename Matrix_3<T>::size_type next[] = { 1, 2, 0 };
         typename Matrix_3<T>::size_type i = 0;
         if(tm(1,1) > tm(0,0)) i = 1;
         if(tm(2,2) > tm(i,i)) i = 2;
@@ -390,10 +395,7 @@ Q_DECL_CONSTEXPR inline QuaternionT<T> operator*(const QuaternionT<T>& a, const 
 /// \return The rotated vector v.
 /// \relates QuaternionT
 template<typename T>
-#ifndef OVITO_DEBUG
-Q_DECL_CONSTEXPR
-#endif
-inline Vector_3<T> operator*(const QuaternionT<T>& q, const Vector_3<T>& v)
+Q_DECL_CONSTEXPR inline Vector_3<T> operator*(const QuaternionT<T>& q, const Vector_3<T>& v)
 {
     return Matrix_3<T>(T(1) - T(2)*(q.y()*q.y() + q.z()*q.z()),        T(2)*(q.x()*q.y() - q.w()*q.z()),        T(2)*(q.x()*q.z() + q.w()*q.y()),
                           T(2)*(q.x()*q.y() + q.w()*q.z()), T(1) - T(2)*(q.x()*q.x() + q.z()*q.z()),        T(2)*(q.y()*q.z() - q.w()*q.x()),
@@ -402,7 +404,7 @@ inline Vector_3<T> operator*(const QuaternionT<T>& q, const Vector_3<T>& v)
 
 // Constructs a quaternion from three Euler angles.
 template<typename T>
-inline QuaternionT<T> QuaternionT<T>::fromEuler(T ai, T aj, T ak, typename Matrix_3<T>::EulerAxisSequence axisSequence)
+Q_DECL_CONSTEXPR inline QuaternionT<T> QuaternionT<T>::fromEuler(T ai, T aj, T ak, typename Matrix_3<T>::EulerAxisSequence axisSequence)
 {
     OVITO_ASSERT(axisSequence == Matrix_3<T>::szyx);
     int firstaxis = 2;
@@ -505,10 +507,22 @@ inline QDataStream& operator>>(QDataStream& stream, QuaternionT<T>& q) {
 }
 
 /**
- * \brief Template class instance of the QuaternionT class used for floating-point quaternions.
+ * \brief Template class instance of the QuaternionT class used for floating-point quaternions (double precision).
  * \relates QuaternionT
  */
 using Quaternion = QuaternionT<FloatType>;
+
+/**
+ * \brief Template class instance of the QuaternionT class used for single-precision floating-point quaternions.
+ * \relates QuaternionT
+ */
+using QuaternionF = QuaternionT<float>;
+
+/**
+ * \brief Instantiation of the QuaternionT class template with the low-precision floating-point type used for graphics data.
+ * \relates QuaternionT
+ */
+using QuaternionG = QuaternionT<GraphicsFloatType>;
 
 }   // End of namespace
 
@@ -517,4 +531,6 @@ template<typename T> struct std::tuple_size<Ovito::QuaternionT<T>> : std::integr
 template<std::size_t I, typename T> struct std::tuple_element<I, Ovito::QuaternionT<T>> { using type = T; };
 
 Q_DECLARE_METATYPE(Ovito::Quaternion);
+Q_DECLARE_METATYPE(Ovito::QuaternionF);
 Q_DECLARE_TYPEINFO(Ovito::Quaternion, Q_PRIMITIVE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::QuaternionF, Q_PRIMITIVE_TYPE);

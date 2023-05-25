@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,7 +57,7 @@ private Q_SLOTS:
 private:
 
     /// This panel shows the properties of the render settings object.
-    PropertiesPanel* propertiesPanel;
+    PropertiesPanel* _propertiesPanel;
 
     QMetaObject::Connection _renderSettingsReplacedConnection;
 };

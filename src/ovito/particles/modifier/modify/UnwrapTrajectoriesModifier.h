@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,7 +57,7 @@ class OVITO_PARTICLES_EXPORT UnwrapTrajectoriesModifier : public Modifier
 public:
 
     /// Constructs a new instance of this class.
-    Q_INVOKABLE UnwrapTrajectoriesModifier(ObjectCreationParams params) : Modifier(params) {}
+    Q_INVOKABLE UnwrapTrajectoriesModifier(ObjectInitializationFlags flags) : Modifier(flags) {}
 
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
@@ -78,13 +78,13 @@ public:
     /// Data structure holding the precomputed information that is needed to unwrap the particle trajectories.
     /// For each crossing of a particle through a periodic cell boundary, the map contains one entry specifying
     /// the particle's unique ID, the time of the crossing, the spatial dimension and the direction (positive or negative).
-    using UnwrapData = std::unordered_multimap<qlonglong, std::tuple<AnimationTime, qint8, qint16>>;
+    using UnwrapData = std::unordered_multimap<qlonglong, std::tuple<AnimationTime, qint8, qint16>>; // Note: using qlonglong instead of IdentifierIntType here fore backward file compatibility with OVITO 3.8
 
     /// Data structure holding the precomputed information that is needed to undo flipping of sheared simulation cells in LAMMPS.
     using UnflipData = std::vector<std::pair<AnimationTime, std::array<int,3>>>;
 
     /// Constructor.
-    Q_INVOKABLE UnwrapTrajectoriesModifierApplication(ObjectCreationParams params) : ModifierApplication(params) {}
+    Q_INVOKABLE UnwrapTrajectoriesModifierApplication(ObjectInitializationFlags flags) : ModifierApplication(flags) {}
 
     /// Indicates the animation time up to which trajectories have already been unwrapped.
     AnimationTime unwrappedUpToTime() const { return _unwrappedUpToTime; }

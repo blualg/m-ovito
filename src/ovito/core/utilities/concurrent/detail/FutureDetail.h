@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,6 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/utilities/concurrent/ExecutionContext.h>
 #include <type_traits>
 
 namespace Ovito::detail {
@@ -121,24 +120,5 @@ template<typename F, typename FutureType>
 using continuation_future_type = std::conditional_t<returns_future_v<F,FutureType>,
                                                     callable_result_t<F,FutureType>,
                                                     future_for_t<callable_result_t<F,FutureType>>>;
-
-/// The simplest implementation of the Executor concept.
-/// The inline executor runs a work function immediately and in place.
-/// See ObjectExecutor for another implementation of the executor concept.
-struct InlineExecutor {
-
-    template<typename Function>
-    static constexpr void execute(Function&& f) noexcept {
-        std::invoke(std::forward<Function>(f));
-    }
-
-    template<typename Function>
-    static constexpr auto schedule(Function&& f) noexcept {
-        return [f = std::forward<Function>(f), context = ExecutionContext::current()]() mutable noexcept {
-            ExecutionContext::Scope execScope(std::move(context));
-            std::invoke(std::move(f));
-        };
-    }   
-};
 
 } // End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,7 +28,6 @@
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
-#include <ovito/crystalanalysis/objects/Microstructure.h>
 
 namespace Ovito::CrystalAnalysis {
 
@@ -46,15 +45,8 @@ public:
     DislocationPickInfo(DislocationVis* visElement, const DislocationNetworkObject* dislocationObj, std::vector<int>&& subobjToSegmentMap) :
         _visElement(visElement), _dislocationObj(dislocationObj), _subobjToSegmentMap(std::move(subobjToSegmentMap)) {}
 
-    /// Constructor.
-    DislocationPickInfo(DislocationVis* visElement, const Microstructure* microstructureObj, std::vector<int>&& subobjToSegmentMap) :
-        _visElement(visElement), _microstructureObj(microstructureObj), _subobjToSegmentMap(std::move(subobjToSegmentMap)) {}
-
     /// The data object containing the dislocations.
     const DislocationNetworkObject* dislocationObj() const { return _dislocationObj; }
-
-    /// The data object containing the dislocations.
-    const Microstructure* microstructureObj() const { return _microstructureObj; }
 
     /// Returns the vis element that rendered the dislocations.
     DislocationVis* visElement() const { return _visElement; }
@@ -75,9 +67,6 @@ private:
 
     /// The data object containing the dislocations.
     OORef<DislocationNetworkObject> _dislocationObj;
-
-    /// The data object containing the dislocations.
-    OORef<Microstructure> _microstructureObj;
 
     /// The vis element that rendered the dislocations.
     OORef<DislocationVis> _visElement;
@@ -107,7 +96,7 @@ public:
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE DislocationVis(ObjectCreationParams params);
+    Q_INVOKABLE DislocationVis(ObjectInitializationFlags flags);
 
     /// \brief Lets the vis element render a data object.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;

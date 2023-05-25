@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,7 +35,7 @@ enum {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-InputColumnMappingDialog::InputColumnMappingDialog(MainWindow& mainWindow, const InputColumnMapping& mapping, QWidget* parent) : QDialog(parent), 
+InputColumnMappingDialog::InputColumnMappingDialog(MainWindow& mainWindow, const InputColumnMapping& mapping, QWidget* parent) : QDialog(parent),
     _mainWindow(mainWindow),
     _containerClass(mapping.containerClass())
 {
@@ -120,17 +120,6 @@ InputColumnMappingDialog::InputColumnMappingDialog(MainWindow& mainWindow, const
 }
 
 /******************************************************************************
- * Returns the string representation of a data channel type.
- *****************************************************************************/
-QString InputColumnMappingDialog::dataTypeToString(int dataType)
-{
-    if(dataType == PropertyObject::Int) return tr("Integer");
-    else if(dataType == PropertyObject::Int64) return tr("Integer (64-bit)");
-    else if(dataType == PropertyObject::Float) return tr("Float");
-    else return tr("None");
-}
-
-/******************************************************************************
 * This is called when the user has pressed the OK button.
 ******************************************************************************/
 void InputColumnMappingDialog::onOk()
@@ -196,7 +185,7 @@ void InputColumnMappingDialog::setMapping(const InputColumnMapping& mapping)
         connect(fileColumnItem, &QCheckBox::clicked, _vectorCmpntSignalMapper, (void (QSignalMapper::*)())&QSignalMapper::map);
         connect(nameItem, &QComboBox::currentTextChanged, _vectorCmpntSignalMapper, (void (QSignalMapper::*)())&QSignalMapper::map);
 
-        _propertyDataTypes.push_back(mapping[i].dataType != QMetaType::Void ? mapping[i].dataType : PropertyObject::Float);
+        _propertyDataTypes.push_back(mapping[i].dataType != QMetaType::Void ? mapping[i].dataType : PropertyObject::FloatDefault);
     }
 
     _tableWidget->resizeRowsToContents();

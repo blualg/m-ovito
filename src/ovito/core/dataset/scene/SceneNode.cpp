@@ -54,21 +54,21 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(SceneNode, nodeName, ReferenceEvent::TitleChange
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-SceneNode::SceneNode(ObjectCreationParams params) : RefTarget(params),
+SceneNode::SceneNode(ObjectInitializationFlags flags) : RefTarget(flags),
     _worldTransform(AffineTransformation::Identity()),
     _worldTransformValidity(TimeInterval::empty()),
     _boundingBoxValidity(TimeInterval::empty()),
     _displayColor(0,0,0)
 {
-    if(params.loadUserDefaults()) {
-        // Assign random color to node.
-        static std::default_random_engine rng;
-        setDisplayColor(Color::fromHSV(std::uniform_real_distribution<FloatType>()(rng), 1, 1));
-    }
-
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(DontInitializeObject)) {
         // Create a transformation controller for the node.
         setTransformationController(ControllerManager::createTransformationController());
+
+        // Assign random color to scene node.
+        if(ExecutionContext::isInteractive()) {
+            static std::default_random_engine rng;
+            setDisplayColor(Color::fromHSV(std::uniform_real_distribution<FloatType>()(rng), 1, 1));
+        }
     }
 }
 

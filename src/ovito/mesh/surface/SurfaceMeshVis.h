@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,6 @@
 
 
 #include <ovito/mesh/Mesh.h>
-#include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/RenderableSurfaceMesh.h>
 #include <ovito/mesh/util/CapPolygonTessellator.h>
@@ -57,7 +56,7 @@ public:
     Q_ENUM(ColorMappingMode);
 
     /// \brief Constructor.
-    Q_INVOKABLE SurfaceMeshVis(ObjectCreationParams params);
+    Q_INVOKABLE SurfaceMeshVis(ObjectInitializationFlags flags);
 
     /// Lets the visualization element render the data object.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
@@ -149,10 +148,10 @@ public:
     private:
 
         /// Splits a triangle face at a periodic boundary.
-        bool splitFace(int faceIndex, int oldVertexCount, std::vector<Point3>& newVertices, std::vector<ColorA>& newVertexColors, std::vector<FloatType>& newVertexPseudoColors, std::map<std::pair<int,int>,std::tuple<int,int,FloatType>>& newVertexLookupMap, size_t dim);
+        bool splitFace(int faceIndex, int oldVertexCount, std::vector<Point3>& newVertices, std::vector<ColorAG>& newVertexColors, std::vector<FloatType>& newVertexPseudoColors, std::map<std::pair<int,int>,std::tuple<int,int,FloatType>>& newVertexLookupMap, size_t dim);
 
         /// Traces the closed contour of the surface-boundary intersection.
-        std::vector<Point2> traceContour(const SurfaceMeshAccess& inputMeshData, SurfaceMesh::edge_index firstEdge, const std::vector<Point3>& reducedPos, std::vector<bool>& visitedFaces, size_t dim, CapPolygonTessellator::FaceMode faceMode) const;
+        std::vector<Point2> traceContour(const SurfaceMeshTopology& inputMeshTopology, SurfaceMesh::edge_index firstEdge, const std::vector<Point3>& reducedPos, std::vector<bool>& visitedFaces, size_t dim, CapPolygonTessellator::FaceMode faceMode) const;
 
         /// Slices a 2d contour at periodic boundaries.
         static void sliceContourAtPeriodicBoundaries(std::vector<Point2>& input, std::array<bool,2> pbcFlags, std::vector<std::vector<Point2>>& openContours, std::vector<std::vector<Point2>>& closedContours);
@@ -182,7 +181,7 @@ public:
         boost::dynamic_bitset<> _faceSubset;        ///< Bit array indicating which surface mesh faces are part of the render set.
         std::vector<ColorA> _materialColors;        ///< The list of material colors for the output TriMesh.
         std::vector<size_t> _originalFaceMap;       ///< Maps output mesh triangles to input mesh facets.
-        bool _renderFacesTwoSided = true;           ///< Indicates that output triangle faces should be rendered two-sided. 
+        bool _renderFacesTwoSided = true;           ///< Indicates that output triangle faces should be rendered two-sided.
         PipelineStatus _status;                     ///< The outcome of the process.
     };
 

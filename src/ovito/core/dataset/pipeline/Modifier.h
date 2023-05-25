@@ -46,7 +46,7 @@ class OVITO_CORE_EXPORT Modifier : public RefTarget
 protected:
 
     /// \brief Constructor.
-    Modifier(ObjectCreationParams params);
+    Modifier(ObjectInitializationFlags flags);
 
 public:
 
@@ -60,7 +60,7 @@ public:
     virtual void inputCachingHints(TimeIntervalUnion& cachingIntervals, ModifierApplication* modApp) {}
 
     /// \brief This method is called by the ModifierApplication to let the modifier adjust the time interval
-    /// of a TargetChanged event received from the upstream pipeline before it is propagated to the 
+    /// of a TargetChanged event received from the upstream pipeline before it is propagated to the
     /// downstream pipeline.
     virtual void restrictInputValidityInterval(TimeInterval& iv) const {}
 

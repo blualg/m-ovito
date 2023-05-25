@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,13 +27,14 @@
 #include <ovito/core/utilities/Exception.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/MixedKeyCache.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 
 namespace Ovito {
 
 /**
  * \brief The main application.
  */
-class OVITO_CORE_EXPORT Application : public QObject
+class OVITO_CORE_EXPORT Application : public QObject, public UserInterface
 {
     Q_OBJECT
 
@@ -49,9 +50,11 @@ public:
     virtual ~Application();
 
     /// \brief Initializes the application.
+    /// \param argc The number of command line arguments.
+    /// \param argv The command line arguments.
     /// \return \c true if the application was initialized successfully;
     ///         \c false if an error occurred and the program should be terminated.
-    bool initialize();
+    bool initialize(int& argc, char** argv);
 
     /// \brief Handler method for Qt error messages.
     ///
@@ -73,10 +76,6 @@ public:
 
     /// \brief Switches between graphical and console mode.
     void setGuiMode(bool enableGui) { _consoleMode = !enableGui; }
-
-    /// Returns the root task manager, which manages all asynchronous tasks that are 
-    /// associated with a specific user interface or dataset.
-    TaskManager& taskManager() { return _taskManager; }
 
     /// Returns the global FileManager class instance.
     FileManager& fileManager() { return _fileManager; }
@@ -116,6 +115,16 @@ public:
     QNetworkAccessManager* networkAccessManager();
 #endif
 
+Q_SIGNALS:
+
+    /// This signal is emitted when UserInterface::shutdown() is called.
+    void aboutToQuit();
+
+protected:
+
+    /// Is called by UserInterface::shutdown() when application is shutting down.
+    virtual void signalAboutToQuit() override;
+
 protected:
 
     /// Indicates that the application is running in console mode.
@@ -127,11 +136,11 @@ protected:
     /// The number of parallel threads to be used by the application when doing computations.
     int _idealThreadCount = 1;
 
-    /// The root task manager, which manages all asynchronous tasks that are NOT associated with a specific user interface or dataset.
-    TaskManager _taskManager;
-
     /// The global file manager instance.
     FileManager& _fileManager;
+
+    /// The global dataset container (only used in non-GUI mode).
+    DataSetContainer _globalDatasetContainer;
 
 #ifndef Q_OS_WASM
     /// The application-wide network manager object.

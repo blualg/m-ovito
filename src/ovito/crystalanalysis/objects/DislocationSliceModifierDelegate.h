@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,7 +57,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT DislocationSliceModifierDelegate : public Sli
 public:
 
     /// Constructor.
-    Q_INVOKABLE DislocationSliceModifierDelegate(ObjectCreationParams params) : SliceModifierDelegate(params) {}
+    Q_INVOKABLE DislocationSliceModifierDelegate(ObjectInitializationFlags flags) : SliceModifierDelegate(flags) {}
 
     /// \brief Applies a slice operation to a data object.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

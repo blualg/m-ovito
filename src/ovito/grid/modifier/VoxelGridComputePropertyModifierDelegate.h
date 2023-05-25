@@ -61,7 +61,7 @@ class OVITO_GRID_EXPORT VoxelGridComputePropertyModifierDelegate : public Comput
 public:
 
     /// Constructor.
-    Q_INVOKABLE VoxelGridComputePropertyModifierDelegate(ObjectCreationParams params) : ComputePropertyModifierDelegate(params) {}
+    Q_INVOKABLE VoxelGridComputePropertyModifierDelegate(ObjectInitializationFlags flags) : ComputePropertyModifierDelegate(flags) {}
 };
 
 }   // End of namespace

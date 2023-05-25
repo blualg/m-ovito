@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,7 +55,7 @@ void ViewportsPanel::onViewportConfigurationReplaced(ViewportConfiguration* newV
     disconnect(_maximizedViewportChangedConnection);
 
     // Delete all existing viewport windows first.
-    for(QuickViewportWindow* window : findChildren<QuickViewportWindow*>())
+    for(QuickViewportWindow* window : findChildren<QuickViewportWindow*>(Qt::FindDirectChildrenOnly))
         delete window;
 
     _viewportConfig = newViewportConfiguration;
@@ -138,7 +138,7 @@ void ViewportsPanel::viewportModeCursorChanged(const QCursor& cursor)
 {
     if(!_viewportConfig) return;
 
-    for(ViewportWindowInterface* window : findChildren<QuickViewportWindow*>()) {
+    for(ViewportWindowInterface* window : findChildren<QuickViewportWindow*>(Qt::FindDirectChildrenOnly)) {
         window->setCursor(cursor);
     }
 }
@@ -148,7 +148,7 @@ void ViewportsPanel::viewportModeCursorChanged(const QCursor& cursor)
 ******************************************************************************/
 void ViewportsPanel::updateViewportWindows()
 {
-    for(QuickViewportWindow* window : findChildren<QuickViewportWindow*>()) {
+    for(QuickViewportWindow* window : findChildren<QuickViewportWindow*>(Qt::FindDirectChildrenOnly)) {
         window->update();
     }
 }

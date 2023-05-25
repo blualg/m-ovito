@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,7 +36,7 @@ IMPLEMENT_OVITO_CLASS(GSDExporter);
 /******************************************************************************
  * Constructor.
  *****************************************************************************/
-GSDExporter::GSDExporter(ObjectCreationParams params) : ParticleExporter(params)
+GSDExporter::GSDExporter(ObjectInitializationFlags flags) : ParticleExporter(flags)
 {
 }
 
@@ -132,13 +132,13 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     // Determine particle ordering.
     std::vector<size_t> ordering(particles->elementCount());
     std::iota(ordering.begin(), ordering.end(), (size_t)0);
-    if(ConstPropertyAccess<qlonglong> idProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
+    if(BufferAccess<const int64_t> idProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
         boost::sort(ordering, [&](size_t a, size_t b) { return idProperty[a] < idProperty[b]; });
     }
     if(operation.isCanceled()) return false;
 
     // Output particle coordinates.
-    ConstPropertyAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+    BufferAccess<const Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
     // Apply coordinate transformation matrix, wrapping a periodic box boundaries and data type conversion:
     std::vector<Point_3<float>> posBuffer(posProperty.size());
     std::vector<Vector_3<int32_t>> imageBuffer(posProperty.size());
@@ -182,7 +182,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
         _gsdFile->writeChunk<int8_t>("particles/types", typeNames.size(), maxStringLength, typeNameBuffer.data());
 
         // Build typeid array.
-        ConstPropertyAccess<int> typeIdsArray(typeIds); 
+        BufferAccess<const int32_t> typeIdsArray(typeIds);
         std::vector<uint32_t> typeIdBuffer(typeIdsArray.size());
         boost::transform(ordering, typeIdBuffer.begin(),
             [&](size_t i) { return typeIdsArray[i]; });
@@ -191,7 +191,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
 
     // Output particle masses.
-    if(ConstPropertyAccess<FloatType> massProperty = particles->getProperty(ParticlesObject::MassProperty)) {
+    if(BufferAccess<const FloatType> massProperty = particles->getProperty(ParticlesObject::MassProperty)) {
         // Apply particle index mapping and data type conversion:
         std::vector<float> massBuffer(massProperty.size());
         boost::transform(ordering, massBuffer.begin(),
@@ -201,7 +201,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
 
     // Output particle charges.
-    if(ConstPropertyAccess<FloatType> chargeProperty = particles->getProperty(ParticlesObject::ChargeProperty)) {
+    if(BufferAccess<const FloatType> chargeProperty = particles->getProperty(ParticlesObject::ChargeProperty)) {
         // Apply particle index mapping and data type conversion:
         std::vector<float> chargeBuffer(chargeProperty.size());
         boost::transform(ordering, chargeBuffer.begin(),
@@ -211,7 +211,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
 
     // Output particle diameters.
-    if(ConstPropertyAccess<FloatType> radiusProperty = particles->getProperty(ParticlesObject::RadiusProperty)) {
+    if(BufferAccess<const GraphicsFloatType> radiusProperty = particles->getProperty(ParticlesObject::RadiusProperty)) {
         // Apply particle index mapping, data type conversion and
         // multiplying with a factor of 2 to convert from radii to diameters:
         std::vector<float> diameterBuffer(radiusProperty.size());
@@ -222,20 +222,20 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
 
     // Output particle orientations.
-    if(ConstPropertyAccess<Quaternion> orientationProperty = particles->getProperty(ParticlesObject::OrientationProperty)) {
+    if(BufferAccess<const QuaternionG> orientationProperty = particles->getProperty(ParticlesObject::OrientationProperty)) {
         // Apply particle index mapping and data type conversion.
         // Also right-shift the quaternion components, because GSD uses a different representation.
         // (X,Y,Z,W) -> (W,X,Y,Z).
         std::vector<std::array<float,4>> orientationBuffer(orientationProperty.size());
         boost::transform(ordering, orientationBuffer.begin(),
-            [&](size_t i) { const Quaternion& q = orientationProperty[i];
+            [&](size_t i) { const QuaternionG& q = orientationProperty[i];
                 return std::array<float,4>{{ (float)q.w(), (float)q.x(), (float)q.y(), (float)q.z() }}; });
         _gsdFile->writeChunk<float>("particles/orientation", orientationBuffer.size(), 4, orientationBuffer.data());
         if(operation.isCanceled()) return false;
     }
 
     // Output particle velocities.
-    if(ConstPropertyAccess<Vector3> velocityProperty = particles->getProperty(ParticlesObject::VelocityProperty)) {
+    if(BufferAccess<const Vector3> velocityProperty = particles->getProperty(ParticlesObject::VelocityProperty)) {
         // Apply particle index mapping and data type conversion:
         // Also apply affine transform of simulation cell to velocity vectors.
         std::vector<Vector_3<float>> velocityBuffer(velocityProperty.size());
@@ -246,24 +246,26 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
 
     // Output particle angular momenta. Note: The GSDImporter currently stores these values in the user-defined particle property "angmom".
-    if(ConstPropertyAccess<Quaternion> angularMomentumProperty = particles->getProperty("angmom")) {
-        if(angularMomentumProperty.dataType() == PropertyObject::Float && angularMomentumProperty.componentCount() == 4) {
+    if(const PropertyObject* angularMomentumProperty = particles->getProperty("angmom")) {
+        if(angularMomentumProperty->dataType() == PropertyObject::FloatDefault && angularMomentumProperty->componentCount() == 4) {
+            BufferAccess<const Quaternion> angularMomentumPropertyAccess(angularMomentumProperty);
             // Apply particle index mapping and data type conversion:
-            std::vector<QuaternionT<float>> angMomBuffer(angularMomentumProperty.size());
+            std::vector<QuaternionT<float>> angMomBuffer(angularMomentumProperty->size());
             boost::transform(ordering, angMomBuffer.begin(),
-                [&](size_t i) { return angularMomentumProperty[i].toDataType<float>(); });
+                [&](size_t i) { return angularMomentumPropertyAccess[i].toDataType<float>(); });
             _gsdFile->writeChunk<float>("particles/angmom", angMomBuffer.size(), 4, angMomBuffer.data());
             if(operation.isCanceled()) return false;
         }
     }
 
     // Output particle body property. Note: The GSDImporter currently stores the values in the user-defined particle property "body".
-    if(ConstPropertyAccess<int> bodyProperty = particles->getProperty("body")) {
-        if(bodyProperty.dataType() == PropertyObject::Int && bodyProperty.componentCount() == 1) {
+    if(const PropertyObject* bodyProperty = particles->getProperty("body")) {
+        if(bodyProperty->dataType() == PropertyObject::Int32 && bodyProperty->componentCount() == 1) {
+            BufferAccess<const int32_t> bodyPropertyAccess(bodyProperty);
             // Apply particle index mapping:
-            std::vector<int> bodyBuffer(bodyProperty.size());
-            boost::transform(ordering, bodyBuffer.begin(), 
-                [&](size_t i) { return bodyProperty[i]; });
+            std::vector<int> bodyBuffer(bodyProperty->size());
+            boost::transform(ordering, bodyBuffer.begin(),
+                [&](size_t i) { return bodyPropertyAccess[i]; });
             _gsdFile->writeChunk<int>("particles/body", bodyBuffer.size(), 1, bodyBuffer.data());
             if(operation.isCanceled()) return false;
         }
@@ -274,7 +276,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     // Export bonds (optional).
     if(const BondsObject* bonds = particles->bonds()) {
         bonds->verifyIntegrity();
-        ConstPropertyAccess<ParticleIndexPair> bondTopologyProperty = bonds->expectProperty(BondsObject::TopologyProperty);
+        BufferAccess<const ParticleIndexPair> bondTopologyProperty = bonds->expectProperty(BondsObject::TopologyProperty);
 
         // Output number of bonds.
         if(bonds->elementCount() > (size_t)std::numeric_limits<uint32_t>::max())
@@ -330,7 +332,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
             _gsdFile->writeChunk<int8_t>("bonds/types", typeNames.size(), maxStringLength, typeNameBuffer.data());
 
             // Output typeid array.
-            _gsdFile->writeChunk<uint32_t>("bonds/typeid", typeIds->size(), 1, ConstPropertyAccess<int>(typeIds).cbegin());
+            _gsdFile->writeChunk<uint32_t>("bonds/typeid", typeIds->size(), 1, BufferAccess<const int32_t>(typeIds).cbegin());
             if(operation.isCanceled()) return false;
         }
     }
@@ -338,7 +340,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     // Export angles (optional).
     if(const AnglesObject* angles = particles->angles()) {
         angles->verifyIntegrity();
-        ConstPropertyAccess<ParticleIndexTriplet> topologyProperty = angles->expectProperty(AnglesObject::TopologyProperty);
+        BufferAccess<const ParticleIndexTriplet> topologyProperty = angles->expectProperty(AnglesObject::TopologyProperty);
 
         // Output number of angles.
         if(angles->elementCount() > (size_t)std::numeric_limits<uint32_t>::max())
@@ -396,7 +398,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
             _gsdFile->writeChunk<int8_t>("angles/types", typeNames.size(), maxStringLength, typeNameBuffer.data());
 
             // Output typeid array.
-            _gsdFile->writeChunk<uint32_t>("angles/typeid", typeIds->size(), 1, ConstPropertyAccess<int>(typeIds).cbegin());
+            _gsdFile->writeChunk<uint32_t>("angles/typeid", typeIds->size(), 1, BufferAccess<const int32_t>(typeIds).cbegin());
             if(operation.isCanceled()) return false;
         }
     }
@@ -404,7 +406,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     // Export dihedrals (optional).
     if(const DihedralsObject* dihedrals = particles->dihedrals()) {
         dihedrals->verifyIntegrity();
-        ConstPropertyAccess<ParticleIndexQuadruplet> topologyProperty = dihedrals->expectProperty(DihedralsObject::TopologyProperty);
+        BufferAccess<const ParticleIndexQuadruplet> topologyProperty = dihedrals->expectProperty(DihedralsObject::TopologyProperty);
 
         // Output number of dihedrals.
         if(dihedrals->elementCount() > (size_t)std::numeric_limits<uint32_t>::max())
@@ -464,7 +466,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
             _gsdFile->writeChunk<int8_t>("dihedrals/types", typeNames.size(), maxStringLength, typeNameBuffer.data());
 
             // Output typeid array.
-            _gsdFile->writeChunk<uint32_t>("dihedrals/typeid", typeIds->size(), 1, ConstPropertyAccess<int>(typeIds).cbegin());
+            _gsdFile->writeChunk<uint32_t>("dihedrals/typeid", typeIds->size(), 1, BufferAccess<const int32_t>(typeIds).cbegin());
             if(operation.isCanceled()) return false;
         }
     }
@@ -472,7 +474,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     // Export impropers (optional).
     if(const ImpropersObject* impropers = particles->impropers()) {
         impropers->verifyIntegrity();
-        ConstPropertyAccess<ParticleIndexQuadruplet> topologyProperty = impropers->expectProperty(ImpropersObject::TopologyProperty);
+        BufferAccess<const ParticleIndexQuadruplet> topologyProperty = impropers->expectProperty(ImpropersObject::TopologyProperty);
 
         // Output number of impropers.
         if(impropers->elementCount() > (size_t)std::numeric_limits<uint32_t>::max())
@@ -532,7 +534,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
             _gsdFile->writeChunk<int8_t>("impropers/types", typeNames.size(), maxStringLength, typeNameBuffer.data());
 
             // Output typeid array.
-            _gsdFile->writeChunk<uint32_t>("impropers/typeid", typeIds->size(), 1, ConstPropertyAccess<int>(typeIds).cbegin());
+            _gsdFile->writeChunk<uint32_t>("impropers/typeid", typeIds->size(), 1, BufferAccess<const int32_t>(typeIds).cbegin());
             if(operation.isCanceled()) return false;
         }
     }

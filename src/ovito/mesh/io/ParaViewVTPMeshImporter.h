@@ -59,7 +59,7 @@ class OVITO_MESH_EXPORT ParaViewVTPMeshImporter : public FileSourceImporter
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE ParaViewVTPMeshImporter(ObjectCreationParams params) : FileSourceImporter(params) {}
+    Q_INVOKABLE ParaViewVTPMeshImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags) {}
 
     /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("VTP"); }

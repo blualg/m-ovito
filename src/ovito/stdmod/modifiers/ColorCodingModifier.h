@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -100,7 +100,7 @@ public:
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingModifier(ObjectCreationParams params);
+    Q_INVOKABLE ColorCodingModifier(ObjectInitializationFlags flags);
 
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;

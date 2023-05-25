@@ -42,7 +42,7 @@ class OVITO_MESH_EXPORT SurfaceMeshRegions : public PropertyContainer
         using PropertyContainerClass::PropertyContainerClass;
 
         /// Create a storage object for standard region properties.
-        virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
+        virtual PropertyPtr createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const override;
 
         /// Generates a human-readable string representation of the data object reference.
         virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override;
@@ -72,13 +72,14 @@ public:
     };
 
     /// \brief Constructor.
-    Q_INVOKABLE SurfaceMeshRegions(ObjectCreationParams params) : PropertyContainer(params) {
+    Q_INVOKABLE SurfaceMeshRegions(ObjectInitializationFlags flags) : PropertyContainer(flags) {
         // Assign the default data object identifier.
         setIdentifier(OOClass().pythonName());
     }
 
     /// Deletes elements for which bits are set in the given bit-mask.
     virtual size_t deleteElements(const boost::dynamic_bitset<>& mask) override {
+        OVITO_ASSERT(false);
         throw Exception(tr("Deleting regions from a SurfaceMesh is not supported via this method. Call SurfaceMesh.delete_regions() on the parent object instead."));
     }
 };

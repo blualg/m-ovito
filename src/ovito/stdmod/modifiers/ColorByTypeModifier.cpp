@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_LABEL(ColorByTypeModifier, clearSelection, "Clear selection")
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ColorByTypeModifier::ColorByTypeModifier(ObjectCreationParams params) : GenericPropertyModifier(params),
+ColorByTypeModifier::ColorByTypeModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags),
     _colorOnlySelected(false),
     _clearSelection(true)
 {
@@ -118,9 +118,9 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
         throw Exception(tr("The selected input property '%1' is not present.").arg(sourceProperty().name()));
     if(typePropertyObject->componentCount() != 1)
         throw Exception(tr("The input property '%1' has the wrong number of components. Must be a scalar property.").arg(typePropertyObject->name()));
-    if(typePropertyObject->dataType() != PropertyObject::Int)
-        throw Exception(tr("The input property '%1' has the wrong data type. Must be an integer property.").arg(typePropertyObject->name()));
-    ConstPropertyAccess<int> typeProperty = typePropertyObject;
+    if(typePropertyObject->dataType() != PropertyObject::Int32)
+        throw Exception(tr("The input property '%1' has the wrong data type. Must be a 32-bit integer property.").arg(typePropertyObject->name()));
+    BufferAccess<const int32_t> typeProperty = typePropertyObject;
 
     // Get the selection property if enabled by the user.
     ConstPropertyPtr selectionProperty;
@@ -135,10 +135,10 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     }
 
     // Create the color output property.
-    PropertyAccess<Color> colorProperty = container->createProperty(PropertyObject::GenericColorProperty, (bool)selectionProperty ? DataBuffer::InitializeMemory : DataBuffer::NoFlags, objectPath);
+    BufferAccess<ColorG> colorProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, PropertyObject::GenericColorProperty, objectPath);
 
     // Access selection array.
-    ConstPropertyAccessAndRef<int> selection(std::move(selectionProperty));
+    BufferAccess<const SelectionIntType> selection(selectionProperty.get());
 
     // Create color lookup table.
     const std::map<int,Color> colorMap = typePropertyObject->typeColorMap();
@@ -151,9 +151,9 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
 
         auto c = colorMap.find(typeProperty[i]);
         if(c == colorMap.end())
-            colorProperty[i] = Color(1,1,1);
+            colorProperty[i] = ColorG(1,1,1);
         else
-            colorProperty[i] = c->second;
+            colorProperty[i] = c->second.toDataType<GraphicsFloatType>();
     }
 #endif
 }
@@ -161,8 +161,8 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
 
 #ifdef OVITO_QML_GUI
 /******************************************************************************
-* This helper method is called by the QML GUI (ColorByTypeModifier.qml) to extract 
-* the list of element types from the input pipeline output state. 
+* This helper method is called by the QML GUI (ColorByTypeModifier.qml) to extract
+* the list of element types from the input pipeline output state.
 ******************************************************************************/
 QVariantList ColorByTypeModifier::getElementTypesFromInputState(ModifierApplication* modApp) const
 {
@@ -175,8 +175,8 @@ QVariantList ColorByTypeModifier::getElementTypesFromInputState(ModifierApplicat
                 for(const ElementType* type : inputProperty->elementTypes()) {
                     if(!type) continue;
                     list.push_back(QVariantMap({
-                        {"id", type->numericId()}, 
-                        {"name", type->nameOrNumericId()}, 
+                        {"id", type->numericId()},
+                        {"name", type->nameOrNumericId()},
                         {"color", (QColor)type->color()}}));
                 }
             }

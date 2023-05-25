@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,7 +46,7 @@ class OVITO_STDOBJ_EXPORT PropertyColorMapping : public RefTarget
 public:
 
     /// Constructor.
-    Q_INVOKABLE PropertyColorMapping(ObjectCreationParams params);
+    Q_INVOKABLE PropertyColorMapping(ObjectInitializationFlags flags);
 
 #ifdef OVITO_QML_GUI
     /// Returns the class name of the selected color gradient.

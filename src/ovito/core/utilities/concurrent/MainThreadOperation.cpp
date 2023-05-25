@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -68,7 +68,7 @@ public:
 ******************************************************************************/
 MainThreadOperation::MainThreadOperation(ExecutionContext::Type contextType, UserInterface& userInterface, bool visibleInUserInterface) :
     Promise<>(std::make_shared<MainThreadTask>(Task::current())),
-    ExecutionContext::Scope(contextType, userInterface),
+    ExecutionContext::Scope(contextType, userInterface.shared_from_this()),
     Task::Scope(task())
 {
     // Usage of MainThreadOperation is only permitted in the main thread.
@@ -76,7 +76,7 @@ MainThreadOperation::MainThreadOperation(ExecutionContext::Type contextType, Use
 
     // Register the container MainThreadOperation with the TaskManager to display its progress in the UI.
     if(visibleInUserInterface)
-        userInterface.taskManager().registerTask(task());
+        ExecutionContext::current().ui().taskManager().registerTask(task());
 }
 
 /******************************************************************************
@@ -109,17 +109,6 @@ void MainThreadOperation::processUIEvents() const
     if(ExecutionContext::current().ui().processEvents()) {
         cancel();
     }
-}
-
-/******************************************************************************
-* Puts the task object back into the started state.
-******************************************************************************/
-void MainThreadOperation::restart()
-{
-    // Usage of MainThreadOperation is only permitted in the main thread.
-    OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "MainThreadOperation::restart()", "MainThreadOperation may only be created in the main thread.");
-
-    task()->restart();
 }
 
 }   // End of namespace

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,11 +34,11 @@ DEFINE_REFERENCE_FIELD(CalculateDisplacementsModifier, vectorVis);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-CalculateDisplacementsModifier::CalculateDisplacementsModifier(ObjectCreationParams params) : ReferenceConfigurationModifier(params)
+CalculateDisplacementsModifier::CalculateDisplacementsModifier(ObjectInitializationFlags flags) : ReferenceConfigurationModifier(flags)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create vis element for vectors.
-        setVectorVis(OORef<VectorVis>::create(params));
+        setVectorVis(OORef<VectorVis>::create(flags));
         vectorVis()->setObjectTitle(tr("Displacements"));
 
         // Don't show vectors by default, because too many vectors can make the
@@ -51,7 +51,7 @@ CalculateDisplacementsModifier::CalculateDisplacementsModifier(ObjectCreationPar
         vectorVis()->setArrowPosition(VectorVis::Head);
 
         // In GUI mode, visualize the displacement magnitude by default.
-        if(params.loadUserDefaults())
+        if(ExecutionContext::isInteractive())
             vectorVis()->colorMapping()->setSourceProperty(ParticlePropertyReference(ParticlesObject::DisplacementMagnitudeProperty));
     }
 }
@@ -102,10 +102,10 @@ void CalculateDisplacementsModifier::DisplacementEngine::perform()
     if(!buildParticleMapping(true, false))
         return;
 
-    PropertyAccess<Vector3> displacementsArray(displacements());
-    PropertyAccess<FloatType> displacementMagnitudesArray(displacementMagnitudes());
-    ConstPropertyAccess<Point3> positionsArray(positions());
-    ConstPropertyAccess<Point3> refPositionsArray(refPositions());
+    BufferAccess<Vector3> displacementsArray(displacements());
+    BufferAccess<FloatType> displacementMagnitudesArray(displacementMagnitudes());
+    BufferAccess<const Point3> positionsArray(positions());
+    BufferAccess<const Point3> refPositionsArray(refPositions());
 
     // Compute displacement vectors.
     if(affineMapping() != NO_MAPPING) {

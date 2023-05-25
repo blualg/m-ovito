@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -138,12 +138,13 @@ void GaussianCubeImporter::FrameLoader::loadFile()
 
     // Create the particle properties.
     setParticleCount(numAtoms);
-    PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
-    PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+    BufferAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+    PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
 
-    // Read atomic coordinates.
+    // Read atomic coordinates and types.
     Point3* p = posProperty.begin();
-    int* a = typeProperty.begin();
+    BufferAccess<int32_t> typePropertyAccess(typeProperty);
+    auto* a = typePropertyAccess.begin();
     setProgressMaximum(numAtoms + gridSize[0]*gridSize[1]*gridSize[2]);
     for(qlonglong i = 0; i < numAtoms; i++, ++p, ++a) {
         if(!setProgressValueIntermittent(i)) return;
@@ -157,16 +158,16 @@ void GaussianCubeImporter::FrameLoader::loadFile()
     }
 
     // Translate atomic numbers into element names.
-    for(int atomicNumber : typeProperty) {
+    for(auto atomicNumber : typePropertyAccess) {
         if(atomicNumber >= 0 && atomicNumber < ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES)
-            addNumericType(ParticlesObject::OOClass(), typeProperty.buffer(), atomicNumber, ParticleType::getPredefinedParticleTypeName(static_cast<ParticleType::PredefinedParticleType>(atomicNumber)));
+            addNumericType(ParticlesObject::OOClass(), typeProperty, atomicNumber, ParticleType::getPredefinedParticleTypeName(static_cast<ParticleType::PredefinedParticleType>(atomicNumber)));
         else
-            addNumericType(ParticlesObject::OOClass(), typeProperty.buffer(), atomicNumber, {});
+            addNumericType(ParticlesObject::OOClass(), typeProperty, atomicNumber, {});
     }
 
     // Release property accessors.
     posProperty.reset();
-    typeProperty.reset();
+    typePropertyAccess.reset();
 
     // Parse voxel field table.
     const char* s = stream.readLine();
@@ -183,8 +184,8 @@ void GaussianCubeImporter::FrameLoader::loadFile()
                 if(s != token) break;
                 s = stream.readLine();
             }
-            int value;
-            if(!parseInt(token, s, value))
+            int32_t value;
+            if(!parseInt32(token, s, value))
                 throw Exception(tr("Invalid integer value in line %1 of Cube file: \"%2\"").arg(stream.lineNumber()).arg(QString::fromLocal8Bit(token, s - token)));
             if(*s != '\0')
                 s++;
@@ -221,8 +222,8 @@ void GaussianCubeImporter::FrameLoader::loadFile()
     voxelGrid->setContent(gridSize[0] * gridSize[1] * gridSize[2], {});
 
     // Create the voxel grid property.
-    PropertyObject* property = voxelGrid->createProperty(QStringLiteral("Property"), PropertyObject::Float, nfields, DataBuffer::NoFlags, std::move(componentNames));
-    PropertyAccess<FloatType, true> fieldQuantity(property);
+    PropertyObject* property = voxelGrid->createProperty(QStringLiteral("Property"), DataBuffer::FloatDefault, nfields, std::move(componentNames));
+    BufferAccess<FloatType*> fieldQuantity(property);
 
     // Parse voxel data.
     for(size_t x = 0; x < gridSize[0]; x++) {

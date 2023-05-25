@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(ActiveObject, title, ReferenceEvent::TitleChange
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ActiveObject::ActiveObject(ObjectCreationParams params) : RefTarget(params), _isEnabled(true)
+ActiveObject::ActiveObject(ObjectInitializationFlags flags) : RefTarget(flags), _isEnabled(true)
 {
 }
 
@@ -81,7 +81,7 @@ void ActiveObject::notifyDependentsImpl(const ReferenceEvent& event)
 #endif
 
 /******************************************************************************
-* Increments the internal task counter and notifies the UI that this 
+* Increments the internal task counter and notifies the UI that this
 * object is currently active.
 ******************************************************************************/
 void ActiveObject::incrementNumberOfActiveTasks()
@@ -95,7 +95,7 @@ void ActiveObject::incrementNumberOfActiveTasks()
 }
 
 /******************************************************************************
-* Decrements the internal task counter and, if the counter has reached zero, 
+* Decrements the internal task counter and, if the counter has reached zero,
 * notifies the UI that this object is no longer active.
 ******************************************************************************/
 void ActiveObject::decrementNumberOfActiveTasks()
@@ -146,10 +146,10 @@ void ActiveObject::timerEvent(QTimerEvent* event)
 }
 
 /******************************************************************************
-* Returns a short piece information (typically a string or color) to be 
+* Returns a short piece information (typically a string or color) to be
 * displayed next to the object's title in the pipeline editor.
 ******************************************************************************/
-QVariant ActiveObject::getPipelineEditorShortInfo(Scene* scene) const 
+QVariant ActiveObject::getPipelineEditorShortInfo(Scene* scene) const
 {
     return status().shortInfo();
 }

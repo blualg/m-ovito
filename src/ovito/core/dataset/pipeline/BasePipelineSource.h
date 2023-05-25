@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,7 +37,7 @@ class OVITO_CORE_EXPORT BasePipelineSource : public CachingPipelineObject
 public:
 
     /// \brief Constructor.
-    BasePipelineSource(ObjectCreationParams params);
+    explicit BasePipelineSource(ObjectInitializationFlags flags);
 
     /// Returns the list of data objects that are managed by this data source.
     /// The returned data objects will be displayed as sub-objects of the data source in the pipeline editor.
@@ -58,7 +58,7 @@ protected:
     virtual TimeInterval frameTimeInterval(int frame) const;
 
 public Q_SLOTS:
-    
+
     /// Throws away the master data collection maintained by the source.
     void discardDataCollection();
 
@@ -77,7 +77,7 @@ private:
 
     /// Flag indicating that a call to DataObject::updateEditableProxies() is currently in progress
     /// and that change signals received from the master data collection should be ignored.
-    bool _updatingEditableProxies = false;  
+    bool _updatingEditableProxies = false;
 };
 
 }   // End of namespace

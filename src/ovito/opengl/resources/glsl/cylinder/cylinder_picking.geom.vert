@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,7 +26,7 @@
 // Inputs:
 in vec3 base;
 in vec3 head;
-in float radius;
+in float diameter;
 
 // Outputs:
 out vec3 base_gs;
@@ -38,7 +38,7 @@ void main()
     // Forward data to geometry shader.
     base_gs = base;
     head_gs = head;
-    radius_gs = radius;
+    radius_gs = 0.5 * diameter;
 
     // Compute color from object ID.
     color_gs = pickingModeColor(<VertexID>);

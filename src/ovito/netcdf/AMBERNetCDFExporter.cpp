@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,12 +47,6 @@ const char NC_CELL_ANGLES_STR[]   = "cell_angles";
 
 const char NC_UNITS_STR[]         = "units";
 const char NC_SCALE_FACTOR_STR[]  = "scale_factor";
-
-#ifdef FLOATTYPE_FLOAT
-    #define NC_OVITO_FLOATTYPE NC_FLOAT
-#else
-    #define NC_OVITO_FLOATTYPE NC_DOUBLE
-#endif
 
 IMPLEMENT_OVITO_CLASS(AMBERNetCDFExporter);
 
@@ -191,7 +185,7 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
 
         // Define NetCDF variable for atomic positions.
         int dims[3] = { _frame_dim, _atom_dim, _spatial_dim };
-        NCERR(nc_def_var(_ncid, "coordinates", NC_OVITO_FLOATTYPE, 3, dims, &_coords_var));
+        NCERR(nc_def_var(_ncid, "coordinates", (posProperty->dataType() == DataBuffer::Float32) ? NC_FLOAT : NC_DOUBLE, 3, dims, &_coords_var));
 
         // Define a NetCDF variable for every per-particle property to be exported.
         for(auto c = columnMapping().begin(); c != columnMapping().end(); ++c) {
@@ -243,12 +237,14 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
 
             // Create the NetCDF variable for the property.
             nc_type ncDataType;
-            if(prop->dataType() == PropertyObject::Int) ncDataType = NC_INT;
-            else if(prop->dataType() == PropertyObject::Int64) ncDataType = NC_INT64;
-            else if(prop->dataType() == PropertyObject::Float) ncDataType = NC_OVITO_FLOATTYPE;
+            if(prop->dataType() == DataBuffer::Int8) ncDataType = NC_BYTE;
+            else if(prop->dataType() == DataBuffer::Int32) ncDataType = NC_INT;
+            else if(prop->dataType() == DataBuffer::Int64) ncDataType = NC_INT64;
+            else if(prop->dataType() == DataBuffer::Float32) ncDataType = NC_FLOAT;
+            else if(prop->dataType() == DataBuffer::Float64) ncDataType = NC_DOUBLE;
             else continue;
-            // For scalar OVITO properties we define a NetCDF variable with 2 dimensions.
-            // For vector OVITO properties we define a NetCDF variable with 3 dimensions.
+            // For scalar OVITO properties, we define a NetCDF variable with 2 dimensions.
+            // For vector OVITO properties, we define a NetCDF variable with 3 dimensions.
             int ncvar;
             NCERR(nc_def_var(_ncid, mangledName ? mangledName : qPrintable(c->name()), ncDataType, (prop->componentCount() > 1) ? 3 : 2, dims, &ncvar));
             _columns.emplace_back(*c, prop->dataType(), prop->componentCount(), ncvar);
@@ -322,11 +318,15 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
     // Write atomic coordinates.
     count[1] = atomsCount;
     count[2] = 3;
-#ifdef FLOATTYPE_FLOAT
-    NCERR(nc_put_vara_float(_ncid, _coords_var, start, count, ConstPropertyAccess<FloatType,true>(posProperty).cbegin()));
-#else
-    NCERR(nc_put_vara_double(_ncid, _coords_var, start, count, ConstPropertyAccess<FloatType,true>(posProperty).cbegin()));
-#endif
+    if(posProperty->dataType() == DataBuffer::Float32) {
+        NCERR(nc_put_vara_float(_ncid, _coords_var, start, count, BufferAccess<const float*>(posProperty).cbegin()));
+    }
+    else if(posProperty->dataType() == DataBuffer::Float64) {
+        NCERR(nc_put_vara_double(_ncid, _coords_var, start, count, BufferAccess<const double*>(posProperty).cbegin()));
+    }
+    else {
+        OVITO_ASSERT(false);
+    }
 
     // Write out other particle properties.
     operation.setProgressMaximum(_columns.size());
@@ -343,18 +343,23 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
 
         // Write property data to file.
         count[2] = outColumn.componentCount;
-        if(outColumn.dataType == PropertyObject::Int) {
-            NCERR(nc_put_vara_int(_ncid, outColumn.ncvar, start, count, ConstPropertyAccess<int,true>(prop).cbegin()));
+        if(outColumn.dataType == DataBuffer::Int8) {
+            OVITO_STATIC_ASSERT(sizeof(int8_t) == sizeof(signed char));
+            NCERR(nc_put_vara_schar(_ncid, outColumn.ncvar, start, count, BufferAccess<const int8_t*>(prop).cbegin()));
         }
-        else if(outColumn.dataType == PropertyObject::Int64) {
-            NCERR(nc_put_vara_longlong(_ncid, outColumn.ncvar, start, count, ConstPropertyAccess<qlonglong,true>(prop).cbegin()));
+        else if(outColumn.dataType == DataBuffer::Int32) {
+            OVITO_STATIC_ASSERT(sizeof(int32_t) == sizeof(int));
+            NCERR(nc_put_vara_int(_ncid, outColumn.ncvar, start, count, BufferAccess<const int32_t*>(prop).cbegin()));
         }
-        else if(outColumn.dataType == PropertyObject::Float) {
-#ifdef FLOATTYPE_FLOAT
-            NCERR(nc_put_vara_float(_ncid, outColumn.ncvar, start, count, ConstPropertyAccess<FloatType,true>(prop).cbegin()));
-#else
-            NCERR(nc_put_vara_double(_ncid, outColumn.ncvar, start, count, ConstPropertyAccess<FloatType,true>(prop).cbegin()));
-#endif
+        else if(outColumn.dataType == DataBuffer::Int64) {
+            OVITO_STATIC_ASSERT(sizeof(long long int) == sizeof(int64_t));
+            NCERR(nc_put_vara_longlong(_ncid, outColumn.ncvar, start, count, reinterpret_cast<const qlonglong*>(BufferAccess<const int64_t*>(prop).cbegin())));
+        }
+        else if(outColumn.dataType == DataBuffer::Float32) {
+            NCERR(nc_put_vara_float(_ncid, outColumn.ncvar, start, count, BufferAccess<const float*>(prop).cbegin()));
+        }
+        else if(outColumn.dataType == DataBuffer::Float64) {
+            NCERR(nc_put_vara_double(_ncid, outColumn.ncvar, start, count, BufferAccess<const double*>(prop).cbegin()));
         }
 
         if(!operation.incrementProgressValue())

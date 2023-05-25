@@ -102,8 +102,8 @@ void CoordinationAnalysisModifierEditor::plotRDF()
     // Determine X plotting range.
     if(table) {
         ConstPropertyPtr x = table->getXValues();
-        ConstPropertyAccessAndRef<FloatType,false> rdfXArray(x);
-        ConstPropertyAccessAndRef<FloatType,true>  rdfYArray(table->y());
+        BufferAccessAndRef<const FloatType>  rdfXArray(x);
+        BufferAccessAndRef<const FloatType*> rdfYArray(table->y());
         double minX = 0;
         for(size_t i = 0; i < rdfYArray.size(); i++) {
             for(size_t cmpnt = 0; cmpnt < rdfYArray.componentCount(); cmpnt++) {

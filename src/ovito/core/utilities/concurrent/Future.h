@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,6 +28,7 @@
 #include "detail/FutureDetail.h"
 #include "detail/TaskReference.h"
 #include "detail/ContinuationTask.h"
+#include "InlineExecutor.h"
 
 namespace Ovito {
 
@@ -266,7 +267,7 @@ public:
 
     /// Overload of the function above using the default inline executor.
     template<typename Function>
-    decltype(auto) then(Function&& f) { return then(detail::InlineExecutor{}, std::forward<Function>(f)); }
+    decltype(auto) then(Function&& f) { return then(InlineExecutor{}, std::forward<Function>(f)); }
 
 #ifndef Q_CC_GNU
 protected:

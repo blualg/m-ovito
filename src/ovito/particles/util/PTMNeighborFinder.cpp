@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,10 +41,10 @@ PTMNeighborFinder::PTMNeighborFinder(bool all_properties) : NearestNeighborFinde
 /******************************************************************************
 * Prepares the neighbor finder.
 ******************************************************************************/
-bool PTMNeighborFinder::prepare(ConstPropertyAccess<Point3> positions, const SimulationCellObject* cell, ConstPropertyAccess<int> selection,
-                                ConstPropertyPtr structuresArray,
-                                ConstPropertyPtr orientationsArray,
-                                ConstPropertyPtr correspondencesArray)
+bool PTMNeighborFinder::prepare(BufferAccess<const Point3> positions, const SimulationCellObject* cell, BufferAccess<const SelectionIntType> selection,
+                                ConstDataBufferPtr structuresArray,
+                                ConstDataBufferPtr orientationsArray,
+                                ConstDataBufferPtr correspondencesArray)
 {
     // Initialize the internal NearestNeighborFinder.
     if(!NearestNeighborFinder::prepare(std::move(positions), cell, std::move(selection)))
@@ -66,11 +66,11 @@ bool PTMNeighborFinder::prepare(ConstPropertyAccess<Point3> positions, const Sim
 ******************************************************************************/
 void PTMNeighborFinder::Query::findNeighbors(size_t particleIndex, std::optional<Quaternion> targetOrientation)
 {
-    ConstPropertyAccess<PTMAlgorithm::StructureType> structuresArray(_finder._structuresArray);
-    ConstPropertyAccess<Quaternion> orientationsArray(_finder._orientationsArray);
+    BufferAccess<const PTMAlgorithm::StructureType> structuresArray(_finder._structuresArray);
+    BufferAccess<const QuaternionG> orientationsArray(_finder._orientationsArray);
 
     _structureType = structuresArray[particleIndex];
-    _orientation = orientationsArray[particleIndex];
+    _orientation = orientationsArray[particleIndex].toDataType<FloatType>();
     _rmsd = std::numeric_limits<FloatType>::infinity();
 
     int ptm_type = PTMAlgorithm::ovito_to_ptm_structure_type(_structureType);
@@ -149,7 +149,7 @@ void PTMNeighborFinder::Query::findNeighbors(size_t particleIndex, std::optional
 
 void PTMNeighborFinder::Query::getNeighbors(size_t particleIndex, int ptm_type)
 {
-    ConstPropertyAccess<qlonglong> correspondencesArray(_finder._correspondencesArray);
+    BufferAccess<const int64_t> correspondencesArray(_finder._correspondencesArray);
 
     // Let the internal NearestNeighborFinder determine the list of nearest particles.
     NeighborQuery neighborQuery(_finder);
@@ -192,7 +192,7 @@ void PTMNeighborFinder::Query::getNeighbors(size_t particleIndex, int ptm_type)
     if(num_outer != 0) {
         for(int i = 0; i < num_inner; i++) {
             neighborQuery.findNeighbors(_env.atom_indices[1 + i]);
-            fillNeighbors(neighborQuery, 
+            fillNeighbors(neighborQuery,
                             _env.atom_indices[1 + i],
                             num_inner + i * num_outer,
                             num_outer,

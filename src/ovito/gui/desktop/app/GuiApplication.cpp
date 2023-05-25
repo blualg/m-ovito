@@ -50,9 +50,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-GuiApplication::GuiApplication() : StandaloneApplication(_fileManager), UserInterface(_globalDatasetContainer, StandaloneApplication::taskManager()),
-    _fileManager(StandaloneApplication::taskManager()),
-    _globalDatasetContainer(StandaloneApplication::taskManager(), *this)
+GuiApplication::GuiApplication() : StandaloneApplication(_fileManager), _fileManager(StandaloneApplication::taskManager())
 {
     // Register Qt resources.
     ::registerQtResources();
@@ -83,12 +81,12 @@ bool GuiApplication::processCommandLineParameters()
     // Check if program was started in console mode.
     if(!_cmdLineParser.isSet("nogui")) {
         // Enable GUI mode by default.
-        _consoleMode = false;
+        setGuiMode(true);
         _headlessMode = false;
     }
     else {
         // Activate console mode.
-        _consoleMode = true;
+        setGuiMode(false);
 #if defined(Q_OS_LINUX)
         // On Linux, run in headless mode by default - unless explicitly requested otherwise (in which case an X server is required).
         if(qEnvironmentVariableIsSet("OVITO_GUI_MODE") && qgetenv("OVITO_GUI_MODE") != "0") {
@@ -240,7 +238,8 @@ MainThreadOperation GuiApplication::startupApplication()
         QGuiApplication::setWindowIcon(mainWindowIcon);
 
         // Create the main window.
-        MainWindow* mainWin = new MainWindow();
+        std::shared_ptr<MainWindow> mainWin = std::make_shared<MainWindow>();
+        mainWin->keepAliveUntilShutdown();
 
         // Make the application shutdown as soon as the last main window has been closed.
         QGuiApplication::setQuitOnLastWindowClosed(true);
@@ -251,24 +250,6 @@ MainThreadOperation GuiApplication::startupApplication()
         mainWin->restoreLayout();
         mainWin->setUpdatesEnabled(true);
 
-#ifdef OVITO_EXPIRATION_DATE
-        QDate expirationDate = QDate::fromString(QStringLiteral(OVITO_EXPIRATION_DATE), Qt::ISODate);
-        if(QDate::currentDate() > expirationDate) {
-            QMessageBox msgbox(mainWin);
-            msgbox.setWindowTitle(tr("Expiration - %1").arg(Application::applicationName()));
-            msgbox.setStandardButtons(QMessageBox::Close);
-            msgbox.setText(tr("<p>This is a preview version of %1 with a limited life span, which did expire on %2.</p>"
-                "<p>Please obtain the final program release, which is now available on our website "
-                "<a href=\"https://www.ovito.org/\">www.ovito.org</a>.</p>"
-                "<p>This pre-release build of %1 can no longer be used and will quit now.</p>")
-                    .arg(Application::applicationName())
-                    .arg(expirationDate.toString(Qt::SystemLocaleLongDate)));
-            msgbox.setTextInteractionFlags(Qt::TextBrowserInteraction);
-            msgbox.setIcon(QMessageBox::Critical);
-            msgbox.exec();
-            return nullptr;
-        }
-#endif
         return MainThreadOperation(ExecutionContext::Type::Interactive, *mainWin, false);
     }
     else {
@@ -287,11 +268,12 @@ void GuiApplication::postStartupInitialization()
     QEventLoopLocker eventLoopLocker;
 
     GuiApplication::initializeUserInterface(ExecutionContext::current().ui(), cmdLineParser().positionalArguments());
+
     StandaloneApplication::postStartupInitialization();
 }
 
 /******************************************************************************
-* Initializes an abstract user interface (e.g. a MainWindow).
+* Initializes a new abstract user interface object (e.g. a MainWindow in GUI mode or this application object in console mode).
 ******************************************************************************/
 void GuiApplication::initializeUserInterface(UserInterface& userInterface, const QStringList& arguments)
 {
@@ -302,7 +284,7 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
         QString startupFilename = arguments.front();
         if(startupFilename.endsWith(".ovito", Qt::CaseInsensitive)) {
             try {
-                // TODO: Create sub-task for this operation.
+                MainThreadOperation loadOperation(true);
                 if(OORef<DataSet> dataset = datasetContainer.loadDataset(startupFilename)) {
                     datasetContainer.setCurrentSet(std::move(dataset));
                 }
@@ -319,7 +301,7 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
         QString defaultsFilePath = QStandardPaths::locate(QStandardPaths::AppDataLocation, QStringLiteral("defaults.ovito"));
         if(!defaultsFilePath.isEmpty()) {
             try {
-                // TODO: Create sub-task for this operation.
+                MainThreadOperation loadOperation(true);
                 if(OORef<DataSet> dataset = datasetContainer.loadDataset(defaultsFilePath)) {
                     dataset->setFilePath({});
                     datasetContainer.setCurrentSet(std::move(dataset));
@@ -351,8 +333,10 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
             if(!importUrls.empty()) {
                 if(numSessionFiles)
                     throw Exception(tr("Detected incompatible arguments: Cannot open a session state file and a simulation data file at the same time."));
-                if(GuiDataSetContainer* guiContainer = dynamic_object_cast<GuiDataSetContainer>(&datasetContainer))
-                    guiContainer->importFiles(std::move(importUrls)); // TODO: Create sub-task for this operation.
+                if(GuiDataSetContainer* guiContainer = dynamic_object_cast<GuiDataSetContainer>(&datasetContainer)) {
+                    MainThreadOperation importOperation(true);
+                    guiContainer->importFiles(std::move(importUrls));
+                }
                 else
                     throw Exception(tr("Cannot import data files from the command line when running in console mode."));
             }

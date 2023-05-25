@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,7 +26,10 @@
 // Inputs:
 in vec3 position;
 in float radius;
-in vec4 color;
+in vec3 color;
+in float transparency;
+in float selection;
+uniform vec4 selection_color;
 
 // Outputs:
 flat out vec4 color_fs;
@@ -73,7 +76,7 @@ void main()
     gl_Position = projection_matrix * vec4(particle_view_pos_fs + uv, 1.0);
 
     // Forward particle color to fragment shader.
-    color_fs = color;
+    color_fs = (selection != 0.0) ? selection_color : vec4(color, clamp(1.0 - transparency, 0.0, 1.0));
 
     // Calculate ray passing through the vertex (in view space).
     <calculate_view_ray_through_vertex>;

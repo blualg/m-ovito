@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,6 @@
 
 
 #include <ovito/core/Core.h>
-#include "Task.h"
 
 namespace Ovito {
 
@@ -40,13 +39,15 @@ public:
     /// Constructor.
     TaskManager();
 
+#ifdef OVITO_DEBUG
     /// Destructor.
-    ~TaskManager();
+    virtual ~TaskManager();
+#endif
 
     /// \brief Returns the watchers for all currently running tasks.
     /// \return A list of TaskWatcher objects, one for each registered task that is currently in the 'started' state.
     /// \note This method is *not* thread-safe and may only be called from the main thread.
-    const std::vector<TaskWatcher*>& runningTasks() const { return _runningTaskStack; }
+    const std::vector<TaskWatcher*>& runningTasks() const { return _runningTasks; }
 
     /// \brief Returns the watchers for all currently registered tasks.
     /// \return A list of TaskWatcher objects, one for each registered task that has not yet reached the 'finished' state.
@@ -81,7 +82,12 @@ public:
     /// \brief Enables or disables printing of task status messages to the console for this task manager.
     void setConsoleLoggingEnabled(bool enabled);
 
-    /// Cancels all running tasks and waits for them to finish.
+    /// Indicates whether the session is in the processing of shutting down.
+    bool isShuttingDown() const { return _isShuttingDown; }
+
+public Q_SLOTS:
+
+    /// \brief Cancels all running tasks and waits for them to finish.
     void shutdown();
 
 Q_SIGNALS:
@@ -94,10 +100,13 @@ Q_SIGNALS:
     /// \param watcher The TaskWatcher that was used by the task manager to track the running task.
     void taskFinished(TaskWatcher* taskWatcher);
 
+    /// This signal is emitted when the number of active tasks drops to zero.
+    void allTasksFinished();
+
 private:
 
     /// \brief Registers a promise with the progress manager.
-    Q_INVOKABLE TaskWatcher* addTaskInternal(const TaskPtr& sharedState);
+    Q_INVOKABLE void addTaskInternal(const TaskPtr& sharedState);
 
 private Q_SLOTS:
 
@@ -113,12 +122,15 @@ private Q_SLOTS:
 private:
 
     /// The list of watchers for the active tasks.
-    std::vector<TaskWatcher*> _runningTaskStack;
+    std::vector<TaskWatcher*> _runningTasks;
 
     /// Enables printing of task status messages to the console.
     bool _consoleLoggingEnabled = false;
+
+    /// Indicates whether the session is in the processing of shutting down.
+    bool _isShuttingDown = false;
+
+    friend class Task;
 };
 
 }   // End of namespace
-
-Q_DECLARE_METATYPE(Ovito::TaskPtr);

@@ -25,7 +25,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/mesh/surface/SurfaceMeshAccess.h>
+#include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/properties/PropertyObject.h>
@@ -68,7 +68,7 @@ public:
 public:
 
     /// Constructor.
-    Q_INVOKABLE ConstructSurfaceModifier(ObjectCreationParams params);
+    Q_INVOKABLE ConstructSurfaceModifier(ObjectInitializationFlags flags);
 
     /// Decides whether a preliminary viewport update is performed after the modifier has been
     /// evaluated but before the entire pipeline evaluation is complete.
@@ -102,11 +102,11 @@ private:
               _totalCellVolume(mesh->domain()
                                    ? mesh->domain()->volume3D()
                                    : 0.0),  // totalCellVolume is initialized before _mesh. Therefore mesh has to be used.
-              _particleRegionIds(mapParticlesToRegions ? ParticlesObject::OOClass().createUserProperty(
-                                                             positions->size(), PropertyObject::Int, 1, tr("Region"))
+              _particleRegionIds(mapParticlesToRegions ? ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized,
+                                                             positions->size(), PropertyObject::Int32, 1, tr("Region"))
                                                        : nullptr),
-              _surfaceDistances(computeSurfaceDistance ? ParticlesObject::OOClass().createUserProperty(
-                                                             positions->size(), PropertyObject::Float, 1, tr("Surface Distance"))
+              _surfaceDistances(computeSurfaceDistance ? ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized,
+                                                             positions->size(), PropertyObject::FloatDefault, 1, tr("Surface Distance"))
                                                        : nullptr)
         {
         }
@@ -147,28 +147,28 @@ private:
         }
 
         /// Compute the distance of each input particle from the constructed surface.
-        void computeSurfaceDistances(const SurfaceMeshAccess& mesh);
+        void computeSurfaceDistances(const SurfaceMeshBuilder& mesh);
 
         // Computes the surface area per mesh region and the total surface area
-        bool computeSurfaceAreaWithRegions(SurfaceMeshAccess& mesh);
+        bool computeSurfaceAreaWithRegions(SurfaceMeshBuilder& mesh);
 
         // Computes the total surface of the mesh
-        bool computeSurfaceArea(const SurfaceMeshAccess& mesh);
+        bool computeSurfaceArea(const SurfaceMeshBuilder& mesh);
 
         // Computes the void, exterior, and total volumes from the per region volume properties.
-        void computeAggregateVolumes(const SurfaceMeshAccess& mesh);
+        void computeAggregateVolumes(const SurfaceMeshBuilder& mesh);
 
         /// Controls the identification of disconnected spatial regions (filled and empty).
         const bool _identifyRegions;
 
         /// Number of filled regions that have been identified.
-        SurfaceMeshAccess::size_type _filledRegionCount = 0;
+        SurfaceMesh::size_type _filledRegionCount = 0;
 
         /// Total number of empty regions that have been identified.
-        SurfaceMeshAccess::size_type _emptyRegionCount = 0;
+        SurfaceMesh::size_type _emptyRegionCount = 0;
 
         /// Total number of interior empty regions that have been identified.
-        SurfaceMeshAccess::size_type _voidRegionCount = 0;
+        SurfaceMesh::size_type _voidRegionCount = 0;
 
         /// The computed total surface area.
         double _totalSurfaceArea = 0;
@@ -223,8 +223,8 @@ private:
               _smoothingLevel(smoothingLevel),
               _surfaceParticleSelection(
                   selectSurfaceParticles
-                      ? ParticlesObject::OOClass().createStandardProperty(
-                            this->positions()->size(), ParticlesObject::SelectionProperty, DataBuffer::InitializeMemory)
+                      ? ParticlesObject::OOClass().createStandardProperty(DataBuffer::Initialized,
+                            this->positions()->size(), ParticlesObject::SelectionProperty)
                       : nullptr)
         {
         }

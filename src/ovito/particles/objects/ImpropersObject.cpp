@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,7 +30,7 @@ IMPLEMENT_OVITO_CLASS(ImpropersObject);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ImpropersObject::ImpropersObject(ObjectCreationParams params) : PropertyContainer(params)
+ImpropersObject::ImpropersObject(ObjectInitializationFlags flags) : PropertyContainer(flags)
 {
     // Assign the default data object identifier.
     setIdentifier(OOClass().pythonName());
@@ -39,14 +39,14 @@ ImpropersObject::ImpropersObject(ObjectCreationParams params) : PropertyContaine
 /******************************************************************************
 * Creates a storage object for standard properties.
 ******************************************************************************/
-PropertyPtr ImpropersObject::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
+PropertyPtr ImpropersObject::OOMetaClass::createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const
 {
     int dataType;
     size_t componentCount;
 
     switch(type) {
     case TypeProperty:
-        dataType = PropertyObject::Int;
+        dataType = PropertyObject::Int32;
         componentCount = 1;
         break;
     case TopologyProperty:
@@ -62,9 +62,9 @@ PropertyPtr ImpropersObject::OOMetaClass::createStandardPropertyInternal(size_t 
 
     OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-    PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
+    PropertyPtr property = PropertyPtr::create(DataBuffer::Uninitialized, elementCount, dataType, componentCount, propertyName, type, componentNames);
 
-    if(flags.testFlag(DataBuffer::InitializeMemory)) {
+    if(init == DataBuffer::Initialized) {
         // Default-initialize property values with zeros.
         property->fillZero();
     }
@@ -86,7 +86,7 @@ void ImpropersObject::OOMetaClass::initialize()
     const QStringList emptyList;
     const QStringList abcdList = QStringList() << "A" << "B" << "C" << "D";
 
-    registerStandardProperty(TypeProperty, tr("Improper Type"), PropertyObject::Int, emptyList, &ElementType::OOClass(), tr("Improper types"));
+    registerStandardProperty(TypeProperty, tr("Improper Type"), PropertyObject::Int32, emptyList, &ElementType::OOClass(), tr("Improper types"));
     registerStandardProperty(TopologyProperty, tr("Topology"), PropertyObject::Int64, abcdList);
 }
 

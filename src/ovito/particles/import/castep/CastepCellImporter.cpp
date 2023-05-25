@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -169,14 +169,14 @@ void CastepCellImporter::FrameLoader::loadFile()
             }
 
             setParticleCount(coords.size());
-            PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+            BufferAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
             boost::copy(coords, posProperty.begin());
 
-            PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-            boost::transform(types, typeProperty.begin(), [&](const QString& typeName) {
-                return addNamedType(ParticlesObject::OOClass(), typeProperty.buffer(), typeName)->numericId();
+            PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+            boost::transform(types, BufferAccess<int32_t>(typeProperty).begin(), [&](const QString& typeName) {
+                return addNamedType(ParticlesObject::OOClass(), typeProperty, typeName)->numericId();
             });
-            typeProperty.buffer()->sortElementTypesByName();
+            typeProperty->sortElementTypesByName();
 
             state().setStatus(tr("%1 atoms").arg(coords.size()));
         }
@@ -190,8 +190,8 @@ void CastepCellImporter::FrameLoader::loadFile()
                 // Ignore parsing error, skip optional units.
                 line = readNonCommentLine();
             }
-            
-            PropertyAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty);
+
+            BufferAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty);
             if(velocities.size() != velocityProperty.size())
                 throw Exception(tr("Invalid number of velocity vectors in CASTEP file."));
             boost::copy(velocities, velocityProperty.begin());

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,8 +30,8 @@ namespace Ovito {
 /******************************************************************************
 * Creates the Vulkan pipeline.
 ******************************************************************************/
-void VulkanPipeline::create(VulkanContext& context, 
-    const QString& shaderName, 
+void VulkanPipeline::create(VulkanContext& context,
+    const QString& shaderName,
     VkRenderPass renderpass,
     uint32_t vertexPushConstantSize,
     uint32_t fragmentPushConstantSize,
@@ -122,7 +122,7 @@ void VulkanPipeline::create(VulkanContext& context,
 
     VkPipelineRasterizationStateCreateInfo rs = { VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
     rs.polygonMode = VK_POLYGON_MODE_FILL;
-    rs.cullMode = VK_CULL_MODE_BACK_BIT; 
+    rs.cullMode = VK_CULL_MODE_BACK_BIT;
     rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rs.lineWidth = 1.0f;
     if(enableDepthOffset) {

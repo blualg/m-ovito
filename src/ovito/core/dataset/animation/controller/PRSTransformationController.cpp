@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,9 +43,9 @@ SET_PROPERTY_FIELD_UNITS(PRSTransformationController, scalingController, Percent
 /******************************************************************************
 * Default constructor.
 ******************************************************************************/
-PRSTransformationController::PRSTransformationController(ObjectCreationParams params) : Controller(params)
+PRSTransformationController::PRSTransformationController(ObjectInitializationFlags flags) : Controller(flags)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(DontInitializeObject)) {
         // Create sub-controllers.
         setPositionController(ControllerManager::createPositionController());
         setRotationController(ControllerManager::createRotationController());

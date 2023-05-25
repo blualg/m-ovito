@@ -14,11 +14,16 @@ OVITO User Manual
   * :ref:`Python API <scripting_manual>`
 
 .. toctree::
-  :maxdepth: 2
+  :maxdepth: 1
   :includehidden:
 
   introduction
-  new_features
+  What's new <new_features>
+
+.. toctree::
+  :maxdepth: 2
+  :includehidden:
+
   installation
   usage/index
   tutorials/index

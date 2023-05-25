@@ -31,34 +31,37 @@ IMPLEMENT_OVITO_CLASS(SurfaceMeshRegions);
 /******************************************************************************
 * Creates a storage object for standard region properties.
 ******************************************************************************/
-PropertyPtr SurfaceMeshRegions::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
+PropertyPtr SurfaceMeshRegions::OOMetaClass::createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const
 {
     int dataType;
     size_t componentCount;
 
     switch(type) {
     case SelectionProperty:
-        dataType = PropertyObject::Int;
+        dataType = PropertyObject::IntSelection;
         componentCount = 1;
         break;
     case ColorProperty:
-        dataType = PropertyObject::Float;
+        dataType = PropertyObject::FloatGraphics;
         componentCount = 3;
-        OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Color));
+        OVITO_ASSERT(componentCount * sizeof(GraphicsFloatType) == sizeof(ColorG));
         break;
     case PhaseProperty:
+        dataType = PropertyObject::Int32;
+        componentCount = 1;
+        break;
     case IsFilledProperty:
     case IsExteriorProperty:
-        dataType = PropertyObject::Int;
+        dataType = PropertyObject::IntSelection;
         componentCount = 1;
         break;
     case VolumeProperty:
     case SurfaceAreaProperty:
-        dataType = PropertyObject::Float;
+        dataType = PropertyObject::FloatDefault;
         componentCount = 1;
         break;
     case LatticeCorrespondenceProperty:
-        dataType = PropertyObject::Float;
+        dataType = PropertyObject::FloatDefault;
         componentCount = 9;
         break;
     default:
@@ -70,22 +73,22 @@ PropertyPtr SurfaceMeshRegions::OOMetaClass::createStandardPropertyInternal(size
 
     OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-    PropertyPtr property = PropertyPtr::create(elementCount, dataType, componentCount, propertyName, flags & ~DataBuffer::InitializeMemory, type, componentNames);
+    PropertyPtr property = PropertyPtr::create(DataBuffer::Uninitialized, elementCount, dataType, componentCount, propertyName, type, componentNames);
 
     // Initialize memory if requested.
-    if(flags.testFlag(DataBuffer::InitializeMemory) && containerPath.size() >= 2) {
+    if(init == DataBuffer::Initialized && containerPath.size() >= 2) {
         // Certain standard properties need to be initialized with default values determined by the attached visual elements.
         if(type == ColorProperty) {
             if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(containerPath[containerPath.size()-2])) {
                 if(SurfaceMeshVis* vis = surfaceMesh->visElement<SurfaceMeshVis>()) {
-                    property->fill(vis->surfaceColor());
-                    flags.setFlag(DataBuffer::InitializeMemory, false);
+                    property->fill<ColorG>(vis->surfaceColor().toDataType<GraphicsFloatType>());
+                    init = DataBuffer::Uninitialized;
                 }
             }
         }
     }
 
-    if(flags.testFlag(DataBuffer::InitializeMemory)) {
+    if(init == DataBuffer::Initialized) {
         // Default-initialize property values with zeros.
         property->fillZero();
     }
@@ -108,14 +111,14 @@ void SurfaceMeshRegions::OOMetaClass::initialize()
     const QStringList rgbList = QStringList() << "R" << "G" << "B";
     const QStringList tensorList = QStringList() << "XX" << "YX" << "ZX" << "XY" << "YY" << "ZY" << "XZ" << "YZ" << "ZZ";
 
-    registerStandardProperty(SelectionProperty, tr("Selection"), PropertyObject::Int, emptyList);
-    registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::Float, rgbList, nullptr, tr("Region colors"));
-    registerStandardProperty(PhaseProperty, tr("Phase"), PropertyObject::Int, emptyList, nullptr, tr("Phases"));
-    registerStandardProperty(VolumeProperty, tr("Volume"), PropertyObject::Float, emptyList);
-    registerStandardProperty(SurfaceAreaProperty, tr("Surface Area"), PropertyObject::Float, emptyList);
-    registerStandardProperty(IsFilledProperty, tr("Filled"), PropertyObject::Int, emptyList);
-    registerStandardProperty(LatticeCorrespondenceProperty, tr("Lattice Correspondence"), PropertyObject::Float, tensorList);
-    registerStandardProperty(IsExteriorProperty, tr("Exterior"), PropertyObject::Int, emptyList);
+    registerStandardProperty(SelectionProperty, tr("Selection"), PropertyObject::IntSelection, emptyList);
+    registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::FloatGraphics, rgbList, nullptr, tr("Region colors"));
+    registerStandardProperty(PhaseProperty, tr("Phase"), PropertyObject::Int32, emptyList, nullptr, tr("Phases"));
+    registerStandardProperty(VolumeProperty, tr("Volume"), PropertyObject::FloatDefault, emptyList);
+    registerStandardProperty(SurfaceAreaProperty, tr("Surface Area"), PropertyObject::FloatDefault, emptyList);
+    registerStandardProperty(IsFilledProperty, tr("Filled"), PropertyObject::IntSelection, emptyList);
+    registerStandardProperty(LatticeCorrespondenceProperty, tr("Lattice Correspondence"), PropertyObject::FloatDefault, tensorList);
+    registerStandardProperty(IsExteriorProperty, tr("Exterior"), PropertyObject::IntSelection, emptyList);
 }
 
 /******************************************************************************

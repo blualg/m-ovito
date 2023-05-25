@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -61,7 +61,7 @@ class OVITO_PARTICLES_EXPORT GSDImporter : public ParticleImporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE GSDImporter(ObjectCreationParams params) : ParticleImporter(params), _roundingResolution(4) {
+    Q_INVOKABLE GSDImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _roundingResolution(4) {
         setMultiTimestepFile(true);
     }
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,6 +27,7 @@
 #include "Future.h"
 #include "detail/FutureDetail.h"
 #include "detail/TaskReference.h"
+#include "InlineExecutor.h"
 
 namespace Ovito {
 
@@ -92,7 +93,7 @@ public:
             return std::get<0>(results());
         }
         else {
-            task()->throwPossibleException(); 
+            task()->throwPossibleException();
         }
     }
 
@@ -104,7 +105,7 @@ public:
 
     /// Overload of the function above using the default inline executor.
     template<typename Function>
-    decltype(auto) then(Function&& f) { return then(detail::InlineExecutor{}, std::forward<Function>(f)); }
+    decltype(auto) then(Function&& f) { return then(InlineExecutor{}, std::forward<Function>(f)); }
 
 protected:
 
@@ -116,7 +117,7 @@ protected:
 /// The provided continuation function must accept the results of this future as an input parameter.
 template<typename... R>
 template<typename Executor, typename Function>
-detail::continuation_future_type<Function,SharedFuture<R...>> 
+detail::continuation_future_type<Function,SharedFuture<R...>>
 SharedFuture<R...>::then(Executor&& executor, Function&& f)
 {
     // Infer the exact future/promise/task types to create.
@@ -135,7 +136,7 @@ SharedFuture<R...>::then(Executor&& executor, Function&& f)
     // Run the following function once the existing task finishes. We'll then invoke the user's continuation function.
     continuationTask->whenTaskFinishes(
             this->task(),
-            std::forward<Executor>(executor), 
+            std::forward<Executor>(executor),
             [f = std::forward<Function>(f), promise = std::move(promise)]() mutable noexcept {
 
         // Get the task that is about to continue.

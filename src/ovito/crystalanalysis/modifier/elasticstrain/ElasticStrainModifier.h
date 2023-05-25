@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,8 +46,8 @@ class OVITO_CRYSTALANALYSIS_EXPORT ElasticStrainModifier : public StructureIdent
 public:
 
     /// Constructor.
-    Q_INVOKABLE ElasticStrainModifier(ObjectCreationParams params);
-    
+    Q_INVOKABLE ElasticStrainModifier(ObjectInitializationFlags flags);
+
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,7 +27,7 @@
 // Inputs:
 in vec3 base;
 in vec3 head;
-in float radius;
+in float diameter;
 uniform vec3 unit_box_triangle_strip[14];
 
 // Outputs:
@@ -40,6 +40,9 @@ const float cone_ratio = 1.8; // Ratio of height to radius of arrow head code.
 
 void main()
 {
+    // The radius of the current arrow (in object coordinates).
+    float radius = 0.5 * diameter;
+
     // The index of the box corner.
     int corner = <VertexID>;
 
@@ -73,7 +76,7 @@ void main()
     // Compute color from object ID.
     color_fs = pickingModeColor(<InstanceID>);
 
-    // Apply additional scaling to cone radius due to model-view transformation. 
+    // Apply additional scaling to cone radius due to model-view transformation.
 	// Pass square of cylinder radius to fragment shader.
     cone_radius = arrowHeadRadius * length(modelview_matrix[0]);
 

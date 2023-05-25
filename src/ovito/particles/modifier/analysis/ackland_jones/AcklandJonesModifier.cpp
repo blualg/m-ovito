@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,15 +35,15 @@ IMPLEMENT_OVITO_CLASS(AcklandJonesModifier);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-AcklandJonesModifier::AcklandJonesModifier(ObjectCreationParams params) : StructureIdentificationModifier(params)
+AcklandJonesModifier::AcklandJonesModifier(ObjectInitializationFlags flags) : StructureIdentificationModifier(flags)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the structure types.
-        createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, params);
-        createStructureType(FCC, ParticleType::PredefinedStructureType::FCC, params);
-        createStructureType(HCP, ParticleType::PredefinedStructureType::HCP, params);
-        createStructureType(BCC, ParticleType::PredefinedStructureType::BCC, params);
-        createStructureType(ICO, ParticleType::PredefinedStructureType::ICO, params);
+        createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER);
+        createStructureType(FCC, ParticleType::PredefinedStructureType::FCC);
+        createStructureType(HCP, ParticleType::PredefinedStructureType::HCP);
+        createStructureType(BCC, ParticleType::PredefinedStructureType::BCC);
+        createStructureType(ICO, ParticleType::PredefinedStructureType::ICO);
     }
 }
 
@@ -80,7 +80,7 @@ void AcklandJonesModifier::AcklandJonesAnalysisEngine::perform()
     if(!neighborFinder.prepare(positions(), cell(), selection()))
         return;
 
-    PropertyAccess<int> output(structures());
+    BufferAccess<int32_t> output(structures());
 
     // Perform analysis on each particle.
     if(!selection()) {
@@ -89,7 +89,7 @@ void AcklandJonesModifier::AcklandJonesAnalysisEngine::perform()
         });
     }
     else {
-        ConstPropertyAccess<int> selectionData(selection());
+        BufferAccess<const SelectionIntType> selectionData(selection());
         parallelForWithProgress(positions()->size(), [&](size_t index) {
             // Skip particles that are not included in the analysis.
             if(selectionData[index])

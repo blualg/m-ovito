@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -54,7 +54,7 @@ public:
     ExecutionContext() noexcept = default;
 
     /// Constructor for a new execution context.
-    explicit ExecutionContext(Type type, UserInterface& ui) noexcept : _type(type), _ui(&ui) { OVITO_ASSERT(isValid()); }
+    explicit ExecutionContext(Type type, std::shared_ptr<UserInterface> ui) noexcept;
 
     /// Returns whether this context is not of type 'None'.
     bool isValid() const noexcept { return type() != Type::None; }
@@ -63,16 +63,16 @@ public:
     Type type() const noexcept { return _type; }
 
     /// Returns the user interface for this execution context.
-    UserInterface& ui() const noexcept { 
+    UserInterface& ui() const noexcept {
         OVITO_ASSERT(isValid());
-        OVITO_ASSERT(_ui != nullptr); 
-        return *_ui; 
+        OVITO_ASSERT(_ui);
+        return *_ui;
     }
 
 private:
 
     Type _type = Type::None;
-    UserInterface* _ui = nullptr;
+    std::shared_ptr<UserInterface> _ui;
 };
 
 /// RAII helper class that can be used to temporarily set the current execution context.
@@ -84,7 +84,7 @@ public:
     explicit Scope(ExecutionContext context) noexcept : _previous(std::exchange(ExecutionContext::current(), std::move(context))) {}
 
     /// Constructor.
-    explicit Scope(Type type, UserInterface& ui) noexcept : Scope(ExecutionContext(type, ui)) {}
+    explicit Scope(Type type, std::shared_ptr<UserInterface> ui) noexcept : Scope(ExecutionContext(type, std::move(ui))) {}
 
     /// Destructor.
     ~Scope() noexcept { ExecutionContext::current() = std::move(_previous); }
@@ -105,5 +105,18 @@ private:
 
     ExecutionContext _previous;
 };
+
+}   // End of namespace
+
+#include <ovito/core/app/UserInterface.h>
+
+namespace Ovito {
+
+/// Constructor for a new execution context.
+inline ExecutionContext::ExecutionContext(Type type, std::shared_ptr<UserInterface> ui) noexcept : _type(type), _ui(std::move(ui))
+{
+    OVITO_ASSERT(isValid());
+    OVITO_ASSERT(_ui);
+}
 
 }   // End of namespace

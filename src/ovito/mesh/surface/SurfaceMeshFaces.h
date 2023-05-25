@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ class OVITO_MESH_EXPORT SurfaceMeshFaces : public PropertyContainer
         using PropertyContainerClass::PropertyContainerClass;
 
         /// Create a storage object for standard face properties.
-        virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const override;
+        virtual PropertyPtr createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const override;
 
         /// Generates a human-readable string representation of the data object reference.
         virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override;
@@ -70,7 +70,7 @@ public:
     };
 
     /// \brief Constructor.
-    Q_INVOKABLE SurfaceMeshFaces(ObjectCreationParams params) : PropertyContainer(params) {
+    Q_INVOKABLE SurfaceMeshFaces(ObjectInitializationFlags flags) : PropertyContainer(flags) {
         // Assign the default data object identifier.
         setIdentifier(OOClass().pythonName());
     }
@@ -80,6 +80,7 @@ public:
 
     /// Deletes elements for which bits are set in the given bit-mask.
     virtual size_t deleteElements(const boost::dynamic_bitset<>& mask) override {
+        OVITO_ASSERT(false);
         throw Exception(tr("Deleting faces from a SurfaceMesh is not supported via this method. Call SurfaceMesh.delete_faces() on the parent object instead."));
     }
 };

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,7 +47,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(CoordinationAnalysisModifier, numberOfBins, I
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-CoordinationAnalysisModifier::CoordinationAnalysisModifier(ObjectCreationParams params) : AsynchronousModifier(params),
+CoordinationAnalysisModifier::CoordinationAnalysisModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
     _cutoff(3.2),
     _numberOfBins(200),
     _computePartialRDF(false),
@@ -128,9 +128,9 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
         return;
 
     size_t particleCount = positions()->size();
-    PropertyAccess<int> coordinationData(coordinationNumbers());
-    ConstPropertyAccess<int> particleTypeData(particleTypes());
-    ConstPropertyAccess<int> selectionData(selection());
+    BufferAccess<int32_t> coordinationData(coordinationNumbers());
+    BufferAccess<const int32_t> particleTypeData(particleTypes());
+    BufferAccess<const SelectionIntType> selectionData(selection());
     setProgressMaximum(particleCount);
 
     // Parallel calculation loop:
@@ -179,7 +179,7 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
         }
         // Combine per-thread RDFs into a set of master histograms.
         std::lock_guard<std::mutex> lock(mutex);
-        PropertyAccess<FloatType,true> rdfData(rdfY());
+        BufferAccess<FloatType*> rdfData(rdfY());
         auto bin = rdfData.begin();
         for(auto iter = threadLocalRDF.cbegin(); iter != threadLocalRDF.cend(); ++iter)
             *bin++ += *iter;
@@ -202,7 +202,7 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
         FloatType r1 = 0;
         size_t cmpntCount = rdfY()->componentCount();
         OVITO_ASSERT(component < cmpntCount);
-        PropertyAccess<FloatType,true> rdfData(rdfY());
+        BufferAccess<FloatType*> rdfData(rdfY());
         for(FloatType& y : rdfData.componentRange(component)) {
             double r2 = r1 + stepSize;
             FloatType vol = cell()->is2D() ? (r2*r2 - r1*r1) : (r2*r2*r2 - r1*r1*r1);
@@ -219,9 +219,10 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
     else {
         // Count particle type occurrences.
         std::vector<size_t> particleCounts(uniqueTypeIds().size(), 0);
-        const int* sel = selectionData ? selectionData.begin() : nullptr;
-        for(int t : particleTypeData) {
-            if(sel && !(*sel++)) continue;
+        const SelectionIntType* sel = selectionData ? selectionData.begin() : nullptr;
+        for(int32_t t : particleTypeData) {
+            if(sel && !(*sel++))
+                continue;
             size_t typeIndex = uniqueTypeIds().index_of(uniqueTypeIds().find(t));
             if(typeIndex < particleCounts.size())
                 particleCounts[typeIndex]++;

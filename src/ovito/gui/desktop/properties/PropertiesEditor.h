@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -77,7 +77,7 @@ public:
     static OORef<PropertiesEditor> create(MainWindow& mainWindow, RefTarget* obj);
 
     /// \brief The virtual destructor.
-    virtual ~PropertiesEditor() { clearAllReferences(); }
+    virtual ~PropertiesEditor();
 
     /// \brief This will bind the editor to the given container.
     /// \param container The properties panel that's the host of the editor.
@@ -92,8 +92,8 @@ public:
     PropertiesPanel* container() const { return _container; }
 
     /// \brief Returns the main window that hosts the editor.
-    MainWindow& mainWindow() const { 
-        OVITO_ASSERT(_mainWindow != nullptr); 
+    MainWindow& mainWindow() const {
+        OVITO_ASSERT(_mainWindow != nullptr);
         return *_mainWindow;
     }
 
@@ -157,8 +157,8 @@ public:
     }
 
     /// Executes a functor provided by the caller that performs undoable actions in an interactive context.
-    /// If an exception is thrown by the functor, the error message is displayed 
-    /// to the user, and this function returns false. 
+    /// If an exception is thrown by the functor, the error message is displayed
+    /// to the user, and this function returns false.
     template<typename Function>
     bool performActions(UndoableTransaction& transaction, Function&& func) {
         return mainWindow().performActions(transaction, std::forward<Function>(func));
@@ -218,11 +218,11 @@ Q_SIGNALS:
     void contentsChanged(RefTarget* editObject);
 
     /// \brief This signal is emitted whenever the edited object has produced new results as part of a pipeline evaluation
-    ///        or when a new object has been loaded into the editor. 
+    ///        or when a new object has been loaded into the editor.
     void pipelineOutputChanged();
 
     /// \brief This signal is emitted whenever the edited object received new pipeline inputs due to an upstream pipeline change
-    ///        or when a new object has been loaded into the editor. 
+    ///        or when a new object has been loaded into the editor.
     void pipelineInputChanged();
 
 protected:

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,7 +57,7 @@ class OVITO_PARTICLES_EXPORT ParticlesCombineDatasetsModifierDelegate : public C
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticlesCombineDatasetsModifierDelegate(ObjectCreationParams params) : CombineDatasetsModifierDelegate(params) {}
+    Q_INVOKABLE ParticlesCombineDatasetsModifierDelegate(ObjectInitializationFlags flags) : CombineDatasetsModifierDelegate(flags) {}
 
     /// Applies the modifier operation to the data in a pipeline flow state.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

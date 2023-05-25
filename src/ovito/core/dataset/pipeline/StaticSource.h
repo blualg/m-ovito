@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ class OVITO_CORE_EXPORT StaticSource : public PipelineObject
 public:
 
     /// \brief Standard constructor.
-    Q_INVOKABLE StaticSource(ObjectCreationParams params, DataCollection* data = nullptr);
+    Q_INVOKABLE StaticSource(ObjectInitializationFlags flags, DataCollection* data = nullptr);
 
     /// \brief Asks the object for the result of the data pipeline.
     virtual SharedFuture<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request) override;

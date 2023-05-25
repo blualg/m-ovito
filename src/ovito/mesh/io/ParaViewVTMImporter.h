@@ -33,7 +33,7 @@ namespace Ovito::Mesh {
 class ParaViewVTMImporter; // defined below
 
 /**
- * \brief Describes a single data file referenced by a VTM file. 
+ * \brief Describes a single data file referenced by a VTM file.
  */
 struct OVITO_MESH_EXPORT ParaViewVTMBlockInfo
 {
@@ -51,7 +51,7 @@ struct OVITO_MESH_EXPORT ParaViewVTMBlockInfo
 };
 
 /**
- * \brief Abstract base class for filters that can customize the loading of VTM files. 
+ * \brief Abstract base class for filters that can customize the loading of VTM files.
  */
 class OVITO_MESH_EXPORT ParaViewVTMFileFilter : public OvitoObject
 {
@@ -81,7 +81,7 @@ class OVITO_MESH_EXPORT ParaViewVTMImporter : public FileSourceImporter
     class OOMetaClass : public FileSourceImporter::OOMetaClass
     {
     public:
-    
+
         /// Inherit standard constructor from base meta class.
         using FileSourceImporter::OOMetaClass::OOMetaClass;
 
@@ -100,7 +100,7 @@ class OVITO_MESH_EXPORT ParaViewVTMImporter : public FileSourceImporter
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParaViewVTMImporter(ObjectCreationParams params) : FileSourceImporter(params), _uniteMeshes(false) {}
+    Q_INVOKABLE ParaViewVTMImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags), _uniteMeshes(false) {}
 
     /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("VTM"); }

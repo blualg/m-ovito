@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,7 +57,7 @@ public:
 
     /// Constructor.
     /// Creates an instance of the default renderer class which can be accessed via the renderer() method.
-    Q_INVOKABLE RenderSettings(ObjectCreationParams params);
+    Q_INVOKABLE RenderSettings(ObjectInitializationFlags flags);
 
     /// Returns the aspect ratio (height/width) of the rendered image.
     FloatType outputImageAspectRatio() const { return (FloatType)outputImageHeight() / (FloatType)outputImageWidth(); }

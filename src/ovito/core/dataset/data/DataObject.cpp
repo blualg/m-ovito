@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,7 +59,7 @@ bool DataObject::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(event.type() == ReferenceEvent::TargetChanged && _visElements.contains(source) && !event.sender()->isBeingLoaded()) {
         // Inform dependents that this data object's visual element was modified.
-        // This is a separate notification event, because regular change messages from the visual element are 
+        // This is a separate notification event, because regular change messages from the visual element are
         // not propagated by the data object.
         notifyDependents(ReferenceEvent::VisualElementModified);
     }
@@ -102,7 +102,7 @@ bool DataObject::isSafeToModify() const
 {
     OVITO_CHECK_OBJECT_POINTER(this);
 
-    if(_dataReferenceCount.loadAcquire() <= 1) {
+    if(_dataReferenceCount.load() <= 1) {
         bool isExclusivelyOwned = true;
         visitDependents([&](RefMaker* dependent) {
             // Recursively determine if the container of this data object is safe to modify as well.
@@ -130,7 +130,7 @@ DataObject* DataObject::makeMutable(const DataObject* subObject)
     OVITO_ASSERT(subObject);
     OVITO_ASSERT(hasReferenceTo(subObject));
     OVITO_ASSERT_MSG(!subObject || isSafeToModify(), "DataObject::makeMutable()", qPrintable(QString("Cannot make sub-object %1 mutable, because parent object %2 is not safe to modify.").arg(subObject->getOOClass().name()).arg(getOOClass().name())));
-    
+
     if(subObject && !subObject->isSafeToModify()) {
         OORef<DataObject> clone = CloneHelper().cloneObject(subObject, false);
         replaceReferencesTo(subObject, clone);
@@ -141,15 +141,15 @@ DataObject* DataObject::makeMutable(const DataObject* subObject)
 #ifdef OVITO_DEBUG
     if(!subObject->isSafeToModify()) {
         qDebug() << "ERROR: Data sub-object" << subObject << "owned by" << this << "is not mutable after a call to DataObject::makeMutable().";
-        qDebug() << "Data reference count of sub-object is" << subObject->_dataReferenceCount.loadAcquire();
+        qDebug() << "Data reference count of sub-object is" << subObject->_dataReferenceCount.load();
         qDebug() << "Listing dependents of sub-object:";
         subObject->visitDependents([](RefMaker* dependent) {
-            qDebug() << "  -" << dependent; 
+            qDebug() << "  -" << dependent;
         });
-        qDebug() << "Data reference count of parent object is" << _dataReferenceCount.loadAcquire();
+        qDebug() << "Data reference count of parent object is" << _dataReferenceCount.load();
         qDebug() << "Listing dependents of parent object:";
         visitDependents([](RefMaker* dependent) {
-            qDebug() << "  -" << dependent; 
+            qDebug() << "  -" << dependent;
         });
         OVITO_ASSERT(false);
     }
@@ -177,7 +177,7 @@ DataObject* DataObject::makeMutable(const DataObject* subObject, CloneHelper& cl
     }
 
     OVITO_ASSERT(hasReferenceTo(subObject));
-    
+
     if(subObject && !subObject->isSafeToModify()) {
         OORef<DataObject> clone = cloneHelper.cloneObject(subObject, false);
         replaceReferencesTo(subObject, clone);
@@ -188,15 +188,15 @@ DataObject* DataObject::makeMutable(const DataObject* subObject, CloneHelper& cl
 #ifdef OVITO_DEBUG
     if(!subObject->isSafeToModify()) {
         qDebug() << "ERROR: Data sub-object" << subObject << "owned by" << this << "is not mutable after a call to DataObject::makeMutable().";
-        qDebug() << "Data reference count of sub-object is" << subObject->_dataReferenceCount.loadAcquire();
+        qDebug() << "Data reference count of sub-object is" << subObject->_dataReferenceCount.load();
         qDebug() << "Listing dependents of sub-object:";
         subObject->visitDependents([](RefMaker* dependent) {
-            qDebug() << "  -" << dependent; 
+            qDebug() << "  -" << dependent;
         });
-        qDebug() << "Data reference count of parent object is" << _dataReferenceCount.loadAcquire();
+        qDebug() << "Data reference count of parent object is" << _dataReferenceCount.load();
         qDebug() << "Listing dependents of parent object:";
         visitDependents([](RefMaker* dependent) {
-            qDebug() << "  -" << dependent; 
+            qDebug() << "  -" << dependent;
         });
         OVITO_ASSERT(false);
     }
@@ -243,7 +243,7 @@ void DataObject::updateEditableProxies(PipelineFlowState& state, ConstDataObject
     const OvitoClass& selfClass = self->getOOClass();
     OVITO_ASSERT(selfClass == this->getOOClass());
     OVITO_ASSERT(!self->isUndoRecording());
-    
+
     // Visit all sub-objects recursively.
     for(const PropertyFieldDescriptor* field : self->getOOMetaClass().propertyFields()) {
         if(field->isReferenceField() && !field->isWeakReference() && field->targetClass()->isDerivedFrom(DataObject::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM)) {

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,7 +29,6 @@
 #include <ovito/particles/objects/ParticlesObject.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/mesh/surface/SurfaceMeshAccess.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
@@ -61,8 +60,8 @@ class OVITO_PARTICLES_EXPORT VoronoiAnalysisModifier : public AsynchronousModifi
 public:
 
     /// Constructor.
-    Q_INVOKABLE VoronoiAnalysisModifier(ObjectCreationParams params);
-    
+    Q_INVOKABLE VoronoiAnalysisModifier(ObjectInitializationFlags flags);
+
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.
@@ -89,10 +88,10 @@ private:
             _faceThreshold(faceThreshold),
             _relativeFaceThreshold(relativeFaceThreshold),
             _computeBonds(computeBonds),
-            _coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(fingerprint.particleCount(), ParticlesObject::CoordinationProperty, DataBuffer::InitializeMemory)),
-            _atomicVolumes(ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::Float, 1, QStringLiteral("Atomic Volume"), DataBuffer::InitializeMemory)),
-            _cavityRadii(ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::Float, 1, QStringLiteral("Cavity Radius"), DataBuffer::InitializeMemory)),
-            _maxFaceOrders(computeIndices ? ParticlesObject::OOClass().createUserProperty(fingerprint.particleCount(), PropertyObject::Int, 1, QStringLiteral("Max Face Order"), DataBuffer::InitializeMemory) : nullptr),
+            _coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(DataBuffer::Initialized, fingerprint.particleCount(), ParticlesObject::CoordinationProperty)),
+            _atomicVolumes(ParticlesObject::OOClass().createUserProperty(DataBuffer::Initialized, fingerprint.particleCount(), PropertyObject::FloatDefault, 1, QStringLiteral("Atomic Volume"))),
+            _cavityRadii(ParticlesObject::OOClass().createUserProperty(DataBuffer::Initialized, fingerprint.particleCount(), PropertyObject::FloatDefault, 1, QStringLiteral("Cavity Radius"))),
+            _maxFaceOrders(computeIndices ? ParticlesObject::OOClass().createUserProperty(DataBuffer::Initialized, fingerprint.particleCount(), PropertyObject::Int32, 1, QStringLiteral("Max Face Order")) : nullptr),
             _inputFingerprint(std::move(fingerprint)),
             _polyhedraMesh(std::move(polyhedraMesh)) {}
 

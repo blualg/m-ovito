@@ -52,6 +52,8 @@ The following commands were used to build it::
   cmake -G Ninja \
       -DCMAKE_BUILD_TYPE=Release \
       -DWITH_SERVER=OFF \
+      -DWITH_EXAMPLES=OFF \
+      -DWITH_PKCS11_URI=ON \
       -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 \
       ..
   cmake --build . --parallel && cmake --install .

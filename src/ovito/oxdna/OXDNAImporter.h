@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,9 +31,9 @@ namespace Ovito::Particles {
 
 /**
  * \brief File parser for data files of the oxDNA code.
- * 
+ *
  * File format documentation:
- * 
+ *
  * https://dna.physics.ox.ac.uk/index.php/Documentation#Visualisation_of_structures
  */
 class OVITO_OXDNA_EXPORT OXDNAImporter : public ParticleImporter
@@ -60,7 +60,7 @@ class OVITO_OXDNA_EXPORT OXDNAImporter : public ParticleImporter
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE OXDNAImporter(ObjectCreationParams params) : ParticleImporter(params) {}
+    Q_INVOKABLE OXDNAImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {}
 
     /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("oxDNA"); }
@@ -86,7 +86,7 @@ private:
 
         /// Constructor.
         FrameLoader(const LoadOperationRequest& request, const QUrl& userSpecifiedTopologyUrl) :
-            ParticleImporter::FrameLoader(request), 
+            ParticleImporter::FrameLoader(request),
             _userSpecifiedTopologyUrl(userSpecifiedTopologyUrl) {}
 
     protected:
@@ -114,7 +114,7 @@ private:
 
 private:
 
-    /// oxDNA files come in pairs: a topology file and a configuration file. 
+    /// oxDNA files come in pairs: a topology file and a configuration file.
     /// The configuration file is the primary file passed to the file importer by the system.
     /// This extra field stores the URL of the oxDNA topology file belonging to the configuration file
     /// if explicitly specified by the user.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -62,7 +62,7 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(Viewport, viewportTitle, ReferenceEvent::TitleCh
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-Viewport::Viewport(ObjectCreationParams params) : RefTarget(params),
+Viewport::Viewport(ObjectInitializationFlags flags) : RefTarget(flags),
         _viewType(VIEW_NONE),
         _fieldOfView(100),
         _renderPreviewMode(false),
@@ -76,7 +76,7 @@ Viewport::Viewport(ObjectCreationParams params) : RefTarget(params),
     // Automatically associate the new viewport with the global scene (if there is one).
     // This is mainly done for the Python interface, where each viewport created by the user is automatically
     // associated with some scene.
-    if(params.createSubObjects() && ExecutionContext::isScripting()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject) && ExecutionContext::isScripting()) {
         setScene(ExecutionContext::current().ui().datasetContainer().activeScene());
     }
 }

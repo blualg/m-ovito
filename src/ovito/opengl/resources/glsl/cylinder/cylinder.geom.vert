@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,9 +25,11 @@
 // Inputs:
 in vec3 base;
 in vec3 head;
-in float radius;
-in vec4 color1;
-in vec4 color2;
+in float diameter;
+in vec3 color1;
+in vec3 color2;
+in float transparency1;
+in float transparency2;
 
 // Outputs:
 out vec3 base_gs;
@@ -41,7 +43,7 @@ void main()
     // Forward data to geometry shader.
     base_gs = base;
     head_gs = head;
-    radius_gs = radius;
-    color1_gs = color1;
-    color2_gs = color2;
+    radius_gs = 0.5 * diameter;
+    color1_gs = vec4(color1, clamp(1.0 - transparency1, 0.0, 1.0));
+    color2_gs = vec4(color2, clamp(1.0 - transparency2, 0.0, 1.0));
 }

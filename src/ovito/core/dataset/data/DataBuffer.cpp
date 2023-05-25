@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "DataBuffer.h"
-#include "DataBufferAccess.h"
+#include "BufferAccess.h"
 
 namespace Ovito {
 
@@ -32,15 +32,15 @@ IMPLEMENT_OVITO_CLASS(DataBuffer);
 /******************************************************************************
 * Constructor allocating a buffer array with given size and data layout.
 ******************************************************************************/
-DataBuffer::DataBuffer(ObjectCreationParams params, size_t elementCount, int dataType, size_t componentCount, InitializationFlags flags, QStringList componentNames) :
-    DataObject(params),
+DataBuffer::DataBuffer(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, QStringList componentNames) :
+    DataObject(flags),
     _dataType(dataType),
-    _dataTypeSize(getQtTypeSizeFromId(dataType)),
+    _dataTypeSize(QMetaType(dataType).sizeOf()),
     _componentCount(componentCount),
     _componentNames(std::move(componentNames))
 {
     _stride = _dataTypeSize * _componentCount;
-    OVITO_ASSERT(dataType == Int || dataType == Int64 || dataType == Float);
+    OVITO_ASSERT(dataType == Int8 || dataType == Int32 || dataType == Int64 || dataType == Float32 || dataType == Float64);
     OVITO_ASSERT(_dataTypeSize > 0);
     OVITO_ASSERT(_componentCount > 0);
     OVITO_ASSERT(_componentNames.empty() || _componentCount == _componentNames.size());
@@ -50,7 +50,7 @@ DataBuffer::DataBuffer(ObjectCreationParams params, size_t elementCount, int dat
         for(size_t i = _componentNames.size(); i < componentCount; i++)
             _componentNames << QString::number(i + 1);
     }
-    resize(elementCount, flags.testFlag(InitializeMemory));
+    resize(elementCount, init == Initialized);
 }
 
 /******************************************************************************
@@ -62,7 +62,7 @@ OORef<RefTarget> DataBuffer::clone(bool deepCopy, CloneHelper& cloneHelper) cons
     OORef<DataBuffer> clone = static_object_cast<DataBuffer>(DataObject::clone(deepCopy, cloneHelper));
 
     // Copy internal data.
-    prepareReadAccess();
+    ReadAccess readAccess(*this);
     clone->_dataType = _dataType;
     clone->_dataTypeSize = _dataTypeSize;
     clone->_numElements = _numElements;
@@ -70,9 +70,8 @@ OORef<RefTarget> DataBuffer::clone(bool deepCopy, CloneHelper& cloneHelper) cons
     clone->_stride = _stride;
     clone->_componentCount = _componentCount;
     clone->_componentNames = _componentNames;
-    clone->_data.reset(new uint8_t[_numElements * _stride]);
+    clone->_data.reset(new std::byte[_numElements * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
     std::memcpy(clone->_data.get(), _data.get(), _numElements * _stride);
-    finishReadAccess();
 
     return clone;
 }
@@ -85,9 +84,9 @@ void DataBuffer::resize(size_t newSize, bool preserveData)
     // Note: Do not reallocate the buffer when its size is reduced.
     // The filterResize() method relies on
     // the data buffer's memory pointer to remain the same when the buffer is shrinked.
-    prepareWriteAccess();
+    WriteAccess writeAccess(*this);
     if(newSize > _capacity || !_data) {
-        std::unique_ptr<uint8_t[]> newBuffer(new uint8_t[newSize * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
+        std::unique_ptr<std::byte[]> newBuffer(new std::byte[newSize * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
         if(preserveData)
             std::memcpy(newBuffer.get(), _data.get(), _stride * std::min(_numElements, newSize));
         _data.swap(newBuffer);
@@ -98,7 +97,6 @@ void DataBuffer::resize(size_t newSize, bool preserveData)
         std::memset(_data.get() + _numElements * _stride, 0, (newSize - _numElements) * _stride);
     }
     _numElements = newSize;
-    finishWriteAccess();
 }
 
 /******************************************************************************
@@ -108,8 +106,9 @@ void DataBuffer::resize(size_t newSize, bool preserveData)
 ******************************************************************************/
 bool DataBuffer::grow(size_t numAdditionalElements, bool callerAlreadyHasWriteAccess)
 {
+    std::optional<WriteAccess> writeAccess;
     if(!callerAlreadyHasWriteAccess)
-        prepareWriteAccess();
+        writeAccess.emplace(*this);
     size_t newSize = _numElements + numAdditionalElements;
     OVITO_ASSERT(newSize >= _numElements);
     bool needToGrow;
@@ -118,14 +117,12 @@ bool DataBuffer::grow(size_t numAdditionalElements, bool callerAlreadyHasWriteAc
         size_t newCapacity = (newSize < 1024)
             ? std::max(newSize * 2, (size_t)256)
             : (newSize * 3 / 2);
-        std::unique_ptr<uint8_t[]> newBuffer(new uint8_t[newCapacity * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
+        std::unique_ptr<std::byte[]> newBuffer(new std::byte[newCapacity * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
         std::memcpy(newBuffer.get(), _data.get(), _stride * _numElements);
         _data.swap(newBuffer);
         _capacity = newCapacity;
     }
     _numElements = newSize;
-    if(!callerAlreadyHasWriteAccess)
-        finishWriteAccess();
     return needToGrow;
 }
 
@@ -134,12 +131,14 @@ bool DataBuffer::grow(size_t numAdditionalElements, bool callerAlreadyHasWriteAc
 * Note: This method never reallocates the memory buffer. Thus, the capacity of the array remains unchanged and the
 * memory of the truncated elements is not released by the method.
 ******************************************************************************/
-void DataBuffer::truncate(size_t numElementsToRemove)
+void DataBuffer::truncate(size_t numElementsToRemove, bool callerAlreadyHasWriteAccess)
 {
     OVITO_ASSERT(numElementsToRemove <= _numElements);
-    prepareWriteAccess();
+
+    std::optional<WriteAccess> writeAccess;
+    if(!callerAlreadyHasWriteAccess)
+        writeAccess.emplace(*this);
     _numElements -= numElementsToRemove;
-    finishWriteAccess();
 }
 
 /******************************************************************************
@@ -149,28 +148,21 @@ void DataBuffer::saveToStream(ObjectSaveStream& stream, bool excludeRecomputable
 {
     DataObject::saveToStream(stream, excludeRecomputableData);
 
-    prepareReadAccess();
-    try {
-        stream.beginChunk(0x03);
-        stream << QByteArray(getQtTypeNameFromId(_dataType));
-        stream.writeSizeT(_dataTypeSize);
-        stream.writeSizeT(_stride);
-        stream.writeSizeT(_componentCount);
-        stream << _componentNames;
-        if(excludeRecomputableData) {
-            stream.writeSizeT(0);
-        }
-        else {
-            stream.writeSizeT(_numElements);
-            stream.write(_data.get(), _stride * _numElements);
-        }
-        stream.endChunk();
-        finishReadAccess();
+    ReadAccess readAccess(*this);
+    stream.beginChunk(0x03);
+    stream << QByteArray(QMetaType(_dataType).name());
+    stream.writeSizeT(_dataTypeSize);
+    stream.writeSizeT(_stride);
+    stream.writeSizeT(_componentCount);
+    stream << _componentNames;
+    if(excludeRecomputableData) {
+        stream.writeSizeT(0);
     }
-    catch(...) {
-        finishReadAccess();
-        throw;
+    else {
+        stream.writeSizeT(_numElements);
+        stream.write(_data.get(), _stride * _numElements);
     }
+    stream.endChunk();
 }
 
 /******************************************************************************
@@ -186,48 +178,18 @@ void DataBuffer::loadFromStream(ObjectLoadStream& stream)
 
     QByteArray dataTypeName;
     stream >> dataTypeName;
-    _dataType = getQtTypeIdFromName(dataTypeName);
+    _dataType = QMetaType::fromName(dataTypeName).id();
     OVITO_ASSERT_MSG(_dataType != 0, "DataBuffer::loadFromStream()", qPrintable(QString("The metadata type '%1' seems to be no longer defined.").arg(QString::fromLatin1(dataTypeName))));
-    OVITO_ASSERT(dataTypeName == getQtTypeNameFromId(_dataType));
+    OVITO_ASSERT(dataTypeName == this->dataTypeName());
     stream.readSizeT(_dataTypeSize);
     stream.readSizeT(_stride);
     stream.readSizeT(_componentCount);
     stream >> _componentNames;
     stream.readSizeT(_numElements);
     _capacity = _numElements;
-    _data.reset(new uint8_t[_numElements * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
+    _data.reset(new std::byte[_numElements * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
     stream.read(_data.get(), _stride * _numElements);
     stream.closeChunk();
-
-    // Do floating-point precision conversion from single to double precision.
-    if(_dataType == qMetaTypeId<float>() && DataBuffer::Float == qMetaTypeId<double>()) {
-        OVITO_ASSERT(sizeof(FloatType) == sizeof(double));
-        OVITO_ASSERT(_dataTypeSize == sizeof(float));
-        _stride *= sizeof(double) / sizeof(float);
-        _dataTypeSize = sizeof(double);
-        _dataType = DataBuffer::Float;
-        std::unique_ptr<uint8_t[]> newBuffer(new uint8_t[_stride * _numElements]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
-        double* dst = reinterpret_cast<double*>(newBuffer.get());
-        const float* src = reinterpret_cast<const float*>(_data.get());
-        for(size_t c = _numElements * _componentCount; c--; )
-            *dst++ = (double)*src++;
-        _data.swap(newBuffer);
-    }
-
-    // Do floating-point precision conversion from double to single precision.
-    if(_dataType == qMetaTypeId<double>() && DataBuffer::Float == qMetaTypeId<float>()) {
-        OVITO_ASSERT(sizeof(FloatType) == sizeof(float));
-        OVITO_ASSERT(_dataTypeSize == sizeof(double));
-        _stride /= sizeof(double) / sizeof(float);
-        _dataTypeSize = sizeof(float);
-        _dataType = DataBuffer::Float;
-        std::unique_ptr<uint8_t[]> newBuffer(new uint8_t[_stride * _numElements]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
-        float* dst = reinterpret_cast<float*>(newBuffer.get());
-        const double* src = reinterpret_cast<const double*>(_data.get());
-        for(size_t c = _numElements * _componentCount; c--; )
-            *dst++ = (float)*src++;
-        _data.swap(newBuffer);
-    }
 }
 
 /******************************************************************************
@@ -238,16 +200,16 @@ void DataBuffer::replicate(size_t n, bool replicateValues)
     OVITO_ASSERT(n >= 1);
     if(n <= 1) return;
 
-    prepareWriteAccess();
+    WriteAccess writeAccess(*this);
     size_t oldSize = _numElements;
-    std::unique_ptr<uint8_t[]> oldData = std::move(_data);
+    std::unique_ptr<std::byte[]> oldData = std::move(_data);
 
     _numElements *= n;
     _capacity = _numElements;
-    _data.reset(new uint8_t[_capacity * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
+    _data.reset(new std::byte[_capacity * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
     if(replicateValues) {
         // Replicate data values N times.
-        uint8_t* dest = _data.get();
+        std::byte* dest = _data.get();
         for(size_t i = 0; i < n; i++, dest += oldSize * stride()) {
             std::memcpy(dest, oldData.get(), oldSize * stride());
         }
@@ -256,7 +218,6 @@ void DataBuffer::replicate(size_t n, bool replicateValues)
         // Copy just one replica of the data from the old memory buffer to the new one.
         std::memcpy(_data.get(), oldData.get(), oldSize * stride());
     }
-    finishWriteAccess();
 }
 
 /******************************************************************************
@@ -266,81 +227,71 @@ void DataBuffer::replicate(size_t n, bool replicateValues)
 void DataBuffer::filterResize(const boost::dynamic_bitset<>& mask)
 {
     OVITO_ASSERT(size() == mask.size());
-    size_t s = size();
+    auto s = size();
 
-    // Optimize filter operation for the most common property types.
-    if(dataType() == DataBuffer::Float && stride() == sizeof(FloatType)) {
-        prepareWriteAccess();
-        // Single float
-        auto src = reinterpret_cast<const FloatType*>(cbuffer());
-        auto dst = reinterpret_cast<FloatType*>(buffer());
-        for(size_t i = 0; i < s; ++i, ++src) {
-            if(!mask.test(i)) *dst++ = *src;
+    auto specializedFilter = [&](auto _) {
+        using T = decltype(_);
+        size_t newSize;
+        {
+            WriteAccess writeAccess(*this);
+            auto src = reinterpret_cast<const T*>(cdata());
+            auto dst = reinterpret_cast<T*>(data());
+            for(size_t i = 0; i < s; ++i, ++src) {
+                if(!mask.test(i))
+                    *dst++ = *src;
+            }
+            newSize = dst - reinterpret_cast<T*>(data());
         }
-        finishWriteAccess();
-        resize(dst - reinterpret_cast<FloatType*>(buffer()), true); // Note: This is a cheap operation - does not mem copy.
-    }
-    else if(dataType() == DataBuffer::Int && stride() == sizeof(int)) {
-        // Single integer
-        prepareWriteAccess();
-        auto src = reinterpret_cast<const int*>(cbuffer());
-        auto dst = reinterpret_cast<int*>(buffer());
-        for(size_t i = 0; i < s; ++i, ++src) {
-            if(!mask.test(i)) *dst++ = *src;
+        resize(newSize, true); // Note: This is a cheap operation - does no mem copy.
+    };
+
+    // Optimize filter operation for the most common data types.
+    if(dataType() == DataBuffer::Float32) {
+        if(componentCount() == 1 && stride() == sizeof(float)) {
+            specializedFilter(float{});
+            return;
         }
-        finishWriteAccess();
-        resize(dst - reinterpret_cast<int*>(buffer()), true); // Note: This is a cheap operation - does not mem copy.
-    }
-    else if(dataType() == DataBuffer::Int64 && stride() == sizeof(qlonglong)) {
-        // Single 64-bit integer
-        prepareWriteAccess();
-        auto src = reinterpret_cast<const qlonglong*>(cbuffer());
-        auto dst = reinterpret_cast<qlonglong*>(buffer());
-        for(size_t i = 0; i < s; ++i, ++src) {
-            if(!mask.test(i)) *dst++ = *src;
+        else if(componentCount() == 3 && stride() == sizeof(Point_3<float>)) {
+            specializedFilter(Point_3<float>{});
+            return;
         }
-        finishWriteAccess();
-        resize(dst - reinterpret_cast<qlonglong*>(buffer()), true); // Note: This is a cheap operation - does not mem copy.
     }
-    else if(dataType() == DataBuffer::Float && stride() == sizeof(Point3)) {
-        // Triple float (may actually be four floats when SSE instructions are enabled).
-        prepareWriteAccess();
-        auto src = reinterpret_cast<const Point3*>(cbuffer());
-        auto dst = reinterpret_cast<Point3*>(buffer());
-        for(size_t i = 0; i < s; ++i, ++src) {
-            if(!mask.test(i)) *dst++ = *src;
+    else if(dataType() == DataBuffer::Float64) {
+        if(componentCount() == 1 && stride() == sizeof(double)) {
+            specializedFilter(double{});
+            return;
         }
-        finishWriteAccess();
-        resize(dst - reinterpret_cast<Point3*>(buffer()), true); // Note: This is a cheap operation - does not mem copy.
-    }
-    else if(dataType() == DataBuffer::Float && stride() == sizeof(Color)) {
-        // Triple float
-        prepareWriteAccess();
-        auto src = reinterpret_cast<const Color*>(cbuffer());
-        auto dst = reinterpret_cast<Color*>(buffer());
-        for(size_t i = 0; i < s; ++i, ++src) {
-            if(!mask.test(i)) *dst++ = *src;
+        else if(componentCount() == 3 && stride() == sizeof(Point_3<double>)) {
+            specializedFilter(Point_3<double>{});
+            return;
         }
-        finishWriteAccess();
-        resize(dst - reinterpret_cast<Color*>(buffer()), true); // Note: This is a cheap operation - does not mem copy.
     }
-    else if(dataType() == DataBuffer::Int && stride() == sizeof(Point3I)) {
-        // Triple int.
-        prepareWriteAccess();
-        auto src = reinterpret_cast<const Point3I*>(cbuffer());
-        auto dst = reinterpret_cast<Point3I*>(buffer());
-        for(size_t i = 0; i < s; ++i, ++src) {
-            if(!mask.test(i)) *dst++ = *src;
+    else if(dataType() == DataBuffer::Int32) {
+        if(componentCount() == 1 && stride() == sizeof(int32_t)) {
+            specializedFilter(int32_t{});
+            return;
         }
-        finishWriteAccess();
-        resize(dst - reinterpret_cast<Point3I*>(buffer()), true); // Note: This is a cheap operation - does not mem copy.
+        else if(componentCount() == 3 && stride() == sizeof(Vector_3<int32_t>)) {
+            specializedFilter(Vector_3<int32_t>{});
+            return;
+        }
     }
-    else {
-        // Generic case:
-        prepareWriteAccess();
-        const uint8_t* src = _data.get();
-        uint8_t* dst = _data.get();
-        size_t stride = this->stride();
+    else if(dataType() == DataBuffer::Int64 && stride() == sizeof(int64_t)) {
+        specializedFilter(int64_t{});
+        return;
+    }
+    else if(dataType() == DataBuffer::Int8 && stride() == sizeof(int8_t)) {
+        specializedFilter(int8_t{});
+        return;
+    }
+
+    // Generic case:
+    size_t newSize;
+    {
+        WriteAccess writeAccess(*this);
+        const std::byte* src = _data.get();
+        std::byte* dst = _data.get();
+        const auto stride = this->stride();
         for(size_t i = 0; i < s; i++, src += stride) {
             if(!mask.test(i)) {
                 if(dst != src)
@@ -348,96 +299,100 @@ void DataBuffer::filterResize(const boost::dynamic_bitset<>& mask)
                 dst += stride;
             }
         }
-        finishWriteAccess();
-        resize((dst - _data.get()) / stride, true); // Note: This is a cheap operation - does not mem copy.
+        newSize = (dst - _data.get()) / stride;
     }
+    resize(newSize, true); // Note: This is a cheap operation - does not mem copy.
 }
 
 /******************************************************************************
-* Creates a copy of the array, not containing those elements for which
-* the corresponding bits in the given bit array were set.
+* Removes those data elements for which the bits are set in the given bitmask
+* array by moving data from the back of the array into the free slots.
+* This method is potentially faster than filterResize() if only few elements are to be deleted.
+* However, the ordering of the remaining elements is NOT preserved.
 ******************************************************************************/
-OORef<DataBuffer> DataBuffer::filterCopy(const boost::dynamic_bitset<>& mask) const
+void DataBuffer::filterResizeReordering(const boost::dynamic_bitset<>& mask)
 {
-    auto copy = CloneHelper().cloneObject(this, false);
-
-    prepareReadAccess();
     OVITO_ASSERT(size() == mask.size());
+    auto s = size();
+    if(s == 0)
+        return;
 
-    size_t s = size();
-    size_t newSize = size() - mask.count();
-    copy->resize(newSize, false);
+    auto specializedFilter = [&](auto _) {
+        using T = decltype(_);
+        size_t newSize;
+        {
+            WriteAccess writeAccess(*this);
+            auto begin = reinterpret_cast<const T*>(cdata());
+            auto end = begin + s;
+            auto dst = reinterpret_cast<T*>(data()) + s;
+            for(size_t i = s - 1; dst != begin; --i) {
+                --dst;
+                if(mask.test(i))
+                    *dst = *(--end);
+            }
+            newSize = end - begin;
+        }
+        resize(newSize, true); // Note: This is a cheap operation - does no mem copy.
+    };
 
-    // Optimize filter operation for the most common property types.
-    if(dataType() == DataBuffer::Float && stride() == sizeof(FloatType)) {
-        // Single float
-        const FloatType* __restrict src = reinterpret_cast<const FloatType*>(cbuffer());
-        FloatType* __restrict dst = reinterpret_cast<FloatType*>(copy->buffer());
-        for(size_t i = 0; i < s; ++i, ++src) {
-            if(!mask.test(i)) *dst++ = *src;
+    // Optimize filter operation for the most common data types.
+    if(dataType() == DataBuffer::Float32) {
+        if(componentCount() == 1 && stride() == sizeof(float)) {
+            specializedFilter(float{});
+            return;
         }
-        OVITO_ASSERT(dst == reinterpret_cast<FloatType*>(copy->buffer()) + newSize);
-    }
-    else if(dataType() == DataBuffer::Int && stride() == sizeof(int)) {
-        // Single integer
-        const int* __restrict src = reinterpret_cast<const int*>(cbuffer());
-        int* __restrict dst = reinterpret_cast<int*>(copy->buffer());
-        for(size_t i = 0; i < s; ++i, ++src) {
-            if(!mask.test(i)) *dst++ = *src;
+        else if(componentCount() == 3 && stride() == sizeof(Point_3<float>)) {
+            specializedFilter(Point_3<float>{});
+            return;
         }
-        OVITO_ASSERT(dst == reinterpret_cast<int*>(copy->buffer()) + newSize);
     }
-    else if(dataType() == DataBuffer::Int64 && stride() == sizeof(qlonglong)) {
-        // Single 64-bit integer
-        const qlonglong* __restrict src = reinterpret_cast<const qlonglong*>(cbuffer());
-        qlonglong* __restrict dst = reinterpret_cast<qlonglong*>(copy->buffer());
-        for(size_t i = 0; i < s; ++i, ++src) {
-            if(!mask.test(i)) *dst++ = *src;
+    else if(dataType() == DataBuffer::Float64) {
+        if(componentCount() == 1 && stride() == sizeof(double)) {
+            specializedFilter(double{});
+            return;
         }
-        OVITO_ASSERT(dst == reinterpret_cast<qlonglong*>(copy->buffer()) + newSize);
-    }
-    else if(dataType() == DataBuffer::Float && stride() == sizeof(Point3)) {
-        // Triple float (may actually be four floats when SSE instructions are enabled).
-        const Point3* __restrict src = reinterpret_cast<const Point3*>(cbuffer());
-        Point3* __restrict dst = reinterpret_cast<Point3*>(copy->buffer());
-        for(size_t i = 0; i < s; ++i, ++src) {
-            if(!mask.test(i)) *dst++ = *src;
+        else if(componentCount() == 3 && stride() == sizeof(Point_3<double>)) {
+            specializedFilter(Point_3<double>{});
+            return;
         }
-        OVITO_ASSERT(dst == reinterpret_cast<Point3*>(copy->buffer()) + newSize);
     }
-    else if(dataType() == DataBuffer::Float && stride() == sizeof(Color)) {
-        // Triple float
-        const Color* __restrict src = reinterpret_cast<const Color*>(cbuffer());
-        Color* __restrict dst = reinterpret_cast<Color*>(copy->buffer());
-        for(size_t i = 0; i < s; ++i, ++src) {
-            if(!mask.test(i)) *dst++ = *src;
+    else if(dataType() == DataBuffer::Int32) {
+        if(componentCount() == 1 && stride() == sizeof(int32_t)) {
+            specializedFilter(int32_t{});
+            return;
         }
-        OVITO_ASSERT(dst == reinterpret_cast<Color*>(copy->buffer()) + newSize);
-    }
-    else if(dataType() == DataBuffer::Int && stride() == sizeof(Point3I)) {
-        // Triple int.
-        const Point3I* __restrict src = reinterpret_cast<const Point3I*>(cbuffer());
-        Point3I* __restrict dst = reinterpret_cast<Point3I*>(copy->buffer());
-        for(size_t i = 0; i < s; ++i, ++src) {
-            if(!mask.test(i)) *dst++ = *src;
+        else if(componentCount() == 3 && stride() == sizeof(Vector_3<int32_t>)) {
+            specializedFilter(Vector_3<int32_t>{});
+            return;
         }
-        OVITO_ASSERT(dst == reinterpret_cast<Point3I*>(copy->buffer()) + newSize);
     }
-    else {
-        // Generic case:
-        const uint8_t* __restrict src = _data.get();
-        uint8_t* __restrict dst = copy->_data.get();
-        size_t stride = this->stride();
-        for(size_t i = 0; i < s; i++, src += stride) {
-            if(!mask.test(i)) {
-                std::memcpy(dst, src, stride);
-                dst += stride;
+    else if(dataType() == DataBuffer::Int64 && stride() == sizeof(int64_t)) {
+        specializedFilter(int64_t{});
+        return;
+    }
+    else if(dataType() == DataBuffer::Int8 && stride() == sizeof(int8_t)) {
+        specializedFilter(int8_t{});
+        return;
+    }
+
+    // Generic case:
+    size_t newSize;
+    {
+        WriteAccess writeAccess(*this);
+        const auto stride = this->stride();
+        const std::byte* begin = _data.get();
+        const std::byte* end = begin + (s * stride);
+        std::byte* dst = _data.get() + (s * stride);
+        for(size_t i = s - 1; dst != begin; --i) {
+            dst -= stride;
+            if(mask.test(i)) {
+                end -= stride;
+                std::memcpy(dst, end, stride);
             }
         }
-        OVITO_ASSERT(dst == copy->_data.get() + newSize * stride);
+        newSize = (end - begin) / stride;
     }
-    finishReadAccess();
-    return copy;
+    resize(newSize, true); // Note: This is a cheap operation - does not mem copy.
 }
 
 /******************************************************************************
@@ -447,79 +402,65 @@ OORef<DataBuffer> DataBuffer::filterCopy(const boost::dynamic_bitset<>& mask) co
 void DataBuffer::mappedCopyFrom(const DataBuffer& source, const std::vector<size_t>& mapping)
 {
     OVITO_ASSERT(source.size() == mapping.size());
-    OVITO_ASSERT(stride() == source.stride());
+    OVITO_ASSERT(this->dataType() == source.dataType());
+    OVITO_ASSERT(this->stride() == source.stride());
     OVITO_ASSERT(&source != this); // Do not allow aliasing.
-    prepareWriteAccess();
-    source.prepareReadAccess();
 
-    // Optimize copying operation for the most common property types.
-    if(stride() == sizeof(FloatType)) {
-        // Single float
-        const FloatType* __restrict src = reinterpret_cast<const FloatType*>(source.cbuffer());
-        FloatType* __restrict dst = reinterpret_cast<FloatType*>(buffer());
-        for(size_t idx : mapping) {
+    WriteAccess writeAccess(*this);
+    ReadAccess readAccess(source);
+
+    auto specializedCopy = [&](auto _) {
+        using T = decltype(_);
+        const T* __restrict src = reinterpret_cast<const T*>(source.cdata());
+        T* __restrict dst = reinterpret_cast<T*>(data());
+        for(auto idx : mapping) {
             OVITO_ASSERT(idx < this->size());
             dst[idx] = *src++;
         }
-    }
-    else if(stride() == sizeof(int)) {
-        // Single integer
-        const int* __restrict src = reinterpret_cast<const int*>(source.cbuffer());
-        int* __restrict dst = reinterpret_cast<int*>(buffer());
-        for(size_t idx : mapping) {
-            OVITO_ASSERT(idx < this->size());
-            dst[idx] = *src++;
+    };
+
+    // Optimize operation for the most common data types.
+    if(dataType() == DataBuffer::Float32) {
+        if(componentCount() == 1 && stride() == sizeof(float)) {
+            specializedCopy(float{});
+            return;
+        }
+        else if(componentCount() == 3 && stride() == sizeof(Vector_3<float>)) {
+            specializedCopy(Vector_3<float>{});
+            return;
         }
     }
-    else if(stride() == sizeof(qlonglong)) {
-        // Single 64-bit integer
-        const qlonglong* __restrict src = reinterpret_cast<const qlonglong*>(source.cbuffer());
-        qlonglong* __restrict dst = reinterpret_cast<qlonglong*>(buffer());
-        for(size_t idx : mapping) {
-            OVITO_ASSERT(idx < this->size());
-            dst[idx] = *src++;
+    else if(dataType() == DataBuffer::Float64) {
+        if(componentCount() == 1 && stride() == sizeof(double)) {
+            specializedCopy(double{});
+            return;
+        }
+        else if(componentCount() == 3 && stride() == sizeof(Vector_3<double>)) {
+            specializedCopy(Vector_3<double>{});
+            return;
         }
     }
-    else if(stride() == sizeof(Point3)) {
-        // Triple float (may actually be four floats when SSE instructions are enabled).
-        const Point3* __restrict src = reinterpret_cast<const Point3*>(source.cbuffer());
-        Point3* __restrict dst = reinterpret_cast<Point3*>(buffer());
-        for(size_t idx : mapping) {
-            OVITO_ASSERT(idx < this->size());
-            dst[idx] = *src++;
-        }
+    else if(dataType() == DataBuffer::Int32 && componentCount() == 1 && stride() == sizeof(int32_t)) {
+        specializedCopy(int32_t{});
+        return;
     }
-    else if(stride() == sizeof(Color)) {
-        // Triple float
-        const Color* __restrict src = reinterpret_cast<const Color*>(source.cbuffer());
-        Color* __restrict dst = reinterpret_cast<Color*>(buffer());
-        for(size_t idx : mapping) {
-            OVITO_ASSERT(idx < this->size());
-            dst[idx] = *src++;
-        }
+    else if(dataType() == DataBuffer::Int64 && componentCount() == 1 && stride() == sizeof(int64_t)) {
+        specializedCopy(int64_t{});
+        return;
     }
-    else if(stride() == sizeof(Point3I)) {
-        // Triple int
-        const Point3I* __restrict src = reinterpret_cast<const Point3I*>(source.cbuffer());
-        Point3I* __restrict dst = reinterpret_cast<Point3I*>(buffer());
-        for(size_t idx : mapping) {
-            OVITO_ASSERT(idx < this->size());
-            dst[idx] = *src++;
-        }
-    }
-    else {
-        // General case:
-        const uint8_t* __restrict src = source.cbuffer();
-        uint8_t* __restrict dst = buffer();
-        size_t stride = this->stride();
-        for(size_t i = 0; i < source.size(); i++, src += stride) {
-            OVITO_ASSERT(mapping[i] < this->size());
-            std::memcpy(dst + stride * mapping[i], src, stride);
-        }
+    else if(dataType() == DataBuffer::Int8 && componentCount() == 1 && stride() == sizeof(int8_t)) {
+        specializedCopy(int8_t{});
+        return;
     }
 
-    source.finishReadAccess();
-    finishWriteAccess();
+    // General case:
+    const std::byte* __restrict src = source.cdata();
+    std::byte* __restrict dst = data();
+    const auto stride = this->stride();
+    for(size_t i = 0; i < source.size(); i++, src += stride) {
+        OVITO_ASSERT(mapping[i] < this->size());
+        std::memcpy(dst + stride * mapping[i], src, stride);
+    }
 }
 
 /******************************************************************************
@@ -531,32 +472,41 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
     OVITO_ASSERT(destination.size() == mapping.size());
     OVITO_ASSERT(this->stride() == destination.stride());
     OVITO_ASSERT(&destination != this); // Do not allow aliasing.
-    prepareReadAccess();
-    destination.prepareWriteAccess();
+
+    ReadAccess readAccess(*this);
+    WriteAccess writeAccess(destination);
 
     // Optimize copying operation for the most common property types.
     if(stride() == sizeof(FloatType)) {
         // Single float
-        const FloatType* __restrict src = reinterpret_cast<const FloatType*>(cbuffer());
-        FloatType* __restrict dst = reinterpret_cast<FloatType*>(destination.buffer());
+        const FloatType* __restrict src = reinterpret_cast<const FloatType*>(cdata());
+        FloatType* __restrict dst = reinterpret_cast<FloatType*>(destination.data());
         for(size_t idx : mapping) {
             OVITO_ASSERT(idx < size());
             *dst++ = src[idx];
         }
     }
-    else if(stride() == sizeof(int)) {
+    else if(stride() == sizeof(int32_t)) {
         // Single integer
-        const int* __restrict src = reinterpret_cast<const int*>(cbuffer());
-        int* __restrict dst = reinterpret_cast<int*>(destination.buffer());
+        const int32_t* __restrict src = reinterpret_cast<const int32_t*>(cdata());
+        int32_t* __restrict dst = reinterpret_cast<int32_t*>(destination.data());
         for(size_t idx : mapping) {
             OVITO_ASSERT(idx < size());
             *dst++ = src[idx];
         }
     }
-    else if(stride() == sizeof(qlonglong)) {
+    else if(stride() == sizeof(int64_t)) {
         // Single 64-bit integer
-        const qlonglong* __restrict src = reinterpret_cast<const qlonglong*>(cbuffer());
-        qlonglong* __restrict dst = reinterpret_cast<qlonglong*>(destination.buffer());
+        const int64_t* __restrict src = reinterpret_cast<const int64_t*>(cdata());
+        int64_t* __restrict dst = reinterpret_cast<int64_t*>(destination.data());
+        for(size_t idx : mapping) {
+            OVITO_ASSERT(idx < size());
+            *dst++ = src[idx];
+        }
+    }
+    else if(stride() == sizeof(int8_t)) {
+        const int8_t* __restrict src = reinterpret_cast<const int8_t*>(cdata());
+        int8_t* __restrict dst = reinterpret_cast<int8_t*>(destination.data());
         for(size_t idx : mapping) {
             OVITO_ASSERT(idx < size());
             *dst++ = src[idx];
@@ -564,8 +514,8 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
     }
     else if(stride() == sizeof(Point3)) {
         // Triple float (may actually be four floats when SSE instructions are enabled).
-        const Point3* __restrict src = reinterpret_cast<const Point3*>(cbuffer());
-        Point3* __restrict dst = reinterpret_cast<Point3*>(destination.buffer());
+        const Point3* __restrict src = reinterpret_cast<const Point3*>(cdata());
+        Point3* __restrict dst = reinterpret_cast<Point3*>(destination.data());
         for(size_t idx : mapping) {
             OVITO_ASSERT(idx < size());
             *dst++ = src[idx];
@@ -573,8 +523,8 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
     }
     else if(stride() == sizeof(Color)) {
         // Triple float
-        const Color* __restrict src = reinterpret_cast<const Color*>(cbuffer());
-        Color* __restrict dst = reinterpret_cast<Color*>(destination.buffer());
+        const Color* __restrict src = reinterpret_cast<const Color*>(cdata());
+        Color* __restrict dst = reinterpret_cast<Color*>(destination.data());
         for(size_t idx : mapping) {
             OVITO_ASSERT(idx < size());
             *dst++ = src[idx];
@@ -582,8 +532,8 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
     }
     else if(stride() == sizeof(Point3I)) {
         // Triple int
-        const Point3I* __restrict src = reinterpret_cast<const Point3I*>(cbuffer());
-        Point3I* __restrict dst = reinterpret_cast<Point3I*>(destination.buffer());
+        const Point3I* __restrict src = reinterpret_cast<const Point3I*>(cdata());
+        Point3I* __restrict dst = reinterpret_cast<Point3I*>(destination.data());
         for(size_t idx : mapping) {
             OVITO_ASSERT(idx < size());
             *dst++ = src[idx];
@@ -591,8 +541,8 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
     }
     else {
         // General case:
-        const uint8_t* __restrict src = cbuffer();
-        uint8_t* __restrict dst = destination.buffer();
+        const std::byte* __restrict src = cdata();
+        std::byte* __restrict dst = destination.data();
         size_t stride = this->stride();
         for(size_t idx : mapping) {
             OVITO_ASSERT(idx < size());
@@ -600,8 +550,6 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
             dst += stride;
         }
     }
-    destination.finishWriteAccess();
-    finishReadAccess();
 }
 
 /******************************************************************************
@@ -624,11 +572,9 @@ void DataBuffer::copyFrom(const DataBuffer& source)
     OVITO_ASSERT(this->stride() == source.stride());
     OVITO_ASSERT(this->size() == source.size());
     if(&source != this) {
-        prepareWriteAccess();
-        source.prepareReadAccess();
-        std::memcpy(buffer(), source.cbuffer(), this->stride() * this->size());
-        source.finishReadAccess();
-        finishWriteAccess();
+        WriteAccess writeAccess(*this);
+        ReadAccess readAccess(source);
+        std::memcpy(data(), source.cdata(), this->stride() * this->size());
     }
 }
 
@@ -643,11 +589,12 @@ void DataBuffer::copyRangeFrom(const DataBuffer& source, size_t sourceIndex, siz
     OVITO_ASSERT(this->stride() == source.stride());
     OVITO_ASSERT(sourceIndex + count <= source.size());
     OVITO_ASSERT(destIndex + count <= this->size());
-    prepareWriteAccess();
-    source.prepareReadAccess();
-    std::memcpy(buffer() + destIndex * this->stride(), source.cbuffer() + sourceIndex * source.stride(), this->stride() * count);
-    source.finishReadAccess();
-    finishWriteAccess();
+    WriteAccess writeAccess(*this);
+    ReadAccess readAccess(source);
+    std::memcpy(
+        data() + destIndex * this->stride(),
+        source.cdata() + sourceIndex * source.stride(),
+        this->stride() * count);
 }
 
 /******************************************************************************
@@ -659,62 +606,71 @@ bool DataBuffer::equals(const DataBuffer& other) const
     if(&other == this)
         return true;
 
-    prepareReadAccess();
-    other.prepareReadAccess();
+    ReadAccess readAccess1(*this);
+    ReadAccess readAccess2(other);
 
-    bool result = [&]() {
-        if(this->dataType() != other.dataType()) return false;
-        if(this->size() != other.size()) return false;
-        if(this->componentCount() != other.componentCount()) return false;
-        OVITO_ASSERT(this->stride() == other.stride());
-        return std::equal(this->cbuffer(), this->cbuffer() + this->size() * this->stride(), other.cbuffer());
-    }();
-
-    other.finishReadAccess();
-    finishReadAccess();
-
-    return result;
+    if(this->dataType() != other.dataType()) return false;
+    if(this->size() != other.size()) return false;
+    if(this->componentCount() != other.componentCount()) return false;
+    OVITO_ASSERT(this->stride() == other.stride());
+    return std::equal(this->cdata(), this->cdata() + this->size() * this->stride(), other.cdata());
 }
 
 /******************************************************************************
 * Changes the data type of the buffer in place and converts the stored values.
 ******************************************************************************/
-void DataBuffer::convertDataType(int newDataType)
+void DataBuffer::convertToDataType(int newDataType)
 {
-    OVITO_ASSERT(newDataType == Int || newDataType == Int64 || newDataType == Float);
+    OVITO_ASSERT(newDataType == Int8 || newDataType == Int32 || newDataType == Int64 || newDataType == Float32 || newDataType == Float64);
 
     if(dataType() == newDataType)
         return;
 
-    size_t newDataTypeSize = getQtTypeSizeFromId(newDataType);
+    size_t newDataTypeSize = QMetaType(newDataType).sizeOf();
     size_t newStride = _componentCount * newDataTypeSize;
-    std::unique_ptr<uint8_t[]> newData(new uint8_t[_numElements * newStride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
+    std::unique_ptr<std::byte[]> newData(new std::byte[_numElements * newStride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
 
     // Copy values from old buffer to new buffer and perform data type convertion.
-    ConstDataBufferAccess<void, true> oldData(this);
+    BufferReadAccess oldData(this);
     switch(newDataType) {
-    case Int:
+    case Int8:
         {
-            int* __restrict dest = reinterpret_cast<int*>(newData.get());
+            int8_t* __restrict dest = reinterpret_cast<int8_t*>(newData.get());
             for(size_t i = 0; i < _numElements; i++)
                 for(size_t j = 0; j < _componentCount; j++)
-                    *dest++ = oldData.get<int>(i, j);
+                    *dest++ = oldData.get<int8_t>(i, j);
+        }
+        break;
+    case Int32:
+        {
+            int32_t* __restrict dest = reinterpret_cast<int32_t*>(newData.get());
+            for(size_t i = 0; i < _numElements; i++)
+                for(size_t j = 0; j < _componentCount; j++)
+                    *dest++ = oldData.get<int32_t>(i, j);
         }
         break;
     case Int64:
         {
-            qlonglong* __restrict dest = reinterpret_cast<qlonglong*>(newData.get());
+            int64_t* __restrict dest = reinterpret_cast<int64_t*>(newData.get());
             for(size_t i = 0; i < _numElements; i++)
                 for(size_t j = 0; j < _componentCount; j++)
-                    *dest++ = oldData.get<qlonglong>(i, j);
+                    *dest++ = oldData.get<int64_t>(i, j);
         }
         break;
-    case Float:
+    case Float32:
         {
-            FloatType* __restrict dest = reinterpret_cast<FloatType*>(newData.get());
+            float* __restrict dest = reinterpret_cast<float*>(newData.get());
             for(size_t i = 0; i < _numElements; i++)
                 for(size_t j = 0; j < _componentCount; j++)
-                    *dest++ = oldData.get<FloatType>(i, j);
+                    *dest++ = oldData.get<float>(i, j);
+        }
+        break;
+    case Float64:
+        {
+            double* __restrict dest = reinterpret_cast<double*>(newData.get());
+            for(size_t i = 0; i < _numElements; i++)
+                for(size_t j = 0; j < _componentCount; j++)
+                    *dest++ = oldData.get<double>(i, j);
         }
         break;
     default:
@@ -722,13 +678,12 @@ void DataBuffer::convertDataType(int newDataType)
     }
     oldData.reset();
 
-    prepareWriteAccess();
+    WriteAccess writeAccess(*this);
     _dataType = newDataType;
     _dataTypeSize = newDataTypeSize;
     _stride = newStride;
     _capacity = _numElements;
     _data = std::move(newData);
-    finishWriteAccess();
 }
 
 }   // End of namespace

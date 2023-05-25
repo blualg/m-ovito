@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,7 +32,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/grid/Grid.h>
 
-namespace Ovito::CrystalAnalysis 
+namespace Ovito::CrystalAnalysis
 {
     using namespace Ovito::Particles;
     using namespace Ovito::Mesh;
@@ -48,8 +48,6 @@ namespace Ovito::CrystalAnalysis
     class DislocationNetwork;
     struct DislocationNode;
     struct DislocationSegment;
-    class Microstructure;
-    class MicrostructureAccess;
 }
 
 #endif

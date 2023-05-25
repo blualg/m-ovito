@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,14 +50,14 @@ public:
     const QString& pythonName() const { return _pythonName; }
 
     /// Creates a new property storage for one of the registered standard properties.
-    virtual PropertyPtr createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const { return {}; }
+    virtual PropertyPtr createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const { return {}; }
 
     /// Creates a new property object for a standard property of this container class.
-    PropertyPtr createStandardProperty(size_t elementCount, int type, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, const ConstDataObjectPath& containerPath = ConstDataObjectPath{}) const;
+    PropertyPtr createStandardProperty(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath = ConstDataObjectPath{}) const;
 
     /// Creates a new property object for a user-defined property.
-    PropertyPtr createUserProperty(size_t elementCount, int dataType, size_t componentCount, const QString& name, DataBuffer::InitializationFlags flags = DataBuffer::NoFlags, int type = 0, QStringList componentNames = QStringList()) const {
-        return PropertyPtr::create(elementCount, dataType, componentCount, name, flags, type, std::move(componentNames));
+    PropertyPtr createUserProperty(DataBuffer::BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QString& name, int type = 0, QStringList componentNames = QStringList()) const {
+        return PropertyPtr::create(init, elementCount, dataType, componentCount, name, type, std::move(componentNames));
     }
 
     /// Indicates whether this kind of property container supports picking of individual elements in the viewports.

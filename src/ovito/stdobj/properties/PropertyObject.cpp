@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,15 +37,15 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(PropertyObject, title, ReferenceEvent::TitleChan
 /******************************************************************************
 * Constructor creating an empty property array.
 ******************************************************************************/
-PropertyObject::PropertyObject(ObjectCreationParams params) : DataBuffer(params)
+PropertyObject::PropertyObject(ObjectInitializationFlags flags) : DataBuffer(flags)
 {
 }
 
 /******************************************************************************
 * Constructor allocating a property array with given size and data layout.
 ******************************************************************************/
-PropertyObject::PropertyObject(ObjectCreationParams params, size_t elementCount, int dataType, size_t componentCount, const QString& name, DataBuffer::InitializationFlags flags, int type, QStringList componentNames) :
-    DataBuffer(params, elementCount, dataType, componentCount, flags, std::move(componentNames)),
+PropertyObject::PropertyObject(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QString& name, int type, QStringList componentNames) :
+    DataBuffer(flags, init, elementCount, dataType, componentCount, std::move(componentNames)),
     _name(name),
     _type(type)
 {
@@ -162,7 +162,7 @@ void PropertyObject::loadFromStream(ObjectLoadStream& stream)
 }
 
 /******************************************************************************
-* Checks if this property storage and its contents exactly match those of 
+* Checks if this property storage and its contents exactly match those of
 * another property storage.
 ******************************************************************************/
 bool PropertyObject::equals(const PropertyObject& other) const
@@ -203,7 +203,7 @@ void PropertyObject::makeWritableFromPython()
 
 /******************************************************************************
 * Puts the property array back into the default read-only state.
-* In the read-only state, the Python binding layer will not permit write 
+* In the read-only state, the Python binding layer will not permit write
 * access to the property's internal data.
 ******************************************************************************/
 void PropertyObject::makeReadOnlyFromPython()
@@ -224,22 +224,22 @@ void PropertyObject::makeReadOnlyFromPython()
 ******************************************************************************/
 std::tuple<std::map<int,int>, ConstPropertyPtr> PropertyObject::generateContiguousTypeIdMapping(int baseId) const
 {
-    OVITO_ASSERT(dataType() == PropertyObject::Int && componentCount() == 1);
+    OVITO_ASSERT(dataType() == PropertyObject::Int32 && componentCount() == 1);
 
     // Generate sorted list of existing type IDs.
-    std::set<int> typeIds;
+    std::set<int32_t> typeIds;
     for(const ElementType* t : elementTypes())
         typeIds.insert(t->numericId());
 
     // Add ID values that occur in the property array but which have not been defined as a type.
-    for(int t : ConstDataBufferAccess<int>(this))
+    for(int32_t t : BufferAccess<const int32_t>(this))
         typeIds.insert(t);
 
     // Build the mappings between old and new IDs.
-    std::map<int,int> oldToNewMap;
-    std::map<int,int> newToOldMap;
+    std::map<int32_t,int32_t> oldToNewMap;
+    std::map<int32_t,int32_t> newToOldMap;
     bool remappingRequired = false;
-    for(int id : typeIds) {
+    for(int32_t id : typeIds) {
         if(id != baseId) remappingRequired = true;
         oldToNewMap.emplace(id, baseId);
         newToOldMap.emplace(baseId++, id);
@@ -249,10 +249,10 @@ std::tuple<std::map<int,int>, ConstPropertyPtr> PropertyObject::generateContiguo
     ConstPropertyPtr remappedArray;
     if(remappingRequired) {
         // Make a copy of this property, which can be modified.
-        PropertyAccessAndRef<int> array(CloneHelper().cloneObject(this, false));
-        for(int& id : array)
+        PropertyPtr copy = CloneHelper().cloneObject(this, false);
+        for(auto& id : BufferAccess<int32_t>(copy))
             id = oldToNewMap[id];
-        remappedArray = array.take();
+        remappedArray = std::move(copy);
     }
     else {
         // No data copied needed if ordering hasn't changed.
@@ -270,7 +270,7 @@ std::tuple<std::map<int,int>, ConstPropertyPtr> PropertyObject::generateContiguo
 ******************************************************************************/
 void PropertyObject::sortElementTypesByName()
 {
-    OVITO_ASSERT(dataType() == StandardDataType::Int);
+    OVITO_ASSERT(dataType() == DataBuffer::Int32 && componentCount() == 1);
 
     // Check if type IDs form a consecutive sequence starting at 1.
     // If not, we leave the type order as it is.
@@ -281,13 +281,13 @@ void PropertyObject::sortElementTypesByName()
     }
 
     // Check if types are already in the correct order.
-    if(std::is_sorted(elementTypes().begin(), elementTypes().end(), 
+    if(std::is_sorted(elementTypes().begin(), elementTypes().end(),
             [](const ElementType* a, const ElementType* b) { return a->name().compare(b->name(), Qt::CaseInsensitive) < 0; }))
         return;
 
     // Reorder types by name.
     DataRefVector<ElementType> types = elementTypes();
-    std::sort(types.begin(), types.end(), 
+    std::sort(types.begin(), types.end(),
         [](const ElementType* a, const ElementType* b) { return a->name().compare(b->name(), Qt::CaseInsensitive) < 0; });
     setElementTypes(std::move(types));
 
@@ -306,7 +306,7 @@ void PropertyObject::sortElementTypesByName()
     }
 
     // Remap type IDs.
-    for(int& t : DataBufferAccess<int>(this)) {
+    for(int& t : BufferAccess<int32_t>(this)) {
         OVITO_ASSERT(t >= 1 && t < mapping.size());
         t = mapping[t];
     }
@@ -319,7 +319,7 @@ void PropertyObject::sortElementTypesByName()
 void PropertyObject::sortElementTypesById()
 {
     DataRefVector<ElementType> types = elementTypes();
-    std::sort(types.begin(), types.end(), 
+    std::sort(types.begin(), types.end(),
         [](const auto& a, const auto& b) { return a->numericId() < b->numericId(); });
     setElementTypes(std::move(types));
 }
@@ -350,9 +350,9 @@ void PropertyObject::updateEditableProxies(PipelineFlowState& state, ConstDataOb
         }
     }
     else if(!self->elementTypes().empty()) {
-        // Create and initialize a new proxy property object. 
+        // Create and initialize a new proxy property object.
         // Note: We avoid copying the property data here by constructing the proxy PropertyObject from scratch instead of cloning the original data object.
-        OORef<PropertyObject> newProxy = OORef<PropertyObject>::create(ObjectCreationParams::WithoutVisElement, 0, self->dataType(), self->componentCount(), self->name(), DataBuffer::NoFlags, self->type(), self->componentNames());
+        OORef<PropertyObject> newProxy = OORef<PropertyObject>::create(ObjectInitializationFlag::DontCreateVisElement, DataBuffer::Uninitialized, 0, self->dataType(), self->componentCount(), self->name(), self->type(), self->componentNames());
         newProxy->setTitle(self->title());
 
         // Adopt the proxy objects corresponding to the element types, which have already been created by
@@ -368,8 +368,8 @@ void PropertyObject::updateEditableProxies(PipelineFlowState& state, ConstDataOb
 }
 
 /******************************************************************************
-* Creates and returns a new numeric element type with the given numeric ID and, 
-* optionally, a human-readable name. If an element type with the given numeric ID 
+* Creates and returns a new numeric element type with the given numeric ID and,
+* optionally, a human-readable name. If an element type with the given numeric ID
 * already exists in this property's element type list, it will be returned instead.
 ******************************************************************************/
 const ElementType* PropertyObject::addNumericType(const PropertyContainerClass& containerClass, int id, const QString& name, OvitoClassPtr elementTypeClass)
@@ -377,7 +377,7 @@ const ElementType* PropertyObject::addNumericType(const PropertyContainerClass& 
     if(const ElementType* existingType = elementType(id))
         return existingType;
 
-    // If the caller did not specify an element type class, let the PropertyConatiner class 
+    // If the caller did not specify an element type class, let the PropertyConatiner class
     // determine the right element type class for the given property.
     if(elementTypeClass == nullptr) {
         elementTypeClass = containerClass.typedPropertyElementClass(type());

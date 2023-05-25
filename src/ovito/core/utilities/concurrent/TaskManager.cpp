@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,6 +35,7 @@ TaskManager::TaskManager()
     qRegisterMetaType<TaskPtr>("TaskPtr");
 }
 
+#ifdef OVITO_DEBUG
 /******************************************************************************
 * Destructor.
 ******************************************************************************/
@@ -45,6 +46,7 @@ TaskManager::~TaskManager()
                         "Some tasks are still in progress while destroying the TaskManager.");
     }
 }
+#endif
 
 /******************************************************************************
 * Registers a future's promise with the progress manager, which will display
@@ -85,16 +87,22 @@ void TaskManager::registerTask(Task& task)
 /******************************************************************************
 * Registers a promise with the task manager.
 ******************************************************************************/
-TaskWatcher* TaskManager::addTaskInternal(const TaskPtr& task)
+void TaskManager::addTaskInternal(const TaskPtr& task)
 {
     OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
+
+    // Abort all new tasks while application shutting down.
+    if(isShuttingDown()) {
+        task->cancel();
+        return;
+    }
 
     // Check if the task has already been registered before.
     // In this case, a TaskWatcher must exist for the task that has been added as a child object to the TaskManager.
     for(QObject* childObject : children()) {
         if(TaskWatcher* watcher = qobject_cast<TaskWatcher*>(childObject)) {
             if(watcher->task() == task) {
-                return watcher;
+                return;
             }
         }
     }
@@ -106,22 +114,25 @@ TaskWatcher* TaskManager::addTaskInternal(const TaskPtr& task)
 
     // Activate the watcher.
     watcher->watch(task);
-    return watcher;
 }
 
 /******************************************************************************
 * Returns the watchers for all currently registered tasks.
 ******************************************************************************/
-QList<TaskWatcher*> TaskManager::registeredTasks() const 
-{ 
-    return findChildren<TaskWatcher*>(QString{}, Qt::FindDirectChildrenOnly); 
+QList<TaskWatcher*> TaskManager::registeredTasks() const
+{
+#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
+    return findChildren<TaskWatcher*>(Qt::FindDirectChildrenOnly);
+#else
+    return findChildren<TaskWatcher*>(QString{}, Qt::FindDirectChildrenOnly);
+#endif
 }
 
 /******************************************************************************
-* Enables or disables printing of task status messages to the console for 
+* Enables or disables printing of task status messages to the console for
 * this task manager.
 ******************************************************************************/
-void TaskManager::setConsoleLoggingEnabled(bool enabled) 
+void TaskManager::setConsoleLoggingEnabled(bool enabled)
 {
     if(_consoleLoggingEnabled != enabled) {
         _consoleLoggingEnabled = enabled;
@@ -130,7 +141,7 @@ void TaskManager::setConsoleLoggingEnabled(bool enabled)
             for(TaskWatcher* watcher : runningTasks()) {
                 connect(watcher, &TaskWatcher::progressTextChanged, this, &TaskManager::taskProgressTextChangedInternal);
             }
-        }   
+        }
     }
 }
 
@@ -149,7 +160,7 @@ void TaskManager::taskProgressTextChangedInternal(const QString& msg)
 void TaskManager::taskStartedInternal()
 {
     TaskWatcher* watcher = static_cast<TaskWatcher*>(sender());
-    _runningTaskStack.push_back(watcher);
+    _runningTasks.push_back(watcher);
 
     // Foward status messages from the task to the console if logging is enabled.
     if(_consoleLoggingEnabled)
@@ -165,14 +176,18 @@ void TaskManager::taskFinishedInternal()
 {
     TaskWatcher* watcher = static_cast<TaskWatcher*>(sender());
 
-    if(auto iter = std::find(_runningTaskStack.begin(), _runningTaskStack.end(), watcher); iter != _runningTaskStack.end()) {
-        _runningTaskStack.erase(iter);
+    if(auto iter = std::find(_runningTasks.begin(), _runningTasks.end(), watcher); iter != _runningTasks.end()) {
+        _runningTasks.erase(iter);
     }
 
     Q_EMIT taskFinished(watcher);
 
     watcher->reset();
     watcher->deleteLater();
+
+    if(runningTasks().empty()) {
+        Q_EMIT allTasksFinished();
+    }
 }
 
 /******************************************************************************
@@ -180,16 +195,39 @@ void TaskManager::taskFinishedInternal()
 ******************************************************************************/
 void TaskManager::shutdown()
 {
+    OVITO_ASSERT(QThread::currentThread() == this->thread());
+    OVITO_ASSERT(!_isShuttingDown);
+
+    _isShuttingDown = true;
+
     for(TaskWatcher* watcher : registeredTasks()) {
-        if(watcher->task())
+        if(watcher->task()) {
             watcher->task()->cancel();
+        }
     }
 
-    do {
-        QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-        QCoreApplication::sendPostedEvents(nullptr, ObjectExecutor::workEventType());
+    // Block with a local event until all running tasks have completed.
+    if(!runningTasks().empty()) {
+        QEventLoop eventLoop;
+        connect(this, &TaskManager::allTasksFinished, &eventLoop, &QEventLoop::quit);
+
+        // Temporarily switch to a null context while in the event loop.
+        ExecutionContext::Scope execScope(ExecutionContext{});
+        // Also switch back to the null task.
+        Task::Scope taskScope(nullptr);
+
+        OVITO_ASSERT(!runningTasks().empty());
+        eventLoop.exec();
     }
-    while(!runningTasks().empty());
+    OVITO_ASSERT(runningTasks().empty());
+
+    // Wait until all threads did terminate. That's because canceled asynchronous tasks
+    // may still be running in threads until they notice they have been canceled.
+    bool result = QThreadPool::globalInstance()->waitForDone();
+    OVITO_ASSERT(result);
+
+    // Execute all remaining deferred tasks which have not been registered with this task manager.
+    QCoreApplication::sendPostedEvents(nullptr, ObjectExecutor::workEventType());
 }
 
 }   // End of namespace

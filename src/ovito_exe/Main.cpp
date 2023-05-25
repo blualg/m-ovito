@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 {
 #if defined(OVITO_BUILD_PLUGIN_PYSCRIPT) && !defined(OVITO_BUILD_BASIC)
     // This (useless) call to a Python C API function is needed to force-link the Python library into the executable.
-    // We have to make sure the Python lib gets loaded into process memory before any of the OVITO plugin Python modules 
+    // We have to make sure the Python lib gets loaded into process memory before any of OVITO's plugin Python modules
     // are loaded, because they depend on the Python lib but were not explicitly linked to it.
     if(Py_IsInitialized())
         return 1;
@@ -52,24 +52,25 @@ int main(int argc, char** argv)
 
     // Initialize the application.
 #ifndef OVITO_QML_GUI
-    Ovito::GuiApplication app;
+    std::shared_ptr<Ovito::GuiApplication> app = std::make_shared<Ovito::GuiApplication>();
 #else
-    Ovito::WasmApplication app;
+    std::shared_ptr<Ovito::WasmApplication> app = std::make_shared<Ovito::WasmApplication>();
 #endif
-    if(!app.initialize(argc, argv))
-        return 1;
 
-    // The Application::initialize() method may return with success but without creating a Qt application
-    // object. This happens, for example, when the --version command line parameter was specified to the user.
-    // In this case, we terminate the program immediately without even entering the event loop.
-    if(!QCoreApplication::instance())
-        return 0;
-
-    // Enter event loop if a Qt application has been created.
-    int result = app.runApplication();
-
-    // Shut application down.
-    app.shutdown();
+    int result = 1;
+    if(app->initialize(argc, argv)) {
+        if(!QCoreApplication::instance()) {
+            // Application::initialize() may return successfully but without creating a Qt application object.
+            // This happens, for example, when the --version command line parameter has been specified by the user.
+            // In this case we quit immediately without entering the event loop.
+            result = 0;
+        }
+        else {
+            // Enter event loop.
+            result = QCoreApplication::exec();
+        }
+    }
+    app->shutdown();
 
     return result;
 }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -64,7 +64,7 @@ PipelineStatus ParticlesDeleteSelectedModifierDelegate::apply(const ModifierEval
             // Generate filter mask.
             boost::dynamic_bitset<> mask(selProperty->size());
             boost::dynamic_bitset<>::size_type i = 0;
-            for(int s : ConstPropertyAccess<int>(selProperty)) {
+            for(auto s : BufferAccess<const SelectionIntType>(selProperty)) {
                 if(s != 0) {
                     mask.set(i++);
                     numSelected++;
@@ -145,7 +145,7 @@ PipelineStatus BondsDeleteSelectedModifierDelegate::apply(const ModifierEvaluati
                 // Generate filter mask.
                 boost::dynamic_bitset<> mask(selProperty->size());
                 boost::dynamic_bitset<>::size_type i = 0;
-                for(int s : ConstPropertyAccess<int>(selProperty)) {
+                for(auto s : BufferAccess<const SelectionIntType>(selProperty)) {
                     if(s != 0) {
                         mask.set(i++);
                         numSelected++;

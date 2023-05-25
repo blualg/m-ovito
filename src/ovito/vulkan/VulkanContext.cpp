@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,7 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/app/Application.h>
-#include <ovito/core/dataset/data/DataBufferAccess.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include "VulkanContext.h"
 
@@ -46,7 +46,7 @@ static bool vulkanDebugFilter(VkDebugReportFlagsEXT flags, VkDebugReportObjectTy
 ******************************************************************************/
 VulkanContext::VulkanContext(QObject* parent) : QObject(parent)
 {
-    setDeviceExtensions(QByteArrayList() 
+    setDeviceExtensions(QByteArrayList()
         << VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME
         << VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME
         << VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
@@ -68,7 +68,7 @@ std::shared_ptr<QVulkanInstance> VulkanContext::vkInstance()
     else {
 #ifdef Q_OS_LINUX
         // Workaround for Qt not finding libvulkan.so.1 on Ubuntu systems.
-        // The implementation of QVulkanInstance looks for libvulkan.so only. 
+        // The implementation of QVulkanInstance looks for libvulkan.so only.
         // In order to make it find libvulkan.so.1, we preload that library here.
         if(qEnvironmentVariableIsSet("QT_VULKAN_LIB") == false) {
             QLibrary vulkanLib("vulkan", 1);
@@ -83,10 +83,10 @@ std::shared_ptr<QVulkanInstance> VulkanContext::vkInstance()
         inst->setLayers(QByteArrayList() << "VK_LAYER_LUNARG_standard_validation");
         inst->installDebugOutputFilter(&vulkanDebugFilter);
 #endif
-        inst->setExtensions(QByteArrayList() 
+        inst->setExtensions(QByteArrayList()
             << VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME
             << VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-        
+
         if(!inst->create()) {
             throw SceneRenderer::RendererException(tr("Failed to initialize Vulkan interface (error code %1). Please make sure the Vulkan library is installed on your system and the graphics driver supports at least Vulkan API 1.0. "
                 "If the Vulkan interface doesn't work, you can change the rendering interface back to OpenGL in the application settings dialog of OVITO.").arg(inst->errorCode()));
@@ -137,7 +137,7 @@ QVector<VkPhysicalDeviceProperties> VulkanContext::availablePhysicalDevices()
 * Requests the usage of the physical device with index \a idx. The index
 * corresponds to the list returned from availablePhysicalDevices().
 * By default the first physical device is used.
-* 
+*
 * This function must be called before the logical device is created.
 ******************************************************************************/
 void VulkanContext::setPhysicalDeviceIndex(int idx)
@@ -197,7 +197,7 @@ QVulkanInfoVector<QVulkanExtension> VulkanContext::supportedDeviceExtensions()
 }
 
 /******************************************************************************
-* Sets the list of device \a extensions to be enabled. Unsupported extensions 
+* Sets the list of device \a extensions to be enabled. Unsupported extensions
 * are ignored.
 *
 * This function must be called before the logical device is created.
@@ -212,7 +212,7 @@ void VulkanContext::setDeviceExtensions(const QByteArrayList& extensions)
 }
 
 /******************************************************************************
-* Creates the logical Vulkan device.  
+* Creates the logical Vulkan device.
 ******************************************************************************/
 bool VulkanContext::create(QWindow* window)
 {
@@ -223,7 +223,7 @@ bool VulkanContext::create(QWindow* window)
         return true;
 
     _vulkanFunctions = vulkanInstance()->functions();
-    
+
     qCDebug(lcVulkan, "VulkanContext create");
 
     // Get the list of available physical devices.
@@ -282,7 +282,7 @@ bool VulkanContext::create(QWindow* window)
     qCDebug(lcVulkan, "Using queue families: graphics = %u present = %u", _gfxQueueFamilyIdx, _presQueueFamilyIdx);
 
     // Filter out unsupported extensions in order to keep symmetry
-    // with how QVulkanInstance behaves. Add the swapchain extension when 
+    // with how QVulkanInstance behaves. Add the swapchain extension when
     // the device is to be used for a window.
     QVector<const char*> devExts;
     QVulkanInfoVector<QVulkanExtension> supportedExtensions = supportedDeviceExtensions();
@@ -431,15 +431,15 @@ bool VulkanContext::create(QWindow* window)
     vulkanFunctionsTable.vkDestroyImage = (PFN_vkDestroyImage)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkDestroyImage");
     vulkanFunctionsTable.vkCmdCopyBuffer = (PFN_vkCmdCopyBuffer)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkCmdCopyBuffer");
 
-    // VK_KHR_dedicated_allocation is a Vulkan extension which can be used to improve performance on some GPUs. 
-    // It augments Vulkan API with possibility to query driver whether it prefers particular buffer or image to have its own, 
+    // VK_KHR_dedicated_allocation is a Vulkan extension which can be used to improve performance on some GPUs.
+    // It augments Vulkan API with possibility to query driver whether it prefers particular buffer or image to have its own,
     // dedicated allocation (separate VkDeviceMemory block) for better efficiency - to be able to do some internal optimizations.
     if(reqExts.contains(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME) && reqExts.contains(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME)) {
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
         vulkanFunctionsTable.vkGetBufferMemoryRequirements2KHR = (PFN_vkGetBufferMemoryRequirements2KHR)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkGetBufferMemoryRequirements2KHR");
         vulkanFunctionsTable.vkGetImageMemoryRequirements2KHR = (PFN_vkGetImageMemoryRequirements2KHR)vulkanFunctions()->vkGetDeviceProcAddr(logicalDevice(), "vkGetImageMemoryRequirements2KHR");
     }
-    
+
     allocatorInfo.pVulkanFunctions = &vulkanFunctionsTable;
     vmaCreateAllocator(&allocatorInfo, &_allocator);
 
@@ -505,8 +505,8 @@ bool VulkanContext::create(QWindow* window)
     }
     qCDebug(lcVulkan, "Picked memtype %d for device local memory", _deviceLocalMemIndex);
 
-    // Determine if this device uses a unified memory architecture, i.e., 
-    // all device-local memory heaps are also the CPU-local memory heaps. 
+    // Determine if this device uses a unified memory architecture, i.e.,
+    // all device-local memory heaps are also the CPU-local memory heaps.
     _isUMA = true;
     for(uint32_t heapIndex = 0; heapIndex < physDevMemProps.memoryHeapCount; heapIndex++) {
         if(!(physDevMemProps.memoryHeaps[heapIndex].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT))
@@ -759,7 +759,7 @@ bool VulkanContext::createVulkanImage(const QSize size,
             qWarning("VulkanContext: Failed to allocate image memory: %d", err);
             return false;
         }
-    } 
+    }
     while(err != VK_SUCCESS);
     VkDeviceSize ofs = 0;
     for(int i = 0; i < count; ++i) {
@@ -979,7 +979,7 @@ VkBuffer VulkanContext::uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, R
     if(dataBuffer->dataType() == DataBuffer::Float) {
         bufferSize = dataBuffer->size() * dataBuffer->componentCount() * sizeof(float);
 
-        // When uploading the data to a SSBO, automatically convert vec3 to vec4, because of the 16-byte alignment requirement of Vulkan. 
+        // When uploading the data to a SSBO, automatically convert vec3 to vec4, because of the 16-byte alignment requirement of Vulkan.
         if(usage == VK_BUFFER_USAGE_STORAGE_BUFFER_BIT && dataBuffer->componentCount() == 3)
             bufferSize = dataBuffer->size() * 4 * sizeof(float);
     }
@@ -988,16 +988,16 @@ VkBuffer VulkanContext::uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, R
         throw SceneRenderer::RendererException(tr("Cannot create Vulkan vertex buffer for DataBuffer with data type %1.").arg(dataBuffer->dataType()));
     }
 
-    // Create a Vulkan buffer object and fill it with the data from the OVITO DataBuffer object. 
+    // Create a Vulkan buffer object and fill it with the data from the OVITO DataBuffer object.
     return createCachedBuffer(dataBuffer, bufferSize, resourceFrame, usage, [&](void* p) {
         if(dataBuffer->dataType() == DataBuffer::Float) {
             // Convert from FloatType to float data type.
-            ConstDataBufferAccess<FloatType, true> arrayAccess(dataBuffer);
+            BufferAccess<const FloatType*> arrayAccess(dataBuffer);
             size_t srcStride = dataBuffer->componentCount();
             float* dst = static_cast<float*>(p);
             size_t dstStride = dataBuffer->componentCount();
 
-            // When uploading the data to a SSBO, automatically convert vec3 to vec4, because of the 16-byte alignment requirement of Vulkan. 
+            // When uploading the data to a SSBO, automatically convert vec3 to vec4, because of the 16-byte alignment requirement of Vulkan.
             if(usage == VK_BUFFER_USAGE_STORAGE_BUFFER_BIT && srcStride == 3)
                 dstStride = 4;
 

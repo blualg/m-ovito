@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,11 +22,14 @@
 
 #include "../../global_uniforms.glsl"
 #include "../../picking.glsl"
+#include "../../shape_orientation.glsl"
 #include <view_ray.vert>
 
 // Inputs:
 in vec3 position;
-in mat4 shape_orientation;
+in float radius;
+in vec3 aspherical_shape;
+in vec4 orientation;
 in vec2 roundness;
 uniform vec3 unit_cube_triangle_strip[14];
 
@@ -35,13 +38,17 @@ flat out vec4 color_fs;
 flat out mat3 view_particle_matrix_fs;
 flat out vec3 particle_view_pos_fs;
 flat out vec2 particle_exponents_fs;
+
 void main()
 {
     // The index of the box corner.
     int corner = <VertexID>;
 
+    // Prepare matrix that describes the aspherical shape and orientation of the particle.
+    mat3 shape_orientation = calc_shape_orientation(orientation, aspherical_shape, radius);
+
     // Compute rotated and scaled unit cube corner coordinates.
-    vec4 scaled_corner = vec4(position, 1.0) + (shape_orientation * vec4(unit_cube_triangle_strip[corner], 0.0));
+    vec4 scaled_corner = vec4(position + shape_orientation * unit_cube_triangle_strip[corner], 1.0);
 
 	// Apply model-view-projection matrix to particle position displaced by the cube vertex position.
     gl_Position = modelview_projection_matrix * scaled_corner;
@@ -51,7 +58,7 @@ void main()
 
     // Pass ellipsoid matrix and center position to fragment shader.
 	particle_view_pos_fs = (modelview_matrix * vec4(position, 1.0)).xyz;
-    view_particle_matrix_fs = <inverse_mat3>(mat3(modelview_matrix) * mat3(shape_orientation));
+    view_particle_matrix_fs = <inverse_mat3>(mat3(modelview_matrix) * shape_orientation);
 
 	// The x-component of the input vector is exponent 'e', the y-component is 'n'.
 	particle_exponents_fs.x = 2.0 / (roundness.x > 0.0 ? roundness.x : 1.0);

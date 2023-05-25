@@ -57,7 +57,7 @@ class OVITO_GRID_EXPORT LAMMPSGridDumpImporter : public FileSourceImporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE LAMMPSGridDumpImporter(ObjectCreationParams params) : FileSourceImporter(params) {}
+    Q_INVOKABLE LAMMPSGridDumpImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags) {}
 
     /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("LAMMPS Grid Dump"); }

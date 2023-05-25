@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,6 +28,7 @@
 #include "UserInterface.h"
 
 #include <QOperatingSystemVersion>
+#include <QAbstractEventDispatcher>
 #include <QProcess>
 
 namespace Ovito {
@@ -38,8 +39,46 @@ namespace Ovito {
 ******************************************************************************/
 void UserInterface::exitWithFatalError(const Exception& ex)
 {
+    // Display fata error message to the user.
     reportError(ex, true);
+
+    // Make sure the main event loop is running.
+    OVITO_ASSERT(QCoreApplication::instance());
+    OVITO_ASSERT(QThread::currentThread()->loopLevel() != 0);
+
+    // This will eventually trigger the QCoreApplication::aboutToQuit signal, which invokes UserInterface::shutdown().
     QCoreApplication::exit(1);
+}
+
+/******************************************************************************
+* Closes the user interface immediately (without asking user to save changes).
+******************************************************************************/
+void UserInterface::shutdown()
+{
+    if(isShuttingDown())
+        return;
+
+    // Set up a local execution context (needed for the use of ObjectExecutor below).
+    ExecutionContext::Scope execScope(ExecutionContext::Type::Scripting, shared_from_this());
+
+    // Close the dataset container. This should release all data objects.
+    datasetContainer().clearAllReferences();
+
+    // Tell other systems we are about to shutdown.
+    signalAboutToQuit();
+
+    // Terminate all running tasks.
+    taskManager().shutdown();
+
+    OVITO_ASSERT(isShuttingDown());
+
+    // Release this UI instance as soon as control returns to the event loop.
+    if(_selfGuard) {
+        if(QThread::currentThread()->loopLevel() != 0)
+            ObjectExecutor(Application::instance(), true).execute([s = std::move(_selfGuard)]() mutable {});
+        else
+            _selfGuard.reset();
+    }
 }
 
 /******************************************************************************
@@ -74,15 +113,6 @@ bool UserInterface::processEvents()
 std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, int height, bool showRenderingOperationProgress)
 {
     return std::make_shared<FrameBuffer>(width, height);
-}
-
-/******************************************************************************
-* Indicates whether the program session is being closed and all task in progress should be canceled.
-******************************************************************************/
-bool UserInterface::isShuttingDown() const
-{
-    // If the application is closing down, the current dataset has been removed from the container.
-    return datasetContainer().currentSet() == nullptr;
 }
 
 /******************************************************************************

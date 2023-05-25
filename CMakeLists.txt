@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2022 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -61,7 +61,7 @@ OPTION(OVITO_USE_PRECOMPILED_HEADERS "Use precompiled C++ headers to speed up bu
 OPTION(OVITO_USE_UNITY_BUILD "Use unity builds to speed up compilation (requires CMake 3.16)." "OFF")
 OPTION(OVITO_DISABLE_THREADING "Disable multi-threading code (meant only for development purposes)." "OFF")
 OPTION(OVITO_USE_GIT_REVISION_NUMBER "Include Git revision information in OVITO version string." "OFF")
-OPTION(OVITO_BUILD_SSH_CLIENT "Build the SSH client for remote file access (requires libssh)." "ON")
+OPTION(OVITO_BUILD_SSH_CLIENT "Build the integrated SSH client for remote file access (requires libssh)." "ON")
 OPTION(OVITO_LIBSSH_RUNTIME_LINKING "Load libssh at runtime" "OFF")
 OPTION(OVITO_USE_SYCL "Enable SYCL build" "OFF")
 
@@ -120,14 +120,6 @@ ENDIF()
 
 IF(APPLE)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -Wno-invalid-offsetof")
-ENDIF()
-
-IF(OVITO_USE_SYCL AND NOT OPENSYCL_DEBUG_LEVEL)
-    IF(CMAKE_BUILD_TYPE MATCHES "Debug")
-        SET(OPENSYCL_DEBUG_LEVEL 3 CACHE INTEGER "Choose the debug level, options are: 0 (no debug), 1 (print errors), 2 (also print warnings), 3 (also print general information)" FORCE)
-    ELSE()
-        SET(OPENSYCL_DEBUG_LEVEL 2 CACHE INTEGER "Choose the debug level, options are: 0 (no debug), 1 (print errors), 2 (also print warnings), 3 (also print general information)" FORCE)
-    ENDIF()
 ENDIF()
 
 # Enable build with AddressSanitizer support if requested.
@@ -295,6 +287,14 @@ ELSE()
         SET(OVITO_PLUGIN_LIBRARY_SUFFIX ".so")
     ELSE()
         SET(OVITO_PLUGIN_LIBRARY_SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    ENDIF()
+ENDIF()
+
+IF(OVITO_USE_SYCL AND NOT OPENSYCL_DEBUG_LEVEL)
+    IF(CMAKE_BUILD_TYPE MATCHES "Debug")
+        SET(OPENSYCL_DEBUG_LEVEL 3 CACHE INTEGER "Choose the debug level, options are: 0 (no debug), 1 (print errors), 2 (also print warnings), 3 (also print general information)" FORCE)
+    ELSE()
+        SET(OPENSYCL_DEBUG_LEVEL 2 CACHE INTEGER "Choose the debug level, options are: 0 (no debug), 1 (print errors), 2 (also print warnings), 3 (also print general information)" FORCE)
     ENDIF()
 ENDIF()
 

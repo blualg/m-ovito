@@ -88,9 +88,17 @@ void PropertiesEditor::initialize(PropertiesPanel* container, const RolloutInser
 }
 
 /******************************************************************************
+* The virtual destructor.
+******************************************************************************/
+PropertiesEditor::~PropertiesEditor()
+{
+    clearAllReferences();
+}
+
+/******************************************************************************
 * Sets the object being edited in this editor.
 ******************************************************************************/
-void PropertiesEditor::setEditObject(RefTarget* newObject) 
+void PropertiesEditor::setEditObject(RefTarget* newObject)
 {
     OVITO_ASSERT_MSG(!editObject() || !newObject || newObject->getOOClass().isDerivedFrom(editObject()->getOOClass()),
             "PropertiesEditor::setEditObject()", "This properties editor was not made for this object class.");
@@ -120,7 +128,7 @@ QWidget* PropertiesEditor::createRollout(const QString& title, const RolloutInse
             QString effectiveTitle = fixedTitle;
 
             // If no fixed title has been specified, use the title of the current object being edited.
-            if(effectiveTitle.isEmpty() && target) 
+            if(effectiveTitle.isEmpty() && target)
                 effectiveTitle = target->objectTitle();
 
             // Let the rollout insertion parameters control the rollout title prefix.
@@ -150,9 +158,9 @@ QWidget* PropertiesEditor::createRollout(const QString& title, const RolloutInse
 /******************************************************************************
 * Returns the top-level window hosting this editor panel.
 ******************************************************************************/
-QWidget* PropertiesEditor::parentWindow() const 
-{ 
-    return parentEditor() ? parentEditor()->parentWindow() : container()->window(); 
+QWidget* PropertiesEditor::parentWindow() const
+{
+    return parentEditor() ? parentEditor()->parentWindow() : container()->window();
 }
 
 /******************************************************************************
@@ -164,7 +172,7 @@ void PropertiesEditor::disableRollout(QWidget* rolloutWidget, const QString& not
     if(Rollout* rollout = container()->findRolloutFromWidget(rolloutWidget)) {
         rollout->setNotice(noticeText);
         // Force a re-layout of the rollouts.
-        QTimer::singleShot(100, container(), &RolloutContainer::updateRollouts);    
+        QTimer::singleShot(100, container(), &RolloutContainer::updateRollouts);
     }
 }
 
@@ -248,7 +256,7 @@ PipelineFlowState PropertiesEditor::getPipelineInput() const
     // Sub-editors inherit the information from their parent editor.
     if(parentEditor())
         return parentEditor()->getPipelineInput();
-    
+
     return {};
 }
 
@@ -285,7 +293,7 @@ std::vector<PipelineFlowState> PropertiesEditor::getPipelineInputs() const
             }
         }
     }
-    
+
     return inputStates;
 }
 
@@ -337,7 +345,7 @@ QVector<ModifierApplication*> PropertiesEditor::modifierApplications() const
 }
 
 /******************************************************************************
-* For an editor of a DataVis element, returns the data collection path to 
+* For an editor of a DataVis element, returns the data collection path to
 * the DataObject which the DataVis element is attached to.
 ******************************************************************************/
 ConstDataObjectRefPath PropertiesEditor::getVisDataObjectPath() const
@@ -367,7 +375,7 @@ ConstDataObjectRefPath PropertiesEditor::getVisDataObjectPath() const
 }
 
 /******************************************************************************
-* For an editor of a DataVis element, returns the DataObject to which the 
+* For an editor of a DataVis element, returns the DataObject to which the
 * DataVis element is attached.
 ******************************************************************************/
 ConstDataObjectRef PropertiesEditor::getVisDataObject() const

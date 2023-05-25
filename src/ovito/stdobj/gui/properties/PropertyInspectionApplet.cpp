@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,7 @@
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyExpressionEvaluator.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
+#include <ovito/gui/desktop/mainwin/data_inspector/DataInspectorPanel.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "PropertyInspectionApplet.h"
 
@@ -54,8 +55,9 @@ void PropertyInspectionApplet::createBaseWidgets()
     _tableView->setModel(_filterModel);
     _cleanupHandler.add(_tableView);
 
-    // Clear filter expression whenever a different scene pipeline is being selected by the user.
-    connect(this, &DataInspectionApplet::currentObjectChanged, _resetFilterAction, &QAction::trigger);
+    // Clear filter expression whenever a different scene pipeline or data object is selected by the user.
+    connect(this, &DataInspectionApplet::currentObjectPathChanged, _resetFilterAction, &QAction::trigger);
+    connect(inspectorPanel(), &DataInspectorPanel::selectedPipelineChanged, _resetFilterAction, &QAction::trigger);
     // Update tabular display whenever the user selects a different property container in the list.
     connect(this, &DataInspectionApplet::currentObjectChanged, this, &PropertyInspectionApplet::onCurrentContainerChanged);
 }
@@ -95,7 +97,7 @@ bool PropertyInspectionApplet::selectDataObject(PipelineObject* dataSource, cons
     // Check the property columns in case the requested data object is a property object.
     const auto& properties = _tableModel->properties();
     auto iter = boost::find_if(properties, [&](const PropertyObject* property) {
-        return property->dataSource() == dataSource && 
+        return property->dataSource() == dataSource &&
             (objectIdentifierHint.isEmpty() || property->identifier().startsWith(objectIdentifierHint));
     });
     if(iter != properties.end()) {
@@ -113,7 +115,7 @@ void PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyCon
     // Generate the new list of properties.
     std::vector<ConstPropertyPtr> newProperties;
     if(container) {
-        // Let the sub-class insert an extra ad-hoc column. 
+        // Let the sub-class insert an extra ad-hoc column.
         // This option is used for DataTables, for example, which compute the x-axis dynamically.
         if(ConstPropertyPtr headerColumn = _applet->createHeaderColumnProperty(container))
             newProperties.push_back(std::move(headerColumn));
@@ -226,8 +228,8 @@ QVariant PropertyInspectionApplet::PropertyTableModel::data(const QModelIndex& i
             QString str;
             for(size_t component = 0; component < property->componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(" ");
-                if(property->dataType() == PropertyObject::Int) {
-                    ConstPropertyAccess<int, true> data(property);
+                if(property->dataType() == PropertyObject::Int32) {
+                    BufferAccess<const int32_t*> data(property);
                     str += QString::number(data.get(elementIndex, component));
                     if(property->elementTypes().empty() == false) {
                         if(const ElementType* ptype = property->elementType(data.get(elementIndex, component))) {
@@ -237,11 +239,19 @@ QVariant PropertyInspectionApplet::PropertyTableModel::data(const QModelIndex& i
                     }
                 }
                 else if(property->dataType() == PropertyObject::Int64) {
-                    ConstPropertyAccess<qlonglong, true> data(property);
+                    BufferAccess<const int64_t*> data(property);
                     str += QString::number(data.get(elementIndex, component));
                 }
-                else if(property->dataType() == PropertyObject::Float) {
-                    ConstPropertyAccess<FloatType, true> data(property);
+                else if(property->dataType() == PropertyObject::Int8) {
+                    BufferAccess<const int8_t*> data(property);
+                    str += QString::number(data.get(elementIndex, component));
+                }
+                else if(property->dataType() == PropertyObject::Float32) {
+                    BufferAccess<const float*> data(property);
+                    str += QString::number(data.get(elementIndex, component));
+                }
+                else if(property->dataType() == PropertyObject::Float64) {
+                    BufferAccess<const double*> data(property);
                     str += QString::number(data.get(elementIndex, component));
                 }
             }
@@ -254,13 +264,15 @@ QVariant PropertyInspectionApplet::PropertyTableModel::data(const QModelIndex& i
         size_t elementIndex = index.row();
         if(elementIndex < property->size()) {
             if(_applet->isColorProperty(property)) {
-                ConstPropertyAccess<Color> data(property);
-                return (QColor)data[elementIndex];
+                if(property->dataType() == DataBuffer::Float32)
+                    return static_cast<QColor>(BufferAccess<const ColorT<float>>(property)[elementIndex]);
+                else if(property->dataType() == DataBuffer::Float64)
+                    return static_cast<QColor>(BufferAccess<const ColorT<double>>(property)[elementIndex]);
             }
-            else if(property->dataType() == PropertyObject::Int && property->componentCount() == 1 && property->elementTypes().empty() == false) {
-                ConstPropertyAccess<int> data(property);
+            else if(property->dataType() == PropertyObject::Int32 && property->componentCount() == 1 && property->elementTypes().empty() == false) {
+                BufferAccess<const int32_t> data(property);
                 if(const ElementType* ptype = property->elementType(data[elementIndex]))
-                    return (QColor)ptype->color();
+                    return static_cast<QColor>(ptype->color());
             }
         }
     }

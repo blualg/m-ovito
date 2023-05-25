@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -53,14 +53,14 @@ private:
 
     OORef<ElementSelectionSet> _owner;
     boost::dynamic_bitset<> _selection;
-    QSet<qlonglong> _selectedIdentifiers;
+    QSet<qlonglong> _selectedIdentifiers; // Note: using qlonglong instead of IdentifierIntType for compatibility with corresponding field of ElementSelectionSet class
 };
 
 /* Undo record that can restore selection state of a single element. */
 class ToggleSelectionOperation : public UndoableOperation
 {
 public:
-    ToggleSelectionOperation(ElementSelectionSet* owner, qlonglong id, size_t elementIndex = std::numeric_limits<size_t>::max()) :
+    ToggleSelectionOperation(ElementSelectionSet* owner, IdentifierIntType id, size_t elementIndex = std::numeric_limits<size_t>::max()) :
         _owner(owner), _index(elementIndex), _id(id) {}
 
     virtual void undo() override {
@@ -77,7 +77,7 @@ public:
 private:
 
     OORef<ElementSelectionSet> _owner;
-    qlonglong _id;
+    IdentifierIntType _id;
     size_t _index;
 };
 
@@ -125,13 +125,13 @@ void ElementSelectionSet::resetSelection(const PropertyContainer* container)
     OVITO_ASSERT(container != nullptr);
 
     // Take a snapshot of the current selection state.
-    if(ConstDataBufferAccess<int> selectionProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
+    if(BufferAccess<const SelectionIntType> selectionProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
 
         // Make a backup of the old snapshot so it may be restored.
         pushIfUndoRecording<ReplaceSelectionOperation>(this);
 
         // Obtain access to the unique identifiers of the data elements (if present).
-        ConstDataBufferAccess<qlonglong> identifierProperty;
+        BufferAccess<const IdentifierIntType> identifierProperty;
         if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
             identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
         OVITO_ASSERT(!identifierProperty || selectionProperty.size() == identifierProperty.size());
@@ -194,7 +194,7 @@ void ElementSelectionSet::setSelection(const PropertyContainer* container, const
     pushIfUndoRecording<ReplaceSelectionOperation>(this);
 
     // Obtain access to the unique identifiers of the data elements (if present).
-    ConstDataBufferAccess<qlonglong> identifierProperty;
+    BufferAccess<const IdentifierIntType> identifierProperty;
     if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
         identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
     OVITO_ASSERT(!identifierProperty || selection.size() == identifierProperty.size());
@@ -248,7 +248,7 @@ void ElementSelectionSet::toggleElement(const PropertyContainer* container, size
         return;
 
     // Obtain access to the unique identifiers of the data elements (if present).
-    ConstDataBufferAccess<qlonglong> identifierProperty;
+    BufferAccess<const IdentifierIntType> identifierProperty;
     if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
         identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
 
@@ -265,7 +265,7 @@ void ElementSelectionSet::toggleElement(const PropertyContainer* container, size
 /******************************************************************************
 * Toggles the selection state of a single element.
 ******************************************************************************/
-void ElementSelectionSet::toggleElementById(qlonglong elementId)
+void ElementSelectionSet::toggleElementById(IdentifierIntType elementId)
 {
     // Make a backup of the old selection state so it may be restored.
     pushIfUndoRecording<ToggleSelectionOperation>(this, elementId);
@@ -301,7 +301,7 @@ void ElementSelectionSet::selectAll(const PropertyContainer* container)
     pushIfUndoRecording<ReplaceSelectionOperation>(this);
 
     // Obtain access to the unique identifiers of the data elements (if present).
-    ConstDataBufferAccess<qlonglong> identifierProperty;
+    BufferAccess<const IdentifierIntType> identifierProperty;
     if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
         identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
 
@@ -328,7 +328,7 @@ void ElementSelectionSet::invertSelection(const PropertyContainer* container)
     pushIfUndoRecording<ReplaceSelectionOperation>(this);
 
     // Obtain access to the unique identifiers of the data elements (if present).
-    ConstDataBufferAccess<qlonglong> identifierProperty;
+    BufferAccess<const IdentifierIntType> identifierProperty;
     if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
         identifierProperty = container->getProperty(PropertyObject::GenericIdentifierProperty);
 
@@ -351,7 +351,7 @@ void ElementSelectionSet::invertSelection(const PropertyContainer* container)
 /******************************************************************************
 * Copies the stored selection set into the given output selection property.
 ******************************************************************************/
-PipelineStatus ElementSelectionSet::applySelection(DataBufferAccess<int> outputSelectionProperty, ConstDataBufferAccess<qlonglong> identifierProperty)
+PipelineStatus ElementSelectionSet::applySelection(BufferAccess<SelectionIntType> outputSelectionProperty, BufferAccess<const IdentifierIntType> identifierProperty)
 {
     size_t nselected = 0;
     if(!identifierProperty || !useIdentifiers()) {

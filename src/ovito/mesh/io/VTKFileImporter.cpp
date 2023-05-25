@@ -186,7 +186,7 @@ void VTKFileImporter::FrameLoader::loadFile()
             if(!isPointData) {
                 mesh->setHasFaceColors(true);
                 auto& faceColors = mesh->faceColors();
-                std::fill(faceColors.begin(), faceColors.end(), ColorA(1,1,1,1));
+                std::fill(faceColors.begin(), faceColors.end(), ColorAG(1,1,1,1));
                 component = 0;
                 for(int i = 0; i < polygonCount;) {
                     if(stream.eof())
@@ -195,7 +195,7 @@ void VTKFileImporter::FrameLoader::loadFile()
                     for(; ;) {
                         while(*s <= ' ' && *s != '\0') ++s;         // Skip whitespace in front of token
                         if(!*s || i >= polygonCount) break;
-                        faceColors[i][component++] = (FloatType)std::atof(s);
+                        faceColors[i][component++] = static_cast<GraphicsFloatType>(std::atof(s));
                         if(component == componentCount) {
                             component = 0;
                             ++i;
@@ -207,7 +207,7 @@ void VTKFileImporter::FrameLoader::loadFile()
             else {
                 mesh->setHasVertexColors(true);
                 auto& vertexColors = mesh->vertexColors();
-                std::fill(vertexColors.begin(), vertexColors.end(), ColorA(1,1,1,1));
+                std::fill(vertexColors.begin(), vertexColors.end(), ColorAG(1,1,1,1));
                 component = 0;
                 for(int i = 0; i < pointCount;) {
                     if(stream.eof())
@@ -216,7 +216,7 @@ void VTKFileImporter::FrameLoader::loadFile()
                     for(; ;) {
                         while(*s <= ' ' && *s != '\0') ++s;         // Skip whitespace in front of token
                         if(!*s || i >= pointCount) break;
-                        vertexColors[i][component++] = (FloatType)std::atof(s);
+                        vertexColors[i][component++] = static_cast<GraphicsFloatType>(std::atof(s));
                         if(component == componentCount) {
                             component = 0;
                             ++i;

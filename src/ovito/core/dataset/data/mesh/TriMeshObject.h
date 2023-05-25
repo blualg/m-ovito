@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -171,7 +171,7 @@ class OVITO_CORE_EXPORT TriMeshObject : public DataObject
 public:
 
     /// Constructor that creates an object with an empty triangle mesh.
-    Q_INVOKABLE TriMeshObject(ObjectCreationParams params);
+    Q_INVOKABLE TriMeshObject(ObjectInitializationFlags flags);
 
     /// \brief Returns the title of this object.
     virtual QString objectTitle() const override { return tr("Triangle mesh"); }
@@ -279,7 +279,7 @@ public:
 
     /// \brief Allows direct access to the vertex RGBA color array of the mesh.
     /// \return A reference to the vector that stores all vertex colors.
-    QVector<ColorA>& vertexColors() {
+    QVector<ColorAG>& vertexColors() {
         OVITO_ASSERT(_hasVertexColors);
         OVITO_ASSERT(_vertexColors.size() == _vertices.size());
         return _vertexColors;
@@ -287,7 +287,7 @@ public:
 
     /// \brief Allows direct read-access to the vertex RGBA color array of the mesh.
     /// \return A constant reference to the vector that stores all vertex colors.
-    const QVector<ColorA>& vertexColors() const {
+    const QVector<ColorAG>& vertexColors() const {
         OVITO_ASSERT(_hasVertexColors);
         OVITO_ASSERT(_vertexColors.size() == _vertices.size());
         return _vertexColors;
@@ -296,7 +296,7 @@ public:
     /// \brief Returns the RGBA color of the vertex with the given index.
     /// \param index The index starting at 0 of the vertex whose color should be returned.
     /// \return The color of the given vertex.
-    const ColorA& vertexColor(int index) const {
+    const ColorAG& vertexColor(int index) const {
         OVITO_ASSERT(index >= 0 && index < vertexCount());
         return vertexColors()[index];
     }
@@ -304,7 +304,7 @@ public:
     /// \brief Returns a reference to the RGBA color of the vertex with the given index.
     /// \param index The index starting at 0 of the vertex whose color should be returned.
     /// \return A reference to the color of the given vertex. The reference can be used to alter the vertex color.
-    ColorA& vertexColor(int index) {
+    ColorAG& vertexColor(int index) {
         OVITO_ASSERT(index >= 0 && index < vertexCount());
         return vertexColors()[index];
     }
@@ -312,7 +312,7 @@ public:
     /// \brief Sets the RGBA color of the vertex with the given index.
     /// \param index The index starting at 0 of the vertex whose color should be set.
     /// \param p The new color of the vertex.
-    void setVertexColor(int index, const ColorA& c) {
+    void setVertexColor(int index, const ColorAG& c) {
         vertexColor(index) = c;
     }
 
@@ -424,7 +424,7 @@ public:
 
     /// \brief Allows direct access to the per-face RGBA color array of the mesh.
     /// \return A reference to the vector storing each face's RGBA color.
-    QVector<ColorA>& faceColors() {
+    QVector<ColorAG>& faceColors() {
         OVITO_ASSERT(_hasFaceColors);
         OVITO_ASSERT(_faceColors.size() == _faces.size());
         return _faceColors;
@@ -432,7 +432,7 @@ public:
 
     /// \brief Allows direct read-access to the per-face RGBA color array of the mesh.
     /// \return A constant reference to the vector that stores all face colors.
-    const QVector<ColorA>& faceColors() const {
+    const QVector<ColorAG>& faceColors() const {
         OVITO_ASSERT(_hasFaceColors);
         OVITO_ASSERT(_faceColors.size() == _faces.size());
         return _faceColors;
@@ -441,7 +441,7 @@ public:
     /// \brief Returns the RGBA color of the face with the given index.
     /// \param index The index starting at 0 of the face whose color should be returned.
     /// \return The color of the given face.
-    const ColorA& faceColor(int index) const {
+    const ColorAG& faceColor(int index) const {
         OVITO_ASSERT(index >= 0 && index < faceCount());
         return faceColors()[index];
     }
@@ -449,7 +449,7 @@ public:
     /// \brief Returns a reference to the RGBA color of the face with the given index.
     /// \param index The index starting at 0 of the face whose color should be returned.
     /// \return A reference to the color of the given face. The reference can be used to alter the face color.
-    ColorA& faceColor(int index) {
+    ColorAG& faceColor(int index) {
         OVITO_ASSERT(index >= 0 && index < faceCount());
         return faceColors()[index];
     }
@@ -457,7 +457,7 @@ public:
     /// \brief Sets the RGBA color of the face with the given index.
     /// \param index The index starting at 0 of the face whose color should be set.
     /// \param p The new color of the face.
-    void setFaceColor(int index, const ColorA& c) {
+    void setFaceColor(int index, const ColorAG& c) {
         faceColor(index) = c;
     }
 
@@ -517,7 +517,7 @@ public:
 
     /// \brief Allows direct access to the face vertex normals of the mesh.
     /// \return A reference to the vector that stores all normal vectors (three per face).
-    QVector<Vector3>& normals() {
+    QVector<Vector3G>& normals() {
         OVITO_ASSERT(_hasNormals);
         OVITO_ASSERT(_normals.size() == _faces.size()*3);
         return _normals;
@@ -525,7 +525,7 @@ public:
 
     /// \brief Allows direct read-access to the normal vectors of the mesh.
     /// \return A constant reference to the vector that stores all normal vectors (three per face).
-    const QVector<Vector3>& normals() const {
+    const QVector<Vector3G>& normals() const {
         OVITO_ASSERT(_hasNormals);
         OVITO_ASSERT(_normals.size() == _faces.size()*3);
         return _normals;
@@ -535,7 +535,7 @@ public:
     /// \param faceIndex The index starting at 0 of the face whose normal should be returned.
     /// \param vertexIndex The face vertex (0-2) for which the normal should be returned.
     /// \return The stored normal vector.
-    const Vector3& faceVertexNormal(int faceIndex, int vertexIndex) const {
+    const Vector3G& faceVertexNormal(int faceIndex, int vertexIndex) const {
         OVITO_ASSERT(faceIndex >= 0 && faceIndex < faceCount());
         OVITO_ASSERT(vertexIndex >= 0 && vertexIndex < 3);
         return normals()[faceIndex*3 + vertexIndex];
@@ -545,7 +545,7 @@ public:
     /// \param faceIndex The index starting at 0 of the face whose normal should be returned.
     /// \param vertexIndex The face vertex (0-2) for which the normal should be returned.
     /// \return A reference to the normal vector of the given face vertex. The reference can be used to alter the vector..
-    Vector3& faceVertexNormal(int faceIndex, int vertexIndex) {
+    Vector3G& faceVertexNormal(int faceIndex, int vertexIndex) {
         OVITO_ASSERT(faceIndex >= 0 && faceIndex < faceCount());
         OVITO_ASSERT(vertexIndex >= 0 && vertexIndex < 3);
         return normals()[faceIndex*3 + vertexIndex];
@@ -555,7 +555,7 @@ public:
     /// \param faceIndex The index starting at 0 of the face whose normal should be set.
     /// \param vertexIndex The face vertex (0-2) for which the normal should be set.
     /// \param n The new normal vector.
-    void setFaceVertexNormal(int faceIndex, int vertexIndex, const Vector3& n) {
+    void setFaceVertexNormal(int faceIndex, int vertexIndex, const Vector3G& n) {
         faceVertexNormal(faceIndex, vertexIndex) = n;
     }
 
@@ -633,7 +633,7 @@ private:
     bool _hasVertexColors = false;
 
     /// Array of per-vertex RGBA colors.
-    QVector<ColorA> _vertexColors;
+    QVector<ColorAG> _vertexColors;
 
     /// Indicates that per-vertex pseudo-colors are stored in this mesh.
     bool _hasVertexPseudoColors = false;
@@ -645,7 +645,7 @@ private:
     bool _hasFaceColors = false;
 
     /// Array of per-face RGBA colors.
-    QVector<ColorA> _faceColors;
+    QVector<ColorAG> _faceColors;
 
     /// Indicates that per-face pseudo-color values are stored in this mesh.
     bool _hasFacePseudoColors = false;
@@ -660,7 +660,7 @@ private:
     bool _hasNormals = false;
 
     /// Array of normals (three per face).
-    QVector<Vector3> _normals;
+    QVector<Vector3G> _normals;
 };
 
 }   // End of namespace

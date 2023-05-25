@@ -25,7 +25,8 @@ FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Xml REQUIRED)
 
 SET(SourceFiles
     surface/SurfaceMesh.cpp
-    surface/SurfaceMeshAccess.cpp
+    surface/SurfaceMeshReadAccess.cpp
+    surface/SurfaceMeshBuilder.cpp
     surface/RenderableSurfaceMesh.cpp
     surface/SurfaceMeshVis.cpp
     surface/SurfaceMeshTopology.cpp

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -209,13 +209,13 @@ private:
     bool _identifyPlanarDefects;
     const ConstPropertyPtr _positions;
     const PropertyPtr _structureTypes;
-    PropertyAccess<int> _structureTypesArray;
+    BufferAccess<int32_t> _structureTypesArray;
     const PropertyPtr _atomClusters;
-    PropertyAccess<qlonglong> _atomClustersArray;
+    BufferAccess<int64_t> _atomClustersArray;
     std::vector<int> _neighborLists;
     std::vector<int> _atomSymmetryPermutations;
     size_t _neighborListsSize = 0;
-    ConstPropertyAccessAndRef<int> _particleSelection;
+    BufferAccessAndRef<const SelectionIntType> _particleSelection;
     const std::shared_ptr<ClusterGraph> _clusterGraph;
     std::atomic<FloatType> _maximumNeighborDistance;
     DataOORef<const SimulationCellObject> _simCell;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -200,7 +200,7 @@ void ParcasFileImporter::FrameLoader::loadFile()
     state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(simu_time), dataSource());
 
     // Create particle properties for extra fields.
-    std::vector<PropertyAccess<FloatType>> extraProperties;
+    std::vector<BufferAccess<FloatType>> extraProperties;
     for(int i = 0; i < fields; i++) {
         char field_name[5], field_unit[5];
         stream.read(field_name, 4);
@@ -218,9 +218,9 @@ void ParcasFileImporter::FrameLoader::loadFile()
 
         PropertyObject* property;
         if(propertyType != ParticlesObject::UserProperty)
-            property = particles()->createProperty(propertyType, DataBuffer::InitializeMemory);
+            property = particles()->createProperty(DataBuffer::Initialized, propertyType);
         else
-            property = particles()->createProperty(propertyName, PropertyObject::Float, 1, DataBuffer::InitializeMemory);
+            property = particles()->createProperty(DataBuffer::Initialized, propertyName, PropertyObject::FloatDefault);
         extraProperties.emplace_back(property);
     }
 
@@ -236,16 +236,16 @@ void ParcasFileImporter::FrameLoader::loadFile()
     simulationCell()->setPbcFlags(box_x < 0, box_y < 0, box_z < 0);
 
     // Create the required standard properties.
-    PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
-    PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-    PropertyAccess<qlonglong> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty);
+    BufferAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+    PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+    BufferAccess<int64_t> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty);
 
     // Create particle types list.
     std::vector<std::array<char,5>> types(maxtype - mintype + 1);
     for(int i = mintype; i <= maxtype; i++) {
         stream.read(types[i - mintype].data(), 4);
         types[i - mintype][4] = '\0';
-        addNumericType(ParticlesObject::OOClass(), typeProperty.buffer(), i, QString::fromUtf8(types[i - mintype].data()).trimmed());
+        addNumericType(ParticlesObject::OOClass(), typeProperty, i, QString::fromUtf8(types[i - mintype].data()).trimmed());
     }
 
     // The actual header is now parsed. Check the offsets.
@@ -260,6 +260,7 @@ void ParcasFileImporter::FrameLoader::loadFile()
     setProgressMaximum(numAtoms);
 
     // Parse atoms.
+    BufferAccess<int32_t> typeAccess(typeProperty);
     for(size_t i = 0; i < numAtoms; i++) {
 
         // Parse atom id.
@@ -268,7 +269,7 @@ void ParcasFileImporter::FrameLoader::loadFile()
         // Parse atom type.
         int32_t atomType = std::abs(stream.get_int32());
         OVITO_ASSERT(atomType >= mintype && atomType <= maxtype);
-        typeProperty[i] = atomType;
+        typeAccess[i] = atomType;
 
         // Parse atom coordinates.
         Point3& pos = posProperty[i];
@@ -283,11 +284,11 @@ void ParcasFileImporter::FrameLoader::loadFile()
 
         // Parse extra fields.
         if(realsize == 4) {
-            for(PropertyAccess<FloatType>& prop : extraProperties)
+            for(BufferAccess<FloatType>& prop : extraProperties)
                 prop[i] = (FloatType)stream.get_real32();
         }
         else {
-            for(PropertyAccess<FloatType>& prop : extraProperties)
+            for(BufferAccess<FloatType>& prop : extraProperties)
                 prop[i] = (FloatType)stream.get_real64();
         }
 
@@ -295,7 +296,7 @@ void ParcasFileImporter::FrameLoader::loadFile()
         if(!setProgressValueIntermittent(i)) return;
     }
     posProperty.reset();
-    typeProperty.reset();
+    typeAccess.reset();
     identifierProperty.reset();
 
     // Sort particles by ID if requested.

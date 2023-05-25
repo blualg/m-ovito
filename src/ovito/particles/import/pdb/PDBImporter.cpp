@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -242,36 +242,39 @@ void PDBImporter::FrameLoader::loadFile()
 
         // Allocate property arrays for atoms.
         setParticleCount(natoms);
-        PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
-        PropertyAccess<int> typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-        PropertyAccess<int> atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int);
-        PropertyAccess<int> residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int);
+        BufferAccess<Point3> posAccess = particles()->createProperty(ParticlesObject::PositionProperty);
+        PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+        PropertyObject* atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), DataBuffer::Int32);
+        PropertyObject* residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), DataBuffer::Int32);
 
         // Give these particle properties new titles, which are displayed in the GUI under the file source.
-        atomNameProperty.buffer()->setTitle(tr("Atom names"));
-        residueTypeProperty.buffer()->setTitle(tr("Residue types"));
+        atomNameProperty->setTitle(tr("Atom names"));
+        residueTypeProperty->setTitle(tr("Residue types"));
 
-        Point3* posIter = posProperty.begin();
-        int* typeIter = typeProperty.begin();
-        int* atomNameIter = atomNameProperty.begin();
-        int* residueTypeIter = residueTypeProperty.begin();
+        BufferAccess<int32_t> typeAccess(typeProperty);;
+        BufferAccess<int32_t> atomNameAccess(atomNameProperty);
+        BufferAccess<int32_t> residueTypeAccess(residueTypeProperty);
+        auto* posIter = posAccess.begin();
+        auto* typeIter = typeAccess.begin();
+        auto* atomNameIter = atomNameAccess.begin();
+        auto* residueTypeIter = residueTypeAccess.begin();
 
         // Transfer atomic data from Gemmi to OVITO data structures.
         bool hasOccupancy = false;
         for(const gemmi::Chain& chain : model.chains) {
             for(const gemmi::Residue& residue : chain.residues) {
                 if(isCanceled()) return;
-                int residueTypeId = (residue.name.empty() == false) ? addNamedType(ParticlesObject::OOClass(), residueTypeProperty.buffer(), QLatin1String(residue.name.c_str(), residue.name.size()))->numericId() : 0;
+                int residueTypeId = (residue.name.empty() == false) ? addNamedType(ParticlesObject::OOClass(), residueTypeProperty, QLatin1String(residue.name.c_str(), residue.name.size()))->numericId() : 0;
                 for(const gemmi::Atom& atom : residue.atoms) {
                     // Atomic position.
                     *posIter++ = Point3(atom.pos.x, atom.pos.y, atom.pos.z);
 
                     // Chemical type.
                     *typeIter++ = atom.element.ordinal();
-                    addNumericType(ParticlesObject::OOClass(), typeProperty.buffer(), atom.element.ordinal(), QString::fromStdString(atom.element.name()));
+                    addNumericType(ParticlesObject::OOClass(), typeProperty, atom.element.ordinal(), QString::fromStdString(atom.element.name()));
 
                     // Atom name.
-                    *atomNameIter++ = addNamedType(ParticlesObject::OOClass(), atomNameProperty.buffer(), QLatin1String(atom.name.c_str(), atom.name.size()))->numericId();
+                    *atomNameIter++ = addNamedType(ParticlesObject::OOClass(), atomNameProperty, QLatin1String(atom.name.c_str(), atom.name.size()))->numericId();
 
                     // Residue type.
                     *residueTypeIter++ = residueTypeId;
@@ -281,11 +284,15 @@ void PDBImporter::FrameLoader::loadFile()
                 }
             }
         }
-        if(isCanceled()) return;
+        if(isCanceled())
+            return;
+        typeAccess.reset();
+        atomNameAccess.reset();
+        residueTypeAccess.reset();
 
         // Parse the optional site occupancy information.
         if(hasOccupancy) {
-            PropertyAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::Float);
+            BufferAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), DataBuffer::FloatDefault);
             FloatType* occupancyIter = occupancyProperty.begin();
             for(const gemmi::Chain& chain : model.chains) {
                 for(const gemmi::Residue& residue : chain.residues) {
@@ -300,15 +307,18 @@ void PDBImporter::FrameLoader::loadFile()
         // Since we created particle types on the go while reading the particles, the assigned particle type IDs
         // depend on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
         // why we sort them now.
-        typeProperty.buffer()->sortElementTypesById();
-        atomNameProperty.buffer()->sortElementTypesByName();
-        residueTypeProperty.buffer()->sortElementTypesByName();
-        typeProperty.reset();
-        atomNameProperty.reset();
-        residueTypeProperty.reset();
+        typeProperty->sortElementTypesById();
+        atomNameProperty->sortElementTypesByName();
+        residueTypeProperty->sortElementTypesByName();
 
-        // Parse unit cell.
-        if(structure.cell.is_crystal()) {
+        // Parse unit cell if available.
+        //
+        // Gemmi provides the UnitCell::is_crystal() method to determin whether (periodic) cell information
+        // is available. But it turned out to be too strict. Atomsk writes PDB files containing unity
+        // SCALEn records, which make Gemmi intrept these files as non-periodic. We replace the check
+        // with a simpler criterion.
+        // See https://www.ovito.org/forum/topic/polyhedral-visualazation/#postid-4244.
+        if(structure.cell.a != 1.0 || structure.cell.b != 1.0 || structure.cell.c != 1.0 || structure.cell.alpha != 90.0 || structure.cell.beta != 90.0 || structure.cell.gamma != 90.0) {
 
             // Some PDB files use wrong column widths in the CRYST1 record line. These leads to invalid cell values when parsed by gemmi.
             if(std::isnan(structure.cell.alpha) || std::isnan(structure.cell.beta) || std::isnan(structure.cell.gamma) ||
@@ -344,10 +354,10 @@ void PDBImporter::FrameLoader::loadFile()
             }
             simulationCell()->setCellMatrix(cell);
         }
-        else if(posProperty.size() != 0) {
+        else if(posAccess.size() != 0) {
             // Use bounding box of atomic coordinates as non-periodic simulation cell.
             Box3 boundingBox;
-            boundingBox.addPoints(posProperty);
+            boundingBox.addPoints(posAccess);
             simulationCell()->setPbcFlags(false, false, false);
             simulationCell()->setCellMatrix(AffineTransformation(
                     Vector3(boundingBox.sizeX(), 0, 0),

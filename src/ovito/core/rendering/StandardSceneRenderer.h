@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 202e OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ class OVITO_CORE_EXPORT StandardSceneRenderer : public SceneRenderer
 public:
 
     /// Constructor.
-    Q_INVOKABLE StandardSceneRenderer(ObjectCreationParams params);
+    Q_INVOKABLE StandardSceneRenderer(ObjectInitializationFlags flags);
 
     /// Prepares the renderer for rendering one or more frames.
     virtual bool startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache) override;
@@ -66,7 +66,7 @@ private:
     /// Controls the number of sub-pixels to render.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(int, antialiasingLevel, setAntialiasingLevel);
 
-    /// The active renderer implementation (OpenGL or Vulkan). 
+    /// The active renderer implementation (OpenGL or Vulkan).
     OORef<SceneRenderer> _internalRenderer;
 };
 

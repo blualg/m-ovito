@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,6 +31,7 @@ uniform vec2 unit_quad_triangle_strip[4];
 // Outputs:
 flat out vec4 color_fs;
 out vec2 uv_fs;
+
 void main()
 {
     // The index of the quad corner.
@@ -39,7 +40,7 @@ void main()
     // Transform particle center to view space.
 	vec4 eye_position = modelview_matrix * position;
 
-    // Apply additional scaling due to model-view transformation to particle radius. 
+    // Apply additional scaling due to model-view transformation to particle radius.
     float scaled_radius = radius * length(modelview_matrix[0]);
 
 	// Project corner vertex.

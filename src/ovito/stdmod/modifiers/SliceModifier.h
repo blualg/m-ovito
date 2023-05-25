@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -69,7 +69,7 @@ class OVITO_STDMOD_EXPORT SliceModifier : public MultiDelegatingModifier
 public:
 
     /// Constructor.
-    Q_INVOKABLE SliceModifier(ObjectCreationParams params);
+    Q_INVOKABLE SliceModifier(ObjectInitializationFlags flags);
 
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
@@ -103,7 +103,7 @@ public:
     /// Returns the slicing plane and the slab width.
     std::tuple<Plane3, FloatType> slicingPlane(AnimationTime time, TimeInterval& validityInterval, const PipelineFlowState& state);
 
-    /// Moves the plane along its current normal vector to position in the center of the simulation cell. 
+    /// Moves the plane along its current normal vector to position in the center of the simulation cell.
     void centerPlaneInSimulationCell(ModifierApplication* modApp, AnimationTime time);
 
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.

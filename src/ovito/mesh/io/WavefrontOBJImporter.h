@@ -59,7 +59,7 @@ class OVITO_MESH_EXPORT WavefrontOBJImporter : public FileSourceImporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE WavefrontOBJImporter(ObjectCreationParams params) : FileSourceImporter(params) {}
+    Q_INVOKABLE WavefrontOBJImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags) {}
 
     /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("OBJ"); }

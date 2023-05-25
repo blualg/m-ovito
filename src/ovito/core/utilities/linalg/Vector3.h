@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -92,40 +92,28 @@ public:
     Vector_3() = default;
 
     /// Constructs a vector with all three components initialized to the given value.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR explicit Vector_3(T val) : std::array<T, 3>{{val,val,val}} {}
-#else
-    explicit Vector_3(T val) { this->fill(val); }
-#endif
 
     /// Initializes the components of the vector with the given values.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR Vector_3(T x, T y, T z) : std::array<T, 3>{{x, y, z}} {}
-#else
-    Vector_3(T x, T y, T z) { this->x() = x; this->y() = y; this->z() = z; }
-#endif
 
     /// Initializes the vector to the null vector. All components are set to zero.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR Vector_3(Zero) : std::array<T, 3>{{T(0), T(0), T(0)}} {}
-#else
-    Vector_3(Zero) { this->fill(T(0)); }
-#endif
 
     /// Initializes the vector from an array.
     Q_DECL_CONSTEXPR explicit Vector_3(const std::array<T, 3>& a) : std::array<T, 3>(a) {}
 
     /// Conversion constructor from a Qt vector.
-    Q_DECL_CONSTEXPR Vector_3(const QVector3D& v)
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-        : std::array<T, 3>{{T(v.x()), T(v.y()), T(v.z())}} {}
-#else
-        { this->x() = T(v.x()); this->y() = T(v.y()); this->z() = T(v.z()); }
-#endif
+    Q_DECL_CONSTEXPR Vector_3(const QVector3D& v) : std::array<T, 3>{{T(v.x()), T(v.y()), T(v.z())}} {}
 
     /// Casts the vector to another component type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR Vector_3<U> toDataType() const { return Vector_3<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z())); }
+    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, Vector_3<U>, const Vector_3<T>&> {
+        if constexpr(!std::is_same_v<T,U>)
+            return Vector_3<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()));
+        else
+            return *this;  // When casting to the same type \a T, this method becomes a no-op.
+    }
 
     /////////////////////////////// Unary operators //////////////////////////////
 
@@ -138,22 +126,22 @@ public:
     ///////////////////////////// Assignment operators ///////////////////////////
 
     /// Increments the components of this vector by the components of another vector.
-    Vector_3& operator+=(const Vector_3& v) { x() += v.x(); y() += v.y(); z() += v.z(); return *this; }
+    Q_DECL_CONSTEXPR Vector_3& operator+=(const Vector_3& v) { x() += v.x(); y() += v.y(); z() += v.z(); return *this; }
 
     /// Decrements the components of this vector by the components of another vector.
-    Vector_3& operator-=(const Vector_3& v) { x() -= v.x(); y() -= v.y(); z() -= v.z(); return *this; }
+    Q_DECL_CONSTEXPR Vector_3& operator-=(const Vector_3& v) { x() -= v.x(); y() -= v.y(); z() -= v.z(); return *this; }
 
     /// Multiplies each component of the vector with a scalar.
-    Vector_3& operator*=(T s) { x() *= s; y() *= s; z() *= s; return *this; }
+    Q_DECL_CONSTEXPR Vector_3& operator*=(T s) { x() *= s; y() *= s; z() *= s; return *this; }
 
     /// Divides each component of the vector by a scalar.
-    Vector_3& operator/=(T s) { x() /= s; y() /= s; z() /= s; return *this; }
+    Q_DECL_CONSTEXPR Vector_3& operator/=(T s) { x() /= s; y() /= s; z() /= s; return *this; }
 
     /// Sets all components of the vector to zero.
-    Vector_3& operator=(Zero) { setZero(); return *this; }
+    Q_DECL_CONSTEXPR Vector_3& operator=(Zero) { setZero(); return *this; }
 
     /// Sets all components of the vector to zero.
-    void setZero() { this->fill(T(0)); }
+    Q_DECL_CONSTEXPR void setZero() { this->fill(T(0)); }
 
     //////////////////////////// Component access //////////////////////////
 
@@ -167,13 +155,13 @@ public:
     Q_DECL_CONSTEXPR T z() const { return (*this)[2]; }
 
     /// Returns a reference to the X component of this vector.
-    T& x() { return (*this)[0]; }
+    Q_DECL_CONSTEXPR T& x() { return (*this)[0]; }
 
     /// Returns a reference to the Y component of this vector.
-    T& y() { return (*this)[1]; }
+    Q_DECL_CONSTEXPR T& y() { return (*this)[1]; }
 
     /// Returns a reference to the Z component of this vector.
-    T& z() { return (*this)[2]; }
+    Q_DECL_CONSTEXPR T& z() { return (*this)[2]; }
 
     ////////////////////////////////// Comparison ////////////////////////////////
 
@@ -198,14 +186,14 @@ public:
     /// \param tolerance A non-negative threshold for the equality test. The two vectors are considered equal if
     ///        the differences in the three components are all less than this tolerance value.
     /// \return \c true if this vector is equal to \a v within the given tolerance; \c false otherwise.
-    Q_DECL_CONSTEXPR bool equals(const Vector_3& v, T tolerance = T(FLOATTYPE_EPSILON)) const {
+    Q_DECL_CONSTEXPR bool equals(const Vector_3& v, T tolerance = FloatTypeEpsilon<T>()) const {
         return std::abs(v.x() - x()) <= tolerance && std::abs(v.y() - y()) <= tolerance && std::abs(v.z() - z()) <= tolerance;
     }
 
     /// \brief Test if the vector is zero within a given tolerance.
     /// \param tolerance A non-negative threshold.
     /// \return \c true if the absolute vector components are all smaller than \a tolerance.
-    Q_DECL_CONSTEXPR bool isZero(T tolerance = T(FLOATTYPE_EPSILON)) const {
+    Q_DECL_CONSTEXPR bool isZero(T tolerance = FloatTypeEpsilon<T>()) const {
         return std::abs(x()) <= tolerance && std::abs(y()) <= tolerance && std::abs(z()) <= tolerance;
     }
 
@@ -231,7 +219,7 @@ public:
     /// \warning Do not call this function if the vector has length zero to avoid division by zero.
     /// In debug builds, a zero vector will be detected and reported. In release builds, the behavior is undefined.
     /// \sa normalized(), normalizeSafely(), resize()
-    inline void normalize() {
+    Q_DECL_CONSTEXPR inline void normalize() {
         OVITO_ASSERT_MSG(*this != Zero(), "Vector3::normalize", "Cannot normalize a vector of length zero.");
         *this /= length();
     }
@@ -241,7 +229,7 @@ public:
     /// \warning Do not call this function if the vector has length zero to avoid division by zero.
     /// In debug builds, a zero vector will be detected and reported. In release builds, the behavior is undefined.
     /// \sa normalize(), normalizeSafely()
-    inline Vector_3 normalized() const {
+    Q_DECL_CONSTEXPR inline Vector_3 normalized() const {
         OVITO_ASSERT_MSG(*this != Zero(), "Vector3::normalize", "Cannot normalize a vector of length zero.");
         return *this / length();
     }
@@ -250,7 +238,7 @@ public:
     /// \param epsilon The epsilon used to test if this vector is zero.
     /// \return The normalized vector.
     /// \sa normalized(), normalizeSafely()
-    inline Vector_3 safelyNormalized(T epsilon = T(FLOATTYPE_EPSILON)) const {
+    Q_DECL_CONSTEXPR inline Vector_3 safelyNormalized(T epsilon = FloatTypeEpsilon<T>()) const {
         T l = length();
         if(l > epsilon)
             return *this / l;
@@ -263,7 +251,7 @@ public:
     /// This method rescales this vector to unit length if its original length is greater than \a epsilon.
     /// Otherwise it does nothing.
     /// \sa normalize(), normalized()
-    inline void normalizeSafely(T epsilon = T(FLOATTYPE_EPSILON)) {
+    Q_DECL_CONSTEXPR inline void normalizeSafely(T epsilon = FloatTypeEpsilon<T>()) {
         T l = length();
         if(l > epsilon)
             *this /= l;
@@ -274,7 +262,7 @@ public:
     /// \warning Do not call this function if the vector has length zero to avoid division by zero.
     /// In debug builds, a zero vector will be detected and reported. In release builds, the behavior is undefined.
     /// \sa resized(), normalize(), normalized()
-    inline void resize(T len) {
+    Q_DECL_CONSTEXPR inline void resize(T len) {
         OVITO_ASSERT_MSG(*this != Zero(), "Vector3::resize", "Cannot resize a vector of length zero.");
         *this *= (len / length());
     }
@@ -285,7 +273,7 @@ public:
     /// \warning Do not call this function if the vector has length zero to avoid division by zero.
     /// In debug builds, a zero vector will be detected and reported. In release builds, the behavior is undefined.
     /// \sa resize(), normalized()
-    inline Vector_3 resized(T len) const {
+    Q_DECL_CONSTEXPR inline Vector_3 resized(T len) const {
         OVITO_ASSERT_MSG(*this != Zero(), "Vector3::resized", "Cannot resize a vector of length zero.");
         return *this * (len / length());
     }
@@ -415,16 +403,28 @@ inline QDataStream& operator>>(QDataStream& stream, Vector_3<T>& v) {
 }
 
 /**
- * \brief Instantiation of the Vector_3 class template with the default floating-point type.
+ * \brief Instantiation of the Vector_3 class template with the default floating-point type (double precision).
  * \relates Vector_3
  */
 using Vector3 = Vector_3<FloatType>;
 
 /**
+ * \brief Instantiation of the Vector_3 class template with the single-precision floating-point type.
+ * \relates Vector_3
+ */
+using Vector3F = Vector_3<float>;
+
+/**
+ * \brief Instantiation of the Vector_3 class template with the low-precision floating-point type used for graphics data.
+ * \relates Vector_3
+ */
+using Vector3G = Vector_3<GraphicsFloatType>;
+
+/**
  * \brief Instantiation of the Vector_3 class template with the default integer type.
  * \relates Vector_3
 */
-using Vector3I = Vector_3<int>;
+using Vector3I = Vector_3<int32_t>;
 
 }   // End of namespace
 
@@ -433,6 +433,8 @@ template<typename T> struct std::tuple_size<Ovito::Vector_3<T>> : std::integral_
 template<std::size_t I, typename T> struct std::tuple_element<I, Ovito::Vector_3<T>> { using type = T; };
 
 Q_DECLARE_METATYPE(Ovito::Vector3);
+Q_DECLARE_METATYPE(Ovito::Vector3F);
 Q_DECLARE_METATYPE(Ovito::Vector3I);
 Q_DECLARE_TYPEINFO(Ovito::Vector3, Q_PRIMITIVE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::Vector3F, Q_PRIMITIVE_TYPE);
 Q_DECLARE_TYPEINFO(Ovito::Vector3I, Q_PRIMITIVE_TYPE);

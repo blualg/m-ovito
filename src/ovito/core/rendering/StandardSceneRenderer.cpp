@@ -37,8 +37,8 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(StandardSceneRenderer, antialiasingLevel, Int
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-StandardSceneRenderer::StandardSceneRenderer(ObjectCreationParams params) : SceneRenderer(params), 
-    _antialiasingLevel(3) 
+StandardSceneRenderer::StandardSceneRenderer(ObjectInitializationFlags flags) : SceneRenderer(flags),
+    _antialiasingLevel(3)
 {
 }
 

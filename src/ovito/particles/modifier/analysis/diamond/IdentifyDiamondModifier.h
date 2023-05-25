@@ -62,8 +62,8 @@ public:
 public:
 
     /// Constructor.
-    Q_INVOKABLE IdentifyDiamondModifier(ObjectCreationParams params);
-    
+    Q_INVOKABLE IdentifyDiamondModifier(ObjectInitializationFlags flags);
+
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.

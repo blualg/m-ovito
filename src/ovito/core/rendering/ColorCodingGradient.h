@@ -48,7 +48,12 @@ public:
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    Q_INVOKABLE virtual Color valueToColor(FloatType t) = 0;
+    Q_INVOKABLE virtual ColorT<double> valueToColor(double t) = 0;
+
+    /// \brief Converts a scalar value to a color value.
+    /// \param t A value between 0 and 1.
+    /// \return The color that visualizes the given scalar value.
+    Q_INVOKABLE virtual ColorT<float> valueToColor(float t) = 0;
 };
 
 /**
@@ -62,14 +67,22 @@ class OVITO_CORE_EXPORT ColorCodingHSVGradient : public ColorCodingGradient
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingHSVGradient(ObjectCreationParams params) : ColorCodingGradient(params) {}
+    Q_INVOKABLE ColorCodingHSVGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual Color valueToColor(FloatType t) override { 
+    virtual ColorT<double> valueToColor(double t) override {
         OVITO_ASSERT(t >= 0.0 && t <= 1.0);
-        return Color::fromHSV((FloatType(1) - t) * FloatType(0.7), 1, 1); 
+        return ColorT<double>::fromHSV((1.0 - t) * 0.7, 1.0, 1.0);
+    }
+
+    /// \brief Converts a scalar value to a color value.
+    /// \param t A value between 0 and 1.
+    /// \return The color that visualizes the given scalar value.
+    virtual ColorT<float> valueToColor(float t) override {
+        OVITO_ASSERT(t >= 0.0f && t <= 1.0f);
+        return ColorT<float>::fromHSV((1.0f - t) * 0.7f, 1.0f, 1.0f);
     }
 };
 
@@ -84,14 +97,22 @@ class OVITO_CORE_EXPORT ColorCodingGrayscaleGradient : public ColorCodingGradien
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingGrayscaleGradient(ObjectCreationParams params) : ColorCodingGradient(params) {}
+    Q_INVOKABLE ColorCodingGrayscaleGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual Color valueToColor(FloatType t) override { 
+    virtual ColorT<double> valueToColor(double t) override {
         OVITO_ASSERT(t >= 0.0 && t <= 1.0);
-        return Color(t, t, t); 
+        return ColorT<double>(t, t, t);
+    }
+
+    /// \brief Converts a scalar value to a color value.
+    /// \param t A value between 0 and 1.
+    /// \return The color that visualizes the given scalar value.
+    virtual ColorT<float> valueToColor(float t) override {
+        OVITO_ASSERT(t >= 0.0f && t <= 1.0f);
+        return ColorT<float>(t, t, t);
     }
 };
 
@@ -106,15 +127,24 @@ class OVITO_CORE_EXPORT ColorCodingHotGradient : public ColorCodingGradient
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingHotGradient(ObjectCreationParams params) : ColorCodingGradient(params) {}
+    Q_INVOKABLE ColorCodingHotGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual Color valueToColor(FloatType t) override {
+    virtual ColorT<double> valueToColor(double t) override {
         OVITO_ASSERT(t >= 0.0 && t <= 1.0);
         // Interpolation black->red->yellow->white.
-        return Color(std::min(t / FloatType(0.375), FloatType(1)), std::max(FloatType(0), std::min((t-FloatType(0.375))/FloatType(0.375), FloatType(1))), std::max(FloatType(0), t*4 - FloatType(3)));
+        return ColorT<double>(std::min(t / 0.375, 1.0), std::max(0.0, std::min((t-0.375)/0.375, 1.0)), std::max(0.0, t*4.0 - 3.0));
+    }
+
+    /// \brief Converts a scalar value to a color value.
+    /// \param t A value between 0 and 1.
+    /// \return The color that visualizes the given scalar value.
+    virtual ColorT<float> valueToColor(float t) override {
+        OVITO_ASSERT(t >= 0.0f && t <= 1.0f);
+        // Interpolation black->red->yellow->white.
+        return ColorT<float>(std::min(t / 0.375f, 1.0f), std::max(0.0f, std::min((t-0.375f)/0.375f, 1.0f)), std::max(0.0f, t*4.0f - 3.0f));
     }
 };
 
@@ -129,18 +159,30 @@ class OVITO_CORE_EXPORT ColorCodingJetGradient : public ColorCodingGradient
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingJetGradient(ObjectCreationParams params) : ColorCodingGradient(params) {}
+    Q_INVOKABLE ColorCodingJetGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual Color valueToColor(FloatType t) override {
+    virtual ColorT<double> valueToColor(double t) override {
         OVITO_ASSERT(t >= 0.0 && t <= 1.0);
-        if(t < FloatType(0.125)) return Color(0, 0, FloatType(0.5) + FloatType(0.5) * t / FloatType(0.125));
-        else if(t < FloatType(0.125) + FloatType(0.25)) return Color(0, (t - FloatType(0.125)) / FloatType(0.25), 1);
-        else if(t < FloatType(0.125) + FloatType(0.25) + FloatType(0.25)) return Color((t - FloatType(0.375)) / FloatType(0.25), 1, FloatType(1) - (t - FloatType(0.375)) / FloatType(0.25));
-        else if(t < FloatType(0.125) + FloatType(0.25) + FloatType(0.25) + FloatType(0.25)) return Color(1, FloatType(1) - (t - FloatType(0.625)) / FloatType(0.25), 0);
-        else return Color(FloatType(1) - FloatType(0.5) * (t - FloatType(0.875)) / FloatType(0.125), 0, 0);
+        if(t < 0.125) return ColorT<double>(0.0, 0.0, 0.5 + 0.5 * t / 0.125);
+        else if(t < 0.125 + 0.25) return ColorT<double>(0.0, (t - 0.125) / 0.25, 1.0);
+        else if(t < 0.125 + 0.25 + 0.25) return ColorT<double>((t - 0.375) / 0.25, 1.0, 1.0 - (t - 0.375) / 0.25);
+        else if(t < 0.125 + 0.25 + 0.25 + 0.25) return ColorT<double>(1.0, 1.0 - (t - 0.625) / 0.25, 0.0);
+        else return ColorT<double>(1.0 - 0.5 * (t - 0.875) / 0.125, 0.0, 0.0);
+    }
+
+    /// \brief Converts a scalar value to a color value.
+    /// \param t A value between 0 and 1.
+    /// \return The color that visualizes the given scalar value.
+    virtual ColorT<float> valueToColor(float t) override {
+        OVITO_ASSERT(t >= 0.0f && t <= 1.0f);
+        if(t < 0.125f) return ColorT<float>(0.0f, 0.0f, 0.5f + 0.5f * t / 0.125f);
+        else if(t < 0.125f + 0.25f) return ColorT<float>(0.0f, (t - 0.125f) / 0.25f, 1.0f);
+        else if(t < 0.125f + 0.25f + 0.25f) return ColorT<float>((t - 0.375f) / 0.25f, 1.0f, 1.0f - (t - 0.375f) / 0.25f);
+        else if(t < 0.125f + 0.25f + 0.25f + 0.25f) return ColorT<float>(1.0f, 1.0f - (t - 0.625f) / 0.25f, 0.0f);
+        else return ColorT<float>(1.0f - 0.5f * (t - 0.875f) / 0.125f, 0.0f, 0.0f);
     }
 };
 
@@ -155,17 +197,28 @@ class OVITO_CORE_EXPORT ColorCodingBlueWhiteRedGradient : public ColorCodingGrad
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingBlueWhiteRedGradient(ObjectCreationParams params) : ColorCodingGradient(params) {}
+    Q_INVOKABLE ColorCodingBlueWhiteRedGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual Color valueToColor(FloatType t) override {
+    virtual ColorT<double> valueToColor(double t) override {
         OVITO_ASSERT(t >= 0.0 && t <= 1.0);
-        if(t <= FloatType(0.5))
-            return Color(t * 2, t * 2, 1);
+        if(t <= 0.5)
+            return ColorT<double>(t * 2.0, t * 2.0, 1.0);
         else
-            return Color(1, (FloatType(1)-t) * 2, (FloatType(1)-t) * 2);
+            return ColorT<double>(1.0, (1.0-t) * 2.0, (1.0-t) * 2.0);
+    }
+
+    /// \brief Converts a scalar value to a color value.
+    /// \param t A value between 0 and 1.
+    /// \return The color that visualizes the given scalar value.
+    virtual ColorT<float> valueToColor(float t) override {
+        OVITO_ASSERT(t >= 0.0f && t <= 1.0f);
+        if(t <= 0.5f)
+            return ColorT<float>(t * 2.0f, t * 2.0f, 1.0f);
+        else
+            return ColorT<float>(1.0f, (1.0f-t) * 2.0f, (1.0f-t) * 2.0f);
     }
 };
 
@@ -180,16 +233,23 @@ class OVITO_CORE_EXPORT ColorCodingViridisGradient : public ColorCodingGradient
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingViridisGradient(ObjectCreationParams params) : ColorCodingGradient(params) {}
+    Q_INVOKABLE ColorCodingViridisGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual Color valueToColor(FloatType t) override {
-        OVITO_ASSERT(t >= 0.0 && t <= 1.0);
-        int index = t * (sizeof(colormap_viridis_data)/sizeof(colormap_viridis_data[0]) - 1);
-        OVITO_ASSERT(t >= 0 && t < sizeof(colormap_viridis_data)/sizeof(colormap_viridis_data[0]));
-        return Color(colormap_viridis_data[index][0], colormap_viridis_data[index][1], colormap_viridis_data[index][2]);
+    virtual ColorT<double> valueToColor(double t) override {
+        return ColorCodingViridisGradient::valueToColor(static_cast<float>(t)).toDataType<double>();
+    }
+
+    /// \brief Converts a scalar value to a color value.
+    /// \param t A value between 0 and 1.
+    /// \return The color that visualizes the given scalar value.
+    virtual ColorT<float> valueToColor(float t) override {
+        OVITO_ASSERT(t >= 0.0f && t <= 1.0f);
+        int index = t * (sizeof(colormap_viridis_data) / sizeof(colormap_viridis_data[0]) - 1);
+        OVITO_ASSERT(index >= 0 && index < sizeof(colormap_viridis_data) / sizeof(colormap_viridis_data[0]));
+        return ColorT<float>(colormap_viridis_data[index][0], colormap_viridis_data[index][1], colormap_viridis_data[index][2]);
     }
 };
 
@@ -204,16 +264,23 @@ class OVITO_CORE_EXPORT ColorCodingMagmaGradient : public ColorCodingGradient
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingMagmaGradient(ObjectCreationParams params) : ColorCodingGradient(params) {}
+    Q_INVOKABLE ColorCodingMagmaGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual Color valueToColor(FloatType t) override {
-        OVITO_ASSERT(t >= 0.0 && t <= 1.0);
-        int index = t * (sizeof(colormap_magma_data)/sizeof(colormap_magma_data[0]) - 1);
-        OVITO_ASSERT(t >= 0 && t < sizeof(colormap_magma_data)/sizeof(colormap_magma_data[0]));
-        return Color(colormap_magma_data[index][0], colormap_magma_data[index][1], colormap_magma_data[index][2]);
+    virtual ColorT<double> valueToColor(double t) override {
+        return ColorCodingMagmaGradient::valueToColor(static_cast<float>(t)).toDataType<double>();
+    }
+
+    /// \brief Converts a scalar value to a color value.
+    /// \param t A value between 0 and 1.
+    /// \return The color that visualizes the given scalar value.
+    virtual ColorT<float> valueToColor(float t) override {
+        OVITO_ASSERT(t >= 0.0f && t <= 1.0f);
+        int index = t * (sizeof(colormap_magma_data) / sizeof(colormap_magma_data[0]) - 1);
+        OVITO_ASSERT(index >= 0 && index < sizeof(colormap_magma_data) / sizeof(colormap_magma_data[0]));
+        return ColorT<float>(colormap_magma_data[index][0], colormap_magma_data[index][1], colormap_magma_data[index][2]);
     }
 };
 
@@ -228,12 +295,19 @@ class OVITO_CORE_EXPORT ColorCodingTableGradient : public ColorCodingGradient
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingTableGradient(ObjectCreationParams params) : ColorCodingGradient(params) {}
+    Q_INVOKABLE ColorCodingTableGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual Color valueToColor(FloatType t) override;
+    virtual ColorT<double> valueToColor(double t) override;
+
+    /// \brief Converts a scalar value to a color value.
+    /// \param t A value between 0 and 1.
+    /// \return The color that visualizes the given scalar value.
+    virtual ColorT<float> valueToColor(float t) override {
+        return ColorCodingTableGradient::valueToColor(static_cast<double>(t)).toDataType<float>();
+    }
 
 private:
 
@@ -252,12 +326,19 @@ class OVITO_CORE_EXPORT ColorCodingImageGradient : public ColorCodingGradient
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingImageGradient(ObjectCreationParams params) : ColorCodingGradient(params) {}
+    Q_INVOKABLE ColorCodingImageGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual Color valueToColor(FloatType t) override;
+    virtual ColorT<double> valueToColor(double t) override;
+
+    /// \brief Converts a scalar value to a color value.
+    /// \param t A value between 0 and 1.
+    /// \return The color that visualizes the given scalar value.
+    virtual ColorT<float> valueToColor(float t) override {
+        return ColorCodingImageGradient::valueToColor(static_cast<double>(t)).toDataType<float>();
+    }
 
     /// Loads the given image file from disk.
     void loadImage(const QString& filename);

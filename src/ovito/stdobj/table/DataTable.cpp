@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -54,16 +54,16 @@ void DataTable::OOMetaClass::initialize()
 /******************************************************************************
 * Creates a storage object for standard data table properties.
 ******************************************************************************/
-PropertyPtr DataTable::OOMetaClass::createStandardPropertyInternal(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const
+PropertyPtr DataTable::OOMetaClass::createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const
 {
-    OVITO_ASSERT_MSG(false, "DataTable::createStandardProperty()", "Invalid standard property type");
+    OVITO_ASSERT_MSG(false, "DataTable::createStandardPropertyInternal()", "Invalid standard property type");
     throw Exception(tr("This is not a valid standard property type for DataTable: %1").arg(type));
 }
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DataTable::DataTable(ObjectCreationParams params, PlotMode plotMode, const QString& title, ConstPropertyPtr y, ConstPropertyPtr x) : PropertyContainer(params, title),
+DataTable::DataTable(ObjectInitializationFlags flags, PlotMode plotMode, const QString& title, ConstPropertyPtr y, ConstPropertyPtr x) : PropertyContainer(flags, title),
     _intervalStart(0),
     _intervalEnd(0),
     _plotMode(plotMode)
@@ -107,19 +107,21 @@ ConstPropertyPtr DataTable::getXValues() const
     }
     else if(const PropertyObject* yProperty = y()) {
         if(elementCount() != 0 && (intervalStart() != 0 || intervalEnd() != 0)) {
-            PropertyAccessAndRef<FloatType> xdata = OOClass().createUserProperty(elementCount(), PropertyObject::Float, 1, axisLabelX());
-            FloatType binSize = (intervalEnd() - intervalStart()) / xdata.size();
+            PropertyPtr xdata = OOClass().createUserProperty(DataBuffer::Uninitialized, elementCount(), PropertyObject::FloatDefault, 1, axisLabelX());
+            BufferAccess<FloatType> xdataAccess(xdata);
+            FloatType binSize = (intervalEnd() - intervalStart()) / xdata->size();
             FloatType x = intervalStart() + binSize * FloatType(0.5);
-            for(FloatType& v : xdata) {
+            for(auto& v : xdataAccess) {
                 v = x;
                 x += binSize;
             }
-            return xdata.take();
+            return xdata;
         }
         else {
-            PropertyAccessAndRef<qlonglong> xdata = OOClass().createUserProperty(elementCount(), PropertyObject::Int64, 1, axisLabelX());
-            std::iota(xdata.begin(), xdata.end(), (size_t)0);
-            return xdata.take();
+            PropertyPtr xdata = OOClass().createUserProperty(DataBuffer::Uninitialized, elementCount(), PropertyObject::Int64, 1, axisLabelX());
+            BufferAccess<int64_t> xdataAccess(xdata);
+            std::iota(xdataAccess.begin(), xdataAccess.end(), (int64_t)0);
+            return xdata;
         }
     }
     return {};

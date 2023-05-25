@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,14 +46,14 @@ TimeInterval AsynchronousDelegatingModifier::validityInterval(const ModifierEval
 /******************************************************************************
 * Creates a default delegate for this modifier.
 ******************************************************************************/
-void AsynchronousDelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ObjectCreationParams params)
+void AsynchronousDelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName)
 {
     OVITO_ASSERT(delegateType.isDerivedFrom(ModifierDelegate::OOClass()));
 
     // Find the delegate type that corresponds to the given name string.
     for(OvitoClassPtr clazz : PluginManager::instance().listClasses(delegateType)) {
         if(clazz->name() == defaultDelegateTypeName) {
-            OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(clazz->createInstance(params));
+            OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(clazz->createInstance());
             setDelegate(std::move(delegate));
             break;
         }

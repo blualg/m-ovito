@@ -58,13 +58,13 @@ class OVITO_PARTICLES_EXPORT XYZImporter : public ParticleImporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE XYZImporter(ObjectCreationParams params) : ParticleImporter(params), _autoRescaleCoordinates(true) {}
+    Q_INVOKABLE XYZImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _autoRescaleCoordinates(true) {}
 
     /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("XYZ File"); }
 
     /// Indicates whether this file importer type loads particle trajectories.
-    virtual bool isTrajectoryFormat() const override { return true; } 
+    virtual bool isTrajectoryFormat() const override { return true; }
 
     /// Guesses the mapping of input file columns to internal particle properties.
     static bool mapVariableToProperty(ParticleInputColumnMapping& columnMapping, int column, QString name, int dataType, int vec);

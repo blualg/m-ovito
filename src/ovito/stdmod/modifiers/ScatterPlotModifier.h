@@ -47,7 +47,7 @@ class OVITO_STDMOD_EXPORT ScatterPlotModifier : public GenericPropertyModifier
 public:
 
     /// Constructor.
-    Q_INVOKABLE ScatterPlotModifier(ObjectCreationParams params);
+    Q_INVOKABLE ScatterPlotModifier(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -50,7 +50,7 @@ public:
 
 #ifdef OVITO_DEBUG
     /// Destructor.
-    ~RendererResourceCache() { 
+    ~RendererResourceCache() {
         // The cache should be completely empty at the time it is destroyed.
         OVITO_ASSERT(_activeResourceFrames.empty());
         OVITO_ASSERT(empty());
@@ -101,7 +101,7 @@ public:
         _nextResourceFrame++;
         _activeResourceFrames.push_back(_nextResourceFrame);
 
-        return _nextResourceFrame;  
+        return _nextResourceFrame;
     }
 
     /// Informs the resource manager that a frame has completely finished rendering and all resources associated with that frame may be released.
@@ -109,7 +109,7 @@ public:
         OVITO_ASSERT(frame > 0);
 
         // Remove frame from the list of active frames.
-        // There is no need to maintain the original list order. 
+        // There is no need to maintain the original list order.
         // We can move the last item into the erased list position.
         auto iter = std::find(_activeResourceFrames.begin(), _activeResourceFrames.end(), frame);
         OVITO_ASSERT(iter != _activeResourceFrames.end());
@@ -160,7 +160,7 @@ private:
         }
     };
 
-    /// Stores all key-value pairs of the cache. 
+    /// Stores all key-value pairs of the cache.
     /// Note we are using std::deque instead of std::vector here, because we require stability of pointers.
     /// lookup() returns references to elements in the cache, which must remain valid even when new objects are added
     /// to the cache.

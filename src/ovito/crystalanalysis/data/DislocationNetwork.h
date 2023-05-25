@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -266,9 +266,6 @@ public:
 
     /// Copy constructor.
     DislocationNetwork(const DislocationNetwork& other);
-
-    /// Conversion constructor.
-    explicit DislocationNetwork(const Microstructure* microstructureObj);
 
     /// Returns a const-reference to the cluster graph.
     const std::shared_ptr<ClusterGraph>& clusterGraph() const { return _clusterGraph; }

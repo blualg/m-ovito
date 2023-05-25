@@ -68,13 +68,13 @@
         Q_IMPORT_PLUGIN(QtQmlLabsModelsPlugin)  // Qt.labs.qmlmodels
         Q_IMPORT_PLUGIN(QSvgIconPlugin)         // SVG icon engine plugin
     }
-    
+
     // Make sure the Particle module gets linked into the static executable
     // by calling a function that is defined in the module.
     extern void ovito_static_plugin_Particles();
 #endif
 
-// Registers the embedded Qt resource files embedded in a statically linked executable at application startup. 
+// Registers the embedded Qt resource files embedded in a statically linked executable at application startup.
 // Following the Qt documentation, this needs to be placed outside of any C++ namespace.
 static void registerQtResources()
 {
@@ -105,9 +105,9 @@ WasmApplication::WasmApplication()
 /******************************************************************************
 * Returns a pointer to the main dataset container.
 ******************************************************************************/
-WasmDataSetContainer* WasmApplication::datasetContainer() const 
+WasmDataSetContainer* WasmApplication::datasetContainer() const
 {
-    return static_cast<WasmDataSetContainer*>(StandaloneApplication::datasetContainer()); 
+    return static_cast<WasmDataSetContainer*>(StandaloneApplication::datasetContainer());
 }
 
 /******************************************************************************
@@ -117,8 +117,8 @@ void WasmApplication::registerCommandLineParameters(QCommandLineParser& parser)
 {
     StandaloneApplication::registerCommandLineParameters(parser);
 
-    // Only needed for compatibility with the desktop application. 
-    // The core module expects this command option to be defined. 
+    // Only needed for compatibility with the desktop application.
+    // The core module expects this command option to be defined.
     parser.addOption(QCommandLineOption(QStringList{{"noviewports"}}, tr("Do not create any viewports (for debugging purposes only).")));
 }
 
@@ -162,7 +162,7 @@ bool WasmApplication::startupApplication()
     ovito_static_plugin_Particles();
 #endif
 
-    // Make these C++ classes available as a Qt Quick items in QML. 
+    // Make these C++ classes available as a Qt Quick items in QML.
     qmlRegisterType<MainWindow>("org.ovito", 1, 0, "MainWindow");
     qmlRegisterType<ViewportsPanel>("org.ovito", 1, 0, "ViewportsPanel");
     qmlRegisterType<QuickViewportWindow>("org.ovito", 1, 0, "QuickViewportWindow");
@@ -180,11 +180,11 @@ bool WasmApplication::startupApplication()
     qmlRegisterType<ModifierDelegateParameterUI>("org.ovito", 1, 0, "ModifierDelegateParameterUI");
     qmlRegisterType<MouseGrabWorkaround>("org.ovito", 1, 0, "MouseGrabWorkaround");
 
-    // Make the C++ ViewportSettings class available as a singleton in QML. 
+    // Make the C++ ViewportSettings class available as a singleton in QML.
     qmlRegisterSingletonInstance("org.ovito", 1, 0, "ViewportSettings", &ViewportSettings::getSettings());
 
 #ifdef OVITO_DEBUG
-    // A common cause of bugs in QML applications is accidentally overwriting bindings with static values from JavaScript statements. 
+    // A common cause of bugs in QML applications is accidentally overwriting bindings with static values from JavaScript statements.
     // To help tracking down problems of this kind, the QML engine is able to emit messages whenever a binding is lost due to imperative assignments.
     QLoggingCategory::setFilterRules(QStringLiteral("qt.qml.binding.removal.info=true"));
 #endif
@@ -259,7 +259,7 @@ void WasmApplication::shutdown()
         datasetContainer()->taskManager().cancelAllAndWait();
     }
 
-    // Shut down QML engine.
+    // Shutdown QML engine.
     delete _qmlEngine;
 
     StandaloneApplication::shutdown();

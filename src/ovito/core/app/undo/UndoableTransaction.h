@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,15 +45,15 @@ public:
     }
 
     /// Destructor reverts all operations recorded so far, unless commit() has been called.
-    ~UndoableTransaction() { 
+    ~UndoableTransaction() {
         if(operation())
-            cancel(); 
+            cancel();
     }
 
     /// Opens a new transaction.
     void begin(UserInterface& userInterface, const QString& undoOperationName) {
         OVITO_ASSERT(!operation());
-        _userInterface = &userInterface;
+        _userInterface = userInterface.shared_from_this();
         _operation = std::make_unique<CompoundOperation>(undoOperationName);
     }
 
@@ -80,8 +80,10 @@ public:
 
 private:
 
-    UserInterface* _userInterface = nullptr;
-    std::unique_ptr<CompoundOperation> _operation; 
+    std::shared_ptr<UserInterface> _userInterface;
+    std::unique_ptr<CompoundOperation> _operation;
 };
 
 }   // End of namespace
+
+#include <ovito/core/app/UserInterface.h>

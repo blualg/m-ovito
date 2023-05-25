@@ -31,7 +31,7 @@ namespace Ovito::Particles {
 /******************************************************************************
 * Prepares the neighbor list builder.
 ******************************************************************************/
-bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, const SimulationCellObject* cellData, ConstPropertyAccess<int> selectionProperty)
+bool NearestNeighborFinder::prepare(BufferAccess<const Point3> posProperty, const SimulationCellObject* cellData, BufferAccess<const SelectionIntType> selectionProperty)
 {
     OVITO_ASSERT(posProperty);
     OVITO_ASSERT(cellData);
@@ -120,8 +120,8 @@ bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, con
     splitLeafNode(root->children[1]->children[1], 2);
 
     // Insert particles into tree structure. Refine tree as needed.
-    const Point3* p = posProperty.cbegin();
-    const int* sel = selectionProperty ? selectionProperty.cbegin() : nullptr;
+    const auto* p = posProperty.cbegin();
+    const auto* sel = selectionProperty ? selectionProperty.cbegin() : nullptr;
     atoms.resize(posProperty.size());
     for(NeighborListAtom& a : atoms) {
         if(currentTask && currentTask->isCanceled())
@@ -131,7 +131,7 @@ bool NearestNeighborFinder::prepare(ConstPropertyAccess<Point3> posProperty, con
         Point3 rp = inverseCellMatrix * a.pos;
         for(size_t k = 0; k < 3; k++) {
             if(simCell->hasPbcCorrected(k)) {
-                if(FloatType s = std::floor(rp[k])) {
+                if(auto s = std::floor(rp[k])) {
                     rp[k] -= s;
                     a.pos -= s * simCell->matrix().column(k);
                 }

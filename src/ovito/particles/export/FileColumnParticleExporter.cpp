@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,10 +31,10 @@ IMPLEMENT_OVITO_CLASS(FileColumnParticleExporter);
 /******************************************************************************
 * Constructor.
 *****************************************************************************/
-FileColumnParticleExporter::FileColumnParticleExporter(ObjectCreationParams params) : ParticleExporter(params)
+FileColumnParticleExporter::FileColumnParticleExporter(ObjectInitializationFlags flags) : ParticleExporter(flags)
 {
 #ifndef OVITO_DISABLE_QSETTINGS
-    if(params.loadUserDefaults()) {
+    if(ExecutionContext::isInteractive()) {
         // Restore last output column mapping.
         QSettings settings;
         settings.beginGroup("exporter/particles/");

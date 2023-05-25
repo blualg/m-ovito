@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,9 +25,8 @@
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
-#include <ovito/mesh/surface/SurfaceMeshAccess.h>
+#include <ovito/mesh/surface/SurfaceMeshReadAccess.h>
 #include <ovito/mesh/io/ParaViewVTPMeshImporter.h>
-#include <ovito/core/dataset/data/DataObjectAccess.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include "ParaViewVTPParticleImporter.h"
 
@@ -57,7 +56,7 @@ bool ParaViewVTPParticleImporter::OOMetaClass::checkFileFormat(const FileHandle&
     if(xml.attributes().value("type").compare(QLatin1String("PolyData")) != 0)
         return false;
 
-    // Continue until we reach the <Piece> element. 
+    // Continue until we reach the <Piece> element.
     while(xml.readNextStartElement()) {
         if(xml.name().compare(QLatin1String("Piece")) == 0) {
             // Number of lines, triangle strips, and polygons must be zero.
@@ -97,7 +96,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
     }
 
     // Aspherix stores bonds in a seperate VTK file, which gets loaded alongside with this particles files.
-    // To preserve the bonds loaded by ParaViewVTPBondsImporter, we have to explicitly tell the ParticleImporter base class here 
+    // To preserve the bonds loaded by ParaViewVTPBondsImporter, we have to explicitly tell the ParticleImporter base class here
     // to NOT reset the bonds list (which it would otherwise do, because ParaViewVTPParticleImporter doesn't create any bonds).
     setKeepExistingTopology(true);
 
@@ -153,7 +152,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                         OvitoClassPtr elementTypeClass = ParticlesObject::OOClass().typedPropertyElementClass(property->type());
                         if(!elementTypeClass && property->name() == QStringLiteral("Material Type")) elementTypeClass = &ElementType::OOClass();
                         if(elementTypeClass) {
-                            for(int t : ConstPropertyAccess<int>(property).csubrange(baseParticleIndex, property->size())) {
+                            for(int t : BufferAccess<const int32_t>(property).subrange(baseParticleIndex)) {
                                 if(!property->elementType(t)) {
                                     DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance());
                                     elementType->setNumericId(t);
@@ -195,15 +194,15 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
     // Convert superquadric 'Blockiness' values from the Aspherix simulation to 'Roundness' values used by OVITO particle visualization.
     bool transposeOrientations = false;
     if(PropertyObject* roundnessProperty = particles()->getMutableProperty(ParticlesObject::SuperquadricRoundnessProperty)) {
-        for(Vector2& v : PropertyAccess<Vector2>(roundnessProperty).subrange(baseParticleIndex, roundnessProperty->size())) {
+        for(auto& v : BufferAccess<Vector_2<GraphicsFloatType>>(roundnessProperty).subrange(baseParticleIndex)) {
             // Blockiness1: "north-south" blockiness
             // Blockiness2: "east-west" blockiness
             // Roundness.x: "east-west" roundness
             // Roundness.y: "north-south" roundness
             std::swap(v.x(), v.y());
             // Roundness = 2.0 / Blockiness:
-            if(v.x() != 0) v.x() = FloatType(2) / v.x();
-            if(v.y() != 0) v.y() = FloatType(2) / v.y();
+            if(v.x() != 0) v.x() = GraphicsFloatType(2) / v.x();
+            if(v.y() != 0) v.y() = GraphicsFloatType(2) / v.y();
         }
         transposeOrientations = true;
         if(isCanceled())
@@ -212,18 +211,21 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 
     // Convert 3x3 'Tensor' property into particle orientation.
     if(const PropertyObject* tensorProperty = particles()->getProperty(QStringLiteral("Tensor"))) {
-        if(tensorProperty->dataType() == PropertyObject::Float && tensorProperty->componentCount() == 9) {
-            PropertyAccess<Quaternion> orientations = particles()->createProperty(ParticlesObject::OrientationProperty, preserveExistingData ? DataBuffer::InitializeMemory : DataBuffer::NoFlags);
-            Quaternion* q = orientations.begin() + baseParticleIndex;
-            for(const Matrix3& tensor : ConstPropertyAccess<Matrix3>(tensorProperty).csubrange(baseParticleIndex, tensorProperty->size())) {
-                *q++ = Quaternion(transposeOrientations ? tensor.transposed() : tensor, FloatType(1e-9));
+        if(tensorProperty->dataType() == PropertyObject::FloatDefault && tensorProperty->componentCount() == 9) {
+            BufferAccess<QuaternionG> orientations = particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::OrientationProperty);
+            auto* q = orientations.begin() + baseParticleIndex;
+            for(const Matrix3& tensor : BufferAccess<const Matrix3>(tensorProperty).subrange(baseParticleIndex)) {
+                if(!tensor.isZero())
+                    *q++ = Quaternion(transposeOrientations ? tensor.transposed() : tensor, FloatType(1e-6)).toDataType<GraphicsFloatType>();
+                else
+                    *q++ = QuaternionG::Identity();
             }
             if(isCanceled())
                 return;
         }
     }
 
-    // Reset "Radius" property of particles with a mesh-based shape to zero to get correct scaling. 
+    // Reset "Radius" property of particles with a mesh-based shape to zero to get correct scaling.
     if(const PropertyObject* typeProperty = particles()->getProperty(ParticlesObject::TypeProperty)) {
         std::vector<int> typesWithMeshShape;
         for(const ElementType* type : typeProperty->elementTypes()) {
@@ -237,11 +239,11 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                 particles()->removeProperty(radiusProperty);
         }
         else if(!typesWithMeshShape.empty()) {
-            if(PropertyAccess<FloatType> radiusArray = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
-                FloatType* radius = radiusArray.begin() + baseParticleIndex;
-                for(int t : ConstPropertyAccess<int>(typeProperty).csubrange(baseParticleIndex, typeProperty->size())) {
+            if(BufferAccess<GraphicsFloatType> radiusArray = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
+                auto* radius = radiusArray.begin() + baseParticleIndex;
+                for(auto t : BufferAccess<const int32_t>(typeProperty).subrange(baseParticleIndex)) {
                     if(std::find(typesWithMeshShape.cbegin(), typesWithMeshShape.cend(), t) != typesWithMeshShape.cend())
-                        *radius = 0.0;
+                        *radius = 0;
                     ++radius;
                 }
             }
@@ -257,78 +259,77 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 }
 
 /******************************************************************************
-* Creates the right kind of OVITO property object that will receive the data 
+* Creates the right kind of OVITO property object that will receive the data
 * read from a <DataArray> element.
 ******************************************************************************/
 PropertyObject* ParaViewVTPParticleImporter::FrameLoader::createParticlePropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent, bool preserveExistingData)
 {
     int numComponents = std::max(1, xml.attributes().value("NumberOfComponents").toInt());
     auto name = xml.attributes().value("Name");
-    DataBuffer::InitializationFlags initFlags = preserveExistingData ? DataBuffer::InitializeMemory : DataBuffer::NoFlags;
 
     if(name.compare(QLatin1String("connectivity"), Qt::CaseInsensitive) == 0 || name.compare(QLatin1String("offsets"), Qt::CaseInsensitive) == 0) {
         return nullptr;
     }
     else if(name.compare(QLatin1String("points"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
-        return particles()->createProperty(ParticlesObject::PositionProperty, initFlags);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::PositionProperty);
     }
     else if(name.compare(QLatin1String("id"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
-        return particles()->createProperty(ParticlesObject::IdentifierProperty, initFlags);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::IdentifierProperty);
     }
     else if(name.compare(QLatin1String("type"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
-        PropertyObject* property = particles()->createProperty(QStringLiteral("Material Type"), PropertyObject::Int, 1, initFlags);
+        PropertyObject* property = particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Material Type"), PropertyObject::Int32);
         property->setTitle(tr("Material types"));
         return property;
     }
     else if(name.compare(QLatin1String("shapetype"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
-        return particles()->createProperty(ParticlesObject::TypeProperty, initFlags);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::TypeProperty);
     }
     else if(name.compare(QLatin1String("mass"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
-        return particles()->createProperty(ParticlesObject::MassProperty, initFlags);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::MassProperty);
     }
     else if(name.compare(QLatin1String("radius"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
-        return particles()->createProperty(ParticlesObject::RadiusProperty, initFlags);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::RadiusProperty);
     }
     else if(name.compare(QLatin1String("v"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
-        return particles()->createProperty(ParticlesObject::VelocityProperty, initFlags);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::VelocityProperty);
     }
     else if(name.compare(QLatin1String("omega"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
-        return particles()->createProperty(ParticlesObject::AngularVelocityProperty, initFlags);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::AngularVelocityProperty);
     }
     else if(name.compare(QLatin1String("tq"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
-        return particles()->createProperty(ParticlesObject::TorqueProperty, initFlags);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::TorqueProperty);
     }
     else if(name.compare(QLatin1String("f"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
-        return particles()->createProperty(ParticlesObject::ForceProperty, initFlags);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::ForceProperty);
     }
     else if(name.compare(QLatin1String("density"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
-        return particles()->createProperty(QStringLiteral("Density"), PropertyObject::Float, 1, initFlags);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Density"), PropertyObject::FloatDefault);
     }
     else if(name.compare(QLatin1String("tensor"), Qt::CaseInsensitive) == 0 && numComponents == 9) {
-        return particles()->createProperty(QStringLiteral("Tensor"), PropertyObject::Float, 9, initFlags);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Tensor"), PropertyObject::FloatDefault, 9);
     }
     else if(name.compare(QLatin1String("shapex"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
         vectorComponent = 0;
-        return particles()->createProperty(ParticlesObject::AsphericalShapeProperty, DataBuffer::InitializeMemory);
+        return particles()->createProperty(DataBuffer::Initialized, ParticlesObject::AsphericalShapeProperty);
     }
     else if(name.compare(QLatin1String("shapey"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
         vectorComponent = 1;
-        return particles()->createProperty(ParticlesObject::AsphericalShapeProperty, DataBuffer::InitializeMemory);
+        return particles()->createProperty(DataBuffer::Initialized, ParticlesObject::AsphericalShapeProperty);
     }
     else if(name.compare(QLatin1String("shapez"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
         vectorComponent = 2;
-        return particles()->createProperty(ParticlesObject::AsphericalShapeProperty, DataBuffer::InitializeMemory);
+        return particles()->createProperty(DataBuffer::Initialized, ParticlesObject::AsphericalShapeProperty);
     }
     else if(name.compare(QLatin1String("blockiness1"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
         vectorComponent = 0;
-        return particles()->createProperty(ParticlesObject::SuperquadricRoundnessProperty, DataBuffer::InitializeMemory);
+        return particles()->createProperty(DataBuffer::Initialized, ParticlesObject::SuperquadricRoundnessProperty);
     }
     else if(name.compare(QLatin1String("blockiness2"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
         vectorComponent = 1;
-        return particles()->createProperty(ParticlesObject::SuperquadricRoundnessProperty, DataBuffer::InitializeMemory);
+        return particles()->createProperty(DataBuffer::Initialized, ParticlesObject::SuperquadricRoundnessProperty);
     }
     else {
-        return particles()->createProperty(name.toString(), PropertyObject::Float, numComponents, initFlags);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, name.toString(), PropertyObject::FloatDefault, numComponents);
     }
     return nullptr;
 }
@@ -385,31 +386,33 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
         return;
 
     // Look for a triangle mesh or a surface mesh.
-    DataObjectAccess<DataOORef, TriMeshObject> meshObj = state.getObject<TriMeshObject>();
+    DataOORef<const TriMeshObject> meshObj = state.getObject<TriMeshObject>();
     if(!meshObj) {
         if(const SurfaceMesh* surfaceMesh = state.getObject<SurfaceMesh>()) {
             // Convert surface mesh to triangle mesh.
-            DataOORef<TriMeshObject> triMesh = DataOORef<TriMeshObject>::create(ObjectCreationParams::WithoutVisElement);
-            SurfaceMeshAccess(surfaceMesh).convertToTriMesh(*triMesh, false);
-            meshObj.reset(std::move(triMesh));
+            DataOORef<TriMeshObject> triMesh = DataOORef<TriMeshObject>::create(ObjectInitializationFlag::DontCreateVisElement);
+            SurfaceMeshReadAccess(surfaceMesh).convertToTriMesh(*triMesh, false);
+            meshObj = std::move(triMesh);
         }
         else return;
     }
+    // Release pipeline state.
     state.reset();
 
     // Show sharp edges of the mesh.
-    meshObj.makeMutable()->determineEdgeVisibility();
+    DataOORef<TriMeshObject> mutableMeshObj = std::move(meshObj).makeMutable();
+    mutableMeshObj->determineEdgeVisibility();
 
-    particleType->setShapeMesh(meshObj.take());
+    particleType->setShapeMesh(std::move(mutableMeshObj));
     particleType->setShape(ParticlesVis::Mesh);
 
-    // Aspherix particle geometries seem not to have a consistent face winding order. 
+    // Aspherix particle geometries seem not to have a consistent face winding order.
     // Need to turn edge highlighting and backface culling off by default.
     particleType->setShapeBackfaceCullingEnabled(false);
     particleType->setHighlightShapeEdges(false);
 
     particleType->freezeInitialParameterValues({
-        SHADOW_PROPERTY_FIELD(ElementType::name), 
+        SHADOW_PROPERTY_FIELD(ElementType::name),
         SHADOW_PROPERTY_FIELD(ParticleType::radius),
         SHADOW_PROPERTY_FIELD(ParticleType::shape),
         SHADOW_PROPERTY_FIELD(ParticleType::highlightShapeEdges),
@@ -432,7 +435,7 @@ void ParticlesParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMB
         }
     }
 
-    // The following is specific to VTM files written by the Aspherix code. 
+    // The following is specific to VTM files written by the Aspherix code.
 
     // Remove those datasets from the multi-block structure that represent Aspherix particle shapes (group block "Convex shapes").
     // Keep a list of these removed datasets for later to load them together with the particles dataset.

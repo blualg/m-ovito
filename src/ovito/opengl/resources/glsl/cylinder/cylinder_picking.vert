@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,7 +27,7 @@
 // Inputs:
 in vec3 base;
 in vec3 head;
-in float radius;
+in float diameter;
 uniform vec3 unit_box_triangle_strip[14];
 
 // Outputs:
@@ -36,8 +36,12 @@ flat out vec3 cylinder_view_base;		// Transformed cylinder position in view coor
 flat out vec3 cylinder_view_axis;		// Transformed cylinder axis in view coordinates
 flat out float cylinder_radius_sq_fs;	// The squared radius of the cylinder
 flat out float cylinder_length;			// The length of the cylinder
+
 void main()
 {
+    // The radius of the current cylinder (in object coordinates).
+    float radius = 0.5 * diameter;
+
     // The index of the box corner.
     int corner = <VertexID>;
 
@@ -61,7 +65,7 @@ void main()
     // Compute color from object ID.
     color_fs = pickingModeColor(<InstanceID>);
 
-    // Apply additional scaling to cylinder radius due to model-view transformation. 
+    // Apply additional scaling to cylinder radius due to model-view transformation.
     float viewspace_radius = radius * length(modelview_matrix[0]);
 
 	// Pass square of cylinder radius to fragment shader.

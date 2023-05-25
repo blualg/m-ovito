@@ -42,7 +42,7 @@ class OVITO_STDMOD_EXPORT ColorLegendOverlay : public ViewportOverlay
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE ColorLegendOverlay(ObjectCreationParams params);
+    Q_INVOKABLE ColorLegendOverlay(ObjectInitializationFlags flags);
 
     /// \brief This virtual method gets called when the overlay is being newly attached to a viewport.
     virtual void initializeOverlay(Viewport* viewport) override;

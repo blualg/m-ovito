@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -82,25 +82,13 @@ public:
     Vector_4() = default;
 
     /// Constructs a vector with all four components initialized to the given value.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR explicit Vector_4(T val) : std::array<T, 4>{{val,val,val,val}} {}
-#else
-    explicit Vector_4(T val) { this->fill(val); }
-#endif
 
         /// Initializes the components of the vector with the given values.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR Vector_4(T x, T y, T z, T w) : std::array<T, 4>{{x, y, z, w}} {}
-#else
-    Vector_4(T x, T y, T z, T w) { this->x() = x; this->y() = y; this->z() = z; this->w() = w; }
-#endif
 
         /// Initializes the vector to the null vector. All components are set to zero.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR Vector_4(Zero) : std::array<T, 4>{{T(0), T(0), T(0), T(0)}} {}
-#else
-    Vector_4(Zero) { this->fill(T(0)); }
-#endif
 
     /// Initializes the vector from an array.
     Q_DECL_CONSTEXPR explicit Vector_4(const std::array<T, 4>& a) : std::array<T, 4>(a) {}
@@ -108,23 +96,19 @@ public:
     /// Initializes the 4-vector from a 3-vector.
     /// \param v Specifies the xyz components of the new vector.
     /// \param w The w component of the new vector.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR explicit Vector_4(const Vector_3<T>& v, T w) : std::array<T, 4>{{v.x(), v.y(), v.z(), w}} {}
-#else
-    explicit Vector_4(const Vector_3<T>& v, T w) { this->x() = v.x(); this->y() = v.y(); this->z() = v.z(); this->w() = w; }
-#endif
 
     /// Conversion constructor from a Qt vector.
-    Q_DECL_CONSTEXPR explicit Vector_4(const QVector4D& v)
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-        : std::array<T, 4>{{T(v.x()), T(v.y()), T(v.z()), T(v.w())}} {}
-#else
-        { this->x() = T(v.x()); this->y() = T(v.y()); this->z() = T(v.z()); this->w() = T(v.w()); }
-#endif
+    Q_DECL_CONSTEXPR explicit Vector_4(const QVector4D& v) : std::array<T, 4>{{T(v.x()), T(v.y()), T(v.z()), T(v.w())}} {}
 
     /// Casts the vector to another component type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR Vector_4<U> toDataType() const { return Vector_4<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()), static_cast<U>(w())); }
+    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, Vector_4<U>, const Vector_4<T>&> {
+        if constexpr(!std::is_same_v<T,U>)
+            return Vector_4<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()), static_cast<U>(w()));
+        else
+            return *this;  // When casting to the same type \a T, this method becomes a no-op.
+    }
 
     /////////////////////////////// Unary operators //////////////////////////////
 
@@ -137,22 +121,22 @@ public:
     ///////////////////////////// Assignment operators ///////////////////////////
 
     /// Increments the components of this vector by the components of another vector.
-    Vector_4& operator+=(const Vector_4& v) { x() += v.x(); y() += v.y(); z() += v.z(); w() += v.w(); return *this; }
+    Q_DECL_CONSTEXPR Vector_4& operator+=(const Vector_4& v) { x() += v.x(); y() += v.y(); z() += v.z(); w() += v.w(); return *this; }
 
     /// Decrements the components of this vector by the components of another vector.
-    Vector_4& operator-=(const Vector_4& v) { x() -= v.x(); y() -= v.y(); z() -= v.z(); w() -= v.w(); return *this; }
+    Q_DECL_CONSTEXPR Vector_4& operator-=(const Vector_4& v) { x() -= v.x(); y() -= v.y(); z() -= v.z(); w() -= v.w(); return *this; }
 
     /// Multiplies each component of the vector with a scalar.
-    Vector_4& operator*=(T s) { x() *= s; y() *= s; z() *= s; w() *= s; return *this; }
+    Q_DECL_CONSTEXPR Vector_4& operator*=(T s) { x() *= s; y() *= s; z() *= s; w() *= s; return *this; }
 
     /// Divides each component of the vector by a scalar.
-    Vector_4& operator/=(T s) { x() /= s; y() /= s; z() /= s; w() /= s; return *this; }
+    Q_DECL_CONSTEXPR Vector_4& operator/=(T s) { x() /= s; y() /= s; z() /= s; w() /= s; return *this; }
 
     /// Sets all components of the vector to zero.
-    Vector_4& operator=(Zero) { setZero(); return *this; }
+    Q_DECL_CONSTEXPR Vector_4& operator=(Zero) { setZero(); return *this; }
 
     /// Sets all components of the vector to zero.
-    void setZero() { this->fill(T(0)); }
+    Q_DECL_CONSTEXPR void setZero() { this->fill(T(0)); }
 
     //////////////////////////// Component access //////////////////////////
 
@@ -169,16 +153,16 @@ public:
     Q_DECL_CONSTEXPR T w() const { return (*this)[3]; }
 
     /// Returns a reference to the X component of this vector.
-    T& x() { return (*this)[0]; }
+    Q_DECL_CONSTEXPR T& x() { return (*this)[0]; }
 
     /// Returns a reference to the Y component of this vector.
-    T& y() { return (*this)[1]; }
+    Q_DECL_CONSTEXPR T& y() { return (*this)[1]; }
 
     /// Returns a reference to the Z component of this vector.
-    T& z() { return (*this)[2]; }
+    Q_DECL_CONSTEXPR T& z() { return (*this)[2]; }
 
     /// Returns a reference to the W component of this vector.
-    T& w() { return (*this)[3]; }
+    Q_DECL_CONSTEXPR T& w() { return (*this)[3]; }
 
     ////////////////////////////////// Comparison ////////////////////////////////
 
@@ -203,14 +187,14 @@ public:
     /// \param tolerance A non-negative threshold for the equality test. The two vectors are considered equal if
     ///        the differences in the four components are all less than this tolerance value.
     /// \return \c true if this vector is equal to \a v within the given tolerance; \c false otherwise.
-    Q_DECL_CONSTEXPR bool equals(const Vector_4& v, T tolerance = T(FLOATTYPE_EPSILON)) const {
+    Q_DECL_CONSTEXPR bool equals(const Vector_4& v, T tolerance = FloatTypeEpsilon<T>()) const {
         return std::abs(v.x() - x()) <= tolerance && std::abs(v.y() - y()) <= tolerance && std::abs(v.z() - z()) <= tolerance && std::abs(v.w() - w()) <= tolerance;
     }
 
     /// \brief Test if the vector is zero within a given tolerance.
     /// \param tolerance A non-negative threshold.
     /// \return \c true if the absolute vector components are all smaller than \a tolerance.
-    Q_DECL_CONSTEXPR bool isZero(T tolerance = T(FLOATTYPE_EPSILON)) const {
+    Q_DECL_CONSTEXPR bool isZero(T tolerance = FloatTypeEpsilon<T>()) const {
         return std::abs(x()) <= tolerance && std::abs(y()) <= tolerance && std::abs(z()) <= tolerance && std::abs(w()) <= tolerance;
     }
 
@@ -229,7 +213,7 @@ public:
     /// \warning Do not call this function if the vector has length zero to avoid division by zero.
     /// In debug builds, a zero vector will be detected and reported. In release builds, the behavior is undefined.
     /// \sa normalized(), normalizeSafely()
-    inline void normalize() {
+    Q_DECL_CONSTEXPR inline void normalize() {
         OVITO_ASSERT_MSG(*this != Zero(), "Vector4::normalize", "Cannot normalize a vector with zero length.");
         *this /= length();
     }
@@ -239,7 +223,7 @@ public:
     /// \warning Do not call this function if the vector has length zero to avoid division by zero.
     /// In debug builds, a zero vector will be detected and reported. In release builds, the behavior is undefined.
     /// \sa normalize(), normalizeSafely()
-    inline Vector_4 normalized() const {
+    Q_DECL_CONSTEXPR inline Vector_4 normalized() const {
         OVITO_ASSERT_MSG(*this != Zero(), "Vector4::normalize", "Cannot normalize a vector with zero length.");
         return *this / length();
     }
@@ -249,7 +233,7 @@ public:
     /// This method rescales this vector to unit length if its original length is greater than \a epsilon.
     /// Otherwise it does nothing.
     /// \sa normalize(), normalized()
-    inline void normalizeSafely(T epsilon = T(FLOATTYPE_EPSILON)) {
+    Q_DECL_CONSTEXPR inline void normalizeSafely(T epsilon = FloatTypeEpsilon<T>()) {
         T l = length();
         if(l > epsilon)
             *this /= l;
@@ -352,10 +336,16 @@ inline QDataStream& operator>>(QDataStream& stream, Vector_4<T>& v) {
 }
 
 /**
- * \brief Instantiation of the Vector_4 class template with the default floating-point type.
+ * \brief Instantiation of the Vector_4 class template with the default floating-point type (double precision).
  * \relates Vector_4
  */
 using Vector4 = Vector_4<FloatType>;
+
+/**
+ * \brief Instantiation of the Vector_4 class template with the single-precision floating-point type.
+ * \relates Vector_4
+ */
+using Vector4F = Vector_4<float>;
 
 /**
  * \brief Instantiation of the Vector_4 class template with the default integer type.
@@ -370,6 +360,8 @@ template<typename T> struct std::tuple_size<Ovito::Vector_4<T>> : std::integral_
 template<std::size_t I, typename T> struct std::tuple_element<I, Ovito::Vector_4<T>> { using type = T; };
 
 Q_DECLARE_METATYPE(Ovito::Vector4);
+Q_DECLARE_METATYPE(Ovito::Vector4F);
 Q_DECLARE_METATYPE(Ovito::Vector4I);
 Q_DECLARE_TYPEINFO(Ovito::Vector4, Q_PRIMITIVE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::Vector4F, Q_PRIMITIVE_TYPE);
 Q_DECLARE_TYPEINFO(Ovito::Vector4I, Q_PRIMITIVE_TYPE);

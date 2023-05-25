@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,7 +47,7 @@ class OVITO_CORE_EXPORT LookAtController : public Controller
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE LookAtController(ObjectCreationParams params);
+    Q_INVOKABLE LookAtController(ObjectInitializationFlags flags);
 
     /// \brief Returns the value type of the controller.
     virtual ControllerType controllerType() const override { return ControllerTypeRotation; }

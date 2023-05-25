@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,11 +39,11 @@ class OVITO_CORE_EXPORT ViewportOverlay : public ActiveObject
 protected:
 
     /// \brief Constructor.
-    ViewportOverlay(ObjectCreationParams params);
+    ViewportOverlay(ObjectInitializationFlags flags);
 
 public:
 
-    /// \brief This virtual method gets called when the overlay is being newly attached to a viewport. 
+    /// \brief This virtual method gets called when the overlay is being newly attached to a viewport.
     virtual void initializeOverlay(Viewport* viewport) {}
 
     /// \brief This method asks the overlay to paint its contents over the rendered image.
@@ -62,7 +62,7 @@ public:
 private:
 
     /// Option for rendering the overlay contents behind the three-dimensional content.
-    /// Note: This field exists only for backward compatibility with OVITO 2.9.0. 
+    /// Note: This field exists only for backward compatibility with OVITO 2.9.0.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, renderBehindScene, setRenderBehindScene);
 };
 

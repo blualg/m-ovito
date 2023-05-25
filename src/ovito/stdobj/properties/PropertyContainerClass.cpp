@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,7 +32,7 @@ namespace Ovito::StdObj {
 /******************************************************************************
 * Is called by the system after construction of the meta-class instance.
 ******************************************************************************/
-void PropertyContainerClass::initialize() 
+void PropertyContainerClass::initialize()
 {
     DataObject::OOMetaClass::initialize();
 
@@ -52,7 +52,7 @@ void PropertyContainerClass::registerStandardProperty(int typeId, QString name, 
     OVITO_ASSERT_MSG(typeId > 0, "PropertyContainerClass::registerStandardProperty", "Invalid standard property type ID");
     OVITO_ASSERT_MSG(_standardPropertyIds.find(name) == _standardPropertyIds.end(), "PropertyContainerClass::registerStandardProperty", "Duplicate standard property name");
     OVITO_ASSERT_MSG(_standardPropertyNames.find(typeId) == _standardPropertyNames.end(), "PropertyContainerClass::registerStandardProperty", "Duplicate standard property type ID");
-    OVITO_ASSERT_MSG(dataType == PropertyObject::Int || dataType == PropertyObject::Int64 || dataType == PropertyObject::Float, "PropertyContainerClass::registerStandardProperty", "Invalid standard property data type");
+    OVITO_ASSERT_MSG(dataType == PropertyObject::Int8 || dataType == PropertyObject::Int32 || dataType == PropertyObject::Int64 || dataType == PropertyObject::Float32 || dataType == PropertyObject::Float64, "PropertyContainerClass::registerStandardProperty", "Invalid standard property data type");
     OVITO_ASSERT_MSG(!typedPropertyElementClass || typedPropertyElementClass->isDerivedFrom(ElementType::OOClass()), "PropertyContainerClass::registerStandardProperty", "Element type class is not derived from ElementType base");
 
     if(!name.isEmpty())
@@ -68,9 +68,9 @@ void PropertyContainerClass::registerStandardProperty(int typeId, QString name, 
 /******************************************************************************
 * Creates a new property object for a standard property of this container class.
 ******************************************************************************/
-PropertyPtr PropertyContainerClass::createStandardProperty(size_t elementCount, int type, DataBuffer::InitializationFlags flags, const ConstDataObjectPath& containerPath) const 
+PropertyPtr PropertyContainerClass::createStandardProperty(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const
 {
-    PropertyPtr property = createStandardPropertyInternal(elementCount, type, flags, containerPath);
+    PropertyPtr property = createStandardPropertyInternal(init, elementCount, type, containerPath);
     if(property && property->type() != 0)
         property->setTitle(standardPropertyTitle(property->type()));
     return property;

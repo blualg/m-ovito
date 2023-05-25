@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,12 +44,12 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(TriMeshVis, transparencyController, PercentPa
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-TriMeshVis::TriMeshVis(ObjectCreationParams params) : DataVis(params),
+TriMeshVis::TriMeshVis(ObjectInitializationFlags flags) : DataVis(flags),
     _color(0.85, 0.85, 1),
     _highlightEdges(false),
     _backfaceCulling(false)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setTransparencyController(ControllerManager::createFloatController());
     }
 }

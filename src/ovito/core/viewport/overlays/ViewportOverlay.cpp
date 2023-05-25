@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,7 +32,7 @@ SET_PROPERTY_FIELD_LABEL(ViewportOverlay, renderBehindScene, "Draw behind scene"
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ViewportOverlay::ViewportOverlay(ObjectCreationParams params) : ActiveObject(params),
+ViewportOverlay::ViewportOverlay(ObjectInitializationFlags flags) : ActiveObject(flags),
     _renderBehindScene(false)
 {
 }

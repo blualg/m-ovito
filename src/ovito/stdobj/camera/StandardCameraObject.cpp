@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,7 @@
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
-#include <ovito/core/dataset/data/DataBufferAccess.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
@@ -49,19 +49,19 @@ IMPLEMENT_OVITO_CLASS(CameraVis);
 /******************************************************************************
 * Constructs a camera object.
 ******************************************************************************/
-StandardCameraObject::StandardCameraObject(ObjectCreationParams params) : AbstractCameraObject(params), 
+StandardCameraObject::StandardCameraObject(ObjectInitializationFlags flags) : AbstractCameraObject(flags),
     _isPerspective(true),
     _fov(FLOATTYPE_PI/4),
     _zoom(200.0)
 {
-    if(params.createVisElement()) {
-        setVisElement(OORef<CameraVis>::create(params));
+    if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement))) {
+        setVisElement(OORef<CameraVis>::create(flags));
     }
 }
 
 /******************************************************************************
-* Provides a custom function that takes are of the deserialization of a 
-* serialized property field that has been removed from the class. 
+* Provides a custom function that takes are of the deserialization of a
+* serialized property field that has been removed from the class.
 * This is needed for file backward compatibility with OVITO 3.3.
 ******************************************************************************/
 RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr StandardCameraObject::OOMetaClass::overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const
@@ -211,32 +211,32 @@ PipelineStatus CameraVis::render(AnimationTime time, const ConstDataObjectPath& 
 
             // Check if we already have a valid rendering primitive that is up to date.
             if(!conePrimitive.positions()) {
-                DataBufferAccessAndRef<Point3> targetLineVertices = DataBufferPtr::create(0, DataBuffer::Float, 3);
+                BufferAccessAndRef<Point3G> targetLineVertices = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
                 if(targetDistance != 0) {
                     if(showTargetLine) {
-                        targetLineVertices.push_back(Point3::Origin());
-                        targetLineVertices.push_back(Point3(0,0,-targetDistance));
+                        targetLineVertices.push_back(Point3G::Origin());
+                        targetLineVertices.push_back(Point3G(0,0,-targetDistance));
                     }
                     if(aspectRatio != 0 && coneAngle != 0) {
-                        FloatType sizeY = tan(FloatType(0.5) * coneAngle) * targetDistance;
-                        FloatType sizeX = sizeY / aspectRatio;
-                        targetLineVertices.push_back(Point3::Origin());
-                        targetLineVertices.push_back(Point3(sizeX, sizeY, -targetDistance));
-                        targetLineVertices.push_back(Point3::Origin());
-                        targetLineVertices.push_back(Point3(-sizeX, sizeY, -targetDistance));
-                        targetLineVertices.push_back(Point3::Origin());
-                        targetLineVertices.push_back(Point3(-sizeX, -sizeY, -targetDistance));
-                        targetLineVertices.push_back(Point3::Origin());
-                        targetLineVertices.push_back(Point3(sizeX, -sizeY, -targetDistance));
+                        GraphicsFloatType sizeY = std::tan(GraphicsFloatType(0.5) * coneAngle) * targetDistance;
+                        GraphicsFloatType sizeX = sizeY / aspectRatio;
+                        targetLineVertices.push_back(Point3G::Origin());
+                        targetLineVertices.push_back(Point3G(sizeX, sizeY, -targetDistance));
+                        targetLineVertices.push_back(Point3G::Origin());
+                        targetLineVertices.push_back(Point3G(-sizeX, sizeY, -targetDistance));
+                        targetLineVertices.push_back(Point3G::Origin());
+                        targetLineVertices.push_back(Point3G(-sizeX, -sizeY, -targetDistance));
+                        targetLineVertices.push_back(Point3G::Origin());
+                        targetLineVertices.push_back(Point3G(sizeX, -sizeY, -targetDistance));
 
-                        targetLineVertices.push_back(Point3(sizeX, sizeY, -targetDistance));
-                        targetLineVertices.push_back(Point3(-sizeX, sizeY, -targetDistance));
-                        targetLineVertices.push_back(Point3(-sizeX, sizeY, -targetDistance));
-                        targetLineVertices.push_back(Point3(-sizeX, -sizeY, -targetDistance));
-                        targetLineVertices.push_back(Point3(-sizeX, -sizeY, -targetDistance));
-                        targetLineVertices.push_back(Point3(sizeX, -sizeY, -targetDistance));
-                        targetLineVertices.push_back(Point3(sizeX, -sizeY, -targetDistance));
-                        targetLineVertices.push_back(Point3(sizeX, sizeY, -targetDistance));
+                        targetLineVertices.push_back(Point3G(sizeX, sizeY, -targetDistance));
+                        targetLineVertices.push_back(Point3G(-sizeX, sizeY, -targetDistance));
+                        targetLineVertices.push_back(Point3G(-sizeX, sizeY, -targetDistance));
+                        targetLineVertices.push_back(Point3G(-sizeX, -sizeY, -targetDistance));
+                        targetLineVertices.push_back(Point3G(-sizeX, -sizeY, -targetDistance));
+                        targetLineVertices.push_back(Point3G(sizeX, -sizeY, -targetDistance));
+                        targetLineVertices.push_back(Point3G(sizeX, -sizeY, -targetDistance));
+                        targetLineVertices.push_back(Point3G(sizeX, sizeY, -targetDistance));
                     }
                 }
                 conePrimitive.setPositions(targetLineVertices.take());
@@ -252,7 +252,7 @@ PipelineStatus CameraVis::render(AnimationTime time, const ConstDataObjectPath& 
             renderer->addToLocalBoundingBox(Point3(0,0,-targetDistance));
         }
         if(aspectRatio != 0 && coneAngle != 0) {
-            FloatType sizeY = tan(FloatType(0.5) * coneAngle) * targetDistance;
+            FloatType sizeY = std::tan(FloatType(0.5) * coneAngle) * targetDistance;
             FloatType sizeX = sizeY / aspectRatio;
             renderer->addToLocalBoundingBox(Point3(sizeX, sizeY, -targetDistance));
             renderer->addToLocalBoundingBox(Point3(-sizeX, sizeY, -targetDistance));
@@ -270,7 +270,7 @@ PipelineStatus CameraVis::render(AnimationTime time, const ConstDataObjectPath& 
 
         // Load 3d camera icon.
         if(!_cameraIconVertices) {
-            DataBufferAccessAndRef<Point3> lines = DataBufferPtr::create(0, DataBuffer::Float, 3);
+            BufferAccessAndRef<Point3G> lines = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
             // Load and parse PLY file that contains the camera icon.
             QFile meshFile(QStringLiteral(":/core/3dicons/camera.ply"));
             meshFile.open(QIODevice::ReadOnly | QIODevice::Text);
@@ -281,7 +281,7 @@ PipelineStatus CameraVis::render(AnimationTime time, const ConstDataObjectPath& 
             for(int i = 0; i < 3; i++) stream.readLine();
             int numFaces = stream.readLine().section(' ', 2, 2).toInt();
             for(int i = 0; i < 2; i++) stream.readLine();
-            std::vector<Point3> vertices(numVertices);
+            std::vector<Point3G> vertices(numVertices);
             for(int i = 0; i < numVertices; i++)
                 stream >> vertices[i].x() >> vertices[i].y() >> vertices[i].z();
             for(int i = 0; i < numFaces; i++) {

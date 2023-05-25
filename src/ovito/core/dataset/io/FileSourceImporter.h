@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,22 +42,22 @@ class OVITO_CORE_EXPORT FileSourceImporter : public FileImporter
 
 public:
 
-    /// Data structure that stores meta information about a source animation frame.
+    /// Data structure that stores meta information about a source trajectory frame.
     struct Frame {
 
         /// Default constructor.
         Frame() = default;
 
         /// Initialization constructor.
-        explicit Frame(const FileHandle& fileHandle, qint64 offset = 0, int linenum = 1, const QString& name = QString(), qint64 parserInfo = 0) :
-                sourceFile(fileHandle.sourceUrl()), byteOffset(offset), lineNumber(linenum), label(name.isEmpty() ? fileHandle.sourceUrl().fileName() : name), parserData(parserInfo) {
+        explicit Frame(const FileHandle& fileHandle, qint64 offset = 0, int linenum = 1, const QString& name = QString()) :
+                sourceFile(fileHandle.sourceUrl()), byteOffset(offset), lineNumber(linenum), label(name.isEmpty() ? fileHandle.sourceUrl().fileName() : name) {
             if(!fileHandle.localFilePath().isEmpty())
                 lastModificationTime = QFileInfo(fileHandle.localFilePath()).lastModified();
         }
 
         /// Initialization constructor.
-        explicit Frame(const QUrl& url, qint64 offset = 0, int linenum = 1, const QDateTime& modTime = QDateTime(), const QString& name = QString(), qint64 parserInfo = 0) :
-            sourceFile(url), byteOffset(offset), lineNumber(linenum), lastModificationTime(modTime), label(name), parserData(parserInfo) {}
+        explicit Frame(const QUrl& url, qint64 offset = 0, int linenum = 1, const QDateTime& modTime = QDateTime(), const QString& name = QString()) :
+            sourceFile(url), byteOffset(offset), lineNumber(linenum), lastModificationTime(modTime), label(name) {}
 
         /// The source file that contains the data of the animation frame.
         QUrl sourceFile;
@@ -75,10 +75,10 @@ public:
         /// The name or label of the source frame.
         QString label;
 
-        /// An informational field that can be used by the file parser to store additional info about the frame.
-        qint64 parserData = 0;
+        /// Auxialiary field that can be used by the file parser to store additional info about the frame.
+        QVariant parserData;
 
-        /// Compares two data records.
+        /// Compares two frame descriptors.
         bool operator!=(const Frame& other) const {
             return (const_cast<QUrl&>(sourceFile).data_ptr() != const_cast<QUrl&>(other.sourceFile).data_ptr() && sourceFile != other.sourceFile) ||
                     (byteOffset != other.byteOffset) ||
@@ -200,7 +200,7 @@ public:
 public:
 
     /// \brief Constructs a new instance of this class.
-    FileSourceImporter(ObjectCreationParams params) : FileImporter(params), _isMultiTimestepFile(false) {}
+    FileSourceImporter(ObjectInitializationFlags flags) : FileImporter(flags), _isMultiTimestepFile(false) {}
 
     ///////////////////////////// from FileImporter /////////////////////////////
 
@@ -266,7 +266,16 @@ public:
     FileSource* fileSource() const;
 
     /// Determines whether the URL contains a wildcard pattern.
-    static bool isWildcardPattern(const QUrl& sourceUrl);
+    static bool isWildcardPattern(const QUrl& sourceUrl) {
+        return isWildcardPattern(sourceUrl.fileName());
+    }
+
+    /// Determines whether a filename contains a wildcard pattern.
+    static bool isWildcardPattern(const QString& filename);
+
+	/// Tries to derive a sensible wildcard pattern from a filename by replacing a
+	/// numeric character sequence with a '*'.
+	static QString deriveWildcardPatternFromFilename(const QString& filename);
 
 Q_SIGNALS:
 

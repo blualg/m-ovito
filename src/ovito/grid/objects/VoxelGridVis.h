@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,7 +44,7 @@ class OVITO_GRID_EXPORT VoxelGridVis : public DataVis
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE VoxelGridVis(ObjectCreationParams params);
+    Q_INVOKABLE VoxelGridVis(ObjectInitializationFlags flags);
 
     /// Lets the visualization element render the data object.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
@@ -79,7 +79,7 @@ private:
 };
 
 /**
- * \brief This data structure is attached to the geometry rendered by the VoxelGridVis 
+ * \brief This data structure is attached to the geometry rendered by the VoxelGridVis
  * in the viewports. It facilitates the picking of grid cells with the mouse.
  */
 class OVITO_GRID_EXPORT VoxelGridPickInfo : public ObjectPickInfo
@@ -109,7 +109,7 @@ private:
     /// The vis element that rendered the voxel grid.
     OORef<VoxelGridVis> _visElement;
 
-    /// Number of visible cells in each grid direction. 
+    /// Number of visible cells in each grid direction.
     std::array<int, 3> _numCells;
 
     /// The number of triangles rendered per voxel grid cell.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,7 +23,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
-#include <ovito/core/dataset/data/DataBufferAccess.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include "TargetObject.h"
 
@@ -35,10 +35,10 @@ IMPLEMENT_OVITO_CLASS(TargetVis);
 /******************************************************************************
 * Constructs a target object.
 ******************************************************************************/
-TargetObject::TargetObject(ObjectCreationParams params) : DataObject(params)
+TargetObject::TargetObject(ObjectInitializationFlags flags) : DataObject(flags)
 {
-    if(params.createVisElement()) {
-        setVisElement(OORef<TargetVis>::create(params));
+    if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement))) {
+        setVisElement(OORef<TargetVis>::create(flags));
     }
 }
 
@@ -64,7 +64,7 @@ PipelineStatus TargetVis::render(AnimationTime time, const ConstDataObjectPath& 
 
         // Initialize geometry of wireframe cube.
         if(!vertexPositions) {
-            const Point3 linePoints[] = {
+            constexpr Point3G linePoints[] = {
                 {-1, -1, -1}, { 1,-1,-1},
                 {-1, -1,  1}, { 1,-1, 1},
                 {-1, -1, -1}, {-1,-1, 1},
@@ -78,7 +78,7 @@ PipelineStatus TargetVis::render(AnimationTime time, const ConstDataObjectPath& 
                 { 1, -1,  1}, { 1, 1, 1},
                 {-1, -1,  1}, {-1, 1, 1}
             };
-            DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(sizeof(linePoints) / sizeof(Point3), DataBuffer::Float, 3);
+            BufferAccessAndRef<Point3G> vertices = DataBufferPtr::create(sizeof(linePoints) / sizeof(Point3G), DataBuffer::FloatGraphics, 3);
             boost::copy(linePoints, vertices.begin());
             vertexPositions = vertices.take();
         }

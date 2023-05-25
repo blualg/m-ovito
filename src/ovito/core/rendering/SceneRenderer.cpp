@@ -31,7 +31,7 @@
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/dataset/data/DataBufferAccess.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/viewport/ViewportGizmo.h>
 #include <ovito/core/app/Application.h>
 
@@ -314,12 +314,12 @@ ConstDataBufferPtr SceneRenderer::getNodeTrajectory(const SceneNode* node)
         int firstFrame = animSettings->firstFrame();
         int lastFrame = animSettings->lastFrame();
         OVITO_ASSERT(lastFrame >= firstFrame);
-        DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create(lastFrame - firstFrame + 1, DataBuffer::Float, 3);
+        BufferAccessAndRef<Point3G> vertices = DataBufferPtr::create(lastFrame - firstFrame + 1, DataBuffer::FloatGraphics, 3);
         auto v = vertices.begin();
         for(int frame = firstFrame; frame <= lastFrame; frame++) {
             TimeInterval iv;
             const Vector3& pos = node->getWorldTransform(AnimationTime::fromFrame(frame), iv).translation();
-            *v++ = Point3::Origin() + pos;
+            *v++ = Point3G::Origin() + pos.toDataType<GraphicsFloatType>();
         }
         OVITO_ASSERT(v == vertices.end());
         return vertices.take();
@@ -342,8 +342,8 @@ void SceneRenderer::renderNodeTrajectory(const SceneNode* node)
 
             // Render lines connecting the trajectory points.
             if(trajectory->size() >= 2) {
-                DataBufferAccessAndRef<Point3> lineVertices = DataBufferPtr::create((trajectory->size() - 1) * 2, DataBuffer::Float, 3);
-                ConstDataBufferAccess<Point3> trajectoryPoints(trajectory);
+                BufferAccessAndRef<Point3G> lineVertices = DataBufferPtr::create((trajectory->size() - 1) * 2, DataBuffer::FloatGraphics, 3);
+                BufferAccess<const Point3G> trajectoryPoints(trajectory);
                 for(size_t index = 0; index < trajectory->size(); index++) {
                     if(index != 0)
                         lineVertices[index * 2 - 1] = trajectoryPoints[index];
@@ -363,9 +363,9 @@ void SceneRenderer::renderNodeTrajectory(const SceneNode* node)
             renderMarkers(frameMarkers);
         }
         else {
-            Box3 bb;
-            bb.addPoints(ConstDataBufferAccess<Point3>(trajectory));
-            addToLocalBoundingBox(bb);
+            Box3G bb;
+            bb.addPoints(BufferAccess<const Point3G>(trajectory));
+            addToLocalBoundingBox(bb.toDataType<FloatType>());
         }
     }
 }
@@ -455,15 +455,15 @@ void SceneRenderer::render2DPolyline(const Point2* points, int count, const Colo
     LinePrimitive primitive;
     primitive.setUniformColor(color);
 
-    DataBufferAccessAndRef<Point3> vertices = DataBufferPtr::create((closed ? count : count-1) * 2, DataBuffer::Float, 3);
-    Point3* lineSegment = vertices.begin();
+    BufferAccessAndRef<Point3G> vertices = DataBufferPtr::create((closed ? count : count-1) * 2, DataBuffer::FloatGraphics, 3);
+    Point3G* lineSegment = vertices.begin();
     for(int i = 0; i < count - 1; i++, lineSegment += 2) {
-        lineSegment[0] = Point3(points[i].x(), points[i].y(), 0.0);
-        lineSegment[1] = Point3(points[i+1].x(), points[i+1].y(), 0.0);
+        lineSegment[0] = Point3G(points[i].x(), points[i].y(), 0.0);
+        lineSegment[1] = Point3G(points[i+1].x(), points[i+1].y(), 0.0);
     }
     if(closed) {
-        lineSegment[0] = Point3(points[count-1].x(), points[count-1].y(), 0.0);
-        lineSegment[1] = Point3(points[0].x(), points[0].y(), 0.0);
+        lineSegment[0] = Point3G(points[count-1].x(), points[count-1].y(), 0.0);
+        lineSegment[1] = Point3G(points[0].x(), points[0].y(), 0.0);
         lineSegment += 2;
     }
     OVITO_ASSERT(lineSegment == vertices.end());
@@ -665,20 +665,20 @@ void SceneRenderer::renderGrid()
         // Allocate vertex buffer.
         int numVertices = 2 * (numLinesX + numLinesY);
 
-        DataBufferAccessAndRef<Point3> vertexPositions = DataBufferPtr::create(numVertices, DataBuffer::Float, 3);
-        DataBufferAccessAndRef<ColorA> vertexColors = DataBufferPtr::create(numVertices, DataBuffer::Float, 4);
+        BufferAccessAndRef<Point3G> vertexPositions = DataBufferPtr::create(numVertices, DataBuffer::FloatGraphics, 3);
+        BufferAccessAndRef<ColorAG> vertexColors = DataBufferPtr::create(numVertices, DataBuffer::FloatGraphics, 4);
 
         // Build lines array.
-        ColorA color = Viewport::viewportColor(ViewportSettings::COLOR_GRID);
-        ColorA majorColor = Viewport::viewportColor(ViewportSettings::COLOR_GRID_INTENS);
-        ColorA majorMajorColor = Viewport::viewportColor(ViewportSettings::COLOR_GRID_AXIS);
+        const ColorAG color = Viewport::viewportColor(ViewportSettings::COLOR_GRID).toDataType<GraphicsFloatType>();
+        const ColorAG majorColor = Viewport::viewportColor(ViewportSettings::COLOR_GRID_INTENS).toDataType<GraphicsFloatType>();
+        const ColorAG majorMajorColor = Viewport::viewportColor(ViewportSettings::COLOR_GRID_AXIS).toDataType<GraphicsFloatType>();
 
-        Point3* v = vertexPositions.begin();
-        ColorA* c = vertexColors.begin();
+        Point3G* v = vertexPositions.begin();
+        ColorAG* c = vertexColors.begin();
         FloatType x = xstartF;
         for(int i = xstart; i < xstart + numLinesX; i++, x += gridSpacing, c += 2) {
-            *v++ = Point3(x, ystartF, 0);
-            *v++ = Point3(x, yendF, 0);
+            *v++ = Point3G(x, ystartF, 0);
+            *v++ = Point3G(x, yendF, 0);
             if((i % 10) != 0)
                 c[0] = c[1] = color;
             else if(i != 0)
@@ -688,8 +688,8 @@ void SceneRenderer::renderGrid()
         }
         FloatType y = ystartF;
         for(int i = ystart; i < ystart + numLinesY; i++, y += gridSpacing, c += 2) {
-            *v++ = Point3(xstartF, y, 0);
-            *v++ = Point3(xendF, y, 0);
+            *v++ = Point3G(xstartF, y, 0);
+            *v++ = Point3G(xendF, y, 0);
             if((i % 10) != 0)
                 c[0] = c[1] = color;
             else if(i != 0)

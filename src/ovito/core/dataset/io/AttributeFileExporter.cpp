@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,9 +37,9 @@ DEFINE_PROPERTY_FIELD(AttributeFileExporter, attributesToExport);
 /******************************************************************************
 * Constructor
 *****************************************************************************/
-AttributeFileExporter::AttributeFileExporter(ObjectCreationParams params) : FileExporter(params)
+AttributeFileExporter::AttributeFileExporter(ObjectInitializationFlags flags) : FileExporter(flags)
 {
-    if(params.loadUserDefaults()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject) && ExecutionContext::isInteractive()) {
         // This exporter is typically used to export attributes as functions of time.
         if(ExecutionContext::current().isValid()) {
             if(AnimationSettings* anim = ExecutionContext::current().ui().datasetContainer().activeAnimationSettings()) {

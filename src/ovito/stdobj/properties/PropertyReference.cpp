@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -79,7 +79,7 @@ PropertyReference PropertyReference::convertToContainerClass(PropertyContainerCl
         if(containerClass != this->containerClass()) {
             newref._containerClass = containerClass;
 
-            // Split string into property name and vector component name. 
+            // Split string into property name and vector component name.
             QStringList parts = this->name().split(QChar('.'));
             if((parts.length() == 1 || parts.length() == 2) && !parts[0].isEmpty()) {
                 // Determine property type.
@@ -141,7 +141,7 @@ LoadStream& operator>>(LoadStream& stream, PropertyReference& r)
         r = PropertyReference();
     else {
         // For backward compatibility with older OVITO versions:
-        // If the reference is to a standard property type that has been deprecated, 
+        // If the reference is to a standard property type that has been deprecated,
         // we should turn the reference into a user-property reference.
         if(r._type != 0 && !r._containerClass->isValidStandardPropertyId(r._type))
             r._type = 0;

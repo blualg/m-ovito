@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,17 +45,17 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CommonNeighborAnalysisModifier, cutoff, Wor
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-CommonNeighborAnalysisModifier::CommonNeighborAnalysisModifier(ObjectCreationParams params) : StructureIdentificationModifier(params),
-    _cutoff(3.2), 
+CommonNeighborAnalysisModifier::CommonNeighborAnalysisModifier(ObjectInitializationFlags flags) : StructureIdentificationModifier(flags),
+    _cutoff(3.2),
     _mode(AdaptiveCutoffMode)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the structure types.
-        createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER, params);
-        createStructureType(FCC, ParticleType::PredefinedStructureType::FCC, params);
-        createStructureType(HCP, ParticleType::PredefinedStructureType::HCP, params);
-        createStructureType(BCC, ParticleType::PredefinedStructureType::BCC, params);
-        createStructureType(ICO, ParticleType::PredefinedStructureType::ICO, params);
+        createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER);
+        createStructureType(FCC, ParticleType::PredefinedStructureType::FCC);
+        createStructureType(HCP, ParticleType::PredefinedStructureType::HCP);
+        createStructureType(BCC, ParticleType::PredefinedStructureType::BCC);
+        createStructureType(ICO, ParticleType::PredefinedStructureType::ICO);
     }
 }
 
@@ -107,7 +107,7 @@ void CommonNeighborAnalysisModifier::AdaptiveCNAEngine::perform()
         return;
 
     // Create output storage.
-    PropertyAccess<int> output(structures());
+    BufferAccess<int32_t> output(structures());
 
     // Perform analysis on each particle.
     if(!selection()) {
@@ -116,7 +116,7 @@ void CommonNeighborAnalysisModifier::AdaptiveCNAEngine::perform()
         });
     }
     else {
-        ConstPropertyAccess<int> selectionData(selection());
+        BufferAccess<const SelectionIntType> selectionData(selection());
         parallelForWithProgress(positions()->size(), [&](size_t index) {
             // Skip particles that are not included in the analysis.
             if(selectionData[index])
@@ -143,7 +143,7 @@ void CommonNeighborAnalysisModifier::IntervalCNAEngine::perform()
         return;
 
     // Create output storage.
-    PropertyAccess<int> output(structures());
+    BufferAccess<int32_t> output(structures());
 
     // Perform analysis on each particle.
     if(!selection()) {
@@ -152,7 +152,7 @@ void CommonNeighborAnalysisModifier::IntervalCNAEngine::perform()
         });
     }
     else {
-        ConstPropertyAccess<int> selectionData(selection());
+        BufferAccess<const SelectionIntType> selectionData(selection());
         parallelForWithProgress(positions()->size(), [&](size_t index) {
             // Skip particles that are not included in the analysis.
             if(selectionData[index])
@@ -176,7 +176,7 @@ void CommonNeighborAnalysisModifier::FixedCNAEngine::perform()
         return;
 
     // Create output storage.
-    PropertyAccess<int> output(structures());
+    BufferAccess<int32_t> output(structures());
 
     // Perform analysis on each particle.
     if(!selection()) {
@@ -185,7 +185,7 @@ void CommonNeighborAnalysisModifier::FixedCNAEngine::perform()
         });
     }
     else {
-        ConstPropertyAccess<int> selectionData(selection());
+        BufferAccess<const SelectionIntType> selectionData(selection());
         parallelForWithProgress(positions()->size(), [&](size_t index) {
             // Skip particles that are not included in the analysis.
             if(selectionData[index])
@@ -212,9 +212,9 @@ void CommonNeighborAnalysisModifier::BondCNAEngine::perform()
     // Compute per-bond CNA indices.
     bool maxNeighborLimitExceeded = false;
     bool maxCommonNeighborBondLimitExceeded = false;
-    ConstPropertyAccess<ParticleIndexPair> bonds(bondTopology());
-    ConstPropertyAccess<Vector3I> bondPeriodicImagesData(bondPeriodicImages());
-    PropertyAccess<Vector3I> cnaIndicesData(cnaIndices());
+    BufferAccess<const ParticleIndexPair> bonds(bondTopology());
+    BufferAccess<const Vector3I> bondPeriodicImagesData(bondPeriodicImages());
+    BufferAccess<Vector3I> cnaIndicesData(cnaIndices());
     parallelForWithProgress(bonds.size(), [&](size_t bondIndex) {
         size_t currentBondParticle1 = bonds[bondIndex][0];
         size_t currentBondParticle2 = bonds[bondIndex][1];
@@ -276,9 +276,9 @@ void CommonNeighborAnalysisModifier::BondCNAEngine::perform()
         throw Exception(tr("There are more than 64 bonds between common neighbors, which is the built-in limit. Cannot perform CNA in this case."));
 
     // Create output storage.
-    PropertyAccess<int> output(structures());
-    ConstPropertyAccess<int> selectionData(selection());
-    
+    BufferAccess<int32_t> output(structures());
+    BufferAccess<const SelectionIntType> selectionData(selection());
+
     // Classify particles.
     parallelForWithProgress(positions()->size(), [&](size_t particleIndex) {
 

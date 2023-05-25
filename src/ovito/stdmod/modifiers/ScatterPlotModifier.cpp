@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -63,7 +63,7 @@ SET_PROPERTY_FIELD_LABEL(ScatterPlotModifier, yAxisProperty, "Y-axis property");
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ScatterPlotModifier::ScatterPlotModifier(ObjectCreationParams params) : GenericPropertyModifier(params),
+ScatterPlotModifier::ScatterPlotModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags),
     _selectXAxisInRange(false),
     _selectionXAxisRangeStart(0),
     _selectionXAxisRangeEnd(1),
@@ -179,7 +179,7 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
         std::swap(selectionYAxisRangeStart, selectionYAxisRangeEnd);
 
     // Create output selection.
-    PropertyAccess<int> outputSelection;
+    BufferAccess<SelectionIntType> outputSelection;
     size_t numSelected = 0;
     if((selectXAxisInRange() || selectYAxisInRange()) && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
         // First make sure we can safely modify the property container.
@@ -191,20 +191,22 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     }
 
     // Create output arrays.
-    PropertyAccessAndRef<FloatType> out_x = DataTable::OOClass().createUserProperty(container->elementCount(), PropertyObject::Float, 1, xAxisProperty().nameWithComponent());
-    PropertyAccessAndRef<FloatType> out_y = DataTable::OOClass().createUserProperty(container->elementCount(), PropertyObject::Float, 1, yAxisProperty().nameWithComponent());
+    PropertyPtr out_x = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, container->elementCount(), PropertyObject::FloatDefault, 1, xAxisProperty().nameWithComponent());
+    PropertyPtr out_y = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, container->elementCount(), PropertyObject::FloatDefault, 1, yAxisProperty().nameWithComponent());
+    BufferAccess<FloatType> out_x_access(out_x);
+    BufferAccess<FloatType> out_y_access(out_y);
 
     // Collect X coordinates.
-    if(!xProperty->copyTo(out_x.begin(), xVecComponent))
+    if(!xProperty->copyTo(out_x_access.begin(), xVecComponent))
         throw Exception(tr("Failed to extract coordinate values from input property for x-axis."));
 
     // Collect Y coordinates.
-    if(!yProperty->copyTo(out_y.begin(), yVecComponent))
+    if(!yProperty->copyTo(out_y_access.begin(), yVecComponent))
         throw Exception(tr("Failed to extract coordinate values from input property for y-axis."));
 
     if(outputSelection && selectXAxisInRange()) {
-        int* s = outputSelection.begin();
-        for(FloatType x : out_x) {
+        SelectionIntType* s = outputSelection.begin();
+        for(const FloatType x : out_x_access) {
             if(x < selectionXAxisRangeStart || x > selectionXAxisRangeEnd) {
                 *s = 0;
                 numSelected--;
@@ -214,8 +216,8 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     }
 
     if(outputSelection && selectYAxisInRange()) {
-        int* s = outputSelection.begin();
-        for(FloatType y : out_y) {
+        SelectionIntType* s = outputSelection.begin();
+        for(const FloatType y : out_y_access) {
             if(y < selectionYAxisRangeStart || y > selectionYAxisRangeEnd) {
                 if(*s) {
                     *s = 0;
@@ -225,11 +227,13 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
             ++s;
         }
     }
+    out_x_access.reset();
+    out_y_access.reset();
 
     // Output a data table object with the scatter points.
     DataTable* table = state.createObject<DataTable>(QStringLiteral("scatter"), request.modApp(),
         DataTable::Scatter, tr("%1 vs. %2").arg(yAxisProperty().nameWithComponent()).arg(xAxisProperty().nameWithComponent()),
-        out_y.take(), out_x.take());
+        std::move(out_y), std::move(out_x));
     OVITO_ASSERT(table == state.getObjectBy<DataTable>(request.modApp(), QStringLiteral("scatter")));
 
     QString statusMessage;

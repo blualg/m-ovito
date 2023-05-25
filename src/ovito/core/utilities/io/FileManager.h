@@ -29,13 +29,11 @@
 
 namespace Ovito {
 
-#ifdef OVITO_SSH_CLIENT
 namespace Ssh {
-    // These classes are defined elsewhere:
+    // Classes are defined elsewhere:
     class SshConnection;
     struct SshConnectionParameters;
 }
-#endif
 
 #ifdef OVITO_ZLIB_SUPPORT
 class GzipIndex; // defined in GzipIODevice.h
@@ -113,13 +111,11 @@ public:
     /// \brief Constructs a URL from a path entered by the user.
     static QUrl urlFromUserInput(const QString& path);
 
-#ifdef OVITO_SSH_CLIENT
     /// Create a new SSH connection or returns an existing connection having the same parameters.
     Ssh::SshConnection* acquireSshConnection(const Ssh::SshConnectionParameters& sshParams);
 
     /// Releases an SSH connection after it is no longer used.
     void releaseSshConnection(Ssh::SshConnection* connection);
-#endif
 
 #ifdef OVITO_ZLIB_SUPPORT
     /// Returns index data for a gzipped file if it exists in the cache.
@@ -163,10 +159,10 @@ protected:
 
 private Q_SLOTS:
 
-#ifdef OVITO_SSH_CLIENT
     /// Is called whenever an SSH connection is closed.
     void cleanupSshConnection();
 
+#ifdef OVITO_SSH_CLIENT
     /// Is called whenever a SSH connection to an yet unknown server is being established.
     void unknownSshServer();
 
@@ -214,13 +210,11 @@ private:
     /// The mutex to synchronize access to above data structures.
     QRecursiveMutex _mutex;
 
-#ifdef OVITO_SSH_CLIENT
     /// Holds open SSH connections, which are currently active.
     QList<Ssh::SshConnection*> _acquiredConnections;
 
     /// Holds SSH connections, which are still open but not in use.
     QList<Ssh::SshConnection*> _unacquiredConnections;
-#endif
 
     friend class DownloadRemoteFileJob;
 };

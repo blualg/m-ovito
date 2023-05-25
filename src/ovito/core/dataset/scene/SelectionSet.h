@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,7 +44,7 @@ class OVITO_CORE_EXPORT SelectionSet : public RefTarget
 public:
 
     /// \brief Creates an empty selection set.
-    Q_INVOKABLE SelectionSet(ObjectCreationParams params) : RefTarget(params) {}
+    Q_INVOKABLE SelectionSet(ObjectInitializationFlags flags) : RefTarget(flags) {}
 
     /// \brief Adds a scene node to this selection set.
     /// \param node The node to be added.

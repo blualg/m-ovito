@@ -57,13 +57,13 @@ class OVITO_PARTICLES_EXPORT ReaxFFBondImporter : public ParticleImporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE ReaxFFBondImporter(ObjectCreationParams params) : ParticleImporter(params) {}
+    Q_INVOKABLE ReaxFFBondImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {}
 
     /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("ReaxFF Bonds"); }
 
     /// Indicates whether this file importer type loads particle trajectories.
-    virtual bool isTrajectoryFormat() const override { return true; } 
+    virtual bool isTrajectoryFormat() const override { return true; }
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {

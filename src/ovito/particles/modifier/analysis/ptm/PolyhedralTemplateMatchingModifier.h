@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,8 +46,8 @@ class OVITO_PARTICLES_EXPORT PolyhedralTemplateMatchingModifier : public Structu
 public:
 
     /// Constructor.
-    Q_INVOKABLE PolyhedralTemplateMatchingModifier(ObjectCreationParams params);    
-    
+    Q_INVOKABLE PolyhedralTemplateMatchingModifier(ObjectInitializationFlags flags);
+
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.
@@ -75,8 +75,8 @@ private:
         virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
         /// This method is called by the system whenever a parameter of the modifier changes.
-        /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be 
-        /// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true). 
+        /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be
+        /// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true).
         virtual bool modifierChanged(const PropertyFieldEvent& event) override {
             // Avoid a recomputation if the user changes just the RMSD cutoff parameter.
             if(event.field() == PROPERTY_FIELD(rmsdCutoff))

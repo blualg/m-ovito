@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,7 +26,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
-#include <ovito/core/dataset/data/DataBufferAccess.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
@@ -65,25 +65,25 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SliceModifier, widthController, WorldParame
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-SliceModifier::SliceModifier(ObjectCreationParams params) : MultiDelegatingModifier(params),
+SliceModifier::SliceModifier(ObjectInitializationFlags flags) : MultiDelegatingModifier(flags),
     _createSelection(false),
     _inverse(false),
     _applyToSelection(false),
     _enablePlaneVisualization(false),
     _reducedCoordinates(false)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setNormalController(ControllerManager::createVector3Controller());
         setDistanceController(ControllerManager::createFloatController());
         setWidthController(ControllerManager::createFloatController());
-        if(normalController()) 
+        if(normalController())
             normalController()->setVector3Value(AnimationTime(0), Vector3(1,0,0));
 
         // Generate the list of delegate objects.
-        createModifierDelegates(SliceModifierDelegate::OOClass(), params);
+        createModifierDelegates(SliceModifierDelegate::OOClass());
 
         // Create the vis element for the plane.
-        setPlaneVis(OORef<TriMeshVis>::create(params));
+        setPlaneVis(OORef<TriMeshVis>::create(flags));
         planeVis()->setTitle(tr("Plane"));
         planeVis()->setHighlightEdges(true);
         planeVis()->setTransparency(0.5);
@@ -183,7 +183,7 @@ void SliceModifier::renderVisual(AnimationTime time, PipelineSceneNode* contextN
     if(plane.normal.isZero())
         return;
 
-    ColorA color(0.8, 0.3, 0.3);
+    constexpr ColorA color(0.8, 0.3, 0.3);
     if(slabWidth <= 0) {
         renderPlane(renderer, plane, bb, color);
     }
@@ -236,7 +236,7 @@ void SliceModifier::renderPlane(SceneRenderer* renderer, const Plane3& plane, co
         renderer->addToLocalBoundingBox(vertexBoundingBox);
     }
     else {
-        DataBufferAccessAndRef<Point3> positions = DataBufferPtr::create(vertices.size(), DataBuffer::Float, 3);
+        BufferAccessAndRef<Point3> positions = DataBufferPtr::create(vertices.size(), DataBuffer::FloatDefault, 3);
         boost::range::copy(vertices, positions.begin());
         LinePrimitive buffer;
         buffer.setPositions(positions.take());
@@ -272,18 +272,17 @@ void SliceModifier::planeQuadIntersection(const Point3 corners[8], const std::ar
 }
 
 /******************************************************************************
-* This method is called by the system when the modifier has been inserted
-* into a PipelineObject.
+* This method is called by the system at the time the modifier is being inserted
+* into a pipeline for the first time.
 ******************************************************************************/
 void SliceModifier::initializeModifier(const ModifierInitializationRequest& request)
 {
     MultiDelegatingModifier::initializeModifier(request);
 
-    // Get the input simulation cell to initially place the cutting plane in
-    // the center of the cell.
-    const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
-    if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
-        if(distanceController() && distanceController()->getFloatValue(AnimationTime(0)) == 0) {
+    // Initially place the cutting plane in the center of the simulation cell.
+    if(ExecutionContext::isInteractive() && distanceController() && distanceController()->getFloatValue(AnimationTime(0)) == 0) {
+        const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
+        if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
             Point3 centerPoint = cell->cellMatrix() * Point3(0.5, 0.5, 0.5);
             FloatType centerDistance = normal().dot(centerPoint - Point3::Origin());
             if(std::abs(centerDistance) > FLOATTYPE_EPSILON && distanceController())
@@ -337,7 +336,7 @@ void SliceModifier::evaluateSynchronous(const ModifierEvaluationRequest& request
             planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(1) + cellMatrix.column(2), cellMatrix.column(0));
             planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(2) + cellMatrix.column(0), cellMatrix.column(1));
             if(vertices.size() < 3) return;
-            vertices.erase(std::remove_if(vertices.begin() + 1, vertices.end(), 
+            vertices.erase(std::remove_if(vertices.begin() + 1, vertices.end(),
                 [p = vertices.front()](const Point3& p2) { return p2.equals(p); }), vertices.end());
             if(vertices.size() < 3) return;
             std::sort(vertices.begin() + 1, vertices.end(), [&](const Point3& a, const Point3& b) {
@@ -365,7 +364,7 @@ void SliceModifier::evaluateSynchronous(const ModifierEvaluationRequest& request
 }
 
 /******************************************************************************
-* Moves the plane along its current normal vector to position in the center of the simulation cell. 
+* Moves the plane along its current normal vector to position in the center of the simulation cell.
 ******************************************************************************/
 void SliceModifier::centerPlaneInSimulationCell(ModifierApplication* modApp, AnimationTime time)
 {
@@ -393,13 +392,13 @@ void SliceModifier::centerPlaneInSimulationCell(ModifierApplication* modApp, Ani
 }
 
 /******************************************************************************
-* Returns a short piece information (typically a string or color) to be 
+* Returns a short piece information (typically a string or color) to be
 * displayed next to the modifier's title in the pipeline editor list.
 ******************************************************************************/
 QVariant SliceModifier::getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const
-{ 
+{
     Vector3 normal = this->normal();
-    return tr("(%1 %2 %3), %4").arg(normal.x(), 0, 'g', 1).arg(normal.y(), 0, 'g', 1).arg(normal.z(), 0, 'g', 1).arg(distance(), 0, 'g', 6); 
+    return tr("(%1 %2 %3), %4").arg(normal.x(), 0, 'g', 1).arg(normal.y(), 0, 'g', 1).arg(normal.z(), 0, 'g', 1).arg(distance(), 0, 'g', 6);
 }
 
 }   // End of namespace

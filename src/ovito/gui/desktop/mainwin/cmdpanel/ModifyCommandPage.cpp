@@ -222,7 +222,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 /******************************************************************************
 * Loads the layout of the widgets from the settings store.
 ******************************************************************************/
-void ModifyCommandPage::restoreLayout() 
+void ModifyCommandPage::restoreLayout()
 {
     QSettings settings;
     settings.beginGroup("app/mainwindow/modify");
@@ -234,7 +234,7 @@ void ModifyCommandPage::restoreLayout()
 /******************************************************************************
 * Saves the layout of the widgets to the settings store.
 ******************************************************************************/
-void ModifyCommandPage::saveLayout() 
+void ModifyCommandPage::saveLayout()
 {
     QSettings settings;
     settings.beginGroup("app/mainwindow/modify");
@@ -249,13 +249,13 @@ void ModifyCommandPage::onSelectedItemChanged()
 {
     RefTarget* selectedObject = pipelineListModel()->selectedObject();
 
-    _modifierSelector->setEnabled(selectedObject != nullptr); 
+    _modifierSelector->setEnabled(selectedObject != nullptr);
 
     if(selectedObject != _propertiesPanel->editObject()) {
         _propertiesPanel->setEditObject(selectedObject);
 
-        // Request a viewport update whenever a new item in the pipeline editor is selected, 
-        // because the currently selected modifier may render gizmos in the viewports. 
+        // Request a viewport update whenever a new item in the pipeline editor is selected,
+        // because the currently selected modifier may render gizmos in the viewports.
         _mainWindow.updateViewports();
     }
 
@@ -389,32 +389,7 @@ void ModifyCommandPage::showProgramNotice(const QString& htmlPage)
 {
     QString finalText = htmlPage;
 
-#if defined(OVITO_EXPIRATION_DATE)
-    QDate expirationDate = QDate::fromString(QStringLiteral(OVITO_EXPIRATION_DATE), Qt::ISODate);
-    QDate currentDate = QDate::currentDate();
-    QString expirationNotice;
-    if(currentDate < expirationDate.addMonths(-1)) {
-        expirationNotice = tr("<h4>Preview build</h4><p>You are using a preview version of %1, which will expire on %2. "
-                "The final release of %1 will be made available on our website <a href=\"https://www.ovito.org/\">www.ovito.org</a>.</p>")
-            .arg(Application::applicationName())
-            .arg(expirationDate.toString(Qt::SystemLocaleShortDate));
-    }
-    else if(currentDate <= expirationDate) {
-        expirationNotice = tr("<h4>Preview build: Expiration date approaching</h4><p style=\"background-color: rgb(230,180,180); color: black;\">You are using a preview version of %1, which will expire on %2. "
-                "The final program release is now available. Please visit our website <a href=\"https://www.ovito.org/\">www.ovito.org</a>. "
-                "<br>This preview release will stop working in %3 days!</p>")
-            .arg(Application::applicationName())
-            .arg(expirationDate.toString(Qt::SystemLocaleShortDate))
-            .arg(currentDate.daysTo(expirationDate));
-    }
-    else {
-        expirationNotice = tr("<h4>Preview build</h4><p style=\"background-color: rgb(230,180,180); color: black;\">This preview version of %1 has expired on %2 and will no longer work. "
-                "The final program release is now available, please visit our website <a href=\"https://www.ovito.org/\">www.ovito.org</a>. ")
-            .arg(Application::applicationName())
-            .arg(expirationDate.toString(Qt::SystemLocaleShortDate));
-    }
-    finalText.replace(QStringLiteral("<p>&nbsp;</p>"), expirationNotice);
-#elif defined(OVITO_DEVELOPMENT_BUILD_DATE)
+#if defined(OVITO_DEVELOPMENT_BUILD_DATE)
     QString previewNotice = tr("<h4>Preview version notice</h4><p style=\"background-color: rgb(230,180,180); color: black;\">You are using an early development build of %1, which was created on %2.</p> "
             "<p style=\"background-color: rgb(230,180,180); color: black;\">Remember to install the final release of %1 as soon as it becomes available on our website <a href=\"https://www.ovito.org/\">www.ovito.org</a>.</p>")
         .arg(Application::applicationName())

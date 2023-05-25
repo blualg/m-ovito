@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,13 +27,14 @@
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/app/UserInterface.h>
+#include <ovito/core/viewport/ViewportSuspender.h>
 
 #include <QTcpSocket>
 
 namespace Ovito::Particles {
 
 /**
- * \brief A modifier that updates the particle positions using real-time MD trajectory data it receives from a 
+ * \brief A modifier that updates the particle positions using real-time MD trajectory data it receives from a
  *        remote network server process using the Interactive Molecular Dynamics (IMD) protocol.
  */
 class OVITO_PARTICLES_EXPORT InteractiveMolecularDynamicsModifier : public Modifier
@@ -62,7 +63,7 @@ class OVITO_PARTICLES_EXPORT InteractiveMolecularDynamicsModifier : public Modif
 public:
 
     /// Constructor.
-    Q_INVOKABLE InteractiveMolecularDynamicsModifier(ObjectCreationParams params);
+    Q_INVOKABLE InteractiveMolecularDynamicsModifier(ObjectInitializationFlags flags);
 
     /// Destructor.
     virtual ~InteractiveMolecularDynamicsModifier();
@@ -103,7 +104,7 @@ private:
     /// Is called to indicate an error state. Closes the connection to the server.
     void protocolError(const QString& errorString, PipelineStatus::StatusType statusType = PipelineStatus::Error);
 
-    /// The header data structure used by the IMD network protocol. 
+    /// The header data structure used by the IMD network protocol.
     struct IMDHeader {
         qint32 type;
         qint32 length;
@@ -135,7 +136,7 @@ private:
         float Eangle;     ///< Angle energy, Kcal/mol
         float Edihe;      ///< Dihedral energy, Kcal/mol
         float Eimpr;      ///< Improper energy, Kcal/mol
-    };      
+    };
 
     /// The network hostname of the IMD server.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QString, hostName, setHostName, PROPERTY_FIELD_MEMORIZE);
@@ -152,7 +153,7 @@ private:
     /// The current status of the modifier.
     PipelineStatus _modifierStatus;
 
-    /// The detected endianess of the server side. 
+    /// The detected endianess of the server side.
     QSysInfo::Endian _serverEndianess;
 
     // The last IMD protocol header received.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -95,7 +95,7 @@ public:
     /// \brief Returns the current value of the object's reference counter.
     /// \return The reference count for this object, i.e. the number of references
     ///         pointing to this object.
-    const QAtomicInt& objectReferenceCount() const noexcept { return _referenceCount; }
+    const std::atomic<int>& objectReferenceCount() const noexcept { return _referenceCount; }
 
 #ifdef OVITO_DEBUG
     /// \brief Returns whether this object has not been deleted yet.
@@ -195,7 +195,7 @@ protected:
 private:
 
     /// The current number of references to this object that keep it alive.
-    mutable QAtomicInt _referenceCount{0};
+    mutable std::atomic<int> _referenceCount{0};
 
     /// This is the special value the reference count of the object is set to while it is being deleted:
     constexpr static auto INVALID_REFERENCE_COUNT = std::numeric_limits<int>::max() / 2;
@@ -204,7 +204,7 @@ private:
     void incrementReferenceCount() const noexcept {
         OVITO_CHECK_OBJECT_POINTER(this);
         OVITO_ASSERT_MSG(_isAllocatedOnTheHeap, "OvitoObject::incrementReferenceCount()", "Cannot use OORef<> to hold an object that has not been created with OORef<>::create().");
-        _referenceCount.ref();
+        _referenceCount.fetch_add(1);
     }
 
     /// \brief Decrements the reference count by one.
@@ -213,7 +213,8 @@ private:
     void decrementReferenceCount() const noexcept {
         OVITO_CHECK_OBJECT_POINTER(this);
         OVITO_ASSERT_MSG(_isAllocatedOnTheHeap, "OvitoObject::decrementReferenceCount()", "Cannot use OORef<> to hold an object that was allocated on the stack.");
-        if(!_referenceCount.deref()) {
+        OVITO_ASSERT(_referenceCount.load() >= 1);
+        if(_referenceCount.fetch_sub(1) == 1) {
             const_cast<OvitoObject*>(this)->deleteObjectInternal();
         }
     }
@@ -222,11 +223,11 @@ private:
     /// It is automatically called when the object's reference counter reaches zero.
     Q_INVOKABLE void deleteObjectInternal() noexcept;
 
-    /// Returns the name of the plugin class this object is an instance of. 
+    /// Returns the name of the plugin class this object is an instance of.
     /// This method is an implementation detail required by the Q_PROPERTY macro above.
     const QString& className() const { return getOOClass().name(); }
 
-    /// Returns the idenitifier of the plugin module this object belongs to. 
+    /// Returns the idenitifier of the plugin module this object belongs to.
     /// This method is an implementation detail required by the Q_PROPERTY macro above.
     QString pluginId() const { return QString::fromLatin1(getOOClass().pluginId()); }
 

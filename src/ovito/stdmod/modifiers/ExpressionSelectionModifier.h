@@ -92,7 +92,7 @@ class OVITO_STDMOD_EXPORT ExpressionSelectionModifier : public DelegatingModifie
 public:
 
     /// Constructor.
-    Q_INVOKABLE ExpressionSelectionModifier(ObjectCreationParams params);
+    Q_INVOKABLE ExpressionSelectionModifier(ObjectInitializationFlags flags);
 
     /// \brief Returns the list of available input variables.
     const QStringList& inputVariableNames() const { return _variableNames; }
@@ -121,7 +121,7 @@ Q_SIGNALS:
     /// This signal is emitted whenever the status of this object changes.
     /// The signal is used in the QML GUI to update the display.
     void objectStatusChanged();
-#endif  
+#endif
 
 protected:
 

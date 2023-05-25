@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2022 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -32,7 +32,7 @@ ENDIF()
 
 # Locate the libssh library, needed for the built-in SSH client.
 IF(OVITO_BUILD_SSH_CLIENT AND NOT EMSCRIPTEN)
-    FIND_PACKAGE(Libssh)
+    FIND_PACKAGE(libssh)
 ENDIF()
 
 # Locate the Boost library.
@@ -127,6 +127,11 @@ SET(SourceFiles
     utilities/concurrent/TaskManager.cpp
     utilities/concurrent/MainThreadOperation.cpp
     utilities/concurrent/ExecutionContext.cpp
+    utilities/io/ssh/SshConnection.cpp
+    utilities/io/ssh/openssh/OpensshConnection.cpp
+    utilities/io/ssh/openssh/SshRequest.cpp
+    utilities/io/ssh/openssh/DownloadRequest.cpp
+    utilities/io/ssh/openssh/FileListingRequest.cpp
     rendering/SceneRenderer.cpp
     rendering/ParticlePrimitive.cpp
     rendering/MeshPrimitive.cpp
@@ -158,18 +163,24 @@ ENDIF()
 
 # Include optional SSH client code.
 IF(OVITO_BUILD_SSH_CLIENT)
-    IF(Libssh_FOUND)
+    IF(libssh_FOUND)
+        MESSAGE(STATUS "Found libssh. Will build integrated SSH client.")
         LIST(APPEND SourceFiles
-            utilities/io/ssh/SshConnection.cpp
-            utilities/io/ssh/SshChannel.cpp
-            utilities/io/ssh/ProcessChannel.cpp
-            utilities/io/ssh/ScpChannel.cpp
-            utilities/io/ssh/LsChannel.cpp
-            utilities/io/ssh/LibsshWrapper.cpp
+            utilities/io/ssh/libssh/LibsshConnection.cpp
+            utilities/io/ssh/libssh/SshChannel.cpp
+            utilities/io/ssh/libssh/ProcessChannel.cpp
+            utilities/io/ssh/libssh/ScpChannel.cpp
+            utilities/io/ssh/libssh/LsChannel.cpp
+            utilities/io/ssh/libssh/LibsshWrapper.cpp
         )
     ELSE()
-        MESSAGE("Libssh library not found. OVITO will be built without built-in SSH client.")
+        MESSAGE("libssh not found. OVITO will be built without integrated SSH client.")
     ENDIF()
+ENDIF()
+
+# Build the askpass utility, which is needed for the external OpenSSH-based client.
+IF(OVITO_BUILD_APP AND NOT EMSCRIPTEN)
+    ADD_SUBDIRECTORY(utilities/io/ssh/openssh/askpass)
 ENDIF()
 
 # Make use of the zlib library provided by Emscripten.
@@ -214,15 +225,15 @@ IF(ZLIB_FOUND)
 ENDIF()
 
 # Link to Libssh.
-IF(OVITO_BUILD_SSH_CLIENT AND Libssh_FOUND)
+IF(OVITO_BUILD_SSH_CLIENT AND libssh_FOUND)
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_SSH_CLIENT)
     IF(OVITO_LIBSSH_RUNTIME_LINKING)
         TARGET_COMPILE_DEFINITIONS(Core PRIVATE OVITO_LIBSSH_RUNTIME_LINKING)
         TARGET_INCLUDE_DIRECTORIES(Core PRIVATE "${LIBSSH_INCLUDE_DIR}")
         FILE(RELATIVE_PATH OVITO_LIBSSH_RELATIVE_PATH "${OVITO_BINARY_DIRECTORY}" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}")
         TARGET_COMPILE_DEFINITIONS(Core PRIVATE "OVITO_LIBSSH_RELATIVE_PATH=\"${OVITO_LIBSSH_RELATIVE_PATH}\"")
-        ELSE()
-        TARGET_LINK_LIBRARIES(Core PRIVATE Libssh::Libssh)
+    ELSE()
+        TARGET_LINK_LIBRARIES(Core PRIVATE ssh)
     ENDIF()
 ENDIF()
 
@@ -236,6 +247,8 @@ ENDIF()
 
 # Define the OVITO_DEBUG macro in debug builds.
 TARGET_COMPILE_DEFINITIONS(Core PUBLIC "$<$<CONFIG:Debug>:OVITO_DEBUG>")
+# Define QT_NO_DEBUG_OUTPUT in release builds.
+TARGET_COMPILE_DEFINITIONS(Core PUBLIC "$<$<CONFIG:Release>:QT_NO_DEBUG_OUTPUT=1>")
 
 # Turn off Clang compiler warnings regarding undefined instantiation of static variable of class templates.
 IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -296,9 +309,6 @@ IF(OVITO_BUILD_PROFESSIONAL)
 ENDIF()
 IF(OVITO_BUILD_BASIC)
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC "OVITO_BUILD_BASIC")
-ENDIF()
-IF(OVITO_EXPIRATION_DATE)
-    TARGET_COMPILE_DEFINITIONS(Core PUBLIC "OVITO_EXPIRATION_DATE=\"${OVITO_EXPIRATION_DATE}\"")
 ENDIF()
 IF(OVITO_BUILD_CONDA)
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC "OVITO_BUILD_CONDA")
@@ -366,11 +376,12 @@ IF(OVITO_BUILD_CONDA AND UNIX AND NOT APPLE)
 ENDIF()
 
 # Deploy the libssh library and its dependencies.
-IF(OVITO_BUILD_SSH_CLIENT AND Libssh_FOUND AND NOT EMSCRIPTEN AND NOT OVITO_BUILD_CONDA)
+IF(OVITO_BUILD_SSH_CLIENT AND libssh_FOUND AND NOT EMSCRIPTEN AND NOT OVITO_BUILD_CONDA)
     IF(WIN32)
-        LIST(GET LIBSSH_LIBRARIES 0 LIBSSH_FIRST_LIBRARY)
-        GET_FILENAME_COMPONENT(LIBSSH_LIBRARY_DIR "${LIBSSH_FIRST_LIBRARY}" PATH)
-        GET_FILENAME_COMPONENT(LIBSSH_LIBRARY_NAME "${LIBSSH_FIRST_LIBRARY}" NAME_WE)
+        # Install libssh.dylib
+        GET_TARGET_PROPERTY(LIBSSH_LIBRARY_LOCATION ssh LOCATION)
+        GET_FILENAME_COMPONENT(LIBSSH_LIBRARY_DIR "${LIBSSH_LIBRARY_LOCATION}" PATH)
+        GET_FILENAME_COMPONENT(LIBSSH_LIBRARY_NAME "${LIBSSH_LIBRARY_LOCATION}" NAME_WE)
         OVITO_INSTALL_SHARED_LIB("${LIBSSH_LIBRARY_DIR}/../bin/${LIBSSH_LIBRARY_NAME}.dll")
 
         # Also install the OpenSSL DLLs needed by libssh.
@@ -391,17 +402,18 @@ IF(OVITO_BUILD_SSH_CLIENT AND Libssh_FOUND AND NOT EMSCRIPTEN AND NOT OVITO_BUIL
 
         IF(OVITO_LIBSSH_RUNTIME_LINKING)
             # Create a symlink to libssh in the build directory to make it available at runtime.
+            GET_TARGET_PROPERTY(LIBSSH_LIBRARY_LOCATION ssh LOCATION)
             FILE(MAKE_DIRECTORY "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}")
-            EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${LIBSSH_LIBRARY}" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/libssh.dylib")
+            EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${LIBSSH_LIBRARY_LOCATION}" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/libssh.dylib")
             # Install libssh in the installation directory to ship it with OVITO.
-            INSTALL(FILES "${LIBSSH_LIBRARY}" DESTINATION "${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/")
+            INSTALL(FILES "${LIBSSH_LIBRARY_LOCATION}" DESTINATION "${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/")
         ENDIF()
 
     ELSEIF(UNIX AND OVITO_REDISTRIBUTABLE_PACKAGE)
 
-        FOREACH(lib ${LIBSSH_LIBRARIES})
-            OVITO_INSTALL_SHARED_LIB("${lib}")
-        ENDFOREACH()
+        # Install libssh.so
+        GET_TARGET_PROPERTY(LIBSSH_LIBRARY_LOCATION ssh LOCATION)
+        OVITO_INSTALL_SHARED_LIB("${LIBSSH_LIBRARY_LOCATION}")
 
         # Install OpenSSL (libcrypto.so and libssl.so) needed by libssh.
         FOREACH(lib libcrypto.so libssl.so)

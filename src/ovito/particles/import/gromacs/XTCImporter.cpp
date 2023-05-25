@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -73,8 +73,8 @@ public:
         OVITO_ASSERT(!_eof);
         Frame frame;
         frame.xyz.resize(_numAtoms);
-        int returnCode = read_xtc(_file, _numAtoms, &frame.step, &frame.time, 
-            reinterpret_cast<matrix&>(frame.cell), 
+        int returnCode = read_xtc(_file, _numAtoms, &frame.step, &frame.time,
+            reinterpret_cast<matrix&>(frame.cell),
             reinterpret_cast<rvec*>(frame.xyz.data()), &frame.prec);
         if(returnCode != exdrOK && returnCode != exdrENDOFFILE)
             throw Exception(XTCImporter::tr("Error reading XTC file (code %1).").arg(returnCode));
@@ -161,7 +161,7 @@ void XTCImporter::FrameLoader::loadFile()
     // Transfer atomic coordinates to property storage. Also convert from nanometer units to angstroms.
     size_t numParticles = xtcFrame.xyz.size();
     setParticleCount(numParticles);
-    PropertyAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+    BufferAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
     std::transform(xtcFrame.xyz.cbegin(), xtcFrame.xyz.cend(), posProperty.begin(), [](const Point_3<float>& p) {
         return (p * 10.0f).toDataType<FloatType>();
     });

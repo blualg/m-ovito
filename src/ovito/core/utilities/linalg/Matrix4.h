@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2014 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -76,25 +76,14 @@ public:
 
     /// \brief Constructor that initializes 9 elements of the matrix to the given values. All other elements are set to zero.
     /// \note Values are given in row-major order, i.e. row by row.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR Matrix_4(T m11, T m12, T m13,
                        T m21, T m22, T m23,
                        T m31, T m32, T m33)
         : std::array<Vector_4<T>,4>{{{m11,m21,m31,T(0)},{m12,m22,m32,T(0)},{m13,m23,m33,T(0)}, typename Vector_4<T>::Zero()}} {}
-#else
-    Matrix_4(T m11, T m12, T m13,
-           T m21, T m22, T m23,
-           T m31, T m32, T m33)
-        { (*this)[0] = Vector_4<T>(m11,m21,m31,T(0));
-          (*this)[1] = Vector_4<T>(m12,m22,m32,T(0));
-          (*this)[2] = Vector_4<T>(m13,m23,m33,T(0));
-          (*this)[3] = typename Vector_4<T>::Zero(); }
-#endif
 
     /// \brief Constructor that initializes the 12 elements of the 3x4 submatrix to the given values.
     ///        All other elements are set to zero.
     /// \note Elements need to be specified in row-major order, i.e. row by row.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR Matrix_4(
                         T m11, T m12, T m13, T m14,
                         T m21, T m22, T m23, T m24,
@@ -104,20 +93,9 @@ public:
             Vector_4<T>(m12,m22,m32,T(0)),
             Vector_4<T>(m13,m23,m33,T(0)),
             Vector_4<T>(m14,m24,m34,T(0))}} {}
-#else
-    Matrix_4(
-            T m11, T m12, T m13, T m14,
-            T m21, T m22, T m23, T m24,
-            T m31, T m32, T m33, T m34)
-        { (*this)[0] = Vector_4<T>(m11,m21,m31,T(0));
-          (*this)[1] = Vector_4<T>(m12,m22,m32,T(0));
-          (*this)[2] = Vector_4<T>(m13,m23,m33,T(0));
-          (*this)[3] = Vector_4<T>(m14,m24,m34,T(0)); }
-#endif
 
     /// \brief Constructor that initializes 16 elements of the matrix to the given values.
     /// \note Elements need to be specified in row-major order, i.e. row by row.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR Matrix_4(
                         T m11, T m12, T m13, T m14,
                         T m21, T m22, T m23, T m24,
@@ -128,117 +106,67 @@ public:
             Vector_4<T>(m12,m22,m32,m42),
             Vector_4<T>(m13,m23,m33,m43),
             Vector_4<T>(m14,m24,m34,m44)}} {}
-#else
-    Matrix_4(
-            T m11, T m12, T m13, T m14,
-            T m21, T m22, T m23, T m24,
-            T m31, T m32, T m33, T m34,
-            T m41, T m42, T m43, T m44)
-        { (*this)[0] = Vector_4<T>(m11,m21,m31,m41);
-          (*this)[1] = Vector_4<T>(m12,m22,m32,m42);
-          (*this)[2] = Vector_4<T>(m13,m23,m33,m43);
-          (*this)[3] = Vector_4<T>(m14,m24,m34,m44); }
-#endif
 
     /// \brief Initializes the 4x4 matrix from a 3x3 matrix.
     /// The lower matrix row and the right column are initialized to (0,0,0,1).
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-    explicit Q_DECL_CONSTEXPR Matrix_4(const Matrix_3<T>& tm)
+    Q_DECL_CONSTEXPR explicit Matrix_4(const Matrix_3<T>& tm)
         : std::array<Vector_4<T>,4>{{
             Vector_4<T>(tm(0,0),tm(1,0),tm(2,0),T(0)),
             Vector_4<T>(tm(0,1),tm(1,1),tm(2,1),T(0)),
             Vector_4<T>(tm(0,2),tm(1,2),tm(2,2),T(0)),
             Vector_4<T>(   T(0),   T(0),   T(0),T(1))}} {}
-#else
-    explicit Matrix_4(const Matrix_3<T>& tm)
-        { (*this)[0] = Vector_4<T>(tm(0,0),tm(1,0),tm(2,0),T(0));
-          (*this)[1] = Vector_4<T>(tm(0,1),tm(1,1),tm(2,1),T(0));
-          (*this)[2] = Vector_4<T>(tm(0,2),tm(1,2),tm(2,2),T(0));
-          (*this)[3] = Vector_4<T>(   T(0),   T(0),   T(0),T(1)); }
-#endif
 
     /// \brief Constructor that initializes the matrix from four column vectors.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR Matrix_4(const Vector_4<T>& c1, const Vector_4<T>& c2, const Vector_4<T>& c3, const Vector_4<T>& c4)
         : std::array<Vector_4<T>,4>{{c1, c2, c3, c4}} {}
-#else
-    Matrix_4(const Vector_4<T>& c1, const Vector_4<T>& c2, const Vector_4<T>& c3, const Vector_4<T>& c4)
-        { (*this)[0] = c1; (*this)[1] = c2; (*this)[2] = c3; (*this)[3] = c4; }
-#endif
 
     /// \brief Initializes the 4x4 matrix from a 3x4 matrix.
     /// The lower matrix row is initialized to (0,0,0,1).
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-    explicit Q_DECL_CONSTEXPR Matrix_4(const AffineTransformationT<T>& tm)
+    Q_DECL_CONSTEXPR explicit Matrix_4(const AffineTransformationT<T>& tm)
         : std::array<Vector_4<T>,4>{{
             Vector_4<T>(tm(0,0),tm(1,0),tm(2,0),T(0)),
             Vector_4<T>(tm(0,1),tm(1,1),tm(2,1),T(0)),
             Vector_4<T>(tm(0,2),tm(1,2),tm(2,2),T(0)),
             Vector_4<T>(tm(0,3),tm(1,3),tm(2,3),T(1))}} {}
-#else
-    explicit Matrix_4(const AffineTransformationT<T>& tm)
-        { (*this)[0] = Vector_4<T>(tm(0,0),tm(1,0),tm(2,0),T(0));
-          (*this)[1] = Vector_4<T>(tm(0,1),tm(1,1),tm(2,1),T(0));
-          (*this)[2] = Vector_4<T>(tm(0,2),tm(1,2),tm(2,2),T(0));
-          (*this)[3] = Vector_4<T>(tm(0,3),tm(1,3),tm(2,3),T(1)); }
-#endif
 
     /// \brief Constructor that initializes the top 3x4 submatrix from four column 3-vectors.
     /// The lower matrix row is initialized to (0,0,0,1).
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR Matrix_4(const Vector_3<T>& c1, const Vector_3<T>& c2, const Vector_3<T>& c3, const Vector_3<T>& c4)
         : std::array<Vector_4<T>,4>{{
             Vector_4<T>(c1[0],c1[1],c1[2],T(0)),
             Vector_4<T>(c2[0],c2[1],c2[2],T(0)),
             Vector_4<T>(c3[0],c3[1],c3[2],T(0)),
             Vector_4<T>(c4[0],c4[1],c4[2],T(1))}} {}
-#else
-    Matrix_4(const Vector_3<T>& c1, const Vector_3<T>& c2, const Vector_3<T>& c3, const Vector_3<T>& c4)
-        { (*this)[0] = Vector_4<T>(c1[0],c1[1],c1[2],T(0));
-          (*this)[1] = Vector_4<T>(c2[0],c2[1],c2[2],T(0));
-          (*this)[2] = Vector_4<T>(c3[0],c3[1],c3[2],T(0));
-          (*this)[3] = Vector_4<T>(c4[0],c4[1],c4[2],T(1)); }
-#endif
 
     /// \brief Initializes the matrix to the null matrix.
     /// All matrix elements are set to zero by this constructor.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR Matrix_4(Zero)
         : std::array<Vector_4<T>,4>{{
             typename Vector_4<T>::Zero(),
             typename Vector_4<T>::Zero(),
             typename Vector_4<T>::Zero(),
             typename Vector_4<T>::Zero()}} {}
-#else
-    Matrix_4(Zero)
-        { this->fill(typename Vector_4<T>::Zero()); }
-#endif
 
     /// \brief Initializes the matrix to the identity matrix.
     /// All diagonal elements are set to one, and all off-diagonal elements are set to zero.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR Matrix_4(Identity)
         : std::array<Vector_4<T>,4>{{
             Vector_4<T>(T(1),T(0),T(0),T(0)),
             Vector_4<T>(T(0),T(1),T(0),T(0)),
             Vector_4<T>(T(0),T(0),T(1),T(0)),
             Vector_4<T>(T(0),T(0),T(0),T(1))}} {}
-#else
-    Matrix_4(Identity)
-        { (*this)[0] = Vector_4<T>(T(1),T(0),T(0),T(0));
-          (*this)[1] = Vector_4<T>(T(0),T(1),T(0),T(0));
-          (*this)[2] = Vector_4<T>(T(0),T(0),T(1),T(0));
-          (*this)[3] = Vector_4<T>(T(0),T(0),T(0),T(1)); }
-#endif
 
     /// \brief Casts the matrix to a matrix with another data type.
     template<typename U>
-    Q_DECL_CONSTEXPR Matrix_4<U> toDataType() const {
-        return Matrix_4<U>(
+    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, Matrix_4<U>, const Matrix_4<T>&> {
+        if constexpr(!std::is_same_v<T,U>)
+            return Matrix_4<U>(
                 static_cast<U>((*this)(0,0)), static_cast<U>((*this)(0,1)), static_cast<U>((*this)(0,2)), static_cast<U>((*this)(0,3)),
                 static_cast<U>((*this)(1,0)), static_cast<U>((*this)(1,1)), static_cast<U>((*this)(1,2)), static_cast<U>((*this)(1,3)),
                 static_cast<U>((*this)(2,0)), static_cast<U>((*this)(2,1)), static_cast<U>((*this)(2,2)), static_cast<U>((*this)(2,3)),
                 static_cast<U>((*this)(3,0)), static_cast<U>((*this)(3,1)), static_cast<U>((*this)(3,2)), static_cast<U>((*this)(3,3)));
+        else
+            return *this;  // When casting to the same type \a T, this method becomes a no-op.
     }
 
     /// \brief Returns the number of rows of this matrix.
@@ -258,7 +186,7 @@ public:
     /// \brief Returns a reference to a matrix element.
     /// \param row The row of the element to return.
     /// \param col The column of the element to return.
-    inline T& operator()(size_type row, size_type col) {
+    inline Q_DECL_CONSTEXPR T& operator()(size_type row, size_type col) {
         return (*this)[col][row];
     }
 
@@ -272,7 +200,7 @@ public:
     /// \brief Returns a reference to a column vector of the matrix.
     /// \param col The column to return.
     /// \return The i-th column of the matrix as a vector reference. Modifying the vector modifies the matrix.
-    inline column_type& column(size_type col) {
+    inline Q_DECL_CONSTEXPR column_type& column(size_type col) {
         return (*this)[col];
     }
 
@@ -286,7 +214,7 @@ public:
     /// \brief Replaces a row of the matrix.
     /// \param row The row to replace.
     /// \param v The new row vector.
-    void setRow(size_type row, const Vector_4<T>& v) {
+    Q_DECL_CONSTEXPR void setRow(size_type row, const Vector_4<T>& v) {
         (*this)[0][row] = v[0];
         (*this)[1][row] = v[1];
         (*this)[2][row] = v[2];
@@ -294,31 +222,31 @@ public:
     }
 
     /// Returns a pointer to the 16 elements of the matrix (stored in column-major order).
-    const element_type* elements() const {
+    Q_DECL_CONSTEXPR const element_type* elements() const {
         OVITO_STATIC_ASSERT(sizeof(*this) == sizeof(element_type)*16);
         return column(0).data();
     }
 
     /// Returns a pointer to the 16 elements of the matrix (stored in column-major order).
-    element_type* elements() {
+    Q_DECL_CONSTEXPR element_type* elements() {
         OVITO_STATIC_ASSERT(sizeof(*this) == sizeof(element_type)*16);
         return column(0).data();
     }
 
     /// \brief Sets all components of the matrix to zero.
-    void setZero() {
+    Q_DECL_CONSTEXPR void setZero() {
         for(size_type i = 0; i < col_count(); i++)
             column(i).setZero();
     }
 
     /// \brief Sets all components of the matrix to zero.
-    Matrix_4& operator=(Zero) {
+    Q_DECL_CONSTEXPR Matrix_4& operator=(Zero) {
         setZero();
         return *this;
     }
 
     /// \brief Sets the matrix to the identity matrix.
-    void setIdentity() {
+    Q_DECL_CONSTEXPR void setIdentity() {
         (*this)[0][0] = T(1); (*this)[0][1] = T(0); (*this)[0][2] = T(0); (*this)[0][3] = T(0);
         (*this)[1][0] = T(0); (*this)[1][1] = T(1); (*this)[1][2] = T(0); (*this)[1][3] = T(0);
         (*this)[2][0] = T(0); (*this)[2][1] = T(0); (*this)[2][2] = T(1); (*this)[2][3] = T(0);
@@ -326,7 +254,7 @@ public:
     }
 
     /// \brief Sets the matrix to the identity matrix.
-    Matrix_4& operator=(Identity) {
+    Q_DECL_CONSTEXPR Matrix_4& operator=(Identity) {
         setIdentity();
         return *this;
     }
@@ -338,7 +266,7 @@ public:
     /// \param tolerance A non-negative threshold for the equality test. The two matrices are considered equal if
     ///        the element-wise differences are all less than this tolerance value.
     /// \return \c true if this matrix is equal to \a m within the given tolerance; \c false otherwise.
-    inline bool equals(const Matrix_4& m, T tolerance = T(FLOATTYPE_EPSILON)) const {
+    inline Q_DECL_CONSTEXPR bool equals(const Matrix_4& m, T tolerance = FloatTypeEpsilon<T>()) const {
         for(size_type i = 0; i < col_count(); i++)
             if(!column(i).equals(m.column(i), tolerance)) return false;
         return true;
@@ -347,7 +275,7 @@ public:
     /// \brief Test if the matrix is zero within a given tolerance.
     /// \param tolerance A non-negative threshold.
     /// \return \c true if the absolute value of each matrix element is all smaller than \a tolerance.
-    inline bool isZero(T tolerance = T(FLOATTYPE_EPSILON)) const {
+    inline Q_DECL_CONSTEXPR bool isZero(T tolerance = FloatTypeEpsilon<T>()) const {
         for(size_type i = 0; i < col_count(); i++)
             if(!column(i).isZero(tolerance)) return false;
         return true;
@@ -367,7 +295,7 @@ public:
 
     /// \brief Computes the inverse of the matrix.
     /// \throw Exception if matrix is not invertible because it is singular.
-    Matrix_4 inverse() const {
+    Q_DECL_CONSTEXPR Matrix_4 inverse() const {
 
         T det = determinant();
         OVITO_ASSERT_MSG(det != T(0), "Matrix4::inverse()", "Singular matrix cannot be inverted: Determinant is zero.");
@@ -419,7 +347,7 @@ public:
     ///////////////////////////// Generation //////////////////////////////////
 
     /// \brief Generates a translation matrix.
-    static Matrix_4<T> translation(const Vector_3<T>& t) {
+    static Q_DECL_CONSTEXPR Matrix_4<T> translation(const Vector_3<T>& t) {
         return { T(1), T(0), T(0), t.x(),
                  T(0), T(1), T(0), t.y(),
                  T(0), T(0), T(1), t.z(),
@@ -427,7 +355,7 @@ public:
     }
 
     /// \brief Generates a perspective projection matrix.
-    static Matrix_4<T> perspective(T fovy, T aspect, T znear, T zfar) {
+    static Q_DECL_CONSTEXPR Matrix_4<T> perspective(T fovy, T aspect, T znear, T zfar) {
         T f = tan(fovy * T(0.5));
         OVITO_ASSERT(f != T(0));
         OVITO_ASSERT(zfar > znear);
@@ -438,7 +366,7 @@ public:
     }
 
     /// \brief Generates an orthogonal projection matrix.
-    static Matrix_4<T> ortho(T left, T right, T bottom, T top, T znear, T zfar) {
+    static Q_DECL_CONSTEXPR Matrix_4<T> ortho(T left, T right, T bottom, T top, T znear, T zfar) {
         OVITO_ASSERT(znear < zfar);
         return { T(2)/(right-left), T(0),  T(0), -(right+left)/(right-left),
                  T(0), T(2)/(top-bottom), T(0), -(top+bottom)/(top-bottom),
@@ -447,7 +375,7 @@ public:
     }
 
     /// \brief Generates a perspective projection matrix.
-    static Matrix_4<T> frustum(T left, T right, T bottom, T top, T znear, T zfar) {
+    static Q_DECL_CONSTEXPR Matrix_4<T> frustum(T left, T right, T bottom, T top, T znear, T zfar) {
         OVITO_ASSERT(znear < zfar);
         return { T(2)*znear/(right-left), T(0),  (right + left) / (right - left), T(0),
                  T(0), T(2)*znear/(top-bottom), (top + bottom) / (top - bottom), T(0),
@@ -486,7 +414,7 @@ Q_DECL_CONSTEXPR inline Vector_4<T> operator*(const Matrix_4<T>& a, const Vector
 /// \brief Computes the product of a 4x4 matrix and a Vector3 (which is assumed to be a 4-vector with the last element equal to 0).
 /// \relates Matrix_4
 template<typename T>
-inline Vector_3<T> operator*(const Matrix_4<T>& a, const Vector_3<T>& v)
+Q_DECL_CONSTEXPR inline Vector_3<T> operator*(const Matrix_4<T>& a, const Vector_3<T>& v)
 {
     T s = a(3,0)*v[0] + a(3,1)*v[1] + a(3,2)*v[2] + a(3,3);
     return {
@@ -499,7 +427,7 @@ inline Vector_3<T> operator*(const Matrix_4<T>& a, const Vector_3<T>& v)
 /// \brief Computes the product of a 4x4 matrix and a Point3 (which is assumed to be a 4-vector with the last element equal to 1).
 /// \relates Matrix_4
 template<typename T>
-inline Point_3<T> operator*(const Matrix_4<T>& a, const Point_3<T>& v)
+Q_DECL_CONSTEXPR inline Point_3<T> operator*(const Matrix_4<T>& a, const Point_3<T>& v)
 {
     T s = a(3,0)*v[0] + a(3,1)*v[1] + a(3,2)*v[2] + a(3,3);
     return {
@@ -512,7 +440,7 @@ inline Point_3<T> operator*(const Matrix_4<T>& a, const Point_3<T>& v)
 /// Computes the product of two 4x4 matrices.
 /// \relates Matrix_4
 template<typename T>
-inline Matrix_4<T> operator*(const Matrix_4<T>& a, const Matrix_4<T>& b)
+Q_DECL_CONSTEXPR inline Matrix_4<T> operator*(const Matrix_4<T>& a, const Matrix_4<T>& b)
 {
     Matrix_4<T> res;
     for(typename Matrix_4<T>::size_type i = 0; i < 4; i++) {
@@ -526,7 +454,7 @@ inline Matrix_4<T> operator*(const Matrix_4<T>& a, const Matrix_4<T>& b)
 /// Computes the product of a 4x4 matrix and a 3x4 Matrix.
 /// \relates Matrix_4
 template<typename T>
-inline Matrix_4<T> operator*(const Matrix_4<T>& a, const AffineTransformationT<T>& b)
+Q_DECL_CONSTEXPR inline Matrix_4<T> operator*(const Matrix_4<T>& a, const AffineTransformationT<T>& b)
 {
     Matrix_4<T> res;
     for(typename Matrix_4<T>::size_type i = 0; i < 4; i++) {
@@ -611,12 +539,20 @@ inline QDataStream& operator>>(QDataStream& stream, Matrix_4<T>& m) {
 }
 
 /**
- * \brief Instantiation of the Matrix_4 class template with the default floating-point type.
+ * \brief Instantiation of the Matrix_4 class template with the default floating-point type (double precision).
  * \relates Matrix_4
  */
 using Matrix4 = Matrix_4<FloatType>;
 
+/**
+ * \brief Instantiation of the Matrix_4 class template with the single-precision floating-point type.
+ * \relates Matrix_4
+ */
+using Matrix4F = Matrix_4<float>;
+
 }   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Matrix4);
+Q_DECLARE_METATYPE(Ovito::Matrix4F);
 Q_DECLARE_TYPEINFO(Ovito::Matrix4, Q_PRIMITIVE_TYPE);
+Q_DECLARE_TYPEINFO(Ovito::Matrix4F, Q_PRIMITIVE_TYPE);

@@ -286,7 +286,7 @@ void DataTablePlotWidget::updateDataPlot()
         }
         QVector<double> ycoords;
         QStringList labels;
-        ConstPropertyAccess<void,true> yarray(y);
+        BufferReadAccess yarray(y);
         for(int i = 0; i < y->size(); i++) {
             const ElementType* type = y->elementType(i);
             if(!type && x) type = x->elementType(i);
@@ -320,7 +320,7 @@ void DataTablePlotWidget::updateDataPlot()
     axisWidget(QwtPlot::yLeft)->setBorderDist(0, 0);
 
     replot();
-    
+
     _zoomer->setEnabled(enableMouseInteraction && _mouseNavigationEnabled);
     _magnifier->setEnabled(enableMouseInteraction && _mouseNavigationEnabled);
     _panner->setEnabled(enableMouseInteraction && _mouseNavigationEnabled);

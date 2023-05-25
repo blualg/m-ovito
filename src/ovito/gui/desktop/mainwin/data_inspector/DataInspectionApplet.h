@@ -47,7 +47,7 @@ public:
 
     /// Determines the list of data objects that are displayed by the applet.
     virtual std::vector<ConstDataObjectPath> getDataObjectPaths() {
-        return currentState().getObjectsRecursive(_dataObjectClass); 
+        return currentState().getObjectsRecursive(_dataObjectClass);
     }
 
     /// Returns the main window this applet is embedded in.
@@ -95,6 +95,9 @@ Q_SIGNALS:
 
     /// This signal is emitted when the user selects a different data object in the list.
     void currentObjectChanged(const DataObject* dataObject);
+
+    /// This signal is emitted when the user selects a different data object in the list.
+    void currentObjectPathChanged(const QString& dataObjectPath);
 
 public:
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,7 +35,7 @@ IMPLEMENT_OVITO_CLASS(RefTarget);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-RefTarget::RefTarget(ObjectCreationParams params) 
+RefTarget::RefTarget(ObjectInitializationFlags flags)
 {
     // A Qt application object must exist.
     OVITO_ASSERT_MSG(QCoreApplication::instance() != nullptr, "RefTarget::RefTarget()", "Creating an instance of a RefTarget-derived class is only allowed while a Qt application object exists.");
@@ -48,7 +48,7 @@ RefTarget::RefTarget(ObjectCreationParams params)
 /******************************************************************************
 * Destructor.
 ******************************************************************************/
-RefTarget::~RefTarget() 
+RefTarget::~RefTarget()
 {
     // Make sure there are no more dependents left.
     static const QMetaMethod objectEventSignal = QMetaMethod::fromSignal(&RefTarget::objectEvent);
@@ -145,7 +145,7 @@ bool RefTarget::handleReferenceEvent(RefTarget* source, const ReferenceEvent& ev
 ******************************************************************************/
 bool RefTarget::isReferencedBy(const RefMaker* obj, bool onlyStrongReferences) const
 {
-    if(this == obj) 
+    if(this == obj)
         return true;
     CheckIsReferencedByEvent event(const_cast<RefTarget*>(this), obj, onlyStrongReferences);
     const_cast<RefTarget*>(this)->notifyDependentsImpl(event);
@@ -163,13 +163,12 @@ bool RefTarget::isReferencedBy(const RefMaker* obj, bool onlyStrongReferences) c
 OORef<RefTarget> RefTarget::clone(bool deepCopy, CloneHelper& cloneHelper) const
 {
     // Create a new instance of the object's class.
-    // Note: Calling low-level method createInstanceImpl() instead of createInstanceImpl() here to avoid initialization of
-    // object parameters to default values. Default initialization is not needed when cloning an object.
-    OORef<RefTarget> clone = static_object_cast<RefTarget>(getOOClass().createInstanceImpl(ObjectCreationParams(ObjectCreationParams::DontCreateSubObjects)));
-    OVITO_ASSERT(clone);
-    OVITO_ASSERT(clone->getOOClass().isDerivedFrom(getOOClass()));
-    if(!clone || !clone->getOOClass().isDerivedFrom(getOOClass()))
+    // Note: Calling low-level method createInstanceImpl() instead of createInstance() here to avoid initialization of
+    // object parameters to default values. Parameter initialization is not needed when cloning an object.
+    OORef<RefTarget> clone = static_object_cast<RefTarget>(getOOClass().createInstanceImpl(ObjectInitializationFlag::DontInitializeObject));
+    if(!clone)
         throw Exception(tr("Failed to create clone instance of class %1.").arg(getOOClass().name()));
+    OVITO_ASSERT(clone->getOOClass().isDerivedFrom(getOOClass()));
 
     // Clone properties and referenced objects.
     for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {

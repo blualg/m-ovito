@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,15 +28,18 @@ uniform vec3 view_dir_eye_pos; // Either camera viewing direction (parallel) or 
 // Inputs:
 in vec3 base;
 in vec3 head;
-in float radius;
-in vec4 color1;
-in vec4 color2;
+in float diameter;
+in vec3 color1;
+in float transparency1;
 
 // Outputs:
 flat out vec4 color_fs;
 
 void main()
 {
+    // The radius of the current arrow (in object coordinates).
+    float radius = 0.5 * diameter;
+
     // Vector pointing from camera to cylinder base in object space:
 	vec3 view_dir;
 	if(!is_perspective())
@@ -74,5 +77,5 @@ void main()
     gl_Position = modelview_projection_matrix * vec4(base + uv_tm * vec3(vpos, 0.0), 1.0);
 
     // Forward primitive color to fragment shader.
-    color_fs = color1;
+    color_fs = vec4(color1, clamp(1.0 - transparency1, 0.0, 1.0));
 }

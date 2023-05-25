@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ class OVITO_CORE_EXPORT CachingPipelineObject : public PipelineObject
 public:
 
     /// Constructor.
-    CachingPipelineObject(ObjectCreationParams params);
+    explicit CachingPipelineObject(ObjectInitializationFlags flags);
 
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const override;
@@ -77,8 +77,8 @@ protected:
     }
 
     /// Lets the pipeline stage compute a preliminary result in a synchronous fashion.
-    virtual PipelineFlowState evaluateInternalSynchronous(const PipelineEvaluationRequest& request) { 
-        return PipelineFlowState(getSourceDataCollection(), status()); 
+    virtual PipelineFlowState evaluateInternalSynchronous(const PipelineEvaluationRequest& request) {
+        return PipelineFlowState(getSourceDataCollection(), status());
     }
 
     /// Decides whether a preliminary viewport update is performed after this pipeline object has been

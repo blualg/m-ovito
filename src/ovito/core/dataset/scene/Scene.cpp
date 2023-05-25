@@ -39,21 +39,22 @@ SET_PROPERTY_FIELD_LABEL(Scene, selection, "Selection");
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-Scene::Scene(ObjectCreationParams params, AnimationSettings* animationSettings) : SceneNode(params),
+Scene::Scene(ObjectInitializationFlags flags, AnimationSettings* animationSettings) : SceneNode(flags),
     _orbitCenterMode(ORBIT_SELECTION_CENTER),
     _userOrbitCenter(Point3::Origin())
 {
-    setNodeName("Scene");
     setAnimationSettings(animationSettings);
 
-    // The root node does not need a transformation controller.
-    setTransformationController(nullptr);
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
+        setNodeName("Scene");
 
-    // Create child objects for animation settings and node selection set.
-    if(params.createSubObjects()) {
+        // The root node does not need a transformation controller.
+        setTransformationController(nullptr);
+
+        // Create child objects for animation settings and node selection set.
         if(!this->animationSettings())
-            setAnimationSettings(OORef<AnimationSettings>::create(params));
-        setSelection(OORef<SelectionSet>::create(params));
+            setAnimationSettings(OORef<AnimationSettings>::create(flags));
+        setSelection(OORef<SelectionSet>::create(flags));
     }
 }
 

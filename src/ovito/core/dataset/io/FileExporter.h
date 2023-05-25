@@ -109,7 +109,7 @@ public:
 protected:
 
     /// Initializes the object.
-    FileExporter(ObjectCreationParams params);
+    FileExporter(ObjectInitializationFlags flags);
 
     /// \brief This is called once for every output file to be written and before exportFrame() is called.
     virtual void openOutputFile(const QString& filePath, int numberOfFrames) = 0;

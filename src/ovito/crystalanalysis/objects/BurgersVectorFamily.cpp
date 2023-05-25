@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2015 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,8 +35,8 @@ SET_PROPERTY_FIELD_LABEL(BurgersVectorFamily, burgersVector, "Burgers vector");
 /******************************************************************************
 * Constructs a new BurgersVectorFamily.
 ******************************************************************************/
-BurgersVectorFamily::BurgersVectorFamily(ObjectCreationParams params, int id, const QString& name, const Vector3& burgersVector, const Color& color)
-    : ElementType(params), _burgersVector(burgersVector)
+BurgersVectorFamily::BurgersVectorFamily(ObjectInitializationFlags flags, int id, const QString& name, const Vector3& burgersVector, const Color& color)
+    : ElementType(flags), _burgersVector(burgersVector)
 {
     setNumericId(id);
     setName(name);

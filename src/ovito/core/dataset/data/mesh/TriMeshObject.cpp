@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,10 +33,10 @@ IMPLEMENT_OVITO_CLASS(TriMeshObject);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-TriMeshObject::TriMeshObject(ObjectCreationParams params) : DataObject(params)
+TriMeshObject::TriMeshObject(ObjectInitializationFlags flags) : DataObject(flags)
 {
-    if(params.createVisElement()) {
-        setVisElement(OORef<TriMeshVis>::create(params));
+    if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement))) {
+        setVisElement(OORef<TriMeshVis>::create(flags));
     }
 }
 
@@ -129,7 +129,7 @@ void TriMeshObject::saveToStream(ObjectSaveStream& stream, bool excludeRecomputa
     DataObject::saveToStream(stream, excludeRecomputableData);
 
     stream.beginChunk(0x01);
-    stream.beginChunk(0x03);
+    stream.beginChunk(0x04);
 
     // Save vertices.
     stream << _vertices;
@@ -177,7 +177,7 @@ void TriMeshObject::loadFromStream(ObjectLoadStream& stream)
     clear();
 
     if(stream.expectChunkRange(0x00, 0x01) != 0) {
-        int formatVersion = stream.expectChunkRange(0x00, 0x03);
+        int formatVersion = stream.expectChunkRange(0x00, 0x04);
 
         // Load vertices.
         stream >> _vertices;
@@ -230,10 +230,10 @@ void TriMeshObject::flipFaces()
     if(hasNormals()) {
         // Negate normal vectors and swap normals of first and third face vertex.
         for(auto n = _normals.begin(); n != _normals.end(); ) {
-            Vector3& n1 = *n++;
+            auto& n1 = *n++;
             *n = -(*n);
             ++n;
-            Vector3 temp = -(*n);
+            auto temp = -(*n);
             *n = -n1;
             n1 = temp;
             ++n;
@@ -349,7 +349,7 @@ void TriMeshObject::saveToOBJ(CompressedTextWriter& stream) const
 ******************************************************************************/
 void TriMeshObject::clipAtPlane(const Plane3& plane)
 {
-    TriMeshObject clippedMesh(ObjectCreationParams{ObjectCreationParams::WithoutVisElement});
+    TriMeshObject clippedMesh(ObjectInitializationFlag::DontCreateVisElement);
     clippedMesh.setHasVertexColors(hasVertexColors());
     clippedMesh.setHasVertexPseudoColors(hasVertexPseudoColors());
     clippedMesh.setHasFaceColors(hasFaceColors());
@@ -385,13 +385,13 @@ void TriMeshObject::clipAtPlane(const Plane3& plane)
                     Point3 intersection = v1 + (v2 - v1) * t;
                     newVertexMapping.emplace(vindices, std::make_pair(clippedMesh.addVertex(intersection), t));
                     if(hasVertexColors()) {
-                        const ColorA& color1 = vertexColor(vindices.first);
-                        const ColorA& color2 = vertexColor(vindices.second);
-                        ColorA& newColor = clippedMesh.vertexColors().back();
-                        newColor.r() = color1.r() + (color2.r() - color1.r()) * t;
-                        newColor.g() = color1.g() + (color2.g() - color1.g()) * t;
-                        newColor.b() = color1.b() + (color2.b() - color1.b()) * t;
-                        newColor.a() = color1.a() + (color2.a() - color1.a()) * t;
+                        const auto& color1 = vertexColor(vindices.first);
+                        const auto& color2 = vertexColor(vindices.second);
+                        auto& newColor = clippedMesh.vertexColors().back();
+                        newColor.r() = color1.r() + (color2.r() - color1.r()) * static_cast<GraphicsFloatType>(t);
+                        newColor.g() = color1.g() + (color2.g() - color1.g()) * static_cast<GraphicsFloatType>(t);
+                        newColor.b() = color1.b() + (color2.b() - color1.b()) * static_cast<GraphicsFloatType>(t);
+                        newColor.a() = color1.a() + (color2.a() - color1.a()) * static_cast<GraphicsFloatType>(t);
                     }
                     if(hasVertexPseudoColors()) {
                         FloatType pseudoColor1 = vertexPseudoColor(vindices.first);
@@ -411,7 +411,7 @@ void TriMeshObject::clipAtPlane(const Plane3& plane)
             int current_classification = plane.classifyPoint(current_pos);
             if(current_classification == -1) {
                 int newface[4];
-                Vector3 newface_normals[4];
+                Vector3G newface_normals[4];
                 bool newface_edge_visibility[4];
                 int vout = 0;
                 int next_classification;

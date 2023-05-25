@@ -31,7 +31,7 @@ namespace Ovito {
 
 /**
  * A promise-like object that is used during long-running program operations that are performed synchronously by the program's main thread.
- * 
+ *
  * The operation is automatically put into the 'finished' state by the class' destructor.
  */
 class OVITO_CORE_EXPORT MainThreadOperation : public Promise<>, ExecutionContext::Scope, Task::Scope
@@ -47,11 +47,8 @@ public:
     /// Destructor, which puts the promise into the 'finished' state.
     ~MainThreadOperation();
 
-    /// Puts the task object back into the started state after it has reached the finished state. 
-    void restart();
-
     /// Returns the shared task, casting it to the ProgressingTask subclass.
-    ProgressingTask& progressingTask() const { 
+    ProgressingTask& progressingTask() const {
         OVITO_ASSERT(isValid());
         OVITO_ASSERT(task()->isProgressingTask());
         return static_cast<ProgressingTask&>(*task());
@@ -65,17 +62,17 @@ public:
     }
 
     /// Override this method from the Promise class to keep the UI responsive during long-running tasks.
-    bool incrementProgressValue(qlonglong increment = 1) const { 
+    bool incrementProgressValue(qlonglong increment = 1) const {
         // Temporarily yield control back to the event loop to process UI events and keep the UI responsive during long-running tasks.
         processUIEvents();
-        return Promise<>::incrementProgressValue(increment); 
+        return Promise<>::incrementProgressValue(increment);
     }
 
     /// Override this method from the Promise class to keep the UI responsive during long-running tasks.
     void setProgressText(const QString& progressText) const {
         // Temporarily yield control back to the event loop to process UI events and keep the UI responsive during long-running tasks.
         processUIEvents();
-        Promise<>::setProgressText(progressText); 
+        Promise<>::setProgressText(progressText);
     }
 
 protected:

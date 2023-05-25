@@ -64,11 +64,11 @@ void OpenGLSceneRenderer::renderImageImplementation(const ImagePrimitive& primit
     }
     const QRect& vpRect = viewportRect();
     Vector4 image_rect(
-        b.minc.x() / vpRect.width() * 2.0 - 1.0, 
+        b.minc.x() / vpRect.width() * 2.0 - 1.0,
         1.0 - b.maxc.y() / vpRect.height() * 2.0,
-        b.maxc.x() / vpRect.width() * 2.0 - 1.0, 
+        b.maxc.x() / vpRect.width() * 2.0 - 1.0,
         1.0 - b.minc.y() / vpRect.height() * 2.0);
-        
+
     // Pass the image rectangle to the shader as a uniform.
     shader.setUniformValue("image_rect", image_rect);
 
@@ -76,13 +76,13 @@ void OpenGLSceneRenderer::renderImageImplementation(const ImagePrimitive& primit
     shader.enableBlending();
 
     // Draw a quad with 4 vertices.
-    shader.drawArrays(GL_TRIANGLE_STRIP);
+    shader.draw(GL_TRIANGLE_STRIP);
 
     // Release the texture.
     texture->release();
 
     // Restore old context state.
-    if(wasDepthTestEnabled) 
+    if(wasDepthTestEnabled)
         glEnable(GL_DEPTH_TEST);
 
     OVITO_REPORT_OPENGL_ERRORS(this);

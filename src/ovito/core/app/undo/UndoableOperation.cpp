@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,7 +29,7 @@
 namespace Ovito {
 
 /******************************************************************************
-* Returns the currently active compound operation (either while recording 
+* Returns the currently active compound operation (either while recording
 * operations or while undoing/redoing an operation).
 ******************************************************************************/
 CompoundOperation*& CompoundOperation::current()
@@ -37,7 +37,7 @@ CompoundOperation*& CompoundOperation::current()
     // The active operation in the current thread.
     static thread_local CompoundOperation* _current = nullptr;
 
-    return _current; 
+    return _current;
 }
 
 /******************************************************************************
@@ -51,7 +51,7 @@ bool CompoundOperation::isUndoRecording()
 }
 
 /******************************************************************************
-* Indicates whether previously recorded operations are currently 
+* Indicates whether previously recorded operations are currently
 * being undo or redone.
 ******************************************************************************/
 bool CompoundOperation::isUndoingOrRedoing()
@@ -64,7 +64,7 @@ bool CompoundOperation::isUndoingOrRedoing()
 /******************************************************************************
 * Commits the recorded operations by placing them on the undo stack.
 ******************************************************************************/
-void UndoableTransaction::commit() 
+void UndoableTransaction::commit()
 {
     OVITO_ASSERT(_operation);
 
@@ -78,6 +78,7 @@ void UndoableTransaction::commit()
         }
     }
     _operation.reset();
+    _userInterface.reset();
 }
 
 /******************************************************************************
@@ -86,6 +87,7 @@ void UndoableTransaction::commit()
 void UndoableTransaction::revert()
 {
     OVITO_ASSERT(_operation);
+    OVITO_ASSERT(_userInterface);
 
     userInterface().handleExceptions([&] {
         _operation->undo();
@@ -99,6 +101,7 @@ void UndoableTransaction::revert()
 void UndoableTransaction::revertTo(int snapshot)
 {
     OVITO_ASSERT(_operation);
+    OVITO_ASSERT(_userInterface);
 
     userInterface().handleExceptions([&] {
         _operation->revertTo(snapshot);
@@ -117,6 +120,7 @@ void UndoableTransaction::cancel()
         _operation->undo();
     });
     _operation.reset();
+    _userInterface.reset();
 }
 
 /******************************************************************************

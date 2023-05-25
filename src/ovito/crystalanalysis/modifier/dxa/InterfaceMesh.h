@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,7 @@
 
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/mesh/surface/SurfaceMeshAccess.h>
+#include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include "ElasticMapping.h"
 
 namespace Ovito::CrystalAnalysis {
@@ -37,7 +37,7 @@ class DislocationTracer;            // defined in DislocationTracer.h
 /**
  * The interface mesh that separates the 'bad' crystal regions from the 'good' crystal regions.
  */
-class InterfaceMesh : public SurfaceMeshAccess
+class InterfaceMesh : private DataOORef<SurfaceMesh>, public SurfaceMeshBuilder
 {
 public:
 
@@ -158,7 +158,9 @@ public:
 public:
 
     /// Constructor.
-    explicit InterfaceMesh(ElasticMapping& elasticMapping) : SurfaceMeshAccess(DataOORef<SurfaceMesh>::create()),
+    explicit InterfaceMesh(ElasticMapping& elasticMapping) :
+        DataOORef<SurfaceMesh>(DataOORef<SurfaceMesh>::create()),
+        SurfaceMeshBuilder(this->get()),
         _elasticMapping(elasticMapping) {
             setDomain(elasticMapping.structureAnalysis().cell());
         }
@@ -178,10 +180,10 @@ public:
     const StructureAnalysis& structureAnalysis() const { return elasticMapping().structureAnalysis(); }
 
     /// Creates the mesh facets separating good and bad tetrahedra.
-    bool createMesh(FloatType maximumNeighborDistance, ConstPropertyAccess<qlonglong> crystalClusters, ProgressingTask& operation);
+    bool createMesh(FloatType maximumNeighborDistance, BufferAccess<const int64_t> crystalClusters, ProgressingTask& operation);
 
     /// Generates the nodes and facets of the defect mesh based on the interface mesh.
-    bool generateDefectMesh(const DislocationTracer& tracer, SurfaceMeshAccess& defectMesh, ProgressingTask& operation);
+    bool generateDefectMesh(const DislocationTracer& tracer, SurfaceMeshBuilder& defectMesh, ProgressingTask& operation);
 
     /// Returns the list of extra per-vertex infos kept by the interface mesh.
     std::vector<Vertex>& vertices() { return _vertices; }

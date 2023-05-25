@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,7 +49,7 @@ class OVITO_PARTICLES_EXPORT WignerSeitzAnalysisModifier : public ReferenceConfi
 public:
 
     /// Constructor.
-    Q_INVOKABLE WignerSeitzAnalysisModifier(ObjectCreationParams params);
+    Q_INVOKABLE WignerSeitzAnalysisModifier(ObjectInitializationFlags flags);
 
 protected:
 

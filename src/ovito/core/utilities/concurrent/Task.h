@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -101,7 +101,7 @@ public:
     /// \brief Switches the task into the 'finished' state.
     void setFinished() noexcept;
 
-    /// \brief Puts a finished task back into the started state. This method should be used with care.
+    /// \brief Puts a finished task back into the started state. This method must be used with extreme care!
     void restart();
 
     /// \brief Switches the task into the 'exception' state to signal that an exception has occurred.
@@ -153,9 +153,9 @@ public:
 
     /// Runs the given continuation function once this task has reached either the 'finished' or the 'canceled' state.
     /// Note that the continuation function will always be executed, even if this task was canceled or set to an error state.
-    template<typename Function>
+    template<typename Function, typename Executor = InlineExecutor>
     void finally(Function&& f) {
-        addContinuation(detail::InlineExecutor{}, detail::bind_front(std::forward<Function>(f), std::ref(*this)));
+        addContinuation(Executor{}, detail::bind_front(std::forward<Function>(f), std::ref(*this)));
     }
 
     /// Accessor function for the internal results storage.
@@ -381,5 +381,6 @@ private:
     Task* _previous;
 };
 
-
 }   // End of namespace
+
+Q_DECLARE_METATYPE(Ovito::TaskPtr);

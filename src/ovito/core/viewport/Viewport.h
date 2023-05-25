@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -69,7 +69,7 @@ public:
 public:
 
     /// \brief Constructs a new viewport.
-    Q_INVOKABLE Viewport(ObjectCreationParams params);
+    Q_INVOKABLE Viewport(ObjectInitializationFlags flags);
 
     /// \brief Destructor.
     virtual ~Viewport();
@@ -218,7 +218,7 @@ public:
     /// \brief Associates this viewport with a GUI window. This is an internal method.
     void setWindow(ViewportWindowInterface* window);
 
-    /// Returns the nested layout cell this viewport's window is currently in (if any). 
+    /// Returns the nested layout cell this viewport's window is currently in (if any).
     ViewportLayoutCell* layoutCell() const;
 
     /// Renders the contents of the interactive viewport in a window.
@@ -286,10 +286,10 @@ protected:
     /// matches the true visible area.
     void adjustProjectionForRenderFrame(DataSet* dataset, ViewProjectionParameters& params);
 
-    /// Determines this viewport's area in the rendered output image. 
+    /// Determines this viewport's area in the rendered output image.
     QRect renderViewportRect(DataSet* dataset) const;
 
-    /// Determines the aspect ratio of this viewport's area in the rendered output image. 
+    /// Determines the aspect ratio of this viewport's area in the rendered output image.
     FloatType renderAspectRatio(DataSet* dataset) const;
 
 private Q_SLOTS:

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -97,11 +97,11 @@ PipelineStatus VoxelGridReplicateModifierDelegate::apply(const ModifierEvaluatio
             for(PropertyObject* property : newVoxelGrid->makePropertiesMutable()) {
                 // First, copy the original property data to a temporary buffer so that
                 // it doesn't get destroyed while we are rewriting it to the replicated property array.
-                DataBufferAccess<void,true> array(property);
+                BufferWriteAccess array(property);
                 size_t stride = array.stride();
-                uint8_t* dst = array.data();
-                std::vector<uint8_t> buffer(dst, dst + stride * existingVoxelGrid->elementCount());
-                const uint8_t* src = buffer.data();
+                std::byte* dst = array.data();
+                std::vector<std::byte> buffer(dst, dst + stride * existingVoxelGrid->elementCount());
+                const std::byte* src = buffer.data();
                 for(size_t z = 0; z < shape[2]; z++) {
                     size_t zs = z % oldShape[2];
                     for(size_t y = 0; y < shape[1]; y++) {

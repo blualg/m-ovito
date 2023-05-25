@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,7 +57,7 @@ class OVITO_PARTICLES_EXPORT CFGImporter : public ParticleImporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE CFGImporter(ObjectCreationParams params) : ParticleImporter(params) {}
+    Q_INVOKABLE CFGImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {}
 
     /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("CFG"); }

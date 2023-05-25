@@ -62,7 +62,7 @@ class ParticlesAssignColorModifierDelegate : public AssignColorModifierDelegate
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticlesAssignColorModifierDelegate(ObjectCreationParams params) : AssignColorModifierDelegate(params) {}
+    Q_INVOKABLE ParticlesAssignColorModifierDelegate(ObjectInitializationFlags flags) : AssignColorModifierDelegate(flags) {}
 
 protected:
 
@@ -100,7 +100,7 @@ class ParticleVectorsAssignColorModifierDelegate : public AssignColorModifierDel
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticleVectorsAssignColorModifierDelegate(ObjectCreationParams params) : AssignColorModifierDelegate(params) {}
+    Q_INVOKABLE ParticleVectorsAssignColorModifierDelegate(ObjectInitializationFlags flags) : AssignColorModifierDelegate(flags) {}
 
 protected:
 
@@ -138,7 +138,7 @@ class BondsAssignColorModifierDelegate : public AssignColorModifierDelegate
 public:
 
     /// Constructor.
-    Q_INVOKABLE BondsAssignColorModifierDelegate(ObjectCreationParams params) : AssignColorModifierDelegate(params) {}
+    Q_INVOKABLE BondsAssignColorModifierDelegate(ObjectInitializationFlags flags) : AssignColorModifierDelegate(flags) {}
 
 protected:
 

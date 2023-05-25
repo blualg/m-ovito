@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -93,8 +93,8 @@ public:
     /// Sets the coordinates of the base and the head points.
     void setPositions(ConstDataBufferPtr baseCoordinates, ConstDataBufferPtr headCoordinates) {
         OVITO_ASSERT((baseCoordinates != nullptr) == (headCoordinates != nullptr));
-        OVITO_ASSERT(!baseCoordinates || (baseCoordinates->dataType() == DataBuffer::Float && baseCoordinates->componentCount() == 3));
-        OVITO_ASSERT(!headCoordinates || (headCoordinates->dataType() == DataBuffer::Float && headCoordinates->componentCount() == 3));
+        OVITO_ASSERT(!baseCoordinates || baseCoordinates->componentCount() == 3);
+        OVITO_ASSERT(!headCoordinates || headCoordinates->componentCount() == 3);
         OVITO_ASSERT(!baseCoordinates || baseCoordinates->size() == headCoordinates->size());
         _basePositions = std::move(baseCoordinates);
         _headPositions = std::move(headCoordinates);
@@ -105,13 +105,13 @@ public:
 
     /// Sets the per-primitive (or per-vertex) colors.
     void setColors(ConstDataBufferPtr colors) {
-        OVITO_ASSERT(!colors || (colors->dataType() == DataBuffer::Float && (colors->componentCount() == 3 || colors->componentCount() == 1)));
+        OVITO_ASSERT(!colors || (colors->componentCount() == 3 || colors->componentCount() == 1));
         _colors = std::move(colors);
     }
 
     /// Sets the transparency values of the primitives.
     void setTransparencies(ConstDataBufferPtr transparencies) {
-        OVITO_ASSERT(!transparencies || (transparencies->dataType() == DataBuffer::Float && transparencies->componentCount() == 1));
+        OVITO_ASSERT(!transparencies || transparencies->componentCount() == 1);
         _transparencies = std::move(transparencies);
     }
 
@@ -120,7 +120,7 @@ public:
 
     /// Sets the diameters of the primitives.
     void setWidths(ConstDataBufferPtr widths) {
-        OVITO_ASSERT(!widths || (widths->dataType() == DataBuffer::Float && widths->componentCount() == 1));
+        OVITO_ASSERT(!widths || widths->componentCount() == 1);
         _widths = std::move(widths);
     }
 
@@ -131,8 +131,8 @@ public:
     const PseudoColorMapping& pseudoColorMapping() const { return _pseudoColorMapping; }
 
     /// Sets the mapping from pseudo-color values to RGB colors.
-    void setPseudoColorMapping(const PseudoColorMapping& mapping) { 
-        _pseudoColorMapping = mapping; 
+    void setPseudoColorMapping(const PseudoColorMapping& mapping) {
+        _pseudoColorMapping = mapping;
     }
 
 private:
@@ -165,10 +165,10 @@ private:
     ConstDataBufferPtr _colors; // Array of Color (RGB) or Float (pseudocolor values)
 
     /// Buffer storing the semi-transparency values.
-    ConstDataBufferPtr _transparencies; // Array of FloatType   
+    ConstDataBufferPtr _transparencies; // Array of FloatType
 
     /// Buffer storing the per-primitive width values.
-    ConstDataBufferPtr _widths; // Array of FloatType   
+    ConstDataBufferPtr _widths; // Array of FloatType
 };
 
 }   // End of namespace

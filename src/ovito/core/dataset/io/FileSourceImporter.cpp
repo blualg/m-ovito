@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -266,9 +266,47 @@ bool FileSourceImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<
 /******************************************************************************
 * Determines whether the URL contains a wildcard pattern.
 ******************************************************************************/
-bool FileSourceImporter::isWildcardPattern(const QUrl& sourceUrl)
+bool FileSourceImporter::isWildcardPattern(const QString& filename)
 {
-    return QFileInfo(sourceUrl.path()).fileName().contains('*');
+    return filename.contains('*');
+}
+
+/******************************************************************************
+* Tries to derive a sensible wildcard pattern from a filename by replacing a
+* numeric character sequence with a '*'.
+******************************************************************************/
+QString FileSourceImporter::deriveWildcardPatternFromFilename(const QString& filename)
+{
+    int startIndex, endIndex;
+
+    // Locate the first digit from the back of the filename.
+    // If the filename has a regular format suffix (dot followed by three or less chars),
+    // do not look for digits in the suffix. This exception is specifically needed for
+    // compatiblity with file suffixes like *.h5 used by pyiron.
+
+    // First, skip to last '.' in filename.
+    for(endIndex = filename.length() - 2; endIndex >= 1; endIndex--)
+        if(filename.at(endIndex) == QChar('.'))
+            break;
+    // If no dot was found, jump back to end of filename.
+    if(endIndex <= 1 || endIndex + 4 < filename.length())
+        endIndex = filename.length() - 1;
+
+    // Then skip to last digit.
+    for(; endIndex >= 0; endIndex--)
+        if(filename.at(endIndex).isNumber())
+            break;
+
+    // If we have found a first digit, identify the contiguous range of digits
+    // and replace this number with the placeholder (*).
+    if(endIndex >= 0) {
+        for(startIndex = endIndex-1; startIndex >= 0; startIndex--)
+            if(!filename.at(startIndex).isNumber()) break;
+
+        return filename.left(startIndex + 1) + QChar('*') + filename.mid(endIndex + 1);
+    }
+
+    return {};
 }
 
 /******************************************************************************
@@ -448,6 +486,8 @@ void FileSourceImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImp
 ******************************************************************************/
 Future<std::vector<QUrl>> FileSourceImporter::findWildcardMatches(const QUrl& sourceUrl)
 {
+    OVITO_ASSERT(ExecutionContext::current().isValid());
+
     // Determine whether the filename contains a wildcard character.
     if(!isWildcardPattern(sourceUrl)) {
         // It's not a wildcard pattern. Register just a single frame.
@@ -580,7 +620,19 @@ SaveStream& operator<<(SaveStream& stream, const FileSourceImporter::Frame& fram
 LoadStream& operator>>(LoadStream& stream, FileSourceImporter::Frame& frame)
 {
     stream.expectChunk(0x03);
-    stream >> frame.sourceFile >> frame.byteOffset >> frame.lineNumber >> frame.lastModificationTime >> frame.label >> frame.parserData;
+
+    stream >> frame.sourceFile >> frame.byteOffset >> frame.lineNumber >> frame.lastModificationTime >> frame.label;
+    if(stream.formatVersion() >= 30010) {
+        stream >> frame.parserData;
+    }
+    else {
+        // For backward compatibility with OVITO 3.8.
+        qint64 oldParserData;
+        stream >> oldParserData;
+        if(oldParserData != 0)
+            frame.parserData.setValue(oldParserData);
+    }
+
     stream.closeChunk();
     return stream;
 }

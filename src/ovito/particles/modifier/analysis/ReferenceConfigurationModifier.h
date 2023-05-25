@@ -63,7 +63,7 @@ public:
 public:
 
     /// Constructor.
-    ReferenceConfigurationModifier(ObjectCreationParams params);
+    ReferenceConfigurationModifier(ObjectInitializationFlags flags);
 
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
@@ -71,7 +71,7 @@ public:
     /// Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
     virtual void inputCachingHints(TimeIntervalUnion& cachingIntervals, ModifierApplication* modApp) override;
 
-    /// Is called by the ModifierApplication to let the modifier adjust the time interval of a TargetChanged event 
+    /// Is called by the ModifierApplication to let the modifier adjust the time interval of a TargetChanged event
     /// received from the upstream pipeline before it is propagated to the downstream pipeline.
     virtual void restrictInputValidityInterval(TimeInterval& iv) const override;
 
@@ -92,7 +92,7 @@ protected:
     public:
 
         /// Constructor.
-        RefConfigEngineBase(const ModifierEvaluationRequest& request, 
+        RefConfigEngineBase(const ModifierEvaluationRequest& request,
                 const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
                 ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef,
                 ConstPropertyPtr identifiers, ConstPropertyPtr refIdentifiers,
@@ -196,7 +196,7 @@ class OVITO_PARTICLES_EXPORT ReferenceConfigurationModifierApplication : public 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ReferenceConfigurationModifierApplication(ObjectCreationParams params) : AsynchronousModifierApplication(params) {}
+    Q_INVOKABLE ReferenceConfigurationModifierApplication(ObjectInitializationFlags flags) : AsynchronousModifierApplication(flags) {}
 };
 
 }   // End of namespace

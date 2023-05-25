@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,11 +40,11 @@ class OVITO_MESH_EXPORT RenderableSurfaceMesh : public TransformedDataObject
 public:
 
     /// Constructor.
-    Q_INVOKABLE RenderableSurfaceMesh(ObjectCreationParams params, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr, DataOORef<const TriMeshObject> surfaceMesh = {}, DataOORef<const TriMeshObject> capPolygonsMesh = {}, bool backfaceCulling = false) 
-        : TransformedDataObject(params, creator, sourceData), 
+    Q_INVOKABLE RenderableSurfaceMesh(ObjectInitializationFlags flags, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr, DataOORef<const TriMeshObject> surfaceMesh = {}, DataOORef<const TriMeshObject> capPolygonsMesh = {}, bool backfaceCulling = false)
+        : TransformedDataObject(flags, creator, sourceData),
         _surfaceMesh(std::move(surfaceMesh)),
         _capPolygonsMesh(std::move(capPolygonsMesh)),
-        _backfaceCulling(backfaceCulling) 
+        _backfaceCulling(backfaceCulling)
     {
         // Adopt the ID string from the original data object.
         if(sourceData)

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -53,8 +53,8 @@ class OVITO_PARTICLES_EXPORT LAMMPSDataExporter : public ParticleExporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE LAMMPSDataExporter(ObjectCreationParams params) : ParticleExporter(params), 
-        _atomStyle(LAMMPSDataImporter::AtomStyle_Atomic), 
+    Q_INVOKABLE LAMMPSDataExporter(ObjectInitializationFlags flags) : ParticleExporter(flags),
+        _atomStyle(LAMMPSDataImporter::AtomStyle_Atomic),
         _omitMassesSection(false),
         _ignoreParticleIdentifiers(false),
         _exportTypeNames(false),

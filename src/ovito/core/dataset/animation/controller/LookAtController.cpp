@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,9 +38,9 @@ SET_PROPERTY_FIELD_UNITS(LookAtController, rollController, AngleParameterUnit);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-LookAtController::LookAtController(ObjectCreationParams params) : Controller(params)
+LookAtController::LookAtController(ObjectInitializationFlags flags) : Controller(flags)
 {
-    if(params.createSubObjects()) {
+    if(!flags.testFlag(DontInitializeObject)) {
         // Create sub-controller.
         setRollController(ControllerManager::createFloatController());
     }

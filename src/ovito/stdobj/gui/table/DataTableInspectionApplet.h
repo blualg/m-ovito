@@ -57,7 +57,7 @@ public:
 
     /// Determines whether the given property represents a color.
     virtual bool isColorProperty(const PropertyObject* property) const override {
-        return property->dataType() == PropertyObject::Float && property->componentCount() == 3 && property->name().contains(QStringLiteral("Color"));
+        return (property->dataType() == PropertyObject::Float32 || property->dataType() == PropertyObject::Float64) && property->componentCount() == 3 && property->name().contains(QStringLiteral("Color"));
     }
 
     /// Creates an optional ad-hoc property that serves as header column for the table.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,6 +28,11 @@
 
 namespace Ovito {
 
+namespace detail {
+    // Forward declarations
+    template<class BufferReference> class BufferAccessBase;
+}
+
 /**
  * \brief A one- or two-dimensional array of data elements.
  */
@@ -38,38 +43,72 @@ class OVITO_CORE_EXPORT DataBuffer : public DataObject
 
 public:
 
+    // Make sure our type IDs are all platform-independent.
+    static_assert(sizeof(int8_t) == sizeof(signed char)); // QMetaType::SChar
+    static_assert(sizeof(int32_t) == sizeof(int)); // QMetaType::Int
+    static_assert(sizeof(int64_t) == sizeof(qlonglong)); // QMetaType::LongLong
+    static_assert(sizeof(float) == 4);  // QMetaType::Float
+    static_assert(sizeof(double) == 8);  // QMetaType::Double
+
     /// \brief The most commonly used data types. Note that, at least in principle,
     ///        the class supports any data type registered with the Qt meta type system.
-    enum StandardDataType {
-#ifndef Q_CC_MSVC
-        Int = qMetaTypeId<int>(),
-        Int64 = qMetaTypeId<qlonglong>(),
-        Float = qMetaTypeId<FloatType>()
-#else // MSVC compiler doesn't treat qMetaTypeId() function as constexpr. Workaround:
-        Int = QMetaType::Int,
+    enum DataTypes {
+
+        Int8 = QMetaType::SChar,
+        Int32 = QMetaType::Int,
         Int64 = QMetaType::LongLong,
-#ifdef FLOATTYPE_FLOAT
-        Float = QMetaType::Float
-#else
-        Float = QMetaType::Double
-#endif
-#endif
+        Float32 = QMetaType::Float,
+        Float64 = QMetaType::Double,
+
+        // Alias for high-precision floating-point type:
+        FloatDefault = std::is_same_v<FloatType, double> ? Float64 : Float32,
+
+        // Alias for low-precision floating-point type:
+        FloatGraphics = std::is_same_v<GraphicsFloatType, double> ? Float64 : Float32,
+
+        // Alias for data type used for storing selection flags:
+        IntSelection = Int8,
+
+        // Alias for data type used for storing unique identifiers:
+        IntIdentifier = Int64
     };
 
-    enum InitializationFlag {
-        NoFlags = 0,
-        InitializeMemory = (1<<0)
+    enum BufferInitialization {
+        Uninitialized = 0,
+        Initialized = 1
     };
-    Q_DECLARE_FLAGS(InitializationFlags, InitializationFlag);
-    Q_FLAG(InitializationFlags);
+
+    /// RAII utility class that guards read access to a DataBuffer.
+    class ReadAccess
+    {
+    public:
+        ReadAccess(const DataBuffer& buffer) noexcept : _buffer(buffer) { buffer.prepareReadAccess(); }
+        ~ReadAccess() { _buffer.finishReadAccess(); }
+    private:
+        const DataBuffer& _buffer;
+    };
+
+    /// RAII utility class that guards write access to a DataBuffer.
+    class WriteAccess
+    {
+    public:
+        WriteAccess(DataBuffer& buffer) noexcept : _buffer(buffer) { buffer.prepareWriteAccess(); }
+        ~WriteAccess() { _buffer.finishWriteAccess(); }
+    private:
+        DataBuffer& _buffer;
+    };
 
 public:
 
     /// \brief Creates an empty buffer.
-    Q_INVOKABLE DataBuffer(ObjectCreationParams params) : DataObject(params) {}
+    Q_INVOKABLE explicit DataBuffer(ObjectInitializationFlags flags) : DataObject(flags) {}
 
     /// \brief Constructor that creates and initializes a new buffer array.
-    DataBuffer(ObjectCreationParams params, size_t elementCount, int dataType, size_t componentCount = 1, InitializationFlags flags = NoFlags, QStringList componentNames = QStringList());
+    DataBuffer(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList());
+
+    /// \brief Constructor that creates a new buffer array.
+    DataBuffer(ObjectInitializationFlags flags, size_t elementCount, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList()) :
+        DataBuffer(flags, BufferInitialization::Uninitialized, elementCount, dataType, componentCount, std::move(componentNames)) {}
 
     /// \brief Returns the number of elements stored in the buffer array.
     size_t size() const { return _numElements; }
@@ -89,12 +128,15 @@ public:
     /// \brief Reduces the number of data elements while preserving the exiting data.
     /// Note: This method never reallocates the memory buffer. Thus, the capacity of the array remains unchanged and the
     /// memory of the truncated elements is not released by the method.
-    void truncate(size_t numElementsToRemove);
+    void truncate(size_t numElementsToRemove, bool callerAlreadyHasWriteAccess = false);
 
     /// \brief Returns the data type of the property.
     /// \return The identifier of the data type used for the elements stored in
     ///         this property storage according to the Qt meta type system.
     int dataType() const { return _dataType; }
+
+    /// \brief Returns the data type as a human-readable string.
+    const char* dataTypeName() const { return QMetaType(dataType()).name(); }
 
     /// \brief Returns the number of bytes per value.
     /// \return Number of bytes used to store a single value of the data type
@@ -119,28 +161,17 @@ public:
         _componentNames = std::move(names);
     }
 
-    /// Changes the data type of the buffer in place and converts the stored values.
-    void convertDataType(int newDataType);
-
-    /// \brief Returns a read-only pointer to the raw element data stored in this buffer.
-    const uint8_t* cbuffer() const {
-        return _data.get();
-    }
-
-    /// \brief Returns a read-write pointer to the raw element data stored in this buffer.
-    uint8_t* buffer() {
-        return _data.get();
-    }
+    /// Changes the data type of the buffer in place (only if necessary) and converts the stored values.
+    void convertToDataType(int dataType);
 
     /// \brief Sets all array elements to the given uniform value.
     template<typename T>
     void fill(const T value) {
-        prepareWriteAccess();
+        WriteAccess writeAccess(*this);
         OVITO_ASSERT(stride() == sizeof(T));
-        T* begin = reinterpret_cast<T*>(buffer());
+        T* begin = reinterpret_cast<T*>(data());
         T* end = begin + this->size();
         std::fill(begin, end, value);
-        finishWriteAccess();
     }
 
     /// \brief Sets all array elements for which the corresponding entries in the
@@ -148,16 +179,16 @@ public:
     template<typename T>
     void fillSelected(const T value, const DataBuffer& selectionProperty) {
         OVITO_ASSERT(&selectionProperty != this); // Do not allow aliasing.
-        prepareWriteAccess();
-        selectionProperty.prepareReadAccess();
+        WriteAccess writeAccess(*this);
+        ReadAccess readAccess(selectionProperty);
         OVITO_ASSERT(selectionProperty.size() == this->size());
-        OVITO_ASSERT(selectionProperty.dataType() == Int);
+        OVITO_ASSERT(selectionProperty.dataType() == IntSelection);
         OVITO_ASSERT(selectionProperty.componentCount() == 1);
-        const int* __restrict selectionIter = reinterpret_cast<const int*>(selectionProperty.cbuffer());
-        for(T* __restrict v = reinterpret_cast<T*>(buffer()), *end = v + this->size(); v != end; ++v)
-            if(*selectionIter++) *v = value;
-        selectionProperty.finishReadAccess();
-        finishWriteAccess();
+        const SelectionIntType* __restrict selectionIter = reinterpret_cast<const SelectionIntType*>(selectionProperty.cdata());
+        for(T* __restrict v = reinterpret_cast<T*>(data()), *end = v + this->size(); v != end; ++v) {
+            if(*selectionIter++)
+                *v = value;
+        }
     }
 
     /// \brief Sets all array elements for which the corresponding entries in the
@@ -172,17 +203,21 @@ public:
 
     // Set all stored values to zeros.
     void fillZero() {
-        prepareWriteAccess();
+        WriteAccess writeAccess(*this);
         std::memset(_data.get(), 0, this->size() * this->stride());
-        finishWriteAccess();
     }
 
     /// Extends the data array and replicates the existing data N times.
     void replicate(size_t n, bool replicateValues = true);
 
-    /// Reduces the size of the storage array, removing elements for which
-    /// the corresponding bits in the bit array are set.
+    /// Reduces the size of the storage array, deleting elements for which
+    /// the corresponding bits in the bitmask array are set.
     void filterResize(const boost::dynamic_bitset<>& mask);
+
+    /// Removes data elements for which the bits are set in the given bitmask array by moving elements from the back of
+    /// the array into the free slots. This method is potentially faster than filterResize() if only few elements are to be deleted.
+    /// However, the ordering of the remaining elements is NOT preserved.
+    void filterResizeReordering(const boost::dynamic_bitset<>& mask);
 
     /// Creates a copy of the array, not containing those elements for which
     /// the corresponding bits in the given bit array were set.
@@ -211,27 +246,34 @@ public:
     template<typename Iter>
     bool copyTo(Iter iter, size_t component = 0) const {
         const size_t cmpntCount = componentCount();
-        if(component >= cmpntCount) return false;
-        if(size() == 0) return true;
-        if(dataType() == DataBuffer::Int) {
-            prepareReadAccess();
-            for(const int* __restrict v = reinterpret_cast<const int*>(cbuffer()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
+        if(component >= cmpntCount)
+            return false;
+        if(size() == 0)
+            return true;
+        ReadAccess readAccess(*this);
+        if(dataType() == DataBuffer::Int8) {
+            for(const int8_t* __restrict v = reinterpret_cast<const int8_t*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
                 *iter++ = *v;
-            finishReadAccess();
+            return true;
+        }
+        else if(dataType() == DataBuffer::Int32) {
+            for(const int32_t* __restrict v = reinterpret_cast<const int32_t*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
+                *iter++ = *v;
             return true;
         }
         else if(dataType() == DataBuffer::Int64) {
-            prepareReadAccess();
-            for(const qlonglong* __restrict v = reinterpret_cast<const qlonglong*>(cbuffer()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
+            for(const int64_t* __restrict v = reinterpret_cast<const int64_t*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
                 *iter++ = *v;
-            finishReadAccess();
             return true;
         }
-        else if(dataType() == DataBuffer::Float) {
-            prepareReadAccess();
-            for(const FloatType* __restrict v = reinterpret_cast<const FloatType*>(cbuffer()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
+        else if(dataType() == DataBuffer::Float32) {
+            for(const float* __restrict v = reinterpret_cast<const float*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
                 *iter++ = *v;
-            finishReadAccess();
+            return true;
+        }
+        else if(dataType() == DataBuffer::Float64) {
+            for(const double* __restrict v = reinterpret_cast<const double*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
+                *iter++ = *v;
             return true;
         }
         return false;
@@ -246,31 +288,49 @@ public:
         size_t s = size();
         if(s == 0)
             return true;
-        if(dataType() == DataBuffer::Int) {
-            prepareReadAccess();
-            auto v = reinterpret_cast<const int*>(cbuffer()) + component;
+        ReadAccess readAccess(*this);
+        if(dataType() == DataBuffer::Int8) {
+            auto v = reinterpret_cast<const int8_t*>(cdata()) + component;
             for(size_t i = 0; i < s; i++, v += cmpntCount)
                 std::invoke(std::forward<F>(func), i, *v);
-            finishReadAccess();
+            return true;
+        }
+        else if(dataType() == DataBuffer::Int32) {
+            auto v = reinterpret_cast<const int32_t*>(cdata()) + component;
+            for(size_t i = 0; i < s; i++, v += cmpntCount)
+                std::invoke(std::forward<F>(func), i, *v);
             return true;
         }
         else if(dataType() == DataBuffer::Int64) {
-            prepareReadAccess();
-            auto v = reinterpret_cast<const qlonglong*>(cbuffer()) + component;
+            auto v = reinterpret_cast<const int64_t*>(cdata()) + component;
             for(size_t i = 0; i < s; i++, v += cmpntCount)
                 std::invoke(std::forward<F>(func), i, *v);
-            finishReadAccess();
             return true;
         }
-        else if(dataType() == DataBuffer::Float) {
-            prepareReadAccess();
-            auto v = reinterpret_cast<const FloatType*>(cbuffer()) + component;
+        else if(dataType() == DataBuffer::Float32) {
+            auto v = reinterpret_cast<const float*>(cdata()) + component;
             for(size_t i = 0; i < s; i++, v += cmpntCount)
                 std::invoke(std::forward<F>(func), i, *v);
-            finishReadAccess();
+            return true;
+        }
+        else if(dataType() == DataBuffer::Float64) {
+            auto v = reinterpret_cast<const double*>(cdata()) + component;
+            for(size_t i = 0; i < s; i++, v += cmpntCount)
+                std::invoke(std::forward<F>(func), i, *v);
             return true;
         }
         return false;
+    }
+
+    /// Moves the values from one index of property container to another in all property arrays.
+    void moveElement(size_t fromIndex, size_t toIndex, bool callerAlreadyHasWriteAccess = false) {
+        OVITO_ASSERT(fromIndex < size() && toIndex < size());
+#ifdef OVITO_DEBUG
+        std::optional<WriteAccess> writeAccess;
+        if(!callerAlreadyHasWriteAccess)
+            writeAccess.emplace(*this);
+#endif
+        std::memmove(data() + toIndex * stride(), cdata() + fromIndex * stride(), stride());
     }
 
     /// Checks if this buffer|s metadata and the contents exactly match those of another buffer.
@@ -325,6 +385,18 @@ protected:
 
 private:
 
+    /// \brief Returns a read-only pointer to the raw element data stored in this buffer.
+    const std::byte* cdata() const {
+        return _data.get();
+    }
+
+    /// \brief Returns a read-write pointer to the raw element data stored in this buffer.
+    std::byte* data() {
+        return _data.get();
+    }
+
+private:
+
     /// The data type of the array (a Qt metadata type identifier).
     int _dataType = QMetaType::Void;
 
@@ -347,27 +419,31 @@ private:
     QStringList _componentNames;
 
     /// The internal memory buffer holding the data elements.
-    std::unique_ptr<uint8_t[]> _data;
+    std::unique_ptr<std::byte[]> _data;
 
 #ifdef OVITO_DEBUG
-    /// In debug builds this counter keeps track of how many read or write accessors
-    /// are currently referencing this buffer object.
+    /// In debug builds, this counter is used to detect race conditions due to concurrent access to a buffer's
+    /// memory and data fields. The counter keeps track of how many read or write accessors are currently
+    /// operating on this buffer object. Write access must be exclusive and as is indicated by the special value -1.
     mutable QAtomicInteger<int> _activeAccessors = 0;
 #endif
+
+    template<class BufferReference> friend class detail::BufferAccessBase;
 };
 
 /// Class template returning the Qt data type identifier for the components in the given C++ array structure.
-template<typename T, typename = void> struct DataBufferPrimitiveType { static constexpr int value = qMetaTypeId<T>(); };
-#ifdef Q_CC_MSVC // MSVC compiler doesn't treat qMetaTypeId() function as constexpr. Workaround:
-template<> struct DataBufferPrimitiveType<int> { static constexpr DataBuffer::StandardDataType value = DataBuffer::Int; };
-template<> struct DataBufferPrimitiveType<qlonglong> { static constexpr DataBuffer::StandardDataType value = DataBuffer::Int64; };
-template<> struct DataBufferPrimitiveType<FloatType> { static constexpr DataBuffer::StandardDataType value = DataBuffer::Float; };
-#endif
+template<typename T, typename = void> struct DataBufferPrimitiveType {};
+template<> struct DataBufferPrimitiveType<int8_t> { static constexpr DataBuffer::DataTypes value = DataBuffer::DataTypes::Int8; };
+template<> struct DataBufferPrimitiveType<int32_t> { static constexpr DataBuffer::DataTypes value = DataBuffer::DataTypes::Int32; };
+template<> struct DataBufferPrimitiveType<int64_t> { static constexpr DataBuffer::DataTypes value = DataBuffer::DataTypes::Int64; };
+template<> struct DataBufferPrimitiveType<float> { static constexpr DataBuffer::DataTypes value = DataBuffer::DataTypes::Float32; };
+template<> struct DataBufferPrimitiveType<double> { static constexpr DataBuffer::DataTypes value = DataBuffer::DataTypes::Float64; };
 template<typename T, std::size_t N> struct DataBufferPrimitiveType<std::array<T,N>> : public DataBufferPrimitiveType<T> {};
-template<typename T> struct DataBufferPrimitiveType<Point_3<T>> : public DataBufferPrimitiveType<T> {};
-template<typename T> struct DataBufferPrimitiveType<Vector_3<T>> : public DataBufferPrimitiveType<T> {};
 template<typename T> struct DataBufferPrimitiveType<Point_2<T>> : public DataBufferPrimitiveType<T> {};
+template<typename T> struct DataBufferPrimitiveType<Point_3<T>> : public DataBufferPrimitiveType<T> {};
 template<typename T> struct DataBufferPrimitiveType<Vector_2<T>> : public DataBufferPrimitiveType<T> {};
+template<typename T> struct DataBufferPrimitiveType<Vector_3<T>> : public DataBufferPrimitiveType<T> {};
+template<typename T> struct DataBufferPrimitiveType<Vector_4<T>> : public DataBufferPrimitiveType<T> {};
 template<typename T> struct DataBufferPrimitiveType<Matrix_3<T>> : public DataBufferPrimitiveType<T> {};
 template<typename T> struct DataBufferPrimitiveType<AffineTransformationT<T>> : public DataBufferPrimitiveType<T> {};
 template<typename T> struct DataBufferPrimitiveType<QuaternionT<T>> : public DataBufferPrimitiveType<T> {};
@@ -375,5 +451,9 @@ template<typename T> struct DataBufferPrimitiveType<ColorT<T>> : public DataBuff
 template<typename T> struct DataBufferPrimitiveType<ColorAT<T>> : public DataBufferPrimitiveType<T> {};
 template<typename T> struct DataBufferPrimitiveType<SymmetricTensor2T<T>> : public DataBufferPrimitiveType<T> {};
 template<typename T> struct DataBufferPrimitiveType<T, typename std::enable_if<std::is_enum<T>::value>::type> : public DataBufferPrimitiveType<std::make_signed_t<std::underlying_type_t<T>>> {};
+
+OVITO_STATIC_ASSERT(DataBufferPrimitiveType<IdentifierIntType>::value == DataBuffer::IntIdentifier);
+OVITO_STATIC_ASSERT(DataBufferPrimitiveType<SelectionIntType>::value  == DataBuffer::IntSelection);
+OVITO_STATIC_ASSERT(DataBufferPrimitiveType<GraphicsFloatType>::value == DataBuffer::FloatGraphics);
 
 }   // End of namespace

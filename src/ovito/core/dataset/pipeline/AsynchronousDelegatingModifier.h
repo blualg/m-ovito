@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -77,7 +77,7 @@ protected:
 
     /// Creates a default delegate for this modifier.
     /// This should be called from the modifier's constructor.
-    void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName, ObjectCreationParams params);
+    void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName);
 
 protected:
 
