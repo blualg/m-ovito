@@ -92,36 +92,19 @@ public:
     Vector_3() = default;
 
     /// Constructs a vector with all three components initialized to the given value.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR explicit Vector_3(T val) : std::array<T, 3>{{val,val,val}} {}
-#else
-    Q_DECL_CONSTEXPR explicit Vector_3(T val) { this->fill(val); }
-#endif
 
     /// Initializes the components of the vector with the given values.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR Vector_3(T x, T y, T z) : std::array<T, 3>{{x, y, z}} {}
-#else
-    Q_DECL_CONSTEXPR Vector_3(T x, T y, T z) { this->x() = x; this->y() = y; this->z() = z; }
-#endif
 
     /// Initializes the vector to the null vector. All components are set to zero.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR Vector_3(Zero) : std::array<T, 3>{{T(0), T(0), T(0)}} {}
-#else
-    Q_DECL_CONSTEXPR Vector_3(Zero) { this->fill(T(0)); }
-#endif
 
     /// Initializes the vector from an array.
     Q_DECL_CONSTEXPR explicit Vector_3(const std::array<T, 3>& a) : std::array<T, 3>(a) {}
 
     /// Conversion constructor from a Qt vector.
-    Q_DECL_CONSTEXPR Vector_3(const QVector3D& v)
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-        : std::array<T, 3>{{T(v.x()), T(v.y()), T(v.z())}} {}
-#else
-        { this->x() = T(v.x()); this->y() = T(v.y()); this->z() = T(v.z()); }
-#endif
+    Q_DECL_CONSTEXPR Vector_3(const QVector3D& v) : std::array<T, 3>{{T(v.x()), T(v.y()), T(v.z())}} {}
 
     /// Casts the vector to another component type \a U.
     template<typename U>

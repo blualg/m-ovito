@@ -357,15 +357,4 @@ QNetworkAccessManager* Application::networkAccessManager()
 }
 #endif
 
-/******************************************************************************
-* Creates a signal/slot connection which is fired on shutdown.
-******************************************************************************/
-QMetaObject::Connection Application::whenAboutToQuit(const QObject* receiver, const char* method, Qt::ConnectionType type)
-{
-    const QMetaObject* metaObject = receiver->metaObject();
-    int index = metaObject->indexOfMethod(method);
-    OVITO_ASSERT(index >= 0);
-    return QObject::connect(this, QMetaMethod::fromSignal(&Application::aboutToQuit), receiver, metaObject->method(index), type);
-}
-
 }   // End of namespace

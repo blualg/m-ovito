@@ -84,36 +84,19 @@ public:
     Vector_2() = default;
 
     /// Constructs a vector with the two components initialized to the given value.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR explicit Vector_2(T val) : std::array<T, 2>{{val,val}} {}
-#else
-    Q_DECL_CONSTEXPR explicit Vector_2(T val) { this->fill(val); }
-#endif
 
-        /// Initializes the components of the vector with the given values.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
+    /// Initializes the components of the vector with the given values.
     Q_DECL_CONSTEXPR Vector_2(T x, T y) : std::array<T, 2>{{x, y}} {}
-#else
-    Q_DECL_CONSTEXPR Vector_2(T x, T y) { this->x() = x; this->y() = y; }
-#endif
 
     /// Initializes the vector to the null vector. All components are set to zero.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR Vector_2(Zero) : std::array<T, 2>{{T(0), T(0)}} {}
-#else
-    Q_DECL_CONSTEXPR Vector_2(Zero) { this->fill(T(0)); }
-#endif
 
     /// Initializes the vector from an array.
     Q_DECL_CONSTEXPR explicit Vector_2(const std::array<T, 2>& a) : std::array<T, 2>(a) {}
 
     /// Conversion constructor from a Qt vector.
-    Q_DECL_CONSTEXPR Vector_2(const QVector2D& v)
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-        : std::array<T, 2>{{T(v.x()), T(v.y())}} {}
-#else
-        { this->x() = T(v.x()); this->y() = T(v.y()); }
-#endif
+    Q_DECL_CONSTEXPR Vector_2(const QVector2D& v) : std::array<T, 2>{{T(v.x()), T(v.y())}} {}
 
     /// Casts the vector to another component type \a U.
     template<typename U>

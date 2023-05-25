@@ -89,7 +89,6 @@ public:
     /// \brief Constructor that initializes 9 elements of the left 3x3 submatrix to the given values.
     ///        The translation (4th column) is set to zero.
     /// \note Matrix elements are specified in row-major order, i.e. row by row.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR AffineTransformationT(
                         T m11, T m12, T m13,
                         T m21, T m22, T m23,
@@ -99,20 +98,9 @@ public:
             Vector_3<T>(m12,m22,m32),
             Vector_3<T>(m13,m23,m33),
             typename Vector_3<T>::Zero()}} {}
-#else
-    Q_DECL_CONSTEXPR AffineTransformationT(
-        T m11, T m12, T m13,
-        T m21, T m22, T m23,
-        T m31, T m32, T m33)
-        { (*this)[0] = Vector_3<T>(m11,m21,m31);
-          (*this)[1] = Vector_3<T>(m12,m22,m32);
-          (*this)[2] = Vector_3<T>(m13,m23,m33);
-          (*this)[3] = typename Vector_3<T>::Zero(); }
-#endif
 
     /// \brief Constructor that initializes the elements of the matrix to the given values.
     /// \note Elements are specified in row-major order, i.e. row by row.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR AffineTransformationT(
                         T m11, T m12, T m13, T m14,
                         T m21, T m22, T m23, T m24,
@@ -122,82 +110,41 @@ public:
             Vector_3<T>(m12,m22,m32),
             Vector_3<T>(m13,m23,m33),
             Vector_3<T>(m14,m24,m34)}} {}
-#else
-    Q_DECL_CONSTEXPR AffineTransformationT(
-                    T m11, T m12, T m13, T m14,
-                    T m21, T m22, T m23, T m24,
-                    T m31, T m32, T m33, T m34)
-        { (*this)[0] = Vector_3<T>(m11,m21,m31);
-          (*this)[1] = Vector_3<T>(m12,m22,m32);
-          (*this)[2] = Vector_3<T>(m13,m23,m33);
-          (*this)[3] = Vector_3<T>(m14,m24,m34); }
-#endif
 
     /// \brief Constructor that initializes the matrix from four column vectors.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR AffineTransformationT(const column_type& c1, const column_type& c2, const column_type& c3, const column_type& c4)
         : std::array<Vector_3<T>,4>{{c1, c2, c3, c4}} {}
-#else
-    Q_DECL_CONSTEXPR AffineTransformationT(const column_type& c1, const column_type& c2, const column_type& c3, const column_type& c4)
-        { (*this)[0] = c1; (*this)[1] = c2; (*this)[2] = c3; (*this)[3] = c4; }
-#endif
 
     /// \brief Initializes the matrix to the null matrix.
     /// All matrix elements are set to zero by this constructor.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR AffineTransformationT(Zero)
         : std::array<Vector_3<T>,4>{{
             typename Vector_3<T>::Zero(),
             typename Vector_3<T>::Zero(),
             typename Vector_3<T>::Zero(),
             typename Vector_3<T>::Zero()}} {}
-#else
-    Q_DECL_CONSTEXPR AffineTransformationT(Zero)
-        { this->fill(typename Vector_3<T>::Zero()); }
-#endif
 
     /// \brief Initializes the matrix to the identity matrix.
     /// All diagonal elements are set to one and all off-diagonal elements are set to zero.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR AffineTransformationT(Identity)
         : std::array<Vector_3<T>,4>{{
             Vector_3<T>(T(1),T(0),T(0)),
             Vector_3<T>(T(0),T(1),T(0)),
             Vector_3<T>(T(0),T(0),T(1)),
             Vector_3<T>(T(0),T(0),T(0))}} {}
-#else
-    Q_DECL_CONSTEXPR AffineTransformationT(Identity)
-        { (*this)[0] = Vector_3<T>(T(1),T(0),T(0));
-          (*this)[1] = Vector_3<T>(T(0),T(1),T(0));
-          (*this)[2] = Vector_3<T>(T(0),T(0),T(1));
-          (*this)[3] = Vector_3<T>(T(0),T(0),T(0)); }
-#endif
 
     /// \brief Initializes the 3x4 matrix from a 3x3 matrix.
     /// The translation vector (4th column) is set to zero.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     explicit Q_DECL_CONSTEXPR AffineTransformationT(const Matrix_3<T>& tm)
         : std::array<Vector_3<T>,4>{{tm.column(0), tm.column(1), tm.column(2), typename Vector_3<T>::Zero()}} {}
-#else
-    explicit Q_DECL_CONSTEXPR AffineTransformationT(const Matrix_3<T>& tm)
-        { (*this)[0] = tm.column(0); (*this)[1] = tm.column(1); (*this)[2] = tm.column(2); (*this)[3] = typename Vector_3<T>::Zero(); }
-#endif
 
     /// Conversion constructor from a Qt matrix.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     Q_DECL_CONSTEXPR AffineTransformationT(const QMatrix4x4& m)
         : std::array<Vector_3<T>,4>{{
             Vector_3<T>(m(0,0),m(1,0),m(2,0)),
             Vector_3<T>(m(0,1),m(1,1),m(2,1)),
             Vector_3<T>(m(0,2),m(1,2),m(2,2)),
             Vector_3<T>(m(0,3),m(1,3),m(2,3))}} {}
-#else
-    Q_DECL_CONSTEXPR AffineTransformationT(const QMatrix4x4& m)
-        { (*this)[0] = Vector_3<T>(m(0,0),m(1,0),m(2,0));
-          (*this)[1] = Vector_3<T>(m(0,1),m(1,1),m(2,1));
-          (*this)[2] = Vector_3<T>(m(0,2),m(1,2),m(2,2));
-          (*this)[3] = Vector_3<T>(m(0,3),m(1,3),m(2,3)); }
-#endif
 
     /// \brief Casts the matrix to a matrix with another data type.
     template<typename U>
@@ -579,6 +526,12 @@ public:
     ///   2. A * A^T = I
     Q_DECL_CONSTEXPR bool isRotationMatrix(T epsilon = FloatTypeEpsilon<T>()) const {
         return isOrthogonalMatrix(epsilon) && (std::abs(determinant() - T(1)) <= epsilon);
+    }
+
+    /// \brief Tests whether the matrix is a pure translation matrix.
+    /// \return \c true if the matrix is a pure rotation matrix; \c false otherwise.
+    Q_DECL_CONSTEXPR bool isTranslationMatrix() const {
+        return linear() == typename Matrix_3<T>::Identity();
     }
 
     /// \brief Converts the matrix to a Qt 4x4 matrix.

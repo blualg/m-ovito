@@ -110,9 +110,6 @@ public:
     /// Handler function for exceptions.
     virtual void reportError(const Exception& exception);
 
-    /// Creates a signal/slot connection which is fired on shutdown.
-    virtual QMetaObject::Connection whenAboutToQuit(const QObject* receiver, const char* method, Qt::ConnectionType type = Qt::AutoConnection) override;
-
 #ifndef Q_OS_WASM
     /// Returns the application-wide network access manager object.
     QNetworkAccessManager* networkAccessManager();

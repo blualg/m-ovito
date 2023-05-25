@@ -15,7 +15,7 @@ Here is a (nearly complete) list of the program features that are available in *
    :width: 15%
    :align: right
 
-- :ref:`Multiple pipelines <usage.import.multiple_datasets>` in the same visualization scene
+- :ref:`Multiple pipelines <usage.import.multiple_datasets>` in the same visualization scene (comparative analysis)
 - Instant :ref:`Python code generation <python_code_generation>` to greatly simplify script development for the OVITO Python package
 - :ref:`User-defined modifier functions <particles.modifiers.python_script>` including GUI controls for user-defined parameters
 - LAMMPS integration via :ref:`data_source.lammps_script` pipeline source

@@ -149,9 +149,6 @@ public:
     /// Displays an error message to the user that is associated with a particular child window or dialog.
     void reportError(const Exception& exception, QWidget* window);
 
-    /// Creates a signal/slot connection which is fired on shutdown.
-    virtual QMetaObject::Connection whenAboutToQuit(const QObject* receiver, const char* method, Qt::ConnectionType type = Qt::AutoConnection) override;
-
     /// Opens another main window (in addition to the existing windows) and optionally loads a file in the new window.
     static void openNewWindow(const QStringList& arguments = {});
 

@@ -58,40 +58,20 @@ public:
     ColorT() {}
 
     /// Initializes the color with the given red, green and blue values (in the range 0 to 1).
-    Q_DECL_CONSTEXPR ColorT(T red, T green, T blue)
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-        : std::array<T, 3>{{red, green, blue}} {}
-#else
-        { this->r() = red; this->g() = green; this->b() = blue; }
-#endif
+    Q_DECL_CONSTEXPR ColorT(T red, T green, T blue) : std::array<T, 3>{{red, green, blue}} {}
 
     /// Converts a 3-vector to a color.
     /// The X, Y and Z vector components are used to initialize the red, green and blue components respectively.
-    Q_DECL_CONSTEXPR ColorT(const Vector_3<T>& v)
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-        : std::array<T, 3>{{v.x(), v.y(), v.z()}} {}
-#else
-        { this->r() = v.x(); this->g() = v.y(); this->b() = v.z(); }
-#endif
+    Q_DECL_CONSTEXPR ColorT(const Vector_3<T>& v) : std::array<T, 3>{{v.x(), v.y(), v.z()}} {}
 
     /// Initializes the color from an array with three values.
     Q_DECL_CONSTEXPR explicit ColorT(const std::array<T, 3>& c) : std::array<T, 3>(c) {}
 
     /// Conversion constructor from a Qt color.
-    Q_DECL_CONSTEXPR ColorT(const QColor& c)
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-        : std::array<T, 3>{{T(c.redF()), T(c.greenF()), T(c.blueF())}} {}
-#else
-        { this->r() = T(c.redF()); this->g() = T(c.greenF()); this->b() = T(c.blueF()); }
-#endif
+    Q_DECL_CONSTEXPR ColorT(const QColor& c) : std::array<T, 3>{{T(c.redF()), T(c.greenF()), T(c.blueF())}} {}
 
     /// Conversion constructor from a Qt color.
-    Q_DECL_CONSTEXPR ColorT(const QVector3D& v)
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-        : std::array<T, 3>{{T(v.x()), T(v.y()), T(v.z())}} {}
-#else
-        { this->r() = T(v.x()); this->g() = T(v.y()); this->b() = T(v.z()); }
-#endif
+    Q_DECL_CONSTEXPR ColorT(const QVector3D& v) : std::array<T, 3>{{T(v.x()), T(v.y()), T(v.z())}} {}
 
     /// Casts the color to another component type \a U.
     template<typename U>
@@ -351,43 +331,19 @@ public:
     ColorAT() {}
 
     /// Initializes the color with the given red, green, blue, and alpha value.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-    Q_DECL_CONSTEXPR ColorAT(T red, T green, T blue, T alpha = T(1))
-        : std::array<T, 4>{{red, green, blue, alpha}} {}
-#else
-    Q_DECL_CONSTEXPR ColorAT(T red, T green, T blue, T alpha = T(1))
-        { this->r() = red; this->g() = green; this->b() = blue; this->a() = alpha; }
-#endif
+    Q_DECL_CONSTEXPR ColorAT(T red, T green, T blue, T alpha = T(1)) : std::array<T, 4>{{red, green, blue, alpha}} {}
 
     /// Converts a 4-vector to a color. The X, Y, Z, and W vector components are used to initialize the red, green, blue, and alpha components respectively.
     Q_DECL_CONSTEXPR explicit ColorAT(const Vector_4<T>& v) : std::array<T, 4>(v) {}
 
     /// Conversion constructor from a Qt color value.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-    Q_DECL_CONSTEXPR ColorAT(const QColor& c)
-        : std::array<T, 4>{{T(c.redF()), T(c.greenF()), T(c.blueF()), T(c.alphaF())}} {}
-#else
-    Q_DECL_CONSTEXPR ColorAT(const QColor& c)
-        { this->r() = T(c.redF()); this->g() = T(c.greenF()); this->b() = T(c.blueF()); this->a() = T(c.alphaF()); }
-#endif
+    Q_DECL_CONSTEXPR ColorAT(const QColor& c) : std::array<T, 4>{{T(c.redF()), T(c.greenF()), T(c.blueF()), T(c.alphaF())}} {}
 
     /// Converts a color without alpha component to a color with alpha component set to 1.0.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-    Q_DECL_CONSTEXPR ColorAT(const ColorT<T>& c)
-        : std::array<T, 4>{{c.r(), c.g(), c.b(), T(1)}} {}
-#else
-    Q_DECL_CONSTEXPR ColorAT(const ColorT<T>& c)
-        { this->r() = c.r(); this->g() = c.g(); this->b() = c.b(); this->a() = T(1); }
-#endif
+    Q_DECL_CONSTEXPR ColorAT(const ColorT<T>& c) : std::array<T, 4>{{c.r(), c.g(), c.b(), T(1)}} {}
 
     /// Converts a color without alpha component to a color with given alpha component.
-#if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
-    Q_DECL_CONSTEXPR ColorAT(const ColorT<T>& c, T alpha)
-        : std::array<T, 4>{{c.r(), c.g(), c.b(), alpha}} {}
-#else
-    Q_DECL_CONSTEXPR ColorAT(const ColorT<T>& c, T alpha)
-        { this->r() = c.r(); this->g() = c.g(); this->b() = c.b(); this->a() = alpha; }
-#endif
+    Q_DECL_CONSTEXPR ColorAT(const ColorT<T>& c, T alpha) : std::array<T, 4>{{c.r(), c.g(), c.b(), alpha}} {}
 
     /// Initializes the color components from an array of four values.
     Q_DECL_CONSTEXPR explicit ColorAT(const std::array<T, 4>& c) : std::array<T, 4>(c) {}

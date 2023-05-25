@@ -90,9 +90,6 @@ public:
     /// Call this to keep the UI object alive until shutdown() is called on it.
     void keepAliveUntilShutdown() { _selfGuard = shared_from_this(); }
 
-    /// Creates a signal/slot connection which is fired on shutdown.
-    virtual QMetaObject::Connection whenAboutToQuit(const QObject* receiver, const char* method, Qt::ConnectionType type = Qt::AutoConnection) = 0;
-
     /// Tells the UI to process any pending events in the event queue and return immediately.
     /// The function can return true to indicate that the running operation should be canceled.
     virtual bool processEvents();
