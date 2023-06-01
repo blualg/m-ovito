@@ -22,13 +22,13 @@ Atomic Volume
   The volume of the Voronoi cell of the particle (in cubic simulation units of length).
 
 Coordination
-  The number of faces of the Voronoi cell. Since there is one Voronoi face per nearest neighbors of a particle, 
+  The number of faces of the Voronoi cell. Since there is one Voronoi face per nearest neighbors of a particle,
   this quantity is typically called the *coordination number*.
 
 Cavity Radius
-  The distance from the particle to the farthest vertex of its Voronoi cell. 
-  This distance is also the radius of the biggest empty sphere (i.e. containing no other particle) touching the particle. 
-  It can thus be used to quantify the size of the cavities near the particles, by assuming that particles are points with no size. 
+  The distance from the particle to the farthest vertex of its Voronoi cell.
+  This distance is also the radius of the biggest empty sphere (i.e. containing no other particle) touching the particle.
+  It can thus be used to quantify the size of the cavities near the particles, by assuming that particles are points with no size.
   For this reason the quantity is called *cavity radius*.
 
 After the modifier has been executed these quantities become available as new particle properties and may be referenced in subsequent
@@ -51,7 +51,7 @@ Note that we don't need to include the first two indices in the selection expres
 do not exist.
 
 Due to limitation in OVITO's data model, which can only store per-particle Voronoi index vectors of uniform length,
-the vectors are truncated at a certain maximum face order, which is given by the parameter :guilabel:`Maximum edge count`. 
+the vectors are truncated at a certain maximum face order, which is given by the parameter :guilabel:`Maximum edge count`.
 Faces with more edges will be ignored and don't show up in the truncated index vector.
 OVITO warns if it encounters any such higher order faces and will recommend to increase the vector length to avoid truncation.
 
@@ -97,7 +97,7 @@ Relative face area threshold
   The relative threshold is specified as a fraction of the total surface area of the Voronoi polyhedron the faces belong to.
   For example, you can use this threshold to exclude those faces from the analysis with an area less than 1% of the total area of the polyhedron surface,
   like it was done in `this paper <http://dx.doi.org/10.1038/nature04421>`__.
- 
+
 Compute Voronoi indices
   Activates the calculation of Voronoi indices. The modifier stores the computed indices in a vector particle property
   named ``Voronoi Index``. The *i*-th component of this vector will contain the number of faces of the
@@ -119,11 +119,16 @@ Generate neighbor bonds
 
 Generate Voronoi polyhedra
   Lets the modifier output a :ref:`surface mesh <scene_objects.surface_mesh>` to visualize the computed Voronoi polyhedra.
-  Each volumetric region of the mesh represents a single Voronoi cell and has properties such as
-  the cell's volume, coordination number, surface area and the unique ID of the input particle located at the center of the cell. 
-  Use additional modifiers such as :ref:`particles.modifiers.expression_select` and :ref:`particles.modifiers.delete_selected_particles` to 
-  subsequently filter the set of displayed Voronoi cells, e.g., show only cells having a certain number of faces
-  or belonging to a particular atom.
+  Each Voronoi cell is represented by a spatial region in the mesh and is associated with local properties such as
+  the cell's volume, coordination number, surface area and the unique ID of the input particle located at the center of the cell.
+  Use additional modifiers such as :ref:`particles.modifiers.expression_select` and :ref:`particles.modifiers.delete_selected_particles` to
+  subsequently filter the set of displayed Voronoi cells. For example, to visualize only cells having a certain number of faces
+  or belonging to certain atoms.
+
+  Additionally, the modifier outputs each face's area, order, and adjacent cell info as per-face mesh properties,
+  which can be used to further analyze the characteristics of individual Voronoi faces in the system. Note that tools such as
+  the :ref:`particles.modifiers.histogram` modifier allow you to subsequently compute global statistics, e.g. the
+  distribution of Voronoi face areas.
 
 Use particle radii
   Lets the modifier compute the poly-disperse Voronoi tessellation, which takes into account the radii of particles.
@@ -146,7 +151,7 @@ The solution to this type of problem is to slightly enlarge the simulation box t
 This can be done, for example, by using the :ref:`particles.modifiers.affine_transformation` modifier to scale the box size by a factor greater than 1.
 
 .. seealso::
-  
+
   :py:class:`ovito.modifiers.VoronoiAnalysisModifier` (Python API)
 
 .. versionadded:: 3.7.9
