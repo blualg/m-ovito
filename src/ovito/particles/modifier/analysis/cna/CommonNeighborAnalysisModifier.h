@@ -116,7 +116,7 @@ public:
     Q_INVOKABLE CommonNeighborAnalysisModifier(ObjectInitializationFlags flags);
 
     /// Find all atoms that are nearest neighbors of the given pair of atoms.
-    static int findCommonNeighbors(const NeighborBondArray& neighborArray, int neighborIndex, unsigned int& commonNeighbors, int numNeighbors);
+    static int findCommonNeighbors(const NeighborBondArray& neighborArray, int neighborIndex, unsigned int& commonNeighbors);
 
     /// Finds all bonds between common nearest neighbors.
     static int findNeighborBonds(const NeighborBondArray& neighborArray, unsigned int commonNeighbors, int numNeighbors, CNAPairBond* neighborBonds);

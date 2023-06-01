@@ -51,7 +51,7 @@ protected:
     virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
     /// Replots one of the correlation function computed by the modifier.
-    std::pair<FloatType,FloatType> plotData(const DataTable* table, DataTablePlotWidget* plotWidget, FloatType offset, FloatType fac, BufferAccess<const FloatType> normalization);
+    std::pair<FloatType,FloatType> plotData(const DataTable* table, DataTablePlotWidget* plotWidget, FloatType offset, FloatType fac, BufferReadAccess<FloatType> normalization);
 
 protected Q_SLOTS:
 

@@ -247,7 +247,7 @@ InputColumnReader::InputColumnReader(StandardFrameLoader& frameLoader, const Inp
             // Create a property memory accessor, but only one per property if multiple columns are mapped to that property.
             auto sharedTargetProperty = std::find_if(_properties.begin(), _properties.end(), [&](const TargetPropertyRecord& other) { return other.property == property; });
             if(sharedTargetProperty == _properties.end()) {
-                rec.propertyArray = BufferWriteAccess(rec.property);
+                rec.propertyArray = rec.property;
                 rec.data = reinterpret_cast<uint8_t*>(rec.propertyArray.data(rec.vectorComponent));
             }
             else {

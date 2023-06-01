@@ -134,10 +134,10 @@ public:
         std::deque<SurfaceMesh::face_index> facesToProcess;
 
         // Access the per-face region indices.
-        BufferAccess<SurfaceMesh::region_index> faceRegions(_mesh.mutableFaceProperty(SurfaceMeshFaces::RegionProperty));
+        BufferWriteAccess<SurfaceMesh::region_index, access_mode::read_write> faceRegions(_mesh.mutableFaceProperty(SurfaceMeshFaces::RegionProperty));
 
         // Access the vertex coordinates.
-        BufferAccess<const Point3> vertexPositions(_mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+        BufferReadAccess<Point3> vertexPositions(_mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
 
         // Identify disconnected components of the surface mesh bordering to an empty region.
         operation.setProgressMaximum(_mesh.faceCount() / 2); // Note: Dividing by two, because only every other face is oriented towards the empty region.
@@ -386,8 +386,8 @@ public:
                 SurfaceMesh::region_index ridx = regionGrower.grow(1);
                 OVITO_ASSERT(ridx == _emptyRegionCount + _filledRegionCount);
                 regionMapping[i] = ridx;
-                BufferAccess<SelectionIntType>{regionPropertyIsExterior}[ridx] = regionIsExterior[i];
-                BufferAccess<FloatType>{regionPropertyVolume}[ridx] = regionVolumes[i];
+                BufferWriteAccess<SelectionIntType, access_mode::write>{regionPropertyIsExterior}[ridx] = regionIsExterior[i];
+                BufferWriteAccess<FloatType, access_mode::write>{regionPropertyVolume}[ridx] = regionVolumes[i];
                 _emptyRegionCount++;
             }
         }
@@ -402,8 +402,8 @@ public:
         // Create a single space-filling empty region if there is no filled region at all.
         if(_emptyRegionCount == 0 && _filledRegionCount == 0) {
             regionGrower.grow(1);
-            BufferAccess<FloatType>{regionPropertyVolume}[0] = simCell->volume3D();
-            BufferAccess<SelectionIntType>{regionPropertyIsExterior}[0] = (!simCell->pbcX() || !simCell->pbcY() || !simCell->pbcZ());
+            BufferWriteAccess<FloatType, access_mode::discard_write>{regionPropertyVolume}[0] = simCell->volume3D();
+            BufferWriteAccess<SelectionIntType, access_mode::discard_write>{regionPropertyIsExterior}[0] = (!simCell->pbcX() || !simCell->pbcY() || !simCell->pbcZ());
             _emptyRegionCount = 1;
         }
 
@@ -518,8 +518,7 @@ private:
         // Identify connected tetrahedra to create regions if no regions were previously defined.
         if(_mesh.regionCount() == 0) {
             // Create the 'Volume' property for the identified regions.
-            PropertyPtr regionVolumeProperty = SurfaceMeshRegions::OOClass().createStandardProperty(DataBuffer::Uninitialized, 0, SurfaceMeshRegions::VolumeProperty);
-            BufferAccess<FloatType> regionVolumes(regionVolumeProperty);
+            BufferWriteAccessAndRef<FloatType, access_mode::discard_write> regionVolumes = SurfaceMeshRegions::OOClass().createStandardProperty(DataBuffer::Uninitialized, 0, SurfaceMeshRegions::VolumeProperty);
 
             // Loop over all Delaunay cells to cluster them into connected components.
             // All filled cells have initially a user field value of 0.
@@ -582,10 +581,10 @@ private:
                 regionVolumes.push_back(regionVolume);
                 OVITO_ASSERT(regionId + 1 == currentRegionId);
             }
-            regionVolumes.reset();
 
             // Put region property into container.
-            _mesh.mutableRegions()->setContent(regionVolumeProperty->size(), { regionVolumeProperty });
+            size_t nreg = regionVolumes.size();
+            _mesh.mutableRegions()->setContent(nreg, { static_object_cast<PropertyObject>(regionVolumes.take()) });
 
             if(_mesh.regionCount() > 0) {
                 // Shift filled region IDs to start at index 0.
@@ -598,7 +597,7 @@ private:
         }
         else {
             // Create the 'Volume' property for the identified regions.
-            BufferAccess<FloatType> regionVolumes = _mesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::VolumeProperty);
+            BufferWriteAccess<FloatType, access_mode::read_write> regionVolumes = _mesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::VolumeProperty);
 
             // Filled mesh regions have already been predefined by the caller.
             // We just need to compute the volume of each spatial region.
@@ -700,12 +699,10 @@ private:
         _faceLookupMap.clear();
 
         // Create the vertex coordinates array, which will dynamically grow.
-        PropertyPtr vertexPositionProperty = SurfaceMeshVertices::OOClass().createStandardProperty(DataBuffer::Uninitialized, 0, SurfaceMeshVertices::PositionProperty);
-        BufferAccess<Point3> vertexPositions = BufferAccess<Point3>(vertexPositionProperty);
+        BufferWriteAccessAndRef<Point3, access_mode::discard_write> vertexPositions = SurfaceMeshVertices::OOClass().createStandardProperty(DataBuffer::Uninitialized, 0, SurfaceMeshVertices::PositionProperty);
 
         // Create the per-face region array, which will dynamically grow.
-        PropertyPtr faceRegionsProperty = SurfaceMeshFaces::OOClass().createStandardProperty(DataBuffer::Uninitialized, 0, SurfaceMeshFaces::RegionProperty);
-        BufferAccess<SurfaceMesh::region_index> faceRegions = BufferAccess<SurfaceMesh::region_index>(faceRegionsProperty);
+        BufferWriteAccessAndRef<SurfaceMesh::region_index, access_mode::discard_write> faceRegions = SurfaceMeshFaces::OOClass().createStandardProperty(DataBuffer::Uninitialized, 0, SurfaceMeshFaces::RegionProperty);
 
         operation.setProgressMaximum(_numFilledCells);
         SurfaceMeshTopology* topo = _mesh.mutableTopology();
@@ -807,12 +804,10 @@ private:
         }
 
         // Store the vertex coordinates in the mesh.
-        vertexPositions.reset();
-        _mesh.mutableVertices()->setContent(topo->vertexCount(), { std::move(vertexPositionProperty) });
+        _mesh.mutableVertices()->setContent(topo->vertexCount(), { static_object_cast<PropertyObject>(vertexPositions.take()) });
 
         // Store the per-face region information in the mesh.
-        faceRegions.reset();
-        _mesh.mutableFaces()->setContent(topo->faceCount(), { std::move(faceRegionsProperty) });
+        _mesh.mutableFaces()->setContent(topo->faceCount(), { static_object_cast<PropertyObject>(faceRegions.take()) });
 
         return !operation.isCanceled();
     }
@@ -873,7 +868,7 @@ private:
         operation.setProgressMaximum(_tetrahedraFaceList.size());
 
 #ifdef OVITO_DEBUG
-        BufferAccess<const SurfaceMesh::region_index> faceRegions(_mesh.expectFaceProperty(SurfaceMeshFaces::RegionProperty));
+        BufferReadAccess<SurfaceMesh::region_index> faceRegions(_mesh.expectFaceProperty(SurfaceMeshFaces::RegionProperty));
 #endif
 
         auto tet = _tetrahedraFaceList.cbegin();
@@ -1135,7 +1130,7 @@ private:
             return 0;
 
         // Compute volume enclosed by the convex hull polyhedron.
-        BufferAccess<const Point3> vertexCoordinates(meshBuilder.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+        BufferReadAccess<Point3> vertexCoordinates(meshBuilder.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
         const Point3 apex = vertexCoordinates[0];
         FloatType convexVolume = 0;
         for(SurfaceMesh::edge_index firstEdge : meshBuilder.firstFaceEdges()) {
@@ -1178,7 +1173,7 @@ private:
     SurfaceMesh::size_type _emptyRegionCount = 0;
 
     /// The input particle positions.
-    BufferAccess<const Point3> _positions;
+    BufferReadAccess<Point3> _positions;
 
     /// The output surface mesh.
     SurfaceMeshBuilder& _mesh;

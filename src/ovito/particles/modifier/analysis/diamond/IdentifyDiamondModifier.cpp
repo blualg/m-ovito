@@ -91,7 +91,7 @@ void IdentifyDiamondModifier::DiamondIdentificationEngine::perform()
     std::vector<std::array<NeighborInfo,4>> neighLists(positions()->size());
 
     // Determine four nearest neighbors of each atom and store vectors in the working array.
-    BufferAccess<const SelectionIntType> selectionData(selection());
+    BufferReadAccess<SelectionIntType> selectionData(selection());
     parallelForWithProgress(positions()->size(), [&](size_t index) {
         // Skip particles that are not included in the analysis.
         if(selectionData && selectionData[index] == 0)
@@ -111,7 +111,7 @@ void IdentifyDiamondModifier::DiamondIdentificationEngine::perform()
     if(isCanceled()) return;
 
     // Create output storage.
-    BufferAccess<int32_t> output(structures());
+    BufferWriteAccess<int32_t, access_mode::discard_read_write> output(structures());
 
     // Perform structure identification.
     setProgressText(tr("Identifying diamond structures"));
@@ -165,7 +165,7 @@ void IdentifyDiamondModifier::DiamondIdentificationEngine::perform()
 
             // Determine number of neighbors the two atoms have in common.
             unsigned int commonNeighbors;
-            int numCommonNeighbors = CommonNeighborAnalysisModifier::findCommonNeighbors(neighborArray, ni, commonNeighbors, 12);
+            int numCommonNeighbors = CommonNeighborAnalysisModifier::findCommonNeighbors(neighborArray, ni, commonNeighbors);
             if(numCommonNeighbors != 4) return;
 
             // Determine the number of bonds among the common neighbors.

@@ -107,21 +107,19 @@ ConstPropertyPtr DataTable::getXValues() const
     }
     else if(const PropertyObject* yProperty = y()) {
         if(elementCount() != 0 && (intervalStart() != 0 || intervalEnd() != 0)) {
-            PropertyPtr xdata = OOClass().createUserProperty(DataBuffer::Uninitialized, elementCount(), PropertyObject::FloatDefault, 1, axisLabelX());
-            BufferAccess<FloatType> xdataAccess(xdata);
-            FloatType binSize = (intervalEnd() - intervalStart()) / xdata->size();
+            PropertyFactory<FloatType> xdata(OOClass(), elementCount(), axisLabelX());
+            FloatType binSize = (intervalEnd() - intervalStart()) / elementCount();
             FloatType x = intervalStart() + binSize * FloatType(0.5);
-            for(auto& v : xdataAccess) {
+            for(auto& v : xdata) {
                 v = x;
                 x += binSize;
             }
-            return xdata;
+            return xdata.take();
         }
         else {
-            PropertyPtr xdata = OOClass().createUserProperty(DataBuffer::Uninitialized, elementCount(), PropertyObject::Int64, 1, axisLabelX());
-            BufferAccess<int64_t> xdataAccess(xdata);
-            std::iota(xdataAccess.begin(), xdataAccess.end(), (int64_t)0);
-            return xdata;
+            PropertyFactory<int64_t> xdata(OOClass(), elementCount(), axisLabelX());
+            std::iota(xdata.begin(), xdata.end(), (int64_t)0);
+            return xdata.take();
         }
     }
     return {};

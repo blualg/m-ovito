@@ -138,12 +138,12 @@ void GaussianCubeImporter::FrameLoader::loadFile()
 
     // Create the particle properties.
     setParticleCount(numAtoms);
-    BufferAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+    BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
     PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
 
     // Read atomic coordinates and types.
     Point3* p = posProperty.begin();
-    BufferAccess<int32_t> typePropertyAccess(typeProperty);
+    BufferWriteAccess<int32_t, access_mode::discard_read_write> typePropertyAccess(typeProperty);
     auto* a = typePropertyAccess.begin();
     setProgressMaximum(numAtoms + gridSize[0]*gridSize[1]*gridSize[2]);
     for(qlonglong i = 0; i < numAtoms; i++, ++p, ++a) {
@@ -223,7 +223,7 @@ void GaussianCubeImporter::FrameLoader::loadFile()
 
     // Create the voxel grid property.
     PropertyObject* property = voxelGrid->createProperty(QStringLiteral("Property"), DataBuffer::FloatDefault, nfields, std::move(componentNames));
-    BufferAccess<FloatType*> fieldQuantity(property);
+    BufferWriteAccess<FloatType*, access_mode::discard_read_write> fieldQuantity(property);
 
     // Parse voxel data.
     for(size_t x = 0; x < gridSize[0]; x++) {

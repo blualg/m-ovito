@@ -193,7 +193,7 @@ public:
 
     /// Uploads some data to the Vulkan device as a buffer object and caches it.
     template<typename KeyType>
-    QOpenGLBuffer createCachedBuffer(KeyType&& cacheKey, GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*, BufferAccess<const int32_t>)>&& fillMemoryFunc) {
+    QOpenGLBuffer createCachedBuffer(KeyType&& cacheKey, GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*, BufferReadAccess<int32_t>)>&& fillMemoryFunc) {
 
         QOpenGLBuffer* bufferObject;
 
@@ -288,7 +288,7 @@ public:
 private:
 
     /// Uploads some data to a new OpenGL buffer object.
-    QOpenGLBuffer createCachedBufferImpl(GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*, BufferAccess<const int32_t>)>&& fillMemoryFunc);
+    QOpenGLBuffer createCachedBufferImpl(GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*, BufferReadAccess<int32_t>)>&& fillMemoryFunc);
 
 #ifndef Q_OS_WASM
     /// Issues a drawing command with an ordering of the instances.

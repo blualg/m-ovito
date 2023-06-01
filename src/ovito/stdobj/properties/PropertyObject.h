@@ -78,6 +78,11 @@ public:
     PropertyObject(ObjectInitializationFlags flags, size_t elementCount, int dataType, size_t componentCount, const QString& name, int type = 0, QStringList componentNames = QStringList()) :
         PropertyObject(flags, BufferInitialization::Uninitialized, elementCount, dataType, componentCount, name, type, std::move(componentNames)) {}
 
+#ifdef OVITO_DEBUG
+    /// \brief Destructor.
+    virtual ~PropertyObject();
+#endif
+
     /// \brief Gets the property's name.
     /// \return The name of property.
     const QString& name() const { return _name; }
@@ -254,7 +259,7 @@ public:
     struct PythonAccessGuard {
         explicit PythonAccessGuard(PropertyObject& p) : propertyReference(&p), memoryAccessor(&p) {}
         OORef<PropertyObject> propertyReference;
-        BufferReadAccess memoryAccessor;
+        RawBufferReadAccess memoryAccessor;
     };
 
     /// Creates an access guard object for this property.

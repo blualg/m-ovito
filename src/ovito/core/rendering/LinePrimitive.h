@@ -51,11 +51,7 @@ public:
         using PointType = typename std::iterator_traits<InputIterator>::value_type;
         using ValueType = typename PointType::value_type;
         OVITO_STATIC_ASSERT((std::is_same_v<PointType, Point_3<ValueType>>));
-
-        size_t count = std::distance(begin, end);
-        BufferAccessAndRef<PointType> buffer = DataBufferPtr::create(count, DataBufferPrimitiveType<ValueType>::value, 3);
-        std::copy(std::move(begin), std::move(end), buffer.begin());
-        setPositions(buffer.take());
+        setPositions(BufferFactory<PointType>(begin, end).take());
     }
 
     /// \brief Sets the coordinates of the line vertices.
@@ -79,11 +75,7 @@ public:
         using ColorType = typename std::iterator_traits<InputIterator>::value_type;
         using ValueType = typename ColorType::value_type;
         OVITO_STATIC_ASSERT((std::is_same_v<ColorType, ColorAT<ValueType>>));
-
-        size_t count = std::distance(begin, end);
-        BufferAccessAndRef<ColorType> buffer = DataBufferPtr::create(count, DataBufferPrimitiveType<ValueType>::value, 4);
-        std::copy(std::move(begin), std::move(end), buffer.begin());
-        setColors(buffer.take());
+        setColors(BufferFactory<ColorType>(begin, end).take());
     }
 
     /// \brief Sets the colors of the vertices.

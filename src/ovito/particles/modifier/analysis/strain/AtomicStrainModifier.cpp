@@ -115,9 +115,9 @@ void AtomicStrainModifier::AtomicStrainEngine::perform()
         return;
 
     // Compute displacement vectors of particles in the reference configuration.
-    BufferAccess<Vector3> displacementsArray(displacements());
-    BufferAccess<const Point3> positionsArray(positions());
-    BufferAccess<const Point3> refPositionsArray(refPositions());
+    BufferWriteAccess<Vector3, access_mode::discard_write> displacementsArray(displacements());
+    BufferReadAccess<Point3> positionsArray(positions());
+    BufferReadAccess<Point3> refPositionsArray(refPositions());
     parallelForChunksWithProgress(displacements()->size(), [&](size_t startIndex, size_t count, ProgressingTask& task) {
         Vector3* u = displacementsArray.begin() + startIndex;
         const Point3* p0 = refPositionsArray.cbegin() + startIndex;
@@ -151,14 +151,14 @@ void AtomicStrainModifier::AtomicStrainEngine::perform()
         return;
 
     // Prepare the output data arrays.
-    BufferAccess<SelectionIntType> invalidParticlesArray(invalidParticles());
-    BufferAccess<Matrix3> deformationGradientsArray(deformationGradients());
-    BufferAccess<SymmetricTensor2> strainTensorsArray(strainTensors());
-    BufferAccess<FloatType> shearStrainsArray(shearStrains());
-    BufferAccess<FloatType> volumetricStrainsArray(volumetricStrains());
-    BufferAccess<FloatType> nonaffineSquaredDisplacementsArray(nonaffineSquaredDisplacements());
-    BufferAccess<Quaternion> rotationsArray(rotations());
-    BufferAccess<SymmetricTensor2> stretchTensorsArray(stretchTensors());
+    BufferWriteAccess<SelectionIntType, access_mode::discard_write> invalidParticlesArray(invalidParticles());
+    BufferWriteAccess<Matrix3, access_mode::discard_write> deformationGradientsArray(deformationGradients());
+    BufferWriteAccess<SymmetricTensor2, access_mode::discard_write> strainTensorsArray(strainTensors());
+    BufferWriteAccess<FloatType, access_mode::discard_write> shearStrainsArray(shearStrains());
+    BufferWriteAccess<FloatType, access_mode::discard_write> volumetricStrainsArray(volumetricStrains());
+    BufferWriteAccess<FloatType, access_mode::discard_write> nonaffineSquaredDisplacementsArray(nonaffineSquaredDisplacements());
+    BufferWriteAccess<Quaternion, access_mode::discard_write> rotationsArray(rotations());
+    BufferWriteAccess<SymmetricTensor2, access_mode::discard_write> stretchTensorsArray(stretchTensors());
 
     // Perform individual strain calculation for each particle.
     parallelForWithProgress(positions()->size(), [&](size_t particleIndex) {

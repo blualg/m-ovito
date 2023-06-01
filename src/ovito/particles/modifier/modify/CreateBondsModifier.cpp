@@ -320,8 +320,8 @@ void CreateBondsModifier::BondsEngine::perform()
     // The lower bond length cutoff squared.
     FloatType minCutoffSquared = _minCutoff * _minCutoff;
 
-    BufferAccess<const IdentifierIntType> moleculeIDsArray(_moleculeIDs);
-    BufferAccess<const int32_t> particleTypesArray(_particleTypes);
+    BufferReadAccess<IdentifierIntType> moleculeIDsArray(_moleculeIDs);
+    BufferReadAccess<int32_t> particleTypesArray(_particleTypes);
 
     // Generate bonds.
     size_t particleCount = _particles->elementCount();

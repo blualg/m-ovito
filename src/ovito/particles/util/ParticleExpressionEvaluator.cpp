@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ void ParticleExpressionEvaluator::createInputVariables(const std::vector<ConstPr
             return property->type() == ParticlesObject::PositionProperty;
         });
         if(iter != inputProperties.end()) {
-            BufferAccessAndRef<const Point3> posProperty = *iter;
+            BufferReadAccessAndRef<Point3> posProperty = *iter;
             registerComputedVariable("ReducedPosition.X", [posProperty,simCell=DataOORef<const SimulationCellObject>(simCell)](size_t particleIndex) -> double {
                 return simCell->inverseMatrix().prodrow(posProperty[particleIndex], 0);
             });
@@ -68,9 +68,9 @@ void BondExpressionEvaluator::initialize(const QStringList& expressions, const P
             _topologyArray = bonds->getProperty(BondsObject::TopologyProperty);
 
             // Define computed variable 'BondLength', which yields the length of the bonds.
-            if(BufferAccessAndRef<const Point3> positions = particles->getProperty(ParticlesObject::PositionProperty)) {
-                if(BufferAccessAndRef<const ParticleIndexPair> topology = bonds->getProperty(BondsObject::TopologyProperty)) {
-                    BufferAccessAndRef<const Vector3I> periodicImages = bonds->getProperty(BondsObject::PeriodicImageProperty);
+            if(BufferReadAccessAndRef<Point3> positions = particles->getProperty(ParticlesObject::PositionProperty)) {
+                if(BufferReadAccessAndRef<ParticleIndexPair> topology = bonds->getProperty(BondsObject::TopologyProperty)) {
+                    BufferReadAccessAndRef<Vector3I> periodicImages = bonds->getProperty(BondsObject::PeriodicImageProperty);
                     DataOORef<const SimulationCellObject> simCell = state.getObject<SimulationCellObject>();
 
                     registerComputedVariable("BondLength", [positions=std::move(positions),topology=std::move(topology),periodicImages=std::move(periodicImages),simCell=std::move(simCell)](size_t bondIndex) -> double {
@@ -80,7 +80,7 @@ void BondExpressionEvaluator::initialize(const QStringList& expressions, const P
                             const Point3& p1 = positions[index1];
                             const Point3& p2 = positions[index2];
                             Vector3 delta = p2 - p1;
-                            if(periodicImages && simCell) {
+                            if(periodicImages.valid() && simCell) {
                                 if(int dx = periodicImages[bondIndex][0]) delta += simCell->matrix().column(0) * (FloatType)dx;
                                 if(int dy = periodicImages[bondIndex][1]) delta += simCell->matrix().column(1) * (FloatType)dy;
                                 if(int dz = periodicImages[bondIndex][2]) delta += simCell->matrix().column(2) * (FloatType)dz;

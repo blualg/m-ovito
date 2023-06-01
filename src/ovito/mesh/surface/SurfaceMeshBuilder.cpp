@@ -69,7 +69,7 @@ void SurfaceMeshBuilder::deleteRegions(const boost::dynamic_bitset<>& mask)
     OVITO_ASSERT(mask.size() == regionCount());
 
     // Update the region property of faces.
-    if(BufferAccess<int32_t> faceRegions = mutableFaceProperty(SurfaceMeshFaces::RegionProperty)) {
+    if(BufferWriteAccess<int32_t, access_mode::read_write> faceRegions = mutableFaceProperty(SurfaceMeshFaces::RegionProperty)) {
         // Build a mapping from old region indices to new indices.
         std::vector<region_index> remapping(regionCount());
         size_type newRegionCount = 0;
@@ -250,7 +250,7 @@ SurfaceMesh::size_type SurfaceMeshBuilder::makeManifold()
 void SurfaceMeshBuilder::makeQuadrilateralFaces()
 {
     // Get access to the vertex coordinates.
-    BufferAccess<const Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+    BufferReadAccess<Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
 
     FaceGrower faceGrower(*this);
 
@@ -343,7 +343,7 @@ bool SurfaceMeshBuilder::smoothMesh(int numIterations, ProgressingTask& task, Fl
     // Performs one iteration of the smoothing algorithm.
     auto smoothMeshIteration = [this](FloatType prefactor) {
 
-        BufferAccess<const Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+        BufferReadAccess<Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
 
         // Compute displacement for each vertex.
         std::vector<Vector3> displacements(vertexCount());
@@ -371,7 +371,7 @@ bool SurfaceMeshBuilder::smoothMesh(int numIterations, ProgressingTask& task, Fl
 
         // Apply computed displacements.
         auto d = displacements.cbegin();
-        for(Point3& vertex : BufferAccess<Point3>(mutableVertexProperty(SurfaceMeshVertices::PositionProperty)))
+        for(Point3& vertex : BufferWriteAccess<Point3, access_mode::read_write>(mutableVertexProperty(SurfaceMeshVertices::PositionProperty)))
             vertex += *d++;
     };
 
@@ -661,7 +661,7 @@ void SurfaceMeshBuilder::joinCoplanarFaces(FloatType thresholdAngle)
 
     // Compute mesh face normals.
     std::vector<Vector3> faceNormals(faceCount());
-    BufferAccess<const Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+    BufferReadAccess<Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
     for(face_index face : facesRange()) {
         faceNormals[face] = computeFaceNormal(face, vertexPositions);
     }

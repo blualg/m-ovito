@@ -470,9 +470,9 @@ void VulkanSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
     // Upload vertex buffer with the base and head positions and radii.
     VkBuffer positionRadiusBuffer = context()->createCachedBuffer(positionRadiusCacheKey, primitiveCount * (sizeof(Vector_3<float>) + sizeof(Vector_3<float>) + sizeof(float)), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {
         OVITO_ASSERT(!primitive.widths() || primitive.widths()->size() == primitive.basePositions()->size());
-        BufferAccess<const Point3> basePositionArray(primitive.basePositions());
-        BufferAccess<const Point3> headPositionArray(primitive.headPositions());
-        BufferAccess<const FloatType> diameterArray(primitive.widths());
+        BufferReadAccess<Point3> basePositionArray(primitive.basePositions());
+        BufferReadAccess<Point3> headPositionArray(primitive.headPositions());
+        BufferReadAccess<FloatType> diameterArray(primitive.widths());
         float* dst = reinterpret_cast<float*>(buffer);
         const FloatType* diameter = diameterArray ? diameterArray.cbegin() : nullptr;
         const float uniformRadius = 0.5f * primitive.uniformWidth();
@@ -511,8 +511,8 @@ void VulkanSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
             OVITO_ASSERT(!primitive.colors() || (primitive.colors()->componentCount() == 1 && renderWithPseudoColorMapping) || (primitive.colors()->componentCount() == 3 && !renderWithPseudoColorMapping));
             OVITO_ASSERT(!primitive.transparencies() || primitive.transparencies()->size() == primitive.basePositions()->size() || primitive.transparencies()->size() == 2 * primitive.basePositions()->size());
             const ColorT<float> uniformColor = primitive.uniformColor().toDataType<float>();
-            BufferAccess<const FloatType*> colorArray(primitive.colors());
-            BufferAccess<const FloatType> transparencyArray(primitive.transparencies());
+            BufferReadAccess<FloatType*> colorArray(primitive.colors());
+            BufferReadAccess<FloatType> transparencyArray(primitive.transparencies());
             const FloatType* color = colorArray ? colorArray.cbegin() : nullptr;
             const FloatType* transparency = transparencyArray ? transparencyArray.cbegin() : nullptr;
             bool twoColorsPerPrimitive = (primitive.colors() && primitive.colors()->size() == 2 * primitive.basePositions()->size());

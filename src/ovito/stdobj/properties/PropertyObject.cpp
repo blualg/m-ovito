@@ -52,6 +52,15 @@ PropertyObject::PropertyObject(ObjectInitializationFlags flags, BufferInitializa
     setIdentifier(name);
 }
 
+#ifdef OVITO_DEBUG
+/******************************************************************************
+* Destructor.
+******************************************************************************/
+PropertyObject::~PropertyObject()
+{
+}
+#endif
+
 /******************************************************************************
 * Creates a copy of a property object.
 ******************************************************************************/
@@ -232,7 +241,7 @@ std::tuple<std::map<int,int>, ConstPropertyPtr> PropertyObject::generateContiguo
         typeIds.insert(t->numericId());
 
     // Add ID values that occur in the property array but which have not been defined as a type.
-    for(int32_t t : BufferAccess<const int32_t>(this))
+    for(auto t : BufferReadAccess<int32_t>(this))
         typeIds.insert(t);
 
     // Build the mappings between old and new IDs.
@@ -250,7 +259,7 @@ std::tuple<std::map<int,int>, ConstPropertyPtr> PropertyObject::generateContiguo
     if(remappingRequired) {
         // Make a copy of this property, which can be modified.
         PropertyPtr copy = CloneHelper().cloneObject(this, false);
-        for(auto& id : BufferAccess<int32_t>(copy))
+        for(auto& id : BufferWriteAccess<int32_t, access_mode::discard_write>(copy))
             id = oldToNewMap[id];
         remappedArray = std::move(copy);
     }

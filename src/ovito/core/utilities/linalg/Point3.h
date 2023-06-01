@@ -85,18 +85,32 @@ namespace Ovito {
  * \sa Vector_3, Point_2
  */
 template<typename T>
-class Point_3 : public std::array<T, 3>
+class Point_3 : public
+#ifndef OVITO_USE_SYCL
+    std::array<T, 3>
+#else
+    cl::sycl::marray<T, 3>
+#endif
 {
+private:
+
+    using base_type =
+#ifndef OVITO_USE_SYCL
+        std::array<T, 3>;
+#else
+        cl::sycl::marray<T, 3>;
+#endif
+
 public:
 
     /// An empty type that denotes the point (0,0,0).
     struct Origin {};
 
-    using typename std::array<T, 3>::size_type;
-    using typename std::array<T, 3>::difference_type;
-    using typename std::array<T, 3>::value_type;
-    using typename std::array<T, 3>::iterator;
-    using typename std::array<T, 3>::const_iterator;
+    using size_type = std::size_t;
+    using difference_type = std::ptrdiff_t;
+    using typename base_type::value_type;
+    using typename base_type::iterator;
+    using typename base_type::const_iterator;
 
     /////////////////////////////// Constructors /////////////////////////////////
 
@@ -104,16 +118,31 @@ public:
     Point_3() = default;
 
     /// Constructs a point with all three components initialized to the given value.
-    Q_DECL_CONSTEXPR explicit Point_3(T val) : std::array<T, 3>{{val,val,val}} {}
+    Q_DECL_CONSTEXPR explicit Point_3(T val) :
+#ifndef OVITO_USE_SYCL
+        base_type{{val,val,val}} {}
+#else
+        base_type{val,val,val} {}
+#endif
 
     /// Initializes the coordinates of the point with the given values.
-    Q_DECL_CONSTEXPR Point_3(T x, T y, T z) : std::array<T, 3>{{x, y, z}} {}
+    Q_DECL_CONSTEXPR Point_3(T x, T y, T z) :
+#ifndef OVITO_USE_SYCL
+        base_type{{x, y, z}} {}
+#else
+        base_type{x, y, z} {}
+#endif
 
     /// Initializes the point to the origin. All coordinates are set to zero.
-    Q_DECL_CONSTEXPR Point_3(Origin) : std::array<T, 3>{{T(0), T(0), T(0)}} {}
+    Q_DECL_CONSTEXPR Point_3(Origin) :
+#ifndef OVITO_USE_SYCL
+        base_type{{T(0), T(0), T(0)}} {}
+#else
+        base_type{T(0), T(0), T(0)} {}
+#endif
 
     /// Initializes the point from an array of three coordinates.
-    Q_DECL_CONSTEXPR explicit Point_3(const std::array<T, 3>& a) : std::array<T, 3>(a) {}
+    Q_DECL_CONSTEXPR explicit Point_3(const base_type& a) : base_type(a) {}
 
     /// Casts the point to another coordinate type \a U.
     template<typename U>
@@ -167,6 +196,12 @@ public:
 
     /// \brief Returns a reference to the Z coordinate of this point.
     Q_DECL_CONSTEXPR T& z() { return (*this)[2]; }
+
+#ifdef OVITO_USE_SYCL
+    // Workaround for missing data() method in SYCL's marray class template.
+    Q_DECL_CONSTEXPR T* data() noexcept { return &(*this)[0]; }
+    Q_DECL_CONSTEXPR const T* data() const noexcept { return &(*this)[0]; }
+#endif
 
     ////////////////////////////////// Comparison ////////////////////////////////
 
@@ -223,6 +258,15 @@ public:
     QString toString() const {
         return QString("(%1 %2 %3)").arg(x()).arg(y()).arg(z());
     }
+
+#ifdef OVITO_USE_SYCL
+    // Workaround for missing swap() method in SYCL's marray class template.
+    friend void swap(Point_3& a, Point_3& b) noexcept {
+        using namespace std;
+        for(size_type i = 0; i < 3; i++)
+            swap(a[i], b[i]);
+    }
+#endif
 };
 
 /// \brief Computes the sum of a point and a vector.

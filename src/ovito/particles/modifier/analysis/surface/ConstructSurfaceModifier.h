@@ -136,6 +136,7 @@ private:
         const PropertyPtr& surfaceDistances() const { return _surfaceDistances; }
 
     protected:
+
         /// Injects the computed results into the data pipeline.
         virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 

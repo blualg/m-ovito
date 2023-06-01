@@ -101,7 +101,7 @@ PipelineStatus ExpressionSelectionModifierDelegate::apply(const ModifierEvaluati
     std::atomic_size_t nselected(0);
 
     // Generate the output selection property.
-    BufferAccess<SelectionIntType> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty);
+    BufferWriteAccess<SelectionIntType, access_mode::discard_write> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty);
 
     // Evaluate Boolean expression for every input data element.
     evaluator->evaluate([&selProperty, &nselected](size_t elementIndex, size_t componentIndex, double value) {

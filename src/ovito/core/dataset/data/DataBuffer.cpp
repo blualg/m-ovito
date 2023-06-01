@@ -70,8 +70,20 @@ OORef<RefTarget> DataBuffer::clone(bool deepCopy, CloneHelper& cloneHelper) cons
     clone->_stride = _stride;
     clone->_componentCount = _componentCount;
     clone->_componentNames = _componentNames;
+#ifdef OVITO_DEBUG
+    clone->_isDataInitialized = _isDataInitialized;
+#endif
+#ifdef OVITO_USE_SYCL
+    if(clone->_numElements != 0) {
+        clone->_data.emplace(cl::sycl::range<1>(_numElements * _stride));
+        cl::sycl::host_accessor writeAccessor(*clone->_data, cl::sycl::write_only, cl::sycl::no_init);
+        cl::sycl::host_accessor readAccessor(*const_cast<DataBuffer*>(this)->_data, cl::sycl::read_only);
+        std::memcpy(writeAccessor.get_pointer(), readAccessor.get_pointer(), _numElements * _stride);
+    }
+#else
     clone->_data.reset(new std::byte[_numElements * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
     std::memcpy(clone->_data.get(), _data.get(), _numElements * _stride);
+#endif
 
     return clone;
 }
@@ -81,22 +93,44 @@ OORef<RefTarget> DataBuffer::clone(bool deepCopy, CloneHelper& cloneHelper) cons
 ******************************************************************************/
 void DataBuffer::resize(size_t newSize, bool preserveData)
 {
+    OVITO_ASSERT(_isDataInitialized || !preserveData || newSize == 0 || size() == 0);
     // Note: Do not reallocate the buffer when its size is reduced.
     // The filterResize() method relies on
     // the data buffer's memory pointer to remain the same when the buffer is shrinked.
     WriteAccess writeAccess(*this);
-    if(newSize > _capacity || !_data) {
+    if(newSize > _capacity) {
+#ifdef OVITO_USE_SYCL
+        cl::sycl::buffer<std::byte> newBuffer(newSize * _stride);
+        if(preserveData && _numElements != 0) {
+            cl::sycl::host_accessor writeAccessor(newBuffer, cl::sycl::write_only, cl::sycl::no_init);
+            cl::sycl::host_accessor readAccessor(*_data, cl::sycl::read_only);
+            std::memcpy(writeAccessor.get_pointer(), readAccessor.get_pointer(), _stride * std::min(_numElements, newSize));
+        }
+        _data = std::move(newBuffer);
+#else
         std::unique_ptr<std::byte[]> newBuffer(new std::byte[newSize * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
         if(preserveData)
             std::memcpy(newBuffer.get(), _data.get(), _stride * std::min(_numElements, newSize));
         _data.swap(newBuffer);
+#endif
         _capacity = newSize;
     }
-    // Initialize new elements to zero.
+    // Initialize newly added elements to zero.
+#ifdef OVITO_USE_SYCL
+    if(newSize > _numElements && preserveData) {
+        cl::sycl::host_accessor writeAccessor(*_data, cl::sycl::write_only, _numElements == 0 ? cl::sycl::property_list{cl::sycl::no_init} : cl::sycl::property_list{});
+        std::memset(writeAccessor.get_pointer() + _numElements * _stride, 0, (newSize - _numElements) * _stride);
+    }
+#else
+    OVITO_ASSERT(_data);
     if(newSize > _numElements && preserveData) {
         std::memset(_data.get() + _numElements * _stride, 0, (newSize - _numElements) * _stride);
     }
+#endif
     _numElements = newSize;
+#ifdef OVITO_DEBUG
+    _isDataInitialized = preserveData;
+#endif
 }
 
 /******************************************************************************
@@ -106,9 +140,12 @@ void DataBuffer::resize(size_t newSize, bool preserveData)
 ******************************************************************************/
 bool DataBuffer::grow(size_t numAdditionalElements, bool callerAlreadyHasWriteAccess)
 {
+    OVITO_ASSERT(size() == 0 || _isDataInitialized);
+#ifdef OVITO_DEBUG
     std::optional<WriteAccess> writeAccess;
     if(!callerAlreadyHasWriteAccess)
         writeAccess.emplace(*this);
+#endif
     size_t newSize = _numElements + numAdditionalElements;
     OVITO_ASSERT(newSize >= _numElements);
     bool needToGrow;
@@ -117,9 +154,22 @@ bool DataBuffer::grow(size_t numAdditionalElements, bool callerAlreadyHasWriteAc
         size_t newCapacity = (newSize < 1024)
             ? std::max(newSize * 2, (size_t)256)
             : (newSize * 3 / 2);
+#ifdef OVITO_USE_SYCL
+        if(newCapacity != 0) {
+            cl::sycl::buffer<std::byte> newBuffer(newCapacity * _stride);
+            if(_numElements != 0) {
+                cl::sycl::host_accessor writeAccessor(newBuffer, cl::sycl::write_only, cl::sycl::no_init);
+                cl::sycl::host_accessor readAccessor(*_data, cl::sycl::read_only);
+                std::memcpy(writeAccessor.get_pointer(), readAccessor.get_pointer(), _stride * _numElements);
+            }
+            _data = std::move(newBuffer);
+        }
+        else _data = {};
+#else
         std::unique_ptr<std::byte[]> newBuffer(new std::byte[newCapacity * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
         std::memcpy(newBuffer.get(), _data.get(), _stride * _numElements);
         _data.swap(newBuffer);
+#endif
         _capacity = newCapacity;
     }
     _numElements = newSize;
@@ -135,9 +185,11 @@ void DataBuffer::truncate(size_t numElementsToRemove, bool callerAlreadyHasWrite
 {
     OVITO_ASSERT(numElementsToRemove <= _numElements);
 
+#ifdef OVITO_DEBUG
     std::optional<WriteAccess> writeAccess;
     if(!callerAlreadyHasWriteAccess)
         writeAccess.emplace(*this);
+#endif
     _numElements -= numElementsToRemove;
 }
 
@@ -160,7 +212,15 @@ void DataBuffer::saveToStream(ObjectSaveStream& stream, bool excludeRecomputable
     }
     else {
         stream.writeSizeT(_numElements);
+        OVITO_ASSERT(_isDataInitialized);
+#ifdef OVITO_USE_SYCL
+        if(_numElements != 0) {
+            cl::sycl::host_accessor readAccessor(*const_cast<DataBuffer*>(this)->_data, cl::sycl::read_only);
+            stream.write(readAccessor.get_pointer(), _stride * _numElements);
+        }
+#else
         stream.write(_data.get(), _stride * _numElements);
+#endif
     }
     stream.endChunk();
 }
@@ -187,8 +247,20 @@ void DataBuffer::loadFromStream(ObjectLoadStream& stream)
     stream >> _componentNames;
     stream.readSizeT(_numElements);
     _capacity = _numElements;
+#ifdef OVITO_DEBUG
+    if(_numElements != 0)
+        _isDataInitialized = true;
+#endif
+#ifdef OVITO_USE_SYCL
+    if(_numElements != 0) {
+        _data = cl::sycl::buffer<std::byte>(_numElements * _stride);
+        cl::sycl::host_accessor writeAccessor(*_data, cl::sycl::write_only, cl::sycl::no_init);
+        stream.read(writeAccessor.get_pointer(), _stride * _numElements);
+    }
+#else
     _data.reset(new std::byte[_numElements * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
     stream.read(_data.get(), _stride * _numElements);
+#endif
     stream.closeChunk();
 }
 
@@ -197,26 +269,38 @@ void DataBuffer::loadFromStream(ObjectLoadStream& stream)
 ******************************************************************************/
 void DataBuffer::replicate(size_t n, bool replicateValues)
 {
+    OVITO_ASSERT(_isDataInitialized);
     OVITO_ASSERT(n >= 1);
-    if(n <= 1) return;
+    if(n <= 1 || size() == 0)
+        return;
 
     WriteAccess writeAccess(*this);
     size_t oldSize = _numElements;
-    std::unique_ptr<std::byte[]> oldData = std::move(_data);
+    auto oldData = std::move(_data);
+    OVITO_ASSERT(oldData);
 
     _numElements *= n;
     _capacity = _numElements;
+#ifdef OVITO_USE_SYCL
+    _data.emplace(_capacity * _stride);
+    cl::sycl::host_accessor writeAccessor(*_data, cl::sycl::write_only, cl::sycl::no_init);
+    std::byte* dest = writeAccessor.get_pointer();
+    cl::sycl::host_accessor readAccessor(*oldData, cl::sycl::read_only);
+    const std::byte* src = readAccessor.get_pointer();
+#else
     _data.reset(new std::byte[_capacity * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
+    std::byte* dest = _data.get();
+    const std::byte* src = oldData.get();
+#endif
     if(replicateValues) {
         // Replicate data values N times.
-        std::byte* dest = _data.get();
         for(size_t i = 0; i < n; i++, dest += oldSize * stride()) {
-            std::memcpy(dest, oldData.get(), oldSize * stride());
+            std::memcpy(dest, src, oldSize * stride());
         }
     }
     else {
         // Copy just one replica of the data from the old memory buffer to the new one.
-        std::memcpy(_data.get(), oldData.get(), oldSize * stride());
+        std::memcpy(dest, src, oldSize * stride());
     }
 }
 
@@ -226,21 +310,32 @@ void DataBuffer::replicate(size_t n, bool replicateValues)
 ******************************************************************************/
 void DataBuffer::filterResize(const boost::dynamic_bitset<>& mask)
 {
+    OVITO_ASSERT(_isDataInitialized);
     OVITO_ASSERT(size() == mask.size());
     auto s = size();
+    if(s == 0)
+        return;
 
     auto specializedFilter = [&](auto _) {
         using T = decltype(_);
         size_t newSize;
         {
             WriteAccess writeAccess(*this);
+#ifdef OVITO_USE_SYCL
+            cl::sycl::buffer<T> valueBuffer = _data->reinterpret<T, 1>();
+            cl::sycl::host_accessor writeAccessor(valueBuffer, cl::sycl::read_write);
+            auto src = writeAccessor.get_pointer();
+            auto start = writeAccessor.get_pointer();
+#else
             auto src = reinterpret_cast<const T*>(cdata());
-            auto dst = reinterpret_cast<T*>(data());
+            auto start = reinterpret_cast<T*>(data());
+#endif
+            auto dst = start;
             for(size_t i = 0; i < s; ++i, ++src) {
                 if(!mask.test(i))
                     *dst++ = *src;
             }
-            newSize = dst - reinterpret_cast<T*>(data());
+            newSize = dst - start;
         }
         resize(newSize, true); // Note: This is a cheap operation - does no mem copy.
     };
@@ -289,8 +384,15 @@ void DataBuffer::filterResize(const boost::dynamic_bitset<>& mask)
     size_t newSize;
     {
         WriteAccess writeAccess(*this);
+#ifdef OVITO_USE_SYCL
+        cl::sycl::host_accessor writeAccessor(*_data, cl::sycl::read_write);
+        const std::byte* src = writeAccessor.get_pointer();
+        std::byte* start = writeAccessor.get_pointer();
+#else
         const std::byte* src = _data.get();
-        std::byte* dst = _data.get();
+        std::byte* start = _data.get();
+#endif
+        std::byte* dst = start;
         const auto stride = this->stride();
         for(size_t i = 0; i < s; i++, src += stride) {
             if(!mask.test(i)) {
@@ -299,7 +401,7 @@ void DataBuffer::filterResize(const boost::dynamic_bitset<>& mask)
                 dst += stride;
             }
         }
-        newSize = (dst - _data.get()) / stride;
+        newSize = (dst - start) / stride;
     }
     resize(newSize, true); // Note: This is a cheap operation - does not mem copy.
 }
@@ -312,6 +414,7 @@ void DataBuffer::filterResize(const boost::dynamic_bitset<>& mask)
 ******************************************************************************/
 void DataBuffer::filterResizeReordering(const boost::dynamic_bitset<>& mask)
 {
+    OVITO_ASSERT(_isDataInitialized);
     OVITO_ASSERT(size() == mask.size());
     auto s = size();
     if(s == 0)
@@ -322,9 +425,16 @@ void DataBuffer::filterResizeReordering(const boost::dynamic_bitset<>& mask)
         size_t newSize;
         {
             WriteAccess writeAccess(*this);
+#ifdef OVITO_USE_SYCL
+            cl::sycl::buffer<T> valueBuffer = _data->reinterpret<T, 1>();
+            cl::sycl::host_accessor writeAccessor(valueBuffer, cl::sycl::read_write);
+            auto begin = writeAccessor.get_pointer();
+            auto dst = writeAccessor.get_pointer() + s;
+#else
             auto begin = reinterpret_cast<const T*>(cdata());
-            auto end = begin + s;
             auto dst = reinterpret_cast<T*>(data()) + s;
+#endif
+            auto end = begin + s;
             for(size_t i = s - 1; dst != begin; --i) {
                 --dst;
                 if(mask.test(i))
@@ -380,9 +490,16 @@ void DataBuffer::filterResizeReordering(const boost::dynamic_bitset<>& mask)
     {
         WriteAccess writeAccess(*this);
         const auto stride = this->stride();
+#ifdef OVITO_USE_SYCL
+        cl::sycl::host_accessor writeAccessor(*_data, cl::sycl::read_write);
+        const std::byte* begin = writeAccessor.get_pointer();
+        const std::byte* end = begin + (s * stride);
+        std::byte* dst = writeAccessor.get_pointer() + (s * stride);
+#else
         const std::byte* begin = _data.get();
         const std::byte* end = begin + (s * stride);
         std::byte* dst = _data.get() + (s * stride);
+#endif
         for(size_t i = s - 1; dst != begin; --i) {
             dst -= stride;
             if(mask.test(i)) {
@@ -399,20 +516,37 @@ void DataBuffer::filterResizeReordering(const boost::dynamic_bitset<>& mask)
 * Copies the contents from the given source into this property storage using
 * a mapping of indices.
 ******************************************************************************/
-void DataBuffer::mappedCopyFrom(const DataBuffer& source, const std::vector<size_t>& mapping)
+void DataBuffer::mappedCopyFrom(const DataBuffer& source, const std::vector<size_t>& mapping, bool discardOldContents)
 {
     OVITO_ASSERT(source.size() == mapping.size());
     OVITO_ASSERT(this->dataType() == source.dataType());
     OVITO_ASSERT(this->stride() == source.stride());
     OVITO_ASSERT(&source != this); // Do not allow aliasing.
 
+    if(this->size() == 0 || source.size() == 0)
+        return;
+
+#ifdef OVITO_DEBUG
+    OVITO_ASSERT(source._isDataInitialized);
+    _isDataInitialized = true;
+#endif
+
     WriteAccess writeAccess(*this);
     ReadAccess readAccess(source);
 
     auto specializedCopy = [&](auto _) {
         using T = decltype(_);
+#ifdef OVITO_USE_SYCL
+        cl::sycl::buffer<T> typedSource = source._data->reinterpret<T, 1>();
+        cl::sycl::buffer<T> typedDest = _data->reinterpret<T, 1>();
+        cl::sycl::host_accessor readAccessor(typedSource, cl::sycl::read_only);
+        cl::sycl::host_accessor writeAccessor(typedDest, cl::sycl::write_only);
+        const T* __restrict src = readAccessor.get_pointer();
+        T* __restrict dst = writeAccessor.get_pointer();
+#else
         const T* __restrict src = reinterpret_cast<const T*>(source.cdata());
         T* __restrict dst = reinterpret_cast<T*>(data());
+#endif
         for(auto idx : mapping) {
             OVITO_ASSERT(idx < this->size());
             dst[idx] = *src++;
@@ -454,8 +588,15 @@ void DataBuffer::mappedCopyFrom(const DataBuffer& source, const std::vector<size
     }
 
     // General case:
+#ifdef OVITO_USE_SYCL
+    cl::sycl::host_accessor readAccessor(*const_cast<DataBuffer&>(source)._data, cl::sycl::read_only);
+    cl::sycl::host_accessor writeAccessor(*_data, cl::sycl::write_only, discardOldContents ? cl::sycl::property_list{cl::sycl::no_init} : cl::sycl::property_list{});
+    const std::byte* __restrict src = readAccessor.get_pointer();
+    std::byte* __restrict dst = writeAccessor.get_pointer();
+#else
     const std::byte* __restrict src = source.cdata();
     std::byte* __restrict dst = data();
+#endif
     const auto stride = this->stride();
     for(size_t i = 0; i < source.size(); i++, src += stride) {
         OVITO_ASSERT(mapping[i] < this->size());
@@ -473,9 +614,18 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
     OVITO_ASSERT(this->stride() == destination.stride());
     OVITO_ASSERT(&destination != this); // Do not allow aliasing.
 
+    if(this->size() == 0 || destination.size() == 0)
+        return;
+
+#ifdef OVITO_DEBUG
+    OVITO_ASSERT(_isDataInitialized);
+    destination._isDataInitialized = true;
+#endif
+
     ReadAccess readAccess(*this);
     WriteAccess writeAccess(destination);
 
+#ifndef OVITO_USE_SYCL
     // Optimize copying operation for the most common property types.
     if(stride() == sizeof(FloatType)) {
         // Single float
@@ -543,13 +693,21 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
         // General case:
         const std::byte* __restrict src = cdata();
         std::byte* __restrict dst = destination.data();
+#else
+        cl::sycl::host_accessor readAccessor(*const_cast<DataBuffer*>(this)->_data, cl::sycl::read_only);
+        cl::sycl::host_accessor writeAccessor(*destination._data, cl::sycl::write_only, cl::sycl::no_init);
+        const std::byte* __restrict src = readAccessor.get_pointer();
+        std::byte* __restrict dst = writeAccessor.get_pointer();
+#endif
         size_t stride = this->stride();
         for(size_t idx : mapping) {
             OVITO_ASSERT(idx < size());
             std::memcpy(dst, src + stride * idx, stride);
             dst += stride;
         }
+#ifndef OVITO_USE_SYCL
     }
+#endif
 }
 
 /******************************************************************************
@@ -557,6 +715,7 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
 ******************************************************************************/
 void DataBuffer::reorderElements(const std::vector<size_t>& mapping)
 {
+    // TODO: Implement this in a more efficient way.
     auto copy = CloneHelper().cloneObject(this, false);
     copy->mappedCopyTo(*this, mapping);
 }
@@ -571,10 +730,20 @@ void DataBuffer::copyFrom(const DataBuffer& source)
     OVITO_ASSERT(this->dataType() == source.dataType());
     OVITO_ASSERT(this->stride() == source.stride());
     OVITO_ASSERT(this->size() == source.size());
-    if(&source != this) {
+    OVITO_ASSERT(source._isDataInitialized);
+#ifdef OVITO_DEBUG
+    _isDataInitialized = true;
+#endif
+    if(&source != this && this->size() != 0) {
         WriteAccess writeAccess(*this);
         ReadAccess readAccess(source);
+#ifdef OVITO_USE_SYCL
+        cl::sycl::host_accessor writeAccessor(*_data, cl::sycl::write_only, cl::sycl::no_init);
+        cl::sycl::host_accessor readAccessor(*const_cast<DataBuffer&>(source)._data, cl::sycl::read_only);
+        std::memcpy(writeAccessor.get_pointer(), readAccessor.get_pointer(), this->stride() * this->size());
+#else
         std::memcpy(data(), source.cdata(), this->stride() * this->size());
+#endif
     }
 }
 
@@ -589,12 +758,27 @@ void DataBuffer::copyRangeFrom(const DataBuffer& source, size_t sourceIndex, siz
     OVITO_ASSERT(this->stride() == source.stride());
     OVITO_ASSERT(sourceIndex + count <= source.size());
     OVITO_ASSERT(destIndex + count <= this->size());
+    if(this->size() == 0 || source.size() == 0 || count == 0)
+        return;
+#ifdef OVITO_DEBUG
+    OVITO_ASSERT(source._isDataInitialized);
+    _isDataInitialized = true;
+#endif
     WriteAccess writeAccess(*this);
     ReadAccess readAccess(source);
+#ifdef OVITO_USE_SYCL
+    cl::sycl::host_accessor writeAccessor(*_data, cl::sycl::write_only, (destIndex == 0 && count == this->size()) ? cl::sycl::property_list{cl::sycl::no_init} : cl::sycl::property_list{});
+    cl::sycl::host_accessor readAccessor(*const_cast<DataBuffer&>(source)._data, cl::sycl::read_only);
+    std::memcpy(
+        writeAccessor.get_pointer() + destIndex * this->stride(),
+        readAccessor.get_pointer() + sourceIndex * source.stride(),
+        this->stride() * count);
+#else
     std::memcpy(
         data() + destIndex * this->stride(),
         source.cdata() + sourceIndex * source.stride(),
         this->stride() * count);
+#endif
 }
 
 /******************************************************************************
@@ -603,6 +787,9 @@ void DataBuffer::copyRangeFrom(const DataBuffer& source, size_t sourceIndex, siz
 ******************************************************************************/
 bool DataBuffer::equals(const DataBuffer& other) const
 {
+    OVITO_ASSERT(_isDataInitialized);
+    OVITO_ASSERT(other._isDataInitialized);
+
     if(&other == this)
         return true;
 
@@ -613,7 +800,14 @@ bool DataBuffer::equals(const DataBuffer& other) const
     if(this->size() != other.size()) return false;
     if(this->componentCount() != other.componentCount()) return false;
     OVITO_ASSERT(this->stride() == other.stride());
+    if(this->size() == 0) return true;
+#ifdef OVITO_USE_SYCL
+    cl::sycl::host_accessor readAccessor1(*const_cast<DataBuffer&>(other)._data, cl::sycl::read_only);
+    cl::sycl::host_accessor readAccessor2(*const_cast<DataBuffer*>(this)->_data, cl::sycl::read_only);
+    return std::equal(readAccessor1.get_pointer(), readAccessor1.get_pointer() + this->size() * this->stride(), readAccessor2.get_pointer());
+#else
     return std::equal(this->cdata(), this->cdata() + this->size() * this->stride(), other.cdata());
+#endif
 }
 
 /******************************************************************************
@@ -628,55 +822,93 @@ void DataBuffer::convertToDataType(int newDataType)
 
     size_t newDataTypeSize = QMetaType(newDataType).sizeOf();
     size_t newStride = _componentCount * newDataTypeSize;
+#ifdef OVITO_USE_SYCL
+    std::optional<cl::sycl::buffer<std::byte>> newData;
+    if(_numElements != 0)
+        newData.emplace(_numElements * newStride);
+#else
     std::unique_ptr<std::byte[]> newData(new std::byte[_numElements * newStride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
+#endif
 
     // Copy values from old buffer to new buffer and perform data type convertion.
-    BufferReadAccess oldData(this);
-    switch(newDataType) {
-    case Int8:
-        {
-            int8_t* __restrict dest = reinterpret_cast<int8_t*>(newData.get());
-            for(size_t i = 0; i < _numElements; i++)
-                for(size_t j = 0; j < _componentCount; j++)
-                    *dest++ = oldData.get<int8_t>(i, j);
+    if(_numElements != 0) {
+        OVITO_ASSERT(_isDataInitialized);
+        RawBufferReadAccess oldData(this);
+        switch(newDataType) {
+        case Int8:
+            {
+#ifdef OVITO_USE_SYCL
+                auto typedDest = newData->reinterpret<int8_t, 1>();
+                cl::sycl::host_accessor writeAccessor(typedDest, cl::sycl::write_only, cl::sycl::no_init);
+                int8_t* __restrict dest = writeAccessor.get_pointer();
+#else
+                int8_t* __restrict dest = reinterpret_cast<int8_t*>(newData.get());
+#endif
+                for(size_t i = 0; i < _numElements; i++)
+                    for(size_t j = 0; j < _componentCount; j++)
+                        *dest++ = oldData.get<int8_t>(i, j);
+            }
+            break;
+        case Int32:
+            {
+#ifdef OVITO_USE_SYCL
+                auto typedDest = newData->reinterpret<int32_t, 1>();
+                cl::sycl::host_accessor writeAccessor(typedDest, cl::sycl::write_only, cl::sycl::no_init);
+                int32_t* __restrict dest = writeAccessor.get_pointer();
+#else
+                int32_t* __restrict dest = reinterpret_cast<int32_t*>(newData.get());
+#endif
+                for(size_t i = 0; i < _numElements; i++)
+                    for(size_t j = 0; j < _componentCount; j++)
+                        *dest++ = oldData.get<int32_t>(i, j);
+            }
+            break;
+        case Int64:
+            {
+#ifdef OVITO_USE_SYCL
+                auto typedDest = newData->reinterpret<int64_t, 1>();
+                cl::sycl::host_accessor writeAccessor(typedDest, cl::sycl::write_only, cl::sycl::no_init);
+                int64_t* __restrict dest = writeAccessor.get_pointer();
+#else
+                int64_t* __restrict dest = reinterpret_cast<int64_t*>(newData.get());
+#endif
+                for(size_t i = 0; i < _numElements; i++)
+                    for(size_t j = 0; j < _componentCount; j++)
+                        *dest++ = oldData.get<int64_t>(i, j);
+            }
+            break;
+        case Float32:
+            {
+#ifdef OVITO_USE_SYCL
+                auto typedDest = newData->reinterpret<float, 1>();
+                cl::sycl::host_accessor writeAccessor(typedDest, cl::sycl::write_only, cl::sycl::no_init);
+                float* __restrict dest = writeAccessor.get_pointer();
+#else
+                float* __restrict dest = reinterpret_cast<float*>(newData.get());
+#endif
+                for(size_t i = 0; i < _numElements; i++)
+                    for(size_t j = 0; j < _componentCount; j++)
+                        *dest++ = oldData.get<float>(i, j);
+            }
+            break;
+        case Float64:
+            {
+#ifdef OVITO_USE_SYCL
+                auto typedDest = newData->reinterpret<double, 1>();
+                cl::sycl::host_accessor writeAccessor(typedDest, cl::sycl::write_only, cl::sycl::no_init);
+                double* __restrict dest = writeAccessor.get_pointer();
+#else
+                double* __restrict dest = reinterpret_cast<double*>(newData.get());
+#endif
+                for(size_t i = 0; i < _numElements; i++)
+                    for(size_t j = 0; j < _componentCount; j++)
+                        *dest++ = oldData.get<double>(i, j);
+            }
+            break;
+        default:
+            OVITO_ASSERT(false); // Unsupported data type
         }
-        break;
-    case Int32:
-        {
-            int32_t* __restrict dest = reinterpret_cast<int32_t*>(newData.get());
-            for(size_t i = 0; i < _numElements; i++)
-                for(size_t j = 0; j < _componentCount; j++)
-                    *dest++ = oldData.get<int32_t>(i, j);
-        }
-        break;
-    case Int64:
-        {
-            int64_t* __restrict dest = reinterpret_cast<int64_t*>(newData.get());
-            for(size_t i = 0; i < _numElements; i++)
-                for(size_t j = 0; j < _componentCount; j++)
-                    *dest++ = oldData.get<int64_t>(i, j);
-        }
-        break;
-    case Float32:
-        {
-            float* __restrict dest = reinterpret_cast<float*>(newData.get());
-            for(size_t i = 0; i < _numElements; i++)
-                for(size_t j = 0; j < _componentCount; j++)
-                    *dest++ = oldData.get<float>(i, j);
-        }
-        break;
-    case Float64:
-        {
-            double* __restrict dest = reinterpret_cast<double*>(newData.get());
-            for(size_t i = 0; i < _numElements; i++)
-                for(size_t j = 0; j < _componentCount; j++)
-                    *dest++ = oldData.get<double>(i, j);
-        }
-        break;
-    default:
-        OVITO_ASSERT(false); // Unsupported data type
     }
-    oldData.reset();
 
     WriteAccess writeAccess(*this);
     _dataType = newDataType;
@@ -684,6 +916,22 @@ void DataBuffer::convertToDataType(int newDataType)
     _stride = newStride;
     _capacity = _numElements;
     _data = std::move(newData);
+}
+
+/******************************************************************************
+* Set all stored values to zeros.
+******************************************************************************/
+void DataBuffer::fillZero()
+{
+    if(size() == 0)
+        return;
+    RawBufferAccess<access_mode::discard_write> writeAccess(this);
+#ifdef OVITO_USE_SYCL
+    cl::sycl::host_accessor writeAccessor(*_data, cl::sycl::write_only, cl::sycl::no_init);
+    std::memset(writeAccessor.get_pointer(), 0, this->size() * this->stride());
+#else
+    std::memset(writeAccess.data(), 0, this->size() * this->stride());
+#endif
 }
 
 }   // End of namespace

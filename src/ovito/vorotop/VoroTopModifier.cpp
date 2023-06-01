@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //  Copyright 2017 Emanuel A. Lazar
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -385,10 +385,10 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
 
     setProgressText(tr("Performing VoroTop analysis"));
 
-    BufferAccess<const Point3> positionsArray(positions());
-    BufferAccess<const SelectionIntType> selectionArray(selection());
-    BufferAccess<const GraphicsFloatType> radiiArray(_radii);
-    BufferAccess<int32_t> structuresArray(structures());
+    BufferReadAccess<Point3> positionsArray(positions());
+    BufferReadAccess<SelectionIntType> selectionArray(selection());
+    BufferReadAccess<GraphicsFloatType> radiiArray(_radii);
+    BufferWriteAccess<int32_t, access_mode::discard_write> structuresArray(structures());
 
     // Decide whether to use Voro++ container class or our own implementation.
     if(cell()->isAxisAligned()) {

@@ -85,7 +85,7 @@ public:
     void setSelection(const PropertyContainer* container, const boost::dynamic_bitset<>& selection, SelectionMode mode = SelectionReplace);
 
     /// Copies the stored selection set into the given output selection property.
-    PipelineStatus applySelection(BufferAccess<SelectionIntType> outputSelectionProperty, BufferAccess<const IdentifierIntType> identifierProperty);
+    PipelineStatus applySelection(BufferWriteAccess<SelectionIntType, access_mode::discard_write> outputSelectionProperty, BufferReadAccess<IdentifierIntType> identifierProperty);
 
 protected:
 

@@ -57,7 +57,7 @@ PTMAlgorithm::Kernel::~Kernel()
 struct ptmnbrdata_t
 {
     const NearestNeighborFinder* neighFinder;
-    BufferAccess<const int32_t> particleTypes;
+    BufferReadAccess<int32_t> particleTypes;
     const std::vector<uint64_t>* cachedNeighbors;
 };
 
@@ -65,7 +65,7 @@ static int get_neighbours(void* vdata, size_t _unused_lammps_variable, size_t at
 {
     ptmnbrdata_t* nbrdata = (ptmnbrdata_t*)vdata;
     const NearestNeighborFinder* neighFinder = nbrdata->neighFinder;
-    const BufferAccess<const int32_t>& particleTypes = nbrdata->particleTypes;
+    const BufferReadAccess<int32_t>& particleTypes = nbrdata->particleTypes;
     const std::vector<uint64_t>& cachedNeighbors = *nbrdata->cachedNeighbors;
 
     // Find nearest neighbors.

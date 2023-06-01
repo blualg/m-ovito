@@ -219,6 +219,7 @@ public:
     public:
 
         Grower(PropertyContainer* container) : _container(container), _elementCount(container->elementCount()) {
+            OVITO_ASSERT(container->isSafeToModify());
             // Make all property arrays mutable to begin with.
             container->makePropertiesMutableInternal();
         }
@@ -230,16 +231,30 @@ public:
             _container->_elementCount.set(_container, PROPERTY_FIELD(PropertyContainer::elementCount), _elementCount);
         }
 
-        size_t grow(size_t numAdditionalElements, int alreadyLockedPropertyType = -1) {
+        size_t grow(size_t numAdditionalElements) {
             // Grow property arrays.
             for(const PropertyObject* prop : _container->properties()) {
                 OVITO_ASSERT(prop->size() == _elementCount);
-                const_cast<PropertyObject*>(prop)->grow(numAdditionalElements, prop->type() == alreadyLockedPropertyType);
+                const_cast<PropertyObject*>(prop)->grow(numAdditionalElements);
             }
             // Update only our internal element count. Container will be updated by destructor.
             size_t oldCount = _elementCount;
             _elementCount += numAdditionalElements;
             return oldCount;
+        }
+
+        bool grow(size_t numAdditionalElements, int alreadyLockedPropertyType) {
+            bool wasReallocated = false;
+            // Grow property arrays.
+            for(const PropertyObject* prop : _container->properties()) {
+                OVITO_ASSERT(prop->size() == _elementCount);
+                bool b = const_cast<PropertyObject*>(prop)->grow(numAdditionalElements, prop->type() == alreadyLockedPropertyType);
+                if(b && prop->type() == alreadyLockedPropertyType)
+                    wasReallocated = true;
+            }
+            // Update only our internal element count. Container will be updated by destructor.
+            _elementCount += numAdditionalElements;
+            return wasReallocated;
         }
 
         /// Deletes a number of elements from the end of each property array (without reallocation).
@@ -267,9 +282,12 @@ public:
         }
 
         PropertyObject* mutableProperty(int type) const {
+            OVITO_ASSERT(_container->isSafeToModify());
             for(const PropertyObject* prop : _container->properties()) {
-                if(prop->type() == type)
+                OVITO_ASSERT(prop->isSafeToModify());
+                if(prop->type() == type) {
                     return const_cast<PropertyObject*>(prop);
+                }
             }
             return nullptr;
         }

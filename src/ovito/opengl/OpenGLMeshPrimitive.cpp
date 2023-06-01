@@ -125,7 +125,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     };
 
     // Upload vertex buffer to GPU memory.
-    QOpenGLBuffer meshBuffer = shader.createCachedBuffer(std::move(meshCacheKey), sizeof(MeshPrimitive::RenderVertex), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer, BufferAccess<const int32_t> subset) {
+    QOpenGLBuffer meshBuffer = shader.createCachedBuffer(std::move(meshCacheKey), sizeof(MeshPrimitive::RenderVertex), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer, BufferReadAccess<int32_t> subset) {
         OVITO_ASSERT(!subset);
         bool highlightSelectedFaces = isInteractive() && !isPicking();
         primitive.generateRenderableVertices(reinterpret_cast<MeshPrimitive::RenderVertex*>(buffer), highlightSelectedFaces, renderWithPseudoColorMapping);
@@ -216,7 +216,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         RendererResourceKey<struct DepthSortingCache, DataOORef<const TriMeshObject>, Vector3> indexBufferCacheKey{ primitive.mesh(), direction };
 
         // Create index buffer with three entries per triangle face.
-        QOpenGLBuffer indexBuffer = shader.createCachedBuffer(std::move(indexBufferCacheKey), sizeof(GLsizei), QOpenGLBuffer::IndexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer, BufferAccess<const int32_t> subset) {
+        QOpenGLBuffer indexBuffer = shader.createCachedBuffer(std::move(indexBufferCacheKey), sizeof(GLsizei), QOpenGLBuffer::IndexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer, BufferReadAccess<int32_t> subset) {
             OVITO_ASSERT(!subset);
 
             // Compute each face's center point.
@@ -283,14 +283,14 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
             std::vector<GraphicsFloatType> distances(sortedIndices.size());
             if(primitive.perInstanceTMs()->dataType() == DataBuffer::Float32) {
                 const Vector_3<float> directionFloat = direction.toDataType<float>();
-                boost::transform(sortedIndices, distances.begin(), [directionFloat, tmArray = BufferAccess<const AffineTransformationT<float>>(primitive.perInstanceTMs())](size_t i) {
+                boost::transform(sortedIndices, distances.begin(), [directionFloat, tmArray = BufferReadAccess<AffineTransformationT<float>>(primitive.perInstanceTMs())](size_t i) {
                     return directionFloat.dot(tmArray[i].translation());
                 });
             }
             else {
                 // Viewing direction in object space:
                 const Vector_3<double> directionDouble = direction.toDataType<double>();
-                boost::transform(sortedIndices, distances.begin(), [directionDouble, tmArray = BufferAccess<const AffineTransformationT<double>>(primitive.perInstanceTMs())](size_t i) {
+                boost::transform(sortedIndices, distances.begin(), [directionDouble, tmArray = BufferReadAccess<AffineTransformationT<double>>(primitive.perInstanceTMs())](size_t i) {
                     return directionDouble.dot(tmArray[i].translation());
                 });
             }
@@ -324,18 +324,18 @@ QOpenGLBuffer OpenGLSceneRenderer::getMeshInstanceTMBuffer(const MeshPrimitive& 
     RendererResourceKey<struct InstanceTMCache, ConstDataBufferPtr> cacheKey(primitive.perInstanceTMs());
 
     // Upload the per-instance TMs to GPU memory.
-    return shader.createCachedBuffer(std::move(cacheKey), 3 * sizeof(Vector_4<float>), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer, BufferAccess<const int32_t> subset) {
+    return shader.createCachedBuffer(std::move(cacheKey), 3 * sizeof(Vector_4<float>), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer, BufferReadAccess<int32_t> subset) {
         OVITO_ASSERT(!subset);
         Vector_4<float>* row = reinterpret_cast<Vector_4<float>*>(buffer);
         if(primitive.perInstanceTMs()->dataType() == DataBuffer::Float32) {
-            for(const AffineTransformationT<float>& tm : BufferAccess<const AffineTransformationT<float>>(primitive.perInstanceTMs())) {
+            for(const AffineTransformationT<float>& tm : BufferReadAccess<AffineTransformationT<float>>(primitive.perInstanceTMs())) {
                 *row++ = tm.row(0);
                 *row++ = tm.row(1);
                 *row++ = tm.row(2);
             }
         }
         else {
-            for(const AffineTransformationT<double>& tm : BufferAccess<const AffineTransformationT<double>>(primitive.perInstanceTMs())) {
+            for(const AffineTransformationT<double>& tm : BufferReadAccess<AffineTransformationT<double>>(primitive.perInstanceTMs())) {
                 *row++ = tm.row(0).toDataType<float>();
                 *row++ = tm.row(1).toDataType<float>();
                 *row++ = tm.row(2).toDataType<float>();

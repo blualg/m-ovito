@@ -31,6 +31,9 @@ namespace Ovito {
 * Initializes the task manager.
 ******************************************************************************/
 TaskManager::TaskManager()
+#ifdef OVITO_USE_SYCL
+    : _syclQueue(cl::sycl::default_selector())
+#endif
 {
     qRegisterMetaType<TaskPtr>("TaskPtr");
 }
@@ -205,6 +208,11 @@ void TaskManager::shutdown()
             watcher->task()->cancel();
         }
     }
+
+#ifdef OVITO_USE_SYCL
+    // Wait for completion of all enqueued tasks in the SYCL queue.
+    _syclQueue.wait();
+#endif
 
     // Block with a local event until all running tasks have completed.
     if(!runningTasks().empty()) {

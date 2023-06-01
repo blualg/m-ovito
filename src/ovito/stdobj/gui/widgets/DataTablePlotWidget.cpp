@@ -286,7 +286,7 @@ void DataTablePlotWidget::updateDataPlot()
         }
         QVector<double> ycoords;
         QStringList labels;
-        BufferReadAccess yarray(y);
+        RawBufferReadAccess yarray(y);
         for(int i = 0; i < y->size(); i++) {
             const ElementType* type = y->elementType(i);
             if(!type && x) type = x->elementType(i);

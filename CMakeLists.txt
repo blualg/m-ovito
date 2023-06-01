@@ -118,10 +118,6 @@ IF(CYGWIN AND CMAKE_COMPILER_IS_GNUCXX)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 ENDIF()
 
-IF(APPLE)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -Wno-invalid-offsetof")
-ENDIF()
-
 # Enable build with AddressSanitizer support if requested.
 IF(OVITO_USE_ADDRESS_SANITIZER)
     IF(MSVC)

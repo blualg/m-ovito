@@ -212,7 +212,7 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
     setProgressText(tr("Constructing isosurface"));
 
     // Set up callback function returning the field value, which will be passed to the marching cubes algorithm.
-    BufferAccess<const FloatType*> data(property());
+    BufferReadAccess<FloatType*> data(property());
     auto getFieldValue = [
             _data = data.cbegin() + _vectorComponent,
             _pbcFlags = _mesh->domain() ? _mesh->domain()->pbcFlags() : std::array<bool,3>{{false,false,false}},
@@ -301,7 +301,7 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
     PropertyPtr histogramValues = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, _histogram->elementCount(), PropertyObject::Int64, 1, tr("Count"));
     FloatType binSize = (maxValue - minValue) / histogramValues->size();
     int histogramSizeMin1 = histogramValues->size() - 1;
-    BufferAccess<int64_t> histogramAccess(histogramValues);
+    BufferWriteAccess<int64_t, access_mode::read_write> histogramAccess(histogramValues);
     for(const FloatType v : data.componentRange(_vectorComponent)) {
         int binIndex = (v - minValue) / binSize;
         histogramAccess[std::max(0, std::min(binIndex, histogramSizeMin1))]++;
@@ -335,9 +335,9 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshBuild
     OVITO_ASSERT(Task::current() && Task::current()->isProgressingTask());
 
     // Create destination properties for transferring voxel values to the surface vertices.
-    std::vector<std::pair<BufferReadAccess, BufferWriteAccess>> propertyMapping;
+    std::vector<std::pair<RawBufferReadAccess, RawBufferAccess<access_mode::discard_write>>> propertyMapping;
     for(const ConstPropertyPtr& fieldProperty : fieldProperties) {
-        PropertyPtr vertexProperty;
+        PropertyObject* vertexProperty;
         if(fieldProperty->type() < PropertyObject::FirstSpecificProperty && SurfaceMeshVertices::OOClass().isValidStandardPropertyId(fieldProperty->type())) {
             // Input voxel property is also a standard property for mesh vertices.
             vertexProperty = mesh.createVertexProperty(DataBuffer::Initialized, static_cast<SurfaceMeshVertices::Type>(fieldProperty->type()));
@@ -362,7 +362,7 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshBuild
     // Transfer values of field properties to the created mesh vertices.
     if(!propertyMapping.empty()) {
         std::array<bool,3> pbcFlags = gridDomain.pbcFlagsCorrected();
-        BufferAccess<const Point3> vertexPositions = mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty);
+        BufferReadAccess<Point3> vertexPositions = mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty);
 
         parallelForWithProgress(mesh.vertexCount(), [&](size_t vertexIndex) {
             // Trilinear interpolation scheme.

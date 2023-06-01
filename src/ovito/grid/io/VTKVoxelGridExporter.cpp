@@ -122,7 +122,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
             size_t cmpnts = prop->componentCount();
             OVITO_ASSERT(prop->stride() == prop->dataTypeSize() * cmpnts);
             if(prop->dataType() == PropertyObject::Float32) {
-                BufferAccess<const float*> data(prop);
+                BufferReadAccess<float*> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
                     if(operation.isCanceled())
                         return false;
@@ -134,7 +134,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
                 }
             }
             else if(prop->dataType() == PropertyObject::Float64) {
-                BufferAccess<const double*> data(prop);
+                BufferReadAccess<double*> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
                     if(operation.isCanceled())
                         return false;
@@ -146,7 +146,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
                 }
             }
             else if(prop->dataType() == PropertyObject::Int8) {
-                BufferAccess<const int8_t*> data(prop);
+                BufferReadAccess<int8_t*> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
                     if(operation.isCanceled())
                         return false;
@@ -158,7 +158,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
                 }
             }
             else if(prop->dataType() == PropertyObject::Int32) {
-                BufferAccess<const int32_t*> data(prop);
+                BufferReadAccess<int32_t*> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
                     if(operation.isCanceled())
                         return false;
@@ -170,7 +170,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
                 }
             }
             else if(prop->dataType() == PropertyObject::Int64) {
-                BufferAccess<const int64_t*> data(prop);
+                BufferReadAccess<int64_t*> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
                     if(operation.isCanceled())
                         return false;

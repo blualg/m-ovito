@@ -101,6 +101,7 @@ void DataObject::loadFromStream(ObjectLoadStream& stream)
 bool DataObject::isSafeToModify() const
 {
     OVITO_CHECK_OBJECT_POINTER(this);
+    OVITO_ASSERT(_dataReferenceCount.load() <= objectReferenceCount().load());
 
     if(_dataReferenceCount.load() <= 1) {
         bool isExclusivelyOwned = true;
@@ -127,11 +128,13 @@ bool DataObject::isSafeToModify() const
 DataObject* DataObject::makeMutable(const DataObject* subObject)
 {
     OVITO_CHECK_OBJECT_POINTER(this);
-    OVITO_ASSERT(subObject);
+    OVITO_CHECK_OBJECT_POINTER(subObject);
     OVITO_ASSERT(hasReferenceTo(subObject));
     OVITO_ASSERT_MSG(!subObject || isSafeToModify(), "DataObject::makeMutable()", qPrintable(QString("Cannot make sub-object %1 mutable, because parent object %2 is not safe to modify.").arg(subObject->getOOClass().name()).arg(getOOClass().name())));
+    OVITO_ASSERT(_dataReferenceCount.load() <= objectReferenceCount().load());
 
     if(subObject && !subObject->isSafeToModify()) {
+        OVITO_ASSERT(subObject->_dataReferenceCount.load() <= subObject->objectReferenceCount().load());
         OORef<DataObject> clone = CloneHelper().cloneObject(subObject, false);
         replaceReferencesTo(subObject, clone);
         OVITO_ASSERT(hasReferenceTo(clone));
@@ -168,6 +171,7 @@ DataObject* DataObject::makeMutable(const DataObject* subObject, CloneHelper& cl
     OVITO_CHECK_OBJECT_POINTER(this);
     OVITO_ASSERT(subObject);
     OVITO_ASSERT_MSG(!subObject || isSafeToModify(), "DataObject::makeMutable()", qPrintable(QString("Cannot make sub-object %1 mutable, because parent object %2 is not safe to modify.").arg(subObject->getOOClass().name()).arg(getOOClass().name())));
+    OVITO_ASSERT(_dataReferenceCount.load() <= objectReferenceCount().load());
 
     if(DataObject* clone = cloneHelper.lookupCloneOf(subObject)) {
         OVITO_ASSERT(!hasReferenceTo(subObject));
@@ -179,6 +183,7 @@ DataObject* DataObject::makeMutable(const DataObject* subObject, CloneHelper& cl
     OVITO_ASSERT(hasReferenceTo(subObject));
 
     if(subObject && !subObject->isSafeToModify()) {
+        OVITO_ASSERT(subObject->_dataReferenceCount.load() <= subObject->objectReferenceCount().load());
         OORef<DataObject> clone = cloneHelper.cloneObject(subObject, false);
         replaceReferencesTo(subObject, clone);
         OVITO_ASSERT(hasReferenceTo(clone));

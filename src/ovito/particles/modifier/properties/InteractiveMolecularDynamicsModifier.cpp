@@ -253,7 +253,7 @@ void InteractiveMolecularDynamicsModifier::dataReceived()
 
                 // Convert data array into particle coordinates property.
                 _coordinates = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, numCoords, ParticlesObject::PositionProperty);
-                std::transform(coords.cbegin(), coords.cend(), BufferAccess<Point3>(_coordinates).begin(), [](const Point_3<float>& p) { return p.toDataType<FloatType>(); });
+                std::transform(coords.cbegin(), coords.cend(), BufferWriteAccess<Point3, access_mode::discard_write>(_coordinates).begin(), [](const Point_3<float>& p) { return p.toDataType<FloatType>(); });
 
                 // Notify pipeline system that this modifier has new results.
                 _numFramesReceived++;
@@ -325,9 +325,9 @@ void InteractiveMolecularDynamicsModifier::evaluateSynchronous(const ModifierEva
     if(outputParticles->bonds()) {
         if(const SimulationCellObject* cell = state.getObject<SimulationCellObject>()) {
             if(cell->hasPbcCorrected()) {
-                if(BufferAccess<const ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
-                    BufferAccess<const Point3> positions(_coordinates);
-                    BufferAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
+                if(BufferReadAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
+                    BufferReadAccess<Point3> positions(_coordinates);
+                    BufferWriteAccess<Vector3I, access_mode::read_write> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
                     // Recompute PBC vectors of bonds as particle may have moved over arbitrary distances.
                     parallelForChunks(topologyProperty.size(), [&](size_t startIndex, size_t count) {
                         for(size_t bondIndex = startIndex, endIndex = startIndex+count; bondIndex < endIndex; bondIndex++) {

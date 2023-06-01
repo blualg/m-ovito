@@ -69,25 +69,25 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     // Get the bond data to be exported.
     const BondsObject* bonds = particles->bonds();
     if(bonds) bonds->verifyIntegrity();
-    BufferAccess<const ParticleIndexPair> bondTopologyProperty = bonds ? bonds->getTopology() : nullptr;
+    BufferReadAccess<ParticleIndexPair> bondTopologyProperty = bonds ? bonds->getTopology() : nullptr;
     const PropertyObject* bondTypeProperty = bonds ? bonds->getProperty(BondsObject::TypeProperty) : nullptr;
 
     // Get the angle data to be exported.
     const AnglesObject* angles = particles->angles();
     if(angles) angles->verifyIntegrity();
-    BufferAccess<const ParticleIndexTriplet> angleTopologyProperty = angles ? angles->getTopology() : nullptr;
+    BufferReadAccess<ParticleIndexTriplet> angleTopologyProperty = angles ? angles->getTopology() : nullptr;
     const PropertyObject* angleTypeProperty = angles ? angles->getProperty(AnglesObject::TypeProperty) : nullptr;
 
     // Get the dihedral data to be exported.
     const DihedralsObject* dihedrals = particles->dihedrals();
     if(dihedrals) dihedrals->verifyIntegrity();
-    BufferAccess<const ParticleIndexQuadruplet> dihedralTopologyProperty = dihedrals ? dihedrals->getTopology() : nullptr;
+    BufferReadAccess<ParticleIndexQuadruplet> dihedralTopologyProperty = dihedrals ? dihedrals->getTopology() : nullptr;
     const PropertyObject* dihedralTypeProperty = dihedrals ? dihedrals->getProperty(DihedralsObject::TypeProperty) : nullptr;
 
     // Get the improper data to be exported.
     const ImpropersObject* impropers = particles->impropers();
     if(impropers) impropers->verifyIntegrity();
-    BufferAccess<const ParticleIndexQuadruplet> improperTopologyProperty = impropers ? impropers->getTopology() : nullptr;
+    BufferReadAccess<ParticleIndexQuadruplet> improperTopologyProperty = impropers ? impropers->getTopology() : nullptr;
     const PropertyObject* improperTypeProperty = impropers ? impropers->getProperty(ImpropersObject::TypeProperty) : nullptr;
 
     // Get simulation cell info.
@@ -129,11 +129,11 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
                     else if(newProperty->type() == ParticlesObject::UserProperty && newProperty->name() == QStringLiteral("Density")) {
                         OVITO_ASSERT(col.columnName == "density");
                         // When exporting the "Density" property, compute its values from the particles masses and radii.
-                        BufferAccessAndRef<const GraphicsFloatType> radii = particles->inputParticleRadii();
-                        BufferAccessAndRef<const FloatType> masses = particles->inputParticleMasses();
+                        BufferReadAccessAndRef<GraphicsFloatType> radii = particles->inputParticleRadii();
+                        BufferReadAccessAndRef<FloatType> masses = particles->inputParticleMasses();
                         auto radius = radii.cbegin();
                         auto mass = masses.cbegin();
-                        for(FloatType& density : BufferAccess<FloatType>(newProperty)) {
+                        for(FloatType& density : BufferWriteAccess<FloatType, access_mode::discard_write>(newProperty)) {
                             FloatType r = *radius++;
                             density = (r > 0) ? (*mass / (r*r*r * (FLOATTYPE_PI * FloatType(4.0/3.0)))) : FloatType(0);
                             ++mass;
@@ -148,7 +148,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
             if(property->type() == ParticlesObject::RadiusProperty) {
                 OVITO_ASSERT(col.columnName == "diameter");
                 // Write particle diameters instead of radii to the output file.
-                for(auto& r : BufferAccess<GraphicsFloatType>(particles->makeMutable(property)))
+                for(auto& r : BufferWriteAccess<GraphicsFloatType, access_mode::read_write>(particles->makeMutable(property)))
                     r *= 2;
             }
         }
@@ -176,12 +176,12 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
         AffineTransformation transformation = AffineTransformation(a,b,c,simCell.translation()) * simCell.inverse();
 
         // Apply the transformation to the particle coordinates.
-        for(Point3& p : BufferAccess<Point3>(particles->expectMutableProperty(ParticlesObject::PositionProperty))) {
+        for(Point3& p : BufferWriteAccess<Point3, access_mode::read_write>(particles->expectMutableProperty(ParticlesObject::PositionProperty))) {
             p = transformation * p;
         }
 
         // Apply the transformation to the particle velocity vectors.
-        if(BufferAccess<Vector3> velocities = particles->getMutableProperty(ParticlesObject::VelocityProperty)) {
+        if(BufferWriteAccess<Vector3, access_mode::read_write> velocities = particles->getMutableProperty(ParticlesObject::VelocityProperty)) {
             for(Vector3& v : velocities) {
                 v = transformation * v;
             }
@@ -245,7 +245,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
             typeList.push_back(nullptr);
         }
         if(typeProperty && typeProperty->size() > 0) {
-            BufferAccess<const int32_t> typeValuesArray(typeProperty);;
+            BufferReadAccess<int32_t> typeValuesArray(typeProperty);;
             if(generateConsecutiveTypeIds()) {
                 boost::for_each(typeValuesArray, [&](auto id) {
                     if(typeMapping.find(id) == typeMapping.end()) {
@@ -272,7 +272,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
 
     // Substitude the original IDs stored in the 'Particle Type' property array.
     if(generateConsecutiveTypeIds() && particleTypeProperty) {
-        BufferAccess<int32_t> typeArray = particles->makeMutable(particleTypeProperty);
+        BufferWriteAccess<int32_t, access_mode::read_write> typeArray = particles->makeMutable(particleTypeProperty);
         for(auto& id : typeArray) {
             OVITO_ASSERT(atomTypeMapping.find(id) != atomTypeMapping.end());
             id = atomTypeMapping[id];
@@ -297,7 +297,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
         textStream() << improperTypeList.size() << " improper types\n";
 
     size_t numEllipsoids = 0;
-    BufferAccess<const Vector3G> asphericalShapeProperty = particles->getProperty(ParticlesObject::AsphericalShapeProperty);
+    BufferReadAccess<Vector3G> asphericalShapeProperty = particles->getProperty(ParticlesObject::AsphericalShapeProperty);
     if(asphericalShapeProperty) {
         // Only write Ellipsoids section if atom style (or a hybrid sub-style) is "ellipsoid".
         if(atomStyle() == LAMMPSDataImporter::AtomStyle_Ellipsoid || (atomStyle() == LAMMPSDataImporter::AtomStyle_Hybrid && boost::find(atomSubStyles(), LAMMPSDataImporter::AtomStyle_Ellipsoid) != atomSubStyles().end())) {
@@ -399,9 +399,9 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     }
 
     // Look up the particle velocity vectors.
-    BufferAccess<const Vector3> velocityProperty = particles->getProperty(ParticlesObject::VelocityProperty);
+    BufferReadAccess<Vector3> velocityProperty = particles->getProperty(ParticlesObject::VelocityProperty);
     // Look up the particle identifiers.
-    BufferAccess<const int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+    BufferReadAccess<int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
 
     qlonglong totalProgressCount = particles->elementCount();
     if(velocityProperty) totalProgressCount += particles->elementCount();
@@ -464,7 +464,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     if(writeBonds) {
         textStream() << "\nBonds\n\n";
 
-        BufferAccess<const int32_t> bondTypeArray(bondTypeProperty);;
+        BufferReadAccess<int32_t> bondTypeArray(bondTypeProperty);;
         size_t bondIndex = 1;
         for(size_t i = 0; i < bondTopologyProperty.size(); i++) {
             size_t atomIndex1 = bondTopologyProperty[i][0];
@@ -490,7 +490,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     if(writeAngles) {
         textStream() << "\nAngles\n\n";
 
-        BufferAccess<const int32_t> angleTypeArray(angleTypeProperty);;
+        BufferReadAccess<int32_t> angleTypeArray(angleTypeProperty);;
         size_t angleIndex = 1;
         for(size_t i = 0; i < angleTopologyProperty.size(); i++) {
             size_t atomIndex1 = angleTopologyProperty[i][0];
@@ -519,7 +519,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     if(writeDihedrals) {
         textStream() << "\nDihedrals\n\n";
 
-        BufferAccess<const int32_t> dihedralTypeArray(dihedralTypeProperty);;
+        BufferReadAccess<int32_t> dihedralTypeArray(dihedralTypeProperty);;
         size_t dihedralIndex = 1;
         for(size_t i = 0; i < dihedralTopologyProperty.size(); i++) {
             size_t atomIndex1 = dihedralTopologyProperty[i][0];
@@ -551,7 +551,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     if(writeImpropers) {
         textStream() << "\nImpropers\n\n";
 
-        BufferAccess<const int32_t> improperTypeArray(improperTypeProperty);;
+        BufferReadAccess<int32_t> improperTypeArray(improperTypeProperty);;
         size_t improperIndex = 1;
         for(size_t i = 0; i < improperTopologyProperty.size(); i++) {
             size_t atomIndex1 = improperTopologyProperty[i][0];
@@ -583,7 +583,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     if(asphericalShapeProperty) {
         textStream() << "\nEllipsoids\n\n";
 
-        BufferAccess<const QuaternionG> orientationProperty = particles->getProperty(ParticlesObject::OrientationProperty);
+        BufferReadAccess<QuaternionG> orientationProperty = particles->getProperty(ParticlesObject::OrientationProperty);
         for(size_t i = 0; i < asphericalShapeProperty.size(); i++) {
             if(asphericalShapeProperty[i] == Vector3G::Zero())
                 continue;

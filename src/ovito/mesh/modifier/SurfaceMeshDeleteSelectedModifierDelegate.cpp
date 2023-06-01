@@ -57,11 +57,12 @@ PipelineStatus SurfaceMeshRegionsDeleteSelectedModifierDelegate::apply(const Mod
             existingSurface->verifyMeshIntegrity();
 
             // Check if there is a region selection set.
-            BufferAccessAndRef<const SelectionIntType> selectionProperty = existingSurface->regions()->getProperty(SurfaceMeshRegions::SelectionProperty);
-            if(!selectionProperty) continue; // Nothing to do if there is no selection.
+            BufferReadAccessAndRef<SelectionIntType> selectionAccess = existingSurface->regions()->getProperty(SurfaceMeshRegions::SelectionProperty);
+            if(!selectionAccess)
+                continue; // Nothing to do if there is no selection.
 
             // Check if at least one mesh region is currently selected.
-            if(boost::algorithm::all_of(selectionProperty, [](auto s) { return s == 0; }))
+            if(boost::algorithm::all_of(selectionAccess, [](auto s) { return s == 0; }))
                 continue;
 
             // Mesh faces must have the "Region" property.
@@ -79,13 +80,13 @@ PipelineStatus SurfaceMeshRegionsDeleteSelectedModifierDelegate::apply(const Mod
             mesh.removeRegionProperty(SurfaceMeshRegions::SelectionProperty);
 
             // Get access to the per-face region information.
-            BufferAccess<const int32_t> regionProperty = mesh.expectFaceProperty(SurfaceMeshFaces::RegionProperty);
+            BufferReadAccess<int32_t> regionProperty = mesh.expectFaceProperty(SurfaceMeshFaces::RegionProperty);
 
             // Delete all faces that belong to one of the selected mesh regions.
             boost::dynamic_bitset<> faceMask(mesh.faceCount());
             for(SurfaceMesh::face_index face : mesh.facesRange()) {
                 SurfaceMesh::region_index region = regionProperty[face];
-                if(region >= 0 && region < selectionProperty.size() && selectionProperty[region]) {
+                if(region >= 0 && region < selectionAccess.size() && selectionAccess[region]) {
                     faceMask.set(face);
                 }
             }
@@ -95,12 +96,12 @@ PipelineStatus SurfaceMeshRegionsDeleteSelectedModifierDelegate::apply(const Mod
             // Delete the selected regions.
             boost::dynamic_bitset<> regionMask(mesh.regionCount());
             for(SurfaceMesh::region_index region : mesh.regionsRange()) {
-                if(selectionProperty[region]) {
+                if(selectionAccess[region]) {
                     regionMask.set(region);
                     numSelected++;
                 }
             }
-            selectionProperty.reset();
+            selectionAccess.reset();
             mesh.deleteRegions(regionMask);
         }
     }

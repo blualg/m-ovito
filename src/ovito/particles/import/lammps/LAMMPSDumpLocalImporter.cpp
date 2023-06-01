@@ -264,7 +264,7 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 
                 // If the bond "Topology" property was loaded, we need to shift particle indices by 1, because LAMMPS
                 // uses 1-based atom IDs and OVITO uses 0-based indices.
-                if(BufferAccess<ParticleIndexPair> topologyProperty = bonds()->getMutableProperty(BondsObject::TopologyProperty)) {
+                if(BufferWriteAccess<ParticleIndexPair, access_mode::read_write> topologyProperty = bonds()->getMutableProperty(BondsObject::TopologyProperty)) {
                     for(ParticleIndexPair& ab : topologyProperty) {
                         ab[0] -= 1;
                         ab[1] -= 1;

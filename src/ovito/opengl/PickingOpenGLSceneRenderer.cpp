@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -150,7 +150,7 @@ std::tuple<const SceneRenderer::ObjectPickingRecord*, quint32> PickingOpenGLScen
                 quint32 subObjectID = objectID - objRecord->baseObjectID;
                 for(const auto& range : objRecord->indexedRanges) {
                     if(subObjectID >= range.second && subObjectID < range.second + range.first->size()) {
-                        subObjectID = range.second + BufferAccess<const int32_t>(range.first).get(subObjectID - range.second);
+                        subObjectID = range.second + BufferReadAccess<int32_t>(range.first).get(subObjectID - range.second);
                         break;
                     }
                 }

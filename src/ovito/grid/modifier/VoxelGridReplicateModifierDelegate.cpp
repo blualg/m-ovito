@@ -97,7 +97,7 @@ PipelineStatus VoxelGridReplicateModifierDelegate::apply(const ModifierEvaluatio
             for(PropertyObject* property : newVoxelGrid->makePropertiesMutable()) {
                 // First, copy the original property data to a temporary buffer so that
                 // it doesn't get destroyed while we are rewriting it to the replicated property array.
-                BufferWriteAccess array(property);
+                RawBufferAccess<access_mode::read_write> array(property);
                 size_t stride = array.stride();
                 std::byte* dst = array.data();
                 std::vector<std::byte> buffer(dst, dst + stride * existingVoxelGrid->elementCount());

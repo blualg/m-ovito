@@ -148,8 +148,12 @@ bool OffscreenOpenGLSceneRenderer::startRender(const RenderSettings* settings, c
     QOpenGLFramebufferObjectFormat framebufferFormat;
     framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
     _framebufferObject = std::make_unique<QOpenGLFramebufferObject>(_framebufferSize, framebufferFormat);
-    if(!_framebufferObject->isValid())
-        throw RendererException(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
+    if(!_framebufferObject->isValid()) {
+        if(_framebufferSize.width() > 16000 || _framebufferSize.height() > 16000)
+            throw RendererException(tr("Failed to create OpenGL framebuffer object for offscreen rendering. The selected combination of large image rendering size and/or antialiasing (supersampling) level may exceed what is supported by the OpenGL graphics driver."));
+        else
+            throw RendererException(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
+    }
 
     // Bind OpenGL buffer.
     if(!_framebufferObject->bind())

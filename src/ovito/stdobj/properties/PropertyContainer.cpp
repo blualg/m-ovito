@@ -100,7 +100,12 @@ const PropertyObject* PropertyContainer::expectProperty(const QString& propertyN
 ******************************************************************************/
 void PropertyContainer::makePropertiesMutableInternal()
 {
+    OVITO_CHECK_OBJECT_POINTER(this);
+    OVITO_ASSERT(isSafeToModify());
+
     for(const PropertyObject* property : properties()) {
+        OVITO_CHECK_OBJECT_POINTER(property);
+        OVITO_ASSERT(properties().contains(property));
         if(property->isBeingAccessedFromPython()) {
             OORef<PropertyObject> clone = CloneHelper().cloneObject(property, false);
             replaceReferencesTo(property, std::move(clone));
@@ -361,7 +366,7 @@ std::vector<size_t> PropertyContainer::sortById()
 #endif
     if(!getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
         return {};
-    BufferAccess<const IdentifierIntType> ids = getProperty(PropertyObject::GenericIdentifierProperty);
+    BufferReadAccess<IdentifierIntType> ids = getProperty(PropertyObject::GenericIdentifierProperty);
     if(!ids)
         return {};
 
@@ -384,7 +389,7 @@ std::vector<size_t> PropertyContainer::sortById()
         const_cast<PropertyObject*>(prop)->reorderElements(permutation);
     }
 
-    OVITO_ASSERT(boost::range::is_sorted(BufferAccess<const IdentifierIntType>(getProperty(PropertyObject::GenericIdentifierProperty)).range()));
+    OVITO_ASSERT(boost::range::is_sorted(BufferReadAccess<IdentifierIntType>(getProperty(PropertyObject::GenericIdentifierProperty)).range()));
 
     return invertedPermutation;
 }
@@ -425,8 +430,10 @@ void PropertyContainer::loadFromStream(ObjectLoadStream& stream)
         stream.expectChunk(0x01);
         bool excludeRecomputableData;
         stream >> excludeRecomputableData;
-        if(excludeRecomputableData)
-            setElementCount(0);
+        if(excludeRecomputableData) {
+            // Reset internal element counter.
+            _elementCount.set(this, PROPERTY_FIELD(elementCount), 0);
+        }
         stream.closeChunk();
     }
     // This is needed only for backward compatibility with early dev builds of OVITO 3.0:
@@ -442,7 +449,7 @@ void PropertyContainer::loadFromStreamComplete(ObjectLoadStream& stream)
     DataObject::loadFromStreamComplete(stream);
 
     // For backward compatibility with old OVITO versions.
-    // Make sure size of deserialized property arrays is consistent.
+    // Make sure sizes of deserialized property arrays are consistent.
     if(stream.formatVersion() < 30004) {
         for(const PropertyObject* property : properties()) {
             if(property->size() != elementCount()) {
@@ -497,7 +504,7 @@ QString PropertyContainer::elementInfoString(size_t elementIndex, const ConstDat
         str += property->name().toHtmlEscaped();
         str += QStringLiteral(":</key> <val>");
         if(property->dataType() == PropertyObject::Int32) {
-            BufferAccess<const int*> data(property);
+            BufferReadAccess<int*> data(property);
             for(size_t component = 0; component < data.componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(", ");
                 str += QString::number(data.get(elementIndex, component));
@@ -510,21 +517,21 @@ QString PropertyContainer::elementInfoString(size_t elementIndex, const ConstDat
             }
         }
         else if(property->dataType() == PropertyObject::Int64) {
-            BufferAccess<const int64_t*> data(property);
+            BufferReadAccess<int64_t*> data(property);
             for(size_t component = 0; component < property->componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(", ");
                 str += QString::number(data.get(elementIndex, component));
             }
         }
         else if(property->dataType() == PropertyObject::Float32) {
-            BufferAccess<const float*> data(property);
+            BufferReadAccess<float*> data(property);
             for(size_t component = 0; component < property->componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(", ");
                 str += QString::number(data.get(elementIndex, component));
             }
         }
         else if(property->dataType() == PropertyObject::Float64) {
-            BufferAccess<const double*> data(property);
+            BufferReadAccess<double*> data(property);
             for(size_t component = 0; component < property->componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(", ");
                 str += QString::number(data.get(elementIndex, component));

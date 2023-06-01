@@ -169,7 +169,7 @@ protected:
         /// Strong reference to the property storage.
         ConstPropertyPtr propertyRef;
         /// Data access to the property values.
-        BufferReadAccess propertyAccess;
+        RawBufferReadAccess propertyAccess;
         /// Indicates whether this variable is a caller-defined element variable.
         int variableClass = 0;
 

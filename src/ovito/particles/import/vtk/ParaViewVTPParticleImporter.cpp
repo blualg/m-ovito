@@ -152,7 +152,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                         OvitoClassPtr elementTypeClass = ParticlesObject::OOClass().typedPropertyElementClass(property->type());
                         if(!elementTypeClass && property->name() == QStringLiteral("Material Type")) elementTypeClass = &ElementType::OOClass();
                         if(elementTypeClass) {
-                            for(int t : BufferAccess<const int32_t>(property).subrange(baseParticleIndex)) {
+                            for(int t : BufferReadAccess<int32_t>(property).subrange(baseParticleIndex)) {
                                 if(!property->elementType(t)) {
                                     DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance());
                                     elementType->setNumericId(t);
@@ -194,7 +194,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
     // Convert superquadric 'Blockiness' values from the Aspherix simulation to 'Roundness' values used by OVITO particle visualization.
     bool transposeOrientations = false;
     if(PropertyObject* roundnessProperty = particles()->getMutableProperty(ParticlesObject::SuperquadricRoundnessProperty)) {
-        for(auto& v : BufferAccess<Vector_2<GraphicsFloatType>>(roundnessProperty).subrange(baseParticleIndex)) {
+        for(auto& v : BufferWriteAccess<Vector_2<GraphicsFloatType>, access_mode::read_write>(roundnessProperty).subrange(baseParticleIndex)) {
             // Blockiness1: "north-south" blockiness
             // Blockiness2: "east-west" blockiness
             // Roundness.x: "east-west" roundness
@@ -212,9 +212,11 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
     // Convert 3x3 'Tensor' property into particle orientation.
     if(const PropertyObject* tensorProperty = particles()->getProperty(QStringLiteral("Tensor"))) {
         if(tensorProperty->dataType() == PropertyObject::FloatDefault && tensorProperty->componentCount() == 9) {
-            BufferAccess<QuaternionG> orientations = particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::OrientationProperty);
+            BufferWriteAccess<QuaternionG, access_mode::write> orientations(
+                particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::OrientationProperty),
+                !preserveExistingData);
             auto* q = orientations.begin() + baseParticleIndex;
-            for(const Matrix3& tensor : BufferAccess<const Matrix3>(tensorProperty).subrange(baseParticleIndex)) {
+            for(const Matrix3& tensor : BufferReadAccess<Matrix3>(tensorProperty).subrange(baseParticleIndex)) {
                 if(!tensor.isZero())
                     *q++ = Quaternion(transposeOrientations ? tensor.transposed() : tensor, FloatType(1e-6)).toDataType<GraphicsFloatType>();
                 else
@@ -239,9 +241,9 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                 particles()->removeProperty(radiusProperty);
         }
         else if(!typesWithMeshShape.empty()) {
-            if(BufferAccess<GraphicsFloatType> radiusArray = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
+            if(BufferWriteAccess<GraphicsFloatType, access_mode::write> radiusArray = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
                 auto* radius = radiusArray.begin() + baseParticleIndex;
-                for(auto t : BufferAccess<const int32_t>(typeProperty).subrange(baseParticleIndex)) {
+                for(auto t : BufferReadAccess<int32_t>(typeProperty).subrange(baseParticleIndex)) {
                     if(std::find(typesWithMeshShape.cbegin(), typesWithMeshShape.cend(), t) != typesWithMeshShape.cend())
                         *radius = 0;
                     ++radius;

@@ -199,22 +199,22 @@ void GroImporter::FrameLoader::loadFile()
     setParticleCount(numParticles);
 
     // Create particle properties.
-    BufferAccess<Point3> posProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::PositionProperty);
+    BufferWriteAccess<Point3, access_mode::read_write> posProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::PositionProperty);
     PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
     PropertyObject* atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int32);
     PropertyObject* residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int32);
     PropertyObject* residueNumberProperty = particles()->createProperty(QStringLiteral("Residue Identifier"), PropertyObject::Int64);
-    BufferAccess<int64_t> identifierProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::IdentifierProperty);
-    BufferAccess<Vector3> velocityProperty;
+    BufferWriteAccess<int64_t, access_mode::read_write> identifierProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::IdentifierProperty);
+    BufferWriteAccess<Vector3, access_mode::discard_write> velocityProperty;
 
     // Give these particle properties new titles, which are displayed in the GUI under the file source.
     atomNameProperty->setTitle(tr("Atom names"));
     residueTypeProperty->setTitle(tr("Residue types"));
 
-    BufferAccess<int32_t> typeAccess(typeProperty);
-    BufferAccess<int32_t> atomNameAccess(atomNameProperty);
-    BufferAccess<int32_t> residueTypeAccess(residueTypeProperty);
-    BufferAccess<int64_t> residueNumberAccess(residueNumberProperty);
+    BufferWriteAccess<int32_t, access_mode::discard_write> typeAccess(typeProperty);
+    BufferWriteAccess<int32_t, access_mode::discard_write> atomNameAccess(atomNameProperty);
+    BufferWriteAccess<int32_t, access_mode::discard_write> residueTypeAccess(residueTypeProperty);
+    BufferWriteAccess<int64_t, access_mode::discard_write> residueNumberAccess(residueNumberProperty);
 
     // Parse list of atoms.
     int atomBaseNumber = 0;

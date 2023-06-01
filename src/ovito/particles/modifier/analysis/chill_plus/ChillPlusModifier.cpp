@@ -86,8 +86,8 @@ void ChillPlusModifier::ChillPlusEngine::perform()
     if(!neighborListBuilder.prepare(cutoff(), positions(), cell(), selection()))
         return;
 
-    BufferAccess<int32_t> output(structures());
-    BufferAccess<const SelectionIntType> selectionData(selection());
+    BufferWriteAccess<int32_t, access_mode::discard_write> output(structures());
+    BufferReadAccess<SelectionIntType> selectionData(selection());
 
     // Find all relevant q_lm
     // create matrix of q_lm

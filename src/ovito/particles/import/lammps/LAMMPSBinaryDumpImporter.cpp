@@ -466,7 +466,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
         // Assume reduced coordinates if all particle coordinates are within the [-0.02,1.02] interval.
         // We allow coordinates to be slightly outside the [0,1] interval, because LAMMPS
         // wraps around particles at the periodic boundaries only occasionally.
-        if(BufferAccess<const Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty)) {
+        if(BufferReadAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty)) {
             // Compute bound box of particle positions.
             Box3 boundingBox;
             boundingBox.addPoints(posProperty);
@@ -478,7 +478,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
 
     if(reducedCoordinates) {
         // Convert all atom coordinates from reduced to absolute (Cartesian) format.
-        if(BufferAccess<Point3> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty)) {
+        if(BufferWriteAccess<Point3, access_mode::read_write> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty)) {
             const AffineTransformation simCell = simulationCell()->cellMatrix();
             for(Point3& p : posProperty)
                 p = simCell * p;
@@ -490,7 +490,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
         // we need to divide values by two.
         for(int i = 0; i < (int)_columnMapping.size() && i < fileColumnNames.size(); i++) {
             if(_columnMapping[i].property.type() == ParticlesObject::RadiusProperty && fileColumnNames[i] == "diameter") {
-                if(BufferAccess<GraphicsFloatType> radiusProperty = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
+                if(BufferWriteAccess<GraphicsFloatType, access_mode::read_write> radiusProperty = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
                     for(auto& r : radiusProperty)
                         r *= 0.5f;
                 }
@@ -501,7 +501,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
         // Same for the "c_diameter[1..3]" columns being mapped to the "Aspherical Shape" property.
         for(int i = 0; i < (int)_columnMapping.size() && i < fileColumnNames.size(); i++) {
             if(_columnMapping[i].property.type() == ParticlesObject::AsphericalShapeProperty && (fileColumnNames[i] == "c_diameter[1]" || fileColumnNames[i] == "c_diameter[2]" || fileColumnNames[i] == "c_diameter[3]")) {
-                if(BufferAccess<Vector3G> shapeProperty = particles()->getMutableProperty(ParticlesObject::AsphericalShapeProperty)) {
+                if(BufferWriteAccess<Vector3G, access_mode::read_write> shapeProperty = particles()->getMutableProperty(ParticlesObject::AsphericalShapeProperty)) {
                     for(auto& s : shapeProperty) {
                         s.x() *= 0.5f;
                         s.y() *= 0.5f;

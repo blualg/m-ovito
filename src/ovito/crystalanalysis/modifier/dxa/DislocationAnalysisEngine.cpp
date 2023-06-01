@@ -120,11 +120,11 @@ void DislocationAnalysisEngine::perform()
     nextProgressSubStep();
     FloatType ghostLayerSize = FloatType(3.5) * _structureAnalysis->maximumNeighborDistance();
     if(!_tessellation->generateTessellation(_structureAnalysis->cell(),
-            BufferAccess<const Point3>(positions()).cbegin(),
+            BufferReadAccess<Point3>(positions()).cbegin(),
             _structureAnalysis->atomCount(),
             ghostLayerSize,
             false, // flag coverDomainWithFiniteTets
-            selection() ? BufferAccess<const SelectionIntType>(selection()).cbegin() : nullptr,
+            selection() ? BufferReadAccess<SelectionIntType>(selection()).cbegin() : nullptr,
             *this))
         return;
 
@@ -385,12 +385,12 @@ FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const Pipeli
     for(const auto& entry : dislocationLengths)
         maxId = std::max(maxId, entry.first->numericId());
     PropertyPtr dislocationLengthsProperty = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, maxId+1, DataBuffer::FloatDefault, 1, DislocationAnalysisModifier::tr("Total line length"));
-    BufferAccess<FloatType> dislocationLengthsAccess(dislocationLengthsProperty);
+    BufferWriteAccess<FloatType, access_mode::write> dislocationLengthsAccess(dislocationLengthsProperty);
     for(const auto& entry : dislocationLengths)
         dislocationLengthsAccess[entry.first->numericId()] = entry.second;
     dislocationLengthsAccess.reset();
     PropertyPtr dislocationTypeIds = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxId+1, DataBuffer::Int32, 1, DislocationAnalysisModifier::tr("Dislocation type"));
-    boost::algorithm::iota_n(BufferAccess<int32_t>(dislocationTypeIds).begin(), 0, dislocationTypeIds->size());
+    boost::algorithm::iota_n(BufferWriteAccess<int32_t, access_mode::discard_write>(dislocationTypeIds).begin(), 0, dislocationTypeIds->size());
 
     for(const auto& entry : dislocationLengths)
         dislocationTypeIds->addElementType(entry.first);
@@ -410,7 +410,7 @@ FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const Pipeli
 
     // Output a data table with the dislocation segment counts.
     PropertyPtr dislocationCountsProperty = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, maxId+1, DataBuffer::Int32, 1, DislocationAnalysisModifier::tr("Dislocation count"));
-    BufferAccessAndRef<int32_t> dislocationCountsAccess(dislocationCountsProperty);
+    BufferWriteAccessAndRef<int32_t, access_mode::write> dislocationCountsAccess(dislocationCountsProperty);
     for(const auto& entry : segmentCounts)
         dislocationCountsAccess[entry.first->numericId()] = entry.second;
     dislocationCountsAccess.reset();

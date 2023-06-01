@@ -191,10 +191,10 @@ bool GrainSegmentationEngine1::interface_cubic_hex(NeighborBond& bond, Interface
 bool GrainSegmentationEngine1::rotateInterfaceAtoms()
 {
     // Make a copy of structure types and orientations.
-    BufferAccess<const PTMAlgorithm::StructureType> structuresArray(structureTypes());
+    BufferReadAccess<PTMAlgorithm::StructureType> structuresArray(structureTypes());
     _adjustedStructureTypes = std::vector<PTMAlgorithm::StructureType>(structuresArray.cbegin(), structuresArray.cend());
     _adjustedOrientations = std::vector<Quaternion>(orientations()->size());
-    boost::transform(BufferAccess<const QuaternionG>(orientations()), _adjustedOrientations.begin(), [](const QuaternionG& q) { return q.toDataType<FloatType>(); });
+    boost::transform(BufferReadAccess<QuaternionG>(orientations()), _adjustedOrientations.begin(), [](const QuaternionG& q) { return q.toDataType<FloatType>(); });
 
     // Only rotate hexagonal atoms if handling of coherent interfaces is enabled
     if (!_handleBoundaries)
@@ -437,8 +437,8 @@ fclose(fout);
     if(_algorithmType == GrainSegmentationModifier::GraphClusteringAutomatic || _algorithmType == GrainSegmentationModifier::GraphClusteringManual) {
 
         // Create PropertyStorage objects for the output plot.
-        BufferAccess<FloatType> mergeDistanceArray = _mergeDistance = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Log merge distance"));
-        BufferAccess<FloatType> mergeSizeArray = _mergeSize = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Delta merge size"));
+        BufferWriteAccess<FloatType, access_mode::discard_read_write> mergeDistanceArray = _mergeDistance = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Log merge distance"));
+        BufferWriteAccess<FloatType, access_mode::discard_read_write> mergeSizeArray = _mergeSize = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Delta merge size"));
 
         // Generate output data plot points from dendrogram data.
         FloatType* mergeDistanceIter = mergeDistanceArray.begin();
@@ -455,18 +455,18 @@ fclose(fout);
 
         // Create PropertyStorage objects for the output plot.
         numPlot = 0;
-        for (auto y: regressor.ys) {
+        for(auto y : regressor.ys) {
             numPlot += (y > 0) ? 1 : 0; // plot positive distances only, for clarity
         }
 
-        BufferAccess<FloatType> logMergeSizeArray = _logMergeSize = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Log geometric merge size"));
-        BufferAccess<FloatType> logMergeDistanceArray = _logMergeDistance = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Log merge distance"));
+        BufferWriteAccess<FloatType, access_mode::discard_write> logMergeSizeArray = _logMergeSize = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Log geometric merge size"));
+        BufferWriteAccess<FloatType, access_mode::discard_write> logMergeDistanceArray = _logMergeDistance = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Log merge distance"));
 
         // Generate output data plot points from dendrogram data.
         FloatType* logMergeDistanceIter = logMergeDistanceArray.begin();
         FloatType* logMergeSizeIter = logMergeSizeArray.begin();
-        for (size_t i=0;i<regressor.residuals.size();i++) {
-            if (regressor.ys[i] > 0) {
+        for(size_t i=0;i<regressor.residuals.size();i++) {
+            if(regressor.ys[i] > 0) {
                 *logMergeSizeIter++ = regressor.xs[i];
                 *logMergeDistanceIter++ = regressor.ys[i];
             }
@@ -475,8 +475,8 @@ fclose(fout);
     }
     else {
         // Create PropertyStorage objects for the output plot.
-        BufferAccess<FloatType> mergeDistanceArray = _mergeDistance = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Misorientation (degrees)"));
-        BufferAccess<FloatType> mergeSizeArray = _mergeSize = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Merge size"));
+        BufferWriteAccess<FloatType, access_mode::discard_write> mergeDistanceArray = _mergeDistance = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Misorientation (degrees)"));
+        BufferWriteAccess<FloatType, access_mode::discard_write> mergeSizeArray = _mergeSize = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, numPlot, DataBuffer::FloatDefault, 1, GrainSegmentationModifier::tr("Merge size"));
 
         // Generate output data plot points from dendrogram data.
         FloatType* mergeDistanceIter = mergeDistanceArray.begin();
@@ -529,7 +529,7 @@ void GrainSegmentationEngine2::perform()
     const std::vector<GrainSegmentationEngine1::DendrogramNode>& dendrogram = _engine1->_dendrogram;
 
     std::vector<Quaternion> meanOrientation(_engine1->orientations()->size());
-    boost::transform(BufferAccess<const QuaternionG>(_engine1->orientations()), meanOrientation.begin(), [](const QuaternionG& q) { return q.toDataType<FloatType>(); });
+    boost::transform(BufferReadAccess<QuaternionG>(_engine1->orientations()), meanOrientation.begin(), [](const QuaternionG& q) { return q.toDataType<FloatType>(); });
 
     // Iterate through merge list until distance cutoff is met.
     DisjointSet uf(_numParticles);
@@ -551,7 +551,7 @@ void GrainSegmentationEngine2::perform()
 
     // Assign new consecutive IDs to root clusters.
     _numClusters = 1;
-    BufferAccess<const int32_t> structuresArray(_engine1->structureTypes());
+    BufferReadAccess<int32_t> structuresArray(_engine1->structureTypes());
     std::vector<int> clusterStructureTypes;
     std::vector<Quaternion> clusterOrientations;
     for(size_t i = 0; i < _numParticles; i++) {
@@ -573,7 +573,7 @@ void GrainSegmentationEngine2::perform()
 
     // Allocate and fill output array storing the grain IDs (1-based identifiers).
     _grainIds =  DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, _numClusters - 1, PropertyObject::IntIdentifier, 1, QStringLiteral("Grain Identifier"));
-    boost::algorithm::iota_n(BufferAccess<IdentifierIntType>(_grainIds).begin(), IdentifierIntType{1}, _grainIds->size());
+    boost::algorithm::iota_n(BufferWriteAccess<IdentifierIntType, access_mode::discard_write>(_grainIds).begin(), IdentifierIntType{1}, _grainIds->size());
     if(isCanceled())
         return;
 
@@ -582,7 +582,7 @@ void GrainSegmentationEngine2::perform()
 
     // Allocate output array storing the structure type of grains.
     _grainStructureTypes = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, _numClusters - 1, PropertyObject::Int32, 1, QStringLiteral("Structure Type"));
-    boost::copy(clusterStructureTypes, BufferAccess<int32_t>(_grainStructureTypes).begin());
+    boost::copy(clusterStructureTypes, BufferWriteAccess<int32_t, access_mode::discard_write>(_grainStructureTypes).begin());
     // Transfer the set of PTM crystal structure types to the structure column of the grain table.
     for(const ElementType* type : _engine1->structureTypes()->elementTypes()) {
         if(type->enabled())
@@ -596,13 +596,14 @@ void GrainSegmentationEngine2::perform()
     _grainColors = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, _numClusters - 1, DataBuffer::FloatGraphics, 3, QStringLiteral("Color"), 0, QStringList() << QStringLiteral("R") << QStringLiteral("G") << QStringLiteral("B"));
     std::default_random_engine rng(1);
     std::uniform_real_distribution<FloatType> uniform_dist(0, 1);
-    boost::generate(BufferAccess<ColorG>(_grainColors), [&]() { return ColorG::fromHSV(static_cast<GraphicsFloatType>(uniform_dist(rng)), 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.8f, 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.5f); });
+    boost::generate(BufferWriteAccess<ColorG, access_mode::discard_write>(_grainColors), [&]() { return ColorG::fromHSV(static_cast<GraphicsFloatType>(uniform_dist(rng)), 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.8f, 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.5f); });
     if(isCanceled())
         return;
 
     // Allocate output array storing the mean lattice orientation of grains (represented by a quaternion).
-    _grainOrientations = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, _numClusters - 1, DataBuffer::FloatDefault, 4, QStringLiteral("Orientation"), 0, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z") << QStringLiteral("W"));
-    boost::copy(clusterOrientations, BufferAccess<Quaternion>(_grainOrientations).begin());
+    _grainOrientations = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, _numClusters - 1, DataBuffer::FloatDefault, 4, QStringLiteral("Orientation"), 0, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z") << QStringLiteral("W"));
+    OVITO_ASSERT(clusterOrientations.size() == _grainOrientations->size());
+    boost::copy(clusterOrientations, BufferWriteAccess<Quaternion, access_mode::discard_write>(_grainOrientations).begin());
 
     // Determine new IDs for non-root clusters.
     for(size_t particleIndex = 0; particleIndex < _numParticles; particleIndex++)
@@ -613,12 +614,13 @@ void GrainSegmentationEngine2::perform()
     // Relabel atoms after cluster IDs have changed.
     // Also count the number of atoms in each cluster.
     {
-        BufferAccess<int64_t> atomClustersArray(atomClusters());
-        BufferAccess<int64_t> grainSizeArray(_grainSizes);
+        BufferWriteAccess<int64_t, access_mode::read_write> atomClustersArray(atomClusters());
+        BufferWriteAccess<int64_t, access_mode::read_write> grainSizeArray(_grainSizes);
         for(size_t particleIndex = 0; particleIndex < _numParticles; particleIndex++) {
             size_t gid = clusterRemapping[particleIndex];
             atomClustersArray[particleIndex] = gid;
-            if(gid != 0) grainSizeArray[gid - 1]++;
+            if(gid != 0)
+                grainSizeArray[gid - 1]++;
         }
     }
     if(isCanceled())
@@ -630,7 +632,7 @@ void GrainSegmentationEngine2::perform()
         // Determine the index remapping for reordering the grain list by size.
         std::vector<size_t> mapping(_numClusters - 1);
         std::iota(mapping.begin(), mapping.end(), size_t(0));
-        std::sort(mapping.begin(), mapping.end(), [grainSizeArray = BufferAccess<const int64_t>(_grainSizes)](size_t a, size_t b) {
+        std::sort(mapping.begin(), mapping.end(), [grainSizeArray = BufferReadAccess<int64_t>(_grainSizes)](size_t a, size_t b) {
             return grainSizeArray[a] > grainSizeArray[b];
         });
         if(isCanceled())
@@ -652,7 +654,7 @@ void GrainSegmentationEngine2::perform()
 
         // Remap per-particle grain IDs.
 
-        for(auto& id : BufferAccess<int64_t>(atomClusters()))
+        for(auto& id : BufferWriteAccess<int64_t, access_mode::read_write>(atomClusters()))
             id = inverseMapping[id];
         if(isCanceled())
             return;
@@ -671,8 +673,8 @@ bool GrainSegmentationEngine2::mergeOrphanAtoms()
     setProgressText(GrainSegmentationModifier::tr("Grain segmentation - merging orphan atoms"));
     setProgressValue(0);
 
-    BufferAccess<int64_t> atomClustersArray(atomClusters());
-    BufferAccess<int64_t> grainSizeArray(_grainSizes);
+    BufferWriteAccess<int64_t, access_mode::read_write> atomClustersArray(atomClusters());
+    BufferWriteAccess<int64_t, access_mode::read_write> grainSizeArray(_grainSizes);
 
     /// The bonds connecting neighboring non-crystalline atoms.
     std::vector<GrainSegmentationEngine1::NeighborBond> noncrystallineBonds;

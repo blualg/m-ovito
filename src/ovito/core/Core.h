@@ -136,7 +136,9 @@
 * SYCL
 ******************************************************************************/
 #ifdef OVITO_USE_SYCL
+    #pragma GCC visibility push(default)
     #include <CL/sycl.hpp>
+    #pragma GCC visibility pop
 #endif
 
 /******************************************************************************

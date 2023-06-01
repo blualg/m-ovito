@@ -25,6 +25,7 @@
 #include <ovito/particles/objects/VectorVis.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/data/SyclBufferAccess.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include "ParticlesAffineTransformationModifierDelegate.h"
 
@@ -49,6 +50,8 @@ QVector<DataObjectReference> ParticlesAffineTransformationModifierDelegate::OOMe
 ******************************************************************************/
 PipelineStatus ParticlesAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
+    using namespace cl::sycl;
+
     if(const ParticlesObject* inputParticles = state.getObject<ParticlesObject>()) {
         inputParticles->verifyIntegrity();
 
@@ -56,49 +59,64 @@ PipelineStatus ParticlesAffineTransformationModifierDelegate::apply(const Modifi
         ParticlesObject* outputParticles = state.makeMutable(inputParticles);
 
         // Create a modifiable copy of the particle position.
-        BufferAccess<Point3> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
+        PropertyObject* posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
+        if(posProperty->size() != 0) {
 
-        // Determine transformation matrix.
-        AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
-        const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
+            // Determine transformation matrix.
+            AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
+            const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
 
-        if(mod->selectionOnly()) {
-            if(BufferAccess<const SelectionIntType> selProperty = inputParticles->getProperty(ParticlesObject::SelectionProperty)) {
-                const auto* s = selProperty.cbegin();
-                for(Point3& p : posProperty) {
-                    if(*s++)
-                        p = tm * p;
-                }
-            }
-        }
-        else {
-            // Check if the matrix describes a pure translation. If yes, we can
-            // simply add vectors instead of computing full matrix products.
-            Vector3 translation = tm.translation();
-            if(tm == AffineTransformation::translation(translation)) {
+            if(mod->selectionOnly()) {
+                if(const PropertyObject* selProperty = inputParticles->getProperty(ParticlesObject::SelectionProperty)) {
 #ifdef OVITO_USE_SYCL
-                using namespace cl::sycl;
-                default_selector device_selector;
-                queue queue(device_selector);
-                qDebug() << "Running SYCL on" << queue.get_device().get_info<info::device::name>();
-                {
-                    buffer<marray<FloatType, 3>, 1> color_sycl(reinterpret_cast<marray<FloatType, 3>*>(colorProperty.begin()), range<1>(colorProperty.size()));
-                    queue.submit([&](handler& cgh) {
-                        auto color_acc = color_sycl.get_access<access::mode::discard_write>(cgh);
-                        cgh.parallel_for<class color_mapping>(range<1>{colorProperty.size()}, [=](id<1> it) {
-                            qDebug() << "i=" << it[0];
-                            color_acc[it[0]] = {1.0, 1.0, 1.0};
+                    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](handler& cgh) {
+                        SyclBufferAccess<Point3> posAccessor(posProperty, cgh);
+                        SyclBufferAccess<const SelectionIntType> selAccessor(selProperty, cgh);
+                        cgh.parallel_for<class particles_affine_transformation_selection>(range<>(posProperty->size()), [=](size_t i) {
+                            if(selAccessor[i])
+                                posAccessor[i] = tm * posAccessor[i];
                         });
                     });
-                }
 #else
-                for(Point3& p : posProperty)
-                    p += translation;
+                    BufferReadAccess<SelectionIntType> selAccess;
+                    const auto* s = selAccess.cbegin();
+                    for(Point3& p : BufferWriteAccess<Point3, access_mode::read_write>(posProperty)) {
+                        if(*s++)
+                            p = tm * p;
+                    }
 #endif
+                }
             }
             else {
-                for(Point3& p : posProperty)
-                    p = tm * p;
+                // Check if the matrix describes a pure translation. If yes, we can
+                // simply add vectors instead of computing full matrix products.
+                if(tm.isTranslationMatrix()) {
+                    const Vector3 translation = tm.translation();
+#ifdef OVITO_USE_SYCL
+                    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](handler& cgh) {
+                        SyclBufferAccess<Point3> posAccessor(posProperty, cgh);
+                        cgh.parallel_for<class particles_affine_transformation_simple_translation>(range<>(posProperty->size()), [=](size_t i) {
+                            posAccessor[i] += translation;
+                        });
+                    });
+#else
+                    for(Point3& p : BufferWriteAccess<Point3, access_mode::read_write>(posProperty))
+                        p += translation;
+#endif
+                }
+                else {
+#ifdef OVITO_USE_SYCL
+                    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](handler& cgh) {
+                        SyclBufferAccess<Point3> posAccessor(posProperty, cgh);
+                        cgh.parallel_for<class particles_affine_transformation_full_xform>(range<>(posProperty->size()), [=](size_t i) {
+                            posAccessor[i] = tm * posAccessor[i];
+                        });
+                    });
+#else
+                    for(Point3& p : BufferAccess<Point3>(posProperty))
+                        p = tm * p;
+#endif
+                }
             }
         }
         outputParticles->verifyIntegrity();
@@ -151,13 +169,13 @@ PipelineStatus VectorParticlePropertiesAffineTransformationModifierDelegate::app
             PropertyObject* property = mutableObjectPath.lastAs<PropertyObject>();
             if(property->dataType() == DataBuffer::Float32) {
                 const auto tm = mod->effectiveAffineTransformation(inputState).toDataType<float>();
-                BufferAccess<Vector_3<float>> propertyAccess(property);
+                BufferWriteAccess<Vector_3<float>, access_mode::read_write> propertyAccess(property);
                 if(!mod->selectionOnly() || !container || !container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
                     for(auto& v : propertyAccess)
                         v = tm * v;
                 }
                 else {
-                    if(BufferAccess<const SelectionIntType> selProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
+                    if(BufferReadAccess<SelectionIntType> selProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
                         const auto* s = selProperty.cbegin();
                         for(auto& v : propertyAccess) {
                             if(*s++)
@@ -168,13 +186,13 @@ PipelineStatus VectorParticlePropertiesAffineTransformationModifierDelegate::app
             }
             else {
                 const auto tm = mod->effectiveAffineTransformation(inputState).toDataType<double>();
-                BufferAccess<Vector_3<double>> propertyAccess(property);
+                BufferWriteAccess<Vector_3<double>, access_mode::read_write> propertyAccess(property);
                 if(!mod->selectionOnly() || !container || !container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
                     for(auto& v : propertyAccess)
                         v = tm * v;
                 }
                 else {
-                    if(BufferAccess<const SelectionIntType> selProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
+                    if(BufferReadAccess<SelectionIntType> selProperty = container->getProperty(PropertyObject::GenericSelectionProperty)) {
                         const auto* s = selProperty.cbegin();
                         for(auto& v : propertyAccess) {
                             if(*s++)

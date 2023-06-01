@@ -236,7 +236,7 @@ void SliceModifier::renderPlane(SceneRenderer* renderer, const Plane3& plane, co
         renderer->addToLocalBoundingBox(vertexBoundingBox);
     }
     else {
-        BufferAccessAndRef<Point3> positions = DataBufferPtr::create(vertices.size(), DataBuffer::FloatDefault, 3);
+        BufferFactory<Point3> positions(vertices.size());
         boost::range::copy(vertices, positions.begin());
         LinePrimitive buffer;
         buffer.setPositions(positions.take());

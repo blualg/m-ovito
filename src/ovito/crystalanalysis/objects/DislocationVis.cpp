@@ -263,11 +263,11 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
         // Allocate rendering data buffers.
         std::vector<int> subobjToSegmentMap(lineSegmentCount + cornerCount);
         FloatType lineDiameter = std::max(lineWidth(), FloatType(0));
-        BufferAccessAndRef<Point3G> cornerPoints = DataBufferPtr::create(cornerCount, DataBuffer::FloatGraphics, 3);
-        BufferAccessAndRef<ColorG> cornerColors = DataBufferPtr::create(cornerCount, DataBuffer::FloatGraphics, 3);
-        BufferAccessAndRef<Point3G> baseSegmentPoints = DataBufferPtr::create(lineSegmentCount, DataBuffer::FloatGraphics, 3);
-        BufferAccessAndRef<Point3G> headSegmentPoints = DataBufferPtr::create(lineSegmentCount, DataBuffer::FloatGraphics, 3);
-        BufferAccessAndRef<ColorG> segmentColors = DataBufferPtr::create(lineSegmentCount, DataBuffer::FloatGraphics, 3);
+        BufferFactory<Point3G> cornerPoints(cornerCount);
+        BufferFactory<ColorG> cornerColors(cornerCount);
+        BufferFactory<Point3G> baseSegmentPoints(lineSegmentCount);
+        BufferFactory<Point3G> headSegmentPoints(lineSegmentCount);
+        BufferFactory<ColorG> segmentColors(lineSegmentCount);
 
         // Build list of line segments.
         auto cornerPointsIter = cornerPoints.begin();
@@ -363,8 +363,8 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
 
         if(dislocationsObj) {
             if(showBurgersVectors()) {
-                BufferAccessAndRef<Point3G> baseArrowPoints = DataBufferPtr::create(dislocationsObj->segments().size(), DataBuffer::FloatGraphics, 3);
-                BufferAccessAndRef<Point3G> headArrowPoints = DataBufferPtr::create(dislocationsObj->segments().size(), DataBuffer::FloatGraphics, 3);
+                BufferFactory<Point3G> baseArrowPoints(dislocationsObj->segments().size());
+                BufferFactory<Point3G> headArrowPoints(dislocationsObj->segments().size());
                 subobjToSegmentMap.reserve(subobjToSegmentMap.size() + dislocationsObj->segments().size());
                 int arrowIndex = 0;
                 for(const DislocationSegment* segment : dislocationsObj->segments()) {
@@ -430,9 +430,9 @@ void DislocationVis::renderOverlayMarker(AnimationTime time, const DataObject* d
     const DislocationSegment* segment = dislocationsObj->segments()[segmentIndex];
 
     // Generate the polyline segments to render.
-    BufferAccessAndRef<Point3G> baseSegmentPoints = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
-    BufferAccessAndRef<Point3G> headSegmentPoints = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
-    BufferAccessAndRef<Point3G> cornerVertices = DataBufferPtr::create(0, DataBuffer::FloatGraphics, 3);
+    BufferFactory<Point3G> baseSegmentPoints(0);
+    BufferFactory<Point3G> headSegmentPoints(0);
+    BufferFactory<Point3G> cornerVertices(0);
     clipDislocationLine(segment->line, *cellObject, dislocationsObj->cuttingPlanes(), [&](const Point3& v1, const Point3& v2, bool isInitialSegment) {
         baseSegmentPoints.push_back(v1.toDataType<GraphicsFloatType>());
         headSegmentPoints.push_back(v2.toDataType<GraphicsFloatType>());
@@ -477,7 +477,7 @@ void DislocationVis::renderOverlayMarker(AnimationTime time, const DataObject* d
     renderer->renderParticles(cornerBuffer);
 
     if(!segment->line.empty()) {
-        BufferAccessAndRef<Point3G> wrappedHeadPos = DataBufferPtr::create(1, DataBuffer::FloatGraphics, 3);
+        BufferFactory<Point3G> wrappedHeadPos(1);
         wrappedHeadPos[0] = cellObject->wrapPoint(segment->line.front()).toDataType<GraphicsFloatType>();
         ParticlePrimitive headBuffer;
         headBuffer.setShadingMode(ParticlePrimitive::FlatShading);

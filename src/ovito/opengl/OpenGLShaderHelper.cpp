@@ -151,7 +151,7 @@ void OpenGLShaderHelper::load(const QString& id, const QString& vertexShaderFile
 /******************************************************************************
 * Uploads some data to a new OpenGL buffer object.
 ******************************************************************************/
-QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*, BufferAccess<const int32_t>)>&& fillMemoryFunc)
+QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*, BufferReadAccess<int32_t>)>&& fillMemoryFunc)
 {
     // This method must be called from the main thread.
     OVITO_ASSERT(QThread::currentThread() == QOpenGLContext::currentContext()->thread());
@@ -321,9 +321,9 @@ QOpenGLBuffer OpenGLShaderHelper::uploadDataBuffer(const ConstDataBufferPtr& dat
     }
 
     // Create an OpenGL buffer object and fill it with the data from the DataBuffer.
-    return createCachedBuffer(dataBuffer, elementSize, usage, inputRate, [&](void* p, BufferAccess<const int32_t> subset) {
+    return createCachedBuffer(dataBuffer, elementSize, usage, inputRate, [&](void* p, BufferReadAccess<int32_t> subset) {
         if(dataBuffer->dataType() == DataBuffer::Float32 || dataBuffer->dataType() == DataBuffer::Int8 || dataBuffer->dataType() == DataBuffer::Int32) {
-            BufferReadAccess bufferAccess(dataBuffer);
+            RawBufferReadAccess bufferAccess(dataBuffer);
             if(!subset) {
                 // Data types of source and destination are the same. Can do a simple memcpy.
                 std::memcpy(p, bufferAccess.cdata(), bufferAccess.size() * bufferAccess.stride());
@@ -339,7 +339,7 @@ QOpenGLBuffer OpenGLShaderHelper::uploadDataBuffer(const ConstDataBufferPtr& dat
         }
         else if(dataBuffer->dataType() == DataBuffer::Float64) {
             // Convert from double to float data type.
-            BufferAccess<const double*> bufferAccess(dataBuffer);
+            BufferReadAccess<double*> bufferAccess(dataBuffer);
             float* dst = static_cast<float*>(p);
             if(!subset) {
                 // Copy all data elements.
@@ -500,11 +500,11 @@ void OpenGLShaderHelper::draw(GLenum mode)
 
             // Check if this indirect drawing buffer has already been uploaded to the GPU.
             if(!indirectBuffer.isCreated()) {
-                indirectBuffer = createCachedBufferImpl(sizeof(DrawArraysIndirectCommand), static_cast<QOpenGLBuffer::Type>(GL_DRAW_INDIRECT_BUFFER), PerInstance, [&](void* buffer, BufferAccess<const int32_t> subset) {
+                indirectBuffer = createCachedBufferImpl(sizeof(DrawArraysIndirectCommand), static_cast<QOpenGLBuffer::Type>(GL_DRAW_INDIRECT_BUFFER), PerInstance, [&](void* buffer, BufferReadAccess<int32_t> subset) {
                     OVITO_ASSERT(!subset);
                     // Fill the buffer with DrawArraysIndirectCommand records.
                     DrawArraysIndirectCommand* dst = reinterpret_cast<DrawArraysIndirectCommand*>(buffer);
-                    for(auto index : BufferAccess<const int32_t>(_instancesSubset)) {
+                    for(auto index : BufferReadAccess<int32_t>(_instancesSubset)) {
                         dst->count = verticesPerInstance();
                         dst->instanceCount = 1;
                         dst->first = 0;
@@ -545,13 +545,13 @@ void OpenGLShaderHelper::drawReorderedGeometryShader(QOpenGLBuffer& indexBuffer,
 
     // Check if this index buffer has already been uploaded to the GPU.
     if(!indexBuffer.isCreated()) {
-        indexBuffer = createCachedBufferImpl(sizeof(GLsizei), QOpenGLBuffer::IndexBuffer, PerInstance, [&](void* buffer, BufferAccess<const int32_t> subset) {
+        indexBuffer = createCachedBufferImpl(sizeof(GLsizei), QOpenGLBuffer::IndexBuffer, PerInstance, [&](void* buffer, BufferReadAccess<int32_t> subset) {
             OVITO_ASSERT(!subset);
             auto sortedIndices = span(static_cast<GLuint*>(buffer), renderInstanceCount);
             if(!_instancesSubset)
                 std::iota(sortedIndices.begin(), sortedIndices.end(), (GLuint)0);
             else
-                boost::copy(BufferAccess<const int32_t>(_instancesSubset), sortedIndices.begin());
+                boost::copy(BufferReadAccess<int32_t>(_instancesSubset), sortedIndices.begin());
             // Call user function to generate the element ordering.
             std::move(computeOrderingFunc)(sortedIndices);
         });
@@ -590,13 +590,13 @@ void OpenGLShaderHelper::drawReorderedOpenGL4(GLenum mode, QOpenGLBuffer& indire
 
     // Check if this indirect drawing buffer has already been uploaded to the GPU.
     if(!indirectBuffer.isCreated()) {
-        indirectBuffer = createCachedBufferImpl(sizeof(DrawArraysIndirectCommand), static_cast<QOpenGLBuffer::Type>(GL_DRAW_INDIRECT_BUFFER), PerInstance, [&](void* buffer, BufferAccess<const int32_t> subset) {
+        indirectBuffer = createCachedBufferImpl(sizeof(DrawArraysIndirectCommand), static_cast<QOpenGLBuffer::Type>(GL_DRAW_INDIRECT_BUFFER), PerInstance, [&](void* buffer, BufferReadAccess<int32_t> subset) {
             OVITO_ASSERT(!subset);
             auto sortedIndices = span(static_cast<GLuint*>(buffer), renderInstanceCount);
             if(!_instancesSubset)
                 std::iota(sortedIndices.begin(), sortedIndices.end(), (GLuint)0);
             else
-                boost::copy(BufferAccess<const int32_t>(_instancesSubset), sortedIndices.begin());
+                boost::copy(BufferReadAccess<int32_t>(_instancesSubset), sortedIndices.begin());
             // Call user function to generate the element ordering.
             std::move(computeOrderingFunc)(sortedIndices);
 
@@ -726,7 +726,7 @@ void OpenGLShaderHelper::drawReorderedOpenGL2or3(GLenum mode, std::pair<std::vec
         if(!_instancesSubset)
             std::iota(sortedIndices.begin(), sortedIndices.end(), (GLuint)0);
         else
-            boost::copy(BufferAccess<const int32_t>(_instancesSubset), sortedIndices.begin());
+            boost::copy(BufferReadAccess<int32_t>(_instancesSubset), sortedIndices.begin());
         // Call user function to generate the element ordering.
         std::move(computeOrderingFunc)(sortedIndices);
 
@@ -734,7 +734,7 @@ void OpenGLShaderHelper::drawReorderedOpenGL2or3(GLenum mode, std::pair<std::vec
         if(_instancesSubset) {
             std::vector<GLuint> mapping(instanceCount());
             GLuint j = 0;
-            for(auto i : BufferAccess<const int32_t>(_instancesSubset))
+            for(auto i : BufferReadAccess<int32_t>(_instancesSubset))
                 mapping[i] = j++;
             for(auto& k : sortedIndices)
                 k = mapping[k];

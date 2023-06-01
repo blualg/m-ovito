@@ -133,13 +133,13 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
     PropertyContainer::Grower regionGrower(meshBuilder.mutableRegions());
 
     // Determine number of selected particles.
-    BufferAccess<const SelectionIntType> selectionArray(_selection);
+    BufferReadAccess<SelectionIntType> selectionArray(_selection);
     size_t npoly = boost::count_if(selectionArray, [](auto s) { return s != 0; });
     setProgressMaximum(npoly);
 
     ParticleBondMap bondMap(_bondTopology, _bondPeriodicImages);
 
-    BufferAccess<const Point3> positionsArray(_positions);
+    BufferReadAccess<Point3> positionsArray(_positions);
 
     // Working variables.
     std::vector<Point3> neighborPositions;
@@ -188,7 +188,7 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 
             // Find each input point among the newly added vertices of the mesh.
             // This will help us later to transfer the particle properties to the corresponding mesh vertices.
-            BufferAccess<const Point3> vertexPositions = meshBuilder.expectVertexProperty(SurfaceMeshVertices::PositionProperty);
+            BufferReadAccess<Point3> vertexPositions = meshBuilder.expectVertexProperty(SurfaceMeshVertices::PositionProperty);
             for(const Point3& vpos : std::move(vertexPositions).subrange(oldVertexCount)) {
                 auto idx = neighborIndices.cbegin();
                 for(const Point3& p : neighborPositions) {
@@ -269,7 +269,7 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 
     // Create the "Particle index" region property, which contains the index of the particle that is at the center of each coordination polyhedron.
     PropertyPtr particleIndexProperty = meshBuilder.createRegionProperty(DataBuffer::Uninitialized, QStringLiteral("Particle Index"), PropertyObject::Int64);
-    std::copy(regionToParticleMap.cbegin(), regionToParticleMap.cend(), BufferAccess<int64_t>(particleIndexProperty).begin());
+    std::copy(regionToParticleMap.cbegin(), regionToParticleMap.cend(), BufferWriteAccess<int64_t, access_mode::discard_write>(particleIndexProperty).begin());
 
     // Release data that is no longer needed.
     _positions.reset();

@@ -244,16 +244,16 @@ void ParticleImporter::FrameLoader::setImproperCount(size_t count)
 ******************************************************************************/
 void ParticleImporter::FrameLoader::generateBondPeriodicImageProperty()
 {
-    BufferAccess<const Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty);
+    BufferReadAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty);
     if(!posProperty) return;
 
-    BufferAccess<const ParticleIndexPair> bondTopologyProperty = bonds()->getProperty(BondsObject::TopologyProperty);
+    BufferReadAccess<ParticleIndexPair> bondTopologyProperty = bonds()->getProperty(BondsObject::TopologyProperty);
     if(!bondTopologyProperty) return;
 
-    BufferAccess<Vector3I> bondPeriodicImageProperty = bonds()->createProperty(BondsObject::PeriodicImageProperty);
+    BufferWriteAccess<Vector3I, access_mode::discard_write> bondPeriodicImageProperty = bonds()->createProperty(BondsObject::PeriodicImageProperty);
 
     if(!hasSimulationCell() || !simulationCell()->hasPbcCorrected()) {
-        bondPeriodicImageProperty.take()->fill<Vector3I>(Vector3I::Zero());
+        boost::fill(bondPeriodicImageProperty, Vector3I::Zero());
     }
     else {
         const AffineTransformation inverseCellMatrix = simulationCell()->inverseMatrix();
@@ -264,8 +264,7 @@ void ParticleImporter::FrameLoader::generateBondPeriodicImageProperty()
             OVITO_ASSERT(index1 < posProperty.size() && index2 < posProperty.size());
             Vector3 delta = posProperty[index1] - posProperty[index2];
             for(size_t dim = 0; dim < 3; dim++) {
-                if(pbcFlags[dim])
-                    bondPeriodicImageProperty[bondIndex][dim] = std::lround(inverseCellMatrix.prodrow(delta, dim));
+                bondPeriodicImageProperty[bondIndex][dim] = pbcFlags[dim] ? std::lround(inverseCellMatrix.prodrow(delta, dim)) : 0;
             }
         }
     }
@@ -319,7 +318,7 @@ void ParticleImporter::FrameLoader::generateBonds()
     if(!neighborFinder.prepare(maxCutoff, positionProperty, state().getObject<SimulationCellObject>(), {}))
         return;
 
-    BufferAccess<const int32_t> particleTypesArray(typeProperty);
+    BufferReadAccess<int32_t> particleTypesArray(typeProperty);
 
     // Multi-threaded loop over all particles, each thread producing a partial bonds list.
     size_t particleCount = positionProperty->size();
@@ -346,9 +345,9 @@ void ParticleImporter::FrameLoader::generateBonds()
 
     // Create BondsObject.
     setBondCount(boost::accumulate(partialBondsLists, (size_t)0, [](size_t n, const std::vector<Bond>& bonds) { return n + bonds.size(); }));
-    BufferAccess<ParticleIndexPair> bondTopologyProperty = this->bonds()->createProperty(BondsObject::TopologyProperty);
+    BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> bondTopologyProperty = this->bonds()->createProperty(BondsObject::TopologyProperty);
     PropertyObject* bondTypeProperty = this->bonds()->createProperty(BondsObject::TypeProperty);
-    BufferAccess<Vector3I> bondPeriodicImageProperty = this->bonds()->createProperty(BondsObject::PeriodicImageProperty);
+    BufferWriteAccess<Vector3I, access_mode::discard_write> bondPeriodicImageProperty = this->bonds()->createProperty(BondsObject::PeriodicImageProperty);
 
     // Create bond type.
     addNumericType(BondsObject::OOClass(), bondTypeProperty, 1, {});
@@ -375,10 +374,10 @@ void ParticleImporter::FrameLoader::computeVelocityMagnitude()
     if(!_particles || isCanceled())
         return;
 
-    if(BufferAccess<const Vector3> velocityVectors = _particles->getProperty(ParticlesObject::VelocityProperty)) {
+    if(BufferReadAccess<Vector3> velocityVectors = _particles->getProperty(ParticlesObject::VelocityProperty)) {
         auto v = velocityVectors.cbegin();
         PropertyObject* magnitudeProperty = particles()->createProperty(ParticlesObject::VelocityMagnitudeProperty);
-        for(FloatType& mag : BufferAccess<FloatType>(magnitudeProperty)) {
+        for(FloatType& mag : BufferWriteAccess<FloatType, access_mode::discard_write>(magnitudeProperty)) {
             mag = v->length();
             ++v;
         }
@@ -408,7 +407,7 @@ void ParticleImporter::FrameLoader::correctOffcenterCell()
         return;
 
     // Get the particle coordinates.
-    BufferAccess<const Point3> positions = _particles ? _particles->getProperty(ParticlesObject::PositionProperty) : nullptr;
+    BufferReadAccess<Point3> positions = _particles ? _particles->getProperty(ParticlesObject::PositionProperty) : nullptr;
     if(!positions || positions.size() == 0)
         return;
 
@@ -454,7 +453,7 @@ void ParticleImporter::FrameLoader::recenterSimulationCell()
     simulationCell->setCellMatrix(cellMatrix);
 
     if(_particles) {
-        if(BufferAccess<Point3> positions = _particles->getMutableProperty(ParticlesObject::PositionProperty)) {
+        if(BufferWriteAccess<Point3, access_mode::read_write> positions = _particles->getMutableProperty(ParticlesObject::PositionProperty)) {
             for(Point3& p : positions)
                 p -= offset;
         }
