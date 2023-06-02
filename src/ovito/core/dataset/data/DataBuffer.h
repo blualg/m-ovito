@@ -311,14 +311,16 @@ private:
     /// The data type of the array (a Qt metadata type identifier).
     int _dataType = QMetaType::Void;
 
-    /// The number of bytes per data type value.
+    /// The number of bytes per single value.
     size_t _dataTypeSize = 0;
 
     /// The number of elements in the property storage.
     size_t _numElements = 0;
 
+#ifndef OVITO_USE_SYCL
     /// The capacity of the allocated buffer.
     size_t _capacity = 0;
+#endif
 
     /// The number of bytes per element.
     size_t _stride = 0;
@@ -331,6 +333,7 @@ private:
 
 #ifdef OVITO_USE_SYCL
     /// The internal memory buffer holding the data elements.
+    /// Note: We are using std::optional<> here, because SYCL won't allow us to allocate 0-size buffers.
     std::optional<cl::sycl::buffer<std::byte>> _data;
 #else
     /// The internal memory buffer holding the data elements.
@@ -409,8 +412,8 @@ namespace Ovito {
 template<typename T>
 inline void DataBuffer::fill(const T value)
 {
-    WriteAccess writeAccess(*this);
     OVITO_ASSERT(stride() == sizeof(T));
+    WriteAccess writeAccess(*this);
 #ifdef OVITO_DEBUG
     _isDataInitialized = true;
 #endif

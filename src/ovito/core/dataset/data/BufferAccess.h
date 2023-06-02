@@ -675,25 +675,40 @@ private:
 template<typename T>
 class BufferFactory : public BufferWriteAccessAndRef<T, access_mode::discard_write>
 {
-    static_assert(!std::is_pointer_v<T>);
+    using base_class = BufferWriteAccessAndRef<T, access_mode::discard_write>;
+    using base_class::ComponentWise;
+    using typename base_class::element_type;
 
 public:
 
     /// Null constructor.
-    BufferFactory() : BufferWriteAccessAndRef<T, access_mode::discard_write>() {}
+    BufferFactory() noexcept : BufferWriteAccessAndRef<T, access_mode::discard_write>() {}
 
     /// Constructor allocating a new uninitialized DataBuffer of the given size.
-    BufferFactory(size_t elementCount) :
-        BufferWriteAccessAndRef<T, access_mode::discard_write>(DataBufferPtr::create(
+    template<bool IsEnabled = !ComponentWise>
+    BufferFactory(std::enable_if_t<IsEnabled, size_t> elementCount) :
+        base_class(DataBufferPtr::create(
             DataBuffer::BufferInitialization::Uninitialized,
             elementCount,
-            DataBufferPrimitiveType<T>::value,
-            DataBufferPrimitiveComponentCount<T>::value)) {}
+            DataBufferPrimitiveType<element_type>::value,
+            DataBufferPrimitiveComponentCount<element_type>::value)) {}
 
     /// Constructor allocating a new DataBuffer and initializing it with the values from the given iterator range.
     template<typename InputIterator>
     BufferFactory(InputIterator begin, InputIterator end) : BufferFactory(std::distance(begin, end)) {
         std::copy(std::move(begin), std::move(end), this->begin());
+    }
+
+    /// Constructor allocating a new uninitialized vector array of the given size and component count.
+    template<bool IsEnabled = ComponentWise>
+    BufferFactory(std::enable_if_t<IsEnabled, size_t> elementCount, size_t componentCount, QStringList componentNames = QStringList()) :
+        base_class(DataBufferPtr::create(
+            DataBuffer::BufferInitialization::Uninitialized,
+            elementCount,
+            DataBufferPrimitiveType<element_type>::value,
+            componentCount,
+            std::move(componentNames))) {
+        static_assert(DataBufferPrimitiveComponentCount<element_type>::value == 1);
     }
 };
 

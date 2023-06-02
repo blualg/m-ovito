@@ -120,6 +120,21 @@ bool DataObject::isSafeToModify() const
 }
 
 /******************************************************************************
+* Determines whether it is safe to modify the given child object without unwanted side effects.
+* This method just checks the use count of the child object. It assumes this parent object
+* is already safe to modify.
+******************************************************************************/
+bool DataObject::isSafeToModifySubObject(const DataObject* subObject) const
+{
+    OVITO_CHECK_OBJECT_POINTER(subObject);
+    OVITO_ASSERT(this->hasReferenceTo(subObject));
+    OVITO_ASSERT_MSG(this->isSafeToModify(), "DataObject::isSafeToModifySubobject()", qPrintable(QString("Cannot make sub-object %1 mutable, because parent object %2 itself is not safe to modify.").arg(subObject->getOOClass().name()).arg(getOOClass().name())));
+    OVITO_ASSERT(subObject->_dataReferenceCount.load() <= subObject->objectReferenceCount().load());
+
+    return (subObject->_dataReferenceCount.load() <= 1);
+}
+
+/******************************************************************************
 * Duplicates the given sub-object from this container object if it is shared
 * with others. After this method returns, the returned sub-object will be
 * exclusively owned by this container can be safely modified without unwanted
@@ -128,13 +143,8 @@ bool DataObject::isSafeToModify() const
 DataObject* DataObject::makeMutable(const DataObject* subObject)
 {
     OVITO_CHECK_OBJECT_POINTER(this);
-    OVITO_CHECK_OBJECT_POINTER(subObject);
-    OVITO_ASSERT(hasReferenceTo(subObject));
-    OVITO_ASSERT_MSG(!subObject || isSafeToModify(), "DataObject::makeMutable()", qPrintable(QString("Cannot make sub-object %1 mutable, because parent object %2 is not safe to modify.").arg(subObject->getOOClass().name()).arg(getOOClass().name())));
-    OVITO_ASSERT(_dataReferenceCount.load() <= objectReferenceCount().load());
 
-    if(subObject && !subObject->isSafeToModify()) {
-        OVITO_ASSERT(subObject->_dataReferenceCount.load() <= subObject->objectReferenceCount().load());
+    if(subObject && !isSafeToModifySubObject(subObject)) {
         OORef<DataObject> clone = CloneHelper().cloneObject(subObject, false);
         replaceReferencesTo(subObject, clone);
         OVITO_ASSERT(hasReferenceTo(clone));
@@ -142,7 +152,7 @@ DataObject* DataObject::makeMutable(const DataObject* subObject)
         subObject = clone;
     }
 #ifdef OVITO_DEBUG
-    if(!subObject->isSafeToModify()) {
+    if(subObject && !subObject->isSafeToModify()) {
         qDebug() << "ERROR: Data sub-object" << subObject << "owned by" << this << "is not mutable after a call to DataObject::makeMutable().";
         qDebug() << "Data reference count of sub-object is" << subObject->_dataReferenceCount.load();
         qDebug() << "Listing dependents of sub-object:";

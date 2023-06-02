@@ -66,7 +66,6 @@ OORef<RefTarget> DataBuffer::clone(bool deepCopy, CloneHelper& cloneHelper) cons
     clone->_dataType = _dataType;
     clone->_dataTypeSize = _dataTypeSize;
     clone->_numElements = _numElements;
-    clone->_capacity = _numElements;
     clone->_stride = _stride;
     clone->_componentCount = _componentCount;
     clone->_componentNames = _componentNames;
@@ -81,6 +80,7 @@ OORef<RefTarget> DataBuffer::clone(bool deepCopy, CloneHelper& cloneHelper) cons
         std::memcpy(writeAccessor.get_pointer(), readAccessor.get_pointer(), _numElements * _stride);
     }
 #else
+    clone->_capacity = _numElements;
     clone->_data.reset(new std::byte[_numElements * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
     std::memcpy(clone->_data.get(), _data.get(), _numElements * _stride);
 #endif
@@ -94,12 +94,15 @@ OORef<RefTarget> DataBuffer::clone(bool deepCopy, CloneHelper& cloneHelper) cons
 void DataBuffer::resize(size_t newSize, bool preserveData)
 {
     OVITO_ASSERT(_isDataInitialized || !preserveData || newSize == 0 || size() == 0);
-    // Note: Do not reallocate the buffer when its size is reduced.
-    // The filterResize() method relies on
-    // the data buffer's memory pointer to remain the same when the buffer is shrinked.
+#ifdef OVITO_DEBUG
     WriteAccess writeAccess(*this);
-    if(newSize > _capacity) {
+    _isDataInitialized = preserveData;
+#endif
+
+    // Note: We do not reallocate the storage for performance reasons when the number of elements gets reduced.
+    // The filterResize() method also relies on the data buffer's storage to remain in plkace when the buffer is shrinked.
 #ifdef OVITO_USE_SYCL
+    if(newSize != 0 && (!_data || newSize * _stride > _data->get_range()[0])) {
         cl::sycl::buffer<std::byte> newBuffer(newSize * _stride);
         if(preserveData && _numElements != 0) {
             cl::sycl::host_accessor writeAccessor(newBuffer, cl::sycl::write_only, cl::sycl::no_init);
@@ -107,30 +110,28 @@ void DataBuffer::resize(size_t newSize, bool preserveData)
             std::memcpy(writeAccessor.get_pointer(), readAccessor.get_pointer(), _stride * std::min(_numElements, newSize));
         }
         _data = std::move(newBuffer);
-#else
-        std::unique_ptr<std::byte[]> newBuffer(new std::byte[newSize * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
-        if(preserveData)
-            std::memcpy(newBuffer.get(), _data.get(), _stride * std::min(_numElements, newSize));
-        _data.swap(newBuffer);
-#endif
-        _capacity = newSize;
     }
-    // Initialize newly added elements to zero.
-#ifdef OVITO_USE_SYCL
+    // Initialize newly appended data elements to zero.
     if(newSize > _numElements && preserveData) {
+        OVITO_ASSERT(_data);
         cl::sycl::host_accessor writeAccessor(*_data, cl::sycl::write_only, _numElements == 0 ? cl::sycl::property_list{cl::sycl::no_init} : cl::sycl::property_list{});
         std::memset(writeAccessor.get_pointer() + _numElements * _stride, 0, (newSize - _numElements) * _stride);
     }
 #else
     OVITO_ASSERT(_data);
+    if(newSize > _capacity) {
+        std::unique_ptr<std::byte[]> newBuffer(new std::byte[newSize * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
+        if(preserveData)
+            std::memcpy(newBuffer.get(), _data.get(), _stride * std::min(_numElements, newSize));
+        _data.swap(newBuffer);
+        _capacity = newSize;
+    }
+    // Initialize newly appended data elements to zero.
     if(newSize > _numElements && preserveData) {
         std::memset(_data.get() + _numElements * _stride, 0, (newSize - _numElements) * _stride);
     }
 #endif
     _numElements = newSize;
-#ifdef OVITO_DEBUG
-    _isDataInitialized = preserveData;
-#endif
 }
 
 /******************************************************************************
@@ -141,15 +142,22 @@ void DataBuffer::resize(size_t newSize, bool preserveData)
 bool DataBuffer::grow(size_t numAdditionalElements, bool callerAlreadyHasWriteAccess)
 {
     OVITO_ASSERT(size() == 0 || _isDataInitialized);
+    if(numAdditionalElements == 0)
+        return false;
 #ifdef OVITO_DEBUG
     std::optional<WriteAccess> writeAccess;
     if(!callerAlreadyHasWriteAccess)
         writeAccess.emplace(*this);
 #endif
+
     size_t newSize = _numElements + numAdditionalElements;
     OVITO_ASSERT(newSize >= _numElements);
-    bool needToGrow;
-    if((needToGrow = (newSize > _capacity))) {
+#ifdef OVITO_USE_SYCL
+    bool needToGrow = (!_data || newSize * _stride > _data->get_range()[0]);
+#else
+    bool needToGrow = (newSize > _capacity);
+#endif
+    if(needToGrow) {
         // Grow the storage capacity of the data buffer.
         size_t newCapacity = (newSize < 1024)
             ? std::max(newSize * 2, (size_t)256)
@@ -169,8 +177,8 @@ bool DataBuffer::grow(size_t numAdditionalElements, bool callerAlreadyHasWriteAc
         std::unique_ptr<std::byte[]> newBuffer(new std::byte[newCapacity * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
         std::memcpy(newBuffer.get(), _data.get(), _stride * _numElements);
         _data.swap(newBuffer);
-#endif
         _capacity = newCapacity;
+#endif
     }
     _numElements = newSize;
     return needToGrow;
@@ -246,7 +254,6 @@ void DataBuffer::loadFromStream(ObjectLoadStream& stream)
     stream.readSizeT(_componentCount);
     stream >> _componentNames;
     stream.readSizeT(_numElements);
-    _capacity = _numElements;
 #ifdef OVITO_DEBUG
     if(_numElements != 0)
         _isDataInitialized = true;
@@ -258,6 +265,7 @@ void DataBuffer::loadFromStream(ObjectLoadStream& stream)
         stream.read(writeAccessor.get_pointer(), _stride * _numElements);
     }
 #else
+    _capacity = _numElements;
     _data.reset(new std::byte[_numElements * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
     stream.read(_data.get(), _stride * _numElements);
 #endif
@@ -280,14 +288,14 @@ void DataBuffer::replicate(size_t n, bool replicateValues)
     OVITO_ASSERT(oldData);
 
     _numElements *= n;
-    _capacity = _numElements;
 #ifdef OVITO_USE_SYCL
-    _data.emplace(_capacity * _stride);
+    _data.emplace(_numElements * _stride);
     cl::sycl::host_accessor writeAccessor(*_data, cl::sycl::write_only, cl::sycl::no_init);
     std::byte* dest = writeAccessor.get_pointer();
     cl::sycl::host_accessor readAccessor(*oldData, cl::sycl::read_only);
     const std::byte* src = readAccessor.get_pointer();
 #else
+    _capacity = _numElements;
     _data.reset(new std::byte[_capacity * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
     std::byte* dest = _data.get();
     const std::byte* src = oldData.get();
@@ -914,8 +922,10 @@ void DataBuffer::convertToDataType(int newDataType)
     _dataType = newDataType;
     _dataTypeSize = newDataTypeSize;
     _stride = newStride;
-    _capacity = _numElements;
     _data = std::move(newData);
+#ifndef OVITO_USE_SYCL
+    _capacity = _numElements;
+#endif
 }
 
 /******************************************************************************

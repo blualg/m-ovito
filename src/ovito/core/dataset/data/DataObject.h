@@ -113,11 +113,18 @@ public:
         return nullptr;
     }
 
-    /// Determines if it is safe to modify this data object without unwanted sideeffects.
+    /// Determines whether it is safe to modify this data object without unwanted side effects.
+    /// This method takes into account transitive ownerships and goes up the complete
+    /// parent hierarchy of objects if necessary.
     /// Returns true if there is only one exclusive owner of this data object (if any).
     /// Returns false if there are multiple references to this data object from several
     /// data collections or other container data objects.
     bool isSafeToModify() const;
+
+    /// Determines whether it is safe to modify the given child object without unwanted side effects.
+    /// This method just checks the use count of the child object. It assumes this parent object
+    /// is already safe to modify.
+    bool isSafeToModifySubObject(const DataObject* subObject) const;
 
     /// Returns whether this data object wants to be shown in the pipeline editor
     /// under the data source section. The default implementation returns false.

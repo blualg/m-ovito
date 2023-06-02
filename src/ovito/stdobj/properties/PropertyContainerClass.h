@@ -207,6 +207,9 @@ class PropertyFactory : public detail::BufferAccessTyped<T, PropertyObject, true
 
 public:
 
+    /// Null constructor.
+    PropertyFactory() noexcept : base_class() {}
+
     /// Constructor allocating a new uninitialized user property array of the given size and name.
     template<bool IsEnabled = !ComponentWise>
     PropertyFactory(const std::enable_if_t<IsEnabled, PropertyContainerClass>& containerClazz, size_t elementCount, const QString& propertyName) :
