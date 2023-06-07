@@ -531,7 +531,7 @@ PropertyObject* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, con
             int slashPos = propertyName.lastIndexOf(QChar('/'));
             if(slashPos != -1) propertyName.remove(0, slashPos + 1);
             std::pair<int, size_t> dataTypeAndComponents = gsd.getChunkDataTypeAndComponentCount(chunkName);
-            prop = container->createProperty(propertyName, dataTypeAndComponents.first, dataTypeAndComponents.second);
+            prop = container->createProperty(PropertyObject::makePropertyNameValid(propertyName), dataTypeAndComponents.first, dataTypeAndComponents.second);
         }
         if(prop->dataType() == PropertyObject::Float32)
             gsd.readFloatArray(chunkName, frameNumber, BufferAccess<float*>(prop).begin(), container->elementCount(), prop->componentCount());
@@ -557,7 +557,7 @@ PropertyObject* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, con
             int slashPos = propertyName.lastIndexOf(QChar('/'));
             if(slashPos != -1) propertyName.remove(0, slashPos + 1);
             std::pair<int, size_t> dataTypeAndComponents = gsd.getChunkDataTypeAndComponentCount(chunkName);
-            prop = container->createProperty(propertyName, dataTypeAndComponents.first, dataTypeAndComponents.second);
+            prop = container->createProperty(PropertyObject::makePropertyNameValid(propertyName), dataTypeAndComponents.first, dataTypeAndComponents.second);
         }
         OVITO_ASSERT(prop->stride() == defaultValueSize);
         if(prop->stride() == defaultValueSize) {

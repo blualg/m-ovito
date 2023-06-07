@@ -295,7 +295,7 @@ void XSFImporter::FrameLoader::loadFile()
             voxelGrid->setIdentifier(gridId);
         }
         else if(boost::algorithm::starts_with(line, "BEGIN_DATAGRID_3D_") || boost::algorithm::starts_with(line, "DATAGRID_3D_")) {
-            QString name = QString::fromLatin1(line + (boost::algorithm::starts_with(line, "BEGIN_DATAGRID_3D_") ? 18 : 12)).trimmed();
+            QString name = PropertyObject::makePropertyNameValid(QString::fromLatin1(line + (boost::algorithm::starts_with(line, "BEGIN_DATAGRID_3D_") ? 18 : 12)));
 
             // Parse grid dimensions.
             VoxelGrid::GridDimensions gridSize;

@@ -248,6 +248,9 @@ public:
     /// For example, to be valid, the name must not contains any dots.
     static void throwIfInvalidPropertyName(const QString& name);
 
+    /// Performs name mangeling if necessary to turn the given name into a valid property name.
+    static QString makePropertyNameValid(const QString& name);
+
 public:
 
     /// Helper class that is created when direct access to a property's memory is requested

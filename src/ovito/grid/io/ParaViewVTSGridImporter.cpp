@@ -190,7 +190,7 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
                     auto name = xml.attributes().value("Name");
 
                     // Create voxel grid property that receives the values.
-                    PropertyObject* property = gridObj->createProperty(name.toString(), dataType, numComponents);
+                    PropertyObject* property = gridObj->createProperty(PropertyObject::makePropertyNameValid(name.toString()), dataType, numComponents);
 
                     // Parse values from XML file.
                     if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, xml))

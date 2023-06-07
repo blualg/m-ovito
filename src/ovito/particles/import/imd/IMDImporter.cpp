@@ -114,8 +114,9 @@ void IMDImporter::FrameLoader::loadFile()
                         }
                         if(isStandardProperty) break;
                     }
-                    if(!isStandardProperty)
-                        columnMapping.mapCustomColumn(columnIndex, token, PropertyObject::FloatDefault);
+                    if(!isStandardProperty) {
+                        columnMapping.mapCustomColumn(columnIndex, PropertyObject::makePropertyNameValid(token), PropertyObject::FloatDefault);
+                    }
                 }
             }
         }

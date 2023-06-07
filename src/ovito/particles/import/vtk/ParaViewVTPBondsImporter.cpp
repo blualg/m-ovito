@@ -221,7 +221,7 @@ PropertyObject* ParaViewVTPBondsImporter::FrameLoader::createBondPropertyForData
         return bonds()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, BondsObject::ParticleIdentifiersProperty);
     }
     else {
-        return bonds()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, name.toString(), PropertyObject::FloatDefault, numComponents);
+        return bonds()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, PropertyObject::makePropertyNameValid(name.toString()), PropertyObject::FloatDefault, numComponents);
     }
     return nullptr;
 }

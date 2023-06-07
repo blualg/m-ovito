@@ -329,7 +329,7 @@ PropertyObject* ParaViewVTPParticleImporter::FrameLoader::createParticleProperty
         return particles()->createProperty(DataBuffer::Initialized, ParticlesObject::SuperquadricRoundnessProperty);
     }
     else {
-        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, name.toString(), PropertyObject::FloatDefault, numComponents);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, PropertyObject::makePropertyNameValid(name.toString()), PropertyObject::FloatDefault, numComponents);
     }
     return nullptr;
 }

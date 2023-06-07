@@ -168,7 +168,14 @@ void InputColumnMapping::validate() const
     // Check for conflicting mappings, i.e. several file columns being mapped to the same particle property.
     int numMapped = 0;
     for(auto m1 = begin(); m1 != end(); ++m1) {
-        if(!m1->isMapped()) continue;
+        // Skip columns to be ignored.
+        if(!m1->isMapped())
+            continue;
+
+        // Validate property names.
+        if(m1->property.type() == PropertyObject::GenericUserProperty)
+            PropertyObject::throwIfInvalidPropertyName(m1->property.name());
+
         numMapped++;
         OVITO_ASSERT(m1->property.containerClass() == containerClass());
         for(auto m2 = std::next(m1); m2 != end(); ++m2) {

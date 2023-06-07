@@ -419,4 +419,15 @@ void PropertyObject::throwIfInvalidPropertyName(const QString& name)
         throw Exception(tr("Invalid property name: '%1'. OVITO property names must not end with whitespace.").arg(name));
 }
 
+/******************************************************************************
+* Performs name mangeling if necessary to turn the given name into a valid property name.
+******************************************************************************/
+QString PropertyObject::makePropertyNameValid(const QString& name)
+{
+    QString mangledName = name.trimmed();
+    mangledName.replace(QChar('.'), QChar('_'));
+    mangledName.replace(QChar('/'), QChar('_'));
+    return mangledName;
+}
+
 }   // End of namespace

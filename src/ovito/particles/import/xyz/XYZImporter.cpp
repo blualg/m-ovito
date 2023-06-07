@@ -188,7 +188,7 @@ bool XYZImporter::mapVariableToProperty(ParticleInputColumnMapping& columnMappin
     else {
         // Only int or float custom properties are supported
         if(dataType == PropertyObject::Float32 || dataType == PropertyObject::Float64 || dataType == PropertyObject::Int8 || dataType == PropertyObject::Int32 || dataType == PropertyObject::Int64)
-            columnMapping.mapCustomColumn(column, name, dataType, vec);
+            columnMapping.mapCustomColumn(column, PropertyObject::makePropertyNameValid(name), dataType, vec);
         else
             return false;
     }

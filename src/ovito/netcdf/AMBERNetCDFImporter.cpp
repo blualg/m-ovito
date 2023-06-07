@@ -696,7 +696,7 @@ InputColumnInfo AMBERNetCDFImporter::mapVariableToColumn(const QString& name, in
         }
     }
 
-    column.mapCustomColumn(&ParticlesObject::OOClass(), name, dataType);
+    column.mapCustomColumn(&ParticlesObject::OOClass(), PropertyObject::makePropertyNameValid(name), dataType);
     return column;
 }
 

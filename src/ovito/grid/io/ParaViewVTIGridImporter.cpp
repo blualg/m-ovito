@@ -230,7 +230,7 @@ PropertyObject* ParaViewVTIGridImporter::FrameLoader::createGridPropertyForDataA
     int numComponents = std::max(1, xml.attributes().value("NumberOfComponents").toInt());
     auto name = xml.attributes().value("Name");
 
-    return gridObj->createProperty(name.toString(), PropertyObject::FloatDefault, numComponents);
+    return gridObj->createProperty(PropertyObject::makePropertyNameValid(name.toString()), PropertyObject::FloatDefault, numComponents);
 }
 
 }   // End of namespace
