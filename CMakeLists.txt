@@ -63,7 +63,6 @@ OPTION(OVITO_DISABLE_THREADING "Disable multi-threading code (meant only for dev
 OPTION(OVITO_USE_GIT_REVISION_NUMBER "Include Git revision information in OVITO version string." "OFF")
 OPTION(OVITO_BUILD_SSH_CLIENT "Build the integrated SSH client for remote file access (requires libssh)." "ON")
 OPTION(OVITO_LIBSSH_RUNTIME_LINKING "Load libssh at runtime" "OFF")
-OPTION(OVITO_USE_KOKKOS "Enable Kokkos (GPU) support" "OFF")
 
 # Ovito needs Qt>=6.2.
 SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 6.2)
@@ -100,11 +99,6 @@ SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Set visibility of symbols in libraries to hidden by default, except those exported in the source code.
 SET(CMAKE_CXX_VISIBILITY_PRESET "hidden")
 SET(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
-
-# Build Kokkos library.
-IF(OVITO_USE_KOKKOS)
-    ADD_SUBDIRECTORY(src/3rdparty/kokkos)
-ENDIF()
 
 # Enable link time optimization (LTO)
 IF(WIN32 OR APPLE) # On Linux, LTO currently breaks the executable due to missing symbols at runtime.

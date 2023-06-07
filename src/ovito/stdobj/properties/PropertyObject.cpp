@@ -401,4 +401,22 @@ const ElementType* PropertyObject::addNumericType(const PropertyContainerClass& 
     return addElementType(std::move(elementType));
 }
 
+/******************************************************************************
+* Throws an exception with an informative text if the given name is not a
+* valid name for an OVITO property.
+******************************************************************************/
+void PropertyObject::throwIfInvalidPropertyName(const QString& name)
+{
+    if(name.isEmpty())
+        throw Exception(tr("Invalid empty property name. OVITO property names must have at least length 1."));
+    if(name.contains(QChar('.')))
+        throw Exception(tr("Invalid property name: '%1'. Dots are not allowed in OVITO property names.").arg(name));
+    if(name.contains(QChar('/')))
+        throw Exception(tr("Invalid property name: '%1'. '/' is not allowed in OVITO property names.").arg(name));
+    if(name.startsWith(QChar(' ')))
+        throw Exception(tr("Invalid property name: '%1'. OVITO property names must not start with whitespace.").arg(name));
+    if(name.endsWith(QChar(' ')))
+        throw Exception(tr("Invalid property name: '%1'. OVITO property names must not end with whitespace.").arg(name));
+}
+
 }   // End of namespace

@@ -55,8 +55,12 @@ void PropertyContainerClass::registerStandardProperty(int typeId, QString name, 
     OVITO_ASSERT_MSG(dataType == PropertyObject::Int8 || dataType == PropertyObject::Int32 || dataType == PropertyObject::Int64 || dataType == PropertyObject::Float32 || dataType == PropertyObject::Float64, "PropertyContainerClass::registerStandardProperty", "Invalid standard property data type");
     OVITO_ASSERT_MSG(!typedPropertyElementClass || typedPropertyElementClass->isDerivedFrom(ElementType::OOClass()), "PropertyContainerClass::registerStandardProperty", "Element type class is not derived from ElementType base");
 
-    if(!name.isEmpty())
+    if(!name.isEmpty()) {
+#ifdef OVITO_DEBUG
+        PropertyObject::throwIfInvalidPropertyName(name);
+#endif
         _standardPropertyIds.insert(name, typeId);
+    }
     _standardPropertyNames.emplace(typeId, std::move(name));
     _standardPropertyTitles.emplace(typeId, std::move(title));
     _standardPropertyComponents.emplace(typeId, std::move(componentNames));
@@ -74,6 +78,17 @@ PropertyPtr PropertyContainerClass::createStandardProperty(DataBuffer::BufferIni
     if(property && property->type() != 0)
         property->setTitle(standardPropertyTitle(property->type()));
     return property;
+}
+
+/******************************************************************************
+* Creates a new property object for a user-defined property.
+******************************************************************************/
+PropertyPtr PropertyContainerClass::createUserProperty(DataBuffer::BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QString& name, int type, QStringList componentNames) const
+{
+    // Check if property name contains invalid characters.
+    PropertyObject::throwIfInvalidPropertyName(name);
+
+    return PropertyPtr::create(init, elementCount, dataType, componentCount, name, type, std::move(componentNames));
 }
 
 /******************************************************************************

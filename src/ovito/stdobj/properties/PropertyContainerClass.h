@@ -56,9 +56,7 @@ public:
     PropertyPtr createStandardProperty(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath = ConstDataObjectPath{}) const;
 
     /// Creates a new property object for a user-defined property.
-    PropertyPtr createUserProperty(DataBuffer::BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QString& name, int type = 0, QStringList componentNames = QStringList()) const {
-        return PropertyPtr::create(init, elementCount, dataType, componentCount, name, type, std::move(componentNames));
-    }
+    PropertyPtr createUserProperty(DataBuffer::BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QString& name, int type = 0, QStringList componentNames = QStringList()) const;
 
     /// Indicates whether this kind of property container supports picking of individual elements in the viewports.
     virtual bool supportsViewportPicking() const { return false; }

@@ -244,6 +244,10 @@ public:
     /// Returns the display title of this property object in the user interface.
     virtual QString objectTitle() const override;
 
+    /// Throws an exception with an informative text if the given name is not a valid name for an OVITO property.
+    /// For example, to be valid, the name must not contains any dots.
+    static void throwIfInvalidPropertyName(const QString& name);
+
 public:
 
     /// Helper class that is created when direct access to a property's memory is requested
