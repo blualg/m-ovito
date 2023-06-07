@@ -42,7 +42,7 @@ TARGET_INCLUDE_DIRECTORIES(gsd INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
 IF(MSVC)
     # Do not warn about use of unsafe CRT Library functions.
-    TARGET_COMPILE_DEFINITIONS(xdrgsdfile PRIVATE "_CRT_SECURE_NO_WARNINGS=")
+    TARGET_COMPILE_DEFINITIONS(gsd PRIVATE "_CRT_SECURE_NO_WARNINGS=")
     # Suppress warning on conversion from size_t to int, possible loss of data.
     TARGET_COMPILE_OPTIONS(gsd PRIVATE "/wd4267" "/wd4244")
     # Suppress warning on signed/unsigned mismatch.
