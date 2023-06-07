@@ -89,19 +89,15 @@ PipelineStatus VoxelGridReplicateModifierDelegate::apply(const ModifierEvaluatio
             newVoxelGrid->mutableDomain()->setCellMatrix(simCell);
 
             // Replicate voxel property data.
-            newVoxelGrid->replicate(numCopies, false);
-
             // We cannot rely on the replicate() method above to duplicate the data in the property
             // arrays, because for three-dimensional voxel grids, the storage order of voxel data matters.
             // The following loop takes care of replicating the property values the right way.
-            for(PropertyObject* property : newVoxelGrid->makePropertiesMutable()) {
-                // First, copy the original property data to a temporary buffer so that
-                // it doesn't get destroyed while we are rewriting it to the replicated property array.
-                RawBufferAccess<access_mode::read_write> array(property);
-                size_t stride = array.stride();
-                std::byte* dst = array.data();
-                std::vector<std::byte> buffer(dst, dst + stride * existingVoxelGrid->elementCount());
-                const std::byte* src = buffer.data();
+            for(auto [oldProperty, newProperty] : newVoxelGrid->reallocateProperties(existingVoxelGrid->elementCount() * numCopies)) {
+                RawBufferReadAccess oldData(oldProperty);
+                RawBufferAccess<access_mode::discard_write> newData(newProperty);
+                size_t stride = newData.stride();
+                std::byte* dst = newData.data();
+                const std::byte* src = oldData.cdata();
                 for(size_t z = 0; z < shape[2]; z++) {
                     size_t zs = z % oldShape[2];
                     for(size_t y = 0; y < shape[1]; y++) {
@@ -114,7 +110,7 @@ PipelineStatus VoxelGridReplicateModifierDelegate::apply(const ModifierEvaluatio
                         }
                     }
                 }
-                OVITO_ASSERT(dst == array.data() + property->size() * property->stride());
+                OVITO_ASSERT(dst == newData.data() + newProperty->size() * newProperty->stride());
             }
         }
     }

@@ -151,6 +151,10 @@ public:
         return _ref.get();
     }
 
+    inline operator const OORef<T>&() const noexcept {
+        return _ref;
+    }
+
     inline T& operator*() const noexcept {
         return *_ref;
     }
@@ -172,7 +176,7 @@ public:
 
     /// Returns a copy of the data object, which can be safely modified.
     DataOORef<std::remove_const_t<T>> makeCopy() const {
-        return CloneHelper().cloneObject(_ref, false);
+        return CloneHelper::cloneSingleObject(_ref, false);
     }
 
     /// Turns a const data object reference into a mutable data object reference.
@@ -198,7 +202,7 @@ public:
     /// If copying takes place, the internal reference is updated to point to the copy.
     std::remove_const_t<T>* makeMutableInplace() {
         if(this->_ref && !this->_ref->isSafeToModify()) {
-            reset(CloneHelper().cloneObject(this->_ref.get(), false));
+            reset(CloneHelper::cloneSingleObject(this->_ref.get(), false));
             OVITO_ASSERT(this->_ref->isSafeToModify());
         }
         return const_pointer_cast<std::remove_const_t<T>>(this->_ref.get());
@@ -206,12 +210,12 @@ public:
 
     /// Makes a shallow copy of a data object.
     static DataOORef<std::remove_const_t<T>> makeCopy(const T* obj) {
-        return CloneHelper().cloneObject(obj, false);
+        return CloneHelper::cloneSingleObject(obj, false);
     }
 
     /// Makes a deep copy of a data object and its children.
     static DataOORef<std::remove_const_t<T>> makeDeepCopy(const T* obj) {
-        return CloneHelper().cloneObject(obj, true);
+        return CloneHelper::cloneSingleObject(obj, true);
     }
 
     template<class T2, class U> friend DataOORef<T2> static_pointer_cast(DataOORef<U>&& p) noexcept;

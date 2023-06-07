@@ -80,7 +80,7 @@ PipelineStatus SurfaceMeshReplicateModifierDelegate::apply(const ModifierEvaluat
             newVertices->replicate(numCopies);
 
             // Shift vertex positions by the periodicity vector.
-            BufferWriteAccess<Point3, access_mode::read_write> positionProperty = newVertices->expectMutableProperty(SurfaceMeshVertices::PositionProperty);
+            BufferWriteAccess<Point3, access_mode::read_write> positionProperty = newVertices->expectMutableProperty(SurfaceMeshVertices::PositionProperty, DataBuffer::Initialized);
             Point3* p = positionProperty.begin();
             for(int imageX = newImages.minc.x(); imageX <= newImages.maxc.x(); imageX++) {
                 for(int imageY = newImages.minc.y(); imageY <= newImages.maxc.y(); imageY++) {

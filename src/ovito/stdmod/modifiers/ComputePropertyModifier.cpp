@@ -169,7 +169,7 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
     const PropertyObject* existingProperty = outputProperty().findInContainer(container);
     if(existingProperty && existingProperty->componentCount() == propertyComponentCount()) {
         // Copy existing data.
-        outp = CloneHelper().cloneObject(existingProperty, false);
+        outp = CloneHelper::cloneSingleObject(existingProperty, false);
 
         // Reset cached vis elements.
         if(myModApp)

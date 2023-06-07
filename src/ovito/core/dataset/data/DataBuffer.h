@@ -40,7 +40,7 @@ enum class access_mode
 namespace detail {
     // Forward declarations
     template<typename BufferType, bool StrongReference, Ovito::access_mode accessmode> class BufferAccessBase;
-    template<typename T> class SyclBufferAccessTyped;
+    template<typename T, Ovito::access_mode AccessMode> class SyclBufferAccessTyped;
 }
 
 /**
@@ -129,6 +129,9 @@ public:
     ///                     This also determines whether newly allocated memory is initialized to zero.
     void resize(size_t newSize, bool preserveData);
 
+    /// \brief Resizes the buffer and copies the data element from an existing buffer.
+    void resizeCopyFrom(size_t newSize, const DataBuffer& original);
+
     /// \brief Grows the number of data elements while preserving the exiting data.
     /// Newly added elements are *not* initialized to zero by this method.
     /// \return True if the memory buffer was reallocated, because the current capacity was insufficient
@@ -196,17 +199,12 @@ public:
     /// Sets all stored elements to zeros.
     void fillZero();
 
-    /// Extends the data array and replicates the existing data N times.
-    void replicate(size_t n, bool replicateValues = true);
+    /// Replicates existing data N times.
+    void replicateFrom(size_t n, const DataBuffer& original);
 
     /// Reduces the size of the storage array, deleting elements for which
     /// the corresponding bits in the bitmask array are set.
-    void filterResize(const boost::dynamic_bitset<>& mask);
-
-    /// Removes data elements for which the bits are set in the given bitmask array by moving elements from the back of
-    /// the array into the free slots. This method is potentially faster than filterResize() if only few elements are to be deleted.
-    /// However, the ordering of the remaining elements is NOT preserved.
-    void filterResizeReordering(const boost::dynamic_bitset<>& mask);
+    void filterResizeCopyFrom(size_t newSize, const boost::dynamic_bitset<>& mask, const DataBuffer& original);
 
     /// Creates a copy of the array, not containing those elements for which
     /// the corresponding bits in the given bit array were set.
@@ -281,6 +279,14 @@ public:
 #endif
     }
 
+#ifdef OVITO_USE_SYCL
+    /// Provides direct access to the internal SYCL buffer managed by this class.
+    cl::sycl::buffer<std::byte>& syclBuffer() {
+        OVITO_ASSERT(_data);
+        return *_data;
+    }
+#endif
+
 protected:
 
     /// Saves the class' contents to the given stream.
@@ -353,7 +359,7 @@ private:
 #endif
 
     template<typename BufferType, bool StrongReference, Ovito::access_mode accessmode> friend class detail::BufferAccessBase;
-    template<typename T> friend class detail::SyclBufferAccessTyped;
+    template<typename T, Ovito::access_mode AccessMode> friend class detail::SyclBufferAccessTyped;
 };
 
 /// Class template returning the data type identifier for the components in the given C++ array structure.
@@ -364,7 +370,7 @@ template<> struct DataBufferPrimitiveType<int64_t> { static constexpr DataBuffer
 template<> struct DataBufferPrimitiveType<float> { static constexpr DataBuffer::DataTypes value = DataBuffer::DataTypes::Float32; };
 template<> struct DataBufferPrimitiveType<double> { static constexpr DataBuffer::DataTypes value = DataBuffer::DataTypes::Float64; };
 template<typename T, std::size_t N> struct DataBufferPrimitiveType<std::array<T,N>> : public DataBufferPrimitiveType<T> {};
-#ifndef OVITO_USE_SYCL
+#ifdef OVITO_USE_SYCL
 template<typename T, std::size_t N> struct DataBufferPrimitiveType<cl::sycl::marray<T,N>> : public DataBufferPrimitiveType<T> {};
 #endif
 template<typename T> struct DataBufferPrimitiveType<Point_2<T>> : public DataBufferPrimitiveType<T> {};
@@ -387,7 +393,7 @@ OVITO_STATIC_ASSERT(DataBufferPrimitiveType<GraphicsFloatType>::value == DataBuf
 /// Class template returning the  number of components in the given C++ array structure.
 template<typename T, typename = void> struct DataBufferPrimitiveComponentCount { static constexpr size_t value = 1; };
 template<typename T, std::size_t N> struct DataBufferPrimitiveComponentCount<std::array<T,N>> { static constexpr size_t value = N; };
-#ifndef OVITO_USE_SYCL
+#ifdef OVITO_USE_SYCL
 template<typename T, std::size_t N> struct DataBufferPrimitiveComponentCount<cl::sycl::marray<T,N>> { static constexpr size_t value = N; };
 #endif
 template<typename T> struct DataBufferPrimitiveComponentCount<Point_2<T>> { static constexpr size_t value = 2; };
@@ -405,6 +411,7 @@ template<typename T> struct DataBufferPrimitiveComponentCount<SymmetricTensor2T<
 }   // End of namespace
 
 #include "BufferAccess.h"
+#include "SyclBufferAccess.h"
 
 namespace Ovito {
 
@@ -413,21 +420,25 @@ template<typename T>
 inline void DataBuffer::fill(const T value)
 {
     OVITO_ASSERT(stride() == sizeof(T));
+    if(size() == 0)
+        return;
     WriteAccess writeAccess(*this);
 #ifdef OVITO_DEBUG
     _isDataInitialized = true;
 #endif
 #ifdef OVITO_USE_SYCL
-    if(size() == 0)
-        return;
-    cl::sycl::buffer<T> typedBuffer = _data->reinterpret<T, 1>();
-    cl::sycl::host_accessor writeAccessor(typedBuffer, cl::sycl::write_only, cl::sycl::no_init);
-    T* begin = writeAccessor.get_pointer();
+    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](cl::sycl::handler& cgh) {
+        SyclBufferAccess<T, access_mode::discard_write> accessor(this, cgh);
+        // Note: Tried handler.fill() method, but it led to segfaults. Using a custom fill kernel instead:
+        cgh.parallel_for<class databuffer_fill>(cl::sycl::range(size()), [=](size_t i) {
+            accessor[i] = value;
+        });
+    });
 #else
     T* begin = reinterpret_cast<T*>(data());
-#endif
     T* end = begin + this->size();
     std::fill(begin, end, value);
+#endif
 }
 
 /// \brief Sets all array elements for which the corresponding entries in the
@@ -445,15 +456,14 @@ inline void DataBuffer::fillSelected(const T value, const DataBuffer& selectionP
     WriteAccess writeAccess(*this);
     ReadAccess readAccess(selectionProperty);
 #ifdef OVITO_USE_SYCL
-    cl::sycl::buffer<T> valueBuffer = _data->reinterpret<T, 1>();
-    cl::sycl::host_accessor writeAccessor(valueBuffer, cl::sycl::write_only);
-    cl::sycl::buffer<SelectionIntType> selectionBuffer = selectionProperty._data->reinterpret<SelectionIntType, 1>();
-    cl::sycl::host_accessor selectionAccessor(selectionBuffer, cl::sycl::read_only);
-    const SelectionIntType* __restrict selectionIter = selectionAccessor.get_pointer();
-    for(T* __restrict v = writeAccessor.get_pointer(), *end = v + this->size(); v != end; ++v) {
-        if(*selectionIter++)
-            *v = value;
-    }
+    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](cl::sycl::handler& cgh) {
+        SyclBufferAccess<T, access_mode::write> outputAccessor(this, cgh);
+        SyclBufferAccess<SelectionIntType, access_mode::read> selectionAccessor(&selectionProperty, cgh);
+        cgh.parallel_for<class databuffer_fillSelected>(cl::sycl::range(size()), [=](size_t i) {
+            if(selectionAccessor[i])
+                outputAccessor[i] = value;
+        });
+    });
 #else
     const SelectionIntType* __restrict selectionIter = reinterpret_cast<const SelectionIntType*>(selectionProperty.cdata());
     for(T* __restrict v = reinterpret_cast<T*>(data()), *end = v + this->size(); v != end; ++v) {

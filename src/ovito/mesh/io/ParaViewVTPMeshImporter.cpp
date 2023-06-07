@@ -161,8 +161,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             }
             // Copy point coordinates from temporary array to surface mesh data structure.
             OVITO_ASSERT(property->size() + vertexBaseIndex == meshBuilder.vertexCount());
-            BufferWriteAccess<Point3, access_mode::write> vertexPositions(meshBuilder.mutableVertices()->expectMutableProperty(SurfaceMeshVertices::PositionProperty));
-            boost::copy(BufferReadAccess<Point3>(property), std::next(vertexPositions.begin(), vertexBaseIndex));
+            meshBuilder.mutableVertices()->expectMutableProperty(SurfaceMeshVertices::PositionProperty, vertexBaseIndex == 0 ? DataBuffer::Uninitialized : DataBuffer::Initialized)->copyRangeFrom(*property, 0, vertexBaseIndex, property->size());
             xml.skipCurrentElement();
         }
         else if(xml.name().compare(QStringLiteral("Polys")) == 0) {

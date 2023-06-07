@@ -604,7 +604,7 @@ void ViewportsPanel::showSplitterContextMenu(const SplitterRectangle& splitter, 
         }
         _mainWindow.performTransaction(tr("Insert viewport"), [&]() {
             OORef<ViewportLayoutCell> newCell = OORef<ViewportLayoutCell>::create();
-            newCell->setViewport(CloneHelper().cloneObject(adjacentViewport, true));
+            newCell->setViewport(CloneHelper::cloneSingleObject(adjacentViewport, true));
             _viewportConfig->setActiveViewport(newCell->viewport());
             splitter.cell->insertChild(splitter.childCellIndex + 1, std::move(newCell), splitter.cell->childWeights()[splitter.childCellIndex]);
         });

@@ -269,34 +269,35 @@ public:
     vertex_index createVerticesRange(CoordinatesRange coordRange) {
         auto nverts = std::distance(std::begin(coordRange), std::end(coordRange));
         vertex_index startIndex = createVertices(nverts);
-        BufferWriteAccess<Point3, access_mode::write> vertexPositions(mutableVertexProperty(SurfaceMeshVertices::PositionProperty));
+        bool no_init = (startIndex == 0);
+        BufferWriteAccess<Point3, access_mode::write> vertexPositions(mutableVertexProperty(SurfaceMeshVertices::PositionProperty, no_init ? DataBuffer::Uninitialized : DataBuffer::Initialized), no_init);
         boost::copy(std::forward<CoordinatesRange>(coordRange), std::next(vertexPositions.begin(), startIndex));
         return startIndex;
     }
 
     /// Returns one of the standard vertex properties (or null if the property is not defined).
-    PropertyObject* mutableVertexProperty(SurfaceMeshVertices::Type ptype) {
-        return mutableVertices()->getMutableProperty(ptype);
+    PropertyObject* mutableVertexProperty(SurfaceMeshVertices::Type ptype, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
+        return mutableVertices()->getMutableProperty(ptype, cloneMode);
     }
 
     /// Returns one of the standard face properties (or null if the property is not defined).
-    PropertyObject* mutableFaceProperty(SurfaceMeshFaces::Type ptype) {
-        return mutableFaces()->getMutableProperty(ptype);
+    PropertyObject* mutableFaceProperty(SurfaceMeshFaces::Type ptype, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
+        return mutableFaces()->getMutableProperty(ptype, cloneMode);
     }
 
     /// Returns one of the standard region properties (or null if the property is not defined).
-    PropertyObject* mutableRegionProperty(SurfaceMeshRegions::Type ptype) {
-        return mutableRegions()->getMutableProperty(ptype);
+    PropertyObject* mutableRegionProperty(SurfaceMeshRegions::Type ptype, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
+        return mutableRegions()->getMutableProperty(ptype, cloneMode);
     }
 
     /// Returns a user vertex property (or null if the property is not defined).
-    PropertyObject* mutableVertexProperty(const QString& name) {
-        return mutableVertices()->getMutableProperty(name);
+    PropertyObject* mutableVertexProperty(const QString& name, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
+        return mutableVertices()->getMutableProperty(name, cloneMode);
     }
 
     /// Returns a user face property (or null if the property is not defined).
-    PropertyObject* mutableFaceProperty(const QString& name) {
-        return mutableFaces()->getMutableProperty(name);
+    PropertyObject* mutableFaceProperty(const QString& name, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
+        return mutableFaces()->getMutableProperty(name, cloneMode);
     }
 
     /// Attaches an existing property object to the vertices of the mesh.

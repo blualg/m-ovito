@@ -36,10 +36,10 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the menu.
 ******************************************************************************/
-ViewportMenu::ViewportMenu(MainWindow& mainWindow, Viewport* viewport, QWidget* viewportWidget) : 
-    QMenu(viewportWidget), 
+ViewportMenu::ViewportMenu(MainWindow& mainWindow, Viewport* viewport, QWidget* viewportWidget) :
+    QMenu(viewportWidget),
     _mainWindow(mainWindow),
-    _viewport(viewport), 
+    _viewport(viewport),
     _viewportWidget(viewportWidget)
 {
     QAction* action;
@@ -267,7 +267,7 @@ void ViewportMenu::onCreateCamera()
         OORef<PipelineSceneNode> cameraNode;
         {
             UndoSuspender noUndo;
-    
+
             // Create an instance of the StandardCameraSource class.
             OvitoClassPtr cameraSourceType = PluginManager::instance().findClass(QStringLiteral("StdObj"), QStringLiteral("StandardCameraSource"));
             if(!cameraSourceType)
@@ -324,7 +324,7 @@ void ViewportMenu::onSplitViewport(ViewportLayoutCell::SplitDirection direction)
     _mainWindow.performTransaction(tr("Split viewport"), [&]() {
 
         OORef<ViewportLayoutCell> newCell = OORef<ViewportLayoutCell>::create();
-        newCell->setViewport(CloneHelper().cloneObject(_viewport, true));
+        newCell->setViewport(CloneHelper::cloneSingleObject(_viewport, true));
 
         if(ViewportLayoutCell* parentCell = _layoutCell->parentCell()) {
             if(parentCell->splitDirection() == direction) {

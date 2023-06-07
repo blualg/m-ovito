@@ -145,7 +145,7 @@ DataObject* DataObject::makeMutable(const DataObject* subObject)
     OVITO_CHECK_OBJECT_POINTER(this);
 
     if(subObject && !isSafeToModifySubObject(subObject)) {
-        OORef<DataObject> clone = CloneHelper().cloneObject(subObject, false);
+        OORef<DataObject> clone = CloneHelper::cloneSingleObject(subObject, false);
         replaceReferencesTo(subObject, clone);
         OVITO_ASSERT(hasReferenceTo(clone));
         OVITO_ASSERT(!hasReferenceTo(subObject));
@@ -179,9 +179,6 @@ DataObject* DataObject::makeMutable(const DataObject* subObject)
 DataObject* DataObject::makeMutable(const DataObject* subObject, CloneHelper& cloneHelper)
 {
     OVITO_CHECK_OBJECT_POINTER(this);
-    OVITO_ASSERT(subObject);
-    OVITO_ASSERT_MSG(!subObject || isSafeToModify(), "DataObject::makeMutable()", qPrintable(QString("Cannot make sub-object %1 mutable, because parent object %2 is not safe to modify.").arg(subObject->getOOClass().name()).arg(getOOClass().name())));
-    OVITO_ASSERT(_dataReferenceCount.load() <= objectReferenceCount().load());
 
     if(DataObject* clone = cloneHelper.lookupCloneOf(subObject)) {
         OVITO_ASSERT(!hasReferenceTo(subObject));
@@ -189,10 +186,9 @@ DataObject* DataObject::makeMutable(const DataObject* subObject, CloneHelper& cl
         OVITO_ASSERT(clone->isSafeToModify());
         return clone;
     }
+    OVITO_ASSERT(!subObject || hasReferenceTo(subObject));
 
-    OVITO_ASSERT(hasReferenceTo(subObject));
-
-    if(subObject && !subObject->isSafeToModify()) {
+    if(subObject && !isSafeToModifySubObject(subObject)) {
         OVITO_ASSERT(subObject->_dataReferenceCount.load() <= subObject->objectReferenceCount().load());
         OORef<DataObject> clone = cloneHelper.cloneObject(subObject, false);
         replaceReferencesTo(subObject, clone);
@@ -201,7 +197,7 @@ DataObject* DataObject::makeMutable(const DataObject* subObject, CloneHelper& cl
         subObject = clone;
     }
 #ifdef OVITO_DEBUG
-    if(!subObject->isSafeToModify()) {
+    if(subObject && !subObject->isSafeToModify()) {
         qDebug() << "ERROR: Data sub-object" << subObject << "owned by" << this << "is not mutable after a call to DataObject::makeMutable().";
         qDebug() << "Data reference count of sub-object is" << subObject->_dataReferenceCount.load();
         qDebug() << "Listing dependents of sub-object:";

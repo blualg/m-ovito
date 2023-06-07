@@ -78,6 +78,16 @@ OORef<RefTarget> PropertyObject::clone(bool deepCopy, CloneHelper& cloneHelper) 
     OVITO_ASSERT(clone->identifier() == clone->name());
     finishReadAccess();
 
+#ifdef OVITO_USE_SYCL
+    if(isBeingAccessedFromPython()) {
+        // Force flush SYCL queue to complete the memcpy to the cloned data buffer now.
+        // That's needed because Python code may be performing subsequent writes to the old memory buffer that will go unnoticed by
+        // SYCL. We need to make sure these happen after the memcpy is completed, because a direct write access to the array should never
+        // affect the cloned property.
+        RawBufferReadAccess{clone};
+    }
+#endif
+
     return clone;
 }
 
@@ -195,35 +205,6 @@ bool PropertyObject::equals(const PropertyObject& other) const
 }
 
 /******************************************************************************
-* Puts the property array into a writable state.
-* In the writable state, the Python binding layer will allow write access
-* to the property's internal data.
-******************************************************************************/
-void PropertyObject::makeWritableFromPython()
-{
-    OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
-
-    if(!isSafeToModify())
-        throw Exception(tr("Modifying the data values stored in this property is not allowed, because the Property object currently is shared by more than one PropertyContainer or DataCollection. "
-                        "Please explicitly request a mutable version of the property using the '_' notation or by calling the DataObject.make_mutable() method on its parent container. "
-                        "See the documentation of this method for further information on OVITO's data model and the shared-ownership system."));
-    _isWritableFromPython++;
-}
-
-/******************************************************************************
-* Puts the property array back into the default read-only state.
-* In the read-only state, the Python binding layer will not permit write
-* access to the property's internal data.
-******************************************************************************/
-void PropertyObject::makeReadOnlyFromPython()
-{
-    OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
-
-    OVITO_ASSERT(_isWritableFromPython > 0);
-    _isWritableFromPython--;
-}
-
-/******************************************************************************
 * Helper method that remaps the existing type IDs to a contiguous range starting at the given
 * base ID. This method is mainly used for file output, because some file formats
 * work with numeric particle types only, which must form a contiguous range.
@@ -258,7 +239,7 @@ std::tuple<std::map<int,int>, ConstPropertyPtr> PropertyObject::generateContiguo
     ConstPropertyPtr remappedArray;
     if(remappingRequired) {
         // Make a copy of this property, which can be modified.
-        PropertyPtr copy = CloneHelper().cloneObject(this, false);
+        PropertyPtr copy = CloneHelper::cloneSingleObject(this, false);
         for(auto& id : BufferWriteAccess<int32_t, access_mode::discard_write>(copy))
             id = oldToNewMap[id];
         remappedArray = std::move(copy);
@@ -409,5 +390,24 @@ const ElementType* PropertyObject::addNumericType(const PropertyContainerClass& 
     // Add the new element type to the type list managed by this property.
     return addElementType(std::move(elementType));
 }
+
+/******************************************************************************
+* Creates an access guard object for this property.
+******************************************************************************/
+std::shared_ptr<BufferPythonAccessGuard> PropertyObject::aquireBufferPythonAccessGuard()
+{
+    OVITO_CHECK_OBJECT_POINTER(this);
+    auto guard = _pythonAccessGuard.lock();
+    if(!guard) {
+#ifndef OVITO_USE_SYCL
+        guard = std::make_shared<BufferPythonAccessGuard>(*this);
+#else
+        guard = ExecutionContext::current().ui().taskManager().createBufferBufferPythonAccessGuard(*this);
+#endif
+        _pythonAccessGuard = guard;
+    }
+    return guard;
+}
+
 
 }   // End of namespace

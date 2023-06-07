@@ -563,7 +563,7 @@ DataVis* PipelineSceneNode::makeVisElementIndependent(DataVis* visElement)
     OVITO_ASSERT(replacedVisElements().size() == replacementVisElements().size());
 
     // Clone the visual element.
-    OORef<DataVis> clonedVisElement = CloneHelper().cloneObject(visElement, true);
+    OORef<DataVis> clonedVisElement = CloneHelper::cloneSingleObject(visElement, true);
     DataVis* newVis = clonedVisElement.get();
 
     // Make sure the scene gets notified that the pipeline is changing if the operation is being undone.

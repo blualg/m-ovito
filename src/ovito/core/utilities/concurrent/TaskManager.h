@@ -88,6 +88,9 @@ public:
 #ifdef OVITO_USE_SYCL
     /// Returns the main SYCL out-of-order queue to which work can be submitted.
     cl::sycl::queue& syclQueue() { return _syclQueue; }
+
+    /// Creates a new BufferPythonAccessGuard instance and associates it with this TaskManager.
+    std::shared_ptr<BufferPythonAccessGuard> createBufferBufferPythonAccessGuard(DataBuffer& dataBuffer);
 #endif
 
 public Q_SLOTS:
@@ -138,6 +141,9 @@ private:
 #ifdef OVITO_USE_SYCL
     /// The main SYCL out-of-order queue for work on the compute device.
     cl::sycl::queue _syclQueue;
+
+    /// The head of the linked list of BufferPythonAccessGuard objects associated with this task manager's SYCL queue.
+    BufferPythonAccessGuard* _pythonAccessGuards = nullptr;
 #endif
 
     friend class Task;

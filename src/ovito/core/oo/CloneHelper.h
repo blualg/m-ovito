@@ -86,6 +86,34 @@ public:
         return cloneObject(obj.get(), deepCopy);
     }
 
+    /// \brief This creates a copy of a RefTarget derived object.
+    /// \param obj The input object to be cloned. Can be a \c NULL pointer.
+    /// \param deepCopy Specifies whether a deep or a shallow copy of the object should be created.
+    ///                 The exact interpretation of this parameter depends on the implementation
+    ///                 of the RefTarget::clone() method of the object. For a deep copy the complete
+    ///                 object graph is duplicated including sub-objects. For a shallow copy the clone
+    ///                 of the input object will reference the same sub-objects as the original one.
+    /// \return The clone of the input object or \c NULL if \a obj was \c NULL.
+    template<class T>
+    static OORef<T> cloneSingleObject(const T* obj, bool deepCopy) {
+        OORef<RefTarget> p = cloneSingleObjectImpl(obj, deepCopy);
+        OVITO_ASSERT_MSG(!p || p->getOOClass().isDerivedFrom(T::OOClass()), "CloneHelper::cloneSingleObject", qPrintable("The clone method of class " + obj->getOOClass().name() + " did not return an assignable instance of the class " + T::OOClass().name() + "."));
+        return static_object_cast<T>(std::move(p));
+    }
+
+    /// \brief This creates a copy of a RefTarget derived object.
+    /// \param obj The input object to be cloned. Can be a \c NULL pointer.
+    /// \param deepCopy Specifies whether a deep or a shallow copy of the object should be created.
+    ///                 The exact interpretation of this parameter depends on the implementation
+    ///                 of the RefTarget::clone() method of the object. For a deep copy the complete
+    ///                 object graph is duplicated including sub-objects. For a shallow copy the clone
+    ///                 of the input object will reference the same sub-objects as the original one.
+    /// \return The clone of the input object or \c NULL if \a obj was \c NULL.
+    template<class T>
+    static OORef<std::remove_const_t<T>> cloneSingleObject(const OORef<T>& obj, bool deepCopy) {
+        return cloneSingleObject(obj.get(), deepCopy);
+    }
+
     /// \brief Can be used to copy a sub-object reference.
     /// \param obj The sub-object to be cloned. Can be \c NULL.
     /// \param deepCopy Specifies whether a deep copy of the input object should be performed.
@@ -118,6 +146,9 @@ public:
     T* lookupCloneOf(const T* original) const { return static_cast<T*>(lookupCloneOf(static_cast<const RefTarget*>(original))); }
 
 private:
+
+    /// Clones an object.
+    static OORef<RefTarget> cloneSingleObjectImpl(const RefTarget* obj, bool deepCopy);
 
     /// Untyped version of the clone function.
     RefTarget* cloneObjectImpl(const RefTarget* obj, bool deepCopy);

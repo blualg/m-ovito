@@ -165,11 +165,11 @@ const DataObject* DataCollection::expectLeafObject(const DataObject::OOMetaClass
 /******************************************************************************
 * Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
 ******************************************************************************/
-DataObject* DataCollection::makeMutable(const DataObject* obj, bool deepCopy)
+DataObject* DataCollection::makeMutable(const DataObject* obj)
 {
     OVITO_ASSERT(contains(obj));
     if(!isSafeToModifySubObject(obj)) {
-        OORef<DataObject> clone = CloneHelper().cloneObject(obj, deepCopy);
+        OORef<DataObject> clone = CloneHelper::cloneSingleObject(obj, false);
         DataObject* clonedObj = clone.get();
         if(replaceObject(obj, std::move(clone))) {
             OVITO_ASSERT(clonedObj->isSafeToModify());

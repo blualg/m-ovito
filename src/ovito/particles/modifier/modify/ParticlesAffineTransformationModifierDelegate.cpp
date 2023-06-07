@@ -50,17 +50,17 @@ QVector<DataObjectReference> ParticlesAffineTransformationModifierDelegate::OOMe
 ******************************************************************************/
 PipelineStatus ParticlesAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-    using namespace cl::sycl;
-
     if(const ParticlesObject* inputParticles = state.getObject<ParticlesObject>()) {
         inputParticles->verifyIntegrity();
+        if(inputParticles->elementCount() != 0) {
+            // Get the input particle coordinates.
+            ConstPropertyPtr inputPositionProperty = inputParticles->expectProperty(ParticlesObject::PositionProperty);
 
-        // Make sure we can safely modify the particles object.
-        ParticlesObject* outputParticles = state.makeMutable(inputParticles);
+            // Make sure we can safely modify the particles object.
+            ParticlesObject* outputParticles = state.makeMutable(inputParticles);
 
-        // Create a modifiable copy of the particle position.
-        PropertyObject* posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
-        if(posProperty->size() != 0) {
+            // Create an uninitialized copy of the particle position property.
+            PropertyObject* outputPositionProperty = outputParticles->createProperty(DataBuffer::Uninitialized, ParticlesObject::PositionProperty);
 
             // Determine transformation matrix.
             AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
@@ -69,20 +69,22 @@ PipelineStatus ParticlesAffineTransformationModifierDelegate::apply(const Modifi
             if(mod->selectionOnly()) {
                 if(const PropertyObject* selProperty = inputParticles->getProperty(ParticlesObject::SelectionProperty)) {
 #ifdef OVITO_USE_SYCL
-                    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](handler& cgh) {
-                        SyclBufferAccess<Point3> posAccessor(posProperty, cgh);
-                        SyclBufferAccess<const SelectionIntType> selAccessor(selProperty, cgh);
-                        cgh.parallel_for<class particles_affine_transformation_selection>(range<>(posProperty->size()), [=](size_t i) {
-                            if(selAccessor[i])
-                                posAccessor[i] = tm * posAccessor[i];
+                    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](cl::sycl::handler& cgh) {
+                        SyclBufferAccess<const Point3, access_mode::read> posIn(inputPositionProperty, cgh);
+                        SyclBufferAccess<Point3, access_mode::discard_write> posOut(outputPositionProperty, cgh);
+                        SyclBufferAccess<const SelectionIntType, access_mode::read> selectionIn(selProperty, cgh);
+                        cgh.parallel_for<class particles_affine_transformation_selection>(cl::sycl::range(inputPositionProperty->size()), [=](size_t i) {
+                            posOut[i] = selectionIn[i] ? (tm * posIn[i]) : posIn[i];
                         });
                     });
 #else
-                    BufferReadAccess<SelectionIntType> selAccess;
+                    BufferReadAccess<const Point3> posIn(inputPositionProperty);
+                    const auto* pin = posIn.cbegin();
+                    BufferReadAccess<const SelectionIntType> selAccess(selProperty);
                     const auto* s = selAccess.cbegin();
-                    for(Point3& p : BufferWriteAccess<Point3, access_mode::read_write>(posProperty)) {
-                        if(*s++)
-                            p = tm * p;
+                    for(Point3& pout : BufferWriteAccess<Point3, access_mode::discard_write>(outputPositionProperty)) {
+                        pout = (*s++) ? (tm * (*pin)) : (*pin);
+                        ++pin;
                     }
 #endif
                 }
@@ -93,33 +95,39 @@ PipelineStatus ParticlesAffineTransformationModifierDelegate::apply(const Modifi
                 if(tm.isTranslationMatrix()) {
                     const Vector3 translation = tm.translation();
 #ifdef OVITO_USE_SYCL
-                    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](handler& cgh) {
-                        SyclBufferAccess<Point3> posAccessor(posProperty, cgh);
-                        cgh.parallel_for<class particles_affine_transformation_simple_translation>(range<>(posProperty->size()), [=](size_t i) {
-                            posAccessor[i] += translation;
+                    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](cl::sycl::handler& cgh) {
+                        SyclBufferAccess<const Point3, access_mode::read> posIn(inputPositionProperty, cgh);
+                        SyclBufferAccess<Point3, access_mode::discard_write> posOut(outputPositionProperty, cgh);
+                        cgh.parallel_for<class particles_affine_transformation_simple_translation>(cl::sycl::range(inputPositionProperty->size()), [=](size_t i) {
+                            posOut[i] = posIn[i] + translation;
                         });
                     });
 #else
-                    for(Point3& p : BufferWriteAccess<Point3, access_mode::read_write>(posProperty))
-                        p += translation;
+                    BufferReadAccess<const Point3> posIn(inputPositionProperty);
+                    const auto* pin = posIn.cbegin();
+                    for(Point3& pout : BufferWriteAccess<Point3, access_mode::discard_write>(outputPositionProperty))
+                        pout = (*pin++) + translation;
 #endif
                 }
                 else {
 #ifdef OVITO_USE_SYCL
-                    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](handler& cgh) {
-                        SyclBufferAccess<Point3> posAccessor(posProperty, cgh);
-                        cgh.parallel_for<class particles_affine_transformation_full_xform>(range<>(posProperty->size()), [=](size_t i) {
-                            posAccessor[i] = tm * posAccessor[i];
+                    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](cl::sycl::handler& cgh) {
+                        SyclBufferAccess<const Point3, access_mode::read> posIn(inputPositionProperty, cgh);
+                        SyclBufferAccess<Point3, access_mode::discard_write> posOut(outputPositionProperty, cgh);
+                        cgh.parallel_for<class particles_affine_transformation_full_xform>(cl::sycl::range(inputPositionProperty->size()), [=](size_t i) {
+                            posOut[i] = tm * posIn[i];
                         });
                     });
 #else
-                    for(Point3& p : BufferAccess<Point3>(posProperty))
-                        p = tm * p;
+                    BufferReadAccess<const Point3> posIn(inputPositionProperty);
+                    const auto* pin = posIn.cbegin();
+                    for(Point3& pout : BufferWriteAccess<Point3, access_mode::discard_write>(outputPositionProperty))
+                        pout = tm * (*pin++);
 #endif
                 }
             }
+            outputParticles->verifyIntegrity();
         }
-        outputParticles->verifyIntegrity();
     }
 
     return PipelineStatus::Success;

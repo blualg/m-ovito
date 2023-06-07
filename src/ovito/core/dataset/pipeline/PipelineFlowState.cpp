@@ -35,7 +35,7 @@ DataCollection* PipelineFlowState::mutableData()
 {
     OVITO_ASSERT(_data);
     if(_data && !_data->isSafeToModify()) {
-        _data = CloneHelper().cloneObject(_data.get(), false);
+        _data = CloneHelper::cloneSingleObject(_data.get(), false);
         OVITO_ASSERT(_data->isSafeToModify());
     }
     return const_cast<DataCollection*>(_data.get());

@@ -27,6 +27,7 @@
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/dataset/data/DataObjectReference.h>
+#include <ovito/core/dataset/data/BufferPythonAccessGuard.h>
 #include <ovito/stdobj/properties/ElementType.h>
 
 namespace Ovito::StdObj {
@@ -220,20 +221,6 @@ public:
     /// been remapped to the output IDs.
     std::tuple<std::map<int,int>, ConstPropertyPtr> generateContiguousTypeIdMapping(int baseId = 1) const;
 
-    ////////////////////////////// Support functions for the Python bindings //////////////////////////////
-
-    /// Indicates to the Python binding layer that this property object has been temporarily put into a
-    /// writable state. In this state, the binding layer will allow write access to the property's internal data.
-    bool isWritableFromPython() const { return _isWritableFromPython != 0; }
-
-    /// Puts the property array into a writable state.
-    /// In the writable state, the Python binding layer will allow write access to the property's internal data.
-    void makeWritableFromPython();
-
-    /// Puts the property array back into the default read-only state.
-    /// In the read-only state, the Python binding layer will not permit write access to the property's internal data.
-    void makeReadOnlyFromPython();
-
     /// Returns whether this data object wants to be shown in the pipeline editor
     /// under the data source section.
     /// This implementation returns true only it this is a typed property, i.e. if the 'elementTypes' list contains
@@ -251,24 +238,8 @@ public:
 
 public:
 
-    /// Helper class that is created when direct access to a property's memory is requested
-    /// from the Python side. The PythonAccessGuard instance exists as long as at least one
-    /// NumPy view references the property object. During this time, the PropertyContainer
-    /// protects the PropertyObject from operations that might trigger a reallocation of the memory
-    /// buffer.
-    struct PythonAccessGuard {
-        explicit PythonAccessGuard(PropertyObject& p) : propertyReference(&p), memoryAccessor(&p) {}
-        OORef<PropertyObject> propertyReference;
-        RawBufferReadAccess memoryAccessor;
-    };
-
     /// Creates an access guard object for this property.
-    std::shared_ptr<PythonAccessGuard> aquirePythonAccessGuard() {
-        auto guard = _pythonAccessGuard.lock();
-        if(!guard)
-            _pythonAccessGuard = guard = std::make_shared<PythonAccessGuard>(*this);
-        return guard;
-    }
+    std::shared_ptr<BufferPythonAccessGuard> aquireBufferPythonAccessGuard();
 
     /// Indicates that there current exists a Numpy view referencing this property's memory buffer.
     bool isBeingAccessedFromPython() const { return !_pythonAccessGuard.expired(); }
@@ -299,11 +270,7 @@ private:
     QString _name;
 
     /// Pointer to the access guard object while the Python side accesses this property's memory buffer.
-    std::weak_ptr<PythonAccessGuard> _pythonAccessGuard;
-
-    /// This is a special flag used by the Python bindings to indicate that
-    /// this property object has been temporarily put into a writable state.
-    int _isWritableFromPython = 0;
+    std::weak_ptr<BufferPythonAccessGuard> _pythonAccessGuard;
 };
 
 /// Smart-pointer to a PropertyObject.
