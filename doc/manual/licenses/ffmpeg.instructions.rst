@@ -42,7 +42,7 @@ The following commands have been used to generate them::
 Linux
 """""
 
-OVITO for Linux includes shared libraries that have been built from the unmodified sources of ffmpeg 5.1.3.
+OVITO for Linux includes shared libraries that have been built from the unmodified sources of ffmpeg 6.0.
 The following commands have been used to generate them::
 
   # Build platform: CentOS 7

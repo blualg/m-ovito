@@ -5,6 +5,15 @@ Version history
 ===============
 
 ---------------------------
+Version 3.8.5 (xx-Jun-2023)
+---------------------------
+
+* :ref:`particles.modifiers.voronoi_analysis` modifier now outputs per-face ``Area`` and ``Voronoi Order`` mesh properties
+* PDB file reader: Refined detection of cells with periodic boundary conditions
+* Fix: Particle selection in data inspector is lost when playing animation or moving viewport camera
+* Workaround for macOS (Apple Silicon) OpenGL stencil buffer issue: Highlighted particles not rendered correctly
+
+---------------------------
 Version 3.8.4 (03-May-2023)
 ---------------------------
 
