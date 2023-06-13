@@ -247,7 +247,7 @@ void LAMMPSGridDumpImporter::FrameLoader::loadFile()
                     int vectorComponent = 0;
                     int dataType = PropertyObject::Float;
 
-                    // Parse LAMMPScolumn name, which should have the form <fix/compute name>:<grid name>:<data field>.
+                    // Parse LAMMPS column name, which should have the form <fix/compute name>:<grid name>:<data field>.
                     QStringList tokens = fileColumnNames[i].split(QChar(':'));
                     if(tokens.size() == 3 && !tokens[0].isEmpty() && !tokens[2].isEmpty()) {
                         // Use LAMMPS fix/compute name as property name.
