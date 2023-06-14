@@ -29,11 +29,20 @@ Column-to-property mapping
 """"""""""""""""""""""""""
 
 The different data columns in a dump local file must be mapped to corresponding :ref:`bond properties <scene_objects.bonds>` within OVITO during file import.
-Since OVITO cannot guess the right mapping automatically in almost all cases (because file columns have user-defined names),
+Since OVITO cannot guess the right mapping automatically in most cases (because file columns have user-defined names),
 you usually have to specify the correct mapping by hand in the following dialog displayed by the file reader:
 
 .. image:: /images/io/lammps_dump_local_reader_mapping_dialog.*
   :width: 50%
+
+File columns get automatically mapped to corresponding standard properties in OVITO if their names
+match one of the predefined :ref:`standard bond properties <bond-types-list>` (case insensitive).
+Spaces that are part of a standard property name must be left out, because LAMMPS dump files do not support column names containing spaces. For example,
+a dump file column named ``BondType`` will be mapped to the standard property :guilabel:`Bond Type`.
+
+For standard properties with multiple components, a component name must be appended with a dot. For example, a dump file column
+named ``ParticleIdentifiers.A`` will automatically be mapped to the second component of the :guilabel:`Particle Identifiers` standard bond property
+in OVITO. Note that you can use the LAMMPS `dump_modify colname` command to give the columns in your dump file specific names.
 
 For further information on how to set up the bond property mapping correctly, see the :ref:`particles.modifiers.load_trajectory` modifier.
 

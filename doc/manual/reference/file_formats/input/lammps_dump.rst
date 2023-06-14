@@ -107,8 +107,8 @@ pattern                    :guilabel:`Structure Type`
 
 Generally, file columns are mapped to the corresponding standard property in OVITO if their name
 matches one of the predefined :ref:`particle properties <particle-properties-list>` (case insensitive).
-Spaces that are part of the property name must be left out, because LAMMPS dump files do not support column names containing spaces. For example,
-a dump file column named ``ParticleType`` will automatically be mapped to the standard property :guilabel:`Particle Type`.
+Spaces that are part of the standard property name must be left out, because LAMMPS dump files do not support column names containing spaces. For example,
+a dump file column named ``ParticleType`` will be mapped to the standard property :guilabel:`Particle Type`.
 
 For vectorial standard properties, a component name must be appended with a dot. For example, a dump file column
 named ``AsphericalShape.Z`` will automatically be mapped to the z-component of the :guilabel:`Aspherical Shape` standard property
