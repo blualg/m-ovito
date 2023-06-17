@@ -186,6 +186,12 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, radius, setRadius);
     DECLARE_SHADOW_PROPERTY_FIELD(radius);
 
+    /// Indicates that the type's radius was read from loaded input file and the value should be considered immutable.
+    /// If this flag is set by the file reader, the user is no longer allowed to modify the radius value in the GUI.
+    /// Currently, this flag is only set by the GSDImporter for types with shape type "Sphere", whose
+    /// radius may vary with simulation time.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, radiusIsPrescribed, setRadiusIsPrescribed);
+
     /// The van der Waals radius of this particle type, which is used for generating bonds between particles.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, vdwRadius, setVdwRadius);
     DECLARE_SHADOW_PROPERTY_FIELD(vdwRadius);

@@ -174,7 +174,7 @@ void PipelineListModel::refreshItemLater(PipelineListItem* item)
     if(iter == _items.end())
         return;
     int index = std::distance(_items.begin(), iter);
-    if(boost::find(_itemsRefreshPending, index) != _itemsRefreshPending.end()) 
+    if(boost::find(_itemsRefreshPending, index) != _itemsRefreshPending.end())
         return;
     _itemsRefreshPending.push_back(index);
     // Invoke actual refresh function at a later time when control returns to the GUI event loop.
@@ -185,10 +185,10 @@ void PipelineListModel::refreshItemLater(PipelineListItem* item)
 /******************************************************************************
 * Will rebuild the model's list of items after a short delay.
 ******************************************************************************/
-void PipelineListModel::refreshListLater() 
+void PipelineListModel::refreshListLater()
 {
     bool wasEmpty = _itemsRefreshPending.empty();
-    if(!wasEmpty && _itemsRefreshPending.front() == -1) 
+    if(!wasEmpty && _itemsRefreshPending.front() == -1)
         return;
     _itemsRefreshPending.insert(_itemsRefreshPending.begin(), -1);
     if(wasEmpty)
@@ -204,7 +204,7 @@ void PipelineListModel::refreshList()
     if(_itemsRefreshPending.empty())
         return;
 
-    // Unless a full list refresh has been requested, just refresh individual list items 
+    // Unless a full list refresh has been requested, just refresh individual list items
     // which have been marked for a pending update.
     if(!_itemsRefreshPending.empty() && _itemsRefreshPending.front() != -1) {
         for(int listIndex : _itemsRefreshPending) {
@@ -374,14 +374,14 @@ PipelineListItem* PipelineListModel::appendListItem(RefTarget* object, PipelineL
                     selectItem = true;
                     break;
                 }
-                else if(itemType == PipelineListItem::DataObject && oldItem->itemType() == PipelineListItem::DataObject && oldItem->title() == item->title()) {
+                else if(itemType == PipelineListItem::DataObject && (oldItem->itemType() == PipelineListItem::DataObject || oldItem->itemType() == PipelineListItem::DeletedDataObject) && oldItem->title() == item->title()) {
                     selectItem = true;
                     break;
                 }
             }
         }
         else {
-            // The data source is the object to be selected initially. 
+            // The data source is the object to be selected initially.
             if(itemType == PipelineListItem::DataSource)
                 selectItem = true;
         }
@@ -427,14 +427,14 @@ void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers
         while(currentItem->parent()) {
             currentItem = currentItem->parent();
         }
-        
+
         RefTarget* selectedObject = currentItem->object();
         if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(selectedObject)) {
             selectedObject = group->modifierApplications().first();
         }
 
         if(OORef<PipelineObject> pobj = dynamic_object_cast<PipelineObject>(selectedObject)) {
-            
+
             ModifierGroup* modifierGroup = nullptr;
             if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(selectedObject)) {
                 if(selectedObject == currentItem->object())
@@ -709,7 +709,7 @@ bool PipelineListModel::setData(const QModelIndex& index, const QVariant& value,
         }
         else if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(item->object())) {
             _userInterface.performTransaction((value.toInt() != Qt::Unchecked) ? tr("Enable modifier") : tr("Disable modifier"), [modApp, &value, index, role, this]() {
-                if(modApp->modifier()) 
+                if(modApp->modifier())
                     modApp->modifier()->setEnabled(value.toInt() != Qt::Unchecked);
             });
             return true;
@@ -777,6 +777,9 @@ Qt::ItemFlags PipelineListModel::flags(const QModelIndex& index) const
                 return QAbstractListModel::flags(index);
             case PipelineListItem::PipelineBranch:
                 return Qt::ItemIsDropEnabled;
+            case PipelineListItem::DeletedObject:
+            case PipelineListItem::DeletedDataObject:
+                return QAbstractListModel::flags(index); // Keep entries with deleted objects selectable to not loose the current selection before the model is updated.
             default:
                 return Qt::NoItemFlags;
         }
@@ -789,7 +792,7 @@ Qt::ItemFlags PipelineListModel::flags(const QModelIndex& index) const
 ******************************************************************************/
 QHash<int, QByteArray> PipelineListModel::roleNames() const
 {
-    return { 
+    return {
         { TitleRole, "title" },
         { ItemTypeRole, "type" },
         { CheckedRole, "ischecked" },
@@ -800,7 +803,7 @@ QHash<int, QByteArray> PipelineListModel::roleNames() const
 }
 
 /******************************************************************************
-* Updates the state of the actions that can be invoked on the currently 
+* Updates the state of the actions that can be invoked on the currently
 * selected list item.
 ******************************************************************************/
 void PipelineListModel::updateActions()
@@ -879,9 +882,9 @@ void PipelineListModel::updateActions()
     _toggleModifierGroupAction->setEnabled(false);
     _toggleModifierGroupAction->setText(tr("Create Modifier Group"));
     // Are all selected objects modifier applications and are they not in a group?
-    if(!objects.empty() && boost::algorithm::all_of(objects, [](RefTarget* obj) { 
+    if(!objects.empty() && boost::algorithm::all_of(objects, [](RefTarget* obj) {
             ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj);
-            return modApp && modApp->modifierGroup() == nullptr; })) 
+            return modApp && modApp->modifierGroup() == nullptr; }))
     {
         // Do all selected modifier applications form a contiguous sequence.
         bool isContinguousSequence = true;
@@ -945,9 +948,9 @@ QMimeData* PipelineListModel::mimeData(const QModelIndexList& indexes) const
 /******************************************************************************
 * Returns the type of drag and drop operations supported by the model.
 ******************************************************************************/
-Qt::DropActions PipelineListModel::supportedDropActions() const 
-{ 
-    return Qt::MoveAction; 
+Qt::DropActions PipelineListModel::supportedDropActions() const
+{
+    return Qt::MoveAction;
 }
 
 /******************************************************************************
@@ -975,7 +978,7 @@ bool PipelineListModel::dropMimeData(const QMimeData* data, Qt::DropAction actio
 {
     if(action != Qt::MoveAction)
         return false;
-        
+
     return performDragAndDropOperation(indexListFromMimeData(data), row, false);
 }
 
@@ -1048,7 +1051,7 @@ bool PipelineListModel::performDragAndDropOperation(const QVector<int>& indexLis
         return false;
     }
 
-    // Determine the contiguous sequence of modifiers to be moved. 
+    // Determine the contiguous sequence of modifiers to be moved.
     ModifierApplication* head = nullptr;
     ModifierApplication* tail = nullptr;
     std::vector<ModifierApplication*> regroupModApps;
@@ -1208,7 +1211,7 @@ void PipelineListModel::moveItemUp(PipelineListItem* item)
                             if(ModifierApplication* predecessor2 = dynamic_object_cast<ModifierApplication>(dependent2)) {
                                 if(predecessor2->modifierGroup() != predecessor->modifierGroup())
                                     predecessor2->setInput(modApp);
-                                else 
+                                else
                                     next = predecessor2;
                             }
                             else if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dependent2)) {
@@ -1305,7 +1308,7 @@ void PipelineListModel::moveItemDown(PipelineListItem* item)
             OORef<ModifierApplication> successor = dynamic_object_cast<ModifierApplication>(modApp->input());
             if(successor && successor->isPipelineBranch(true) == false) {
                 if(modApp->modifierGroup() != nullptr && successor->modifierGroup() != modApp->modifierGroup()) {
-                    // If the modifier application is the last entry in the modifier group, move it out of the group. 
+                    // If the modifier application is the last entry in the modifier group, move it out of the group.
                     modApp->setModifierGroup(nullptr);
                 }
                 else if(modApp->modifierGroup() == nullptr && successor->modifierGroup() != nullptr && successor->modifierGroup()->isCollapsed() == false) {
@@ -1509,7 +1512,7 @@ void PipelineListModel::toggleModifierGroup()
             return;
         }
     }
-    
+
     // If an existing modifier group is currently selected, dissolve the group.
     if(!existingGroup)
         existingGroup = dynamic_object_cast<ModifierGroup>(objects.front());

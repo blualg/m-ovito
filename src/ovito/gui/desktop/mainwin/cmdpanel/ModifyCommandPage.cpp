@@ -222,7 +222,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 /******************************************************************************
 * Loads the layout of the widgets from the settings store.
 ******************************************************************************/
-void ModifyCommandPage::restoreLayout() 
+void ModifyCommandPage::restoreLayout()
 {
     QSettings settings;
     settings.beginGroup("app/mainwindow/modify");
@@ -234,7 +234,7 @@ void ModifyCommandPage::restoreLayout()
 /******************************************************************************
 * Saves the layout of the widgets to the settings store.
 ******************************************************************************/
-void ModifyCommandPage::saveLayout() 
+void ModifyCommandPage::saveLayout()
 {
     QSettings settings;
     settings.beginGroup("app/mainwindow/modify");
@@ -249,13 +249,13 @@ void ModifyCommandPage::onSelectedItemChanged()
 {
     RefTarget* selectedObject = pipelineListModel()->selectedObject();
 
-    _modifierSelector->setEnabled(selectedObject != nullptr); 
+    _modifierSelector->setEnabled(selectedObject != nullptr);
 
     if(selectedObject != _propertiesPanel->editObject()) {
         _propertiesPanel->setEditObject(selectedObject);
 
-        // Request a viewport update whenever a new item in the pipeline editor is selected, 
-        // because the currently selected modifier may render gizmos in the viewports. 
+        // Request a viewport update whenever a new item in the pipeline editor is selected,
+        // because the currently selected modifier may render gizmos in the viewports.
         _mainWindow.updateViewports();
     }
 
@@ -426,6 +426,5 @@ void ModifyCommandPage::showProgramNotice(const QString& htmlPage)
     OVITO_CHECK_POINTER(aboutLabel);
     aboutLabel->setHtml(finalText);
 }
-
 
 }   // End of namespace

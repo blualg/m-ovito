@@ -38,7 +38,7 @@ PipelineListItem::PipelineListItem(RefTarget* object, PipelineItemType itemType,
     _parent(parent), _itemType(itemType)
 {
     _object.set(this, PROPERTY_FIELD(object), object);
-    
+
     switch(_itemType) {
     case VisualElementsHeader: _title = tr("Visual elements"); break;
     case ModificationsHeader: _title = tr("Modifications"); break;
@@ -72,7 +72,10 @@ bool PipelineListItem::referenceEvent(RefTarget* source, const ReferenceEvent& e
         Q_EMIT subitemsChanged(this);
     }
     else if(event.type() == ReferenceEvent::TargetDeleted) {
-        _itemType = DeletedObject;
+        if(_itemType == DataObject)
+            _itemType = DeletedDataObject;
+        else
+            _itemType = DeletedObject;
         Q_EMIT subitemsChanged(this);
     }
 
@@ -82,7 +85,7 @@ bool PipelineListItem::referenceEvent(RefTarget* source, const ReferenceEvent& e
 /******************************************************************************
 * Updates the stored title string of the item.
 ******************************************************************************/
-void PipelineListItem::updateTitle() 
+void PipelineListItem::updateTitle()
 {
     if(object()) {
         if(_itemType == DataObject) {

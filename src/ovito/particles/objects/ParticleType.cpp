@@ -29,6 +29,7 @@ namespace Ovito::Particles {
 
 IMPLEMENT_OVITO_CLASS(ParticleType);
 DEFINE_PROPERTY_FIELD(ParticleType, radius);
+DEFINE_PROPERTY_FIELD(ParticleType, radiusIsPrescribed);
 DEFINE_PROPERTY_FIELD(ParticleType, vdwRadius);
 DEFINE_PROPERTY_FIELD(ParticleType, shape);
 DEFINE_REFERENCE_FIELD(ParticleType, shapeMesh);
@@ -59,6 +60,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ParticleType, vdwRadius, WorldParameterUnit
 ******************************************************************************/
 ParticleType::ParticleType(ObjectCreationParams params) : ElementType(params),
     _radius(0),
+    _radiusIsPrescribed(false),
     _vdwRadius(0),
     _shape(ParticlesVis::ParticleShape::Default),
     _highlightShapeEdges(false),
@@ -110,9 +112,12 @@ void ParticleType::updateEditableProxies(PipelineFlowState& state, ConstDataObje
 
     if(ParticleType* proxy = static_object_cast<ParticleType>(self->editableProxy())) {
 
-        // This allows the GSD file importer to update the generated shape mesh as long as the user didn't replace the mesh with a custom one.
+        // This allows the GSD file importer to update the generated shape mesh - as long as the user didn't replace the mesh with a custom one.
         if(self->shapeMesh() && self->shapeMesh()->identifier() == QStringLiteral("generated") && proxy->shapeMesh() && proxy->shapeMesh()->identifier() == QStringLiteral("generated")) {
             proxy->setShapeMesh(self->shapeMesh());
+        }
+        if(self->radiusIsPrescribed() && self->radius() != proxy->radius()) {
+            proxy->setRadius(self->radius());
         }
 
         // Copy properties changed by the user over to the data object.
@@ -120,7 +125,8 @@ void ParticleType::updateEditableProxies(PipelineFlowState& state, ConstDataObje
                 || proxy->shapeBackfaceCullingEnabled() != self->shapeBackfaceCullingEnabled() || proxy->shapeUseMeshColor() != self->shapeUseMeshColor()) {
             // Make this data object mutable first.
             ParticleType* mutableSelf = static_object_cast<ParticleType>(state.makeMutableInplace(dataPath));
-            mutableSelf->setRadius(proxy->radius());
+            if(!mutableSelf->radiusIsPrescribed())
+                mutableSelf->setRadius(proxy->radius());
             mutableSelf->setVdwRadius(proxy->vdwRadius());
             mutableSelf->setMass(proxy->mass());
             mutableSelf->setShape(proxy->shape());

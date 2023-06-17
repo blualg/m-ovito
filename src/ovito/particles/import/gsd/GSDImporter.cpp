@@ -497,7 +497,7 @@ void GSDImporter::FrameLoader::loadFile()
             readOptionalProperty(gsd, chunkName, frameNumber, ImpropersObject::UserProperty, impropers(), nullptr, 0);
             chunkName = gsd.findMatchingChunkName("log/impropers/", chunkName);
         }
-    }   
+    }
 
     QString statusString = tr("Number of particles: %1").arg(numParticles);
     if(numBonds != 0)
@@ -542,7 +542,7 @@ PropertyObject* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, con
     }
     else if(defaultValue != nullptr && gsd.findMatchingChunkName(chunkName, nullptr) != nullptr) {
         // If the GSD file contains the requested chunk in some other trajectory frame(s), just not in the current frame, then
-        // fill the property array with the default value for that chunk as specified by the HOOMD standard. 
+        // fill the property array with the default value for that chunk as specified by the HOOMD standard.
         if(propertyType != PropertyObject::GenericUserProperty) {
             prop = container->createProperty(propertyType);
         }
@@ -560,7 +560,7 @@ PropertyObject* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, con
             for(size_t i = 0; i < prop->size(); i++, dest += defaultValueSize) {
                 std::memcpy(dest, defaultValue, defaultValueSize);
             }
-            prop->finishWriteAccess();          
+            prop->finishWriteAccess();
         }
     }
     return prop;
@@ -644,18 +644,21 @@ void GSDImporter::FrameLoader::parseParticleShape(int typeId, const QByteArray& 
 ******************************************************************************/
 void GSDImporter::FrameLoader::parseSphereShape(int typeId, QJsonObject definition)
 {
-    double diameter = definition.value("diameter").toDouble();
+    const double diameter = definition.value("diameter").toDouble();
     if(diameter <= 0)
         throw Exception(tr("Missing or invalid 'diameter' field in 'Sphere' particle shape definition in GSD file."));
 
-    FloatType radius = diameter / 2;
+    const FloatType radius = diameter / 2;
 
-    // Assign the radius value to the particle type.
+    // Set the radius value to the existing particle type.
     const PropertyObject* existingTypeProperty = particles()->expectProperty(ParticlesObject::TypeProperty);
     if(const ParticleType* existingType = static_object_cast<ParticleType>(existingTypeProperty->elementType(typeId))) {
         if(existingType->radius() != radius) {
             PropertyObject* typeProperty = particles()->makeMutable(existingTypeProperty);
-            typeProperty->makeMutable(existingType)->setRadius(radius);
+            ParticleType* mutableType = typeProperty->makeMutable(existingType);
+            mutableType->setRadius(radius);
+            mutableType->setRadiusIsPrescribed(true);
+            mutableType->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::radius)});
         }
     }
 }
@@ -671,12 +674,12 @@ void GSDImporter::FrameLoader::parseEllipsoidShape(int typeId, QJsonObject defin
     abc.z() = definition.value("c").toDouble();
     if(abc.x() <= 0)
         throw Exception(tr("Missing or invalid 'a' field in 'Ellipsoid' particle shape definition in GSD file. Value must be positive."));
-    
+
     if(abc.y() == 0.0)
         abc.y() = abc.x();
     else if(abc.y() < 0.0)
         throw Exception(tr("Invalid 'b' field in 'Ellipsoid' particle shape definition in GSD file. Value must not be negative."));
-    
+
     if(abc.z() == 0.0)
         abc.z() = abc.y();
     else if(abc.z() < 0.0)
@@ -1071,7 +1074,7 @@ void GSDImporter::FrameLoader::parseSphereUnionShape(int typeId, QJsonObject def
     }
     if(centers.size() < 1)
         throw Exception(tr("Invalid 'SphereUnion' particle shape definition in GSD file: Number of spheres must be at least 1."));
-    
+
     // Parse the list of sphere diameters.
     std::vector<FloatType> diameters;
     const QJsonValue diametersArrayVal = definition.value("diameters");
