@@ -24,7 +24,7 @@
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/concurrent/TaskWatcher.h>
 #include <ovito/core/oo/ObjectExecutor.h>
-#include <ovito/core/dataset/data/BufferPythonAccessGuard.h>
+#include <ovito/core/dataset/data/RegisteredBufferAccess.h>
 
 namespace Ovito {
 
@@ -234,25 +234,14 @@ void TaskManager::shutdown()
     QCoreApplication::sendPostedEvents(nullptr, ObjectExecutor::workEventType());
 
 #ifdef OVITO_USE_SYCL
-    // Close all active SYCL accessors which are associated with NumPy views of PropertyObjects.
-    for(BufferPythonAccessGuard* guard = _pythonAccessGuards; guard != nullptr; guard = guard->_next) {
-        guard->memoryAccessor = {};
+    // Close all active SYCL host memory accessors which are associated with NumPy views of PropertyObjects.
+    for(RegisteredBufferAccess* accessor = _registeredBufferAccessors; accessor != nullptr; accessor = accessor->_next) {
+        accessor->_syclAccessor = {};
     }
 
     // Wait for completion of all enqueued tasks in the SYCL queue.
     _syclQueue.wait();
 #endif
 }
-
-#ifdef OVITO_USE_SYCL
-/******************************************************************************
-* Creates a new BufferPythonAccessGuard instance and associates it with
-* this TaskManager.
-******************************************************************************/
-std::shared_ptr<BufferPythonAccessGuard> TaskManager::createBufferBufferPythonAccessGuard(DataBuffer& dataBuffer)
-{
-    return std::make_shared<BufferPythonAccessGuard>(dataBuffer, &_pythonAccessGuards);
-}
-#endif
 
 }   // End of namespace

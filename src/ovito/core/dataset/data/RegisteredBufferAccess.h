@@ -28,34 +28,45 @@
 
 namespace Ovito {
 
-
 /// Helper class that gets created when direct access to a property's memory is requested
-/// from the Python side. The BufferPythonAccessGuard instance exists as long as at least one
-/// NumPy view references the property object. During this time, a PropertyContainer
-/// protects the DataBuffer from operations that might trigger a reallocation of the memory
-/// buffer.
-class OVITO_CORE_EXPORT BufferPythonAccessGuard
-{
+/// from the Python side. Instances of the class register themselves with a TaskManager,
+/// which allows to shutdown all existing memory accessor before the SYCL queue gets closed.
 #ifndef OVITO_USE_SYCL
-
+class OVITO_CORE_EXPORT RegisteredBufferAccess
+{
 public:
-    explicit BufferPythonAccessGuard(DataBuffer& p) : bufferReference(&p), memoryAccessor(&p) {}
-    const void* dataPointer() { return memoryAccessor.cdata(); }
+
+    /// Constructor.
+    RegisteredBufferAccess(DataBuffer& buffer) : _accessor(&buffer), _buffer(&buffer) {}
+
+    /// Returns a C pointer to the buffer's internal storage.
+    const void* dataPointer() { return _accessor.cdata(); }
+
+    /// Returns a pointer to the buffer object.
+    const DataBuffer* buffer() const { return _buffer.get(); }
+
 private:
-    OORef<DataBuffer> bufferReference;
-    RawBufferReadAccess memoryAccessor;
 
+    /// To keep the buffer object alive while it is being accessed.
+    OORef<DataBuffer> _buffer;
+
+    /// Internal memory accessor.
+    RawBufferReadAccess _accessor;
+};
 #else
-
+class OVITO_CORE_EXPORT RegisteredBufferAccess
+{
+public:
     /// When using a SYCL accessor, we don't need to keep the DataBuffer alive.
     /// It's sufficent that the internal SYCL buffer object remains alive while its memory is being accessed.
-public:
     using accessor_type = cl::sycl::host_accessor<std::byte, 1, cl::sycl::access_mode::read_write>;
-    explicit BufferPythonAccessGuard(DataBuffer& p, BufferPythonAccessGuard** listHead) : memoryAccessor(p.size() != 0 ? accessor_type{p.syclBuffer()} : accessor_type{}), _next(*listHead), _listHead(listHead) {
+
+    RegisteredBufferAccess(DataBuffer& p, RegisteredBufferAccess** listHead) : memoryAccessor(p.size() != 0 ? accessor_type{p.syclBuffer()} : accessor_type{}), _next(*listHead), _listHead(listHead) {
         if(_next) _next->_prev = this;
         *listHead = this;
     }
-    ~BufferPythonAccessGuard() {
+
+    ~RegisteredBufferAccess() {
         if(_prev == nullptr) {
             *_listHead = _next;
             if(_next) _next->_prev = nullptr;
@@ -67,15 +78,18 @@ public:
     }
     const void* dataPointer() { return !memoryAccessor.empty() ? memoryAccessor.get_pointer() : nullptr; }
 private:
-    accessor_type memoryAccessor;
+
+    /// SYCL host memory accessor.
+    accessor_type _syclAccessor;
+
     /// Linked list to keep track of all existing instances of this class.
     /// The linked list is maintained by the TaskManager this SYCL accessor is associated with.
-    BufferPythonAccessGuard* _next = nullptr;
-    BufferPythonAccessGuard* _prev = nullptr;
-    BufferPythonAccessGuard** _listHead = nullptr;
+    RegisteredBufferAccess* _next = nullptr;
+    RegisteredBufferAccess* _prev = nullptr;
+    RegisteredBufferAccess** _listHead = nullptr;
 
     friend class TaskManager;
-#endif
 };
+#endif
 
 }   // End of namespace

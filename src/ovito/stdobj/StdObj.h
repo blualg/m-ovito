@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,7 +29,7 @@
 
 #include <ovito/core/Core.h>
 
-namespace Ovito::StdObj 
+namespace Ovito::StdObj
 {
     class PropertyObject;
     class PropertyContainer;
@@ -48,6 +48,8 @@ namespace Ovito::StdObj
     class DataTable;
     class PropertyColorMapping;
     class StandardFrameLoader;
+
+    class BufferPythonAccessGuard; // Note: This class is defined in another plugin module (StdObjPython).
 }
 
 #endif

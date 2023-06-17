@@ -27,7 +27,6 @@
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/dataset/data/DataObjectReference.h>
-#include <ovito/core/dataset/data/BufferPythonAccessGuard.h>
 #include <ovito/stdobj/properties/ElementType.h>
 
 namespace Ovito::StdObj {
@@ -238,9 +237,6 @@ public:
 
 public:
 
-    /// Creates an access guard object for this property.
-    std::shared_ptr<BufferPythonAccessGuard> aquireBufferPythonAccessGuard();
-
     /// Indicates that there current exists a Numpy view referencing this property's memory buffer.
     bool isBeingAccessedFromPython() const { return !_pythonAccessGuard.expired(); }
 
@@ -271,6 +267,8 @@ private:
 
     /// Pointer to the access guard object while the Python side accesses this property's memory buffer.
     std::weak_ptr<BufferPythonAccessGuard> _pythonAccessGuard;
+
+    friend class BufferPythonAccessGuard;
 };
 
 /// Smart-pointer to a PropertyObject.

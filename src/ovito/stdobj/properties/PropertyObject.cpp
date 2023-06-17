@@ -391,23 +391,4 @@ const ElementType* PropertyObject::addNumericType(const PropertyContainerClass& 
     return addElementType(std::move(elementType));
 }
 
-/******************************************************************************
-* Creates an access guard object for this property.
-******************************************************************************/
-std::shared_ptr<BufferPythonAccessGuard> PropertyObject::aquireBufferPythonAccessGuard()
-{
-    OVITO_CHECK_OBJECT_POINTER(this);
-    auto guard = _pythonAccessGuard.lock();
-    if(!guard) {
-#ifndef OVITO_USE_SYCL
-        guard = std::make_shared<BufferPythonAccessGuard>(*this);
-#else
-        guard = ExecutionContext::current().ui().taskManager().createBufferBufferPythonAccessGuard(*this);
-#endif
-        _pythonAccessGuard = guard;
-    }
-    return guard;
-}
-
-
 }   // End of namespace
