@@ -87,33 +87,31 @@ MACRO(OVITO_INSTALL_SHARED_LIB shared_lib)
         LIST(REMOVE_DUPLICATES lib_files)
 
         FOREACH(lib_file ${lib_files})
-            IF(NOT APPLE)
-                MESSAGE("Installing shared library ${lib_file}")
-                EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" "-E" "copy_if_different" "${lib_file}" "${_abs_dest_dir}/" RESULT_VARIABLE _error_var)
-                IF(_error_var)
-                    MESSAGE(FATAL_ERROR "Failed to copy shared library into build directory: ${lib_file}")
-                ENDIF()
-                IF(WIN32 OR NOT OVITO_BUILD_PYPI)
+            MESSAGE("Installing shared library ${lib_file}")
+            EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" "-E" "copy_if_different" "${lib_file}" "${_abs_dest_dir}/" RESULT_VARIABLE _error_var)
+            IF(_error_var)
+                MESSAGE(FATAL_ERROR "Failed to copy shared library into build directory: ${lib_file}")
+            ENDIF()
+            IF(WIN32 OR NOT OVITO_BUILD_PYPI)
+                INSTALL(FILES "${lib_file}" DESTINATION "${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/${destination_dir}/")
+            ELSE()
+                # Detect if this .so file is a linker script starting with the string "INPUT".
+                # The TBB libraries use this special GNU ld feature instead of regular symbolic links to create aliases of a shared library in the same directory.
+                FILE(READ "${lib_file}" _SO_FILE_HEADER LIMIT 5 HEX)
+                IF("${_SO_FILE_HEADER}" STREQUAL "494e505554") # 494e505554 = "INPUT"
                     INSTALL(FILES "${lib_file}" DESTINATION "${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/${destination_dir}/")
                 ELSE()
-                    # Detect if this .so file is a linker script starting with the string "INPUT".
-                    # The TBB libraries use this special GNU ld feature instead of regular symbolic links to create aliases of a shared library in the same directory.
-                    FILE(READ "${lib_file}" _SO_FILE_HEADER LIMIT 5 HEX)
-                    IF("${_SO_FILE_HEADER}" STREQUAL "494e505554") # 494e505554 = "INPUT"
-                        INSTALL(FILES "${lib_file}" DESTINATION "${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/${destination_dir}/")
-                    ELSE()
-                        # Use the objdump command to read out the SONAME of the shared library.
-                        GET_FILENAME_COMPONENT(lib_filename "${lib_file}" NAME)
-                        EXECUTE_PROCESS(COMMAND objdump -p "${lib_file}" COMMAND grep "SONAME" OUTPUT_VARIABLE _output_var RESULT_VARIABLE _error_var OUTPUT_STRIP_TRAILING_WHITESPACE)
-                        STRING(REPLACE "SONAME" "" lib_soname "${_output_var}")
-                        STRING(STRIP "${lib_soname}" lib_soname)
-                        IF(_error_var OR NOT lib_soname)
-                            MESSAGE(FATAL_ERROR "Failed to determine SONAME of shared library: ${lib_file}")
-                        ENDIF()
-                        # Use the SONAME as file name when installing the library in the OVITO directory.
-                        FILE(RENAME "${_abs_dest_dir}/${lib_filename}" "${_abs_dest_dir}/${lib_soname}")
-                        INSTALL(PROGRAMS "${_abs_dest_dir}/${lib_soname}" DESTINATION "${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/${destination_dir}/")
+                    # Use the objdump command to read out the SONAME of the shared library.
+                    GET_FILENAME_COMPONENT(lib_filename "${lib_file}" NAME)
+                    EXECUTE_PROCESS(COMMAND objdump -p "${lib_file}" COMMAND grep "SONAME" OUTPUT_VARIABLE _output_var RESULT_VARIABLE _error_var OUTPUT_STRIP_TRAILING_WHITESPACE)
+                    STRING(REPLACE "SONAME" "" lib_soname "${_output_var}")
+                    STRING(STRIP "${lib_soname}" lib_soname)
+                    IF(_error_var OR NOT lib_soname)
+                        MESSAGE(FATAL_ERROR "Failed to determine SONAME of shared library: ${lib_file}")
                     ENDIF()
+                    # Use the SONAME as file name when installing the library in the OVITO directory.
+                    FILE(RENAME "${_abs_dest_dir}/${lib_filename}" "${_abs_dest_dir}/${lib_soname}")
+                    INSTALL(PROGRAMS "${_abs_dest_dir}/${lib_soname}" DESTINATION "${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/${destination_dir}/")
                 ENDIF()
             ENDIF()
         ENDFOREACH()
