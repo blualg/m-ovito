@@ -41,6 +41,7 @@ public:
 
     enum PipelineItemType {
         DeletedObject,
+        DeletedDataObject,
         VisualElement,
         Modifier,
         DataSource,

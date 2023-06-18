@@ -235,7 +235,10 @@ template<class T, class U> DataOORef<T> static_pointer_cast(const DataOORef<U>& 
 
 template<class T, class U> DataOORef<T> static_pointer_cast(DataOORef<U>&& p) noexcept
 {
-    return static_pointer_cast<T>(std::move(p._ref));
+    DataOORef<T> result;
+    result._ref = static_pointer_cast<T>(std::move(p._ref));
+    OVITO_ASSERT(!p._ref);
+    return result;
 }
 
 template<class T, class U> DataOORef<T> const_pointer_cast(const DataOORef<U>& p) noexcept
@@ -250,7 +253,9 @@ template<class T, class U> DataOORef<T> dynamic_pointer_cast(const DataOORef<U>&
 
 template<class T, class U> DataOORef<T> dynamic_pointer_cast(DataOORef<U>&& p) noexcept
 {
-    return dynamic_pointer_cast<T>(std::move(p._ref));
+    DataOORef<T> result;
+    result._ref = dynamic_pointer_cast<T>(std::move(p._ref));
+    return result;
 }
 
 template<class T> QDebug operator<<(QDebug debug, const DataOORef<T>& p)

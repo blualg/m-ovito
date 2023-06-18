@@ -202,6 +202,10 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
     PropertyObject* adjacentCellProperty = nullptr;
     // Output mesh face property storing the bond index corresponding to each Voronoi face.
     PropertyObject* faceBondIndexProperty = nullptr;
+    // Output mesh face property storing the individual area of each Voronoi face.
+    PropertyObject* faceAreaProperty = nullptr;
+    // Output mesh face property storing the number of edges of each Voronoi face.
+    PropertyObject* faceOrderProperty = nullptr;
     /// Output mesh region property storing the volume of each Voronoi cell.
     PropertyObject* cellVolumeProperty = nullptr;
     /// Output mesh region property storing the number of faces of each Voronoi cell.
@@ -224,6 +228,12 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
             faceBondIndexProperty = polyhedraMesh.createFaceProperty(DataBuffer::Uninitialized, QStringLiteral("Bond Index"), PropertyObject::Int64);
             faceBondIndexProperty->fill<int64_t>(-1);
         }
+
+        // Create the "Area" face property, which stores the surface area of each Voronoi face.
+        faceAreaProperty = polyhedraMesh.createFaceProperty(QStringLiteral("Area"), PropertyObject::Float);
+
+        // Create the "Voronoi Order" face property, which stores the order (number of edges) of each Voronoi face.
+        faceOrderProperty = polyhedraMesh.createFaceProperty(QStringLiteral("Voronoi Order"), PropertyObject::Int);
 
         // Create as many mesh regions as there are input particles.
         polyhedraMesh.mutableRegions()->setElementCount(_positions->size());
@@ -321,6 +331,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
             // Store the base vertex index and the vertex count in the lookup map.
             polyhedraVertices[meshRegionIndex].first = meshVertexBaseIndex;
             polyhedraVertices[meshRegionIndex].second = v.p;
+            OVITO_ASSERT(v.p != 0);
         }
 
         // Iterate over the Voronoi faces and their edges.
@@ -343,7 +354,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
                     // Compute length of first face edge.
                     Vector3 d(v.pts[3*k] - v.pts[3*i], v.pts[3*k+1] - v.pts[3*i+1], v.pts[3*k+2] - v.pts[3*i+2]);
-                    if(d.squaredLength() > sqEdgeThreshold)
+                    if(d.squaredLength() >= sqEdgeThreshold)
                         faceOrder++;
                     v.ed[i][j] = -1 - k;
                     int l = v.cycle_up(v.ed[i][v.nu[i]+j], k);
@@ -358,7 +369,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
                         // Compute length of current edge.
                         if(sqEdgeThreshold != 0) {
                             Vector3 u(v.pts[3*m] - v.pts[3*k], v.pts[3*m+1] - v.pts[3*k+1], v.pts[3*m+2] - v.pts[3*k+2]);
-                            if(u.squaredLength() > sqEdgeThreshold)
+                            if(u.squaredLength() >= sqEdgeThreshold)
                                 faceOrder++;
                         }
                         else faceOrder++;
@@ -375,6 +386,12 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
                     }
                     while(k != i);
                     cellFaceArea += area;
+
+                    if(_polyhedraMesh) {
+                        QMutexLocker locker(bondMutex);
+                        PropertyAccess<FloatType>{faceAreaProperty}[meshFace] = area;
+                        PropertyAccess<int>{faceOrderProperty}[meshFace] = faceOrder;
+                    }
 
                     if((faceAreaThreshold == 0 || area > faceAreaThreshold) && faceOrder >= 3) {
                         coordNumber++;
@@ -672,7 +689,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
             SurfaceMesh::region_index region = faceGrower->faceRegion(face);
 
             // We know for each Voronoi face which Voronoi polyhedron is on the other side.
-            SurfaceMesh::region_index adjacentRegion = adjacentCellArray[face];
+            SurfaceMeshAccess::region_index adjacentRegion = adjacentCellArray[face];
             // Skip faces that are at the outer surface.
             if(adjacentRegion < 0) continue;
             // Skip faces that belong to a periodic polyhedron.
@@ -712,7 +729,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
                         closest_vertex = other_vertex;
                     }
                 }
-                OVITO_ASSERT(closest_vertex != SurfaceMesh::InvalidIndex);
+                OVITO_ASSERT(closest_vertex != SurfaceMesh::InvalidIndex || polyhedraVertices[adjacentRegion].second == 0);
 
                 // Determine a threshold distance for testing whether the two vertices should be merged.
                 FloatType distance_threshold = sqrt(longest_dist) * FloatType(1e-9);
@@ -807,7 +824,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
                     break;
                 }
             }
-            OVITO_ASSERT(polyhedraMesh.hasOppositeFace(face));
+            OVITO_ASSERT(polyhedraMesh.hasOppositeFace(face) || polyhedraVertices[adjacentRegion].second == 0);
         }
 
         endProgressSubSteps();

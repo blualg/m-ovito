@@ -338,8 +338,34 @@ Future<BondInputColumnMapping> LAMMPSDumpLocalImporter::inspectFileHeader(const 
                     }
                     else {
                         detectedColumnMapping.resize(fileColumnNames.size());
-                        for(int i = 0; i < fileColumnNames.size(); i++)
+                        for(int i = 0; i < fileColumnNames.size(); i++) {
+
+                            // Automatically map columns to standard OVITO bond properties.
+                            QString name = fileColumnNames[i].toLower();
+                            bool isStandardProperty = false;
+                            const static QRegularExpression invalidCharacters(QStringLiteral("[^A-Za-z\\d_]"));
+                            for(auto entry = BondsObject::OOClass().standardPropertyIds().cbegin(), end = BondsObject::OOClass().standardPropertyIds().cend(); entry != end; ++entry) {
+                                const auto componentCount = BondsObject::OOClass().standardPropertyComponentCount(entry.value());
+                                for(size_t component = 0; component < componentCount; component++) {
+                                    QString propertyName = entry.key();
+                                    propertyName.remove(invalidCharacters); // LAMMPS dump file format does not support column names containing spaces.
+                                    const QStringList& componentNames = BondsObject::OOClass().standardPropertyComponentNames(entry.value());
+                                    if(!componentNames.empty()) {
+                                        OVITO_ASSERT(!componentNames[component].contains(invalidCharacters));
+                                        propertyName += QChar('.');
+                                        propertyName += componentNames[component];
+                                    }
+                                    if(propertyName.compare(name, Qt::CaseInsensitive) == 0) {
+                                        detectedColumnMapping.mapStandardColumn(i, (BondsObject::Type)entry.value(), component);
+                                        isStandardProperty = true;
+                                        break;
+                                    }
+                                }
+                                if(isStandardProperty)
+                                    break;
+                            }
                             detectedColumnMapping[i].columnName = fileColumnNames[i];
+                        }
                     }
                     break;
                 }

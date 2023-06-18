@@ -649,18 +649,21 @@ void GSDImporter::FrameLoader::parseParticleShape(int typeId, const QByteArray& 
 ******************************************************************************/
 void GSDImporter::FrameLoader::parseSphereShape(int typeId, QJsonObject definition)
 {
-    double diameter = definition.value("diameter").toDouble();
+    const double diameter = definition.value("diameter").toDouble();
     if(diameter <= 0)
         throw Exception(tr("Missing or invalid 'diameter' field in 'Sphere' particle shape definition in GSD file."));
 
-    FloatType radius = diameter / 2;
+    const FloatType radius = diameter / 2;
 
-    // Assign the radius value to the particle type.
+    // Set the radius value to the existing particle type.
     const PropertyObject* existingTypeProperty = particles()->expectProperty(ParticlesObject::TypeProperty);
     if(const ParticleType* existingType = static_object_cast<ParticleType>(existingTypeProperty->elementType(typeId))) {
         if(existingType->radius() != radius) {
             PropertyObject* typeProperty = particles()->makeMutable(existingTypeProperty);
-            typeProperty->makeMutable(existingType)->setRadius(radius);
+            ParticleType* mutableType = typeProperty->makeMutable(existingType);
+            mutableType->setRadius(radius);
+            mutableType->setRadiusIsPrescribed(true);
+            mutableType->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::radius)});
         }
     }
 }

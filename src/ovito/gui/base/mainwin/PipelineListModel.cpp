@@ -385,7 +385,7 @@ PipelineListItem* PipelineListModel::appendListItem(RefTarget* object, PipelineL
                     selectItem = true;
                     break;
                 }
-                else if(itemType == PipelineListItem::DataObject && oldItem->itemType() == PipelineListItem::DataObject && oldItem->title() == item->title()) {
+                else if(itemType == PipelineListItem::DataObject && (oldItem->itemType() == PipelineListItem::DataObject || oldItem->itemType() == PipelineListItem::DeletedDataObject) && oldItem->title() == item->title()) {
                     selectItem = true;
                     break;
                 }
@@ -788,6 +788,9 @@ Qt::ItemFlags PipelineListModel::flags(const QModelIndex& index) const
                 return QAbstractListModel::flags(index);
             case PipelineListItem::PipelineBranch:
                 return Qt::ItemIsDropEnabled;
+            case PipelineListItem::DeletedObject:
+            case PipelineListItem::DeletedDataObject:
+                return QAbstractListModel::flags(index); // Keep entries with deleted objects selectable to not loose the current selection before the model is updated.
             default:
                 return Qt::NoItemFlags;
         }

@@ -429,7 +429,6 @@ ParticleInputColumnMapping LAMMPSTextDumpImporter::generateAutomaticColumnMappin
                 }
             }
         }
-        else if(name == "mass") columnMapping.mapStandardColumn(i, ParticlesObject::MassProperty);
         else if(name == "radius" || name == "diameter") columnMapping.mapStandardColumn(i, ParticlesObject::RadiusProperty);
         else if(name == "mol") columnMapping.mapStandardColumn(i, ParticlesObject::MoleculeProperty);
         else if(name == "q") columnMapping.mapStandardColumn(i, ParticlesObject::ChargeProperty);
@@ -452,7 +451,6 @@ ParticleInputColumnMapping LAMMPSTextDumpImporter::generateAutomaticColumnMappin
         else if(name == "tqx") columnMapping.mapStandardColumn(i, ParticlesObject::TorqueProperty, 0);
         else if(name == "tqy") columnMapping.mapStandardColumn(i, ParticlesObject::TorqueProperty, 1);
         else if(name == "tqz") columnMapping.mapStandardColumn(i, ParticlesObject::TorqueProperty, 2);
-        else if(name == "spin") columnMapping.mapStandardColumn(i, ParticlesObject::SpinProperty);
         else if(name == "c_cna" || name == "pattern") columnMapping.mapStandardColumn(i, ParticlesObject::StructureTypeProperty);
         else if(name == "c_epot") columnMapping.mapStandardColumn(i, ParticlesObject::PotentialEnergyProperty);
         else if(name == "c_kpot") columnMapping.mapStandardColumn(i, ParticlesObject::KineticEnergyProperty);
@@ -469,9 +467,33 @@ ParticleInputColumnMapping LAMMPSTextDumpImporter::generateAutomaticColumnMappin
         else if(name == "c_shape[1]" || name == "c_diameter[1]" || name == "shapex") columnMapping.mapStandardColumn(i, ParticlesObject::AsphericalShapeProperty, 0);
         else if(name == "c_shape[2]" || name == "c_diameter[2]" || name == "shapey") columnMapping.mapStandardColumn(i, ParticlesObject::AsphericalShapeProperty, 1);
         else if(name == "c_shape[3]" || name == "c_diameter[3]" || name == "shapez") columnMapping.mapStandardColumn(i, ParticlesObject::AsphericalShapeProperty, 2);
-        else if(name == "selection") columnMapping.mapStandardColumn(i, ParticlesObject::SelectionProperty, 0);
         else {
-            columnMapping.mapCustomColumn(i, PropertyObject::makePropertyNameValid(name), PropertyObject::FloatDefault);
+            // Automatically map columns to standard OVITO particle properties.
+            bool isStandardProperty = false;
+            const static QRegularExpression invalidCharacters(QStringLiteral("[^A-Za-z\\d_]"));
+            for(auto entry = ParticlesObject::OOClass().standardPropertyIds().cbegin(), end = ParticlesObject::OOClass().standardPropertyIds().cend(); entry != end; ++entry) {
+                const auto componentCount = ParticlesObject::OOClass().standardPropertyComponentCount(entry.value());
+                for(size_t component = 0; component < componentCount; component++) {
+                    QString propertyName = entry.key();
+                    propertyName.remove(invalidCharacters); // LAMMPS dump file format does not support column names containing spaces.
+                    const QStringList& componentNames = ParticlesObject::OOClass().standardPropertyComponentNames(entry.value());
+                    if(!componentNames.empty()) {
+                        OVITO_ASSERT(!componentNames[component].contains(invalidCharacters));
+                        propertyName += QChar('.');
+                        propertyName += componentNames[component];
+                    }
+                    if(propertyName.compare(name, Qt::CaseInsensitive) == 0) {
+                        columnMapping.mapStandardColumn(i, (ParticlesObject::Type)entry.value(), component);
+                        isStandardProperty = true;
+                        break;
+                    }
+                }
+                if(isStandardProperty)
+                    break;
+            }
+            // If automatic mapping to one of the standard properties was unsuccessful, read the file column as a user-defined property.
+            if(!isStandardProperty)
+                columnMapping.mapCustomColumn(i, PropertyObject::makePropertyNameValid(name), PropertyObject::FloatDefault);
         }
     }
     return columnMapping;

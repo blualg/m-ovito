@@ -84,7 +84,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
             else
                 lineEdit->setPlaceholderText({});
         }
-    }); 
+    });
 
     QGroupBox* appearanceBox = new QGroupBox(tr("Appearance"), rollout);
     gridLayout = new QGridLayout(appearanceBox);
@@ -178,6 +178,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
                 loadShapeBtn->setText(tr("Load geometry file..."));
                 loadShapeBtn->setIcon({});
             }
+            displayRadiusPUI->setEnabled(!ptype->radiusIsPrescribed());
         }
     });
 
@@ -249,7 +250,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 }
 
 /******************************************************************************
-* Creates a button that opens a menu for managing the presets for a particle type parameter. 
+* Creates a button that opens a menu for managing the presets for a particle type parameter.
 ******************************************************************************/
 QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& parameterName, std::function<void(ParticleType*)> resetFunc, std::function<void(const ParticleType*)> setDefaultFunc, std::function<bool(const ParticleType*)> isUnchangedFunc)
 {

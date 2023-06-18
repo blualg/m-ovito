@@ -56,53 +56,66 @@ OVITO provides support for the following dump_modify keywords:
     (``sort_particles=True`` keyword parameter in Python, see below). This option makes the ordering of
     atoms stable within OVITO even if the `sort` keyword was not used at the time LAMMPS wrote the dump file.
 
+  - The `colname` keyword lets you override the column names in the dump file, which are otherwise automatically
+    chosen by LAMMPS. This gives you full control over how the information in the dump file will be mapped to particle properties in
+    OVITO, see the next section.
+
 .. _file_formats.input.lammps_dump.property_mapping:
 
 Column-to-property mapping
 """"""""""""""""""""""""""
 
 The data columns of a dump file get mapped to corresponding :ref:`particle properties <usage.particle_properties>` within OVITO during file import.
-This happens automatically according to the following rules, but you can manually override the mapping if necessary.
+This happens automatically according to the following rules, but you can manually override the mapping if necessary by clicking the :guilabel:`Edit column mapping` button.
 For certain dump file columns, the file parser may perform an automatic conversion as described in the third table column.
 
-========================== ========================== =========================
-LAMMPS column name         OVITO particle property    Comments
-========================== ========================== =========================
-x, y, z                    ``Position``
-xu, yu, zu                 ``Position``
-xs, ys, zs                 ``Position``               Automatic conversion from reduced to Cartesian coordinates
-xsu, ysu, zsu              ``Position``               Automatic conversion from reduced to Cartesian coordinates
-id                         ``Particle Identifier``
-vx, vy, vz                 ``Velocity``               Automatic computation of ``Velocity Magnitude`` property
-type                       ``Particle Type``
-element                    ``Particle Type``          Named types (may be combined with numeric IDs from `type` column)
-mass                       ``Mass``
-radius                     ``Radius``
-diameter                   ``Radius``                 Automatic division by 2
-mol                        ``Molecule Identifier``
-q                          ``Charge``
-ix, iy, iz                 ``Periodic Image``
-fx, fy, fz                 ``Force``
-mux, muy, muz              ``Dipole Orientation``
-mu                         ``Dipole Magnitude``
-omegax, omegay, omegaz     ``Angular Velocity``
-angmomx, angmomy, angmomz  ``Angular Momentum``
-tqx, tqy, tqz              ``Torque``
-spin                       ``Spin``
-quati, quatj, quatk, quatw ``Orientation``            Quaternion components X, Y, Z, W (see :ref:`here <howto.aspherical_particles.orientation>`)
-c_epot                     ``Potential Energy``
-c_kpot                     ``Kinetic Energy``
-c_stress[1..6]             ``Stress Tensor``          Symmetric tensor components XX, YY, ZZ, XY, XZ, YZ
-c_orient[1..4]             ``Orientation``            Quaternion components X, Y, Z, W (see :ref:`here <howto.aspherical_particles.orientation>`)
-c_shape[1..3]              ``Aspherical Shape``       Principal semi-axes (see :ref:`here <howto.aspherical_particles.ellipsoids>`)
-c_diameter[1..3]           ``Aspherical Shape``       Same as above but with automatic division by 2 (see :ref:`example <howto.aspherical_particles.orientation>`)
-shapex, shapey, shapez     ``Aspherical Shape``       Same as above but with automatic division by 2 (see :ref:`example <howto.aspherical_particles.orientation>`)
-c_cna                      ``Structure Type``
-pattern                    ``Structure Type``
-selection                  ``Selection``
-========================== ========================== =========================
+========================== ================================ =========================
+LAMMPS column name         OVITO particle property          Comments
+========================== ================================ =========================
+x, y, z                    :guilabel:`Position`
+xu, yu, zu                 :guilabel:`Position`
+xs, ys, zs                 :guilabel:`Position`             Automatic conversion from reduced to Cartesian coordinates
+xsu, ysu, zsu              :guilabel:`Position`             Automatic conversion from reduced to Cartesian coordinates
+id                         :guilabel:`Particle Identifier`
+vx, vy, vz                 :guilabel:`Velocity`             Automatic computation of ``Velocity Magnitude`` property
+type                       :guilabel:`Particle Type`
+element                    :guilabel:`Particle Type`        Named types (may be combined with numeric IDs from `type` column)
+mass                       :guilabel:`Mass`
+radius                     :guilabel:`Radius`
+diameter                   :guilabel:`Radius`               Automatic division by 2
+mol                        :guilabel:`Molecule Identifier`
+q                          :guilabel:`Charge`
+ix, iy, iz                 :guilabel:`Periodic Image`
+fx, fy, fz                 :guilabel:`Force`
+mux, muy, muz              :guilabel:`Dipole Orientation`
+mu                         :guilabel:`Dipole Magnitude`
+omegax, omegay, omegaz     :guilabel:`Angular Velocity`
+angmomx, angmomy, angmomz  :guilabel:`Angular Momentum`
+tqx, tqy, tqz              :guilabel:`Torque`
+spin                       :guilabel:`Spin`
+quati, quatj, quatk, quatw :guilabel:`Orientation`          Quaternion components X, Y, Z, W (see :ref:`here <howto.aspherical_particles.orientation>`)
+c_epot                     :guilabel:`Potential Energy`
+c_kpot                     :guilabel:`Kinetic Energy`
+c_stress[1..6]             :guilabel:`Stress Tensor`        Symmetric tensor components XX, YY, ZZ, XY, XZ, YZ
+c_orient[1..4]             :guilabel:`Orientation`          Quaternion components X, Y, Z, W (see :ref:`here <howto.aspherical_particles.orientation>`)
+c_shape[1..3]              :guilabel:`Aspherical Shape`     Principal semi-axes (see :ref:`here <howto.aspherical_particles.ellipsoids>`)
+c_diameter[1..3]           :guilabel:`Aspherical Shape`     Same as above but with automatic division by 2 (see :ref:`example <howto.aspherical_particles.orientation>`)
+shapex, shapey, shapez     :guilabel:`Aspherical Shape`     Same as above but with automatic division by 2 (see :ref:`example <howto.aspherical_particles.orientation>`)
+c_cna                      :guilabel:`Structure Type`
+pattern                    :guilabel:`Structure Type`
+========================== ================================ =========================
 
-Columns having any other name are mapped to a user-defined particle property with the same name.
+Generally, file columns are mapped to the corresponding standard property in OVITO if their name
+matches one of the predefined :ref:`particle properties <particle-properties-list>` (case insensitive).
+Spaces that are part of the standard property name must be left out, because LAMMPS dump files do not support column names containing spaces. For example,
+a dump file column named ``ParticleType`` will be mapped to the standard property :guilabel:`Particle Type`.
+
+For vectorial standard properties, a component name must be appended with a dot. For example, a dump file column
+named ``AsphericalShape.Z`` will automatically be mapped to the z-component of the :guilabel:`Aspherical Shape` standard property
+in OVITO. Note that you can use the LAMMPS `dump_modify colname` command to give the columns in your dump file specific names.
+
+File columns having any other name not listed in the table above and not being a :ref:`standard property name <particle-properties-list>`
+will get imported as user-defined particle properties in OVITO.
 
 .. _file_formats.input.lammps_dump.further_notes:
 

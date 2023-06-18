@@ -402,5 +402,4 @@ void ModifyCommandPage::showProgramNotice(const QString& htmlPage)
     aboutLabel->setHtml(finalText);
 }
 
-
 }   // End of namespace
