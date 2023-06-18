@@ -980,7 +980,7 @@ VkBuffer VulkanContext::uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, R
 
     // Determine the required buffer size.
     VkDeviceSize bufferSize;
-    if(dataBuffer->dataType() == DataBuffer::Float) {
+    if(dataBuffer->dataType() == DataBuffer::Float32 || dataBuffer->dataType() == DataBuffer::Float64) {
         bufferSize = dataBuffer->size() * dataBuffer->componentCount() * sizeof(float);
 
         // When uploading the data to a SSBO, automatically convert vec3 to vec4, because of the 16-byte alignment requirement of Vulkan.
@@ -994,9 +994,15 @@ VkBuffer VulkanContext::uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, R
 
     // Create a Vulkan buffer object and fill it with the data from the OVITO DataBuffer object.
     return createCachedBuffer(dataBuffer, bufferSize, resourceFrame, usage, [&](void* p) {
-        if(dataBuffer->dataType() == DataBuffer::Float) {
+        if(dataBuffer->dataType() == DataBuffer::Float32 || dataBuffer->dataType() == DataBuffer::Int8 || dataBuffer->dataType() == DataBuffer::Int32) {
+            OVITO_ASSERT(usage != VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+            BufferReadAccess bufferAccess(dataBuffer);
+            // Data types of source and destination are the same. Can do a simple memcpy.
+            std::memcpy(p, bufferAccess.cdata(), bufferAccess.size() * bufferAccess.stride());
+        }
+        else if(dataBuffer->dataType() == DataBuffer::Float64) {
             // Convert from FloatType to float data type.
-            BufferAccess<const FloatType*> arrayAccess(dataBuffer);
+            BufferAccess<const double*> bufferAccess(dataBuffer);
             size_t srcStride = dataBuffer->componentCount();
             float* dst = static_cast<float*>(p);
             size_t dstStride = dataBuffer->componentCount();
@@ -1007,12 +1013,12 @@ VkBuffer VulkanContext::uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, R
 
             if(dstStride == srcStride && dataBuffer->stride() == sizeof(FloatType) * srcStride) {
                 // Strides are the same for source and destination. Need only a single loop for copying.
-                for(const FloatType* src = arrayAccess.cbegin(); src != arrayAccess.cend(); ++src, ++dst)
+                for(const auto* src = bufferAccess.cbegin(); src != bufferAccess.cend(); ++src, ++dst)
                     *dst = static_cast<float>(*src);
             }
             else {
                 // Strides are the different for source and destination. Need nested loops for copying.
-                for(const FloatType* src = arrayAccess.cbegin(); src != arrayAccess.cend(); src += srcStride, dst += dstStride) {
+                for(const auto* src = bufferAccess.cbegin(); src != bufferAccess.cend(); src += srcStride, dst += dstStride) {
                     for(size_t i = 0; i < srcStride; i++)
                         dst[i] = static_cast<float>(src[i]);
                 }

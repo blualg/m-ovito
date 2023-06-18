@@ -33,19 +33,32 @@ VkPipelineLayout VulkanSceneRenderer::createCylinderPrimitivePipeline(VulkanPipe
     if(pipeline.isCreated())
         return pipeline.layout();
 
-    std::array<VkVertexInputBindingDescription, 2> vertexBindingDesc;
+    std::array<VkVertexInputBindingDescription, 5> vertexBindingDesc;
 
-    // Base + head + radius:
+    // Base:
     vertexBindingDesc[0].binding = 0;
-    vertexBindingDesc[0].stride = sizeof(Vector_3<float>) + sizeof(Vector_3<float>) + sizeof(float);
+    vertexBindingDesc[0].stride = sizeof(Point_3<float>);
     vertexBindingDesc[0].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
-    // Color + alpha:
+    // Head:
     vertexBindingDesc[1].binding = 1;
-    vertexBindingDesc[1].stride = 2 * sizeof(Vector_4<float>);
+    vertexBindingDesc[1].stride = sizeof(Point_3<float>);
     vertexBindingDesc[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
-    TODO: Adopt new techniques from OpenGL renderer.
+    // Diameter:
+    vertexBindingDesc[2].binding = 2;
+    vertexBindingDesc[2].stride = sizeof(float);
+    vertexBindingDesc[2].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+    // Color (RGB):
+    vertexBindingDesc[3].binding = 3;
+    vertexBindingDesc[3].stride = 2 * sizeof(ColorT<float>);
+    vertexBindingDesc[3].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+    // Transparency:
+    vertexBindingDesc[4].binding = 4;
+    vertexBindingDesc[4].stride = 2 * sizeof(float);
+    vertexBindingDesc[4].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
     VkVertexInputAttributeDescription vertexAttrDesc[] = {
         VkVertexInputAttributeDescription{ // base:
@@ -56,27 +69,27 @@ VkPipelineLayout VulkanSceneRenderer::createCylinderPrimitivePipeline(VulkanPipe
         },
         VkVertexInputAttributeDescription{ // head:
             1, // location
-            0, // binding
+            1, // binding
             VK_FORMAT_R32G32B32_SFLOAT,
-            sizeof(Vector_3<float>) // offset
+            0 // offset
         },
-        VkVertexInputAttributeDescription{ // radius:
+        VkVertexInputAttributeDescription{ // diameter:
             2, // location
-            0, // binding
+            2, // binding
             VK_FORMAT_R32_SFLOAT,
-            sizeof(Vector_3<float>) + sizeof(Vector_3<float>) // offset
+            0 // offset
         },
-        VkVertexInputAttributeDescription{ // color1:
+        VkVertexInputAttributeDescription{ // color1 (rgb):
             3, // location
             1, // binding
             VK_FORMAT_R32G32B32A32_SFLOAT,
             0 // offset
         },
-        VkVertexInputAttributeDescription{ // color2:
+        VkVertexInputAttributeDescription{ // color2 (rgb):
             4, // location
             1, // binding
             VK_FORMAT_R32G32B32A32_SFLOAT,
-            sizeof(Vector_4<float>) // offset
+            sizeof(ColorT<float>) // offset
         }
     };
 
@@ -438,7 +451,10 @@ void VulkanSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
                         // We pass the min/max range of the color map to the fragment shader in the push constants buffer.
                         color_range = Vector_2<float>(primitive.pseudoColorMapping().minValue(), primitive.pseudoColorMapping().maxValue());
                         // Avoid division by zero due to degenerate value interval.
-                        if(color_range.y() == color_range.x()) color_range.y() = std::nextafter(color_range.y(), std::numeric_limits<float>::max());
+                        if(color_range.y() == color_range.x()) {
+                            color_range.x() = std::min(color_range.x() - FloatTypeEpsilon<float>(), std::nextafter(color_range.x(), std::numeric_limits<float>::lowest()));
+                            color_range.y() = std::max(color_range.y() + FloatTypeEpsilon<float>(), std::nextafter(color_range.y(), std::numeric_limits<float>::max()));
+                        }
 
                         // Create the descriptor set with the color map and bind it to the pipeline.
                         VkDescriptorSet colorMapSet = uploadColorMap(primitive.pseudoColorMapping().gradient());
@@ -467,33 +483,26 @@ void VulkanSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
         primitive.widths() ? FloatType(0) : primitive.uniformWidth()
     };
 
-    // Upload vertex buffer with the base and head positions and radii.
-    VkBuffer positionRadiusBuffer = context()->createCachedBuffer(positionRadiusCacheKey, primitiveCount * (sizeof(Vector_3<float>) + sizeof(Vector_3<float>) + sizeof(float)), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, [&](void* buffer) {
-        OVITO_ASSERT(!primitive.widths() || primitive.widths()->size() == primitive.basePositions()->size());
-        BufferAccess<const Point3> basePositionArray(primitive.basePositions());
-        BufferAccess<const Point3> headPositionArray(primitive.headPositions());
-        BufferAccess<const FloatType> diameterArray(primitive.widths());
-        float* dst = reinterpret_cast<float*>(buffer);
-        const FloatType* diameter = diameterArray ? diameterArray.cbegin() : nullptr;
-        const float uniformRadius = 0.5f * primitive.uniformWidth();
-        const Point3* basePos = basePositionArray.cbegin();
-        const Point3* headPos = headPositionArray.cbegin();
-        for(; basePos != basePositionArray.cend(); ++basePos, ++headPos) {
-            *dst++ = static_cast<float>(basePos->x());
-            *dst++ = static_cast<float>(basePos->y());
-            *dst++ = static_cast<float>(basePos->z());
-            *dst++ = static_cast<float>(headPos->x());
-            *dst++ = static_cast<float>(headPos->y());
-            *dst++ = static_cast<float>(headPos->z());
-            *dst++ = diameter ? (0.5f * static_cast<float>(*diameter++)) : uniformRadius;
-        }
-    });
+    // Upload base vertex positions.
+    VkBuffer basePositionBuffer = context()->uploadDataBuffer(primitive.basePositions(), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+    // Upload head vertex positions.
+    VkBuffer headPositionBuffer = context()->uploadDataBuffer(primitive.headPositions(), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     // The list of buffers that will be bound to vertex attributes.
-    // We will bind the base/head positions and radii for sure. More buffers may be added to the list below.
-    std::array<VkBuffer, 2> buffers = { positionRadiusBuffer };
-    std::array<VkDeviceSize, 2> offsets = { 0, 0 };
-    uint32_t buffersCount = 1;
+    // We will bind the base/head positions. More buffers may be added to the list below.
+    std::array<VkBuffer, 4> buffers = { basePositionBuffer, headPositionBuffer };
+    std::array<VkDeviceSize, 4> offsets = { 0, 0, 0, 0 };
+    uint32_t buffersCount = 2;
+
+    // Upload cylinder diameters.
+    if(primitive.widths()) {
+        VkBuffer diametersBuffer = context()->uploadDataBuffer(primitive.widths(), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    }
+    else {
+//        shader.unbindBuffer("diameter");
+//        shader.setAttributeValue("diameter", primitive.uniformWidth());
+    }
 
     if(!isPicking()) {
 

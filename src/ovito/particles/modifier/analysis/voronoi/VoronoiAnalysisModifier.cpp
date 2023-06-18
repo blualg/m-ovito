@@ -230,10 +230,10 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
         }
 
         // Create the "Area" face property, which stores the surface area of each Voronoi face.
-        faceAreaProperty = polyhedraMesh.createFaceProperty(QStringLiteral("Area"), PropertyObject::Float);
+        faceAreaProperty = polyhedraMesh.createFaceProperty(DataBuffer::Uninitialized, QStringLiteral("Area"), PropertyObject::FloatDefault);
 
         // Create the "Voronoi Order" face property, which stores the order (number of edges) of each Voronoi face.
-        faceOrderProperty = polyhedraMesh.createFaceProperty(QStringLiteral("Voronoi Order"), PropertyObject::Int);
+        faceOrderProperty = polyhedraMesh.createFaceProperty(DataBuffer::Uninitialized, QStringLiteral("Voronoi Order"), PropertyObject::Int32);
 
         // Create as many mesh regions as there are input particles.
         polyhedraMesh.mutableRegions()->setElementCount(_positions->size());
@@ -389,8 +389,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
                     if(_polyhedraMesh) {
                         QMutexLocker locker(bondMutex);
-                        PropertyAccess<FloatType>{faceAreaProperty}[meshFace] = area;
-                        PropertyAccess<int>{faceOrderProperty}[meshFace] = faceOrder;
+                        BufferAccess<FloatType>{faceAreaProperty}[meshFace] = area;
+                        BufferAccess<int32_t>{faceOrderProperty}[meshFace] = faceOrder;
                     }
 
                     if((faceAreaThreshold == 0 || area > faceAreaThreshold) && faceOrder >= 3) {
@@ -689,7 +689,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
             SurfaceMesh::region_index region = faceGrower->faceRegion(face);
 
             // We know for each Voronoi face which Voronoi polyhedron is on the other side.
-            SurfaceMeshAccess::region_index adjacentRegion = adjacentCellArray[face];
+            SurfaceMesh::region_index adjacentRegion = adjacentCellArray[face];
             // Skip faces that are at the outer surface.
             if(adjacentRegion < 0) continue;
             // Skip faces that belong to a periodic polyhedron.
