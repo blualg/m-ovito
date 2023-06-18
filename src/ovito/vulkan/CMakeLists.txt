@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2021 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -158,6 +158,20 @@ ENDIF()
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_APP AND NOT OVITO_QML_GUI)
     ADD_SUBDIRECTORY(gui)
+ENDIF()
+
+# On macOS, deploy Vulkan loader and MoltenVK library as part of the app bundle.
+IF(APPLE AND NOT OVITO_BUILD_CONDA AND OVITO_BUILD_APP)
+    GET_TARGET_PROPERTY(VULKAN_LIBRARY_LOCATION Vulkan::Vulkan LOCATION)
+    GET_FILENAME_COMPONENT(VULKAN_LIBRARY_PATH "${VULKAN_LIBRARY_LOCATION}" PATH)
+    OVITO_INSTALL_SHARED_LIB("${VULKAN_LIBRARY_LOCATION}")
+    OVITO_INSTALL_SHARED_LIB("${VULKAN_LIBRARY_PATH}/libMoltenVK.dylib")
+
+    # The macOS Vulkan loader looks in the application's bundle for ICD and layer JSON files.
+    # It looks in the bundle's Resources/vulkan/icd.d/ directory for ICD JSON files and in the bundle's
+    # Resources/vulkan/explicit_layer.d/ directory for layer JSON files.
+    CONFIGURE_FILE("resources/MoltenVK_icd.json" "${Ovito_BINARY_DIR}/${MACOSX_BUNDLE_NAME}.app/Contents/Resources/vulkan/icd.d/MoltenVK_icd.json")
+    INSTALL(FILES "resources/MoltenVK_icd.json" DESTINATION "${MACOSX_BUNDLE_NAME}.app/Contents/Resources/vulkan/icd.d/")
 ENDIF()
 
 # Propagate list of plugins to parent scope.

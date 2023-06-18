@@ -102,7 +102,11 @@ bool OffscreenVulkanSceneRenderer::startRender(const RenderSettings* settings, c
         throw RendererException(tr("Could not create Vulkan offscreen image buffer."));
 
     // Create Vulkan depth-stencil buffer image.
+#ifndef Q_OS_MAC
     VkFormat dsFormat = _grabDepthBuffer ? VK_FORMAT_D24_UNORM_S8_UINT : context()->depthStencilFormat();
+#else
+    VkFormat dsFormat = context()->depthStencilFormat();
+#endif
     usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 
@@ -236,7 +240,7 @@ bool OffscreenVulkanSceneRenderer::startRender(const RenderSettings* settings, c
     err = deviceFunctions()->vkAllocateMemory(logicalDevice(), &memAllocInfo, nullptr, &_frameGrabImageMem);
     if(err != VK_SUCCESS) {
         qWarning("OffscreenVulkanSceneRenderer: Failed to allocate image memory for readback: %d", err);
-        throw RendererException(tr("Failed to allocate Vulkan image memory for framebuffer readback."));
+        throw RendererException(tr("Failed to allocate Vulkan image memory for framebuffer readback. The image dimensions may exceed the limits imposed by the graphics hardware."));
     }
     deviceFunctions()->vkBindImageMemory(logicalDevice(), _frameGrabImage, _frameGrabImageMem, 0);
     if(err != VK_SUCCESS) {

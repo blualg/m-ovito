@@ -717,6 +717,10 @@ bool VulkanContext::createVulkanImage(const QSize size,
                                         VkImageView* views,
                                         int count)
 {
+#ifdef Q_OS_MAC
+    if(size.width() > 16384 || size.height() > 16384)
+        throw SceneRenderer::RendererException(tr("The requested render buffer dimensions exceed the graphics device limits on the macOS platform."));
+#endif
     VkMemoryRequirements memReq;
     VkResult err;
     for(int i = 0; i < count; ++i) {
@@ -753,7 +757,7 @@ bool VulkanContext::createVulkanImage(const QSize size,
             return false;
         }
         startIndex = memInfo.memoryTypeIndex + 1;
-        qCDebug(lcVulkan, "Allocating %u bytes for transient image (memtype %u)", uint32_t(memInfo.allocationSize), memInfo.memoryTypeIndex);
+        qCDebug(lcVulkan, "Allocating %u bytes for transient image (memtype %u) with format %u", uint32_t(memInfo.allocationSize), memInfo.memoryTypeIndex, format);
         err = deviceFunctions()->vkAllocateMemory(logicalDevice(), &memInfo, nullptr, mem);
         if(err != VK_SUCCESS && err != VK_ERROR_OUT_OF_DEVICE_MEMORY) {
             qWarning("VulkanContext: Failed to allocate image memory: %d", err);
