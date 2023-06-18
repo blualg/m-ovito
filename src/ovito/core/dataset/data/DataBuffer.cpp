@@ -91,8 +91,9 @@ OORef<RefTarget> DataBuffer::clone(bool deepCopy, CloneHelper& cloneHelper) cons
         clone->_data = allocateSyclBuffer(_numElements, _stride);
         // Copy data on the SYCL device.
         ExecutionContext::current().ui().taskManager().syclQueue().submit([&](cl::sycl::handler& cgh) {
+            _hasScheduledSyclReadOperations = true;
             cgh.copy(
-                const_cast<DataBuffer*>(this)->_data->get_access(cgh, cl::sycl::range(_numElements * _stride), cl::sycl::read_only),
+                _data->get_access(cgh, cl::sycl::range(_numElements * _stride), cl::sycl::read_only),
                 clone->_data->get_access(cgh, cl::sycl::write_only, cl::sycl::no_init)
             );
         });
@@ -123,6 +124,7 @@ void DataBuffer::resize(size_t newSize, bool preserveData)
         cl::sycl::buffer<std::byte> newBuffer = allocateSyclBuffer(newSize, _stride);
         if(preserveData && _numElements != 0) {
             ExecutionContext::current().ui().taskManager().syclQueue().submit([&](cl::sycl::handler& cgh) {
+                _hasScheduledSyclReadOperations = true;
                 cgh.copy(
                     this->_data->get_access(cgh, cl::sycl::range(_numElements * _stride), cl::sycl::read_only),
                     newBuffer.get_access(cgh, cl::sycl::range(_numElements * _stride), cl::sycl::write_only, cl::sycl::no_init)
@@ -178,8 +180,9 @@ void DataBuffer::resizeCopyFrom(size_t newSize, const DataBuffer& original)
         if(original._numElements != 0) {
             ExecutionContext::current().ui().taskManager().syclQueue().submit([&](cl::sycl::handler& cgh) {
                 size_t nbytes = std::min(newSize, original._numElements) * original._stride;
+                original._hasScheduledSyclReadOperations = true;
                 cgh.copy(
-                    const_cast<DataBuffer&>(original)._data->get_access(cgh, cl::sycl::range(nbytes), cl::sycl::read_only),
+                    original._data->get_access(cgh, cl::sycl::range(nbytes), cl::sycl::read_only),
                     newBuffer.get_access(cgh, cl::sycl::write_only, cl::sycl::no_init)
                 );
             });
@@ -303,7 +306,7 @@ void DataBuffer::saveToStream(ObjectSaveStream& stream, bool excludeRecomputable
         OVITO_ASSERT(_isDataInitialized);
 #ifdef OVITO_USE_SYCL
         if(_numElements != 0) {
-            cl::sycl::host_accessor readAccessor(*const_cast<DataBuffer*>(this)->_data, cl::sycl::read_only);
+            cl::sycl::host_accessor readAccessor(*_data, cl::sycl::read_only);
             stream.write(readAccessor.get_pointer(), _stride * _numElements);
         }
 #else
@@ -376,8 +379,9 @@ void DataBuffer::replicateFrom(size_t n, const DataBuffer& original)
     // Replicate data values N times.
     for(size_t i = 0; i < n; i++) {
         ExecutionContext::current().ui().taskManager().syclQueue().submit([&](cl::sycl::handler& cgh) {
+            original._hasScheduledSyclReadOperations = true;
             cgh.copy(
-                const_cast<DataBuffer&>(original)._data->get_access(cgh, cl::sycl::range(nbytes), cl::sycl::read_only),
+                original._data->get_access(cgh, cl::sycl::range(nbytes), cl::sycl::read_only),
                 _data->get_access(cgh, cl::sycl::range(nbytes), cl::sycl::id(nbytes * i), cl::sycl::write_only, i == 0 ? cl::sycl::property_list{cl::sycl::no_init} : cl::sycl::property_list{})
             );
         });
@@ -433,7 +437,7 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const boost::dynamic_bitse
         OVITO_ASSERT(this->stride() == sizeof(T));
         WriteAccess writeAccess(*this);
 #ifdef OVITO_USE_SYCL
-        cl::sycl::buffer<T> oldBufferTyped = const_cast<DataBuffer&>(original)._data->reinterpret<T, 1>();
+        cl::sycl::buffer<T> oldBufferTyped = original._data->reinterpret<T, 1>();
         cl::sycl::host_accessor readAccessor(oldBufferTyped, cl::sycl::range(original.size()), cl::sycl::read_only);
         cl::sycl::buffer<T> newBufferTyped = newBuffer.reinterpret<T, 1>();
         cl::sycl::host_accessor writeAccessor(newBufferTyped, cl::sycl::write_only, cl::sycl::no_init);
@@ -502,7 +506,7 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const boost::dynamic_bitse
     // Generic case:
     WriteAccess writeAccess(*this);
 #ifdef OVITO_USE_SYCL
-    cl::sycl::host_accessor readAccessor(*const_cast<DataBuffer&>(original)._data, cl::sycl::range(original.size() * original.stride()), cl::sycl::read_only);
+    cl::sycl::host_accessor readAccessor(*original._data, cl::sycl::range(original.size() * original.stride()), cl::sycl::read_only);
     cl::sycl::host_accessor writeAccessor(newBuffer, cl::sycl::write_only, cl::sycl::no_init);
     const std::byte* __restrict src = readAccessor.get_pointer();
     std::byte* __restrict dst = writeAccessor.get_pointer();
@@ -609,7 +613,7 @@ void DataBuffer::mappedCopyFrom(const DataBuffer& source, const std::vector<size
 
     // General case:
 #ifdef OVITO_USE_SYCL
-    cl::sycl::host_accessor readAccessor(*const_cast<DataBuffer&>(source)._data, cl::sycl::read_only);
+    cl::sycl::host_accessor readAccessor(*source._data, cl::sycl::read_only);
     cl::sycl::host_accessor writeAccessor(*_data, cl::sycl::write_only, discardOldContents ? cl::sycl::property_list{cl::sycl::no_init} : cl::sycl::property_list{});
     const std::byte* __restrict src = readAccessor.get_pointer();
     std::byte* __restrict dst = writeAccessor.get_pointer();
@@ -714,7 +718,7 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
         const std::byte* __restrict src = cdata();
         std::byte* __restrict dst = destination.data();
 #else
-        cl::sycl::host_accessor readAccessor(*const_cast<DataBuffer*>(this)->_data, cl::sycl::read_only);
+        cl::sycl::host_accessor readAccessor(*_data, cl::sycl::read_only);
         cl::sycl::host_accessor writeAccessor(*destination._data, cl::sycl::write_only, cl::sycl::no_init);
         const std::byte* __restrict src = readAccessor.get_pointer();
         std::byte* __restrict dst = writeAccessor.get_pointer();
@@ -759,8 +763,9 @@ void DataBuffer::copyFrom(const DataBuffer& source)
         ReadAccess readAccess(source);
 #ifdef OVITO_USE_SYCL
         ExecutionContext::current().ui().taskManager().syclQueue().submit([&](cl::sycl::handler& cgh) {
+            source._hasScheduledSyclReadOperations = true;
             cgh.copy(
-                const_cast<DataBuffer&>(source)._data->get_access(cgh, cl::sycl::range(source.size() * source.stride()), cl::sycl::read_only),
+                source._data->get_access(cgh, cl::sycl::range(source.size() * source.stride()), cl::sycl::read_only),
                 _data->get_access(cgh, cl::sycl::write_only, cl::sycl::no_init)
             );
         });
@@ -791,8 +796,9 @@ void DataBuffer::copyRangeFrom(const DataBuffer& source, size_t sourceIndex, siz
     ReadAccess readAccess(source);
 #ifdef OVITO_USE_SYCL
     ExecutionContext::current().ui().taskManager().syclQueue().submit([&](cl::sycl::handler& cgh) {
+        source._hasScheduledSyclReadOperations = true;
         cgh.copy(
-            const_cast<DataBuffer&>(source)._data->get_access(cgh, cl::sycl::range(count * source.stride()), cl::sycl::id(sourceIndex * source.stride()), cl::sycl::read_only),
+            source._data->get_access(cgh, cl::sycl::range(count * source.stride()), cl::sycl::id(sourceIndex * source.stride()), cl::sycl::read_only),
             _data->get_access(cgh, cl::sycl::range(count * this->stride()), cl::sycl::id(destIndex * this->stride()), cl::sycl::write_only,  (destIndex == 0 && count == this->size()) ? cl::sycl::property_list{cl::sycl::no_init} : cl::sycl::property_list{})
         );
     });
@@ -825,8 +831,8 @@ bool DataBuffer::equals(const DataBuffer& other) const
     OVITO_ASSERT(this->stride() == other.stride());
     if(this->size() == 0) return true;
 #ifdef OVITO_USE_SYCL
-    cl::sycl::host_accessor readAccessor1(*const_cast<DataBuffer&>(other)._data, cl::sycl::read_only);
-    cl::sycl::host_accessor readAccessor2(*const_cast<DataBuffer*>(this)->_data, cl::sycl::read_only);
+    cl::sycl::host_accessor readAccessor1(*other._data, cl::sycl::read_only);
+    cl::sycl::host_accessor readAccessor2(*this->_data, cl::sycl::read_only);
     return std::equal(readAccessor1.get_pointer(), readAccessor1.get_pointer() + this->size() * this->stride(), readAccessor2.get_pointer());
 #else
     return std::equal(this->cdata(), this->cdata() + this->size() * this->stride(), other.cdata());
@@ -965,5 +971,20 @@ void DataBuffer::fillZero()
     std::memset(writeAccess.data(), 0, this->size() * this->stride());
 #endif
 }
+
+#ifdef OVITO_USE_SYCL
+/******************************************************************************
+* Blocks until all SYCL kernels in the queue that read from this buffer have finished running.
+* Only then it is safe again to write into the buffer on the host. This function is used by the
+* Python binding layer, which requires permanent write access to the buffer's underlying memory on the host.
+******************************************************************************/
+void DataBuffer::blockUntilSyclKernelsFinished()
+{
+    if(_hasScheduledSyclReadOperations) {
+        RawBufferAccess<access_mode::write> accessor{this};
+        _hasScheduledSyclReadOperations = false;
+    }
+}
+#endif
 
 }   // End of namespace

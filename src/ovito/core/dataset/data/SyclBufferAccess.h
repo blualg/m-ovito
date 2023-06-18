@@ -85,6 +85,10 @@ public:
                 auto typedBuffer = buffer->_data->template reinterpret<element_type, 2>(cl::sycl::range(capacity, buffer->componentCount()));
                 *this = accessor_type{typedBuffer, commandGroupHandlerRef, cl::sycl::range(buffer->size(), buffer->componentCount()), propList};
             }
+
+            if constexpr(AccessMode == access_mode::read || AccessMode == access_mode::read_write) {
+                buffer->_hasScheduledSyclReadOperations = true;
+            }
         }
     }
 

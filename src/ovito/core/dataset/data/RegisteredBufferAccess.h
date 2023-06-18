@@ -57,14 +57,18 @@ private:
 class OVITO_CORE_EXPORT RegisteredBufferAccess
 {
 public:
-    /// When using a SYCL accessor, we don't need to keep the DataBuffer alive.
-    /// It's sufficent that the internal SYCL buffer object remains alive while its memory is being accessed.
+
+    /// The internal SYCL buffer accessor.
     using accessor_type = cl::sycl::host_accessor<std::byte, 1, cl::sycl::access_mode::read_write>;
 
-    RegisteredBufferAccess(DataBuffer& p, RegisteredBufferAccess** listHead) : memoryAccessor(p.size() != 0 ? accessor_type{p.syclBuffer()} : accessor_type{}), _next(*listHead), _listHead(listHead) {
+    /// Constructor.
+    RegisteredBufferAccess(DataBuffer& buffer, TaskManager& taskManager) : _buffer(&buffer), _syclAccessor(buffer.size() != 0 ? accessor_type{buffer.syclBuffer()} : accessor_type{}), _next(taskManager._registeredBufferAccessors), _listHead(&taskManager._registeredBufferAccessors) {
         if(_next) _next->_prev = this;
-        *listHead = this;
+        *_listHead = this;
     }
+
+    /// Returns a pointer to the buffer object.
+    DataBuffer* buffer() const { return _buffer.get(); }
 
     ~RegisteredBufferAccess() {
         if(_prev == nullptr) {
@@ -76,8 +80,14 @@ public:
             if(_next) _next->_prev = _prev;
         }
     }
-    const void* dataPointer() { return !memoryAccessor.empty() ? memoryAccessor.get_pointer() : nullptr; }
+
+    /// Returns a C pointer to the buffer's internal storage.
+    const void* dataPointer() { return !_syclAccessor.empty() ? _syclAccessor.get_pointer() : nullptr; }
+
 private:
+
+    /// To keep the buffer object alive while it is being accessed.
+    OORef<DataBuffer> _buffer;
 
     /// SYCL host memory accessor.
     accessor_type _syclAccessor;

@@ -285,6 +285,11 @@ public:
         OVITO_ASSERT(_data);
         return *_data;
     }
+
+    /// Blocks until all SYCL kernels in the queue that read from this buffer have finished running.
+    /// Only then it is safe again to write into the buffer on the host. This function is used by the
+    /// Python binding layer, which requires permanent write access to the buffer's underlying memory on the host.
+    void blockUntilSyclKernelsFinished();
 #endif
 
 protected:
@@ -340,10 +345,16 @@ private:
 #ifdef OVITO_USE_SYCL
     /// The internal memory buffer holding the data elements.
     /// Note: We are using std::optional<> here, because SYCL won't allow us to allocate 0-size buffers.
-    std::optional<cl::sycl::buffer<std::byte>> _data;
+    mutable std::optional<cl::sycl::buffer<std::byte>> _data;
 #else
     /// The internal memory buffer holding the data elements.
     std::unique_ptr<std::byte[]> _data;
+#endif
+
+#ifdef OVITO_USE_SYCL
+    /// Flag is set whenever new kernels have been scheduled for execution that read from the buffer.
+    /// This indicates to blockUntilSyclKernelsFinished() that is needs to wait for these operation(s) to finish.
+    mutable bool _hasScheduledSyclReadOperations = false;
 #endif
 
 #ifdef OVITO_DEBUG
