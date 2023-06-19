@@ -5,14 +5,16 @@ Version history
 ===============
 
 ---------------------------
-Version 3.8.5 (xx-Jun-2023)
+Version 3.8.5 (19-Jun-2023)
 ---------------------------
 
 * :ref:`particles.modifiers.voronoi_analysis` modifier now outputs per-face ``Area`` and ``Voronoi Order`` mesh properties
 * PDB file reader: Refined detection of cells with periodic boundary conditions
+* GSD file reader: Support time-varying radii of spherical type shapes; display simulation step numbers in timeline
 * LAMMPS dump file reader: Automatically :ref:`map file columns to standard particle properties <file_formats.input.lammps_dump.property_mapping>` if names match
-* Fix: Particle selection in data inspector is lost when playing animation or moving viewport camera
+* Bug fix: Particle selection in data inspector is lost when playing animation or moving viewport camera
 * Workaround for macOS (Apple Silicon) OpenGL stencil buffer issue: Highlighted particles not rendered correctly
+* Update third-party libraries: ffmpeg 6.0, OpenSSL 1.1.1u, libssh 0.10.5, Qt 6.5.1, PySide6 6.5.1.1, HDF5 1.14.1-2, NetCDF 4.9.2
 
 ---------------------------
 Version 3.8.4 (03-May-2023)

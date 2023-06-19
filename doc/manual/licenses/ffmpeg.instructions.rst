@@ -9,7 +9,7 @@ In accordance with the requirements of this license, this page provides instruct
 Windows
 """""""
 
-OVITO for Windows includes binaries that have been built from the unmodified sources of ffmpeg 5.1.3.
+OVITO for Windows includes binaries that have been built from the unmodified sources of ffmpeg 6.0.
 The following commands have been used to generate them::
 
   # Compiler: Microsoft Visual C++ 2019 (command line tools) + MSYS2 environment
