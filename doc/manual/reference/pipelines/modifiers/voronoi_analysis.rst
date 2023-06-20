@@ -154,5 +154,8 @@ This can be done, for example, by using the :ref:`particles.modifiers.affine_tra
 
   :py:class:`ovito.modifiers.VoronoiAnalysisModifier` (Python API)
 
+.. versionadded:: 3.8.5
+   Calculation of the ``Area`` and ``Voronoi Order`` per-face mesh properties
+
 .. versionadded:: 3.7.9
    Calculation of the ``Cavity Radius`` property (thanks to Alain Dequidt)
