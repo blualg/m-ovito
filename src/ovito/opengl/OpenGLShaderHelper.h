@@ -191,7 +191,7 @@ public:
         _instancesSubset = indices;
     }
 
-    /// Uploads some data to the Vulkan device as a buffer object and caches it.
+    /// Uploads some data to the graphics device as a buffer object and caches it.
     template<typename KeyType>
     QOpenGLBuffer createCachedBuffer(KeyType&& cacheKey, GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*, BufferAccess<const int32_t>)>&& fillMemoryFunc) {
 

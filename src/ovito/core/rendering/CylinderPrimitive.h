@@ -103,7 +103,7 @@ public:
     /// Returns the buffer storing the colors.
     const ConstDataBufferPtr& colors() const { return _colors; }
 
-    /// Sets the per-primitive (or per-vertex) colors.
+    /// Sets the per-primitive or per-vertex colors (either RGB or scalar pseudo-color values).
     void setColors(ConstDataBufferPtr colors) {
         OVITO_ASSERT(!colors || (colors->componentCount() == 3 || colors->componentCount() == 1));
         _colors = std::move(colors);
@@ -162,13 +162,13 @@ private:
     ConstDataBufferPtr _headPositions; // Array of Point3
 
     /// Buffer storing the colors of the arrows/cylinders.
-    ConstDataBufferPtr _colors; // Array of Color (RGB) or Float (pseudocolor values)
+    ConstDataBufferPtr _colors; // Array of RGB colors or floats (pseudocolors)
 
     /// Buffer storing the semi-transparency values.
-    ConstDataBufferPtr _transparencies; // Array of FloatType
+    ConstDataBufferPtr _transparencies; // Array of floats
 
     /// Buffer storing the per-primitive width values.
-    ConstDataBufferPtr _widths; // Array of FloatType
+    ConstDataBufferPtr _widths; // Array of floats
 };
 
 }   // End of namespace
