@@ -65,8 +65,40 @@ your ``modify()`` function will get invoked by the system.
   The pipeline system is free to decide whether it caches the results of your modifier function, and it may call your function
   repeatedly if necessary. In other words, you should design the function in such a way that it can process each trajectory frame in isolation.
 
-Making the modifier function permanently available in OVITO Pro
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.. _particles.modifiers.python_script.installing_extensions:
+
+Installing Python extensions using pip
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+Both Python script modifiers :ref:`advanced modifier interface
+<writing_custom_modifiers>` and :ref:`custom file readers 
+<writing_custom_file_readers>` can be packaged and installed using pip. This process is explained
+in detail on the respective manual pages and in the :ref:`registering custom python extensions
+<registering_custom_python_classes>` section. After these steps have been implemented by the
+package developer and the Python extension has been uploaded either to GitHub or the PyPI repository
+they can be installed using the command line. 
+
+From the OVITO Pro Python interpreter::
+
+  ovitos -m pip install --user [[Repository Link]]/[[Branch]]/archive.zip
+
+In the standalone OVITO Python package or a Conda environment::
+
+  pip install --user [[Repository Link]]/[[Branch]]/archive.zip
+
+After the installation procecss, custom file readers are added the the selection menu in OVITO Pro
+and become available to the automatic file type deduction. Custom Python modifiers are added to the
+modifier selection dropdown menu and become available in the OVITO PRO GUI. 
+
+Note, that the standalone Python package still requires you to import the modifier class into your
+namespace before it can be inserted into a pipeline. It will not be added to the :code:`from ovito.modifiers import *`
+list. Python file readers become available after installation and will be automatically selected for
+appropriate files.
+
+
+
+Making modifier functions locally available (depreciated)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 First, you should give your modifier a meaningful name, making it easier for you to identify the modifier
 in the data pipeline. The :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` of
