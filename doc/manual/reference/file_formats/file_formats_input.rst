@@ -17,7 +17,7 @@ Input file formats
   input/reaxff
   input/xyz
 
-OVITO can read the following file formats:
+OVITO can directly read the following file formats:
 
 .. list-table::
   :widths: 24 46 20 10
@@ -213,3 +213,5 @@ OVITO can read the following file formats:
     - Configuration/topology file format used by the `oxDNA <https://dna.physics.ox.ac.uk/>`__ simulation code for coarse-grained DNA models.
     - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`
     -
+
+*OVITO Pro* additionally provides the option for you to write :ref:`custom file readers in Python <writing_custom_file_readers>` to import more formats.

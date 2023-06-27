@@ -19,7 +19,7 @@ Operating system compatibility:
 
   - Windows 10 (21H2 or later), Windows 11 (21H2 or later) - x86_64 processor architecture
   - Linux: CentOS Linux 8.4 or later, openSUSE 15.3 or later, Ubuntu 20.04 or later, SUSE Linux Enterprise Server 15 SP3 or later - x86_64 processor architecture
-  - macOS 10.14, 10.15, 11, 12 - x86_64 and arm64 processor architectures
+  - macOS 10.15+ - x86_64 and arm64 (Apple Silicon) processor architectures
 
 .. _installation.instructions:
 
@@ -90,9 +90,7 @@ Windows 7 no longer supported
   .. admonition:: Solution
 
     Modern versions of OVITO are based on the Qt6 cross-platform framework, which `requires Windows 10 or later to run <https://doc.qt.io/qt-6/supported-platforms.html>`__.
-    Windows 7 has reached its end of life and is no longer supported. Please upgrade your Windows operating system. With some luck, you may be able to run the Anaconda versions of
-    `OVITO Basic <https://anaconda.org/conda-forge/ovito>`__ or `OVITO Pro <https://www.ovito.org/python-downloads/>`__ on a Windows 7 computer,
-    because these are still built against the old Qt5 framework (as of April 2022).
+    Windows 7 has reached its end of life and is no longer supported. Please upgrade your Windows operating system.
 
 .. _installation.troubleshooting.linux:
 
@@ -127,18 +125,19 @@ Missing XCB system libraries
       Available platform plugins are: minimal, offscreen, vnc, xcb.
 
     In this case OVITO cannot find the required :file:`libxcb-*.so` set of system libraries, which might not be
-    preinstalled on fresh Linux systems.
+    preinstalled on new Linux systems.
 
   .. admonition:: Solution
 
-    Install the required libraries using the system's package manager:
+    Install the required system libraries using your Linux package manager:
 
     .. code-block:: shell
 
       # On Ubuntu/Debian systems:
       sudo apt-get install libxcb1 libx11-xcb1 libxcb-glx0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
-                          libxcb-randr0 libxcb-render-util0 libxcb-render0 libxcb-shape0 libxcb-shm0 \
-                          libxcb-sync1 libxcb-xfixes0 libxcb-xinerama0 libxcb-xinput0 libxcb-xkb1
+                  libxcb-randr0 libxcb-render-util0 libxcb-render0 libxcb-shape0 libxcb-shm0 \
+                  libxcb-sync1 libxcb-xfixes0 libxcb-xinerama0 libxcb-xinput0 libxcb-xkb1 libxcb-cursor0 \
+                  libfontconfig1 libfreetype6 libopengl0 libglx0 libx11-6
 
       # On CentOS/RHEL systems:
       sudo yum install libxcb xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm
@@ -174,5 +173,5 @@ OVITO Pro license activation fails
     of the :file:`$HOME/.config/` parent directory yourself.
 
     If changing the ownership is not possible for some reason, as a last resort, you can set the standard environment variable ``XDG_CONFIG_HOME`` to point to some existing directory
-    other than :file:`$HOME/.config/`. This redirects OVITO Pro <https://specifications.freedesktop.org/basedir-spec/latest/ar01s03.html>`__ to store its
+    other than :file:`$HOME/.config/`. This will `redirect OVITO Pro <https://specifications.freedesktop.org/basedir-spec/latest/ar01s03.html>`__ to store its
     licensing information in a different place, i.e., in a writable filesystem path of your choice.
