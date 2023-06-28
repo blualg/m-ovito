@@ -11,31 +11,34 @@ Data import
 
 To load a simulation file from your local computer, select :guilabel:`Load File` from the menu or use the corresponding button in the toolbar.
 OVITO detects the format of the file automatically (see :ref:`list of supported formats <file_formats.input>`).
-Compressed text-based files with a :file:`.gz` suffix can be read directly by OVITO.
+Compressed files with a :file:`.gz` suffix can be opened directly if the underlying text-based format is supported by OVITO.
+To import files in a custom format, you can write your own :ref:`file reader in Python <writing_custom_file_readers>` |ovito-pro|.
 
-The imported dataset will be visible in the 3d viewports as a visual object
-and also appears under the `Data source` section of the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` (see screenshot on the right).
+After import, the dataset appears in the 3d viewport(s) as a visual object
+and as `data source` in the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` (see screenshot on the right).
 
 The :ref:`External file <scene_objects.file_source>` panel is displayed below the pipeline editor.
 It contains tool buttons for reloading the imported data file in case it was changed outside of OVITO, or for picking a different file as the
-source of the :ref:`data pipeline <usage.modification_pipeline>`. Switching the imported file is useful when you have set up a
-complex data analysis pipeline and would like to reuse it on a different simulation dataset.
+source of the :ref:`data pipeline <usage.modification_pipeline>`. Replacing the imported file is useful if you have set up a
+complex data analysis pipeline and would like to reuse it on a different simulation.
 
 .. _usage.import.command_line:
 
 Command line usage
 ------------------
 
-If you launch OVITO from the terminal, you can directly specify the file(s) to load. This works both for local and :ref:`remote files <usage.import.remote>`::
+When launching OVITO from the terminal, you can directly specify the file(s) to load. This works both for local and :ref:`remote files <usage.import.remote>`:
+
+.. code-block:: shell
 
   ovito /path/filename
   ovito sftp://hostname/path/filename
   ovito https://www.website.org/path/filename
 
 Importing several files at once by specifying multiple paths is possible.
-If they all have the same data format, they will be concatenated into an animatable trajectory.
+If they all have the same file format, they will be concatenated into an animatable trajectory.
 If they have different formats, OVITO will detect whether they represent a pair of topology/trajectory files (see next section).
-Otherwise, they will be inserted as :ref:`separate objects into the scene <usage.import.multiple_datasets>`.
+Otherwise, they will be inserted as :ref:`separate objects into the scene <usage.import.multiple_datasets>` |ovito-pro|.
 
 .. _usage.import.sequence:
 

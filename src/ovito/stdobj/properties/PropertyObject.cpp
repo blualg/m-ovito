@@ -402,6 +402,24 @@ const ElementType* PropertyObject::addNumericType(const PropertyContainerClass& 
 }
 
 /******************************************************************************
+* Returns the display name of the property including the name of the given
+* vector component.
+******************************************************************************/
+QString PropertyObject::nameWithComponent(int vectorComponent) const
+{
+    if(componentCount() <= 1 || vectorComponent < 0) {
+        if(componentNames().size() == 1)
+            return QStringLiteral("%1.%2").arg(name()).arg(componentNames()[0]);
+        else
+            return name();
+    }
+    else if(vectorComponent < componentNames().size())
+        return QStringLiteral("%1.%2").arg(name()).arg(componentNames()[vectorComponent]);
+    else
+        return QStringLiteral("%1.%2").arg(name()).arg(vectorComponent + 1);
+}
+
+/******************************************************************************
 * Throws an exception with an informative text if the given name is not a
 * valid name for an OVITO property.
 ******************************************************************************/
@@ -413,6 +431,8 @@ void PropertyObject::throwIfInvalidPropertyName(const QString& name)
         throw Exception(tr("Invalid property name: '%1'. Dots are not allowed in OVITO property names.").arg(name));
     if(name.contains(QChar('/')))
         throw Exception(tr("Invalid property name: '%1'. '/' is not allowed in OVITO property names.").arg(name));
+    if(name.contains(QChar(':')))
+        throw Exception(tr("Invalid property name: '%1'. ':' is not allowed in OVITO property names.").arg(name));
     if(name.startsWith(QChar(' ')))
         throw Exception(tr("Invalid property name: '%1'. OVITO property names must not start with whitespace.").arg(name));
     if(name.endsWith(QChar(' ')))
@@ -427,6 +447,7 @@ QString PropertyObject::makePropertyNameValid(const QString& name)
     QString mangledName = name.trimmed();
     mangledName.replace(QChar('.'), QChar('_'));
     mangledName.replace(QChar('/'), QChar('_'));
+    mangledName.replace(QChar(':'), QChar('_'));
     return mangledName;
 }
 

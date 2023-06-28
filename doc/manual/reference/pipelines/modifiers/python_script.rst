@@ -97,7 +97,7 @@ GitHub or the PyPI package repository, the extension can be installed in your en
 
 To make an extension package available within OVITO Pro, it must be installed in the :ref:`integrated Python interpreter of OVITO Pro <ovitos_interpreter>`
 by running ``pip install`` via :program:`ovitos` on the command line. Here we assume your extension package is hosted online in a Git repository
-publicly available via *https* protocol::
+publicly accessible via *https* protocol::
 
   ovitos -m pip install --user https://<repository_url>/<branch>/archive.zip
 

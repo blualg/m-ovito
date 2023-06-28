@@ -95,14 +95,7 @@ public:
 
     /// \brief Returns the display name of the property including the name of the given
     ///        vector component.
-    QString nameWithComponent(int vectorComponent) const {
-        if(componentCount() <= 1 || vectorComponent < 0)
-            return name();
-        else if(vectorComponent < componentNames().size())
-            return QStringLiteral("%1.%2").arg(name()).arg(componentNames()[vectorComponent]);
-        else
-            return QStringLiteral("%1.%2").arg(name()).arg(vectorComponent + 1);
-    }
+    QString nameWithComponent(int vectorComponent) const;
 
     /// Checks if this property storage and its contents exactly match those of another property storage.
     bool equals(const PropertyObject& other) const;

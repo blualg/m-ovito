@@ -85,9 +85,6 @@ PropertyPtr PropertyContainerClass::createStandardProperty(DataBuffer::BufferIni
 ******************************************************************************/
 PropertyPtr PropertyContainerClass::createUserProperty(DataBuffer::BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QString& name, int type, QStringList componentNames) const
 {
-    // Check if property name contains invalid characters.
-    PropertyObject::throwIfInvalidPropertyName(name);
-
     return PropertyPtr::create(init, elementCount, dataType, componentCount, name, type, std::move(componentNames));
 }
 

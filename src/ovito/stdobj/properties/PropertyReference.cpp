@@ -59,13 +59,13 @@ QString PropertyReference::nameWithComponent() const
         else {
             const QStringList& names = containerClass()->standardPropertyComponentNames(type());
             if(vectorComponent() < names.size())
-                return QString("%1.%2").arg(name()).arg(names[vectorComponent()]);
+                return QStringLiteral("%1.%2").arg(name()).arg(names[vectorComponent()]);
         }
     }
     if(vectorComponent() < 0)
         return name();
     else
-        return QString("%1.%2").arg(name()).arg(vectorComponent() + 1);
+        return QStringLiteral("%1.%2").arg(name()).arg(vectorComponent() + 1);
 }
 
 /******************************************************************************

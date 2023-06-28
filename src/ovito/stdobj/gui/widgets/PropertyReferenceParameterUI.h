@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -118,8 +118,8 @@ private:
     void addItemsToComboBox(const PropertyContainer* container);
 
     /// Returns the type of property container from which the user can choose a property.
-    const PropertyContainerClass* containerClass() const { 
-        if(container()) 
+    const PropertyContainerClass* containerClass() const {
+        if(container())
             return &container()->getOOMetaClass();
         else
             return containerRef().dataClass();
