@@ -12,6 +12,10 @@ On this tab of the :ref:`application settings dialog <application_settings>`, yo
 User interface options
 """"""""""""""""""""""
 
+Enable automatic dark mode
+  Lets OVITO use a user interface theme that matches the current light/dark mode settings of the operating system.
+  This option is always activate on Linux and macOS platforms.
+
 Use seperate working directories for data import/export and session states
   If this is turned on, OVITO remembers across program sessions the most recently used folders
   for different file I/O operations, e.g., data file import & export, 

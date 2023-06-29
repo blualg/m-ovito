@@ -124,8 +124,15 @@ void GuiApplication::createQtApplication(int& argc, char** argv)
         QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::RoundPreferFloor);
 #endif
 
-#ifdef Q_OS_LINUX
-        // Enforce Fusion UI style on Linux.
+#if defined(Q_OS_WIN) && QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+        // Use Fusion UI style on Windows (Qt 6.5+) to enable dark mode support (can be changed by the user in the application settings).
+        QSettings settings;
+        if(settings.value("ui/automatic_dark_mode", false).toBool()) {
+            qputenv("QT_QPA_PLATFORM", "windows:darkmode=2");
+            QApplication::setStyle("Fusion");
+        }
+#elif defined(Q_OS_LINUX)
+        // Always enforce Fusion UI style on Linux.
         qunsetenv("QT_STYLE_OVERRIDE");
         QApplication::setStyle("Fusion");
 #endif
@@ -133,8 +140,10 @@ void GuiApplication::createQtApplication(int& argc, char** argv)
         // Create the global application object.
         new QApplication(argc, argv);
 
+#if !defined(Q_OS_WIN) || QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
         // Install our customized UI style.
         QApplication::setStyle(new OvitoStyle());
+#endif
 
         // Verify that a global sharing OpenGL context has been created by the Qt application as requested.
         OVITO_ASSERT(QOpenGLContext::globalShareContext() != nullptr);
@@ -144,7 +153,7 @@ void GuiApplication::createQtApplication(int& argc, char** argv)
     QCoreApplication::instance()->installEventFilter(this);
 }
 
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_LINUX) && QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
 static void activateThemeColors(bool dark)
 {
     static const QPalette lightPalette = qApp->palette();
@@ -191,42 +200,52 @@ MainThreadOperation GuiApplication::startupApplication()
         bool darkTheme = usingDarkTheme();
         QIcon::setThemeName(darkTheme ? QStringLiteral("ovito-dark") : QStringLiteral("ovito-light"));
 
-#ifdef Q_OS_LINUX
-        if(darkTheme)
-            activateThemeColors(true);
-
-        if(qgetenv("XDG_CURRENT_DESKTOP") != "KDE") {
-            // Install handler to get notified whenever the system color theme is changed by the user.
-            // This involves permanently running the external process 'gsettings monitor org.gnome.desktop.interface color-scheme' and 'gtk-theme'.
-            auto installThemeNotificationHandler = [&](const QString& settingsKey) {
-                QProcess* gsettingsProcess = new QProcess(this);
-                connect(gsettingsProcess, &QProcess::readyReadStandardOutput, this, [this]() {
-                    QByteArray output = static_cast<QProcess*>(sender())->readAllStandardOutput().toLower();
-                    if(output.contains("-dark")) {
-                        _usingDarkTheme = true;
-                        activateThemeColors(true);
-                    }
-                    else if(!output.isEmpty()) {
-                        _usingDarkTheme = false;
-                        activateThemeColors(false);
-                    }
-                });
-
-                // Terminate gsettings process when the window closes.
-                connect(qApp, &QGuiApplication::lastWindowClosed, gsettingsProcess, [gsettingsProcess]() {
-                    gsettingsProcess->terminate();
-                    gsettingsProcess->waitForFinished(1000);
-                });
-
-                // Launch gsettings monitoring process.
-                gsettingsProcess->start("gsettings", QStringList() << "monitor" << "org.gnome.desktop.interface" << settingsKey);
-            };
-            if(qgetenv("XDG_CURRENT_DESKTOP") != "XFCE")
-                installThemeNotificationHandler(QStringLiteral("color-scheme"));
-            else
-                installThemeNotificationHandler(QStringLiteral("gtk-theme"));
-        }
+        if(automaticallyEnableDarkMode()) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+            // Install handler to get notified whenever the system color scheme is changed by the user.
+            connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged, [](Qt::ColorScheme scheme) {
+                // Adjust OVITO's icon theme to match the UI color scheme.
+                QIcon::setThemeName(scheme == Qt::ColorScheme::Dark ? QStringLiteral("ovito-dark") : QStringLiteral("ovito-light"));
+            });
 #endif
+
+#if defined(Q_OS_LINUX) && QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
+            if(darkTheme)
+                activateThemeColors(true);
+
+            if(qgetenv("XDG_CURRENT_DESKTOP") != "KDE") {
+                // Install handler to get notified whenever the system color theme is changed by the user.
+                // This involves permanently running the external process 'gsettings monitor org.gnome.desktop.interface color-scheme' and 'gtk-theme'.
+                auto installThemeNotificationHandler = [&](const QString& settingsKey) {
+                    QProcess* gsettingsProcess = new QProcess(this);
+                    connect(gsettingsProcess, &QProcess::readyReadStandardOutput, this, [this]() {
+                        QByteArray output = static_cast<QProcess*>(sender())->readAllStandardOutput().toLower();
+                        if(output.contains("-dark")) {
+                            _usingDarkTheme = true;
+                            activateThemeColors(true);
+                        }
+                        else if(!output.isEmpty()) {
+                            _usingDarkTheme = false;
+                            activateThemeColors(false);
+                        }
+                    });
+
+                    // Terminate gsettings process when the window closes.
+                    connect(qApp, &QGuiApplication::lastWindowClosed, gsettingsProcess, [gsettingsProcess]() {
+                        gsettingsProcess->terminate();
+                        gsettingsProcess->waitForFinished(1000);
+                    });
+
+                    // Launch gsettings monitoring process.
+                    gsettingsProcess->start("gsettings", QStringList() << "monitor" << "org.gnome.desktop.interface" << settingsKey);
+                };
+                if(qgetenv("XDG_CURRENT_DESKTOP") != "XFCE")
+                    installThemeNotificationHandler(QStringLiteral("color-scheme"));
+                else
+                    installThemeNotificationHandler(QStringLiteral("gtk-theme"));
+            }
+#endif
+        }
 
         // Set the application icon.
         QIcon mainWindowIcon;
@@ -432,19 +451,44 @@ void GuiApplication::reportError(const Exception& ex)
 }
 
 /******************************************************************************
+* Returns whether app's UI should automatically follow the system color scheme. 
+******************************************************************************/
+bool GuiApplication::automaticallyEnableDarkMode()
+{
+#if defined(Q_OS_LINUX) || defined(Q_OS_MAC)
+    return true;
+#else
+    #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+        return QSettings().value("ui/automatic_dark_mode", false).toBool();
+    #else
+        return false
+    #endif
+#endif
+
+}
+
+/******************************************************************************
 * Returns whether the application currently uses a dark UI theme.
 ******************************************************************************/
 bool GuiApplication::usingDarkTheme() const
 {
-#ifndef Q_OS_LINUX
-    return detectDarkTheme();
+    if(!automaticallyEnableDarkMode())
+        return false;
+        
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+    return QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
 #else
-    if(!_usingDarkTheme.has_value())
-        _usingDarkTheme = detectDarkTheme();
-    return *_usingDarkTheme;
+    #ifndef Q_OS_LINUX
+        return detectDarkTheme();
+    #else
+        if(!_usingDarkTheme.has_value())
+            _usingDarkTheme = detectDarkTheme();
+        return *_usingDarkTheme;
+    #endif
 #endif
 }
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
 /******************************************************************************
 * Queries the system to determine whether the desktop currently uses a dark desktop theme.
 ******************************************************************************/
@@ -489,5 +533,6 @@ bool GuiApplication::detectDarkTheme() const
     return false;
 #endif
 }
+#endif
 
 }   // End of namespace

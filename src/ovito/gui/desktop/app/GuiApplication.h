@@ -57,6 +57,9 @@ public:
     /// Initializes an abstract user interface (e.g. a MainWindow).
     static void initializeUserInterface(UserInterface& userInterface, const QStringList& arguments);
 
+    /// Returns whether app's UI should automatically follow the system color scheme. 
+    static bool automaticallyEnableDarkMode();
+
 protected:
 
     /// Defines the program's command line parameters.
@@ -76,13 +79,15 @@ protected:
 
 private:
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
     /// Queries the system to determine whether the desktop currently uses a dark desktop theme.
     bool detectDarkTheme() const;
+#endif
 
     /// The global file manager.
     GuiFileManager _fileManager;
 
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_LINUX) && QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
     /// Cached results of detectDarkTheme().
     mutable std::optional<bool> _usingDarkTheme;
 #endif

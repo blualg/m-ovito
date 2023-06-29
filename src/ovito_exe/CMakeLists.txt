@@ -181,15 +181,6 @@ ELSEIF(WIN32 AND NOT OVITO_BUILD_CONDA)
         FILE(WRITE \"\${CMAKE_INSTALL_PREFIX}/${OVITO_RELATIVE_BINARY_DIRECTORY}/qt.conf\" \"[Paths]\\nPlugins = plugins/\")
         ")
 
-    # Enable Qt dark mode support for Windows. 
-    # Note: As of Qt 6.4, this will also change the styling of the widgets, which doesn't look good (likely because the Windows Vista style gets disabled).
-    # We'll wait until Qt 6.5, which supposedly will come with improved dark mode support.
-    # https://bugreports.qt.io/browse/QTBUG-72028 
-#   FILE(WRITE "${OVITO_BINARY_DIRECTORY}/qt.conf" "[Paths]\nPlugins = plugins/\n\n[Platforms]\nWindowsArguments = darkmode=2")
-#   INSTALL(CODE "
-#       FILE(WRITE \"\${CMAKE_INSTALL_PREFIX}/${OVITO_RELATIVE_BINARY_DIRECTORY}/qt.conf\" \"[Paths]\\nPlugins = plugins/\\n\\n[Platforms]\\nWindowsArguments = darkmode=2\")
-#   ")
-
 ELSEIF(APPLE AND NOT OVITO_BUILD_CONDA)
 
     # Install the Info.plist file in the app bundle.

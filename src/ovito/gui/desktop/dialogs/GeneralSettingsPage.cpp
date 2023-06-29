@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/app/GuiApplication.h>
 #include <ovito/gui/desktop/dialogs/HistoryFileDialog.h>
 #include <ovito/gui/desktop/dialogs/ImportFileDialog.h>
 #include <ovito/gui/base/mainwin/ModifierListModel.h>
@@ -49,15 +50,30 @@ void GeneralSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
     layout1->addWidget(uiGroupBox);
     QGridLayout* layout2 = new QGridLayout(uiGroupBox);
 
+    _enableAutomaticDarkMode = new QCheckBox(tr("Enable automatic dark mode"));
+    _enableAutomaticDarkMode->setToolTip(tr(
+            "<p>Automatically switch between light and dark UI depending on current system color scheme.</p>"));
+    layout2->addWidget(_enableAutomaticDarkMode, 0, 0);
+    _enableAutomaticDarkMode->setChecked(GuiApplication::automaticallyEnableDarkMode());
+#if defined(Q_OS_LINUX) || defined(Q_OS_MAC)
+    _enableAutomaticDarkMode->setEnabled(false);
+#else
+    #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+        _enableAutomaticDarkMode->setText(_enableAutomaticDarkMode->text() + tr(" (requires application restart to take effect)"));
+    #else
+        _enableAutomaticDarkMode->setEnabled(false);
+    #endif
+#endif
+
     _keepDirHistory = new QCheckBox(tr("Use seperate working directories for data import/export and session states"));
     _keepDirHistory->setToolTip(tr(
             "<p>Maintain individual working directories for different types of file I/O operations.</p>"));
-    layout2->addWidget(_keepDirHistory, 0, 0);
+    layout2->addWidget(_keepDirHistory, 1, 0);
     _keepDirHistory->setChecked(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled());
 
     _sortModifiersByCategory = new QCheckBox(tr("Sort list of available modifiers by category"));
     _sortModifiersByCategory->setToolTip(tr("<p>Show a categorized list of available modifiers in the command panel.</p>"));
-    layout2->addWidget(_sortModifiersByCategory, 1, 0);
+    layout2->addWidget(_sortModifiersByCategory, 2, 0);
     _sortModifiersByCategory->setChecked(ModifierListModel::useCategoriesGlobal());
 
     // Group "Data import":
@@ -104,14 +120,20 @@ void GeneralSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 ******************************************************************************/
 void GeneralSettingsPage::saveValues(QTabWidget* tabWidget)
 {
+    QSettings settings;
     HistoryFileDialog::setKeepWorkingDirectoryHistoryEnabled(_keepDirHistory->isChecked());
     ModifierListModel::setUseCategoriesGlobal(_sortModifiersByCategory->isChecked());
+#if !(defined(Q_OS_LINUX) || defined(Q_OS_MAC)) && QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+    if(_enableAutomaticDarkMode->isChecked())
+        settings.setValue("ui/automatic_dark_mode", true);
+    else
+        settings.remove("ui/automatic_dark_mode");
+#endif
 #ifdef OVITO_BUILD_PROFESSIONAL
     ImportFileDialog::setMultiFileImportMode(static_cast<FileImporter::MultiFileImportMode>(_importMultipleFilesBehavior->checkedId()));
 #endif
 
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
-    QSettings settings;
     settings.setValue("updates/check_for_updates", _enableUpdateChecks->isChecked());
 #endif
 }

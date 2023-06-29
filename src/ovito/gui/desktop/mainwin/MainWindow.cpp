@@ -438,10 +438,12 @@ bool MainWindow::event(QEvent* event)
         showStatusBarMessage(static_cast<QStatusTipEvent*>(event)->tip());
         return true;
     }
+#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
     else if(event->type() == QEvent::ThemeChange) {
         // Switch icon theme to match with the current UI theme.
         QIcon::setThemeName(GuiApplication::instance()->usingDarkTheme() ? QStringLiteral("ovito-dark") : QStringLiteral("ovito-light"));
     }
+#endif
     return QMainWindow::event(event);
 }
 

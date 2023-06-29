@@ -20,10 +20,10 @@ Coordinate system orientation
 Restrict camera rotation to keep the major axis pointing upward
   This option constrains the camera's orientation to prevent the camera from turning upside down.
 
-Color scheme
-""""""""""""
+Viewport background
+"""""""""""""""""""
 
-This option selects between the default dark viewport background and a white background.
+This option changes between a dark (default) and a white viewport background.
 
 3D graphics
 """""""""""

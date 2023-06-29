@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -77,7 +77,7 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
     _constrainCameraRotationBox->setChecked(_viewportSettings.constrainCameraRotation());
     layout2->addWidget(_constrainCameraRotationBox, 2, 0, 1, 3);
 
-    QGroupBox* colorsGroupBox = new QGroupBox(tr("Color scheme"), page);
+    QGroupBox* colorsGroupBox = new QGroupBox(tr("Viewport background"), page);
     layout1->addWidget(colorsGroupBox);
     layout2 = new QGridLayout(colorsGroupBox);
 
