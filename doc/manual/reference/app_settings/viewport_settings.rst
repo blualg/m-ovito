@@ -29,32 +29,39 @@ This option changes between a dark (default) and a white viewport background.
 """""""""""
 
 Graphics hardware interface
-  Selects the application programming interface used by OVITO for rendering the contents of the interactive 
-  viewports. Currently, OVITO supports the `OpenGL <https://www.opengl.org/>`__ and the `Vulkan <https://www.vulkan.org/>`__ graphics interface. The OpenGL interface is more mature
-  and should work well on most systems. Vulkan is the more modern programming interface, and some graphics drivers
-  may still exhibit compatibility problems. Please inform the OVITO developers about any such problems.
-  
+  Selects the application programming interface used by OVITO for rendering the contents of the interactive
+  viewports. Currently, OVITO supports the graphics interfaces `OpenGL <https://www.opengl.org/>`__ and `Vulkan <https://www.vulkan.org/>`__ (only available on some platforms).
+  The viewport renderer which is based on the OpenGL interface is more mature and should work well on most systems.
+  Vulkan is a more modern programming interface, but some graphics drivers still exhibit compatibility problems.
+  Please inform the OVITO developers about any problems you encounter on your system.
+
   The Vulkan interface provides the advantage of letting you explicitly select the graphics
-  device to be used by OVITO when the system contains several GPUs and/or integrated graphics processors. In contrast,
+  device OVITO should use if the system contains more than one GPU or integrated graphics unit. In contrast,
   you have to make the device selection on the `operating system or graphics driver level <https://answers.microsoft.com/en-us/windows/forum/windows_10-hardware/select-gpu-to-use-by-specific-applications/eb671f52-5c24-428d-a7a0-02a36e91ee2f>`__
-  for the OpenGL interface.
+  when using the OpenGL interface.
 
   .. note::
 
     The Vulkan renderer option is *not* available on the macOS platform or in OVITO for Anaconda builds.
 
-  Select :menuselection:`System Information` from the :menuselection:`Help` menu of OVITO to access further information 
-  about the graphics hardware available in your system. Submit this information to the OVITO developers when
-  reporting graphics compatibility problems.
+  .. note::
+
+    The Vulkan renderer has been temporarily removed from OVITO in release 3.9.0, because major changes were made to the
+    internal scene rendering system. We intend to add Vulkan support back in once the Vulkan renderer code has been ported to the
+    new programming interfaces and all issues have been resolved. Please contact support@ovito.org if you have any questions.
+
+  Select :menuselection:`System Information` from the :menuselection:`Help` menu of OVITO to access further information
+  about the graphics hardware found in your system. Please attach this information in case you
+  report any graphics compatibility problems to the OVITO developers.
 
 Transparency rendering method
   This option affects the rendering of semi-transparent objects when they occlude other objects
-  or overlap with each other. Both available rendering methods represent different approximations of how a true rendition of 
+  or overlap with each other. Both available rendering methods represent different approximations of how a true rendition of
   semi-transparent objects would look like - which is not achievable in real-time visualization using OpenGL/Vulkan.
-  
+
   Back-to-front ordered rendering (default) gives correct results if there is only one kind of semi-transparent object in the scene,
-  e.g. just particles, but likely fails to render a mixture of different semi-transparent objects correctly, e.g. semi-transparent particles combined with 
+  e.g. just particles, but likely fails to render a mixture of different semi-transparent objects correctly, e.g. semi-transparent particles combined with
   semi-transparent surface meshes.
 
-  `Weighted Blended Order-Independent Transparency <https://jcgt.org/published/0002/02/09/>`__ is an alternative method more suitable 
-  for overlapping semi-transparent objects of different kinds. But it delivers only a rough approximation of translucency. 
+  `Weighted Blended Order-Independent Transparency <https://jcgt.org/published/0002/02/09/>`__ is an alternative method more suitable
+  for overlapping semi-transparent objects of different kinds. But it delivers only a rough approximation of translucency.
