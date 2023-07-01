@@ -58,44 +58,28 @@ PipelineStatus ParticlesDeleteSelectedModifierDelegate::apply(const ModifierEval
     // Get the particle selection.
     if(const ParticlesObject* inputParticles = state.getObject<ParticlesObject>()) {
         inputParticles->verifyIntegrity();
-        numParticles = inputParticles->elementCount();
-        if(const PropertyObject* selProperty = inputParticles->getProperty(ParticlesObject::SelectionProperty)) {
+        numParticles += inputParticles->elementCount();
+        if(ConstPropertyPtr selProperty = inputParticles->getProperty(ParticlesObject::SelectionProperty)) {
+            // Make sure we can safely modify the particles object.
+            ParticlesObject* outputParticles = state.makeMutable(inputParticles);
 
-            // Generate filter mask.
-            boost::dynamic_bitset<> mask(selProperty->size());
-            boost::dynamic_bitset<>::size_type i = 0;
-            for(auto s : BufferReadAccess<SelectionIntType>(selProperty)) {
-                if(s != 0) {
-                    mask.set(i++);
-                    numSelected++;
-                }
-                else {
-                    mask.reset(i++);
-                }
-            }
+            // Keep track of how many bonds, angles, etc there are.
+            size_t oldBondCount = outputParticles->bonds() ? outputParticles->bonds()->elementCount() : 0;
+            size_t oldAngleCount = outputParticles->angles() ? outputParticles->angles()->elementCount() : 0;
+            size_t oldDihedralCount = outputParticles->dihedrals() ? outputParticles->dihedrals()->elementCount() : 0;
+            size_t oldImproperCount = outputParticles->impropers() ? outputParticles->impropers()->elementCount() : 0;
 
-            if(numSelected) {
-                // Make sure we can safely modify the particles object.
-                ParticlesObject* outputParticles = state.makeMutable(inputParticles);
+            // Remove selection property.
+            outputParticles->removeProperty(selProperty);
 
-                // Keep track of how many bonds, angles, etc there are.
-                size_t oldBondCount = outputParticles->bonds() ? outputParticles->bonds()->elementCount() : 0;
-                size_t oldAngleCount = outputParticles->angles() ? outputParticles->angles()->elementCount() : 0;
-                size_t oldDihedralCount = outputParticles->dihedrals() ? outputParticles->dihedrals()->elementCount() : 0;
-                size_t oldImproperCount = outputParticles->impropers() ? outputParticles->impropers()->elementCount() : 0;
+            // Delete the selected particles.
+            numSelected += outputParticles->deleteElements(std::move(selProperty));
 
-                // Remove selection property.
-                outputParticles->removeProperty(selProperty);
-
-                // Delete the particles.
-                outputParticles->deleteElements(mask);
-
-                // Detect if dangling bonds have been deleted as part of the particle deletion.
-                numDeletedBonds = oldBondCount - (outputParticles->bonds() ? outputParticles->bonds()->elementCount() : 0);
-                numDeletedAngles = oldAngleCount - (outputParticles->angles() ? outputParticles->angles()->elementCount() : 0);
-                numDeletedDihedrals = oldDihedralCount - (outputParticles->dihedrals() ? outputParticles->dihedrals()->elementCount() : 0);
-                numDeletedImpropers = oldImproperCount - (outputParticles->impropers() ? outputParticles->impropers()->elementCount() : 0);
-            }
+            // Detect if dangling bonds/angles/dihedrals/impropers have been deleted due to the particle removal.
+            numDeletedBonds += oldBondCount - (outputParticles->bonds() ? outputParticles->bonds()->elementCount() : 0);
+            numDeletedAngles += oldAngleCount - (outputParticles->angles() ? outputParticles->angles()->elementCount() : 0);
+            numDeletedDihedrals += oldDihedralCount - (outputParticles->dihedrals() ? outputParticles->dihedrals()->elementCount() : 0);
+            numDeletedImpropers += oldImproperCount - (outputParticles->impropers() ? outputParticles->impropers()->elementCount() : 0);
         }
     }
 
@@ -140,32 +124,17 @@ PipelineStatus BondsDeleteSelectedModifierDelegate::apply(const ModifierEvaluati
     if(const ParticlesObject* inputParticles = state.getObject<ParticlesObject>()) {
         if(const BondsObject* inputBonds = inputParticles->bonds()) {
             inputBonds->verifyIntegrity();
-            numBonds = inputBonds->elementCount();
-            if(const PropertyObject* selProperty = inputBonds->getProperty(BondsObject::SelectionProperty)) {
-                // Generate filter mask.
-                boost::dynamic_bitset<> mask(selProperty->size());
-                boost::dynamic_bitset<>::size_type i = 0;
-                for(auto s : BufferReadAccess<SelectionIntType>(selProperty)) {
-                    if(s != 0) {
-                        mask.set(i++);
-                        numSelected++;
-                    }
-                    else {
-                        mask.reset(i++);
-                    }
-                }
+            numBonds += inputBonds->elementCount();
+            if(ConstPropertyPtr selProperty = inputBonds->getProperty(BondsObject::SelectionProperty)) {
+                // Make sure we can safely modify the particles and the bonds object it contains.
+                ParticlesObject* outputParticles = state.makeMutable(inputParticles);
+                BondsObject* outputBonds = outputParticles->makeBondsMutable();
 
-                if(numSelected) {
-                    // Make sure we can safely modify the particles and the bonds object it contains.
-                    ParticlesObject* outputParticles = state.makeMutable(inputParticles);
-                    BondsObject* outputBonds = outputParticles->makeBondsMutable();
+                // Remove selection property.
+                outputBonds->removeProperty(selProperty);
 
-                    // Remove selection property.
-                    outputBonds->removeProperty(selProperty);
-
-                    // Delete the bonds.
-                    outputBonds->deleteElements(mask);
-                }
+                // Delete the selected bonds.
+                numSelected += outputBonds->deleteElements(std::move(selProperty));
             }
         }
     }

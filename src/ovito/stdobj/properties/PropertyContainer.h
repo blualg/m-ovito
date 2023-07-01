@@ -103,13 +103,18 @@ public:
         return nullptr;
     }
 
-    /// Looks up the property with the same name and type as the given property from a different container.
-    const PropertyObject* getPropertyLike(const PropertyObject* property) const {
-        OVITO_ASSERT(property);
-        if(property->type() == 0)
-            return getProperty(property->name());
-        else
-            return getProperty(property->type());
+    /// Looks up the standard property with the given ID, removes it from this container and returns it to the caller.
+    ConstPropertyPtr takeProperty(int typeId) {
+        OVITO_ASSERT(typeId != 0);
+        OVITO_ASSERT(getOOMetaClass().isValidStandardPropertyId(typeId));
+        OVITO_ASSERT(isSafeToModify());
+        for(int index = 0; index < properties().size(); index++) {
+            const PropertyObject* property = properties()[index];
+            if(property->type() == typeId) {
+                return _properties.remove(this, PROPERTY_FIELD(properties), index);
+            }
+        }
+        return {};
     }
 
     /// Looks up the standard property with the given ID and makes it mutable if necessary.
@@ -189,9 +194,9 @@ public:
     /// The lengths of the property arrays will be adjusted accordingly.
     void setElementCount(size_t count);
 
-    /// Deletes those data elements for which the bits are set in the given bitmask array.
-    /// Returns the number of deleted elements. The ordering of the remaining elements is preserved.
-    virtual size_t deleteElements(const boost::dynamic_bitset<>& mask);
+    /// Deletes those data elements having a non-zero value in the given selection array.
+    /// Returns the number of deleted elements. The original order of the remaining elements is preserved.
+    virtual size_t deleteElements(ConstDataBufferPtr selection, size_t selectionCount = std::numeric_limits<size_t>::max());
 
     /// Replaces the property arrays in this property container with a new set of properties.
     /// Existing element types of typed properties will be preserved by the method.

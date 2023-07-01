@@ -166,7 +166,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
                 throw Exception(tr("Particles with duplicate identifiers detected in topology dataset."));
 
             // Used to keep track of which topology particles are going to be deleted.
-            boost::dynamic_bitset<> deletionMask;
+            BufferFactory<SelectionIntType> deletionMask;
 
             // Build mapping of particle indices from the topology dataset to the corresponding indices in the trajectory dataset.
             auto mappedIndex = indexToIndexMap.begin();
@@ -174,11 +174,12 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             for(auto id : identifierProperty) {
                 auto iter = refMap.find(id);
                 if(iter == refMap.end()) {
-                    // Existing particle from topology dataset was not found in the trajectory dataset.
-                    // Mark the particle for deletion.
-                    if(deletionMask.size() == 0)
-                        deletionMask = boost::dynamic_bitset<>(indexToIndexMap.size());
-                    deletionMask.set(idx);
+                    // Existing particle from topology dataset was not found in the trajectory dataset --> Mark the particle for deletion.
+                    if(!deletionMask) {
+                        deletionMask = BufferFactory<SelectionIntType>(indexToIndexMap.size());
+                        boost::fill(deletionMask, 0);
+                    }
+                    deletionMask[idx] = 1;
                 }
                 else {
                     *mappedIndex++ = iter->second;
@@ -189,10 +190,10 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             identifierProperty.reset();
 
             // Delete outdated particles, which have disappeared during the course of the simulation.
-            if(deletionMask.size() != 0) {
+            if(deletionMask) {
                 OVITO_ASSERT(mappedIndex < indexToIndexMap.end());
+                particles->deleteElements(deletionMask.take(), std::distance(mappedIndex, indexToIndexMap.end()));
                 indexToIndexMap.erase(mappedIndex, indexToIndexMap.end());
-                particles->deleteElements(deletionMask);
             }
             else {
                 OVITO_ASSERT(mappedIndex == indexToIndexMap.end());

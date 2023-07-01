@@ -49,32 +49,38 @@ QVector<DataObjectReference> SurfaceMeshRegionsDeleteSelectedModifierDelegate::O
 PipelineStatus SurfaceMeshRegionsDeleteSelectedModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     size_t numRegions = 0;
-    size_t numSelected = 0;
+    size_t numDeleted = 0;
 
     for(const DataObject* obj : state.data()->objects()) {
         if(const SurfaceMesh* existingSurface = dynamic_object_cast<SurfaceMesh>(obj)) {
             // Make sure the input mesh data structure is valid.
             existingSurface->verifyMeshIntegrity();
 
-            // Check if there is a region selection set.
-            BufferReadAccessAndRef<SelectionIntType> selectionAccess = existingSurface->regions()->getProperty(SurfaceMeshRegions::SelectionProperty);
-            if(!selectionAccess)
-                continue; // Nothing to do if there is no selection.
+            // Count total number of input regions.
+            numRegions += existingSurface->regions()->elementCount();
 
-            // Check if at least one mesh region is currently selected.
-            if(boost::algorithm::all_of(selectionAccess, [](auto s) { return s == 0; }))
-                continue;
+            // Check if there is a region selection set.
+            BufferReadAccessAndRef<SelectionIntType> regionMask = existingSurface->regions()->getProperty(SurfaceMeshRegions::SelectionProperty);
+            if(!regionMask)
+                continue; // Nothing to do if there is no selection.
 
             // Mesh faces must have the "Region" property.
             if(!existingSurface->faces()->getProperty(SurfaceMeshFaces::RegionProperty))
                 continue; // Nothing to do if there is no face region information.
+
+            // Check if at least one mesh region is currently selected.
+            size_t selectionCount = regionMask.size() - boost::count(regionMask, 0);
+            if(selectionCount == 0)
+                continue;
+
+            // Count total number of regions being deleted.
+            numDeleted += selectionCount;
 
             // Create a mutable copy of the SurfaceMesh.
             SurfaceMesh* mutableSurface = state.makeMutable(existingSurface);
 
             // Create a working data structure for modifying the mesh.
             SurfaceMeshBuilder mesh(mutableSurface);
-            numRegions += mesh.regionCount();
 
             // Remove selection property from the regions.
             mesh.removeRegionProperty(SurfaceMeshRegions::SelectionProperty);
@@ -83,33 +89,23 @@ PipelineStatus SurfaceMeshRegionsDeleteSelectedModifierDelegate::apply(const Mod
             BufferReadAccess<int32_t> regionProperty = mesh.expectFaceProperty(SurfaceMeshFaces::RegionProperty);
 
             // Delete all faces that belong to one of the selected mesh regions.
-            boost::dynamic_bitset<> faceMask(mesh.faceCount());
+            BufferFactory<SelectionIntType> faceMask(mesh.faceCount());
             for(SurfaceMesh::face_index face : mesh.facesRange()) {
                 SurfaceMesh::region_index region = regionProperty[face];
-                if(region >= 0 && region < selectionAccess.size() && selectionAccess[region]) {
-                    faceMask.set(face);
-                }
+                faceMask[face] = (region >= 0 && region < regionMask.size() && regionMask[region]);
             }
             regionProperty.reset();
-            mesh.deleteFaces(faceMask);
 
-            // Delete the selected regions.
-            boost::dynamic_bitset<> regionMask(mesh.regionCount());
-            for(SurfaceMesh::region_index region : mesh.regionsRange()) {
-                if(selectionAccess[region]) {
-                    regionMask.set(region);
-                    numSelected++;
-                }
-            }
-            selectionAccess.reset();
-            mesh.deleteRegions(regionMask);
+            // Delete the selected faces and regions.
+            mesh.deleteFaces(faceMask.take());
+            mesh.deleteRegions(regionMask.take());
         }
     }
 
     // Report some statistics:
-    QString statusMessage = tr("%n of %1 regions deleted (%2%)", 0, numSelected)
+    QString statusMessage = tr("%n of %1 regions deleted (%2%)", 0, numDeleted)
         .arg(numRegions)
-        .arg((FloatType)numSelected * 100 / std::max(numRegions, (size_t)1), 0, 'f', 1);
+        .arg((FloatType)numDeleted * 100 / std::max(numRegions, (size_t)1), 0, 'f', 1);
 
     return PipelineStatus(PipelineStatus::Success, std::move(statusMessage));
 }

@@ -390,8 +390,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
                     if(_polyhedraMesh) {
                         QMutexLocker locker(bondMutex);
-                        BufferAccess<FloatType>{faceAreaProperty}[meshFace] = area;
-                        BufferAccess<int32_t>{faceOrderProperty}[meshFace] = faceOrder;
+                        BufferWriteAccess<FloatType, access_mode::write>{faceAreaProperty, meshFace == 0}[meshFace] = area;
+                        BufferWriteAccess<int32_t, access_mode::write>{faceOrderProperty, meshFace == 0}[meshFace] = faceOrder;
                     }
 
                     if((faceAreaThreshold == 0 || area > faceAreaThreshold) && faceOrder >= 3) {

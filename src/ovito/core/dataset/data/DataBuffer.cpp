@@ -397,13 +397,15 @@ void DataBuffer::replicateFrom(size_t n, const DataBuffer& original)
 }
 
 /******************************************************************************
-* Reduces the size of the storage array, removing elements for which
-* the corresponding bits in the bit array are set.
+* Reduces the size of the storage array, deleting elements for are marked in the selection array.
 ******************************************************************************/
-void DataBuffer::filterResizeCopyFrom(size_t newSize, const boost::dynamic_bitset<>& mask, const DataBuffer& original)
+void DataBuffer::filterResizeCopyFrom(size_t newSize, const DataBuffer& selection, const DataBuffer& original)
 {
     OVITO_ASSERT(original._isDataInitialized || original.size() == 0);
-    OVITO_ASSERT(original.size() == mask.size());
+    OVITO_ASSERT(original.size() == selection.size());
+    OVITO_ASSERT(selection.dataType() == DataBuffer::IntSelection);
+    OVITO_ASSERT(selection.componentCount() == 1);
+    OVITO_ASSERT(this != &selection);
     OVITO_ASSERT(original.dataType() == this->dataType() && original.stride() == this->stride());
 
     if(newSize == 0) {
@@ -430,7 +432,8 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const boost::dynamic_bitse
 #else
     std::unique_ptr<std::byte[]> newBuffer(new std::byte[newSize * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
 #endif
-    const size_t s = mask.size();
+    const size_t s = selection.size();
+    BufferReadAccess<SelectionIntType> selectionAccess(&selection);
 
     auto specializedFilter = [&](auto _) {
         using T = decltype(_);
@@ -444,7 +447,7 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const boost::dynamic_bitse
         const T* __restrict src = readAccessor.get_pointer();
         T* __restrict dst = writeAccessor.get_pointer();
         for(size_t i = 0; i < s; ++i, ++src) {
-            if(!mask.test(i))
+            if(!selectionAccess[i])
                 *dst++ = *src;
         }
         OVITO_ASSERT(dst == writeAccessor.get_pointer() + newSize);
@@ -453,7 +456,7 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const boost::dynamic_bitse
         const T* __restrict src = reinterpret_cast<const T*>(original.cdata());
         T* __restrict dst = reinterpret_cast<T*>(newBuffer.get());
         for(size_t i = 0; i < s; ++i, ++src) {
-            if(!mask.test(i))
+            if(!selectionAccess[i])
                 *dst++ = *src;
         }
         OVITO_ASSERT(dst == reinterpret_cast<T*>(newBuffer.get()) + newSize);
@@ -512,7 +515,7 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const boost::dynamic_bitse
     std::byte* __restrict dst = writeAccessor.get_pointer();
     const auto stride = this->stride();
     for(size_t i = 0; i < s; i++, src += stride) {
-        if(!mask.test(i)) {
+        if(!selectionAccess[i]) {
             std::memcpy(dst, src, stride);
             dst += stride;
         }
@@ -524,7 +527,7 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const boost::dynamic_bitse
     std::byte* __restrict dst = newBuffer.get();
     const auto stride = this->stride();
     for(size_t i = 0; i < s; i++, src += stride) {
-        if(!mask.test(i)) {
+        if(!selectionAccess[i]) {
             std::memcpy(dst, src, stride);
             dst += stride;
         }

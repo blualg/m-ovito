@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -106,7 +106,7 @@ template<typename T> SingleReferenceFieldBase<T>::~SingleReferenceFieldBase()
 ******************************************************************************/
 template<typename T> void SingleReferenceFieldBase<T>::set(RefMaker* owner, const PropertyFieldDescriptor* descriptor, pointer newTarget)
 {
-    if(_target == newTarget) 
+    if(_target == newTarget)
         return; // Nothing to change.
 
     // Check object type
@@ -120,7 +120,7 @@ template<typename T> void SingleReferenceFieldBase<T>::set(RefMaker* owner, cons
             qPrintable(QString("PROPERTY_FIELD_NO_UNDO flag has not been set for reference field '%1' of non-RefTarget derived class '%2'.")
                 .arg(descriptor->identifier()).arg(descriptor->definingClass()->name())));
 
-    class SetReferenceOperation : public PropertyFieldOperation
+    class SetReferenceOperation final : public PropertyFieldOperation
     {
     private:
 
@@ -132,15 +132,15 @@ template<typename T> void SingleReferenceFieldBase<T>::set(RefMaker* owner, cons
         SingleReferenceFieldBase& _reffield;
 
     public:
-        
+
         SetReferenceOperation(RefMaker* owner, pointer oldTarget, SingleReferenceFieldBase& reffield, const PropertyFieldDescriptor* descriptor) :
             PropertyFieldOperation(owner, descriptor), _inactiveTarget(std::move(oldTarget)), _reffield(reffield) {}
-        
-        virtual void undo() override { 
-            _reffield.swapReference(owner(), descriptor(), _inactiveTarget); 
+
+        virtual void undo() override final {
+            _reffield.swapReference(owner(), descriptor(), _inactiveTarget);
         }
 
-        virtual QString displayName() const override {
+        virtual QString displayName() const override final {
                 return QStringLiteral("Setting reference field <%1> of %2 to point to %3")
                     .arg(descriptor()->identifier())
                     .arg(owner()->getOOClass().name())
@@ -185,15 +185,15 @@ template<typename T> void SingleReferenceFieldBase<T>::swapReference(RefMaker* o
     // Exchange pointer values.
     _target = std::move(inactiveTarget);
     inactiveTarget = std::move(oldTarget);
-    
+
     // Create a Qt signal/slot connection to the newly referenced object.
     if(_target)
         QObject::connect(to_address(_target), &RefTarget::objectEvent, owner, &RefMaker::receiveObjectEvent, static_cast<Qt::ConnectionType>(Qt::DirectConnection | Qt::UniqueConnection));
 
     // Inform owner object about the changed reference value.
-    owner->referenceReplaced(descriptor, 
-        const_cast<RefTarget*>(static_cast<const RefTarget*>(to_address(inactiveTarget))), 
-        const_cast<RefTarget*>(static_cast<const RefTarget*>(to_address(_target))), 
+    owner->referenceReplaced(descriptor,
+        const_cast<RefTarget*>(static_cast<const RefTarget*>(to_address(inactiveTarget))),
+        const_cast<RefTarget*>(static_cast<const RefTarget*>(to_address(_target))),
         -1);
 
     // Emit object-changed signal.
@@ -227,7 +227,7 @@ template<typename T> VectorReferenceFieldBase<T>::~VectorReferenceFieldBase()
 template<typename T> void VectorReferenceFieldBase<T>::set(RefMaker* owner, const PropertyFieldDescriptor* descriptor, size_type i, pointer newTarget)
 {
     OVITO_ASSERT(i >= 0 && i < size());
-    if(_targets[i] == newTarget) 
+    if(_targets[i] == newTarget)
         return; // Nothing to change.
 
     // Check object type
@@ -241,7 +241,7 @@ template<typename T> void VectorReferenceFieldBase<T>::set(RefMaker* owner, cons
             qPrintable(QString("PROPERTY_FIELD_NO_UNDO flag has not been set for reference field '%1' of non-RefTarget derived class '%2'.")
                 .arg(descriptor->identifier()).arg(descriptor->definingClass()->name())));
 
-    class SetReferenceOperation : public PropertyFieldOperation
+    class SetReferenceOperation final : public PropertyFieldOperation
     {
     private:
 
@@ -256,15 +256,15 @@ template<typename T> void VectorReferenceFieldBase<T>::set(RefMaker* owner, cons
         VectorReferenceFieldBase& _reffield;
 
     public:
-        
+
         SetReferenceOperation(RefMaker* owner, pointer oldTarget, size_type i, VectorReferenceFieldBase& reffield, const PropertyFieldDescriptor* descriptor) :
             PropertyFieldOperation(owner, descriptor), _inactiveTarget(std::move(oldTarget)), _index(i), _reffield(reffield) {}
-        
-        virtual void undo() override { 
-            _reffield.swapReference(owner(), descriptor(), _index, _inactiveTarget); 
+
+        virtual void undo() override final {
+            _reffield.swapReference(owner(), descriptor(), _index, _inactiveTarget);
         }
 
-        virtual QString displayName() const override {
+        virtual QString displayName() const override final {
                 return QStringLiteral("Setting entry %1 of vector reference field <%2> of %3 to point to %4")
                     .arg(_index)
                     .arg(descriptor()->identifier())
@@ -299,37 +299,37 @@ template<typename T> auto VectorReferenceFieldBase<T>::insert(RefMaker* owner, c
             qPrintable(QString("PROPERTY_FIELD_NO_UNDO flag has not been set for reference field '%1' of non-RefTarget derived class '%2'.")
                     .arg(descriptor->identifier()).arg(descriptor->definingClass()->name())));
 
-    class InsertReferenceOperation : public PropertyFieldOperation
+    class InsertReferenceOperation final : public PropertyFieldOperation
     {
     private:
-    
+
         /// The target that has been added into the vector reference field.
         pointer _target;
-    
+
         /// The position at which the target has been inserted into the vector reference field.
         size_type _index;
 
         /// The vector reference field to which the reference has been added.
         VectorReferenceFieldBase& _reffield;
-        
+
     public:
-    
+
         InsertReferenceOperation(RefMaker* owner, pointer target, size_type index, VectorReferenceFieldBase& reffield, const PropertyFieldDescriptor* descriptor) :
             PropertyFieldOperation(owner, descriptor), _target(std::move(target)), _reffield(reffield), _index(index) {}
 
-        virtual void undo() override {
+        virtual void undo() override final {
             OVITO_ASSERT(!_target);
             _reffield.removeReference(owner(), descriptor(), _index, _target);
         }
 
-        virtual void redo() override {
+        virtual void redo() override final {
             _index = _reffield.addReference(owner(), descriptor(), _index, _target);
             OVITO_ASSERT(!_target);
         }
 
         size_type insertionIndex() const { return _index; }
 
-        virtual QString displayName() const override {
+        virtual QString displayName() const override final {
             return QStringLiteral("Insert reference to %1 into vector field <%2> of %3")
                 .arg(_target ? _target->getOOClass().name() : "<null>")
                 .arg(descriptor()->identifier())
@@ -353,7 +353,7 @@ template<typename T> auto VectorReferenceFieldBase<T>::insert(RefMaker* owner, c
 * Removes the element at index position i.
 * Creates an undo record so the removal can be undone at a later time.
 ******************************************************************************/
-template<typename T> void VectorReferenceFieldBase<T>::remove(RefMaker* owner, const PropertyFieldDescriptor* descriptor, size_type i)
+template<typename T> T VectorReferenceFieldBase<T>::remove(RefMaker* owner, const PropertyFieldDescriptor* descriptor, size_type i)
 {
     OVITO_ASSERT(i >= 0 && i < size());
 
@@ -362,7 +362,7 @@ template<typename T> void VectorReferenceFieldBase<T>::remove(RefMaker* owner, c
             qPrintable(QString("PROPERTY_FIELD_NO_UNDO flag has not been set for reference field '%1' of non-RefTarget derived class '%2'.")
                     .arg(descriptor->identifier()).arg(descriptor->definingClass()->name())));
 
-    class RemoveReferenceOperation : public PropertyFieldOperation
+    class RemoveReferenceOperation final : public PropertyFieldOperation
     {
     private:
 
@@ -380,17 +380,19 @@ template<typename T> void VectorReferenceFieldBase<T>::remove(RefMaker* owner, c
         RemoveReferenceOperation(RefMaker* owner, size_type index, VectorReferenceFieldBase& reffield, const PropertyFieldDescriptor* descriptor) :
             PropertyFieldOperation(owner, descriptor), _reffield(reffield), _index(index) {}
 
-        virtual void undo() override {
+        const pointer& storedTarget() const { return _target; }
+
+        virtual void undo() override final {
             _index = _reffield.addReference(owner(), descriptor(), _index, _target);
             OVITO_ASSERT(!_target);
         }
 
-        virtual void redo() override {
+        virtual void redo() override final {
             OVITO_ASSERT(!_target);
             _reffield.removeReference(owner(), descriptor(), _index, _target);
         }
 
-        virtual QString displayName() const override {
+        virtual QString displayName() const override final {
             return QStringLiteral("Remove reference to %1 from vector field <%2> of %3")
                 .arg(_target ? _target->getOOClass().name() : "<null>")
                 .arg(descriptor()->identifier())
@@ -401,11 +403,14 @@ template<typename T> void VectorReferenceFieldBase<T>::remove(RefMaker* owner, c
     if(descriptor->automaticUndo() && CompoundOperation::current()) {
         auto op = std::make_unique<RemoveReferenceOperation>(owner, i, *this, descriptor);
         op->redo();
+        pointer removedReference = op->storedTarget();
         CompoundOperation::current()->addOperation(std::move(op));
+        return removedReference;
     }
     else {
-        pointer deadStorage;
-        removeReference(owner, descriptor, i, deadStorage);
+        pointer removedReference;
+        removeReference(owner, descriptor, i, removedReference);
+        return removedReference;
     }
 }
 
@@ -445,15 +450,15 @@ template<typename T> void VectorReferenceFieldBase<T>::swapReference(RefMaker* o
     // Exchange pointer values.
     _targets[index] = std::move(inactiveTarget);
     inactiveTarget = std::move(oldTarget);
-    
+
     // Create a Qt signal/slot connection to the newly referenced object.
     if(_targets[index])
         QObject::connect(to_address(_targets[index]), &RefTarget::objectEvent, owner, &RefMaker::receiveObjectEvent, static_cast<Qt::ConnectionType>(Qt::DirectConnection | Qt::UniqueConnection));
 
     // Inform owner object about the changed reference value.
-    owner->referenceReplaced(descriptor, 
-        const_cast<RefTarget*>(static_cast<const RefTarget*>(to_address(inactiveTarget))), 
-        const_cast<RefTarget*>(static_cast<const RefTarget*>(to_address(_targets[index]))), 
+    owner->referenceReplaced(descriptor,
+        const_cast<RefTarget*>(static_cast<const RefTarget*>(to_address(inactiveTarget))),
+        const_cast<RefTarget*>(static_cast<const RefTarget*>(to_address(_targets[index]))),
         index);
 
     // Emit object-changed signal.
@@ -483,8 +488,8 @@ template<typename T> void VectorReferenceFieldBase<T>::removeReference(RefMaker*
     }
 
     // Inform owner object about the removed reference value.
-    owner->referenceRemoved(descriptor, 
-        const_cast<RefTarget*>(static_cast<const RefTarget*>(to_address(inactiveTarget))), 
+    owner->referenceRemoved(descriptor,
+        const_cast<RefTarget*>(static_cast<const RefTarget*>(to_address(inactiveTarget))),
         index);
 
     // Emit object-changed signal.

@@ -202,9 +202,8 @@ public:
     /// Replicates existing data N times.
     void replicateFrom(size_t n, const DataBuffer& original);
 
-    /// Reduces the size of the storage array, deleting elements for which
-    /// the corresponding bits in the bitmask array are set.
-    void filterResizeCopyFrom(size_t newSize, const boost::dynamic_bitset<>& mask, const DataBuffer& original);
+    /// Reduces the size of the storage array, deleting elements for are marked in the selection array.
+    void filterResizeCopyFrom(size_t newSize, const DataBuffer& selection, const DataBuffer& original);
 
     /// Creates a copy of the array, not containing those elements for which
     /// the corresponding bits in the given bit array were set.

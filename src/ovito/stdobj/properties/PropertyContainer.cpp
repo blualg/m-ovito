@@ -237,24 +237,36 @@ std::vector<std::pair<ConstPropertyPtr, PropertyObject*>> PropertyContainer::rea
 }
 
 /******************************************************************************
-* Deletes those data elements for which the bit is set in the given bitmask array.
-* Returns the number of deleted elements.
+* Deletes those data elements having a non-zero value in the given selection array.
+* Returns the number of deleted elements. The original order of the remaining elements is preserved.
 ******************************************************************************/
-size_t PropertyContainer::deleteElements(const boost::dynamic_bitset<>& mask)
+size_t PropertyContainer::deleteElements(ConstDataBufferPtr selection, size_t selectionCount)
 {
-    OVITO_ASSERT(mask.size() == elementCount());
+    OVITO_ASSERT(selection);
+    OVITO_ASSERT(selection->size() == elementCount());
+    OVITO_ASSERT(selection->dataType() == DataBuffer::IntSelection);
+    OVITO_ASSERT(selection->componentCount() == 1);
+    OVITO_ASSERT(!hasReferenceTo(selection));
     OVITO_CHECK_OBJECT_POINTER(this);
     OVITO_ASSERT(isSafeToModify());
 
-    const size_t deleteCount = mask.count();
-    if(deleteCount == 0)
+    // Determine number of selected elements in the selection array if it wasn't provided by the caller.
+    if(selectionCount == std::numeric_limits<size_t>::max()) {
+        selectionCount = 0;
+        for(auto s : BufferReadAccess<SelectionIntType>(selection)) {
+            if(s)
+                selectionCount++;
+        }
+    }
+    if(selectionCount == 0)
         return 0;   // Nothing to delete.
 
-    const size_t newElementCount = elementCount() - deleteCount;
+    OVITO_ASSERT(selectionCount <= elementCount());
+    const size_t newElementCount = elementCount() - selectionCount;
 
     // Filter the property arrays and reduce their lengths.
     for(OORef<const PropertyObject> property : properties()) {
-        makePropertyMutableUnallocated(property)->filterResizeCopyFrom(newElementCount, mask, *property);
+        makePropertyMutableUnallocated(property)->filterResizeCopyFrom(newElementCount, *selection, *property);
     }
 
     // Update internal element counter.
@@ -264,7 +276,7 @@ size_t PropertyContainer::deleteElements(const boost::dynamic_bitset<>& mask)
     verifyIntegrity();
 #endif
 
-    return deleteCount;
+    return selectionCount;
 }
 
 /******************************************************************************
@@ -443,7 +455,8 @@ std::vector<size_t> PropertyContainer::sortById()
         if(permutation[i] != i) isAlreadySorted = false;
     }
     ids.reset();
-    if(isAlreadySorted) return {};
+    if(isAlreadySorted)
+        return {};
 
     // Re-order all values in the property arrays.
     makePropertiesMutableInternal();

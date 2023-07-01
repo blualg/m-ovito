@@ -134,210 +134,97 @@ const PropertyObject* ParticlesObject::expectBondsTopology() const
 * Deletes the particles for which bits are set in the given bit-mask.
 * Returns the number of deleted particles.
 ******************************************************************************/
-size_t ParticlesObject::deleteElements(const boost::dynamic_bitset<>& mask)
+size_t ParticlesObject::deleteElements(ConstDataBufferPtr selection, size_t selectionCount)
 {
-    OVITO_ASSERT(mask.size() == elementCount());
-
-    size_t deleteCount = mask.count();
+    OVITO_ASSERT(selection && selection->size() == elementCount());
     size_t oldParticleCount = elementCount();
-    size_t newParticleCount = oldParticleCount - deleteCount;
-    if(deleteCount == 0)
-        return 0;   // Nothing to delete.
 
-    // Delete the particles.
-    PropertyContainer::deleteElements(mask);
+    // Delete the particles from this container.
+    size_t deleteParticleCount = PropertyContainer::deleteElements(selection, selectionCount);
+    if(deleteParticleCount == 0)
+        return 0;   // Nothing to do.
+    size_t newParticleCount = elementCount();
+
+    // Remapping of old particle indices to new ones.
+    std::vector<size_t> particleIndexMap;
+    auto computeParticleIndexRemapping = [&]() {
+        if(particleIndexMap.empty()) {
+            particleIndexMap.resize(oldParticleCount);
+            auto iter = particleIndexMap.begin();
+            size_t newIndex = 0;
+            for(auto isDeleted : BufferReadAccess<SelectionIntType>(selection))
+                *iter++ = isDeleted ? std::numeric_limits<size_t>::max() : newIndex++;
+        }
+    };
+
+    // Generic method for deleting dangling bonds/angles/dihedrals/impropers.
+    auto filterTopologyObject = [&](auto* oldContainer, int topologyPropertyType, auto particleIndexTuple) {
+        using ParticleIndexTuple = decltype(particleIndexTuple);
+
+        if(!oldContainer)
+            return; // Nothing to do.
+
+        // Make sure we can safely modify the child object.
+        auto* newContainer = makeMutable(oldContainer);
+        BufferReadAccessAndRef<ParticleIndexTuple> oldTopology = newContainer->takeProperty(topologyPropertyType);
+        if(!oldTopology)
+            return; // Nothing to do if there is no topology property for some reason.
+
+        size_t oldCount = oldTopology.size();
+        BufferFactory<SelectionIntType> deletionMask(oldCount);
+
+        // Build map from old particle indices to new indices.
+        computeParticleIndexRemapping();
+
+        // Remap particle indices and remove dangling bonds etc.
+        PropertyFactory<ParticleIndexTuple> newTopology(newContainer->getOOMetaClass(), oldCount, topologyPropertyType);
+        size_t numRemaining = 0;
+        for(size_t index = 0; index < oldCount; index++) {
+            ParticleIndexTuple particleIndices = oldTopology[index];
+
+            bool deleteElement = false;
+            for(auto& particleIndex : particleIndices) {
+                // Mark invalid entries for deletion, i.e., if particle indices are out of range for some reason.
+                if(particleIndex >= oldParticleCount) {
+                    deleteElement = true;
+                    break;
+                }
+                // Mark dangling entries for deletion and otherwise remap the particle indices.
+                particleIndex = particleIndexMap[particleIndex];
+                if(particleIndex == std::numeric_limits<size_t>::max()) {
+                    deleteElement = true;
+                    break;
+                }
+            }
+            deletionMask[index] = deleteElement;
+            if(!deleteElement) {
+                newTopology[numRemaining] = particleIndices;
+                numRemaining++;
+            }
+        }
+
+        // Delete the marked elements.
+        newContainer->deleteElements(deletionMask.take(), oldCount - numRemaining);
+
+        // Insert the rewritten topology back into the container after truncating the array to the new length.
+        PropertyPtr newTopologyProperty = newTopology.take();
+        newTopologyProperty->resize(numRemaining, true);
+        newContainer->addProperty(std::move(newTopologyProperty));
+    };
 
     // Delete dangling bonds, i.e. those that are incident on deleted particles.
-    if(bonds()) {
-        // Make sure we can safely modify the bonds object.
-        BondsObject* mutableBonds = makeBondsMutable();
-
-        size_t oldBondCount = mutableBonds->elementCount();
-        boost::dynamic_bitset<> deletedBondsMask(oldBondCount);
-
-        // Build map from old particle indices to new indices.
-        std::vector<size_t> indexMap(oldParticleCount);
-        auto index = indexMap.begin();
-        size_t count = 0;
-        for(size_t i = 0; i < oldParticleCount; i++)
-            *index++ = mask.test(i) ? std::numeric_limits<size_t>::max() : count++;
-
-        // Remap particle indices of stored bonds and remove dangling bonds.
-        if(const PropertyObject* topologyProperty = mutableBonds->getTopology()) {
-            BufferWriteAccess<ParticleIndexPair, access_mode::read_write> mutableTopology = mutableBonds->makeMutable(topologyProperty);
-            for(size_t bondIndex = 0; bondIndex < oldBondCount; bondIndex++) {
-                size_t index1 = mutableTopology[bondIndex][0];
-                size_t index2 = mutableTopology[bondIndex][1];
-
-                // Remove invalid bonds, i.e. whose particle indices are out of bounds.
-                if(index1 >= oldParticleCount || index2 >= oldParticleCount) {
-                    deletedBondsMask.set(bondIndex);
-                    continue;
-                }
-
-                // Remove dangling bonds whose particles have gone.
-                if(mask.test(index1) || mask.test(index2)) {
-                    deletedBondsMask.set(bondIndex);
-                    continue;
-                }
-
-                // Keep bond and remap particle indices.
-                mutableTopology[bondIndex][0] = indexMap[index1];
-                mutableTopology[bondIndex][1] = indexMap[index2];
-            }
-            mutableTopology.reset();
-
-            // Delete the marked bonds.
-            mutableBonds->deleteElements(deletedBondsMask);
-        }
-    }
+    filterTopologyObject(bonds(), BondsObject::TopologyProperty, ParticleIndexPair{});
 
     // Delete dangling angles, i.e. those that are incident on deleted particles.
-    if(angles()) {
-        // Make sure we can safely modify the angles object.
-        AnglesObject* mutableAngles = makeAnglesMutable();
-
-        size_t oldAngleCount = mutableAngles->elementCount();
-        boost::dynamic_bitset<> deletedAnglesMask(oldAngleCount);
-
-        // Build map from old particle indices to new indices.
-        std::vector<size_t> indexMap(oldParticleCount);
-        auto index = indexMap.begin();
-        size_t count = 0;
-        for(size_t i = 0; i < oldParticleCount; i++)
-            *index++ = mask.test(i) ? std::numeric_limits<size_t>::max() : count++;
-
-        // Remap particle indices of angles and remove dangling angles.
-        if(const PropertyObject* topologyProperty = mutableAngles->getTopology()) {
-            BufferWriteAccess<ParticleIndexTriplet, access_mode::read_write> mutableTopology = mutableAngles->makeMutable(topologyProperty);
-            for(size_t angleIndex = 0; angleIndex < oldAngleCount; angleIndex++) {
-                size_t index1 = mutableTopology[angleIndex][0];
-                size_t index2 = mutableTopology[angleIndex][1];
-                size_t index3 = mutableTopology[angleIndex][2];
-
-                // Remove invalid angles, i.e. whose particle indices are out of bounds.
-                if(index1 >= oldParticleCount || index2 >= oldParticleCount || index3 >= oldParticleCount) {
-                    deletedAnglesMask.set(angleIndex);
-                    continue;
-                }
-
-                // Remove dangling angles whose particles have gone.
-                if(mask.test(index1) || mask.test(index2) || mask.test(index3)) {
-                    deletedAnglesMask.set(angleIndex);
-                    continue;
-                }
-
-                // Keep angle and remap particle indices.
-                mutableTopology[angleIndex][0] = indexMap[index1];
-                mutableTopology[angleIndex][1] = indexMap[index2];
-                mutableTopology[angleIndex][2] = indexMap[index3];
-            }
-            mutableTopology.reset();
-
-            // Delete the marked angles.
-            mutableAngles->deleteElements(deletedAnglesMask);
-        }
-    }
+    filterTopologyObject(angles(), AnglesObject::TopologyProperty, ParticleIndexTriplet{});
 
     // Delete dangling dihedrals, i.e. those that are incident on deleted particles.
-    if(dihedrals()) {
-        // Make sure we can safely modify the dihedrals object.
-        DihedralsObject* mutableDihedrals = makeDihedralsMutable();
-
-        size_t oldDihedralCount = mutableDihedrals->elementCount();
-        boost::dynamic_bitset<> deletedDihedralsMask(oldDihedralCount);
-
-        // Build map from old particle indices to new indices.
-        std::vector<size_t> indexMap(oldParticleCount);
-        auto index = indexMap.begin();
-        size_t count = 0;
-        for(size_t i = 0; i < oldParticleCount; i++)
-            *index++ = mask.test(i) ? std::numeric_limits<size_t>::max() : count++;
-
-        // Remap particle indices of angles and remove dangling dihedrals.
-        if(const PropertyObject* topologyProperty = mutableDihedrals->getTopology()) {
-            BufferWriteAccess<ParticleIndexQuadruplet, access_mode::read_write> mutableTopology = mutableDihedrals->makeMutable(topologyProperty);
-            for(size_t dihedralIndex = 0; dihedralIndex < oldDihedralCount; dihedralIndex++) {
-                size_t index1 = mutableTopology[dihedralIndex][0];
-                size_t index2 = mutableTopology[dihedralIndex][1];
-                size_t index3 = mutableTopology[dihedralIndex][2];
-                size_t index4 = mutableTopology[dihedralIndex][3];
-
-                // Remove invalid dihedrals, i.e. whose particle indices are out of bounds.
-                if(index1 >= oldParticleCount || index2 >= oldParticleCount || index3 >= oldParticleCount || index4 >= oldParticleCount) {
-                    deletedDihedralsMask.set(dihedralIndex);
-                    continue;
-                }
-
-                // Remove dangling dihedrals whose particles have gone.
-                if(mask.test(index1) || mask.test(index2) || mask.test(index3) || mask.test(index4)) {
-                    deletedDihedralsMask.set(dihedralIndex);
-                    continue;
-                }
-
-                // Keep dihedral and remap particle indices.
-                mutableTopology[dihedralIndex][0] = indexMap[index1];
-                mutableTopology[dihedralIndex][1] = indexMap[index2];
-                mutableTopology[dihedralIndex][2] = indexMap[index3];
-                mutableTopology[dihedralIndex][3] = indexMap[index4];
-            }
-            mutableTopology.reset();
-
-            // Delete the marked dihedrals.
-            mutableDihedrals->deleteElements(deletedDihedralsMask);
-        }
-    }
+    filterTopologyObject(dihedrals(), DihedralsObject::TopologyProperty, ParticleIndexQuadruplet{});
 
     // Delete dangling impropers, i.e. those that are incident on deleted particles.
-    if(impropers()) {
-        // Make sure we can safely modify the impropers object.
-        ImpropersObject* mutableImpropers = makeImpropersMutable();
+    filterTopologyObject(impropers(), ImpropersObject::TopologyProperty, ParticleIndexQuadruplet{});
 
-        size_t oldImproperCount = mutableImpropers->elementCount();
-        boost::dynamic_bitset<> deletedImpropersMask(oldImproperCount);
-
-        // Build map from old particle indices to new indices.
-        std::vector<size_t> indexMap(oldParticleCount);
-        auto index = indexMap.begin();
-        size_t count = 0;
-        for(size_t i = 0; i < oldParticleCount; i++)
-            *index++ = mask.test(i) ? std::numeric_limits<size_t>::max() : count++;
-
-        // Remap particle indices of angles and remove dangling impropers.
-        if(const PropertyObject* topologyProperty = mutableImpropers->getTopology()) {
-            BufferWriteAccess<ParticleIndexQuadruplet, access_mode::read_write> mutableTopology = mutableImpropers->makeMutable(topologyProperty);
-            for(size_t improperIndex = 0; improperIndex < oldImproperCount; improperIndex++) {
-                size_t index1 = mutableTopology[improperIndex][0];
-                size_t index2 = mutableTopology[improperIndex][1];
-                size_t index3 = mutableTopology[improperIndex][2];
-                size_t index4 = mutableTopology[improperIndex][3];
-
-                // Remove invalid impropers, i.e. whose particle indices are out of bounds.
-                if(index1 >= oldParticleCount || index2 >= oldParticleCount || index3 >= oldParticleCount || index4 >= oldParticleCount) {
-                    deletedImpropersMask.set(improperIndex);
-                    continue;
-                }
-
-                // Remove dangling impropers whose particles have gone.
-                if(mask.test(index1) || mask.test(index2) || mask.test(index3) || mask.test(index4)) {
-                    deletedImpropersMask.set(improperIndex);
-                    continue;
-                }
-
-                // Keep improper and remap particle indices.
-                mutableTopology[improperIndex][0] = indexMap[index1];
-                mutableTopology[improperIndex][1] = indexMap[index2];
-                mutableTopology[improperIndex][2] = indexMap[index3];
-                mutableTopology[improperIndex][3] = indexMap[index4];
-            }
-            mutableTopology.reset();
-
-            // Delete the marked impropers.
-            mutableImpropers->deleteElements(deletedImpropersMask);
-        }
-    }
-
-    return deleteCount;
+    return deleteParticleCount;
 }
 
 /******************************************************************************

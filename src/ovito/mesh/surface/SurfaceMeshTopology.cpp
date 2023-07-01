@@ -22,6 +22,7 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/core/dataset/data/mesh/TriMeshObject.h>
+#include <ovito/core/dataset/data/DataBuffer.h>
 #include "SurfaceMeshTopology.h"
 
 namespace Ovito::Mesh {
@@ -377,21 +378,23 @@ void SurfaceMeshTopology::deleteFace(face_index face)
 }
 
 /******************************************************************************
-* Deletes all faces from the mesh for which the bit in the given mask array is set.
+* Deletes all faces from the mesh for which the entry in the given mask array is set.
 * Holes in the mesh will be left behind at the location of the deleted faces.
 * The half-edges of the faces are also disconnected from their respective opposite half-edges and deleted by this method.
 ******************************************************************************/
-void SurfaceMeshTopology::deleteFaces(const boost::dynamic_bitset<>& mask)
+void SurfaceMeshTopology::deleteFaces(const DataBuffer& mask)
 {
     OVITO_ASSERT(mask.size() == faceCount());
+    BufferReadAccess<SelectionIntType> maskAccess(&mask);
 
     // Mark half-edges for deletion that are part of faces to be deleted.
     // Build a mapping from old face indices to new indices.
     std::vector<face_index> remapping(faceCount());
     boost::dynamic_bitset<> edgeMask(edgeCount());
+    size_type oldFaceCount = faceCount();
     size_type newFaceCount = 0;
     for(face_index face = 0; face < faceCount(); face++) {
-        if(!mask.test(face)) {
+        if(!maskAccess[face]) {
             remapping[face] = newFaceCount++;
             continue;
         }
@@ -412,14 +415,15 @@ void SurfaceMeshTopology::deleteFaces(const boost::dynamic_bitset<>& mask)
             }
         }
     }
-    if(newFaceCount == faceCount()) return; // Nothing to delete.
+    if(newFaceCount == oldFaceCount)
+        return; // Nothing to delete.
 
     // Now delete the marked half-edges.
     deleteEdges(edgeMask);
 
     // Update the pointers from the edges to the faces.
     for(face_index& ef : _edgeFaces) {
-        OVITO_ASSERT(ef != InvalidIndex && ef < faceCount());
+        OVITO_ASSERT(ef != InvalidIndex && ef < oldFaceCount);
         ef = remapping[ef];
     }
 
@@ -430,8 +434,9 @@ void SurfaceMeshTopology::deleteFaces(const boost::dynamic_bitset<>& mask)
     auto faceEdgesIter = faceEdgesNew.begin();
     auto oppositeFacesIter = oppositeFacesNew.begin();
 
-    for(face_index face = 0; face < faceCount(); face++) {
-        if(mask.test(face)) continue;
+    for(face_index face = 0; face < oldFaceCount; face++) {
+        if(maskAccess[face])
+            continue;
 
         *faceEdgesIter++ = firstFaceEdge(face);
         *oppositeFacesIter++ = hasOppositeFace(face) ? remapping[oppositeFace(face)] : InvalidIndex;

@@ -422,7 +422,7 @@ void CreateBondsModifier::BondsEngine::applyResults(const ModifierEvaluationRequ
     size_t bondsCount = bonds()->elementCount();
     if(bondsCount > 1000000 && modifier->autoDisableBondDisplay() && modifier->bondsVis() && ExecutionContext::isInteractive()) {
         modifier->bondsVis()->setEnabled(false);
-        state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Created %1 bonds, which is a lot. As a precaution, the display of bonds has been disabled. You can manually enable it again if needed.").arg(_numGeneratedBonds)));
+        state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Created %1 bonds, which is a lot. The display of bonds has been turned off as a precaution. You can manually turn it on again if needed.").arg(_numGeneratedBonds)));
     }
     else {
         state.setStatus(PipelineStatus(PipelineStatus::Success, tr("Created %1 bonds.").arg(_numGeneratedBonds)));

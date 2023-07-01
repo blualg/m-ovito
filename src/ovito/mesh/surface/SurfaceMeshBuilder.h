@@ -376,14 +376,14 @@ public:
     /// and which is adjacent to the given face. Returns the index of the new half-edge.
     edge_index createOppositeEdge(edge_index edge, face_index face) { return mutableTopology()->createOppositeEdge(edge, face); }
 
-    /// Deletes all faces from the mesh for which the bit in the given mask array is set.
+    /// Deletes all faces from the mesh which have a non-zero value in the selection array.
     /// Holes in the mesh will be left behind at the location of the deleted faces.
     /// The half-edges of the faces are also disconnected from their respective opposite half-edges and deleted by this method.
-    void deleteFaces(const boost::dynamic_bitset<>& mask);
+    void deleteFaces(ConstDataBufferPtr selection);
 
-    /// Deletes all regions from the mesh for which the bit in the given mask array is set.
+    /// Deletes all regions from the mesh which have a non-zero value in the selection array.
     /// This method assumes that the deleted regions are not referenced by any other part of the mesh.
-    void deleteRegions(const boost::dynamic_bitset<>& mask);
+    void deleteRegions(ConstDataBufferPtr selection);
 
     /// Joins pairs of triangular faces to form quadrilateral faces.
     void makeQuadrilateralFaces();

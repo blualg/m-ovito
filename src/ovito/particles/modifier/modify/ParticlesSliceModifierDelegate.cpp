@@ -53,7 +53,7 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationReq
     QString statusMessage = tr("%n input particles", 0, inputParticles->elementCount());
 
     SliceModifier* mod = static_object_cast<SliceModifier>(request.modifier());
-    boost::dynamic_bitset<> mask(inputParticles->elementCount());
+    PropertyFactory<SelectionIntType> mask(ParticlesObject::OOClass(), inputParticles->elementCount(), ParticlesObject::SelectionProperty);
 
     // Get the required input properties.
     BufferReadAccess<Point3> posProperty = inputParticles->expectProperty(ParticlesObject::PositionProperty);
@@ -67,22 +67,30 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationReq
     std::tie(plane, sliceWidth) = mod->slicingPlane(request.time(), state.mutableStateValidity(), state);
     sliceWidth /= 2;
 
+    // Number of marked/selected particles.
+    size_t numMarked = 0;
+
+    auto m = mask.begin();
     if(sliceWidth <= 0) {
         if(selProperty) {
             const auto* s = selProperty.cbegin();
-            boost::dynamic_bitset<>::size_type i = 0;
             for(const Point3& p : posProperty) {
-                if(*s++ && plane.pointDistance(p) > 0)
-                    mask.set(i);
-                ++i;
+                if(*s++ && plane.pointDistance(p) > 0) {
+                    *m = 1;
+                    numMarked++;
+                }
+                else *m = 0;
+                ++m;
             }
         }
         else {
-            boost::dynamic_bitset<>::size_type i = 0;
             for(const Point3& p : posProperty) {
-                if(plane.pointDistance(p) > 0)
-                    mask.set(i);
-                ++i;
+                if(plane.pointDistance(p) > 0) {
+                    *m = 1;
+                    numMarked++;
+                }
+                else *m = 0;
+                ++m;
             }
         }
     }
@@ -90,49 +98,43 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationReq
         bool invert = mod->inverse();
         if(selProperty) {
             const auto* s = selProperty.cbegin();
-            boost::dynamic_bitset<>::size_type i = 0;
             for(const Point3& p : posProperty) {
-                if(*s++ && invert == (plane.classifyPoint(p, sliceWidth) == 0))
-                    mask.set(i);
-                ++i;
+                if(*s++ && invert == (plane.classifyPoint(p, sliceWidth) == 0)) {
+                    *m = 1;
+                    numMarked++;
+                }
+                else *m = 0;
+                ++m;
             }
         }
         else {
-            boost::dynamic_bitset<>::size_type i = 0;
             for(const Point3& p : posProperty) {
-                if(invert == (plane.classifyPoint(p, sliceWidth) == 0))
-                    mask.set(i);
-                ++i;
+                if(invert == (plane.classifyPoint(p, sliceWidth) == 0)) {
+                    *m = 1;
+                    numMarked++;
+                }
+                else *m = 0;
+                ++m;
             }
         }
     }
+    OVITO_ASSERT(m == mask.end());
     posProperty.reset();
     selProperty.reset();
 
     // Make sure we can safely modify the particles object.
     ParticlesObject* outputParticles = state.makeMutable(inputParticles);
     if(mod->createSelection() == false) {
-
-        // Delete the selected particles.
-        size_t numDeleted = outputParticles->deleteElements(mask);
-        statusMessage += tr("\n%n particles deleted", 0, numDeleted);
+        // Delete the marked particles.
+        outputParticles->deleteElements(mask.take(), numMarked);
+        statusMessage += tr("\n%n particles deleted", 0, numMarked);
         statusMessage += tr("\n%n particles remaining", 0, outputParticles->elementCount());
     }
     else {
-        size_t numSelected = 0;
-        BufferWriteAccess<SelectionIntType, access_mode::discard_write> newSelProperty = outputParticles->createProperty(ParticlesObject::SelectionProperty);
-        OVITO_ASSERT(mask.size() == newSelProperty.size());
-        boost::dynamic_bitset<>::size_type i = 0;
-        for(auto& s : newSelProperty) {
-            if(mask.test(i++)) {
-                s = 1;
-                numSelected++;
-            }
-            else s = 0;
-        }
-
-        statusMessage += tr("\n%n particles selected", 0, numSelected);
-        statusMessage += tr("\n%n particles unselected", 0, outputParticles->elementCount() - numSelected);
+        // Create or replace the selection particle property.
+        outputParticles->createProperty(mask.take());
+        statusMessage += tr("\n%n particles selected", 0, numMarked);
+        statusMessage += tr("\n%n particles unselected", 0, outputParticles->elementCount() - numMarked);
     }
     outputParticles->verifyIntegrity();
 

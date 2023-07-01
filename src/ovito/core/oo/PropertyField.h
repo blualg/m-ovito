@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -159,7 +159,7 @@ private:
     }
 
     /// This undo class records a change to the property value.
-    class PropertyChangeOperation : public PropertyFieldOperation
+    class PropertyChangeOperation final : public PropertyFieldOperation
     {
     public:
 
@@ -169,7 +169,7 @@ private:
             PropertyFieldOperation(owner, descriptor), _field(field), _oldValue(field.get()) {}
 
         /// Restores the old property value.
-        virtual void undo() override {
+        virtual void undo() override final {
             // Swap old value and current property value.
             using std::swap; // using ADL here
             swap(_field.mutableValue(), _oldValue);
@@ -383,7 +383,7 @@ public:
     void clear(RefMaker* owner, const PropertyFieldDescriptor* descriptor);
 
     /// Removes the reference at index position i.
-    void remove(RefMaker* owner, const PropertyFieldDescriptor* descriptor, size_type i);
+    pointer remove(RefMaker* owner, const PropertyFieldDescriptor* descriptor, size_type i);
 
     /// Returns the number of objects in the vector reference field.
     inline size_type size() const noexcept { return _targets.size(); }
@@ -472,6 +472,11 @@ public:
     /// Inserts or add a reference target to the vector reference field.
     size_type insert(RefMaker* owner, const PropertyFieldDescriptor* descriptor, size_type i, fancy_pointer newPointer) {
         return base_class::insert(owner, descriptor, i, std::move(newPointer));
+    }
+
+    /// Removes the reference target at index position i.
+    fancy_pointer remove(RefMaker* owner, const PropertyFieldDescriptor* descriptor, size_type i) {
+        return static_object_cast<typename std::pointer_traits<fancy_pointer>::element_type>(base_class::remove(owner, descriptor, i));
     }
 
     /// Returns the i-th target object currently being referenced by the vector reference field.

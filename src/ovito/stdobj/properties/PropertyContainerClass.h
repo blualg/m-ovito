@@ -208,6 +208,10 @@ public:
     /// Null constructor.
     PropertyFactory() noexcept : base_class() {}
 
+    /// Constructor allocating a new uninitialized standard property array of the given size.
+    PropertyFactory(const PropertyContainerClass& containerClazz, size_t elementCount, int standardPropertyType) :
+        base_class(containerClazz.createStandardProperty(DataBuffer::Uninitialized, elementCount, standardPropertyType)) {}
+
     /// Constructor allocating a new uninitialized user property array of the given size and name.
     template<bool IsEnabled = !ComponentWise>
     PropertyFactory(const std::enable_if_t<IsEnabled, PropertyContainerClass>& containerClazz, size_t elementCount, const QString& propertyName) :

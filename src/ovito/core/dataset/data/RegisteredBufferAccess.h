@@ -43,7 +43,7 @@ public:
     const void* dataPointer() { return _accessor.cdata(); }
 
     /// Returns a pointer to the buffer object.
-    const DataBuffer* buffer() const { return _buffer.get(); }
+    DataBuffer* buffer() const { return _buffer.get(); }
 
 private:
 

@@ -61,20 +61,22 @@ void SurfaceMeshBuilder::clearMesh()
 }
 
 /******************************************************************************
-* Deletes all regions from the mesh for which the bit in the given mask array is set.
+* Deletes all regions from the mesh which have a non-zero value in the selection array.
 * This method assumes that the deleted regions are not referenced by any other part of the mesh.
 ******************************************************************************/
-void SurfaceMeshBuilder::deleteRegions(const boost::dynamic_bitset<>& mask)
+void SurfaceMeshBuilder::deleteRegions(ConstDataBufferPtr selection)
 {
-    OVITO_ASSERT(mask.size() == regionCount());
+    OVITO_ASSERT(selection);
+    OVITO_ASSERT(selection->size() == regionCount());
 
     // Update the region property of faces.
     if(BufferWriteAccess<int32_t, access_mode::read_write> faceRegions = mutableFaceProperty(SurfaceMeshFaces::RegionProperty)) {
+        BufferReadAccess<SelectionIntType> selectionAccess(selection);
         // Build a mapping from old region indices to new indices.
         std::vector<region_index> remapping(regionCount());
         size_type newRegionCount = 0;
         for(region_index region = 0; region < regionCount(); region++) {
-            if(mask.test(region))
+            if(selectionAccess[region])
                 remapping[region] = InvalidIndex;
             else
                 remapping[region] = newRegionCount++;
@@ -85,24 +87,25 @@ void SurfaceMeshBuilder::deleteRegions(const boost::dynamic_bitset<>& mask)
         }
     }
 
-    // Filter and condense the region property arrays.
-    mutableRegions()->PropertyContainer::deleteElements(mask);
+    // Filter and consolidate the region property arrays.
+    mutableRegions()->PropertyContainer::deleteElements(std::move(selection));
 }
 
 /******************************************************************************
-* Deletes all faces from the mesh for which the bit in the given mask array is set.
+* Deletes all faces from the mesh which have a non-zero value in the selection array.
 * Holes in the mesh will be left behind at the location of the deleted faces.
 * The half-edges of the faces are also disconnected from their respective opposite half-edges and deleted by this method.
 ******************************************************************************/
-void SurfaceMeshBuilder::deleteFaces(const boost::dynamic_bitset<>& mask)
+void SurfaceMeshBuilder::deleteFaces(ConstDataBufferPtr selection)
 {
-    OVITO_ASSERT(mask.size() == faceCount());
+    OVITO_ASSERT(selection);
+    OVITO_ASSERT(selection->size() == faceCount());
 
-    // Filter and condense the face property arrays.
-    mutableFaces()->PropertyContainer::deleteElements(mask);
+    // Filter and consolidate the face property arrays.
+    mutableFaces()->PropertyContainer::deleteElements(selection);
 
     // Update the mesh topology.
-    mutableTopology()->deleteFaces(mask);
+    mutableTopology()->deleteFaces(*selection);
 
     OVITO_ASSERT(topology()->faceCount() == faces()->elementCount());
 }

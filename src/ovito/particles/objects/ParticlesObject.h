@@ -133,9 +133,9 @@ public:
     /// \brief Constructor.
     Q_INVOKABLE ParticlesObject(ObjectInitializationFlags flags);
 
-    /// Deletes the particles for which bits are set in the given bit-mask.
-    /// Returns the number of deleted particles.
-    virtual size_t deleteElements(const boost::dynamic_bitset<>& mask) override;
+    /// Deletes those data elements having a non-zero value in the given selection array.
+    /// Returns the number of deleted elements. The original order of the remaining elements is preserved.
+    virtual size_t deleteElements(ConstDataBufferPtr selection, size_t selectionCount = std::numeric_limits<size_t>::max()) override;
 
     /// Duplicates the BondsObject if it is shared with other particle objects.
     /// After this method returns, the BondsObject is exclusively owned by the ParticlesObject and
