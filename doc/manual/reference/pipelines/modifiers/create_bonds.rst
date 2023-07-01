@@ -61,8 +61,8 @@ you can adjust the visual representation of individual bonds.
 
 .. attention::
 
-  If the modifier creates more than 1,000,000 bonds, it will show a warning message and automatically turn off the display
-  of bonds as a precaution, because rendering too many bonds in the interactive viewports of OVITO on a slow computer takes a long time and could easily freeze
+  In case the modifier generated more than 1,000,000 bonds, it will show a warning message and automatically turn off the display
+  of the bonds as a precaution, because rendering too many bonds in the interactive viewports of OVITO on a slow machine could take exceedingly long and freeze
   the entire program. If desired, you can manually show the bonds again by re-enabling the :ref:`bonds visual element <visual_elements.bonds>` in the pipeline editor.
 
 Technical notes

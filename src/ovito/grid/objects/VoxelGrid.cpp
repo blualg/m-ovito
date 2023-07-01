@@ -143,7 +143,7 @@ void VoxelGrid::verifyIntegrity() const
 
     size_t expectedElementCount = shape()[0] * shape()[1] * shape()[2];
     if(elementCount() != expectedElementCount)
-        throw Exception(tr("VoxelGrid has inconsistent dimensions. PropertyContainer array length (%1) does not match the number of voxel grid cells (%2) for grid shape %3x%4x%5.")
+        throw Exception(tr("VoxelGrid has inconsistent dimensions. PropertyContainer array length (%1) does not match the total number of voxel cells (%2) for a grid with shape %3 x %4 x %5.")
             .arg(elementCount()).arg(expectedElementCount).arg(shape()[0]).arg(shape()[1]).arg(shape()[2]));
 
     if(!domain())
