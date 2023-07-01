@@ -79,7 +79,7 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
 
         // Shift particle positions by the periodicity vector.
         if(property->type() == ParticlesObject::PositionProperty) {
-            BufferAccess<Point3> positionArray(property);
+            BufferWriteAccess<Point3, access_mode::read_write> positionArray(property);
             Point3* p = positionArray.begin();
             for(int imageX = newImages.minc.x(); imageX <= newImages.maxc.x(); imageX++) {
                 for(int imageY = newImages.minc.y(); imageY <= newImages.maxc.y(); imageY++) {
@@ -99,7 +99,7 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
 
         // Assign unique IDs to duplicated particles.
         if(mod->uniqueIdentifiers() && (property->type() == ParticlesObject::IdentifierProperty || property->type() == ParticlesObject::MoleculeProperty)) {
-            BufferAccess<IdentifierIntType> propertyData(property);
+            BufferWriteAccess<IdentifierIntType, access_mode::read_write> propertyData(property);
             auto minmax = std::minmax_element(propertyData.cbegin(), propertyData.cbegin() + oldParticleCount);
             auto minID = *minmax.first;
             auto maxID = *minmax.second;
@@ -116,7 +116,7 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
         size_t oldBondCount = outputParticles->bonds()->elementCount();
         size_t newBondCount = oldBondCount * numCopies;
 
-        BufferAccessAndRef<const Vector3I> oldPeriodicImages = outputParticles->bonds()->getProperty(BondsObject::PeriodicImageProperty);
+        BufferReadAccessAndRef<Vector3I> oldPeriodicImages = outputParticles->bonds()->getProperty(BondsObject::PeriodicImageProperty);
 
         // Replicate bond property values.
         BondsObject* mutableBonds = outputParticles->makeBondsMutable();
@@ -132,7 +132,7 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
 
             // Special handling for the topology property.
             if(property->type() == BondsObject::TopologyProperty) {
-                BufferAccess<ParticleIndexPair> topologyArray(property);
+                BufferWriteAccess<ParticleIndexPair, access_mode::read_write> topologyArray(property);
                 for(image[0] = newImages.minc.x(); image[0] <= newImages.maxc.x(); image[0]++) {
                     for(image[1] = newImages.minc.y(); image[1] <= newImages.maxc.y(); image[1]++) {
                         for(image[2] = newImages.minc.z(); image[2] <= newImages.maxc.z(); image[2]++) {
@@ -163,7 +163,7 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
             else if(property->type() == BondsObject::PeriodicImageProperty) {
                 // Special handling for the PBC shift vector property.
                 OVITO_ASSERT(oldPeriodicImages);
-                BufferAccess<Vector3I> pbcImagesArray(property);
+                BufferWriteAccess<Vector3I, access_mode::read_write> pbcImagesArray(property);
                 for(image[0] = newImages.minc.x(); image[0] <= newImages.maxc.x(); image[0]++) {
                     for(image[1] = newImages.minc.y(); image[1] <= newImages.maxc.y(); image[1]++) {
                         for(image[2] = newImages.minc.z(); image[2] <= newImages.maxc.z(); image[2]++) {
@@ -197,8 +197,8 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
 
             // Special handling for the topology property.
             if(property->type() == AnglesObject::TopologyProperty) {
-                BufferAccess<ParticleIndexTriplet> topologyArray(property);
-                BufferAccess<const Point3> positionArray(inputParticles->expectProperty(ParticlesObject::PositionProperty));
+                BufferWriteAccess<ParticleIndexTriplet, access_mode::read_write> topologyArray(property);
+                BufferReadAccess<Point3> positionArray(inputParticles->expectProperty(ParticlesObject::PositionProperty));
                 for(image[0] = newImages.minc.x(); image[0] <= newImages.maxc.x(); image[0]++) {
                     for(image[1] = newImages.minc.y(); image[1] <= newImages.maxc.y(); image[1]++) {
                         for(image[2] = newImages.minc.z(); image[2] <= newImages.maxc.z(); image[2]++) {
@@ -243,8 +243,8 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
 
             // Special handling for the topology property.
             if(property->type() == DihedralsObject::TopologyProperty) {
-                BufferAccess<ParticleIndexQuadruplet> topologyArray(property);
-                BufferAccess<const Point3> positionArray(inputParticles->expectProperty(ParticlesObject::PositionProperty));
+                BufferWriteAccess<ParticleIndexQuadruplet, access_mode::read_write> topologyArray(property);
+                BufferReadAccess<Point3> positionArray(inputParticles->expectProperty(ParticlesObject::PositionProperty));
                 for(image[0] = newImages.minc.x(); image[0] <= newImages.maxc.x(); image[0]++) {
                     for(image[1] = newImages.minc.y(); image[1] <= newImages.maxc.y(); image[1]++) {
                         for(image[2] = newImages.minc.z(); image[2] <= newImages.maxc.z(); image[2]++) {
@@ -289,8 +289,8 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
 
             // Special handling for the topology property.
             if(property->type() == ImpropersObject::TopologyProperty) {
-                BufferAccess<ParticleIndexQuadruplet> topologyArray(property);
-                BufferAccess<const Point3> positionArray(inputParticles->expectProperty(ParticlesObject::PositionProperty));
+                BufferWriteAccess<ParticleIndexQuadruplet, access_mode::read_write> topologyArray(property);
+                BufferReadAccess<Point3> positionArray(inputParticles->expectProperty(ParticlesObject::PositionProperty));
                 for(image[0] = newImages.minc.x(); image[0] <= newImages.maxc.x(); image[0]++) {
                     for(image[1] = newImages.minc.y(); image[1] <= newImages.maxc.y(); image[1]++) {
                         for(image[2] = newImages.minc.z(); image[2] <= newImages.maxc.z(); image[2]++) {

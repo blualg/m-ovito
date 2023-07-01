@@ -180,7 +180,7 @@ void ElementType::updateEditableProxies(PipelineFlowState& state, ConstDataObjec
     }
     else {
         // Create and initialize a new proxy.
-        OORef<ElementType> newProxy = CloneHelper().cloneObject(self, false);
+        OORef<ElementType> newProxy = CloneHelper::cloneSingleObject(self, false);
         OVITO_ASSERT(newProxy->numericId() == self->numericId());
         OVITO_ASSERT(newProxy->enabled() == self->enabled());
 

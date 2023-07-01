@@ -113,17 +113,17 @@ public:
     }
 
     /// Looks up the standard property with the given ID and makes it mutable if necessary.
-    PropertyObject* getMutableProperty(int typeId) {
+    PropertyObject* getMutableProperty(int typeId, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
         if(const PropertyObject* p = getProperty(typeId))
-            return makeMutable(p);
+            return makePropertyMutable(p, cloneMode);
         else
             return nullptr;
     }
 
     /// Looks up a user-defined property with the given name and makes it mutable if necessary.
-    PropertyObject* getMutableProperty(const QString& name) {
+    PropertyObject* getMutableProperty(const QString& name, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
         if(const PropertyObject* p = getProperty(name))
-            return makeMutable(p);
+            return makePropertyMutable(p, cloneMode);
         else
             return nullptr;
     }
@@ -138,9 +138,16 @@ public:
 
     /// Returns the given standard property after making sure it can be safely modified.
     /// If it does not exist, an exception is thrown.
-    PropertyObject* expectMutableProperty(int typeId) {
-        return makeMutable(expectProperty(typeId));
+    PropertyObject* expectMutableProperty(int typeId, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
+        return makePropertyMutable(expectProperty(typeId), cloneMode);
     }
+
+    /// Duplicates and replaces the given property with its copy if it not exclusively owned by this container or is being accessed from Python.
+    /// This method is similar to the DataObject::makeMutable() method, but it offers the cloneMode option.
+    /// If cloneMode==Uninitialized and a copy of the PropertyObject needs to be made, the payload data of the original are NOT copied over to the clone.
+    /// This option offers a performance benefit in situations where the calling code is going to
+    /// completely overwrite the data in the mutable property with new values.
+    PropertyObject* makePropertyMutable(const PropertyObject* property, DataBuffer::BufferInitialization cloneMode, bool ignorePythonAccess = false);
 
     /// Duplicates any property objects that are shared with other containers.
     /// After this method returns, all property objects are exclusively owned by the container and
@@ -186,17 +193,16 @@ public:
     /// Returns the number of deleted elements. The ordering of the remaining elements is preserved.
     virtual size_t deleteElements(const boost::dynamic_bitset<>& mask);
 
-    /// Removes those data elements for which the bits are set in the given bitmask array by moving data from the back of the array into the free slots.
-    /// This method is potentially faster than deleteElements() if only few elements are to be deleted.
-    /// However, the ordering of the remaining elements is NOT preserved.
-    void deleteElementsReordering(const boost::dynamic_bitset<>& mask);
-
     /// Replaces the property arrays in this property container with a new set of properties.
     /// Existing element types of typed properties will be preserved by the method.
     void setContent(size_t newElementCount, const DataRefVector<PropertyObject>& newProperties);
 
+    /// Clones all properties in the container and newly allocates memory for all property arrays, possibly with a
+    /// different element count than before. It's the callers responsibility to initialize the new property arrays.
+    std::vector<std::pair<ConstPropertyPtr, PropertyObject*>> reallocateProperties(size_t numElements);
+
     /// Duplicates all data elements by extending the property arrays and replicating the existing data N times.
-    void replicate(size_t n, bool replicatePropertyValues = true);
+    void replicate(size_t n);
 
     /// Sorts the data elements in the container with respect to their unique IDs.
     /// Does nothing if data elements do not have the ID property.
@@ -219,6 +225,7 @@ public:
     public:
 
         Grower(PropertyContainer* container) : _container(container), _elementCount(container->elementCount()) {
+            OVITO_ASSERT(container->isSafeToModify());
             // Make all property arrays mutable to begin with.
             container->makePropertiesMutableInternal();
         }
@@ -230,16 +237,30 @@ public:
             _container->_elementCount.set(_container, PROPERTY_FIELD(PropertyContainer::elementCount), _elementCount);
         }
 
-        size_t grow(size_t numAdditionalElements, int alreadyLockedPropertyType = -1) {
+        size_t grow(size_t numAdditionalElements) {
             // Grow property arrays.
             for(const PropertyObject* prop : _container->properties()) {
                 OVITO_ASSERT(prop->size() == _elementCount);
-                const_cast<PropertyObject*>(prop)->grow(numAdditionalElements, prop->type() == alreadyLockedPropertyType);
+                const_cast<PropertyObject*>(prop)->grow(numAdditionalElements);
             }
             // Update only our internal element count. Container will be updated by destructor.
             size_t oldCount = _elementCount;
             _elementCount += numAdditionalElements;
             return oldCount;
+        }
+
+        bool grow(size_t numAdditionalElements, int alreadyLockedPropertyType) {
+            bool wasReallocated = false;
+            // Grow property arrays.
+            for(const PropertyObject* prop : _container->properties()) {
+                OVITO_ASSERT(prop->size() == _elementCount);
+                bool b = const_cast<PropertyObject*>(prop)->grow(numAdditionalElements, prop->type() == alreadyLockedPropertyType);
+                if(b && prop->type() == alreadyLockedPropertyType)
+                    wasReallocated = true;
+            }
+            // Update only our internal element count. Container will be updated by destructor.
+            _elementCount += numAdditionalElements;
+            return wasReallocated;
         }
 
         /// Deletes a number of elements from the end of each property array (without reallocation).
@@ -267,9 +288,12 @@ public:
         }
 
         PropertyObject* mutableProperty(int type) const {
+            OVITO_ASSERT(_container->isSafeToModify());
             for(const PropertyObject* prop : _container->properties()) {
-                if(prop->type() == type)
+                OVITO_ASSERT(_container->isSafeToModifySubObject(prop));
+                if(prop->type() == type) {
                     return const_cast<PropertyObject*>(prop);
+                }
             }
             return nullptr;
         }
@@ -289,6 +313,11 @@ protected:
 
     /// Is called once for this object after it has been completely loaded from a stream.
     virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
+
+    /// Duplicates and replaces the given property with its copy if it not exclusively owned by this container or is being accessed from Python.
+    /// This method is similar to the DataObject::makeMutable() method, but won't copy the contents of the PropertyObject nor
+    /// allocate memory for the new array.
+    PropertyObject* makePropertyMutableUnallocated(const PropertyObject* property);
 
     /// Duplicates any property objects that are shared with other containers or being accessed from Python.
     /// After this method returns, all property objects are exclusively owned by the container and

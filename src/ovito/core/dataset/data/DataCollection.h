@@ -293,12 +293,12 @@ public:
     }
 
     /// Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
-    DataObject* makeMutable(const DataObject* obj, bool deepCopy = false);
+    DataObject* makeMutable(const DataObject* obj);
 
     /// Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
     template<class DataObjectClass>
-    DataObjectClass* makeMutable(const DataObjectClass* obj, bool deepCopy = false) {
-        return static_object_cast<DataObjectClass>(makeMutable(static_cast<const DataObject*>(obj), deepCopy));
+    DataObjectClass* makeMutable(const DataObjectClass* obj) {
+        return static_object_cast<DataObjectClass>(makeMutable(static_cast<const DataObject*>(obj)));
     }
 
     /// Ensures that a DataObject from this flow state is not shared with others and is safe to modify.

@@ -177,8 +177,8 @@ void OXDNAImporter::FrameLoader::loadFile()
     for(int i = 1; i <= numStrands; i++)
         addNumericType(ParticlesObject::OOClass(), strandsProperty, i, {});
 
-    BufferAccess<int32_t> baseAccess(baseProperty);
-    BufferAccess<int32_t> strandsAccess(strandsProperty);
+    BufferWriteAccess<int32_t, access_mode::discard_write> baseAccess(baseProperty);
+    BufferWriteAccess<int32_t, access_mode::discard_write> strandsAccess(strandsProperty);
 
     // The list of bonds between nucleotides.
     std::vector<ParticleIndexPair> bonds;
@@ -215,7 +215,7 @@ void OXDNAImporter::FrameLoader::loadFile()
 
     // Create and fill bonds topology storage.
     setBondCount(bonds.size());
-    BufferAccess<ParticleIndexPair> bondTopologyAccess = this->bonds()->createProperty(BondsObject::TopologyProperty);
+    BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> bondTopologyAccess = this->bonds()->createProperty(BondsObject::TopologyProperty);
     boost::copy(bonds, bondTopologyAccess.begin());
 
     nextProgressSubStep();
@@ -281,10 +281,10 @@ void OXDNAImporter::FrameLoader::loadFile()
         signalAdditionalFrames();
 
     // Displace particle positions. oxDNA stores center of mass coordinates, but OVITO expects particle coordinates to be backbone sphere centers.
-    BufferAccess<Point3> centerOfMassPositionsArray = particles()->createProperty(QStringLiteral("Center Of Mass"), DataBuffer::FloatDefault, 3, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z"));
-    BufferAccess<Point3> basePositionsArray = particles()->createProperty(QStringLiteral("Base Position"), DataBuffer::FloatDefault, 3, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z"));
-    BufferAccess<Point3> positionsArray = particles()->getMutableProperty(ParticlesObject::PositionProperty);
-    BufferAccess<const Vector3> axisVectorArray = particles()->expectProperty(ParticlesObject::NucleotideAxisProperty);
+    BufferWriteAccess<Point3, access_mode::discard_read_write> centerOfMassPositionsArray = particles()->createProperty(QStringLiteral("Center Of Mass"), DataBuffer::FloatDefault, 3, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z"));
+    BufferWriteAccess<Point3, access_mode::discard_write> basePositionsArray = particles()->createProperty(QStringLiteral("Base Position"), DataBuffer::FloatDefault, 3, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z"));
+    BufferWriteAccess<Point3, access_mode::read_write> positionsArray = particles()->getMutableProperty(ParticlesObject::PositionProperty);
+    BufferReadAccess<Vector3> axisVectorArray = particles()->expectProperty(ParticlesObject::NucleotideAxisProperty);
     for(size_t i = 0; i < numNucleotidesLong; i++) {
         centerOfMassPositionsArray[i] = positionsArray[i];
         positionsArray[i] -= 0.4 * axisVectorArray[i];

@@ -443,7 +443,7 @@ void CAImporter::FrameLoader::loadFile()
             setProgressText(tr("Reading defect surface"));
             setProgressMaximum(numDefectMeshVertices);
             meshBuilder.createVertices(numDefectMeshVertices);
-            BufferAccess<Point3> vertexPositions(meshBuilder.mutableVertexProperty(SurfaceMeshVertices::PositionProperty));
+            BufferWriteAccess<Point3, access_mode::read_write> vertexPositions(meshBuilder.mutableVertexProperty(SurfaceMeshVertices::PositionProperty));
             for(int index = 0; index < numDefectMeshVertices; index++) {
                 if(!setProgressValueIntermittent(index)) return;
                 Point3 p;

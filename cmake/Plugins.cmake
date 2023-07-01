@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2021 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -26,7 +26,7 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
     # Parse macro arguments.
     SET(options GUI_PLUGIN HAS_NO_EXPORTS)
     SET(multiValueArgs SOURCES LIB_DEPENDENCIES PRIVATE_LIB_DEPENDENCIES PLUGIN_DEPENDENCIES OPTIONAL_PLUGIN_DEPENDENCIES PRECOMPILED_HEADERS)
-    CMAKE_PARSE_ARGUMENTS(ARG 
+    CMAKE_PARSE_ARGUMENTS(ARG
         "${options}" # options
         ""  # one-value keywords
         "${multiValueArgs}" # multi-value keywords
@@ -77,11 +77,11 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
 
     IF(MSVC)
         # Turn off certain Microsoft compiler warnings.
-        TARGET_COMPILE_OPTIONS(${target_name} 
+        TARGET_COMPILE_OPTIONS(${target_name}
             PRIVATE "/wd4267" # Suppress warning on conversion from size_t to int, possible loss of data.
             PRIVATE "/bigobj" # Compiling template code leads to large object files.
         )
-        
+
         # Do not warn about use of unsafe CRT Library functions.
         TARGET_COMPILE_DEFINITIONS(${target_name} PRIVATE "_CRT_SECURE_NO_WARNINGS=")
 
@@ -136,6 +136,13 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
     # Link to other third-party libraries needed by this specific plugin, which should not be visible to dependent plugins.
     TARGET_LINK_LIBRARIES(${target_name} PRIVATE ${private_lib_dependencies})
 
+    # Enable SYCL.
+    IF(OVITO_USE_SYCL)
+        FIND_PACKAGE(OpenSYCL CONFIG REQUIRED)
+        add_sycl_to_target(TARGET ${target_name})
+        TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC HIPSYCL_DEBUG_LEVEL=${OPENSYCL_DEBUG_LEVEL})
+    ENDIF()
+
     # Link to other plugin modules that are dependencies of this plugin.
     FOREACH(plugin_name ${plugin_dependencies})
         STRING(TOUPPER "${plugin_name}" uppercase_plugin_name)
@@ -181,10 +188,10 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
     ELSEIF(UNIX)
         # Tell linker to detect missing references already at link time (and not at runtime).
         # This check must NOT be performed when building Python extension modules, because they deliberately do not
-        # link to the Python library at build time, only at runtime. That's because the Python library is assumed to be already 
-        # loaded into the process once the extension module gets loaded. 
+        # link to the Python library at build time, only at runtime. That's because the Python library is assumed to be already
+        # loaded into the process once the extension module gets loaded.
         # Here we assume that all OVITO modules that depend on the PyScript module, and the PyScript module itself, are Python
-        # extension modules. The link-time check will not be enabled for these modules. 
+        # extension modules. The link-time check will not be enabled for these modules.
         GET_PROPERTY(_link_libs TARGET ${target_name} PROPERTY LINK_LIBRARIES)
         IF(NOT ${target_name} STREQUAL "PyScript" AND NOT "PyScript" IN_LIST _link_libs)
             TARGET_LINK_OPTIONS(${target_name} PRIVATE "LINKER:--no-undefined" "LINKER:--no-allow-shlib-undefined")

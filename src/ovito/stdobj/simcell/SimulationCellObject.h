@@ -275,23 +275,6 @@ public:
     /// \brief Returns the title of this object.
     virtual QString objectTitle() const override { return tr("Simulation cell"); }
 
-    ////////////////////////////// Support functions for the Python bindings //////////////////////////////
-
-    /// Indicates to the Python binding layer that this object has been temporarily put into a
-    /// writable state. In this state, the binding layer will allow write access to the cell's internal data.
-    bool isWritableFromPython() const { return _isWritableFromPython != 0; }
-
-    /// Puts the simulation cell into a writable state.
-    /// In the writable state, the Python binding layer will allow write access to the cell's internal data.
-    void makeWritableFromPython();
-
-    /// Puts the simulation cell array back into the default read-only state.
-    /// In the read-only state, the Python binding layer will not permit write access to the cell's internal data.
-    void makeReadOnlyFromPython() {
-        OVITO_ASSERT(_isWritableFromPython > 0);
-        _isWritableFromPython--;
-    }
-
 protected:
 
     /// Is called when the value of a non-animatable field of this object changes.
@@ -323,10 +306,6 @@ private:
     /// Stores the dimensionality of the system.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, is2D, setIs2D);
     DECLARE_SHADOW_PROPERTY_FIELD(is2D);
-
-    /// This is a special flag used by the Python bindings to indicate that
-    /// this simulation cell has been temporarily put into a writable state.
-    int _isWritableFromPython = 0;
 };
 
 }   // End of namespace

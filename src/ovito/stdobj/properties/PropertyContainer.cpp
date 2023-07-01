@@ -53,8 +53,10 @@ PropertyContainer::PropertyContainer(ObjectInitializationFlags flags, const QStr
 ******************************************************************************/
 QString PropertyContainer::objectTitle() const
 {
-    if(!title().isEmpty()) return title();
-    return DataObject::objectTitle();
+    if(!title().isEmpty())
+        return title();
+    else
+        return DataObject::objectTitle();
 }
 
 /******************************************************************************
@@ -94,20 +96,92 @@ const PropertyObject* PropertyContainer::expectProperty(const QString& propertyN
 }
 
 /******************************************************************************
+* Duplicates and replaces the given property with its copy if it not exclusively
+* owned by this container or is being accessed from Python. If a copy is being
+* made, the payload data of the PropertyObject is NOT copied over.
+* This method offers a performance benefit in situations where the calling code is going to
+* completely overwrite the data in the mutable property with new values.
+******************************************************************************/
+PropertyObject* PropertyContainer::makePropertyMutable(const PropertyObject* property, DataBuffer::BufferInitialization cloneMode, bool ignorePythonAccess)
+{
+    OVITO_CHECK_OBJECT_POINTER(this);
+    OVITO_ASSERT(!property || properties().contains(property));
+
+    // Always clone property if its memory is currently being accessed from Python code.
+    // That's required, because Python value holders are not strong DataOORefs protecting the property object from changes.
+    if(property && ((property->isBeingAccessedFromPython() && !ignorePythonAccess) || !isSafeToModifySubObject(property))) {
+        DataOORef<PropertyObject> clone;
+        if(cloneMode == DataBuffer::Initialized) {
+            clone = CloneHelper::cloneSingleObject(property, false);
+        }
+        else {
+            // Custom clone implementation, which copies only the metadata but not the contents of the original property.
+            clone = DataOORef<PropertyObject>::create(
+                ObjectInitializationFlag::DontInitializeObject, DataBuffer::Uninitialized, property->size(), property->dataType(),
+                property->componentCount(), property->name(), property->type(), property->componentNames());
+            {
+                UndoSuspender noUndo;
+                clone->setVisElements(property->visElements());
+                clone->setElementTypes(property->elementTypes());
+                clone->setTitle(property->title());
+                clone->setDataSource(property->dataSource());
+            }
+        }
+        replaceReferencesTo(property, clone);
+        OVITO_ASSERT(hasReferenceTo(clone));
+        OVITO_ASSERT(!hasReferenceTo(property));
+        property = clone;
+    }
+
+    return const_cast<PropertyObject*>(property);
+}
+
+/******************************************************************************
+* Duplicates and replaces the given property with its copy if it not exclusively
+* owned by this container or is being accessed from Python. This method is
+* similar to the DataObject::makeMutable() method, but won't copy the contents
+* of the PropertyObject nor allocate memory for the new array.
+******************************************************************************/
+PropertyObject* PropertyContainer::makePropertyMutableUnallocated(const PropertyObject* property)
+{
+    OVITO_CHECK_OBJECT_POINTER(this);
+    OVITO_CHECK_OBJECT_POINTER(property);
+
+    // Always clone property if it is currently being accessed from Python code.
+    // That's required, because Python code never holds a strong DataOORef to the property object.
+    if(property->isBeingAccessedFromPython() || !isSafeToModifySubObject(property)) {
+        // Custom clone implementation, which copies only the metadata but not the contents of the original property.
+        DataOORef<PropertyObject> clone = DataOORef<PropertyObject>::create(
+                ObjectInitializationFlag::DontInitializeObject, DataBuffer::Uninitialized, 0, property->dataType(),
+                property->componentCount(), property->name(), property->type(), property->componentNames());
+        {
+            UndoSuspender noUndo;
+            clone->setVisElements(property->visElements());
+            clone->setElementTypes(property->elementTypes());
+            clone->setTitle(property->title());
+            clone->setDataSource(property->dataSource());
+        }
+        replaceReferencesTo(property, clone);
+        OVITO_ASSERT(hasReferenceTo(clone));
+        OVITO_ASSERT(!hasReferenceTo(property));
+        property = clone;
+    }
+
+    return const_cast<PropertyObject*>(property);
+}
+
+/******************************************************************************
 * Duplicates any property objects that are shared with other containers or being accessed from Python.
 * After this method returns, all property objects are exclusively owned by the container and
 * can be safely modified without unwanted side effects.
 ******************************************************************************/
 void PropertyContainer::makePropertiesMutableInternal()
 {
+    OVITO_CHECK_OBJECT_POINTER(this);
+    OVITO_ASSERT(isSafeToModify());
+
     for(const PropertyObject* property : properties()) {
-        if(property->isBeingAccessedFromPython()) {
-            OORef<PropertyObject> clone = CloneHelper().cloneObject(property, false);
-            replaceReferencesTo(property, std::move(clone));
-        }
-        else {
-            makeMutable(property);
-        }
+        makePropertyMutable(property, DataBuffer::Initialized);
     }
 }
 
@@ -117,16 +191,49 @@ void PropertyContainer::makePropertiesMutableInternal()
 ******************************************************************************/
 void PropertyContainer::setElementCount(size_t count)
 {
-    if(count == elementCount())
-        return;
+    OVITO_CHECK_OBJECT_POINTER(this);
+    OVITO_ASSERT(isSafeToModify());
 
-    // Make sure the property arrays can be safely modified, then resize each array.
-    makePropertiesMutableInternal();
-    for(const PropertyObject* prop : properties())
-        const_cast<PropertyObject*>(prop)->resize(count, true);
+    if(count != elementCount()) {
+
+        // Resize each property array in the container.
+        for(OORef<const PropertyObject> property : properties()) {
+            makePropertyMutableUnallocated(property)->resizeCopyFrom(count, *property);
+        }
+
+        // Update internal element counter.
+        _elementCount.set(this, PROPERTY_FIELD(elementCount), count);
+    }
+
+#ifdef OVITO_DEBUG
+    verifyIntegrity();
+#endif
+}
+
+/******************************************************************************
+* Clones all properties in the container and newly allocates memory for all property arrays, possibly with a
+* different element count than before. It's the callers responsibility to initialize the new property arrays.
+******************************************************************************/
+std::vector<std::pair<ConstPropertyPtr, PropertyObject*>> PropertyContainer::reallocateProperties(size_t numElements)
+{
+    std::vector<std::pair<ConstPropertyPtr, PropertyObject*>> result;
+
+    // Note: Using strong-ref ConstPropertyPtr here to force makePropertyMutableUnallocated() into cloning the property.
+    for(ConstPropertyPtr property : properties()) {
+        PropertyObject* newProperty = makePropertyMutableUnallocated(property);
+        OVITO_ASSERT(newProperty != property);
+        newProperty->resize(numElements, false);
+        result.emplace_back(std::move(property), newProperty);
+    }
 
     // Update internal element counter.
-    _elementCount.set(this, PROPERTY_FIELD(elementCount), count);
+    _elementCount.set(this, PROPERTY_FIELD(elementCount), numElements);
+
+#ifdef OVITO_DEBUG
+    verifyIntegrity();
+#endif
+
+    return result;
 }
 
 /******************************************************************************
@@ -136,53 +243,28 @@ void PropertyContainer::setElementCount(size_t count)
 size_t PropertyContainer::deleteElements(const boost::dynamic_bitset<>& mask)
 {
     OVITO_ASSERT(mask.size() == elementCount());
+    OVITO_CHECK_OBJECT_POINTER(this);
+    OVITO_ASSERT(isSafeToModify());
 
-    size_t deleteCount = mask.count();
-    size_t oldElementCount = elementCount();
-    size_t newElementCount = oldElementCount - deleteCount;
+    const size_t deleteCount = mask.count();
     if(deleteCount == 0)
         return 0;   // Nothing to delete.
 
-    // Make sure the property arrays can be safely modified.
+    const size_t newElementCount = elementCount() - deleteCount;
+
     // Filter the property arrays and reduce their lengths.
-    makePropertiesMutableInternal();
-    for(const PropertyObject* property : properties()) {
-        const_cast<PropertyObject*>(property)->filterResize(mask);
-        OVITO_ASSERT(property->size() == newElementCount);
+    for(OORef<const PropertyObject> property : properties()) {
+        makePropertyMutableUnallocated(property)->filterResizeCopyFrom(newElementCount, mask, *property);
     }
 
     // Update internal element counter.
     _elementCount.set(this, PROPERTY_FIELD(elementCount), newElementCount);
+
+#ifdef OVITO_DEBUG
+    verifyIntegrity();
+#endif
 
     return deleteCount;
-}
-
-/******************************************************************************
-* Removes those data elements for which the bits are set in the given bitmask
-* array by moving data from the back of the array into the free slots.
-* This method is potentially faster than deleteElements() if only few elements are to be deleted.
-* However, the ordering of the remaining elements is NOT preserved.
-******************************************************************************/
-void PropertyContainer::deleteElementsReordering(const boost::dynamic_bitset<>& mask)
-{
-    OVITO_ASSERT(mask.size() == elementCount());
-
-    // Make sure the property arrays can be safely modified.
-    // Filter the property arrays and reduce their lengths.
-    makePropertiesMutableInternal();
-    for(const PropertyObject* property : properties()) {
-        const_cast<PropertyObject*>(property)->filterResizeReordering(mask);
-        OVITO_ASSERT(property->size() == elementCount() - mask.count());
-    }
-
-    size_t newElementCount;
-    if(properties().empty())
-        newElementCount = elementCount() - mask.count();
-    else
-        newElementCount = properties().front()->size();
-
-    // Update internal element counter.
-    _elementCount.set(this, PROPERTY_FIELD(elementCount), newElementCount);
 }
 
 /******************************************************************************
@@ -205,17 +287,7 @@ PropertyObject* PropertyContainer::createProperty(DataBuffer::BufferInitializati
     // Check if property already exists in the output.
     if(const PropertyObject* existingProperty = getProperty(typeId)) {
         OVITO_ASSERT(existingProperty->size() == elementCount());
-        if(existingProperty->isSafeToModify())
-            return const_cast<PropertyObject*>(existingProperty);
-        if(init == DataBuffer::Initialized)
-            return makeMutable(existingProperty);
-
-        // If no memory initialization is requested, create a new PropertyObject from scratch and just adopt
-        // the existing ElementType list to save time.
-        PropertyPtr newProperty = getOOMetaClass().createStandardProperty(DataBuffer::Uninitialized, elementCount(), typeId, containerPath);
-        newProperty->setElementTypes(existingProperty->elementTypes());
-        replaceReferencesTo(existingProperty, newProperty);
-        return newProperty;
+        return makePropertyMutable(existingProperty, init);
     }
     else {
         // Create a new property object.
@@ -238,15 +310,12 @@ PropertyObject* PropertyContainer::createProperty(DataBuffer::BufferInitializati
 
     // Check if property already exists in the output.
     if(existingProperty) {
+        OVITO_ASSERT(existingProperty->size() == elementCount());
         if(existingProperty->dataType() != dataType)
             throw Exception(tr("Existing property '%1' has a different data type.").arg(name));
         if(existingProperty->componentCount() != componentCount)
             throw Exception(tr("Existing property '%1' has a different number of components.").arg(name));
-
-        PropertyObject* newProperty = makeMutable(existingProperty);
-        OVITO_ASSERT(newProperty->isSafeToModify());
-        OVITO_ASSERT(newProperty->size() == elementCount());
-        return newProperty;
+        return makePropertyMutable(existingProperty, init);
     }
     else {
         // Create a new property object.
@@ -333,21 +402,19 @@ void PropertyContainer::setContent(size_t newElementCount, const DataRefVector<P
 * Duplicates all data elements by extensing the property arrays and
 * replicating the existing data N times.
 ******************************************************************************/
-void PropertyContainer::replicate(size_t n, bool replicatePropertyValues)
+void PropertyContainer::replicate(size_t n)
 {
     OVITO_ASSERT(n >= 1);
-    if(n <= 1) return;
+    if(n <= 1)
+        return;
 
     size_t newCount = elementCount() * n;
     if(newCount / n != elementCount())
         throw Exception(tr("Replicate operation failed: Maximum number of elements exceeded."));
 
-    // Make sure the property arrays can be safely modified and replicate the values in each of them.
-    makePropertiesMutableInternal();
-    for(const PropertyObject* property : properties())
-        const_cast<PropertyObject*>(property)->replicate(n, replicatePropertyValues);
-
-    setElementCount(newCount);
+    for(auto [oldProperty, newProperty] : reallocateProperties(newCount)) {
+        newProperty->replicateFrom(n, *oldProperty);
+    }
 }
 
 /******************************************************************************
@@ -361,7 +428,7 @@ std::vector<size_t> PropertyContainer::sortById()
 #endif
     if(!getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty))
         return {};
-    BufferAccess<const IdentifierIntType> ids = getProperty(PropertyObject::GenericIdentifierProperty);
+    BufferReadAccess<IdentifierIntType> ids = getProperty(PropertyObject::GenericIdentifierProperty);
     if(!ids)
         return {};
 
@@ -384,7 +451,7 @@ std::vector<size_t> PropertyContainer::sortById()
         const_cast<PropertyObject*>(prop)->reorderElements(permutation);
     }
 
-    OVITO_ASSERT(boost::range::is_sorted(BufferAccess<const IdentifierIntType>(getProperty(PropertyObject::GenericIdentifierProperty)).range()));
+    OVITO_ASSERT(boost::range::is_sorted(BufferReadAccess<IdentifierIntType>(getProperty(PropertyObject::GenericIdentifierProperty)).range()));
 
     return invertedPermutation;
 }
@@ -425,8 +492,10 @@ void PropertyContainer::loadFromStream(ObjectLoadStream& stream)
         stream.expectChunk(0x01);
         bool excludeRecomputableData;
         stream >> excludeRecomputableData;
-        if(excludeRecomputableData)
-            setElementCount(0);
+        if(excludeRecomputableData) {
+            // Reset internal element counter.
+            _elementCount.set(this, PROPERTY_FIELD(elementCount), 0);
+        }
         stream.closeChunk();
     }
     // This is needed only for backward compatibility with early dev builds of OVITO 3.0:
@@ -442,7 +511,7 @@ void PropertyContainer::loadFromStreamComplete(ObjectLoadStream& stream)
     DataObject::loadFromStreamComplete(stream);
 
     // For backward compatibility with old OVITO versions.
-    // Make sure size of deserialized property arrays is consistent.
+    // Make sure sizes of deserialized property arrays are consistent.
     if(stream.formatVersion() < 30004) {
         for(const PropertyObject* property : properties()) {
             if(property->size() != elementCount()) {
@@ -497,7 +566,7 @@ QString PropertyContainer::elementInfoString(size_t elementIndex, const ConstDat
         str += property->name().toHtmlEscaped();
         str += QStringLiteral(":</key> <val>");
         if(property->dataType() == PropertyObject::Int32) {
-            BufferAccess<const int*> data(property);
+            BufferReadAccess<int*> data(property);
             for(size_t component = 0; component < data.componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(", ");
                 str += QString::number(data.get(elementIndex, component));
@@ -510,21 +579,21 @@ QString PropertyContainer::elementInfoString(size_t elementIndex, const ConstDat
             }
         }
         else if(property->dataType() == PropertyObject::Int64) {
-            BufferAccess<const int64_t*> data(property);
+            BufferReadAccess<int64_t*> data(property);
             for(size_t component = 0; component < property->componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(", ");
                 str += QString::number(data.get(elementIndex, component));
             }
         }
         else if(property->dataType() == PropertyObject::Float32) {
-            BufferAccess<const float*> data(property);
+            BufferReadAccess<float*> data(property);
             for(size_t component = 0; component < property->componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(", ");
                 str += QString::number(data.get(elementIndex, component));
             }
         }
         else if(property->dataType() == PropertyObject::Float64) {
-            BufferAccess<const double*> data(property);
+            BufferReadAccess<double*> data(property);
             for(size_t component = 0; component < property->componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(", ");
                 str += QString::number(data.get(elementIndex, component));

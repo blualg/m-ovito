@@ -111,7 +111,7 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
 
     // Create line primitive for the coordinate axis arrows.
     if(!_orientationTripodGeometry.colors()) {
-        BufferAccessAndRef<ColorAG> vertexColors = DataBufferPtr::create(18, DataBuffer::FloatGraphics, 4);
+        BufferFactory<ColorAG> vertexColors(18);
         std::fill(vertexColors.begin() + 0,  vertexColors.begin() + 6,  axisColors[0].toDataType<GraphicsFloatType>());
         std::fill(vertexColors.begin() + 6,  vertexColors.begin() + 12, axisColors[1].toDataType<GraphicsFloatType>());
         std::fill(vertexColors.begin() + 12, vertexColors.end(),        axisColors[2].toDataType<GraphicsFloatType>());
@@ -119,7 +119,7 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
     }
 
     // Update geometry of coordinate axis arrows.
-    BufferAccessAndRef<Point3G> vertices = DataBufferPtr::create(18, DataBuffer::FloatGraphics, 3);
+    BufferFactory<Point3G> vertices(18);
     for(size_t axis = 0, index = 0; axis < 3; axis++) {
         Vector3G dir = viewport()->projectionParams().viewMatrix.column(axis).normalized().toDataType<GraphicsFloatType>();
         vertices[index++] = Point3G::Origin();

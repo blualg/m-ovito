@@ -73,11 +73,11 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataBu
         // Certain standard properties need to be initialized with default values determined by the attached visual elements.
         if(type == ColorProperty) {
             if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(containerPath[containerPath.size()-2])) {
-                BufferAccess<const ColorG> regionColorProperty = surfaceMesh->regions()->getProperty(SurfaceMeshRegions::ColorProperty);
-                BufferAccess<const int32_t> faceRegionProperty = surfaceMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
+                BufferReadAccess<ColorG> regionColorProperty = surfaceMesh->regions()->getProperty(SurfaceMeshRegions::ColorProperty);
+                BufferReadAccess<int32_t> faceRegionProperty = surfaceMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
                 if(regionColorProperty && faceRegionProperty && faceRegionProperty.size() == elementCount) {
                     // Inherit face colors from regions.
-                    boost::transform(faceRegionProperty, BufferAccess<ColorG>(property).begin(),
+                    boost::transform(faceRegionProperty, BufferWriteAccess<ColorG, access_mode::discard_write>(property).begin(),
                         [&](int region) { return (region >= 0 && region < regionColorProperty.size()) ? regionColorProperty[region] : ColorG(1,1,1); });
                     init = DataBuffer::Uninitialized;
                 }
@@ -148,7 +148,7 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshFaces::getVectorVi
         using CacheKey = RendererResourceKey<struct SurfaceMeshFacesCentroidsCache, ConstDataObjectRef, ConstDataObjectRef>;
         auto& [basePositions, vectorProperty] = visCache.get<std::tuple<ConstDataBufferPtr,ConstDataBufferPtr>>(CacheKey(mesh, path.lastAs<DataBuffer>()));
         if(!basePositions) {
-            BufferAccessAndRef<Vector3> filteredVectors;
+            BufferWriteAccessAndRef<Vector3, access_mode::write> filteredVectors;
             vectorProperty = path.lastAs<DataBuffer>();
             if(vectorProperty && vectorProperty->componentCount() == 3) {
                 OVITO_ASSERT(vectorProperty->dataType() == PropertyObject::FloatDefault);
@@ -164,8 +164,8 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshFaces::getVectorVi
 
             // Compute face centroids.
             const SurfaceMeshReadAccess meshAccess(mesh);
-            BufferAccess<const Point3> vertexPositions(meshAccess.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
-            BufferAccessAndRef<Point3> centroids = DataBufferPtr::create(mesh->faces()->elementCount(), DataBuffer::FloatDefault, 3);
+            BufferReadAccess<Point3> vertexPositions(meshAccess.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+            BufferFactory<Point3> centroids(mesh->faces()->elementCount());
             for(SurfaceMesh::face_index face : mesh->topology()->facesRange()) {
                 Vector3 c = Vector3::Zero();
                 Vector3 com = Vector3::Zero();

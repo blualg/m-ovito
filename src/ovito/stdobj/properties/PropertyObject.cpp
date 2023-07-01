@@ -52,6 +52,15 @@ PropertyObject::PropertyObject(ObjectInitializationFlags flags, BufferInitializa
     setIdentifier(name);
 }
 
+#ifdef OVITO_DEBUG
+/******************************************************************************
+* Destructor.
+******************************************************************************/
+PropertyObject::~PropertyObject()
+{
+}
+#endif
+
 /******************************************************************************
 * Creates a copy of a property object.
 ******************************************************************************/
@@ -68,6 +77,16 @@ OORef<RefTarget> PropertyObject::clone(bool deepCopy, CloneHelper& cloneHelper) 
     clone->_name = _name;
     OVITO_ASSERT(clone->identifier() == clone->name());
     finishReadAccess();
+
+#ifdef OVITO_USE_SYCL
+    if(isBeingAccessedFromPython()) {
+        // Force flush SYCL queue to complete the memcpy to the cloned data buffer now.
+        // That's needed because Python code may be performing subsequent writes to the old memory buffer that will go unnoticed by
+        // SYCL. We need to make sure these happen after the memcpy is completed, because a direct write access to the array should never
+        // affect the cloned property.
+        RawBufferReadAccess{clone};
+    }
+#endif
 
     return clone;
 }
@@ -186,35 +205,6 @@ bool PropertyObject::equals(const PropertyObject& other) const
 }
 
 /******************************************************************************
-* Puts the property array into a writable state.
-* In the writable state, the Python binding layer will allow write access
-* to the property's internal data.
-******************************************************************************/
-void PropertyObject::makeWritableFromPython()
-{
-    OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
-
-    if(!isSafeToModify())
-        throw Exception(tr("Modifying the data values stored in this property is not allowed, because the Property object currently is shared by more than one PropertyContainer or DataCollection. "
-                        "Please explicitly request a mutable version of the property using the '_' notation or by calling the DataObject.make_mutable() method on its parent container. "
-                        "See the documentation of this method for further information on OVITO's data model and the shared-ownership system."));
-    _isWritableFromPython++;
-}
-
-/******************************************************************************
-* Puts the property array back into the default read-only state.
-* In the read-only state, the Python binding layer will not permit write
-* access to the property's internal data.
-******************************************************************************/
-void PropertyObject::makeReadOnlyFromPython()
-{
-    OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
-
-    OVITO_ASSERT(_isWritableFromPython > 0);
-    _isWritableFromPython--;
-}
-
-/******************************************************************************
 * Helper method that remaps the existing type IDs to a contiguous range starting at the given
 * base ID. This method is mainly used for file output, because some file formats
 * work with numeric particle types only, which must form a contiguous range.
@@ -232,7 +222,7 @@ std::tuple<std::map<int,int>, ConstPropertyPtr> PropertyObject::generateContiguo
         typeIds.insert(t->numericId());
 
     // Add ID values that occur in the property array but which have not been defined as a type.
-    for(int32_t t : BufferAccess<const int32_t>(this))
+    for(auto t : BufferReadAccess<int32_t>(this))
         typeIds.insert(t);
 
     // Build the mappings between old and new IDs.
@@ -249,8 +239,8 @@ std::tuple<std::map<int,int>, ConstPropertyPtr> PropertyObject::generateContiguo
     ConstPropertyPtr remappedArray;
     if(remappingRequired) {
         // Make a copy of this property, which can be modified.
-        PropertyPtr copy = CloneHelper().cloneObject(this, false);
-        for(auto& id : BufferAccess<int32_t>(copy))
+        PropertyPtr copy = CloneHelper::cloneSingleObject(this, false);
+        for(auto& id : BufferWriteAccess<int32_t, access_mode::discard_write>(copy))
             id = oldToNewMap[id];
         remappedArray = std::move(copy);
     }

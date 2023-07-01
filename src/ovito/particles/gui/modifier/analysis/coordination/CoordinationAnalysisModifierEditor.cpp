@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -102,8 +102,8 @@ void CoordinationAnalysisModifierEditor::plotRDF()
     // Determine X plotting range.
     if(table) {
         ConstPropertyPtr x = table->getXValues();
-        BufferAccessAndRef<const FloatType>  rdfXArray(x);
-        BufferAccessAndRef<const FloatType*> rdfYArray(table->y());
+        BufferReadAccessAndRef<FloatType>  rdfXArray(x);
+        BufferReadAccessAndRef<FloatType*> rdfYArray(table->y());
         double minX = 0;
         for(size_t i = 0; i < rdfYArray.size(); i++) {
             for(size_t cmpnt = 0; cmpnt < rdfYArray.componentCount(); cmpnt++) {

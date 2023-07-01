@@ -111,7 +111,7 @@ public:
     DataCollection* mutableData();
 
     const DataCollection* data() const { return _data.get(); }
-    
+
     void setData(const DataCollection* data) { _data = data; }
     void setData(DataOORef<const DataCollection> data) { _data = std::move(data); }
 
@@ -347,14 +347,14 @@ public:
     }
 
     /// Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
-    DataObject* makeMutable(const DataObject* obj, bool deepCopy = false) {
-        return mutableData()->makeMutable(obj, deepCopy);
+    DataObject* makeMutable(const DataObject* obj) {
+        return mutableData()->makeMutable(obj);
     }
 
     /// Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
     template<class DataObjectClass>
-    DataObjectClass* makeMutable(const DataObjectClass* obj, bool deepCopy = false) {
-        return mutableData()->makeMutable<DataObjectClass>(obj, deepCopy);
+    DataObjectClass* makeMutable(const DataObjectClass* obj) {
+        return mutableData()->makeMutable<DataObjectClass>(obj);
     }
 
     /// Ensures that a DataObject from this flow state is not shared with others and is safe to modify.

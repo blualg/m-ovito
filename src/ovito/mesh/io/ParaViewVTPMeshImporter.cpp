@@ -161,8 +161,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             }
             // Copy point coordinates from temporary array to surface mesh data structure.
             OVITO_ASSERT(property->size() + vertexBaseIndex == meshBuilder.vertexCount());
-            BufferAccess<Point3> vertexPositions(meshBuilder.mutableVertices()->expectMutableProperty(SurfaceMeshVertices::PositionProperty));
-            boost::copy(BufferAccess<const Point3>(property), std::next(vertexPositions.begin(), vertexBaseIndex));
+            meshBuilder.mutableVertices()->expectMutableProperty(SurfaceMeshVertices::PositionProperty, vertexBaseIndex == 0 ? DataBuffer::Uninitialized : DataBuffer::Initialized)->copyRangeFrom(*property, 0, vertexBaseIndex, property->size());
             xml.skipCurrentElement();
         }
         else if(xml.name().compare(QStringLiteral("Polys")) == 0) {
@@ -192,13 +191,13 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             }
 
             // Shift vertex indices in the array by base vertex offset.
-            BufferAccess<SurfaceMesh::vertex_index> vertexIndices(connectivityArray);
+            BufferWriteAccess<SurfaceMesh::vertex_index, access_mode::read_write> vertexIndices(connectivityArray);
             if(vertexBaseIndex != 0)
                 for(SurfaceMesh::vertex_index& idx : vertexIndices) idx += vertexBaseIndex;
 
             // Go through the connectivity and the offsets arrays and create corresponding faces in the output mesh.
             int previousOffset = 0;
-            for(int offset : BufferAccess<const int32_t>(offsetsArray)) {
+            for(int offset : BufferReadAccess<int32_t>(offsetsArray)) {
                 if(offset < previousOffset + 3 || offset > vertexIndices.size()) {
                     xml.raiseError(tr("Invalid or inconsistent connectivity information in <Polys> element."));
                     break;
@@ -583,35 +582,36 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamRe
     auto copyValuesToBuffer = [&](auto srcData) {
         const auto begin = srcData;
         const auto end = begin + elementCount * numComponents;
+        bool discardExistingData = (destBaseIndex == 0);
         if(buffer->dataType() == PropertyObject::Float32) {
             if(vectorComponent == -1)
-                std::copy(begin, end, std::next(BufferAccess<float*>(buffer).begin(), destBaseIndex * buffer->componentCount()));
+                std::copy(begin, end, std::next(BufferWriteAccess<float*, access_mode::write>(buffer, discardExistingData).begin(), destBaseIndex * buffer->componentCount()));
             else
-                std::copy(begin, end, std::next(std::begin(BufferAccess<float*>(buffer).componentRange(vectorComponent)), destBaseIndex));
+                std::copy(begin, end, std::next(std::begin(BufferWriteAccess<float*, access_mode::write>(buffer, discardExistingData).componentRange(vectorComponent)), destBaseIndex));
         }
         else if(buffer->dataType() == PropertyObject::Float64) {
             if(vectorComponent == -1)
-                std::copy(begin, end, std::next(BufferAccess<double*>(buffer).begin(), destBaseIndex * buffer->componentCount()));
+                std::copy(begin, end, std::next(BufferWriteAccess<double*, access_mode::write>(buffer, discardExistingData).begin(), destBaseIndex * buffer->componentCount()));
             else
-                std::copy(begin, end, std::next(std::begin(BufferAccess<double*>(buffer).componentRange(vectorComponent)), destBaseIndex));
+                std::copy(begin, end, std::next(std::begin(BufferWriteAccess<double*, access_mode::write>(buffer, discardExistingData).componentRange(vectorComponent)), destBaseIndex));
         }
         else if(buffer->dataType() == PropertyObject::Int8) {
             if(vectorComponent == -1)
-                std::copy(begin, end, std::next(BufferAccess<int8_t*>(buffer).begin(), destBaseIndex * buffer->componentCount()));
+                std::copy(begin, end, std::next(BufferWriteAccess<int8_t*, access_mode::write>(buffer, discardExistingData).begin(), destBaseIndex * buffer->componentCount()));
             else
-                std::copy(begin, end, std::next(std::begin(BufferAccess<int8_t*>(buffer).componentRange(vectorComponent)), destBaseIndex));
+                std::copy(begin, end, std::next(std::begin(BufferWriteAccess<int8_t*, access_mode::write>(buffer, discardExistingData).componentRange(vectorComponent)), destBaseIndex));
         }
         else if(buffer->dataType() == PropertyObject::Int32) {
             if(vectorComponent == -1)
-                std::copy(begin, end, std::next(BufferAccess<int32_t*>(buffer).begin(), destBaseIndex * buffer->componentCount()));
+                std::copy(begin, end, std::next(BufferWriteAccess<int32_t*, access_mode::write>(buffer, discardExistingData).begin(), destBaseIndex * buffer->componentCount()));
             else
-                std::copy(begin, end, std::next(std::begin(BufferAccess<int32_t*>(buffer).componentRange(vectorComponent)), destBaseIndex));
+                std::copy(begin, end, std::next(std::begin(BufferWriteAccess<int32_t*, access_mode::write>(buffer, discardExistingData).componentRange(vectorComponent)), destBaseIndex));
         }
         else if(buffer->dataType() == PropertyObject::Int64) {
             if(vectorComponent == -1)
-                std::copy(begin, end, std::next(BufferAccess<int64_t*>(buffer).begin(), destBaseIndex * buffer->componentCount()));
+                std::copy(begin, end, std::next(BufferWriteAccess<int64_t*, access_mode::write>(buffer, discardExistingData).begin(), destBaseIndex * buffer->componentCount()));
             else
-                std::copy(begin, end, std::next(std::begin(BufferAccess<int64_t*>(buffer).componentRange(vectorComponent)), destBaseIndex));
+                std::copy(begin, end, std::next(std::begin(BufferWriteAccess<int64_t*, access_mode::write>(buffer, discardExistingData).componentRange(vectorComponent)), destBaseIndex));
         }
         else OVITO_ASSERT(false);
     };

@@ -293,8 +293,8 @@ template<class T, class U> OORef<T> const_pointer_cast(const OORef<U>& p) noexce
 template<class T, class U> OORef<T> const_pointer_cast(OORef<U>&& p) noexcept
 {
     OORef<T> result;
-    result.px = const_cast<T*>(p.get());
-    p.px = nullptr;
+    result.px = const_cast<T*>(std::exchange(p.px, nullptr));
+    OVITO_ASSERT(!p.px);
     return result;
 }
 

@@ -200,7 +200,7 @@ void ParcasFileImporter::FrameLoader::loadFile()
     state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(simu_time), dataSource());
 
     // Create particle properties for extra fields.
-    std::vector<BufferAccess<FloatType>> extraProperties;
+    std::vector<BufferWriteAccess<FloatType, access_mode::discard_write>> extraProperties;
     for(int i = 0; i < fields; i++) {
         char field_name[5], field_unit[5];
         stream.read(field_name, 4);
@@ -236,9 +236,9 @@ void ParcasFileImporter::FrameLoader::loadFile()
     simulationCell()->setPbcFlags(box_x < 0, box_y < 0, box_z < 0);
 
     // Create the required standard properties.
-    BufferAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+    BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
     PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-    BufferAccess<int64_t> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty);
+    BufferWriteAccess<int64_t, access_mode::discard_write> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty);
 
     // Create particle types list.
     std::vector<std::array<char,5>> types(maxtype - mintype + 1);
@@ -260,7 +260,7 @@ void ParcasFileImporter::FrameLoader::loadFile()
     setProgressMaximum(numAtoms);
 
     // Parse atoms.
-    BufferAccess<int32_t> typeAccess(typeProperty);
+    BufferWriteAccess<int32_t, access_mode::discard_write> typeAccess(typeProperty);
     for(size_t i = 0; i < numAtoms; i++) {
 
         // Parse atom id.
@@ -284,11 +284,11 @@ void ParcasFileImporter::FrameLoader::loadFile()
 
         // Parse extra fields.
         if(realsize == 4) {
-            for(BufferAccess<FloatType>& prop : extraProperties)
+            for(auto& prop : extraProperties)
                 prop[i] = (FloatType)stream.get_real32();
         }
         else {
-            for(BufferAccess<FloatType>& prop : extraProperties)
+            for(auto& prop : extraProperties)
                 prop[i] = (FloatType)stream.get_real64();
         }
 

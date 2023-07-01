@@ -319,10 +319,10 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
     count[1] = atomsCount;
     count[2] = 3;
     if(posProperty->dataType() == DataBuffer::Float32) {
-        NCERR(nc_put_vara_float(_ncid, _coords_var, start, count, BufferAccess<const float*>(posProperty).cbegin()));
+        NCERR(nc_put_vara_float(_ncid, _coords_var, start, count, BufferReadAccess<float*>(posProperty).cbegin()));
     }
     else if(posProperty->dataType() == DataBuffer::Float64) {
-        NCERR(nc_put_vara_double(_ncid, _coords_var, start, count, BufferAccess<const double*>(posProperty).cbegin()));
+        NCERR(nc_put_vara_double(_ncid, _coords_var, start, count, BufferReadAccess<double*>(posProperty).cbegin()));
     }
     else {
         OVITO_ASSERT(false);
@@ -345,21 +345,21 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
         count[2] = outColumn.componentCount;
         if(outColumn.dataType == DataBuffer::Int8) {
             OVITO_STATIC_ASSERT(sizeof(int8_t) == sizeof(signed char));
-            NCERR(nc_put_vara_schar(_ncid, outColumn.ncvar, start, count, BufferAccess<const int8_t*>(prop).cbegin()));
+            NCERR(nc_put_vara_schar(_ncid, outColumn.ncvar, start, count, BufferReadAccess<int8_t*>(prop).cbegin()));
         }
         else if(outColumn.dataType == DataBuffer::Int32) {
             OVITO_STATIC_ASSERT(sizeof(int32_t) == sizeof(int));
-            NCERR(nc_put_vara_int(_ncid, outColumn.ncvar, start, count, BufferAccess<const int32_t*>(prop).cbegin()));
+            NCERR(nc_put_vara_int(_ncid, outColumn.ncvar, start, count, BufferReadAccess<int32_t*>(prop).cbegin()));
         }
         else if(outColumn.dataType == DataBuffer::Int64) {
             OVITO_STATIC_ASSERT(sizeof(long long int) == sizeof(int64_t));
-            NCERR(nc_put_vara_longlong(_ncid, outColumn.ncvar, start, count, reinterpret_cast<const qlonglong*>(BufferAccess<const int64_t*>(prop).cbegin())));
+            NCERR(nc_put_vara_longlong(_ncid, outColumn.ncvar, start, count, reinterpret_cast<const qlonglong*>(BufferReadAccess<int64_t*>(prop).cbegin())));
         }
         else if(outColumn.dataType == DataBuffer::Float32) {
-            NCERR(nc_put_vara_float(_ncid, outColumn.ncvar, start, count, BufferAccess<const float*>(prop).cbegin()));
+            NCERR(nc_put_vara_float(_ncid, outColumn.ncvar, start, count, BufferReadAccess<float*>(prop).cbegin()));
         }
         else if(outColumn.dataType == DataBuffer::Float64) {
-            NCERR(nc_put_vara_double(_ncid, outColumn.ncvar, start, count, BufferAccess<const double*>(prop).cbegin()));
+            NCERR(nc_put_vara_double(_ncid, outColumn.ncvar, start, count, BufferReadAccess<double*>(prop).cbegin()));
         }
 
         if(!operation.incrementProgressValue())

@@ -107,10 +107,10 @@ void CentroSymmetryModifier::CentroSymmetryEngine::perform()
         return;
 
     // Access output array.
-    BufferAccess<FloatType> cspArray(csp());
+    BufferWriteAccess<FloatType, access_mode::discard_read_write> cspArray(csp());
 
     // Perform analysis on each particle.
-    BufferAccess<const SelectionIntType> selectionData(selection());
+    BufferReadAccess<SelectionIntType> selectionData(selection());
     parallelForWithProgress(positions()->size(), [&](size_t index) {
         if(!selectionData || selectionData[index])
             cspArray[index] = computeCSP(neighFinder, index, _mode);
@@ -127,7 +127,7 @@ void CentroSymmetryModifier::CentroSymmetryEngine::perform()
 
     // Perform binning of CSP values.
     PropertyPtr histogramCounts = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, numHistogramBins, PropertyObject::Int64, 1, tr("Count"));
-    BufferAccess<int64_t> histogramAccess(histogramCounts);
+    BufferWriteAccess<int64_t, access_mode::read_write> histogramAccess(histogramCounts);
     const auto* sel = selectionData ? selectionData.begin() : nullptr;
     for(const FloatType cspValue : cspArray) {
         OVITO_ASSERT(cspValue >= 0);

@@ -50,7 +50,9 @@ public:
         VertexGrower(SurfaceMeshBuilder& builder) :
             PropertyContainer::Grower(builder.mutableVertices()),
             _topo(builder.mutableTopology()),
-            _vertexPositions(mutableProperty(SurfaceMeshVertices::PositionProperty)) {}
+            _vertexPositions(mutableProperty(SurfaceMeshVertices::PositionProperty)) {
+                OVITO_ASSERT(builder.mutableVertices()->properties().contains(static_object_cast<PropertyObject>(_vertexPositions.buffer())));
+        }
 
         void reset() {
             PropertyContainer::Grower::commit();
@@ -62,8 +64,8 @@ public:
         vertex_index createVertex(const Point3& p) {
             OVITO_ASSERT(_topo);
             vertex_index vertex = _topo->createVertex();
-            grow(1, SurfaceMeshVertices::PositionProperty);
-            _vertexPositions.updateDataStorageAddress();
+            if(grow(1, SurfaceMeshVertices::PositionProperty))
+                _vertexPositions.updateDataStorageAddress(vertex == 0);
             _vertexPositions[vertex] = p;
             return vertex;
         }
@@ -72,8 +74,8 @@ public:
         vertex_index copyVertex(vertex_index existingVertex) {
             OVITO_ASSERT(_topo);
             vertex_index vertex = _topo->createVertex();
-            grow(1, SurfaceMeshVertices::PositionProperty);
-            _vertexPositions.updateDataStorageAddress();
+            if(grow(1, SurfaceMeshVertices::PositionProperty))
+                _vertexPositions.updateDataStorageAddress(vertex == 0);
             moveElement(existingVertex, vertex, SurfaceMeshVertices::PositionProperty);
             return vertex;
         }
@@ -94,7 +96,7 @@ public:
 
     private:
         SurfaceMeshTopology* _topo;
-        BufferAccess<Point3> _vertexPositions;
+        BufferWriteAccess<Point3, access_mode::read_write> _vertexPositions;
     };
 
     /// Utility class that supports in efficiently and incrementally adding and removing faces to the surface mesh.
@@ -118,12 +120,12 @@ public:
         face_index createFace(VertexIterator begin, VertexIterator end, region_index region = InvalidIndex) {
             OVITO_ASSERT(_topo);
             face_index face = _topo->createFaceAndEdges(std::forward<VertexIterator>(begin), std::forward<VertexIterator>(end));
-            grow(1, SurfaceMeshFaces::RegionProperty);
-            if(_faceRegions) {
-                _faceRegions.updateDataStorageAddress();
+            if(grow(1, SurfaceMeshFaces::RegionProperty) && _faceRegions)
+                _faceRegions.updateDataStorageAddress(face == 0);
+            if(_faceRegions)
                 _faceRegions[face] = region;
-            }
-            else OVITO_ASSERT(region == InvalidIndex);
+            else
+                OVITO_ASSERT(region == InvalidIndex);
             return face;
         }
 
@@ -131,12 +133,12 @@ public:
         face_index createFace(region_index region = InvalidIndex) {
             OVITO_ASSERT(_topo);
             face_index face = _topo->createFace();
-            grow(1, SurfaceMeshFaces::RegionProperty);
-            if(_faceRegions) {
-                _faceRegions.updateDataStorageAddress();
+            if(grow(1, SurfaceMeshFaces::RegionProperty) && _faceRegions)
+                _faceRegions.updateDataStorageAddress(face == 0);
+            if(_faceRegions)
                 _faceRegions[face] = region;
-            }
-            else OVITO_ASSERT(region == InvalidIndex);
+            else
+                OVITO_ASSERT(region == InvalidIndex);
             return face;
         }
 
@@ -149,9 +151,8 @@ public:
         face_index copyFace(face_index existingFace) {
             OVITO_ASSERT(_topo);
             face_index face = _topo->createFace();
-            grow(1, SurfaceMeshFaces::RegionProperty);
-            if(_faceRegions)
-                _faceRegions.updateDataStorageAddress();
+            if(grow(1, SurfaceMeshFaces::RegionProperty) && _faceRegions)
+                _faceRegions.updateDataStorageAddress(face == 0);
             moveElement(existingFace, face, SurfaceMeshFaces::RegionProperty);
             return face;
         }
@@ -171,14 +172,14 @@ public:
         region_index faceRegion(face_index i) const { return _faceRegions[i]; }
 
         /// Provides direct access to the per-face region information.
-        const BufferAccess<region_index>& faceRegions() const { return _faceRegions; }
+        const BufferWriteAccess<region_index, access_mode::read_write>& faceRegions() const { return _faceRegions; }
 
         /// Provides direct access to the per-face region information.
-        BufferAccess<region_index>& faceRegions() { return _faceRegions; }
+        BufferWriteAccess<region_index, access_mode::read_write>& faceRegions() { return _faceRegions; }
 
     private:
         SurfaceMeshTopology* _topo;
-        BufferAccess<region_index> _faceRegions;
+        BufferWriteAccess<region_index, access_mode::read_write> _faceRegions;
     };
 
 public:
@@ -195,7 +196,10 @@ public:
     void clearMesh();
 
     /// Returns the mutable surface mesh object.
-    SurfaceMesh* mutableMesh() { return const_cast<SurfaceMesh*>(mesh()); }
+    SurfaceMesh* mutableMesh() {
+        OVITO_ASSERT(mesh()->isSafeToModify());
+        return const_cast<SurfaceMesh*>(mesh());
+    }
 
     /// Sets the index of the space-filling spatial region.
     void setSpaceFillingRegion(region_index region) { mutableMesh()->setSpaceFillingRegion(region); }
@@ -221,6 +225,8 @@ public:
             _mutableVertices = mutableMesh()->makeMutable(vertices());
             SurfaceMeshReadAccess::_vertices = _mutableVertices;
         }
+        OVITO_ASSERT(_mutableVertices->isSafeToModify());
+        OVITO_ASSERT(mutableMesh()->makeMutable(vertices()) == _mutableVertices);
         return _mutableVertices;
     }
 
@@ -230,6 +236,8 @@ public:
             _mutableFaces = mutableMesh()->makeMutable(faces());
             SurfaceMeshReadAccess::_faces = _mutableFaces;
         }
+        OVITO_ASSERT(_mutableFaces->isSafeToModify());
+        OVITO_ASSERT(mutableMesh()->makeMutable(faces()) == _mutableFaces);
         return _mutableFaces;
     }
 
@@ -239,6 +247,8 @@ public:
             _mutableRegions = mutableMesh()->makeMutable(regions());
             SurfaceMeshReadAccess::_regions = _mutableRegions;
         }
+        OVITO_ASSERT(_mutableRegions->isSafeToModify());
+        OVITO_ASSERT(mutableMesh()->makeMutable(regions()) == _mutableRegions);
         return _mutableRegions;
     }
 
@@ -259,34 +269,35 @@ public:
     vertex_index createVerticesRange(CoordinatesRange coordRange) {
         auto nverts = std::distance(std::begin(coordRange), std::end(coordRange));
         vertex_index startIndex = createVertices(nverts);
-        BufferAccess<Point3> vertexPositions(mutableVertexProperty(SurfaceMeshVertices::PositionProperty));
+        bool no_init = (startIndex == 0);
+        BufferWriteAccess<Point3, access_mode::write> vertexPositions(mutableVertexProperty(SurfaceMeshVertices::PositionProperty, no_init ? DataBuffer::Uninitialized : DataBuffer::Initialized), no_init);
         boost::copy(std::forward<CoordinatesRange>(coordRange), std::next(vertexPositions.begin(), startIndex));
         return startIndex;
     }
 
     /// Returns one of the standard vertex properties (or null if the property is not defined).
-    PropertyObject* mutableVertexProperty(SurfaceMeshVertices::Type ptype) {
-        return mutableVertices()->getMutableProperty(ptype);
+    PropertyObject* mutableVertexProperty(SurfaceMeshVertices::Type ptype, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
+        return mutableVertices()->getMutableProperty(ptype, cloneMode);
     }
 
     /// Returns one of the standard face properties (or null if the property is not defined).
-    PropertyObject* mutableFaceProperty(SurfaceMeshFaces::Type ptype) {
-        return mutableFaces()->getMutableProperty(ptype);
+    PropertyObject* mutableFaceProperty(SurfaceMeshFaces::Type ptype, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
+        return mutableFaces()->getMutableProperty(ptype, cloneMode);
     }
 
     /// Returns one of the standard region properties (or null if the property is not defined).
-    PropertyObject* mutableRegionProperty(SurfaceMeshRegions::Type ptype) {
-        return mutableRegions()->getMutableProperty(ptype);
+    PropertyObject* mutableRegionProperty(SurfaceMeshRegions::Type ptype, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
+        return mutableRegions()->getMutableProperty(ptype, cloneMode);
     }
 
     /// Returns a user vertex property (or null if the property is not defined).
-    PropertyObject* mutableVertexProperty(const QString& name) {
-        return mutableVertices()->getMutableProperty(name);
+    PropertyObject* mutableVertexProperty(const QString& name, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
+        return mutableVertices()->getMutableProperty(name, cloneMode);
     }
 
     /// Returns a user face property (or null if the property is not defined).
-    PropertyObject* mutableFaceProperty(const QString& name) {
-        return mutableFaces()->getMutableProperty(name);
+    PropertyObject* mutableFaceProperty(const QString& name, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
+        return mutableFaces()->getMutableProperty(name, cloneMode);
     }
 
     /// Attaches an existing property object to the vertices of the mesh.
@@ -382,7 +393,7 @@ public:
 
     /// Transforms all vertices of the mesh with the given affine transformation matrix.
     void transformVertices(const AffineTransformation tm) {
-        for(Point3& p : BufferAccess<Point3>(mutableVertexProperty(SurfaceMeshVertices::PositionProperty)))
+        for(Point3& p : BufferWriteAccess<Point3, access_mode::read_write>(mutableVertexProperty(SurfaceMeshVertices::PositionProperty)))
             p = tm * p;
     }
 

@@ -165,12 +165,11 @@ const DataObject* DataCollection::expectLeafObject(const DataObject::OOMetaClass
 /******************************************************************************
 * Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
 ******************************************************************************/
-DataObject* DataCollection::makeMutable(const DataObject* obj, bool deepCopy)
+DataObject* DataCollection::makeMutable(const DataObject* obj)
 {
-    OVITO_CHECK_OBJECT_POINTER(obj);
     OVITO_ASSERT(contains(obj));
-    if(!obj->isSafeToModify()) {
-        OORef<DataObject> clone = CloneHelper().cloneObject(obj, deepCopy);
+    if(!isSafeToModifySubObject(obj)) {
+        OORef<DataObject> clone = CloneHelper::cloneSingleObject(obj, false);
         DataObject* clonedObj = clone.get();
         if(replaceObject(obj, std::move(clone))) {
             OVITO_ASSERT(clonedObj->isSafeToModify());
@@ -548,7 +547,7 @@ AttributeDataObject* DataCollection::addAttribute(const QString& key, QVariant v
 }
 
 /******************************************************************************
-* Inserts a new global attribute into the pipeline state overwritting any 
+* Inserts a new global attribute into the pipeline state overwritting any
 * existing attribute with the same name.
 ******************************************************************************/
 AttributeDataObject* DataCollection::setAttribute(const QString& key, QVariant value, const PipelineObject* dataSource)

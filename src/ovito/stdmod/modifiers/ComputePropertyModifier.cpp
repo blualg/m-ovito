@@ -169,7 +169,7 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
     const PropertyObject* existingProperty = outputProperty().findInContainer(container);
     if(existingProperty && existingProperty->componentCount() == propertyComponentCount()) {
         // Copy existing data.
-        outp = CloneHelper().cloneObject(existingProperty, false);
+        outp = CloneHelper::cloneSingleObject(existingProperty, false);
 
         // Reset cached vis elements.
         if(myModApp)
@@ -178,10 +178,10 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
     else {
         // Allocate new data array.
         if(outputProperty().type() != PropertyObject::GenericUserProperty) {
-            outp = container->getOOMetaClass().createStandardProperty(onlySelectedElements() ? DataBuffer::Initialized : DataBuffer::Uninitialized, nelements, outputProperty().type(), objectPath);
+            outp = container->getOOMetaClass().createStandardProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, nelements, outputProperty().type(), objectPath);
         }
         else if(!outputProperty().name().isEmpty() && propertyComponentCount() > 0) {
-            outp = container->getOOMetaClass().createUserProperty(onlySelectedElements() ? DataBuffer::Initialized : DataBuffer::Uninitialized, nelements, PropertyObject::FloatDefault, propertyComponentCount(), outputProperty().name());
+            outp = container->getOOMetaClass().createUserProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, nelements, PropertyObject::FloatDefault, propertyComponentCount(), outputProperty().name());
         }
         else {
             throw Exception(tr("Output property of compute property modifier has not been specified."));
@@ -274,12 +274,12 @@ ComputePropertyModifierDelegate::PropertyComputeEngine::PropertyComputeEngine(
         int frameNumber,
         std::unique_ptr<PropertyExpressionEvaluator> evaluator) :
     AsynchronousModifier::Engine(request, validityInterval),
-    _selectionArray(selectionProperty),
+    _selection(selectionProperty),
     _expressions(std::move(expressions)),
     _frameNumber(frameNumber),
     _outputProperty(std::move(outputProperty)),
     _evaluator(std::move(evaluator)),
-    _outputArray(_outputProperty)
+    _outputArray(_outputProperty, !selectionProperty)
 {
     OVITO_ASSERT(_expressions.size() == this->outputProperty()->componentCount());
 
@@ -295,8 +295,10 @@ void ComputePropertyModifierDelegate::PropertyComputeEngine::perform()
     setProgressText(tr("Computing property '%1'").arg(outputProperty()->name()));
     setProgressMaximum(outputProperty()->size());
 
+    BufferReadAccess<SelectionIntType> selectionAccessor(selection());
+
     // Parallelized loop over all data elements.
-    parallelForChunksWithProgress(outputProperty()->size(), [this](size_t startIndex, size_t count, ProgressingTask& operation) {
+    parallelForChunksWithProgress(outputProperty()->size(), [this, &selectionAccessor](size_t startIndex, size_t count, ProgressingTask& operation) {
         PropertyExpressionEvaluator::Worker worker(*_evaluator);
 
         size_t endIndex = startIndex + count;
@@ -312,7 +314,7 @@ void ComputePropertyModifierDelegate::PropertyComputeEngine::perform()
                 return;
 
             // Skip unselected particles if requested.
-            if(selectionArray() && !selectionArray()[elementIndex])
+            if(selectionAccessor && !selectionAccessor[elementIndex])
                 continue;
 
             for(size_t component = 0; component < componentCount; component++) {

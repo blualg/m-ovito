@@ -120,7 +120,7 @@ void SimulationCellVis::renderWireframe(AnimationTime time, const SimulationCell
     // Check if we already have a valid rendering primitive that is up to date.
     if(!lineVertices) {
         // Depending on whether this cell is 3D or 2D, create a wireframe unit cube or unit square.
-        BufferAccessAndRef<Point3G> corners = DataBufferPtr::create(cell->is2D() ? 8 : 24, DataBuffer::FloatGraphics, 3);
+        BufferFactory<Point3G> corners(cell->is2D() ? 8 : 24);
         corners[0] = Point3G(0,0,0);
         corners[1] = Point3G(1,0,0);
         corners[2] = Point3G(1,0,0);
@@ -196,13 +196,13 @@ void SimulationCellVis::renderSolid(AnimationTime time, const SimulationCellObje
         visCache.edges.setUniformWidth(2 * cellLineWidth());
 
         // Create a data buffer for the box corner coordinates.
-        BufferAccessAndRef<Point3G> corners = DataBufferPtr::create(cell->is2D() ? 4 : 8, DataBuffer::FloatGraphics, 3);
+        BufferFactory<Point3G> corners(cell->is2D() ? 4 : 8);
 
         // Create a data buffer for the cylinder base points.
-        BufferAccessAndRef<Point3G> basePoints = DataBufferPtr::create(cell->is2D() ? 4 : 12, DataBuffer::FloatGraphics, 3);
+        BufferFactory<Point3G> basePoints(cell->is2D() ? 4 : 12);
 
         // Create a data buffer for the cylinder head points.
-        BufferAccessAndRef<Point3G> headPoints = DataBufferPtr::create(cell->is2D() ? 4 : 12, DataBuffer::FloatGraphics, 3);
+        BufferFactory<Point3G> headPoints(cell->is2D() ? 4 : 12);
 
         corners[0] = cell->cellOrigin().toDataType<GraphicsFloatType>();
         if(cell->is2D()) corners[0].z() = 0; // For 2D cells, implicitly set z-coordinate of origin to zero.

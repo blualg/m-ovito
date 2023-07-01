@@ -102,10 +102,10 @@ void CalculateDisplacementsModifier::DisplacementEngine::perform()
     if(!buildParticleMapping(true, false))
         return;
 
-    BufferAccess<Vector3> displacementsArray(displacements());
-    BufferAccess<FloatType> displacementMagnitudesArray(displacementMagnitudes());
-    BufferAccess<const Point3> positionsArray(positions());
-    BufferAccess<const Point3> refPositionsArray(refPositions());
+    BufferWriteAccess<Vector3, access_mode::discard_write> displacementsArray(displacements());
+    BufferWriteAccess<FloatType, access_mode::discard_write> displacementMagnitudesArray(displacementMagnitudes());
+    BufferReadAccess<Point3> positionsArray(positions());
+    BufferReadAccess<Point3> refPositionsArray(refPositions());
 
     // Compute displacement vectors.
     if(affineMapping() != NO_MAPPING) {
@@ -116,7 +116,8 @@ void CalculateDisplacementsModifier::DisplacementEngine::perform()
             auto index = currentToRefIndexMap().cbegin() + startIndex;
             const AffineTransformation& reduced_to_absolute = (affineMapping() == TO_REFERENCE_CELL) ? refCell()->matrix() : cell()->matrix();
             for(; count; --count, ++u, ++umag, ++p, ++index) {
-                if(task.isCanceled()) return;
+                if(task.isCanceled())
+                    return;
                 Point3 reduced_current_pos = cell()->inverseMatrix() * (*p);
                 Point3 reduced_reference_pos = refCell()->inverseMatrix() * refPositionsArray[*index];
                 Vector3 delta = reduced_current_pos - reduced_reference_pos;

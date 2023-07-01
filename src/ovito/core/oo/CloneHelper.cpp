@@ -65,4 +65,29 @@ RefTarget* CloneHelper::cloneObjectImpl(const RefTarget* obj, bool deepCopy)
     return _cloneTable.back().second;
 }
 
+/******************************************************************************
+* This creates a copy of a RefTarget.
+******************************************************************************/
+OORef<RefTarget> CloneHelper::cloneSingleObjectImpl(const RefTarget* obj, bool deepCopy)
+{
+    OVITO_ASSERT(ExecutionContext::current().isValid());
+
+    if(obj == nullptr)
+        return nullptr;
+
+    OVITO_CHECK_OBJECT_POINTER(obj);
+
+    // Never generate undo records for a cloning operation.
+    UndoSuspender noUndo;
+
+    CloneHelper tempHelper;
+    OORef<RefTarget> copy = obj->clone(deepCopy, tempHelper);
+    if(!copy)
+        throw Exception(QString("Object of class %1 cannot be cloned. It does not implement the clone() method.").arg(obj->getOOClass().name()));
+
+    OVITO_ASSERT_MSG(copy->getOOClass().isDerivedFrom(obj->getOOClass()), "CloneHelper::cloneSingleObject", qPrintable(QString("The clone method of class %1 did not return a compatible class instance.").arg(obj->getOOClass().name())));
+
+    return copy;
+}
+
 }   // End of namespace

@@ -215,7 +215,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
                 // Extract brightness values from rendered image.
                 const QImage& image = frameBuffer.image();
                 OVITO_ASSERT(!image.isNull());
-                BufferAccess<FloatType> brightnessValues(brightness());
+                BufferWriteAccess<FloatType, access_mode::read_write> brightnessValues(brightness());
                 for(int y = 0; y < _resolution; y++) {
                     const QRgb* pixel = reinterpret_cast<const QRgb*>(image.scanLine(y));
                     for(int x = 0; x < _resolution; x++, ++pixel) {
@@ -247,8 +247,8 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
         setProgressValue(_samplingCount);
 
         // Normalize brightness values by particle area.
-        BufferAccess<const GraphicsFloatType> radiusArray(particleRadii());
-        BufferAccess<FloatType> brightnessValues(brightness());
+        BufferReadAccess<GraphicsFloatType> radiusArray(particleRadii());
+        BufferWriteAccess<FloatType, access_mode::read_write> brightnessValues(brightness());
         auto r = radiusArray.cbegin();
         for(FloatType& b : brightnessValues) {
             if(*r != 0)
@@ -293,8 +293,8 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::applyResults(const Modifi
         return;
 
     // Get output property object.
-    BufferAccess<const FloatType> brightnessValues(brightness());
-    BufferAccess<ColorG> colorProperty = particles->createProperty(DataBuffer::Initialized, ParticlesObject::ColorProperty, {particles});
+    BufferReadAccess<FloatType> brightnessValues(brightness());
+    BufferWriteAccess<ColorG, access_mode::read_write> colorProperty = particles->createProperty(DataBuffer::Initialized, ParticlesObject::ColorProperty, {particles});
     const FloatType* b = brightnessValues.cbegin();
     for(ColorG& c : colorProperty) {
         GraphicsFloatType factor = FloatType(1) - intensity + static_cast<GraphicsFloatType>(*b);

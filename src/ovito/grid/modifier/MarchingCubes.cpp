@@ -376,11 +376,11 @@ void MarchingCubes::handleSpaceFillingRegion()
     OVITO_ASSERT(_outputMesh.regionCount() == 0);
     _outputMesh.mutableRegions()->setElementCount(1);
 
-    BufferAccess<FloatType> volumeProperty =
+    BufferWriteAccess<FloatType, access_mode::discard_write> volumeProperty =
         _outputMesh.createRegionProperty(DataBuffer::Uninitialized, SurfaceMeshRegions::VolumeProperty);
-    BufferAccess<SelectionIntType> isExteriorProperty =
+    BufferWriteAccess<SelectionIntType, access_mode::discard_write> isExteriorProperty =
         _outputMesh.createRegionProperty(DataBuffer::Uninitialized, SurfaceMeshRegions::IsExteriorProperty);
-    BufferAccess<SelectionIntType> isFilledProperty =
+    BufferWriteAccess<SelectionIntType, access_mode::discard_write> isFilledProperty =
         _outputMesh.createRegionProperty(DataBuffer::Uninitialized, SurfaceMeshRegions::IsFilledProperty);
 
     volumeProperty[0] = _size_x * _size_y * _size_z;
@@ -419,11 +419,11 @@ void MarchingCubes::mergeIdentifiedRegions()
     _maxRegionIndex = regionMap.size();
     _outputMesh.mutableRegions()->setElementCount(_maxRegionIndex);
 
-    BufferAccess<FloatType> volumeProperty{
+    BufferWriteAccess<FloatType, access_mode::read_write> volumeProperty{
         _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::VolumeProperty)};
-    BufferAccess<SelectionIntType> isExteriorProperty{
+    BufferWriteAccess<SelectionIntType, access_mode::read_write> isExteriorProperty{
         _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsExteriorProperty)};
-    BufferAccess<SelectionIntType> isFilledProperty{
+    BufferWriteAccess<SelectionIntType, access_mode::read_write> isFilledProperty{
         _outputMesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsFilledProperty)};
 
     for(int i = 0; i < _regionVolumes.size(); i++) {

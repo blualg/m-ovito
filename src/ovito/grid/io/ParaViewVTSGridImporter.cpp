@@ -216,7 +216,7 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
                 break;
 
             // Derive domain geometry from spacing between grid points.
-            BufferAccess<const Point3> points(buffer);
+            BufferReadAccess<Point3> points(buffer);
             AffineTransformation cellMatrix = AffineTransformation::Zero();
             cellMatrix.column(0) = (points[1] - points[0]) * (FloatType)wholeExtent.size(0);
             cellMatrix.column(1) = (points[pieceExtent.size(0) + 1] - points[0]) * (FloatType)wholeExtent.size(1);

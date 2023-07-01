@@ -85,6 +85,11 @@ public:
     /// Indicates whether the session is in the processing of shutting down.
     bool isShuttingDown() const { return _isShuttingDown; }
 
+#ifdef OVITO_USE_SYCL
+    /// Returns the main SYCL out-of-order queue to which work can be submitted.
+    cl::sycl::queue& syclQueue() { return _syclQueue; }
+#endif
+
 public Q_SLOTS:
 
     /// \brief Cancels all running tasks and waits for them to finish.
@@ -130,7 +135,16 @@ private:
     /// Indicates whether the session is in the processing of shutting down.
     bool _isShuttingDown = false;
 
+#ifdef OVITO_USE_SYCL
+    /// The main SYCL out-of-order queue for work on the compute device.
+    cl::sycl::queue _syclQueue;
+
+    /// The head of the linked list of RegisteredBufferAccess objects associated with this task manager's SYCL queue.
+    RegisteredBufferAccess* _registeredBufferAccessors = nullptr;
+#endif
+
     friend class Task;
+    friend class RegisteredBufferAccess;
 };
 
 }   // End of namespace

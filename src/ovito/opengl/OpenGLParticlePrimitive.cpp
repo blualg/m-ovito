@@ -344,20 +344,20 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
             if(primitive.positions()->dataType() == DataBuffer::Float64) {
                 if(sortedIndices.size() < 10000) {
                     // Serial code version (used for small datasets).
-                    boost::transform(sortedIndices, distances.begin(), [direction = direction.toDataType<double>(), positionsArray = BufferAccess<const Vector_3<double>>(primitive.positions())](size_t i) {
+                    boost::transform(sortedIndices, distances.begin(), [direction = direction.toDataType<double>(), positionsArray = BufferReadAccess<Vector_3<double>>(primitive.positions())](size_t i) {
                         return static_cast<GraphicsFloatType>(direction.dot(positionsArray[i]));
                     });
                 }
                 else {
                     // Parallelized code version.
-                    BufferAccess<const Vector_3<double>> positionsArray(primitive.positions());
+                    BufferReadAccess<Vector_3<double>> positionsArray(primitive.positions());
                     parallelFor(sortedIndices.size(), [&, direction = direction.toDataType<double>()](size_t i) {
                         distances[i] = static_cast<GraphicsFloatType>(direction.dot(positionsArray[sortedIndices[i]]));
                     });
                 }
             }
             else if(primitive.positions()->dataType() == DataBuffer::Float32) {
-                boost::transform(sortedIndices, distances.begin(), [direction = direction.toDataType<float>(), positionsArray = BufferAccess<const Vector_3<float>>(primitive.positions())](size_t i) {
+                boost::transform(sortedIndices, distances.begin(), [direction = direction.toDataType<float>(), positionsArray = BufferReadAccess<Vector_3<float>>(primitive.positions())](size_t i) {
                     return static_cast<GraphicsFloatType>(direction.dot(positionsArray[i]));
                 });
             }

@@ -98,7 +98,7 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
     std::vector<FloatType> type_masses;
     bool hasCellVectors = false;
     bool convertToAbsoluteCoordinates = false;
-    BufferAccess<Point3> posAccess;
+    BufferWriteAccess<Point3, access_mode::discard_read_write> posAccess;
 
     while(!stream.eof() && !isCanceled()) {
         const char* line = stream.readLineTrimLeft();
@@ -214,9 +214,8 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
                 static_object_cast<ParticleType>(typeProperty->makeMutable(type))->setMass(type_masses[i]);
             }
 
-
-            BufferAccess<int32_t> typeAccess(typeProperty);
-            BufferAccess<FloatType> massAccess(massProperty);
+            BufferWriteAccess<int32_t, access_mode::discard_write> typeAccess(typeProperty);
+            BufferWriteAccess<FloatType, access_mode::discard_write> massAccess(massProperty);
 
             // Parse atom definitions.
             for(int i = 0; i < natoms; i++) {

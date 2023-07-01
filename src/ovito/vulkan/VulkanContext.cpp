@@ -1002,7 +1002,7 @@ VkBuffer VulkanContext::uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, R
         }
         else if(dataBuffer->dataType() == DataBuffer::Float64) {
             // Convert from FloatType to float data type.
-            BufferAccess<const double*> bufferAccess(dataBuffer);
+            BufferReadAccess<double*> bufferAccess(dataBuffer);
             size_t srcStride = dataBuffer->componentCount();
             float* dst = static_cast<float*>(p);
             size_t dstStride = dataBuffer->componentCount();

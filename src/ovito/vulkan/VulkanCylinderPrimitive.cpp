@@ -520,8 +520,8 @@ void VulkanSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
             OVITO_ASSERT(!primitive.colors() || (primitive.colors()->componentCount() == 1 && renderWithPseudoColorMapping) || (primitive.colors()->componentCount() == 3 && !renderWithPseudoColorMapping));
             OVITO_ASSERT(!primitive.transparencies() || primitive.transparencies()->size() == primitive.basePositions()->size() || primitive.transparencies()->size() == 2 * primitive.basePositions()->size());
             const ColorT<float> uniformColor = primitive.uniformColor().toDataType<float>();
-            BufferAccess<const FloatType*> colorArray(primitive.colors());
-            BufferAccess<const FloatType> transparencyArray(primitive.transparencies());
+            BufferReadAccess<FloatType*> colorArray(primitive.colors());
+            BufferReadAccess<FloatType> transparencyArray(primitive.transparencies());
             const FloatType* color = colorArray ? colorArray.cbegin() : nullptr;
             const FloatType* transparency = transparencyArray ? transparencyArray.cbegin() : nullptr;
             bool twoColorsPerPrimitive = (primitive.colors() && primitive.colors()->size() == 2 * primitive.basePositions()->size());

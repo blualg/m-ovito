@@ -127,17 +127,4 @@ void SimulationCellObject::updateEditableProxies(PipelineFlowState& state, Const
     DataObject::updateEditableProxies(state, dataPath);
 }
 
-/******************************************************************************
-* Puts the simulation cell into a writable state.
-* In the writable state, the Python binding layer will allow write access to
-* the cell's internal data.
-******************************************************************************/
-void SimulationCellObject::makeWritableFromPython()
-{
-    if(!isSafeToModify())
-        throw Exception(tr("Modifying the cell is not allowed, because the SimulationCell object is currently shared by more than one data collection. "
-                            "Please explicitly request a mutable version of the SimulationCell object by using the '_' notation."));
-    _isWritableFromPython++;
-}
-
 }   // End of namespace

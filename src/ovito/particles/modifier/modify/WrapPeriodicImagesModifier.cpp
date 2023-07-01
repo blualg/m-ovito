@@ -62,12 +62,12 @@ void WrapPeriodicImagesModifier::evaluateSynchronous(const ModifierEvaluationReq
     outputParticles->verifyIntegrity();
 
     // Make a modifiable copy of the particle position property.
-    BufferAccess<Point3> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
+    BufferWriteAccess<Point3, access_mode::read_write> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
 
     // Wrap bonds by adjusting their PBC shift vectors.
     if(outputParticles->bonds()) {
-        if(BufferAccess<const ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
-            BufferAccess<Vector3I> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
+        if(BufferReadAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
+            BufferWriteAccess<Vector3I, access_mode::read_write> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
             for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
                 size_t particleIndex1 = topologyProperty[bondIndex][0];
                 size_t particleIndex2 = topologyProperty[bondIndex][1];

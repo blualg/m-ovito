@@ -193,6 +193,44 @@ private:
     boost::container::flat_map<int, OvitoClassPtr> _standardPropertyElementTypes;
 };
 
+/**
+ * Utility class that behaves like a BufferAccessAndRef but additionally allocates a new PropertyObject of the given size upon construction.
+*/
+template<typename T>
+class PropertyFactory : public detail::BufferAccessTyped<T, PropertyObject, true, access_mode::discard_write>
+{
+    using base_class = detail::BufferAccessTyped<T, PropertyObject, true, access_mode::discard_write>;
+    using base_class::ComponentWise;
+    using typename base_class::element_type;
+
+public:
+
+    /// Null constructor.
+    PropertyFactory() noexcept : base_class() {}
+
+    /// Constructor allocating a new uninitialized user property array of the given size and name.
+    template<bool IsEnabled = !ComponentWise>
+    PropertyFactory(const std::enable_if_t<IsEnabled, PropertyContainerClass>& containerClazz, size_t elementCount, const QString& propertyName) :
+        base_class(containerClazz.createUserProperty(
+            DataBuffer::Uninitialized, elementCount,
+            DataBufferPrimitiveType<element_type>::value,
+            DataBufferPrimitiveComponentCount<element_type>::value,
+            propertyName)) {}
+
+    /// Constructor allocating a new uninitialized vector user property array of the given size and name.
+    template<bool IsEnabled = ComponentWise>
+    PropertyFactory(const std::enable_if_t<IsEnabled, PropertyContainerClass>& containerClazz, size_t elementCount, const QString& propertyName, size_t componentCount, QStringList componentNames = QStringList()) :
+        base_class(containerClazz.createUserProperty(
+            DataBuffer::Uninitialized, elementCount,
+            DataBufferPrimitiveType<element_type>::value,
+            componentCount,
+            propertyName,
+            0, // type = user property
+            std::move(componentNames))) {
+        static_assert(DataBufferPrimitiveComponentCount<element_type>::value == 1);
+    }
+};
+
 }   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::StdObj::PropertyContainerClassPtr);

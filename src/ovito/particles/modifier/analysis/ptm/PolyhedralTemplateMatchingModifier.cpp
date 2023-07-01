@@ -181,7 +181,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
         return;
 
     // Get access to the particle selection flags.
-    BufferAccess<const SelectionIntType> selectionData(selection());
+    BufferReadAccess<SelectionIntType> selectionData(selection());
 
     setProgressMaximum(positions()->size());
     setProgressText(tr("Pre-calculating neighbor ordering"));
@@ -219,13 +219,13 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
     setProgressText(tr("Performing polyhedral template matching"));
 
     // Get access to the output buffers that will receive the identified particle types and other data.
-    BufferAccess<int32_t> outputStructureArray(structures());
-    BufferAccess<FloatType> rmsdArray(rmsd());
-    BufferAccess<FloatType> interatomicDistancesArray(interatomicDistances());
-    BufferAccess<QuaternionG> orientationsArray(orientations());
-    BufferAccess<Matrix3> deformationGradientsArray(deformationGradients());
-    BufferAccess<int32_t> orderingTypesArray(orderingTypes());
-    BufferAccess<int64_t> correspondencesArray(correspondences());
+    BufferWriteAccess<int32_t, access_mode::discard_read_write> outputStructureArray(structures());
+    BufferWriteAccess<FloatType, access_mode::discard_read_write> rmsdArray(rmsd());
+    BufferWriteAccess<FloatType, access_mode::write> interatomicDistancesArray(interatomicDistances());
+    BufferWriteAccess<QuaternionG, access_mode::write> orientationsArray(orientations());
+    BufferWriteAccess<Matrix3, access_mode::write> deformationGradientsArray(deformationGradients());
+    BufferWriteAccess<int32_t, access_mode::write> orderingTypesArray(orderingTypes());
+    BufferWriteAccess<int64_t, access_mode::write> correspondencesArray(correspondences());
 
     // Perform analysis on each particle.
     parallelForChunksWithProgress(positions()->size(), [&](size_t startIndex, size_t count, ProgressingTask& operation) {
@@ -278,7 +278,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
 
     // Perform binning of RMSD values.
     if(outputStructureArray.size() != 0) {
-        BufferAccess<int64_t> histogramCounts(_rmsdHistogram);
+        BufferWriteAccess<int64_t, access_mode::read_write> histogramCounts(_rmsdHistogram);
         const int32_t* structureType = outputStructureArray.cbegin();
         for(FloatType rmsdValue : rmsdArray) {
             if(*structureType++ != PTMAlgorithm::OTHER) {
@@ -311,8 +311,8 @@ PropertyPtr PolyhedralTemplateMatchingModifier::PTMEngine::postProcessStructureT
         PropertyPtr finalStructureTypes = structures.makeCopy();
 
         // Mark those particles whose RMSD exceeds the cutoff as 'OTHER'.
-        BufferAccess<const FloatType> rmdsArray(rmsd());
-        BufferAccess<int32_t> structureTypesArray(finalStructureTypes);
+        BufferReadAccess<FloatType> rmdsArray(rmsd());
+        BufferWriteAccess<int32_t, access_mode::write> structureTypesArray(finalStructureTypes);
         const FloatType* rmsdValue = rmdsArray.cbegin();
         for(int32_t& type : structureTypesArray) {
             if(*rmsdValue++ > rmsdCutoff)

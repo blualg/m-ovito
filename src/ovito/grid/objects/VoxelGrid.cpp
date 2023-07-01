@@ -182,7 +182,7 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> VoxelGrid::getVectorVisData(c
     auto& basePositions = visCache.get<ConstDataBufferPtr>(CacheKey(this));
 
     if(!basePositions) {
-        BufferAccessAndRef<Point3> points = DataBufferPtr::create(elementCount(), DataBuffer::FloatDefault, 3);
+        BufferFactory<Point3> points(elementCount());
         if(points.size() != 0) {
             if(gridType() == GridType::CellData) {
                 // Compute grid cell centers.

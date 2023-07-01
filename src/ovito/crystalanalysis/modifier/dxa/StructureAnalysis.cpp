@@ -585,7 +585,7 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
 
             // Determine number of neighbors the two atoms have in common.
             unsigned int commonNeighbors;
-            int numCommonNeighbors = CommonNeighborAnalysisModifier::findCommonNeighbors(neighborArray, ni, commonNeighbors, nn);
+            int numCommonNeighbors = CommonNeighborAnalysisModifier::findCommonNeighbors(neighborArray, ni, commonNeighbors);
             if(numCommonNeighbors != 4)
                 break;
 
@@ -622,7 +622,7 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
 
             // Determine number of neighbors the two atoms have in common.
             unsigned int commonNeighbors;
-            int numCommonNeighbors = CommonNeighborAnalysisModifier::findCommonNeighbors(neighborArray, ni, commonNeighbors, 14);
+            int numCommonNeighbors = CommonNeighborAnalysisModifier::findCommonNeighbors(neighborArray, ni, commonNeighbors);
             if(numCommonNeighbors != 4 && numCommonNeighbors != 6)
                 break;
 
@@ -653,7 +653,7 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
         for(int ni = 0; ni < 4; ni++) {
             cnaSignatures[ni] = 0;
             unsigned int commonNeighbors;
-            if(CommonNeighborAnalysisModifier::findCommonNeighbors(neighborArray, ni, commonNeighbors, nn) != 3)
+            if(CommonNeighborAnalysisModifier::findCommonNeighbors(neighborArray, ni, commonNeighbors) != 3)
                 return;
         }
         int n543 = 0;
@@ -661,7 +661,7 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
         for(int ni = 4; ni < nn; ni++) {
             // Determine number of neighbors the two atoms have in common.
             unsigned int commonNeighbors;
-            int numCommonNeighbors = CommonNeighborAnalysisModifier::findCommonNeighbors(neighborArray, ni, commonNeighbors, nn);
+            int numCommonNeighbors = CommonNeighborAnalysisModifier::findCommonNeighbors(neighborArray, ni, commonNeighbors);
             if(numCommonNeighbors != 5)
                 break;
 
@@ -767,7 +767,7 @@ bool StructureAnalysis::buildClusters()
     ProgressingTask& operation = static_cast<ProgressingTask&>(*Task::current());
     operation.setProgressMaximum(positions()->size());
     int progressCounter = 0;
-    BufferAccess<const Point3> positionsArray(positions());
+    BufferReadAccess<Point3> positionsArray(positions());
 
     // Iterate over atoms, looking for those that have not been visited yet.
     for(size_t seedAtomIndex = 0; seedAtomIndex < positions()->size(); seedAtomIndex++) {

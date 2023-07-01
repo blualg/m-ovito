@@ -103,14 +103,14 @@ void FHIAimsImporter::FrameLoader::loadFile()
 
     // Create the particle properties.
     setParticleCount(totalAtomCount);
-    BufferAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+    BufferWriteAccess<Point3, access_mode::discard_read_write> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
     PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
 
     // Return to file beginning.
     stream.seek(0);
 
     // Second pass: read atom coordinates and types.
-    BufferAccess<int32_t> typeAccess(typeProperty);
+    BufferWriteAccess<int32_t, access_mode::discard_write> typeAccess(typeProperty);
     for(int i = 0; i < totalAtomCount; i++) {
         while(true) {
             const char* line = stream.readLineTrimLeft();

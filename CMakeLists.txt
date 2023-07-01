@@ -117,10 +117,6 @@ IF(CYGWIN AND CMAKE_COMPILER_IS_GNUCXX)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 ENDIF()
 
-IF(APPLE)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -Wno-invalid-offsetof")
-ENDIF()
-
 # Enable build with AddressSanitizer support if requested.
 IF(OVITO_USE_ADDRESS_SANITIZER)
     IF(MSVC)
@@ -286,6 +282,14 @@ ELSE()
         SET(OVITO_PLUGIN_LIBRARY_SUFFIX ".so")
     ELSE()
         SET(OVITO_PLUGIN_LIBRARY_SUFFIX "${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    ENDIF()
+ENDIF()
+
+IF(OVITO_USE_SYCL AND NOT OPENSYCL_DEBUG_LEVEL)
+    IF(CMAKE_BUILD_TYPE MATCHES "Debug")
+        SET(OPENSYCL_DEBUG_LEVEL 3 CACHE INTEGER "Choose the debug level, options are: 0 (no debug), 1 (print errors), 2 (also print warnings), 3 (also print general information)" FORCE)
+    ELSE()
+        SET(OPENSYCL_DEBUG_LEVEL 2 CACHE INTEGER "Choose the debug level, options are: 0 (no debug), 1 (print errors), 2 (also print warnings), 3 (also print general information)" FORCE)
     ENDIF()
 ENDIF()
 

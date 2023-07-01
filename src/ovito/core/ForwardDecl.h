@@ -150,6 +150,7 @@ namespace Ovito
     class FileSource;
     class FileSourceImporter;
     class MixedKeyCache;
+    class RegisteredBufferAccess;
 
     class ViewportInputManager;   // Note: This class is defined in another plugin module (GuiBase).
     class ActionManager;          // Note: This class is defined in another plugin module (GuiBase).

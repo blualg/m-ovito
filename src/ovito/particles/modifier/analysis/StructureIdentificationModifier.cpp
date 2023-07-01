@@ -128,7 +128,7 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
 
     // Finalize output property.
     PropertyPtr structureProperty = postProcessStructureTypes(request, structures());
-    BufferAccess<const int32_t> structureData(structureProperty);
+    BufferReadAccess<int32_t> structureData(structureProperty);
 
     // Add output property to the particles.
     particles->createProperty(structureProperty);
@@ -146,7 +146,7 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
         }
 
         // Assign colors to particles based on their structure type.
-        BufferAccess<ColorG> colorProperty = particles->createProperty(ParticlesObject::ColorProperty);
+        BufferWriteAccess<ColorG, access_mode::discard_write> colorProperty = particles->createProperty(ParticlesObject::ColorProperty);
         boost::transform(structureData, colorProperty.begin(), [&](int s) {
             if(s >= 0 && s < structureTypeColors.size())
                 return structureTypeColors[s];
@@ -170,9 +170,9 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
 
     // Create the property arrays for the bar chart.
     PropertyPtr typeCounts = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxTypeId + 1, PropertyObject::Int64, 1, tr("Count"));
-    boost::copy(_typeCounts, BufferAccess<int64_t>(typeCounts).begin());
+    boost::copy(_typeCounts, BufferWriteAccess<int64_t, access_mode::discard_write>(typeCounts).begin());
     PropertyPtr typeIds = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxTypeId + 1, PropertyObject::Int32, 1, tr("Structure type"));
-    boost::algorithm::iota_n(BufferAccess<int32_t>(typeIds).begin(), 0, typeIds->size());
+    boost::algorithm::iota_n(BufferWriteAccess<int32_t, access_mode::discard_write>(typeIds).begin(), 0, typeIds->size());
 
     // Use the structure types as labels for the output bar chart.
     for(const ElementType* type : structureProperty->elementTypes()) {
@@ -203,7 +203,7 @@ QVector<int64_t> StructureIdentificationModifier::getStructureCountsFromModifier
             if(structureCounts->size() != 0 && structureCounts->dataType() == PropertyObject::Int64) {
 
                 // Convert the table data to a format that can be passed back to QML.
-                BufferAccess<const int64_t> array(structureCounts);
+                BufferReadAccess<int64_t> array(structureCounts);
                 return QVector<int64_t>{ array.cbegin(), array.cend() };
             }
         }

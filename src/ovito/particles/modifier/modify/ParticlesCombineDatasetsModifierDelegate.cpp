@@ -101,12 +101,12 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
 
             // Assign unique particle and molecule IDs.
             if(prop->type() == ParticlesObject::IdentifierProperty && primaryParticleCount != 0) {
-                BufferAccess<IdentifierIntType> identifiers(prop);
+                BufferWriteAccess<IdentifierIntType, access_mode::read_write> identifiers(prop);
                 auto maxId = *std::max_element(identifiers.cbegin(), identifiers.cbegin() + primaryParticleCount);
                 std::iota(identifiers.begin() + primaryParticleCount, identifiers.end(), maxId + 1);
             }
             else if(prop->type() == ParticlesObject::MoleculeProperty && primaryParticleCount != 0) {
-                BufferAccess<IdentifierIntType> identifiers(prop);
+                BufferWriteAccess<IdentifierIntType, access_mode::read_write> identifiers(prop);
                 auto maxId = *std::max_element(identifiers.cbegin(), identifiers.cbegin() + primaryParticleCount);
                 for(auto* mol_id = identifiers.begin() + primaryParticleCount; mol_id != identifiers.end(); ++mol_id)
                     *mol_id += maxId;
@@ -135,7 +135,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
 
         // Shift values of second dataset and reset values of first dataset to zero:
         if(primaryParticleCount != 0) {
-            BufferWriteAccess access(clonedProperty);
+            RawBufferAccess<access_mode::read_write> access(clonedProperty);
             std::memmove(access.data() + primaryParticleCount * clonedProperty->stride(), access.cdata(), clonedProperty->stride() * secondaryParticleCount);
             std::memset(access.data(), 0, clonedProperty->stride() * primaryParticleCount);
         }
@@ -201,7 +201,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
 
                 // Shift values of second dataset and reset values of first dataset to zero:
                 if(primaryElementCount != 0) {
-                    BufferWriteAccess access(clonedProperty);
+                    RawBufferAccess<access_mode::read_write> access(clonedProperty);
                     std::memmove(access.data() + primaryElementCount * clonedProperty->stride(), access.cdata(), clonedProperty->stride() * secondaryElementCount);
                     std::memset(access.data(), 0, clonedProperty->stride() * primaryElementCount);
                 }
@@ -210,7 +210,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
             // Shift particle indices stored in the topology array of the second container.
             const PropertyObject* topologyProperty = primaryMutableElements->getProperty(topologyPropertyId);
             if(topologyProperty && primaryParticleCount != 0) {
-                BufferAccess<int64_t*> mutableTopologyProperty = primaryMutableElements->makeMutable(topologyProperty);
+                BufferWriteAccess<int64_t*, access_mode::read_write> mutableTopologyProperty = primaryMutableElements->makeMutable(topologyProperty);
                 for(auto idx = mutableTopologyProperty.begin() + (primaryElementCount * mutableTopologyProperty.componentCount()); idx != mutableTopologyProperty.end(); ++idx) {
                     *idx += primaryParticleCount;
                 }

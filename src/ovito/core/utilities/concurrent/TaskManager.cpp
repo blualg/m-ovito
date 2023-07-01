@@ -24,6 +24,7 @@
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/concurrent/TaskWatcher.h>
 #include <ovito/core/oo/ObjectExecutor.h>
+#include <ovito/core/dataset/data/RegisteredBufferAccess.h>
 
 namespace Ovito {
 
@@ -31,6 +32,9 @@ namespace Ovito {
 * Initializes the task manager.
 ******************************************************************************/
 TaskManager::TaskManager()
+#ifdef OVITO_USE_SYCL
+    : _syclQueue(cl::sycl::default_selector())
+#endif
 {
     qRegisterMetaType<TaskPtr>("TaskPtr");
 }
@@ -228,6 +232,16 @@ void TaskManager::shutdown()
 
     // Execute all remaining deferred tasks which have not been registered with this task manager.
     QCoreApplication::sendPostedEvents(nullptr, ObjectExecutor::workEventType());
+
+#ifdef OVITO_USE_SYCL
+    // Close all active SYCL host memory accessors which are associated with NumPy views of PropertyObjects.
+    for(RegisteredBufferAccess* accessor = _registeredBufferAccessors; accessor != nullptr; accessor = accessor->_next) {
+        accessor->_syclAccessor = {};
+    }
+
+    // Wait for completion of all enqueued tasks in the SYCL queue.
+    _syclQueue.wait();
+#endif
 }
 
 }   // End of namespace

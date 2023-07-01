@@ -103,7 +103,7 @@ void ParaViewVTUSimulationCellImporter::FrameLoader::loadFile()
 
             // Compute bounding box of points.
             Box3 bbox;
-            bbox.addPoints(BufferAccess<const Point3>(buffer));
+            bbox.addPoints(BufferReadAccess<Point3>(buffer));
 
             // Set up simulation cell matrix.
             AffineTransformation cellMatrix = AffineTransformation::Zero();

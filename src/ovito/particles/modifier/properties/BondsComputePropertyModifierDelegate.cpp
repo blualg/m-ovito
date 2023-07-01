@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,7 +59,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> BondsCom
 {
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     return std::make_shared<Engine>(
-            request, 
+            request,
             input.stateValidity(),
             std::move(outputProperty),
             containerPath,
@@ -73,7 +73,7 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> BondsCom
 * Constructor.
 ******************************************************************************/
 BondsComputePropertyModifierDelegate::Engine::Engine(
-        const ModifierEvaluationRequest& request, 
+        const ModifierEvaluationRequest& request,
         const TimeInterval& validityInterval,
         PropertyPtr outputProperty,
         const ConstDataObjectPath& containerPath,
@@ -82,7 +82,7 @@ BondsComputePropertyModifierDelegate::Engine::Engine(
         int frameNumber,
         const PipelineFlowState& input) :
     ComputePropertyModifierDelegate::PropertyComputeEngine(
-            request, 
+            request,
             validityInterval,
             input,
             containerPath,
@@ -102,9 +102,10 @@ void BondsComputePropertyModifierDelegate::Engine::perform()
 {
     setProgressText(tr("Computing property '%1'").arg(outputProperty()->name()));
     setProgressMaximum(outputProperty()->size());
+    BufferReadAccess<SelectionIntType> selectionAccessor(selection());
 
     // Parallelized loop over all bonds.
-    parallelForChunksWithProgress(outputProperty()->size(), [this](size_t startIndex, size_t count, ProgressingTask& operation) {
+    parallelForChunksWithProgress(outputProperty()->size(), [this, &selectionAccessor](size_t startIndex, size_t count, ProgressingTask& operation) {
         BondExpressionEvaluator::Worker worker(*_evaluator);
 
         size_t endIndex = startIndex + count;
@@ -120,7 +121,7 @@ void BondsComputePropertyModifierDelegate::Engine::perform()
                 return;
 
             // Skip unselected bonds if requested.
-            if(selectionArray() && !selectionArray()[bondIndex])
+            if(selectionAccessor && !selectionAccessor[bondIndex])
                 continue;
 
             for(size_t component = 0; component < componentCount; component++) {

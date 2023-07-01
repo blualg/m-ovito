@@ -107,7 +107,7 @@ void CommonNeighborAnalysisModifier::AdaptiveCNAEngine::perform()
         return;
 
     // Create output storage.
-    BufferAccess<int32_t> output(structures());
+    BufferWriteAccess<int32_t, access_mode::discard_write> output(structures());
 
     // Perform analysis on each particle.
     if(!selection()) {
@@ -116,7 +116,7 @@ void CommonNeighborAnalysisModifier::AdaptiveCNAEngine::perform()
         });
     }
     else {
-        BufferAccess<const SelectionIntType> selectionData(selection());
+        BufferReadAccess<SelectionIntType> selectionData(selection());
         parallelForWithProgress(positions()->size(), [&](size_t index) {
             // Skip particles that are not included in the analysis.
             if(selectionData[index])
@@ -143,7 +143,7 @@ void CommonNeighborAnalysisModifier::IntervalCNAEngine::perform()
         return;
 
     // Create output storage.
-    BufferAccess<int32_t> output(structures());
+    BufferWriteAccess<int32_t, access_mode::discard_write> output(structures());
 
     // Perform analysis on each particle.
     if(!selection()) {
@@ -152,7 +152,7 @@ void CommonNeighborAnalysisModifier::IntervalCNAEngine::perform()
         });
     }
     else {
-        BufferAccess<const SelectionIntType> selectionData(selection());
+        BufferReadAccess<SelectionIntType> selectionData(selection());
         parallelForWithProgress(positions()->size(), [&](size_t index) {
             // Skip particles that are not included in the analysis.
             if(selectionData[index])
@@ -176,7 +176,7 @@ void CommonNeighborAnalysisModifier::FixedCNAEngine::perform()
         return;
 
     // Create output storage.
-    BufferAccess<int32_t> output(structures());
+    BufferWriteAccess<int32_t, access_mode::discard_write> output(structures());
 
     // Perform analysis on each particle.
     if(!selection()) {
@@ -185,7 +185,7 @@ void CommonNeighborAnalysisModifier::FixedCNAEngine::perform()
         });
     }
     else {
-        BufferAccess<const SelectionIntType> selectionData(selection());
+        BufferReadAccess<SelectionIntType> selectionData(selection());
         parallelForWithProgress(positions()->size(), [&](size_t index) {
             // Skip particles that are not included in the analysis.
             if(selectionData[index])
@@ -212,14 +212,17 @@ void CommonNeighborAnalysisModifier::BondCNAEngine::perform()
     // Compute per-bond CNA indices.
     bool maxNeighborLimitExceeded = false;
     bool maxCommonNeighborBondLimitExceeded = false;
-    BufferAccess<const ParticleIndexPair> bonds(bondTopology());
-    BufferAccess<const Vector3I> bondPeriodicImagesData(bondPeriodicImages());
-    BufferAccess<Vector3I> cnaIndicesData(cnaIndices());
+    BufferReadAccess<ParticleIndexPair> bonds(bondTopology());
+    BufferReadAccess<Vector3I> bondPeriodicImagesData(bondPeriodicImages());
+    BufferWriteAccess<Vector3I, access_mode::discard_read_write> cnaIndicesData(cnaIndices());
     parallelForWithProgress(bonds.size(), [&](size_t bondIndex) {
+        cnaIndicesData[bondIndex][0] = 0;
+        cnaIndicesData[bondIndex][1] = 0;
+        cnaIndicesData[bondIndex][2] = 0;
         size_t currentBondParticle1 = bonds[bondIndex][0];
         size_t currentBondParticle2 = bonds[bondIndex][1];
-        if(currentBondParticle1 >= positions()->size()) return;
-        if(currentBondParticle2 >= positions()->size()) return;
+        if(currentBondParticle1 >= positions()->size() || currentBondParticle2 >= positions()->size())
+            return;
         Vector3I currentBondPbcShift = bondPeriodicImagesData ? bondPeriodicImagesData[bondIndex] : Vector3I::Zero();
 
         // Determine common neighbors shared by both particles.
@@ -276,8 +279,8 @@ void CommonNeighborAnalysisModifier::BondCNAEngine::perform()
         throw Exception(tr("There are more than 64 bonds between common neighbors, which is the built-in limit. Cannot perform CNA in this case."));
 
     // Create output storage.
-    BufferAccess<int32_t> output(structures());
-    BufferAccess<const SelectionIntType> selectionData(selection());
+    BufferWriteAccess<int32_t, access_mode::discard_write> output(structures());
+    BufferReadAccess<SelectionIntType> selectionData(selection());
 
     // Classify particles.
     parallelForWithProgress(positions()->size(), [&](size_t particleIndex) {
@@ -327,7 +330,7 @@ void CommonNeighborAnalysisModifier::BondCNAEngine::perform()
 /******************************************************************************
 * Find all atoms that are nearest neighbors of the given pair of atoms.
 ******************************************************************************/
-int CommonNeighborAnalysisModifier::findCommonNeighbors(const NeighborBondArray& neighborArray, int neighborIndex, unsigned int& commonNeighbors, int numNeighbors)
+int CommonNeighborAnalysisModifier::findCommonNeighbors(const NeighborBondArray& neighborArray, int neighborIndex, unsigned int& commonNeighbors)
 {
     commonNeighbors = neighborArray.neighborArray[neighborIndex];
 #ifndef Q_CC_MSVC
@@ -428,7 +431,7 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::CN
 
         // Determine number of neighbors the two atoms have in common.
         unsigned int commonNeighbors;
-        int numCommonNeighbors = findCommonNeighbors(neighborArray, ni, commonNeighbors, nn);
+        int numCommonNeighbors = findCommonNeighbors(neighborArray, ni, commonNeighbors);
         if(numCommonNeighbors != 4 && numCommonNeighbors != 5)
             break;
 
@@ -463,7 +466,7 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::CN
 
         // Determine number of neighbors the two atoms have in common.
         unsigned int commonNeighbors;
-        int numCommonNeighbors = findCommonNeighbors(neighborArray, ni, commonNeighbors, nn);
+        int numCommonNeighbors = findCommonNeighbors(neighborArray, ni, commonNeighbors);
         if(numCommonNeighbors != 4 && numCommonNeighbors != 6)
             break;
 

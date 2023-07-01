@@ -57,10 +57,10 @@ BondsObject::BondsObject(ObjectInitializationFlags flags) : PropertyContainer(fl
 ******************************************************************************/
 void BondsObject::generatePeriodicImageProperty(const ParticlesObject* particles, const SimulationCellObject* simulationCellObject)
 {
-    BufferAccess<const Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty);
+    BufferReadAccess<Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty);
     if(!posProperty) return;
 
-    BufferAccess<const ParticleIndexPair> bondTopologyProperty = getProperty(BondsObject::TopologyProperty);
+    BufferReadAccess<ParticleIndexPair> bondTopologyProperty = getProperty(BondsObject::TopologyProperty);
     if(!bondTopologyProperty) return;
 
     if(!simulationCellObject)
@@ -71,7 +71,7 @@ void BondsObject::generatePeriodicImageProperty(const ParticlesObject* particles
     const AffineTransformation inverseCellMatrix = simulationCellObject->reciprocalCellMatrix();
 
     auto topoIter = bondTopologyProperty.begin();
-    BufferAccess<Vector3I> bondPeriodicImageProperty = createProperty(BondsObject::PeriodicImageProperty);
+    BufferWriteAccess<Vector3I, access_mode::discard_write> bondPeriodicImageProperty = createProperty(BondsObject::PeriodicImageProperty);
     for(Vector3I& pbcVec : bondPeriodicImageProperty) {
         size_t particleIndex1 = (*topoIter)[0];
         size_t particleIndex2 = (*topoIter)[1];
@@ -104,8 +104,8 @@ size_t BondsObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsV
         setElementCount(newBonds.size());
 
         // Create essential bond properties.
-        BufferAccess<ParticleIndexPair> topologyProperty = createProperty(BondsObject::TopologyProperty);
-        BufferAccess<Vector3I> periodicImageProperty = createProperty(BondsObject::PeriodicImageProperty);
+        BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> topologyProperty = createProperty(BondsObject::TopologyProperty);
+        BufferWriteAccess<Vector3I, access_mode::discard_write> periodicImageProperty = createProperty(BondsObject::PeriodicImageProperty);
         PropertyObject* bondTypeProperty = bondType ? createProperty(BondsObject::TypeProperty) : nullptr;
 
         // Transfer per-bond data into the standard property arrays.
@@ -167,15 +167,15 @@ size_t BondsObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsV
         // Resize the existing property arrays.
         setElementCount(outputBondCount);
 
-        BufferAccess<ParticleIndexPair> newBondsTopology = expectMutableProperty(BondsObject::TopologyProperty);
-        BufferAccess<Vector3I> newBondsPeriodicImages = createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
+        BufferWriteAccess<ParticleIndexPair, access_mode::write> newBondsTopology = expectMutableProperty(BondsObject::TopologyProperty);
+        BufferWriteAccess<Vector3I, access_mode::write> newBondsPeriodicImages = createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
         PropertyObject* newBondTypeProperty = bondType ? createProperty(DataBuffer::Initialized, BondsObject::TypeProperty) : nullptr;
 
         if(newBondTypeProperty && !newBondTypeProperty->elementType(bondType->numericId()))
             newBondTypeProperty->addElementType(bondType);
 
         // Copy bonds information into the extended arrays.
-        BufferAccess<int32_t> newBondTypePropertyAccess(newBondTypeProperty);
+        BufferWriteAccess<int32_t, access_mode::write> newBondTypePropertyAccess(newBondTypeProperty);
         for(size_t bondIndex = 0; bondIndex < newBonds.size(); bondIndex++) {
             if(mapping[bondIndex] >= originalBondCount) {
                 const Bond& bond = newBonds[bondIndex];
@@ -227,7 +227,7 @@ size_t BondsObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsV
             }
 
             // Copy bond property data.
-            propertyObject->mappedCopyFrom(*bprop, mapping);
+            propertyObject->mappedCopyFrom(*bprop, mapping, originalBondCount == 0);
         }
 
         return outputBondCount - originalBondCount;
@@ -419,12 +419,12 @@ size_t BondsObject::OOMetaClass::remapElementIndex(const ConstDataObjectPath& so
     if(sourceParticles && destParticles) {
 
         // Make sure the topology information is present.
-        if(BufferAccess<const ParticleIndexPair> sourceTopology = sourceBonds->getProperty(TopologyProperty)) {
-            if(BufferAccess<const ParticleIndexPair> destTopology = destBonds->getProperty(TopologyProperty)) {
+        if(BufferReadAccess<ParticleIndexPair> sourceTopology = sourceBonds->getProperty(TopologyProperty)) {
+            if(BufferReadAccess<ParticleIndexPair> destTopology = destBonds->getProperty(TopologyProperty)) {
 
                 // If unique IDs are available try to use them to look up the bond in the other data collection.
-                if(BufferAccess<const int64_t> sourceIdentifiers = sourceParticles->getProperty(ParticlesObject::IdentifierProperty)) {
-                    if(BufferAccess<const int64_t> destIdentifiers = destParticles->getProperty(ParticlesObject::IdentifierProperty)) {
+                if(BufferReadAccess<int64_t> sourceIdentifiers = sourceParticles->getProperty(ParticlesObject::IdentifierProperty)) {
+                    if(BufferReadAccess<int64_t> destIdentifiers = destParticles->getProperty(ParticlesObject::IdentifierProperty)) {
                         size_t index_a = sourceTopology[elementIndex][0];
                         size_t index_b = sourceTopology[elementIndex][1];
                         if(index_a < sourceIdentifiers.size() && index_b < sourceIdentifiers.size()) {
@@ -462,8 +462,8 @@ size_t BondsObject::OOMetaClass::remapElementIndex(const ConstDataObjectPath& so
                 }
 
                 // Try to find matching bond based on particle indices alone.
-                if(BufferAccess<const Point3> sourcePos = sourceParticles->getProperty(ParticlesObject::PositionProperty)) {
-                    if(BufferAccess<const Point3> destPos = destParticles->getProperty(ParticlesObject::PositionProperty)) {
+                if(BufferReadAccess<Point3> sourcePos = sourceParticles->getProperty(ParticlesObject::PositionProperty)) {
+                    if(BufferReadAccess<Point3> destPos = destParticles->getProperty(ParticlesObject::PositionProperty)) {
                         size_t index_a = sourceTopology[elementIndex][0];
                         size_t index_b = sourceTopology[elementIndex][1];
                         if(index_a < sourcePos.size() && index_b < sourcePos.size()) {
@@ -512,8 +512,8 @@ boost::dynamic_bitset<> BondsObject::OOMetaClass::viewportFenceSelection(const Q
     const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(objectPath.size() >= 2 ? objectPath[objectPath.size()-2] : nullptr);
 
     if(particles) {
-        if(BufferAccess<const ParticleIndexPair> topologyProperty = bonds->getProperty(BondsObject::TopologyProperty)) {
-            if(BufferAccess<const Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty)) {
+        if(BufferReadAccess<ParticleIndexPair> topologyProperty = bonds->getProperty(BondsObject::TopologyProperty)) {
+            if(BufferReadAccess<Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty)) {
 
                 if(!bonds->visElement() || bonds->visElement()->isEnabled() == false)
                     throw Exception(tr("Cannot select bonds while the corresponding visual element is disabled. Please enable the display of bonds first."));
@@ -590,10 +590,10 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> BondsObject::getVectorVisData
             auto& basePositions = visCache.get<ConstDataBufferPtr>(CacheKey(particles, simulationCell));
             if(!basePositions) {
                 // Compute bond centers.
-                BufferAccessAndRef<Point3> centers = DataBufferPtr::create(elementCount(), DataBuffer::FloatDefault, 3);
-                BufferAccess<const ParticleIndexPair> bondTopology(bondTopologyProperty);
-                BufferAccess<const Vector3I> bondPeriodicImages(bondPeriodicImageProperty);
-                BufferAccess<const Point3> positions(positionProperty);
+                BufferFactory<Point3> centers(elementCount());
+                BufferReadAccess<ParticleIndexPair> bondTopology(bondTopologyProperty);
+                BufferReadAccess<Vector3I> bondPeriodicImages(bondPeriodicImageProperty);
+                BufferReadAccess<Point3> positions(positionProperty);
 
                 size_t particleCount = positions.size();
                 const AffineTransformation cell = simulationCell ? simulationCell->cellMatrix() : AffineTransformation::Zero();

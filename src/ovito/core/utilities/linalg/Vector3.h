@@ -73,18 +73,32 @@ namespace Ovito {
  * \sa Point_3, Vector_2, Vector_4
  */
 template<typename T>
-class Vector_3 : public std::array<T, 3>
+class Vector_3 : public
+#ifndef OVITO_USE_SYCL
+    std::array<T, 3>
+#else
+    cl::sycl::marray<T, 3>
+#endif
 {
+private:
+
+    using base_type =
+#ifndef OVITO_USE_SYCL
+        std::array<T, 3>;
+#else
+        cl::sycl::marray<T, 3>;
+#endif
+
 public:
 
     /// An empty type denoting the vector (0,0,0).
     struct Zero {};
 
-    using typename std::array<T, 3>::size_type;
-    using typename std::array<T, 3>::difference_type;
-    using typename std::array<T, 3>::value_type;
-    using typename std::array<T, 3>::iterator;
-    using typename std::array<T, 3>::const_iterator;
+    using size_type = std::size_t;
+    using difference_type = std::ptrdiff_t;
+    using typename base_type::value_type;
+    using typename base_type::iterator;
+    using typename base_type::const_iterator;
 
     /////////////////////////////// Constructors /////////////////////////////////
 
@@ -92,19 +106,39 @@ public:
     Vector_3() = default;
 
     /// Constructs a vector with all three components initialized to the given value.
-    Q_DECL_CONSTEXPR explicit Vector_3(T val) : std::array<T, 3>{{val,val,val}} {}
+    Q_DECL_CONSTEXPR explicit Vector_3(T val) :
+#ifndef OVITO_USE_SYCL
+        base_type{{val,val,val}} {}
+#else
+        base_type{val,val,val} {}
+#endif
 
     /// Initializes the components of the vector with the given values.
-    Q_DECL_CONSTEXPR Vector_3(T x, T y, T z) : std::array<T, 3>{{x, y, z}} {}
+    Q_DECL_CONSTEXPR Vector_3(T x, T y, T z) :
+#ifndef OVITO_USE_SYCL
+        base_type{{x, y, z}} {}
+#else
+        base_type{x, y, z} {}
+#endif
 
     /// Initializes the vector to the null vector. All components are set to zero.
-    Q_DECL_CONSTEXPR Vector_3(Zero) : std::array<T, 3>{{T(0), T(0), T(0)}} {}
+    Q_DECL_CONSTEXPR Vector_3(Zero) :
+#ifndef OVITO_USE_SYCL
+        base_type{{T(0), T(0), T(0)}} {}
+#else
+        base_type{T(0), T(0), T(0)} {}
+#endif
 
     /// Initializes the vector from an array.
-    Q_DECL_CONSTEXPR explicit Vector_3(const std::array<T, 3>& a) : std::array<T, 3>(a) {}
+    Q_DECL_CONSTEXPR explicit Vector_3(const base_type& a) : base_type(a) {}
 
     /// Conversion constructor from a Qt vector.
-    Q_DECL_CONSTEXPR Vector_3(const QVector3D& v) : std::array<T, 3>{{T(v.x()), T(v.y()), T(v.z())}} {}
+    Q_DECL_CONSTEXPR Vector_3(const QVector3D& v) :
+#ifndef OVITO_USE_SYCL
+        base_type{{T(v.x()), T(v.y()), T(v.z())}} {}
+#else
+        base_type{T(v.x()), T(v.y()), T(v.z())} {}
+#endif
 
     /// Casts the vector to another component type \a U.
     template<typename U>
@@ -141,7 +175,13 @@ public:
     Q_DECL_CONSTEXPR Vector_3& operator=(Zero) { setZero(); return *this; }
 
     /// Sets all components of the vector to zero.
-    Q_DECL_CONSTEXPR void setZero() { this->fill(T(0)); }
+    Q_DECL_CONSTEXPR void setZero() {
+#ifndef OVITO_USE_SYCL
+        this->fill(T(0));
+#else
+        std::fill(this->begin(), this->end(), T(0));
+#endif
+    }
 
     //////////////////////////// Component access //////////////////////////
 
@@ -162,6 +202,12 @@ public:
 
     /// Returns a reference to the Z component of this vector.
     Q_DECL_CONSTEXPR T& z() { return (*this)[2]; }
+
+#ifdef OVITO_USE_SYCL
+    // Workaround for missing data() method in SYCL's marray class template.
+    Q_DECL_CONSTEXPR T* data() noexcept { return &(*this)[0]; }
+    Q_DECL_CONSTEXPR const T* data() const noexcept { return &(*this)[0]; }
+#endif
 
     ////////////////////////////////// Comparison ////////////////////////////////
 
@@ -294,6 +340,15 @@ public:
     QString toString() const {
         return QString("(%1 %2 %3)").arg(x()).arg(y()).arg(z());
     }
+
+#ifdef OVITO_USE_SYCL
+    // Workaround for missing swap() method in SYCL's marray class template.
+    friend void swap(Vector_3& a, Vector_3& b) noexcept {
+        using namespace std;
+        for(size_type i = 0; i < 3; i++)
+            swap(a[i], b[i]);
+    }
+#endif
 };
 
 /// \brief Computes the sum of two vectors.

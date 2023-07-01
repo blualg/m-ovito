@@ -234,22 +234,22 @@ void ReaxFFBondImporter::FrameLoader::loadFile()
     {
         // Create bonds storage.
         setBondCount(reaxBonds.size());
-        BufferAccess<ParticleIndexPair> bondParticleIdentifiersProperty = bonds()->createProperty(BondsObject::ParticleIdentifiersProperty);
+        BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> bondParticleIdentifiersProperty = bonds()->createProperty(BondsObject::ParticleIdentifiersProperty);
         std::transform(reaxBonds.cbegin(), reaxBonds.cend(), bondParticleIdentifiersProperty.begin(), [](const ReaxFFBond& bond) { return bond.atoms; });
 
         // Create bond property for the bond order.
-        BufferAccess<FloatType> bondOrderProperty = bonds()->createProperty(QStringLiteral("Bond Order"), PropertyObject::FloatDefault);
+        BufferWriteAccess<FloatType, access_mode::discard_write> bondOrderProperty = bonds()->createProperty(QStringLiteral("Bond Order"), PropertyObject::FloatDefault);
         std::transform(reaxBonds.cbegin(), reaxBonds.cend(), bondOrderProperty.begin(), [](const ReaxFFBond& bond) { return bond.bondOrder; });
 
         // Create particle properties.
         setParticleCount(reaxAtoms.size());
-        BufferAccess<int64_t> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty);
+        BufferWriteAccess<int64_t, access_mode::discard_write> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty);
         std::transform(reaxAtoms.cbegin(), reaxAtoms.cend(), identifierProperty.begin(), [](const ReaxFFAtom& atom) { return atom.id; });
-        BufferAccess<FloatType> chargeProperty = particles()->createProperty(ParticlesObject::ChargeProperty);
+        BufferWriteAccess<FloatType, access_mode::discard_write> chargeProperty = particles()->createProperty(ParticlesObject::ChargeProperty);
         std::transform(reaxAtoms.cbegin(), reaxAtoms.cend(), chargeProperty.begin(), [](const ReaxFFAtom& atom) { return atom.q; });
-        BufferAccess<FloatType> atomBondOrderProperty = particles()->createProperty(QStringLiteral("Atom Bond Order"), PropertyObject::FloatDefault);
+        BufferWriteAccess<FloatType, access_mode::discard_write> atomBondOrderProperty = particles()->createProperty(QStringLiteral("Atom Bond Order"), PropertyObject::FloatDefault);
         std::transform(reaxAtoms.cbegin(), reaxAtoms.cend(), atomBondOrderProperty.begin(), [](const ReaxFFAtom& atom) { return atom.abo; });
-        BufferAccess<FloatType> lonePairsProperty = particles()->createProperty(QStringLiteral("Lone Pairs"), PropertyObject::FloatDefault);
+        BufferWriteAccess<FloatType, access_mode::discard_write> lonePairsProperty = particles()->createProperty(QStringLiteral("Lone Pairs"), PropertyObject::FloatDefault);
         std::transform(reaxAtoms.cbegin(), reaxAtoms.cend(), lonePairsProperty.begin(), [](const ReaxFFAtom& atom) { return atom.nlp; });
     }
 

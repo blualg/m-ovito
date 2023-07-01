@@ -86,10 +86,10 @@ void ElasticStrainEngine::perform()
 
     nextProgressSubStep();
 
-    BufferAccess<const Point3> positionsArray(positions());
-    BufferAccess<Matrix3> deformationGradientsArray(deformationGradients());
-    BufferAccess<SymmetricTensor2> strainTensorsArray(strainTensors());
-    BufferAccess<FloatType> volumetricStrainsArray(volumetricStrains());
+    BufferReadAccess<Point3> positionsArray(positions());
+    BufferWriteAccess<Matrix3, access_mode::discard_write> deformationGradientsArray(deformationGradients());
+    BufferWriteAccess<SymmetricTensor2, access_mode::discard_write> strainTensorsArray(strainTensors());
+    BufferWriteAccess<FloatType, access_mode::discard_write> volumetricStrainsArray(volumetricStrains());
 
     parallelForWithProgress(positions()->size(), [&](size_t particleIndex) {
 
@@ -136,7 +136,7 @@ void ElasticStrainEngine::perform()
                 // Calculate deformation gradient tensor.
                 Matrix_3<double> elasticF = orientationW * orientationV.inverse();
                 if(deformationGradientsArray)
-                    deformationGradientsArray[particleIndex] = (Matrix3)elasticF;
+                    deformationGradientsArray[particleIndex] = elasticF.toDataType<FloatType>();
 
                 // Calculate strain tensor.
                 SymmetricTensor2T<double> elasticStrain;
@@ -159,7 +159,7 @@ void ElasticStrainEngine::perform()
                 // Calculate volumetric strain component.
                 double volumetricStrain = (elasticStrain(0,0) + elasticStrain(1,1) + elasticStrain(2,2)) / 3.0;
                 OVITO_ASSERT(std::isfinite(volumetricStrain));
-                volumetricStrainsArray[particleIndex] = (FloatType)volumetricStrain;
+                volumetricStrainsArray[particleIndex] = static_cast<FloatType>(volumetricStrain);
 
                 return;
             }

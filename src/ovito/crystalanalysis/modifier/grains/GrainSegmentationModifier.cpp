@@ -154,7 +154,7 @@ void GrainSegmentationEngine1::applyResults(const ModifierEvaluationRequest& req
 
         std::vector<Bond> bonds;
         std::vector<FloatType> disorientations;
-        BufferAccess<const Point3> positionsArray(particles->expectProperty(ParticlesObject::PositionProperty));
+        BufferReadAccess<Point3> positionsArray(particles->expectProperty(ParticlesObject::PositionProperty));
 
         for (auto edge: neighborBonds()) {
             if (isCrystallineBond(edge)) {
@@ -178,7 +178,7 @@ void GrainSegmentationEngine1::applyResults(const ModifierEvaluationRequest& req
 
         // Output disorientation angles as a bond property.
         PropertyPtr neighborDisorientationAngles = BondsObject::OOClass().createUserProperty(DataBuffer::Uninitialized, bonds.size(), DataBuffer::FloatDefault, 1, QStringLiteral("Disorientation"));
-        BufferAccess<FloatType> disorientationAnglesAccess(neighborDisorientationAngles);
+        BufferWriteAccess<FloatType, access_mode::discard_write> disorientationAnglesAccess(neighborDisorientationAngles);
         for(size_t i = 0; i < disorientations.size(); i++) {
             disorientationAnglesAccess[i] = disorientations[i];
         }
@@ -219,9 +219,9 @@ void GrainSegmentationEngine2::applyResults(const ModifierEvaluationRequest& req
         if(modifier->colorParticlesByGrain()) {
 
             // Assign colors to particles according to the grains they belong to.
-            BufferAccess<const ColorG> grainColorsArray(_grainColors);
-            BufferAccess<ColorG> particleColorsArray = particles->createProperty(ParticlesObject::ColorProperty);
-            boost::transform(BufferAccess<const int64_t>(atomClusters()), particleColorsArray.begin(), [&](int64_t cluster) {
+            BufferReadAccess<ColorG> grainColorsArray(_grainColors);
+            BufferWriteAccess<ColorG, access_mode::discard_write> particleColorsArray = particles->createProperty(ParticlesObject::ColorProperty);
+            boost::transform(BufferReadAccess<int64_t>(atomClusters()), particleColorsArray.begin(), [&](int64_t cluster) {
                 if(cluster != 0)
                     return grainColorsArray[cluster - 1];
                 else
@@ -240,7 +240,7 @@ void GrainSegmentationEngine2::applyResults(const ModifierEvaluationRequest& req
 
     size_t numGrains = 0;
     if(atomClusters()->size() != 0)
-        numGrains = *boost::max_element(BufferAccess<const int64_t>(atomClusters()));
+        numGrains = *boost::max_element(BufferReadAccess<int64_t>(atomClusters()));
 
     state.addAttribute(QStringLiteral("GrainSegmentation.grain_count"), QVariant::fromValue(numGrains), request.modApp());
 

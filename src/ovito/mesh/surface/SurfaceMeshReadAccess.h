@@ -170,7 +170,7 @@ public:
     }
 
     /// Returns the vector corresponding to an half-edge of the surface mesh.
-    Vector3 edgeVector(edge_index edge, const BufferAccess<const Point3>& vertexPositions) const {
+    Vector3 edgeVector(edge_index edge, const BufferReadAccess<Point3>& vertexPositions) const {
         Vector3 delta = vertexPositions[vertex2(edge)] - vertexPositions[vertex1(edge)];
         return domain() ? domain()->wrapVector(delta) : delta;
     }
@@ -218,7 +218,7 @@ public:
     void convertToTriMesh(TriMeshObject& outputMesh, bool smoothShading, const boost::dynamic_bitset<>& faceSubset = boost::dynamic_bitset<>{}, std::vector<size_t>* originalFaceMap = nullptr, bool autoGenerateOppositeFaces = false) const;
 
     /// Computes the unit normal vector of a mesh face.
-    Vector3 computeFaceNormal(face_index face, const BufferAccess<const Point3>& vertexPositions) const;
+    Vector3 computeFaceNormal(face_index face, const BufferReadAccess<Point3>& vertexPositions) const;
 
     /// Returns the surface mesh object managed by this class.
     const SurfaceMesh* mesh() const { return _mesh; }

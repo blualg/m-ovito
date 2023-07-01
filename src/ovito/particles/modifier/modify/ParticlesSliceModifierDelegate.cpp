@@ -56,8 +56,8 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationReq
     boost::dynamic_bitset<> mask(inputParticles->elementCount());
 
     // Get the required input properties.
-    BufferAccess<const Point3> posProperty = inputParticles->expectProperty(ParticlesObject::PositionProperty);
-    BufferAccess<const SelectionIntType> selProperty = mod->applyToSelection() ? inputParticles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
+    BufferReadAccess<Point3> posProperty = inputParticles->expectProperty(ParticlesObject::PositionProperty);
+    BufferReadAccess<SelectionIntType> selProperty = mod->applyToSelection() ? inputParticles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
     OVITO_ASSERT(posProperty.size() == mask.size());
     OVITO_ASSERT(!selProperty || selProperty.size() == mask.size());
 
@@ -120,7 +120,7 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationReq
     }
     else {
         size_t numSelected = 0;
-        BufferAccess<SelectionIntType> newSelProperty = outputParticles->createProperty(ParticlesObject::SelectionProperty);
+        BufferWriteAccess<SelectionIntType, access_mode::discard_write> newSelProperty = outputParticles->createProperty(ParticlesObject::SelectionProperty);
         OVITO_ASSERT(mask.size() == newSelProperty.size());
         boost::dynamic_bitset<>::size_type i = 0;
         for(auto& s : newSelProperty) {

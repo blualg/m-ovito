@@ -141,7 +141,7 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
     if(method() == AlphaShape) {
         // Generate adhoc particle property array 'Particle Index' and fill it with numbers 0 through N-1.
         PropertyPtr particleIndexProp = ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, particles->elementCount(), PropertyObject::Int64, 1, QStringLiteral("Particle Index"));
-        boost::algorithm::iota_n(BufferAccess<int64_t>(particleIndexProp).begin(), (int64_t)0, particleIndexProp->size());
+        boost::algorithm::iota_n(BufferWriteAccess<int64_t, access_mode::discard_write>(particleIndexProp).begin(), (int64_t)0, particleIndexProp->size());
         particleProperties.push_back(std::move(particleIndexProp));
     }
 
@@ -229,11 +229,11 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
     if(!tessellation.generateTessellation(
             mesh()->domain(),
-            BufferAccess<const Point3>(positions()).cbegin(),
+            BufferReadAccess<Point3>(positions()).cbegin(),
             positions()->size(),
             ghostLayerSize,
             coverDomainWithFiniteTets,
-            selection() ? BufferAccess<const SelectionIntType>(selection()).cbegin() : nullptr,
+            selection() ? BufferReadAccess<SelectionIntType>(selection()).cbegin() : nullptr,
             *this))
         return;
     OVITO_ASSERT(tessellation.simCell());
@@ -249,7 +249,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
         int64_t maxGrainId = 0;
         if(particleGrains()->size() != 0) {
             maxGrainId = qBound(int64_t{0},
-                *boost::max_element(BufferAccess<const int64_t>(particleGrains())),
+                *boost::max_element(BufferReadAccess<int64_t>(particleGrains())),
                 static_cast<int64_t>(std::numeric_limits<SurfaceMesh::region_index>::max() - 1));
         }
 
@@ -261,7 +261,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
     // This is only used if the input particles have previously been divided into grains by a GrainSegmentationModifier.
     // Otherwise, all tetrahedra are attributed to the null grain initially. Subsequently, they will be
     // grouped into disconnected sets, which form the regions of the output SurfaceMesh.
-    auto tetrahedronRegion = [&,grains = BufferAccess<const int64_t>(_identifyRegions ? particleGrains() : nullptr)](DelaunayTessellation::CellHandle cell) -> SurfaceMesh::region_index {
+    auto tetrahedronRegion = [&,grains = BufferReadAccess<int64_t>(_identifyRegions ? particleGrains() : nullptr)](DelaunayTessellation::CellHandle cell) -> SurfaceMesh::region_index {
         if(grains) {
             // Decide which particle cluster the Delaunay cell belongs to.
             // We need a tie-breaker in case the four vertex atoms belong to different grains.
@@ -279,7 +279,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
     // This callback function is called for every surface facet created by the manifold construction helper.
     // It marks the particles corresponding to the mesh vertices as belonging to the surface.
-    BufferAccess<SelectionIntType> surfaceParticleSelectionArray(surfaceParticleSelection());
+    BufferWriteAccess<SelectionIntType, access_mode::write> surfaceParticleSelectionArray(surfaceParticleSelection());
     auto prepareMeshFace = [&](SurfaceMesh::face_index face, const std::array<size_t,3>& vertexIndices, const std::array<DelaunayTessellation::VertexHandle,3>& vertexHandles, DelaunayTessellation::CellHandle cell) {
         // Mark the face's corner particles as belonging to the surface.
         if(surfaceParticleSelectionArray) {
@@ -329,7 +329,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
         _emptyRegionCount = manifoldConstructor.emptyRegionCount();
 
         // Transfer the region ID information to the output particles.
-        if(BufferAccess<int32_t> regionIds = particleRegionIds()) {
+        if(BufferWriteAccess<int32_t, access_mode::discard_read_write> regionIds = particleRegionIds()) {
             nextProgressSubStep();
             setProgressMaximum(regionIds.size());
             size_t numProcessedParticles = 0;
@@ -363,7 +363,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
             // are not attributed to any region yet. We do the attribution next by performing point queries on the Delaunay tessellation.
             // For each unassigned particle we determine the Delaunay cell it is located in and then use its region.
             auto particleRegionId = regionIds.begin();
-            for(const Point3& pos : BufferAccess<const Point3>(positions())) {
+            for(const Point3& pos : BufferReadAccess<Point3>(positions())) {
                 if(*particleRegionId == -1) {
                     if(!setProgressValueIntermittent(++numProcessedParticles))
                         return;
@@ -382,7 +382,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
         }
 
         // Output "Filled" region property.
-        BufferAccess<SelectionIntType> filledProperty(meshBuilder.createRegionProperty(DataBuffer::Uninitialized, SurfaceMeshRegions::IsFilledProperty));
+        BufferWriteAccess<SelectionIntType, access_mode::discard_write> filledProperty(meshBuilder.createRegionProperty(DataBuffer::Uninitialized, SurfaceMeshRegions::IsFilledProperty));
         std::fill(filledProperty.begin(), filledProperty.begin() + _filledRegionCount, 1);
         std::fill(filledProperty.begin() + _filledRegionCount, filledProperty.end(), 0);
 
@@ -463,14 +463,14 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
         if(_identifyRegions) {
             SurfaceMeshBuilder meshBuilder(this->mesh());
             meshBuilder.mutableRegions()->setElementCount(1);
-            BufferAccess<FloatType> volumeProperty{
-                meshBuilder.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::VolumeProperty)};
-            BufferAccess<SelectionIntType> isExteriorProperty{
-                meshBuilder.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsExteriorProperty)};
-            BufferAccess<SelectionIntType> isFilledProperty{
-                meshBuilder.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsFilledProperty)};
-            BufferAccess<FloatType> surfaceArea{
-                meshBuilder.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::SurfaceAreaProperty)};
+            BufferWriteAccess<FloatType, access_mode::discard_write> volumeProperty{
+                meshBuilder.createRegionProperty(DataBuffer::Uninitialized, SurfaceMeshRegions::VolumeProperty)};
+            BufferWriteAccess<SelectionIntType, access_mode::discard_write> isExteriorProperty{
+                meshBuilder.createRegionProperty(DataBuffer::Uninitialized, SurfaceMeshRegions::IsExteriorProperty)};
+            BufferWriteAccess<SelectionIntType, access_mode::discard_write> isFilledProperty{
+                meshBuilder.createRegionProperty(DataBuffer::Uninitialized, SurfaceMeshRegions::IsFilledProperty)};
+            BufferWriteAccess<FloatType, access_mode::discard_write> surfaceArea{
+                meshBuilder.createRegionProperty(DataBuffer::Uninitialized, SurfaceMeshRegions::SurfaceAreaProperty)};
             volumeProperty[0] = meshBuilder.domain()->volume3D();
             isFilledProperty[0] = 0;
             isExteriorProperty[0] =
@@ -488,14 +488,14 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     beginProgressSubStepsWithWeights({ 1, 30, 1600, 1500, 30, 500, 100, 300, surfaceDistances() ? 10000 : 1 });
 
     // Access the atomic radii.
-    BufferAccess<const GraphicsFloatType> particleRadii(_particleRadii);
+    BufferReadAccess<GraphicsFloatType> particleRadii(_particleRadii);
 
     // Determine the cutoff range of atomic Gaussians.
     FloatType cutoffSize = FloatType(3) * *boost::max_element(particleRadii) * _radiusFactor;
 
     // Determine the extents of the density grid.
     AffineTransformation gridBoundaries = mesh()->domain()->matrix();
-    BufferAccess<const Point3> positionsArray(positions());
+    BufferReadAccess<Point3> positionsArray(positions());
     for(size_t dim = 0; dim < 3; dim++) {
         // Use bounding box of particles in directions that are non-periodic.
         if(!mesh()->domain()->hasPbc(dim)) {
@@ -628,7 +628,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 
     // Map mesh region volumes from orthogonal grid space to world space.
     FloatType gridToCartesianDeterminant = gridToCartesian.determinant();
-    BufferAccess<FloatType> regionVolumes = meshBuilder.mutableRegionProperty(SurfaceMeshRegions::VolumeProperty);
+    BufferWriteAccess<FloatType, access_mode::read_write> regionVolumes = meshBuilder.mutableRegionProperty(SurfaceMeshRegions::VolumeProperty);
     for(SurfaceMesh::region_index region : meshBuilder.regionsRange()) {
         regionVolumes[region] *= gridToCartesianDeterminant;
     }
@@ -639,8 +639,8 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     nextProgressSubStep();
 
     // Create mesh vertex properties for transferring particle property values to the surface.
-    std::vector<std::pair<BufferAccess<const float*>, BufferAccess<float*>>> propertyMapping32;
-    std::vector<std::pair<BufferAccess<const double*>, BufferAccess<double*>>> propertyMapping64;
+    std::vector<std::pair<BufferReadAccess<float*>, BufferWriteAccess<float*, access_mode::read_write>>> propertyMapping32;
+    std::vector<std::pair<BufferReadAccess<double*>, BufferWriteAccess<double*, access_mode::read_write>>> propertyMapping64;
     for(const ConstPropertyPtr& particleProperty : particleProperties()) {
         // Can only transfer floating-point properties, because we'll need to blend values of several particles.
         if(particleProperty->dataType() == PropertyObject::Float32 || particleProperty->dataType() == PropertyObject::Float64) {
@@ -671,7 +671,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     // Transfer property values from particles to the mesh vertices.
     if(!propertyMapping32.empty() || !propertyMapping64.empty()) {
         // Compute the accumulated density at each grid point.
-        BufferAccess<const Point3> vertexPositions = meshBuilder.expectVertexProperty(SurfaceMeshVertices::PositionProperty);
+        BufferReadAccess<Point3> vertexPositions = meshBuilder.expectVertexProperty(SurfaceMeshVertices::PositionProperty);
         parallelForWithProgress(meshBuilder.vertexCount(), [&](size_t vertexIndex) {
             // Visit all particles in the vicinity of the vertex.
             FloatType weightSum = 0;
@@ -753,10 +753,10 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
  ******************************************************************************/
 bool ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeSurfaceAreaWithRegions(SurfaceMeshBuilder& mesh)
 {
-    BufferAccess<FloatType> surfaceAreaProperty{mesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::SurfaceAreaProperty)};
-    BufferAccess<const SelectionIntType> isFilled{mesh.regionProperty(SurfaceMeshRegions::IsFilledProperty)};
-    BufferAccess<const Point3> vertexPositions{mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty)};
-    BufferAccess<const SurfaceMesh::region_index> faceRegions{mesh.expectFaceProperty(SurfaceMeshFaces::RegionProperty)};
+    BufferWriteAccess<FloatType, access_mode::read_write> surfaceAreaProperty{mesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::SurfaceAreaProperty)};
+    BufferReadAccess<SelectionIntType> isFilled{mesh.regionProperty(SurfaceMeshRegions::IsFilledProperty)};
+    BufferReadAccess<Point3> vertexPositions{mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty)};
+    BufferReadAccess<SurfaceMesh::region_index> faceRegions{mesh.expectFaceProperty(SurfaceMeshFaces::RegionProperty)};
 
     setProgressMaximum(mesh.faceCount());
     _totalSurfaceArea = 0;
@@ -782,7 +782,7 @@ bool ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeSurfaceAreaWit
  ******************************************************************************/
 bool ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeSurfaceArea(const SurfaceMeshBuilder& mesh)
 {
-    BufferAccess<const Point3> vertexPositions{mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty)};
+    BufferReadAccess<Point3> vertexPositions{mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty)};
 
     setProgressMaximum(mesh.faceCount());
     _totalSurfaceArea = 0;
@@ -807,9 +807,9 @@ void ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeAggregateVolum
     _voidRegionCount = 0;
     _emptyRegionCount = 0;
 
-    BufferAccess<const SelectionIntType> isFilled{mesh.expectRegionProperty(SurfaceMeshRegions::IsFilledProperty)};
-    BufferAccess<const SelectionIntType> isExterior{mesh.expectRegionProperty(SurfaceMeshRegions::IsExteriorProperty)};
-    BufferAccess<const FloatType> regionVolumes{mesh.expectRegionProperty(SurfaceMeshRegions::VolumeProperty)};
+    BufferReadAccess<SelectionIntType> isFilled{mesh.expectRegionProperty(SurfaceMeshRegions::IsFilledProperty)};
+    BufferReadAccess<SelectionIntType> isExterior{mesh.expectRegionProperty(SurfaceMeshRegions::IsExteriorProperty)};
+    BufferReadAccess<FloatType> regionVolumes{mesh.expectRegionProperty(SurfaceMeshRegions::VolumeProperty)};
 
     for(SurfaceMesh::region_index region{0}; region < mesh.regionCount(); region++) {
         FloatType volume = regionVolumes[region];
@@ -839,9 +839,9 @@ void ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeSurfaceDistanc
     setProgressText(tr("Computing surface distances"));
 
     // Access output array.
-    BufferAccess<FloatType> distanceArray(surfaceDistances());
+    BufferWriteAccess<FloatType, access_mode::discard_write> distanceArray(surfaceDistances());
     // Access input positions.
-    BufferAccess<const Point3> positionArray(positions());
+    BufferReadAccess<Point3> positionArray(positions());
 
     // Perform computation for each particle.
     size_t progressChunkSize = 64;

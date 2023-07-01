@@ -314,7 +314,7 @@ ConstDataBufferPtr SceneRenderer::getNodeTrajectory(const SceneNode* node)
         int firstFrame = animSettings->firstFrame();
         int lastFrame = animSettings->lastFrame();
         OVITO_ASSERT(lastFrame >= firstFrame);
-        BufferAccessAndRef<Point3G> vertices = DataBufferPtr::create(lastFrame - firstFrame + 1, DataBuffer::FloatGraphics, 3);
+        BufferFactory<Point3G> vertices(lastFrame - firstFrame + 1);
         auto v = vertices.begin();
         for(int frame = firstFrame; frame <= lastFrame; frame++) {
             TimeInterval iv;
@@ -342,8 +342,8 @@ void SceneRenderer::renderNodeTrajectory(const SceneNode* node)
 
             // Render lines connecting the trajectory points.
             if(trajectory->size() >= 2) {
-                BufferAccessAndRef<Point3G> lineVertices = DataBufferPtr::create((trajectory->size() - 1) * 2, DataBuffer::FloatGraphics, 3);
-                BufferAccess<const Point3G> trajectoryPoints(trajectory);
+                BufferFactory<Point3G> lineVertices((trajectory->size() - 1) * 2);
+                BufferReadAccess<Point3G> trajectoryPoints(trajectory);
                 for(size_t index = 0; index < trajectory->size(); index++) {
                     if(index != 0)
                         lineVertices[index * 2 - 1] = trajectoryPoints[index];
@@ -364,7 +364,7 @@ void SceneRenderer::renderNodeTrajectory(const SceneNode* node)
         }
         else {
             Box3G bb;
-            bb.addPoints(BufferAccess<const Point3G>(trajectory));
+            bb.addPoints(BufferReadAccess<Point3G>(trajectory));
             addToLocalBoundingBox(bb.toDataType<FloatType>());
         }
     }
@@ -455,7 +455,7 @@ void SceneRenderer::render2DPolyline(const Point2* points, int count, const Colo
     LinePrimitive primitive;
     primitive.setUniformColor(color);
 
-    BufferAccessAndRef<Point3G> vertices = DataBufferPtr::create((closed ? count : count-1) * 2, DataBuffer::FloatGraphics, 3);
+    BufferFactory<Point3G> vertices((closed ? count : count-1) * 2);
     Point3G* lineSegment = vertices.begin();
     for(int i = 0; i < count - 1; i++, lineSegment += 2) {
         lineSegment[0] = Point3G(points[i].x(), points[i].y(), 0.0);
@@ -665,8 +665,8 @@ void SceneRenderer::renderGrid()
         // Allocate vertex buffer.
         int numVertices = 2 * (numLinesX + numLinesY);
 
-        BufferAccessAndRef<Point3G> vertexPositions = DataBufferPtr::create(numVertices, DataBuffer::FloatGraphics, 3);
-        BufferAccessAndRef<ColorAG> vertexColors = DataBufferPtr::create(numVertices, DataBuffer::FloatGraphics, 4);
+        BufferFactory<Point3G> vertexPositions(numVertices);
+        BufferFactory<ColorAG> vertexColors(numVertices);
 
         // Build lines array.
         const ColorAG color = Viewport::viewportColor(ViewportSettings::COLOR_GRID).toDataType<GraphicsFloatType>();

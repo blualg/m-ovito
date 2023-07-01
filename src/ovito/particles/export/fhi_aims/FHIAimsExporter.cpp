@@ -38,9 +38,9 @@ bool FHIAimsExporter::exportData(const PipelineFlowState& state, int frameNumber
     // Get particle positions and types.
     const ParticlesObject* particles = state.expectObject<ParticlesObject>();
     particles->verifyIntegrity();
-    BufferAccess<const Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+    BufferReadAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
     const PropertyObject* particleTypeProperty = particles->getProperty(ParticlesObject::TypeProperty);
-    BufferAccess<const int32_t> particleTypeArray(particleTypeProperty);
+    BufferReadAccess<int32_t> particleTypeArray(particleTypeProperty);
 
     textStream() << "# FHI-aims file written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
 

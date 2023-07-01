@@ -138,7 +138,7 @@ void mmCIFImporter::FrameLoader::loadFile()
 
         // Allocate property arrays for atoms.
         setParticleCount(natoms);
-        BufferAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+        BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
         PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
         PropertyObject* atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int32);
         PropertyObject* residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int32);
@@ -148,9 +148,9 @@ void mmCIFImporter::FrameLoader::loadFile()
         residueTypeProperty->setTitle(tr("Residue types"));
 
         auto* posIter = posProperty.begin();
-        BufferAccess<int32_t> typeAccess(typeProperty);
-        BufferAccess<int32_t> atomNameAccess(atomNameProperty);
-        BufferAccess<int32_t> residueTypeAccess(residueTypeProperty);
+        BufferWriteAccess<int32_t, access_mode::discard_write> typeAccess(typeProperty);
+        BufferWriteAccess<int32_t, access_mode::discard_write> atomNameAccess(atomNameProperty);
+        BufferWriteAccess<int32_t, access_mode::discard_write> residueTypeAccess(residueTypeProperty);
         auto* typeIter = typeAccess.begin();
         auto* atomNameIter = atomNameAccess.begin();
         auto* residueTypeIter = residueTypeAccess.begin();
@@ -188,7 +188,7 @@ void mmCIFImporter::FrameLoader::loadFile()
 
         // Parse the optional site occupancy information.
         if(hasOccupancy) {
-            BufferAccess<FloatType> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::FloatDefault);
+            BufferWriteAccess<FloatType, access_mode::discard_write> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::FloatDefault);
             FloatType* occupancyIter = occupancyProperty.begin();
             for(const gemmi::Chain& chain : model.chains) {
                 for(const gemmi::Residue& residue : chain.residues) {

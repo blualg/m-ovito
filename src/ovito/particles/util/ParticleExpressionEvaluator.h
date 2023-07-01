@@ -76,7 +76,7 @@ protected:
 private:
 
     /// Holds a reference to the bond topology property.
-    BufferAccessAndRef<const ParticleIndexPair> _topologyArray;
+    BufferReadAccessAndRef<ParticleIndexPair> _topologyArray;
 };
 
 }   // End of namespace

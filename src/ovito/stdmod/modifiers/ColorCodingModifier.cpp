@@ -396,9 +396,11 @@ PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationReques
     if(!std::isfinite(endValue)) endValue = std::numeric_limits<FloatType>::max();
 
     // Create the color output property.
-    BufferAccess<ColorG> colorProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, outputColorPropertyId(), objectPath);
+    BufferWriteAccess<ColorG, access_mode::write> colorProperty(
+        container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, outputColorPropertyId(), objectPath),
+        !selectionProperty);
 
-    BufferAccess<const SelectionIntType> selection(selectionProperty.get());
+    BufferReadAccess<SelectionIntType> selection(selectionProperty.get());
     bool result = property->forEach(vecComponent, [&](size_t i, auto v) {
         if(selection && !selection[i])
             return;

@@ -30,8 +30,8 @@ This option changes between a dark (default) and a white viewport background.
 
 Graphics hardware interface
   Selects the application programming interface used by OVITO for rendering the contents of the interactive
-  viewports. Currently, OVITO supports the graphics interfaces `OpenGL <https://www.opengl.org/>`__ and `Vulkan <https://www.vulkan.org/>`__ (only available on some platforms).
-  The viewport renderer which is based on the OpenGL interface is more mature and should work well on most systems.
+  viewports. Currently, OVITO supports the graphics interfaces `OpenGL <https://www.opengl.org/>`__ and `Vulkan <https://www.vulkan.org/>`__ (latter only available on certain platforms).
+  The OpenGL-based viewport renderer is more mature and should work well on most systems.
   Vulkan is a more modern programming interface, but some graphics drivers still exhibit compatibility problems.
   Please inform the OVITO developers about any problems you encounter on your system.
 

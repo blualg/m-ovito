@@ -163,11 +163,11 @@ void CastepMDImporter::FrameLoader::loadFile()
 
     // Create the particle properties.
     setParticleCount(coords.size());
-    BufferAccess<Point3> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+    BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
     boost::copy(coords, posProperty.begin());
 
     PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-    boost::transform(types, BufferAccess<int32_t>(typeProperty).begin(), [&](const QString& typeName) {
+    boost::transform(types, BufferWriteAccess<int32_t, access_mode::discard_write>(typeProperty).begin(), [&](const QString& typeName) {
         return addNamedType(ParticlesObject::OOClass(), typeProperty, typeName)->numericId();
     });
 
@@ -177,11 +177,11 @@ void CastepMDImporter::FrameLoader::loadFile()
     typeProperty->sortElementTypesByName();
 
     if(velocities.size() == coords.size()) {
-        BufferAccess<Vector3> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty);
+        BufferWriteAccess<Vector3, access_mode::discard_write> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty);
         boost::copy(velocities, velocityProperty.begin());
     }
     if(forces.size() == coords.size()) {
-        BufferAccess<Vector3> forceProperty = particles()->createProperty(ParticlesObject::ForceProperty);
+        BufferWriteAccess<Vector3, access_mode::discard_write> forceProperty = particles()->createProperty(ParticlesObject::ForceProperty);
         boost::copy(forces, forceProperty.begin());
     }
 

@@ -48,7 +48,7 @@ void InvertSelectionModifier::evaluateSynchronous(const ModifierEvaluationReques
         throw Exception(tr("No data element type set."));
 
     PropertyContainer* container = state.expectMutableLeafObject(subject());
-    BufferAccess<SelectionIntType> selProperty = container->createProperty(DataBuffer::Initialized, PropertyObject::GenericSelectionProperty);
+    BufferWriteAccess<SelectionIntType, access_mode::read_write> selProperty = container->createProperty(DataBuffer::Initialized, PropertyObject::GenericSelectionProperty);
     for(auto& s : selProperty)
         s = !s;
 }
