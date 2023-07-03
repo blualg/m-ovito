@@ -189,12 +189,18 @@ bool ColorCodingModifier::determinePropertyValueRange(const PipelineFlowState& s
         return false;
     int vecComponent = std::max(0, sourceProperty().vectorComponent());
 
+    // Access the input selection if coloring is restricted to the currently selected elements.
+    BufferReadAccess<SelectionIntType> selection = (colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty))
+        ? container->getProperty(PropertyObject::GenericSelectionProperty) : nullptr;
+
     // Iterate over the property array to find the lowest/highest value.
     FloatType maxValue = std::numeric_limits<FloatType>::lowest();
     FloatType minValue = std::numeric_limits<FloatType>::max();
     property->forEach(vecComponent, [&](size_t i, auto v) {
-            if(v > maxValue) maxValue = v;
-            if(v < minValue) minValue = v;
+            if(!selection || selection[i]) {
+                if(v > maxValue) maxValue = v;
+                if(v < minValue) minValue = v;
+            }
         });
     if(minValue == std::numeric_limits<FloatType>::max())
         return false;
@@ -363,14 +369,7 @@ PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationReques
     // Get the selection property if enabled by the user.
     ConstPropertyPtr selectionProperty;
     if(mod->colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
-        if(const PropertyObject* selPropertyObj = container->getProperty(PropertyObject::GenericSelectionProperty)) {
-            selectionProperty = selPropertyObj;
-
-            // Clear selection if requested.
-            if(!mod->keepSelection()) {
-                container->removeProperty(selPropertyObj);
-            }
-        }
+        selectionProperty = container->getProperty(PropertyObject::GenericSelectionProperty);
     }
 
     // Get modifier's parameter values.
@@ -394,6 +393,11 @@ PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationReques
     // Clamp to finite range.
     if(!std::isfinite(startValue)) startValue = std::numeric_limits<FloatType>::lowest();
     if(!std::isfinite(endValue)) endValue = std::numeric_limits<FloatType>::max();
+
+    // Clear selection if requested. This must happen after calling determinePropertyValueRange(), which needs the input selection.
+    if(!mod->keepSelection() && selectionProperty) {
+        container->removeProperty(selectionProperty);
+    }
 
     // Create the color output property.
     BufferWriteAccess<ColorG, access_mode::write> colorProperty(

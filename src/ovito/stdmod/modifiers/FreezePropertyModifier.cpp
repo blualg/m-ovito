@@ -220,6 +220,9 @@ void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest
         myModApp->property()->mappedCopyTo(*outputProperty, mapping);
     }
     else {
+        storedIds.reset();
+        idProperty.reset();
+
         // Make sure the number of elements didn't change when no IDs are defined.
         if(myModApp->property()->size() != outputProperty->size())
             throw Exception(tr("Number of input elements has changed. Cannot restore saved property values. There were %1 elements when the snapshot was created. Now there are %2.").arg(myModApp->property()->size()).arg(outputProperty->size()));

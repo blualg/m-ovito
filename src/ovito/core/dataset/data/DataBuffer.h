@@ -566,13 +566,13 @@ inline bool DataBuffer::copyTo(Iter iter, size_t component) const
 template<typename F>
 inline bool DataBuffer::forEach(size_t component, F&& func) const
 {
-    OVITO_ASSERT(_isDataInitialized);
     size_t cmpntCount = componentCount();
     if(component >= cmpntCount)
         return false;
     size_t s = size();
     if(s == 0)
         return true;
+    OVITO_ASSERT(_isDataInitialized);
     ReadAccess readAccess(*this);
 #ifdef OVITO_USE_SYCL
     if(dataType() == DataBuffer::Int8) {
