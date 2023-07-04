@@ -448,7 +448,7 @@ Future<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvaluationR
         });
 
     // Post-process the results of the loading operation before returning them to the caller.
-    return postprocessDataCollection(frame, frameTimeInterval(frame), std::move(stateFuture));
+    return postprocessDataCollection(frame, frameTimeInterval(frame), std::move(stateFuture), request.throwOnError());
 }
 
 /******************************************************************************

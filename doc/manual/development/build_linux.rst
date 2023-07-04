@@ -17,15 +17,8 @@ as follows:
   framework, which is available as a download from https://www.qt.io/download. Alternatively,
   you can use the Qt6 development files provided by the package manager of your Linux distro.
 
-.. list-table::
-   :width: 100%
-   :widths: auto
-   :header-rows: 1
-
-   * - Linux distribution
-     - Commands
-   * - Ubuntu / Debian
-     - .. code::
+Ubuntu / Debian:
+  .. code-block:: shell
 
           sudo apt-get install build-essential git cmake-curses-gui qt6-base-dev libqt6svg6-dev \
                 libboost-dev libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev \
@@ -33,8 +26,8 @@ as follows:
                 libglu1-mesa-dev libvulkan-dev ninja-build \
                 libssh-dev python3-sphinx python3-sphinx-rtd-theme
 
-   * - openSUSE
-     - .. code::
+openSUSE:
+  .. code-block:: shell
 
           sudo zypper install git cmake gcc-c++ qt6-concurrent-devel qt6-core-devel qt6-gui-devel \
                  qt6-network-devel qt6-dbus-devel qt6-opengl-devel qt6-printsupport-devel \
@@ -42,8 +35,8 @@ as follows:
                  libavfilter-devel libavcodec-devel libavdevice-devel netcdf-devel libssh-devel \
                  boost-devel hdf5-devel libswscale-devel ninja
 
-   * - Fedora
-     - .. code::
+Fedora:
+  .. code-block:: shell
 
           # Activate the RPMfusion repository providing the ffmpeg package (optional):
           sudo dnf install \
@@ -53,15 +46,15 @@ as follows:
           sudo dnf install git cmake g++ qt6-qtbase-devel qt6-qtsvg-devel boost-devel zlib-devel ninja-build \
                            ffmpeg-devel netcdf-devel libssh-devel python3-sphinx python3-sphinx_rtd_theme
 
-   * - CentOS / RHEL
-     - .. code::
+RHEL / CentOS:
+  .. code-block:: shell
 
           sudo yum install epel-release
           sudo yum install git gcc gcc-c++ cmake qt6-qtbase-devel qt6-qtsvg-devel qt6-qttools-devel \
                                boost-devel netcdf-devel hdf5-devel libssh-devel
 
-       These packages allow building only a basic version of OVITO without video encoding support and documentation.
-       In order to build a complete version, other :ref:`dependencies <development.requirements>` must be installed manually.
+  These RHEL/CentOS packages allow building only a basic version of OVITO without video encoding support and documentation.
+  In order to build a complete version, other :ref:`dependencies <development.requirements>` must be installed manually.
 
 Getting the source code
 -----------------------
