@@ -283,7 +283,7 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
             if(lineSegment.burgersVector != lastBurgersVector || lineSegment.region != lastRegion) {
                 lastBurgersVector = lineSegment.burgersVector;
                 lastRegion = lineSegment.region;
-                lineColor = ColorG(0.8, 0.8, 0.8);
+                lineColor = ColorG(0.8f, 0.8f, 0.8f);
                 const MicrostructurePhase* phase = nullptr;
                 if(dislocationsObj && renderableLines->clusterGraph()) {
                     Cluster* cluster = renderableLines->clusterGraph()->findCluster(lineSegment.region);

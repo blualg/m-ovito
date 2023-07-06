@@ -451,7 +451,7 @@ void GuiApplication::reportError(const Exception& ex)
 }
 
 /******************************************************************************
-* Returns whether app's UI should automatically follow the system color scheme. 
+* Returns whether app's UI should automatically follow the system color scheme.
 ******************************************************************************/
 bool GuiApplication::automaticallyEnableDarkMode()
 {
@@ -461,7 +461,7 @@ bool GuiApplication::automaticallyEnableDarkMode()
     #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
         return QSettings().value("ui/automatic_dark_mode", false).toBool();
     #else
-        return false
+        return false;
     #endif
 #endif
 
@@ -474,7 +474,7 @@ bool GuiApplication::usingDarkTheme() const
 {
     if(!automaticallyEnableDarkMode())
         return false;
-        
+
 #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     return QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
 #else
