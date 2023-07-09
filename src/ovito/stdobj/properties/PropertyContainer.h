@@ -235,6 +235,9 @@ public:
             container->makePropertiesMutableInternal();
         }
 
+        Grower(const Grower&) = delete; // non construction-copyable
+        Grower& operator=(const Grower&) = delete; // non copyable
+
         ~Grower() { commit(); }
 
         void commit() {

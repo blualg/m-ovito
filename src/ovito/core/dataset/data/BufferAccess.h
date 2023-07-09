@@ -145,7 +145,7 @@ public:
 #ifdef OVITO_DEBUG
     /// Copy construction (only enabled for read-only accessors).
     BufferAccessBase(const BufferAccessBase& other) : BufferAccessBase(other._buffer, false, PrivateConstructorTag{}) {
-        static_assert(accessmode == access_mode::read);
+        OVITO_ASSERT(accessmode == access_mode::read);
     }
 #endif
 

@@ -185,7 +185,7 @@ size_t ParticlesObject::deleteElements(ConstDataBufferPtr selection, size_t sele
             bool deleteElement = false;
             for(auto& particleIndex : particleIndices) {
                 // Mark invalid entries for deletion, i.e., if particle indices are out of range for some reason.
-                if(particleIndex < 0 || particleIndex >= (size_t)oldParticleCount) {
+                if(particleIndex < 0 || (size_t)particleIndex >= oldParticleCount) {
                     deleteElement = true;
                     break;
                 }
