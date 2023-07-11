@@ -147,6 +147,7 @@ private:
         PropertyPtr _voronoiIndices;
         const PropertyPtr _maxFaceOrders;
         std::vector<Bond> _bonds;
+        PropertyPtr _bondVoronoiOrder;
         ParticleOrderingFingerprint _inputFingerprint;
 
         /// The volume sum of all Voronoi cells.

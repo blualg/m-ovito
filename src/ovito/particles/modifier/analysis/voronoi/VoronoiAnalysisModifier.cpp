@@ -225,10 +225,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
         adjacentCellProperty = polyhedraMesh.createFaceProperty(DataBuffer::Uninitialized, QStringLiteral("Adjacent Cell"), PropertyObject::Int32);
 
         // Create the "Bond Index" face property, which stores the which bond belongs to which Voronoi face.
-        if(_computeBonds) {
+        if(_computeBonds)
             faceBondIndexProperty = polyhedraMesh.createFaceProperty(DataBuffer::Uninitialized, QStringLiteral("Bond Index"), PropertyObject::Int64);
-            faceBondIndexProperty->fill<int64_t>(-1);
-        }
 
         // Create the "Area" face property, which stores the surface area of each Voronoi face.
         faceAreaProperty = polyhedraMesh.createFaceProperty(DataBuffer::Uninitialized, QStringLiteral("Area"), PropertyObject::FloatDefault);
@@ -262,6 +260,11 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
         vertexGrower.emplace(polyhedraMesh);
         faceGrower.emplace(polyhedraMesh);
     }
+
+    // For generting the "Voronoi Order" bond property.
+    PropertyFactory<int32_t> bondVoronoiOrder;
+    if(_computeBonds)
+        bondVoronoiOrder = PropertyFactory<int32_t>(BondsObject::OOClass(), 0, QStringLiteral("Voronoi Order"));
 
     if(_positions->size() == 0 || _simCell->volume3D() == 0) {
         if(maxFaceOrders()) {
@@ -350,6 +353,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
                         QMutexLocker locker(bondMutex);
                         meshFace = faceGrower->createFace(meshRegionIndex);
                         BufferWriteAccess<int32_t, access_mode::write>{adjacentCellProperty, meshFace == 0}[meshFace] = neighbor_id;
+                        BufferWriteAccess<int64_t, access_mode::write>{faceBondIndexProperty, meshFace == 0}[meshFace] = -1;
                         polyhedraMesh.mutableTopology()->createEdge(meshVertexBaseIndex + i, meshVertexBaseIndex + k, meshFace);
                     }
 
@@ -398,9 +402,9 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
                         coordNumber++;
                         if(faceOrder > localMaxFaceOrder)
                             localMaxFaceOrder = faceOrder;
-                        faceOrder--;
-                        if(maxFaceOrders() && faceOrder < FaceOrderStorageLimit)
-                            localVoronoiIndex[faceOrder]++;
+                        int faceOrderIndex = faceOrder - 1;
+                        if(maxFaceOrders() && faceOrderIndex < FaceOrderStorageLimit)
+                            localVoronoiIndex[faceOrderIndex]++;
                         if(_computeBonds && neighbor_id >= 0 && normal != Vector3::Zero()) {
                             OVITO_ASSERT(neighbor_id < _positions->size());
                             FloatType dot = face_vertex0.dot(normal);
@@ -422,8 +426,9 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
                             if(!bond.isOdd()) {
                                 QMutexLocker locker(bondMutex);
                                 if(_polyhedraMesh)
-                                    BufferWriteAccess<int64_t, access_mode::write>{faceBondIndexProperty, meshFace == 0}[meshFace] = bonds().size();
+                                    BufferWriteAccess<int64_t, access_mode::write>{faceBondIndexProperty}[meshFace] = bonds().size();
                                 bonds().push_back(bond);
+                                bondVoronoiOrder.push_back(faceOrder);
                             }
                         }
                     }
@@ -663,6 +668,9 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
         }
     }
 
+    // Store "Voronoi Order" bond property.
+    _bondVoronoiOrder = bondVoronoiOrder.take();
+
     // Finalize the polyhedral mesh.
     if(_polyhedraMesh) {
         nextProgressSubStep();
@@ -819,9 +827,9 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
                     OVITO_ASSERT(!polyhedraMesh.hasOppositeFace(adjacentFace));
                     polyhedraMesh.linkOppositeFaces(face, adjacentFace);
                     if(faceBondIndices) {
-                        if(faceBondIndices[face] != -1)
+                        if(faceBondIndices[face] != int64_t{-1})
                             faceBondIndices[adjacentFace] = faceBondIndices[face];
-                        else
+                        else if(faceBondIndices[adjacentFace] != int64_t{-1})
                             faceBondIndices[face] = faceBondIndices[adjacentFace];
                     }
                     break;
@@ -880,7 +888,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::applyResults(const Modifier
 
     if(modifier->computeBonds()) {
         // Insert output object into the pipeline.
-        particles->addBonds(bonds(), modifier->bondsVis());
+        particles->addBonds(bonds(), modifier->bondsVis(), {_bondVoronoiOrder});
     }
 
     // Output the surface mesh representing the computed Voronoi polyhedra.
