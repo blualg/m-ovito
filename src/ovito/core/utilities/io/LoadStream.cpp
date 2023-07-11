@@ -270,7 +270,7 @@ LoadStream& operator>>(LoadStream& stream, QUrl& url)
         if(QFileDevice* fileDevice = qobject_cast<QFileDevice*>(stream.dataStream().device())) {
             QFileInfo streamFile(fileDevice->fileName());
             if(streamFile.isAbsolute()) {
-                QFileInfo resolvedFilePath(streamFile.dir(), relativePath);
+                QFileInfo resolvedFilePath(streamFile.dir().canonicalPath(), relativePath);
                 if(resolvedFilePath.dir().exists())
                     url = QUrl::fromLocalFile(resolvedFilePath.absoluteFilePath());
             }
