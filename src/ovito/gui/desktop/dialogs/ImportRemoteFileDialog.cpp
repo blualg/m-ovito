@@ -135,7 +135,7 @@ ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindow& mainWindow, const QVe
     layout3->addWidget(_sftpPath, 1, 1);
     connect(_opensshMethod, &QRadioButton::toggled, _sftpPath, &QWidget::setEnabled);
 
-    QPushButton* selectExecutablePathButton = new QPushButton("...");
+    QPushButton* selectExecutablePathButton = new QPushButton(QStringLiteral("..."));
     connect(selectExecutablePathButton, &QPushButton::clicked, this, [this]() {
         QString path = QFileDialog::getOpenFileName(this, tr("Select SFTP Executable"), _sftpPath->text().trimmed());
         if(!path.isEmpty())

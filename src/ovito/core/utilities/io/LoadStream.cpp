@@ -220,7 +220,7 @@ void LoadStream::resolvePointer(quint64 id, void* pointer)
 
     // Backpatch pointers.
     auto first = _backpatchPointers.find(id);
-    if(first == _backpatchPointers.end()) 
+    if(first == _backpatchPointers.end())
         return;
 
     auto last = first;

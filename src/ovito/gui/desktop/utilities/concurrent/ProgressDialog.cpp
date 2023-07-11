@@ -22,7 +22,6 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/gui/desktop/widgets/general/ElidedTextLabel.h>
 #include <ovito/core/utilities/concurrent/TaskWatcher.h>
 #include "ProgressDialog.h"
 
@@ -43,7 +42,7 @@ ProgressDialog::ProgressDialog(QWidget* parent, TaskPtr task, const QString& dia
 #if 0
 #ifdef Q_OS_MAC
     // On macOS, the progress dialog has no title bar (it's a Qt::Sheet).
-    // Insert our own header text label into the dialog. 
+    // Insert our own header text label into the dialog.
     if(parent && !dialogTitle.isEmpty()) {
         QLabel* titleLabel = new QLabel(dialogTitle);
         QFont boldFont;
