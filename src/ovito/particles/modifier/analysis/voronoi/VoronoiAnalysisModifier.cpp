@@ -353,7 +353,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
                         QMutexLocker locker(bondMutex);
                         meshFace = faceGrower->createFace(meshRegionIndex);
                         BufferWriteAccess<int32_t, access_mode::write>{adjacentCellProperty, meshFace == 0}[meshFace] = neighbor_id;
-                        BufferWriteAccess<int64_t, access_mode::write>{faceBondIndexProperty, meshFace == 0}[meshFace] = -1;
+                        if(_computeBonds)
+                            BufferWriteAccess<int64_t, access_mode::write>{faceBondIndexProperty, meshFace == 0}[meshFace] = -1;
                         polyhedraMesh.mutableTopology()->createEdge(meshVertexBaseIndex + i, meshVertexBaseIndex + k, meshFace);
                     }
 
