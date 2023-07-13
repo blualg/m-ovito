@@ -279,11 +279,8 @@ void GSDImporter::FrameLoader::loadFile()
     // Read any user-defined log chunks and add them to the global attributes dictionary.
     chunkName = gsd.findMatchingChunkName("log/", nullptr);
     while(chunkName) {
-        QString key(chunkName);
-        if(key.count(QChar('/')) == 1) {
-            key.remove(0, 4);
-            state().setAttribute(key, gsd.readVariant(chunkName, frameNumber), dataSource());
-        }
+        QString key = QString::fromUtf8(chunkName + 4); // Cut off "log/" prefix
+        state().setAttribute(key, gsd.readVariant(chunkName, frameNumber), dataSource());
         chunkName = gsd.findMatchingChunkName("log/", chunkName);
     }
 
@@ -531,7 +528,7 @@ PropertyObject* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, con
             prop = container->createProperty(propertyType);
         }
         else {
-            QString propertyName(chunkName);
+            QString propertyName = QString::fromUtf8(chunkName);
             int slashPos = propertyName.lastIndexOf(QChar('/'));
             if(slashPos != -1) propertyName.remove(0, slashPos + 1);
             std::pair<int, size_t> dataTypeAndComponents = gsd.getChunkDataTypeAndComponentCount(chunkName);
@@ -557,7 +554,7 @@ PropertyObject* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, con
             prop = container->createProperty(propertyType);
         }
         else {
-            QString propertyName(chunkName);
+            QString propertyName = QString::fromUtf8(chunkName);
             int slashPos = propertyName.lastIndexOf(QChar('/'));
             if(slashPos != -1) propertyName.remove(0, slashPos + 1);
             std::pair<int, size_t> dataTypeAndComponents = gsd.getChunkDataTypeAndComponentCount(chunkName);

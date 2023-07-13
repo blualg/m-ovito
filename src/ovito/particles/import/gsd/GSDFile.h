@@ -170,7 +170,10 @@ public:
         if(chunk->type == GSD_TYPE_INT8 && chunk->M == 1) {
             // Special handling for char arrays, which need to be converted to a string object.
             QByteArray buffer(chunk->N, '\0');
-            errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
+            if(chunk->N != 0)
+                errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
+            else
+                errCode = gsd_error::GSD_SUCCESS;
             result = QString::fromUtf8(buffer);
         }
         else {
@@ -228,55 +231,60 @@ public:
             }
             else {
                 QVariantList list;
-                if(chunk->type == GSD_TYPE_INT8) {
-                    std::vector<int8_t> buffer(chunk->N * chunk->M);
-                    errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
-                    std::copy(buffer.begin(), buffer.end(), std::back_inserter(list));
+                if(chunk->N != 0) {
+                    if(chunk->type == GSD_TYPE_INT8) {
+                        std::vector<int8_t> buffer(chunk->N * chunk->M);
+                        errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
+                        std::copy(buffer.begin(), buffer.end(), std::back_inserter(list));
+                    }
+                    else if(chunk->type == GSD_TYPE_UINT8) {
+                        std::vector<uint8_t> buffer(chunk->N * chunk->M);
+                        errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
+                        std::copy(buffer.begin(), buffer.end(), std::back_inserter(list));
+                    }
+                    else if(chunk->type == GSD_TYPE_INT16) {
+                        std::vector<int16_t> buffer(chunk->N * chunk->M);
+                        errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
+                        std::copy(buffer.begin(), buffer.end(), std::back_inserter(list));
+                    }
+                    else if(chunk->type == GSD_TYPE_UINT16) {
+                        std::vector<uint16_t> buffer(chunk->N * chunk->M);
+                        errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
+                        std::copy(buffer.begin(), buffer.end(), std::back_inserter(list));
+                    }
+                    else if(chunk->type == GSD_TYPE_INT32) {
+                        std::vector<int32_t> buffer(chunk->N * chunk->M);
+                        errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
+                        std::copy(buffer.begin(), buffer.end(), std::back_inserter(list));
+                    }
+                    else if(chunk->type == GSD_TYPE_UINT32) {
+                        std::vector<uint32_t> buffer(chunk->N * chunk->M);
+                        errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
+                        std::copy(buffer.begin(), buffer.end(), std::back_inserter(list));
+                    }
+                    else if(chunk->type == GSD_TYPE_INT64) {
+                        std::vector<int64_t> buffer(chunk->N * chunk->M);
+                        errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
+                        std::transform(buffer.begin(), buffer.end(), std::back_inserter(list), [](int64_t v) { return QVariant::fromValue((qlonglong)v); });
+                    }
+                    else if(chunk->type == GSD_TYPE_UINT64) {
+                        std::vector<uint64_t> buffer(chunk->N * chunk->M);
+                        errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
+                        std::transform(buffer.begin(), buffer.end(), std::back_inserter(list), [](uint64_t v) { return QVariant::fromValue((qulonglong)v); });
+                    }
+                    else if(chunk->type == GSD_TYPE_FLOAT) {
+                        std::vector<float> buffer(chunk->N * chunk->M);
+                        errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
+                        std::copy(buffer.begin(), buffer.end(), std::back_inserter(list));
+                    }
+                    else if(chunk->type == GSD_TYPE_DOUBLE) {
+                        std::vector<double> buffer(chunk->N * chunk->M);
+                        errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
+                        std::copy(buffer.begin(), buffer.end(), std::back_inserter(list));
+                    }
                 }
-                else if(chunk->type == GSD_TYPE_UINT8) {
-                    std::vector<uint8_t> buffer(chunk->N * chunk->M);
-                    errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
-                    std::copy(buffer.begin(), buffer.end(), std::back_inserter(list));
-                }
-                else if(chunk->type == GSD_TYPE_INT16) {
-                    std::vector<int16_t> buffer(chunk->N * chunk->M);
-                    errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
-                    std::copy(buffer.begin(), buffer.end(), std::back_inserter(list));
-                }
-                else if(chunk->type == GSD_TYPE_UINT16) {
-                    std::vector<uint16_t> buffer(chunk->N * chunk->M);
-                    errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
-                    std::copy(buffer.begin(), buffer.end(), std::back_inserter(list));
-                }
-                else if(chunk->type == GSD_TYPE_INT32) {
-                    std::vector<int32_t> buffer(chunk->N * chunk->M);
-                    errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
-                    std::copy(buffer.begin(), buffer.end(), std::back_inserter(list));
-                }
-                else if(chunk->type == GSD_TYPE_UINT32) {
-                    std::vector<uint32_t> buffer(chunk->N * chunk->M);
-                    errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
-                    std::copy(buffer.begin(), buffer.end(), std::back_inserter(list));
-                }
-                else if(chunk->type == GSD_TYPE_INT64) {
-                    std::vector<int64_t> buffer(chunk->N * chunk->M);
-                    errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
-                    std::transform(buffer.begin(), buffer.end(), std::back_inserter(list), [](int64_t v) { return QVariant::fromValue((qlonglong)v); });
-                }
-                else if(chunk->type == GSD_TYPE_UINT64) {
-                    std::vector<uint64_t> buffer(chunk->N * chunk->M);
-                    errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
-                    std::transform(buffer.begin(), buffer.end(), std::back_inserter(list), [](uint64_t v) { return QVariant::fromValue((qulonglong)v); });
-                }
-                else if(chunk->type == GSD_TYPE_FLOAT) {
-                    std::vector<float> buffer(chunk->N * chunk->M);
-                    errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
-                    std::copy(buffer.begin(), buffer.end(), std::back_inserter(list));
-                }
-                else if(chunk->type == GSD_TYPE_DOUBLE) {
-                    std::vector<double> buffer(chunk->N * chunk->M);
-                    errCode = ::gsd_read_chunk(&_handle, buffer.data(), chunk);
-                    std::copy(buffer.begin(), buffer.end(), std::back_inserter(list));
+                else {
+                    errCode = gsd_error::GSD_SUCCESS;
                 }
                 result = QVariant::fromValue(list);
             }
@@ -321,7 +329,7 @@ public:
         auto chunk = ::gsd_find_chunk(&_handle, frame, chunkName);
         // Automatically fall back to frame 0 if chunk doesn't exist for the requested simulation frame.
         if(!chunk && frame != 0) chunk = ::gsd_find_chunk(&_handle, 0, chunkName);
-        if(chunk) {
+        if(chunk && chunk->N != 0) {
             if(chunk->type != GSD_TYPE_INT8 && chunk->type != GSD_TYPE_UINT8)
                 throw Exception(GSDImporter::tr("GSD file I/O error: Data type of chunk '%1' is not GSD_TYPE_UINT8 but %2.").arg(chunkName).arg(chunk->type));
             std::vector<char> buffer(chunk->N * chunk->M);
@@ -355,6 +363,8 @@ public:
             throw Exception(GSDImporter::tr("GSD file I/O error: Number of elements in chunk '%1' does not match expected value.").arg(chunkName));
         if(chunk->M != componentCount)
             throw Exception(GSDImporter::tr("GSD file I/O error: Size of second dimension in chunk '%1' is %2 and does not match expected value %3.").arg(chunkName).arg(chunk->M).arg(componentCount));
+        if(chunk->N == 0)
+            return;
         int errCode = -1;
         if constexpr(std::is_same_v<T, float>) {
             if(chunk->type == GSD_TYPE_DOUBLE) {
@@ -411,6 +421,8 @@ public:
             throw Exception(GSDImporter::tr("GSD file I/O error: Number of elements in chunk '%1' does not match expected value.").arg(chunkName));
         if(chunk->M != intsPerElement)
             throw Exception(GSDImporter::tr("GSD file I/O error: Size of second dimension in chunk '%1' is not %2.").arg(chunkName).arg(intsPerElement));
+        if(chunk->N == 0)
+            return;
         int errCode;
         if(::gsd_sizeof_type(static_cast<gsd_type>(chunk->type)) == sizeof(IntType)) {
             // No data type conversion needed.
