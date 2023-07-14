@@ -5,6 +5,24 @@ Changelog
 =========
 
 ---------------------------
+Version 3.9.0 (xx-xxx-2023)
+---------------------------
+
+* Added support for :ref:`dark mode UI <application_settings.general>` to Windows version of OVITO
+* Support for additional property array data types (float32, int8) to reduce memory footprint of some particle properties (e.g. Color, Selection) with low precision requirements
+* GSD file reader: Do not skip ``log/`` chunks containing ``/`` in their names
+* All file readers: Automatic mangling of property names in case they collide with OVITO's property naming rules
+* OpenGL renderer: Performance optimizations, support for direct upload of float32 and int8 data
+* Fix: Color Coding modifier's "adjust range" function does not follow option "only selected"
+* Automatic generation of search pattern for trajectory file series: Avoid placing placeholder in 2 or 3-character file extensions containing digits
+* |ovito-pro| Support for :ref:`user-defined file readers <writing_custom_file_readers>`
+* |ovito-pro| Discovery mechanism for Python-based user extensions: :ref:`registering_custom_python_classes`
+* |ovito-pro| New *Python Settings* dialog, which provides a hot-reload function for Python modules
+* |ovito-pro| New Python method :py:meth:`VoxelGrid.view <ovito.data.VoxelGrid.view>`
+* |ovito-pro| Performance optimizations for property array read and write accesses from Python
+* |ovito-pro| New SSH remote file access option via OpenSSH to support smartcard authentication methods
+
+---------------------------
 Version 3.8.5 (19-Jun-2023)
 ---------------------------
 
