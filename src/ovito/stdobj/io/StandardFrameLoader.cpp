@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -70,9 +70,9 @@ void StandardFrameLoader::loadFile()
     // This is needed for the Python code generator to detect manual changes subsequently made by the user.
     if(_simulationCell) {
         _simulationCell->freezeInitialParameterValues({
-            SHADOW_PROPERTY_FIELD(SimulationCellObject::pbcX), 
-            SHADOW_PROPERTY_FIELD(SimulationCellObject::pbcY), 
-            SHADOW_PROPERTY_FIELD(SimulationCellObject::pbcZ), 
+            SHADOW_PROPERTY_FIELD(SimulationCellObject::pbcX),
+            SHADOW_PROPERTY_FIELD(SimulationCellObject::pbcY),
+            SHADOW_PROPERTY_FIELD(SimulationCellObject::pbcZ),
             SHADOW_PROPERTY_FIELD(SimulationCellObject::is2D)});
     }
 }
