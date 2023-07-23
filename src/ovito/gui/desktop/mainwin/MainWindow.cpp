@@ -697,9 +697,9 @@ void MainWindow::reportError(const Exception& exception, QWidget* window)
         // If there currently is a modal dialog box being shown,
         // make the error message dialog a child of this dialog to prevent a UI dead-lock.
 #if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
-        for(QDialog* dialog : window->findChildren<QDialog*>(Qt::FindDirectChildrenOnly)) {
+        for(QDialog* dialog : window->findChildren<QDialog*>(Qt::FindChildrenRecursively)) {
 #else
-        for(QDialog* dialog : window->findChildren<QDialog*>(QString{}, Qt::FindDirectChildrenOnly)) {
+        for(QDialog* dialog : window->findChildren<QDialog*>(QString{}, Qt::FindChildrenRecursively)) {
 #endif
             if(dialog->isModal()) {
                 window = dialog;
