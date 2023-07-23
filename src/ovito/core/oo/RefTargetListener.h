@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -87,11 +87,11 @@ class RefTargetListener : public RefTargetListenerBase
 public:
 
     /// \brief Returns the current target this listener is listening to.
-    /// \return The current target object or \c NULL.
+    /// \return The current target object or \c nullptr.
     T* target() const { return static_object_cast<T>(RefTargetListenerBase::target()); }
 
     /// \brief Sets the current target this listener should listen to.
-    /// \param newTarget The new target or \c NULL.
+    /// \param newTarget The new target or \c nullptr.
     void setTarget(T* newTarget) { RefTargetListenerBase::setTarget(newTarget); }
 };
 
@@ -187,15 +187,15 @@ public:
     /// \param newTargets The new list of targets.
     /// \sa targets()
     template<typename U>
-    void setTargets(U&& newTargets) { 
-        VectorRefTargetListenerBase::setTargets(std::forward<U>(newTargets)); 
+    void setTargets(U&& newTargets) {
+        VectorRefTargetListenerBase::setTargets(std::forward<U>(newTargets));
     }
 
     /// \brief Sets the list of targets this listener should listen to.
     /// \param newTargets The new list of targets.
     /// \sa targets()
-    void setTargets(std::initializer_list<T*> newTargets) { 
-        VectorRefTargetListenerBase::setTargets(std::move(newTargets)); 
+    void setTargets(std::initializer_list<T*> newTargets) {
+        VectorRefTargetListenerBase::setTargets(std::move(newTargets));
     }
 
     /// \brief Adds a new object to the list of targets this listener should listen to.

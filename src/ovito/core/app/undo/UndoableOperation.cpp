@@ -160,7 +160,7 @@ void CompoundOperation::redo()
     _isUndoingOrRedoing = true;
     try {
         for(const auto& op : _subOperations) {
-            OVITO_CHECK_POINTER(op);
+            OVITO_CHECK_POINTER(op.get());
             op->redo();
         }
         _isUndoingOrRedoing = false;

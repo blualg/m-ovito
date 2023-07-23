@@ -100,6 +100,11 @@ public:
     /// \param name The localized and human-readable display name for this compound operation.
     explicit CompoundOperation(const QString& name) : _displayName(name) {}
 
+#ifdef OVITO_DEBUG
+    /// \brief Destructor.
+    virtual ~CompoundOperation() { OVITO_ASSERT(!_isUndoingOrRedoing); }
+#endif
+
     /// \brief Provides a localized, human readable description of this operation.
     /// \return A localized string that describes the operation. It is shown in the
     ///         edit menu of the application.
@@ -120,14 +125,20 @@ public:
     /// \param operation An instance of a UndoableOperation derived class that encapsulates
     ///                  the operation. The CompoundOperation becomes the owner of
     ///                  this object and is responsible for its deletion.
-    void addOperation(std::unique_ptr<UndoableOperation> operation) { _subOperations.push_back(std::move(operation)); }
+    void addOperation(std::unique_ptr<UndoableOperation> operation) {
+        OVITO_ASSERT(!_isUndoingOrRedoing);
+        _subOperations.push_back(std::move(operation));
+    }
 
     /// \brief Indicates whether this UndoableOperation is significant or can be ignored.
     /// \return \c true if the CompoundOperation contains at least one sub-operation; \c false it is empty.
     bool isSignificant() const { return _subOperations.empty() == false; }
 
     /// \brief Removes all sub-operations from this compound operation.
-    void clear() { _subOperations.clear(); }
+    void clear() {
+        OVITO_ASSERT(!_isUndoingOrRedoing);
+        _subOperations.clear();
+    }
 
     /// \brief Undo all operations up to the given position and the remove those operations from the container.
     void revertTo(int position);

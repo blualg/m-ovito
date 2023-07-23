@@ -105,7 +105,7 @@ public:
             if(get() == newValue) return;
         }
         if constexpr(!(flags & PROPERTY_FIELD_NO_UNDO)) {
-            if(descriptor->automaticUndo() && CompoundOperation::current())
+            if(descriptor->automaticUndo() && CompoundOperation::isUndoRecording())
                 CompoundOperation::current()->addOperation(std::make_unique<PropertyChangeOperation>(owner, *this, descriptor));
         }
         mutableValue() = std::forward<T>(newValue);

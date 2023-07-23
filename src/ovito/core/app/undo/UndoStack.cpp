@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -48,7 +48,7 @@ void UndoStack::push(std::unique_ptr<CompoundOperation> operation)
 
     // Discard previously undone operations.
     _operations.resize(index() + 1);
-    if(cleanIndex() > index()) 
+    if(cleanIndex() > index())
         _cleanIndex = -1;
 
     _operations.push_back(std::move(operation));
@@ -72,7 +72,7 @@ void UndoStack::limitUndoStack()
     OVITO_ASSERT(CompoundOperation::isUndoRecording() == false);
     OVITO_ASSERT(!CompoundOperation::current());
 
-    if(_undoLimit < 0) 
+    if(_undoLimit < 0)
         return;
     int n = count() - _undoLimit;
     if(n > 0) {
@@ -133,7 +133,7 @@ void UndoStack::undo()
     OVITO_ASSERT(CompoundOperation::isUndoRecording() == false);
     OVITO_ASSERT(!CompoundOperation::current());
 
-    if(!canUndo()) 
+    if(!canUndo())
         return;
 
     CompoundOperation* curOp = _operations[index()].get();
@@ -158,7 +158,7 @@ void UndoStack::redo()
     OVITO_ASSERT(CompoundOperation::isUndoRecording() == false);
     OVITO_ASSERT(!CompoundOperation::current());
 
-    if(!canRedo()) 
+    if(!canRedo())
         return;
 
     CompoundOperation* nextOp = _operations[index() + 1].get();

@@ -148,7 +148,7 @@ template<typename T> void SingleReferenceFieldBase<T>::set(RefMaker* owner, cons
         }
     };
 
-    if(descriptor->automaticUndo() && CompoundOperation::current()) {
+    if(descriptor->automaticUndo() && CompoundOperation::isUndoRecording()) {
         auto op = std::make_unique<SetReferenceOperation>(owner, std::move(newTarget), *this, descriptor);
         op->redo();
         CompoundOperation::current()->addOperation(std::move(op));
@@ -273,7 +273,7 @@ template<typename T> void VectorReferenceFieldBase<T>::set(RefMaker* owner, cons
         }
     };
 
-    if(descriptor->automaticUndo() && CompoundOperation::current()) {
+    if(descriptor->automaticUndo() && CompoundOperation::isUndoRecording()) {
         auto op = std::make_unique<SetReferenceOperation>(owner, std::move(newTarget), i, *this, descriptor);
         op->redo();
         CompoundOperation::current()->addOperation(std::move(op));
@@ -337,7 +337,7 @@ template<typename T> auto VectorReferenceFieldBase<T>::insert(RefMaker* owner, c
         }
     };
 
-    if(descriptor->automaticUndo() && CompoundOperation::current()) {
+    if(descriptor->automaticUndo() && CompoundOperation::isUndoRecording()) {
         auto op = std::make_unique<InsertReferenceOperation>(owner, std::move(newTarget), i, *this, descriptor);
         op->redo();
         int index = op->insertionIndex();
@@ -400,7 +400,7 @@ template<typename T> T VectorReferenceFieldBase<T>::remove(RefMaker* owner, cons
         }
     };
 
-    if(descriptor->automaticUndo() && CompoundOperation::current()) {
+    if(descriptor->automaticUndo() && CompoundOperation::isUndoRecording()) {
         auto op = std::make_unique<RemoveReferenceOperation>(owner, i, *this, descriptor);
         op->redo();
         pointer removedReference = op->storedTarget();
