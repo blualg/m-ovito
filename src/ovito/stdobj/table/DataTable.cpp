@@ -105,24 +105,22 @@ ConstPropertyPtr DataTable::getXValues() const
     if(const PropertyObject* xProperty = x()) {
         return xProperty;
     }
-    else if(const PropertyObject* yProperty = y()) {
-        if(elementCount() != 0 && (intervalStart() != 0 || intervalEnd() != 0)) {
-            PropertyFactory<FloatType> xdata(OOClass(), elementCount(), axisLabelX());
-            FloatType binSize = (intervalEnd() - intervalStart()) / elementCount();
-            FloatType x = intervalStart() + binSize * FloatType(0.5);
-            for(auto& v : xdata) {
-                v = x;
-                x += binSize;
-            }
-            return xdata.take();
+    else if(y() && elementCount() != 0 && (intervalStart() != 0 || intervalEnd() != 0)) {
+        const PropertyObject* yProperty = y();
+        PropertyFactory<FloatType> xdata(OOClass(), elementCount(), axisLabelX());
+        FloatType binSize = (intervalEnd() - intervalStart()) / elementCount();
+        FloatType x = intervalStart() + binSize * FloatType(0.5);
+        for(auto& v : xdata) {
+            v = x;
+            x += binSize;
         }
-        else {
-            PropertyFactory<int64_t> xdata(OOClass(), elementCount(), axisLabelX());
-            std::iota(xdata.begin(), xdata.end(), (int64_t)0);
-            return xdata.take();
-        }
+        return xdata.take();
     }
-    return {};
+    else {
+        PropertyFactory<int64_t> xdata(OOClass(), elementCount(), axisLabelX().isEmpty() ? QStringLiteral("Index") : axisLabelX());
+        std::iota(xdata.begin(), xdata.end(), (int64_t)0);
+        return xdata.take();
+    }
 }
 
 }   // End of namespace

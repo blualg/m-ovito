@@ -80,14 +80,11 @@ bool DataTableExporter::exportFrame(int frameNumber, const QString& filePath, Ma
 
     ConstPropertyPtr xstorage = table->getXValues();
     ConstPropertyPtr ystorage = table->y();
-    const PropertyObject* xprop = table->x();
-    const PropertyObject* yprop = table->y();
-    if(!ystorage || !yprop)
+    if(table->properties().empty())
         throw Exception(tr("Data table to be exported contains no valid data columns."));
 
     size_t row_count = table->elementCount();
     int xDataType = xstorage ? xstorage->dataType() : 0;
-    int yDataType = ystorage->dataType();
 
     BufferReadAccess<int8_t*> xaccessInt8(xDataType == PropertyObject::Int8 ? xstorage : nullptr);
     BufferReadAccess<int32_t*> xaccessInt32(xDataType == PropertyObject::Int32 ? xstorage : nullptr);
@@ -101,23 +98,29 @@ bool DataTableExporter::exportFrame(int frameNumber, const QString& filePath, Ma
     auto formatColumnName = [](const QString& name) {
         return name.contains(QChar(' ')) ? (QChar('"') + name + QChar('"')) : name;
     };
-    textStream() << formatColumnName((!xprop || !table->axisLabelX().isEmpty()) ? table->axisLabelX() : xprop->name());
+    if(!xstorage)
+        textStream() << formatColumnName(table->axisLabelX());
+    else
+        textStream() << formatColumnName(xstorage->name());
 
-    if(ystorage->componentNames().size() == ystorage->componentCount()) {
-        for(size_t col = 0; col < ystorage->componentCount(); col++) {
-            textStream() << " " << formatColumnName(ystorage->componentNames()[col]);
+    if(ystorage) {
+        if(ystorage->componentNames().size() == ystorage->componentCount()) {
+            for(size_t col = 0; col < ystorage->componentCount(); col++) {
+                textStream() << " " << formatColumnName(ystorage->componentNames()[col]);
+            }
         }
-    }
-    else {
-        textStream() << " " << formatColumnName(!table->axisLabelY().isEmpty() ? table->axisLabelY() : ystorage->name());
+        else {
+            textStream() << " " << formatColumnName(!table->axisLabelY().isEmpty() ? table->axisLabelY() : ystorage->name());
+        }
     }
 
     // Collect the extra properties that should be written to the file.
     std::vector<RawBufferReadAccess> outputProperties;
-    outputProperties.emplace_back(ystorage);
+    if(ystorage)
+        outputProperties.emplace_back(ystorage);
     for(const PropertyObject* propObj : table->properties()) {
-        if(propObj == table->x()) continue;
-        if(propObj == table->y()) continue;
+        if(propObj == table->x() || propObj == table->y())
+            continue;
         outputProperties.emplace_back(propObj);
         if(propObj->componentNames().size() == propObj->componentCount()) {
             for(size_t col = 0; col < propObj->componentCount(); col++) {
@@ -134,8 +137,9 @@ bool DataTableExporter::exportFrame(int frameNumber, const QString& filePath, Ma
     for(size_t row = 0; row < row_count; row++) {
         // Write the X column.
         if(table->plotMode() == DataTable::BarChart) {
-            const ElementType* type = yprop->elementType(row);
-            if(!type && xprop) type = xprop->elementType(row);
+            const ElementType* type = ystorage ? ystorage->elementType(row) : nullptr;
+            if(!type && xstorage)
+                type = xstorage->elementType(row);
             if(type) {
                 textStream() << formatColumnName(type->name()) << " ";
             }
@@ -155,7 +159,7 @@ bool DataTableExporter::exportFrame(int frameNumber, const QString& filePath, Ma
             else
                 textStream() << "<?> ";
         }
-        // Write the Y column(s).
+        // Write the data column(s).
         for(const auto& array : outputProperties) {
             for(size_t col = 0; col < array.componentCount(); col++) {
                 if(array.dataType() == PropertyObject::Int8)
