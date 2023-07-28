@@ -79,7 +79,7 @@ void CAImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::F
 
         // Create a new record for the frame.
         frame.lineNumber = stream.lineNumber();
-        frame.label = QString("%1 (Frame %2)").arg(filename).arg(frameNumber++);
+        frame.label = QStringLiteral("%1 (Frame %2)").arg(filename).arg(frameNumber++);
         frames.push_back(frame);
         stream.recordSeekPoint();
 

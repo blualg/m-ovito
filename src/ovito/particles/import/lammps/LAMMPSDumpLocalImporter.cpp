@@ -87,7 +87,7 @@ void LAMMPSDumpLocalImporter::FrameFinder::discoverFramesInFile(QVector<FileSour
                     throw Exception(tr("LAMMPS dump local file parsing error. Invalid timestep number (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
                 frame.byteOffset = byteOffset;
                 frame.lineNumber = lineNumber;
-                frame.label = QString("Timestep %1").arg(timestep);
+                frame.label = QStringLiteral("Timestep %1").arg(timestep);
                 frames.push_back(frame);
                 stream.recordSeekPoint();
                 break;

@@ -7,6 +7,7 @@ Input file formats
   :hidden:
 
   input/ase_database
+  input/ase_trajectory
   input/cfg_atomeye
   input/gaussian_cube
   input/gsd
@@ -162,6 +163,11 @@ OVITO can directly read the following file formats:
     - `Database files written by the Atomic Simulation Environment (ASE) <https://wiki.fysik.dtu.dk/ase/ase/db/db.html>`__
     - :ref:`particles <scene_objects.particles>`
     - :ref:`Details <file_formats.input.ase_database>`
+
+  * - ASE trajectory |ovito-pro|
+    - `Trajectory files written by the Atomic Simulation Environment (ASE) <https://wiki.fysik.dtu.dk/ase/ase/io/trajectory.html>`__
+    - :ref:`particles <scene_objects.particles>`
+    - :ref:`Details <file_formats.input.ase_trajectory>`
 
   * - GALAMOST
     - XML-based file format used by the *GALAMOST* molecular dynamics code.

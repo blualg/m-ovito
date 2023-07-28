@@ -10,10 +10,9 @@ ASE database reader |ovito-pro|
 
 .. important::
 
-  The file reader requires the ASE module to work. Without this Python module, database files will not be recognized
-  by OVITO Pro or the :py:func:`~ovito.io.import_file` function. Thus, first make sure that ASE is
-  installed in your Python interpreter or in the embedded interpreter of OVITO Pro. See
-  :ref:`ovitos_install_modules`.
+  The file reader requires the `ASE module <https://wiki.fysik.dtu.dk/ase/install.html>`__ to work. Without this Python module, database files will not be recognized
+  by OVITO Pro or the :py:func:`~ovito.io.import_file` function. Thus, first make sure that ASE is installed in your Python interpreter or in the embedded interpreter
+  of OVITO Pro. See :ref:`ovitos_install_modules`.
 
 .. figure:: /images/io/ase_database_reader.*
   :figwidth: 36%
@@ -31,6 +30,8 @@ The file reader lets you specify an optional `filter query string <https://wiki.
 
 Internally, the file reader is based on the :py:func:`ovito.io.ase.ase_to_ovito` function, which converts ASE atoms objects
 to OVITO's :ref:`particle <scene_objects.particles>` datasets.
+
+.. seealso:: :ref:`file_formats.input.ase_trajectory`
 
 .. _file_formats.input.ase_database.python:
 
