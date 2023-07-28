@@ -81,6 +81,11 @@ OVITO can directly read the following file formats:
     - :ref:`particles <scene_objects.particles>`
     -
 
+  * - DCD
+    - Trajectory file format written by the CHARMM, NAMD, and LAMMPS simulation codes.
+    - :ref:`particles <scene_objects.particles>`
+    -
+
   * - CFG (AtomEye)
     - File format used by the `AtomEye <http://li.mit.edu/Archive/Graphics/A/>`__ visualization program.
     - :ref:`particles <scene_objects.particles>`

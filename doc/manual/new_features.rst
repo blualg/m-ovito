@@ -8,14 +8,16 @@ Changelog
 Version 3.9.0 (xx-xxx-2023)
 ---------------------------
 
-* Added support for :ref:`dark mode UI <application_settings.general>` to Windows version of OVITO
-* Support for additional property array data types (float32, int8) to reduce memory footprint of some particle properties (e.g. Color, Selection) with low precision requirements
-* GSD file reader: Do not skip ``log/`` chunks containing ``/`` in their names (`issue #226 <https://gitlab.com/stuko/ovito/-/issues/226>`__)
+* Support :ref:`dark mode UI <application_settings.general>` on Windows
+* Introduced additional property data types (float32, int8) to reduce memory footprint of some particle properties (e.g. Color, Selection) with low precision requirements
 * All file readers: Automatic mangling of property names in case they collide with OVITO's property naming rules
 * OpenGL renderer: Performance optimizations, support for direct upload of float32 and int8 array data
 * Fix: Color Coding modifier's "Adjust Range" function does not follow option "Only selected"
+* New file reader for the DCD trajectory format, which is written by the CHARMM, NAMD, and LAMMPS simulation codes
+* GSD file reader: Do not skip ``log/`` chunks containing ``/`` in their names (`issue #226 <https://gitlab.com/stuko/ovito/-/issues/226>`__)
 * Automatic generation of search pattern for trajectory file series: Avoid placing placeholder in 2 or 3-character file extensions containing digits
-* |ovito-pro| Support for :ref:`user-defined file readers <writing_custom_file_readers>`
+* Data table file exporter: Do not require a :py:attr:`~ovito.data.DataTable.y`-property
+* |ovito-pro| Added programming interface for :ref:`user-defined file readers <writing_custom_file_readers>`
 * |ovito-pro| New :ref:`SSH remote file access option via OpenSSH <usage.import.remote.openssh_connection_method>` to support smartcard authentication methods
 * |ovito-pro| Discovery mechanism for Python-based user extensions: :ref:`registering_custom_python_classes`
 * |ovito-pro| New *Python Settings* dialog, which provides a hot-reload function for Python modules

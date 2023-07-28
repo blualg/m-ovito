@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -73,6 +73,7 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
         import/cif/mmCIFImporterEditor.cpp
         import/gromacs/GroImporterEditor.cpp
         import/gromacs/XTCImporterEditor.cpp
+        import/dcd/DCDImporterEditor.cpp
         import/vasp/POSCARImporterEditor.cpp
         import/xyz/XYZImporterEditor.cpp
         import/cube/GaussianCubeImporterEditor.cpp
@@ -83,7 +84,7 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
         export/xyz/XYZExporterEditor.cpp
         resources/particles_gui.qrc
     PRIVATE_LIB_DEPENDENCIES Qwt PolyhedralTemplateMatching
-    PLUGIN_DEPENDENCIES Particles StdObjGui 
+    PLUGIN_DEPENDENCIES Particles StdObjGui
     PRECOMPILED_HEADERS ParticlesGui.h
     GUI_PLUGIN
 )

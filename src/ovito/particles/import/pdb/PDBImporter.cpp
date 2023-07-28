@@ -344,7 +344,7 @@ void PDBImporter::FrameLoader::loadFile()
                 FloatType alpha = qDegreesToRadians(structure.cell.alpha);
                 FloatType beta = qDegreesToRadians(structure.cell.beta);
                 FloatType gamma = qDegreesToRadians(structure.cell.gamma);
-                FloatType v = structure.cell.a * structure.cell.b * structure.cell.c * sqrt(1.0 - std::cos(alpha)*std::cos(alpha) - std::cos(beta)*std::cos(beta) - std::cos(gamma)*std::cos(gamma) + 2.0 * std::cos(alpha) * std::cos(beta) * std::cos(gamma));
+                FloatType v = structure.cell.a * structure.cell.b * structure.cell.c * std::sqrt(1.0 - std::cos(alpha)*std::cos(alpha) - std::cos(beta)*std::cos(beta) - std::cos(gamma)*std::cos(gamma) + 2.0 * std::cos(alpha) * std::cos(beta) * std::cos(gamma));
                 cell(0,0) = structure.cell.a;
                 cell(0,1) = structure.cell.b * std::cos(gamma);
                 cell(1,1) = structure.cell.b * std::sin(gamma);
