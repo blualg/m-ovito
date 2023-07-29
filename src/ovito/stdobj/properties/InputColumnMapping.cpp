@@ -158,7 +158,7 @@ void InputColumnMapping::fromByteArray(const QByteArray& array)
 /******************************************************************************
  * Checks if the mapping is valid; throws an exception if not.
  *****************************************************************************/
-void InputColumnMapping::validate() const
+void InputColumnMapping::validate(const QString& fileFormatName) const
 {
     OVITO_ASSERT(containerClass());
 
@@ -180,15 +180,18 @@ void InputColumnMapping::validate() const
         OVITO_ASSERT(m1->property.containerClass() == containerClass());
         for(auto m2 = std::next(m1); m2 != end(); ++m2) {
             if(m1->property == m2->property)
-                throw Exception(InputColumnReader::tr("Invalid file column mapping: File columns %1 and %2 cannot both be mapped to the same property '%3'.")
+                throw Exception(InputColumnReader::tr("Invalid file column mapping%4: File columns %1 and %2 cannot both be mapped to the same property '%3'.")
                     .arg(std::distance(begin(), m1) + 1)
                     .arg(std::distance(begin(), m2) + 1)
-                    .arg(m1->property.nameWithComponent()));
+                    .arg(m1->property.nameWithComponent())
+                    .arg(fileFormatName.isEmpty() ? QString() : InputColumnReader::tr(" set for parsing \"%1\"").arg(fileFormatName)));
         }
     }
 
     if(numMapped == 0)
-        throw Exception(InputColumnReader::tr("File column mapping is empty. Please specify how data columns of the input file should be mapped to the properties of %1.").arg(containerClass()->elementDescriptionName()));
+        throw Exception(InputColumnReader::tr("File column mapping%2 is empty. Please specify how data columns of the input file should be mapped to the properties of %1.")
+            .arg(containerClass()->elementDescriptionName())
+            .arg(fileFormatName.isEmpty() ? QString() : InputColumnReader::tr(" for parsing \"%1\"").arg(fileFormatName)));
 }
 
 /******************************************************************************
@@ -198,7 +201,7 @@ InputColumnReader::InputColumnReader(StandardFrameLoader& frameLoader, const Inp
     : _frameLoader(frameLoader), _mapping(mapping), _container(container)
 {
     if(validateMapping)
-        mapping.validate();
+        mapping.validate(frameLoader.dataSource() ? frameLoader.dataSource()->objectTitle() : QString());
 
     // Create target properties as defined by the mapping.
     for(int i = 0; i < (int)mapping.size(); i++) {

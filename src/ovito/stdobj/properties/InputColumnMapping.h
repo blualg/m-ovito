@@ -125,7 +125,7 @@ public:
     void fromByteArray(const QByteArray& array);
 
     /// \brief Checks if the mapping is valid; throws an exception if not.
-    void validate() const;
+    void validate(const QString& fileFormatName = {}) const;
 
     /// \brief Returns the first few lines of the file, which can help the user to figure out
     ///        the column mapping.

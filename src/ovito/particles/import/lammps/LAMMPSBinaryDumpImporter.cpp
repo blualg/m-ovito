@@ -146,8 +146,7 @@ bool LAMMPSBinaryDumpImporter::OOMetaClass::checkFileFormat(const FileHandle& fi
     if(!device->open(QIODevice::ReadOnly))
         return false;
 
-    LAMMPSBinaryDumpHeader header;
-    return header.parse(*device);
+    return LAMMPSBinaryDumpHeader().parse(*device);
 }
 
 /******************************************************************************
@@ -211,9 +210,8 @@ bool LAMMPSBinaryDumpHeader::parse(QIODevice& input)
     qint64 headerPos = input.pos();
     for(int endianessIndex = 0; endianessIndex < NUMBER_OF_LAMMPS_ENDIAN_TYPES; endianessIndex++) {
         endianess = (LAMMPSEndianess)endianessIndex;
-        for(int dataTypeIndex = 0; dataTypeIndex < NUMBER_OF_LAMMPS_DATA_TYPES; dataTypeIndex++) {
+        for(int dataTypeIndex = 0; dataTypeIndex < NUMBER_OF_LAMMPS_DATA_TYPES; dataTypeIndex++, input.seek(headerPos)) {
             dataType = (LAMMPSDataType)dataTypeIndex;
-            input.seek(headerPos);
 
             ntimestep = readBigInt(input);
             if(ntimestep < 0) {
@@ -247,10 +245,12 @@ bool LAMMPSBinaryDumpHeader::parse(QIODevice& input)
                 if(ntimestep < 0)
                     continue;
             }
-            if(input.atEnd()) return false;
+            if(input.atEnd())
+                return false;
 
             natoms = readBigInt(input);
-            if(natoms < 0 || input.atEnd()) continue;
+            if(natoms < 0 || input.atEnd() || natoms > int64_t(100'000'000'000))
+                continue;
 
             qint64 startPos = input.pos();
 
@@ -290,7 +290,7 @@ bool LAMMPSBinaryDumpHeader::parse(QIODevice& input)
                         isValid = false;
                 }
             }
-            if(!isValid || input.atEnd())
+            if(!isValid || input.atEnd() || triclinic < -1 || triclinic > 1)
                 continue;
 
             // Try parsing shear parameters of triclinic cell.
@@ -309,7 +309,8 @@ bool LAMMPSBinaryDumpHeader::parse(QIODevice& input)
             }
 
             size_one = parseInt(input);
-            if(size_one <= 0 || size_one > 40) continue;
+            if(size_one <= 0 || size_one > 40)
+                continue;
 
             // Newer file format includes units string, columns string and time.
             columnsString.clear();
@@ -330,7 +331,8 @@ bool LAMMPSBinaryDumpHeader::parse(QIODevice& input)
             }
 
             nchunk = parseInt(input);
-            if(nchunk <= 0 || nchunk > natoms) continue;
+            if(nchunk <= 0 || nchunk > natoms)
+                continue;
 
             if(!input.atEnd())
                 return true;

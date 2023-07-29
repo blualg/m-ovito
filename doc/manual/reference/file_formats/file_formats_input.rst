@@ -160,12 +160,12 @@ OVITO can directly read the following file formats:
     -
 
   * - ASE database |ovito-pro|
-    - `Database files written by the Atomic Simulation Environment (ASE) <https://wiki.fysik.dtu.dk/ase/ase/db/db.html>`__
+    - `Structure database files written by the Atomic Simulation Environment (ASE) <https://wiki.fysik.dtu.dk/ase/ase/db/db.html>`__
     - :ref:`particles <scene_objects.particles>`
     - :ref:`Details <file_formats.input.ase_database>`
 
   * - ASE trajectory |ovito-pro|
-    - `Trajectory files written by the Atomic Simulation Environment (ASE) <https://wiki.fysik.dtu.dk/ase/ase/io/trajectory.html>`__
+    - `Simulation trajectory files written by the Atomic Simulation Environment (ASE) <https://wiki.fysik.dtu.dk/ase/ase/io/trajectory.html>`__
     - :ref:`particles <scene_objects.particles>`
     - :ref:`Details <file_formats.input.ase_trajectory>`
 

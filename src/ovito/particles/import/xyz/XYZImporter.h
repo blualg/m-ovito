@@ -61,7 +61,7 @@ public:
     Q_INVOKABLE XYZImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _autoRescaleCoordinates(true) {}
 
     /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("XYZ File"); }
+    virtual QString objectTitle() const override { return tr("XYZ"); }
 
     /// Indicates whether this file importer type loads particle trajectories.
     virtual bool isTrajectoryFormat() const override { return true; }

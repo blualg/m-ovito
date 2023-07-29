@@ -61,7 +61,7 @@ public:
     Q_INVOKABLE LAMMPSBinaryDumpImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {}
 
     /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("LAMMPS Dump File"); }
+    virtual QString objectTitle() const override { return tr("LAMMPS Binary Dump File"); }
 
     /// Indicates whether this file importer type loads particle trajectories.
     virtual bool isTrajectoryFormat() const override { return true; }
