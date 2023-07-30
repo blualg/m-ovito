@@ -272,9 +272,10 @@ bool FileExporter::doExport(MainThreadOperation operation)
 
     try {
         // Export animation frames.
-        operation.setProgressMaximum(numberOfFrames);
+        operation.beginProgressSubSteps(numberOfFrames);
         for(int frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
-            operation.setProgressValue(frameIndex);
+            if(frameIndex != 0)
+                operation.nextProgressSubStep();
 
             int frameNumber = firstFrameNumber + frameIndex * everyNthFrame();
 
@@ -288,15 +289,16 @@ bool FileExporter::doExport(MainThreadOperation operation)
 
             operation.setProgressText(tr("Exporting frame %1 to file '%2'").arg(frameNumber).arg(filename));
 
-            exportFrame(frameNumber, filename, operation);
+            bool notCanceled = exportFrame(frameNumber, filename, operation);
 
             // Close per-frame output file.
             if(exportAnimation() && useWildcardFilename())
-                closeOutputFile(!operation.isCanceled());
+                closeOutputFile(!operation.isCanceled() && notCanceled);
 
-            if(operation.isCanceled())
+            if(operation.isCanceled() || !notCanceled)
                 break;
         }
+        operation.endProgressSubSteps();
     }
     catch(...) {
         closeOutputFile(false);

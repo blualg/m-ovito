@@ -102,7 +102,7 @@ PropertyOutputWriter::PropertyOutputWriter(const OutputColumnMapping& mapping, c
                 for(int component = 0; component < property->componentCount(); component++) {
                     _properties.push_back(property);
                     _vectorComponents.push_back(component);
-                    _propertyArrays.emplace_back(property);
+                    _accessors.emplace_back(property);
                 }
                 continue;
             }
@@ -111,8 +111,9 @@ PropertyOutputWriter::PropertyOutputWriter(const OutputColumnMapping& mapping, c
         // Build internal list of property objects for fast look up during writing.
         _properties.push_back(property);
         _vectorComponents.push_back(std::max(0, pref.vectorComponent()));
-        _propertyArrays.emplace_back(property);
+        _accessors.emplace_back(property);
     }
+    _cachedTypeNames.resize(_properties.size());
 }
 
 /******************************************************************************
@@ -120,60 +121,68 @@ PropertyOutputWriter::PropertyOutputWriter(const OutputColumnMapping& mapping, c
  *****************************************************************************/
 void PropertyOutputWriter::writeElement(size_t index, CompressedTextWriter& stream)
 {
-    QVector<const PropertyObject*>::const_iterator property = _properties.constBegin();
-    QVector<int>::const_iterator vcomp = _vectorComponents.constBegin();
-    auto array = _propertyArrays.constBegin();
-    for(; property != _properties.constEnd(); ++property, ++vcomp, ++array) {
-        if(property != _properties.constBegin()) stream << ' ';
+    auto property = _properties.cbegin();
+    auto vcomp = _vectorComponents.cbegin();
+    auto accessor = _accessors.cbegin();
+    auto typeNameCache = _cachedTypeNames.begin();
+    for(; property != _properties.cend(); ++property, ++vcomp, ++accessor, ++typeNameCache) {
+        if(property != _properties.cbegin())
+            stream << ' ';
         if(*property) {
-            if((*property)->dataType() == PropertyObject::Int32) {
+            const int dataType = (*property)->dataType();
+            if(dataType == PropertyObject::Float32) {
+                stream << *reinterpret_cast<const float*>(accessor->cdata(index, *vcomp));
+            }
+            else if(dataType == PropertyObject::Float64) {
+                stream << *reinterpret_cast<const double*>(accessor->cdata(index, *vcomp));
+            }
+            else if(dataType == PropertyObject::Int32) {
                 if(_typedPropertyMode == WriteNumericIds || (*property)->elementTypes().empty()) {
-                    stream << *reinterpret_cast<const int32_t*>(array->cdata(index, *vcomp));
+                    stream << *reinterpret_cast<const int32_t*>(accessor->cdata(index, *vcomp));
                 }
                 else {
                     // Write type name instead of type number.
-                    int32_t numericTypeId = *reinterpret_cast<const int32_t*>(array->cdata(index, *vcomp));
-                    const ElementType* type = (*property)->elementType(numericTypeId);
-                    if(type && !type->name().isEmpty()) {
-                        if(_typedPropertyMode == WriteNamesUnmodified) {
-                            stream << type->name();
+                    int32_t numericTypeId = *reinterpret_cast<const int32_t*>(accessor->cdata(index, *vcomp));
+                    auto entry = typeNameCache->find(numericTypeId);
+                    if(entry == typeNameCache->end()) {
+                        const ElementType* type = (*property)->elementType(numericTypeId);
+                        if(type && !type->name().isEmpty()) {
+                            if(_typedPropertyMode == WriteNamesUnmodified) {
+                                entry = typeNameCache->emplace(numericTypeId, type->name()).first;
+                            }
+                            else if(_typedPropertyMode == WriteNamesUnderscore) {
+                                // Replace spaces in the name with underscores.
+                                QString s = type->name();
+                                entry = typeNameCache->emplace(numericTypeId, s.replace(QChar(' '), QChar('_'))).first;
+                            }
+                            else if(_typedPropertyMode == WriteNamesInQuotes) {
+                                // Surround name with quotes if necessary.
+                                if(type->name().contains(QChar(' ')))
+                                    entry = typeNameCache->emplace(numericTypeId, QChar('"') + type->name() + QChar('"')).first;
+                                else
+                                    entry = typeNameCache->emplace(numericTypeId, type->name()).first;
+                            }
                         }
-                        else if(_typedPropertyMode == WriteNamesUnderscore) {
-                            // Replace spaces in the name with underscores.
-                            QString s = type->name();
-                            stream << s.replace(QChar(' '), QChar('_'));
-                        }
-                        else if(_typedPropertyMode == WriteNamesInQuotes) {
-                            // Surround name with quotes if necessary.
-                            if(type->name().contains(QChar(' ')))
-                                stream << QChar('"') << type->name() << QChar('"');
-                            else
-                                stream << type->name();
+                        else {
+                            entry = typeNameCache->emplace(numericTypeId, QString::number(numericTypeId)).first;
                         }
                     }
-                    else {
-                        stream << numericTypeId;
-                    }
+                    stream << entry->second;
                 }
             }
-            else if((*property)->dataType() == PropertyObject::Int64) {
-                stream << static_cast<qint64>(*reinterpret_cast<const int64_t*>(array->cdata(index, *vcomp)));
+            else if(dataType == PropertyObject::Int64) {
+                stream << static_cast<qint64>(*reinterpret_cast<const int64_t*>(accessor->cdata(index, *vcomp)));
             }
-            else if((*property)->dataType() == PropertyObject::Int8) {
-                stream << static_cast<qint32>(*reinterpret_cast<const int8_t*>(array->cdata(index, *vcomp)));
-            }
-            else if((*property)->dataType() == PropertyObject::Float32) {
-                stream << *reinterpret_cast<const float*>(array->cdata(index, *vcomp));
-            }
-            else if((*property)->dataType() == PropertyObject::Float64) {
-                stream << *reinterpret_cast<const double*>(array->cdata(index, *vcomp));
+            else if(dataType == PropertyObject::Int8) {
+                stream << static_cast<qint32>(*reinterpret_cast<const int8_t*>(accessor->cdata(index, *vcomp)));
             }
             else {
                 throw Exception(tr("The property '%1' cannot be written to the output file, because it has a non-standard data type.").arg((*property)->name()));
             }
         }
         else {
-            stream << (quint64)(index + 1);
+            // Write (implicit) element index:
+            stream << static_cast<quint64>(index + 1);
         }
     }
     stream << '\n';

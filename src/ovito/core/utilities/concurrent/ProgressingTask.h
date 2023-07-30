@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -110,7 +110,7 @@ protected:
 
     /// The progress value of the current sub-task.
     qlonglong _progressValue = 0;
-    
+
     /// The maximum progress value of the current sub-task.
     qlonglong _progressMaximum = 0;
 
@@ -125,9 +125,9 @@ protected:
 
     /// Keeps track of nested sub-tasks and their current progress.
     std::vector<std::pair<int, std::vector<int>>> _subTaskProgressStack;
-    
+
     int _intermittentUpdateCounter = 0;
-    
+
     QElapsedTimer _progressTime;
 };
 

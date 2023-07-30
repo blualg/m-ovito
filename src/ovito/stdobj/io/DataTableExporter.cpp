@@ -76,8 +76,6 @@ bool DataTableExporter::exportFrame(int frameNumber, const QString& filePath, Ma
     // Make sure the X property exists in the property container.
     // If not, create a temporary property for export.
 
-    operation.setProgressText(tr("Writing file %1").arg(filePath));
-
     ConstPropertyPtr xstorage = table->getXValues();
     ConstPropertyPtr ystorage = table->y();
     if(table->properties().empty())

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,11 +36,11 @@ public:
     explicit ProgressDialog(QWidget* parent, TaskPtr task, const QString& dialogTitle = QString());
 
     /// Constructor.
-    explicit ProgressDialog(QWidget* parent, const QString& dialogTitle = QString()) : 
+    explicit ProgressDialog(QWidget* parent, const QString& dialogTitle = QString()) :
         ProgressDialog(parent, Task::current()->shared_from_this(), dialogTitle) {}
 
     /// Constructor.
-    explicit ProgressDialog(QWidget* parent, const FutureBase& future, const QString& dialogTitle = QString()) : 
+    explicit ProgressDialog(QWidget* parent, const FutureBase& future, const QString& dialogTitle = QString()) :
         ProgressDialog(parent, future.task(), dialogTitle) {}
 
 protected:

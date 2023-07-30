@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -82,7 +82,7 @@ ProgressDialog::ProgressDialog(QWidget* parent, TaskPtr task, const QString& dia
             progressBar->setValue(progress);
         });
         connect(taskWatcher, &TaskWatcher::progressTextChanged, statusLabel, &QLabel::setText);
-        connect(taskWatcher, &TaskWatcher::progressTextChanged, statusLabel, [statusLabel, progressBar](const QString& text) {
+        connect(taskWatcher, &TaskWatcher::progressTextChanged, statusLabel, [statusLabel, progressBar, taskWatcher](const QString& text) {
             statusLabel->setVisible(!text.isEmpty());
             progressBar->setVisible(!text.isEmpty());
         });

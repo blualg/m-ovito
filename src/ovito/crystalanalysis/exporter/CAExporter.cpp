@@ -71,9 +71,6 @@ bool CAExporter::exportFrame(int frameNumber, const QString& filePath, MainThrea
     if(operation.isCanceled())
         return false;
 
-    // Set progress display.
-    operation.setProgressText(tr("Writing file %1").arg(filePath));
-
     // Get simulation cell info.
     const SimulationCellObject* simulationCell = state.expectObject<SimulationCellObject>();
 

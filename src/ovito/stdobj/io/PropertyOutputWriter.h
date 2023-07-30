@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -120,13 +120,16 @@ private:
 
     /// Stores the source properties for each column in the output file.
     /// The special value NULL instead of a PropertyObjects means that the implicit element indices should be output in this file column.
-    QVector<const PropertyObject*> _properties;
+    std::vector<const PropertyObject*> _properties;
 
     /// Stores the source vector component for each output column.
-    QVector<int> _vectorComponents;
+    std::vector<int> _vectorComponents;
 
-    /// Stores the memory buffer object for each output property.
-    QVector<RawBufferReadAccess> _propertyArrays;
+    /// Stores the data accessor for each output property.
+    std::vector<RawBufferReadAccess> _accessors;
+
+    /// The names corresponding to numeric types of each typed property.
+    std::vector<std::map<int, QString>> _cachedTypeNames;
 
     /// Controls how type names are output.
     TypedPropertyMode _typedPropertyMode;

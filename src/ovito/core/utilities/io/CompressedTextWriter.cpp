@@ -158,9 +158,10 @@ CompressedTextWriter& CompressedTextWriter::operator<<(size_t i)
 /******************************************************************************
 * Writes an integer number to the text-based output file.
 ******************************************************************************/
-CompressedTextWriter& CompressedTextWriter::operator<<(FloatType f)
+CompressedTextWriter& CompressedTextWriter::operator<<(float f)
 {
-    char buffer[std::numeric_limits<FloatType>::max_digits10 + 8];
+    using FType = decltype(f);
+    char buffer[std::numeric_limits<FType>::max_digits10 + 8];
     char *s = buffer;
 
     // Workaround for Boost bug #5983 (https://svn.boost.org/trac/boost/ticket/5983)
@@ -171,12 +172,53 @@ CompressedTextWriter& CompressedTextWriter::operator<<(FloatType f)
         using namespace boost::spirit;
 
         // Define Boost Karma generator to control floating-point to string conversion.
-        struct floattype_format_policy : karma::real_policies<FloatType> {
+        struct floattype_format_policy : karma::real_policies<FType> {
             floattype_format_policy(unsigned int precision) : _precision(precision) {}
-            unsigned int precision(FloatType n) const { return _precision; }
+            unsigned int precision(FType n) const { return _precision; }
             unsigned int _precision;
         };
-        karma::generate(s, karma::real_generator<FloatType, floattype_format_policy>(_floatPrecision), f);
+        karma::generate(s, karma::real_generator<FType, floattype_format_policy>(_floatPrecision), f);
+    }
+    else {
+        // Use sprintf() to handle denormalized floating point numbers.
+#if !defined(Q_CC_MSVC) || _MSC_VER >= 1900
+        s += std::snprintf(buffer, sizeof(buffer), "%.*g", _floatPrecision, f);
+#else
+        // MSVC 2013 is not fully C++11 standard compliant. Need to use _snprintf() instead.
+        s += _snprintf(buffer, sizeof(buffer), "%.*g", _floatPrecision, f);
+#endif
+    }
+
+    OVITO_ASSERT(s - buffer < sizeof(buffer));
+    if(_stream->write(buffer, s - buffer) == -1)
+        reportWriteError();
+
+    return *this;
+}
+
+/******************************************************************************
+* Writes an integer number to the text-based output file.
+******************************************************************************/
+CompressedTextWriter& CompressedTextWriter::operator<<(double f)
+{
+    using FType = decltype(f);
+    char buffer[std::numeric_limits<FType>::max_digits10 + 8];
+    char *s = buffer;
+
+    // Workaround for Boost bug #5983 (https://svn.boost.org/trac/boost/ticket/5983)
+    // Karma cannot format subnormal floating point numbers.
+    // Have to switch to a slower formatting method (sprintf) in this case.
+    if(std::fpclassify(f) != FP_SUBNORMAL) {
+
+        using namespace boost::spirit;
+
+        // Define Boost Karma generator to control floating-point to string conversion.
+        struct floattype_format_policy : karma::real_policies<FType> {
+            floattype_format_policy(unsigned int precision) : _precision(precision) {}
+            unsigned int precision(FType n) const { return _precision; }
+            unsigned int _precision;
+        };
+        karma::generate(s, karma::real_generator<FType, floattype_format_policy>(_floatPrecision), f);
     }
     else {
         // Use sprintf() to handle denormalized floating point numbers.

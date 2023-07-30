@@ -96,9 +96,6 @@ bool ParticleExporter::exportFrame(int frameNumber, const QString& filePath, Mai
     if(operation.isCanceled() || !state)
         return false;
 
-    // Set progress display.
-    operation.setProgressText(tr("Writing file %1").arg(filePath));
-
     // Let the subclass do the work.
     return exportData(state, frameNumber, filePath, operation);
 }

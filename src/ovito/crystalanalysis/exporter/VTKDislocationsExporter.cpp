@@ -81,8 +81,6 @@ bool VTKDislocationsExporter::exportFrame(int frameNumber, const QString& filePa
     if(!dislocationsObj)
         throw Exception(tr("The object to be exported does not contain any exportable dislocation line data."));
 
-    operation.setProgressText(tr("Writing file %1").arg(filePath));
-
     // Count disloction polylines and output vertices.
     std::vector<size_t> polyVertexCounts;
     for(size_t i = 0; i < renderableLines->lineSegments().size(); i++) {

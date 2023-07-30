@@ -86,8 +86,6 @@ bool DataTablePlotExporter::exportFrame(int frameNumber, const QString& filePath
     }
     table->verifyIntegrity();
 
-    operation.setProgressText(tr("Writing file %1").arg(filePath));
-
     DataTablePlotWidget plotWidget;
     plotWidget.setTable(table);
     plotWidget.axisScaleDraw(QwtPlot::yLeft)->setPenWidthF(1);

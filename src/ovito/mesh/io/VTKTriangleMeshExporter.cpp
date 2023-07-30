@@ -77,8 +77,6 @@ bool VTKTriangleMeshExporter::exportFrame(int frameNumber, const QString& filePa
             .arg(frameNumber).arg(objectRef.dataPath()).arg(getAvailableDataObjectList(state, RenderableSurfaceMesh::OOClass())));
     }
 
-    operation.setProgressText(tr("Writing file %1").arg(filePath));
-
     const TriMeshObject* surfaceMesh = meshObj->surfaceMesh();
     const TriMeshObject* capPolygonsMesh = exportCapPolygons() ? meshObj->capPolygonsMesh() : nullptr;
     auto totalVertexCount = (surfaceMesh ? surfaceMesh->vertexCount() : 0) + (capPolygonsMesh ? capPolygonsMesh->vertexCount() : 0);

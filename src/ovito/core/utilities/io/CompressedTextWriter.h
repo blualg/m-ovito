@@ -78,7 +78,10 @@ public:
 #endif
 
     /// Writes a floating-point number to the text-based output file.
-    CompressedTextWriter& operator<<(FloatType f);
+    CompressedTextWriter& operator<<(float f);
+
+    /// Writes a floating-point number to the text-based output file.
+    CompressedTextWriter& operator<<(double f);
 
     /// Writes a text string to the text-based output file.
     CompressedTextWriter& operator<<(const char* s) {

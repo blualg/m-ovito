@@ -76,8 +76,6 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
     // Make sure the data structure to be exported is consistent.
     voxelGrid->verifyIntegrity();
 
-    operation.setProgressText(tr("Writing file %1").arg(filePath));
-
     auto dims = voxelGrid->shape();
     textStream() << "# vtk DataFile Version 3.0\n";
     textStream() << "# Voxel grid data written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
