@@ -20,7 +20,7 @@ Version 3.9.0 (xx-xxx-2023)
 * |ovito-pro| Added programming interface for :ref:`user-defined file readers <writing_custom_file_readers>`
 * |ovito-pro| New :ref:`SSH remote file access option via OpenSSH <usage.import.remote.openssh_connection_method>` to support smartcard authentication methods
 * |ovito-pro| Discovery mechanism for Python-based user extensions: :ref:`registering_custom_python_classes`
-* |ovito-pro| New *Python Settings* dialog, which provides a hot-reload function for Python modules
+* |ovito-pro| New :ref:`Python Settings <python_settings_dialog>` dialog, which provides a hot-reload function for imported Python extension modules
 * |ovito-pro| :ref:`New file reader for the ASE trajectory files <file_formats.input.ase_trajectory>`
 * |ovito-pro| New Python methods :py:meth:`Property.add_type_id <ovito.data.Property.add_type_id>` and :py:meth:`Property.add_type_name <ovito.data.Property.add_type_name>`
 * |ovito-pro| New Python method :py:meth:`VoxelGrid.view <ovito.data.VoxelGrid.view>`

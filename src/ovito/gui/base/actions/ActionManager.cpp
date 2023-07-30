@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -83,7 +83,7 @@ ActionManager::ActionManager(QObject* parent, UserInterface& userInterface) : QA
     else {
         undoAction->setEnabled(false);
         redoAction->setEnabled(false);
-        clearUndoStackAction->setEnabled(false);        
+        clearUndoStackAction->setEnabled(false);
     }
 
     QAction* createNewPipelineAcion = createCommandAction(ACTION_NEW_PIPELINE_FILESOURCE, tr("External data file"), "edit_create_pipeline", tr("Creates a new pipeline with an external file as data source."));
@@ -371,7 +371,7 @@ void ActionManager::openHelpTopic(const QString& helpTopicId)
     // Determine the filesystem path where OVITO's documentation files are installed.
 #ifndef Q_OS_WASM
     QDir prefixDir(QCoreApplication::applicationDirPath());
-    QDir helpDir = QDir(prefixDir.absolutePath() + QChar('/') + QStringLiteral(OVITO_DOCUMENTATION_PATH));  
+    QDir helpDir = QDir(prefixDir.absolutePath() + QChar('/') + QStringLiteral(OVITO_DOCUMENTATION_PATH));
     QUrl url;
 #else
     QDir helpDir(QStringLiteral(":/doc/manual/"));
@@ -390,7 +390,7 @@ void ActionManager::openHelpTopic(const QString& helpTopicId)
         // and gets distributed together with the application.
         QFile inventoryFile(helpDir.absoluteFilePath("objects.txt"));
         if(!inventoryFile.open(QIODevice::ReadOnly | QIODevice::Text))
-            qWarning() << "WARNING: Could not open Intersphinx inventory file to resolve help topic reference:" << inventoryFile.fileName() << inventoryFile.errorString();         
+            qWarning() << "WARNING: Could not open Intersphinx inventory file to resolve help topic reference:" << inventoryFile.fileName() << inventoryFile.errorString();
         else {
             QTextStream stream(&inventoryFile);
             // Skip file until to the line "std:label":
@@ -424,7 +424,7 @@ void ActionManager::openHelpTopic(const QString& helpTopicId)
             OVITO_ASSERT(!url.isEmpty());
         }
     }
-    
+
 #ifndef Q_OS_WASM
     if(url.isEmpty()) {
         // If no help topic has been specified, open the main index page of the user manual.
@@ -432,21 +432,22 @@ void ActionManager::openHelpTopic(const QString& helpTopicId)
     }
 #endif
 
-    // Workaround for a limitation of the Microsoft Edge browser:
-    // The browser drops any # fragment in local URLs to be opened, thus making it difficult to reference sub-topics within a HTML help page.
+    // Workaround for a limitation of the Microsoft Edge and Apple Safari browsers:
+    // These browsers drop any # fragment in local URLs to be opened, thus making it difficult to reference sub-topics within a HTML help page.
     // Solution is to generate a temporary HTML file which redirects to the actual help page including the # fragment.
     // See also https://forums.madcapsoftware.com/viewtopic.php?f=9&t=28376#p130613
     // and https://stackoverflow.com/questions/26305322/shellexecute-fails-for-local-html-or-file-urls
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
     if(url.isLocalFile() && url.hasFragment()) {
         static QTemporaryFile* temporaryHtmlFile = nullptr;
-        if(temporaryHtmlFile) delete temporaryHtmlFile;
+        if(temporaryHtmlFile)
+            delete temporaryHtmlFile;
         temporaryHtmlFile = new QTemporaryFile(QDir::temp().absoluteFilePath(QStringLiteral("ovito-help-XXXXXX.html")), qApp);
         if(temporaryHtmlFile->open()) {
             // Write a small HTML file that just contains a redirect directive to the actual help page including the # fragment.
-            QTextStream(temporaryHtmlFile) << QStringLiteral("<html><meta http-equiv=Refresh content=\"0; url=%1\"><body></body></html>").arg(url.toString(QUrl::FullyEncoded));
+            QTextStream(temporaryHtmlFile) << QStringLiteral("<html><meta http-equiv=Refresh content=\"0; url=%1\"><body><a href=\"%1\">Continue to help topic...</a></body></html>").arg(url.toString(QUrl::FullyEncoded));
             temporaryHtmlFile->close();
-            // Let the web brwoser ppen the redirect page instead of the original help page. 
+            // Let the web brwoser ppen the redirect page instead of the original help page.
             url = QUrl::fromLocalFile(temporaryHtmlFile->fileName());
         }
     }

@@ -1,7 +1,7 @@
 .. _clone_pipeline:
 
-Pipeline cloning |ovito-pro|
-----------------------------
+Branched and cloned pipelines |ovito-pro|
+-----------------------------------------
 
 .. image:: /images/clone_pipeline/clone_pipeline_menu_item.png
   :width: 35%

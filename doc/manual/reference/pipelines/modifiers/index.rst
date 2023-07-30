@@ -114,6 +114,8 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.interactive_molecular_dynamics`  Visualize live atomic trajectories from a running MD simulation as they are being calculated.
   ========================================================== ==========================================================
 
+.. _particles.modifiers.pythonbased:
+
 .. table::
   :width: 100%
   :widths: 28 72
@@ -123,9 +125,9 @@ combine several modifiers to accomplish more complex tasks.
   =====================================================================================================================
   :ref:`modifiers.calculate_local_entropy` |ovito-pro|       Computes local pair entropy fingerprints of particles.
   :ref:`modifiers.identify_fcc_planar_faults` |ovito-pro|    Discerns between stacking fault and twin boundary crystal defects.
-  :ref:`modifiers.render_lammps_regions` |ovito-pro|         Visualize LAMMPS regions as surface meshes. 
+  :ref:`modifiers.render_lammps_regions` |ovito-pro|         Visualize LAMMPS regions as surface meshes.
   :ref:`modifiers.shrink_wrap_box` |ovito-pro|               Resets the simulation cell to tightly fit all particles.
-  ========================================================== ==========================================================  
+  ========================================================== ==========================================================
 
 .. toctree::
   :maxdepth: 1
