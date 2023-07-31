@@ -5,23 +5,24 @@ Changelog
 =========
 
 ---------------------------
-Version 3.9.0 (xx-xxx-2023)
+Version 3.9.0 (02-Aug-2023)
 ---------------------------
 
-* Support :ref:`dark mode UI <application_settings.general>` on Windows
-* Introduced additional property data types (float32, int8) to reduce memory footprint of some particle properties (e.g. Color, Selection) with low precision requirements
-* All file readers: Automatic mangling of property names in case they collide with OVITO's property naming rules
-* OpenGL renderer: Performance optimizations, support for direct upload of float32 and int8 array data
-* Fix: Color Coding modifier's "Adjust Range" function does not follow option "Only selected"
+* Support for :ref:`dark UI theme <application_settings.general>` on Windows
+* Additional property data types (`float32`, `int8`) to reduce memory footprint of particle properties with low precision requirements (e.g. `Color`, `Selection`)
+* OpenGL renderer: Performance optimizations, direct upload of `float32` and `int8` array values to GPU memory
 * New file reader for the DCD trajectory format, which is written by the CHARMM, NAMD, and LAMMPS simulation codes
 * GSD file reader: Do not skip ``log/`` chunks containing ``/`` in their names (`issue #226 <https://gitlab.com/stuko/ovito/-/issues/226>`__)
-* Automatic generation of search pattern for trajectory file series: Avoid placing placeholder in 2 or 3-character file extensions containing digits
+* Fix: Color Coding modifier's "Adjust Range" function does not follow option "Only selected"
+* Search patterns for trajectory file series: Avoid asterisk in file extensions containing digits, e.g. :file:`snapshot0000.h5` → :file:`snapshot*.h5`
 * Data table file exporter: Do not require a :py:attr:`~ovito.data.DataTable.y`-property
-* |ovito-pro| Added programming interface for :ref:`user-defined file readers <writing_custom_file_readers>`
-* |ovito-pro| New :ref:`SSH remote file access option via OpenSSH <usage.import.remote.openssh_connection_method>` to support smartcard authentication methods
-* |ovito-pro| Discovery mechanism for Python-based user extensions: :ref:`registering_custom_python_classes`
+* Automatic name mangling of imported attribute from LAMMPS dump, GSD, and XYZ files in case they do not conform to OVITO's property naming rules
+* The :ref:`Vulkan viewport renderer <application_settings.viewports.graphics_implementation>` has been temporarily disabled in this release
+* |ovito-pro| :ref:`Programming interface for user-defined file readers <writing_custom_file_readers>`
+* |ovito-pro| :ref:`SSH remote file access option via OpenSSH <usage.import.remote.openssh_connection_method>` to support smartcard authentication methods
+* |ovito-pro| :ref:`Discovery mechanism for installable Python extensions <registering_custom_python_classes>`
 * |ovito-pro| New :ref:`Python Settings <python_settings_dialog>` dialog, which provides a hot-reload function for imported Python extension modules
-* |ovito-pro| :ref:`New file reader for the ASE trajectory files <file_formats.input.ase_trajectory>`
+* |ovito-pro| :ref:`File reader for the ASE trajectory files <file_formats.input.ase_trajectory>`
 * |ovito-pro| New Python methods :py:meth:`Property.add_type_id <ovito.data.Property.add_type_id>` and :py:meth:`Property.add_type_name <ovito.data.Property.add_type_name>`
 * |ovito-pro| New Python method :py:meth:`VoxelGrid.view <ovito.data.VoxelGrid.view>`
 * |ovito-pro| Performance optimizations for property array data accesses from Python

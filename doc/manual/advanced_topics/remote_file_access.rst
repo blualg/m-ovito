@@ -40,7 +40,7 @@ OpenSSH client |ovito-pro|
   :align: right
 
 The integrated standard SSH client of OVITO is based on `Libssh <https://www.libssh.org>`__, an implementation of the SSH protocol that is distinct
-from the standalone command line tools (:program:`ssh` & :program:`scp`, part of the OpenSSH system package) you are probably used to.
+from the standalone command line tools (:program:`ssh` & :program:`scp`, parts of the OpenSSH system package) you are probably used to.
 Unfortunantely, Libssh does not support all authentication methods that commonly work with these OpenSSH utilities. In particular,
 smartcard-based and other two-factor authentication methods, requiring PKCS#11 extensions, won't work with OVITO's integrated SSH client.
 

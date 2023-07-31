@@ -31,6 +31,15 @@
 
 namespace Ovito {
 
+static void ensureFontRenderingCapability()
+{
+    if(!qobject_cast<QGuiApplication*>(qApp)) {
+        throw SceneRenderer::RendererException(QStringLiteral(
+                "Font rendering capability is not available because OVITO is running in headless mode. Enable graphics mode by setting environment variable OVITO_GUI_MODE=1. "
+                "See also https://docs.ovito.org/python/modules/ovito_vis.html#ovito.vis.OpenGLRenderer."));
+    }
+}
+
 /******************************************************************************
 * Sets the destination rectangle for rendering the image in viewport coordinates.
 ******************************************************************************/
@@ -60,6 +69,8 @@ Qt::TextFormat TextPrimitive::resolvedTextFormat() const
 ******************************************************************************/
 QRectF TextPrimitive::queryLocalBounds(qreal devicePixelRatio, Qt::TextFormat textFormatHint) const
 {
+    ensureFontRenderingCapability();
+
     QRectF textBounds;
     Qt::TextFormat resolvedTextFormat = textFormat();
     if(resolvedTextFormat == Qt::AutoText) {
@@ -145,6 +156,8 @@ QRectF TextPrimitive::computeBoundingBox(const QSizeF textSize, qreal devicePixe
 ******************************************************************************/
 void TextPrimitive::draw(QPainter& painter, Qt::TextFormat resolvedTextFormat, qreal textWidth) const
 {
+    ensureFontRenderingCapability();
+
 #ifndef Q_OS_WIN
     if(resolvedTextFormat != Qt::RichText) {
 #else

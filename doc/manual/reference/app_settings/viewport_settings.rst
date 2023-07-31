@@ -25,6 +25,8 @@ Viewport background
 
 This option changes between a dark (default) and a white viewport background.
 
+.. _application_settings.viewports.graphics_implementation:
+
 3D graphics
 """""""""""
 

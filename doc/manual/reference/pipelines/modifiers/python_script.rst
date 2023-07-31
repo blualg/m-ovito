@@ -158,42 +158,39 @@ Python Settings dialog
   :width: 45%
   :align: right
 
-This dialog window lets you inspect and configure several aspects of a Python-based extension that your are working with in OVITO Pro, for
-example :ref:`Python modifiers <particles.modifiers.python_script>`, :ref:`Python viewport layers <viewport_layers.python_script>`, :ref:`Python pipeline sources <data_source.python_script>`,
+This dialog window lets you inspect and configure several aspects of a Python-based extension that you are working with in OVITO Pro, for
+example, :ref:`Python modifiers <particles.modifiers.python_script>`, :ref:`Python viewport layers <viewport_layers.python_script>`, :ref:`Python pipeline sources <data_source.python_script>`,
 or :ref:`Python-based file readers <writing_custom_file_readers>`.
 
-:guilabel:`Working directory` specifies the file system location on your computer that should be used as current working directory while executing
-the extension's Python code. This setting only plays a role if your script performs I/O operations using relative file paths, which will be resolved with respect to
-the current working directory. By default, OVITO Pro will use the path it was started from as working directory.
+:guilabel:`Working directory` specifies the file system location on your computer that should be used as the current working directory while executing
+the Python script. This setting is optional and only plays a role if your script performs I/O operations using relative file paths, which will be resolved with respect to
+the current working directory.
 
 The panel :guilabel:`Python extension` displays information about the Python code object that is underlying the current extension.
-For example, in case of a :ref:`user-defined modifier <particles.modifiers.python_script>`, this will be the ``modify()`` function you wrote using the integrated code editor.
+For example, in the case of a :ref:`user-defined modifier <particles.modifiers.python_script>`, this will be the ``modify()`` function you wrote using the integrated code editor.
 If you are currently working with a :ref:`predefined Python-based modifier <particles.modifiers.pythonbased>` shipping with OVITO Pro, this may be a function or class defined
 in an importable Python module.
 
 .. note::
 
-  OVITO distinguishes between *embedded extensions*, which are inline source code that exists only at runtime during the current program session,
-  and *imported extensions*, which are based on code that lives permanently in one of the importable packages installed in OVITO's integrated Python interpreter or
-  elsewhere on your system.
+  OVITO Pro distinguishes between *embedded* extensions and *imported* extensions.
 
-  Embedded code was written by you during a program session and may be lost when you close OVITO -- unless you save it as part of a :ref:`session state file <usage.saving_loading_scene>` or
-  modifier template as :ref:`described above <particles.modifiers.python_script.save_as_template>`.
+  Embedded extensions are written by you during a program session and may be lost when you close OVITO Pro -- unless you save them as part of a :ref:`session state file <usage.saving_loading_scene>` or
+  a modifier template as :ref:`described above <particles.modifiers.python_script.save_as_template>`.
 
-  Imported code, on the other hand, lives in a :file:`.py`` file that belongs to an importable Python module installed on your computer.
-  Such extensions always remain available, even across program sessions. They can be either standard Python-based extensions :ref:`already shipped with OVITO Pro <particles.modifiers.pythonbased>`,
-  or :ref:`extension modules installed by you <particles.modifiers.python_script.installing_extensions>` that were developed by you or others.
+  Imported extensions, on the other hand, live in :file:`.py` code files belonging to importable Python modules -- installed in the Python interpreter used by OVITO Pro.
+  Such extensions always remain available, even across program sessions. They can be either Python-based standard function :ref:`already included with OVITO Pro <particles.modifiers.pythonbased>`,
+  or :ref:`installed extension modules <particles.modifiers.python_script.installing_extensions>` that were developed by you or others.
 
-  See also: :ref:`registering_custom_python_classes`
+  See also :ref:`registering_custom_python_classes`.
 
-The option :guilabel:`Edit embedded code with` applies only to user-defined extensions that have been developed within the current program session, i.e.,
-which are based on inline source code existing only in the current program session and not imported from an external Python module.
-The option selects what the :guilabel:`Edit code...` button should do: OVITO Pro can open a simple integrated code editor, or you can
-let OVITO Pro invoke an external Python IDE (e.g. *Visual Studio Code*), which provides a better coding experience. OVITO Pro will automatically
-re-run your source code whenever you save it in the external code editor application and switch back to the OVITO Pro window.
+The option :guilabel:`Edit embedded code with` only applies to embedded extension code developed within OVITO Pro and not imported from an external Python module.
+The option selects what the button :guilabel:`Edit code...` should do: OVITO Pro can open a simple integrated code editor, or you can
+let OVITO Pro start up an external text editor or Python IDE (e.g. *Visual Studio Code*), which provides a better coding experience. OVITO Pro will automatically
+re-run your source code whenever you save it in the external application and switch back to the OVITO Pro window.
 
-The bottom panel of the dialog window lists all Python packages that are currently installed in the environment of OVITO Pro and which may be imported
-and used by your Python extension script. Note that a standalone installation of OVITO Pro uses :ref:`an embedded Python interpreter <ovitos_interpreter>`, which
+The bottom panel of the dialog window lists all Python packages that are currently installed in the OVITO Pro environment and which may be imported
+and used by your Python extension scripts. Note that regular installations of OVITO Pro use :ref:`an embedded Python interpreter <ovitos_interpreter>`, which
 manages its own set of Python packages independent from your system's Python interpreter. Thus, :ref:`installing additional packages from the PyPI repository <ovitos_install_modules>` requires a
-special :command:`pip` command, which is displayed below the package list. If you are working with the :ref:`conda version of OVITO Pro <installation.anaconda>`, the program
-uses conda's Python interpreter and you can make additional Python packages available simply by installing them in the same conda environment as OVITO Pro.
+special :command:`pip` command, which is displayed below the package list for your convenience. If you are working with the :ref:`Conda version of OVITO Pro <installation.anaconda>`, the program
+uses Conda's Python interpreter and you can make additional Python packages available simply by installing them in the same Conda environment as OVITO Pro.
