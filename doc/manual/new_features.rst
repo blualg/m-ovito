@@ -8,24 +8,72 @@ Changelog
 Version 3.9.0 (02-Aug-2023)
 ---------------------------
 
-* Support for :ref:`dark UI theme <application_settings.general>` on Windows
-* Additional property data types (`float32`, `int8`) to reduce memory footprint of particle properties with low precision requirements (e.g. `Color`, `Selection`)
+.. rubric:: Dark mode support on Windows
+
+To enable the dark UI theme on Windows, go to the :ref:`application settings <application_settings.general>` and switch on :guilabel:`Enable automatic dark mode`.
+OVITO will follow the Windows system color theme.
+
+.. image:: /images/new_features/windows_dark_mode_support.png
+  :width: 60%
+
+.. rubric:: OpenSSH client integration |ovito-pro|
+
+OVITO Pro is now able to access data files on remote machines using OpenSSH's :program:`sftp` utility, which fully supports smartcard authentication and other advanced
+ssh features. See :ref:`usage.import.remote.openssh_connection_method` for further information.
+
+.. rubric:: User-defined file format readers |ovito-pro|
+
+This program release introduces a :ref:`programming interface for user-defined file readers <writing_custom_file_readers>`, which enables
+you to develop parser functions for new file formats in Python. User-defined file readers are fully integrated into the
+GUI of OVITO Pro and work seamlessly with the :py:func:`~ovito.io.import_file` function from the OVITO Python module.
+
+.. rubric:: Discovery mechanism for Python extensions |ovito-pro|
+
+Python extensions for OVITO Pro or the OVITO Python module (i.e. user-defined modifiers and file readers) can now be :ref:`packaged as Python modules <registering_custom_python_classes>`,
+making it easier to deploy and install them (using :command:`pip install`). Custom extensions you've developed can be put under version control in a Git repo
+and shared online with other OVITO users if desired -- we have set up the new `OVITO Extensions Directory <https://ovito-org.github.io/extensions-contrib-page/>`__ for that purpose.
+After :ref:`easy installation on a user's computer <particles.modifiers.python_script.installing_extensions>`, OVITO Pro automatically discovers all extensions
+and makes them available in the GUI.
+
+.. image:: /images/new_features/python_extension_workflow.jpg
+  :width: 90%
+  :align: center
+
+.. image:: /images/new_features/empty.png
+  :width: 1%
+  :align: center
+
+.. image:: /images/new_features/python_settings_dialog.png
+  :width: 50%
+  :align: right
+
+.. rubric:: New *Python Settings* dialog |ovito-pro|
+
+The new :ref:`Python Settings dialog <python_settings_dialog>` provides access to all things related to a Python extension in OVITO Pro:
+
+  * Configure the current working directory used for file I/O operations
+  * Hot reload function for imported Python modules, which streamlines development of Python code located in external source files
+  * Import the source code of installed extensions into the current program session to selectively customize functions when needed
+  * List of all installed Python packages that are available for import by user code
+
+.. rubric:: Support for more file formats
+
+OVITO can now import DCD trajectory files, which are written by the CHARMM, NAMD, and LAMMPS simulation codes.
+OVITO Pro and the OVITO Python module can additionally read :ref:`ASE trajectory files <file_formats.input.ase_trajectory>`.
+
+.. rubric:: Further changes in this program release:
+
+* Support for additional property data types (`float32`, `int8`) to reduce memory footprint of particle properties with low precision requirements (e.g. `Color`, `Selection`)
 * OpenGL renderer: Performance optimizations, direct upload of `float32` and `int8` array values to GPU memory
-* New file reader for the DCD trajectory format, which is written by the CHARMM, NAMD, and LAMMPS simulation codes
 * GSD file reader: Do not skip ``log/`` chunks containing ``/`` in their names (`issue #226 <https://gitlab.com/stuko/ovito/-/issues/226>`__)
 * Fix: Color Coding modifier's "Adjust Range" function does not follow option "Only selected"
 * Search patterns for trajectory file series: Avoid asterisk in file extensions containing digits, e.g. :file:`snapshot0000.h5` → :file:`snapshot*.h5`
-* Data table file exporter: Do not require a :py:attr:`~ovito.data.DataTable.y`-property
-* Automatic name mangling of imported attribute from LAMMPS dump, GSD, and XYZ files in case they do not conform to OVITO's property naming rules
+* Data table file exporter does not require a :py:attr:`~ovito.data.DataTable.y`-property anymore
+* Automatic name mangling of atom attributes imported from LAMMPS dump, GSD, and XYZ files in case they do not conform to OVITO's property naming rules
 * The :ref:`Vulkan viewport renderer <application_settings.viewports.graphics_implementation>` has been temporarily disabled in this release
-* |ovito-pro| :ref:`Programming interface for user-defined file readers <writing_custom_file_readers>`
-* |ovito-pro| :ref:`SSH remote file access option via OpenSSH <usage.import.remote.openssh_connection_method>` to support smartcard authentication methods
-* |ovito-pro| :ref:`Discovery mechanism for installable Python extensions <registering_custom_python_classes>`
-* |ovito-pro| New :ref:`Python Settings <python_settings_dialog>` dialog, which provides a hot-reload function for imported Python extension modules
-* |ovito-pro| :ref:`File reader for the ASE trajectory files <file_formats.input.ase_trajectory>`
 * |ovito-pro| New Python methods :py:meth:`Property.add_type_id <ovito.data.Property.add_type_id>` and :py:meth:`Property.add_type_name <ovito.data.Property.add_type_name>`
 * |ovito-pro| New Python method :py:meth:`VoxelGrid.view <ovito.data.VoxelGrid.view>`
-* |ovito-pro| Performance optimizations for property array data accesses from Python
+* |ovito-pro| Performance optimizations for property data access from Python code
 
 ---------------------------
 Version 3.8.5 (19-Jun-2023)

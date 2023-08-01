@@ -18,6 +18,7 @@ Here is a (nearly complete) list of the program features that are available in *
 - :ref:`Multiple pipelines <usage.import.multiple_datasets>` in the same visualization scene (comparative analysis)
 - Instant :ref:`Python code generation <python_code_generation>` to greatly simplify script development for the OVITO Python package
 - :ref:`User-defined modifier functions <particles.modifiers.python_script>` including GUI controls for user-defined parameters
+- Option to develop :ref:`file parsers for custom file formats <writing_custom_file_readers>` in Python
 - LAMMPS integration via :ref:`data_source.lammps_script` pipeline source
 - :ref:`data_source.python_script` pipeline source to generate new particle structures via scripts
 - :ref:`OpenSSH client integration <usage.import.remote.openssh_connection_method>` for remote file access (support for smartcards and 2FA authentication methods)
@@ -31,15 +32,15 @@ Here is a (nearly complete) list of the program features that are available in *
 
   - :ref:`particles.modifiers.bin_and_reduce`
   - :ref:`particles.modifiers.bond_analysis`
-  - :ref:`particles.modifiers.color_by_type`
   - :ref:`particles.modifiers.construct_surface_mesh.regions`
   - :ref:`particles.modifiers.time_averaging`
   - :ref:`particles.modifiers.time_series`
   - :ref:`modifiers.identify_fcc_planar_faults`
   - :ref:`modifiers.render_lammps_regions`
+  - :ref:`modifiers.calculate_local_entropy`
+  - :ref:`particles.modifiers.color_by_type`
 
-- :ref:`file_formats.input.ase_database`
-- Support for :ref:`user-defined file format readers <writing_custom_file_readers>`
+- :ref:`file_formats.input.ase_database` and :ref:`file_formats.input.ase_trajectory`
 - Use of Miller indices in the :ref:`particles.modifiers.slice` modifier
 
 Please visit `www.ovito.org <https://www.ovito.org/about/ovito-pro/>`__ for further details on OVITO Pro, our support services, and pricing.

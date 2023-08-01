@@ -166,23 +166,22 @@ or :ref:`Python-based file readers <writing_custom_file_readers>`.
 the Python script. This setting is optional and only plays a role if your script performs I/O operations using relative file paths, which will be resolved with respect to
 the current working directory.
 
-The panel :guilabel:`Python extension` displays information about the Python code object that is underlying the current extension.
-For example, in the case of a :ref:`user-defined modifier <particles.modifiers.python_script>`, this will be the ``modify()`` function you wrote using the integrated code editor.
-If you are currently working with a :ref:`predefined Python-based modifier <particles.modifiers.pythonbased>` shipping with OVITO Pro, this may be a function or class defined
-in an importable Python module.
+The panel :guilabel:`Python extension` displays information about the Python code object for the current extension and whether
+it is defined in embedded source code or in an installed extension module.
 
 .. note::
 
   OVITO Pro distinguishes between *embedded* extensions and *imported* extensions.
 
   Embedded extensions are written by you during a program session and may be lost when you close OVITO Pro -- unless you save them as part of a :ref:`session state file <usage.saving_loading_scene>` or
-  a modifier template as :ref:`described above <particles.modifiers.python_script.save_as_template>`.
+  a modifier template as :ref:`described above <particles.modifiers.python_script.save_as_template>`. They are typically simple, ad-hoc Python functions.
 
-  Imported extensions, on the other hand, live in :file:`.py` code files belonging to importable Python modules -- installed in the Python interpreter used by OVITO Pro.
-  Such extensions always remain available, even across program sessions. They can be either Python-based standard function :ref:`already included with OVITO Pro <particles.modifiers.pythonbased>`,
-  or :ref:`installed extension modules <particles.modifiers.python_script.installing_extensions>` that were developed by you or others.
+  Imported extensions, on the other hand, may be more complex and live in :file:`.py` code files in Python modules -- installed in the Python interpreter that is being used by OVITO Pro.
+  Such extensions always remain available, even across program sessions. OVITO Pro already includes several such extensions, e.g., :ref:`its Python-based modifiers <particles.modifiers.pythonbased>`,
+  which are part of the OVITO Python module. Additionally, you can install :ref:`user extension modules <particles.modifiers.python_script.installing_extensions>` that were
+  developed by you or others, and which seamlessly integrate into the OVITO Pro GUI.
 
-  See also :ref:`registering_custom_python_classes`.
+  See also :ref:`registering_custom_python_classes` and the `OVITO Extensions Directory <https://ovito-org.github.io/extensions-contrib-page/>`__.
 
 The option :guilabel:`Edit embedded code with` only applies to embedded extension code developed within OVITO Pro and not imported from an external Python module.
 The option selects what the button :guilabel:`Edit code...` should do: OVITO Pro can open a simple integrated code editor, or you can
