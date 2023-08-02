@@ -69,7 +69,7 @@ OVITO's functionality in script-based workflows. Please refer to :ref:`this sect
 Troubleshooting
 ===============
 
-If you run into any problems during the installation of OVITO, you can contact the developers through our `online support forum <https://www.ovito.org/forum/>`_.
+If you run into any problems during the installation of OVITO, you can contact the developers through the `online user forum <https://matsci.org/c/ovito/>`__.
 The OVITO team will be happy to help you. The most commonly encountered installation issues on different platforms are addressed here:
 
   - :ref:`installation.troubleshooting.windows`

@@ -77,4 +77,5 @@ open the command prompt (:program:`cmd.exe`) and start OVITO by entering the fol
   "C:\Program Files\OVITO Basic\ovito.exe"
 
 Try loading a remote file via SSH. If the connection fails, have a look at the file :file:`ovito_log.txt`, which should have been created
-in your user directory. For further help, visit the `user forum <https://www.ovito.org/forum/>`__ or contact OVITO `technical support <https://www.ovito.org/contact/>`__.
+in your user directory. For further help, visit the `online user forum <https://matsci.org/c/ovito/>`__ or contact
+`OVITO technical support <https://www.ovito.org/contact/>`__ directly.
