@@ -130,6 +130,7 @@ size_t BondsObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsV
 
         // Insert other bond properties.
         for(const auto& bprop : bondProperties) {
+            OVITO_ASSERT(bprop);
             OVITO_ASSERT(bprop->size() == newBonds.size());
             OVITO_ASSERT(bprop->type() != BondsObject::TopologyProperty);
             OVITO_ASSERT(bprop->type() != BondsObject::PeriodicImageProperty);
@@ -213,6 +214,7 @@ size_t BondsObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsV
 
         // Merge new bond properties.
         for(const auto& bprop : bondProperties) {
+            OVITO_ASSERT(bprop);
             OVITO_ASSERT(bprop->size() == newBonds.size());
             OVITO_ASSERT(bprop->type() != BondsObject::TopologyProperty);
             OVITO_ASSERT(bprop->type() != BondsObject::PeriodicImageProperty);

@@ -263,10 +263,11 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
     // For generting the "Voronoi Order" bond property.
     PropertyFactory<int32_t> bondVoronoiOrder;
-    if(_computeBonds)
+    if(_computeBonds) {
         bondVoronoiOrder = PropertyFactory<int32_t>(BondsObject::OOClass(), 0, QStringLiteral("Voronoi Order"));
+    }
 
-    if(_positions->size() == 0 || _simCell->volume3D() == 0) {
+    if(_positions->size() == 0 || _simulationBoxVolume == 0) {
         if(maxFaceOrders()) {
             _voronoiIndices = ParticlesObject::OOClass().createUserProperty(DataBuffer::Initialized, _positions->size(), PropertyObject::Int32, 3, QStringLiteral("Voronoi Index"));
             // Re-use the output particle property as an output mesh region property.
@@ -275,6 +276,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
                 polyhedraMesh.addRegionProperty(maxFaceOrders());
             }
         }
+        _bondVoronoiOrder = bondVoronoiOrder.take();
         // Nothing else to do if there are no particles.
         return;
     }
@@ -644,7 +646,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
                 voronoiBuffer.insert(voronoiBuffer.end(), localVoronoiBuffer.cbegin(), localVoronoiBuffer.cend());
             }
         });
-        if(isCanceled()) return;
+        if(isCanceled())
+            return;
     }
 
     if(maxFaceOrders()) {
@@ -887,9 +890,12 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::applyResults(const Modifier
                         "Voronoi cell volume sum: %2").arg(_simulationBoxVolume).arg(voronoiVolumeSum())));
     }
 
-    if(modifier->computeBonds()) {
+    if(modifier->computeBonds() && _computeBonds) {
         // Insert output object into the pipeline.
-        particles->addBonds(bonds(), modifier->bondsVis(), {_bondVoronoiOrder});
+        std::vector<PropertyPtr> bondProperties;
+        if(_bondVoronoiOrder)
+            bondProperties.push_back(_bondVoronoiOrder);
+        particles->addBonds(bonds(), modifier->bondsVis(), bondProperties);
     }
 
     // Output the surface mesh representing the computed Voronoi polyhedra.
