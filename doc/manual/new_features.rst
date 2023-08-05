@@ -368,7 +368,7 @@ Version 3.7.5 (28-May-2022)
 * Performance improvements to OpenGL high-quality sphere rendering code
 * Bug fix: Data inspector shows a 3rd text label in bar charts with 2 bars.
 * Bug fix: Sporadic program crashes when importing CA files.
-* |ovito-pro| :py:class:`ovito.data.DataCollection` attributes dictionary can now store arbitrary Python objects.
+* |ovito-pro| :py:attr:`DataCollection.attributes <ovito.data.DataCollection.attributes>` dictionary can now store arbitrary Python objects.
 * |ovito-pro| New Python method :py:meth:`ovito.data.Particles.remap_indices() <ovito.data.Particles.remap_indices>`.
 * |ovito-pro| New Python method :py:meth:`ovito.data.SurfaceMesh.to_triangle_mesh() <ovito.data.SurfaceMesh.to_triangle_mesh>`.
 * |ovito-pro| Bumped maximum neighbor limit of :py:class:`ovito.data.NearestNeighborFinder` to 64.
