@@ -5,6 +5,16 @@ Changelog
 =========
 
 ---------------------------
+Version 3.9.1 (06-Aug-2023)
+---------------------------
+
+* Fix: Voronoi Analysis modifier crashes if simulation cell is degenerate or atom count is zero, and option `Generate neighbor bonds` is turned on
+* |ovito-pro| New Python class :py:class:`ovito.pipeline.PipelineSourceInterface`
+* |ovito-pro| New Python method :py:meth:`ModifierInterface.compute_trajectory_length() <ovito.pipeline.ModifierInterface.compute_trajectory_length>`, which gives user-defined modifiers control over the timeline length
+* |ovito-pro| New Python field :py:attr:`Modifier.title <ovito.pipeline.Modifier.title>`
+* |ovito-pro| Fixed :command:`ovitos -m pip install` failure for packages that require a build step
+
+---------------------------
 Version 3.9.0 (02-Aug-2023)
 ---------------------------
 
