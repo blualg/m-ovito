@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -40,7 +40,7 @@ public:
 
     /// Constructor.
     explicit ObjectExecutorWorkEvent(QEvent::Type eventType, QPointer<const QObject>&& obj, ExecutionContext context, std::decay_t<Function>&& f) :
-        QEvent(eventType), 
+        QEvent(eventType),
         _executionContext(std::move(context)),
         _callable(std::move(f)) {
             OVITO_ASSERT(_executionContext.isValid());
@@ -52,14 +52,15 @@ public:
         // Qt should be destroying event objects only in the main thread.
         OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
 
-        // Execute work only if the context object still exists and the application is not shutting down. 
-        // Otherwise, silently cancel the work (but still run the destructor of the callable). 
+        // Execute work only if the context object still exists and the application is not shutting down.
+        // Otherwise, silently cancel the work (but still run the destructor of the callable).
         if(object() && !QCoreApplication::closingDown()) {
             // Activate the execution context to which the work was submitted.
             ExecutionContext::Scope execScope(std::move(_executionContext));
 
-            // Undo recording should not be active at this point.
-            OVITO_ASSERT(!CompoundOperation::isUndoRecording());
+            // Undo recording may still be active if the GUI is currently performing a extended user operation (e.g. Animation Settings dialog).
+            // While the asynchronous work is being performed, undo recording should be suspended.
+            UndoSuspender noUndo;
 
             // Execute the work function.
             std::invoke(std::move(_callable));
@@ -68,7 +69,7 @@ public:
 
     /// Returns the object the work has been submitted to.
     const QObject* object() const { return _obj.data(); }
-    
+
 private:
     QPointer<const QObject> _obj;
     ExecutionContext _executionContext;
@@ -86,9 +87,9 @@ class OVITO_CORE_EXPORT ObjectExecutor
 public:
 
     /// Constructor.
-    explicit ObjectExecutor(const QObject* obj, bool deferredExecution) noexcept : 
-            _obj(obj), 
-            _deferredExecution(deferredExecution) { 
+    explicit ObjectExecutor(const QObject* obj, bool deferredExecution) noexcept :
+            _obj(obj),
+            _deferredExecution(deferredExecution) {
         OVITO_ASSERT(obj);
         OVITO_ASSERT(!QCoreApplication::instance() || obj->thread() == QCoreApplication::instance()->thread());
     }
@@ -106,7 +107,7 @@ public:
                     QCoreApplication::postEvent(const_cast<QObject*>(event->object()), event);
                 }
                 else { // When already in the main thread, execute work immediately.
-                    
+
                     // Activate the execution context to which the work was submitted.
                     ExecutionContext::Scope execScope(std::move(context));
 
@@ -137,7 +138,7 @@ public:
                 std::invoke(std::forward<Function>(f));
             }
         }
-    }   
+    }
 
     /// Returns the object this executor is associated with.
     /// Work submitted to this executor will be executed in the context of the object.
@@ -152,11 +153,11 @@ public:
 private:
 
     /// The object work will be submitted to. Work will be executed in the context of this object,
-    /// which means it will be automatically canceled if the object gets deleted before the work 
+    /// which means it will be automatically canceled if the object gets deleted before the work
     /// is done.
     QPointer<const QObject> _obj;
 
-    /// Controls whether execution of the work will be deferred until after control is returned to 
+    /// Controls whether execution of the work will be deferred until after control is returned to
     /// the event loop even if immediate execution would be possible.
     const bool _deferredExecution;
 };
