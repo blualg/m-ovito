@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -73,8 +73,8 @@ class OVITO_CORE_EXPORT SceneRenderer : public RefTarget
 	OVITO_CLASS(SceneRenderer)
 
 public:
-	
-	struct ObjectPickingRecord 
+
+	struct ObjectPickingRecord
 	{
 		quint32 baseObjectID;
 		OORef<PipelineSceneNode> objectNode;
@@ -278,7 +278,7 @@ protected:
 	/// \brief Renders the visual representation of the modifiers.
 	void renderModifiers(PipelineSceneNode* pipeline, bool renderOverlay);
 
-	/// \brief Gets the trajectory of motion of a node. The returned data buffer stores an array of 
+	/// \brief Gets the trajectory of motion of a node. The returned data buffer stores an array of
 	///        Point3 (if the node's position is animated) or a null pointer (if the node's position is static).
 	ConstDataBufferPtr getNodeTrajectory(const SceneNode* node);
 

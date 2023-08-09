@@ -55,7 +55,7 @@ public:
 
     /// Default constructs a color without initializing its components.
     /// The color components will therefore have an undefined value!
-    ColorT() {}
+    ColorT() = default;
 
     /// Initializes the color with the given red, green and blue values (in the range 0 to 1).
     Q_DECL_CONSTEXPR ColorT(T red, T green, T blue) : std::array<T, 3>{{red, green, blue}} {}
@@ -328,7 +328,7 @@ public:
 
     /// Default constructs a color without initializing its components.
     /// The components will therefore have an undefined value!
-    ColorAT() {}
+    ColorAT() = default;
 
     /// Initializes the color with the given red, green, blue, and alpha value.
     Q_DECL_CONSTEXPR ColorAT(T red, T green, T blue, T alpha = T(1)) : std::array<T, 4>{{red, green, blue, alpha}} {}

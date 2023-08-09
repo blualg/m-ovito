@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,8 +28,8 @@
 namespace Ovito {
 
 /**
- * Utility class, which temporarily replaces the value of a variable and makes
- * sure that the old value gets restored afterwards.
+ * Utility class that temporarily replaces the value of a variable, making
+ * sure that its old value gets restored upon deconstruction of the RAII helper.
  */
 template<typename T>
 class ChangeValueRAII
@@ -42,7 +42,7 @@ public:
     /// Destructor.
     ~ChangeValueRAII() { _storage = std::move(_oldValue); }
 
-    /// No copying.
+    /// No copying allowed.
     ChangeValueRAII(const ChangeValueRAII& other) = delete;
     ChangeValueRAII& operator=(const ChangeValueRAII& other) = delete;
 
@@ -50,6 +50,37 @@ private:
 
     T& _storage;
     T _oldValue;
+};
+
+/**
+ * Utility class that temporarily exchanges the values of two variables, making
+ * sure that their old values get restored upon deconstruction of the RAII helper.
+ */
+template<typename T>
+class SwapValueRAII
+{
+public:
+
+    /// Constructor.
+    explicit SwapValueRAII(T& storage1, T& storage2) : _storage1(storage1), _storage2(storage2) {
+        using namespace std;
+        swap(storage1, storage2);
+    }
+
+    /// Destructor.
+    ~SwapValueRAII() {
+        using namespace std;
+        swap(_storage1, _storage2);
+    }
+
+    /// No copying allowed.
+    SwapValueRAII(const SwapValueRAII& other) = delete;
+    SwapValueRAII& operator=(const SwapValueRAII& other) = delete;
+
+private:
+
+    T& _storage1;
+    T& _storage2;
 };
 
 }   // End of namespace
