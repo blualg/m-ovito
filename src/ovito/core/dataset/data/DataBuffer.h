@@ -226,11 +226,13 @@ public:
     /// Component count and data type of source and destination must be compatible.
     void copyRangeFrom(const DataBuffer& source, size_t sourceIndex, size_t destIndex, size_t count);
 
-    /// Copies the values stored this buffer to the given output iterator if it is compatible.
-    /// Returns false if copying was not possible, because the data type of the array and the output iterator
-    /// are not compatible.
+    /// Copies all values to the given output iterator, possibly doing data type conversion.
     template<typename Iter>
-    bool copyTo(Iter iter, size_t component = 0) const;
+    void copyTo(Iter iter) const;
+
+    /// Copies all values of a given vector component to the given output iterator, possibly doing data type conversion.
+    template<typename Iter>
+    void copyComponentTo(Iter iter, size_t component) const;
 
     /// Calls a functor provided by the caller for every value of the given vector component.
     template<typename F>
@@ -483,18 +485,85 @@ inline void DataBuffer::fillSelected(const T value, const DataBuffer& selectionP
 #endif
 }
 
-/// Copies the values stored this buffer to the given output iterator if it is compatible.
-/// Returns false if copying was not possible, because the data type of the array and the output iterator
-/// are not compatible.
+/// Copies all values to the given output iterator, possibly doing data type conversion.
 template<typename Iter>
-inline bool DataBuffer::copyTo(Iter iter, size_t component) const
+inline void DataBuffer::copyTo(Iter iter) const
 {
-    OVITO_ASSERT(_isDataInitialized);
-    const size_t cmpntCount = componentCount();
-    if(component >= cmpntCount)
-        return false;
     if(size() == 0)
-        return true;
+        return;
+    OVITO_ASSERT(_isDataInitialized);
+    ReadAccess readAccess(*this);
+    const size_t cmpntCount = componentCount();
+#ifdef OVITO_USE_SYCL
+    OVITO_ASSERT(stride() == cmpntCount * dataTypeSize());
+    if(dataType() == DataBuffer::Int8) {
+        cl::sycl::buffer<int8_t> valueBuffer = _data->reinterpret<int8_t, 1>();
+        cl::sycl::host_accessor valueAccess(valueBuffer, cl::sycl::read_only);
+        for(const auto* __restrict v = valueAccess.get_pointer(), *v_end = v + size() * cmpntCount; v != v_end;)
+            *iter++ = *v++;
+    }
+    else if(dataType() == DataBuffer::Int32) {
+        cl::sycl::buffer<int32_t> valueBuffer = _data->reinterpret<int32_t, 1>();
+        cl::sycl::host_accessor valueAccess(valueBuffer, cl::sycl::read_only);
+        for(const auto* __restrict v = valueAccess.get_pointer(), *v_end = v + size() * cmpntCount; v != v_end;)
+            *iter++ = *v++;
+    }
+    else if(dataType() == DataBuffer::Int64) {
+        cl::sycl::buffer<int64_t> valueBuffer = _data->reinterpret<int64_t, 1>();
+        cl::sycl::host_accessor valueAccess(valueBuffer, cl::sycl::read_only);
+        for(const auto* __restrict v = valueAccess.get_pointer(), *v_end = v + size() * cmpntCount; v != v_end;)
+            *iter++ = *v++;
+    }
+    else if(dataType() == DataBuffer::Float32) {
+        cl::sycl::buffer<float> valueBuffer = _data->reinterpret<float, 1>();
+        cl::sycl::host_accessor valueAccess(valueBuffer, cl::sycl::read_only);
+        for(const auto* __restrict v = valueAccess.get_pointer(), *v_end = v + size() * cmpntCount; v != v_end;)
+            *iter++ = *v++;
+    }
+    else if(dataType() == DataBuffer::Float64) {
+        cl::sycl::buffer<double> valueBuffer = _data->reinterpret<double, 1>();
+        cl::sycl::host_accessor valueAccess(valueBuffer, cl::sycl::read_only);
+        for(const auto* __restrict v = valueAccess.get_pointer(), *v_end = v + size() * cmpntCount; v != v_end;)
+            *iter++ = *v++;
+    }
+    else OVITO_ASSERT(false);
+#else
+    OVITO_ASSERT(stride() == cmpntCount * dataTypeSize());
+    if(dataType() == DataBuffer::Int8) {
+        for(const int8_t* __restrict v = reinterpret_cast<const int8_t*>(cdata()), *v_end = v + size()*cmpntCount; v != v_end;)
+            *iter++ = *v++;
+    }
+    else if(dataType() == DataBuffer::Int32) {
+        for(const int32_t* __restrict v = reinterpret_cast<const int32_t*>(cdata()), *v_end = v + size()*cmpntCount; v != v_end;)
+            *iter++ = *v++;
+    }
+    else if(dataType() == DataBuffer::Int64) {
+        for(const int64_t* __restrict v = reinterpret_cast<const int64_t*>(cdata()), *v_end = v + size()*cmpntCount; v != v_end;)
+            *iter++ = *v++;
+    }
+    else if(dataType() == DataBuffer::Float32) {
+        for(const float* __restrict v = reinterpret_cast<const float*>(cdata()), *v_end = v + size()*cmpntCount; v != v_end;)
+            *iter++ = *v++;
+    }
+    else if(dataType() == DataBuffer::Float64) {
+        for(const double* __restrict v = reinterpret_cast<const double*>(cdata()), *v_end = v + size()*cmpntCount; v != v_end;)
+            *iter++ = *v++;
+    }
+    else OVITO_ASSERT(false);
+#endif
+}
+
+/// Copies all values of a given vector component to the given output iterator, possibly doing data type conversion.
+template<typename Iter>
+inline void DataBuffer::copyComponentTo(Iter iter, size_t component) const
+{
+    const size_t cmpntCount = componentCount();
+    OVITO_ASSERT(component < cmpntCount);
+    if(component >= cmpntCount)
+        return;
+    if(size() == 0)
+        return;
+    OVITO_ASSERT(_isDataInitialized);
     ReadAccess readAccess(*this);
 #ifdef OVITO_USE_SYCL
     if(dataType() == DataBuffer::Int8) {
@@ -502,64 +571,55 @@ inline bool DataBuffer::copyTo(Iter iter, size_t component) const
         cl::sycl::host_accessor valueAccess(valueBuffer, cl::sycl::read_only);
         for(const auto* __restrict v = valueAccess.get_pointer() + component, *v_end = v + size() * cmpntCount; v != v_end; v += cmpntCount)
             *iter++ = *v;
-        return true;
     }
     else if(dataType() == DataBuffer::Int32) {
         cl::sycl::buffer<int32_t> valueBuffer = _data->reinterpret<int32_t, 1>();
         cl::sycl::host_accessor valueAccess(valueBuffer, cl::sycl::read_only);
         for(const auto* __restrict v = valueAccess.get_pointer() + component, *v_end = v + size() * cmpntCount; v != v_end; v += cmpntCount)
             *iter++ = *v;
-        return true;
     }
     else if(dataType() == DataBuffer::Int64) {
         cl::sycl::buffer<int64_t> valueBuffer = _data->reinterpret<int64_t, 1>();
         cl::sycl::host_accessor valueAccess(valueBuffer, cl::sycl::read_only);
         for(const auto* __restrict v = valueAccess.get_pointer() + component, *v_end = v + size() * cmpntCount; v != v_end; v += cmpntCount)
             *iter++ = *v;
-        return true;
     }
     else if(dataType() == DataBuffer::Float32) {
         cl::sycl::buffer<float> valueBuffer = _data->reinterpret<float, 1>();
         cl::sycl::host_accessor valueAccess(valueBuffer, cl::sycl::read_only);
         for(const auto* __restrict v = valueAccess.get_pointer() + component, *v_end = v + size() * cmpntCount; v != v_end; v += cmpntCount)
             *iter++ = *v;
-        return true;
     }
     else if(dataType() == DataBuffer::Float64) {
         cl::sycl::buffer<double> valueBuffer = _data->reinterpret<double, 1>();
         cl::sycl::host_accessor valueAccess(valueBuffer, cl::sycl::read_only);
         for(const auto* __restrict v = valueAccess.get_pointer() + component, *v_end = v + size() * cmpntCount; v != v_end; v += cmpntCount)
             *iter++ = *v;
-        return true;
     }
+    else OVITO_ASSERT(false);
 #else
     if(dataType() == DataBuffer::Int8) {
         for(const int8_t* __restrict v = reinterpret_cast<const int8_t*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
             *iter++ = *v;
-        return true;
     }
     else if(dataType() == DataBuffer::Int32) {
         for(const int32_t* __restrict v = reinterpret_cast<const int32_t*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
             *iter++ = *v;
-        return true;
     }
     else if(dataType() == DataBuffer::Int64) {
         for(const int64_t* __restrict v = reinterpret_cast<const int64_t*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
             *iter++ = *v;
-        return true;
     }
     else if(dataType() == DataBuffer::Float32) {
         for(const float* __restrict v = reinterpret_cast<const float*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
             *iter++ = *v;
-        return true;
     }
     else if(dataType() == DataBuffer::Float64) {
         for(const double* __restrict v = reinterpret_cast<const double*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
             *iter++ = *v;
-        return true;
     }
+    else OVITO_ASSERT(false);
 #endif
-    return false;
 }
 
 /// Calls a functor provided by the caller for every value of the given vector component.
@@ -615,6 +675,7 @@ inline bool DataBuffer::forEach(size_t component, F&& func) const
             std::invoke(std::forward<F>(func), i, *v);
         return true;
     }
+    else OVITO_ASSERT(false);
 #else
     if(dataType() == DataBuffer::Int8) {
         auto v = reinterpret_cast<const int8_t*>(cdata()) + component;
@@ -646,6 +707,7 @@ inline bool DataBuffer::forEach(size_t component, F&& func) const
             std::invoke(std::forward<F>(func), i, *v);
         return true;
     }
+    else OVITO_ASSERT(false);
 #endif
     return false;
 }

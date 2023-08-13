@@ -637,7 +637,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineVertexColors()
             OVITO_ASSERT(pseudoColorProperty->size() == outputMesh()->vertexCount());
             if(_pseudoColorPropertyRef.vectorComponent() < (int)pseudoColorProperty->componentCount()) {
                 outputMesh()->setHasVertexPseudoColors(true);
-                pseudoColorProperty->copyTo(outputMesh()->vertexPseudoColors().begin(), std::max(0, _pseudoColorPropertyRef.vectorComponent()));
+                pseudoColorProperty->copyComponentTo(outputMesh()->vertexPseudoColors().begin(), std::max(0, _pseudoColorPropertyRef.vectorComponent()));
             }
             else {
                 _status = PipelineStatus(PipelineStatus::Error, tr("The vector component is out of range. The property '%1' has only %2 values per data element.").arg(_pseudoColorPropertyRef.name()).arg(pseudoColorProperty->componentCount()));

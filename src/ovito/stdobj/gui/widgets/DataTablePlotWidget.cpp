@@ -248,7 +248,7 @@ void DataTablePlotWidget::updateDataPlot()
         }
 
         QVector<double> xcoords(y->size());
-        if(!x || x->size() != xcoords.size() || !x->copyTo(xcoords.begin())) {
+        if(!x || x->size() != xcoords.size()) {
             if(table()->intervalStart() < table()->intervalEnd() && y->size() != 0) {
                 FloatType binSize = (table()->intervalEnd() - table()->intervalStart()) / y->size();
                 double xc = table()->intervalStart() + binSize / 2;
@@ -261,12 +261,13 @@ void DataTablePlotWidget::updateDataPlot()
                 std::iota(xcoords.begin(), xcoords.end(), 0);
             }
         }
+        else {
+            x->copyComponentTo(xcoords.begin(), 0);
+        }
 
         QVector<double> ycoords(y->size());
         for(size_t cmpnt = 0; cmpnt < y->componentCount(); cmpnt++) {
-            if(!y->copyTo(ycoords.begin(), cmpnt)) {
-                std::fill(ycoords.begin(), ycoords.end(), 0.0);
-            }
+            y->copyComponentTo(ycoords.begin(), cmpnt);
             _curves[cmpnt]->setSamples(xcoords, ycoords);
         }
     }

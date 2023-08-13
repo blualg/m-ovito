@@ -594,6 +594,12 @@ using RawBufferAccess = detail::BufferAccessUntyped<std::conditional_t<accessmod
 using RawBufferReadAccess = RawBufferAccess<access_mode::read>;
 
 /**
+ * Same as RawBufferReadAccess but additionally keeps a strong reference to the DataBuffer object
+ * to keep it alive while the acessor object exists.
+*/
+using RawBufferReadAccessAndRef = detail::BufferAccessUntyped<const DataBuffer, true, access_mode::read>;;
+
+/**
  * Provides read-only access to individual array elements of a DataBuffer.
 */
 template<typename T>

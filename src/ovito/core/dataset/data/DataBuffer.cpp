@@ -864,8 +864,6 @@ void DataBuffer::convertToDataType(int newDataType)
 
     // Copy values from old buffer to new buffer and perform data type convertion.
     if(_numElements != 0) {
-        OVITO_ASSERT(_isDataInitialized);
-        RawBufferReadAccess oldData(this);
         switch(newDataType) {
         case Int8:
             {
@@ -876,9 +874,7 @@ void DataBuffer::convertToDataType(int newDataType)
 #else
                 int8_t* __restrict dest = reinterpret_cast<int8_t*>(newData.get());
 #endif
-                for(size_t i = 0; i < _numElements; i++)
-                    for(size_t j = 0; j < _componentCount; j++)
-                        *dest++ = oldData.get<int8_t>(i, j);
+                copyTo(dest);
             }
             break;
         case Int32:
@@ -890,9 +886,7 @@ void DataBuffer::convertToDataType(int newDataType)
 #else
                 int32_t* __restrict dest = reinterpret_cast<int32_t*>(newData.get());
 #endif
-                for(size_t i = 0; i < _numElements; i++)
-                    for(size_t j = 0; j < _componentCount; j++)
-                        *dest++ = oldData.get<int32_t>(i, j);
+                copyTo(dest);
             }
             break;
         case Int64:
@@ -904,9 +898,7 @@ void DataBuffer::convertToDataType(int newDataType)
 #else
                 int64_t* __restrict dest = reinterpret_cast<int64_t*>(newData.get());
 #endif
-                for(size_t i = 0; i < _numElements; i++)
-                    for(size_t j = 0; j < _componentCount; j++)
-                        *dest++ = oldData.get<int64_t>(i, j);
+                copyTo(dest);
             }
             break;
         case Float32:
@@ -918,9 +910,7 @@ void DataBuffer::convertToDataType(int newDataType)
 #else
                 float* __restrict dest = reinterpret_cast<float*>(newData.get());
 #endif
-                for(size_t i = 0; i < _numElements; i++)
-                    for(size_t j = 0; j < _componentCount; j++)
-                        *dest++ = oldData.get<float>(i, j);
+                copyTo(dest);
             }
             break;
         case Float64:
@@ -932,9 +922,7 @@ void DataBuffer::convertToDataType(int newDataType)
 #else
                 double* __restrict dest = reinterpret_cast<double*>(newData.get());
 #endif
-                for(size_t i = 0; i < _numElements; i++)
-                    for(size_t j = 0; j < _componentCount; j++)
-                        *dest++ = oldData.get<double>(i, j);
+                copyTo(dest);
             }
             break;
         default:

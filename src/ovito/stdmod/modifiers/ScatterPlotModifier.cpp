@@ -197,12 +197,10 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     BufferWriteAccess<FloatType, access_mode::discard_read_write> out_y_access(out_y);
 
     // Collect X coordinates.
-    if(!xProperty->copyTo(out_x_access.begin(), xVecComponent))
-        throw Exception(tr("Failed to extract coordinate values from input property for x-axis."));
+    xProperty->copyComponentTo(out_x_access.begin(), xVecComponent);
 
     // Collect Y coordinates.
-    if(!yProperty->copyTo(out_y_access.begin(), yVecComponent))
-        throw Exception(tr("Failed to extract coordinate values from input property for y-axis."));
+    yProperty->copyComponentTo(out_y_access.begin(), yVecComponent);
 
     if(outputSelection && selectXAxisInRange()) {
         SelectionIntType* s = outputSelection.begin();
