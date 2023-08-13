@@ -327,7 +327,7 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
                 }
             }
             catch(Exception& ex) {
-                ex.prependGeneralMessage(tr("An error occured while loading the user's default session state from the file: %1").arg(defaultsFilePath));
+                ex.prependGeneralMessage(tr("An error occurred while loading the user's default session state from the file: %1").arg(defaultsFilePath));
                 userInterface.reportError(ex);
             }
         }

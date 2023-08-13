@@ -299,7 +299,7 @@ void PropertyInspectionApplet::setFilterExpression(const QString& expression)
 }
 
 /******************************************************************************
-* Is called when an error during filter evaluation ocurred.
+* Is called when an error during filter evaluation occurred.
 ******************************************************************************/
 void PropertyInspectionApplet::onFilterStatusChanged(const QString& msgText)
 {

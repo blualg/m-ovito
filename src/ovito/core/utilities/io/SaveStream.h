@@ -64,7 +64,7 @@ public:
 
     /// \brief Constructs the stream wrapper.
     /// \param destination The sink that will receive the data. This Qt output stream must support random access.
-    /// \throw Exception if the given data stream supports only sequential access or if an I/O error occured while writing the file header.
+    /// \throw Exception if the given data stream supports only sequential access or if an I/O error occurred while writing the file header.
     SaveStream(QDataStream& destination);
 
     /// \brief Automatically closes the stream by calling close().

@@ -1265,7 +1265,7 @@ Version 2.4.1 (01-Nov-2014)
 * Bug fix: LAMMPS data file parser did not parse atom IDs.
 * Bug fix: Particle inspection utility did not recalculate displayed distances and angles upon simulation frame change.
 * Bug fix: StrainTensor.XZ and StrainTensor.YZ components output by Atomic Strain modifier were swapped.
-* Bug fix: Fixed issue in Histogram modifier that occured when the x-range was fixed to an interval smaller than the value range.
+* Bug fix: Fixed issue in Histogram modifier that occurred when the x-range was fixed to an interval smaller than the value range.
 * Bug fix: Atom type ordering is now maintained when importing a sequence of LAMMPS dump files with named atom types.
 
 ---------------------------

@@ -104,7 +104,7 @@ private Q_SLOTS:
     /// Is called when the uer has changed the filter expression.
     void onFilterExpressionEntered();
 
-    /// Is called when an error during filter evaluation ocurred.
+    /// Is called when an error during filter evaluation occurred.
     void onFilterStatusChanged(const QString& msgText);
 
 private:
