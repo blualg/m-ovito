@@ -34,7 +34,7 @@ IMPLEMENT_OVITO_CLASS(DataBuffer);
 static cl::sycl::buffer<std::byte> allocateSyclBuffer(size_t nelements, size_t stride)
 {
 #if 1
-    // Using make_async_buffer() to create a buffer with a destructor that does not block.
+    // Using OpenSYCL's make_async_buffer() to create a buffer with a destructor that won't block.
     return cl::sycl::make_async_buffer<std::byte, 1>(nelements * stride);
 #else
     return cl::sycl::buffer<std::byte, 1>(nelements * stride);

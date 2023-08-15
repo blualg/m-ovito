@@ -353,20 +353,20 @@ private:
 #endif
 
 #ifdef OVITO_USE_SYCL
-    /// Flag is set whenever new kernels have been scheduled for execution that read from the buffer.
-    /// This indicates to blockUntilSyclKernelsFinished() that is needs to wait for these operation(s) to finish.
+    /// Flag indicating that new kernels have been scheduled for execution that read from the buffer.
+    /// This signals blockUntilSyclKernelsFinished() to wait for these operation(s) to finish.
     mutable bool _hasScheduledSyclReadOperations = false;
 #endif
 
 #ifdef OVITO_DEBUG
     /// In debug builds, this counter is used to detect race conditions due to concurrent access to a buffer's
     /// memory and data fields. The counter keeps track of how many read or write accessors are currently
-    /// operating on this buffer object. Write access must be exclusive and as is indicated by the special value -1.
+    /// operating on this buffer object. Write access must be exclusive and as is signaled by the special value -1.
     mutable QAtomicInteger<int> _activeAccessors = 0;
 #endif
 
 #ifdef OVITO_DEBUG
-    /// Indicates whether this buffer's contents are still uninitialized.
+    /// Indicates whether this buffer's contents have been initialized already.
     bool _isDataInitialized = false;
 #endif
 
@@ -496,6 +496,7 @@ inline void DataBuffer::copyTo(Iter iter) const
     const size_t cmpntCount = componentCount();
 #ifdef OVITO_USE_SYCL
     OVITO_ASSERT(stride() == cmpntCount * dataTypeSize());
+    _hasScheduledSyclReadOperations = true;
     if(dataType() == DataBuffer::Int8) {
         cl::sycl::buffer<int8_t> valueBuffer = _data->reinterpret<int8_t, 1>();
         cl::sycl::host_accessor valueAccess(valueBuffer, cl::sycl::read_only);
@@ -566,6 +567,7 @@ inline void DataBuffer::copyComponentTo(Iter iter, size_t component) const
     OVITO_ASSERT(_isDataInitialized);
     ReadAccess readAccess(*this);
 #ifdef OVITO_USE_SYCL
+    _hasScheduledSyclReadOperations = true;
     if(dataType() == DataBuffer::Int8) {
         cl::sycl::buffer<int8_t> valueBuffer = _data->reinterpret<int8_t, 1>();
         cl::sycl::host_accessor valueAccess(valueBuffer, cl::sycl::read_only);
@@ -635,6 +637,7 @@ inline bool DataBuffer::forEach(size_t component, F&& func) const
     OVITO_ASSERT(_isDataInitialized);
     ReadAccess readAccess(*this);
 #ifdef OVITO_USE_SYCL
+    _hasScheduledSyclReadOperations = true;
     if(dataType() == DataBuffer::Int8) {
         cl::sycl::buffer<int8_t> valueBuffer = _data->reinterpret<int8_t, 1>();
         cl::sycl::host_accessor valueAccess(valueBuffer, cl::sycl::read_only);

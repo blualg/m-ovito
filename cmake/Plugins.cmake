@@ -139,7 +139,7 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
     # Enable SYCL.
     IF(OVITO_USE_SYCL)
         FIND_PACKAGE(OpenSYCL CONFIG REQUIRED)
-        add_sycl_to_target(TARGET ${target_name})
+        ADD_SYCL_TO_TARGET(TARGET ${target_name})
         TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC HIPSYCL_DEBUG_LEVEL=${OPENSYCL_DEBUG_LEVEL})
     ENDIF()
 

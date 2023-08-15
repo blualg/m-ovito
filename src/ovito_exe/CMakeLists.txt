@@ -49,25 +49,31 @@ TARGET_LINK_LIBRARIES(Ovito PRIVATE Core)
 # The executable depends on the gui module.
 TARGET_LINK_LIBRARIES(Ovito PRIVATE Gui)
 IF(NOT OVITO_QML_GUI)
-    TARGET_LINK_LIBRARIES(Ovito PRIVATE 
-        Qt6::Core 
+    TARGET_LINK_LIBRARIES(Ovito PRIVATE
+        Qt6::Core
         Qt6::Gui)
 ELSE()
     FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Qml Quick QuickControls2 QuickControls2Impl QuickLayouts QuickTemplates2 LabsQmlModels Svg REQUIRED)
-    TARGET_LINK_LIBRARIES(Ovito PRIVATE 
-        Qt6::Core 
-        Qt6::Gui 
-        Qt6::Qml 
-        Qt6::Quick 
-        Qt6::QuickControls2 
-        Qt6::QuickControls2Impl 
+    TARGET_LINK_LIBRARIES(Ovito PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Qml
+        Qt6::Quick
+        Qt6::QuickControls2
+        Qt6::QuickControls2Impl
         Qt6::QuickLayouts
-        Qt6::QuickTemplates2 
+        Qt6::QuickTemplates2
         Qt6::LabsQmlModels
         Qt6::Svg)
     IF(NOT OVITO_DISABLE_THREADING)
-        TARGET_LINK_LIBRARIES(Ovito PRIVATE Qt6::QmlWorkerScript) 
+        TARGET_LINK_LIBRARIES(Ovito PRIVATE Qt6::QmlWorkerScript)
     ENDIF()
+ENDIF()
+
+# Enable SYCL.
+IF(OVITO_USE_SYCL)
+    FIND_PACKAGE(OpenSYCL CONFIG REQUIRED)
+    ADD_SYCL_TO_TARGET(TARGET Ovito)
 ENDIF()
 
 # Put the executable into the right directory.
@@ -152,7 +158,7 @@ IF(EMSCRIPTEN)
     )
     # When built without exception support, Qt6 passes DISABLE_EXCEPTION_CATCHING=1 to the Emscripten linker (see QtWasmHelpers.cmake).
     # However, OVITO requires exception support in its own code. The following commands patch the INTERFACE_LINK_OPTIONS property
-    # of the Qt platform module to override the linker flag value. 
+    # of the Qt platform module to override the linker flag value.
     get_target_property(_opt_old Qt6::Platform INTERFACE_LINK_OPTIONS)
     string(REPLACE "DISABLE_EXCEPTION_CATCHING=1" "DISABLE_EXCEPTION_CATCHING=0" _opt_new "${_opt_old}")
     set_target_properties(Qt6::Platform PROPERTIES INTERFACE_LINK_OPTIONS "${_opt_new}")
@@ -200,7 +206,7 @@ IF(OVITO_BUILD_PLUGIN_PYSCRIPT AND NOT OVITO_BUILD_BASIC)
 
     # Make sure the Python library gets loaded at program startup. We need to do it
     # this way, because the OVITO scripting plugins do not explicitly link the
-    # Python interpreter library. They rely on it already being loaded into the 
+    # Python interpreter library. They rely on it already being loaded into the
     # process memory (as is the case if the OVITO Python modules are imported by an external interpreter).
     FIND_PACKAGE(Python3 REQUIRED COMPONENTS Interpreter Development)
     TARGET_LINK_LIBRARIES(Ovito PRIVATE Python3::Python)
