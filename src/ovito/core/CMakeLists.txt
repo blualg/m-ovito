@@ -32,7 +32,7 @@ ENDIF()
 
 # Locate the libssh library, needed for the built-in SSH client.
 IF(OVITO_BUILD_SSH_CLIENT AND NOT EMSCRIPTEN)
-    FIND_PACKAGE(libssh)
+    FIND_PACKAGE(libssh QUIET)
 ENDIF()
 
 # Locate the Boost library.

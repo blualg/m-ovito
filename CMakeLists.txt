@@ -32,6 +32,9 @@ ENDIF()
 IF(NOT CMAKE_VERSION VERSION_LESS "3.13")
     CMAKE_POLICY(SET CMP0079 NEW)   # Allows use of target_link_libraries() with targets defined in other directories.
 ENDIF()
+IF(NOT CMAKE_VERSION VERSION_LESS "3.27")
+    CMAKE_POLICY(SET CMP0144 NEW)   # find_package() uses upper-case <PACKAGENAME>_ROOT variables.
+ENDIF()
 
 PROJECT(Ovito)
 
