@@ -328,6 +328,12 @@ void GroImporter::FrameLoader::loadFile()
             if(atomNameStart[1] == 'R') element = gemmi::Element(gemmi::El::Br);
             else element = gemmi::Element(gemmi::El::B);
         }
+        else if(atomNameStart[0] == 'A' && atomNameStart[1] == 'U') { // Exceptions for two-letter element AU - added in OVITO 3.9.2.
+            element = gemmi::Element(gemmi::El::Au);
+        }
+        else if(atomNameStart[0] == 'A' && atomNameStart[1] == 'G') { // Exceptions for two-letter element AG - added in OVITO 3.9.2.
+            element = gemmi::Element(gemmi::El::Ag);
+        }
         else {
             const char singleLetterName[2] = { atomNameStart[0], '\0' };
             element = gemmi::Element(singleLetterName);
