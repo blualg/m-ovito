@@ -46,7 +46,7 @@ public:
     /// \param status A status object describing the outcome of the pipeline evaluation.
     /// \param validityInterval The time interval during which the state is valid.
     PipelineFlowState(DataOORef<const DataCollection> dataCollection, const PipelineStatus& status, const TimeInterval& validityInterval = TimeInterval::infinite()) :
-        _data(std::move(dataCollection)), _status(status), _stateValidity(validityInterval) {}
+        _data(std::move(dataCollection)), _stateValidity(validityInterval), _status(status) {}
 
     /// \brief Discards all contents of this state object and resets it to an empty state.
     void reset() {

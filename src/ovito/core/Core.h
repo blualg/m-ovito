@@ -136,7 +136,11 @@
 * SYCL
 ******************************************************************************/
 #ifdef OVITO_USE_SYCL
-    #include <CL/sycl.hpp>
+    #ifdef OVITO_USE_OPENSYCL
+        #include <CL/sycl.hpp>
+    #else
+        #include <sycl/sycl.hpp>
+    #endif
 #endif
 
 /******************************************************************************

@@ -48,12 +48,12 @@ protected:
 
 #ifdef OVITO_USE_SYCL
     /// The type of SYCL buffer used by the DataBuffer class.
-    using sycl_buffer_type = cl::sycl::buffer<std::byte>;
+    using sycl_buffer_type = SYCL_NS::buffer<std::byte>;
 
     /// The type of SYCL accessor used to access the buffer's contents on the host.
-    using sycl_accessor_type = cl::sycl::host_accessor<std::byte, 1,
-        (accessmode == access_mode::read) ? cl::sycl::access_mode::read : (
-            (accessmode == access_mode::write || accessmode == access_mode::discard_write) ? cl::sycl::access_mode::write : cl::sycl::access_mode::read_write)>;
+    using sycl_accessor_type = SYCL_NS::host_accessor<std::byte, 1,
+        (accessmode == access_mode::read) ? SYCL_NS::access_mode::read : (
+            (accessmode == access_mode::write || accessmode == access_mode::discard_write) ? SYCL_NS::access_mode::write : SYCL_NS::access_mode::read_write)>;
 
     /// SYCL accessor providing direct memory access to the underlying SYCL buffer.
     sycl_accessor_type _syclAccessor;
@@ -82,8 +82,8 @@ protected:
         return (buffer && buffer->_data)
             ? sycl_accessor_type{const_cast<sycl_buffer_type&>(*buffer->_data),
                 no_init
-                    ? cl::sycl::property_list{cl::sycl::no_init}
-                    : cl::sycl::property_list{}}
+                    ? SYCL_NS::property_list{SYCL_NS::no_init}
+                    : SYCL_NS::property_list{}}
             : sycl_accessor_type{};
     }
 #endif

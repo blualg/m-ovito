@@ -67,6 +67,8 @@ OPTION(OVITO_USE_GIT_REVISION_NUMBER "Include Git revision information in OVITO 
 OPTION(OVITO_BUILD_SSH_CLIENT "Build the integrated SSH client for remote file access (requires libssh)." "ON")
 OPTION(OVITO_LIBSSH_RUNTIME_LINKING "Load libssh at runtime" "OFF")
 OPTION(OVITO_USE_SYCL "Build with SYCL support" "OFF")
+SET(OVITO_USE_SYCL OFF CACHE STRING "SYCL implementation to use")
+SET_PROPERTY(CACHE OVITO_USE_SYCL PROPERTY STRINGS OFF OpenSYCL DPC++)
 
 # Ovito needs Qt>=6.2.
 SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 6.2)
@@ -74,6 +76,12 @@ FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
 
 # Look for optional Vulkan SDK (requires version 1.1 or above).
 FIND_PACKAGE(Vulkan)
+
+# Look for DPC++ SYCL implementation.
+IF(OVITO_USE_SYCL STREQUAL DPC++)
+    CMAKE_MINIMUM_REQUIRED(VERSION 3.23)
+    FIND_PACKAGE(IntelSYCL REQUIRED)
+ENDIF()
 
 # Define user options that control the building of OVITO's standard plugins.
 OPTION(OVITO_BUILD_PLUGIN_STDOBJ "Build the standard objects plugin." "ON")
@@ -101,7 +109,7 @@ SET(CMAKE_CXX_STANDARD 17)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Set visibility of symbols in libraries to hidden by default, except those exported in the source code.
-IF(NOT OVITO_USE_SYCL)
+IF(NOT OVITO_USE_SYCL STREQUAL OpenSYCL)
     SET(CMAKE_CXX_VISIBILITY_PRESET "hidden")
     SET(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 ENDIF()
@@ -291,7 +299,7 @@ ELSE()
     ENDIF()
 ENDIF()
 
-IF(OVITO_USE_SYCL AND NOT OPENSYCL_DEBUG_LEVEL)
+IF(OVITO_USE_SYCL STREQUAL OpenSYCL AND NOT OPENSYCL_DEBUG_LEVEL)
     IF(CMAKE_BUILD_TYPE MATCHES "Debug")
         SET(OPENSYCL_DEBUG_LEVEL 3 CACHE INTEGER "Choose the debug level, options are: 0 (no debug), 1 (print errors), 2 (also print warnings), 3 (also print general information)" FORCE)
     ELSE()

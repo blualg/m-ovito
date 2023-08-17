@@ -77,7 +77,7 @@ class Vector_3 : public
 #ifndef OVITO_USE_SYCL
     std::array<T, 3>
 #else
-    cl::sycl::marray<T, 3>
+    SYCL_NS::marray<T, 3>
 #endif
 {
 private:
@@ -86,7 +86,7 @@ private:
 #ifndef OVITO_USE_SYCL
         std::array<T, 3>;
 #else
-        cl::sycl::marray<T, 3>;
+        SYCL_NS::marray<T, 3>;
 #endif
 
 public:
@@ -344,9 +344,8 @@ public:
 #ifdef OVITO_USE_SYCL
     // Workaround for missing swap() method in SYCL's marray class template.
     friend void swap(Vector_3& a, Vector_3& b) noexcept {
-        using namespace std;
         for(size_type i = 0; i < 3; i++)
-            swap(a[i], b[i]);
+            std::swap(a[i], b[i]);
     }
 #endif
 };

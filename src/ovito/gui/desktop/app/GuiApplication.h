@@ -49,7 +49,7 @@ public:
     virtual void createQtApplication(int& argc, char** argv) override;
 
     /// Handler function for exceptions.
-    virtual void reportError(const Exception& exception) override;
+    virtual void reportError(const Exception& exception, bool blocking = false) override;
 
     /// Returns whether the application currently uses a dark UI theme.
     bool usingDarkTheme() const;

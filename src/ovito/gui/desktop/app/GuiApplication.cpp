@@ -420,12 +420,12 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
 /******************************************************************************
 * Handler function for exceptions used in GUI mode.
 ******************************************************************************/
-void GuiApplication::reportError(const Exception& ex)
+void GuiApplication::reportError(const Exception& ex, bool blocking)
 {
     OVITO_ASSERT(QThread::currentThread() == this->thread());
 
     // Always display errors in the terminal window.
-    Application::reportError(ex);
+    Application::reportError(ex, blocking);
 
     // In GUI mode, display a message box (application modal).
     if(guiMode()) {

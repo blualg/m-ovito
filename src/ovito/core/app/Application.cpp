@@ -320,16 +320,6 @@ void Application::signalAboutToQuit()
     Q_EMIT aboutToQuit();
 }
 
-/******************************************************************************
-* Handler function for exceptions.
-******************************************************************************/
-void Application::reportError(const Exception& ex)
-{
-    for(auto msg = ex.messages().crbegin(); msg != ex.messages().crend(); ++msg) {
-        qInfo().noquote() << "ERROR:" << *msg;
-    }
-}
-
 #ifndef Q_OS_WASM
 /******************************************************************************
 * Returns the application-wide network manager object.

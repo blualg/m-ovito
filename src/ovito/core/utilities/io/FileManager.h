@@ -137,7 +137,7 @@ protected:
     static QUrl normalizeUrl(QUrl url) {
         url.setUserName({});
         url.setPassword({});
-        return std::move(url);
+        return url;
     }
 
 #ifdef OVITO_SSH_CLIENT

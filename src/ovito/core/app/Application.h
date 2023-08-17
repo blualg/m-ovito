@@ -107,9 +107,6 @@ public:
     /// Create the global instance of the right QCoreApplication derived class.
     virtual void createQtApplication(int& argc, char** argv);
 
-    /// Handler function for exceptions.
-    virtual void reportError(const Exception& exception);
-
 #ifndef Q_OS_WASM
     /// Returns the application-wide network access manager object.
     QNetworkAccessManager* networkAccessManager();
