@@ -224,35 +224,6 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
     if(!property || property->size() > 0) {
         BufferReadAccess<Point3> positionsArray(positions());
 
-        auto helperFunc = [&](auto _) {
-            using T = decltype(_);
-            BufferReadAccess<T*> propertyArray(property);
-            const Point3* pos = positionsArray.cbegin();
-            for(T v : propertyArray.componentRange(vecComponent)) {
-                if(std::numeric_limits<T>::is_integer || !std::isnan(v)) {
-                    Point3 fractionalPos = reciprocalCellMatrix * (*pos);
-                    int binIndexX = int( fractionalPos.x() * nX );
-                    int binIndexY = int( fractionalPos.y() * nY );
-                    int binIndexZ = int( fractionalPos.z() * nZ );
-                    FloatType window = 1;
-                    if(pbc[0]) binIndexX = SimulationCellObject::modulo(binIndexX, nX);
-                    else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.x()));
-                    if(pbc[1]) binIndexY = SimulationCellObject::modulo(binIndexY, nY);
-                    else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.y()));
-                    if(is2D) binIndexZ = 0;
-                    else if(pbc[2]) binIndexZ = SimulationCellObject::modulo(binIndexZ, nZ);
-                    else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.z()));
-                    if(!applyWindow) window = 1;
-                    if(binIndexX >= 0 && binIndexX < nX && binIndexY >= 0 && binIndexY < nY && binIndexZ >= 0 && binIndexZ < nZ) {
-                        // Store in row-major format.
-                        size_t binIndex = binIndexZ+nZ*(binIndexY+nY*binIndexX);
-                        gridData[binIndex] += window * v;
-                    }
-                }
-                ++pos;
-            }
-        };
-
         if(!property) {
             for(const Point3& pos : positionsArray) {
                 Point3 fractionalPos = reciprocalCellMatrix * pos;
@@ -275,20 +246,35 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
                 }
             }
         }
-        else if(property->dataType() == DataBuffer::Float32) {
-            helperFunc(float{});
-        }
-        else if(property->dataType() == DataBuffer::Float64) {
-            helperFunc(double{});
-        }
-        else if(property->dataType() == DataBuffer::Int8) {
-            helperFunc(int8_t{});
-        }
-        else if(property->dataType() == DataBuffer::Int32) {
-            helperFunc(int32_t{});
-        }
-        else if(property->dataType() == DataBuffer::Int64) {
-            helperFunc(int64_t{});
+        else {
+            property->forAnyType([&](auto _) {
+                using T = decltype(_);
+                BufferReadAccess<T*> propertyArray(property);
+                const Point3* pos = positionsArray.cbegin();
+                for(T v : propertyArray.componentRange(vecComponent)) {
+                    if(std::numeric_limits<T>::is_integer || !std::isnan(v)) {
+                        Point3 fractionalPos = reciprocalCellMatrix * (*pos);
+                        int binIndexX = int( fractionalPos.x() * nX );
+                        int binIndexY = int( fractionalPos.y() * nY );
+                        int binIndexZ = int( fractionalPos.z() * nZ );
+                        FloatType window = 1;
+                        if(pbc[0]) binIndexX = SimulationCellObject::modulo(binIndexX, nX);
+                        else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.x()));
+                        if(pbc[1]) binIndexY = SimulationCellObject::modulo(binIndexY, nY);
+                        else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.y()));
+                        if(is2D) binIndexZ = 0;
+                        else if(pbc[2]) binIndexZ = SimulationCellObject::modulo(binIndexZ, nZ);
+                        else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.z()));
+                        if(!applyWindow) window = 1;
+                        if(binIndexX >= 0 && binIndexX < nX && binIndexY >= 0 && binIndexY < nY && binIndexZ >= 0 && binIndexZ < nZ) {
+                            // Store in row-major format.
+                            size_t binIndex = binIndexZ+nZ*(binIndexY+nY*binIndexX);
+                            gridData[binIndex] += window * v;
+                        }
+                    }
+                    ++pos;
+                }
+            });
         }
     }
     return gridData;

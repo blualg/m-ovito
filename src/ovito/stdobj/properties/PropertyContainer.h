@@ -171,7 +171,7 @@ public:
     /// In case the property already exists, it is made sure that it's safe to modify it.
     PropertyObject* createProperty(DataBuffer::BufferInitialization init, int typeId, const ConstDataObjectPath& containerPath = {});
 
-    /// Creates a standard property and adds it to the contaPropertyContaineriner.
+    /// Creates a standard property and adds it to the container.
     /// In case the property already exists, it is made sure that it's safe to modify it.
     PropertyObject* createProperty(int typeId, const ConstDataObjectPath& containerPath = {}) {
         return createProperty(DataBuffer::BufferInitialization::Uninitialized, typeId, containerPath);

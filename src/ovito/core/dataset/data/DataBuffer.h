@@ -83,6 +83,14 @@ public:
         IntIdentifier = Int64
     };
 
+    /// Class template returning the C++ type for a DataBuffer data tzpe ID.
+    template<DataTypes DataType, typename = void> struct TypeFromDataTypeId {};
+    template<> struct TypeFromDataTypeId<Int8> { using type = int8_t; };
+    template<> struct TypeFromDataTypeId<Int32> { using type = int32_t; };
+    template<> struct TypeFromDataTypeId<Int64> { using type = int64_t; };
+    template<> struct TypeFromDataTypeId<Float32> { using type = float; };
+    template<> struct TypeFromDataTypeId<Float64> { using type = double; };
+
     enum BufferInitialization {
         Uninitialized = 0,
         Initialized = 1
@@ -244,6 +252,28 @@ public:
     /// Checks if this buffer|s metadata and the contents exactly match those of another buffer.
     bool equals(const DataBuffer& other) const;
 
+    /// Invokes a generic lampda function with the current data type of the buffer.
+    /// The lambda function must accept exactly one generic parameter ("auto _"), whose type
+    /// will be the type of the DataBuffer. The value of the parameter is not used.
+    template<typename F>
+    void forAnyType(F&& f) const {
+        forTypes<Float64, Float32, Int32, Int64, Int8>(std::forward<F>(f));
+    }
+
+    /// Invokes a generic lampda function with the current data type of the buffer.
+    /// The lambda function must accept exactly one generic parameter ("auto _"), whose type
+    /// will be the type of the DataBuffer. The value of the parameter is not used.
+    template<DataTypes... TypeIds, typename F>
+    void forTypes(F&& f) const {
+        if(!((dataType() == TypeIds
+            ? (std::forward<F>(f)(typename TypeFromDataTypeId<TypeIds>::type{}), true)
+            : false)
+        || ...)) {
+            OVITO_ASSERT_MSG(false, "DataBuffer::forTypes()", qPrintable(QStringLiteral("DataBuffer has unexpected data type %1.").arg(dataType())));
+            throw Exception(tr("Unexpected data buffer type %1").arg(dataType()));
+        }
+    }
+
     ////////////////////////////// Data access management //////////////////////////////
 
     /// Informs the buffer object that a read accessor is becoming active.
@@ -402,7 +432,7 @@ OVITO_STATIC_ASSERT(DataBufferPrimitiveType<IdentifierIntType>::value == DataBuf
 OVITO_STATIC_ASSERT(DataBufferPrimitiveType<SelectionIntType>::value  == DataBuffer::IntSelection);
 OVITO_STATIC_ASSERT(DataBufferPrimitiveType<GraphicsFloatType>::value == DataBuffer::FloatGraphics);
 
-/// Class template returning the  number of components in the given C++ array structure.
+/// Class template returning the number of components in the given C++ array structure.
 template<typename T, typename = void> struct DataBufferPrimitiveComponentCount { static constexpr size_t value = 1; };
 template<typename T, std::size_t N> struct DataBufferPrimitiveComponentCount<std::array<T,N>> { static constexpr size_t value = N; };
 #ifdef OVITO_USE_SYCL
@@ -462,6 +492,7 @@ inline void DataBuffer::fillSelected(const T value, const DataBuffer& selectionP
     OVITO_ASSERT(selectionProperty.size() == this->size());
     OVITO_ASSERT(selectionProperty.dataType() == IntSelection);
     OVITO_ASSERT(selectionProperty.componentCount() == 1);
+    OVITO_ASSERT(stride() == sizeof(T));
     if(size() == 0)
         return;
     OVITO_ASSERT(_isDataInitialized);
@@ -497,60 +528,22 @@ inline void DataBuffer::copyTo(Iter iter) const
 #ifdef OVITO_USE_SYCL
     OVITO_ASSERT(stride() == cmpntCount * dataTypeSize());
     _hasScheduledSyclReadOperations = true;
-    if(dataType() == DataBuffer::Int8) {
-        SYCL_NS::buffer<int8_t> valueBuffer = _data->reinterpret<int8_t, 1>();
+    forAnyType([&](auto _) {
+        using T = decltype(_);
+        OVITO_ASSERT(sizeof(T) == dataTypeSize());
+        SYCL_NS::buffer<T> valueBuffer = _data->reinterpret<T, 1>();
         SYCL_NS::host_accessor valueAccess(valueBuffer, SYCL_NS::read_only);
         for(const auto* __restrict v = valueAccess.get_pointer(), *v_end = v + size() * cmpntCount; v != v_end;)
             *iter++ = *v++;
-    }
-    else if(dataType() == DataBuffer::Int32) {
-        SYCL_NS::buffer<int32_t> valueBuffer = _data->reinterpret<int32_t, 1>();
-        SYCL_NS::host_accessor valueAccess(valueBuffer, SYCL_NS::read_only);
-        for(const auto* __restrict v = valueAccess.get_pointer(), *v_end = v + size() * cmpntCount; v != v_end;)
-            *iter++ = *v++;
-    }
-    else if(dataType() == DataBuffer::Int64) {
-        SYCL_NS::buffer<int64_t> valueBuffer = _data->reinterpret<int64_t, 1>();
-        SYCL_NS::host_accessor valueAccess(valueBuffer, SYCL_NS::read_only);
-        for(const auto* __restrict v = valueAccess.get_pointer(), *v_end = v + size() * cmpntCount; v != v_end;)
-            *iter++ = *v++;
-    }
-    else if(dataType() == DataBuffer::Float32) {
-        SYCL_NS::buffer<float> valueBuffer = _data->reinterpret<float, 1>();
-        SYCL_NS::host_accessor valueAccess(valueBuffer, SYCL_NS::read_only);
-        for(const auto* __restrict v = valueAccess.get_pointer(), *v_end = v + size() * cmpntCount; v != v_end;)
-            *iter++ = *v++;
-    }
-    else if(dataType() == DataBuffer::Float64) {
-        SYCL_NS::buffer<double> valueBuffer = _data->reinterpret<double, 1>();
-        SYCL_NS::host_accessor valueAccess(valueBuffer, SYCL_NS::read_only);
-        for(const auto* __restrict v = valueAccess.get_pointer(), *v_end = v + size() * cmpntCount; v != v_end;)
-            *iter++ = *v++;
-    }
-    else OVITO_ASSERT(false);
+    });
 #else
     OVITO_ASSERT(stride() == cmpntCount * dataTypeSize());
-    if(dataType() == DataBuffer::Int8) {
-        for(const int8_t* __restrict v = reinterpret_cast<const int8_t*>(cdata()), *v_end = v + size()*cmpntCount; v != v_end;)
+    forAnyType([&](auto _) {
+        using T = decltype(_);
+        OVITO_ASSERT(sizeof(T) == dataTypeSize());
+        for(const T* __restrict v = reinterpret_cast<const T*>(cdata()), *v_end = v + size()*cmpntCount; v != v_end;)
             *iter++ = *v++;
-    }
-    else if(dataType() == DataBuffer::Int32) {
-        for(const int32_t* __restrict v = reinterpret_cast<const int32_t*>(cdata()), *v_end = v + size()*cmpntCount; v != v_end;)
-            *iter++ = *v++;
-    }
-    else if(dataType() == DataBuffer::Int64) {
-        for(const int64_t* __restrict v = reinterpret_cast<const int64_t*>(cdata()), *v_end = v + size()*cmpntCount; v != v_end;)
-            *iter++ = *v++;
-    }
-    else if(dataType() == DataBuffer::Float32) {
-        for(const float* __restrict v = reinterpret_cast<const float*>(cdata()), *v_end = v + size()*cmpntCount; v != v_end;)
-            *iter++ = *v++;
-    }
-    else if(dataType() == DataBuffer::Float64) {
-        for(const double* __restrict v = reinterpret_cast<const double*>(cdata()), *v_end = v + size()*cmpntCount; v != v_end;)
-            *iter++ = *v++;
-    }
-    else OVITO_ASSERT(false);
+    });
 #endif
 }
 
@@ -568,59 +561,21 @@ inline void DataBuffer::copyComponentTo(Iter iter, size_t component) const
     ReadAccess readAccess(*this);
 #ifdef OVITO_USE_SYCL
     _hasScheduledSyclReadOperations = true;
-    if(dataType() == DataBuffer::Int8) {
-        SYCL_NS::buffer<int8_t> valueBuffer = _data->reinterpret<int8_t, 1>();
+    forAnyType([&](auto _) {
+        using T = decltype(_);
+        OVITO_ASSERT(sizeof(T) == dataTypeSize());
+        SYCL_NS::buffer<T> valueBuffer = _data->reinterpret<T, 1>();
         SYCL_NS::host_accessor valueAccess(valueBuffer, SYCL_NS::read_only);
         for(const auto* __restrict v = valueAccess.get_pointer() + component, *v_end = v + size() * cmpntCount; v != v_end; v += cmpntCount)
             *iter++ = *v;
-    }
-    else if(dataType() == DataBuffer::Int32) {
-        SYCL_NS::buffer<int32_t> valueBuffer = _data->reinterpret<int32_t, 1>();
-        SYCL_NS::host_accessor valueAccess(valueBuffer, SYCL_NS::read_only);
-        for(const auto* __restrict v = valueAccess.get_pointer() + component, *v_end = v + size() * cmpntCount; v != v_end; v += cmpntCount)
-            *iter++ = *v;
-    }
-    else if(dataType() == DataBuffer::Int64) {
-        SYCL_NS::buffer<int64_t> valueBuffer = _data->reinterpret<int64_t, 1>();
-        SYCL_NS::host_accessor valueAccess(valueBuffer, SYCL_NS::read_only);
-        for(const auto* __restrict v = valueAccess.get_pointer() + component, *v_end = v + size() * cmpntCount; v != v_end; v += cmpntCount)
-            *iter++ = *v;
-    }
-    else if(dataType() == DataBuffer::Float32) {
-        SYCL_NS::buffer<float> valueBuffer = _data->reinterpret<float, 1>();
-        SYCL_NS::host_accessor valueAccess(valueBuffer, SYCL_NS::read_only);
-        for(const auto* __restrict v = valueAccess.get_pointer() + component, *v_end = v + size() * cmpntCount; v != v_end; v += cmpntCount)
-            *iter++ = *v;
-    }
-    else if(dataType() == DataBuffer::Float64) {
-        SYCL_NS::buffer<double> valueBuffer = _data->reinterpret<double, 1>();
-        SYCL_NS::host_accessor valueAccess(valueBuffer, SYCL_NS::read_only);
-        for(const auto* __restrict v = valueAccess.get_pointer() + component, *v_end = v + size() * cmpntCount; v != v_end; v += cmpntCount)
-            *iter++ = *v;
-    }
-    else OVITO_ASSERT(false);
+    });
 #else
-    if(dataType() == DataBuffer::Int8) {
-        for(const int8_t* __restrict v = reinterpret_cast<const int8_t*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
+    forAnyType([&](auto _) {
+        using T = decltype(_);
+        OVITO_ASSERT(sizeof(T) == dataTypeSize());
+        for(const T* __restrict v = reinterpret_cast<const T*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
             *iter++ = *v;
-    }
-    else if(dataType() == DataBuffer::Int32) {
-        for(const int32_t* __restrict v = reinterpret_cast<const int32_t*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
-            *iter++ = *v;
-    }
-    else if(dataType() == DataBuffer::Int64) {
-        for(const int64_t* __restrict v = reinterpret_cast<const int64_t*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
-            *iter++ = *v;
-    }
-    else if(dataType() == DataBuffer::Float32) {
-        for(const float* __restrict v = reinterpret_cast<const float*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
-            *iter++ = *v;
-    }
-    else if(dataType() == DataBuffer::Float64) {
-        for(const double* __restrict v = reinterpret_cast<const double*>(cdata()) + component, *v_end = v + size()*cmpntCount; v != v_end; v += cmpntCount)
-            *iter++ = *v;
-    }
-    else OVITO_ASSERT(false);
+    });
 #endif
 }
 
@@ -638,81 +593,25 @@ inline bool DataBuffer::forEach(size_t component, F&& func) const
     ReadAccess readAccess(*this);
 #ifdef OVITO_USE_SYCL
     _hasScheduledSyclReadOperations = true;
-    if(dataType() == DataBuffer::Int8) {
-        SYCL_NS::buffer<int8_t> valueBuffer = _data->reinterpret<int8_t, 1>();
+    forAnyType([&](auto _) {
+        using T = decltype(_);
+        OVITO_ASSERT(sizeof(T) == dataTypeSize());
+        SYCL_NS::buffer<T> valueBuffer = _data->reinterpret<T, 1>();
         SYCL_NS::host_accessor valueAccess(valueBuffer, SYCL_NS::read_only);
         auto v = valueAccess.get_pointer() + component;
         for(size_t i = 0; i < s; i++, v += cmpntCount)
             std::invoke(std::forward<F>(func), i, *v);
-        return true;
-    }
-    else if(dataType() == DataBuffer::Int32) {
-        SYCL_NS::buffer<int32_t> valueBuffer = _data->reinterpret<int32_t, 1>();
-        SYCL_NS::host_accessor valueAccess(valueBuffer, SYCL_NS::read_only);
-        auto v = valueAccess.get_pointer() + component;
-        for(size_t i = 0; i < s; i++, v += cmpntCount)
-            std::invoke(std::forward<F>(func), i, *v);
-        return true;
-    }
-    else if(dataType() == DataBuffer::Int64) {
-        SYCL_NS::buffer<int64_t> valueBuffer = _data->reinterpret<int64_t, 1>();
-        SYCL_NS::host_accessor valueAccess(valueBuffer, SYCL_NS::read_only);
-        auto v = valueAccess.get_pointer() + component;
-        for(size_t i = 0; i < s; i++, v += cmpntCount)
-            std::invoke(std::forward<F>(func), i, *v);
-        return true;
-    }
-    else if(dataType() == DataBuffer::Float32) {
-        SYCL_NS::buffer<float> valueBuffer = _data->reinterpret<float, 1>();
-        SYCL_NS::host_accessor valueAccess(valueBuffer, SYCL_NS::read_only);
-        auto v = valueAccess.get_pointer() + component;
-        for(size_t i = 0; i < s; i++, v += cmpntCount)
-            std::invoke(std::forward<F>(func), i, *v);
-        return true;
-    }
-    else if(dataType() == DataBuffer::Float64) {
-        SYCL_NS::buffer<double> valueBuffer = _data->reinterpret<double, 1>();
-        SYCL_NS::host_accessor valueAccess(valueBuffer, SYCL_NS::read_only);
-        auto v = valueAccess.get_pointer() + component;
-        for(size_t i = 0; i < s; i++, v += cmpntCount)
-            std::invoke(std::forward<F>(func), i, *v);
-        return true;
-    }
-    else OVITO_ASSERT(false);
+    });
 #else
-    if(dataType() == DataBuffer::Int8) {
-        auto v = reinterpret_cast<const int8_t*>(cdata()) + component;
+    forAnyType([&](auto _) {
+        using T = decltype(_);
+        OVITO_ASSERT(sizeof(T) == dataTypeSize());
+        auto v = reinterpret_cast<const T*>(cdata()) + component;
         for(size_t i = 0; i < s; i++, v += cmpntCount)
             std::invoke(std::forward<F>(func), i, *v);
-        return true;
-    }
-    else if(dataType() == DataBuffer::Int32) {
-        auto v = reinterpret_cast<const int32_t*>(cdata()) + component;
-        for(size_t i = 0; i < s; i++, v += cmpntCount)
-            std::invoke(std::forward<F>(func), i, *v);
-        return true;
-    }
-    else if(dataType() == DataBuffer::Int64) {
-        auto v = reinterpret_cast<const int64_t*>(cdata()) + component;
-        for(size_t i = 0; i < s; i++, v += cmpntCount)
-            std::invoke(std::forward<F>(func), i, *v);
-        return true;
-    }
-    else if(dataType() == DataBuffer::Float32) {
-        auto v = reinterpret_cast<const float*>(cdata()) + component;
-        for(size_t i = 0; i < s; i++, v += cmpntCount)
-            std::invoke(std::forward<F>(func), i, *v);
-        return true;
-    }
-    else if(dataType() == DataBuffer::Float64) {
-        auto v = reinterpret_cast<const double*>(cdata()) + component;
-        for(size_t i = 0; i < s; i++, v += cmpntCount)
-            std::invoke(std::forward<F>(func), i, *v);
-        return true;
-    }
-    else OVITO_ASSERT(false);
+    });
 #endif
-    return false;
+    return true;
 }
 
 /// Moves the values from one index of property container to another in all property arrays.

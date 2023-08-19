@@ -24,6 +24,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/stdobj/simcell/SimulationCellObject.h>
 #include <ovito/stdobj/simcell/PeriodicDomainDataObject.h>
+#include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/core/dataset/pipeline/ModifierApplication.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include "AffineTransformationModifier.h"
@@ -101,6 +102,158 @@ AffineTransformation AffineTransformationModifier::effectiveAffineTransformation
     }
 
     return tm;
+}
+
+/******************************************************************************
+* Copies positions from one buffer to another while transforming them.
+* If enabled, the transformation is only applied to selected elements.
+******************************************************************************/
+void AffineTransformationModifier::transformCoordinates(const PipelineFlowState& inputState, const PropertyObject* input, PropertyObject* output, const PropertyObject* selection)
+{
+    OVITO_ASSERT(output != input);
+    OVITO_ASSERT(output->size() == input->size());
+
+    if(input->size() == 0)
+        return;
+
+    // Determine transformation matrix.
+    const AffineTransformation tm = effectiveAffineTransformation(inputState);
+
+    if(selectionOnly()) {
+        if(selection) {
+#ifdef OVITO_USE_SYCL
+            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
+                SyclBufferAccess<const Point3, access_mode::read> posIn(input, cgh);
+                SyclBufferAccess<Point3, access_mode::discard_write> posOut(output, cgh);
+                SyclBufferAccess<const SelectionIntType, access_mode::read> selectionIn(selection, cgh);
+                cgh.parallel_for<class affine_coord_transformation_selection>(SYCL_NS::range(input->size()), [=](size_t i) {
+                    posOut[i] = selectionIn[i] ? (tm * posIn[i]) : posIn[i];
+                });
+            });
+#else
+            BufferReadAccess<const Point3> posIn(input);
+            const auto* pin = posIn.cbegin();
+            BufferReadAccess<const SelectionIntType> selAccess(selection);
+            const auto* s = selAccess.cbegin();
+            for(Point3& pout : BufferWriteAccess<Point3, access_mode::discard_write>(output)) {
+                pout = (*s++) ? (tm * (*pin)) : (*pin);
+                ++pin;
+            }
+#endif
+        }
+        else {
+            // Without any selection property present, none of the elements get transformed.
+            output->copyFrom(*input);
+        }
+    }
+    else {
+        // Check if the matrix describes a pure translation, which can be applied more efficiently.
+        // If so, we can simply add vectors instead of computing full matrix products.
+        if(tm.isTranslationMatrix()) {
+            const Vector3 translation = tm.translation();
+#ifdef OVITO_USE_SYCL
+            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
+                SyclBufferAccess<const Point3, access_mode::read> posIn(input, cgh);
+                SyclBufferAccess<Point3, access_mode::discard_write> posOut(output, cgh);
+                cgh.parallel_for<class affine_coord_transformation_simple_translation>(SYCL_NS::range(input->size()), [=](size_t i) {
+                    posOut[i] = posIn[i] + translation;
+                });
+            });
+#else
+            BufferReadAccess<const Point3> posIn(input);
+            const auto* pin = posIn.cbegin();
+            for(Point3& pout : BufferWriteAccess<Point3, access_mode::discard_write>(output))
+                pout = (*pin++) + translation;
+#endif
+        }
+        else {
+#ifdef OVITO_USE_SYCL
+            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
+                SyclBufferAccess<const Point3, access_mode::read> posIn(input, cgh);
+                SyclBufferAccess<Point3, access_mode::discard_write> posOut(output, cgh);
+                cgh.parallel_for<class affine_coord_transformation_full_xform>(SYCL_NS::range(input->size()), [=](size_t i) {
+                    posOut[i] = tm * posIn[i];
+                });
+            });
+#else
+            BufferReadAccess<const Point3> posIn(input);
+            const auto* pin = posIn.cbegin();
+            for(Point3& pout : BufferWriteAccess<Point3, access_mode::discard_write>(output))
+                pout = tm * (*pin++);
+#endif
+        }
+    }
+}
+
+/******************************************************************************
+* Copies vectors from one buffer to another while transforming them.
+* If enabled, the transformation is only applied to selected elements.
+******************************************************************************/
+void AffineTransformationModifier::transformVectors(const PipelineFlowState& inputState, const PropertyObject* input, PropertyObject* output, const PropertyObject* selection)
+{
+    OVITO_ASSERT(output != input);
+    OVITO_ASSERT(output->size() == input->size());
+
+    if(input->size() == 0)
+        return;
+
+    input->forTypes<DataBuffer::Float32, DataBuffer::Float64>([&](auto _) {
+        using T = decltype(_);
+        using Vec3 = Vector_3<T>;
+
+        // Determine transformation matrix.
+        const AffineTransformationT<T> tm = effectiveAffineTransformation(inputState).toDataType<T>();
+
+        if(selectionOnly()) {
+            if(selection) {
+#ifdef OVITO_USE_SYCL
+                ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
+                    SyclBufferAccess<const Vec3, access_mode::read> vecIn(input, cgh);
+                    SyclBufferAccess<Vec3, access_mode::discard_write> vecOut(output, cgh);
+                    SyclBufferAccess<const SelectionIntType, access_mode::read> selectionIn(selection, cgh);
+                    cgh.parallel_for<class affine_vec_transformation_selection>(SYCL_NS::range(input->size()), [=](size_t i) {
+                        vecOut[i] = selectionIn[i] ? (tm * vecIn[i]) : vecIn[i];
+                    });
+                });
+#else
+                BufferReadAccess<const Vec3> vecIn(input);
+                const auto* vin = vecIn.cbegin();
+                BufferReadAccess<const SelectionIntType> selAccess(selection);
+                const auto* s = selAccess.cbegin();
+                for(Vec3& vout : BufferWriteAccess<Vec3, access_mode::discard_write>(output)) {
+                    vout = (*s++) ? (tm * (*vin)) : (*vin);
+                    ++vin;
+                }
+#endif
+            }
+            else {
+                // Without any selection property present, none of the elements get transformed.
+                output->copyFrom(*input);
+            }
+        }
+        else {
+            // Check if the matrix describes a pure translation. If so, effectively, no vector transformation takes place.
+            if(tm.isTranslationMatrix()) {
+                output->copyFrom(*input);
+            }
+            else {
+#ifdef OVITO_USE_SYCL
+                ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
+                    SyclBufferAccess<const Vec3, access_mode::read> vecIn(input, cgh);
+                    SyclBufferAccess<Vec3, access_mode::discard_write> vecOut(output, cgh);
+                    cgh.parallel_for<class affine_vec_transformation_full_xform>(SYCL_NS::range(input->size()), [=](size_t i) {
+                        vecOut[i] = tm * vecIn[i];
+                    });
+                });
+#else
+                BufferReadAccess<const Vec3> vecIn(input);
+                const auto* vin = vecIn.cbegin();
+                for(Vec3& vout : BufferWriteAccess<Vec3, access_mode::discard_write>(output))
+                    vout = tm * (*vin++);
+#endif
+            }
+        }
+    });
 }
 
 /******************************************************************************

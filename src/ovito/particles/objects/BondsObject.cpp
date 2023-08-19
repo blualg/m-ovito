@@ -147,8 +147,9 @@ size_t BondsObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsV
         // Check which bonds are new and need to be merged.
         size_t originalBondCount = elementCount();
         size_t outputBondCount = originalBondCount;
-        std::vector<size_t> mapping(newBonds.size());
-        for(size_t bondIndex = 0; bondIndex < newBonds.size(); bondIndex++) {
+        size_t addedBondCount = newBonds.size();
+        std::vector<size_t> mapping(addedBondCount);
+        for(size_t bondIndex = 0; bondIndex < addedBondCount; bondIndex++) {
             // Check if there is already a bond like this.
             const Bond& bond = newBonds[bondIndex];
             auto existingBondIndex = bondMap.findBond(bond);
@@ -177,16 +178,17 @@ size_t BondsObject::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsV
 
         // Copy bonds information into the extended arrays.
         BufferWriteAccess<int32_t, access_mode::write> newBondTypePropertyAccess(newBondTypeProperty);
-        for(size_t bondIndex = 0; bondIndex < newBonds.size(); bondIndex++) {
-            if(mapping[bondIndex] >= originalBondCount) {
+        for(size_t bondIndex = 0; bondIndex < addedBondCount; bondIndex++) {
+            size_t mappedIndex = mapping[bondIndex];
+            if(mappedIndex >= originalBondCount) {
                 const Bond& bond = newBonds[bondIndex];
                 OVITO_ASSERT(!particles || bond.index1 < particles->elementCount());
                 OVITO_ASSERT(!particles || bond.index2 < particles->elementCount());
-                newBondsTopology[mapping[bondIndex]][0] = bond.index1;
-                newBondsTopology[mapping[bondIndex]][1] = bond.index2;
-                newBondsPeriodicImages[mapping[bondIndex]] = bond.pbcShift;
+                newBondsTopology[mappedIndex][0] = bond.index1;
+                newBondsTopology[mappedIndex][1] = bond.index2;
+                newBondsPeriodicImages[mappedIndex] = bond.pbcShift;
                 if(newBondTypePropertyAccess)
-                    newBondTypePropertyAccess[mapping[bondIndex]] = bondType->numericId();
+                    newBondTypePropertyAccess[mappedIndex] = bondType->numericId();
             }
         }
         newBondsTopology.reset();

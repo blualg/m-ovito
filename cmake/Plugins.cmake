@@ -146,10 +146,10 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
         ADD_SYCL_TO_TARGET(TARGET ${target_name})
         TARGET_LINK_LIBRARIES(${target_name} PUBLIC IntelSYCL::SYCL_CXX)
         GET_TARGET_PROPERTY(__sycl_cxx_include_directories IntelSYCL::SYCL_CXX INTERFACE_INCLUDE_DIRECTORIES)
-        TARGET_INCLUDE_DIRECTORIES(${target_name} PUBLIC "${__sycl_cxx_include_directories}/sycl") # To find headers starting with <CL/...> 
+        TARGET_INCLUDE_DIRECTORIES(${target_name} PUBLIC "${__sycl_cxx_include_directories}/sycl") # To find headers starting with <CL/...>
         TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC "SYCL_NS=sycl")
         TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-ignored-attributes" "-Wno-ignored-pragmas" "-Wno-deprecated-builtins")
-    ELSE()
+    ELSEIF(OVITO_USE_SYCL)
         MESSAGE(FATAL_ERROR "Invalid OVITO_USE_SYCL setting. Must be one of [OFF, OpenSYCL, DPC++].")
     ENDIF()
 

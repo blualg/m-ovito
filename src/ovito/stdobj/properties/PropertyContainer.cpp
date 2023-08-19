@@ -146,6 +146,7 @@ PropertyObject* PropertyContainer::makePropertyMutableUnallocated(const Property
 {
     OVITO_CHECK_OBJECT_POINTER(this);
     OVITO_CHECK_OBJECT_POINTER(property);
+    OVITO_ASSERT(hasReferenceTo(property));
 
     // Always clone property if it is currently being accessed from Python code.
     // That's required, because Python code never holds a strong DataOORef to the property object.

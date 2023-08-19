@@ -30,6 +30,7 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS(DataBuffer);
 
 #ifdef OVITO_USE_SYCL
+
 /// Helper function allocating a new SYCL buffer object of the given size.
 static SYCL_NS::buffer<std::byte> allocateSyclBuffer(size_t nelements, size_t stride)
 {
@@ -40,6 +41,49 @@ static SYCL_NS::buffer<std::byte> allocateSyclBuffer(size_t nelements, size_t st
     return SYCL_NS::buffer<std::byte, 1>(nelements * stride);
 #endif
 }
+
+/// Helper function that copies a range of bytes from one device buffer to another.
+static void copySyclBufferContents(SYCL_NS::buffer<std::byte>& src, SYCL_NS::buffer<std::byte>& dst, size_t nbytes, size_t srcOffset = 0, size_t dstOffset = 0, bool no_init = true)
+{
+    OVITO_ASSERT(nbytes != 0);
+    OVITO_ASSERT(&src != &dst);
+
+    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
+        if(srcOffset == 0 && dstOffset == 0 && no_init) {
+            cgh.copy(
+                src.get_access(cgh, SYCL_NS::range(nbytes), SYCL_NS::read_only),
+                dst.get_access(cgh, SYCL_NS::write_only, SYCL_NS::no_init)
+            );
+        }
+        else {
+            cgh.copy(
+                src.get_access(cgh, SYCL_NS::range(nbytes), SYCL_NS::id(srcOffset), SYCL_NS::read_only),
+                dst.get_access(cgh, SYCL_NS::range(nbytes), SYCL_NS::id(dstOffset), SYCL_NS::write_only, no_init ? SYCL_NS::property_list{SYCL_NS::no_init} : SYCL_NS::property_list{})
+            );
+        }
+    });
+}
+
+/// Helper function that fills a range of bytes in a device buffer with zero.
+static void fillSyclBufferZero(SYCL_NS::buffer<std::byte>& dst, size_t nbytes, size_t dstOffset = 0, bool no_init = true)
+{
+    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
+#if 0
+        cgh.fill(dst.get_access(cgh,
+            SYCL_NS::range(nbytes),
+            SYCL_NS::id(dstOffset),
+            SYCL_NS::write_only,
+            no_init ? SYCL_NS::property_list{SYCL_NS::no_init} : SYCL_NS::property_list{}), std::byte{0});
+#else
+        // Workaround for OpenSYCL bug (https://github.com/OpenSYCL/OpenSYCL/issues/1110)
+        auto outputAccessor = dst.get_access(cgh, SYCL_NS::range(nbytes), SYCL_NS::id(dstOffset), SYCL_NS::write_only, no_init ? SYCL_NS::property_list{SYCL_NS::no_init} : SYCL_NS::property_list{});
+        cgh.parallel_for<class databuffer_fillSyclBufferZero>(SYCL_NS::range(nbytes), [=](size_t i) {
+            outputAccessor[i] = std::byte{0};
+        });
+#endif
+    });
+}
+
 #endif
 
 /******************************************************************************
@@ -90,13 +134,8 @@ OORef<RefTarget> DataBuffer::clone(bool deepCopy, CloneHelper& cloneHelper) cons
         // Allocate new buffer.
         clone->_data = allocateSyclBuffer(_numElements, _stride);
         // Copy data on the SYCL device.
-        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
-            _hasScheduledSyclReadOperations = true;
-            cgh.copy(
-                _data->get_access(cgh, SYCL_NS::range(_numElements * _stride), SYCL_NS::read_only),
-                clone->_data->get_access(cgh, SYCL_NS::write_only, SYCL_NS::no_init)
-            );
-        });
+        _hasScheduledSyclReadOperations = true;
+        copySyclBufferContents(*_data, *clone->_data, _numElements * _stride);
     }
 #else
     clone->_capacity = _numElements;
@@ -123,26 +162,15 @@ void DataBuffer::resize(size_t newSize, bool preserveData)
     if(newSize != 0 && (!_data || newSize * _stride > _data->get_range()[0])) {
         SYCL_NS::buffer<std::byte> newBuffer = allocateSyclBuffer(newSize, _stride);
         if(preserveData && _numElements != 0) {
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
-                _hasScheduledSyclReadOperations = true;
-                cgh.copy(
-                    this->_data->get_access(cgh, SYCL_NS::range(_numElements * _stride), SYCL_NS::read_only),
-                    newBuffer.get_access(cgh, SYCL_NS::range(_numElements * _stride), SYCL_NS::write_only, SYCL_NS::no_init)
-                );
-            });
+            _hasScheduledSyclReadOperations = true;
+            copySyclBufferContents(*_data, newBuffer, _numElements * _stride);
         }
         _data = std::move(newBuffer);
     }
     // Initialize newly appended data elements to zero.
     if(newSize > _numElements && preserveData) {
         OVITO_ASSERT(_data);
-        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
-            cgh.fill(this->_data->get_access(cgh,
-                SYCL_NS::range((newSize - _numElements) * _stride),
-                SYCL_NS::id(_numElements * _stride),
-                SYCL_NS::write_only,
-                _numElements == 0 ? SYCL_NS::property_list{SYCL_NS::no_init} : SYCL_NS::property_list{}), (std::byte)0);
-        });
+        fillSyclBufferZero(*this->_data, (newSize - _numElements) * _stride, _numElements * _stride, _numElements == 0);
     }
 #else
     if(newSize > _capacity) {
@@ -178,14 +206,9 @@ void DataBuffer::resizeCopyFrom(size_t newSize, const DataBuffer& original)
     if(newSize != 0 && (this != &original || !this->_data || newSize * _stride > this->_data->get_range()[0])) {
         SYCL_NS::buffer<std::byte> newBuffer = allocateSyclBuffer(newSize, _stride);
         if(original._numElements != 0) {
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
-                size_t nbytes = std::min(newSize, original._numElements) * original._stride;
-                original._hasScheduledSyclReadOperations = true;
-                cgh.copy(
-                    original._data->get_access(cgh, SYCL_NS::range(nbytes), SYCL_NS::read_only),
-                    newBuffer.get_access(cgh, SYCL_NS::write_only, SYCL_NS::no_init)
-                );
-            });
+            original._hasScheduledSyclReadOperations = true;
+            size_t nbytes = std::min(newSize, original._numElements) * original._stride;
+            copySyclBufferContents(*original._data, newBuffer, nbytes);
         }
         _data = std::move(newBuffer);
     }
@@ -193,13 +216,7 @@ void DataBuffer::resizeCopyFrom(size_t newSize, const DataBuffer& original)
     // Initialize newly appended data elements to zero.
     if(newSize > original._numElements) {
         OVITO_ASSERT(_data);
-        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
-            cgh.fill(this->_data->get_access(cgh,
-                SYCL_NS::range((newSize - _numElements) * _stride),
-                SYCL_NS::id(_numElements * _stride),
-                SYCL_NS::write_only,
-                _numElements == 0 ? SYCL_NS::property_list{SYCL_NS::no_init} : SYCL_NS::property_list{}), (std::byte)0);
-        });
+        fillSyclBufferZero(*_data, (newSize - _numElements) * _stride, _numElements * _stride, _numElements == 0);
     }
 #else
     if(newSize > _capacity) {
@@ -377,14 +394,9 @@ void DataBuffer::replicateFrom(size_t n, const DataBuffer& original)
 #ifdef OVITO_USE_SYCL
     const size_t nbytes = original.size() * original.stride();
     // Replicate data values N times.
+    original._hasScheduledSyclReadOperations = true;
     for(size_t i = 0; i < n; i++) {
-        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
-            original._hasScheduledSyclReadOperations = true;
-            cgh.copy(
-                original._data->get_access(cgh, SYCL_NS::range(nbytes), SYCL_NS::read_only),
-                _data->get_access(cgh, SYCL_NS::range(nbytes), SYCL_NS::id(nbytes * i), SYCL_NS::write_only, i == 0 ? SYCL_NS::property_list{SYCL_NS::no_init} : SYCL_NS::property_list{})
-            );
-        });
+        copySyclBufferContents(*original._data, *_data, nbytes, 0, nbytes * i, i == 0);
     }
 #else
     std::byte* dest = _data.get();
@@ -765,13 +777,8 @@ void DataBuffer::copyFrom(const DataBuffer& source)
         WriteAccess writeAccess(*this);
         ReadAccess readAccess(source);
 #ifdef OVITO_USE_SYCL
-        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
-            source._hasScheduledSyclReadOperations = true;
-            cgh.copy(
-                source._data->get_access(cgh, SYCL_NS::range(source.size() * source.stride()), SYCL_NS::read_only),
-                _data->get_access(cgh, SYCL_NS::write_only, SYCL_NS::no_init)
-            );
-        });
+        source._hasScheduledSyclReadOperations = true;
+        copySyclBufferContents(*source._data, *_data, source.size() * source.stride());
 #else
         std::memcpy(data(), source.cdata(), this->stride() * this->size());
 #endif
@@ -798,13 +805,8 @@ void DataBuffer::copyRangeFrom(const DataBuffer& source, size_t sourceIndex, siz
     WriteAccess writeAccess(*this);
     ReadAccess readAccess(source);
 #ifdef OVITO_USE_SYCL
-    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
-        source._hasScheduledSyclReadOperations = true;
-        cgh.copy(
-            source._data->get_access(cgh, SYCL_NS::range(count * source.stride()), SYCL_NS::id(sourceIndex * source.stride()), SYCL_NS::read_only),
-            _data->get_access(cgh, SYCL_NS::range(count * this->stride()), SYCL_NS::id(destIndex * this->stride()), SYCL_NS::write_only,  (destIndex == 0 && count == this->size()) ? SYCL_NS::property_list{SYCL_NS::no_init} : SYCL_NS::property_list{})
-        );
-    });
+    source._hasScheduledSyclReadOperations = true;
+    copySyclBufferContents(*source._data, *_data, count * source.stride(), sourceIndex * source.stride(), destIndex * this->stride(), (destIndex == 0 && count == this->size()));
 #else
     std::memcpy(
         data() + destIndex * this->stride(),
@@ -951,12 +953,7 @@ void DataBuffer::fillZero()
     _isDataInitialized = true;
 #endif
 #ifdef OVITO_USE_SYCL
-    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
-        cgh.fill(_data->get_access(cgh,
-            SYCL_NS::range(_numElements * _stride),
-            SYCL_NS::write_only,
-            SYCL_NS::no_init), (std::byte)0);
-    });
+    fillSyclBufferZero(*this->_data, _numElements * _stride);
 #else
     RawBufferAccess<access_mode::discard_write> writeAccess(this);
     std::memset(writeAccess.data(), 0, this->size() * this->stride());

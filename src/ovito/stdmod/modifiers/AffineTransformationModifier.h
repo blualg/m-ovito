@@ -114,6 +114,14 @@ public:
     /// Thus, the affine transformation may depend on the current simulation cell shape.
     AffineTransformation effectiveAffineTransformation(const PipelineFlowState& state) const;
 
+    /// Copies positions from one buffer to another while transforming them.
+    /// If enabled, the transformation is only applied to selected elements.
+    void transformCoordinates(const PipelineFlowState& inputState, const PropertyObject* input, PropertyObject* output, const PropertyObject* selection);
+
+    /// Copies vectors from one buffer to another while transforming them.
+    /// If enabled, the transformation is only applied to selected elements.
+    void transformVectors(const PipelineFlowState& inputState, const PropertyObject* input, PropertyObject* output, const PropertyObject* selection);
+
 protected:
 
     /// This property fields stores the transformation matrix (used in 'relative' mode).

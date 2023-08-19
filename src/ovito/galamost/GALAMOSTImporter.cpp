@@ -320,35 +320,20 @@ PropertyObject* GALAMOSTImporter::FrameLoader::parsePropertyData(QXmlStreamReade
     QString text = xml.readElementText();
     QTextStream stream(&text, QIODevice::ReadOnly | QIODevice::Text);
 
-    if(property->dataType() == DataBuffer::Float32) {
-        BufferWriteAccess<float*, access_mode::discard_write> array(property);
-        for(float& v : array)
-            stream >> v;
-    }
-    else if(property->dataType() == DataBuffer::Float64) {
-        BufferWriteAccess<double*, access_mode::discard_write> array(property);
-        for(double& v : array)
-            stream >> v;
-    }
-    else if(property->dataType() == DataBuffer::Int8) {
-        BufferWriteAccess<int8_t*, access_mode::discard_write> array(property);
-        for(int8_t& v : array) {
-            int vi;
-            stream >> vi;
-            v = static_cast<int8_t>(vi);
+    property->forAnyType([&](auto _) {
+        using T = decltype(_);
+        BufferWriteAccess<T*, access_mode::discard_write> array(property);
+        for(T& v : array) {
+            if constexpr(!std::is_same_v<T, int8_t>) {
+                stream >> v;
+            }
+            else {
+                int vi;
+                stream >> vi;
+                v = static_cast<T>(vi);
+            }
         }
-    }
-    else if(property->dataType() == DataBuffer::Int32) {
-        BufferWriteAccess<int32_t*, access_mode::discard_write> array(property);
-        for(int32_t& v : array)
-            stream >> v;
-    }
-    else if(property->dataType() == DataBuffer::Int64) {
-        BufferWriteAccess<int64_t*, access_mode::discard_write> array(property);
-        for(int64_t& v : array)
-            stream >> v;
-    }
-    else OVITO_ASSERT(false);
+    });
     return property;
 }
 

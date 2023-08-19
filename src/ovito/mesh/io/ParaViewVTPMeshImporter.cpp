@@ -583,37 +583,14 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamRe
         const auto begin = srcData;
         const auto end = begin + elementCount * numComponents;
         bool discardExistingData = (destBaseIndex == 0);
-        if(buffer->dataType() == PropertyObject::Float32) {
+
+        buffer->forAnyType([&](auto _) {
+            using T = decltype(_);
             if(vectorComponent == -1)
-                std::copy(begin, end, std::next(BufferWriteAccess<float*, access_mode::write>(buffer, discardExistingData).begin(), destBaseIndex * buffer->componentCount()));
+                std::copy(begin, end, std::next(BufferWriteAccess<T*, access_mode::write>(buffer, discardExistingData).begin(), destBaseIndex * buffer->componentCount()));
             else
-                std::copy(begin, end, std::next(std::begin(BufferWriteAccess<float*, access_mode::write>(buffer, discardExistingData).componentRange(vectorComponent)), destBaseIndex));
-        }
-        else if(buffer->dataType() == PropertyObject::Float64) {
-            if(vectorComponent == -1)
-                std::copy(begin, end, std::next(BufferWriteAccess<double*, access_mode::write>(buffer, discardExistingData).begin(), destBaseIndex * buffer->componentCount()));
-            else
-                std::copy(begin, end, std::next(std::begin(BufferWriteAccess<double*, access_mode::write>(buffer, discardExistingData).componentRange(vectorComponent)), destBaseIndex));
-        }
-        else if(buffer->dataType() == PropertyObject::Int8) {
-            if(vectorComponent == -1)
-                std::copy(begin, end, std::next(BufferWriteAccess<int8_t*, access_mode::write>(buffer, discardExistingData).begin(), destBaseIndex * buffer->componentCount()));
-            else
-                std::copy(begin, end, std::next(std::begin(BufferWriteAccess<int8_t*, access_mode::write>(buffer, discardExistingData).componentRange(vectorComponent)), destBaseIndex));
-        }
-        else if(buffer->dataType() == PropertyObject::Int32) {
-            if(vectorComponent == -1)
-                std::copy(begin, end, std::next(BufferWriteAccess<int32_t*, access_mode::write>(buffer, discardExistingData).begin(), destBaseIndex * buffer->componentCount()));
-            else
-                std::copy(begin, end, std::next(std::begin(BufferWriteAccess<int32_t*, access_mode::write>(buffer, discardExistingData).componentRange(vectorComponent)), destBaseIndex));
-        }
-        else if(buffer->dataType() == PropertyObject::Int64) {
-            if(vectorComponent == -1)
-                std::copy(begin, end, std::next(BufferWriteAccess<int64_t*, access_mode::write>(buffer, discardExistingData).begin(), destBaseIndex * buffer->componentCount()));
-            else
-                std::copy(begin, end, std::next(std::begin(BufferWriteAccess<int64_t*, access_mode::write>(buffer, discardExistingData).componentRange(vectorComponent)), destBaseIndex));
-        }
-        else OVITO_ASSERT(false);
+                std::copy(begin, end, std::next(std::begin(BufferWriteAccess<T*, access_mode::write>(buffer, discardExistingData).componentRange(vectorComponent)), destBaseIndex));
+        });
     };
 
     if(dataType == "Float32") {

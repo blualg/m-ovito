@@ -40,38 +40,32 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(const Modi
     for(const DataObject* obj : state.data()->objects()) {
         // Process SurfaceMesh objects.
         if(const SurfaceMesh* existingSurface = dynamic_object_cast<SurfaceMesh>(obj)) {
-            const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
 
             // Make sure the input mesh data structure is valid.
             existingSurface->verifyMeshIntegrity();
+
             // Create a copy of the SurfaceMesh.
             SurfaceMesh* newSurface = state.makeMutable(existingSurface);
             // Create a copy of the vertices sub-object (no need to copy the topology when only moving vertices).
             SurfaceMeshVertices* newVertices = newSurface->makeVerticesMutable();
-            // Create a copy of the vertex coordinates array.
-            BufferWriteAccess<Point3, access_mode::read_write> positionProperty = newVertices->expectMutableProperty(SurfaceMeshVertices::PositionProperty, DataBuffer::Initialized);
 
-            if(!mod->selectionOnly()) {
-                // Apply transformation to the vertex coordinates.
-                for(Point3& p : positionProperty)
-                    p = tm * p;
-            }
-            else {
-                if(BufferReadAccess<SelectionIntType> selectionProperty = newVertices->getProperty(SurfaceMeshVertices::SelectionProperty)) {
-                    // Apply transformation only to the selected vertices.
-                    const auto* s = selectionProperty.cbegin();
-                    for(Point3& p : positionProperty) {
-                        if(*s++)
-                            p = tm * p;
-                    }
-                }
-            }
+            // Get the input vertex coordinates (as strong reference to force creation of a mutable clone below).
+            ConstPropertyPtr inputPositionProperty = newVertices->expectProperty(SurfaceMeshVertices::PositionProperty);
+
+            // Create an uninitialized copy of the vertex position property.
+            PropertyObject* outputPositionProperty = newVertices->makePropertyMutable(inputPositionProperty, DataBuffer::Uninitialized);
+
+            // Let the modifier do the actual coordinate transformation work.
+            mod->transformCoordinates(inputState, inputPositionProperty, outputPositionProperty, newVertices->getProperty(SurfaceMeshVertices::SelectionProperty));
 
             // Apply transformation to the cutting planes attached to the surface mesh.
-            QVector<Plane3> cuttingPlanes = newSurface->cuttingPlanes();
-            for(Plane3& plane : cuttingPlanes)
-                plane = tm * plane;
-            newSurface->setCuttingPlanes(std::move(cuttingPlanes));
+            if(!newSurface->cuttingPlanes().empty()) {
+                const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
+                QVector<Plane3> cuttingPlanes = newSurface->cuttingPlanes();
+                for(Plane3& plane : cuttingPlanes)
+                    plane = tm * plane;
+                newSurface->setCuttingPlanes(std::move(cuttingPlanes));
+            }
         }
         // Process TriangleMesh objects.
         else if(const TriMeshObject* existingMeshObj = dynamic_object_cast<TriMeshObject>(obj)) {
