@@ -33,7 +33,7 @@
 #include <ovito/core/dataset/scene/PipelineSceneNode.h>
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/oo/RefTarget.h>
-#include <ovito/core/viewport/ViewportProjectionParameters.h>
+#include <ovito/core/viewport/ViewProjectionParameters.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/utilities/MixedKeyCache.h>
 #include "LinePrimitive.h"

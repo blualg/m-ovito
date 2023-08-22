@@ -83,13 +83,14 @@ public:
         IntIdentifier = Int64
     };
 
-    /// Class template returning the C++ type for a DataBuffer data tzpe ID.
+    /// Class template returning the C++ type for a DataBuffer data type ID.
+    /// Note: Template parameter 'dummy' is needed to work around C++ restrictions (GCC error: "explicit specialization in non-namespace scope")
     template<DataTypes DataType, typename = void> struct TypeFromDataTypeId {};
-    template<> struct TypeFromDataTypeId<Int8> { using type = int8_t; };
-    template<> struct TypeFromDataTypeId<Int32> { using type = int32_t; };
-    template<> struct TypeFromDataTypeId<Int64> { using type = int64_t; };
-    template<> struct TypeFromDataTypeId<Float32> { using type = float; };
-    template<> struct TypeFromDataTypeId<Float64> { using type = double; };
+    template<typename dummy> struct TypeFromDataTypeId<Int8, dummy> { using type = int8_t; };
+    template<typename dummy> struct TypeFromDataTypeId<Int32, dummy> { using type = int32_t; };
+    template<typename dummy> struct TypeFromDataTypeId<Int64, dummy> { using type = int64_t; };
+    template<typename dummy> struct TypeFromDataTypeId<Float32, dummy> { using type = float; };
+    template<typename dummy> struct TypeFromDataTypeId<Float64, dummy> { using type = double; };
 
     enum BufferInitialization {
         Uninitialized = 0,

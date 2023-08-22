@@ -31,7 +31,7 @@
 #include <ovito/core/dataset/scene/Scene.h>
 #include "ViewportSettings.h"
 #include "ViewportWindowInterface.h"
-#include "ViewportProjectionParameters.h"
+#include "ViewProjectionParameters.h"
 
 namespace Ovito {
 
