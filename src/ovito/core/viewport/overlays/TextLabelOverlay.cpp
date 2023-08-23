@@ -204,6 +204,7 @@ void TextLabelOverlay::renderImplementation(SceneRenderer* renderer, const QRect
     // Paint the image into the output framebuffer.
     renderer->setDepthTestEnabled(false);
     renderer->renderText(textPrimitive);
+    renderer->setDepthTestEnabled(true);
 }
 
 }   // End of namespace

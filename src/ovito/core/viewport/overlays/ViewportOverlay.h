@@ -58,12 +58,6 @@ public:
 
     /// Helper method that checks whether the given Qt alignment value contains exactly one horizontal and one vertical alignment flag.
     void checkAlignmentParameterValue(int alignment) const;
-
-private:
-
-    /// Option for rendering the overlay contents behind the three-dimensional content.
-    /// Note: This field exists only for backward compatibility with OVITO 2.9.0.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, renderBehindScene, setRenderBehindScene);
 };
 
 }   // End of namespace
