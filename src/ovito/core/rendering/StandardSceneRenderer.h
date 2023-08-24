@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 202e OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -60,6 +60,9 @@ public:
 
     /// Is called after rendering has finished.
     virtual void endRender() override;
+
+	/// Returns the best format for QImage to be used when creating an ImagePrimitive.
+	virtual QImage::Format preferredImageFormat() const override { return _internalRenderer->preferredImageFormat(); }
 
 private:
 

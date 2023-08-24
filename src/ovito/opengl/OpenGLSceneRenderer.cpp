@@ -344,7 +344,7 @@ void OpenGLSceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewpo
 ******************************************************************************/
 bool OpenGLSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOperation& operation)
 {
-    OVITO_ASSERT(_glcontext == QOpenGLContext::currentContext());
+    makeContextCurrent();
     OVITO_REPORT_OPENGL_ERRORS(this);
 
     // Let the visual elements in the scene send their primitives to this renderer.
@@ -595,7 +595,7 @@ void OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
 ******************************************************************************/
 void OpenGLSceneRenderer::renderText(const TextPrimitive& primitive)
 {
-    renderTextDefaultImplementation(primitive, glcontext()->isOpenGLES() ? QImage::Format_ARGB32 : QImage::Format_ARGB32_Premultiplied);
+    renderTextDefaultImplementation(primitive);
 }
 
 /******************************************************************************

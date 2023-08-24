@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -106,7 +106,7 @@ void CoordinateTripodOverlay::propertyChanged(const PropertyFieldDescriptor* fie
 /******************************************************************************
 * Lets the overlay paint its contents into the framebuffer.
 ******************************************************************************/
-void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
+void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect)
 {
     // Check alignment parameter.
     checkAlignmentParameterValue(alignment());
@@ -185,7 +185,7 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
             QRect pixelBounds = imageRect.toAlignedRect();
 
             // Draw the joint into an image buffer, which will be cached.
-            QImage textureImage(pixelBounds.width(), pixelBounds.height(), QImage::Format_ARGB32_Premultiplied);
+            QImage textureImage(pixelBounds.width(), pixelBounds.height(), renderer->preferredImageFormat());
             textureImage.fill(0);
             QPainter painter(&textureImage);
             painter.setRenderHint(QPainter::Antialiasing);
@@ -236,7 +236,7 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
             QRect pixelBounds = imageRect.toAlignedRect();
 
             // Draw the arrow into an image buffer, which will be cached.
-            QImage textureImage(pixelBounds.width(), pixelBounds.height(), QImage::Format_ARGB32_Premultiplied);
+            QImage textureImage(pixelBounds.width(), pixelBounds.height(), renderer->preferredImageFormat());
             textureImage.fill(0);
             QPainter painter(&textureImage);
             painter.setRenderHint(QPainter::Antialiasing);

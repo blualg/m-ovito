@@ -47,7 +47,7 @@ public:
     virtual void initializeOverlay(Viewport* viewport) {}
 
     /// \brief This method asks the overlay to paint its contents over the rendered image.
-    virtual void render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation) = 0;
+    virtual void render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect) = 0;
 
     /// \brief Moves the position of the layer in the viewport by the given amount,
     ///        which is specified as a fraction of the viewport render size.

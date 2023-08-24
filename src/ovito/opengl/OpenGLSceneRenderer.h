@@ -160,6 +160,9 @@ public:
     /// Sets the primary framebuffer to be used by the renderer.
     void setPrimaryFramebuffer(GLuint primaryFramebuffer) { _primaryFramebuffer = primaryFramebuffer; }
 
+	/// Returns the best format for QImage to be used when creating an ImagePrimitive.
+	virtual QImage::Format preferredImageFormat() const override { return QImage::QImage::Format_RGBA8888; }
+
     /// Returns the vendor name of the OpenGL implementation in use.
     static const QByteArray& openGLVendor() { return _openGLVendor; }
 

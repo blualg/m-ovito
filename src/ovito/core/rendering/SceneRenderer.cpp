@@ -293,7 +293,7 @@ bool SceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportR
 
     for(ViewportOverlay* layer : (underlays ? viewport()->underlays() : viewport()->overlays())) {
         if(layer->isEnabled()) {
-            layer->render(this, logicalViewportRect, physicalViewportRect, operation);
+            layer->render(this, logicalViewportRect, physicalViewportRect);
             if(operation.isCanceled())
                 return false;
         }
@@ -713,7 +713,7 @@ void SceneRenderer::renderGrid()
 /******************************************************************************
  * Renders a text primitive by means of a cached image primitive.
  ******************************************************************************/
-void SceneRenderer::renderTextDefaultImplementation(const TextPrimitive& primitive, QImage::Format preferredImageFormat)
+void SceneRenderer::renderTextDefaultImplementation(const TextPrimitive& primitive)
 {
     if(primitive.text().isEmpty() || isPicking())
         return;
@@ -741,7 +741,7 @@ void SceneRenderer::renderTextDefaultImplementation(const TextPrimitive& primiti
 
         // Generate texture image.
         QRect pixelBounds = boundingBox.toAlignedRect();
-        QImage textureImage(pixelBounds.width(), pixelBounds.height(), preferredImageFormat);
+        QImage textureImage(pixelBounds.width(), pixelBounds.height(), preferredImageFormat());
         textureImage.setDevicePixelRatio(devicePixelRatio);
         textureImage.fill(0);
         QPainter painter(&textureImage);

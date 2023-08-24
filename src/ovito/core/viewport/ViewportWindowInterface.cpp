@@ -168,10 +168,10 @@ void ViewportWindowInterface::renderRenderFrame(SceneRenderer* renderer)
     if(frameRect.isEmpty())
         return;
 
-    // Create a 1x1 pixel semi-transparent image, which is used to fill reactangular areas with a uniform color.
+    // Create a 1x1 pixel semi-transparent image, which is used to fill rectangular areas with a uniform color.
     static QImage image;
     if(image.isNull()) {
-        image = QImage(1, 1, QImage::Format_ARGB32);
+        image = QImage(1, 1, renderer->preferredImageFormat());
         image.fill(0xA0A0A0A0);
     }
 

@@ -250,7 +250,7 @@ QVariant ColorLegendOverlay::getPipelineEditorShortInfo(Scene* scene) const
 /******************************************************************************
 * Lets the overlay paint its contents into the framebuffer.
 ******************************************************************************/
-void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
+void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect)
 {
     DataOORef<const PropertyObject> typedProperty;
 
@@ -290,7 +290,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
 
             return true;
         });
-        if(operation.isCanceled())
+        if(Task::current()->isCanceled())
             return;
 
         // Verify that the typed property, which has been selected as the source of the color legend, is available.
@@ -568,7 +568,7 @@ void ColorLegendOverlay::drawContinuousColorMap(SceneRenderer* renderer, const Q
         // Allocate the image buffer.
         QSize gradientSize = colorBarRect.size().toSize();
         QImage textureImage(gradientSize.width() + 2 * borderWidth, gradientSize.height() + 2 * borderWidth,
-                            QImage::Format_ARGB32_Premultiplied);
+                            renderer->preferredImageFormat());
         if(borderEnabled()) textureImage.fill((QColor)borderColor());
 
         // Create the color gradient image.
@@ -890,7 +890,7 @@ void ColorLegendOverlay::drawContinuousColorMap(SceneRenderer* renderer, const Q
         // Generate image primitive if not found in the cache
         if(backgroundImagePrimitive.image().isNull()) {
             // 1 x 1 px texture of the right color which will be streched to the desired rectangle dimensions.
-            QImage backgroundTextureImage{QSize(1, 1), QImage::Format_ARGB32_Premultiplied};
+            QImage backgroundTextureImage{QSize(1, 1), renderer->preferredImageFormat()};
             backgroundTextureImage.fill(static_cast<QColor>(backgroundColor()));
             backgroundImagePrimitive.setImage(std::move(backgroundTextureImage));
         }
@@ -970,7 +970,7 @@ void ColorLegendOverlay::drawDiscreteColorMap(SceneRenderer* renderer, const QRe
         // Allocate the image buffer.
         QSize gradientSize = colorBarRect.size().toSize();
         int borderWidth = borderEnabled() ? (int)std::ceil(2.0 * devicePixelRatio) : 0;
-        QImage textureImage(gradientSize.width() + 2*borderWidth, gradientSize.height() + 2*borderWidth, QImage::Format_ARGB32_Premultiplied);
+        QImage textureImage(gradientSize.width() + 2*borderWidth, gradientSize.height() + 2*borderWidth, renderer->preferredImageFormat());
         if(borderEnabled())
             textureImage.fill((QColor)borderColor());
 
@@ -1129,7 +1129,7 @@ void ColorLegendOverlay::drawDiscreteColorMap(SceneRenderer* renderer, const QRe
         // Generate image primitive if not found in the cache
         if(backgroundImagePrimitive.image().isNull()) {
             // 1 x 1 px texture of the right color which will be streched to the desired rectangle dimensions.
-            QImage backgroundTextureImage{QSize(1, 1), QImage::Format_ARGB32_Premultiplied};
+            QImage backgroundTextureImage{QSize(1, 1), renderer->preferredImageFormat()};
             backgroundTextureImage.fill(static_cast<QColor>(backgroundColor()));
             backgroundImagePrimitive.setImage(std::move(backgroundTextureImage));
         }

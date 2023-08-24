@@ -252,6 +252,9 @@ public:
 	/// true if isInteractive() returns false and vice versa.
 	virtual bool waitForLongOperationsEnabled() const { return !isInteractive(); }
 
+	/// Returns the best format for QImage to be used when creating an ImagePrimitive.
+	virtual QImage::Format preferredImageFormat() const { return QImage::Format_ARGB32_Premultiplied; }
+
 protected:
 
 	/// Constructor.
@@ -292,7 +295,7 @@ protected:
 	void renderGrid();
 
 	/// Renders a text primitive by means of a cached image primitive.
-	void renderTextDefaultImplementation(const TextPrimitive& primitive, QImage::Format preferredImageFormat = QImage::Format_ARGB32_Premultiplied);
+	void renderTextDefaultImplementation(const TextPrimitive& primitive);
 
 private:
 

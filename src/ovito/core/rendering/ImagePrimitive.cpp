@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,9 +30,9 @@ namespace Ovito {
 * Sets the destination rectangle for rendering the image in viewport coordinates.
 ******************************************************************************/
 void ImagePrimitive::setRectViewport(const SceneRenderer* renderer, const Box2& rect)
-{ 
+{
     OVITO_ASSERT(!rect.isEmpty());
-    QSize windowSize = renderer->viewportRect().size();
+    const QSize windowSize = renderer->viewportRect().size();
     Point2 minc((rect.minc.x() + 1.0) * windowSize.width() / 2.0, (-rect.maxc.y() + 1.0) * windowSize.height() / 2.0);
     Point2 maxc((rect.maxc.x() + 1.0) * windowSize.width() / 2.0, (-rect.minc.y() + 1.0) * windowSize.height() / 2.0);
     setRectWindow(Box2(minc, maxc));

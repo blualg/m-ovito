@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,7 +31,7 @@ namespace Ovito {
 
 static QThreadStorage<OpenGLResourceManager*> glContextManagerStorage;
 
-OpenGLResourceManager* OpenGLResourceManager::instance() 
+OpenGLResourceManager* OpenGLResourceManager::instance()
 {
     if(!glContextManagerStorage.hasLocalData()) {
         glContextManagerStorage.setLocalData(new OpenGLResourceManager());

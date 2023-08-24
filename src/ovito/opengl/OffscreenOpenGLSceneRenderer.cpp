@@ -220,6 +220,7 @@ bool OffscreenOpenGLSceneRenderer::renderOverlays(bool underlays, const QRect& l
 void OffscreenOpenGLSceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewportRect)
 {
     if(renderingSuccessful && frameBuffer()) {
+        makeContextCurrent();
 
         // Flush the contents to the FBO before extracting image.
         glcontext()->swapBuffers(_offscreenSurface);

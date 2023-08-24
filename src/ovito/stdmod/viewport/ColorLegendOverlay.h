@@ -48,7 +48,7 @@ public:
     virtual void initializeOverlay(Viewport* viewport) override;
 
     /// Lets the overlay paint its contents into the framebuffer.
-    virtual void render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation) override;
+    virtual void render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect) override;
 
     /// Moves the position of the overlay in the viewport by the given amount,
     /// which is specified as a fraction of the viewport render size.
