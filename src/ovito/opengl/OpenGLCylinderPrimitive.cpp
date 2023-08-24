@@ -31,13 +31,12 @@ namespace Ovito {
 ******************************************************************************/
 void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive& primitive)
 {
-    OVITO_REPORT_OPENGL_ERRORS(this);
-
     // Make sure there is something to be rendered. Otherwise, step out early.
     if(!primitive.basePositions() || !primitive.headPositions() || primitive.basePositions()->size() == 0)
         return;
 
     rebindVAO();
+    OVITO_REPORT_OPENGL_ERRORS(this);
 
     // The OpenGL drawing primitive.
     GLenum primitiveDrawMode = GL_TRIANGLE_STRIP;

@@ -31,13 +31,12 @@ namespace Ovito {
 ******************************************************************************/
 void OpenGLSceneRenderer::renderMarkersImplementation(const MarkerPrimitive& primitive)
 {
-    OVITO_REPORT_OPENGL_ERRORS(this);
-
     // Step out early if there is nothing to render.
     if(!primitive.positions() || primitive.positions()->size() == 0)
         return;
 
     rebindVAO();
+    OVITO_REPORT_OPENGL_ERRORS(this);
 
     OpenGLShaderHelper shader(this);
     switch(primitive.shape()) {

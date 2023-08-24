@@ -33,8 +33,6 @@ namespace Ovito {
 ******************************************************************************/
 void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive& primitive)
 {
-    OVITO_REPORT_OPENGL_ERRORS(this);
-
     // Make sure there is something to be rendered. Otherwise, step out early.
     if(!primitive.positions() || primitive.positions()->size() == 0)
         return;
@@ -42,6 +40,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
         return;
 
     rebindVAO();
+    OVITO_REPORT_OPENGL_ERRORS(this);
 
     // Activate the right OpenGL shader program.
     OpenGLShaderHelper shader(this);

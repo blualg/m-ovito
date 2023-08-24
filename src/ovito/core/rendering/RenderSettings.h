@@ -74,6 +74,11 @@ public:
     /// Sets the output filename of the rendered image.
     void setImageFilename(const QString& filename);
 
+    /// Returns whether errors that occur within a data pipeline lead to an abortion of the rendering process.
+    bool stopOnPipelineError() const { return _stopOnPipelineError; }
+    /// Sets whether errors that occur within a data pipeline lead to an abortion of the rendering process.
+    void setStopOnPipelineError(bool stopOnPipelineError) { _stopOnPipelineError = stopOnPipelineError; }
+
     /// \brief This is the high-level rendering function, which invokes the renderer to generate one or more
     ///        output images of the scene.
     /// \param viewportConfiguration The viewport configuration to render.
@@ -164,6 +169,9 @@ private:
 
     /// Controls the color of the separator lines between viewports when rendering an entire viewport layout.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, layoutSeperatorColor, setLayoutSeperatorColor, PROPERTY_FIELD_MEMORIZE);
+
+    /// Controls whether errors that occur within a data pipeline lead to an abortion of the rendering process.
+    bool _stopOnPipelineError = false;
 
     friend class RenderSettingsEditor;
 };

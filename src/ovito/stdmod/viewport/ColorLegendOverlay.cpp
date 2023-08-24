@@ -273,10 +273,13 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
         renderer->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
 
             // Evaluate pipeline and obtain output data collection.
-            if(!renderer->isInteractive()) {
-                PipelineEvaluationFuture pipelineEvaluation = pipeline->evaluatePipeline(PipelineEvaluationRequest(renderer->time()));
+            if(renderer->waitForLongOperationsEnabled()) {
+                PipelineEvaluationRequest request(renderer->time());
+                request.setThrowOnError(renderer->renderSettings().stopOnPipelineError());
+                PipelineEvaluationFuture pipelineEvaluation = pipeline->evaluatePipeline(request);
                 if(!pipelineEvaluation.waitForFinished())
                     return false;
+
                 // Look up the typed property.
                 typedProperty = pipelineEvaluation.result().getLeafObject(sourceProperty());
             }
@@ -370,10 +373,12 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
             if(ModifierApplication* modApp = modifier()->someModifierApplication()) {
                 QVariant minValue, maxValue;
                 PipelineEvaluationRequest request(renderer->time());
-                if(!renderer->isInteractive()) {
+                request.setThrowOnError(renderer->renderSettings().stopOnPipelineError());
+                if(renderer->waitForLongOperationsEnabled()) {
                     SharedFuture<PipelineFlowState> stateFuture = modApp->evaluate(request);
                     if(!stateFuture.waitForFinished())
                         return;
+
                     const PipelineFlowState& state = stateFuture.result();
                     minValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMin"));
                     maxValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMax"));

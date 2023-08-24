@@ -387,6 +387,9 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
         return;
     }
 
+    // Restore GL context.
+    makeContextCurrent();
+
     // Transparency should never play a role in a picking render pass.
     OVITO_ASSERT(!isPicking());
 

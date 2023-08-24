@@ -185,13 +185,11 @@ bool SceneRenderer::renderNode(SceneNode* node)
             // Evaluate data pipeline of object node and render the results.
             PipelineEvaluationFuture pipelineEvaluation;
             if(waitForLongOperationsEnabled()) {
-                pipelineEvaluation = pipeline->evaluateRenderingPipeline(PipelineEvaluationRequest(time()));
+                PipelineEvaluationRequest request(time());
+                request.setThrowOnError(renderSettings().stopOnPipelineError());
+                pipelineEvaluation = pipeline->evaluateRenderingPipeline(request);
                 if(!pipelineEvaluation.waitForFinished())
                     return false;
-
-                // After the rendering process has been temporarily interrupted above, rendering is resumed now.
-                // Give the renderer the opportunity to restore any state that must be active (e.g. the active OpenGL context).
-                resumeRendering();
             }
             const PipelineFlowState& state = pipelineEvaluation.isValid() ?
                                                 pipelineEvaluation.result() :

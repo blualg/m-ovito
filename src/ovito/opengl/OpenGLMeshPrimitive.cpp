@@ -43,6 +43,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         return;
 
     rebindVAO();
+    OVITO_REPORT_OPENGL_ERRORS(this);
 
     // Render wireframe lines.
     if(primitive.emphasizeEdges() && !isPicking())

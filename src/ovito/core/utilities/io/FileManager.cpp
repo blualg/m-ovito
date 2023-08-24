@@ -86,7 +86,7 @@ SharedFuture<FileHandle> FileManager::fetchUrl(const QUrl& url)
         // But first check if the file exists.
         QString filePath = url.toLocalFile();
         if(!QFileInfo(filePath).exists())
-            return Future<FileHandle>::createFailed(Exception(tr("File does not exist:\n%1").arg(filePath)));
+            return Future<FileHandle>::createFailed(Exception(tr("File does not exist: %1").arg(filePath)));
 
         return FileHandle(url, std::move(filePath));
     }

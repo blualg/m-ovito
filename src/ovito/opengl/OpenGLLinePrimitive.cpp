@@ -31,13 +31,12 @@ namespace Ovito {
 ******************************************************************************/
 void OpenGLSceneRenderer::renderLinesImplementation(const LinePrimitive& primitive)
 {
-    OVITO_REPORT_OPENGL_ERRORS(this);
-
     // Step out early if there is nothing to render.
     if(!primitive.positions() || primitive.positions()->size() == 0)
         return;
 
     rebindVAO();
+    OVITO_REPORT_OPENGL_ERRORS(this);
 
     if(primitive.lineWidth() == 1 || (primitive.lineWidth() <= 0 && devicePixelRatio() <= 1))
         renderThinLinesImplementation(primitive);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -127,7 +127,7 @@ bool OpenGLDepthTextureBlitter::create()
     if(format.profile() == QSurfaceFormat::CoreProfile && format.version() >= qMakePair(3,2)) {
         if(!buildProgram(vertex_shader150, fragment_shader150))
             return false;
-    } 
+    }
     else {
         if(!buildProgram(vertex_shader, fragment_shader))
             return false;

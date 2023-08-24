@@ -201,14 +201,6 @@ protected:
     /// Puts the GL context into its default initial state before rendering of a frame begins.
     virtual void initializeGLState();
 
-    /// This is called during rendering whenever the rendering process has been temporarily
-    /// interrupted by an event loop and before rendering is resumed. It gives the renderer
-    /// the opportunity to restore the active OpenGL context.
-    virtual void resumeRendering() override {
-        if(!isBoundingBoxPass())
-            rebindVAO();
-    }
-
 private:
 
     /// Render all semi-transparent geometry in a second rendering pass.
