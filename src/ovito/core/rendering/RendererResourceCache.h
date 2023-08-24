@@ -48,6 +48,9 @@ public:
     /// Data type used by the resource cache to refer to an frame being rendered (in flight) on the CPU and/or the GPU.
     using ResourceFrameHandle = int;
 
+    /// Constructor.
+    RendererResourceCache() = default;
+
 #ifdef OVITO_DEBUG
     /// Destructor.
     ~RendererResourceCache() {
@@ -56,6 +59,14 @@ public:
         OVITO_ASSERT(empty());
     }
 #endif
+
+    // A cache cannot be copied.
+    RendererResourceCache(const RendererResourceCache& other) = delete;
+    RendererResourceCache& operator=(const RendererResourceCache& other) = delete;
+
+    // A cache is movable.
+    RendererResourceCache(RendererResourceCache&& other) = default;
+    RendererResourceCache& operator=(RendererResourceCache&& other) = default;
 
     /// Returns a reference to the value for the given key.
     /// Creates a new cache entry with a default-initialized value if the key doesn't exist.
