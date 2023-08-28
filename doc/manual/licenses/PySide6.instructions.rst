@@ -9,7 +9,7 @@ In accordance with the requirements of this license, this page provides instruct
 Windows
 """""""
 
-OVITO Pro for Windows ships with a copy of the PySide6-Essentials module (version 6.5.1.1) from
+OVITO Pro for Windows ships with a copy of the PySide6-Essentials module (version 6.5.2) from
 the official `PyPI repository <https://pypi.org/project/PySide6/>`__.
 
 Linux
@@ -17,13 +17,13 @@ Linux
 
 OVITO Pro for Linux ships with a copy of the PySide6 module that has been built from the original sources provided by
 the Qt Company, following the standard procedure described `here <https://doc.qt.io/qtforpython/gettingstarted-linux.html>`__.
-PySide6 v6.5.1 has been compiled against Qt 6.5.2 (see :ref:`here <appendix.license.qt6.instructions>`) and a custom build of the `CPython <https://www.python.org>`__ 3.11 interpreter::
+PySide6 v6.5.2 has been compiled against Qt 6.5.2 (see :ref:`here <appendix.license.qt6.instructions>`) and a custom build of the `CPython <https://www.python.org>`__ 3.11 interpreter::
 
   # Build platform: CentOS 7
   # Compiler: GCC 10
   git clone --recursive https://code.qt.io/pyside/pyside-setup
   cd pyside-setup
-  git checkout v6.5.1.1
+  git checkout v6.5.2
   python3 setup.py install \
     --qmake=/usr/local/lib/qt6/bin/qmake \
     --ignore-git \
