@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -53,7 +53,7 @@ public:
     const QVector<SceneNode*>& sceneNodes() const { return _nodeListener.targets(); }
 
     /// Returns the scene node at the given index of the list model.
-    SceneNode* sceneNodeFromListIndex(int index) const { 
+    SceneNode* sceneNodeFromListIndex(int index) const {
         int nodeIndex = index - firstSceneNodeIndex();
         return (nodeIndex >= 0 && nodeIndex < sceneNodes().size()) ? sceneNodes()[nodeIndex] : nullptr;
     }

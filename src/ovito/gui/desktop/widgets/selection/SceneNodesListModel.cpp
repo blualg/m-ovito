@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -96,7 +96,7 @@ QVariant SceneNodesListModel::data(const QModelIndex& index, int role) const
     if(role == Qt::DisplayRole) {
         if(index.row() == 0)
             return tr("Existing pipelines:");
-        
+
         int pipelineIndex = index.row() - firstSceneNodeIndex();
         if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size())
             return _nodeListener.targets()[pipelineIndex]->objectTitle();
@@ -233,7 +233,7 @@ void SceneNodesListModel::onNodeNotificationEvent(RefTarget* source, const Refer
     if(event.type() == ReferenceEvent::ReferenceAdded) {
         const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
         if(refEvent.field() == PROPERTY_FIELD(SceneNode::children)) {
-            if(SceneNode* node = dynamic_object_cast<SceneNode>(refEvent.newTarget())) {                
+            if(SceneNode* node = dynamic_object_cast<SceneNode>(refEvent.newTarget())) {
                 // Extend the list model by one entry.
                 if(sceneNodes().empty()) {
                     _nodeListener.push_back(node);

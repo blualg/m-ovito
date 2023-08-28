@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -136,7 +136,7 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
     variablesLayout->setColumnStretch(1, 1);
 
     _pipelineComboBox = new PopupUpdateComboBox();
-    connect(_pipelineComboBox, &PopupUpdateComboBox::dropDownActivated, this, &TextLabelOverlayEditor::updateSourcesList); 
+    connect(_pipelineComboBox, &PopupUpdateComboBox::dropDownActivated, this, &TextLabelOverlayEditor::updateSourcesList);
 
     CustomParameterUI* sourcePUI = new CustomParameterUI(this, "sourceNode", _pipelineComboBox,
             // updateWidgetFunction:
@@ -204,7 +204,7 @@ void TextLabelOverlayEditor::updateSourcesList()
         });
         _pipelineComboBox->setCurrentIndex(_pipelineComboBox->findData(QVariant::fromValue(overlay->sourceNode())));
     }
-    if(_pipelineComboBox->count() == 0) 
+    if(_pipelineComboBox->count() == 0)
         _pipelineComboBox->addItem(tr("<none>"));
 }
 
