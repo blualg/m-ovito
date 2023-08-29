@@ -95,34 +95,38 @@ bool LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNum
     if(mapping.empty())
         throw Exception(tr("No particle properties have been selected for export to the LAMMPS dump file. Cannot write dump file with zero columns."));
 
+    // Prepare effective list of output columns (e.g. expand vector properties).
+    PropertyOutputWriter columnWriter(mapping, particles, PropertyOutputWriter::WriteNumericIds);
+
     // Write column names.
-    for(int i = 0; i < (int)mapping.size(); i++) {
-        const PropertyReference& pref = mapping[i];
+    for(size_t i = 0; i < columnWriter.columnCount(); i++) {
+        const PropertyReference& pref = columnWriter.propertyRef(i);
+        bool isVectorProperty = columnWriter.property(i)->componentCount() != 1 || !columnWriter.property(i)->componentNames().empty();
         QString columnName;
         switch(pref.type()) {
         case ParticlesObject::PositionProperty:
             if(pref.vectorComponent() == 0) columnName = QStringLiteral("x");
             else if(pref.vectorComponent() == 1) columnName = QStringLiteral("y");
             else if(pref.vectorComponent() == 2) columnName = QStringLiteral("z");
-            else columnName = QStringLiteral("position");
+            else columnName = pref.nameWithComponent();
             break;
         case ParticlesObject::VelocityProperty:
             if(pref.vectorComponent() == 0) columnName = QStringLiteral("vx");
             else if(pref.vectorComponent() == 1) columnName = QStringLiteral("vy");
             else if(pref.vectorComponent() == 2) columnName = QStringLiteral("vz");
-            else columnName = QStringLiteral("velocity");
+            else columnName = pref.nameWithComponent();
             break;
         case ParticlesObject::ForceProperty:
             if(pref.vectorComponent() == 0) columnName = QStringLiteral("fx");
             else if(pref.vectorComponent() == 1) columnName = QStringLiteral("fy");
             else if(pref.vectorComponent() == 2) columnName = QStringLiteral("fz");
-            else columnName = QStringLiteral("force");
+            else columnName = pref.nameWithComponent();
             break;
         case ParticlesObject::PeriodicImageProperty:
             if(pref.vectorComponent() == 0) columnName = QStringLiteral("ix");
             else if(pref.vectorComponent() == 1) columnName = QStringLiteral("iy");
             else if(pref.vectorComponent() == 2) columnName = QStringLiteral("iz");
-            else columnName = QStringLiteral("pbcimage");
+            else columnName = pref.nameWithComponent();
             break;
         case ParticlesObject::IdentifierProperty: columnName = QStringLiteral("id"); break;
         case ParticlesObject::TypeProperty: columnName = QStringLiteral("type"); break;
@@ -138,23 +142,22 @@ bool LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNum
             else if(pref.vectorComponent() == 1) columnName = QStringLiteral("quatj");
             else if(pref.vectorComponent() == 2) columnName = QStringLiteral("quatk");
             else if(pref.vectorComponent() == 3) columnName = QStringLiteral("quatw");
-            else columnName = QStringLiteral("orientation");
+            else columnName = pref.nameWithComponent();
             break;
         case ParticlesObject::AsphericalShapeProperty:
             if(pref.vectorComponent() == 0) columnName = QStringLiteral("c_shape[1]");
             else if(pref.vectorComponent() == 1) columnName = QStringLiteral("c_shape[2]");
             else if(pref.vectorComponent() == 2) columnName = QStringLiteral("c_shape[3]");
-            else columnName = QStringLiteral("aspherical_shape");
+            else columnName = pref.nameWithComponent();
             break;
         default:
-            columnName = pref.nameWithComponent();
+            columnName = isVectorProperty ? pref.nameWithComponent() : pref.name();
             columnName.remove(QRegularExpression(QStringLiteral("[^A-Za-z\\d_]")));
         }
         textStream() << ' ' << columnName;
     }
     textStream() << '\n';
 
-    PropertyOutputWriter columnWriter(mapping, particles, PropertyOutputWriter::WriteNumericIds);
     operation.setProgressMaximum(atomsCount);
     for(size_t i = 0; i < atomsCount; i++) {
         columnWriter.writeElement(i, textStream());

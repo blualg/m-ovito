@@ -81,8 +81,8 @@ bool XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, co
         textStream() << QStringLiteral("Properties=");
         QString propertiesStr;
         int i = 0;
-        while(i < (int)mapping.size()) {
-            const ParticlePropertyReference& pref = mapping[i];
+        while(i < (int)columnWriter.columnCount()) {
+            const ParticlePropertyReference& pref = columnWriter.propertyRef(i);
 
             // Convert from OVITO property type and name to extended XYZ property name
             // Naming conventions followed are those of the QUIP code
@@ -136,8 +136,12 @@ bool XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, co
 
             // Count the number of consecutive columns with the same property.
             int nCols = 1;
-            while(++i < (int)mapping.size() && pref.name() == mapping[i].name() && pref.type() == mapping[i].type())
+            while(++i < (int)columnWriter.columnCount()) {
+                const ParticlePropertyReference& nextpref = columnWriter.propertyRef(i);
+                if(pref.name() != nextpref.name() || pref.type() != nextpref.type())
+                    break;
                 nCols++;
+            }
 
             // Convert OVITO property data type to extended XYZ type code: 'I','R','S','L'
             int dataType = property ? property->dataType() : PropertyObject::Int32;

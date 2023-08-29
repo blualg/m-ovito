@@ -81,7 +81,7 @@ void OutputColumnMapping::fromByteArray(const QByteArray& array)
  * Initializes the writer object.
  *****************************************************************************/
 PropertyOutputWriter::PropertyOutputWriter(const OutputColumnMapping& mapping, const PropertyContainer* sourceContainer, TypedPropertyMode typedPropertyMode)
-    : _typedPropertyMode(typedPropertyMode)
+    : _sourceContainer(sourceContainer), _typedPropertyMode(typedPropertyMode)
 {
     // Gather the source properties.
     for(int i = 0; i < (int)mapping.size(); i++) {

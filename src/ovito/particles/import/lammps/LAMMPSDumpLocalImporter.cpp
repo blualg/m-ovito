@@ -350,12 +350,14 @@ Future<BondInputColumnMapping> LAMMPSDumpLocalImporter::inspectFileHeader(const 
                                     QString propertyName = entry.key();
                                     propertyName.remove(invalidCharacters); // LAMMPS dump file format does not support column names containing spaces.
                                     const QStringList& componentNames = BondsObject::OOClass().standardPropertyComponentNames(entry.value());
+                                    QString propertyName2;
                                     if(!componentNames.empty()) {
                                         OVITO_ASSERT(!componentNames[component].contains(invalidCharacters));
+                                        propertyName2 = propertyName + componentNames[component];
                                         propertyName += QChar('.');
                                         propertyName += componentNames[component];
                                     }
-                                    if(propertyName.compare(name, Qt::CaseInsensitive) == 0) {
+                                    if(propertyName.compare(name, Qt::CaseInsensitive) == 0 || propertyName2.compare(name, Qt::CaseInsensitive) == 0) {
                                         detectedColumnMapping.mapStandardColumn(i, (BondsObject::Type)entry.value(), component);
                                         isStandardProperty = true;
                                         break;

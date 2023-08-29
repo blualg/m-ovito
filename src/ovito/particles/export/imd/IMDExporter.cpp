@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -121,18 +121,27 @@ bool IMDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
     else textStream() << "0 ";
 
-    for(int i = 0; i < (int)filteredMapping.size(); i++) {
-        const PropertyReference& pref = filteredMapping[i];
-        QString columnName = pref.nameWithComponent();
-        columnName.remove(QRegularExpression(QStringLiteral("[^A-Za-z\\d_.]")));
-        columnNames.push_back(columnName);
-        colMapping.push_back(pref);
+    for(size_t i = 0; i < filteredMapping.size(); i++) {
+        colMapping.push_back(filteredMapping[i]);
     }
-    textStream() << filteredMapping.size() << "\n";
+
+    PropertyOutputWriter columnWriter(colMapping, particles, PropertyOutputWriter::WriteNumericIds);
+
+    textStream() << (columnWriter.columnCount() - columnNames.size()) << "\n";
 
     textStream() << "#C";
-    for(const QString& cname : columnNames)
-        textStream() << " " << cname;
+    for(size_t i = 0; i < columnWriter.columnCount(); i++) {
+        QString columnName;
+        if(i < columnNames.size())
+            columnName = columnNames[i];
+        else {
+            const PropertyReference& pref = columnWriter.propertyRef(i);
+            bool isVectorProperty = columnWriter.property(i)->componentCount() != 1 || !columnWriter.property(i)->componentNames().empty();
+            columnName = isVectorProperty ? pref.nameWithComponent() : pref.name();
+            columnName.remove(QRegularExpression(QStringLiteral("[^A-Za-z\\d_.]")));
+        }
+        textStream() << " " << columnName;
+    }
     textStream() << "\n";
 
     textStream() << "#X " << simCell.column(0)[0] << " " << simCell.column(0)[1] << " " << simCell.column(0)[2] << "\n";
@@ -144,7 +153,6 @@ bool IMDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     textStream() << "#E\n";
 
     operation.setProgressMaximum(atomsCount);
-    PropertyOutputWriter columnWriter(colMapping, particles, PropertyOutputWriter::WriteNumericIds);
     for(size_t i = 0; i < atomsCount; i++) {
         columnWriter.writeElement(i, textStream());
 

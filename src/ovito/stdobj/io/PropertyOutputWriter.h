@@ -116,10 +116,35 @@ public:
     /// \param stream An output text stream.
     void writeElement(size_t index, CompressedTextWriter& stream);
 
+    /// Returns the number of output columns that will be written.
+    size_t columnCount() const { return _properties.size(); }
+
+    /// Returns the property that will be written to the i-th file column.
+    const PropertyObject* property(size_t columnIndex) const {
+        OVITO_ASSERT(columnIndex < _properties.size());
+        return _properties[columnIndex];
+    }
+
+    /// Returns the property component that will be written to the i-th file column.
+    int vectorComponent(size_t columnIndex) const {
+        OVITO_ASSERT(columnIndex < _vectorComponents.size());
+        return _vectorComponents[columnIndex];
+    }
+
+    /// Returns a PropertyReference for the i-th output column.
+    PropertyReference propertyRef(size_t columnIndex) const {
+        OVITO_ASSERT(columnIndex < _properties.size());
+        OVITO_ASSERT(columnIndex < _vectorComponents.size());
+        return PropertyReference(&_sourceContainer->getOOMetaClass(), _properties[columnIndex], _vectorComponents[columnIndex]);
+    }
+
 private:
 
+    /// The property container;
+    const PropertyContainer* _sourceContainer;
+
     /// Stores the source properties for each column in the output file.
-    /// The special value NULL instead of a PropertyObjects means that the implicit element indices should be output in this file column.
+    /// A nullptr instead of a PropertyObject means that the implicit element indices should be output in this file column.
     std::vector<const PropertyObject*> _properties;
 
     /// Stores the source vector component for each output column.
