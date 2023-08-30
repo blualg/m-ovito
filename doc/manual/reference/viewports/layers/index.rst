@@ -34,10 +34,10 @@ OVITO activates the render preview mode automatically for the active viewport wh
 ================================================================ ==================================
 Layer type                                                       Description
 ================================================================ ==================================
-:ref:`Color legend <viewport_layers.color_legend>`               Shows a legend for a :ref:`Color coding <particles.modifiers.color_coding>` modifier or a :ref:`typed property <scene_objects.particle_types>`.
+:ref:`Color legend <viewport_layers.color_legend>`               Shows a color map for a :ref:`particles.modifiers.color_coding` modifier or a :ref:`typed property <scene_objects.particle_types>`.
 :ref:`Coordinate tripod <viewport_layers.coordinate_tripod>`     Renders an axes tripod to indicate the view orientation
-:ref:`Python script <viewport_layers.python_script>` |ovito-pro| Calls your own Python script function to draw arbitrary graphics on top of the rendered image
-:ref:`Text label <viewport_layers.text_label>`                   Renders a user-defined text string, which can contain dynamically computed variables
+:ref:`Python script <viewport_layers.python_script>` |ovito-pro| Write your own overlay type in Python and draw arbitrary graphics and data plots on top of the 3d view
+:ref:`Text label <viewport_layers.text_label>`                   Renders some text, which may be used to display dynamically computed quantities
 ================================================================ ==================================
 
 .. seealso::
@@ -45,3 +45,4 @@ Layer type                                                       Description
    * :py:class:`ovito.vis.ViewportOverlay` (Python API)
    * :py:attr:`Viewport.overlays <ovito.vis.Viewport.overlays>` (Python API)
    * :py:attr:`Viewport.underlays <ovito.vis.Viewport.underlays>` (Python API)
+   * :ref:`writing_custom_viewport_overlays`

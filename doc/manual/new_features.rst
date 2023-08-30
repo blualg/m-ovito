@@ -5,6 +5,18 @@ Changelog
 =========
 
 ---------------------------
+Version 3.9.2 (31-Aug-2023)
+---------------------------
+
+* Fix: Text label viewport layer accidentally disables 3d depth test in interactive viewports if used as an underlay
+* |ovito-pro| :py:meth:`~ovito.vis.Viewport.render_image` and :py:meth:`~ovito.vis.Viewport.render_anim` now raise exceptions in case an error occurs in any of the scene pipelines (can be changed via new parameter `stop_on_error`)
+* |ovito-pro| New class-based programming interface for custom viewport overlays: :py:class:`ovito.vis.ViewportOverlayInterface`
+* |ovito-pro| New flag :py:attr:`Pipeline.preliminary_updates <ovito.pipeline.Pipeline.preliminary_updates>`
+* |ovito-pro| Corrected data column headers in XYZ, LAMMPS dump, and IMD files written via :py:func:`~ovito.io.export_file` if a vector property was specified in the `columns` list
+* |ovito-pro| Build Conda package as monolithic binaries for improved performance of the Python interface
+* |ovito-pro| Updated third-party components: OpenSSL 1.1.1v, PySide6 6.5.2, Python 3.11.5
+
+---------------------------
 Version 3.9.1 (06-Aug-2023)
 ---------------------------
 
