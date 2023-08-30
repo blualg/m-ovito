@@ -135,7 +135,17 @@ public:
     PropertyReference propertyRef(size_t columnIndex) const {
         OVITO_ASSERT(columnIndex < _properties.size());
         OVITO_ASSERT(columnIndex < _vectorComponents.size());
-        return PropertyReference(&_sourceContainer->getOOMetaClass(), _properties[columnIndex], _vectorComponents[columnIndex]);
+        if(_properties[columnIndex])
+            return PropertyReference(&_sourceContainer->getOOMetaClass(), _properties[columnIndex], _vectorComponents[columnIndex]);
+        else
+            return PropertyReference(&_sourceContainer->getOOMetaClass(), PropertyObject::GenericIdentifierProperty, 0);
+    }
+
+    // Determines whether the i-th column contains a vector property component.
+    bool isVectorProperty(size_t columnIndex) const {
+        if(!property(columnIndex))
+            return false;
+        return property(columnIndex)->componentCount() > 1 || !property(columnIndex)->componentNames().empty();
     }
 
 private:

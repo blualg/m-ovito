@@ -101,7 +101,6 @@ bool LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNum
     // Write column names.
     for(size_t i = 0; i < columnWriter.columnCount(); i++) {
         const PropertyReference& pref = columnWriter.propertyRef(i);
-        bool isVectorProperty = columnWriter.property(i)->componentCount() != 1 || !columnWriter.property(i)->componentNames().empty();
         QString columnName;
         switch(pref.type()) {
         case ParticlesObject::PositionProperty:
@@ -151,7 +150,7 @@ bool LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNum
             else columnName = pref.nameWithComponent();
             break;
         default:
-            columnName = isVectorProperty ? pref.nameWithComponent() : pref.name();
+            columnName = columnWriter.isVectorProperty(i) ? pref.nameWithComponent() : pref.name();
             columnName.remove(QRegularExpression(QStringLiteral("[^A-Za-z\\d_]")));
         }
         textStream() << ' ' << columnName;
