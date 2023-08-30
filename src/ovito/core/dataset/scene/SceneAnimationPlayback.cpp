@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -92,7 +92,7 @@ void SceneAnimationPlayback::continuePlaybackAtFrame(int frame)
 
     // The following requires a valid execution context.
     if(!userInterface().handleExceptions([&] {
-    
+
         // Move time slider to the next animation frame and request preparation of the scene for display.
         scene()->animationSettings()->setCurrentFrame(frame);
 
@@ -187,7 +187,7 @@ void SceneAnimationPlayback::timerEvent(QTimerEvent* event)
                 userInterface().handleExceptions([&] {
                     scene()->animationSettings()->setCurrentFrame(newFrame);
                 });
-                stopAnimationPlayback();    
+                stopAnimationPlayback();
             }
         }
         else if(newFrame < anim->firstFrame()) {

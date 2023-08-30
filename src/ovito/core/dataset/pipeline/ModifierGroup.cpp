@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,7 +33,7 @@ SET_PROPERTY_FIELD_LABEL(ModifierGroup, isCollapsed, "Collapsed");
 /******************************************************************************
 * This is called from a ModifierApplication whenever it becomes a member of this group.
 ******************************************************************************/
-void ModifierGroup::registerModApp(ModifierApplication* modApp) 
+void ModifierGroup::registerModApp(ModifierApplication* modApp)
 {
     connect(modApp, &ModifierApplication::objectEvent, this, &ModifierGroup::modAppEvent, Qt::UniqueConnection);
     updateCombinedStatus();
@@ -43,7 +43,7 @@ void ModifierGroup::registerModApp(ModifierApplication* modApp)
 /******************************************************************************
 * This is called from a ModifierApplication whenever it is removed from this group.
 ******************************************************************************/
-void ModifierGroup::unregisterModApp(ModifierApplication* modApp) 
+void ModifierGroup::unregisterModApp(ModifierApplication* modApp)
 {
     disconnect(modApp, &ModifierApplication::objectEvent, this, &ModifierGroup::modAppEvent);
     updateCombinedStatus();
@@ -62,7 +62,7 @@ void ModifierGroup::modAppEvent(RefTarget* sender, const ReferenceEvent& event)
 }
 
 /******************************************************************************
-* This is called whenever one of the group's member modapps changes. 
+* This is called whenever one of the group's member modapps changes.
 * It computes the combined status of the entire group.
 ******************************************************************************/
 void ModifierGroup::updateCombinedStatus()
@@ -125,7 +125,7 @@ QVector<ModifierApplication*> ModifierGroup::modifierApplications() const
         }
 #endif
     }
-    
+
     return modApps;
 }
 

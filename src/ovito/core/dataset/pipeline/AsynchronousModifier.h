@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,17 +59,17 @@ public:
         virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) = 0;
 
         /// This method is called by the system whenever a parameter of the modifier changes.
-        /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be 
-        /// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true). 
+        /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be
+        /// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true).
         virtual bool modifierChanged(const PropertyFieldEvent& event) { return false; }
 
         /// This method is called by the system whenever the preliminary pipeline input changes.
-        /// The method should indicate to the caller whether the cached engine object can be 
-        /// kept around in a transient phase until a full evaluation is started (return true) or 
+        /// The method should indicate to the caller whether the cached engine object can be
+        /// kept around in a transient phase until a full evaluation is started (return true) or
         /// should rather be immediately discarded (return false).
         virtual bool pipelineInputChanged() { return true; }
 
-        /// Creates another engine that performs the next stage of the computation. 
+        /// Creates another engine that performs the next stage of the computation.
         virtual std::shared_ptr<Engine> createContinuationEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) { return {}; }
 
         /// Decides whether the computation is sufficiently short to perform
@@ -113,7 +113,7 @@ protected:
 
     /// Saves the class' contents to the given stream.
     virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
-    
+
     /// Loads the class' contents from the given stream.
     virtual void loadFromStream(ObjectLoadStream& stream) override;
 
@@ -123,7 +123,7 @@ protected:
     /// Creates a computation engine that will compute the modifier's results.
     virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) = 0;
 
-    /// This function is called from AsynchronousModifier::evaluateSynchronous() to apply the results from the last 
+    /// This function is called from AsynchronousModifier::evaluateSynchronous() to apply the results from the last
     /// asycnhronous compute engine during a synchronous pipeline evaluation.
     virtual bool applyCachedResultsSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state);
 };

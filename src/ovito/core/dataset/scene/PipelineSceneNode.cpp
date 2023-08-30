@@ -44,6 +44,7 @@ DEFINE_VECTOR_REFERENCE_FIELD(PipelineSceneNode, replacedVisElements);
 DEFINE_VECTOR_REFERENCE_FIELD(PipelineSceneNode, replacementVisElements);
 DEFINE_REFERENCE_FIELD(PipelineSceneNode, pipelineSource);
 DEFINE_PROPERTY_FIELD(PipelineSceneNode, pipelineTrajectoryCachingEnabled);
+DEFINE_PROPERTY_FIELD(PipelineSceneNode, preliminaryUpdatesEnabled);
 SET_PROPERTY_FIELD_LABEL(PipelineSceneNode, dataProvider, "Pipeline object");
 SET_PROPERTY_FIELD_LABEL(PipelineSceneNode, pipelineTrajectoryCachingEnabled, "Precompute all trajectory frames");
 SET_PROPERTY_FIELD_LABEL(PipelineSceneNode, pipelineSource, "Pipeline source");
@@ -55,7 +56,8 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(PipelineSceneNode, dataProvider, ReferenceEvent:
 PipelineSceneNode::PipelineSceneNode(ObjectInitializationFlags flags) : SceneNode(flags),
     _pipelineCache(this, false),
     _pipelineRenderingCache(this, true),
-    _pipelineTrajectoryCachingEnabled(false)
+    _pipelineTrajectoryCachingEnabled(false),
+    _preliminaryUpdatesEnabled(true)
 {
 }
 
@@ -196,14 +198,20 @@ bool PipelineSceneNode::referenceEvent(RefTarget* source, const ReferenceEvent& 
             return true;
         }
         else if(event.type() == ReferenceEvent::PreliminaryStateAvailable) {
-            // Invalidate the cache whenever the pipeline can provide a new preliminary state.
-            _pipelineCache.invalidateSynchronousState();
-            _pipelineRenderingCache.invalidateSynchronousState();
-            // Also recompute the cached bounding box of this scene node.
-            invalidateBoundingBox();
-            // Inform all vis elements that their input state has changed when the pipeline reports that a new preliminary output state is available.
-            for(DataVis* vis : visElements())
-                vis->notifyDependents(ReferenceEvent::PipelineInputChanged);
+            if(preliminaryUpdatesEnabled()) {
+                // Invalidate the cache whenever the pipeline can provide a new preliminary state.
+                _pipelineCache.invalidateSynchronousState();
+                _pipelineRenderingCache.invalidateSynchronousState();
+                // Also recompute the cached bounding box of this scene node.
+                invalidateBoundingBox();
+                // Inform all vis elements that their input state has changed when the pipeline reports that a new preliminary output state is available.
+                for(DataVis* vis : visElements())
+                    vis->notifyDependents(ReferenceEvent::PipelineInputChanged);
+            }
+            else {
+                // Do not forward signal to scene in order to suppress preliminary viewport updates.
+                return false;
+            }
         }
         else if(event.type() == ReferenceEvent::TargetEnabledOrDisabled) {
             // Inform vis elements that their input state has changed if the last pipeline stage was disabled.

@@ -39,13 +39,17 @@ namespace Ovito {
 class OVITO_CORE_EXPORT ViewportSuspender
 {
 public:
+
     ViewportSuspender(UserInterface& userInterface = ExecutionContext::current().ui()) noexcept : _ui(userInterface) {
         userInterface.suspendViewportUpdates();
     }
+
     ~ViewportSuspender() {
         _ui.resumeViewportUpdates();
     }
+
 private:
+
     UserInterface& _ui;
 };
 
@@ -56,20 +60,20 @@ class OVITO_CORE_EXPORT PreliminaryViewportUpdatesSuspender
 {
 public:
 
-    /// Suspends the automatic generation of animation keys by calling UserInterface::suspendPreliminaryViewportUpdates().
-    /// \param animSettings The animation settings object.
-    PreliminaryViewportUpdatesSuspender(UserInterface& userInterface) : _userInterface(userInterface) {
+    /// Calls UserInterface::suspendPreliminaryViewportUpdates().
+    PreliminaryViewportUpdatesSuspender(UserInterface& userInterface) : _userInterface(userInterface.weak_from_this()) {
         userInterface.suspendPreliminaryViewportUpdates();
     }
 
-    /// Resumes the automatic generation of animation keys by calling UserInterface::resumePreliminaryViewportUpdates().
+    /// Calls UserInterface::resumePreliminaryViewportUpdates().
     ~PreliminaryViewportUpdatesSuspender() {
-        _userInterface.resumePreliminaryViewportUpdates();
+        if(auto ui = _userInterface.lock())
+            ui->resumePreliminaryViewportUpdates();
     }
 
 private:
 
-    UserInterface& _userInterface;
+    std::weak_ptr<UserInterface> _userInterface;
 };
 
 }   // End of namespace
