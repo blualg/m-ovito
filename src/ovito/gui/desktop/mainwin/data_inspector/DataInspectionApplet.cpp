@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -269,53 +269,6 @@ bool DataInspectionApplet::selectDataObject(PipelineObject* dataSource, const QS
         }
     }
     return false;
-}
-
-/******************************************************************************
-* Handles key press events for this widget.
-******************************************************************************/
-void DataInspectionApplet::TableView::keyPressEvent(QKeyEvent* event)
-{
-    if(event->matches(QKeySequence::Copy)) {
-
-        QItemSelectionModel* selection = selectionModel();
-        QModelIndexList indices = selection->selectedIndexes();
-
-        if(indices.isEmpty())
-            return;
-
-        // QModelIndex::operator < sorts first by row, then by column. This is what we need.
-        std::sort(indices.begin(), indices.end());
-
-        int lastRow = indices.first().row();
-        int lastColumn = indices.first().column();
-
-        QString selectedText;
-        for(const QModelIndex& current : indices) {
-
-            if(current.row() != lastRow) {
-                selectedText += QLatin1Char('\n');
-                lastColumn = indices.first().column();
-                lastRow = current.row();
-            }
-
-            if(current.column() != lastColumn) {
-                for(int i = 0; i < current.column() - lastColumn; ++i)
-                    selectedText += QLatin1Char('\t');
-                lastColumn = current.column();
-            }
-
-            selectedText += model()->data(current).toString();
-        }
-
-        selectedText += QLatin1Char('\n');
-
-        QApplication::clipboard()->setText(selectedText);
-        event->accept();
-    }
-    else {
-        QTableView::keyPressEvent(event);
-    }
 }
 
 }   // End of namespace

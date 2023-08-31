@@ -26,6 +26,7 @@
 #include <ovito/core/viewport/ViewportWindowInterface.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/widgets/general/CopyableTableView.h>
 #include "DislocationInspectionApplet.h"
 
 namespace Ovito::CrystalAnalysis {
@@ -77,7 +78,7 @@ QWidget* DislocationInspectionApplet::createWidget()
         }
     });
 
-    _tableView = new TableView();
+    _tableView = new CopyableTableView();
     _tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
     _tableModel = new DislocationTableModel(_tableView);
     _tableView->setModel(_tableModel);

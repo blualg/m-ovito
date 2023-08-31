@@ -81,6 +81,7 @@ OVITO_STANDARD_PLUGIN(Gui
         widgets/general/ViewportModeButton.cpp
         widgets/general/StatusBar.cpp
         widgets/general/PopupUpdateComboBox.cpp
+        widgets/general/CopyableTableView.cpp
         widgets/animation/AnimationTimeSpinner.cpp
         widgets/animation/AnimationTimeSlider.cpp
         widgets/animation/AnimationTrackBar.cpp
@@ -134,7 +135,7 @@ OVITO_STANDARD_PLUGIN(Gui
     PLUGIN_DEPENDENCIES
         GuiBase
     LIB_DEPENDENCIES
-        Qt6::Widgets 
+        Qt6::Widgets
         Qt6::Network
     PRECOMPILED_HEADERS
         GUI.h

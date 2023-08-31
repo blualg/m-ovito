@@ -24,6 +24,7 @@
 #include <ovito/stdobj/properties/PropertyObject.h>
 #include <ovito/stdobj/properties/PropertyExpressionEvaluator.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
+#include <ovito/gui/desktop/widgets/general/CopyableTableView.h>
 #include <ovito/gui/desktop/mainwin/data_inspector/DataInspectorPanel.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "PropertyInspectionApplet.h"
@@ -47,8 +48,7 @@ void PropertyInspectionApplet::createBaseWidgets()
     connect(_resetFilterAction, &QAction::triggered, _filterExpressionEdit, &AutocompleteLineEdit::editingFinished);
     connect(_filterExpressionEdit, &AutocompleteLineEdit::editingFinished, this, &PropertyInspectionApplet::onFilterExpressionEntered);
 
-    _tableView = new TableView();
-    _tableView->setWordWrap(false);
+    _tableView = new CopyableTableView();
     _tableModel = new PropertyTableModel(this, _tableView);
     _filterModel = new PropertyFilterModel(this, _tableView);
     _filterModel->setSourceModel(_tableModel);

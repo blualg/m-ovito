@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -98,25 +98,6 @@ Q_SIGNALS:
 
     /// This signal is emitted when the user selects a different data object in the list.
     void currentObjectPathChanged(const QString& dataObjectPath);
-
-public:
-
-    /// A specialized QTableView widget, which allows copying the selected contents of the
-    /// table to the clipboard.
-    class OVITO_GUI_EXPORT TableView : public QTableView
-    {
-    public:
-
-        /// Constructor.
-        TableView(QWidget* parent = nullptr) : QTableView(parent) {
-            setWordWrap(false);
-        }
-
-    protected:
-
-        /// Handles key press events for this widget.
-        virtual void keyPressEvent(QKeyEvent* event) override;
-    };
 
 private:
 

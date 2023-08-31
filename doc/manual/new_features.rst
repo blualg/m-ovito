@@ -8,6 +8,7 @@ Changelog
 Version 3.9.2 (31-Aug-2023)
 ---------------------------
 
+* Support Ctrl+C copy to clipboard in table of distances, angles, and dislocations in the data inspector
 * Fix: Text label viewport layer accidentally disables 3d depth test in interactive viewports if used as an underlay
 * |ovito-pro| :py:meth:`~ovito.vis.Viewport.render_image` and :py:meth:`~ovito.vis.Viewport.render_anim` now raise exceptions in case an error occurs in any of the scene pipelines (can be changed via new parameter `stop_on_error`)
 * |ovito-pro| New class-based programming interface for custom viewport overlays: :py:class:`ovito.vis.ViewportOverlayInterface`

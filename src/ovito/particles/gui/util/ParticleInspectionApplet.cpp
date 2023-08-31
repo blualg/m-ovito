@@ -25,6 +25,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
 #include <ovito/gui/desktop/mainwin/data_inspector/DataInspectorPanel.h>
+#include <ovito/gui/desktop/widgets/general/CopyableTableView.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
@@ -84,7 +85,7 @@ QWidget* ParticleInspectionApplet::createWidget()
     layout->addWidget(splitter, 1, 0, 1, 2);
     layout->setRowStretch(1, 1);
 
-    _distanceTable = new QTableWidget(0, 3);
+    _distanceTable = new CopyableTableWidget(0, 3);
     _distanceTable->hide();
     _distanceTable->setHorizontalHeaderLabels(QStringList() << tr("Pair A-B") << tr("Distance") << tr("Vector"));
     _distanceTable->horizontalHeader()->setStretchLastSection(true);
@@ -92,7 +93,7 @@ QWidget* ParticleInspectionApplet::createWidget()
     _distanceTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     splitter->addWidget(_distanceTable);
 
-    _angleTable = new QTableWidget(0, 2);
+    _angleTable = new CopyableTableWidget(0, 2);
     _angleTable->hide();
     _angleTable->setHorizontalHeaderLabels(QStringList() << tr("Triplet A-B-C") << tr("Angle"));
     _angleTable->horizontalHeader()->setStretchLastSection(true);

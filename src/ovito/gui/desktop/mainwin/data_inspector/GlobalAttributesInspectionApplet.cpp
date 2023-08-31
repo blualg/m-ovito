@@ -26,6 +26,7 @@
 #include <ovito/core/dataset/io/AttributeFileExporter.h>
 #include <ovito/gui/desktop/dialogs/FileExporterSettingsDialog.h>
 #include <ovito/gui/desktop/dialogs/HistoryFileDialog.h>
+#include <ovito/gui/desktop/widgets/general/CopyableTableView.h>
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "GlobalAttributesInspectionApplet.h"
@@ -63,7 +64,7 @@ QWidget* GlobalAttributesInspectionApplet::createWidget()
     connect(exportToFileAction, &QAction::triggered, this, &GlobalAttributesInspectionApplet::exportToFile);
     toolbar->addAction(exportToFileAction);
 
-    _tableView = new TableView();
+    _tableView = new CopyableTableView();
     _tableModel = new AttributeTableModel(_tableView);
     _tableView->setModel(_tableModel);
     _tableView->verticalHeader()->hide();
