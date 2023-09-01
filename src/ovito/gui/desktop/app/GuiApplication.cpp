@@ -406,12 +406,9 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
             });
         }
         else {
-            try {
+            handleExceptions([&] {
                 MainWindow::openNewWindow({openEvent->file()});
-            }
-            catch(const Exception& ex) {
-                reportError(ex);
-            }
+            });
         }
     }
     return StandaloneApplication::eventFilter(watched, event);
