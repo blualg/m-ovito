@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -113,6 +113,9 @@ public:
 
     /// \brief Specifies the standard value that, if the spinner is set to this special value, should be highlighted in the input field.
     void setStandardValue(FloatType value);
+
+    /// \brief Clears the standard value.
+    void unsetStandardValue() { setStandardValue(std::numeric_limits<FloatType>::quiet_NaN()); }
 
     /// \brief Returns the units of this spinner's value.
     /// \return The parameter unit object that performs the conversion from native units
