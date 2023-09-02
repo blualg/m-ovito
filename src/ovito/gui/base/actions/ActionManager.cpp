@@ -47,17 +47,17 @@ ActionManager::ActionManager(QObject* parent, UserInterface& userInterface) : QA
     connect(&userInterface.datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &ActionManager::onViewportConfigurationReplaced);
 
     createCommandAction(ACTION_QUIT, tr("Quit"), "file_quit", tr("Quit the application."));
-    createCommandAction(ACTION_FILE_OPEN, tr("Load Session State"), "file_open", tr("Load a previously saved session from a file."), QKeySequence::Open);
+    createCommandAction(ACTION_FILE_OPEN, tr("Load Session State..."), "file_open", tr("Load a previously saved session from a file."), QKeySequence::Open);
     createCommandAction(ACTION_FILE_SAVE, tr("Save Session State"), "file_save", tr("Save the current program session to a file."), QKeySequence::Save);
-    createCommandAction(ACTION_FILE_SAVEAS, tr("Save Session State As"), "file_save_as", tr("Save the current program session to a new file."), QKeySequence::SaveAs);
-    createCommandAction(ACTION_FILE_IMPORT, tr("Load File"), "file_import", tr("Import data from a file on this computer."), Qt::Key_I | Qt::CTRL);
+    createCommandAction(ACTION_FILE_SAVEAS, tr("Save Session State As..."), "file_save_as", tr("Save the current program session to a new file."), QKeySequence::SaveAs);
+    createCommandAction(ACTION_FILE_IMPORT, tr("Load File..."), "file_import", tr("Import data from a file on this computer."), Qt::Key_I | Qt::CTRL);
     createCommandAction(ACTION_FILE_REMOTE_IMPORT, tr("Load Remote File"), "file_import_remote", tr("Import a file from a remote location."), Qt::Key_I | Qt::CTRL | Qt::SHIFT);
-    createCommandAction(ACTION_FILE_EXPORT, tr("Export File"), "file_export", tr("Export data to a file."), Qt::Key_E | Qt::CTRL);
+    createCommandAction(ACTION_FILE_EXPORT, tr("Export File..."), "file_export", tr("Export data to a file."), Qt::Key_E | Qt::CTRL);
     createCommandAction(ACTION_FILE_NEW_WINDOW, tr("New Program Window"), "file_new_window", tr("Open another OVITO program window."), QKeySequence::New);
     createCommandAction(ACTION_HELP_ABOUT, tr("About OVITO"), "application_about", tr("Show information about this software."));
-    createCommandAction(ACTION_HELP_SHOW_ONLINE_HELP, tr("User Manual"), "help_user_manual", tr("Open the user manual."), QKeySequence::HelpContents);
-    createCommandAction(ACTION_HELP_SHOW_SCRIPTING_HELP, tr("Scripting Reference"), "help_scripting_manual", tr("Open the Python API documentation."));
-    createCommandAction(ACTION_HELP_GRAPHICS_SYSINFO, tr("System Information"), "help_system_info", tr("Display system and graphics hardware information."));
+    createCommandAction(ACTION_HELP_SHOW_ONLINE_HELP, tr("User Manual"), "help_user_manual", tr("Open the OVITO user manual."), QKeySequence::HelpContents);
+    createCommandAction(ACTION_HELP_SHOW_SCRIPTING_HELP, tr("Scripting Reference"), "help_scripting_manual", tr("Open the OVITO Python API documentation."));
+    createCommandAction(ACTION_HELP_GRAPHICS_SYSINFO, tr("System Information..."), "help_system_info", tr("Display system and graphics hardware information."));
 
     QAction* undoAction = createCommandAction(ACTION_EDIT_UNDO, tr("Undo"), "edit_undo", tr("Reverse the last action."), QKeySequence::Undo);
     QAction* redoAction = createCommandAction(ACTION_EDIT_REDO, tr("Redo"), "edit_redo", tr("Restore the previously reversed action."), QKeySequence::Redo);
