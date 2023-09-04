@@ -168,8 +168,8 @@ void SpinnerWidget::setIntValue(int newValInt, bool emitChangeSignal)
     if(newVal == _value) return;
     // Clamp value if it was entered by the user.
     if(emitChangeSignal) {
-        newVal = std::max((FloatType)ceil(minValue()), newVal);
-        newVal = std::min((FloatType)floor(maxValue()), newVal);
+        newVal = std::max((FloatType)std::ceil(minValue()), newVal);
+        newVal = std::min((FloatType)std::floor(maxValue()), newVal);
     }
     if(_value != newVal) {
         _value = newVal;

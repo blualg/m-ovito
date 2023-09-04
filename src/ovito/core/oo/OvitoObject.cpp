@@ -39,6 +39,9 @@ OvitoObject::~OvitoObject()
     OVITO_CHECK_OBJECT_POINTER(this);
     OVITO_ASSERT_MSG(objectReferenceCount() == 0, "~OvitoObject()", "Destroying an object whose reference counter is non-zero.");
     _magicAliveCode = 0xFEDCBA87;
+#ifdef OVITO_DEBUG
+    _isBeingDestructed = true;
+#endif
 }
 #endif
 
@@ -66,6 +69,9 @@ void OvitoObject::deleteObjectInternal() noexcept
     // original value (no new references).
     OVITO_ASSERT(_referenceCount.load() == INVALID_REFERENCE_COUNT);
     _referenceCount.store(0);
+#ifdef OVITO_DEBUG
+    _isBeingDestructed = true;
+#endif
 
     // Delete the object itself.
     delete this;
