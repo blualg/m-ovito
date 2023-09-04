@@ -157,6 +157,8 @@ namespace Ovito {
 /// This actions lets the user generate script code from the selected data pipeline.
 #define ACTION_SCRIPTING_GENERATE_CODE      "ScriptingGenerateCode"
 
+#define ACTION_REMOTE_RENDERING "RemoteRendering"
+
 /// This action adds a new pipeline to the scene with a FileSource.
 #define ACTION_NEW_PIPELINE_FILESOURCE      "NewPipeline.FileSource"
 /// This action adds a new pipeline to the scene with a PythonScriptSource.

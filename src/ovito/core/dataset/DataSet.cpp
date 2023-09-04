@@ -34,8 +34,10 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS(DataSet);
 DEFINE_REFERENCE_FIELD(DataSet, viewportConfig);
 DEFINE_REFERENCE_FIELD(DataSet, renderSettings);
+DEFINE_VECTOR_REFERENCE_FIELD(DataSet, globalObjects);
 SET_PROPERTY_FIELD_LABEL(DataSet, viewportConfig, "Viewport Configuration");
 SET_PROPERTY_FIELD_LABEL(DataSet, renderSettings, "Render Settings");
+SET_PROPERTY_FIELD_LABEL(DataSet, globalObjects, "Global objects");
 
 /******************************************************************************
 * Constructor.
