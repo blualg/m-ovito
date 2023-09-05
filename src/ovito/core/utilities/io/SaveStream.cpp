@@ -178,6 +178,11 @@ SaveStream& operator<<(SaveStream& stream, const QUrl& url)
 {
     // Write original URL to stream.
     stream.writeValue(url, std::false_type());
+
+    if(stream.urlList()) {
+        stream.urlList()->push_back(url);
+    }
+
     // Additionally write the path relative to current output file to stream.
     // Currently this only works if the file referenced by the URL is in the same directory as the stream destination file.
     QString relativePath;

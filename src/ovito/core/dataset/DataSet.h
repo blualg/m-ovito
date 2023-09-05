@@ -104,6 +104,10 @@ public:
     /// Note that this method does NOT invoke setFilePath().
     void saveToFile(const QString& filePath) const;
 
+    /// Exports all file URLs in the dataset into urlList.
+    /// \throw Exception on error.
+    void exportFileUrls(std::vector<QUrl>* urlList) const;
+
     /// \brief Loads the dataset contents from a session state file.
     /// \throw Exception on error.
     ///

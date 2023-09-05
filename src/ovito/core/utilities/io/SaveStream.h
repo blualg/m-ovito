@@ -79,6 +79,17 @@ public:
     /// \sa close()
     bool isOpen() const { return _isOpen; }
 
+    // Set urlList pointer
+    void setUrlList(std::vector<QUrl>* urlList)
+    {
+        auto x = 1;
+        _urlList = urlList;
+    }
+    // Reset urlList pointer to nullptr
+    void resetUrlList() { _urlList = nullptr; }
+    // Access urlList pointer
+    std::vector<QUrl>* urlList() { return _urlList; }
+
     /// \brief Writes an array of raw bytes to the output stream.
     /// \param buffer A pointer to the beginning of the data.
     /// \param numBytes The number of bytes to be written.
@@ -164,6 +175,9 @@ private:
 
     /// Maps pointers to IDs.
     std::map<void*, quint64> _pointerMap;
+
+    /// Pointer to the array collecting the file paths
+    std::vector<QUrl>* _urlList = nullptr;
 };
 
 /// \brief Writes a value to a SaveStream.
