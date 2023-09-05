@@ -179,8 +179,8 @@ SaveStream& operator<<(SaveStream& stream, const QUrl& url)
     // Write original URL to stream.
     stream.writeValue(url, std::false_type());
 
-    if(stream.urlList()) {
-        stream.urlList()->push_back(url);
+    if(stream.urlCallback()) {
+        std::invoke(stream.urlCallback().value(), url);
     }
 
     // Additionally write the path relative to current output file to stream.

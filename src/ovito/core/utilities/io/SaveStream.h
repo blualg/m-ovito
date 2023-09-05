@@ -79,16 +79,10 @@ public:
     /// \sa close()
     bool isOpen() const { return _isOpen; }
 
-    // Set urlList pointer
-    void setUrlList(std::vector<QUrl>* urlList)
-    {
-        auto x = 1;
-        _urlList = urlList;
-    }
-    // Reset urlList pointer to nullptr
-    void resetUrlList() { _urlList = nullptr; }
-    // Access urlList pointer
-    std::vector<QUrl>* urlList() { return _urlList; }
+    // set url callback function
+    void setUrlCallback(std::function<void(const QUrl& url)>&& urlCallback) { _urlCallback = std::move(urlCallback); }
+    // Access (optional) url callback function
+    const std::optional<std::function<void(const QUrl& url)>>& urlCallback() { return _urlCallback; }
 
     /// \brief Writes an array of raw bytes to the output stream.
     /// \param buffer A pointer to the beginning of the data.
@@ -141,29 +135,30 @@ public:
     QDataStream& dataStream() { return _os; }
 
 private:
-
     /// Checks the status of the underlying output stream and throws an exception if an error has occurred.
     void checkErrorCondition();
 
     /// Writes a C++ enum to the stream.
-    template<typename T>
-    void writeValue(T enumValue, const std::true_type&) {
+    template <typename T>
+    void writeValue(T enumValue, const std::true_type&)
+    {
         dataStream() << (qint32)enumValue;
         checkErrorCondition();
     }
 
     /// Writes a non-enum to the stream.
-    template<typename T>
-    void writeValue(T v, const std::false_type&) {
+    template <typename T>
+    void writeValue(T v, const std::false_type&)
+    {
         dataStream() << v;
         checkErrorCondition();
     }
 
-    template<typename T> friend SaveStream& operator<<(SaveStream& stream, const T& v);
+    template <typename T>
+    friend SaveStream& operator<<(SaveStream& stream, const T& v);
     friend OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const QUrl& url);
 
 private:
-
     /// Indicates the output stream is still open.
     bool _isOpen = false;
 
@@ -176,8 +171,8 @@ private:
     /// Maps pointers to IDs.
     std::map<void*, quint64> _pointerMap;
 
-    /// Pointer to the array collecting the file paths
-    std::vector<QUrl>* _urlList = nullptr;
+    /// Callback to the RemoteExportSettings method to collect file paths
+    std::optional<std::function<void(const QUrl& url)>> _urlCallback = {};
 };
 
 /// \brief Writes a value to a SaveStream.

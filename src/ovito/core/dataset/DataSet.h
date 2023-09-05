@@ -106,7 +106,7 @@ public:
 
     /// Exports all file URLs in the dataset into urlList.
     /// \throw Exception on error.
-    void exportFileUrls(std::vector<QUrl>* urlList) const;
+    void exportFileUrls(std::function<void(const QUrl& url)>&& urlCallback) const;
 
     /// \brief Loads the dataset contents from a session state file.
     /// \throw Exception on error.

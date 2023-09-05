@@ -202,7 +202,7 @@ void DataSet::saveToFile(const QString& filePath) const
     fileStream.close();
 }
 
-void DataSet::exportFileUrls(std::vector<QUrl>* urlList) const
+void DataSet::exportFileUrls(std::function<void(const QUrl& url)>&& urlCallback) const
 {
     // Prepare memory buffer to store the file to
     // TODO: write file to QProcess::nullDevice() instead. Currently not possible as QProcess::nullDevice()
@@ -213,7 +213,8 @@ void DataSet::exportFileUrls(std::vector<QUrl>* urlList) const
 
     QDataStream dataStream(&buffer);
     ObjectSaveStream stream(dataStream);
-    stream.setUrlList(urlList);
+    // stream.setUrlList(urlList);
+    stream.setUrlCallback(std::move(urlCallback));
     stream.saveObject(this);
 
     stream.close();
