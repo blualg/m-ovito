@@ -115,7 +115,7 @@ void CFGHeader::parse(CompressedTextReader& stream)
         string value = line.substr(valuestart);
 
         if(key == "Number of particles") {
-            if(sscanf(value.c_str(), "%lld", &numParticles) != 1 || numParticles < 0 || numParticles > 100'000'000'000ll)
+            if(sscanf(value.c_str(), SCNd64, &numParticles) != 1 || numParticles < 0 || numParticles > 100'000'000'000ll)
                 throw Exception(CFGImporter::tr("CFG file parsing error. Invalid number of atoms (line %1): %2").arg(stream.lineNumber()).arg(QString::fromStdString(value)));
         }
         else if(key == "A") unitMultiplier = atof(value.c_str());

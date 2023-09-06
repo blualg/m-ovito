@@ -574,7 +574,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 }
 
                 // Parse atom ids.
-                if(sscanf(line, "%llu %llu %llu", &(*angle)[0], &(*angle)[1], &(*angle)[2]) != 3)
+                if(sscanf(line, SCNd64 " " SCNd64 " " SCNd64, &(*angle)[0], &(*angle)[1], &(*angle)[2]) != 3)
                     throw Exception(tr("Invalid angle specification (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
 
                 for(auto& idx : *angle) {
@@ -636,7 +636,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 }
 
                 // Parse atom ids.
-                if(sscanf(line, "%llu %llu %llu %llu", &(*dihedral)[0], &(*dihedral)[1], &(*dihedral)[2], &(*dihedral)[3]) != 4)
+                if(sscanf(line, SCNd64 " " SCNd64 " " SCNd64 " " SCNd64, &(*dihedral)[0], &(*dihedral)[1], &(*dihedral)[2], &(*dihedral)[3]) != 4)
                     throw Exception(tr("Invalid dihedral specification (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
 
                 for(auto& idx : *dihedral) {
@@ -698,7 +698,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 }
 
                 // Parse atom ids.
-                if(sscanf(line, "%llu %llu %llu %llu", &(*improper)[0], &(*improper)[1], &(*improper)[2], &(*improper)[3]) != 4)
+                if(sscanf(line, SCNd64 " " SCNd64 " " SCNd64 " " SCNd64, &(*improper)[0], &(*improper)[1], &(*improper)[2], &(*improper)[3]) != 4)
                     throw Exception(tr("Invalid improper specification (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
 
                 for(auto& idx : *improper) {
