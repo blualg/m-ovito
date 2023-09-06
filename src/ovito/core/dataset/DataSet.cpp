@@ -202,25 +202,6 @@ void DataSet::saveToFile(const QString& filePath) const
     fileStream.close();
 }
 
-void DataSet::exportFileUrls(std::function<void(const QUrl& url)>&& urlCallback) const
-{
-    // Prepare memory buffer to store the file to
-    // TODO: write file to QProcess::nullDevice() instead. Currently not possible as QProcess::nullDevice()
-    //       is not sequential. Further changes to SaveStream are neccessary.
-    QBuffer buffer;
-    buffer.buffer().reserve(256 * 1024);  // pre-allcate 256 kB
-    buffer.open(QIODevice::WriteOnly);
-
-    QDataStream dataStream(&buffer);
-    ObjectSaveStream stream(dataStream);
-    // stream.setUrlList(urlList);
-    stream.setUrlCallback(std::move(urlCallback));
-    stream.saveObject(this);
-
-    stream.close();
-    buffer.close();
-}
-
 /******************************************************************************
 * Loads the dataset's contents from a session state file.
 ******************************************************************************/

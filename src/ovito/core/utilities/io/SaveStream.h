@@ -80,9 +80,9 @@ public:
     bool isOpen() const { return _isOpen; }
 
     // set url callback function
-    void setUrlCallback(std::function<void(const QUrl& url)>&& urlCallback) { _urlCallback = std::move(urlCallback); }
+    void setUrlCallback(std::function<const QString*(const QUrl& url)>&& urlCallback) { _urlCallback = std::move(urlCallback); }
     // Access (optional) url callback function
-    const std::optional<std::function<void(const QUrl& url)>>& urlCallback() { return _urlCallback; }
+    const std::function<const QString*(const QUrl& url)>& urlCallback() { return _urlCallback; }
 
     /// \brief Writes an array of raw bytes to the output stream.
     /// \param buffer A pointer to the beginning of the data.
@@ -172,7 +172,7 @@ private:
     std::map<void*, quint64> _pointerMap;
 
     /// Callback to the RemoteExportSettings method to collect file paths
-    std::optional<std::function<void(const QUrl& url)>> _urlCallback = {};
+    std::function<const QString*(const QUrl& url)> _urlCallback = nullptr;
 };
 
 /// \brief Writes a value to a SaveStream.
