@@ -265,6 +265,10 @@ LoadStream& operator>>(LoadStream& stream, QUrl& url)
     // Additionally load the relative path.
     QString relativePath;
     stream >> relativePath;
+
+    qDebug() << "Loading:"
+             << "Absolute path" << url << "relative path" << relativePath;
+
     // Resolve relative path against path of current input file.
     if(!relativePath.isEmpty() && url.isLocalFile()) {
         if(QFileDevice* fileDevice = qobject_cast<QFileDevice*>(stream.dataStream().device())) {
@@ -276,6 +280,9 @@ LoadStream& operator>>(LoadStream& stream, QUrl& url)
             }
         }
     }
+
+    qDebug() << "Loading:"
+             << "Accepted URL" << url;
 
     return stream;
 }

@@ -176,25 +176,40 @@ SaveStream& operator<<(SaveStream& stream, const OvitoClassPtr& clazz)
 ******************************************************************************/
 SaveStream& operator<<(SaveStream& stream, const QUrl& url)
 {
-    // Write original URL to stream.
-    stream.writeValue(url, std::false_type());
-
+    const QString* newPath = nullptr;
     if(stream.urlCallback()) {
-        std::invoke(stream.urlCallback(), url);
+        newPath = std::invoke(stream.urlCallback(), url);
     }
 
-    // Additionally write the path relative to current output file to stream.
-    // Currently this only works if the file referenced by the URL is in the same directory as the stream destination file.
     QString relativePath;
-    if(url.isLocalFile() && !url.isRelative()) {
-        // Extract relative portion of path (only if both the scene file path and the external file path are absolute).
+    if(newPath) {
+        QUrl newPathUrl;
+        // Path adjusted from the remote export settings callback
+        newPathUrl = QUrl::fromLocalFile(QString("%1/%2").arg(*newPath).arg(url.fileName()));
+        stream.writeValue(newPathUrl, std::false_type());
+
+        // Extract relative portion of path
         if(QFileDevice* fileDevice = qobject_cast<QFileDevice*>(stream.dataStream().device())) {
             QFileInfo streamFile(fileDevice->fileName());
-            if(streamFile.isAbsolute()) {
-                relativePath = streamFile.dir().relativeFilePath(url.toLocalFile());
+            relativePath = streamFile.dir().relativeFilePath(newPathUrl.toLocalFile());
+        }
+    }
+    else {
+        // Write original URL to stream.
+        stream.writeValue(url, std::false_type());
+        // Additionally write the path relative to current output file to stream.
+        // Currently this only works if the file referenced by the URL is in the same directory as the stream destination file.
+        if(url.isLocalFile() && !url.isRelative()) {
+            // Extract relative portion of path (only if both the scene file path and the external file path are absolute).
+            if(QFileDevice* fileDevice = qobject_cast<QFileDevice*>(stream.dataStream().device())) {
+                QFileInfo streamFile(fileDevice->fileName());
+                if(streamFile.isAbsolute()) {
+                    relativePath = streamFile.dir().relativeFilePath(url.toLocalFile());
+                }
             }
         }
     }
+
     stream << relativePath;
     return stream;
 }
