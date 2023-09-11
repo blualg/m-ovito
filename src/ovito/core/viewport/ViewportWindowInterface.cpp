@@ -172,7 +172,10 @@ void ViewportWindowInterface::renderRenderFrame(SceneRenderer* renderer)
     static QImage image;
     if(image.isNull()) {
         image = QImage(1, 1, renderer->preferredImageFormat());
-        image.fill(0xA0A0A0A0);
+        if(image.format() == QImage::Format_RGBA8888 || image.format() == QImage::Format_ARGB32)
+            image.fill(0xA0A0A0A0);
+        else
+            image.fill(QColor(0xA0, 0xA0, 0xA0, 0xA0));
     }
 
     // Fill area around frame rectangle with semi-transparent color.
