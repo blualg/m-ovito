@@ -93,6 +93,7 @@ BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport& vp, MainWindo
 #endif
             break;
         }
+#ifdef OVITO_BUILD_PROFESSIONAL
         else if(qstrcmp(metaType->className(), "Ovito::AnariViewportWindow") == 0 && settings.value("rendering/selected_graphics_api").toString() == "Anari") {
             viewportImplementation = metaType;
 #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
@@ -100,6 +101,7 @@ BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport& vp, MainWindo
 #endif
             break;
         }
+#endif
     }
 
     if(viewportImplementation) {
