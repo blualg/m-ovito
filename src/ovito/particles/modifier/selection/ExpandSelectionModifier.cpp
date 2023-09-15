@@ -215,6 +215,9 @@ void ExpandSelectionModifier::ExpandSelectionEngine::applyResults(const Modifier
     // Output the selection property.
     particles->createProperty(outputSelection());
 
+    // Report the number of newly selected particles as a pipeline attribute.
+    state.addAttribute(QStringLiteral("ExpandSelection.num_added"), QVariant::fromValue(numSelectedParticlesOutput() - numSelectedParticlesInput()), request.modApp());
+
     QString msg = tr("Added %1 particles to selection.\n"
             "Old selection count was: %2\n"
             "New selection count is: %3")
