@@ -172,6 +172,22 @@ The table lists the licenses of the included components and, if they are used un
     - :ref:`license <appendix.license.libsodium>`
     -
 
+  * - `The Khronos Group ANARI SDK <https://github.com/KhronosGroup/ANARI-SDK>`__
+    - Apache 2.0
+    -
+
+  * - `NVIDIA VisRTX <https://github.com/NVIDIA/VisRTX/>`__
+    - :ref:`license <appendix.license.VisRTX>`
+    -
+
+  * - `NVIDIA OptiX <https://developer.nvidia.com/rtx/ray-tracing/optix>`__
+    - NVIDIA Software Developer Kits, Samples and Tools License Agreement
+    -
+
+  * - `OpenGL Mathematics (GLM) <https://github.com/g-truc/glm>`__
+    - :ref:`license <appendix.license.GLM>`
+    -
+
 .. toctree::
   :hidden:
 
@@ -202,3 +218,5 @@ The table lists the licenses of the included components and, if they are used un
   vma
   traits
   libsodium
+  visrtx
+  glm
