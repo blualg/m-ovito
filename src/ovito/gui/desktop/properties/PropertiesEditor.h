@@ -26,8 +26,8 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/widgets/general/RolloutContainer.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/utilities/DeferredMethodInvocation.h>
 #include <ovito/core/oo/RefTarget.h>
-#include <ovito/core/utilities/DeferredMethodInvocation.h>
 #include "PropertiesPanel.h"
 
 namespace Ovito {
