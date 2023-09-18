@@ -477,9 +477,9 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::requestFrameList(bo
     // Forward request to the importer object.
     // Intercept future results when they become available and cache them.
     _framesListFuture = importer()->discoverFrames(sourceUrls())
-        // Note that execution of the following continuation function is explicitly deferred to a later time,
+        // Note that storing the frames list in this FileSource is explicitly deferred to some later time,
         // because setListOfFrames() generates a TargetChanged event, which is not allowed during
-        // a synchronous call to the pipeline evaulation function.
+        // a synchronous call to the pipeline evaluation function.
         .then(ObjectExecutor(this, true), [this](QVector<FileSourceImporter::Frame>&& frameList) {
             // Store the new list of frames in the FileSource.
             setListOfFrames(frameList);

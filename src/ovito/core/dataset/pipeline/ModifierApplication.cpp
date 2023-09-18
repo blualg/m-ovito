@@ -234,7 +234,7 @@ void ModifierApplication::referenceReplaced(const PropertyFieldDescriptor* field
 /******************************************************************************
 * Sends an event to all dependents of this RefTarget.
 ******************************************************************************/
-void ModifierApplication::notifyDependentsImpl(const ReferenceEvent& event)
+void ModifierApplication::notifyDependentsImpl(const ReferenceEvent& event) noexcept
 {
     if(event.type() == ReferenceEvent::TargetChanged) {
         // Invalidate cached results when this modifier application or the modifier changes.

@@ -61,7 +61,7 @@ protected:
 
     /// \brief Sends an event to all dependents of this RefTarget.
     /// \param event The notification event to be sent to all dependents of this RefTarget.
-    virtual void notifyDependentsImpl(const ReferenceEvent& event);
+    virtual void notifyDependentsImpl(const ReferenceEvent& event) noexcept;
 
     /// \brief Is called when the value of a reference field of this RefMaker changes.
     /// \param field Specifies the reference field of this RefMaker that has been changed.
@@ -166,7 +166,7 @@ public:
 
     /// \brief Sends an event to all dependents of this RefTarget.
     /// \param eventType The event type passed to the ReferenceEvent constructor.
-    inline void notifyDependents(ReferenceEvent::Type eventType) const {
+    inline void notifyDependents(ReferenceEvent::Type eventType) const noexcept {
         OVITO_ASSERT(eventType != ReferenceEvent::TargetChanged);
         OVITO_ASSERT(eventType != ReferenceEvent::ReferenceChanged);
         OVITO_ASSERT(eventType != ReferenceEvent::ReferenceAdded);
@@ -177,13 +177,13 @@ public:
     }
 
     /// \brief Sends a ReferenceEvent::TargetChanged event to all dependents of this RefTarget.
-    inline void notifyTargetChanged(const PropertyFieldDescriptor* field = nullptr) const {
+    inline void notifyTargetChanged(const PropertyFieldDescriptor* field = nullptr) const noexcept {
         const_cast<RefTarget*>(this)->notifyDependentsImpl(TargetChangedEvent(const_cast<RefTarget*>(this), field));
     }
 
     /// \brief Notifies the dependents that this object's state has changed outside of the given animation time interval
     ///        but remained the same within the interval.
-    inline void notifyTargetChangedOutsideInterval(const TimeInterval& interval) const {
+    inline void notifyTargetChangedOutsideInterval(const TimeInterval& interval) const noexcept {
         const_cast<RefTarget*>(this)->notifyDependentsImpl(TargetChangedEvent(const_cast<RefTarget*>(this), nullptr, interval));
     }
 

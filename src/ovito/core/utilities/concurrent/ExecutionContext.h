@@ -69,6 +69,12 @@ public:
         return *_ui;
     }
 
+    /// Executes the given function at some later time in this execution context
+    /// unless the given object is destroyed in the meantime or the user interface
+    /// associated with the execution context is shut down.
+    template<typename Function>
+    void runDeferred(QPointer<const QObject>&& obj, Function&& f) const;
+
 private:
 
     Type _type = Type::None;
@@ -117,6 +123,15 @@ inline ExecutionContext::ExecutionContext(Type type, std::shared_ptr<UserInterfa
 {
     OVITO_ASSERT(isValid());
     OVITO_ASSERT(_ui);
+}
+
+/// Executes the given function at some later time in this execution context
+/// unless the given object is destroyed in the meantime or the user interface
+/// associated with the execution context is shut down.
+template<typename Function>
+inline void ExecutionContext::runDeferred(QPointer<const QObject>&& obj, Function&& f) const
+{
+    ui().runDeferred(std::move(obj), std::forward<Function>(f), type() == Type::Scripting);
 }
 
 }   // End of namespace

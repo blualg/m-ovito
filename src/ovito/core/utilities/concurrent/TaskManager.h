@@ -68,18 +68,18 @@ public:
     /// \sa PromiseBase::task()
     void registerPromise(const PromiseBase& promise);
 
-    /// \brief Registers a Task with the TaskManager, which will subsequently track the progress of the associated operation.
+    /// Registers a Task with the TaskManager, which will subsequently track the progress of the associated operation.
     /// \note This function is thread-safe.
     void registerTask(const TaskPtr& task);
 
-    /// \brief Registers a Task with the TaskManager, which will subsequently track the progress of the associated operation.
+    /// Registers a Task with the TaskManager, which will subsequently track the progress of the associated operation.
     /// \note This function is thread-safe.
     void registerTask(Task& task);
 
-    /// \brief Returns whether printing of task status messages to the console is currently enabled.
+    /// Returns whether printing of task status messages to the console is currently enabled.
     bool consoleLoggingEnabled() const { return _consoleLoggingEnabled; }
 
-    /// \brief Enables or disables printing of task status messages to the console for this task manager.
+    /// Enables or disables printing of task status messages to the console for this task manager.
     void setConsoleLoggingEnabled(bool enabled);
 
     /// Indicates whether the session is in the processing of shutting down.

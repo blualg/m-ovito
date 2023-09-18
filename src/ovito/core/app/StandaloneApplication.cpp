@@ -165,7 +165,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
         }
 
         // Complete the startup process by calling postStartupInitialization() once the main event loop is running.
-        ObjectExecutor(this, true).execute([this, promise=Promise<>(std::move(startupOperation))]() {
+        ObjectExecutor(this, true).execute([this, promise=Promise<>(std::move(startupOperation))]() noexcept {
             OVITO_ASSERT(ExecutionContext::current().isValid());
             Task::Scope taskScope(promise.task());
             try {

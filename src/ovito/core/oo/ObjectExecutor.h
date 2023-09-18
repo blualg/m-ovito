@@ -29,55 +29,6 @@
 
 namespace Ovito {
 
-namespace detail {
-
-/// Helper class that is used by this executor to transmit a callable
-/// to the UI thread where it gets executed in the context of some object.
-template<typename Function>
-class ObjectExecutorWorkEvent : public QEvent
-{
-public:
-
-    /// Constructor.
-    explicit ObjectExecutorWorkEvent(QEvent::Type eventType, QPointer<const QObject>&& obj, ExecutionContext context, std::decay_t<Function>&& f) :
-        QEvent(eventType),
-        _executionContext(std::move(context)),
-        _callable(std::move(f)) {
-            OVITO_ASSERT(_executionContext.isValid());
-            _obj.swap(obj);
-        }
-
-    /// Event destructor, which runs the work function.
-    virtual ~ObjectExecutorWorkEvent() {
-        // Qt should be destroying event objects only in the main thread.
-        OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
-
-        // Execute work only if the context object still exists and the application is not shutting down.
-        // Otherwise, silently cancel the work (but still run the destructor of the callable).
-        if(object() && !QCoreApplication::closingDown()) {
-            // Activate the execution context to which the work was submitted.
-            ExecutionContext::Scope execScope(std::move(_executionContext));
-
-            // Undo recording may still be active if the GUI is currently performing a extended user operation (e.g. Animation Settings dialog).
-            // While the asynchronous work is being performed, undo recording should be suspended.
-            UndoSuspender noUndo;
-
-            // Execute the work function.
-            std::invoke(std::move(_callable));
-        }
-    }
-
-    /// Returns the object the work has been submitted to.
-    const QObject* object() const { return _obj.data(); }
-
-private:
-    QPointer<const QObject> _obj;
-    ExecutionContext _executionContext;
-    std::decay_t<Function> _callable;
-};
-
-} // End of namespace
-
 /**
  * \brief An executor that can be used with Future<>::then(), which runs the closure
  *        routine in the context (and in the thread) of some QObject.
@@ -91,7 +42,9 @@ public:
             _obj(obj),
             _deferredExecution(deferredExecution) {
         OVITO_ASSERT(obj);
+#ifndef OVITO_NO_EVENT_LOOP
         OVITO_ASSERT(!QCoreApplication::instance() || obj->thread() == QCoreApplication::instance()->thread());
+#endif
     }
 
     /// Creates some work that can be submitted for execution later.
@@ -100,11 +53,15 @@ public:
         OVITO_ASSERT(ExecutionContext::current().isValid());
         // Note: Avoiding the use of C++17 capture this-by-copy here, because it is not fully supported by the MSVC 2017 compiler.
         return [f = std::forward<Function>(f), executor = *this, context = ExecutionContext::current()]() mutable noexcept {
+#ifndef OVITO_NO_EVENT_LOOP
             if(executor.object() && QCoreApplication::instance()) {
+                // When not in the main thread, or if deferred execution was requested, schedule work for later execution in the main thread.
                 if(executor._deferredExecution || QThread::currentThread() != QCoreApplication::instance()->thread()) {
-                    // When not in the main thread, or if deferred execution was requested, schedule work for later execution in the main thread.
-                    auto event = new detail::ObjectExecutorWorkEvent<Function>(workEventType(), std::move(executor._obj), std::move(context), std::move(f));
-                    QCoreApplication::postEvent(const_cast<QObject*>(event->object()), event);
+#else
+            if(executor.object()) {
+                if(executor._deferredExecution) {
+#endif
+                    std::move(context).runDeferred(std::move(executor._obj), std::forward<Function>(f));
                 }
                 else { // When already in the main thread, execute work immediately.
 
@@ -125,14 +82,17 @@ public:
     template<typename Function>
     void execute(Function&& f) {
         OVITO_ASSERT(ExecutionContext::current().isValid());
+#ifndef OVITO_NO_EVENT_LOOP
         if(object() && QCoreApplication::instance()) {
             if(_deferredExecution || QThread::currentThread() != QCoreApplication::instance()->thread()) {
-                // When not in the main thread, or if deferred execution was requested, schedule work for later execution in the main thread.
-                auto event = new detail::ObjectExecutorWorkEvent<Function>(workEventType(), object(), ExecutionContext::current(), std::move(f));
-                QCoreApplication::postEvent(const_cast<QObject*>(event->object()), event);
+#else
+        if(object()) {
+            if(_deferredExecution) {
+#endif
+                ExecutionContext::current().runDeferred(object(), std::forward<Function>(f));
             }
             else {
-                // Temporarily suspend undo recording, because deferred operations never get recorded by convention.
+                // Temporarily suspend undo recording, because asynchronous operations never get recorded by convention.
                 UndoSuspender noUndo;
                 // Execute the work function.
                 std::invoke(std::forward<Function>(f));
@@ -143,12 +103,6 @@ public:
     /// Returns the object this executor is associated with.
     /// Work submitted to this executor will be executed in the context of the object.
     const QObject* object() const { return _obj.data(); }
-
-    /// Returns the unique Qt event type ID used by this class to schedule asynchronous work.
-    static QEvent::Type workEventType() {
-        static const int _workEventType = QEvent::registerEventType();
-        return static_cast<QEvent::Type>(_workEventType);
-    }
 
 private:
 

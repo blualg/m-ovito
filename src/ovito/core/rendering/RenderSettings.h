@@ -104,7 +104,7 @@ Q_SIGNALS:
 protected:
 
     /// Sends an event to all dependents of this RefTarget.
-    virtual void notifyDependentsImpl(const ReferenceEvent& event) override;
+    virtual void notifyDependentsImpl(const ReferenceEvent& event) noexcept override;
 
 private:
 

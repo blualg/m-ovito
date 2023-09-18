@@ -37,11 +37,15 @@ IMPLEMENT_OVITO_CLASS(RefTarget);
 ******************************************************************************/
 RefTarget::RefTarget(ObjectInitializationFlags flags)
 {
+    // Ovito objects always live in the main thread.
+#ifdef OVITO_NO_EVENT_LOOP
+    if(QCoreApplication* app = QCoreApplication::instance())
+        moveToThread(app->thread());
+#else
     // A Qt application object must exist.
     OVITO_ASSERT_MSG(QCoreApplication::instance() != nullptr, "RefTarget::RefTarget()", "Creating an instance of a RefTarget-derived class is only allowed while a Qt application object exists.");
-
-    // Ovito objects always live in the main thread.
     moveToThread(QCoreApplication::instance()->thread());
+#endif
 }
 
 #ifdef OVITO_DEBUG
@@ -94,7 +98,7 @@ void RefTarget::deleteReferenceObject()
 /******************************************************************************
 * Notifies all registered dependents by sending out a message.
 ******************************************************************************/
-void RefTarget::notifyDependentsImpl(const ReferenceEvent& event)
+void RefTarget::notifyDependentsImpl(const ReferenceEvent& event) noexcept
 {
     OVITO_CHECK_OBJECT_POINTER(this);
 

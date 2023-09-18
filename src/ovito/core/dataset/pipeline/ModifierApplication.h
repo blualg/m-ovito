@@ -153,7 +153,7 @@ protected:
     }
 
     /// Sends an event to all dependents of this RefTarget.
-    virtual void notifyDependentsImpl(const ReferenceEvent& event) override;
+    virtual void notifyDependentsImpl(const ReferenceEvent& event) noexcept override;
 
     /// \brief Is called when a RefTarget referenced by this object has generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;

@@ -148,7 +148,7 @@ public:
         // Must store a shared_ptr to this task in the lambda in order to keep it alive until the user
         // function gets invoked. That's because it might happen at a much later time if the executor uses deferred scheduling.
         addContinuation(std::forward<Executor>(executor),
-            [f = std::forward<Function>(f), self = shared_from_this()]() mutable { std::forward<Function>(f)(*self); });
+            [f = std::forward<Function>(f), self = shared_from_this()]() mutable noexcept { std::forward<Function>(f)(*self); });
     }
 
     /// Runs the given continuation function once this task has reached either the 'finished' or the 'canceled' state.

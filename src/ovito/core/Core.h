@@ -55,6 +55,7 @@
 #include <numeric>
 #include <functional>
 #include <optional>
+#include <queue>
 
 /******************************************************************************
 * Qt framework classes.

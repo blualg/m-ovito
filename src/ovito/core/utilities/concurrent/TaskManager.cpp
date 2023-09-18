@@ -230,8 +230,10 @@ void TaskManager::shutdown()
     bool result = QThreadPool::globalInstance()->waitForDone();
     OVITO_ASSERT(result);
 
+#ifndef OVITO_NO_EVENT_LOOP
     // Execute all remaining deferred tasks which have not been registered with this task manager.
     QCoreApplication::sendPostedEvents(nullptr, ObjectExecutor::workEventType());
+#endif
 
 #ifdef OVITO_USE_SYCL
     // Close all active SYCL host memory accessors which are associated with NumPy views of PropertyObjects.

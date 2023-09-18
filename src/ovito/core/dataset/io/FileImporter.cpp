@@ -39,11 +39,17 @@ Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(const QUrl& url, 
 {
     if(!url.isValid())
         throw Exception(tr("Invalid path or URL."));
+#ifndef OVITO_NO_EVENT_LOOP
     if(!QCoreApplication::instance())
         throw Exception(tr("File format detection requires a global QCoreApplication object."));
+#endif
 
     // Resolve filename if it contains a wildcard.
+#ifndef OVITO_NO_EVENT_LOOP
     return FileSourceImporter::findWildcardMatches(url).then(ObjectExecutor(QCoreApplication::instance(), false), [existingImporterHint = std::move(existingImporterHint)](std::vector<QUrl>&& urls) {
+#else
+    return FileSourceImporter::findWildcardMatches(url).then([existingImporterHint = std::move(existingImporterHint)](std::vector<QUrl>&& urls) {
+#endif
         if(urls.empty())
             throw Exception(tr("There are no files in the directory matching the filename pattern."));
 
@@ -64,7 +70,7 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(const FileHandle& file, F
     // Note: FileImporter::autodetectFileFormat() may only be called from the main thread.
     // Event though the implementation of autodetectFileFormat() itself is thread-safe,
     // FileImporterClass::determineFileFormat() is currently limited to the main thread.
-    OVITO_ASSERT(QCoreApplication::instance() && QThread::currentThread() == QCoreApplication::instance()->thread());
+    OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
 
     // Cache for the format of files already loaded during the current program session.
     //

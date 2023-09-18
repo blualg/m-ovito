@@ -116,7 +116,7 @@ RenderSettings::RenderSettings(ObjectInitializationFlags flags) : RefTarget(flag
 /******************************************************************************
 * Sends an event to all dependents of this RefTarget.
 ******************************************************************************/
-void RenderSettings::notifyDependentsImpl(const ReferenceEvent& event)
+void RenderSettings::notifyDependentsImpl(const ReferenceEvent& event) noexcept
 {
     if(event.type() == ReferenceEvent::TargetChanged && !isBeingLoaded()) {
         Q_EMIT settingsChanged();

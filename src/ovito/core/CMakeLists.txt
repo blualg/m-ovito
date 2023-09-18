@@ -320,6 +320,9 @@ ENDIF()
 IF(EMSCRIPTEN)
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC "OVITO_DISABLE_QSETTINGS")
 ENDIF()
+IF(OVITO_NO_EVENT_LOOP)
+    TARGET_COMPILE_DEFINITIONS(Core PUBLIC "OVITO_NO_EVENT_LOOP")
+ENDIF()
 
 # Inject program release version into the source code.
 SET_PROPERTY(SOURCE app/Application.cpp app/StandaloneApplication.cpp

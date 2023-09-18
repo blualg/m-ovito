@@ -133,9 +133,7 @@ public:
         OVITO_ASSERT(this);
         OVITO_ASSERT(ExecutionContext::current().isValid());
         if(QThread::currentThread() != this->thread()) {
-            // When not in the main thread, or if deferred execution was requested, schedule work for later execution in the main thread.
-            auto event = new detail::ObjectExecutorWorkEvent<Function>(ObjectExecutor::workEventType(), this, ExecutionContext::current(), std::forward<Function>(f));
-            QCoreApplication::postEvent(const_cast<QObject*>(event->object()), event);
+            ExecutionContext::current().runDeferred(this, std::forward<Function>(f));
         }
         else {
             // Temporarily suspend undo recording, because deferred operations never get recorded by convention.

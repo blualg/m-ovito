@@ -357,10 +357,9 @@ bool Task::waitFor(detail::TaskReference awaitedTask)
 
         waitingTaskLocker.relock();
     }
-    else {
-        // Otherwise we are currently in the main thread.
-        // In this case, use a local event loop to keep processing application events while waiting.
-        OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
+    else if(QCoreApplication::instance()) {
+        // Use a local Qt event loop to keep processing application events while waiting.
+        OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
 
         // Register the waiting task with the task manager such that it gets canceled in
         // case the UI is shutting down while we are waiting.
@@ -430,6 +429,9 @@ bool Task::waitFor(detail::TaskReference awaitedTask)
             return false;
         }
 #endif
+    }
+    else {
+
     }
 
     // Check if the waiting task has been canceled.
