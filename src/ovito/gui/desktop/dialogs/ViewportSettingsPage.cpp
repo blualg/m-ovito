@@ -103,15 +103,20 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
     _graphicsSystem = new QButtonGroup(page);
     QRadioButton* openglOption = new QRadioButton(tr("OpenGL"), graphicsGroupBox);
     QRadioButton* vulkanOption = new QRadioButton(tr("Vulkan"), graphicsGroupBox);
+    QRadioButton* anariOption = new QRadioButton(tr("Anari"), graphicsGroupBox);
     layout2->addWidget(openglOption, 0, 1);
     layout2->addWidget(vulkanOption, 1, 1);
+    layout2->addWidget(anariOption, 2, 1);
     _graphicsSystem->addButton(openglOption, 0);
     _graphicsSystem->addButton(vulkanOption, 1);
+    _graphicsSystem->addButton(anariOption, 2);
     _vulkanDevices = new QComboBox();
     layout2->addWidget(_vulkanDevices, 1, 2);
 
     if(settings.value("rendering/selected_graphics_api").toString() == "Vulkan")
         vulkanOption->setChecked(true);
+    else if(settings.value("rendering/selected_graphics_api").toString() == "Anari")
+        anariOption->setChecked(true);
     else
         openglOption->setChecked(true);
 
@@ -132,10 +137,10 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
                 case 1: // VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
                     title += tr(" (integrated GPU)");
                     break;
-                case 2: // VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU 
+                case 2: // VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
                     title += tr(" (discrete GPU)");
                     break;
-                case 3: // VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU  
+                case 3: // VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU
                     title += tr(" (virtual GPU)");
                     break;
                 }
@@ -158,8 +163,15 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
         _vulkanDevices->addItem(tr("Not available on this platform"));
     }
 
+    if(!PluginManager::instance().findClass("AnariRenderer", "AnariRenderer")) {
+        anariOption->setEnabled(false);
+        anariOption->setVisible(false);
+    }
+
     // Automatically switch back to OpenGL if the currently selected renderer is not available anymore.
     if(!vulkanOption->isEnabled() && vulkanOption->isChecked())
+        openglOption->setChecked(true);
+    if(!anariOption->isEnabled() && anariOption->isChecked())
         openglOption->setChecked(true);
     _vulkanDevices->setEnabled(vulkanOption->isChecked());
     connect(vulkanOption, &QAbstractButton::toggled, _vulkanDevices, &QComboBox::setEnabled);
@@ -190,7 +202,7 @@ bool ViewportSettingsPage::validateValues(QTabWidget* tabWidget)
     bool wasVulkanSelected = (settings.value("rendering/selected_graphics_api").toString() == "Vulkan");
     bool isVulkanSelected = (_graphicsSystem->checkedId() == 1);
     if(isVulkanSelected != wasVulkanSelected && isVulkanSelected) {
-        // Warn the user that some Vulkan implementations may be incompatible with Ovito and can 
+        // Warn the user that some Vulkan implementations may be incompatible with Ovito and can
         // render the application unusable.
         QMessageBox msgBox(settingsDialog());
         msgBox.setIcon(QMessageBox::Question);
@@ -227,6 +239,7 @@ void ViewportSettingsPage::saveValues(QTabWidget* tabWidget)
     QString oldGraphicsApi = settings.value("rendering/selected_graphics_api").toString();
     QString newGraphicsApi;
     if(_graphicsSystem->checkedId() == 1) newGraphicsApi = "Vulkan";
+    else if(_graphicsSystem->checkedId() == 2) newGraphicsApi = "Anari";
     if(newGraphicsApi != oldGraphicsApi) {
         // Save new API selection in the application settings store.
         if(!newGraphicsApi.isEmpty())

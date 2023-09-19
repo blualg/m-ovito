@@ -154,7 +154,7 @@ bool GuiDataSetContainer::fileSaveAs(const QString& filename)
 
     if(filename.isEmpty()) {
 
-        QFileDialog dialog(&mainWindow(), tr("Save Session State As"));
+        QFileDialog dialog(&mainWindow(), tr("Save Session State"));
         dialog.setNameFilter(tr("OVITO State Files (*.ovito);;All Files (*)"));
         dialog.setAcceptMode(QFileDialog::AcceptSave);
         dialog.setFileMode(QFileDialog::AnyFile);

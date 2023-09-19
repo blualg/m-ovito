@@ -200,7 +200,7 @@ void ReaxFFBondImporter::FrameLoader::loadFile()
         for(int j = 0; j < numBonds; j++) {
             ReaxFFBond reaxBond;
             reaxBond.atoms[0] = reaxAtom.id;
-            if(sscanf(line, "%lld%n", &reaxBond.atoms[1], &nread) != 1 || reaxBond.atoms[1] < 1)
+            if(sscanf(line, "%" SCNd64 "%n", &reaxBond.atoms[1], &nread) != 1 || reaxBond.atoms[1] < 1)
                 throw Exception(tr("Invalid neighbor atom id in line %1 of ReaxFF bond file (bond index %2).").arg(stream.lineNumber()).arg(j));
             line += nread;
 

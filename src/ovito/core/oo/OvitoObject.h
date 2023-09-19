@@ -204,6 +204,7 @@ private:
     void incrementReferenceCount() const noexcept {
         OVITO_CHECK_OBJECT_POINTER(this);
         OVITO_ASSERT_MSG(_isAllocatedOnTheHeap, "OvitoObject::incrementReferenceCount()", "Cannot use OORef<> to hold an object that has not been created with OORef<>::create().");
+        OVITO_ASSERT_MSG(!_isBeingDestructed, "OvitoObject::incrementReferenceCount()", "Cannot create new OORef<> for an object that is currently being destructed.");
         _referenceCount.fetch_add(1);
     }
 
@@ -240,6 +241,9 @@ private:
     /// Indicates that this object lives on the heap, because it has been created by the OORef<>::create() method.
     /// Otherwise it was allocated on the stack, which means the object's reference counting mechanism may not be used.
     bool _isAllocatedOnTheHeap = false;
+
+    /// Indicates that this object's destructor is being run.
+    bool _isBeingDestructed = false;
 
     friend class OvitoClass;
 #endif

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,12 +43,12 @@ public:
     SpinnerWidget(QWidget* parent = nullptr, QLineEdit* textBox = nullptr);
 
     /// \brief Returns the text box connect to this spinner.
-    /// \return The text box widget or \c NULL if the spinner has not been connected to a text box.
+    /// \return The text box widget or \c nullptr if the spinner has not been connected to a text box.
     /// \sa setTextBox()
     QLineEdit* textBox() const { return _textBox; }
 
     /// \brief Connects this spinner to the given text box widget.
-    /// \param textBox The text box or \c NULL to disconnect the spinner from the old text box.
+    /// \param textBox The text box or \c nullptr to disconnect the spinner from the old text box.
     /// \sa textBox()
     void setTextBox(QLineEdit* textBox);
 
@@ -69,7 +69,7 @@ public:
     /// \return The current value in native units.
     /// \sa setIntValue()
     /// \sa floatValue()
-    int intValue() const { return (int)_value; }
+    int intValue() const { return static_cast<int>(_value); }
 
     /// \brief Sets the current value of the spinner.
     /// \param newVal The new value in native units.
@@ -113,6 +113,9 @@ public:
 
     /// \brief Specifies the standard value that, if the spinner is set to this special value, should be highlighted in the input field.
     void setStandardValue(FloatType value);
+
+    /// \brief Clears the standard value.
+    void unsetStandardValue() { setStandardValue(std::numeric_limits<FloatType>::quiet_NaN()); }
 
     /// \brief Returns the units of this spinner's value.
     /// \return The parameter unit object that performs the conversion from native units

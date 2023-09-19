@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,9 +25,9 @@
 
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
+#include <ovito/gui/desktop/utilities/DeferredMethodInvocation.h>
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
 #include <ovito/stdobj/properties/PropertyColorMapping.h>
-#include <ovito/core/utilities/DeferredMethodInvocation.h>
 
 namespace Ovito::StdObj {
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ public:
     /// Constructs the viewport panel.
     ViewportsPanel(MainWindow& parent);
 
-    /// Factory method which creates a new viewport window widget. Depending on the 
+    /// Factory method which creates a new viewport window widget. Depending on the
     /// user's settings this can be either a OpenGL or a Vulkan window.
     static BaseViewportWindow* createViewportWindow(Viewport& vp, MainWindow& mainWindow, QWidget* parent);
 
@@ -51,7 +51,7 @@ public:
 
     /// Returns the current viewport configuration object.
     ViewportConfiguration* viewportConfiguration() const { return _viewportConfig; }
-    
+
     /// Handles keyboard input for the viewport windows.
     bool onKeyShortcut(QKeyEvent* event);
 
@@ -101,8 +101,8 @@ private Q_SLOTS:
     void onViewportModeCursorChanged(const QCursor& cursor);
 
 private:
-    
-    struct SplitterRectangle 
+
+    struct SplitterRectangle
     {
         QRect area;
         ViewportLayoutCell* cell;
@@ -123,7 +123,7 @@ private:
 
     OORef<ViewportConfiguration> _viewportConfig;
     MainWindow& _mainWindow;
-    bool _graphicsInitializationErrorOccurred = false; 
+    bool _graphicsInitializationErrorOccurred = false;
 
     static constexpr int _splitterSize = 2;
     static constexpr int _windowInset = 2;

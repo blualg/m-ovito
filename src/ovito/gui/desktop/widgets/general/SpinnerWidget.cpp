@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -144,7 +144,8 @@ void SpinnerWidget::updateTextBox()
 ******************************************************************************/
 void SpinnerWidget::setFloatValue(FloatType newVal, bool emitChangeSignal)
 {
-    if(newVal == _value) return;
+    if(newVal == _value)
+        return;
     // Clamp value if it was entered by the user.
     if(emitChangeSignal) {
         newVal = std::max(minValue(), newVal);
@@ -152,8 +153,15 @@ void SpinnerWidget::setFloatValue(FloatType newVal, bool emitChangeSignal)
     }
     if(_value != newVal) {
         _value = newVal;
-        if(emitChangeSignal)
+        if(emitChangeSignal) {
+#ifdef OVITO_DEBUG
+            QPointer<SpinnerWidget> self(this);
+#endif
             Q_EMIT spinnerValueChanged();
+#ifdef OVITO_DEBUG
+            OVITO_ASSERT(!self.isNull());
+#endif
+        }
     }
     updateTextBox();
 }
@@ -165,16 +173,24 @@ void SpinnerWidget::setIntValue(int newValInt, bool emitChangeSignal)
 {
     FloatType newVal = (FloatType)newValInt;
 
-    if(newVal == _value) return;
+    if(newVal == _value)
+        return;
     // Clamp value if it was entered by the user.
     if(emitChangeSignal) {
-        newVal = std::max((FloatType)ceil(minValue()), newVal);
-        newVal = std::min((FloatType)floor(maxValue()), newVal);
+        newVal = std::max((FloatType)std::ceil(minValue()), newVal);
+        newVal = std::min((FloatType)std::floor(maxValue()), newVal);
     }
     if(_value != newVal) {
         _value = newVal;
-        if(emitChangeSignal)
+        if(emitChangeSignal) {
+#ifdef OVITO_DEBUG
+            QPointer<SpinnerWidget> self(this);
+#endif
             Q_EMIT spinnerValueChanged();
+#ifdef OVITO_DEBUG
+            OVITO_ASSERT(!self.isNull());
+#endif
+        }
     }
     updateTextBox();
 }
@@ -205,6 +221,7 @@ void SpinnerWidget::setMaxValue(FloatType maxValue)
 void SpinnerWidget::setStandardValue(FloatType value)
 {
     _standardValue = value;
+    updateTextBox();
 }
 
 /******************************************************************************
@@ -268,7 +285,13 @@ void SpinnerWidget::mousePressEvent(QMouseEvent* event)
         }
 
         if(_upperBtnPressed && _lowerBtnPressed) {
+#ifdef OVITO_DEBUG
+            QPointer<SpinnerWidget> self(this);
+#endif
             Q_EMIT spinnerDragAbort();
+#ifdef OVITO_DEBUG
+            OVITO_ASSERT(!self.isNull());
+#endif
         }
 
         _upperBtnPressed = false;
@@ -287,7 +310,13 @@ void SpinnerWidget::mouseReleaseEvent(QMouseEvent* event)
 {
     if(_upperBtnPressed || _lowerBtnPressed) {
         if(_upperBtnPressed && _lowerBtnPressed) {
+#ifdef OVITO_DEBUG
+            QPointer<SpinnerWidget> self(this);
+#endif
             Q_EMIT spinnerDragStop();
+#ifdef OVITO_DEBUG
+            OVITO_ASSERT(!self.isNull());
+#endif
         }
         else {
             FloatType newValue;
@@ -387,7 +416,13 @@ void SpinnerWidget::mouseMoveEvent(QMouseEvent* event)
 void SpinnerWidget::focusOutEvent(QFocusEvent* event)
 {
     if(_upperBtnPressed && _lowerBtnPressed) {
+#ifdef OVITO_DEBUG
+        QPointer<SpinnerWidget> self(this);
+#endif
         Q_EMIT spinnerDragAbort();
+#ifdef OVITO_DEBUG
+        OVITO_ASSERT(!self.isNull());
+#endif
     }
     _upperBtnPressed = false;
     _lowerBtnPressed = false;
