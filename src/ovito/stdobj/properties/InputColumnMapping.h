@@ -244,6 +244,9 @@ public:
     /// \brief Sorts the created element types either by numeric ID or by name, depending on how they were stored in the input file.
     void sortElementTypes();
 
+    /// Returns a list of properties that have been parsed.
+    std::set<PropertyObject*> parsedProperties() const;
+
     /// \brief Explicitly release the target properties written to by this class.
     void reset() { _properties.clear(); }
 
