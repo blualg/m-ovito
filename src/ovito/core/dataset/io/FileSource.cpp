@@ -644,6 +644,17 @@ void FileSource::propertyChanged(const PropertyFieldDescriptor* field)
 }
 
 /******************************************************************************
+* Gets called when the data provider of the pipeline has been replaced.
+******************************************************************************/
+void FileSource::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+{
+    if(field == PROPERTY_FIELD(importer)) {
+        notifyDependents(ReferenceEvent::TitleChanged);
+    }
+    BasePipelineSource::referenceReplaced(field, oldTarget, newTarget, listIndex);
+}
+
+/******************************************************************************
 * If the file source currently uses a wildcard search pattern, replaces it
 * with a single concrete filename.
 ******************************************************************************/

@@ -458,6 +458,17 @@ bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
         updateViewportTitle();
         updateViewport();
     }
+    else if(source == scene() && event.type() == ReferenceEvent::ReferenceAdded) {
+        // If a new pipeline is being added to the scene, inform all viewport overlays.
+        // In case they are not associated any pipeline, they can automatically attach to the new pipeline.
+        const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
+        if(refEvent.field() == PROPERTY_FIELD(SceneNode::children) && !isUndoingOrRedoing() && !isBeingLoaded()) {
+            for(ViewportOverlay* overlay : overlays())
+                overlay->sceneNodeAdded(static_object_cast<SceneNode>(refEvent.newTarget()));
+            for(ViewportOverlay* overlay : underlays())
+                overlay->sceneNodeAdded(static_object_cast<SceneNode>(refEvent.newTarget()));
+        }
+    }
     return RefTarget::referenceEvent(source, event);
 }
 

@@ -85,6 +85,16 @@ void TextLabelOverlay::initializeOverlay(Viewport* viewport)
 }
 
 /******************************************************************************
+* Is called when the overlay is being newly attached to a viewport.
+******************************************************************************/
+void TextLabelOverlay::sceneNodeAdded(SceneNode* node)
+{
+    // Automatically connect to the new pipeline.
+    if(!sourceNode())
+        setSourceNode(dynamic_object_cast<PipelineSceneNode>(node));
+}
+
+/******************************************************************************
 * Is called when the value of a property of this object has changed.
 ******************************************************************************/
 void TextLabelOverlay::propertyChanged(const PropertyFieldDescriptor* field)

@@ -146,7 +146,7 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
                     _pipelineComboBox->addItem(pipeline->objectTitle(), QVariant::fromValue(pipeline));
                 }
                 else {
-                    _pipelineComboBox->addItem(tr("<none>"));
+                    _pipelineComboBox->addItem(tr("‹none›"));
                 }
                 _pipelineComboBox->setCurrentIndex(0);
             },
@@ -205,7 +205,7 @@ void TextLabelOverlayEditor::updateSourcesList()
         _pipelineComboBox->setCurrentIndex(_pipelineComboBox->findData(QVariant::fromValue(overlay->sourceNode())));
     }
     if(_pipelineComboBox->count() == 0)
-        _pipelineComboBox->addItem(tr("<none>"));
+        _pipelineComboBox->addItem(tr("‹none›"));
 }
 
 /******************************************************************************

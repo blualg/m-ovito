@@ -119,6 +119,9 @@ protected:
 	/// Is called when the value of a property of this object has changed.
 	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
+    /// Is called when the value of a reference field of this object changes.
+    virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+
 	/// Saves the class' contents to the given stream.
 	virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 

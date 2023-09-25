@@ -50,6 +50,9 @@ public:
     /// Is called when the overlay is being newly attached to a viewport.
     virtual void initializeOverlay(Viewport* viewport) override;
 
+    /// Informs the overlay that a new scene node has been inserted into the scene.
+    virtual void sceneNodeAdded(SceneNode* node) override;
+
     /// Lets the overlay paint its contents into the framebuffer.
     virtual void render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect) override;
 
