@@ -676,6 +676,84 @@ void TriMeshObject::createIcosphere(int resolution)
 }
 
 /******************************************************************************
+* Creates a unit superellipsoid.
+******************************************************************************/
+void TriMeshObject::createSuperellipsoid(int resolutionU, int resolutionV, FloatType epsilon1, FloatType epsilon2)
+{
+    OVITO_ASSERT(resolutionU > 0);
+    OVITO_ASSERT(resolutionV > 0);
+
+    clear();
+    setHasNormals(true);
+    std::vector<Vector3G> vertexNormals;
+
+    // Add top vertex.
+    auto v0 = addVertex(Point3(0, 0, 1));
+    vertexNormals.push_back(Vector3G(0, 0, 1));
+
+    // Generate UV vertices.
+    for(int i = 0; i < resolutionV - 1; i++) {
+        auto phi = FLOATTYPE_PI * FloatType(i + 1) / resolutionV;
+        for(int j = 0; j < resolutionU; j++) {
+            auto theta = 2 * FLOATTYPE_PI * FloatType(j) / resolutionU;
+            auto sin_phi = std::sin(phi);
+            auto cos_phi = std::cos(phi);
+            auto sin_theta = std::sin(theta);
+            auto cos_theta = std::cos(theta);
+            auto x = std::copysign(FloatType(1), sin_phi) * std::pow(std::abs(sin_phi), epsilon2) * std::copysign(FloatType(1), cos_theta) * std::pow(std::abs(cos_theta), epsilon1);
+            auto y = std::copysign(FloatType(1), sin_phi) * std::pow(std::abs(sin_phi), epsilon2) * std::copysign(FloatType(1), sin_theta) * std::pow(std::abs(sin_theta), epsilon1);
+            auto z = std::copysign(FloatType(1), cos_phi) * std::pow(std::abs(cos_phi), epsilon2);
+            addVertex(Point3(x, y, z));
+            auto nx = std::copysign(FloatType(1), sin_phi) * std::pow(std::abs(sin_phi), 2 - epsilon2) * std::copysign(FloatType(1), cos_theta) * std::pow(std::abs(cos_theta), 2 - epsilon1);
+            auto ny = std::copysign(FloatType(1), sin_phi) * std::pow(std::abs(sin_phi), 2 - epsilon2) * std::copysign(FloatType(1), sin_theta) * std::pow(std::abs(sin_theta), 2 - epsilon1);
+            auto nz = std::copysign(FloatType(1), cos_phi) * std::pow(std::abs(cos_phi), 2 - epsilon2);
+            vertexNormals.push_back(Vector3G(nx, ny, nz).normalized());
+        }
+    }
+
+    // Add bottom vertex.
+    auto v1 = addVertex(Point3(0, 0, -1));
+    vertexNormals.push_back(Vector3G(0, 0, -1));
+
+    // Add top / bottom triangles.
+    for(int i = 0; i < resolutionU; i++) {
+        auto i0 = i + 1;
+        auto i1 = (i + 1) % resolutionU + 1;
+        TriMeshFace& f1 = addFace();
+        f1.setVertices(v0, i0, i1);
+        i0 = i + resolutionU * (resolutionV - 2) + 1;
+        i1 = (i + 1) % resolutionU + resolutionU * (resolutionV - 2) + 1;
+        TriMeshFace& f2 = addFace();
+        f2.setVertices(v1, i1, i0);
+    }
+
+    // Add quads per stack / slice.
+    for(int j = 0; j < resolutionV - 2; j++) {
+        auto j0 = j * resolutionU + 1;
+        auto j1 = (j + 1) * resolutionU + 1;
+        for(int i = 0; i < resolutionU; i++) {
+            auto i0 = j0 + i;
+            auto i1 = j0 + (i + 1) % resolutionU;
+            auto i2 = j1 + (i + 1) % resolutionU;
+            auto i3 = j1 + i;
+            TriMeshFace& f1 = addFace();
+            f1.setVertices(i0, i2, i1);
+            f1.setEdgeVisibility(false, true, true);
+            TriMeshFace& f2 = addFace();
+            f2.setVertices(i0, i3, i2);
+            f2.setEdgeVisibility(true, true, false);
+        }
+    }
+
+    auto n = normals().begin();
+    for(const TriMeshFace& face : faces()) {
+        for(int v = 0; v < 3; v++) {
+            *n++ = vertexNormals[face.vertex(v)];
+        }
+    }
+}
+
+/******************************************************************************
 * Determines whether the mesh forms a closed manifold, i.e. each triangle has
 * three adjacent triangles with correct orientation.
 ******************************************************************************/

@@ -604,6 +604,9 @@ public:
     /// resulting vertices/faces of the mesh.
     void createIcosphere(int resolution);
 
+    /// Creates a unit superellipsoid.
+    void createSuperellipsoid(int resolutionU, int resolutionV, FloatType epsilon1, FloatType epsilon2);
+
     /************************************* Information *************************************/
 
     /// Determines whether the mesh forms a closed manifold, i.e. each triangle has three adjacent
