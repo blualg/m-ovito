@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -79,10 +79,11 @@ public:
     /// \sa close()
     bool isOpen() const { return _isOpen; }
 
-    // set url callback function
-    void setUrlCallback(std::function<const QString*(const QUrl& url)>&& urlCallback) { _urlCallback = std::move(urlCallback); }
-    // Access (optional) url callback function
-    const std::function<const QString*(const QUrl& url)>& urlCallback() { return _urlCallback; }
+    /// Registers a callback function, which will be called for each URL being serialized.
+    void setUrlCallback(std::function<void(QUrl&)>&& urlCallback) { _urlCallback = std::move(urlCallback); }
+
+    /// Returns the registered URL callback function.
+    const std::function<void(QUrl&)>& urlCallback() const { return _urlCallback; }
 
     /// \brief Writes an array of raw bytes to the output stream.
     /// \param buffer A pointer to the beginning of the data.
@@ -156,7 +157,7 @@ private:
 
     template <typename T>
     friend SaveStream& operator<<(SaveStream& stream, const T& v);
-    friend OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const QUrl& url);
+    friend OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, QUrl url);
 
 private:
     /// Indicates the output stream is still open.
@@ -171,8 +172,8 @@ private:
     /// Maps pointers to IDs.
     std::map<void*, quint64> _pointerMap;
 
-    /// Callback to the RemoteExportSettings method to collect file paths
-    std::function<const QString*(const QUrl& url)> _urlCallback = nullptr;
+    /// Optional callback function to be called for each URL being serialized.
+    std::function<void(QUrl&)> _urlCallback;
 };
 
 /// \brief Writes a value to a SaveStream.
@@ -287,7 +288,7 @@ inline SaveStream& operator<<(SaveStream& stream, const boost::dynamic_bitset<>&
 /// \param url The URL to store.
 /// \return The destination stream.
 /// \throw Exception if an I/O error has occurred.
-extern OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const QUrl& url);
+extern OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, QUrl url);
 
 /// \brief Writes a reference to an OvitoObject derived class type to the stream.
 /// \relates SaveStream
