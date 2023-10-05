@@ -27,7 +27,7 @@
 #include <ovito/particles/import/ParticleImporter.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief File parser for Protein Data Bank (PDB) files.

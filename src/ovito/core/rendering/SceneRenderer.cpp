@@ -25,10 +25,10 @@
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/dataset/scene/SceneNode.h>
 #include <ovito/core/dataset/scene/Scene.h>
-#include <ovito/core/dataset/pipeline/PipelineObject.h>
+#include <ovito/core/dataset/pipeline/PipelineNode.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
@@ -176,7 +176,7 @@ bool SceneRenderer::renderNode(SceneNode* node)
     const AffineTransformation& nodeTM = node->getWorldTransform(time(), interval);
     setWorldTransform(nodeTM);
 
-    if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(node)) {
+    if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(node)) {
 
         // Do not render node if it is the view node of the viewport or
         // if it is the target of the view node.
@@ -221,7 +221,7 @@ bool SceneRenderer::renderNode(SceneNode* node)
 /******************************************************************************
 * Renders a data object and all its sub-objects.
 ******************************************************************************/
-void SceneRenderer::renderDataObject(const DataObject* dataObj, const PipelineSceneNode* pipeline, const PipelineFlowState& state, ConstDataObjectPath& dataObjectPath)
+void SceneRenderer::renderDataObject(const DataObject* dataObj, const Pipeline* pipeline, const PipelineFlowState& state, ConstDataObjectPath& dataObjectPath)
 {
     bool isOnStack = false;
 
@@ -405,9 +405,9 @@ void SceneRenderer::renderInteractiveContent()
 ******************************************************************************/
 void SceneRenderer::renderModifiers(bool renderOverlay)
 {
-    // Visit all objects in the scene.
+    // Visit all pipelines in the scene.
     if(scene()) {
-        scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+        scene()->visitPipelines([&](Pipeline* pipeline) {
             renderModifiers(pipeline, renderOverlay);
             return true;
         });
@@ -417,11 +417,11 @@ void SceneRenderer::renderModifiers(bool renderOverlay)
 /******************************************************************************
 * Renders the visual representation of the modifiers in a pipeline.
 ******************************************************************************/
-void SceneRenderer::renderModifiers(PipelineSceneNode* pipeline, bool renderOverlay)
+void SceneRenderer::renderModifiers(Pipeline* pipeline, bool renderOverlay)
 {
-    ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(pipeline->dataProvider());
-    while(modApp) {
-        Modifier* mod = modApp->modifier();
+    ModificationNode* node = dynamic_object_cast<ModificationNode>(pipeline->head());
+    while(node) {
+        Modifier* mod = node->modifier();
 
         // Setup local transformation.
         TimeInterval interval;
@@ -429,7 +429,7 @@ void SceneRenderer::renderModifiers(PipelineSceneNode* pipeline, bool renderOver
 
         try {
             // Render modifier.
-            mod->renderModifierVisual(ModifierEvaluationRequest(scene()->animationSettings(), modApp), pipeline, this, renderOverlay);
+            mod->renderModifierVisual(ModifierEvaluationRequest(scene()->animationSettings(), node), pipeline, this, renderOverlay);
         }
         catch(const Exception& ex) {
             // Swallow exceptions, because we are in interactive rendering mode.
@@ -437,7 +437,7 @@ void SceneRenderer::renderModifiers(PipelineSceneNode* pipeline, bool renderOver
         }
 
         // Traverse up the pipeline.
-        modApp = dynamic_object_cast<ModifierApplication>(modApp->input());
+        node = dynamic_object_cast<ModificationNode>(node->input());
     }
 }
 
@@ -514,10 +514,10 @@ FloatType SceneRenderer::projectedPixelSize(const Point3& worldPosition) const
 /******************************************************************************
 * When picking mode is active, this registers an object being rendered.
 ******************************************************************************/
-quint32 SceneRenderer::beginPickObject(const PipelineSceneNode* objNode, ObjectPickInfo* pickInfo)
+quint32 SceneRenderer::beginPickObject(const Pipeline* pipeline, ObjectPickInfo* pickInfo)
 {
     if(isPicking()) {
-        _currentObjectPickingRecord.objectNode = const_cast<PipelineSceneNode*>(objNode);
+        _currentObjectPickingRecord.pipeline = const_cast<Pipeline*>(pipeline);
         _currentObjectPickingRecord.pickInfo = pickInfo;
         _currentObjectPickingRecord.baseObjectID = _nextAvailablePickingID;
         return _currentObjectPickingRecord.baseObjectID;
@@ -545,11 +545,11 @@ quint32 SceneRenderer::registerSubObjectIDs(quint32 subObjectCount, const ConstD
 void SceneRenderer::endPickObject()
 {
     if(isPicking()) {
-        if(_currentObjectPickingRecord.objectNode) {
+        if(_currentObjectPickingRecord.pipeline) {
             _objectPickingRecords.push_back(std::move(_currentObjectPickingRecord));
         }
         _currentObjectPickingRecord.baseObjectID = 0;
-        _currentObjectPickingRecord.objectNode = nullptr;
+        _currentObjectPickingRecord.pipeline = nullptr;
         _currentObjectPickingRecord.pickInfo = nullptr;
         _currentObjectPickingRecord.indexedRanges.clear();
     }

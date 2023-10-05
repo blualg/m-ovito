@@ -23,7 +23,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/gui/util/ParticleSettingsPage.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/gui/desktop/properties/ColorParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
@@ -37,7 +37,7 @@
 #include <ovito/core/dataset/io/FileSourceImporter.h>
 #include "ParticleTypeEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParticleTypeEditor);
 SET_OVITO_OBJECT_EDITOR(ParticleType, ParticleTypeEditor);
@@ -122,7 +122,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
         // Loads the default parameter value.
         [](ParticleType* ptype) { ptype->setColor(ElementType::getDefaultColor(ptype->ownerProperty(), ptype->nameOrNumericId(), ptype->numericId(), true)); },
         // Saves the current parameter value as new default preset.
-        [](const ParticleType* ptype) { ElementType::setDefaultColor(ParticlePropertyReference(ParticlesObject::TypeProperty), ptype->nameOrNumericId(), ptype->color()); },
+        [](const ParticleType* ptype) { ElementType::setDefaultColor(ParticlePropertyReference(Particles::TypeProperty), ptype->nameOrNumericId(), ptype->color()); },
         // Determines if the current parameter value differs from the saved default value or not.
         [](const ParticleType* ptype) { return (ptype->color() == ElementType::getDefaultColor(ptype->ownerProperty(), ptype->nameOrNumericId(), ptype->numericId(), true)); }
     );
@@ -131,11 +131,11 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     // Display radius presets menu.
     QToolButton* displayRadiusPresetsMenuButton = createPresetsMenuButton(tr("display radius"),
         // Loads the default parameter value.
-        [](ParticleType* ptype) { ptype->setRadius(ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::DisplayRadius)); },
+        [](ParticleType* ptype) { ptype->setRadius(ParticleType::getDefaultParticleRadius(static_cast<Particles::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::DisplayRadius)); },
         // Saves the current parameter value as new default preset.
-        [](const ParticleType* ptype) { ParticleType::setDefaultParticleRadius(ParticlesObject::TypeProperty, ptype->nameOrNumericId(), ptype->radius(), ParticleType::DisplayRadius); },
+        [](const ParticleType* ptype) { ParticleType::setDefaultParticleRadius(Particles::TypeProperty, ptype->nameOrNumericId(), ptype->radius(), ParticleType::DisplayRadius); },
         // Determines if the current parameter value differs from the saved default value or not.
-        [](const ParticleType* ptype) { return (ptype->radius() == ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::DisplayRadius)); }
+        [](const ParticleType* ptype) { return (ptype->radius() == ParticleType::getDefaultParticleRadius(static_cast<Particles::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::DisplayRadius)); }
     );
     gridLayout->addWidget(displayRadiusPresetsMenuButton, 1, 2);
 
@@ -196,7 +196,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
                     // Build list of file importers that can import triangle meshes.
                     QVector<const FileImporterClass*> meshImporters;
                     for(const FileImporterClass* importerClass : PluginManager::instance().metaclassMembers<FileSourceImporter>()) {
-                        if(importerClass->importsDataType(TriMeshObject::OOClass()))
+                        if(importerClass->importsDataType(TriangleMesh::OOClass()))
                             meshImporters.push_back(importerClass);
                     }
 
@@ -240,11 +240,11 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     // VDW radius presets menu.
     QToolButton* vdwRadiusPresetsMenuButton = createPresetsMenuButton(tr("VdW radius"),
         // Loads the default parameter value.
-        [](ParticleType* ptype) { ptype->setVdwRadius(ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::VanDerWaalsRadius)); },
+        [](ParticleType* ptype) { ptype->setVdwRadius(ParticleType::getDefaultParticleRadius(static_cast<Particles::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::VanDerWaalsRadius)); },
         // Saves the current parameter value as new default preset.
-        [](const ParticleType* ptype) { ParticleType::setDefaultParticleRadius(ParticlesObject::TypeProperty, ptype->nameOrNumericId(), ptype->vdwRadius(), ParticleType::VanDerWaalsRadius); },
+        [](const ParticleType* ptype) { ParticleType::setDefaultParticleRadius(Particles::TypeProperty, ptype->nameOrNumericId(), ptype->vdwRadius(), ParticleType::VanDerWaalsRadius); },
         // Determines if the current parameter value differs from the saved default value or not.
-        [](const ParticleType* ptype) { return (ptype->vdwRadius() == ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::VanDerWaalsRadius)); }
+        [](const ParticleType* ptype) { return (ptype->vdwRadius() == ParticleType::getDefaultParticleRadius(static_cast<Particles::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::VanDerWaalsRadius)); }
     );
     gridLayout->addWidget(vdwRadiusPresetsMenuButton, 1, 2);
 }

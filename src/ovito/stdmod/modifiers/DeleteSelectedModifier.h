@@ -26,7 +26,7 @@
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/core/dataset/pipeline/DelegatingModifier.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * \brief Base class for DeleteSelectedModifier delegates that operate on different kinds of data.

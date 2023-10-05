@@ -24,11 +24,11 @@
 
 
 #include <ovito/stdmod/StdMod.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/stdobj/properties/GenericPropertyModifier.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * \brief This modifier computes a scatter plot for two properties.
@@ -62,7 +62,7 @@ public:
     void setYAxisRange(FloatType start, FloatType end) { setYAxisRangeStart(start); setYAxisRangeEnd(end); }
 
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return tr("%1 vs. %2").arg(yAxisProperty().nameWithComponent()).arg(xAxisProperty().nameWithComponent()); }
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return tr("%1 vs. %2").arg(yAxisProperty().nameWithComponent()).arg(xAxisProperty().nameWithComponent()); }
 
 protected:
 

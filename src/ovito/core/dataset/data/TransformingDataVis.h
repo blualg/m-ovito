@@ -43,9 +43,6 @@ protected:
 
 public:
 
-    /// \brief Determines the time interval over which a computed pipeline state will remain valid.
-    virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request, PipelineSceneNode* pipeline) const { return TimeInterval::infinite(); }
-
     /// Lets the vis element transform a data object in preparation for rendering.
     Future<PipelineFlowState> transformData(const PipelineEvaluationRequest& request, const DataObject* dataObject, PipelineFlowState&& flowState, const std::vector<OORef<TransformedDataObject>>& cachedTransformedDataObjects);
 

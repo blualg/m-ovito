@@ -22,10 +22,10 @@
 
 #include <ovito/gui/qml/GUI.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "PropertyReferenceParameterUI.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(PropertyReferenceParameterUI);
 
@@ -71,14 +71,14 @@ void PropertyReferenceParameterUI::updatePropertyList()
                     const PipelineFlowState& state = modApp->evaluateInputSynchronous(mod->dataset()->animationSettings()->time());
 
                     if(const PropertyContainer* container = state ? state.getLeafObject(_containerReference) : nullptr) {
-                        for(const PropertyObject* property : container->properties()) {
+                        for(const Property* property : container->properties()) {
 
                             // The client can apply a filter to the displayed property list.
                             if(acceptablePropertyType() == OnlyTypedProperties && !property->isTypedProperty())
                                 continue;
 
                             // Properties with a non-numeric data type cannot be used as input properties.
-                            if(property->dataType() != PropertyObject::Int && property->dataType() != PropertyObject::Int64 && property->dataType() != PropertyObject::Float)
+                            if(property->dataType() != Property::Int && property->dataType() != Property::Int64 && property->dataType() != Property::Float)
                                 continue;
 
                             if(_componentsMode != ShowOnlyComponents || (property->componentCount() <= 1 && property->componentNames().empty())) {
@@ -109,7 +109,7 @@ void PropertyReferenceParameterUI::updatePropertyList()
                 if(selectedProperty && boost::find(acceptedProperties, selectedProperty) == acceptedProperties.end()) {
                     QString title;
                     selectedProperty = selectedProperty.convertToContainerClass(_containerReference.dataClass());
-                    if(selectedProperty.type() != PropertyObject::GenericUserProperty)
+                    if(selectedProperty.type() != Property::GenericUserProperty)
                         title = selectedProperty.containerClass()->standardPropertyName(selectedProperty.type());
                     else
                         title = selectedProperty.name();

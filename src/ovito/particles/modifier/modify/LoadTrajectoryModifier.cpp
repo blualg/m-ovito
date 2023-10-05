@@ -21,16 +21,16 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/particles/objects/BondsObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/particles/objects/Bonds.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/data/AttributeDataObject.h>
 #include "LoadTrajectoryModifier.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(LoadTrajectoryModifier);
 DEFINE_REFERENCE_FIELD(LoadTrajectoryModifier, trajectorySource);
@@ -53,7 +53,7 @@ LoadTrajectoryModifier::LoadTrajectoryModifier(ObjectInitializationFlags flags) 
 ******************************************************************************/
 bool LoadTrajectoryModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    return input.containsObject<ParticlesObject>();
+    return input.containsObject<Particles>();
 }
 
 /******************************************************************************
@@ -84,7 +84,7 @@ Future<PipelineFlowState> LoadTrajectoryModifier::evaluate(const ModifierEvaluat
     SharedFuture<PipelineFlowState> trajStateFuture = trajectorySource()->evaluate(request);
 
     // Wait for the data to become available.
-    return trajStateFuture.then(*request.modApp(), [state = input, request](const PipelineFlowState& trajState) mutable {
+    return trajStateFuture.then(*request.modificationNode(), [state = input, request](const PipelineFlowState& trajState) mutable {
 
         if(LoadTrajectoryModifier* trajModifier = dynamic_object_cast<LoadTrajectoryModifier>(request.modifier())) {
             // Make sure the obtained configuration is valid and ready to use.
@@ -98,10 +98,10 @@ Future<PipelineFlowState> LoadTrajectoryModifier::evaluate(const ModifierEvaluat
             else {
                 trajModifier->applyTrajectoryState(state, trajState);
 
-                // Invalidate the synchronous state cache of the modifier application.
+                // Invalidate the synchronous state cache of the modifier pipeline node.
                 // This is needed to force the pipeline system to call our evaluateSynchronous() method
                 // again next time the system request a synchronous state from the pipeline.
-                request.modApp()->pipelineCache().invalidateSynchronousState();
+                request.modificationNode()->pipelineCache().invalidateSynchronousState();
             }
         }
 
@@ -133,21 +133,21 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
     state.intersectStateValidity(trajState.stateValidity());
 
     // Get the current particle positions.
-    const ParticlesObject* trajectoryParticles = trajState.getObject<ParticlesObject>();
+    const Particles* trajectoryParticles = trajState.getObject<Particles>();
     if(!trajectoryParticles)
         throw Exception(tr("Trajectory dataset does not contain any particle dataset."));
     trajectoryParticles->verifyIntegrity();
 
     // Get the topology particle dataset.
-    ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+    Particles* particles = state.expectMutableObject<Particles>();
     particles->verifyIntegrity();
 
     if(trajectoryParticles->elementCount() != 0) {
 
         // Build particle-to-particle index map.
         std::vector<size_t> indexToIndexMap(particles->elementCount());
-        BufferReadAccess<IdentifierIntType> topoIdentifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
-        BufferReadAccess<IdentifierIntType> trajIdentifierProperty = trajectoryParticles->getProperty(ParticlesObject::IdentifierProperty);
+        BufferReadAccess<IdentifierIntType> topoIdentifierProperty = particles->getProperty(Particles::IdentifierProperty);
+        BufferReadAccess<IdentifierIntType> trajIdentifierProperty = trajectoryParticles->getProperty(Particles::IdentifierProperty);
         if(topoIdentifierProperty && trajIdentifierProperty) {
 
             // Build map of particle identifiers in trajectory dataset.
@@ -207,7 +207,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
                 indexToIndexMap.reserve(indexToIndexMap.size() + refMap.size());
 
                 // Extend index mapping and particle identifier property.
-                BufferWriteAccess<IdentifierIntType, access_mode::write> identifierProperty = particles->expectMutableProperty(ParticlesObject::IdentifierProperty);
+                BufferWriteAccess<IdentifierIntType, access_mode::write> identifierProperty = particles->expectMutableProperty(Particles::IdentifierProperty);
                 auto id = identifierProperty.begin() + indexToIndexMap.size();
                 for(const auto& entry : refMap) {
                     *id++ = entry.first;
@@ -242,14 +242,14 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
         }
 
         // Transfer particle properties from the trajectory file.
-        for(const PropertyObject* property : trajectoryParticles->properties()) {
-            if(property->type() == ParticlesObject::IdentifierProperty)
+        for(const Property* property : trajectoryParticles->properties()) {
+            if(property->type() == Particles::IdentifierProperty)
                 continue;
 
             // Get or create the output particle property.
-            PropertyObject* outputProperty;
+            Property* outputProperty;
             bool replacingProperty;
-            if(property->type() != ParticlesObject::UserProperty) {
+            if(property->type() != Particles::UserProperty) {
                 replacingProperty = (particles->getProperty(property->type()) != nullptr);
                 outputProperty = particles->createProperty(DataBuffer::Initialized, property->type());
                 if(outputProperty->dataType() != property->dataType()
@@ -273,10 +273,10 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
         }
 
         // Transfer box geometry.
-        const SimulationCellObject* topologyCell = state.getObject<SimulationCellObject>();
-        const SimulationCellObject* trajectoryCell = trajState.getObject<SimulationCellObject>();
+        const SimulationCell* topologyCell = state.getObject<SimulationCell>();
+        const SimulationCell* trajectoryCell = trajState.getObject<SimulationCell>();
         if(topologyCell && trajectoryCell) {
-            SimulationCellObject* outputCell = state.makeMutable(topologyCell);
+            SimulationCell* outputCell = state.makeMutable(topologyCell);
             outputCell->setCellMatrix(trajectoryCell->cellMatrix());
             const AffineTransformation& simCell = trajectoryCell->cellMatrix();
 
@@ -284,13 +284,13 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             // stored in wrapped coordinates, then it becomes necessary to fix bonds using the minimum image convention.
             const std::array<bool, 3> pbc = topologyCell->pbcFlags();
             if((pbc[0] || pbc[1] || pbc[2]) && particles->bonds() && std::abs(simCell.determinant()) > FLOATTYPE_EPSILON) {
-                BufferReadAccess<Point3> outputPosProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+                BufferReadAccess<Point3> outputPosProperty = particles->expectProperty(Particles::PositionProperty);
                 const AffineTransformation inverseCellMatrix = simCell.inverse();
                 const size_t particleCount = outputPosProperty.size();
 
-                BondsObject* bonds = particles->makeBondsMutable();
-                if(BufferReadAccess<ParticleIndexPair> topologyProperty = bonds->getProperty(BondsObject::TopologyProperty)) {
-                    BufferWriteAccess<Vector3I, access_mode::discard_write> periodicImageProperty = bonds->createProperty(DataBuffer::Uninitialized, BondsObject::PeriodicImageProperty);
+                Bonds* bonds = particles->makeBondsMutable();
+                if(BufferReadAccess<ParticleIndexPair> topologyProperty = bonds->getProperty(Bonds::TopologyProperty)) {
+                    BufferWriteAccess<Vector3I, access_mode::discard_write> periodicImageProperty = bonds->createProperty(DataBuffer::Uninitialized, Bonds::PeriodicImageProperty);
 
                     // Wrap bonds crossing a periodic boundary by resetting their PBC shift vectors.
                     for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
@@ -313,19 +313,19 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
         }
     }
 
-    if(const BondsObject* trajectoryBonds = trajectoryParticles->bonds()) {
+    if(const Bonds* trajectoryBonds = trajectoryParticles->bonds()) {
         trajectoryBonds->verifyIntegrity();
 
         // Create a mutable copy of the particles object.
-        ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+        Particles* particles = state.expectMutableObject<Particles>();
         particles->verifyIntegrity();
 
         // If the trajectory file contains a bond topology, completely replace all existing bonds
         // from the topology dataset with the new set of bonds.
         // The topology can be specified either in the form of the "Topology" bond property (two 0-based particle indices)
         // or in the form of the "Particle Identifiers" bond property (pairs of atom IDs).
-        const PropertyObject* bondTopology = trajectoryBonds->getProperty(BondsObject::TopologyProperty);
-        const PropertyObject* bondParticleIdentifiers = trajectoryBonds->getProperty(BondsObject::ParticleIdentifiersProperty);
+        const Property* bondTopology = trajectoryBonds->getProperty(Bonds::TopologyProperty);
+        const Property* bondParticleIdentifiers = trajectoryBonds->getProperty(Bonds::ParticleIdentifiersProperty);
 
         if(bondTopology || bondParticleIdentifiers) {
             if(particles->bonds()) {
@@ -344,7 +344,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             if(bondParticleIdentifiers) {
                 // Build map from particle identifiers to particle indices.
                 std::map<IdentifierIntType, size_t> idToIndexMap;
-                if(BufferReadAccess<IdentifierIntType> particleIdentifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
+                if(BufferReadAccess<IdentifierIntType> particleIdentifierProperty = particles->getProperty(Particles::IdentifierProperty)) {
                     size_t index = 0;
                     for(auto id : particleIdentifierProperty) {
                         if(idToIndexMap.insert(std::make_pair(id, index++)).second == false)
@@ -358,7 +358,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
                 }
 
                 // Perform lookup of particle IDs.
-                BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> bondTopologyArray = particles->makeBondsMutable()->createProperty(BondsObject::TopologyProperty);
+                BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> bondTopologyArray = particles->makeBondsMutable()->createProperty(Bonds::TopologyProperty);
                 auto t = bondTopologyArray.begin();
                 for(const ParticleIndexPair& bond : BufferReadAccess<ParticleIndexPair>(bondParticleIdentifiers)) {
                     auto iter1 = idToIndexMap.find(bond[0]);
@@ -377,8 +377,8 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             }
 
             // Compute the PBC shift vectors of the bonds based on current particle positions.
-            if(!trajectoryBonds->getProperty(BondsObject::PeriodicImageProperty)) {
-                if(const SimulationCellObject* simCellObj = state.getObject<SimulationCellObject>()) {
+            if(!trajectoryBonds->getProperty(Bonds::PeriodicImageProperty)) {
+                if(const SimulationCell* simCellObj = state.getObject<SimulationCell>()) {
                     if(simCellObj->pbcX() || simCellObj->pbcY() || simCellObj->pbcZ()) {
                         particles->makeBondsMutable()->generatePeriodicImageProperty(particles, simCellObj);
                     }
@@ -394,11 +394,11 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             }
 
             if(!trajectoryBonds->properties().empty()) {
-                BondsObject* bonds = particles->makeBondsMutable();
+                Bonds* bonds = particles->makeBondsMutable();
 
                 // Add the properties to the existing bonds, overwriting existing values if necessary.
-                for(const PropertyObject* newProperty : trajectoryBonds->properties()) {
-                    const PropertyObject* existingPropertyObj = (newProperty->type() != 0) ? bonds->getProperty(newProperty->type()) : bonds->getProperty(newProperty->name());
+                for(const Property* newProperty : trajectoryBonds->properties()) {
+                    const Property* existingPropertyObj = (newProperty->type() != 0) ? bonds->getProperty(newProperty->type()) : bonds->getProperty(newProperty->name());
                     if(existingPropertyObj) {
                         bonds->makeMutable(existingPropertyObj)->copyFrom(*newProperty);
                     }

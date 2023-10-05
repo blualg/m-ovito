@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,7 +28,7 @@
 namespace Ovito {
 
 /******************************************************************************
-* A push button that allows the user to open a modifier's output in the data 
+* A push button that allows the user to open a modifier's output in the data
 * inspector panel.
 ******************************************************************************/
 class OVITO_GUI_EXPORT OpenDataInspectorButton : public QPushButton
@@ -50,7 +50,7 @@ private:
 
     /// Data object name hint to be passed to the data inspector when the button is clicked.
     QString _objectNameHint;
-    
+
     /// Mode hint to be passed to the data inspector when the button is clicked.
     QVariant _modeHint;
 };

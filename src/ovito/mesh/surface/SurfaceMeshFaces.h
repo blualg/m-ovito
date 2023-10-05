@@ -26,7 +26,7 @@
 #include <ovito/mesh/Mesh.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 /**
  * \brief Stores all face-related properties of a SurfaceMesh.
@@ -60,11 +60,11 @@ public:
 
     /// \brief The list of standard face properties.
     enum Type {
-        UserProperty = PropertyObject::GenericUserProperty, //< This is reserved for user-defined properties.
-        SelectionProperty = PropertyObject::GenericSelectionProperty,
-        ColorProperty = PropertyObject::GenericColorProperty,
-        FaceTypeProperty = PropertyObject::GenericTypeProperty,
-        RegionProperty = PropertyObject::FirstSpecificProperty,
+        UserProperty = Property::GenericUserProperty, //< This is reserved for user-defined properties.
+        SelectionProperty = Property::GenericSelectionProperty,
+        ColorProperty = Property::GenericColorProperty,
+        FaceTypeProperty = Property::GenericTypeProperty,
+        RegionProperty = Property::FirstSpecificProperty,
         BurgersVectorProperty,
         CrystallographicNormalProperty,
     };

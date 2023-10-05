@@ -25,10 +25,10 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/import/ParticleImporter.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * File parser GROMACS coordinates file in GROMOS-87 format.

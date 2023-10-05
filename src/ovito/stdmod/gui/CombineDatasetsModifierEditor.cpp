@@ -26,7 +26,7 @@
 #include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
 #include "CombineDatasetsModifierEditor.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CombineDatasetsModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CombineDatasetsModifier, CombineDatasetsModifierEditor);

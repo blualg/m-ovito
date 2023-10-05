@@ -31,7 +31,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/rendering/ColorCodingGradient.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * \brief Base class for ColorCodingModifier delegates that operate on different kinds of data.
@@ -65,7 +65,7 @@ protected:
     using ModifierDelegate::ModifierDelegate;
 
     /// Returns the ID of the standard property that will receive the computed colors.
-    virtual int outputColorPropertyId() const { return PropertyObject::GenericColorProperty; }
+    virtual int outputColorPropertyId() const { return Property::GenericColorProperty; }
 };
 
 /**
@@ -93,7 +93,7 @@ public:
     Q_CLASSINFO("ModifierCategory", "Coloring");
 
 #ifdef OVITO_QML_GUI
-    Q_PROPERTY(Ovito::StdMod::ColorCodingGradient* colorGradient READ colorGradient WRITE setColorGradient NOTIFY referenceReplacedSignal)
+    Q_PROPERTY(Ovito::ColorCodingGradient* colorGradient READ colorGradient WRITE setColorGradient NOTIFY referenceReplacedSignal)
     Q_PROPERTY(QString colorGradientType READ colorGradientType WRITE setColorGradientType NOTIFY referenceReplacedSignal)
 #endif
 
@@ -135,7 +135,7 @@ public:
 #endif
 
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return sourceProperty().nameWithComponent(); }
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return sourceProperty().nameWithComponent(); }
 
     /// Sets the start and end value to the minimum and maximum value of the selected input property.
     /// Returns true if successful.

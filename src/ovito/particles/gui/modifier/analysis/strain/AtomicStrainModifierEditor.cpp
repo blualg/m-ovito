@@ -32,7 +32,7 @@
 #include <ovito/core/dataset/io/FileSource.h>
 #include "AtomicStrainModifierEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(AtomicStrainModifierEditor);
 SET_OVITO_OBJECT_EDITOR(AtomicStrainModifier, AtomicStrainModifierEditor);

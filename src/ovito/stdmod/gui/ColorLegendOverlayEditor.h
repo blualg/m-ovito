@@ -26,7 +26,7 @@
 #include <ovito/stdmod/gui/StdModGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * \brief A properties editor for the ColorLegendOverlay class.

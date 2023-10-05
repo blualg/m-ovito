@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/stdmod/modifiers/InvertSelectionModifier.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * A properties editor for the InvertSelectionModifier class.

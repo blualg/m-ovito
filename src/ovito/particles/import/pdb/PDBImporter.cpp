@@ -21,9 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include "PDBImporter.h"
@@ -91,7 +91,7 @@ inline size_t copy_line_from_stream<Ovito::CompressedTextReader&>(char* line, in
 }
 }
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(PDBImporter);
 
@@ -190,7 +190,7 @@ void PDBImporter::FrameLoader::loadFile()
 
         // Import PDB metadata fields as global attributes.
         for(const auto& m : structure.info) {
-            state().setAttribute(QString::fromStdString(m.first), QVariant::fromValue(QString::fromStdString(m.second)), dataSource());
+            state().setAttribute(QString::fromStdString(m.first), QVariant::fromValue(QString::fromStdString(m.second)), pipelineNode());
         }
 
         // Import PDB remark lines as global attributes.
@@ -213,15 +213,15 @@ void PDBImporter::FrameLoader::loadFile()
                         FloatType time = match.captured(2).toDouble(&ok2);
                         FloatType energy = match.captured(3).toDouble(&ok3);
                         if(ok1)
-                            state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timestep), dataSource());
+                            state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timestep), pipelineNode());
                         if(ok2)
-                            state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(time), dataSource());
+                            state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(time), pipelineNode());
                         if(ok3)
-                            state().setAttribute(QStringLiteral("Energy"), QVariant::fromValue(energy), dataSource());
+                            state().setAttribute(QStringLiteral("Energy"), QVariant::fromValue(energy), pipelineNode());
                         continue;
                     }
                 }
-                state().setAttribute(QStringLiteral("pdb.remark.%1").arg(++remarkIndex), QVariant::fromValue(remarkString.trimmed()), dataSource());
+                state().setAttribute(QStringLiteral("pdb.remark.%1").arg(++remarkIndex), QVariant::fromValue(remarkString.trimmed()), pipelineNode());
             }
         }
 
@@ -242,10 +242,10 @@ void PDBImporter::FrameLoader::loadFile()
 
         // Allocate property arrays for atoms.
         setParticleCount(natoms);
-        BufferWriteAccess<Point3, access_mode::discard_read_write> posAccess = particles()->createProperty(ParticlesObject::PositionProperty);
-        PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-        PropertyObject* atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), DataBuffer::Int32);
-        PropertyObject* residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), DataBuffer::Int32);
+        BufferWriteAccess<Point3, access_mode::discard_read_write> posAccess = particles()->createProperty(Particles::PositionProperty);
+        Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
+        Property* atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), DataBuffer::Int32);
+        Property* residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), DataBuffer::Int32);
 
         // Give these particle properties new titles, which are displayed in the GUI under the file source.
         atomNameProperty->setTitle(tr("Atom names"));
@@ -264,17 +264,17 @@ void PDBImporter::FrameLoader::loadFile()
         for(const gemmi::Chain& chain : model.chains) {
             for(const gemmi::Residue& residue : chain.residues) {
                 if(isCanceled()) return;
-                int residueTypeId = (residue.name.empty() == false) ? addNamedType(ParticlesObject::OOClass(), residueTypeProperty, QLatin1String(residue.name.c_str(), residue.name.size()))->numericId() : 0;
+                int residueTypeId = (residue.name.empty() == false) ? addNamedType(Particles::OOClass(), residueTypeProperty, QLatin1String(residue.name.c_str(), residue.name.size()))->numericId() : 0;
                 for(const gemmi::Atom& atom : residue.atoms) {
                     // Atomic position.
                     *posIter++ = Point3(atom.pos.x, atom.pos.y, atom.pos.z);
 
                     // Chemical type.
                     *typeIter++ = atom.element.ordinal();
-                    addNumericType(ParticlesObject::OOClass(), typeProperty, atom.element.ordinal(), QString::fromStdString(atom.element.name()));
+                    addNumericType(Particles::OOClass(), typeProperty, atom.element.ordinal(), QString::fromStdString(atom.element.name()));
 
                     // Atom name.
-                    *atomNameIter++ = addNamedType(ParticlesObject::OOClass(), atomNameProperty, QLatin1String(atom.name.c_str(), atom.name.size()))->numericId();
+                    *atomNameIter++ = addNamedType(Particles::OOClass(), atomNameProperty, QLatin1String(atom.name.c_str(), atom.name.size()))->numericId();
 
                     // Residue type.
                     *residueTypeIter++ = residueTypeId;

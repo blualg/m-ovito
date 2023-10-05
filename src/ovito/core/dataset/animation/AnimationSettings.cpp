@@ -223,24 +223,24 @@ void AnimationSettings::adjustAnimationInterval()
     // Visit all scenes that reference this animation settings object.
     visitDependents([&](RefMaker* dependent) {
         if(Scene* scene = dynamic_object_cast<Scene>(dependent)) {
-            scene->visitObjectNodes([&](PipelineSceneNode* node) {
-                if(node->dataProvider()) {
-                    int nframes = node->dataProvider()->numberOfSourceFrames();
+            scene->visitPipelines([&](Pipeline* pipeline) {
+                if(pipeline->head()) {
+                    int nframes = pipeline->head()->numberOfSourceFrames();
                     if(nframes > 0) {
 
                         // Final animation interval should encompass the local intervals
                         // of all animated objects in the scene.
-                        int start = node->dataProvider()->sourceFrameToAnimationTime(0).frame();
+                        int start = pipeline->head()->sourceFrameToAnimationTime(0).frame();
                         if(start < firstFrame) firstFrame = start;
-                        int end = (node->dataProvider()->sourceFrameToAnimationTime(nframes) - 1).frame();
+                        int end = (pipeline->head()->sourceFrameToAnimationTime(nframes) - 1).frame();
                         if(end > lastFrame) lastFrame = end;
 
                         // Save the list of the named animation frames.
                         // Merge with other list(s) from other scene objects if there are any.
                         if(_namedFrames.empty())
-                            _namedFrames = node->dataProvider()->animationFrameLabels();
+                            _namedFrames = pipeline->head()->animationFrameLabels();
                         else {
-                            auto additionalLabels = node->dataProvider()->animationFrameLabels();
+                            auto additionalLabels = pipeline->head()->animationFrameLabels();
                             if(!additionalLabels.empty())
                                 _namedFrames.insert(additionalLabels);
                         }

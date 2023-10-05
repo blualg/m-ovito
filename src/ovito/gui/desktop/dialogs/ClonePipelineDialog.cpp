@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,8 +23,8 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/base/actions/ActionManager.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/oo/CloneHelper.h>
 #include "ClonePipelineDialog.h"
 
@@ -33,8 +33,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ClonePipelineDialog::ClonePipelineDialog(MainWindow& mainWindow, PipelineSceneNode* node, QWidget* parent) :
-    QDialog(parent), _mainWindow(mainWindow), _originalNode(node)
+ClonePipelineDialog::ClonePipelineDialog(MainWindow& mainWindow, Pipeline* pipeline, QWidget* parent) :
+    QDialog(parent), _mainWindow(mainWindow), _originalPipeline(pipeline)
 {
     setWindowTitle(tr("Clone pipeline"));
 
@@ -87,8 +87,8 @@ ClonePipelineDialog::ClonePipelineDialog(MainWindow& mainWindow, PipelineSceneNo
     sublayout2->addSpacing(10);
     sublayout2->addWidget(new QLabel(tr("Clone:")));
     sublayout2->addWidget(_cloneNameEdit, 1);
-    _originalNameEdit->setPlaceholderText(node->objectTitle());
-    _cloneNameEdit->setPlaceholderText(node->objectTitle());
+    _originalNameEdit->setPlaceholderText(pipeline->objectTitle());
+    _cloneNameEdit->setPlaceholderText(pipeline->objectTitle());
 
     QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &ClonePipelineDialog::onAccept);
@@ -119,32 +119,32 @@ ClonePipelineDialog::ClonePipelineDialog(MainWindow& mainWindow, PipelineSceneNo
 ******************************************************************************/
 void ClonePipelineDialog::initializeGraphicsScene()
 {
-    // Obtain the list of objects that form the current pipeline.
-    PipelineObject* pobj = _originalNode->dataProvider();
-    while(pobj) {
+    // Obtain the list of node that form the current pipeline.
+    PipelineNode* pnode = _originalPipeline->head();
+    while(pnode) {
         PipelineItemStruct s;
-        s.pipelineObjects.push_back(pobj);
-        if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(pobj)) {
-            if(modApp->modifierGroup()) {
-                if(!_pipelineItems.empty() && _pipelineItems.back().modApps.back()->modifierGroup() == modApp->modifierGroup()) {
-                    _pipelineItems.back().pipelineObjects.push_back(pobj);
-                    _pipelineItems.back().modApps.push_back(modApp);
-                    pobj = modApp->input();
+        s.pipelineNodes.push_back(pnode);
+        if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(pnode)) {
+            if(modNode->modifierGroup()) {
+                if(!_pipelineItems.empty() && _pipelineItems.back().modNodes.back()->modifierGroup() == modNode->modifierGroup()) {
+                    _pipelineItems.back().pipelineNodes.push_back(pnode);
+                    _pipelineItems.back().modNodes.push_back(modNode);
+                    pnode = modNode->input();
                     continue;
                 }
-                s.title = modApp->modifierGroup()->objectTitle();
+                s.title = modNode->modifierGroup()->objectTitle();
             }
             else {
-                s.title = modApp->modifier()->objectTitle();
+                s.title = modNode->modifier()->objectTitle();
             }
-            s.modApps.push_back(modApp);
-            pobj = modApp->input();
+            s.modNodes.push_back(modNode);
+            pnode = modNode->input();
         }
         else {
-            s.title = tr("Source: ") + pobj->objectTitle();
-            pobj = nullptr;
+            s.title = tr("Source: ") + pnode->objectTitle();
+            pnode = nullptr;
         }
-        _pipelineItems.push_back(s);
+        _pipelineItems.push_back(std::move(s));
     }
 
     QPen borderPen(palette().color(QPalette::WindowText));
@@ -416,71 +416,72 @@ void ClonePipelineDialog::onAccept()
     setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
 
     _mainWindow.performTransaction(tr("Clone pipeline"), [this]() {
-        if(_pipelineItems.empty()) return;
+        if(_pipelineItems.empty())
+            return;
 
         // Do not create any animation keys during cloning.
         AnimationSuspender animSuspender(_mainWindow);
 
         // Clone the scene node.
         CloneHelper cloneHelper;
-        OORef<PipelineSceneNode> clonedPipeline = cloneHelper.cloneObject(_originalNode, false);
-        OVITO_ASSERT(clonedPipeline->dataProvider() == _originalNode->dataProvider());
+        OORef<Pipeline> clonedPipeline = cloneHelper.cloneObject(_originalPipeline, false);
+        OVITO_ASSERT(clonedPipeline->head() == _originalPipeline->head());
 
         // The scene we are working in.
-        Scene* scene = _originalNode->scene();
+        Scene* scene = _originalPipeline->scene();
 
-        // Clone the pipeline objects.
-        OORef<PipelineObject> precedingObj;
+        // Clone the pipeline nodes.
+        OORef<PipelineNode> precedingNode;
         for(auto s = _pipelineItems.crbegin(); s != _pipelineItems.crend(); ++s) {
             if(s->cloneMode() == CloneMode::Join) {
-                precedingObj = s->pipelineObjects.front();
+                precedingNode = s->pipelineNodes.front();
             }
             else if(s->cloneMode() == CloneMode::Copy) {
-                for(auto pobj = s->pipelineObjects.crbegin(); pobj != s->pipelineObjects.crend(); ++pobj) {
-                    OORef<PipelineObject> clonedObject = cloneHelper.cloneObject(*pobj, false);
-                    if(ModifierApplication* clonedModApp = dynamic_object_cast<ModifierApplication>(clonedObject)) {
-                        clonedModApp->setInput(precedingObj);
-                        clonedModApp->setModifier(cloneHelper.cloneObject(clonedModApp->modifier(), true));
+                for(auto pnode = s->pipelineNodes.crbegin(); pnode != s->pipelineNodes.crend(); ++pnode) {
+                    OORef<PipelineNode> clonedNode = cloneHelper.cloneObject(*pnode, false);
+                    if(ModificationNode* clonedModNode = dynamic_object_cast<ModificationNode>(clonedNode)) {
+                        clonedModNode->setInput(precedingNode);
+                        clonedModNode->setModifier(cloneHelper.cloneObject(clonedModNode->modifier(), true));
                     }
-                    precedingObj = clonedObject;
+                    precedingNode = std::move(clonedNode);
                 }
             }
             else if(s->cloneMode() == CloneMode::Share) {
-                OVITO_ASSERT(s->isModifier() && s->modApps.size() == s->pipelineObjects.size());
-                for(auto modApp = s->modApps.crbegin(); modApp != s->modApps.crend(); ++modApp) {
-                    OORef<ModifierApplication> clonedModApp = cloneHelper.cloneObject(*modApp, false);
-                    clonedModApp->setInput(precedingObj);
-                    precedingObj = clonedModApp;
+                OVITO_ASSERT(s->isModifier() && s->modNodes.size() == s->pipelineNodes.size());
+                for(auto modNode = s->modNodes.crbegin(); modNode != s->modNodes.crend(); ++modNode) {
+                    OORef<ModificationNode> clonedModNode = cloneHelper.cloneObject(*modNode, false);
+                    clonedModNode->setInput(precedingNode);
+                    precedingNode = std::move(clonedModNode);
                 }
             }
             else if(s->cloneMode() == CloneMode::Skip) {
                 continue;
             }
         }
-        clonedPipeline->setDataProvider(precedingObj);
+        clonedPipeline->setHead(precedingNode);
 
         // Give the cloned pipeline the user-defined name.
         QString nodeName = _cloneNameEdit->text().trimmed();
         if(nodeName.isEmpty() == false)
-            clonedPipeline->setNodeName(nodeName);
+            clonedPipeline->setSceneNodeName(nodeName);
 
-        // Give the original pipeline the user-defined name.
+        // Give the original pipeline the new user-defined name.
         nodeName = _originalNameEdit->text().trimmed();
         if(nodeName.isEmpty() == false)
-            _originalNode->setNodeName(nodeName);
+            _originalPipeline->setSceneNodeName(nodeName);
 
-        // Translate cloned pipeline.
+        // Translate cloned pipeline in scene.
         int displacementMode = _displacementDirectionGroup->checkedAction()->data().toInt();
         if(displacementMode != -1) {
             AnimationTime time = scene ? scene->animationSettings()->currentTime() : AnimationTime(0);
-            const Box3& bbox = _originalNode->worldBoundingBox(time);
+            const Box3& bbox = _originalPipeline->worldBoundingBox(time);
             Vector3 translation = Vector3::Zero();
             translation[displacementMode] = bbox.size(displacementMode) + FloatType(0.2) * bbox.size().length();
             clonedPipeline->transformationController()->translate(time, translation, AffineTransformation::Identity());
         }
 
         // Insert cloned pipeline into scene.
-        if(SceneNode* parentNode = _originalNode->parentNode())
+        if(SceneNode* parentNode = _originalPipeline->parentNode())
             parentNode->addChildNode(clonedPipeline);
 
         // Select cloned pipeline.

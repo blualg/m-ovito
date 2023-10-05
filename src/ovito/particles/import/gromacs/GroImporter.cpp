@@ -21,16 +21,16 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include "GroImporter.h"
 
 #include <3rdparty/gemmi/elem.hpp>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(GroImporter);
 
@@ -199,12 +199,12 @@ void GroImporter::FrameLoader::loadFile()
     setParticleCount(numParticles);
 
     // Create particle properties.
-    BufferWriteAccess<Point3, access_mode::read_write> posProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::PositionProperty);
-    PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-    PropertyObject* atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int32);
-    PropertyObject* residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int32);
-    PropertyObject* residueNumberProperty = particles()->createProperty(QStringLiteral("Residue Identifier"), PropertyObject::Int64);
-    BufferWriteAccess<int64_t, access_mode::read_write> identifierProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::IdentifierProperty);
+    BufferWriteAccess<Point3, access_mode::read_write> posProperty = particles()->createProperty(DataBuffer::Initialized, Particles::PositionProperty);
+    Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
+    Property* atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), Property::Int32);
+    Property* residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), Property::Int32);
+    Property* residueNumberProperty = particles()->createProperty(QStringLiteral("Residue Identifier"), Property::Int64);
+    BufferWriteAccess<int64_t, access_mode::read_write> identifierProperty = particles()->createProperty(DataBuffer::Initialized, Particles::IdentifierProperty);
     BufferWriteAccess<Vector3, access_mode::discard_write> velocityProperty;
 
     // Give these particle properties new titles, which are displayed in the GUI under the file source.
@@ -338,18 +338,18 @@ void GroImporter::FrameLoader::loadFile()
             const char singleLetterName[2] = { atomNameStart[0], '\0' };
             element = gemmi::Element(singleLetterName);
         }
-        addNumericType(ParticlesObject::OOClass(), typeProperty, element.ordinal(), QLatin1String(element.name()));
+        addNumericType(Particles::OOClass(), typeProperty, element.ordinal(), QLatin1String(element.name()));
 
         // Store parsed value in property arrays.
         identifierProperty[atomIndex] = atomNumber;
         typeAccess[atomIndex] = element.ordinal();
         atomNameAccess[atomIndex] =
             (residueNameStart != residueNameEnd) ?
-            addNamedType(ParticlesObject::OOClass(), atomNameProperty, QLatin1String(atomNameStart, atomNameEnd))->numericId()
+            addNamedType(Particles::OOClass(), atomNameProperty, QLatin1String(atomNameStart, atomNameEnd))->numericId()
             : 0;
         residueTypeAccess[atomIndex] =
             (residueNameStart != residueNameEnd) ?
-            addNamedType(ParticlesObject::OOClass(), residueTypeProperty, QLatin1String(residueNameStart, residueNameEnd))->numericId()
+            addNamedType(Particles::OOClass(), residueTypeProperty, QLatin1String(residueNameStart, residueNameEnd))->numericId()
             : 0;
         residueNumberAccess[atomIndex] = residueNumber;
 
@@ -390,7 +390,7 @@ void GroImporter::FrameLoader::loadFile()
             for(const char* c2 = c + 1; *c2 != '\0' && *c2 != '.'; ++c2)
                 columnWidth++;
             if(!velocityProperty)
-                velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty);
+                velocityProperty = particles()->createProperty(Particles::VelocityProperty);
             Vector3& v = velocityProperty[atomIndex];
             for(size_t dim = 0; dim < 3; dim++) {
                 token_end = token + columnWidth;

@@ -30,7 +30,7 @@
 
 #include <QXmlStreamReader>
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 /**
  * \brief File parser for reading a VoxelGrid from a ParaView VTS (StructuredGrid) file.

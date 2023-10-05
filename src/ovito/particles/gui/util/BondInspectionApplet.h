@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,14 +25,14 @@
 
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/gui/util/BondPickingHelper.h>
-#include <ovito/particles/objects/BondsObject.h>
+#include <ovito/particles/objects/Bonds.h>
 #include <ovito/particles/util/ParticleExpressionEvaluator.h>
 #include <ovito/stdobj/gui/properties/PropertyInspectionApplet.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/viewport/ViewportGizmo.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 
 /**
@@ -46,7 +46,7 @@ class BondInspectionApplet : public PropertyInspectionApplet
 public:
 
     /// Constructor.
-    Q_INVOKABLE BondInspectionApplet() : PropertyInspectionApplet(BondsObject::OOClass()) {}
+    Q_INVOKABLE BondInspectionApplet() : PropertyInspectionApplet(Bonds::OOClass()) {}
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 10; }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -89,11 +89,11 @@ void GlobalAttributesInspectionApplet::updateDisplay()
 /******************************************************************************
 * Selects a specific data object in this applet.
 ******************************************************************************/
-bool GlobalAttributesInspectionApplet::selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint)
+bool GlobalAttributesInspectionApplet::selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
 {
     for(size_t i = 0; i < _tableModel->attributes().size(); i++) {
         const auto& attr = _tableModel->attributes()[i];
-        if(attr->dataSource() == dataSource) {
+        if(attr->createdByNode() == createdByNode) {
             if(objectIdentifierHint.isEmpty() || attr->identifier().startsWith(objectIdentifierHint)) {
                 // Note: Defer selecting the table row to a somewhat later time, because QTableView only accepts
                 // selection calls when it's visible and after the parent widget has been enabled.
@@ -146,7 +146,7 @@ void GlobalAttributesInspectionApplet::exportToFile()
         exporter->setOutputFilename(exportFile);
 
         // Set scene node to be exported.
-        exporter->setNodeToExport(currentPipeline());
+        exporter->setSceneNodeToExport(currentPipeline());
 
         // If the exporter supports it, automatically choose the data object(s) to be exported.
         exporter->selectDefaultExportableData(mainWindow().datasetContainer().currentSet(), currentPipeline()->scene());

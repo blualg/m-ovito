@@ -24,13 +24,13 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Calculates the centrosymmetry parameter (CSP) for particles.
@@ -87,14 +87,14 @@ private:
     public:
 
         /// Constructor.
-        CentroSymmetryEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCellObject* simCell, int nneighbors, CSPMode mode, DataOORef<DataTable> histogram) :
+        CentroSymmetryEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCell* simCell, int nneighbors, CSPMode mode, DataOORef<DataTable> histogram) :
             Engine(request),
             _nneighbors(nneighbors),
             _mode(mode),
             _positions(std::move(positions)),
             _selection(std::move(selection)),
             _simCell(simCell),
-            _csp(ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), ParticlesObject::CentroSymmetryProperty)),
+            _csp(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), Particles::CentroSymmetryProperty)),
             _inputFingerprint(std::move(fingerprint)),
             _histogram(std::move(histogram)) {}
 
@@ -114,13 +114,13 @@ private:
         const ConstPropertyPtr& selection() const { return _selection; }
 
         /// Returns the simulation cell data.
-        const DataOORef<const SimulationCellObject>& cell() const { return _simCell; }
+        const DataOORef<const SimulationCell>& cell() const { return _simCell; }
 
     private:
 
         const int _nneighbors;
         const CSPMode _mode;
-        DataOORef<const SimulationCellObject> _simCell;
+        DataOORef<const SimulationCell> _simCell;
         ConstPropertyPtr _positions;
         ConstPropertyPtr _selection;
         const PropertyPtr _csp;

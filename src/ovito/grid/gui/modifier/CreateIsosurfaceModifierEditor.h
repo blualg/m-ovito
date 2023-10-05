@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,7 +29,7 @@
 
 class QwtPlotMarker;
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 /**
  * \brief A properties editor for the CreateIsosurfaceModifier class.
@@ -62,7 +62,7 @@ protected Q_SLOTS:
 private:
 
     /// The graph widget to display the histogram.
-    StdObj::DataTablePlotWidget* _plotWidget;
+    DataTablePlotWidget* _plotWidget;
 
     /// The plot item for indicating the current iso level value.
     QwtPlotMarker* _isoLevelIndicator;

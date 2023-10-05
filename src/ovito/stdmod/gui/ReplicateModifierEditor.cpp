@@ -27,7 +27,7 @@
 #include <ovito/stdmod/modifiers/ReplicateModifier.h>
 #include "ReplicateModifierEditor.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ReplicateModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ReplicateModifier, ReplicateModifierEditor);

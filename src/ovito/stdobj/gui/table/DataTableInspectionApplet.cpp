@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,7 +30,7 @@
 #include <ovito/core/app/Application.h>
 #include "DataTableInspectionApplet.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DataTableInspectionApplet);
 
@@ -121,11 +121,11 @@ void DataTableInspectionApplet::onCurrentContainerChanged(const DataObject* data
 /******************************************************************************
 * Selects a specific data object in this applet.
 ******************************************************************************/
-bool DataTableInspectionApplet::selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint)
+bool DataTableInspectionApplet::selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
 {
-    // Let the base class switch to the right data table object. 
-    bool result = PropertyInspectionApplet::selectDataObject(dataSource, objectIdentifierHint, modeHint);
-    
+    // Let the base class switch to the right data table object.
+    bool result = PropertyInspectionApplet::selectDataObject(createdByNode, objectIdentifierHint, modeHint);
+
     if(result) {
         // The mode hint is used to switch between plot and table view.
         int mode = modeHint.toInt();
@@ -188,7 +188,7 @@ void DataTableInspectionApplet::exportDataToFile()
         exporter->setOutputFilename(exportFile);
 
         // Set scene node to be exported.
-        exporter->setNodeToExport(currentPipeline());
+        exporter->setSceneNodeToExport(currentPipeline());
 
         // If the exporter supports it, automatically choose the data object(s) to be exported.
         exporter->selectDefaultExportableData(mainWindow().datasetContainer().currentSet(), currentPipeline()->scene());

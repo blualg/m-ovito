@@ -34,7 +34,7 @@
     #undef min
 #endif
 
-namespace Ovito::Ssh {
+namespace Ovito {
 
 class ProcessChannel : public SshChannel
 {

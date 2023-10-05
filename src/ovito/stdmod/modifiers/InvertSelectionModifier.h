@@ -26,7 +26,7 @@
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/stdobj/properties/GenericPropertyModifier.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * \brief This modifier inverts the selection status of each element.

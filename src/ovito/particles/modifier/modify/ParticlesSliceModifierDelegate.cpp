@@ -21,14 +21,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/app/Application.h>
 #include "ParticlesSliceModifierDelegate.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParticlesSliceModifierDelegate);
 
@@ -38,8 +38,8 @@ IMPLEMENT_OVITO_CLASS(ParticlesSliceModifierDelegate);
 ******************************************************************************/
 QVector<DataObjectReference> ParticlesSliceModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(input.containsObject<ParticlesObject>())
-        return { DataObjectReference(&ParticlesObject::OOClass()) };
+    if(input.containsObject<Particles>())
+        return { DataObjectReference(&Particles::OOClass()) };
     return {};
 }
 
@@ -48,16 +48,16 @@ QVector<DataObjectReference> ParticlesSliceModifierDelegate::OOMetaClass::getApp
 ******************************************************************************/
 PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-    const ParticlesObject* inputParticles = state.expectObject<ParticlesObject>();
+    const Particles* inputParticles = state.expectObject<Particles>();
     inputParticles->verifyIntegrity();
     QString statusMessage = tr("%n input particles", 0, inputParticles->elementCount());
 
     SliceModifier* mod = static_object_cast<SliceModifier>(request.modifier());
-    PropertyFactory<SelectionIntType> mask(ParticlesObject::OOClass(), inputParticles->elementCount(), ParticlesObject::SelectionProperty);
+    PropertyFactory<SelectionIntType> mask(Particles::OOClass(), inputParticles->elementCount(), Particles::SelectionProperty);
 
     // Get the required input properties.
-    BufferReadAccess<Point3> posProperty = inputParticles->expectProperty(ParticlesObject::PositionProperty);
-    BufferReadAccess<SelectionIntType> selProperty = mod->applyToSelection() ? inputParticles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
+    BufferReadAccess<Point3> posProperty = inputParticles->expectProperty(Particles::PositionProperty);
+    BufferReadAccess<SelectionIntType> selProperty = mod->applyToSelection() ? inputParticles->expectProperty(Particles::SelectionProperty) : nullptr;
     OVITO_ASSERT(posProperty.size() == mask.size());
     OVITO_ASSERT(!selProperty || selProperty.size() == mask.size());
 
@@ -123,7 +123,7 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationReq
     selProperty.reset();
 
     // Make sure we can safely modify the particles object.
-    ParticlesObject* outputParticles = state.makeMutable(inputParticles);
+    Particles* outputParticles = state.makeMutable(inputParticles);
     if(mod->createSelection() == false) {
         // Delete the marked particles.
         outputParticles->deleteElements(mask.take(), numMarked);

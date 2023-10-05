@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/export/ParticleExporter.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 class GSDFile;  // Defined in GSDFile.h
 

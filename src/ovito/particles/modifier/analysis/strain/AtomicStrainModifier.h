@@ -25,11 +25,11 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/modifier/analysis/ReferenceConfigurationModifier.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Calculates the per-particle strain tensors based on a reference configuration.
@@ -60,8 +60,8 @@ private:
     public:
 
         /// Constructor.
-        AtomicStrainEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell,
-                ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef,
+        AtomicStrainEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell,
+                ConstPropertyPtr refPositions, const SimulationCell* simCellRef,
                 ConstPropertyPtr identifiers, ConstPropertyPtr refIdentifiers,
                 FloatType cutoff, AffineMappingType affineMapping, bool useMinimumImageConvention,
                 bool calculateDeformationGradients, bool calculateStrainTensors,
@@ -70,15 +70,15 @@ private:
             RefConfigEngineBase(request, validityInterval, positions, simCell, refPositions, simCellRef,
                 std::move(identifiers), std::move(refIdentifiers), affineMapping, useMinimumImageConvention),
             _cutoff(cutoff),
-            _displacements(ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, refPositions->size(), ParticlesObject::DisplacementProperty)),
-            _shearStrains(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), PropertyObject::FloatDefault, 1, tr("Shear Strain"))),
-            _volumetricStrains(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), PropertyObject::FloatDefault, 1, tr("Volumetric Strain"))),
-            _strainTensors(calculateStrainTensors ? ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), ParticlesObject::StrainTensorProperty) : nullptr),
-            _deformationGradients(calculateDeformationGradients ? ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), ParticlesObject::DeformationGradientProperty) : nullptr),
-            _nonaffineSquaredDisplacements(calculateNonaffineSquaredDisplacements ? ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), PropertyObject::FloatDefault, 1, tr("Nonaffine Squared Displacement")) : nullptr),
-            _invalidParticles(selectInvalidParticles ? ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), ParticlesObject::SelectionProperty) : nullptr),
-            _rotations(calculateRotations ? ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), ParticlesObject::RotationProperty) : nullptr),
-            _stretchTensors(calculateStretchTensors ? ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), ParticlesObject::StretchTensorProperty) : nullptr),
+            _displacements(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, refPositions->size(), Particles::DisplacementProperty)),
+            _shearStrains(Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), Property::FloatDefault, 1, tr("Shear Strain"))),
+            _volumetricStrains(Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), Property::FloatDefault, 1, tr("Volumetric Strain"))),
+            _strainTensors(calculateStrainTensors ? Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), Particles::StrainTensorProperty) : nullptr),
+            _deformationGradients(calculateDeformationGradients ? Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), Particles::DeformationGradientProperty) : nullptr),
+            _nonaffineSquaredDisplacements(calculateNonaffineSquaredDisplacements ? Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), Property::FloatDefault, 1, tr("Nonaffine Squared Displacement")) : nullptr),
+            _invalidParticles(selectInvalidParticles ? Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), Particles::SelectionProperty) : nullptr),
+            _rotations(calculateRotations ? Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), Particles::RotationProperty) : nullptr),
+            _stretchTensors(calculateStretchTensors ? Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), Particles::StretchTensorProperty) : nullptr),
             _inputFingerprint(std::move(fingerprint)) {}
 
         /// Computes the modifier's results.

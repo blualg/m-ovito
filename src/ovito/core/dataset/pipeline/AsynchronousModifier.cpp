@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/dataset/pipeline/AsynchronousModifierApplication.h>
+#include <ovito/core/dataset/pipeline/AsynchronousModificationNode.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/concurrent/LaunchTask.h>
 #include "AsynchronousModifier.h"
@@ -47,13 +47,13 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
     OVITO_ASSERT(!isUndoRecording());
     OVITO_ASSERT(ExecutionContext::current().isValid());
 
-    // Get the modifier application, which stores cached computation results.
-    const AsynchronousModifierApplication* asyncModApp = dynamic_object_cast<AsynchronousModifierApplication>(request.modApp());
-    if(!asyncModApp) 
+    // Get the modifier node, which stores cached computation results.
+    const AsynchronousModificationNode* asyncModNode = dynamic_object_cast<AsynchronousModificationNode>(request.modificationNode());
+    if(!asyncModNode)
         return Future<PipelineFlowState>::createFailed(Exception(tr("Wrong type of modifier application.")));
 
     // Check if there is an existing computation result that can be reused as is.
-    if(const EnginePtr& engine = asyncModApp->completedEngine()) {
+    if(const EnginePtr& engine = asyncModNode->completedEngine()) {
         if(engine->validityInterval().contains(request.time())) {
             // Inject the cached computation result into the pipeline.
             PipelineFlowState output = input;
@@ -72,18 +72,18 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
         using future_type = Future<PipelineFlowState>;
 
         /// Constructor.
-        EngineExecutionTask(const ModifierEvaluationRequest& request, EnginePtr engine, const PipelineFlowState& state, std::vector<EnginePtr> validStages = {}) : 
+        EngineExecutionTask(const ModifierEvaluationRequest& request, EnginePtr engine, const PipelineFlowState& state, std::vector<EnginePtr> validStages = {}) :
                 detail::ContinuationTask<std::tuple<PipelineFlowState>, Task>(Task::Started, std::forward_as_tuple(state)),
                 _request(request),
-                _modApp(static_object_cast<AsynchronousModifierApplication>(request.modApp())),
+                _modNode(static_object_cast<AsynchronousModificationNode>(request.modificationNode())),
                 _engine(std::move(engine)),
                 _validStages(std::move(validStages)) {}
 
         /// Starts running the next compute engine.
         void operator()() noexcept {
-            OVITO_ASSERT(_modApp);
+            OVITO_ASSERT(_modNode);
             OVITO_ASSERT(_engine);
-            
+
             if(isCanceled()) {
                 setFinished();
             }
@@ -94,13 +94,13 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
                 _engine->setValidityInterval(iv);
                 _validStages.push_back(_engine);
 
-                auto future = 
-                    _engine->preferSynchronousExecution() 
+                auto future =
+                    _engine->preferSynchronousExecution()
                     ? _engine->runImmediately(true)
                     : _engine->runAsync(true);
 
                 // Schedule next iteration upon completion of the future returned by the user function.
-                this->whenTaskFinishes(std::move(future), *_modApp, detail::bind_front(&EngineExecutionTask::executionFinished, static_pointer_cast<EngineExecutionTask>(this->shared_from_this())));
+                this->whenTaskFinishes(std::move(future), *_modNode, detail::bind_front(&EngineExecutionTask::executionFinished, static_pointer_cast<EngineExecutionTask>(this->shared_from_this())));
             }
             else if(EnginePtr continuationEngine = _engine->createContinuationEngine(_request, resultsStorage())) {
 
@@ -119,8 +119,8 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
                 // Add the computed results to the input pipeline state.
                 _engine->applyResults(_request, resultsStorage());
                 resultsStorage().intersectStateValidity(_engine->validityInterval());
-                _modApp->setCompletedEngine(std::move(_engine));
-                _modApp->setValidStages(std::move(_validStages));
+                _modNode->setCompletedEngine(std::move(_engine));
+                _modNode->setValidStages(std::move(_validStages));
                 setFinished();
             }
         }
@@ -156,20 +156,20 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
     private:
 
         ModifierEvaluationRequest _request;
-        OORef<AsynchronousModifierApplication> _modApp;
+        OORef<AsynchronousModificationNode> _modNode;
         EnginePtr _engine;
         std::vector<EnginePtr> _validStages;
     };
 
     // Check if there are any partially completed computation results that can serve as starting point for a new computation.
-    if(!asyncModApp->validStages().empty() && asyncModApp->validStages().back()->validityInterval().contains(request.time())) {
+    if(!asyncModNode->validStages().empty() && asyncModNode->validStages().back()->validityInterval().contains(request.time())) {
         // Create the asynchronous task object and continue the execution of engines.
-        return launchTask<false>(std::make_shared<EngineExecutionTask>(request, asyncModApp->validStages().back(), input, asyncModApp->validStages()));
+        return launchTask<false>(std::make_shared<EngineExecutionTask>(request, asyncModNode->validStages().back(), input, asyncModNode->validStages()));
     }
     else {
         // Otherwise, ask the subclass to create a new compute engine to perform the computation from scratch.
-        return createEngine(request, input).then(*this, [this, request = request, input = input, modApp = QPointer<const AsynchronousModifierApplication>(asyncModApp)](EnginePtr engine) mutable {
-            if(!modApp || modApp->modifier() != this)
+        return createEngine(request, input).then(*this, [this, request = request, input = input, modNode = QPointer<const AsynchronousModificationNode>(asyncModNode)](EnginePtr engine) mutable {
+            if(!modNode || modNode->modifier() != this)
                 throw Exception(tr("Modifier has been deleted from the pipeline."));
             // Create the asynchronous task object and start running the engine.
             return launchTask<false>(std::make_shared<EngineExecutionTask>(std::move(request), std::move(engine), std::move(input)));
@@ -186,14 +186,14 @@ void AsynchronousModifier::evaluateSynchronous(const ModifierEvaluationRequest& 
 
     // If results are still available from the last pipeline evaluation, apply them to the input data.
     applyCachedResultsSynchronous(request, state);
-    
+
     // Call base implementation.
     Modifier::evaluateSynchronous(request, state);
 }
 
 /******************************************************************************
-* This function is called from AsynchronousModifier::evaluateSynchronous() to 
-* apply the results from the last asycnhronous compute engine during a 
+* This function is called from AsynchronousModifier::evaluateSynchronous() to
+* apply the results from the last asynchronous compute engine during a
 * synchronous pipeline evaluation.
 ******************************************************************************/
 bool AsynchronousModifier::applyCachedResultsSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
@@ -201,8 +201,8 @@ bool AsynchronousModifier::applyCachedResultsSynchronous(const ModifierEvaluatio
     OVITO_ASSERT(!isUndoRecording());
 
     // If results are still available from the last pipeline evaluation, apply them to the input data.
-    if(const AsynchronousModifierApplication* asyncModApp = dynamic_object_cast<AsynchronousModifierApplication>(request.modApp())) {
-        if(const AsynchronousModifier::EnginePtr& engine = asyncModApp->completedEngine()) {
+    if(const AsynchronousModificationNode* asyncModNode = dynamic_object_cast<AsynchronousModificationNode>(request.modificationNode())) {
+        if(const AsynchronousModifier::EnginePtr& engine = asyncModNode->completedEngine()) {
             engine->applyResults(request, state);
             state.intersectStateValidity(engine->validityInterval());
             return true;

@@ -25,12 +25,12 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/VectorVis.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/modifier/analysis/ReferenceConfigurationModifier.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Calculates the per-particle displacement vectors based on a reference configuration.
@@ -65,18 +65,18 @@ private:
                 const ModifierEvaluationRequest& request,
                 const TimeInterval& validityInterval,
                 ConstPropertyPtr positions,
-                const SimulationCellObject* simCell,
+                const SimulationCell* simCell,
                 ParticleOrderingFingerprint fingerprint,
                 ConstPropertyPtr refPositions,
-                const SimulationCellObject* simCellRef,
+                const SimulationCell* simCellRef,
                 ConstPropertyPtr identifiers,
                 ConstPropertyPtr refIdentifiers,
                 AffineMappingType affineMapping,
                 bool useMinimumImageConvention) :
             RefConfigEngineBase(request, validityInterval, positions, simCell, std::move(refPositions), simCellRef,
                 std::move(identifiers), std::move(refIdentifiers), affineMapping, useMinimumImageConvention),
-            _displacements(ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), ParticlesObject::DisplacementProperty)),
-            _displacementMagnitudes(ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), ParticlesObject::DisplacementMagnitudeProperty)),
+            _displacements(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), Particles::DisplacementProperty)),
+            _displacementMagnitudes(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), Particles::DisplacementMagnitudeProperty)),
             _inputFingerprint(std::move(fingerprint)) {}
 
         /// Computes the modifier's results.

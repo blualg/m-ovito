@@ -26,7 +26,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief A properties editor for the BondsVis class.
@@ -49,7 +49,7 @@ private Q_SLOTS:
 
     /// Updates the coloring controls shown in the UI.
     void updateColoringOptions();
-    
+
 private:
 
     IntegerRadioButtonParameterUI* _coloringModeUI;

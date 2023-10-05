@@ -21,12 +21,12 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
 #include "FHIAimsExporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(FHIAimsExporter);
 
@@ -36,17 +36,17 @@ IMPLEMENT_OVITO_CLASS(FHIAimsExporter);
 bool FHIAimsExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
     // Get particle positions and types.
-    const ParticlesObject* particles = state.expectObject<ParticlesObject>();
+    const Particles* particles = state.expectObject<Particles>();
     particles->verifyIntegrity();
-    BufferReadAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-    const PropertyObject* particleTypeProperty = particles->getProperty(ParticlesObject::TypeProperty);
+    BufferReadAccess<Point3> posProperty = particles->expectProperty(Particles::PositionProperty);
+    const Property* particleTypeProperty = particles->getProperty(Particles::TypeProperty);
     BufferReadAccess<int32_t> particleTypeArray(particleTypeProperty);
 
     textStream() << "# FHI-aims file written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
 
     // Output simulation cell.
     Point3 origin = Point3::Origin();
-    const SimulationCellObject* simulationCell = state.getObject<SimulationCellObject>();
+    const SimulationCell* simulationCell = state.getObject<SimulationCell>();
     if(simulationCell) {
         origin = simulationCell->cellOrigin();
         if(simulationCell->pbcX() || simulationCell->pbcY() || simulationCell->pbcZ()) {

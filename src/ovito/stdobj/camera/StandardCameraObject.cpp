@@ -24,7 +24,7 @@
 #include <ovito/stdobj/camera/TargetObject.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/rendering/SceneRenderer.h>
@@ -32,7 +32,7 @@
 #include <ovito/core/app/Application.h>
 #include "StandardCameraObject.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(StandardCameraObject);
 DEFINE_PROPERTY_FIELD(StandardCameraObject, isPerspective);
@@ -144,12 +144,12 @@ void StandardCameraObject::projectionParameters(AnimationTime time, ViewProjecti
 /******************************************************************************
 * With a target camera, indicates the distance between the camera and its target.
 ******************************************************************************/
-FloatType StandardCameraObject::getTargetDistance(AnimationTime time, const PipelineSceneNode* node)
+FloatType StandardCameraObject::getTargetDistance(AnimationTime time, const Pipeline* pipeline)
 {
-    if(node && node->lookatTargetNode() != nullptr) {
+    if(pipeline && pipeline->lookatTargetNode() != nullptr) {
         TimeInterval iv;
-        Vector3 cameraPos = node->getWorldTransform(time, iv).translation();
-        Vector3 targetPos = node->lookatTargetNode()->getWorldTransform(time, iv).translation();
+        Vector3 cameraPos = pipeline->getWorldTransform(time, iv).translation();
+        Vector3 targetPos = pipeline->lookatTargetNode()->getWorldTransform(time, iv).translation();
         return (cameraPos - targetPos).length();
     }
 
@@ -160,7 +160,7 @@ FloatType StandardCameraObject::getTargetDistance(AnimationTime time, const Pipe
 /******************************************************************************
 * Lets the vis element render a camera object.
 ******************************************************************************/
-PipelineStatus CameraVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus CameraVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
 {
     // Camera objects are only visible in the interactive viewports.
     if(renderer->isInteractive() == false || renderer->viewport() == nullptr)
@@ -171,9 +171,9 @@ PipelineStatus CameraVis::render(AnimationTime time, const ConstDataObjectPath& 
     // Determine the camera and target positions when rendering a target camera.
     FloatType targetDistance = 0;
     bool showTargetLine = false;
-    if(contextNode->lookatTargetNode()) {
-        Vector3 cameraPos = contextNode->getWorldTransform(time, iv).translation();
-        Vector3 targetPos = contextNode->lookatTargetNode()->getWorldTransform(time, iv).translation();
+    if(pipeline->lookatTargetNode()) {
+        Vector3 cameraPos = pipeline->getWorldTransform(time, iv).translation();
+        Vector3 targetPos = pipeline->lookatTargetNode()->getWorldTransform(time, iv).translation();
         targetDistance = (cameraPos - targetPos).length();
         showTargetLine = true;
     }
@@ -181,13 +181,13 @@ PipelineStatus CameraVis::render(AnimationTime time, const ConstDataObjectPath& 
     // Determine the aspect ratio and angle of the camera cone.
     FloatType aspectRatio = 0;
     FloatType coneAngle = 0;
-    if(contextNode->isSelected()) {
+    if(pipeline->isSelected()) {
         aspectRatio = renderer->renderSettings().outputImageAspectRatio();
         if(const StandardCameraObject* camera = path.lastAs<StandardCameraObject>()) {
             if(camera->isPerspective()) {
                 coneAngle = camera->fieldOfView(time, iv);
                 if(targetDistance == 0)
-                    targetDistance = StandardCameraObject::getTargetDistance(time, contextNode);
+                    targetDistance = StandardCameraObject::getTargetDistance(time, pipeline);
             }
         }
     }
@@ -304,11 +304,11 @@ PipelineStatus CameraVis::render(AnimationTime time, const ConstDataObjectPath& 
 
         LinePrimitive cameraPrimitives;
         cameraPrimitives.setPositions(_cameraIconVertices);
-        cameraPrimitives.setUniformColor(ViewportSettings::getSettings().viewportColor(contextNode->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_CAMERAS));
+        cameraPrimitives.setUniformColor(ViewportSettings::getSettings().viewportColor(pipeline->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_CAMERAS));
         if(renderer->isPicking())
             cameraPrimitives.setLineWidth(renderer->defaultLinePickingWidth());
 
-        renderer->beginPickObject(contextNode);
+        renderer->beginPickObject(pipeline);
         renderer->renderLines(cameraPrimitives);
         renderer->endPickObject();
     }
@@ -323,7 +323,7 @@ PipelineStatus CameraVis::render(AnimationTime time, const ConstDataObjectPath& 
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 CameraVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 CameraVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
 {
     // This is not a physical object. It doesn't have a size.
     return Box3(Point3::Origin(), Point3::Origin());

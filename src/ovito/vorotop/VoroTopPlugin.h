@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,9 +24,3 @@
 
 
 #include <ovito/particles/Particles.h>
-
-namespace Ovito {
-    namespace VoroTop {
-        using namespace Ovito::Particles;
-    }
-}

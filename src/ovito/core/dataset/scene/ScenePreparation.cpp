@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/scene/Scene.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/app/UserInterface.h>
 #include "ScenePreparation.h"
@@ -141,7 +141,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
 
     // Go through all pipelines of the scene until we find one
     // that is not completely evaluated yet.
-    scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+    scene()->visitPipelines([&](Pipeline* pipeline) {
         // Request visual elements too.
         _pipelineEvaluation = pipeline->evaluateRenderingPipeline(request);
         if(!_pipelineEvaluation.isFinished()) {

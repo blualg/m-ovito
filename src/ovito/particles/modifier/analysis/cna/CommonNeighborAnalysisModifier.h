@@ -25,10 +25,10 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/modifier/analysis/StructureIdentificationModifier.h>
-#include <ovito/particles/objects/BondsObject.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Bonds.h>
+#include <ovito/particles/objects/Particles.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief A modifier that performs the common neighbor analysis (CNA) to identify
@@ -167,7 +167,7 @@ private:
     public:
 
         /// Constructor.
-        FixedCNAEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
+        FixedCNAEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
             CNAEngine(request, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
             _cutoff(cutoff) {}
 
@@ -210,11 +210,11 @@ private:
     public:
 
         /// Constructor.
-        BondCNAEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages) :
+        BondCNAEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages) :
             CNAEngine(request, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
             _bondTopology(std::move(bondTopology)),
             _bondPeriodicImages(std::move(bondPeriodicImages)),
-            _cnaIndices(BondsObject::OOClass().createUserProperty(DataBuffer::Uninitialized, _bondTopology->size(), PropertyObject::Int32, 3, tr("CNA Indices"))) {}
+            _cnaIndices(Bonds::OOClass().createUserProperty(DataBuffer::Uninitialized, _bondTopology->size(), Property::Int32, 3, tr("CNA Indices"))) {}
 
         /// Computes the modifier's results.
         virtual void perform() override;

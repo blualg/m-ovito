@@ -24,7 +24,7 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "TrajectoryColorCodingModifierDelegate.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(TrajectoryColorCodingModifierDelegate);
 
@@ -34,8 +34,8 @@ IMPLEMENT_OVITO_CLASS(TrajectoryColorCodingModifierDelegate);
 ******************************************************************************/
 QVector<DataObjectReference> TrajectoryColorCodingModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(input.containsObject<TrajectoryObject>())
-        return { DataObjectReference(&TrajectoryObject::OOClass()) };
+    if(input.containsObject<TrajectoryLines>())
+        return { DataObjectReference(&TrajectoryLines::OOClass()) };
     return {};
 }
 

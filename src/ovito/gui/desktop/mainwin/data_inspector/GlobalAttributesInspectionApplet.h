@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,7 +55,7 @@ public:
     virtual void updateDisplay() override;
 
     /// Selects a specific data object in this applet.
-    virtual bool selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint) override;
+    virtual bool selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint) override;
 
 private Q_SLOTS:
 

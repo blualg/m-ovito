@@ -26,7 +26,7 @@
 #include <ovito/mesh/io/ParaViewVTPMeshImporter.h>
 #include "ParaViewVTSGridImporter.h"
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParaViewVTSGridImporter);
 IMPLEMENT_OVITO_CLASS(GridParaViewVTMFileFilter);
@@ -73,7 +73,7 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
     QString gridIdentifier = loadRequest().dataBlockPrefix;
     VoxelGrid* gridObj = state().getMutableLeafObject<VoxelGrid>(VoxelGrid::OOClass(), gridIdentifier);
     if(!gridObj) {
-        gridObj = state().createObject<VoxelGrid>(dataSource());
+        gridObj = state().createObject<VoxelGrid>(pipelineNode());
         gridObj->setIdentifier(gridIdentifier);
         VoxelGridVis* vis = gridObj->visElement<VoxelGridVis>();
         if(!gridIdentifier.isEmpty()) {
@@ -190,7 +190,7 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
                     auto name = xml.attributes().value("Name");
 
                     // Create voxel grid property that receives the values.
-                    PropertyObject* property = gridObj->createProperty(PropertyObject::makePropertyNameValid(name.toString()), dataType, numComponents);
+                    Property* property = gridObj->createProperty(Property::makePropertyNameValid(name.toString()), dataType, numComponents);
 
                     // Parse values from XML file.
                     if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, xml))

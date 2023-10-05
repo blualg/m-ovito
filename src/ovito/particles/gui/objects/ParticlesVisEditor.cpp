@@ -26,7 +26,7 @@
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include "ParticlesVisEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParticlesVisEditor);
 SET_OVITO_OBJECT_EDITOR(ParticlesVis, ParticlesVisEditor);

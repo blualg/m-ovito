@@ -29,7 +29,7 @@
 #include <ovito/core/viewport/overlays/ViewportOverlay.h>
 #include <ovito/core/rendering/FrameBuffer.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * \brief A viewport overlay that displays the color legend of a ColorCodingModifier.
@@ -79,7 +79,7 @@ protected:
 
 public:
 
-    Q_PROPERTY(Ovito::StdMod::ColorCodingModifier* modifier READ modifier WRITE setModifier)
+    Q_PROPERTY(Ovito::ColorCodingModifier* modifier READ modifier WRITE setModifier)
 
 private:
 
@@ -87,7 +87,7 @@ private:
     void drawContinuousColorMap(SceneRenderer* renderer, const QRectF& colorBarRect, FloatType legendSize, const PseudoColorMapping& mapping);
 
 	/// Draws the color legend for a typed property.
-	void drawDiscreteColorMap(SceneRenderer* renderer, const QRectF& colorBarRect, FloatType legendSize, const PropertyObject* property);
+	void drawDiscreteColorMap(SceneRenderer* renderer, const QRectF& colorBarRect, FloatType legendSize, const Property* property);
 
     // Determine the starting value and the tick spacing for a given color bar length and character size
     [[nodiscard]] std::tuple<FloatType, FloatType> getAutomaticTickPositions(FloatType lowerLimit, FloatType upperLimit,

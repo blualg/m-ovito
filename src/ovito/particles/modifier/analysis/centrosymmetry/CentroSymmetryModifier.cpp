@@ -22,17 +22,17 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/util/NearestNeighborFinder.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "CentroSymmetryModifier.h"
 #include <mwm_csp/mwm_csp.h>
 
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CentroSymmetryModifier);
 DEFINE_PROPERTY_FIELD(CentroSymmetryModifier, numNeighbors);
@@ -58,7 +58,7 @@ CentroSymmetryModifier::CentroSymmetryModifier(ObjectInitializationFlags flags) 
 ******************************************************************************/
 bool CentroSymmetryModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    return input.containsObject<ParticlesObject>();
+    return input.containsObject<Particles>();
 }
 
 /******************************************************************************
@@ -67,10 +67,10 @@ bool CentroSymmetryModifier::OOMetaClass::isApplicableTo(const DataCollection& i
 Future<AsynchronousModifier::EnginePtr> CentroSymmetryModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get modifier input.
-    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
+    const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
-    const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-    const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
+    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
+    const SimulationCell* simCell = input.expectObject<SimulationCell>();
 
     if(numNeighbors() < 2)
         throw Exception(tr("The number of neighbors to take into account in the centrosymmetry calculation is invalid. It must be at least 2."));
@@ -82,12 +82,12 @@ Future<AsynchronousModifier::EnginePtr> CentroSymmetryModifier::createEngine(con
         throw Exception(tr("The number of neighbors to take into account in the centrosymmetry calculation must be a positive and even integer."));
 
     // Get particle selection.
-    const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
+    const Property* selectionProperty = onlySelectedParticles() ? particles->expectProperty(Particles::SelectionProperty) : nullptr;
 
     // Create an empty data table for the CSP value histogram to be computed.
     DataOORef<DataTable> histogram = DataOORef<DataTable>::create(DataTable::Line, tr("CSP distribution"));
     histogram->setIdentifier(input.generateUniqueIdentifier<DataTable>(QStringLiteral("csp-centrosymmetry")));
-    histogram->setDataSource(request.modApp());
+    histogram->setCreatedByNode(request.modificationNode());
     histogram->setAxisLabelX(tr("CSP"));
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
@@ -126,7 +126,7 @@ void CentroSymmetryModifier::CentroSymmetryEngine::perform()
     if(cspHistogramBinSize <= 0) cspHistogramBinSize = 1;
 
     // Perform binning of CSP values.
-    PropertyPtr histogramCounts = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, numHistogramBins, PropertyObject::Int64, 1, tr("Count"));
+    PropertyPtr histogramCounts = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, numHistogramBins, Property::Int64, 1, tr("Count"));
     BufferWriteAccess<int64_t, access_mode::read_write> histogramAccess(histogramCounts);
     const auto* sel = selectionData ? selectionData.begin() : nullptr;
     for(const FloatType cspValue : cspArray) {
@@ -201,7 +201,7 @@ FloatType CentroSymmetryModifier::computeCSP(NearestNeighborFinder& neighFinder,
 ******************************************************************************/
 void CentroSymmetryModifier::CentroSymmetryEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-    ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+    Particles* particles = state.expectMutableObject<Particles>();
     if(_inputFingerprint.hasChanged(particles))
         throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 

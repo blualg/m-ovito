@@ -22,14 +22,14 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/app/Application.h>
 #include "StructureIdentificationModifier.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(StructureIdentificationModifier);
 DEFINE_VECTOR_REFERENCE_FIELD(StructureIdentificationModifier, structureTypes);
@@ -53,7 +53,7 @@ StructureIdentificationModifier::StructureIdentificationModifier(ObjectInitializ
 ******************************************************************************/
 bool StructureIdentificationModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    return input.containsObject<ParticlesObject>();
+    return input.containsObject<Particles>();
 }
 
 /******************************************************************************
@@ -64,7 +64,7 @@ ElementType* StructureIdentificationModifier::createStructureType(int id, Partic
     DataOORef<ElementType> stype = DataOORef<ElementType>::create();
     stype->setNumericId(id);
     stype->setName(ParticleType::getPredefinedStructureTypeName(predefType));
-    stype->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty));
+    stype->initializeType(ParticlePropertyReference(Particles::StructureTypeProperty));
     addStructureType(stype);
     return stype;
 }
@@ -94,12 +94,12 @@ void StructureIdentificationModifier::loadFromStream(ObjectLoadStream& stream)
 /******************************************************************************
 * Compute engine constructor.
 ******************************************************************************/
-StructureIdentificationModifier::StructureIdentificationEngine::StructureIdentificationEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection) :
+StructureIdentificationModifier::StructureIdentificationEngine::StructureIdentificationEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection) :
     Engine(request),
     _positions(std::move(positions)),
     _simCell(simCell),
     _selection(std::move(selection)),
-    _structures(ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), ParticlesObject::StructureTypeProperty)),
+    _structures(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), Particles::StructureTypeProperty)),
     _inputFingerprint(std::move(fingerprint))
 {
     // Create deep copies of the structure elements types, because data objects owned by the modifier should
@@ -120,7 +120,7 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
     StructureIdentificationModifier* modifier = static_object_cast<StructureIdentificationModifier>(request.modifier());
     OVITO_ASSERT(modifier);
 
-    ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+    Particles* particles = state.expectMutableObject<Particles>();
     particles->verifyIntegrity();
 
     if(_inputFingerprint.hasChanged(particles))
@@ -146,7 +146,7 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
         }
 
         // Assign colors to particles based on their structure type.
-        BufferWriteAccess<ColorG, access_mode::discard_write> colorProperty = particles->createProperty(ParticlesObject::ColorProperty);
+        BufferWriteAccess<ColorG, access_mode::discard_write> colorProperty = particles->createProperty(Particles::ColorProperty);
         boost::transform(structureData, colorProperty.begin(), [&](int s) {
             if(s >= 0 && s < structureTypeColors.size())
                 return structureTypeColors[s];
@@ -169,9 +169,9 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
     }
 
     // Create the property arrays for the bar chart.
-    PropertyPtr typeCounts = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxTypeId + 1, PropertyObject::Int64, 1, tr("Count"));
+    PropertyPtr typeCounts = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxTypeId + 1, Property::Int64, 1, tr("Count"));
     boost::copy(_typeCounts, BufferWriteAccess<int64_t, access_mode::discard_write>(typeCounts).begin());
-    PropertyPtr typeIds = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxTypeId + 1, PropertyObject::Int32, 1, tr("Structure type"));
+    PropertyPtr typeIds = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxTypeId + 1, Property::Int32, 1, tr("Structure type"));
     boost::algorithm::iota_n(BufferWriteAccess<int32_t, access_mode::discard_write>(typeIds).begin(), 0, typeIds->size());
 
     // Use the structure types as labels for the output bar chart.
@@ -181,7 +181,7 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
     }
 
     // Output a bar chart with the type counts.
-    DataTable* table = state.createObject<DataTable>(QStringLiteral("structures"), request.modApp(), DataTable::BarChart, tr("Structure counts"), std::move(typeCounts), std::move(typeIds));
+    DataTable* table = state.createObject<DataTable>(QStringLiteral("structures"), request.modificationNode(), DataTable::BarChart, tr("Structure counts"), std::move(typeCounts), std::move(typeIds));
 }
 
 #ifdef OVITO_QML_GUI
@@ -189,18 +189,18 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
 * This helper method is called by the QML GUI (StructureListParameter.qml) to extract the identification counts
 * from the cached pipeline output state after the modifier has been evaluated.
 ******************************************************************************/
-QVector<int64_t> StructureIdentificationModifier::getStructureCountsFromModifierResults(ModifierApplication* modApp) const
+QVector<int64_t> StructureIdentificationModifier::getStructureCountsFromModifierResults(ModificationNode* node) const
 {
-    if(!modApp || !modApp->isEnabled())
+    if(!node || !node->isEnabled())
         return {};
 
     // Get the current data pipeline output generated by the modifier.
-    const PipelineFlowState& state = modApp->evaluateSynchronousAtCurrentTime(ExecutionContext::Type::Interactive);
+    const PipelineFlowState& state = node->evaluateSynchronousAtCurrentTime(ExecutionContext::Type::Interactive);
 
     // Access the data table in the pipeline state containing the structure counts.
-    if(const DataTable* table = state.getObjectBy<DataTable>(modApp, QStringLiteral("structures"))) {
-        if(const PropertyObject* structureCounts = table->getY()) {
-            if(structureCounts->size() != 0 && structureCounts->dataType() == PropertyObject::Int64) {
+    if(const DataTable* table = state.getObjectBy<DataTable>(node, QStringLiteral("structures"))) {
+        if(const Property* structureCounts = table->getY()) {
+            if(structureCounts->size() != 0 && structureCounts->dataType() == Property::Int64) {
 
                 // Convert the table data to a format that can be passed back to QML.
                 BufferReadAccess<int64_t> array(structureCounts);

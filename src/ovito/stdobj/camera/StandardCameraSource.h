@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,16 +24,16 @@
 
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/core/dataset/pipeline/PipelineObject.h>
+#include <ovito/core/dataset/pipeline/PipelineNode.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * A pipeline source generating a StandardCameraObject.
  */
-class OVITO_STDOBJ_EXPORT StandardCameraSource : public PipelineObject
+class OVITO_STDOBJ_EXPORT StandardCameraSource : public PipelineNode
 {
     OVITO_CLASS(StandardCameraSource)
     Q_CLASSINFO("DisplayName", "Camera");
@@ -50,14 +50,6 @@ public:
 
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const override;
-
-    /// Asks the pipeline stage to compute the results.
-    virtual SharedFuture<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request) override {
-        return evaluateSynchronous(request);
-    }
-
-    /// Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
-    virtual PipelineFlowState evaluateSynchronous(const PipelineEvaluationRequest& request) override;
 
     /// Returns whether this camera is a target camera directed at a target object.
     bool isTargetCamera() const;
@@ -79,6 +71,16 @@ public:
 
     /// Sets the field of view angle of a perspective projection camera.
     void setFov(FloatType newFOV);
+
+protected:
+
+    /// Asks the pipeline stage to compute the results.
+    virtual Future<PipelineFlowState> evaluateInternal(const PipelineEvaluationRequest& request) override {
+        return evaluateInternalSynchronous(request);
+    }
+
+    /// Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
+    virtual PipelineFlowState evaluateInternalSynchronous(const PipelineEvaluationRequest& request) override;
 
 private:
 

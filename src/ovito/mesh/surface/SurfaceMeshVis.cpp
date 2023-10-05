@@ -22,10 +22,10 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/mesh/util/CapPolygonTessellator.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
-#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
+#include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/DataSetContainer.h>
@@ -35,7 +35,7 @@
 #include "SurfaceMeshReadAccess.h"
 #include "RenderableSurfaceMesh.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshVis);
 DEFINE_PROPERTY_FIELD(SurfaceMeshVis, surfaceColor);
@@ -179,7 +179,7 @@ Future<PipelineFlowState> SurfaceMeshVis::transformDataImpl(const PipelineEvalua
 
     // Submit engine for execution and post-process results.
     return engine->runAsync(true)
-        .then(*this, [this, flowState = std::move(flowState), dataObject = OORef<DataObject>(dataObject)](DataOORef<const TriMeshObject>&& surfaceMesh, DataOORef<const TriMeshObject>&& capPolygonsMesh, std::vector<ColorA>&& materialColors, std::vector<size_t>&& originalFaceMap, bool renderFacesTwoSided, PipelineStatus&& status) mutable {
+        .then(*this, [this, flowState = std::move(flowState), dataObject = OORef<DataObject>(dataObject)](DataOORef<const TriangleMesh>&& surfaceMesh, DataOORef<const TriangleMesh>&& capPolygonsMesh, std::vector<ColorA>&& materialColors, std::vector<size_t>&& originalFaceMap, bool renderFacesTwoSided, PipelineStatus&& status) mutable {
             // Output the computed mesh as a RenderableSurfaceMesh.
             DataOORef<RenderableSurfaceMesh> renderableMesh = DataOORef<RenderableSurfaceMesh>::create(
                 ObjectInitializationFlag::DontCreateVisElement, this, dataObject, std::move(surfaceMesh), std::move(capPolygonsMesh), !renderFacesTwoSided);
@@ -196,7 +196,7 @@ Future<PipelineFlowState> SurfaceMeshVis::transformDataImpl(const PipelineEvalua
 /******************************************************************************
 * Computes the bounding box of the displayed data.
 ******************************************************************************/
-Box3 SurfaceMeshVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 SurfaceMeshVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
 {
     Box3 bb;
 
@@ -212,7 +212,7 @@ Box3 SurfaceMeshVis::boundingBox(AnimationTime time, const ConstDataObjectPath& 
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus SurfaceMeshVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus SurfaceMeshVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
 {
     // Ignore render calls for the original SurfaceMesh.
     // We are only interested in the RenderableSurfaceMesh.
@@ -221,7 +221,7 @@ PipelineStatus SurfaceMeshVis::render(AnimationTime time, const ConstDataObjectP
 
     if(renderer->isBoundingBoxPass()) {
         TimeInterval validityInterval;
-        renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, renderer->visCache(), validityInterval));
+        renderer->addToLocalBoundingBox(boundingBox(time, path, pipeline, flowState, renderer->visCache(), validityInterval));
         return {};
     }
 
@@ -287,7 +287,7 @@ PipelineStatus SurfaceMeshVis::render(AnimationTime time, const ConstDataObjectP
     }
 
     // Handle picking of triangles.
-    renderer->beginPickObject(contextNode, visCache.pickInfo);
+    renderer->beginPickObject(pipeline, visCache.pickInfo);
     if(visCache.surfacePrimitive.mesh()) {
 
         // Update the color mapping.
@@ -318,14 +318,14 @@ OORef<ObjectPickInfo> SurfaceMeshVis::createPickInfo(const SurfaceMesh* mesh, co
 * Returns a human-readable string describing the picked object,
 * which will be displayed in the status bar by OVITO.
 ******************************************************************************/
-QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjectId)
+QString SurfaceMeshPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
 {
     QString str = surfaceMesh()->objectTitle();
 
     // Display all the properties of the face and also the properties of the mesh region to which the face belongs.
     auto facetIndex = faceIndexFromSubObjectID(subobjectId);
     if(surfaceMesh()->faces() && facetIndex >= 0 && facetIndex < surfaceMesh()->faces()->elementCount()) {
-        for(const PropertyObject* property : surfaceMesh()->faces()->properties()) {
+        for(const Property* property : surfaceMesh()->faces()->properties()) {
             if(facetIndex >= property->size()) continue;
             if(property->type() == SurfaceMeshFaces::SelectionProperty) continue;
             if(property->type() == SurfaceMeshFaces::ColorProperty) continue;
@@ -334,7 +334,7 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
             str += QStringLiteral("<key>");
             str += property->name();
             str += QStringLiteral(":</key> ");
-            if(property->dataType() == PropertyObject::Int32) {
+            if(property->dataType() == Property::Int32) {
                 BufferReadAccess<int32_t*> data(property);
                 for(size_t component = 0; component < data.componentCount(); component++) {
                     if(component != 0) str += QStringLiteral(", ");
@@ -347,28 +347,28 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
                     }
                 }
             }
-            else if(property->dataType() == PropertyObject::Int64) {
+            else if(property->dataType() == Property::Int64) {
                 BufferReadAccess<int64_t*> data(property);
                 for(size_t component = 0; component < property->componentCount(); component++) {
                     if(component != 0) str += QStringLiteral(", ");
                     str += QString::number(data.get(facetIndex, component));
                 }
             }
-            else if(property->dataType() == PropertyObject::Int8) {
+            else if(property->dataType() == Property::Int8) {
                 BufferReadAccess<int8_t*> data(property);
                 for(size_t component = 0; component < property->componentCount(); component++) {
                     if(component != 0) str += QStringLiteral(", ");
                     str += QString::number(data.get(facetIndex, component));
                 }
             }
-            else if(property->dataType() == PropertyObject::Float32) {
+            else if(property->dataType() == Property::Float32) {
                 BufferReadAccess<float*> data(property);
                 for(size_t component = 0; component < property->componentCount(); component++) {
                     if(component != 0) str += QStringLiteral(", ");
                     str += QString::number(data.get(facetIndex, component));
                 }
             }
-            else if(property->dataType() == PropertyObject::Float64) {
+            else if(property->dataType() == Property::Float64) {
                 BufferReadAccess<double*> data(property);
                 for(size_t component = 0; component < property->componentCount(); component++) {
                     if(component != 0) str += QStringLiteral(", ");
@@ -386,14 +386,14 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
                 int regionIndex = regionProperty[facetIndex];
                 if(!str.isEmpty()) str += QStringLiteral("<sep>");
                 str += QStringLiteral("<key>Region:</key> %1").arg(regionIndex);
-                for(const PropertyObject* property : surfaceMesh()->regions()->properties()) {
+                for(const Property* property : surfaceMesh()->regions()->properties()) {
                     if(regionIndex < 0 || regionIndex >= property->size()) continue;
                     if(property->type() == SurfaceMeshRegions::SelectionProperty) continue;
                     if(property->type() == SurfaceMeshRegions::ColorProperty) continue;
                     str += QStringLiteral("<sep><key>");
                     str += property->name();
                     str += QStringLiteral(":</key> ");
-                    if(property->dataType() == PropertyObject::Int32) {
+                    if(property->dataType() == Property::Int32) {
                         BufferReadAccess<int32_t*> data(property);
                         for(size_t component = 0; component < property->componentCount(); component++) {
                             if(component != 0) str += QStringLiteral(", ");
@@ -406,28 +406,28 @@ QString SurfaceMeshPickInfo::infoString(PipelineSceneNode* objectNode, quint32 s
                             }
                         }
                     }
-                    else if(property->dataType() == PropertyObject::Int64) {
+                    else if(property->dataType() == Property::Int64) {
                         BufferReadAccess<int64_t*> data(property);
                         for(size_t component = 0; component < property->componentCount(); component++) {
                             if(component != 0) str += QStringLiteral(", ");
                             str += QString::number(data.get(regionIndex, component));
                         }
                     }
-                    else if(property->dataType() == PropertyObject::Int8) {
+                    else if(property->dataType() == Property::Int8) {
                         BufferReadAccess<int8_t*> data(property);
                         for(size_t component = 0; component < property->componentCount(); component++) {
                             if(component != 0) str += QStringLiteral(", ");
                             str += QString::number(data.get(regionIndex, component));
                         }
                     }
-                    else if(property->dataType() == PropertyObject::Float32) {
+                    else if(property->dataType() == Property::Float32) {
                         BufferReadAccess<float*> data(property);
                         for(size_t component = 0; component < property->componentCount(); component++) {
                             if(component != 0) str += QStringLiteral(", ");
                             str += QString::number(data.get(regionIndex, component));
                         }
                     }
-                    else if(property->dataType() == PropertyObject::Float64) {
+                    else if(property->dataType() == Property::Float64) {
                         BufferReadAccess<double*> data(property);
                         for(size_t component = 0; component < property->componentCount(); component++) {
                             if(component != 0) str += QStringLiteral(", ");
@@ -551,7 +551,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
         }
     }
     else if(_colorMappingMode == FacePseudoColoring && _pseudoColorPropertyRef && inputMesh()->faces()) {
-        if(const PropertyObject* pseudoColorProperty = _pseudoColorPropertyRef.findInContainer(inputMesh()->faces())) {
+        if(const Property* pseudoColorProperty = _pseudoColorPropertyRef.findInContainer(inputMesh()->faces())) {
             if(_pseudoColorPropertyRef.vectorComponent() < (int)pseudoColorProperty->componentCount()) {
                 outputMesh()->setHasFacePseudoColors(true);
                 RawBufferReadAccess pseudoColorArray(pseudoColorProperty);
@@ -570,7 +570,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
         }
     }
     else if(_colorMappingMode == RegionPseudoColoring && _pseudoColorPropertyRef && inputMesh()->regions()) {
-        if(const PropertyObject* pseudoColorProperty = _pseudoColorPropertyRef.findInContainer(inputMesh()->regions())) {
+        if(const Property* pseudoColorProperty = _pseudoColorPropertyRef.findInContainer(inputMesh()->regions())) {
             if(_pseudoColorPropertyRef.vectorComponent() < (int)pseudoColorProperty->componentCount()) {
                 if(BufferReadAccess<int32_t> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
                     outputMesh()->setHasFacePseudoColors(true);
@@ -633,7 +633,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineVertexColors()
         }
     }
     else if(_colorMappingMode == VertexPseudoColoring && _pseudoColorPropertyRef) {
-        if(const PropertyObject* pseudoColorProperty = _pseudoColorPropertyRef.findInContainer(inputMesh()->vertices())) {
+        if(const Property* pseudoColorProperty = _pseudoColorPropertyRef.findInContainer(inputMesh()->vertices())) {
             OVITO_ASSERT(pseudoColorProperty->size() == outputMesh()->vertexCount());
             if(_pseudoColorPropertyRef.vectorComponent() < (int)pseudoColorProperty->componentCount()) {
                 outputMesh()->setHasVertexPseudoColors(true);
@@ -663,7 +663,7 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
     const SurfaceMeshReadAccess inputMeshData(inputMesh());
 
     // Transfer vertices and faces from half-edge mesh structure to triangle mesh structure.
-    _outputMesh = DataOORef<TriMeshObject>::create(ObjectInitializationFlag::DontCreateVisElement);
+    _outputMesh = DataOORef<TriangleMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
     inputMeshData.convertToTriMesh(*outputMesh(), _smoothShading, _faceSubset, &_originalFaceMap, !_renderFacesTwoSided);
 
     // Check for early abortion.
@@ -752,7 +752,7 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
     // Clip mesh at cutting planes and non-periodic cell boundaries.
     if(!inputMesh()->cuttingPlanes().empty() || (cell() && _clipAtDomainBoundaries)) {
 
-        // Store mapping of original faces to output faces in material index field of TriMeshObject.
+        // Store mapping of original faces to output faces in material index field of TriangleMesh.
         auto of = _originalFaceMap.begin();
         for(TriMeshFace& face : outputMesh()->faces())
             face.setMaterialIndex(*of++);
@@ -782,7 +782,7 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
             }
         }
 
-        // Restore mapping of original faces to output faces from material index field of TriMeshObject.
+        // Restore mapping of original faces to output faces from material index field of TriangleMesh.
         _originalFaceMap.resize(outputMesh()->faces().size());
         of = _originalFaceMap.begin();
         for(TriMeshFace& face : outputMesh()->faces())
@@ -942,7 +942,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
     OVITO_ASSERT(cell());
 
     // Create the output mesh object.
-    _capPolygonsMesh = DataOORef<TriMeshObject>::create(ObjectInitializationFlag::DontCreateVisElement);
+    _capPolygonsMesh = DataOORef<TriangleMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
 
     // Create accessor for the input mesh data.
     const SurfaceMeshReadAccess inputMeshData(inputMesh());

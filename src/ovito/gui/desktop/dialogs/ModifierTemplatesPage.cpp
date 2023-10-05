@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -111,37 +111,37 @@ void ModifierTemplatesPage::onCreateTemplate()
         int rowCount = 0;
 
         // Iterate over the modifiers in the selected pipeline.
-        if(PipelineSceneNode* pipeline = pipelineModel->selectedPipeline()) {
+        if(Pipeline* pipeline = pipelineModel->selectedPipeline()) {
             ModifierGroup* currentGroup = nullptr;
             QTreeWidgetItem* currentGroupItem = nullptr;
-            ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(pipeline->dataProvider());
-            while(modApp) {
-                if(modApp->modifierGroup() != currentGroup) {
-                    if(modApp->modifierGroup()) {
-                        currentGroupItem = new QTreeWidgetItem(modifierListWidget, {modApp->modifierGroup()->objectTitle()});
+            ModificationNode* modNode = dynamic_object_cast<ModificationNode>(pipeline->head());
+            while(modNode) {
+                if(modNode->modifierGroup() != currentGroup) {
+                    if(modNode->modifierGroup()) {
+                        currentGroupItem = new QTreeWidgetItem(modifierListWidget, {modNode->modifierGroup()->objectTitle()});
                         currentGroupItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemIsAutoTristate);
                         currentGroupItem->setExpanded(true);
                         rowCount++;
                     }
                     else currentGroupItem = nullptr;
-                    currentGroup = modApp->modifierGroup();
+                    currentGroup = modNode->modifierGroup();
                 }
-                if(modApp->modifier()) {
-                    QTreeWidgetItem* listItem = currentGroupItem 
-                        ? new QTreeWidgetItem(currentGroupItem, {modApp->modifier()->objectTitle()})
-                        : new QTreeWidgetItem(modifierListWidget, {modApp->modifier()->objectTitle()});
+                if(modNode->modifier()) {
+                    QTreeWidgetItem* listItem = currentGroupItem
+                        ? new QTreeWidgetItem(currentGroupItem, {modNode->modifier()->objectTitle()})
+                        : new QTreeWidgetItem(modifierListWidget, {modNode->modifier()->objectTitle()});
                     listItem->setFlags(Qt::ItemFlags(Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemNeverHasChildren));
-                    if(selectedPipelineObjects.contains(modApp) || selectedPipelineObjects.contains(modApp->modifierGroup())) {
+                    if(selectedPipelineObjects.contains(modNode) || selectedPipelineObjects.contains(modNode->modifierGroup())) {
                         listItem->setCheckState(0, Qt::Checked);
                     }
                     else {
                         listItem->setCheckState(0, Qt::Unchecked);
                     }
-                    listItem->setData(0, Qt::UserRole, QVariant::fromValue(OORef<OvitoObject>(modApp->modifier())));
+                    listItem->setData(0, Qt::UserRole, QVariant::fromValue(OORef<OvitoObject>(modNode->modifier())));
                     itemList.push_back(listItem);
                     rowCount++;
                 }
-                modApp = dynamic_object_cast<ModifierApplication>(modApp->input());
+                modNode = dynamic_object_cast<ModificationNode>(modNode->input());
             }
         }
         if(itemList.empty())
@@ -156,12 +156,12 @@ void ModifierTemplatesPage::onCreateTemplate()
         nameBox->setEditable(true);
         nameBox->addItems(ModifierTemplates::get()->templateList());
 
-        ModifierApplication* selectedModApp = (selectedPipelineObjects.size() == 1) ? dynamic_object_cast<ModifierApplication>(selectedPipelineObjects.front()) : nullptr;
-        if(selectedModApp && selectedModApp->modifier()) {
-            if(selectedModApp->modifier()->title().isEmpty())
-                nameBox->setCurrentText(tr("Custom %1").arg(selectedModApp->modifier()->objectTitle()));
+        ModificationNode* selectedModNode = (selectedPipelineObjects.size() == 1) ? dynamic_object_cast<ModificationNode>(selectedPipelineObjects.front()) : nullptr;
+        if(selectedModNode && selectedModNode->modifier()) {
+            if(selectedModNode->modifier()->title().isEmpty())
+                nameBox->setCurrentText(tr("Custom %1").arg(selectedModNode->modifier()->objectTitle()));
             else
-                nameBox->setCurrentText(selectedModApp->modifier()->title());
+                nameBox->setCurrentText(selectedModNode->modifier()->title());
         }
         else if(ModifierGroup* selectedModGroup = (selectedPipelineObjects.size() == 1) ? dynamic_object_cast<ModifierGroup>(selectedPipelineObjects.front()) : nullptr) {
             if(selectedModGroup->title().isEmpty())
@@ -172,7 +172,7 @@ void ModifierTemplatesPage::onCreateTemplate()
         else {
             nameBox->setCurrentText(tr("Custom modifier template 1"));
         }
-        
+
         mainLayout->addWidget(nameBox);
 
         mainLayout->addSpacing(12);
@@ -317,7 +317,7 @@ void ModifierTemplatesPage::saveValues(QTabWidget* tabWidget)
 }
 
 /******************************************************************************
-* Lets the settings page restore the original values of changed settings when 
+* Lets the settings page restore the original values of changed settings when
 * the user presses the Cancel button.
 ******************************************************************************/
 void ModifierTemplatesPage::restoreValues(QTabWidget* tabWidget)

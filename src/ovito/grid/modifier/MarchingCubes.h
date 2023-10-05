@@ -26,7 +26,7 @@
 #include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include <ovito/core/utilities/concurrent/ProgressingTask.h>
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 /**
  * The Marching Cubes algorithm for constructing isosurfaces from grid data.

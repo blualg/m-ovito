@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include "FileColumnParticleExporterEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(FileColumnParticleExporterEditor);
 SET_OVITO_OBJECT_EDITOR(FileColumnParticleExporter, FileColumnParticleExporterEditor);
@@ -97,7 +97,7 @@ void FileColumnParticleExporterEditor::createUI(const RolloutInsertionParameters
 bool FileColumnParticleExporterEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(source == editObject() && event.type() == ReferenceEvent::ReferenceChanged) {
-        if(static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(FileExporter::nodeToExport)) {
+        if(static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(FileExporter::sceneNodeToExport)) {
             updateParticlePropertiesList();
         }
     }
@@ -123,11 +123,11 @@ void FileColumnParticleExporterEditor::updateParticlePropertiesList()
             throw Exception(tr("Operation has been canceled by the user."));
 
         bool hasParticleIdentifiers = false;
-        const ParticlesObject* particles = state.expectObject<ParticlesObject>();
-        for(const PropertyObject* property : particles->properties()) {
+        const Particles* particles = state.expectObject<Particles>();
+        for(const Property* property : particles->properties()) {
             if(property->componentCount() == 1) {
                 insertPropertyItem(ParticlePropertyReference(property), property->name(), exporter->columnMapping());
-                if(property->type() == ParticlesObject::IdentifierProperty)
+                if(property->type() == Particles::IdentifierProperty)
                     hasParticleIdentifiers = true;
             }
             else {
@@ -139,7 +139,7 @@ void FileColumnParticleExporterEditor::updateParticlePropertiesList()
             }
         }
         if(!hasParticleIdentifiers)
-            insertPropertyItem(ParticlesObject::IdentifierProperty, tr("Particle index"), exporter->columnMapping());
+            insertPropertyItem(Particles::IdentifierProperty, tr("Particle index"), exporter->columnMapping());
     }
     catch(const Exception& ex) {
         // Ignore errors, but display a message in the UI widget to inform user.

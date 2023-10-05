@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,9 +27,7 @@
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/stdmod/modifiers/DeleteSelectedModifier.h>
 
-namespace Ovito::Mesh {
-
-using namespace Ovito::StdMod;
+namespace Ovito {
 
 /**
  * \brief Delegate for the DeleteSelectedModifier that operates on surface mesh regions.

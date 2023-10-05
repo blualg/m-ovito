@@ -25,7 +25,7 @@
 #include <ovito/particles/modifier/analysis/ptm/PTMAlgorithm.h>
 #include "PTMNeighborFinder.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /******************************************************************************
 * Creates the neighbor finder.
@@ -41,7 +41,7 @@ PTMNeighborFinder::PTMNeighborFinder(bool all_properties) : NearestNeighborFinde
 /******************************************************************************
 * Prepares the neighbor finder.
 ******************************************************************************/
-bool PTMNeighborFinder::prepare(BufferReadAccess<Point3> positions, const SimulationCellObject* cell, BufferReadAccess<SelectionIntType> selection,
+bool PTMNeighborFinder::prepare(BufferReadAccess<Point3> positions, const SimulationCell* cell, BufferReadAccess<SelectionIntType> selection,
                                 ConstDataBufferPtr structuresArray,
                                 ConstDataBufferPtr orientationsArray,
                                 ConstDataBufferPtr correspondencesArray)

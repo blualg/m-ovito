@@ -26,7 +26,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/gui/desktop/properties/ParameterUI.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 class OVITO_PARTICLESGUI_EXPORT ChemicalElement
 {

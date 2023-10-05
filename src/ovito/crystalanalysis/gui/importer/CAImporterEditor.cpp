@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "CAImporterEditor.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CAImporterEditor);
 SET_OVITO_OBJECT_EDITOR(CAImporter, CAImporterEditor);

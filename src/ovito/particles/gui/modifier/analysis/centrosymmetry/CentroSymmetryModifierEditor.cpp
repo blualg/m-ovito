@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,11 +26,11 @@
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <qwt/qwt_plot_zoneitem.h>
 #include "CentroSymmetryModifierEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CentroSymmetryModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CentroSymmetryModifier, CentroSymmetryModifierEditor);
@@ -107,7 +107,7 @@ void CentroSymmetryModifierEditor::plotHistogram()
 
     if(state) {
         // Look up the data table in the modifier's pipeline output.
-        _cspPlotWidget->setTable(state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("csp-centrosymmetry")));
+        _cspPlotWidget->setTable(state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("csp-centrosymmetry")));
     }
     else {
         _cspPlotWidget->reset();

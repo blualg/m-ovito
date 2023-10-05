@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include "LibsshWrapper.h"
 
-namespace Ovito::Ssh {
+namespace Ovito {
 
 #ifdef OVITO_LIBSSH_RUNTIME_LINKING
 QLibrary LibsshWrapper::libssh;

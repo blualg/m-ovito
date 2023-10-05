@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -26,10 +26,10 @@ OVITO_STANDARD_PLUGIN(StdObj
         camera/StandardCameraObject.cpp
         camera/StandardCameraSource.cpp
         camera/TargetObject.cpp
-        simcell/SimulationCellObject.cpp
+        simcell/SimulationCell.cpp
         simcell/SimulationCellVis.cpp
-        simcell/PeriodicDomainDataObject.cpp
-        properties/PropertyObject.cpp
+        simcell/PeriodicDomainObject.cpp
+        properties/Property.cpp
         properties/PropertyReference.cpp
         properties/PropertyContainerClass.cpp
         properties/PropertyContainer.cpp
@@ -45,7 +45,7 @@ OVITO_STANDARD_PLUGIN(StdObj
         util/ElementSelectionSet.cpp
     LIB_DEPENDENCIES
         muParser
-    PRECOMPILED_HEADERS 
+    PRECOMPILED_HEADERS
         StdObj.h
 )
 

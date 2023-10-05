@@ -24,10 +24,10 @@
 #include <ovito/stdobj/gui/widgets/PropertyContainerParameterUI.h>
 #include <ovito/stdmod/modifiers/SelectTypeModifier.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "SelectTypeModifierEditor.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(SelectTypeModifierEditor);
 SET_OVITO_OBJECT_EDITOR(SelectTypeModifier, SelectTypeModifierEditor);
@@ -192,7 +192,7 @@ void SelectTypeModifierEditor::ViewModel::refresh()
         // Populate types list based on the selected input property.
         for(const PipelineFlowState& inputState : editor()->getPipelineInputs()) {
             if(const PropertyContainer* container = inputState.getLeafObject(mod->subject())) {
-                if(const PropertyObject* inputProperty = mod->sourceProperty().findInContainer(container)) {
+                if(const Property* inputProperty = mod->sourceProperty().findInContainer(container)) {
                     for(const ElementType* type : inputProperty->elementTypes()) {
                         if(!type) continue;
 

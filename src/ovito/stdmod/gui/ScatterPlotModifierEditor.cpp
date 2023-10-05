@@ -39,7 +39,7 @@
 #include <qwt/qwt_plot_grid.h>
 #include <qwt/qwt_color_map.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ScatterPlotModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ScatterPlotModifier, ScatterPlotModifierEditor);
@@ -238,12 +238,12 @@ void ScatterPlotModifierEditor::plotScatterPlot()
         _selectionRangeIndicatorY->hide();
     }
 
-    if(modifier && modifierApplication()) {
+    if(modifier && modificationNode()) {
         // Request the modifier's pipeline output.
         const PipelineFlowState& state = getPipelineOutput();
 
         // Look up the generated data table in the modifier's pipeline output.
-        const DataTable* table = state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("scatter"));
+        const DataTable* table = state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("scatter"));
         _plotWidget->setTable(table);
     }
     else {

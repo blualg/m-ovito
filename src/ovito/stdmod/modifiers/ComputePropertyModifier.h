@@ -24,14 +24,14 @@
 
 
 #include <ovito/stdmod/StdMod.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/PropertyExpressionEvaluator.h>
 #include <ovito/core/dataset/pipeline/AsynchronousDelegatingModifier.h>
-#include <ovito/core/dataset/pipeline/AsynchronousModifierApplication.h>
+#include <ovito/core/dataset/pipeline/AsynchronousModificationNode.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * \brief Base class for modifier delegates used by the ComputePropertyModifier class.
@@ -61,7 +61,7 @@ protected:
                 const PipelineFlowState& input,
                 const ConstDataObjectPath& containerPath,
                 PropertyPtr outputProperty,
-                const PropertyObject* selectionProperty,
+                const Property* selectionProperty,
                 QStringList expressions,
                 int frameNumber,
                 std::unique_ptr<PropertyExpressionEvaluator> evaluator);
@@ -228,7 +228,7 @@ public:
     QStringList propertyComponentNames() const;
 
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return outputProperty().name(); }
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return outputProperty().name(); }
 
 protected:
 
@@ -259,9 +259,10 @@ private:
 /**
  * Used by the ComputePropertyModifier to store working data.
  */
-class OVITO_STDMOD_EXPORT ComputePropertyModifierApplication : public AsynchronousModifierApplication
+class OVITO_STDMOD_EXPORT ComputePropertyModificationNode : public AsynchronousModificationNode
 {
-    OVITO_CLASS(ComputePropertyModifierApplication)
+    OVITO_CLASS(ComputePropertyModificationNode)
+    Q_CLASSINFO("ClassNameAlias", "ComputePropertyModifierApplication");  // For backward compatibility with OVITO 3.9.2
 
 #ifdef OVITO_QML_GUI
     Q_PROPERTY(QString inputVariableTable READ inputVariableTable NOTIFY objectStatusChanged)
@@ -270,7 +271,7 @@ class OVITO_STDMOD_EXPORT ComputePropertyModifierApplication : public Asynchrono
 public:
 
     /// Constructor.
-    Q_INVOKABLE ComputePropertyModifierApplication(ObjectInitializationFlags flags) : AsynchronousModifierApplication(flags) {}
+    Q_INVOKABLE ComputePropertyModificationNode(ObjectInitializationFlags flags) : AsynchronousModificationNode(flags) {}
 
 private:
 

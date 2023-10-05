@@ -27,10 +27,10 @@
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/core/dataset/data/DataObject.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
- * \brief Describes the basic properties (unique ID, name & color) of a "type" of elements stored in a PropertyObject.
+ * \brief Describes the basic properties (unique ID, name & color) of a "type" of elements stored in a Property.
  *        This serves as generic base class for particle types, bond types, structural types, etc.
  */
 class OVITO_STDOBJ_EXPORT ElementType : public DataObject

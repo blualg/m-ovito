@@ -24,10 +24,10 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Helper class used to detect changes in the storage ordering of particles.
@@ -40,19 +40,19 @@ class OVITO_PARTICLES_EXPORT ParticleOrderingFingerprint
 public:
 
     /// Constructor.
-    ParticleOrderingFingerprint(const ParticlesObject* particles) :
+    ParticleOrderingFingerprint(const Particles* particles) :
         _particleCount(particles->elementCount()),
-        _particleIdentifiers(particles->getProperty(ParticlesObject::IdentifierProperty)) {}
+        _particleIdentifiers(particles->getProperty(Particles::IdentifierProperty)) {}
 
     /// Returns the number of particles for which this object was constructed.
     size_t particleCount() const { return _particleCount; }
 
     /// Returns true if the particle number and the storage order have changed
     /// with respect to the state from which this object was constructed.
-    bool hasChanged(const ParticlesObject* particles) const {
+    bool hasChanged(const Particles* particles) const {
         if(_particleCount != particles->elementCount())
             return true;
-        if(const PropertyObject* prop = particles->getProperty(ParticlesObject::IdentifierProperty)) {
+        if(const Property* prop = particles->getProperty(Particles::IdentifierProperty)) {
             if(!_particleIdentifiers)
                 return true;
             if(prop != _particleIdentifiers) {

@@ -21,15 +21,15 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/util/CutoffNeighborFinder.h>
 #include <ovito/delaunay/DelaunayTessellation.h>
 #include <ovito/delaunay/ManifoldConstructionHelper.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include <ovito/grid/modifier/MarchingCubes.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
@@ -37,9 +37,7 @@
 
 #include <boost/range/numeric.hpp>
 
-namespace Ovito::Particles {
-
-using namespace Ovito::Delaunay;
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ConstructSurfaceModifier);
 DEFINE_REFERENCE_FIELD(ConstructSurfaceModifier, surfaceMeshVis);
@@ -101,7 +99,7 @@ ConstructSurfaceModifier::ConstructSurfaceModifier(ObjectInitializationFlags fla
 ******************************************************************************/
 bool ConstructSurfaceModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    return input.containsObject<ParticlesObject>();
+    return input.containsObject<Particles>();
 }
 
 /******************************************************************************
@@ -111,25 +109,25 @@ bool ConstructSurfaceModifier::OOMetaClass::isApplicableTo(const DataCollection&
 Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get input particle positions.
-    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
+    const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
-    const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
 
     // Get particle selection flags if requested.
-    const PropertyObject* selProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
+    const Property* selProperty = onlySelectedParticles() ? particles->expectProperty(Particles::SelectionProperty) : nullptr;
 
     // Get particle "Grain" property.
     ConstPropertyPtr grainProperty = particles->getProperty(QStringLiteral("Grain"));
     if(grainProperty && grainProperty->componentCount() != 1)
         grainProperty.reset();
-    if(grainProperty && grainProperty->dataType() != PropertyObject::Int64) {
-        auto copy = DataOORef<PropertyObject>::makeCopy(grainProperty);
+    if(grainProperty && grainProperty->dataType() != Property::Int64) {
+        auto copy = DataOORef<Property>::makeCopy(grainProperty);
         copy->convertToDataType(DataBuffer::Int64);
         grainProperty = std::move(copy);
     }
 
     // Get simulation cell.
-    const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
+    const SimulationCell* simCell = input.expectObject<SimulationCell>();
     if(simCell->is2D())
         throw Exception(tr("The construct surface mesh modifier does not support 2d simulation cells."));
 
@@ -140,18 +138,18 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
     // provide a mapping from the generated mesh vertices back the original particles they were created from.
     if(method() == AlphaShape) {
         // Generate adhoc particle property array 'Particle Index' and fill it with numbers 0 through N-1.
-        PropertyPtr particleIndexProp = ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, particles->elementCount(), PropertyObject::Int64, 1, QStringLiteral("Particle Index"));
+        PropertyPtr particleIndexProp = Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, particles->elementCount(), Property::Int64, 1, QStringLiteral("Particle Index"));
         boost::algorithm::iota_n(BufferWriteAccess<int64_t, access_mode::discard_write>(particleIndexProp).begin(), (int64_t)0, particleIndexProp->size());
         particleProperties.push_back(std::move(particleIndexProp));
     }
 
     // Collect explicit particle properties to be transferred.
     if(transferParticleProperties()) {
-        for(const PropertyObject* property : particles->properties()) {
+        for(const Property* property : particles->properties()) {
             // Certain properties should not be transferred to the mesh vertices.
-            if(property->type() == ParticlesObject::SelectionProperty) continue;
-            if(property->type() == ParticlesObject::PositionProperty) continue;
-            if(property->type() == ParticlesObject::IdentifierProperty) continue;
+            if(property->type() == Particles::SelectionProperty) continue;
+            if(property->type() == Particles::PositionProperty) continue;
+            if(property->type() == Particles::IdentifierProperty) continue;
             particleProperties.push_back(property);
         }
     }
@@ -159,7 +157,7 @@ Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(c
     // Create an empty surface mesh.
     DataOORef<SurfaceMesh> mesh = DataOORef<SurfaceMesh>::create(ObjectInitializationFlag::DontCreateVisElement, tr("Surface"));
     mesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("surface")));
-    mesh->setDataSource(request.modApp());
+    mesh->setCreatedByNode(request.modificationNode());
     mesh->setDomain(simCell);
     mesh->setVisElement(surfaceMeshVis());
 
@@ -392,7 +390,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
     // Create mesh vertex properties.
     for(const ConstPropertyPtr& particleProperty : particleProperties()) {
         PropertyPtr vertexProperty;
-        if(particleProperty->type() < PropertyObject::FirstSpecificProperty && SurfaceMeshVertices::OOClass().isValidStandardPropertyId(particleProperty->type())) {
+        if(particleProperty->type() < Property::FirstSpecificProperty && SurfaceMeshVertices::OOClass().isValidStandardPropertyId(particleProperty->type())) {
             // Input property is also a standard property for mesh vertices.
             vertexProperty = meshBuilder.createVertexProperty(DataBuffer::Uninitialized, static_cast<SurfaceMeshVertices::Type>(particleProperty->type()));
             OVITO_ASSERT(vertexProperty->dataType() == particleProperty->dataType());
@@ -602,9 +600,9 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     };
 
     // Temporarily set the domain of the output mesh to the grid domain.
-    DataOORef<const SimulationCellObject> originalDomain = mesh()->domain();
+    DataOORef<const SimulationCell> originalDomain = mesh()->domain();
     if(mesh()->domain()->cellMatrix() != gridBoundaries) {
-        auto newCell = DataOORef<SimulationCellObject>::makeCopy(mesh()->domain());
+        auto newCell = DataOORef<SimulationCell>::makeCopy(mesh()->domain());
         newCell->setCellMatrix(gridBoundaries);
         mesh()->setDomain(std::move(newCell));
     }
@@ -643,9 +641,9 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     std::vector<std::pair<BufferReadAccess<double*>, BufferWriteAccess<double*, access_mode::read_write>>> propertyMapping64;
     for(const ConstPropertyPtr& particleProperty : particleProperties()) {
         // Can only transfer floating-point properties, because we'll need to blend values of several particles.
-        if(particleProperty->dataType() == PropertyObject::Float32 || particleProperty->dataType() == PropertyObject::Float64) {
+        if(particleProperty->dataType() == Property::Float32 || particleProperty->dataType() == Property::Float64) {
             PropertyPtr vertexProperty;
-            if(particleProperty->type() < PropertyObject::FirstSpecificProperty && SurfaceMeshVertices::OOClass().isValidStandardPropertyId(particleProperty->type())) {
+            if(particleProperty->type() < Property::FirstSpecificProperty && SurfaceMeshVertices::OOClass().isValidStandardPropertyId(particleProperty->type())) {
                 // Input property is also a standard property for mesh vertices.
                 vertexProperty = meshBuilder.createVertexProperty(DataBuffer::Initialized, static_cast<SurfaceMeshVertices::Type>(particleProperty->type()));
                 OVITO_ASSERT(vertexProperty->dataType() == particleProperty->dataType());
@@ -661,7 +659,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
                 // Input property is a user property for mesh vertices.
                 vertexProperty = meshBuilder.createVertexProperty(DataBuffer::Initialized, particleProperty->name(), particleProperty->dataType(), particleProperty->componentCount(), particleProperty->componentNames());
             }
-            if(particleProperty->dataType() == PropertyObject::Float32)
+            if(particleProperty->dataType() == Property::Float32)
                 propertyMapping32.emplace_back(particleProperty, std::move(vertexProperty));
             else
                 propertyMapping64.emplace_back(particleProperty, std::move(vertexProperty));
@@ -862,27 +860,27 @@ void ConstructSurfaceModifier::ConstructSurfaceEngineBase::applyResults(const Mo
 
     // Output computed particle distances from surface.
     if(surfaceDistances()) {
-        ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+        Particles* particles = state.expectMutableObject<Particles>();
         particles->verifyIntegrity();
         particles->createProperty(surfaceDistances());
     }
 
     // Output total surface area.
-    state.addAttribute(QStringLiteral("ConstructSurfaceMesh.surface_area"), QVariant::fromValue(surfaceArea()), request.modApp());
+    state.addAttribute(QStringLiteral("ConstructSurfaceMesh.surface_area"), QVariant::fromValue(surfaceArea()), request.modificationNode());
 
     if(_identifyRegions) {
 
         // Output more global attributes.
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.cell_volume"), QVariant::fromValue(_totalCellVolume), request.modApp());
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.specific_surface_area"), QVariant::fromValue(_totalCellVolume ? (surfaceArea() / _totalCellVolume) : 0), request.modApp());
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_volume"), QVariant::fromValue(_totalFilledVolume), request.modApp());
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_fraction"), QVariant::fromValue(_totalCellVolume ? (_totalFilledVolume / _totalCellVolume) : 0), request.modApp());
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_region_count"), QVariant::fromValue(_filledRegionCount), request.modApp());
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_volume"), QVariant::fromValue(_totalEmptyVolume), request.modApp());
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_fraction"), QVariant::fromValue(_totalCellVolume ? (_totalEmptyVolume / _totalCellVolume) : 0), request.modApp());
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_region_count"), QVariant::fromValue(_emptyRegionCount), request.modApp());
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.void_volume"), QVariant::fromValue(_totalVoidVolume), request.modApp());
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.void_region_count"), QVariant::fromValue(_voidRegionCount), request.modApp());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.cell_volume"), QVariant::fromValue(_totalCellVolume), request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.specific_surface_area"), QVariant::fromValue(_totalCellVolume ? (surfaceArea() / _totalCellVolume) : 0), request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_volume"), QVariant::fromValue(_totalFilledVolume), request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_fraction"), QVariant::fromValue(_totalCellVolume ? (_totalFilledVolume / _totalCellVolume) : 0), request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_region_count"), QVariant::fromValue(_filledRegionCount), request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_volume"), QVariant::fromValue(_totalEmptyVolume), request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_fraction"), QVariant::fromValue(_totalCellVolume ? (_totalEmptyVolume / _totalCellVolume) : 0), request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_region_count"), QVariant::fromValue(_emptyRegionCount), request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.void_volume"), QVariant::fromValue(_totalVoidVolume), request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.void_region_count"), QVariant::fromValue(_voidRegionCount), request.modificationNode());
 
         QString statusString = tr("Surface area: %1\n# filled regions (volume): %2 (%3)\n# empty regions (volume): %4 (%5)\n# void regions (volume): %6 (%7)")
                 .arg(surfaceArea())
@@ -910,7 +908,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::applyResults(const ModifierEval
     ConstructSurfaceEngineBase::applyResults(request, state);
 
     if(surfaceParticleSelection() || particleRegionIds()) {
-        ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+        Particles* particles = state.expectMutableObject<Particles>();
         particles->verifyIntegrity();
 
         // Output selection of surface particles.

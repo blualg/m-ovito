@@ -22,12 +22,12 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include "TargetObject.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(TargetObject);
 IMPLEMENT_OVITO_CLASS(TargetVis);
@@ -45,7 +45,7 @@ TargetObject::TargetObject(ObjectInitializationFlags flags) : DataObject(flags)
 /******************************************************************************
 * Lets the vis element render a data object.
 ******************************************************************************/
-PipelineStatus TargetVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus TargetVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
 {
     // Target objects are only visible in the viewports.
     if(renderer->isInteractive() == false || renderer->viewport() == nullptr)
@@ -85,13 +85,13 @@ PipelineStatus TargetVis::render(AnimationTime time, const ConstDataObjectPath& 
 
         // Create line rendering primitive.
         LinePrimitive iconPrimitive;
-        iconPrimitive.setUniformColor(ViewportSettings::getSettings().viewportColor(contextNode->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_CAMERAS));
+        iconPrimitive.setUniformColor(ViewportSettings::getSettings().viewportColor(pipeline->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_CAMERAS));
         iconPrimitive.setPositions(vertexPositions);
         if(renderer->isPicking())
             iconPrimitive.setLineWidth(renderer->defaultLinePickingWidth());
 
         // Render the lines.
-        renderer->beginPickObject(contextNode);
+        renderer->beginPickObject(pipeline);
         renderer->renderLines(iconPrimitive);
         renderer->endPickObject();
     }
@@ -106,7 +106,7 @@ PipelineStatus TargetVis::render(AnimationTime time, const ConstDataObjectPath& 
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 TargetVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 TargetVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
 {
     // This is not a physical object. It is point-like and doesn't have any size.
     return Box3(Point3::Origin(), Point3::Origin());

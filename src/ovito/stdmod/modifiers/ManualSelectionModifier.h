@@ -26,9 +26,9 @@
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/stdobj/util/ElementSelectionSet.h>
 #include <ovito/stdobj/properties/GenericPropertyModifier.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * Modifiers that allows the user to select individual elements, e.g. particles or bonds, by hand.
@@ -57,44 +57,45 @@ public:
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
     /// Adopts the selection state from the modifier's input.
-    void resetSelection(ModifierApplication* modApp, const PipelineFlowState& state);
+    void resetSelection(ModificationNode* modApp, const PipelineFlowState& state);
 
     /// Selects all elements.
-    void selectAll(ModifierApplication* modApp, const PipelineFlowState& state);
+    void selectAll(ModificationNode* modApp, const PipelineFlowState& state);
 
     /// Deselects all elements.
-    void clearSelection(ModifierApplication* modApp, const PipelineFlowState& state);
+    void clearSelection(ModificationNode* modApp, const PipelineFlowState& state);
 
     /// Inverts the selection state of all elements.
-    void invertSelection(ModifierApplication* modApp, const PipelineFlowState& state);
+    void invertSelection(ModificationNode* modApp, const PipelineFlowState& state);
 
     /// Toggles the selection state of a single element.
-    void toggleElementSelection(ModifierApplication* modApp, const PipelineFlowState& state, size_t elementIndex);
+    void toggleElementSelection(ModificationNode* modApp, const PipelineFlowState& state, size_t elementIndex);
 
     /// Replaces the selection.
-    void setSelection(ModifierApplication* modApp, const PipelineFlowState& state, const boost::dynamic_bitset<>& selection, ElementSelectionSet::SelectionMode mode);
+    void setSelection(ModificationNode* modApp, const PipelineFlowState& state, const boost::dynamic_bitset<>& selection, ElementSelectionSet::SelectionMode mode);
 
 protected:
 
     /// Is called when the value of a property of this object has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
-    /// Returns the selection set object stored in the ModifierApplication, or, if it does not exist, creates one when requested.
-    ElementSelectionSet* getSelectionSet(ModifierApplication* modApp, bool createIfNotExist);
+    /// Returns the selection set object stored in the ModificationNode, or, if it does not exist, creates one when requested.
+    ElementSelectionSet* getSelectionSet(ModificationNode* modApp, bool createIfNotExist);
 };
 
 /**
- * \brief The type of ModifierApplication create for a ManualSelectionModifier
+ * \brief The type of ModificationNode create for a ManualSelectionModifier
  *        when it is inserted into in a data pipeline.
  */
-class OVITO_STDMOD_EXPORT ManualSelectionModifierApplication : public ModifierApplication
+class OVITO_STDMOD_EXPORT ManualSelectionModificationNode : public ModificationNode
 {
-    OVITO_CLASS(ManualSelectionModifierApplication)
+    OVITO_CLASS(ManualSelectionModificationNode)
+    Q_CLASSINFO("ClassNameAlias", "ManualSelectionModifierApplication");  // For backward compatibility with OVITO 3.9.2
 
 public:
 
     /// \brief Constructs a modifier application.
-    Q_INVOKABLE ManualSelectionModifierApplication(ObjectInitializationFlags flags) : ModifierApplication(flags) {}
+    Q_INVOKABLE ManualSelectionModificationNode(ObjectInitializationFlags flags) : ModificationNode(flags) {}
 
 private:
 

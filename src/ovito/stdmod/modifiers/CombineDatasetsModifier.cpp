@@ -21,17 +21,17 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdmod/StdMod.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/properties/Property.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
-#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/data/mesh/TriangleMesh.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/data/AttributeDataObject.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include "CombineDatasetsModifier.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CombineDatasetsModifier);
 DEFINE_REFERENCE_FIELD(CombineDatasetsModifier, secondaryDataSource);
@@ -67,7 +67,7 @@ Future<PipelineFlowState> CombineDatasetsModifier::evaluate(const ModifierEvalua
     SharedFuture<PipelineFlowState> secondaryStateFuture = secondaryDataSource()->evaluate(request);
 
     // Wait for the data to become available.
-    return secondaryStateFuture.then(*this, [this, state = input, request, modApp = OORef<const ModifierApplication>(request.modApp())](const PipelineFlowState& secondaryState) mutable {
+    return secondaryStateFuture.then(*this, [this, state = input, request, modNode = OORef<const ModificationNode>(request.modificationNode())](const PipelineFlowState& secondaryState) mutable {
 
         // Make sure the obtained dataset is valid and ready to use.
         if(secondaryState.status().type() == PipelineStatus::Error) {
@@ -133,7 +133,7 @@ void CombineDatasetsModifier::combineDatasets(const ModifierEvaluationRequest& r
             if(!state.data()->contains(surfaceMesh))
                 state.addObject(surfaceMesh);
         }
-        else if(const TriMeshObject* triMesh = dynamic_object_cast<TriMeshObject>(obj)) {
+        else if(const TriangleMesh* triMesh = dynamic_object_cast<TriangleMesh>(obj)) {
             if(!state.data()->contains(surfaceMesh))
                 state.addObject(triMesh);
         }
@@ -144,8 +144,8 @@ void CombineDatasetsModifier::combineDatasets(const ModifierEvaluationRequest& r
 
     // Special handling for the simulation cell. If the secondary dataset contains a simulation cell but
     // the primary doesn't, then copy it over to the primary dataset.
-    if(const SimulationCellObject* secondaryCell = secondaryState.getObject<SimulationCellObject>()) {
-        const SimulationCellObject* primaryCell = state.getObject<SimulationCellObject>();
+    if(const SimulationCell* secondaryCell = secondaryState.getObject<SimulationCell>()) {
+        const SimulationCell* primaryCell = state.getObject<SimulationCell>();
         if(!primaryCell) {
             state.addObject(secondaryCell);
         }
@@ -179,13 +179,13 @@ void CombineDatasetsModifier::referenceReplaced(const PropertyFieldDescriptor* f
 /******************************************************************************
 * Helper method that merges the set of element types defined for a property.
 ******************************************************************************/
-void CombineDatasetsModifierDelegate::mergeElementTypes(PropertyObject* property1, const PropertyObject* property2, CloneHelper& cloneHelper)
+void CombineDatasetsModifierDelegate::mergeElementTypes(Property* property1, const Property* property2, CloneHelper& cloneHelper)
 {
     // Check if input properties have the right format.
     if(!property2) return;
     if(property2->elementTypes().empty()) return;
     if(property1->componentCount() != 1 || property2->componentCount() != 1) return;
-    if(property1->dataType() != PropertyObject::Int32 || property2->dataType() != PropertyObject::Int32) return;
+    if(property1->dataType() != Property::Int32 || property2->dataType() != Property::Int32) return;
 
     std::map<int,int> typeMap;
     for(const ElementType* type2 : property2->elementTypes()) {

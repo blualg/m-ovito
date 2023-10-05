@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,10 +21,10 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/dataset/pipeline/ModifierTemplates.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
@@ -183,22 +183,22 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
     });
 
     connect(actionManager->getAction(ACTION_PIPELINE_COPY_ITEM), &QAction::triggered, [&]() {
-        // Collect all currently selected pipeline objects.
-        QVector<OORef<PipelineObject>> objects;
+        // Collect all currently selected pipeline nodes.
+        QVector<OORef<PipelineNode>> nodes;
         for(RefTarget* obj : _pipelineListModel->selectedObjects()) {
-            if(PipelineObject* pobj = dynamic_object_cast<PipelineObject>(obj)) {
-                if(!objects.contains(pobj))
-                    objects.push_back(pobj);
+            if(PipelineNode* pnode = dynamic_object_cast<PipelineNode>(obj)) {
+                if(!nodes.contains(pnode))
+                    nodes.push_back(pnode);
             }
             else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(obj)) {
-                for(ModifierApplication* modApp : group->modifierApplications()) {
-                    if(!objects.contains(modApp))
-                        objects.push_back(modApp);
+                for(ModificationNode* modNode : group->nodes()) {
+                    if(!nodes.contains(modNode))
+                        nodes.push_back(modNode);
                 }
             }
         }
-        if(!objects.empty()) {
-            CopyPipelineItemDialog dlg(_mainWindow, &_mainWindow, _pipelineListModel->selectedPipeline(), std::move(objects));
+        if(!nodes.empty()) {
+            CopyPipelineItemDialog dlg(_mainWindow, &_mainWindow, _pipelineListModel->selectedPipeline(), std::move(nodes));
             dlg.exec();
         }
     });
@@ -274,10 +274,10 @@ void ModifyCommandPage::onModifierStackDoubleClicked(const QModelIndex& index)
     PipelineListItem* item = pipelineListModel()->item(index.row());
     OVITO_CHECK_OBJECT_POINTER(item);
 
-    if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(item->object())) {
+    if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(item->object())) {
         // Toggle enabled state of modifier.
-        _mainWindow.performTransaction(tr("Toggle modifier state"), [modApp]() {
-            modApp->modifier()->setEnabled(!modApp->modifier()->isEnabled());
+        _mainWindow.performTransaction(tr("Toggle modifier state"), [modNode]() {
+            modNode->modifier()->setEnabled(!modNode->modifier()->isEnabled());
         });
     }
 

@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/io/FileExporter.h>
 #include <ovito/core/utilities/io/CompressedTextWriter.h>
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /**
  * \brief Exporter that exports dislocation networks to a VTK (ParaView) file.

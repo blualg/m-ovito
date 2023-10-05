@@ -15,18 +15,18 @@ Ui.RolloutPanel {
 
 		Ui.ParameterLabel { propertyField: "color" }
 		Ui.ColorParameter {
-			propertyField: "color" // PROPERTY_FIELD(TriMeshVis::color)
-			Layout.fillWidth: true 
+			propertyField: "color" // PROPERTY_FIELD(TriangleMeshVis::color)
+			Layout.fillWidth: true
 		}
 
 		Ui.ParameterLabel { propertyField: "transparencyController" }
-		Ui.FloatParameter { 
-			propertyField: "transparencyController" // PROPERTY_FIELD(TriMeshVis::transparencyController)
-			Layout.fillWidth: true 
+		Ui.FloatParameter {
+			propertyField: "transparencyController" // PROPERTY_FIELD(TriangleMeshVis::transparencyController)
+			Layout.fillWidth: true
 		}
 
-		Ui.BooleanCheckBoxParameter { 
-			propertyField: "highlightEdges" // PROPERTY_FIELD(TriMeshVis::highlightEdges)
+		Ui.BooleanCheckBoxParameter {
+			propertyField: "highlightEdges" // PROPERTY_FIELD(TriangleMeshVis::highlightEdges)
 			Layout.columnSpan: 2
 		}
 	}

@@ -27,7 +27,7 @@
 #include <ovito/crystalanalysis/data/ClusterVector.h>
 #include <ovito/core/dataset/data/TransformedDataObject.h>
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /**
  * \brief A non-periodic version of the dislocation lines that is generated from a periodic DislocationNetworkObject.

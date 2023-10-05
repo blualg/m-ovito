@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief A meta-class for property containers (i.e. classes derived from the PropertyContainer base class).
@@ -73,7 +73,7 @@ public:
     }
 
     /// Determines which elements are located within the given viewport fence region (=2D polygon).
-    virtual boost::dynamic_bitset<> viewportFenceSelection(const QVector<Point2>& fence, const ConstDataObjectPath& objectPath, PipelineSceneNode* node, const Matrix4& projectionTM) const {
+    virtual boost::dynamic_bitset<> viewportFenceSelection(const QVector<Point2>& fence, const ConstDataObjectPath& objectPath, Pipeline* pipeline, const Matrix4& projectionTM) const {
         return boost::dynamic_bitset<>{}; // Return empty set to indicate missing fence selection support.
     }
 
@@ -194,12 +194,12 @@ private:
 };
 
 /**
- * Utility class that behaves like a BufferAccessAndRef but additionally allocates a new PropertyObject of the given size upon construction.
+ * Utility class that behaves like a BufferAccessAndRef but additionally allocates a new Property of the given size upon construction.
 */
 template<typename T>
-class PropertyFactory : public detail::BufferAccessTyped<T, PropertyObject, true, access_mode::discard_write>
+class PropertyFactory : public detail::BufferAccessTyped<T, Property, true, access_mode::discard_write>
 {
-    using base_class = detail::BufferAccessTyped<T, PropertyObject, true, access_mode::discard_write>;
+    using base_class = detail::BufferAccessTyped<T, Property, true, access_mode::discard_write>;
     using base_class::ComponentWise;
     using typename base_class::element_type;
 
@@ -237,4 +237,4 @@ public:
 
 }   // End of namespace
 
-Q_DECLARE_METATYPE(Ovito::StdObj::PropertyContainerClassPtr);
+Q_DECLARE_METATYPE(Ovito::PropertyContainerClassPtr);

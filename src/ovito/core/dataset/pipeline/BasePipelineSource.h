@@ -23,14 +23,14 @@
 #pragma once
 
 #include <ovito/core/Core.h>
-#include <ovito/core/dataset/pipeline/CachingPipelineObject.h>
+#include <ovito/core/dataset/pipeline/PipelineNode.h>
 
 namespace Ovito {
 
 /**
  * \brief General base class for pipeline data source implementations.
  */
-class OVITO_CORE_EXPORT BasePipelineSource : public CachingPipelineObject
+class OVITO_CORE_EXPORT BasePipelineSource : public PipelineNode
 {
     OVITO_CLASS(BasePipelineSource)
 
@@ -67,10 +67,10 @@ private:
     /// Stores the master copy of the generated data collection.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const DataCollection>, dataCollection, setDataCollection, PROPERTY_FIELD_DONT_SAVE_RECOMPUTABLE_DATA | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_SUB_ANIM);
 
-    /// The source frame that is currently stored in the internal master data collection.
+    /// The trajectory frame number that is currently stored in the source's data collection.
     DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(int, dataCollectionFrame, setDataCollectionFrame, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
-    /// Indicates that the user has made manual changes to the data objects in the master data collection
+    /// Indicates that the user has made manual changes to the data objects in the source's data collection
     /// or to the visual elements. If this flag is set, we'll ask the user if these changes should be preserved when
     /// importing a whole new file or model into the source.
     DECLARE_PROPERTY_FIELD_FLAGS(bool, userHasChangedDataCollection, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);

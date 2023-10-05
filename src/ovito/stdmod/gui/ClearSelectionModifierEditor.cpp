@@ -24,7 +24,7 @@
 #include <ovito/stdobj/gui/widgets/PropertyContainerParameterUI.h>
 #include "ClearSelectionModifierEditor.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ClearSelectionModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ClearSelectionModifier, ClearSelectionModifierEditor);
@@ -46,7 +46,7 @@ void ClearSelectionModifierEditor::createUI(const RolloutInsertionParameters& ro
 
     // List only property containers that support element selection.
     pclassUI->setContainerFilter([](const PropertyContainer* container) {
-        return container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty);
+        return container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty);
     });
 }
 

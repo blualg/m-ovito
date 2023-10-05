@@ -25,7 +25,7 @@
 #include <ovito/core/app/PluginManager.h>
 #include "GenericPropertyModifier.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(GenericPropertyModifier);
 DEFINE_PROPERTY_FIELD(GenericPropertyModifier, subject);

@@ -58,6 +58,9 @@ public:
 
     /// Helper method that checks whether the given Qt alignment value contains exactly one horizontal and one vertical alignment flag.
     void checkAlignmentParameterValue(int alignment) const;
+
+    /// Informs the overlay that a new scene node has been inserted into the scene.
+    virtual void sceneNodeAdded(SceneNode* node) {}
 };
 
 }   // End of namespace

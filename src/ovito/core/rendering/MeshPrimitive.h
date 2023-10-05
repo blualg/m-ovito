@@ -25,7 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
-#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
+#include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 #include "PseudoColorMapping.h"
 
 namespace Ovito {
@@ -46,7 +46,7 @@ public:
     Q_ENUM(DepthSortingMode);
 
     /// Sets the mesh to be stored in this buffer object.
-    void setMesh(DataOORef<const TriMeshObject> mesh, DepthSortingMode depthSortingMode = AnyShapeMode) {
+    void setMesh(DataOORef<const TriangleMesh> mesh, DepthSortingMode depthSortingMode = AnyShapeMode) {
         _mesh = std::move(mesh);
         _isMeshFullyOpaque.reset();
         _depthSortingMode = depthSortingMode;
@@ -59,7 +59,7 @@ public:
     int vertexCount() const { return _mesh ? _mesh->vertexCount() : 0; }
 
     /// Returns the triangle mesh stored in this geometry buffer.
-    const DataOORef<const TriMeshObject>& mesh() const { return _mesh; }
+    const DataOORef<const TriangleMesh>& mesh() const { return _mesh; }
 
     /// \brief Enables or disables the culling of triangles not facing the viewer.
     void setCullFaces(bool enable) { _cullFaces = enable; }
@@ -162,7 +162,7 @@ private:
     std::vector<ColorA> _materialColors;
 
     /// The mesh storing the geometry.
-    DataOORef<const TriMeshObject> _mesh;
+    DataOORef<const TriangleMesh> _mesh;
 
     /// The rendering color to be used if the mesh doesn't have per-vertex colors.
     ColorA _uniformColor{1,1,1,1};

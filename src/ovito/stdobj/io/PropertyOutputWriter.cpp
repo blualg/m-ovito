@@ -23,7 +23,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include "PropertyOutputWriter.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /******************************************************************************
  * Saves the mapping to the given stream.
@@ -86,8 +86,8 @@ PropertyOutputWriter::PropertyOutputWriter(const OutputColumnMapping& mapping, c
     // Gather the source properties.
     for(int i = 0; i < (int)mapping.size(); i++) {
         const PropertyReference& pref = mapping[i];
-        const PropertyObject* property = pref.findInContainer(sourceContainer);
-        if(property == nullptr && pref.type() != PropertyObject::GenericIdentifierProperty) {
+        const Property* property = pref.findInContainer(sourceContainer);
+        if(property == nullptr && pref.type() != Property::GenericIdentifierProperty) {
             throw Exception(tr("The specified list of output file columns is invalid. "
                                "The property '%2', which is needed to write file column %1, does not exist or could not be computed.").arg(i+1).arg(pref.name()));
         }
@@ -130,13 +130,13 @@ void PropertyOutputWriter::writeElement(size_t index, CompressedTextWriter& stre
             stream << ' ';
         if(*property) {
             const int dataType = (*property)->dataType();
-            if(dataType == PropertyObject::Float32) {
+            if(dataType == Property::Float32) {
                 stream << *reinterpret_cast<const float*>(accessor->cdata(index, *vcomp));
             }
-            else if(dataType == PropertyObject::Float64) {
+            else if(dataType == Property::Float64) {
                 stream << *reinterpret_cast<const double*>(accessor->cdata(index, *vcomp));
             }
-            else if(dataType == PropertyObject::Int32) {
+            else if(dataType == Property::Int32) {
                 if(_typedPropertyMode == WriteNumericIds || (*property)->elementTypes().empty()) {
                     stream << *reinterpret_cast<const int32_t*>(accessor->cdata(index, *vcomp));
                 }
@@ -170,10 +170,10 @@ void PropertyOutputWriter::writeElement(size_t index, CompressedTextWriter& stre
                     stream << entry->second;
                 }
             }
-            else if(dataType == PropertyObject::Int64) {
+            else if(dataType == Property::Int64) {
                 stream << static_cast<qint64>(*reinterpret_cast<const int64_t*>(accessor->cdata(index, *vcomp)));
             }
-            else if(dataType == PropertyObject::Int8) {
+            else if(dataType == Property::Int8) {
                 stream << static_cast<qint32>(*reinterpret_cast<const int8_t*>(accessor->cdata(index, *vcomp)));
             }
             else {

@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/modifier/analysis/StructureIdentificationModifier.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief A modifier that identifies local diamond structures.

@@ -156,10 +156,10 @@ void NavigationMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent*
 /******************************************************************************
 * Returns the camera object associated with the given viewport.
 ******************************************************************************/
-PipelineObject* NavigationMode::getViewportCamera(Viewport* vp)
+PipelineNode* NavigationMode::getViewportCamera(Viewport* vp)
 {
     if(vp->viewNode() && vp->viewType() == Viewport::VIEW_SCENENODE) {
-        return vp->viewNode()->pipelineSource();
+        return vp->viewNode()->source();
     }
     return nullptr;
 }
@@ -223,7 +223,7 @@ void ZoomMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF 
         }
     }
     else {
-        if(PipelineObject* cameraSource = getViewportCamera(vp)) {
+        if(PipelineNode* cameraSource = getViewportCamera(vp)) {
             FloatType oldFOV = cameraSource->property("zoom").value<FloatType>();
             FloatType newFOV = oldFOV * (FloatType)exp(0.003 * delta.y());
             cameraSource->setProperty("zoom", QVariant::fromValue(newFOV));
@@ -272,7 +272,7 @@ void ZoomMode::zoom(Viewport* vp, FloatType steps, UserInterface& ui)
                 vp->viewNode()->transformationController()->translate(vp->scene()->animationSettings()->currentTime(), Vector3(0,0,-amount), sys);
             }
             else {
-                if(PipelineObject* cameraSource = getViewportCamera(vp)) {
+                if(PipelineNode* cameraSource = getViewportCamera(vp)) {
                     FloatType oldFOV = cameraSource->property("zoom").value<FloatType>();
                     cameraSource->setProperty("zoom", QVariant::fromValue(oldFOV * exp(-steps * FloatType(1e-3))));
                 }
@@ -290,7 +290,7 @@ void ZoomMode::zoom(Viewport* vp, FloatType steps, UserInterface& ui)
 void FOVMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF delta, bool discreteStep)
 {
     FloatType oldFOV = _oldFieldOfView;
-    if(PipelineObject* cameraSource = getViewportCamera(vp)) {
+    if(PipelineNode* cameraSource = getViewportCamera(vp)) {
         oldFOV = cameraSource->property(vp->isPerspectiveProjection() ? "fov" : "zoom").value<FloatType>();
     }
 
@@ -304,7 +304,7 @@ void FOVMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF d
         newFOV = oldFOV * (FloatType)exp(FloatType(6e-3) * delta.y());
     }
 
-    if(PipelineObject* cameraSource = getViewportCamera(vp)) {
+    if(PipelineNode* cameraSource = getViewportCamera(vp)) {
         cameraSource->setProperty(vp->isPerspectiveProjection() ? "fov" : "zoom", QVariant::fromValue(newFOV));
     }
     else {

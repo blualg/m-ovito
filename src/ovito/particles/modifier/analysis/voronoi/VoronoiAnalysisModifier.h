@@ -24,15 +24,15 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/BondsObject.h>
+#include <ovito/particles/objects/Bonds.h>
 #include <ovito/particles/objects/BondsVis.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief This modifier computes the atomic volume and the Voronoi indices of particles.
@@ -76,7 +76,7 @@ private:
 
         /// Constructor.
         VoronoiAnalysisEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleIdentifiers, ConstPropertyPtr radii,
-                            const SimulationCellObject* simCell, DataOORef<SurfaceMesh> polyhedraMesh,
+                            const SimulationCell* simCell, DataOORef<SurfaceMesh> polyhedraMesh,
                             bool computeIndices, bool computeBonds, FloatType edgeThreshold, FloatType faceThreshold, FloatType relativeFaceThreshold) :
             Engine(request, validityInterval),
             _positions(positions),
@@ -88,10 +88,10 @@ private:
             _faceThreshold(faceThreshold),
             _relativeFaceThreshold(relativeFaceThreshold),
             _computeBonds(computeBonds),
-            _coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(DataBuffer::Initialized, fingerprint.particleCount(), ParticlesObject::CoordinationProperty)),
-            _atomicVolumes(ParticlesObject::OOClass().createUserProperty(DataBuffer::Initialized, fingerprint.particleCount(), PropertyObject::FloatDefault, 1, QStringLiteral("Atomic Volume"))),
-            _cavityRadii(ParticlesObject::OOClass().createUserProperty(DataBuffer::Initialized, fingerprint.particleCount(), PropertyObject::FloatDefault, 1, QStringLiteral("Cavity Radius"))),
-            _maxFaceOrders(computeIndices ? ParticlesObject::OOClass().createUserProperty(DataBuffer::Initialized, fingerprint.particleCount(), PropertyObject::Int32, 1, QStringLiteral("Max Face Order")) : nullptr),
+            _coordinationNumbers(Particles::OOClass().createStandardProperty(DataBuffer::Initialized, fingerprint.particleCount(), Particles::CoordinationProperty)),
+            _atomicVolumes(Particles::OOClass().createUserProperty(DataBuffer::Initialized, fingerprint.particleCount(), Property::FloatDefault, 1, QStringLiteral("Atomic Volume"))),
+            _cavityRadii(Particles::OOClass().createUserProperty(DataBuffer::Initialized, fingerprint.particleCount(), Property::FloatDefault, 1, QStringLiteral("Cavity Radius"))),
+            _maxFaceOrders(computeIndices ? Particles::OOClass().createUserProperty(DataBuffer::Initialized, fingerprint.particleCount(), Property::Int32, 1, QStringLiteral("Max Face Order")) : nullptr),
             _inputFingerprint(std::move(fingerprint)),
             _polyhedraMesh(std::move(polyhedraMesh)) {}
 
@@ -125,7 +125,7 @@ private:
         /// Returns the generated nearest neighbor bonds.
         std::vector<Bond>& bonds() { return _bonds; }
 
-        const SimulationCellObject* simCell() const { return _simCell; }
+        const SimulationCell* simCell() const { return _simCell; }
         const ConstPropertyPtr& positions() const { return _positions; }
         const ConstPropertyPtr& selection() const { return _selection; }
 
@@ -134,7 +134,7 @@ private:
         const FloatType _edgeThreshold;
         const FloatType _faceThreshold;
         const FloatType _relativeFaceThreshold;
-        DataOORef<const SimulationCellObject> _simCell;
+        DataOORef<const SimulationCell> _simCell;
         ConstPropertyPtr _radii;
         ConstPropertyPtr _positions;
         ConstPropertyPtr _selection;

@@ -23,7 +23,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include "RenderableDislocationLines.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(RenderableDislocationLines);
 DEFINE_RUNTIME_PROPERTY_FIELD(RenderableDislocationLines, lineSegments);

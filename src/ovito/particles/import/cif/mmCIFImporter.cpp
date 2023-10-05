@@ -21,16 +21,16 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "mmCIFImporter.h"
 
 #include <3rdparty/gemmi/cif.hpp>
 #include <3rdparty/gemmi/mmread.hpp>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 namespace cif = gemmi::cif;
 
@@ -124,7 +124,7 @@ void mmCIFImporter::FrameLoader::loadFile()
 
         // Import metadata fields as global attributes.
         for(const auto& m : structure.info)
-            state().setAttribute(QString::fromStdString(m.first), QVariant::fromValue(QString::fromStdString(m.second)), dataSource());
+            state().setAttribute(QString::fromStdString(m.first), QVariant::fromValue(QString::fromStdString(m.second)), pipelineNode());
 
         const gemmi::Model& model = structure.first_model();
 
@@ -138,10 +138,10 @@ void mmCIFImporter::FrameLoader::loadFile()
 
         // Allocate property arrays for atoms.
         setParticleCount(natoms);
-        BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
-        PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-        PropertyObject* atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), PropertyObject::Int32);
-        PropertyObject* residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), PropertyObject::Int32);
+        BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(Particles::PositionProperty);
+        Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
+        Property* atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), Property::Int32);
+        Property* residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), Property::Int32);
 
         // Give these particle properties new titles, which are displayed in the GUI under the file source.
         atomNameProperty->setTitle(tr("Atom names"));
@@ -160,17 +160,17 @@ void mmCIFImporter::FrameLoader::loadFile()
         for(const gemmi::Chain& chain : model.chains) {
             for(const gemmi::Residue& residue : chain.residues) {
                 if(isCanceled()) return;
-                int residueTypeId = (residue.name.empty() == false) ? addNamedType(ParticlesObject::OOClass(), residueTypeProperty, QLatin1String(residue.name.c_str(), residue.name.size()))->numericId() : 0;
+                int residueTypeId = (residue.name.empty() == false) ? addNamedType(Particles::OOClass(), residueTypeProperty, QLatin1String(residue.name.c_str(), residue.name.size()))->numericId() : 0;
                 for(const gemmi::Atom& atom : residue.atoms) {
                     // Atomic position.
                     *posIter++ = Point3(atom.pos.x, atom.pos.y, atom.pos.z);
 
                     // Chemical type.
                     *typeIter++ = atom.element.ordinal();
-                    addNumericType(ParticlesObject::OOClass(), typeProperty, atom.element.ordinal(), QString::fromStdString(atom.element.name()));
+                    addNumericType(Particles::OOClass(), typeProperty, atom.element.ordinal(), QString::fromStdString(atom.element.name()));
 
                     // Atom name.
-                    *atomNameIter++ = addNamedType(ParticlesObject::OOClass(), atomNameProperty, QLatin1String(atom.name.c_str(), atom.name.size()))->numericId();
+                    *atomNameIter++ = addNamedType(Particles::OOClass(), atomNameProperty, QLatin1String(atom.name.c_str(), atom.name.size()))->numericId();
 
                     // Residue type.
                     *residueTypeIter++ = residueTypeId;
@@ -188,7 +188,7 @@ void mmCIFImporter::FrameLoader::loadFile()
 
         // Parse the optional site occupancy information.
         if(hasOccupancy) {
-            BufferWriteAccess<FloatType, access_mode::discard_write> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::FloatDefault);
+            BufferWriteAccess<FloatType, access_mode::discard_write> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), Property::FloatDefault);
             FloatType* occupancyIter = occupancyProperty.begin();
             for(const gemmi::Chain& chain : model.chains) {
                 for(const gemmi::Residue& residue : chain.residues) {

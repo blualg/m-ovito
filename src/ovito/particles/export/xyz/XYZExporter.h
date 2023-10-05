@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include "../FileColumnParticleExporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Exporter that writes the particles to a LAMMPS data file.

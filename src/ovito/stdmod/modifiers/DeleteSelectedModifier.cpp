@@ -23,7 +23,7 @@
 #include <ovito/stdmod/StdMod.h>
 #include "DeleteSelectedModifier.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DeleteSelectedModifierDelegate);
 IMPLEMENT_OVITO_CLASS(DeleteSelectedModifier);

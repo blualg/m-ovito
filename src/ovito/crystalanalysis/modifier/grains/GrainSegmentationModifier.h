@@ -28,7 +28,7 @@
 #include <ovito/particles/objects/BondsVis.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 class GrainSegmentationEngine;  // defined in GrainSegmentationEngine.h
 

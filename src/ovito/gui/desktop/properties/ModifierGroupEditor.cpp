@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,7 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/ModifierGroupEditor.h>
 #include <ovito/core/dataset/pipeline/ModifierGroup.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 
 namespace Ovito {
 
@@ -63,22 +63,22 @@ void ModifierGroupEditor::updateSubEditors()
     handleExceptions([&] {
         auto subEditorIter = _subEditors.begin();
         if(ModifierGroup* group = static_object_cast<ModifierGroup>(editObject())) {
-            // Get the group's modifier applications.
-            QVector<ModifierApplication*> modApps = group->modifierApplications();
-            for(ModifierApplication* modApp : modApps) {
+            // Get the group's modifier nodes.
+            QVector<ModificationNode*> nodes = group->nodes();
+            for(ModificationNode* node : nodes) {
                 // Open editor for this sub-object.
                 if(subEditorIter != _subEditors.end() && (*subEditorIter)->editObject() != nullptr
-                        && (*subEditorIter)->editObject()->getOOClass() == modApp->getOOClass()) {
+                        && (*subEditorIter)->editObject()->getOOClass() == node->getOOClass()) {
                     // Re-use existing editor.
-                    (*subEditorIter)->setEditObject(modApp);
+                    (*subEditorIter)->setEditObject(node);
                     ++subEditorIter;
                 }
                 else {
                     // Create a new sub-editor for this sub-object.
-                    OORef<PropertiesEditor> editor = PropertiesEditor::create(mainWindow(), modApp);
+                    OORef<PropertiesEditor> editor = PropertiesEditor::create(mainWindow(), node);
                     if(editor) {
                         editor->initialize(container(), _rolloutParams, this);
-                        editor->setEditObject(modApp);
+                        editor->setEditObject(node);
                         _subEditors.erase(subEditorIter, _subEditors.end());
                         _subEditors.push_back(std::move(editor));
                         subEditorIter = _subEditors.end();

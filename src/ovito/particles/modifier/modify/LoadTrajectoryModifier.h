@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,9 +25,9 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
-#include <ovito/core/dataset/pipeline/PipelineObject.h>
+#include <ovito/core/dataset/pipeline/PipelineNode.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Loads particle trajectories from a separate file and injects them into the modification pipeline.
@@ -71,8 +71,8 @@ public:
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
     /// Returns the number of animation frames this modifier can provide.
-    virtual int numberOfOutputFrames(ModifierApplication* modApp) const override {
-        return trajectorySource() ? trajectorySource()->numberOfSourceFrames() : Modifier::numberOfOutputFrames(modApp);
+    virtual int numberOfOutputFrames(ModificationNode* node) const override {
+        return trajectorySource() ? trajectorySource()->numberOfSourceFrames() : Modifier::numberOfOutputFrames(node);
     }
 
     /// Given an animation time, computes the source frame to show.
@@ -106,7 +106,7 @@ private:
     void applyTrajectoryState(PipelineFlowState& state, const PipelineFlowState& trajState);
 
     /// The source for trajectory data.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineObject>, trajectorySource, setTrajectorySource, PROPERTY_FIELD_NO_SUB_ANIM);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineNode>, trajectorySource, setTrajectorySource, PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
 }   // End of namespace

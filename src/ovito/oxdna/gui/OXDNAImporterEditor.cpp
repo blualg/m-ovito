@@ -24,7 +24,7 @@
 #include <ovito/gui/desktop/dialogs/HistoryFileDialog.h>
 #include "OXDNAImporterEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(OXDNAImporterEditor);
 SET_OVITO_OBJECT_EDITOR(OXDNAImporter, OXDNAImporterEditor);

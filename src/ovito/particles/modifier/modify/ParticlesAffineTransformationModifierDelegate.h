@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,9 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/stdmod/modifiers/AffineTransformationModifier.h>
 
-namespace Ovito::Particles {
-
-using namespace Ovito::StdMod;
+namespace Ovito {
 
 /**
  * \brief Delegate for the AffineTransformationModifier that operates on particles.
@@ -98,7 +96,7 @@ public:
 private:
 
     /// Decides if the given particle property is one that should be transformed.
-    static bool isTransformableProperty(const PropertyObject* property);
+    static bool isTransformableProperty(const Property* property);
 };
 
 }   // End of namespace

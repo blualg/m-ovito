@@ -26,14 +26,14 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include "XYZImporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(XYZImporter);
 DEFINE_PROPERTY_FIELD(XYZImporter, autoRescaleCoordinates);
@@ -149,46 +149,46 @@ bool XYZImporter::mapVariableToProperty(ParticleInputColumnMapping& columnMappin
     columnMapping[column].columnName = name;
     QString loweredName = name.toLower();
     if(loweredName == "type" || loweredName == "element" || loweredName == "atom_types" || loweredName == "species")
-        columnMapping.mapStandardColumn(column, ParticlesObject::TypeProperty);
-    else if(loweredName == "pos") columnMapping.mapStandardColumn(column, ParticlesObject::PositionProperty, vec);
-    else if(loweredName == "selection") columnMapping.mapStandardColumn(column, ParticlesObject::SelectionProperty, vec);
-    else if(loweredName == "color") columnMapping.mapStandardColumn(column, ParticlesObject::ColorProperty, vec);
-    else if(loweredName == "disp") columnMapping.mapStandardColumn(column, ParticlesObject::DisplacementProperty, vec);
-    else if(loweredName == "disp_mag") columnMapping.mapStandardColumn(column, ParticlesObject::DisplacementMagnitudeProperty);
-    else if(loweredName == "local_energy") columnMapping.mapStandardColumn(column, ParticlesObject::PotentialEnergyProperty);
-    else if(loweredName == "kinetic_energy") columnMapping.mapStandardColumn(column, ParticlesObject::KineticEnergyProperty);
-    else if(loweredName == "total_energy") columnMapping.mapStandardColumn(column, ParticlesObject::TotalEnergyProperty);
-    else if(loweredName == "velo") columnMapping.mapStandardColumn(column, ParticlesObject::VelocityProperty, vec);
-    else if(loweredName == "velo_mag") columnMapping.mapStandardColumn(column, ParticlesObject::VelocityMagnitudeProperty);
-    else if(loweredName == "radius") columnMapping.mapStandardColumn(column, ParticlesObject::RadiusProperty);
-    else if(loweredName == "cluster") columnMapping.mapStandardColumn(column, ParticlesObject::ClusterProperty);
-    else if(loweredName == "n_neighb") columnMapping.mapStandardColumn(column, ParticlesObject::CoordinationProperty);
-    else if(loweredName == "structure_type") columnMapping.mapStandardColumn(column, ParticlesObject::StructureTypeProperty);
-    else if(loweredName == "id") columnMapping.mapStandardColumn(column, ParticlesObject::IdentifierProperty);
-    else if(loweredName == "stress") columnMapping.mapStandardColumn(column, ParticlesObject::StressTensorProperty, vec);
-    else if(loweredName == "strain") columnMapping.mapStandardColumn(column, ParticlesObject::StrainTensorProperty, vec);
-    else if(loweredName == "deform") columnMapping.mapStandardColumn(column, ParticlesObject::DeformationGradientProperty, vec);
-    else if(loweredName == "orientation") columnMapping.mapStandardColumn(column, ParticlesObject::OrientationProperty, vec);
-    else if(loweredName == "force" || loweredName == "forces") columnMapping.mapStandardColumn(column, ParticlesObject::ForceProperty, vec);
-    else if(loweredName == "mass") columnMapping.mapStandardColumn(column, ParticlesObject::MassProperty);
-    else if(loweredName == "charge") columnMapping.mapStandardColumn(column, ParticlesObject::ChargeProperty);
-    else if(loweredName == "map_shift") columnMapping.mapStandardColumn(column, ParticlesObject::PeriodicImageProperty, vec);
-    else if(loweredName == "transparency") columnMapping.mapStandardColumn(column, ParticlesObject::TransparencyProperty);
-    else if(loweredName == "dipoles") columnMapping.mapStandardColumn(column, ParticlesObject::DipoleOrientationProperty, vec);
-    else if(loweredName == "dipoles_mag") columnMapping.mapStandardColumn(column, ParticlesObject::DipoleMagnitudeProperty);
-    else if(loweredName == "omega") columnMapping.mapStandardColumn(column, ParticlesObject::AngularVelocityProperty, vec);
-    else if(loweredName == "angular_momentum") columnMapping.mapStandardColumn(column, ParticlesObject::AngularMomentumProperty, vec);
-    else if(loweredName == "torque") columnMapping.mapStandardColumn(column, ParticlesObject::TorqueProperty, vec);
-    else if(loweredName == "spin") columnMapping.mapStandardColumn(column, ParticlesObject::SpinProperty, vec);
-    else if(loweredName == "centro_symmetry") columnMapping.mapStandardColumn(column, ParticlesObject::CentroSymmetryProperty);
-    else if(loweredName == "aspherical_shape") columnMapping.mapStandardColumn(column, ParticlesObject::AsphericalShapeProperty, vec);
-    else if(loweredName == "vector_color") columnMapping.mapStandardColumn(column, ParticlesObject::VectorColorProperty, vec);
-    else if(loweredName == "molecule") columnMapping.mapStandardColumn(column, ParticlesObject::MoleculeProperty);
-    else if(loweredName == "molecule_type") columnMapping.mapStandardColumn(column, ParticlesObject::MoleculeTypeProperty);
+        columnMapping.mapStandardColumn(column, Particles::TypeProperty);
+    else if(loweredName == "pos") columnMapping.mapStandardColumn(column, Particles::PositionProperty, vec);
+    else if(loweredName == "selection") columnMapping.mapStandardColumn(column, Particles::SelectionProperty, vec);
+    else if(loweredName == "color") columnMapping.mapStandardColumn(column, Particles::ColorProperty, vec);
+    else if(loweredName == "disp") columnMapping.mapStandardColumn(column, Particles::DisplacementProperty, vec);
+    else if(loweredName == "disp_mag") columnMapping.mapStandardColumn(column, Particles::DisplacementMagnitudeProperty);
+    else if(loweredName == "local_energy") columnMapping.mapStandardColumn(column, Particles::PotentialEnergyProperty);
+    else if(loweredName == "kinetic_energy") columnMapping.mapStandardColumn(column, Particles::KineticEnergyProperty);
+    else if(loweredName == "total_energy") columnMapping.mapStandardColumn(column, Particles::TotalEnergyProperty);
+    else if(loweredName == "velo") columnMapping.mapStandardColumn(column, Particles::VelocityProperty, vec);
+    else if(loweredName == "velo_mag") columnMapping.mapStandardColumn(column, Particles::VelocityMagnitudeProperty);
+    else if(loweredName == "radius") columnMapping.mapStandardColumn(column, Particles::RadiusProperty);
+    else if(loweredName == "cluster") columnMapping.mapStandardColumn(column, Particles::ClusterProperty);
+    else if(loweredName == "n_neighb") columnMapping.mapStandardColumn(column, Particles::CoordinationProperty);
+    else if(loweredName == "structure_type") columnMapping.mapStandardColumn(column, Particles::StructureTypeProperty);
+    else if(loweredName == "id") columnMapping.mapStandardColumn(column, Particles::IdentifierProperty);
+    else if(loweredName == "stress") columnMapping.mapStandardColumn(column, Particles::StressTensorProperty, vec);
+    else if(loweredName == "strain") columnMapping.mapStandardColumn(column, Particles::StrainTensorProperty, vec);
+    else if(loweredName == "deform") columnMapping.mapStandardColumn(column, Particles::DeformationGradientProperty, vec);
+    else if(loweredName == "orientation") columnMapping.mapStandardColumn(column, Particles::OrientationProperty, vec);
+    else if(loweredName == "force" || loweredName == "forces") columnMapping.mapStandardColumn(column, Particles::ForceProperty, vec);
+    else if(loweredName == "mass") columnMapping.mapStandardColumn(column, Particles::MassProperty);
+    else if(loweredName == "charge") columnMapping.mapStandardColumn(column, Particles::ChargeProperty);
+    else if(loweredName == "map_shift") columnMapping.mapStandardColumn(column, Particles::PeriodicImageProperty, vec);
+    else if(loweredName == "transparency") columnMapping.mapStandardColumn(column, Particles::TransparencyProperty);
+    else if(loweredName == "dipoles") columnMapping.mapStandardColumn(column, Particles::DipoleOrientationProperty, vec);
+    else if(loweredName == "dipoles_mag") columnMapping.mapStandardColumn(column, Particles::DipoleMagnitudeProperty);
+    else if(loweredName == "omega") columnMapping.mapStandardColumn(column, Particles::AngularVelocityProperty, vec);
+    else if(loweredName == "angular_momentum") columnMapping.mapStandardColumn(column, Particles::AngularMomentumProperty, vec);
+    else if(loweredName == "torque") columnMapping.mapStandardColumn(column, Particles::TorqueProperty, vec);
+    else if(loweredName == "spin") columnMapping.mapStandardColumn(column, Particles::SpinProperty, vec);
+    else if(loweredName == "centro_symmetry") columnMapping.mapStandardColumn(column, Particles::CentroSymmetryProperty);
+    else if(loweredName == "aspherical_shape") columnMapping.mapStandardColumn(column, Particles::AsphericalShapeProperty, vec);
+    else if(loweredName == "vector_color") columnMapping.mapStandardColumn(column, Particles::VectorColorProperty, vec);
+    else if(loweredName == "molecule") columnMapping.mapStandardColumn(column, Particles::MoleculeProperty);
+    else if(loweredName == "molecule_type") columnMapping.mapStandardColumn(column, Particles::MoleculeTypeProperty);
     else {
         // Only int or float custom properties are supported
-        if(dataType == PropertyObject::Float32 || dataType == PropertyObject::Float64 || dataType == PropertyObject::Int8 || dataType == PropertyObject::Int32 || dataType == PropertyObject::Int64)
-            columnMapping.mapCustomColumn(column, PropertyObject::makePropertyNameValid(name), dataType, vec);
+        if(dataType == Property::Float32 || dataType == Property::Float64 || dataType == Property::Int8 || dataType == Property::Int32 || dataType == Property::Int64)
+            columnMapping.mapCustomColumn(column, Property::makePropertyNameValid(name), dataType, vec);
         else
             return false;
     }
@@ -332,13 +332,13 @@ void XYZImporter::FrameLoader::loadFile()
                     bool ok;
                     int intValue = value.toInt(&ok);
                     if(ok)
-                        state().setAttribute(key, QVariant::fromValue(intValue), dataSource());
+                        state().setAttribute(key, QVariant::fromValue(intValue), pipelineNode());
                     else {
                         double doubleValue = value.toDouble(&ok);
                         if(ok)
-                            state().setAttribute(key, QVariant::fromValue(doubleValue), dataSource());
+                            state().setAttribute(key, QVariant::fromValue(doubleValue), pipelineNode());
                         else
-                            state().setAttribute(key, QVariant::fromValue(value), dataSource());
+                            state().setAttribute(key, QVariant::fromValue(value), pipelineNode());
                     }
                 }
             }
@@ -351,7 +351,7 @@ void XYZImporter::FrameLoader::loadFile()
         // Make comment line string available to Python scripts.
         QString trimmedComment = commentLine.trimmed();
         if(!trimmedComment.isEmpty())
-            state().setAttribute(QStringLiteral("Comment"), QVariant::fromValue(trimmedComment), dataSource());
+            state().setAttribute(QStringLiteral("Comment"), QVariant::fromValue(trimmedComment), pipelineNode());
 
         // XYZ file written by Parcas MD code contain simulation cell info in comment line.
 
@@ -410,10 +410,10 @@ void XYZImporter::FrameLoader::loadFile()
     // the file constains column metadata.
     if(_columnMapping.empty()) {
         _columnMapping.resize(4);
-        _columnMapping.mapStandardColumn(0, ParticlesObject::TypeProperty);
-        _columnMapping.mapStandardColumn(1, ParticlesObject::PositionProperty, 0);
-        _columnMapping.mapStandardColumn(2, ParticlesObject::PositionProperty, 1);
-        _columnMapping.mapStandardColumn(3, ParticlesObject::PositionProperty, 2);
+        _columnMapping.mapStandardColumn(0, Particles::TypeProperty);
+        _columnMapping.mapStandardColumn(1, Particles::PositionProperty, 0);
+        _columnMapping.mapStandardColumn(2, Particles::PositionProperty, 1);
+        _columnMapping.mapStandardColumn(3, Particles::PositionProperty, 2);
     }
 
     // Parse data columns.
@@ -457,7 +457,7 @@ void XYZImporter::FrameLoader::loadFile()
         hasSimulationCell = true;
     }
 
-    BufferWriteAccess<Point3, access_mode::read_write> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty);
+    BufferWriteAccess<Point3, access_mode::read_write> posProperty = particles()->getMutableProperty(Particles::PositionProperty);
     if(posProperty && numParticlesLong != 0) {
         Box3 boundingBox;
         boundingBox.addPoints(posProperty);
@@ -537,19 +537,19 @@ ParticleInputColumnMapping XYZImporter::parseExtendedXYZColumnSpecification(cons
             switch(propType) {
             case 'I':
                 for(int k = 0; k < nCols; k++) {
-                    mapVariableToProperty(mapping, col, propName, PropertyObject::Int32, k);
+                    mapVariableToProperty(mapping, col, propName, Property::Int32, k);
                     col++;
                 }
                 break;
             case 'R':
                 for(int k = 0; k < nCols; k++) {
-                    mapVariableToProperty(mapping, col, propName, PropertyObject::FloatDefault, k);
+                    mapVariableToProperty(mapping, col, propName, Property::FloatDefault, k);
                     col++;
                 }
                 break;
             case 'L':
                 for(int k = 0; k < nCols; k++) {
-                    mapVariableToProperty(mapping, col, propName, PropertyObject::Int32, k);
+                    mapVariableToProperty(mapping, col, propName, Property::Int32, k);
                     col++;
                 }
                 break;
@@ -610,10 +610,10 @@ Future<ParticleInputColumnMapping> XYZImporter::inspectFileHeader(const Frame& f
             // it is a standard XYZ file containing the chemical type and the x,y,z positions.
             if(detectedColumnMapping.size() == 4) {
                 if(std::none_of(detectedColumnMapping.begin(), detectedColumnMapping.end(), [](const InputColumnInfo& col) { return col.isMapped(); })) {
-                    detectedColumnMapping.mapStandardColumn(0, ParticlesObject::TypeProperty);
-                    detectedColumnMapping.mapStandardColumn(1, ParticlesObject::PositionProperty, 0);
-                    detectedColumnMapping.mapStandardColumn(2, ParticlesObject::PositionProperty, 1);
-                    detectedColumnMapping.mapStandardColumn(3, ParticlesObject::PositionProperty, 2);
+                    detectedColumnMapping.mapStandardColumn(0, Particles::TypeProperty);
+                    detectedColumnMapping.mapStandardColumn(1, Particles::PositionProperty, 0);
+                    detectedColumnMapping.mapStandardColumn(2, Particles::PositionProperty, 1);
+                    detectedColumnMapping.mapStandardColumn(3, Particles::PositionProperty, 2);
                 }
             }
             return detectedColumnMapping;

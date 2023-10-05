@@ -23,7 +23,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include "DislocationNetwork.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /******************************************************************************
 * Copy constructor.

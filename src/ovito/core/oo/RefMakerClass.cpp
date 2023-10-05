@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -49,15 +49,21 @@ void RefMakerClass::initialize()
 ******************************************************************************/
 const PropertyFieldDescriptor* RefMakerClass::findPropertyField(const char* identifier, bool searchSuperClasses) const
 {
+    OVITO_ASSERT(identifier != nullptr);
+
     if(!searchSuperClasses) {
-        for(const PropertyFieldDescriptor* field = _firstPropertyField; field; field = field->next())
-            if(qstrcmp(field->identifier(), identifier) == 0) return field;
+        for(const PropertyFieldDescriptor* field = _firstPropertyField; field; field = field->next()) {
+            if(qstrcmp(field->identifier(), identifier) == 0 || qstrcmp(field->identifierAlias(), identifier) == 0)
+                return field;
+        }
     }
     else {
         for(const PropertyFieldDescriptor* field : _propertyFields) {
-            if(qstrcmp(field->identifier(), identifier) == 0) return field;
+            if(qstrcmp(field->identifier(), identifier) == 0 || qstrcmp(field->identifierAlias(), identifier) == 0)
+                return field;
         }
     }
+
     return nullptr;
 }
 
@@ -136,7 +142,7 @@ void RefMakerClass::loadClassInfo(LoadStream& stream, OvitoClass::SerializedClas
             }
         }
 
-        // Add property field to list of fields that will be deserialized for each instance of the object class. 
+        // Add property field to list of fields that will be deserialized for each instance of the object class.
         static_cast<RefMakerClass::SerializedClassInfo*>(classInfo)->propertyFields.push_back(std::move(fieldInfo));
     }
 }

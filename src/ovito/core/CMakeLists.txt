@@ -81,7 +81,7 @@ SET(SourceFiles
     dataset/io/FileSource.cpp
     dataset/io/AttributeFileExporter.cpp
     dataset/scene/SceneNode.cpp
-    dataset/scene/PipelineSceneNode.cpp
+    dataset/scene/Pipeline.cpp
     dataset/scene/Scene.cpp
     dataset/scene/ScenePreparation.cpp
     dataset/scene/SceneAnimationPlayback.cpp
@@ -94,21 +94,20 @@ SET(SourceFiles
     dataset/data/TransformedDataObject.cpp
     dataset/data/camera/AbstractCameraObject.cpp
     dataset/data/AttributeDataObject.cpp
-    dataset/data/mesh/TriMeshObject.cpp
-    dataset/data/mesh/TriMeshVis.cpp
+    dataset/data/mesh/TriangleMesh.cpp
+    dataset/data/mesh/TriangleMeshVis.cpp
     dataset/pipeline/ActiveObject.cpp
     dataset/pipeline/PipelineFlowState.cpp
     dataset/pipeline/PipelineCache.cpp
     dataset/pipeline/PipelineEvaluation.cpp
-    dataset/pipeline/PipelineObject.cpp
+    dataset/pipeline/PipelineNode.cpp
     dataset/pipeline/PipelineStatus.cpp
-    dataset/pipeline/CachingPipelineObject.cpp
     dataset/pipeline/AsynchronousModifier.cpp
     dataset/pipeline/Modifier.cpp
-    dataset/pipeline/ModifierApplication.cpp
+    dataset/pipeline/ModificationNode.cpp
     dataset/pipeline/ModifierGroup.cpp
     dataset/pipeline/ModifierTemplates.cpp
-    dataset/pipeline/AsynchronousModifierApplication.cpp
+    dataset/pipeline/AsynchronousModificationNode.cpp
     dataset/pipeline/AsynchronousDelegatingModifier.cpp
     dataset/pipeline/StaticSource.cpp
     dataset/pipeline/BasePipelineSource.cpp

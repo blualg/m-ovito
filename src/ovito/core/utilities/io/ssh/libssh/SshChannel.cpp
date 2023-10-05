@@ -24,7 +24,7 @@
 #include "SshChannel.h"
 #include "LibsshConnection.h"
 
-namespace Ovito::Ssh {
+namespace Ovito {
 
 /******************************************************************************
 * Constructor.

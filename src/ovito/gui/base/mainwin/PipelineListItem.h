@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,7 +26,7 @@
 #include <ovito/gui/base/GUIBase.h>
 #include <ovito/core/oo/RefMaker.h>
 #include <ovito/core/oo/RefTarget.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 
 namespace Ovito {
 
@@ -69,7 +69,7 @@ public:
     const PipelineStatus& status() const;
 
     /// Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
-    QVariant shortInfo(PipelineSceneNode* selectedPipeline) const;
+    QVariant shortInfo(Pipeline* selectedPipeline) const;
 
     /// Returns whether an active computation is in progress for this object.
     bool isObjectActive() const;

@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/io/FileExporter.h>
 #include <ovito/core/utilities/io/CompressedTextWriter.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief Exporter that writes a data table to a text output file.

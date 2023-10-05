@@ -25,9 +25,9 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/modifier/analysis/ptm/PTMAlgorithm.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief This utility class finds the neighbors of a particle whose local crystalline order has been determined
@@ -51,7 +51,7 @@ public:
     /// \return \c false when the operation has been canceled by the user;
     ///         \c true on success.
     /// \throw Exception on error.
-    bool prepare(BufferReadAccess<Point3> positions, const SimulationCellObject* cell, BufferReadAccess<SelectionIntType> selection,
+    bool prepare(BufferReadAccess<Point3> positions, const SimulationCell* cell, BufferReadAccess<SelectionIntType> selection,
                  ConstDataBufferPtr structuresArray,
                  ConstDataBufferPtr orientationsArray,
                  ConstDataBufferPtr correspondencesArray);

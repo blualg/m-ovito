@@ -23,14 +23,14 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/BondType.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "GALAMOSTImporter.h"
 
 #include <boost/algorithm/string.hpp>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(GALAMOSTImporter);
 
@@ -92,7 +92,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
             auto timeStepStr = xml.attributes().value(QStringLiteral("time_step"));
             if(!timeStepStr.isEmpty()) {
                 bool ok;
-                state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timeStepStr.toLongLong(&ok)), dataSource());
+                state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timeStepStr.toLongLong(&ok)), pipelineNode());
                 if(!ok)
                     throw Exception(tr("GALAMOST file parsing error. Invalid 'time_step' attribute value in <%1> element: %2").arg(xml.name()).arg(timeStepStr));
             }
@@ -154,39 +154,39 @@ void GALAMOSTImporter::FrameLoader::loadFile()
                     xml.skipCurrentElement();
                 }
                 else if(xml.name().compare(QStringLiteral("position")) == 0) {
-                    parsePropertyData(xml, particles()->createProperty(ParticlesObject::PositionProperty));
+                    parsePropertyData(xml, particles()->createProperty(Particles::PositionProperty));
                 }
                 else if(xml.name().compare(QStringLiteral("velocity")) == 0) {
-                    parsePropertyData(xml, particles()->createProperty(ParticlesObject::VelocityProperty));
+                    parsePropertyData(xml, particles()->createProperty(Particles::VelocityProperty));
                 }
                 else if(xml.name().compare(QStringLiteral("image")) == 0) {
-                    parsePropertyData(xml, particles()->createProperty(ParticlesObject::PeriodicImageProperty));
+                    parsePropertyData(xml, particles()->createProperty(Particles::PeriodicImageProperty));
                 }
                 else if(xml.name().compare(QStringLiteral("mass")) == 0) {
-                    parsePropertyData(xml, particles()->createProperty(ParticlesObject::MassProperty));
+                    parsePropertyData(xml, particles()->createProperty(Particles::MassProperty));
                 }
                 else if(xml.name().compare(QStringLiteral("diameter")) == 0) {
-                    PropertyObject* property = parsePropertyData(xml, particles()->createProperty(ParticlesObject::RadiusProperty));
+                    Property* property = parsePropertyData(xml, particles()->createProperty(Particles::RadiusProperty));
                     // Convert diamater values into radii.
                     for(auto& radius : BufferWriteAccess<GraphicsFloatType, access_mode::read_write>(property))
                         radius /= 2;
                 }
                 else if(xml.name().compare(QStringLiteral("charge")) == 0) {
-                    parsePropertyData(xml, particles()->createProperty(ParticlesObject::ChargeProperty));
+                    parsePropertyData(xml, particles()->createProperty(Particles::ChargeProperty));
                 }
                 else if(xml.name().compare(QStringLiteral("quaternion")) == 0) {
-                    PropertyObject* property = parsePropertyData(xml, particles()->createProperty(ParticlesObject::OrientationProperty));
+                    Property* property = parsePropertyData(xml, particles()->createProperty(Particles::OrientationProperty));
                     // Convert quaternion representation to OVITO's internal format.
                     // Left-shift all quaternion components by one: (W,X,Y,Z) -> (X,Y,Z,W).
                     for(auto& q : BufferWriteAccess<QuaternionG, access_mode::read_write>(property))
                         std::rotate(q.begin(), q.begin() + 1, q.end());
                 }
                 else if(xml.name().compare(QStringLiteral("orientation")) == 0) {
-                    DataOORef<PropertyObject> directions = ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, natoms, DataBuffer::FloatGraphics, 3, QStringLiteral("Direction"));
+                    DataOORef<Property> directions = Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, natoms, DataBuffer::FloatGraphics, 3, QStringLiteral("Direction"));
                     parsePropertyData(xml, directions);
                     BufferReadAccess<Vector3G> directionsAccess(directions);
                     const auto* dir = directionsAccess.cbegin();
-                    for(auto& q : BufferWriteAccess<QuaternionG, access_mode::discard_write>(particles()->createProperty(ParticlesObject::OrientationProperty))) {
+                    for(auto& q : BufferWriteAccess<QuaternionG, access_mode::discard_write>(particles()->createProperty(Particles::OrientationProperty))) {
                         if(!dir->isZero()) {
                             RotationT<GraphicsFloatType> r(Vector3G(0,0,1), *dir);
                             q = QuaternionG(r);
@@ -201,24 +201,24 @@ void GALAMOSTImporter::FrameLoader::loadFile()
                 else if(xml.name().compare(QStringLiteral("type")) == 0) {
                     QString text = xml.readElementText();
                     QTextStream stream(&text, QIODevice::ReadOnly | QIODevice::Text);
-                    PropertyObject* property = particles()->createProperty(ParticlesObject::TypeProperty);
+                    Property* property = particles()->createProperty(Particles::TypeProperty);
                     QString typeName;
                     for(auto& type : BufferWriteAccess<int32_t, access_mode::discard_write>(property)) {
                         stream >> typeName;
-                        type = addNamedType(ParticlesObject::OOClass(), property, typeName)->numericId();
+                        type = addNamedType(Particles::OOClass(), property, typeName)->numericId();
                     }
                     property->sortElementTypesByName();
                 }
                 else if(xml.name().compare(QStringLiteral("molecule")) == 0) {
-                    parsePropertyData(xml, particles()->createProperty(ParticlesObject::MoleculeProperty));
+                    parsePropertyData(xml, particles()->createProperty(Particles::MoleculeProperty));
                 }
                 else if(xml.name().compare(QStringLiteral("body")) == 0) {
-                    parsePropertyData(xml, particles()->createProperty(QStringLiteral("Body"), PropertyObject::Int64));
+                    parsePropertyData(xml, particles()->createProperty(QStringLiteral("Body"), Property::Int64));
                 }
                 else if(xml.name().compare(QStringLiteral("Aspheres")) == 0) {
                     QString text = xml.readElementText();
                     QTextStream stream(&text, QIODevice::ReadOnly | QIODevice::Text);
-                    const PropertyObject* typeProperty = particles()->getProperty(ParticlesObject::TypeProperty);
+                    const Property* typeProperty = particles()->getProperty(Particles::TypeProperty);
                     if(!typeProperty)
                         throw Exception(tr("GALAMOST file parsing error. <%1> element must appear after <type> element.").arg(xml.name()));
                     BufferReadAccess<int32_t> typeAccess(typeProperty);
@@ -237,7 +237,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
                             }
                         }
                         const auto* typeIndex = typeAccess.cbegin();
-                        for(auto& shape : BufferWriteAccess<Vector3G, access_mode::discard_write>(particles()->createProperty(ParticlesObject::AsphericalShapeProperty))) {
+                        for(auto& shape : BufferWriteAccess<Vector3G, access_mode::discard_write>(particles()->createProperty(Particles::AsphericalShapeProperty))) {
                             if(*typeIndex < typesAsphericalShape.size())
                                 shape = typesAsphericalShape[*typeIndex];
                             else
@@ -247,10 +247,10 @@ void GALAMOSTImporter::FrameLoader::loadFile()
                     }
                 }
                 else if(xml.name().compare(QStringLiteral("rotation")) == 0) {
-                    parsePropertyData(xml, particles()->createProperty(ParticlesObject::AngularVelocityProperty));
+                    parsePropertyData(xml, particles()->createProperty(Particles::AngularVelocityProperty));
                 }
                 else if(xml.name().compare(QStringLiteral("inert")) == 0) {
-                    parsePropertyData(xml, particles()->createProperty(ParticlesObject::AngularMomentumProperty));
+                    parsePropertyData(xml, particles()->createProperty(Particles::AngularMomentumProperty));
                 }
                 else if(xml.name().compare(QStringLiteral("bond")) == 0) {
                     // Parse number of bonds.
@@ -267,13 +267,13 @@ void GALAMOSTImporter::FrameLoader::loadFile()
                     }
                     QString text = xml.readElementText();
                     QTextStream stream(&text, QIODevice::ReadOnly | QIODevice::Text);
-                    BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> topologyAccess(bonds()->createProperty(BondsObject::TopologyProperty));
-                    PropertyObject* typeProperty = bonds()->createProperty(BondsObject::TypeProperty);
+                    BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> topologyAccess(bonds()->createProperty(Bonds::TopologyProperty));
+                    Property* typeProperty = bonds()->createProperty(Bonds::TypeProperty);
                     BufferWriteAccess<int32_t, access_mode::discard_write> typeAccess(typeProperty);
                     QString typeName;
                     for(size_t i = 0; i < nbonds; i++) {
                         stream >> typeName >> topologyAccess[i][0] >> topologyAccess[i][1];
-                        typeAccess[i] = addNamedType(ParticlesObject::OOClass(), typeProperty, typeName)->numericId();
+                        typeAccess[i] = addNamedType(Particles::OOClass(), typeProperty, typeName)->numericId();
                         stream.skipWhiteSpace();
                     }
                     typeAccess.reset();
@@ -308,7 +308,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
 /******************************************************************************
 * Parses the contents of an XML element and stores the parsed values in a target property.
 ******************************************************************************/
-PropertyObject* GALAMOSTImporter::FrameLoader::parsePropertyData(QXmlStreamReader& xml, PropertyObject* property)
+Property* GALAMOSTImporter::FrameLoader::parsePropertyData(QXmlStreamReader& xml, Property* property)
 {
     // Parse number of data elements.
     qlonglong numElements = xml.attributes().value("num").toLongLong();

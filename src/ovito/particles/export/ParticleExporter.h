@@ -24,12 +24,12 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include <ovito/core/dataset/io/FileExporter.h>
 #include <ovito/core/utilities/io/CompressedTextWriter.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Abstract base class for export services that write particle datasets to an output file.
@@ -46,7 +46,7 @@ public:
 
     /// \brief Returns the type(s) of data objects that this exporter service can export.
     virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
-        return { &ParticlesObject::OOClass() };
+        return { &Particles::OOClass() };
     }
 
 protected:

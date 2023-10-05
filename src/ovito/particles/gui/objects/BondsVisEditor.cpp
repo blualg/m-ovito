@@ -30,7 +30,7 @@
 #include <ovito/gui/desktop/properties/IntegerCheckBoxParameterUI.h>
 #include "BondsVisEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(BondsVisEditor);
 SET_OVITO_OBJECT_EDITOR(BondsVis, BondsVisEditor);
@@ -64,7 +64,7 @@ void BondsVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     layout->addWidget(new QLabel(tr("Coloring mode:")), 2, 0, 1, 3);
     _coloringModeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(BondsVis::coloringMode));
     layout->addWidget(_coloringModeUI->addRadioButton(BondsVis::UniformColoring, tr("Uniform:")), 3, 1);
-    
+
     // Uniform color.
     _bondColorUI = new ColorParameterUI(this, PROPERTY_FIELD(BondsVis::bondColor));
     layout->addWidget(_bondColorUI->colorPicker(), 3, 2);
@@ -79,7 +79,7 @@ void BondsVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     connect(this, &PropertiesEditor::pipelineInputChanged, this, &BondsVisEditor::updateColoringOptions);
 
     // Update the coloring controls when a parameter of the vis element has been changed.
-    connect(this, &PropertiesEditor::contentsChanged, this, &BondsVisEditor::updateColoringOptions);    
+    connect(this, &PropertiesEditor::contentsChanged, this, &BondsVisEditor::updateColoringOptions);
 }
 
 /******************************************************************************
@@ -87,18 +87,18 @@ void BondsVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 ******************************************************************************/
 void BondsVisEditor::updateColoringOptions()
 {
-    // Retrieve the BondsObject this vis element is associated with.
-    DataOORef<const BondsObject> bonds = dynamic_object_cast<const BondsObject>(getVisDataObject());
+    // Retrieve the Bonds this vis element is associated with.
+    DataOORef<const Bonds> bonds = dynamic_object_cast<const Bonds>(getVisDataObject());
 
     // Do the bonds have explicit RGB colors assigned ("Color" property exists)?
-    bool hasExplicitColors = (bonds && bonds->getProperty(BondsObject::ColorProperty));
+    bool hasExplicitColors = (bonds && bonds->getProperty(Bonds::ColorProperty));
 
     BondsVis::ColoringMode coloringMode = editObject() ? static_object_cast<BondsVis>(editObject())->coloringMode() : BondsVis::UniformColoring;
 
     _bondColorUI->setEnabled(editObject() && !hasExplicitColors && coloringMode == BondsVis::UniformColoring);
 
     _coloringModeUI->buttonGroup()->button(BondsVis::UniformColoring)->setEnabled(editObject() && !hasExplicitColors);
-    _coloringModeUI->buttonGroup()->button(BondsVis::ByTypeColoring)->setEnabled(bonds && !hasExplicitColors && bonds->getProperty(BondsObject::TypeProperty));
+    _coloringModeUI->buttonGroup()->button(BondsVis::ByTypeColoring)->setEnabled(bonds && !hasExplicitColors && bonds->getProperty(Bonds::TypeProperty));
     _coloringModeUI->buttonGroup()->button(BondsVis::ParticleBasedColoring)->setEnabled(!hasExplicitColors);
 }
 

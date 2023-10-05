@@ -21,15 +21,15 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/particles/objects/AnglesObject.h>
-#include <ovito/particles/objects/DihedralsObject.h>
-#include <ovito/particles/objects/ImpropersObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/particles/objects/Angles.h>
+#include <ovito/particles/objects/Dihedrals.h>
+#include <ovito/particles/objects/Impropers.h>
 #include <ovito/particles/import/gsd/GSDFile.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include "GSDExporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(GSDExporter);
 
@@ -85,11 +85,11 @@ void GSDExporter::closeOutputFile(bool exportCompleted)
 bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
     // Get particles.
-    const ParticlesObject* particles = state.expectObject<ParticlesObject>();
+    const Particles* particles = state.expectObject<Particles>();
     particles->verifyIntegrity();
 
     // Get simulation cell info.
-    const SimulationCellObject* cell = state.expectObject<SimulationCellObject>();
+    const SimulationCell* cell = state.expectObject<SimulationCell>();
     const AffineTransformation& simCell = cell->matrix();
 
     // Output simulation step.
@@ -132,13 +132,13 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     // Determine particle ordering.
     std::vector<size_t> ordering(particles->elementCount());
     std::iota(ordering.begin(), ordering.end(), (size_t)0);
-    if(BufferReadAccess<int64_t> idProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
+    if(BufferReadAccess<int64_t> idProperty = particles->getProperty(Particles::IdentifierProperty)) {
         boost::sort(ordering, [&](size_t a, size_t b) { return idProperty[a] < idProperty[b]; });
     }
     if(operation.isCanceled()) return false;
 
     // Output particle coordinates.
-    BufferReadAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+    BufferReadAccess<Point3> posProperty = particles->expectProperty(Particles::PositionProperty);
     // Apply coordinate transformation matrix, wrapping a periodic box boundaries and data type conversion:
     std::vector<Point_3<float>> posBuffer(posProperty.size());
     std::vector<Vector_3<int32_t>> imageBuffer(posProperty.size());
@@ -156,7 +156,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     if(operation.isCanceled()) return false;
 
     // Output particle types.
-    if(const PropertyObject* typeProperty = particles->getProperty(ParticlesObject::TypeProperty)) {
+    if(const Property* typeProperty = particles->getProperty(Particles::TypeProperty)) {
 
         // GSD/HOOMD requires particle types to form a contiguous range starting at base index 0.
         std::map<int,int> idMapping;
@@ -191,7 +191,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
 
     // Output particle masses.
-    if(BufferReadAccess<FloatType> massProperty = particles->getProperty(ParticlesObject::MassProperty)) {
+    if(BufferReadAccess<FloatType> massProperty = particles->getProperty(Particles::MassProperty)) {
         // Apply particle index mapping and data type conversion:
         std::vector<float> massBuffer(massProperty.size());
         boost::transform(ordering, massBuffer.begin(),
@@ -201,7 +201,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
 
     // Output particle charges.
-    if(BufferReadAccess<FloatType> chargeProperty = particles->getProperty(ParticlesObject::ChargeProperty)) {
+    if(BufferReadAccess<FloatType> chargeProperty = particles->getProperty(Particles::ChargeProperty)) {
         // Apply particle index mapping and data type conversion:
         std::vector<float> chargeBuffer(chargeProperty.size());
         boost::transform(ordering, chargeBuffer.begin(),
@@ -211,7 +211,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
 
     // Output particle diameters.
-    if(BufferReadAccess<GraphicsFloatType> radiusProperty = particles->getProperty(ParticlesObject::RadiusProperty)) {
+    if(BufferReadAccess<GraphicsFloatType> radiusProperty = particles->getProperty(Particles::RadiusProperty)) {
         // Apply particle index mapping, data type conversion and
         // multiplying with a factor of 2 to convert from radii to diameters:
         std::vector<float> diameterBuffer(radiusProperty.size());
@@ -222,7 +222,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
 
     // Output particle orientations.
-    if(BufferReadAccess<QuaternionG> orientationProperty = particles->getProperty(ParticlesObject::OrientationProperty)) {
+    if(BufferReadAccess<QuaternionG> orientationProperty = particles->getProperty(Particles::OrientationProperty)) {
         // Apply particle index mapping and data type conversion.
         // Also right-shift the quaternion components, because GSD uses a different representation.
         // (X,Y,Z,W) -> (W,X,Y,Z).
@@ -235,7 +235,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
 
     // Output particle velocities.
-    if(BufferReadAccess<Vector3> velocityProperty = particles->getProperty(ParticlesObject::VelocityProperty)) {
+    if(BufferReadAccess<Vector3> velocityProperty = particles->getProperty(Particles::VelocityProperty)) {
         // Apply particle index mapping and data type conversion:
         // Also apply affine transform of simulation cell to velocity vectors.
         std::vector<Vector_3<float>> velocityBuffer(velocityProperty.size());
@@ -246,8 +246,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
 
     // Output particle angular momenta. Note: The GSDImporter currently stores these values in the user-defined particle property "angmom".
-    if(const PropertyObject* angularMomentumProperty = particles->getProperty("angmom")) {
-        if(angularMomentumProperty->dataType() == PropertyObject::FloatDefault && angularMomentumProperty->componentCount() == 4) {
+    if(const Property* angularMomentumProperty = particles->getProperty("angmom")) {
+        if(angularMomentumProperty->dataType() == Property::FloatDefault && angularMomentumProperty->componentCount() == 4) {
             BufferReadAccess<Quaternion> angularMomentumPropertyAccess(angularMomentumProperty);
             // Apply particle index mapping and data type conversion:
             std::vector<QuaternionT<float>> angMomBuffer(angularMomentumProperty->size());
@@ -259,8 +259,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
 
     // Output particle body property. Note: The GSDImporter currently stores the values in the user-defined particle property "body".
-    if(const PropertyObject* bodyProperty = particles->getProperty("body")) {
-        if(bodyProperty->dataType() == PropertyObject::Int32 && bodyProperty->componentCount() == 1) {
+    if(const Property* bodyProperty = particles->getProperty("body")) {
+        if(bodyProperty->dataType() == Property::Int32 && bodyProperty->componentCount() == 1) {
             BufferReadAccess<int32_t> bodyPropertyAccess(bodyProperty);
             // Apply particle index mapping:
             std::vector<int> bodyBuffer(bodyProperty->size());
@@ -274,9 +274,9 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     std::vector<size_t> reverseOrdering;
 
     // Export bonds (optional).
-    if(const BondsObject* bonds = particles->bonds()) {
+    if(const Bonds* bonds = particles->bonds()) {
         bonds->verifyIntegrity();
-        BufferReadAccess<ParticleIndexPair> bondTopologyProperty = bonds->expectProperty(BondsObject::TopologyProperty);
+        BufferReadAccess<ParticleIndexPair> bondTopologyProperty = bonds->expectProperty(Bonds::TopologyProperty);
 
         // Output number of bonds.
         if(bonds->elementCount() > (size_t)std::numeric_limits<uint32_t>::max())
@@ -306,7 +306,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
         if(operation.isCanceled()) return false;
 
         // Output bond types.
-        if(const PropertyObject* typeProperty = bonds->getProperty(BondsObject::TypeProperty)) {
+        if(const Property* typeProperty = bonds->getProperty(Bonds::TypeProperty)) {
 
             // GSD/HOOMD requires bond types to form a contiguous range starting at base index 0.
             std::map<int,int> idMapping;
@@ -338,9 +338,9 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
 
     // Export angles (optional).
-    if(const AnglesObject* angles = particles->angles()) {
+    if(const Angles* angles = particles->angles()) {
         angles->verifyIntegrity();
-        BufferReadAccess<ParticleIndexTriplet> topologyProperty = angles->expectProperty(AnglesObject::TopologyProperty);
+        BufferReadAccess<ParticleIndexTriplet> topologyProperty = angles->expectProperty(Angles::TopologyProperty);
 
         // Output number of angles.
         if(angles->elementCount() > (size_t)std::numeric_limits<uint32_t>::max())
@@ -372,7 +372,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
         if(operation.isCanceled()) return false;
 
         // Output angle types.
-        if(const PropertyObject* typeProperty = angles->getProperty(AnglesObject::TypeProperty)) {
+        if(const Property* typeProperty = angles->getProperty(Angles::TypeProperty)) {
 
             // GSD/HOOMD requires angle types to form a contiguous range starting at base index 0.
             std::map<int,int> idMapping;
@@ -404,9 +404,9 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
 
     // Export dihedrals (optional).
-    if(const DihedralsObject* dihedrals = particles->dihedrals()) {
+    if(const Dihedrals* dihedrals = particles->dihedrals()) {
         dihedrals->verifyIntegrity();
-        BufferReadAccess<ParticleIndexQuadruplet> topologyProperty = dihedrals->expectProperty(DihedralsObject::TopologyProperty);
+        BufferReadAccess<ParticleIndexQuadruplet> topologyProperty = dihedrals->expectProperty(Dihedrals::TopologyProperty);
 
         // Output number of dihedrals.
         if(dihedrals->elementCount() > (size_t)std::numeric_limits<uint32_t>::max())
@@ -440,7 +440,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
         if(operation.isCanceled()) return false;
 
         // Output dihedral types.
-        if(const PropertyObject* typeProperty = dihedrals->getProperty(DihedralsObject::TypeProperty)) {
+        if(const Property* typeProperty = dihedrals->getProperty(Dihedrals::TypeProperty)) {
 
             // GSD/HOOMD requires dihedral types to form a contiguous range starting at base index 0.
             std::map<int,int> idMapping;
@@ -472,9 +472,9 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
 
     // Export impropers (optional).
-    if(const ImpropersObject* impropers = particles->impropers()) {
+    if(const Impropers* impropers = particles->impropers()) {
         impropers->verifyIntegrity();
-        BufferReadAccess<ParticleIndexQuadruplet> topologyProperty = impropers->expectProperty(ImpropersObject::TopologyProperty);
+        BufferReadAccess<ParticleIndexQuadruplet> topologyProperty = impropers->expectProperty(Impropers::TopologyProperty);
 
         // Output number of impropers.
         if(impropers->elementCount() > (size_t)std::numeric_limits<uint32_t>::max())
@@ -508,7 +508,7 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
         if(operation.isCanceled()) return false;
 
         // Output improper types.
-        if(const PropertyObject* typeProperty = impropers->getProperty(ImpropersObject::TypeProperty)) {
+        if(const Property* typeProperty = impropers->getProperty(Impropers::TypeProperty)) {
 
             // GSD/HOOMD requires improper types to form a contiguous range starting at base index 0.
             std::map<int,int> idMapping;

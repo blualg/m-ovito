@@ -27,7 +27,7 @@
 #include <ovito/stdobj/camera/StandardCameraSource.h>
 #include "StandardCameraSourceEditor.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(StandardCameraSourceEditor);
 SET_OVITO_OBJECT_EDITOR(StandardCameraSource, StandardCameraSourceEditor);

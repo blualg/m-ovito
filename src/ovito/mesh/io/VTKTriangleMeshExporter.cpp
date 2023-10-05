@@ -25,7 +25,7 @@
 #include <ovito/core/app/Application.h>
 #include "VTKTriangleMeshExporter.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(VTKTriangleMeshExporter);
 DEFINE_PROPERTY_FIELD(VTKTriangleMeshExporter, exportCapPolygons);
@@ -77,8 +77,8 @@ bool VTKTriangleMeshExporter::exportFrame(int frameNumber, const QString& filePa
             .arg(frameNumber).arg(objectRef.dataPath()).arg(getAvailableDataObjectList(state, RenderableSurfaceMesh::OOClass())));
     }
 
-    const TriMeshObject* surfaceMesh = meshObj->surfaceMesh();
-    const TriMeshObject* capPolygonsMesh = exportCapPolygons() ? meshObj->capPolygonsMesh() : nullptr;
+    const TriangleMesh* surfaceMesh = meshObj->surfaceMesh();
+    const TriangleMesh* capPolygonsMesh = exportCapPolygons() ? meshObj->capPolygonsMesh() : nullptr;
     auto totalVertexCount = (surfaceMesh ? surfaceMesh->vertexCount() : 0) + (capPolygonsMesh ? capPolygonsMesh->vertexCount() : 0);
     auto totalFaceCount = (surfaceMesh ? surfaceMesh->faceCount() : 0) + (capPolygonsMesh ? capPolygonsMesh->faceCount() : 0);
     textStream() << "# vtk DataFile Version 3.0\n";

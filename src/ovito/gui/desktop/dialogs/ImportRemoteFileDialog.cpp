@@ -113,7 +113,7 @@ ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindow& mainWindow, const QVe
     _libsshMethod = new QRadioButton(tr("Integrated client"));
 #ifdef OVITO_SSH_CLIENT
     _libsshMethod->setText(_libsshMethod->text() + tr(" (default)"));
-    _libsshMethod->setChecked(Ssh::SshConnection::getSshImplementation() == Ssh::SshConnection::Libssh);
+    _libsshMethod->setChecked(SshConnection::getSshImplementation() == SshConnection::Libssh);
 #else
     _libsshMethod->setText(_libsshMethod->text() + tr(" (not available in this OVITO build)"));
     _libsshMethod->setEnabled(false);
@@ -121,7 +121,7 @@ ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindow& mainWindow, const QVe
     layout3->addWidget(_libsshMethod, 0, 0, 1, 3);
 #ifdef OVITO_BUILD_PROFESSIONAL
     _opensshMethod = new QRadioButton(tr("External OpenSSH:"));
-    _opensshMethod->setChecked(Ssh::SshConnection::getSshImplementation() == Ssh::SshConnection::Openssh);
+    _opensshMethod->setChecked(SshConnection::getSshImplementation() == SshConnection::Openssh);
 #else
     _opensshMethod = new QRadioButton(tr("External OpenSSH client (available in OVITO Pro)"));
     _opensshMethod->setEnabled(false);
@@ -129,7 +129,7 @@ ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindow& mainWindow, const QVe
     layout3->addWidget(_opensshMethod, 1, 0);
 #ifdef OVITO_BUILD_PROFESSIONAL
     _sftpPath = new QLineEdit();
-    _sftpPath->setText(Ssh::OpensshConnection::getSftpPath());
+    _sftpPath->setText(OpensshConnection::getSftpPath());
     _sftpPath->setPlaceholderText(QStringLiteral("sftp"));
     _sftpPath->setEnabled(_opensshMethod->isChecked());
     layout3->addWidget(_sftpPath, 1, 1);
@@ -185,14 +185,14 @@ void ImportRemoteFileDialog::onOk()
 
 #ifdef OVITO_BUILD_PROFESSIONAL
         if(_libsshMethod->isChecked()) {
-            Ssh::SshConnection::setSshImplementation(Ssh::SshConnection::Libssh);
+            SshConnection::setSshImplementation(SshConnection::Libssh);
         }
         else if(_opensshMethod->isChecked()) {
             QString sftpPath = QDir::fromNativeSeparators(_sftpPath->text().trimmed());
             if(sftpPath.isEmpty())
                 sftpPath = QStringLiteral("sftp");
-            Ssh::OpensshConnection::setSftpPath(sftpPath);
-            Ssh::SshConnection::setSshImplementation(Ssh::SshConnection::Openssh);
+            OpensshConnection::setSftpPath(sftpPath);
+            SshConnection::setSshImplementation(SshConnection::Openssh);
         }
 #endif
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,11 +30,5 @@
 #include <ovito/core/Core.h>
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/mesh/Mesh.h>
-
-namespace Ovito::StdMod 
-{
-    using namespace Ovito::StdObj;
-    using namespace Ovito::Mesh;
-}
 
 #endif

@@ -29,7 +29,7 @@
 namespace Ovito {
 
 /**
- * \brief A properties editor for the TriMeshVis class.
+ * \brief A properties editor for the TriangleMeshVis class.
  */
 class TriMeshVisEditor : public PropertiesEditor
 {

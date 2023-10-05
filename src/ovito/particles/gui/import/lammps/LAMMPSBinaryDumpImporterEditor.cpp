@@ -31,7 +31,7 @@
 #include <ovito/core/dataset/io/FileSource.h>
 #include "LAMMPSBinaryDumpImporterEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSBinaryDumpImporterEditor);
 SET_OVITO_OBJECT_EDITOR(LAMMPSBinaryDumpImporter, LAMMPSBinaryDumpImporterEditor);

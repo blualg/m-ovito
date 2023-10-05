@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -33,7 +33,7 @@
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
 #include "GenerateTrajectoryLinesModifierEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(GenerateTrajectoryLinesModifierEditor);
 SET_OVITO_OBJECT_EDITOR(GenerateTrajectoryLinesModifier, GenerateTrajectoryLinesModifierEditor);
@@ -88,7 +88,7 @@ void GenerateTrajectoryLinesModifierEditor::createUI(const RolloutInsertionParam
         transferParticlePropertiesUI->checkBox()->setText(tr("Sample a particle property:"));
         layout2->addWidget(transferParticlePropertiesUI->checkBox(), 1, 0, 1, 2);
 
-        PropertyReferenceParameterUI* particlePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(GenerateTrajectoryLinesModifier::particleProperty), &ParticlesObject::OOClass(), PropertyReferenceParameterUI::ShowNoComponents);
+        PropertyReferenceParameterUI* particlePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(GenerateTrajectoryLinesModifier::particleProperty), &Particles::OOClass(), PropertyReferenceParameterUI::ShowNoComponents);
         layout2->addWidget(particlePropertyUI->comboBox(), 2, 1);
         particlePropertyUI->setEnabled(false);
         connect(transferParticlePropertiesUI->checkBox(), &QCheckBox::toggled, particlePropertyUI, &PropertyReferenceParameterUI::setEnabled);
@@ -148,7 +148,7 @@ void GenerateTrajectoryLinesModifierEditor::createUI(const RolloutInsertionParam
 
     // Whenever the pipeline output of the modifier changes, update visibility of the visual element for the trajectory lines.
     connect(this, &PropertiesEditor::pipelineOutputChanged, this, [this,trajectoryVisSubEditorUI]() {
-        trajectoryVisSubEditorUI->setEnabled(getPipelineOutput().getObject<TrajectoryObject>() != nullptr);
+        trajectoryVisSubEditorUI->setEnabled(getPipelineOutput().getObject<TrajectoryLines>() != nullptr);
     });
 }
 

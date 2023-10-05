@@ -26,7 +26,7 @@
 
 #include <QQmlEngine>
 
-namespace Ovito::StdObj { 
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(StdObjGuiRegistrationService);
 

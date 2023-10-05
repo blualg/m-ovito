@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -57,7 +57,7 @@ void SelectionMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEven
         ViewportPickResult pickResult = vpwin->pick(_clickPoint);
         if(pickResult.isValid() && _viewport->scene()) {
             inputManager()->userInterface().performTransaction(tr("Select"), [&] {
-                _viewport->scene()->selection()->setNode(pickResult.pipelineNode());
+                _viewport->scene()->selection()->setNode(pickResult.pipeline());
             });
         }
         _viewport = nullptr;
@@ -92,7 +92,7 @@ void SelectionMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* 
 
     // Display a description of the object under the mouse cursor in the status bar and/or in a tooltip window.
     if(pickResult.isValid() && pickResult.pickInfo()) {
-        QString infoText = pickResult.pickInfo()->infoString(pickResult.pipelineNode(), pickResult.subobjectId());
+        QString infoText = pickResult.pickInfo()->infoString(pickResult.pipeline(), pickResult.subobjectId());
         inputManager()->userInterface().showStatusBarMessage(infoText);
         vpwin->showToolTip(infoText, getMousePosition(event));
     }

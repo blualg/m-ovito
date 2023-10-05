@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,10 +22,10 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
-#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
+#include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 #include "WavefrontOBJImporter.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(WavefrontOBJImporter);
 
@@ -34,7 +34,7 @@ IMPLEMENT_OVITO_CLASS(WavefrontOBJImporter);
 ******************************************************************************/
 bool WavefrontOBJImporter::OOMetaClass::importsDataType(const DataObject::OOMetaClass& dataObjectType) const
 {
-    return TriMeshObject::OOClass().isDerivedFrom(dataObjectType);
+    return TriangleMesh::OOClass().isDerivedFrom(dataObjectType);
 }
 
 /******************************************************************************
@@ -89,9 +89,9 @@ void WavefrontOBJImporter::FrameLoader::loadFile()
     setProgressMaximum(stream.underlyingSize());
 
     // Add mesh to the data collection.
-    TriMeshObject* mesh = state().getMutableObject<TriMeshObject>();
+    TriangleMesh* mesh = state().getMutableObject<TriangleMesh>();
     if(!mesh)
-        mesh = state().createObject<TriMeshObject>(dataSource());
+        mesh = state().createObject<TriangleMesh>(pipelineNode());
     else
         mesh->clear();
     mesh->setIdentifier(QStringLiteral("mesh"));

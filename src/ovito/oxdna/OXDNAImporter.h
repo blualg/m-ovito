@@ -27,7 +27,7 @@
 #include <ovito/particles/import/ParticleImporter.h>
 #include <ovito/core/app/Application.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief File parser for data files of the oxDNA code.

@@ -21,14 +21,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include "LAMMPSDumpLocalImporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSDumpLocalImporter);
 DEFINE_PROPERTY_FIELD(LAMMPSDumpLocalImporter, columnMapping);
@@ -156,14 +156,14 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
             if(stream.lineStartsWith("ITEM: TIMESTEP")) {
                 if(sscanf(stream.readLine(), "%llu", &timestep) != 1)
                     throw Exception(tr("LAMMPS dump local file parsing error. Invalid timestep number (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
-                state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timestep), dataSource());
+                state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timestep), pipelineNode());
                 break;
             }
             else if(stream.lineStartsWithToken("ITEM: TIME")) {
                 FloatType simulationTime;
                 if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING, &simulationTime) != 1)
                     throw Exception(tr("LAMMPS dump local file parsing error. Invalid time value (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
-                state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(simulationTime), dataSource());
+                state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(simulationTime), pipelineNode());
                 break;
             }
             else if(stream.lineStartsWith("ITEM: NUMBER OF ENTRIES")) {
@@ -264,7 +264,7 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 
                 // If the bond "Topology" property was loaded, we need to shift particle indices by 1, because LAMMPS
                 // uses 1-based atom IDs and OVITO uses 0-based indices.
-                if(BufferWriteAccess<ParticleIndexPair, access_mode::read_write> topologyProperty = bonds()->getMutableProperty(BondsObject::TopologyProperty)) {
+                if(BufferWriteAccess<ParticleIndexPair, access_mode::read_write> topologyProperty = bonds()->getMutableProperty(Bonds::TopologyProperty)) {
                     for(ParticleIndexPair& ab : topologyProperty) {
                         ab[0] -= 1;
                         ab[1] -= 1;
@@ -344,12 +344,12 @@ Future<BondInputColumnMapping> LAMMPSDumpLocalImporter::inspectFileHeader(const 
                             QString name = fileColumnNames[i].toLower();
                             bool isStandardProperty = false;
                             const static QRegularExpression invalidCharacters(QStringLiteral("[^A-Za-z\\d_]"));
-                            for(auto entry = BondsObject::OOClass().standardPropertyIds().cbegin(), end = BondsObject::OOClass().standardPropertyIds().cend(); entry != end; ++entry) {
-                                const auto componentCount = BondsObject::OOClass().standardPropertyComponentCount(entry.value());
+                            for(auto entry = Bonds::OOClass().standardPropertyIds().cbegin(), end = Bonds::OOClass().standardPropertyIds().cend(); entry != end; ++entry) {
+                                const auto componentCount = Bonds::OOClass().standardPropertyComponentCount(entry.value());
                                 for(size_t component = 0; component < componentCount; component++) {
                                     QString propertyName = entry.key();
                                     propertyName.remove(invalidCharacters); // LAMMPS dump file format does not support column names containing spaces.
-                                    const QStringList& componentNames = BondsObject::OOClass().standardPropertyComponentNames(entry.value());
+                                    const QStringList& componentNames = Bonds::OOClass().standardPropertyComponentNames(entry.value());
                                     QString propertyName2;
                                     if(!componentNames.empty()) {
                                         OVITO_ASSERT(!componentNames[component].contains(invalidCharacters));
@@ -358,7 +358,7 @@ Future<BondInputColumnMapping> LAMMPSDumpLocalImporter::inspectFileHeader(const 
                                         propertyName += componentNames[component];
                                     }
                                     if(propertyName.compare(name, Qt::CaseInsensitive) == 0 || propertyName2.compare(name, Qt::CaseInsensitive) == 0) {
-                                        detectedColumnMapping.mapStandardColumn(i, (BondsObject::Type)entry.value(), component);
+                                        detectedColumnMapping.mapStandardColumn(i, (Bonds::Type)entry.value(), component);
                                         isStandardProperty = true;
                                         break;
                                     }

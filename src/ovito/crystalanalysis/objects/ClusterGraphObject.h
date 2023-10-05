@@ -27,7 +27,7 @@
 #include <ovito/crystalanalysis/data/ClusterGraph.h>
 #include <ovito/core/dataset/data/DataObject.h>
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /**
  * \brief A graph of atomic clusters.

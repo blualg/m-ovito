@@ -21,15 +21,15 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/VectorVis.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/data/SyclBufferAccess.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "ParticlesAffineTransformationModifierDelegate.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParticlesAffineTransformationModifierDelegate);
 IMPLEMENT_OVITO_CLASS(VectorParticlePropertiesAffineTransformationModifierDelegate);
@@ -40,8 +40,8 @@ IMPLEMENT_OVITO_CLASS(VectorParticlePropertiesAffineTransformationModifierDelega
 ******************************************************************************/
 QVector<DataObjectReference> ParticlesAffineTransformationModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(input.containsObject<ParticlesObject>())
-        return { DataObjectReference(&ParticlesObject::OOClass()) };
+    if(input.containsObject<Particles>())
+        return { DataObjectReference(&Particles::OOClass()) };
     return {};
 }
 
@@ -50,21 +50,21 @@ QVector<DataObjectReference> ParticlesAffineTransformationModifierDelegate::OOMe
 ******************************************************************************/
 PipelineStatus ParticlesAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-    if(const ParticlesObject* inputParticles = state.getObject<ParticlesObject>()) {
+    if(const Particles* inputParticles = state.getObject<Particles>()) {
         inputParticles->verifyIntegrity();
 
         // Get the input particle coordinates (as strong reference to force creation of a mutable clone below).
-        ConstPropertyPtr inputPositionProperty = inputParticles->expectProperty(ParticlesObject::PositionProperty);
+        ConstPropertyPtr inputPositionProperty = inputParticles->expectProperty(Particles::PositionProperty);
 
         // Make sure we can safely modify the particles object.
-        ParticlesObject* outputParticles = state.makeMutable(inputParticles);
+        Particles* outputParticles = state.makeMutable(inputParticles);
 
         // Create an uninitialized copy of the particle position property.
-        PropertyObject* outputPositionProperty = outputParticles->makePropertyMutable(inputPositionProperty, DataBuffer::Uninitialized);
+        Property* outputPositionProperty = outputParticles->makePropertyMutable(inputPositionProperty, DataBuffer::Uninitialized);
 
         // Let the modifier do the actual coordinate transformation work.
         AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
-        mod->transformCoordinates(inputState, inputPositionProperty, outputPositionProperty, inputParticles->getProperty(ParticlesObject::SelectionProperty));
+        mod->transformCoordinates(inputState, inputPositionProperty, outputPositionProperty, inputParticles->getProperty(Particles::SelectionProperty));
     }
 
     return PipelineStatus::Success;
@@ -78,8 +78,8 @@ QVector<DataObjectReference> VectorParticlePropertiesAffineTransformationModifie
 {
     // Gather list of all properties in the input data collection.
     QVector<DataObjectReference> objects;
-    for(const ConstDataObjectPath& path : input.getObjectsRecursive(PropertyObject::OOClass())) {
-        if(isTransformableProperty(path.lastAs<PropertyObject>()))
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(Property::OOClass())) {
+        if(isTransformableProperty(path.lastAs<Property>()))
             objects.push_back(path);
     }
     return objects;
@@ -88,7 +88,7 @@ QVector<DataObjectReference> VectorParticlePropertiesAffineTransformationModifie
 /******************************************************************************
 * Decides if the given particle property is one that should be transformed.
 ******************************************************************************/
-bool VectorParticlePropertiesAffineTransformationModifierDelegate::isTransformableProperty(const PropertyObject* property)
+bool VectorParticlePropertiesAffineTransformationModifierDelegate::isTransformableProperty(const Property* property)
 {
     OVITO_ASSERT(property);
 
@@ -103,8 +103,8 @@ PipelineStatus VectorParticlePropertiesAffineTransformationModifierDelegate::app
 {
     CloneHelper cloneHelper;
 
-    for(const ConstDataObjectPath& objectPath : state.getObjectsRecursive(PropertyObject::OOClass())) {
-        const PropertyObject* inputProperty = objectPath.lastAs<PropertyObject>();
+    for(const ConstDataObjectPath& objectPath : state.getObjectsRecursive(Property::OOClass())) {
+        const Property* inputProperty = objectPath.lastAs<Property>();
         if(inputProperty && isTransformableProperty(inputProperty)) {
             // Get the parent property container.
             const PropertyContainer* container = objectPath.lastAs<PropertyContainer>(1);
@@ -113,9 +113,9 @@ PipelineStatus VectorParticlePropertiesAffineTransformationModifierDelegate::app
             container->verifyIntegrity();
 
             // Check if there is a selection property present.
-            const PropertyObject* selProperty = nullptr;
-            if(container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
-                selProperty = container->getProperty(PropertyObject::GenericSelectionProperty);
+            const Property* selProperty = nullptr;
+            if(container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
+                selProperty = container->getProperty(Property::GenericSelectionProperty);
             }
 
             // Strong reference to the input vectors to force creation of a mutable clone below.
@@ -126,7 +126,7 @@ PipelineStatus VectorParticlePropertiesAffineTransformationModifierDelegate::app
             PropertyContainer* mutableContainer = static_object_cast<PropertyContainer>(mutableContainerPath.last());
 
             // Create an uninitialized copy of the vector property.
-            PropertyObject* outputProperty = mutableContainer->makePropertyMutable(inputPropertyRef, DataBuffer::Uninitialized);
+            Property* outputProperty = mutableContainer->makePropertyMutable(inputPropertyRef, DataBuffer::Uninitialized);
 
             // Let the modifier do the actual vector transformation work.
             AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());

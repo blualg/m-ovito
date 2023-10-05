@@ -28,7 +28,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "LAMMPSDataExporterEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSDataExporterEditor);
 SET_OVITO_OBJECT_EDITOR(LAMMPSDataExporter, LAMMPSDataExporterEditor);
@@ -74,7 +74,7 @@ void LAMMPSDataExporterEditor::createUI(const RolloutInsertionParameters& rollou
         connect(substyleList, qOverload<int>(&QComboBox::activated), this, &LAMMPSDataExporterEditor::hybridSubStyleSelected);
     }
     layout->addLayout(sublayout, 1, 1);
-    
+
     IntegerParameterUI* precisionUI = new IntegerParameterUI(this, PROPERTY_FIELD(FileExporter::floatOutputPrecision));
     layout->addWidget(precisionUI->label(), 2, 0);
     layout->addLayout(precisionUI->createFieldLayout(), 2, 1);

@@ -25,7 +25,7 @@
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 struct Cluster;
 struct ClusterTransition;

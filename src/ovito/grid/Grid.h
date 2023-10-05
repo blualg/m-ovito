@@ -31,11 +31,8 @@
 #include <ovito/mesh/Mesh.h>
 #include <ovito/stdobj/StdObj.h>
 
-namespace Ovito::Grid 
+namespace Ovito
 {
-    using namespace Ovito::Mesh;
-    using namespace Ovito::StdObj;
-
     class VoxelGrid;
     class VoxelGridVis;
 }

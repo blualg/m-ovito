@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,12 +24,10 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/TrajectoryObject.h>
+#include <ovito/particles/objects/TrajectoryLines.h>
 #include <ovito/stdmod/modifiers/ColorCodingModifier.h>
 
-namespace Ovito::Particles {
-
-using namespace Ovito::StdMod;
+namespace Ovito {
 
 /**
  * \brief Function for the ColorCodingModifier that operates on trajectory lines.
@@ -48,7 +46,7 @@ class TrajectoryColorCodingModifierDelegate : public ColorCodingModifierDelegate
         virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
         /// Indicates which class of data objects the modifier delegate is able to operate on.
-        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return TrajectoryObject::OOClass(); }
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return TrajectoryLines::OOClass(); }
 
         /// The name by which Python scripts can refer to this modifier delegate.
         virtual QString pythonDataName() const override { return QStringLiteral("trajectories"); }

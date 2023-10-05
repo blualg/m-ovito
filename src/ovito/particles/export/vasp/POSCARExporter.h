@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include "../ParticleExporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Exporter that writes the particles to a POSCAR file.

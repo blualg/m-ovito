@@ -21,15 +21,15 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/particles/objects/BondsObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/particles/objects/Bonds.h>
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/stdobj/io/PropertyOutputWriter.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
 #include "LAMMPSDataExporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSDataExporter);
 DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, atomStyle);
@@ -51,82 +51,82 @@ SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, generateConsecutiveTypeIds, "Genera
 bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
     // Get the particle data to be exported.
-    const ParticlesObject* originalParticles = state.expectObject<ParticlesObject>();
+    const Particles* originalParticles = state.expectObject<Particles>();
     originalParticles->verifyIntegrity();
 
     // Create a modifiable copy of the particles object, because we
     // typically have to make some modifications before writing the data to the output file.
-    DataOORef<ParticlesObject> particles = DataOORef<ParticlesObject>::makeCopy(originalParticles);
+    DataOORef<Particles> particles = DataOORef<Particles>::makeCopy(originalParticles);
 
     // Discard the existing particle IDs if requested by the user.
     if(ignoreParticleIdentifiers()) {
-        if(const PropertyObject* property = particles->getProperty(ParticlesObject::IdentifierProperty))
+        if(const Property* property = particles->getProperty(Particles::IdentifierProperty))
             particles->removeProperty(property);
     }
 
-    const PropertyObject* particleTypeProperty = particles->getProperty(ParticlesObject::TypeProperty);
+    const Property* particleTypeProperty = particles->getProperty(Particles::TypeProperty);
 
     // Get the bond data to be exported.
-    const BondsObject* bonds = particles->bonds();
+    const Bonds* bonds = particles->bonds();
     if(bonds) bonds->verifyIntegrity();
     BufferReadAccess<ParticleIndexPair> bondTopologyProperty = bonds ? bonds->getTopology() : nullptr;
-    const PropertyObject* bondTypeProperty = bonds ? bonds->getProperty(BondsObject::TypeProperty) : nullptr;
+    const Property* bondTypeProperty = bonds ? bonds->getProperty(Bonds::TypeProperty) : nullptr;
 
     // Get the angle data to be exported.
-    const AnglesObject* angles = particles->angles();
+    const Angles* angles = particles->angles();
     if(angles) angles->verifyIntegrity();
     BufferReadAccess<ParticleIndexTriplet> angleTopologyProperty = angles ? angles->getTopology() : nullptr;
-    const PropertyObject* angleTypeProperty = angles ? angles->getProperty(AnglesObject::TypeProperty) : nullptr;
+    const Property* angleTypeProperty = angles ? angles->getProperty(Angles::TypeProperty) : nullptr;
 
     // Get the dihedral data to be exported.
-    const DihedralsObject* dihedrals = particles->dihedrals();
+    const Dihedrals* dihedrals = particles->dihedrals();
     if(dihedrals) dihedrals->verifyIntegrity();
     BufferReadAccess<ParticleIndexQuadruplet> dihedralTopologyProperty = dihedrals ? dihedrals->getTopology() : nullptr;
-    const PropertyObject* dihedralTypeProperty = dihedrals ? dihedrals->getProperty(DihedralsObject::TypeProperty) : nullptr;
+    const Property* dihedralTypeProperty = dihedrals ? dihedrals->getProperty(Dihedrals::TypeProperty) : nullptr;
 
     // Get the improper data to be exported.
-    const ImpropersObject* impropers = particles->impropers();
+    const Impropers* impropers = particles->impropers();
     if(impropers) impropers->verifyIntegrity();
     BufferReadAccess<ParticleIndexQuadruplet> improperTopologyProperty = impropers ? impropers->getTopology() : nullptr;
-    const PropertyObject* improperTypeProperty = impropers ? impropers->getProperty(ImpropersObject::TypeProperty) : nullptr;
+    const Property* improperTypeProperty = impropers ? impropers->getProperty(Impropers::TypeProperty) : nullptr;
 
     // Get simulation cell info.
-    const SimulationCellObject* simulationCell = state.getObject<SimulationCellObject>();
+    const SimulationCell* simulationCell = state.getObject<SimulationCell>();
     if(!simulationCell)
         throw Exception(tr("There is no simulation cell defined. It is needed to write a LAMMPS data file."));
     const AffineTransformation& simCell = simulationCell->cellMatrix();
 
     // Set up output columns for the Atoms section.
-    TypedOutputColumnMapping<ParticlesObject> atomsOutputColumnMapping;
+    TypedOutputColumnMapping<Particles> atomsOutputColumnMapping;
     for(const InputColumnInfo& col : LAMMPSDataImporter::createAtomsColumnMapping(atomStyle(), atomSubStyles())) {
         atomsOutputColumnMapping.push_back(col.property);
-        OVITO_ASSERT(col.property.type() != ParticlesObject::UserProperty || col.property.vectorComponent() == 0);
-        const PropertyObject* property = col.property.findInContainer(particles);
+        OVITO_ASSERT(col.property.type() != Particles::UserProperty || col.property.vectorComponent() == 0);
+        const Property* property = col.property.findInContainer(particles);
         if(!property) {
             // If the property does not exist, implicitly create it and fill it with default values.
-            if(col.property.type() != ParticlesObject::IdentifierProperty) {
-                if(col.property.type() == ParticlesObject::RadiusProperty) {
+            if(col.property.type() != Particles::IdentifierProperty) {
+                if(col.property.type() == Particles::RadiusProperty) {
                     particles->createProperty(particles->inputParticleRadii());
                 }
-                else if(col.property.type() == ParticlesObject::MassProperty) {
+                else if(col.property.type() == Particles::MassProperty) {
                     particles->createProperty(particles->inputParticleMasses());
                 }
                 else {
-                    PropertyObject* newProperty = nullptr;
-                    if(col.property.type() != ParticlesObject::UserProperty)
+                    Property* newProperty = nullptr;
+                    if(col.property.type() != Particles::UserProperty)
                         newProperty = particles->createProperty(DataBuffer::Initialized, col.property.type());
                     else
-                        newProperty = particles->createProperty(DataBuffer::Initialized, col.property.name(), PropertyObject::FloatDefault);
+                        newProperty = particles->createProperty(DataBuffer::Initialized, col.property.name(), Property::FloatDefault);
                     OVITO_ASSERT(col.property.findInContainer(particles) == newProperty);
-                    if(newProperty->type() == ParticlesObject::TypeProperty) {
+                    if(newProperty->type() == Particles::TypeProperty) {
                         // Assume particle type 1 by default.
                         newProperty->fill<int32_t>(1);
                     }
-                    else if(newProperty->type() == ParticlesObject::MoleculeProperty) {
+                    else if(newProperty->type() == Particles::MoleculeProperty) {
                         // Assume molecule identifier 1 by default.
                         newProperty->fill<int64_t>(1);
                     }
-                    else if(newProperty->type() == ParticlesObject::UserProperty && newProperty->name() == QStringLiteral("Density")) {
+                    else if(newProperty->type() == Particles::UserProperty && newProperty->name() == QStringLiteral("Density")) {
                         OVITO_ASSERT(col.columnName == "density");
                         // When exporting the "Density" property, compute its values from the particles masses and radii.
                         BufferReadAccessAndRef<GraphicsFloatType> radii = particles->inputParticleRadii();
@@ -145,7 +145,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
             }
         }
         else {
-            if(property->type() == ParticlesObject::RadiusProperty) {
+            if(property->type() == Particles::RadiusProperty) {
                 OVITO_ASSERT(col.columnName == "diameter");
                 // Write particle diameters instead of radii to the output file.
                 for(auto& r : BufferWriteAccess<GraphicsFloatType, access_mode::read_write>(particles->makeMutable(property)))
@@ -155,7 +155,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     }
 
     // The periodic image flags are optional and appear as trailing three columns if present.
-    if(const PropertyObject* periodicImageProperty = particles->getProperty(ParticlesObject::PeriodicImageProperty)) {
+    if(const Property* periodicImageProperty = particles->getProperty(Particles::PeriodicImageProperty)) {
         atomsOutputColumnMapping.emplace_back(periodicImageProperty, 0);
         atomsOutputColumnMapping.emplace_back(periodicImageProperty, 1);
         atomsOutputColumnMapping.emplace_back(periodicImageProperty, 2);
@@ -176,12 +176,12 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
         AffineTransformation transformation = AffineTransformation(a,b,c,simCell.translation()) * simCell.inverse();
 
         // Apply the transformation to the particle coordinates.
-        for(Point3& p : BufferWriteAccess<Point3, access_mode::read_write>(particles->expectMutableProperty(ParticlesObject::PositionProperty))) {
+        for(Point3& p : BufferWriteAccess<Point3, access_mode::read_write>(particles->expectMutableProperty(Particles::PositionProperty))) {
             p = transformation * p;
         }
 
         // Apply the transformation to the particle velocity vectors.
-        if(BufferWriteAccess<Vector3, access_mode::read_write> velocities = particles->getMutableProperty(ParticlesObject::VelocityProperty)) {
+        if(BufferWriteAccess<Vector3, access_mode::read_write> velocities = particles->getMutableProperty(Particles::VelocityProperty)) {
             for(Vector3& v : velocities) {
                 v = transformation * v;
             }
@@ -221,7 +221,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
         textStream() << impropers->elementCount() << " impropers\n";
 
     // Given an OVITO typed property, determines which and how many LAMMPS types are being output.
-    auto generateTypeMapping = [&](const PropertyObject* typeProperty) {
+    auto generateTypeMapping = [&](const Property* typeProperty) {
         std::vector<const ElementType*> typeList;
         std::map<int, int> typeMapping;
         if(typeProperty) {
@@ -277,7 +277,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
             OVITO_ASSERT(atomTypeMapping.find(id) != atomTypeMapping.end());
             id = atomTypeMapping[id];
         }
-        particleTypeProperty = static_object_cast<PropertyObject>(typeArray.buffer());
+        particleTypeProperty = static_object_cast<Property>(typeArray.buffer());
     }
 
     auto [bondTypeList, bondTypeMapping] = generateTypeMapping(bondTypeProperty);
@@ -297,7 +297,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
         textStream() << improperTypeList.size() << " improper types\n";
 
     size_t numEllipsoids = 0;
-    BufferReadAccess<Vector3G> asphericalShapeProperty = particles->getProperty(ParticlesObject::AsphericalShapeProperty);
+    BufferReadAccess<Vector3G> asphericalShapeProperty = particles->getProperty(Particles::AsphericalShapeProperty);
     if(asphericalShapeProperty) {
         // Only write Ellipsoids section if atom style (or a hybrid sub-style) is "ellipsoid".
         if(atomStyle() == LAMMPSDataImporter::AtomStyle_Ellipsoid || (atomStyle() == LAMMPSDataImporter::AtomStyle_Hybrid && boost::find(atomSubStyles(), LAMMPSDataImporter::AtomStyle_Ellipsoid) != atomSubStyles().end())) {
@@ -399,9 +399,9 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     }
 
     // Look up the particle velocity vectors.
-    BufferReadAccess<Vector3> velocityProperty = particles->getProperty(ParticlesObject::VelocityProperty);
+    BufferReadAccess<Vector3> velocityProperty = particles->getProperty(Particles::VelocityProperty);
     // Look up the particle identifiers.
-    BufferReadAccess<int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+    BufferReadAccess<int64_t> identifierProperty = particles->getProperty(Particles::IdentifierProperty);
 
     qlonglong totalProgressCount = particles->elementCount();
     if(velocityProperty) totalProgressCount += particles->elementCount();
@@ -434,19 +434,19 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     // Write velocities.
     if(velocityProperty) {
         // Set up output columns for the Velocities section.
-        TypedOutputColumnMapping<ParticlesObject> velocitiesOutputColumnMapping;
+        TypedOutputColumnMapping<Particles> velocitiesOutputColumnMapping;
         for(const InputColumnInfo& col : LAMMPSDataImporter::createVelocitiesColumnMapping(atomStyle(), atomSubStyles())) {
             velocitiesOutputColumnMapping.push_back(col.property);
-            OVITO_ASSERT(col.property.type() != ParticlesObject::UserProperty || col.property.vectorComponent() == 0);
-            const PropertyObject* property = col.property.findInContainer(particles);
+            OVITO_ASSERT(col.property.type() != Particles::UserProperty || col.property.vectorComponent() == 0);
+            const Property* property = col.property.findInContainer(particles);
             if(!property) {
                 // If the property does not exist, implicitly create it and fill it with default values.
-                if(col.property.type() != ParticlesObject::IdentifierProperty) {
-                    PropertyObject* newProperty = nullptr;
-                    if(col.property.type() != ParticlesObject::UserProperty)
+                if(col.property.type() != Particles::IdentifierProperty) {
+                    Property* newProperty = nullptr;
+                    if(col.property.type() != Particles::UserProperty)
                         newProperty = particles->createProperty(DataBuffer::Initialized, col.property.type());
                     else
-                        newProperty = particles->createProperty(DataBuffer::Initialized, col.property.name(), PropertyObject::FloatDefault);
+                        newProperty = particles->createProperty(DataBuffer::Initialized, col.property.name(), Property::FloatDefault);
                     OVITO_ASSERT(col.property.findInContainer(particles) == newProperty);
                 }
             }
@@ -583,7 +583,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     if(asphericalShapeProperty) {
         textStream() << "\nEllipsoids\n\n";
 
-        BufferReadAccess<QuaternionG> orientationProperty = particles->getProperty(ParticlesObject::OrientationProperty);
+        BufferReadAccess<QuaternionG> orientationProperty = particles->getProperty(Particles::OrientationProperty);
         for(size_t i = 0; i < asphericalShapeProperty.size(); i++) {
             if(asphericalShapeProperty[i] == Vector3G::Zero())
                 continue;

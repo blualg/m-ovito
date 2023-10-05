@@ -112,6 +112,9 @@ public:
     /// Returns the unique identifier of the reference field.
     const char* identifier() const { return _identifier; }
 
+    /// Returns the alias identifier of the reference field (used for backward compatibility) if defined.
+    const char* identifierAlias() const { return _identifierAlias; }
+
     /// Returns the RefMaker derived class that owns the reference.
     const RefMakerClass* definingClass() const { return _definingClassDescriptor; }
 
@@ -231,6 +234,9 @@ protected:
 
     /// The type of reference event to generate each time this property field's value changes.
     int _extraChangeEventType = 0;
+
+    /// The alias identifier of the reference field. This can be set for backward compatibility with older OVITO versions.
+    const char* _identifierAlias = nullptr;
 
     friend class RefMaker;
     friend class RefTarget;

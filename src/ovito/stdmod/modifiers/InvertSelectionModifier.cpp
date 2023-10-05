@@ -21,12 +21,12 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdmod/StdMod.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "InvertSelectionModifier.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(InvertSelectionModifier);
 
@@ -36,7 +36,7 @@ IMPLEMENT_OVITO_CLASS(InvertSelectionModifier);
 InvertSelectionModifier::InvertSelectionModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags)
 {
     // Operate on particles by default.
-    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
+    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("Particles"));
 }
 
 /******************************************************************************
@@ -48,7 +48,7 @@ void InvertSelectionModifier::evaluateSynchronous(const ModifierEvaluationReques
         throw Exception(tr("No data element type set."));
 
     PropertyContainer* container = state.expectMutableLeafObject(subject());
-    BufferWriteAccess<SelectionIntType, access_mode::read_write> selProperty = container->createProperty(DataBuffer::Initialized, PropertyObject::GenericSelectionProperty);
+    BufferWriteAccess<SelectionIntType, access_mode::read_write> selProperty = container->createProperty(DataBuffer::Initialized, Property::GenericSelectionProperty);
     for(auto& s : selProperty)
         s = !s;
 }

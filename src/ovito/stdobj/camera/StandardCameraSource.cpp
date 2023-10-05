@@ -29,13 +29,13 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/data/DataCollection.h>
 #include <ovito/core/dataset/pipeline/StaticSource.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/stdobj/camera/TargetObject.h>
 #include "StandardCameraSource.h"
 #include "StandardCameraObject.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(StandardCameraSource);
 DEFINE_PROPERTY_FIELD(StandardCameraSource, isPerspective);
@@ -50,9 +50,11 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(StandardCameraSource, zoomController, World
 /******************************************************************************
 * Constructs a camera object.
 ******************************************************************************/
-StandardCameraSource::StandardCameraSource(ObjectInitializationFlags flags) : PipelineObject(flags),
+StandardCameraSource::StandardCameraSource(ObjectInitializationFlags flags) : PipelineNode(flags),
     _isPerspective(true)
 {
+    pipelineCache().setEnabled(false);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setFovController(ControllerManager::createFloatController());
         fovController()->setFloatValue(AnimationTime(0), FLOATTYPE_PI/4);
@@ -78,7 +80,7 @@ StandardCameraSource::StandardCameraSource(ObjectInitializationFlags flags) : Pi
 ******************************************************************************/
 TimeInterval StandardCameraSource::validityInterval(const PipelineEvaluationRequest& request) const
 {
-    TimeInterval interval = PipelineObject::validityInterval(request);
+    TimeInterval interval = PipelineNode::validityInterval(request);
     if(isPerspective() && fovController())
         interval.intersect(fovController()->validityInterval(request.time()));
     if(!isPerspective() && zoomController())
@@ -89,14 +91,14 @@ TimeInterval StandardCameraSource::validityInterval(const PipelineEvaluationRequ
 /******************************************************************************
 * Asks the pipeline stage to compute the results.
 ******************************************************************************/
-PipelineFlowState StandardCameraSource::evaluateSynchronous(const PipelineEvaluationRequest& request)
+PipelineFlowState StandardCameraSource::evaluateInternalSynchronous(const PipelineEvaluationRequest& request)
 {
     // Create a new DataCollection.
     DataOORef<DataCollection> data = DataOORef<DataCollection>::create();
 
     // Set up the camera data object.
     DataOORef<StandardCameraObject> camera = DataOORef<StandardCameraObject>::create();
-    camera->setDataSource(this);
+    camera->setCreatedByNode(this);
     camera->setIsPerspective(isPerspective());
     TimeInterval stateValidity = TimeInterval::infinite();
     if(fovController()) camera->setFov(fovController()->getFloatValue(request.time(), stateValidity));
@@ -150,7 +152,7 @@ void StandardCameraSource::setFov(FloatType newFOV)
 ******************************************************************************/
 bool StandardCameraSource::isTargetCamera() const
 {
-    for(PipelineSceneNode* pipeline : pipelines(true)) {
+    for(Pipeline* pipeline : pipelines(true)) {
         if(pipeline->lookatTargetNode() != nullptr)
             return true;
     }
@@ -162,9 +164,9 @@ bool StandardCameraSource::isTargetCamera() const
 ******************************************************************************/
 FloatType StandardCameraSource::targetDistance(AnimationTime time) const
 {
-    for(PipelineSceneNode* node : pipelines(true)) {
-        if(node->lookatTargetNode() != nullptr) {
-            return StandardCameraObject::getTargetDistance(time, node);
+    for(Pipeline* pipeline : pipelines(true)) {
+        if(pipeline->lookatTargetNode() != nullptr) {
+            return StandardCameraObject::getTargetDistance(time, pipeline);
         }
     }
 
@@ -181,29 +183,29 @@ void StandardCameraSource::setIsTargetCamera(bool enable)
     // Use current scene animation time to initialize camera objects.
     AnimationTime time = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
 
-    for(PipelineSceneNode* node : pipelines(true)) {
-        if(node->lookatTargetNode() == nullptr && enable) {
-            if(SceneNode* parentNode = node->parentNode()) {
+    for(Pipeline* pipeline : pipelines(true)) {
+        if(pipeline->lookatTargetNode() == nullptr && enable) {
+            if(SceneNode* parentNode = pipeline->parentNode()) {
                 DataOORef<DataCollection> dataCollection = DataOORef<DataCollection>::create();
                 dataCollection->addObject(DataOORef<TargetObject>::create());
                 OORef<StaticSource> targetSource = OORef<StaticSource>::create(dataCollection);
-                OORef<PipelineSceneNode> targetNode = OORef<PipelineSceneNode>::create();
-                targetNode->setDataProvider(targetSource);
-                targetNode->setNodeName(tr("%1.target").arg(node->nodeName()));
+                OORef<Pipeline> targetNode = OORef<Pipeline>::create();
+                targetNode->setHead(targetSource);
+                targetNode->setSceneNodeName(tr("%1.target").arg(pipeline->sceneNodeName()));
                 parentNode->addChildNode(targetNode);
                 // Position the new target to match the current orientation of the camera.
                 TimeInterval iv;
-                const AffineTransformation& cameraTM = node->getWorldTransform(time, iv);
+                const AffineTransformation& cameraTM = pipeline->getWorldTransform(time, iv);
                 Vector3 cameraPos = cameraTM.translation();
                 Vector3 cameraDir = cameraTM.column(2).normalized();
                 Vector3 targetPos = cameraPos - targetDistance(time) * cameraDir;
                 targetNode->transformationController()->translate(time, targetPos, AffineTransformation::Identity());
-                node->setLookatTargetNode(time, targetNode);
+                pipeline->setLookatTargetNode(time, targetNode);
             }
         }
-        else if(node->lookatTargetNode() != nullptr && !enable) {
-            node->lookatTargetNode()->deleteNode();
-            OVITO_ASSERT(node->lookatTargetNode() == nullptr);
+        else if(pipeline->lookatTargetNode() != nullptr && !enable) {
+            pipeline->lookatTargetNode()->deleteSceneNode();
+            OVITO_ASSERT(pipeline->lookatTargetNode() == nullptr);
         }
     }
 

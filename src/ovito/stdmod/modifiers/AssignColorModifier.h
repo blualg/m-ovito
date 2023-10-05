@@ -29,7 +29,7 @@
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * \brief Base class for AssignColorModifier delegates that operate on different kinds of data.
@@ -102,7 +102,7 @@ public:
     void setColor(const Color& color) { if(colorController()) colorController()->setColorValue(AnimationTime(0), color); }
 
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return QVariant::fromValue(static_cast<QColor>(color())); }
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return QVariant::fromValue(static_cast<QColor>(color())); }
 
 protected:
 

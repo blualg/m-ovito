@@ -151,7 +151,7 @@ ViewportPickResult OpenGLViewportWindow::pick(const QPointF& pos)
             quint32 subobjectId;
             std::tie(objInfo, subobjectId) = pickingRenderer()->objectAtLocation(pixelPos);
             if(objInfo) {
-                result.setPipelineNode(objInfo->objectNode);
+                result.setPipeline(objInfo->pipeline);
                 result.setPickInfo(objInfo->pickInfo);
                 result.setHitLocation(pickingRenderer()->worldPositionFromLocation(pixelPos));
                 result.setSubobjectId(subobjectId);

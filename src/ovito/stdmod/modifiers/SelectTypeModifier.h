@@ -27,7 +27,7 @@
 #include <ovito/stdobj/properties/GenericPropertyModifier.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * \brief Selects data elements of one or more types.
@@ -62,7 +62,7 @@ public:
 #endif
 
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override;
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override;
 
 protected:
 

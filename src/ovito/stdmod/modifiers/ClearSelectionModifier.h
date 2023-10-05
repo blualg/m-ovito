@@ -26,7 +26,7 @@
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/stdobj/properties/GenericPropertyModifier.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * \brief This modifier clears the current selection of data elements.

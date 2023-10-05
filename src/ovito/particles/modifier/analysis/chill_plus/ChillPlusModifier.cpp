@@ -23,13 +23,13 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/util/CutoffNeighborFinder.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "ChillPlusModifier.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ChillPlusModifier);
 DEFINE_PROPERTY_FIELD(ChillPlusModifier, cutoff);
@@ -60,15 +60,15 @@ ChillPlusModifier::ChillPlusModifier(ObjectInitializationFlags flags) : Structur
 Future<AsynchronousModifier::EnginePtr> ChillPlusModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get modifier input.
-    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
+    const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
-    const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-    const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
+    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
+    const SimulationCell* simCell = input.expectObject<SimulationCell>();
     if(simCell->is2D())
         throw Exception(tr("Chill+ modifier does not support 2d simulation cells."));
 
     // Get particle selection.
-    const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
+    const Property* selectionProperty = onlySelectedParticles() ? particles->expectProperty(Particles::SelectionProperty) : nullptr;
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     return std::make_shared<ChillPlusEngine>(request, particles, posProperty, simCell, structureTypes(), selectionProperty, cutoff());
@@ -195,12 +195,12 @@ void ChillPlusModifier::ChillPlusEngine::applyResults(const ModifierEvaluationRe
     StructureIdentificationEngine::applyResults(request, state);
 
     // Also output structure type counts, which have been computed by the base class.
-    state.addAttribute(QStringLiteral("ChillPlus.counts.OTHER"), QVariant::fromValue(getTypeCount(OTHER)), request.modApp());
-    state.addAttribute(QStringLiteral("ChillPlus.counts.CUBIC_ICE"), QVariant::fromValue(getTypeCount(CUBIC_ICE)), request.modApp());
-    state.addAttribute(QStringLiteral("ChillPlus.counts.HEXAGONAL_ICE"), QVariant::fromValue(getTypeCount(HEXAGONAL_ICE)), request.modApp());
-    state.addAttribute(QStringLiteral("ChillPlus.counts.INTERFACIAL_ICE"), QVariant::fromValue(getTypeCount(INTERFACIAL_ICE)), request.modApp());
-    state.addAttribute(QStringLiteral("ChillPlus.counts.HYDRATE"), QVariant::fromValue(getTypeCount(HYDRATE)), request.modApp());
-    state.addAttribute(QStringLiteral("ChillPlus.counts.INTERFACIAL_HYDRATE"), QVariant::fromValue(getTypeCount(INTERFACIAL_HYDRATE)), request.modApp());
+    state.addAttribute(QStringLiteral("ChillPlus.counts.OTHER"), QVariant::fromValue(getTypeCount(OTHER)), request.modificationNode());
+    state.addAttribute(QStringLiteral("ChillPlus.counts.CUBIC_ICE"), QVariant::fromValue(getTypeCount(CUBIC_ICE)), request.modificationNode());
+    state.addAttribute(QStringLiteral("ChillPlus.counts.HEXAGONAL_ICE"), QVariant::fromValue(getTypeCount(HEXAGONAL_ICE)), request.modificationNode());
+    state.addAttribute(QStringLiteral("ChillPlus.counts.INTERFACIAL_ICE"), QVariant::fromValue(getTypeCount(INTERFACIAL_ICE)), request.modificationNode());
+    state.addAttribute(QStringLiteral("ChillPlus.counts.HYDRATE"), QVariant::fromValue(getTypeCount(HYDRATE)), request.modificationNode());
+    state.addAttribute(QStringLiteral("ChillPlus.counts.INTERFACIAL_HYDRATE"), QVariant::fromValue(getTypeCount(INTERFACIAL_HYDRATE)), request.modificationNode());
 }
 
 std::pair<float, float> ChillPlusModifier::ChillPlusEngine::polar_asimuthal(const Vector3& delta)

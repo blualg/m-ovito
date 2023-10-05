@@ -32,7 +32,7 @@
 #include <ovito/gui/desktop/properties/OpenDataInspectorButton.h>
 #include "ConstructSurfaceModifierEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ConstructSurfaceModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ConstructSurfaceModifier, ConstructSurfaceModifierEditor);

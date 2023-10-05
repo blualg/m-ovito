@@ -26,15 +26,15 @@ FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Xml REQUIRED)
 SET(SourceFiles
     objects/ParticlesVis.cpp
     objects/ParticleType.cpp
-    objects/ParticlesObject.cpp
+    objects/Particles.cpp
     objects/BondType.cpp
     objects/ParticleBondMap.cpp
-    objects/BondsObject.cpp
+    objects/Bonds.cpp
     objects/BondsVis.cpp
-    objects/AnglesObject.cpp
-    objects/DihedralsObject.cpp
-    objects/ImpropersObject.cpp
-    objects/TrajectoryObject.cpp
+    objects/Angles.cpp
+    objects/Dihedrals.cpp
+    objects/Impropers.cpp
+    objects/TrajectoryLines.cpp
     objects/TrajectoryVis.cpp
     objects/VectorVis.cpp
     modifier/coloring/AmbientOcclusionModifier.cpp

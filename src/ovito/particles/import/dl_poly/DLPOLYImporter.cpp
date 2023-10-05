@@ -21,14 +21,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "DLPOLYImporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DLPOLYImporter);
 
@@ -179,7 +179,7 @@ void DLPOLYImporter::FrameLoader::loadFile()
     stream.readLine(1024);
     QString trimmedComment = stream.lineString().trimmed();
     if(!trimmedComment.isEmpty())
-        state().setAttribute(QStringLiteral("Comment"), QVariant::fromValue(trimmedComment), dataSource());
+        state().setAttribute(QStringLiteral("Comment"), QVariant::fromValue(trimmedComment), pipelineNode());
 
     // Parse second line (record 2).
     int levcfg;
@@ -207,8 +207,8 @@ void DLPOLYImporter::FrameLoader::loadFile()
         double ttime;
         if(sscanf(stream.line(), "timestep %u %llu %i %i %lg %lg", &nstep, &megatm, &keytrj, &imcon, &tstep, &ttime) != 6 || megatm != expectedAtomCount)
             throw Exception(tr("Invalid timestep record in line %1 of DL_POLY file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
-        state().setAttribute(QStringLiteral("IntegrationTimestep"), QVariant::fromValue(tstep), dataSource());
-        state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(ttime), dataSource());
+        state().setAttribute(QStringLiteral("IntegrationTimestep"), QVariant::fromValue(tstep), pipelineNode());
+        state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(ttime), pipelineNode());
         stream.readLine();
     }
 
@@ -304,12 +304,12 @@ void DLPOLYImporter::FrameLoader::loadFile()
 
     // Create particle properties.
     setParticleCount(positions.size());
-    BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+    BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(Particles::PositionProperty);
     boost::copy(positions, posProperty.begin());
 
-    PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+    Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
     boost::transform(atom_types, BufferWriteAccess<int32_t, access_mode::discard_write>(typeProperty).begin(), [&](const QString& typeName) {
-        return addNamedType(ParticlesObject::OOClass(), typeProperty, typeName)->numericId();
+        return addNamedType(Particles::OOClass(), typeProperty, typeName)->numericId();
     });
     // Since we created particle types on the go while reading the particles, the type ordering
     // depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
@@ -317,27 +317,27 @@ void DLPOLYImporter::FrameLoader::loadFile()
     typeProperty->sortElementTypesByName();
 
     if(identifiers.size() == positions.size()) {
-        BufferWriteAccess<IdentifierIntType, access_mode::discard_write> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty);
+        BufferWriteAccess<IdentifierIntType, access_mode::discard_write> identifierProperty = particles()->createProperty(Particles::IdentifierProperty);
         boost::copy(identifiers, identifierProperty.begin());
     }
     if(levcfg > 0) {
-        BufferWriteAccess<Vector3, access_mode::discard_write> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty);
+        BufferWriteAccess<Vector3, access_mode::discard_write> velocityProperty = particles()->createProperty(Particles::VelocityProperty);
         boost::copy(velocities, velocityProperty.begin());
     }
     if(levcfg > 1) {
-        BufferWriteAccess<Vector3, access_mode::discard_write> forceProperty = particles()->createProperty(ParticlesObject::ForceProperty);
+        BufferWriteAccess<Vector3, access_mode::discard_write> forceProperty = particles()->createProperty(Particles::ForceProperty);
         boost::copy(forces, forceProperty.begin());
     }
     if(masses.size() == positions.size()) {
-        BufferWriteAccess<FloatType, access_mode::discard_write> massProperty = particles()->createProperty(ParticlesObject::MassProperty);
+        BufferWriteAccess<FloatType, access_mode::discard_write> massProperty = particles()->createProperty(Particles::MassProperty);
         boost::copy(masses, massProperty.begin());
     }
     if(charges.size() == positions.size()) {
-        BufferWriteAccess<FloatType, access_mode::discard_write> chargeProperty = particles()->createProperty(ParticlesObject::ChargeProperty);
+        BufferWriteAccess<FloatType, access_mode::discard_write> chargeProperty = particles()->createProperty(Particles::ChargeProperty);
         boost::copy(charges, chargeProperty.begin());
     }
     if(displacementMagnitudes.size() == positions.size()) {
-        BufferWriteAccess<FloatType, access_mode::discard_write> displProperty = particles()->createProperty(ParticlesObject::DisplacementMagnitudeProperty);
+        BufferWriteAccess<FloatType, access_mode::discard_write> displProperty = particles()->createProperty(Particles::DisplacementMagnitudeProperty);
         boost::copy(displacementMagnitudes, displProperty.begin());
     }
 

@@ -74,7 +74,7 @@ public:
     /// \brief Deletes all child nodes of the scene.
     void clear() {
         while(!children().empty())
-            children().back()->deleteNode();
+            children().back()->deleteSceneNode();
     }
 
 Q_SIGNALS:

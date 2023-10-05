@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include "LAMMPSDumpExporterEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSDumpExporterEditor);
 SET_OVITO_OBJECT_EDITOR(LAMMPSDumpExporter, LAMMPSDumpExporterEditor);

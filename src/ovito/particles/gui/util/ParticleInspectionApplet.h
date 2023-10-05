@@ -25,14 +25,14 @@
 
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/util/ParticleExpressionEvaluator.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/gui/util/ParticlePickingHelper.h>
 #include <ovito/stdobj/gui/properties/PropertyInspectionApplet.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/viewport/ViewportGizmo.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Data inspector page for particles.
@@ -45,7 +45,7 @@ class ParticleInspectionApplet : public PropertyInspectionApplet
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticleInspectionApplet() : PropertyInspectionApplet(ParticlesObject::OOClass()) {}
+    Q_INVOKABLE ParticleInspectionApplet() : PropertyInspectionApplet(Particles::OOClass()) {}
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 0; }
@@ -67,9 +67,9 @@ protected:
     }
 
     /// Determines whether the given property represents a color.
-    virtual bool isColorProperty(const PropertyObject* property) const override {
+    virtual bool isColorProperty(const Property* property) const override {
         return PropertyInspectionApplet::isColorProperty(property)
-                || property->type() == ParticlesObject::VectorColorProperty;
+                || property->type() == Particles::VectorColorProperty;
     }
 
 private Q_SLOTS:

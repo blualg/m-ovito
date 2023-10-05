@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/gui/desktop/utilities/DeferredMethodInvocation.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * A properties editor for the ParticlesComputePropertyModifierDelegate class.

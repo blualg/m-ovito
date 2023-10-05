@@ -24,7 +24,7 @@
 #include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
 #include "SurfaceMeshInspectionApplet.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshInspectionApplet);
 
@@ -108,11 +108,11 @@ void SurfaceMeshInspectionApplet::onCurrentDataObjectChanged()
 /******************************************************************************
 * Selects a specific data object in this applet.
 ******************************************************************************/
-bool SurfaceMeshInspectionApplet::selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint)
+bool SurfaceMeshInspectionApplet::selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
 {
-    // Let the base class switch to the right data object. 
-    bool result = DataInspectionApplet::selectDataObject(dataSource, objectIdentifierHint, modeHint);
-    
+    // Let the base class switch to the right data object.
+    bool result = DataInspectionApplet::selectDataObject(createdByNode, objectIdentifierHint, modeHint);
+
     if(result) {
         // The mode hint is used to switch between vertex/face/region views.
         bool ok;

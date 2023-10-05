@@ -28,7 +28,7 @@
 #include <ovito/crystalanalysis/data/ClusterVector.h>
 #include "StructureAnalysis.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /**
  * Utility class that can find the shortest connecting path between two atoms

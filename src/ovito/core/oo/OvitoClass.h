@@ -71,10 +71,10 @@ public:
     /// \return The description string for this class, or an empty string if the developer did not define a description.
     QString descriptionString() const;
 
-    /// Returns the name alias that has been set for this class.
-    /// It will be used as an alternative name when looking up the class for a serialized object in a state file.
+    /// Checks if this class is known under the given name.
+    /// This method alias names defined for this class, which are used when looking up the class for a serialized object in a state file.
     /// This allows to maintain backward compatibility when renaming classes in the C++ source code.
-    const QString& nameAlias() const { return _nameAlias; }
+    bool isKnownUnderName(const QString& name) const;
 
     /// \brief Returns the meta-class of the base class.
     OvitoClassPtr superClass() const { return _superClass; }
@@ -156,12 +156,6 @@ public:
     /// \brief Changes the human-readable name of this plugin class.
     void setDisplayName(const QString& name) { _displayName = name; }
 
-    /// \brief Sets a name alias for the class.
-    //
-    /// It will be used as an alternative name when looking up the class for a serialized object in a state file.
-    /// This allows to maintain backward compatibility when renaming classes in the C++ source code.
-    void setNameAlias(const QString& alias) { _nameAlias = alias; }
-
 protected:
 
     /// \brief Is called by the system on program startup.
@@ -188,10 +182,6 @@ protected:
 
     /// The plugin that hosts the class.
     Plugin* _plugin = nullptr;
-
-    /// An alias for the class name, which is used when looking up a class for a serialized object.
-    /// This can help to maintain backward file compatibility when renaming classes.
-    QString _nameAlias;
 
     /// The base class descriptor (or nullptr if this is the descriptor for the root OvitoObject class).
     OvitoClassPtr _superClass;

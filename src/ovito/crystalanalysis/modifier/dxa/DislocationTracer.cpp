@@ -25,7 +25,7 @@
 #include "DislocationTracer.h"
 #include "InterfaceMesh.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /******************************************************************************
 * Allocates a new BurgersCircuit instance.

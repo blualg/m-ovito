@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,10 +34,10 @@
 #include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteTextEdit.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/dataset/pipeline/PipelineObject.h>
+#include <ovito/core/dataset/pipeline/PipelineNode.h>
 #include "ComputePropertyModifierEditor.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ComputePropertyModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ComputePropertyModifier, ComputePropertyModifierEditor);
@@ -140,15 +140,16 @@ bool ComputePropertyModifierEditor::referenceEvent(RefTarget* source, const Refe
 void ComputePropertyModifierEditor::updateVariablesList()
 {
     ComputePropertyModifier* mod = static_object_cast<ComputePropertyModifier>(editObject());
-    if(!mod) return;
+    if(!mod)
+        return;
 
-    if(ComputePropertyModifierApplication* modApp = dynamic_object_cast<ComputePropertyModifierApplication>(modifierApplication())) {
-        const QStringList& inputVariableNames = modApp->inputVariableNames();
+    if(ComputePropertyModificationNode* modNode = dynamic_object_cast<ComputePropertyModificationNode>(modificationNode())) {
+        const QStringList& inputVariableNames = modNode->inputVariableNames();
         for(AutocompleteLineEdit* box : expressionLineEdits)
             box->setWordList(inputVariableNames);
         for(AutocompleteTextEdit* box : expressionTextEdits)
             box->setWordList(inputVariableNames);
-        variableNamesDisplay->setText(modApp->inputVariableTable() + QStringLiteral("<p></p>"));
+        variableNamesDisplay->setText(modNode->inputVariableTable() + QStringLiteral("<p></p>"));
     }
 
     container()->updateRolloutsLater();
@@ -195,7 +196,7 @@ void ComputePropertyModifierEditor::updateExpressionFields()
     }
 
     QStringList standardPropertyComponentNames;
-    if(!mod->outputProperty().isNull() && mod->outputProperty().type() != PropertyObject::GenericUserProperty) {
+    if(!mod->outputProperty().isNull() && mod->outputProperty().type() != Property::GenericUserProperty) {
         standardPropertyComponentNames = mod->outputProperty().containerClass()->standardPropertyComponentNames(mod->outputProperty().type());
     }
 

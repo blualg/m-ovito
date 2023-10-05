@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,9 +31,7 @@
 #include <ovito/particles/Particles.h>
 
 namespace Ovito {
-    namespace Particles {
-        class ParticlePropertyComboBox;
-    }
+    class ParticlePropertyComboBox;
 }
 
 #endif

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,10 +22,10 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
-#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
+#include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 #include "VTKFileImporter.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(VTKFileImporter);
 
@@ -34,7 +34,7 @@ IMPLEMENT_OVITO_CLASS(VTKFileImporter);
 ******************************************************************************/
 bool VTKFileImporter::OOMetaClass::importsDataType(const DataObject::OOMetaClass& dataObjectType) const
 {
-    return TriMeshObject::OOClass().isDerivedFrom(dataObjectType);
+    return TriangleMesh::OOClass().isDerivedFrom(dataObjectType);
 }
 
 /******************************************************************************
@@ -97,9 +97,9 @@ void VTKFileImporter::FrameLoader::loadFile()
         throw Exception(tr("Invalid number of points in VTK file (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
 
     // Add mesh to the data collection.
-    TriMeshObject* mesh = state().getMutableObject<TriMeshObject>();
+    TriangleMesh* mesh = state().getMutableObject<TriangleMesh>();
     if(!mesh)
-        mesh = state().createObject<TriMeshObject>(dataSource());
+        mesh = state().createObject<TriangleMesh>(pipelineNode());
     else
         mesh->clear();
     mesh->setIdentifier(QStringLiteral("mesh"));

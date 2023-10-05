@@ -22,13 +22,13 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/util/CutoffNeighborFinder.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "ParticlesComputePropertyModifierDelegate.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParticlesComputePropertyModifierDelegate);
 DEFINE_PROPERTY_FIELD(ParticlesComputePropertyModifierDelegate, neighborExpressions);
@@ -45,8 +45,8 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ParticlesComputePropertyModifierDelegate, c
 ******************************************************************************/
 QVector<DataObjectReference> ParticlesComputePropertyModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(input.containsObject<ParticlesObject>())
-        return { DataObjectReference(&ParticlesObject::OOClass()) };
+    if(input.containsObject<Particles>())
+        return { DataObjectReference(&Particles::OOClass()) };
     return {};
 }
 
@@ -91,8 +91,8 @@ std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> Particle
         throw Exception(tr("Number of neighbor expressions that have been specified (%1) does not match the number of components per particle (%2) of the output property '%3'.")
             .arg(neighborExpressions().size()).arg(outputProperty->componentCount()).arg(outputProperty->name()));
 
-    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
-    const PropertyObject* positions = particles->expectProperty(ParticlesObject::PositionProperty);
+    const Particles* particles = input.expectObject<Particles>();
+    const Property* positions = particles->expectProperty(Particles::PositionProperty);
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     return std::make_shared<Engine>(
@@ -134,7 +134,7 @@ ParticlesComputePropertyModifierDelegate::Engine::Engine(
             std::move(expressions),
             frameNumber,
             std::make_unique<ParticleExpressionEvaluator>()),
-    _inputFingerprint(input.expectObject<ParticlesObject>()),
+    _inputFingerprint(input.expectObject<Particles>()),
     _positions(std::move(positions)),
     _neighborExpressions(std::move(neighborExpressions)),
     _cutoff(cutoff),
@@ -167,8 +167,8 @@ ParticlesComputePropertyModifierDelegate::Engine::Engine(
 
     // Build list of properties that will be made available as expression variables.
     std::vector<ConstPropertyPtr> inputProperties;
-    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
-    for(const PropertyObject* prop : particles->properties()) {
+    const Particles* particles = input.expectObject<Particles>();
+    for(const Property* prop : particles->properties()) {
         inputProperties.push_back(prop);
     }
     _neighborEvaluator->registerPropertyVariables(inputProperties, 1, _T("@"));
@@ -325,7 +325,7 @@ void ParticlesComputePropertyModifierDelegate::Engine::perform()
 ******************************************************************************/
 void ParticlesComputePropertyModifierDelegate::Engine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-    if(_inputFingerprint.hasChanged(state.expectObject<ParticlesObject>()))
+    if(_inputFingerprint.hasChanged(state.expectObject<Particles>()))
         throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
     PropertyComputeEngine::applyResults(request, state);

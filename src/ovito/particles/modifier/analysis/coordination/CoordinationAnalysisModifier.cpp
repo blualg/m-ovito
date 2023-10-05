@@ -21,16 +21,16 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "CoordinationAnalysisModifier.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CoordinationAnalysisModifier);
 DEFINE_PROPERTY_FIELD(CoordinationAnalysisModifier, cutoff);
@@ -60,7 +60,7 @@ CoordinationAnalysisModifier::CoordinationAnalysisModifier(ObjectInitializationF
 ******************************************************************************/
 bool CoordinationAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    return input.containsObject<ParticlesObject>();
+    return input.containsObject<Particles>();
 }
 
 /******************************************************************************
@@ -69,15 +69,15 @@ bool CoordinationAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollect
 Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get the current positions.
-    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
+    const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
-    const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
 
     // Get simulation cell.
-    const SimulationCellObject* inputCell = input.expectObject<SimulationCellObject>();
+    const SimulationCell* inputCell = input.expectObject<SimulationCell>();
 
     // Get selection particle property.
-    const PropertyObject* selectionProperty = onlySelected() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
+    const Property* selectionProperty = onlySelected() ? particles->expectProperty(Particles::SelectionProperty) : nullptr;
 
     // The number of sampling intervals for the radial distribution function.
     int rdfSampleCount = std::max(numberOfBins(), 4);
@@ -88,12 +88,12 @@ Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngi
         throw Exception(tr("Invalid cutoff range value. Cutoff must be positive."));
 
     // Get particle types if partial RDF calculation has been requested.
-    const PropertyObject* typeProperty = nullptr;
+    const Property* typeProperty = nullptr;
     boost::container::flat_map<int,QString> uniqueTypeIds;
     if(computePartialRDF()) {
-        typeProperty = particles->getProperty(ParticlesObject::TypeProperty);
+        typeProperty = particles->getProperty(Particles::TypeProperty);
         if(!typeProperty)
-            throw Exception(tr("Calculation of partial RDFs requires the '%1' property, but particles don't have types assigned.").arg(ParticlesObject::OOClass().standardPropertyName(ParticlesObject::TypeProperty)));
+            throw Exception(tr("Calculation of partial RDFs requires the '%1' property, but particles don't have types assigned.").arg(Particles::OOClass().standardPropertyName(Particles::TypeProperty)));
 
         // Build the set of unique particle type IDs.
         for(const ElementType* pt : typeProperty->elementTypes()) {
@@ -251,7 +251,7 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
 ******************************************************************************/
 void CoordinationAnalysisModifier::CoordinationAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-    ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+    Particles* particles = state.expectMutableObject<Particles>();
 
     if(_inputFingerprint.hasChanged(particles))
         throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
@@ -260,7 +260,7 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::applyResults(cons
     particles->createProperty(coordinationNumbers());
 
     // Output RDF histogram(s).
-    DataTable* table = state.createObject<DataTable>(QStringLiteral("coordination-rdf"), request.modApp(), DataTable::Line, tr("Radial distribution function"), rdfY());
+    DataTable* table = state.createObject<DataTable>(QStringLiteral("coordination-rdf"), request.modificationNode(), DataTable::Line, tr("Radial distribution function"), rdfY());
     table->setIntervalStart(0);
     table->setIntervalEnd(cutoff());
     table->setAxisLabelX(tr("Pair separation distance"));

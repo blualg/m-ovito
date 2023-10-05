@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,7 +43,7 @@ public:
     virtual int exec() override {
         // If there is no animation sequence (just a single frame), and if the exporter does not expose any other settings,
         // then we can skip showing the dialog box altogether.
-        if(_skipDialog) 
+        if(_skipDialog)
             return QDialog::Accepted;
         return QDialog::exec();
     }

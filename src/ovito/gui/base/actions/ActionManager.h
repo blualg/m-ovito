@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -161,8 +161,8 @@ namespace Ovito {
 
 /// This action adds a new pipeline to the scene with a FileSource.
 #define ACTION_NEW_PIPELINE_FILESOURCE      "NewPipeline.FileSource"
-/// This action adds a new pipeline to the scene with a PythonScriptSource.
-#define ACTION_NEW_PIPELINE_PYTHONSOURCE    "NewPipeline.PythonScriptSource"
+/// This action adds a new pipeline to the scene with a PythonSource.
+#define ACTION_NEW_PIPELINE_PYTHONSOURCE    "NewPipeline.PythonSource"
 /// This action adds a new pipeline to the scene with a LammpsScriptSource.
 #define ACTION_NEW_PIPELINE_LAMMPSSOURCE    "NewPipeline.LammpsScriptSource"
 
@@ -178,7 +178,7 @@ public:
     /// Item model roles supported by this QAbstractListModel.
     enum ModelRoles {
         ActionRole = Qt::UserRole,  ///< Pointer to the QAction object.
-        ShortcutRole,               ///< QKeySequence of the action's shortcut. 
+        ShortcutRole,               ///< QKeySequence of the action's shortcut.
         SearchTextRole              ///< The text string used for seaching commands.
     };
 
@@ -245,7 +245,7 @@ public:
 
 Q_SIGNALS:
 
-    /// \brief This signal is emitted by the ActionManager when the quick command search is activated. It tells the system to refresh the enabled/disabled state of actions as needed. 
+    /// \brief This signal is emitted by the ActionManager when the quick command search is activated. It tells the system to refresh the enabled/disabled state of actions as needed.
     void actionUpdateRequested();
 
 private Q_SLOTS:

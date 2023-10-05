@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * A properties editor for the SelectTypeModifier class.
@@ -47,11 +47,11 @@ protected:
     virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
     /// Determines if the given property is a valid input property for the Select Type modifier.
-    static bool isValidInputProperty(const PropertyObject* property) { return property->isTypedProperty(); }
+    static bool isValidInputProperty(const Property* property) { return property->isTypedProperty(); }
 
 private:
 
-    class ViewModel : public QAbstractTableModel 
+    class ViewModel : public QAbstractTableModel
     {
     public:
 
@@ -76,7 +76,7 @@ private:
         /// Sets the role data for the item at index to value.
         virtual bool setData(const QModelIndex& index, const QVariant& value, int role) override;
 
-        /// Returns the number of columns of the table model. 
+        /// Returns the number of columns of the table model.
         int columnCount(const QModelIndex& parent = QModelIndex()) const override { return 2; }
 
         /// Updates the contents of the model.

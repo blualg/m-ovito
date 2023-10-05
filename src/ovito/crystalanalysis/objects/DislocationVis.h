@@ -26,10 +26,10 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/core/dataset/data/TransformingDataVis.h>
 #include <ovito/core/rendering/SceneRenderer.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /**
  * \brief This information record is attached to the dislocation segments by the DislocationVis when rendering
@@ -61,7 +61,7 @@ public:
     }
 
     /// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
-    virtual QString infoString(PipelineSceneNode* objectNode, quint32 subobjectId) override;
+    virtual QString infoString(Pipeline* pipeline, quint32 subobjectId) override;
 
 private:
 
@@ -99,13 +99,13 @@ public:
     Q_INVOKABLE DislocationVis(ObjectInitializationFlags flags);
 
     /// \brief Lets the vis element render a data object.
-    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
+    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;
 
     /// Computes the bounding box of the object.
-    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
+    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
 
     /// \brief Renders an overlay marker for a single dislocation segment.
-    void renderOverlayMarker(AnimationTime time, const DataObject* dataObject, const PipelineFlowState& flowState, int segmentIndex, SceneRenderer* renderer, const PipelineSceneNode* contextNode);
+    void renderOverlayMarker(AnimationTime time, const DataObject* dataObject, const PipelineFlowState& flowState, int segmentIndex, SceneRenderer* renderer, const Pipeline* pipeline);
 
     /// \brief Generates a pretty string representation of a Burgers vector.
     static QString formatBurgersVector(const Vector3& b, const MicrostructurePhase* structure);
@@ -120,7 +120,7 @@ protected:
     virtual Future<PipelineFlowState> transformDataImpl(const PipelineEvaluationRequest& request, const DataObject* dataObject, PipelineFlowState&& flowState) override;
 
     /// Clips a dislocation line at the periodic box boundaries.
-    void clipDislocationLine(const std::deque<Point3>& line, const SimulationCellObject& simulationCell, const QVector<Plane3>& clippingPlanes, const std::function<void(const Point3&, const Point3&, bool)>& segmentCallback);
+    void clipDislocationLine(const std::deque<Point3>& line, const SimulationCell& simulationCell, const QVector<Plane3>& clippingPlanes, const std::function<void(const Point3&, const Point3&, bool)>& segmentCallback);
 
 protected:
 

@@ -24,7 +24,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/correlation/SpatialCorrelationFunctionModifier.h>
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
@@ -33,7 +33,7 @@
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/core/oo/CloneHelper.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "SpatialCorrelationFunctionModifierEditor.h"
 
 #include <qwt/qwt_plot.h>
@@ -41,7 +41,7 @@
 #include <qwt/qwt_plot_grid.h>
 #include <qwt/qwt_scale_engine.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(SpatialCorrelationFunctionModifierEditor);
 SET_OVITO_OBJECT_EDITOR(SpatialCorrelationFunctionModifier, SpatialCorrelationFunctionModifierEditor);
@@ -59,11 +59,11 @@ void SpatialCorrelationFunctionModifierEditor::createUI(const RolloutInsertionPa
     layout->setContentsMargins(4,4,4,4);
     layout->setSpacing(4);
 
-    PropertyReferenceParameterUI* sourceProperty1UI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::sourceProperty1), &ParticlesObject::OOClass());
+    PropertyReferenceParameterUI* sourceProperty1UI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::sourceProperty1), &Particles::OOClass());
     layout->addWidget(new QLabel(tr("First property:"), rollout));
     layout->addWidget(sourceProperty1UI->comboBox());
 
-    PropertyReferenceParameterUI* sourceProperty2UI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::sourceProperty2), &ParticlesObject::OOClass());
+    PropertyReferenceParameterUI* sourceProperty2UI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::sourceProperty2), &Particles::OOClass());
     layout->addWidget(new QLabel(tr("Second property:"), rollout));
     layout->addWidget(sourceProperty2UI->comboBox());
 
@@ -368,11 +368,11 @@ void SpatialCorrelationFunctionModifierEditor::plotAllData()
     const PipelineFlowState& state = getPipelineOutput();
 
     // Retreive computed values from pipeline.
-    const QVariant& mean1 = state.getAttributeValue(modifierApplication(), QStringLiteral("CorrelationFunction.mean1"));
-    const QVariant& mean2 = state.getAttributeValue(modifierApplication(), QStringLiteral("CorrelationFunction.mean2"));
-    const QVariant& variance1 = state.getAttributeValue(modifierApplication(), QStringLiteral("CorrelationFunction.variance1"));
-    const QVariant& variance2 = state.getAttributeValue(modifierApplication(), QStringLiteral("CorrelationFunction.variance2"));
-    const QVariant& covariance = state.getAttributeValue(modifierApplication(), QStringLiteral("CorrelationFunction.covariance"));
+    const QVariant& mean1 = state.getAttributeValue(modificationNode(), QStringLiteral("CorrelationFunction.mean1"));
+    const QVariant& mean2 = state.getAttributeValue(modificationNode(), QStringLiteral("CorrelationFunction.mean2"));
+    const QVariant& variance1 = state.getAttributeValue(modificationNode(), QStringLiteral("CorrelationFunction.variance1"));
+    const QVariant& variance2 = state.getAttributeValue(modificationNode(), QStringLiteral("CorrelationFunction.variance2"));
+    const QVariant& covariance = state.getAttributeValue(modificationNode(), QStringLiteral("CorrelationFunction.covariance"));
 
     // Determine scaling factor and offset.
     FloatType offset = 0.0;
@@ -388,9 +388,9 @@ void SpatialCorrelationFunctionModifierEditor::plotAllData()
     }
 
     // Display direct neighbor correlation function.
-    const DataTable* neighCorrelation = state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("correlation-neighbor"));
-    const DataTable* neighRDF = state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("correlation-neighbor-rdf"));
-    if(modifier && modifierApplication() && modifier->doComputeNeighCorrelation() && neighCorrelation && neighRDF) {
+    const DataTable* neighCorrelation = state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("correlation-neighbor"));
+    const DataTable* neighRDF = state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("correlation-neighbor-rdf"));
+    if(modifier && modificationNode() && modifier->doComputeNeighCorrelation() && neighCorrelation && neighRDF) {
         const auto& xStorage = neighCorrelation->getXValues();
         BufferReadAccess<FloatType> xData(xStorage);
         const auto& yStorage = neighCorrelation->y();
@@ -417,9 +417,9 @@ void SpatialCorrelationFunctionModifierEditor::plotAllData()
     }
 
     // Plot real-space correlation function.
-    const DataTable* realSpaceCorrelation = state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("correlation-real-space"));
-    const DataTable* realSpaceRDF = state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("correlation-real-space-rdf"));
-    if(modifier && modifierApplication() && realSpaceCorrelation) {
+    const DataTable* realSpaceCorrelation = state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("correlation-real-space"));
+    const DataTable* realSpaceRDF = state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("correlation-real-space-rdf"));
+    if(modifier && modificationNode() && realSpaceCorrelation) {
         auto realSpaceYRange = plotData(realSpaceCorrelation, _realSpacePlot, offset, uniformFactor,
             (realSpaceRDF && modifier->normalizeRealSpaceByRDF()) ? realSpaceRDF->y() : nullptr);
 
@@ -438,8 +438,8 @@ void SpatialCorrelationFunctionModifierEditor::plotAllData()
     }
 
     // Plot reciprocal-space correlation function.
-    const DataTable* reciprocalSpaceCorrelation = state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("correlation-reciprocal-space"));
-    if(modifier && modifierApplication() && reciprocalSpaceCorrelation) {
+    const DataTable* reciprocalSpaceCorrelation = state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("correlation-reciprocal-space"));
+    if(modifier && modificationNode() && reciprocalSpaceCorrelation) {
         FloatType rfac = 1;
         if(modifier->normalizeReciprocalSpace() && covariance.toDouble() != 0)
             rfac = 1.0 / covariance.toDouble();

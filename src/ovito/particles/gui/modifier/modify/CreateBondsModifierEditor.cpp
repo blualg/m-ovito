@@ -30,7 +30,7 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "CreateBondsModifierEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CreateBondsModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CreateBondsModifier, CreateBondsModifierEditor);
@@ -142,8 +142,8 @@ void CreateBondsModifierEditor::updatePairCutoffList()
     // Obtain the list of particle types in the modifier's input.
     PairCutoffTableModel::ContentType pairCutoffs;
     const PipelineFlowState& inputState = getPipelineInput();
-    if(const ParticlesObject* particles = inputState.getObject<ParticlesObject>()) {
-        if(const PropertyObject* typeProperty = particles->getProperty(ParticlesObject::TypeProperty)) {
+    if(const Particles* particles = inputState.getObject<Particles>()) {
+        if(const Property* typeProperty = particles->getProperty(Particles::TypeProperty)) {
             for(auto ptype1 = typeProperty->elementTypes().constBegin(); ptype1 != typeProperty->elementTypes().constEnd(); ++ptype1) {
                 for(auto ptype2 = ptype1; ptype2 != typeProperty->elementTypes().constEnd(); ++ptype2) {
                     pairCutoffs.emplace_back(OORef<ElementType>(*ptype1), OORef<ElementType>(*ptype2));
@@ -233,8 +233,8 @@ void CreateBondsModifierEditor::updateVanDerWaalsList()
 
     // Obtain the list of particle types and their van der Waals radii from the modifier's input.
     const PipelineFlowState& inputState = getPipelineInput();
-    if(const ParticlesObject* particles = inputState.getObject<ParticlesObject>()) {
-        if(const PropertyObject* typeProperty = particles->getProperty(ParticlesObject::TypeProperty)) {
+    if(const Particles* particles = inputState.getObject<Particles>()) {
+        if(const Property* typeProperty = particles->getProperty(Particles::TypeProperty)) {
             // Count number of table entries.
             for(const ElementType* type : typeProperty->elementTypes()) {
                 if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(type))

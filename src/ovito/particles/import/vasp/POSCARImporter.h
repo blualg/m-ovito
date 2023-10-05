@@ -27,7 +27,7 @@
 #include <ovito/particles/import/ParticleImporter.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief File parser for POSCAR files as used by the VASP DFT code.
@@ -99,7 +99,7 @@ private:
     private:
 
         QString readDensityGrid(CompressedTextReader& stream);
-        PropertyObject* readFieldQuantity(CompressedTextReader& stream, VoxelGrid* grid, const QString& name);
+        Property* readFieldQuantity(CompressedTextReader& stream, VoxelGrid* grid, const QString& name);
 
         /// Controls the generation of ad-hoc bonds during data import.
         bool _generateBonds;

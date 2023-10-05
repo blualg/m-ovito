@@ -27,7 +27,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief A properties editor for the ChillPlusModifier class.

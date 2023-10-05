@@ -26,14 +26,14 @@
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/mesh/surface/SurfaceMeshBuilder.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/app/Application.h>
 #include "VoxelGridSliceModifierDelegate.h"
 #include "MarchingCubes.h"
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(VoxelGridSliceModifierDelegate);
 DEFINE_REFERENCE_FIELD(VoxelGridSliceModifierDelegate, surfaceMeshVis);
@@ -89,7 +89,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
             voxelGrid->verifyIntegrity();
 
             // Get the simulation cell.
-            DataOORef<const SimulationCellObject> cell = voxelGrid->domain();
+            DataOORef<const SimulationCell> cell = voxelGrid->domain();
             OVITO_ASSERT(cell);
             if(cell->is2D())
                 continue;
@@ -97,13 +97,13 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
             // The slice plane does NOT exist in a periodic domain.
             // Remove any periodic boundary conditions from the surface mesh domain cell.
             if(cell->hasPbc()) {
-                DataOORef<SimulationCellObject> nonperiodicCell = cell.makeCopy();
+                DataOORef<SimulationCell> nonperiodicCell = cell.makeCopy();
                 nonperiodicCell->setPbcFlags(false, false, false);
                 cell = std::move(nonperiodicCell);
             }
 
             // Create an empty surface mesh object.
-            SurfaceMesh* meshObj = state.createObjectWithVis<SurfaceMesh>(QStringLiteral("volume-slice"), request.modApp(), surfaceMeshVis(), tr("Volume slice"));
+            SurfaceMesh* meshObj = state.createObjectWithVis<SurfaceMesh>(QStringLiteral("volume-slice"), request.modificationNode(), surfaceMeshVis(), tr("Volume slice"));
             meshObj->setDomain(cell);
 
             // Construct cross section mesh using a special version of the marching cubes algorithm.
@@ -154,7 +154,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 
             // Collect the set of voxel grid properties that should be transferred over to the isosurface mesh vertices and faces.
             std::vector<ConstPropertyPtr> fieldProperties;
-            for(const PropertyObject* property : voxelGrid->properties())
+            for(const Property* property : voxelGrid->properties())
                 fieldProperties.push_back(property);
 
             if(!fieldProperties.empty()) {
@@ -185,7 +185,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 
                 // Copy field values from voxel grid to surface mesh faces.
                 for(const ConstPropertyPtr& fieldProperty : fieldProperties) {
-                    PropertyObject* faceProperty;
+                    Property* faceProperty;
                     if(SurfaceMeshFaces::OOClass().isValidStandardPropertyId(fieldProperty->type())) {
                         // Input voxel property is also a standard property for mesh faces.
                         faceProperty = mesh.createFaceProperty(DataBuffer::Uninitialized, static_cast<SurfaceMeshFaces::Type>(fieldProperty->type()));

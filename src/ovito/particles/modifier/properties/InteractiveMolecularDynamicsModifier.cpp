@@ -21,10 +21,10 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/app/UserInterface.h>
@@ -32,7 +32,7 @@
 
 #include <QtEndian>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(InteractiveMolecularDynamicsModifier);
 DEFINE_PROPERTY_FIELD(InteractiveMolecularDynamicsModifier, hostName);
@@ -77,7 +77,7 @@ InteractiveMolecularDynamicsModifier::~InteractiveMolecularDynamicsModifier()
 ******************************************************************************/
 bool InteractiveMolecularDynamicsModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    return input.containsObject<ParticlesObject>();
+    return input.containsObject<Particles>();
 }
 
 /******************************************************************************
@@ -252,7 +252,7 @@ void InteractiveMolecularDynamicsModifier::dataReceived()
                 _messageBytesToReceive = 0;
 
                 // Convert data array into particle coordinates property.
-                _coordinates = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, numCoords, ParticlesObject::PositionProperty);
+                _coordinates = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, numCoords, Particles::PositionProperty);
                 std::transform(coords.cbegin(), coords.cend(), BufferWriteAccess<Point3, access_mode::discard_write>(_coordinates).begin(), [](const Point_3<float>& p) { return p.toDataType<FloatType>(); });
 
                 // Notify pipeline system that this modifier has new results.
@@ -311,7 +311,7 @@ void InteractiveMolecularDynamicsModifier::evaluateSynchronous(const ModifierEva
     if(!state || !_coordinates) return;
 
     // Make a modifiable copy of the particles object.
-    ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();
+    Particles* outputParticles = state.expectMutableObject<Particles>();
     outputParticles->verifyIntegrity();
 
     if(_coordinates->size() != outputParticles->elementCount())
@@ -323,11 +323,11 @@ void InteractiveMolecularDynamicsModifier::evaluateSynchronous(const ModifierEva
     // Check if there are any bonds and a simulation cell with periodic boundary conditions.
     // If so, their PBC flags need to be updated.
     if(outputParticles->bonds()) {
-        if(const SimulationCellObject* cell = state.getObject<SimulationCellObject>()) {
+        if(const SimulationCell* cell = state.getObject<SimulationCell>()) {
             if(cell->hasPbcCorrected()) {
-                if(BufferReadAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
+                if(BufferReadAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(Bonds::TopologyProperty)) {
                     BufferReadAccess<Point3> positions(_coordinates);
-                    BufferWriteAccess<Vector3I, access_mode::read_write> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
+                    BufferWriteAccess<Vector3I, access_mode::read_write> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, Bonds::PeriodicImageProperty);
                     // Recompute PBC vectors of bonds as particle may have moved over arbitrary distances.
                     parallelForChunks(topologyProperty.size(), [&](size_t startIndex, size_t count) {
                         for(size_t bondIndex = startIndex, endIndex = startIndex+count; bondIndex < endIndex; bondIndex++) {

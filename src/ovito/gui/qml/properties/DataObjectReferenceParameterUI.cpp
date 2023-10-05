@@ -22,7 +22,7 @@
 
 #include <ovito/gui/qml/GUI.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/data/DataObject.h>
 #include <ovito/core/app/PluginManager.h>
 #include "DataObjectReferenceParameterUI.h"

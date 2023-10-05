@@ -29,7 +29,7 @@
 
 #include <QLibrary>
 
-namespace Ovito::Ssh {
+namespace Ovito {
 
 #ifndef OVITO_LIBSSH_RUNTIME_LINKING
     #define OVITO_LIBSSH_RESOLVE_FUNCTION(funcname) \

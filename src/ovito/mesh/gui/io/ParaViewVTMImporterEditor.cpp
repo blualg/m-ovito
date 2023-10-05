@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "ParaViewVTMImporterEditor.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParaViewVTMImporterEditor);
 SET_OVITO_OBJECT_EDITOR(ParaViewVTMImporter, ParaViewVTMImporterEditor);

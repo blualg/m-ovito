@@ -21,15 +21,15 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "FHIAimsImporter.h"
 
 #include <boost/algorithm/string.hpp>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(FHIAimsImporter);
 
@@ -103,8 +103,8 @@ void FHIAimsImporter::FrameLoader::loadFile()
 
     // Create the particle properties.
     setParticleCount(totalAtomCount);
-    BufferWriteAccess<Point3, access_mode::discard_read_write> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
-    PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+    BufferWriteAccess<Point3, access_mode::discard_read_write> posProperty = particles()->createProperty(Particles::PositionProperty);
+    Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
 
     // Return to file beginning.
     stream.seek(0);
@@ -126,7 +126,7 @@ void FHIAimsImporter::FrameLoader::loadFile()
                         throw Exception(tr("Invalid fractional atom coordinates (in line %1). Cell vectors have not been specified: %2").arg(stream.lineNumber()).arg(stream.lineString()));
                     pos = cell * pos;
                 }
-                typeAccess[i] = addNamedType(ParticlesObject::OOClass(), typeProperty, QLatin1String(atomTypeName))->numericId();
+                typeAccess[i] = addNamedType(Particles::OOClass(), typeProperty, QLatin1String(atomTypeName))->numericId();
                 break;
             }
         }

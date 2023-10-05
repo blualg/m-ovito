@@ -25,7 +25,7 @@
 #include <ovito/core/Core.h>
 #include "ProcessChannel.h"
 
-namespace Ovito::Ssh {
+namespace Ovito {
 
 class ScpChannel : public ProcessChannel
 {

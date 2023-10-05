@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/properties/RefTargetListParameterUI.h>
 #include "MicrostructurePhaseEditor.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(MicrostructurePhaseEditor);
 SET_OVITO_OBJECT_EDITOR(MicrostructurePhase, MicrostructurePhaseEditor);

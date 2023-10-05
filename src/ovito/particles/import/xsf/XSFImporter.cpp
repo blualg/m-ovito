@@ -21,19 +21,19 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/grid/objects/VoxelGridVis.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "XSFImporter.h"
 
 #include <boost/algorithm/string.hpp>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(XSFImporter);
 
@@ -152,12 +152,12 @@ void XSFImporter::FrameLoader::loadFile()
             line = stream.line();
 
             setParticleCount(coords.size());
-            BufferWriteAccess<Point3, access_mode::discard_read_write> posAccess = particles()->createProperty(ParticlesObject::PositionProperty);
+            BufferWriteAccess<Point3, access_mode::discard_read_write> posAccess = particles()->createProperty(Particles::PositionProperty);
             boost::copy(coords, posAccess.begin());
 
-            PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+            Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
             boost::transform(types, BufferWriteAccess<int32_t, access_mode::discard_write>(typeProperty).begin(), [&](const QString& typeName) {
-                return addNamedType(ParticlesObject::OOClass(), typeProperty, typeName)->numericId();
+                return addNamedType(Particles::OOClass(), typeProperty, typeName)->numericId();
             });
             // Since we created particle types on the go while reading the particles, the type ordering
             // depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
@@ -165,7 +165,7 @@ void XSFImporter::FrameLoader::loadFile()
             typeProperty->sortElementTypesByName();
 
             if(forces.size() == coords.size()) {
-                BufferWriteAccess<Vector3, access_mode::discard_write> forceProperty = particles()->createProperty(ParticlesObject::ForceProperty);
+                BufferWriteAccess<Vector3, access_mode::discard_write> forceProperty = particles()->createProperty(Particles::ForceProperty);
                 boost::copy(forces, forceProperty.begin());
             }
 
@@ -234,14 +234,14 @@ void XSFImporter::FrameLoader::loadFile()
             // Prepare the file column to particle property mapping.
             ParticleInputColumnMapping columnMapping;
             columnMapping.resize(nfields + 1);
-            columnMapping.mapStandardColumn(0, ParticlesObject::TypeProperty);
-            columnMapping.mapStandardColumn(1, ParticlesObject::PositionProperty, 0);
-            columnMapping.mapStandardColumn(2, ParticlesObject::PositionProperty, 1);
-            columnMapping.mapStandardColumn(3, ParticlesObject::PositionProperty, 2);
+            columnMapping.mapStandardColumn(0, Particles::TypeProperty);
+            columnMapping.mapStandardColumn(1, Particles::PositionProperty, 0);
+            columnMapping.mapStandardColumn(2, Particles::PositionProperty, 1);
+            columnMapping.mapStandardColumn(3, Particles::PositionProperty, 2);
             if(nfields == 6) {
-                columnMapping.mapStandardColumn(4, ParticlesObject::ForceProperty, 0);
-                columnMapping.mapStandardColumn(5, ParticlesObject::ForceProperty, 1);
-                columnMapping.mapStandardColumn(6, ParticlesObject::ForceProperty, 2);
+                columnMapping.mapStandardColumn(4, Particles::ForceProperty, 0);
+                columnMapping.mapStandardColumn(5, Particles::ForceProperty, 1);
+                columnMapping.mapStandardColumn(6, Particles::ForceProperty, 2);
             }
 
             // Jump back to start of atoms list.
@@ -263,7 +263,7 @@ void XSFImporter::FrameLoader::loadFile()
             columnParser.reset();
 
             // Give numeric atom types chemical names.
-            if(PropertyObject* typeProperty = particles()->getMutableProperty(ParticlesObject::TypeProperty)) {
+            if(Property* typeProperty = particles()->getMutableProperty(Particles::TypeProperty)) {
                 for(int i = 0; i < typeProperty->elementTypes().size(); i++) {
                     const ElementType* type = typeProperty->elementTypes()[i];
                     int typeId = type->numericId();
@@ -283,7 +283,7 @@ void XSFImporter::FrameLoader::loadFile()
             // Create the voxel grid data object.
             voxelGrid = state().getMutableLeafObject<VoxelGrid>(VoxelGrid::OOClass(), gridId);
             if(!voxelGrid) {
-                voxelGrid = state().createObject<VoxelGrid>(dataSource(), gridId);
+                voxelGrid = state().createObject<VoxelGrid>(pipelineNode(), gridId);
                 newVoxelGridVis = voxelGrid->visElement<VoxelGridVis>();
                 newVoxelGridVis->setEnabled(false);
                 newVoxelGridVis->setTitle(voxelGrid->title());
@@ -295,7 +295,7 @@ void XSFImporter::FrameLoader::loadFile()
             voxelGrid->setIdentifier(gridId);
         }
         else if(boost::algorithm::starts_with(line, "BEGIN_DATAGRID_3D_") || boost::algorithm::starts_with(line, "DATAGRID_3D_")) {
-            QString name = PropertyObject::makePropertyNameValid(QString::fromLatin1(line + (boost::algorithm::starts_with(line, "BEGIN_DATAGRID_3D_") ? 18 : 12)));
+            QString name = Property::makePropertyNameValid(QString::fromLatin1(line + (boost::algorithm::starts_with(line, "BEGIN_DATAGRID_3D_") ? 18 : 12)));
 
             // Parse grid dimensions.
             VoxelGrid::GridDimensions gridSize;
@@ -323,8 +323,8 @@ void XSFImporter::FrameLoader::loadFile()
                 voxelGrid->mutableDomain()->setCellMatrix(cell);
             }
             else {
-                DataOORef<SimulationCellObject> simCell = DataOORef<SimulationCellObject>::create(cell, true, true, true, false);
-                simCell->setDataSource(dataSource());
+                DataOORef<SimulationCell> simCell = DataOORef<SimulationCell>::create(cell, true, true, true, false);
+                simCell->setCreatedByNode(pipelineNode());
                 voxelGrid->setDomain(std::move(simCell));
             }
 

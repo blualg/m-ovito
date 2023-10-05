@@ -24,9 +24,9 @@
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/dataset/data/DataObject.h>
 #include <ovito/core/dataset/data/DataVis.h>
-#include <ovito/core/dataset/pipeline/PipelineObject.h>
+#include <ovito/core/dataset/pipeline/PipelineNode.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/Application.h>
@@ -55,7 +55,7 @@ PipelineListModel::PipelineListModel(UserInterface& userInterface, QObject* pare
     _selectionModel = new QItemSelectionModel(this);
 
     // Connect signals and slots.
-    connect(&_selectedPipeline, &RefTargetListener<PipelineSceneNode>::notificationEvent, this, &PipelineListModel::onPipelineEvent);
+    connect(&_selectedPipeline, &RefTargetListener<Pipeline>::notificationEvent, this, &PipelineListModel::onPipelineEvent);
     connect(&userInterface.datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &PipelineListModel::onSceneSelectionChangeComplete);
     connect(_selectionModel, &QItemSelectionModel::selectionChanged, this, &PipelineListModel::onSelectionModelChanged);
     connect(this, &PipelineListModel::selectedItemChanged, this, &PipelineListModel::updateActions);
@@ -120,7 +120,7 @@ PipelineListItem* PipelineListModel::selectedItem() const
 ******************************************************************************/
 void PipelineListModel::onSceneSelectionChangeComplete(SelectionSet* selection)
 {
-    PipelineSceneNode* pipeline = selection ? dynamic_object_cast<PipelineSceneNode>(selection->firstNode()) : nullptr;
+    Pipeline* pipeline = selection ? dynamic_object_cast<Pipeline>(selection->firstNode()) : nullptr;
     if(pipeline != selectedPipeline()) {
         _selectedPipeline.setTarget(pipeline);
         if(pipeline)
@@ -248,43 +248,43 @@ void PipelineListModel::refreshList()
         }
 
         // Traverse the modifiers in the pipeline.
-        PipelineObject* pipelineObject = selectedPipeline()->dataProvider();
-        PipelineObject* firstPipelineObj = pipelineObject;
+        PipelineNode* pipelineNode = selectedPipeline()->head();
+        PipelineNode* firstPipelineNode = pipelineNode;
         ModifierGroup* currentGroup = nullptr;
-        while(pipelineObject) {
+        while(pipelineNode) {
 
-            // Create entries for the modifier applications.
-            if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(pipelineObject)) {
+            // Create entries for the modifier node.
+            if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(pipelineNode)) {
 
-                if(pipelineObject == firstPipelineObj)
+                if(pipelineNode == firstPipelineNode)
                     appendListItem(nullptr, PipelineListItem::ModificationsHeader);
 
-                if(pipelineObject->isPipelineBranch(true))
+                if(pipelineNode->isPipelineBranch(true))
                     appendListItem(nullptr, PipelineListItem::PipelineBranch);
 
-                if(modApp->modifierGroup() != currentGroup) {
-                    if(modApp->modifierGroup())
-                        appendListItem(modApp->modifierGroup(), PipelineListItem::ModifierGroup);
-                    currentGroup = modApp->modifierGroup();
+                if(modNode->modifierGroup() != currentGroup) {
+                    if(modNode->modifierGroup())
+                        appendListItem(modNode->modifierGroup(), PipelineListItem::ModifierGroup);
+                    currentGroup = modNode->modifierGroup();
                 }
 
                 if(!currentGroup || !currentGroup->isCollapsed())
-                    appendListItem(modApp, PipelineListItem::Modifier);
+                    appendListItem(modNode, PipelineListItem::Modifier);
 
-                pipelineObject = modApp->input();
+                pipelineNode = modNode->input();
             }
-            else if(pipelineObject) {
+            else if(pipelineNode) {
 
-                if(pipelineObject->isPipelineBranch(true))
+                if(pipelineNode->isPipelineBranch(true))
                     appendListItem(nullptr, PipelineListItem::PipelineBranch);
 
                 appendListItem(nullptr, PipelineListItem::DataSourceHeader);
 
                 // Create a list item for the data source.
-                PipelineListItem* item = appendListItem(pipelineObject, PipelineListItem::DataSource);
+                PipelineListItem* item = appendListItem(pipelineNode, PipelineListItem::DataSource);
 
                 // Create list items for the source's editable data objects.
-                if(const DataCollection* collection = pipelineObject->getSourceDataCollection()) {
+                if(const DataCollection* collection = pipelineNode->getSourceDataCollection()) {
                     createListItemsForSubobjects(collection, item);
                 }
 
@@ -441,15 +441,15 @@ void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers
 
         RefTarget* selectedObject = currentItem->object();
         if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(selectedObject)) {
-            selectedObject = group->modifierApplications().first();
+            selectedObject = group->nodes().first();
         }
 
-        if(OORef<PipelineObject> pobj = dynamic_object_cast<PipelineObject>(selectedObject)) {
+        if(OORef<PipelineNode> pnode = dynamic_object_cast<PipelineNode>(selectedObject)) {
 
             ModifierGroup* modifierGroup = nullptr;
-            if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(selectedObject)) {
+            if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(selectedObject)) {
                 if(selectedObject == currentItem->object())
-                    modifierGroup = modApp->modifierGroup();
+                    modifierGroup = modNode->modifierGroup();
             }
             if(!modifierGroup)
                 modifierGroup = group;
@@ -457,27 +457,27 @@ void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers
             for(int i = modifiers.size() - 1; i >= 0; i--) {
                 Modifier* modifier = modifiers[i];
                 std::vector<OORef<RefMaker>> dependentsList;
-                pobj->visitDependents([&](RefMaker* dependent) {
-                    if(dynamic_object_cast<ModifierApplication>(dependent) || dynamic_object_cast<PipelineSceneNode>(dependent)) {
+                pnode->visitDependents([&](RefMaker* dependent) {
+                    if(dynamic_object_cast<ModificationNode>(dependent) || dynamic_object_cast<Pipeline>(dependent)) {
                         dependentsList.push_back(dependent);
                     }
                 });
-                OORef<ModifierApplication> modApp = modifier->createModifierApplication();
-                modApp->setModifier(modifier);
-                modApp->setInput(pobj);
-                modApp->setModifierGroup(modifierGroup);
-                modifier->initializeModifier(ModifierInitializationRequest(time, modApp));
-                setNextObjectToSelect(modApp);
+                OORef<ModificationNode> modNode = modifier->createModificationNode();
+                modNode->setModifier(modifier);
+                modNode->setInput(pnode);
+                modNode->setModifierGroup(modifierGroup);
+                modifier->initializeModifier(ModifierInitializationRequest(time, modNode));
+                setNextObjectToSelect(modNode);
                 for(RefMaker* dependent : dependentsList) {
-                    if(ModifierApplication* predecessorModApp = dynamic_object_cast<ModifierApplication>(dependent)) {
-                        predecessorModApp->setInput(modApp);
+                    if(ModificationNode* predecessorModNode = dynamic_object_cast<ModificationNode>(dependent)) {
+                        predecessorModNode->setInput(modNode);
                     }
-                    else if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dependent)) {
-                        if(pipeline->dataProvider() == pobj)
-                            pipeline->setDataProvider(modApp);
+                    else if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(dependent)) {
+                        if(pipeline->head() == pnode)
+                            pipeline->setHead(modNode);
                     }
                 }
-                pobj = modApp;
+                pnode = modNode;
             }
             if(group)
                 setNextObjectToSelect(group);
@@ -487,11 +487,11 @@ void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers
 
     // Insert modifiers at the end of the selected pipelines.
     for(int index = modifiers.size() - 1; index >= 0; --index) {
-        ModifierApplication* modApp = selectedPipeline()->applyModifier(time, modifiers[index]);
+        ModificationNode* modNode = selectedPipeline()->applyModifier(time, modifiers[index]);
         if(group)
-            modApp->setModifierGroup(group);
+            modNode->setModifierGroup(group);
         else
-            setNextObjectToSelect(modApp);
+            setNextObjectToSelect(modNode);
     }
     if(group)
         setNextObjectToSelect(group);
@@ -507,22 +507,22 @@ void PipelineListModel::deleteItems(const QVector<PipelineListItem*>& items)
     if(items.empty())
         return;
 
-    // Build list of modapps to delete from the pipeline.
-    std::set<ModifierApplication*> modApps;
+    // Build list of modifier nodes to delete from the pipeline.
+    std::set<ModificationNode*> nodes;
     for(PipelineListItem* item : items) {
-        if(OORef<ModifierApplication> modApp = dynamic_object_cast<ModifierApplication>(item->object())) {
-            modApps.insert(modApp);
+        if(OORef<ModificationNode> node = dynamic_object_cast<ModificationNode>(item->object())) {
+            nodes.insert(node);
         }
         else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(item->object())) {
-            for(ModifierApplication* modApp : group->modifierApplications())
-                modApps.insert(modApp);
+            for(ModificationNode* node : group->nodes())
+                nodes.insert(node);
         }
     }
 
     // Perform the deletion one by one.
     _userInterface.performTransaction(tr("Delete modifier"), [&]() {
-        for(ModifierApplication* modApp : modApps) {
-            deleteModifierApplication(modApp);
+        for(ModificationNode* node : nodes) {
+            deleteModificationNode(node);
         }
     });
 
@@ -530,26 +530,26 @@ void PipelineListModel::deleteItems(const QVector<PipelineListItem*>& items)
 }
 
 /******************************************************************************
-* Deletes a modifier application from the pipeline.
+* Deletes a modifier node from the pipeline.
 ******************************************************************************/
-void PipelineListModel::deleteModifierApplication(ModifierApplication* modApp)
+void PipelineListModel::deleteModificationNode(ModificationNode* node)
 {
-    _userInterface.performTransaction(tr("Delete modifier"), [modApp = OORef<ModifierApplication>(modApp), this]() {
-        modApp->visitDependents([&](RefMaker* dependent) {
-            if(ModifierApplication* precedingModApp = dynamic_object_cast<ModifierApplication>(dependent)) {
-                if(precedingModApp->input() == modApp) {
-                    setNextObjectToSelect(modApp->input());
-                    precedingModApp->setInput(modApp->input());
+    _userInterface.performTransaction(tr("Delete modifier"), [node = OORef<ModificationNode>(node), this]() {
+        node->visitDependents([&](RefMaker* dependent) {
+            if(ModificationNode* precedingModNode = dynamic_object_cast<ModificationNode>(dependent)) {
+                if(precedingModNode->input() == node) {
+                    setNextObjectToSelect(node->input());
+                    precedingModNode->setInput(node->input());
                 }
             }
-            else if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dependent)) {
-                if(pipeline->dataProvider() == modApp) {
-                    setNextObjectToSelect(modApp->input());
-                    pipeline->setDataProvider(modApp->input());
+            else if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(dependent)) {
+                if(pipeline->head() == node) {
+                    setNextObjectToSelect(node->input());
+                    pipeline->setHead(node->input());
                 }
             }
         });
-        modApp->deleteReferenceObject();
+        node->deleteReferenceObject();
     });
 
     // Invalidate the items list of the model.
@@ -584,8 +584,8 @@ QVariant PipelineListModel::data(const QModelIndex& index, int role) const
     if(role == Qt::DisplayRole || role == TitleRole) {
         // Indent modifiers that are part of a group.
         if(item->itemType() == PipelineListItem::Modifier) {
-            if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(item->object())) {
-                if(modApp->modifierGroup())
+            if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(item->object())) {
+                if(modNode->modifierGroup())
 #ifndef Q_OS_WIN
                     return QStringLiteral(" ") + item->title();
 #else
@@ -606,7 +606,7 @@ QVariant PipelineListModel::data(const QModelIndex& index, int role) const
             return static_object_cast<ModifierGroup>(item->object())->isCollapsed();
     }
     else if(role == StatusInfoRole) {
-        if(PipelineSceneNode* pipeline = selectedPipeline()) {
+        if(Pipeline* pipeline = selectedPipeline()) {
             QVariant v;
             if(_userInterface.handleExceptions([&] {
                 v = item->shortInfo(pipeline);
@@ -658,16 +658,16 @@ QVariant PipelineListModel::data(const QModelIndex& index, int role) const
         return QVariant::fromValue(item->status().text());
     }
     else if(role == Qt::CheckStateRole) {
-        if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(item->object()))
-            return (modApp->modifier() && modApp->modifier()->isEnabled()) ? Qt::Checked : Qt::Unchecked;
+        if(ModificationNode* node = dynamic_object_cast<ModificationNode>(item->object()))
+            return (node->modifier() && node->modifier()->isEnabled()) ? Qt::Checked : Qt::Unchecked;
         else if(ActiveObject* object = dynamic_object_cast<ActiveObject>(item->object())) {
             if(item->itemType() != PipelineListItem::DataSource)
                 return object->isEnabled() ? Qt::Checked : Qt::Unchecked;
         }
     }
     else if(role == CheckedRole) {
-        if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(item->object()))
-            return modApp->modifier() && modApp->modifier()->isEnabled();
+        if(ModificationNode* node = dynamic_object_cast<ModificationNode>(item->object()))
+            return node->modifier() && node->modifier()->isEnabled();
         else if(ActiveObject* object = dynamic_object_cast<ActiveObject>(item->object())) {
             if(item->itemType() != PipelineListItem::DataSource)
                 return object->isEnabled();
@@ -690,7 +690,7 @@ QVariant PipelineListModel::data(const QModelIndex& index, int role) const
     else if(role == Qt::ForegroundRole) {
         if(!item->isObjectItem())
             return _sectionHeaderForegroundBrush;
-        else if(item->itemType() == PipelineListItem::Modifier && static_object_cast<ModifierApplication>(item->object())->modifierAndGroupEnabled() == false)
+        else if(item->itemType() == PipelineListItem::Modifier && static_object_cast<ModificationNode>(item->object())->modifierAndGroupEnabled() == false)
             return _disabledForegroundBrush;
         else if(item->itemType() == PipelineListItem::ModifierGroup && static_object_cast<ModifierGroup>(item->object())->isEnabled() == false)
             return _disabledForegroundBrush;
@@ -718,10 +718,10 @@ bool PipelineListModel::setData(const QModelIndex& index, const QVariant& value,
             });
             return true;
         }
-        else if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(item->object())) {
-            _userInterface.performTransaction((value.toInt() != Qt::Unchecked) ? tr("Enable modifier") : tr("Disable modifier"), [modApp, &value, index, role, this]() {
-                if(modApp->modifier())
-                    modApp->modifier()->setEnabled(value.toInt() != Qt::Unchecked);
+        else if(ModificationNode* node = dynamic_object_cast<ModificationNode>(item->object())) {
+            _userInterface.performTransaction((value.toInt() != Qt::Unchecked) ? tr("Enable modifier") : tr("Disable modifier"), [node, &value, index, role, this]() {
+                if(node->modifier())
+                    node->modifier()->setEnabled(value.toInt() != Qt::Unchecked);
             });
             return true;
         }
@@ -743,11 +743,11 @@ bool PipelineListModel::setData(const QModelIndex& index, const QVariant& value,
             }
             return true;
         }
-        else if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(item->object())) {
+        else if(ModificationNode* node = dynamic_object_cast<ModificationNode>(item->object())) {
             QString newName = value.toString();
-            if(modApp->modifier() && modApp->modifier()->objectTitle() != newName) {
-                _userInterface.performTransaction(tr("Rename modifier"), [modApp, &newName]() {
-                    modApp->modifier()->setObjectTitle(newName);
+            if(node->modifier() && node->modifier()->objectTitle() != newName) {
+                _userInterface.performTransaction(tr("Rename modifier"), [node, &newName]() {
+                    node->modifier()->setObjectTitle(newName);
                 });
             }
             return true;
@@ -828,9 +828,9 @@ void PipelineListModel::updateActions()
 
     // Check if all selected objects are deletable.
     _deleteItemAction->setEnabled(!objects.empty() && boost::algorithm::all_of(objects, [](RefTarget* obj) {
-        return dynamic_object_cast<ModifierApplication>(obj) || dynamic_object_cast<ModifierGroup>(obj);
+        return dynamic_object_cast<ModificationNode>(obj) || dynamic_object_cast<ModifierGroup>(obj);
     }));
-    if(objects.size() == 1 && dynamic_object_cast<ModifierApplication>(objects[0]))
+    if(objects.size() == 1 && dynamic_object_cast<ModificationNode>(objects[0]))
         _deleteItemAction->setText(tr("Delete Modifier"));
     else if(objects.size() == 1 && dynamic_object_cast<ModifierGroup>(objects[0]))
         _deleteItemAction->setText(tr("Delete Modifier Group"));
@@ -840,30 +840,30 @@ void PipelineListModel::updateActions()
     // Check if the selected object is a shared object which can be made independent.
     _makeElementIndependentAction->setEnabled(
         isSharedObject(currentObject)
-        && (dynamic_object_cast<ModifierApplication>(currentObject) == nullptr || static_object_cast<ModifierApplication>(currentObject)->modifierGroup() == nullptr || static_object_cast<ModifierApplication>(currentObject)->pipelines(true).size() == 1));
+        && (dynamic_object_cast<ModificationNode>(currentObject) == nullptr || static_object_cast<ModificationNode>(currentObject)->modifierGroup() == nullptr || static_object_cast<ModificationNode>(currentObject)->pipelines(true).size() == 1));
 
     _copyItemToPipelineAction->setEnabled(boost::algorithm::any_of(objects, [](RefTarget* obj) {
-        return dynamic_object_cast<PipelineObject>(obj) || dynamic_object_cast<ModifierGroup>(obj);
+        return dynamic_object_cast<PipelineNode>(obj) || dynamic_object_cast<ModifierGroup>(obj);
     }));
 
-    _renamePipelineItemAction->setEnabled(ModifierApplication::OOClass().isMember(currentObject) || ModifierGroup::OOClass().isMember(currentObject) || DataVis::OOClass().isMember(currentObject));
+    _renamePipelineItemAction->setEnabled(ModificationNode::OOClass().isMember(currentObject) || ModifierGroup::OOClass().isMember(currentObject) || DataVis::OOClass().isMember(currentObject));
 
     // Update the state of the move up/down actions.
-    if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(currentObject)) {
+    if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(currentObject)) {
         _moveItemDownAction->setText(tr("Move Modifier Down"));
         _moveItemDownAction->setEnabled(
-            modApp->input()
-            && (dynamic_object_cast<ModifierApplication>(modApp->input()) != nullptr || modApp->modifierGroup() != nullptr)
-            && (modApp->input()->isPipelineBranch(true) == false || modApp->modifierGroup() != nullptr)
-            && modApp->pipelines(true).empty() == false
-            && (modApp->modifierGroup() == nullptr || modApp->modifierGroup()->modifierApplications().size() > 1));
+            modNode->input()
+            && (dynamic_object_cast<ModificationNode>(modNode->input()) != nullptr || modNode->modifierGroup() != nullptr)
+            && (modNode->input()->isPipelineBranch(true) == false || modNode->modifierGroup() != nullptr)
+            && modNode->pipelines(true).empty() == false
+            && (modNode->modifierGroup() == nullptr || modNode->modifierGroup()->nodes().size() > 1));
 
         _moveItemUpAction->setText(tr("Move Modifier Up"));
         _moveItemUpAction->setEnabled(
-            (modApp->getPredecessorModApp() != nullptr || modApp->modifierGroup() != nullptr)
-            && (modApp->isPipelineBranch(true) == false || modApp->modifierGroup() != nullptr)
-            && modApp->pipelines(true).empty() == false
-            && (modApp->modifierGroup() == nullptr || modApp->modifierGroup()->modifierApplications().size() > 1));
+            (modNode->getPredecessorModNode() != nullptr || modNode->modifierGroup() != nullptr)
+            && (modNode->isPipelineBranch(true) == false || modNode->modifierGroup() != nullptr)
+            && modNode->pipelines(true).empty() == false
+            && (modNode->modifierGroup() == nullptr || modNode->modifierGroup()->nodes().size() > 1));
     }
     else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(currentObject)) {
         _moveItemUpAction->setEnabled(false);
@@ -873,12 +873,12 @@ void PipelineListModel::updateActions()
 
         // Determine whether it would be possible to move the entire modifier group up and/or down.
         if(group->pipelines(true).empty() == false) {
-            QVector<ModifierApplication*> groupModApps = group->modifierApplications();
-            if(ModifierApplication* inputModApp = dynamic_object_cast<ModifierApplication>(groupModApps.back()->input())) {
-                OVITO_ASSERT(inputModApp->modifierGroup() != group);
-                _moveItemDownAction->setEnabled(!inputModApp->isPipelineBranch(true));
+            QVector<ModificationNode*> groupModNodes = group->nodes();
+            if(ModificationNode* inputModNode = dynamic_object_cast<ModificationNode>(groupModNodes.back()->input())) {
+                OVITO_ASSERT(inputModNode->modifierGroup() != group);
+                _moveItemDownAction->setEnabled(!inputModNode->isPipelineBranch(true));
             }
-            _moveItemUpAction->setEnabled(groupModApps.front()->getPredecessorModApp() != nullptr);
+            _moveItemUpAction->setEnabled(groupModNodes.front()->getPredecessorModNode() != nullptr);
         }
     }
     else {
@@ -892,15 +892,15 @@ void PipelineListModel::updateActions()
     _toggleModifierGroupAction->setChecked(false);
     _toggleModifierGroupAction->setEnabled(false);
     _toggleModifierGroupAction->setText(tr("Create Modifier Group"));
-    // Are all selected objects modifier applications and are they not in a group?
+    // Are all selected objects modifier nodes and are they not in a group?
     if(!objects.empty() && boost::algorithm::all_of(objects, [](RefTarget* obj) {
-            ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj);
-            return modApp && modApp->modifierGroup() == nullptr; }))
+            ModificationNode* modNode = dynamic_object_cast<ModificationNode>(obj);
+            return modNode && modNode->modifierGroup() == nullptr; }))
     {
-        // Do all selected modifier applications form a contiguous sequence.
+        // Do all selected modifier nodes form a contiguous sequence?
         bool isContinguousSequence = true;
         for(auto obj = std::next(objects.cbegin()); obj != objects.cend(); ++obj) {
-            if(static_object_cast<ModifierApplication>(*obj) != static_object_cast<ModifierApplication>(*std::prev(obj))->input()) {
+            if(static_object_cast<ModificationNode>(*obj) != static_object_cast<ModificationNode>(*std::prev(obj))->input()) {
                 isContinguousSequence = false;
                 break;
             }
@@ -1030,59 +1030,59 @@ bool PipelineListModel::performDragAndDropOperation(const QVector<int>& indexLis
     // Determine the insertion location in the pipeline.
     PipelineListItem* insertBeforeItem = item(row);
     PipelineListItem* insertAfterItem = item(row - 1);
-    PipelineObject* insertBefore = nullptr;
-    ModifierApplication* insertAfter = nullptr;
+    PipelineNode* insertBefore = nullptr;
+    ModificationNode* insertAfter = nullptr;
     if(insertAfterItem->itemType() == PipelineListItem::ModificationsHeader) {
         insertBefore = nullptr;
     }
     else if(insertAfterItem->itemType() == PipelineListItem::Modifier) {
-        insertAfter = static_object_cast<ModifierApplication>(insertAfterItem->object());
+        insertAfter = static_object_cast<ModificationNode>(insertAfterItem->object());
         destinationGroup = insertAfter->modifierGroup();
-        if(destinationGroup && destinationGroup->modifierApplications().back() == insertAfter)
+        if(destinationGroup && destinationGroup->nodes().back() == insertAfter)
             isOptionalDestinationGroup = true;
     }
     else if(insertBeforeItem->itemType() == PipelineListItem::Modifier) {
-        insertBefore = static_object_cast<ModifierApplication>(insertBeforeItem->object());
-        destinationGroup = static_object_cast<ModifierApplication>(insertBeforeItem->object())->modifierGroup();
+        insertBefore = static_object_cast<ModificationNode>(insertBeforeItem->object());
+        destinationGroup = static_object_cast<ModificationNode>(insertBeforeItem->object())->modifierGroup();
     }
     else if(insertBeforeItem->itemType() == PipelineListItem::DataSourceHeader) {
-        insertBefore = selectedPipeline()->pipelineSource();
+        insertBefore = selectedPipeline()->source();
     }
     else if(insertAfterItem->itemType() == PipelineListItem::ModifierGroup && insertBeforeItem->itemType() == PipelineListItem::Modifier) {
-        insertBefore = static_object_cast<ModifierApplication>(insertBeforeItem->object());
+        insertBefore = static_object_cast<ModificationNode>(insertBeforeItem->object());
         destinationGroup = static_object_cast<ModifierGroup>(insertAfterItem->object());
     }
     else if(insertAfterItem->itemType() == PipelineListItem::ModifierGroup && static_object_cast<ModifierGroup>(insertAfterItem->object())->isCollapsed()) {
-        insertAfter = static_object_cast<ModifierGroup>(insertAfterItem->object())->modifierApplications().back();
+        insertAfter = static_object_cast<ModifierGroup>(insertAfterItem->object())->nodes().back();
     }
     else if(insertBeforeItem->itemType() == PipelineListItem::ModifierGroup) {
-        insertBefore = static_object_cast<ModifierGroup>(insertBeforeItem->object())->modifierApplications().first();
+        insertBefore = static_object_cast<ModifierGroup>(insertBeforeItem->object())->nodes().first();
     }
     else {
         return false;
     }
 
     // Determine the contiguous sequence of modifiers to be moved.
-    ModifierApplication* head = nullptr;
-    ModifierApplication* tail = nullptr;
-    std::vector<ModifierApplication*> regroupModApps;
+    ModificationNode* head = nullptr;
+    ModificationNode* tail = nullptr;
+    std::vector<ModificationNode*> regroupModNodes;
     for(int row : indexList) {
         if(row <= 0 || row >= items().size())
             return false;
         PipelineListItem* movedItem = item(row);
         if(movedItem->itemType() == PipelineListItem::Modifier) {
-            ModifierApplication* modApp = static_object_cast<ModifierApplication>(movedItem->object());
-            if(head == nullptr) head = modApp;
-            if(tail == nullptr || (modApp->isReferencedBy(tail) && modApp != tail)) {
-                tail = modApp;
-                regroupModApps.push_back(modApp);
+            ModificationNode* modNode = static_object_cast<ModificationNode>(movedItem->object());
+            if(head == nullptr) head = modNode;
+            if(tail == nullptr || (modNode->isReferencedBy(tail) && modNode != tail)) {
+                tail = modNode;
+                regroupModNodes.push_back(modNode);
             }
         }
         else if(movedItem->itemType() == PipelineListItem::ModifierGroup) {
             ModifierGroup* group = static_object_cast<ModifierGroup>(movedItem->object());
-            const auto& modApps = group->modifierApplications();
-            if(head == nullptr) head = modApps.front();
-            if(tail == nullptr || modApps.back()->isReferencedBy(tail)) tail = modApps.back();
+            const auto& modNodes = group->nodes();
+            if(head == nullptr) head = modNodes.front();
+            if(tail == nullptr || modNodes.back()->isReferencedBy(tail)) tail = modNodes.back();
             if(isOptionalDestinationGroup)
                 destinationGroup = nullptr;
             if(dryRun && destinationGroup)
@@ -1102,8 +1102,8 @@ bool PipelineListModel::performDragAndDropOperation(const QVector<int>& indexLis
             moveModifierRange(head, tail, insertBefore, insertAfter);
 
             // Update group memberships.
-            for(ModifierApplication* modApp : regroupModApps)
-                modApp->setModifierGroup(destinationGroup);
+            for(ModificationNode* node : regroupModNodes)
+                node->setModifierGroup(destinationGroup);
         });
     }
 
@@ -1113,7 +1113,7 @@ bool PipelineListModel::performDragAndDropOperation(const QVector<int>& indexLis
 /******************************************************************************
 * Moves a sequence of modifiers to a new position in the pipeline.
 ******************************************************************************/
-bool PipelineListModel::moveModifierRange(OORef<ModifierApplication> head, OORef<ModifierApplication> tail, PipelineObject* insertBefore, ModifierApplication* insertAfter)
+bool PipelineListModel::moveModifierRange(OORef<ModificationNode> head, OORef<ModificationNode> tail, PipelineNode* insertBefore, ModificationNode* insertAfter)
 {
     if(insertAfter == head)
         return false;
@@ -1124,14 +1124,14 @@ bool PipelineListModel::moveModifierRange(OORef<ModifierApplication> head, OORef
 
     // Remove modapps from pipeline.
     head->visitDependents([&](RefMaker* dependent) {
-        if(ModifierApplication* precedingModApp = dynamic_object_cast<ModifierApplication>(dependent)) {
-            if(precedingModApp->input() == head) {
-                precedingModApp->setInput(tail->input());
+        if(ModificationNode* precedingModNode = dynamic_object_cast<ModificationNode>(dependent)) {
+            if(precedingModNode->input() == head) {
+                precedingModNode->setInput(tail->input());
             }
         }
-        else if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dependent)) {
-            if(pipeline->dataProvider() == head) {
-                pipeline->setDataProvider(tail->input());
+        else if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(dependent)) {
+            if(pipeline->head() == head) {
+                pipeline->setHead(tail->input());
             }
         }
     });
@@ -1140,14 +1140,14 @@ bool PipelineListModel::moveModifierRange(OORef<ModifierApplication> head, OORef
     // Re-insert modapps into pipeline.
     if(insertBefore) {
         insertBefore->visitDependents([&](RefMaker* dependent) {
-            if(ModifierApplication* precedingModApp = dynamic_object_cast<ModifierApplication>(dependent)) {
-                if(precedingModApp->input() == insertBefore) {
-                    precedingModApp->setInput(head);
+            if(ModificationNode* precedingModNode = dynamic_object_cast<ModificationNode>(dependent)) {
+                if(precedingModNode->input() == insertBefore) {
+                    precedingModNode->setInput(head);
                 }
             }
-            else if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dependent)) {
-                if(pipeline->dataProvider() == insertBefore) {
-                    pipeline->setDataProvider(head);
+            else if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(dependent)) {
+                if(pipeline->head() == insertBefore) {
+                    pipeline->setHead(head);
                 }
             }
         });
@@ -1158,8 +1158,8 @@ bool PipelineListModel::moveModifierRange(OORef<ModifierApplication> head, OORef
         insertAfter->setInput(head);
     }
     else {
-        tail->setInput(selectedPipeline()->dataProvider());
-        selectedPipeline()->setDataProvider(head);
+        tail->setInput(selectedPipeline()->head());
+        selectedPipeline()->setHead(head);
     }
     refreshList();
 
@@ -1171,22 +1171,22 @@ bool PipelineListModel::moveModifierRange(OORef<ModifierApplication> head, OORef
 ******************************************************************************/
 bool PipelineListModel::isSharedObject(RefTarget* obj)
 {
-    if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj)) {
-        if(modApp->modifier()) {
-            const auto& modApps = modApp->modifier()->modifierApplications();
-            if(modApps.size() > 1)
+    if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(obj)) {
+        if(modNode->modifier()) {
+            const auto& modNodes = modNode->modifier()->nodes();
+            if(modNodes.size() > 1)
                 return true;
-            QSet<PipelineSceneNode*> pipelines;
-            for(ModifierApplication* ma : modApps)
-                pipelines.unite(ma->pipelines(true));
+            QSet<Pipeline*> pipelines;
+            for(ModificationNode* mn : modNodes)
+                pipelines.unite(mn->pipelines(true));
             return pipelines.size() > 1;
         }
     }
     else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(obj)) {
         return group->pipelines(true).size() > 1;
     }
-    else if(PipelineObject* pipelineObject = dynamic_object_cast<PipelineObject>(obj)) {
-        return pipelineObject->pipelines(true).size() > 1;
+    else if(PipelineNode* node = dynamic_object_cast<PipelineNode>(obj)) {
+        return node->pipelines(true).size() > 1;
     }
     else if(DataVis* visElement = dynamic_object_cast<DataVis>(obj)) {
         return visElement->pipelines(true).size() > 1;
@@ -1201,82 +1201,82 @@ void PipelineListModel::moveItemUp(PipelineListItem* item)
 {
     if(!item) return;
 
-    if(OORef<ModifierApplication> modApp = dynamic_object_cast<ModifierApplication>(item->object())) {
-        _userInterface.performTransaction(tr("Move modifier up"), [modApp]() {
-            if(OORef<ModifierApplication> predecessor = modApp->getPredecessorModApp()) {
+    if(OORef<ModificationNode> modNode = dynamic_object_cast<ModificationNode>(item->object())) {
+        _userInterface.performTransaction(tr("Move modifier up"), [modNode]() {
+            if(OORef<ModificationNode> predecessor = modNode->getPredecessorModNode()) {
                 OVITO_ASSERT(!predecessor->pipelines(true).empty());
-                if(modApp->modifierGroup() != nullptr && predecessor->modifierGroup() != modApp->modifierGroup()) {
-                    // If the modifier application is the first entry in a modifier group, move it out of the group.
-                    modApp->setModifierGroup(nullptr);
+                if(modNode->modifierGroup() != nullptr && predecessor->modifierGroup() != modNode->modifierGroup()) {
+                    // If the modifier node is the first entry in a modifier group, move it out of the group.
+                    modNode->setModifierGroup(nullptr);
                 }
-                else if(modApp->modifierGroup() == nullptr && predecessor->modifierGroup() != nullptr && predecessor->modifierGroup()->isCollapsed() == false) {
-                    // If the modifier application is preceded by a modifier group that is currently expanded, move the modifier application into the group.
-                    modApp->setModifierGroup(predecessor->modifierGroup());
+                else if(modNode->modifierGroup() == nullptr && predecessor->modifierGroup() != nullptr && predecessor->modifierGroup()->isCollapsed() == false) {
+                    // If the modifier node is preceded by a modifier group that is currently expanded, move the modifier node into the group.
+                    modNode->setModifierGroup(predecessor->modifierGroup());
                 }
-                else if(modApp->modifierGroup() == nullptr && predecessor->modifierGroup() != nullptr && predecessor->modifierGroup()->isCollapsed() == true) {
-                    // If the modifier application is preceded by a modifier group that is currently collapsed, move the modifier application above the entire group.
-                    OORef<ModifierApplication> current = predecessor;
+                else if(modNode->modifierGroup() == nullptr && predecessor->modifierGroup() != nullptr && predecessor->modifierGroup()->isCollapsed() == true) {
+                    // If the modifier node is preceded by a modifier group that is currently collapsed, move the modifier node above the entire group.
+                    OORef<ModificationNode> current = predecessor;
                     for(;;) {
-                        ModifierApplication* next = nullptr;
+                        ModificationNode* next = nullptr;
                         current->visitDependents([&](RefMaker* dependent2) {
-                            if(ModifierApplication* predecessor2 = dynamic_object_cast<ModifierApplication>(dependent2)) {
+                            if(ModificationNode* predecessor2 = dynamic_object_cast<ModificationNode>(dependent2)) {
                                 if(predecessor2->modifierGroup() != predecessor->modifierGroup())
-                                    predecessor2->setInput(modApp);
+                                    predecessor2->setInput(modNode);
                                 else
                                     next = predecessor2;
                             }
-                            else if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dependent2)) {
-                                if(pipeline->dataProvider() == current)
-                                    pipeline->setDataProvider(modApp);
+                            else if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(dependent2)) {
+                                if(pipeline->head() == current)
+                                    pipeline->setHead(modNode);
                             }
                         });
                         if(!next) break;
                         current = next;
                     }
-                    predecessor->setInput(modApp->input());
-                    modApp->setInput(current);
+                    predecessor->setInput(modNode->input());
+                    modNode->setInput(current);
                 }
                 else {
                     // Standard case: If the modifier application is preceeded by another modifier application, swap the two.
                     predecessor->visitDependents([&](RefMaker* dependent2) {
-                        if(ModifierApplication* predecessor2 = dynamic_object_cast<ModifierApplication>(dependent2)) {
+                        if(ModificationNode* predecessor2 = dynamic_object_cast<ModificationNode>(dependent2)) {
                             OVITO_ASSERT(predecessor2->input() == predecessor);
-                            predecessor2->setInput(modApp);
+                            predecessor2->setInput(modNode);
                         }
-                        else if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dependent2)) {
-                            if(pipeline->dataProvider() == predecessor)
-                                pipeline->setDataProvider(modApp);
+                        else if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(dependent2)) {
+                            if(pipeline->head() == predecessor)
+                                pipeline->setHead(modNode);
                         }
                     });
-                    predecessor->setInput(modApp->input());
-                    modApp->setInput(predecessor);
+                    predecessor->setInput(modNode->input());
+                    modNode->setInput(predecessor);
                 }
             }
-            else if(modApp->modifierGroup() != nullptr) {
-                modApp->setModifierGroup(nullptr);
+            else if(modNode->modifierGroup() != nullptr) {
+                modNode->setModifierGroup(nullptr);
             }
         });
     }
     else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(item->object())) {
-        // Determine the modapps that form the head and the tail for the group.
-        QVector<ModifierApplication*> groupModApps = group->modifierApplications();
-        OORef<ModifierApplication> headModApp = groupModApps.front();
-        OORef<ModifierApplication> tailModApp = groupModApps.back();
-        ModifierApplication* predecessor = headModApp->getPredecessorModApp();
-        OVITO_ASSERT(tailModApp->isReferencedBy(headModApp));
-        OVITO_ASSERT(!predecessor || !headModApp->isPipelineBranch(true));
+        // Determine the nodes that form the head and the tail for the group.
+        QVector<ModificationNode*> groupModNodes = group->nodes();
+        OORef<ModificationNode> headModNode = groupModNodes.front();
+        OORef<ModificationNode> tailModNode = groupModNodes.back();
+        ModificationNode* predecessor = headModNode->getPredecessorModNode();
+        OVITO_ASSERT(tailModNode->isReferencedBy(headModNode));
+        OVITO_ASSERT(!predecessor || !headModNode->isPipelineBranch(true));
 
-        // Don't move the group it is preceded by a pipeline branch or no modifier application at all.
+        // Don't move the group it is preceded by a pipeline branch or no modification node at all.
         if(!predecessor)
             return;
 
         // Determine where to reinsert the group of modifiers into the pipeline.
-        OORef<ModifierApplication> insertBefore = predecessor;
+        OORef<ModificationNode> insertBefore = predecessor;
         if(predecessor->modifierGroup() != nullptr) {
             for(;;) {
-                ModifierApplication* prev = nullptr;
+                ModificationNode* prev = nullptr;
                 insertBefore->visitDependents([&](RefMaker* dependent) {
-                    if(ModifierApplication* predecessor2 = dynamic_object_cast<ModifierApplication>(dependent)) {
+                    if(ModificationNode* predecessor2 = dynamic_object_cast<ModificationNode>(dependent)) {
                         OVITO_ASSERT(!predecessor2->isPipelineBranch(true));
                         if(predecessor2->modifierGroup() == predecessor->modifierGroup()) {
                             insertBefore = predecessor2;
@@ -1291,17 +1291,17 @@ void PipelineListModel::moveItemUp(PipelineListItem* item)
         // Make the pipeline rearrangement.
         _userInterface.performTransaction(tr("Move modifier group up"), [&]() {
             insertBefore->visitDependents([&](RefMaker* dependent) {
-                if(ModifierApplication* predecessor = dynamic_object_cast<ModifierApplication>(dependent)) {
+                if(ModificationNode* predecessor = dynamic_object_cast<ModificationNode>(dependent)) {
                     OVITO_ASSERT(predecessor->input() == insertBefore);
-                    predecessor->setInput(headModApp);
+                    predecessor->setInput(headModNode);
                 }
-                else if(PipelineSceneNode* predecessor = dynamic_object_cast<PipelineSceneNode>(dependent)) {
-                    if(predecessor->dataProvider() == insertBefore)
-                        predecessor->setDataProvider(headModApp);
+                else if(Pipeline* predecessor = dynamic_object_cast<Pipeline>(dependent)) {
+                    if(predecessor->head() == insertBefore)
+                        predecessor->setHead(headModNode);
                 }
             });
-            predecessor->setInput(tailModApp->input());
-            tailModApp->setInput(insertBefore);
+            predecessor->setInput(tailModNode->input());
+            tailModNode->setInput(insertBefore);
         });
     }
     refreshList();
@@ -1314,25 +1314,25 @@ void PipelineListModel::moveItemDown(PipelineListItem* item)
 {
     if(!item) return;
 
-    if(OORef<ModifierApplication> modApp = dynamic_object_cast<ModifierApplication>(item->object())) {
-        _userInterface.performTransaction(tr("Move modifier down"), [modApp]() {
-            OORef<ModifierApplication> successor = dynamic_object_cast<ModifierApplication>(modApp->input());
+    if(OORef<ModificationNode> modNode = dynamic_object_cast<ModificationNode>(item->object())) {
+        _userInterface.performTransaction(tr("Move modifier down"), [modNode]() {
+            OORef<ModificationNode> successor = dynamic_object_cast<ModificationNode>(modNode->input());
             if(successor && successor->isPipelineBranch(true) == false) {
-                if(modApp->modifierGroup() != nullptr && successor->modifierGroup() != modApp->modifierGroup()) {
-                    // If the modifier application is the last entry in the modifier group, move it out of the group.
-                    modApp->setModifierGroup(nullptr);
+                if(modNode->modifierGroup() != nullptr && successor->modifierGroup() != modNode->modifierGroup()) {
+                    // If the modifier node is the last entry in the modifier group, move it out of the group.
+                    modNode->setModifierGroup(nullptr);
                 }
-                else if(modApp->modifierGroup() == nullptr && successor->modifierGroup() != nullptr && successor->modifierGroup()->isCollapsed() == false) {
-                    // If the modifier application is above a group that is currently expanded, move it into the group.
-                    modApp->setModifierGroup(successor->modifierGroup());
+                else if(modNode->modifierGroup() == nullptr && successor->modifierGroup() != nullptr && successor->modifierGroup()->isCollapsed() == false) {
+                    // If the modifier node is above a group that is currently expanded, move it into the group.
+                    modNode->setModifierGroup(successor->modifierGroup());
                 }
                 else {
-                    // Standard case: If the modifier application is followed by another modifier application, swap the two.
-                    OORef<ModifierApplication> insertAfter = successor;
+                    // Standard case: If the modifier node is followed by another modifier node, swap the two.
+                    OORef<ModificationNode> insertAfter = successor;
 
-                    // If the modifier application is above a group that is currently collapsed, move it all the way below that group.
-                    if(modApp->modifierGroup() == nullptr && successor->modifierGroup() != nullptr && successor->modifierGroup()->isCollapsed() == true) {
-                        while(ModifierApplication* next = dynamic_object_cast<ModifierApplication>(insertAfter->input())) {
+                    // If the modifier node is above a group that is currently collapsed, move it all the way below that group.
+                    if(modNode->modifierGroup() == nullptr && successor->modifierGroup() != nullptr && successor->modifierGroup()->isCollapsed() == true) {
+                        while(ModificationNode* next = dynamic_object_cast<ModificationNode>(insertAfter->input())) {
                             if(next->modifierGroup() != successor->modifierGroup())
                                 break;
                             insertAfter = next;
@@ -1340,38 +1340,38 @@ void PipelineListModel::moveItemDown(PipelineListItem* item)
                     }
 
                     // Make the pipeline rearrangement.
-                    modApp->visitDependents([&](RefMaker* dependent) {
-                        if(ModifierApplication* predecessor = dynamic_object_cast<ModifierApplication>(dependent)) {
+                    modNode->visitDependents([&](RefMaker* dependent) {
+                        if(ModificationNode* predecessor = dynamic_object_cast<ModificationNode>(dependent)) {
                             predecessor->setInput(successor);
                         }
-                        else if(PipelineSceneNode* predecessor = dynamic_object_cast<PipelineSceneNode>(dependent)) {
-                            if(predecessor->dataProvider() == modApp)
-                                predecessor->setDataProvider(successor);
+                        else if(Pipeline* predecessor = dynamic_object_cast<Pipeline>(dependent)) {
+                            if(predecessor->head() == modNode)
+                                predecessor->setHead(successor);
                         }
                     });
-                    modApp->setInput(insertAfter->input());
-                    insertAfter->setInput(modApp);
+                    modNode->setInput(insertAfter->input());
+                    insertAfter->setInput(modNode);
                 }
             }
-            else if(modApp->modifierGroup() != nullptr) {
-                modApp->setModifierGroup(nullptr);
+            else if(modNode->modifierGroup() != nullptr) {
+                modNode->setModifierGroup(nullptr);
             }
         });
     }
     else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(item->object())) {
-        QVector<ModifierApplication*> groupModApps = group->modifierApplications();
-        OORef<ModifierApplication> headModApp = groupModApps.front();
-        OORef<ModifierApplication> tailModApp = groupModApps.back();
-        ModifierApplication* successor = dynamic_object_cast<ModifierApplication>(tailModApp->input());
+        QVector<ModificationNode*> groupModNodes = group->nodes();
+        OORef<ModificationNode> headModNode = groupModNodes.front();
+        OORef<ModificationNode> tailModNode = groupModNodes.back();
+        ModificationNode* successor = dynamic_object_cast<ModificationNode>(tailModNode->input());
 
         // Don't move the group over a pipeline branch.
         if(!successor || successor->isPipelineBranch(true))
             return;
 
         // Determine where to reinsert the group of modifiers into the pipeline.
-        OORef<ModifierApplication> insertAfter = successor;
+        OORef<ModificationNode> insertAfter = successor;
         if(successor->modifierGroup() != nullptr) {
-            while(ModifierApplication* next = dynamic_object_cast<ModifierApplication>(insertAfter->input())) {
+            while(ModificationNode* next = dynamic_object_cast<ModificationNode>(insertAfter->input())) {
                 if(next->modifierGroup() != successor->modifierGroup())
                     break;
                 insertAfter = next;
@@ -1380,17 +1380,17 @@ void PipelineListModel::moveItemDown(PipelineListItem* item)
 
         // Make the pipeline rearrangement.
         _userInterface.performTransaction(tr("Move modifier group down"), [&]() {
-            headModApp->visitDependents([&](RefMaker* dependent) {
-                if(ModifierApplication* predecessor = dynamic_object_cast<ModifierApplication>(dependent)) {
+            headModNode->visitDependents([&](RefMaker* dependent) {
+                if(ModificationNode* predecessor = dynamic_object_cast<ModificationNode>(dependent)) {
                     predecessor->setInput(successor);
                 }
-                else if(PipelineSceneNode* predecessor = dynamic_object_cast<PipelineSceneNode>(dependent)) {
-                    if(predecessor->dataProvider() == headModApp)
-                        predecessor->setDataProvider(successor);
+                else if(Pipeline* predecessor = dynamic_object_cast<Pipeline>(dependent)) {
+                    if(predecessor->head() == headModNode)
+                        predecessor->setHead(successor);
                 }
             });
-            tailModApp->setInput(insertAfter->input());
-            insertAfter->setInput(headModApp);
+            tailModNode->setInput(insertAfter->input());
+            insertAfter->setInput(headModNode);
         });
     }
     refreshList();
@@ -1407,27 +1407,26 @@ void PipelineListModel::makeElementIndependent()
 
     if(DataVis* visElement = dynamic_object_cast<DataVis>(item->object())) {
         _userInterface.performTransaction(tr("Make visual element independent"), [&]() {
-            PipelineSceneNode* pipeline = selectedPipeline();
+            Pipeline* pipeline = selectedPipeline();
             DataVis* replacementVisElement = pipeline->makeVisElementIndependent(visElement);
             setNextObjectToSelect(replacementVisElement);
         });
     }
-    else if(PipelineObject* selectedPipelineObj = dynamic_object_cast<PipelineObject>(item->object())) {
+    else if(PipelineNode* selectedPipelineNode = dynamic_object_cast<PipelineNode>(item->object())) {
         _userInterface.performTransaction(tr("Make pipeline element independent"), [&]() {
             CloneHelper cloneHelper;
-            PipelineObject* clonedObject = makeElementIndependentImpl(selectedPipelineObj, cloneHelper);
-            if(clonedObject)
-                setNextObjectToSelect(clonedObject);
+            if(PipelineNode* clonedNode = makeElementIndependentImpl(selectedPipelineNode, cloneHelper))
+                setNextObjectToSelect(clonedNode);
         });
     }
     else if(ModifierGroup* selectedGroup = dynamic_object_cast<ModifierGroup>(item->object())) {
         _userInterface.performTransaction(tr("Make modifier group independent"), [&]() {
             CloneHelper cloneHelper;
-            for(ModifierApplication* modApp : selectedGroup->modifierApplications()) {
-                ModifierApplication* clonedModApp = static_object_cast<ModifierApplication>(makeElementIndependentImpl(modApp, cloneHelper));
-                OVITO_ASSERT(clonedModApp);
-                if(clonedModApp && clonedModApp->modifierGroup()) {
-                    setNextObjectToSelect(clonedModApp->modifierGroup());
+            for(ModificationNode* modNode : selectedGroup->nodes()) {
+                ModificationNode* clonedModNode = static_object_cast<ModificationNode>(makeElementIndependentImpl(modNode, cloneHelper));
+                OVITO_ASSERT(clonedModNode);
+                if(clonedModNode && clonedModNode->modifierGroup()) {
+                    setNextObjectToSelect(clonedModNode->modifierGroup());
                 }
             }
         });
@@ -1438,53 +1437,53 @@ void PipelineListModel::makeElementIndependent()
 /******************************************************************************
 * Replaces the a pipeline item with an independent copy.
 ******************************************************************************/
-PipelineObject* PipelineListModel::makeElementIndependentImpl(PipelineObject* pipelineObj, CloneHelper& cloneHelper)
+PipelineNode* PipelineListModel::makeElementIndependentImpl(PipelineNode* pipelineNode, CloneHelper& cloneHelper)
 {
-    OORef<PipelineObject> currentObj = selectedPipeline()->dataProvider();
-    ModifierApplication* predecessorModApp = nullptr;
-    // Walk up the pipeline, starting at the node, until we reach the selected pipeline object.
-    // Duplicate all shared ModifierApplications to remove pipeline branches.
-    // When arriving at the selected modifier application, duplicate the modifier too
+    OORef<PipelineNode> currentNode = selectedPipeline()->head();
+    ModificationNode* predecessorModNode = nullptr;
+    // Walk up the pipeline, starting at the head, until we reach the selected pipeline node.
+    // Duplicate all shared ModificationNodes to remove pipeline branches.
+    // When arriving at the selected ModificationNode, duplicate the modifier too
     // in case it is being shared by multiple pipelines.
-    while(currentObj) {
-        PipelineObject* nextObj = nullptr;
-        if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(currentObj)) {
+    while(currentNode) {
+        PipelineNode* nextNode = nullptr;
+        if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(currentNode)) {
 
-            // Clone all modifier applications along the way if they are shared by multiple pipeline branches.
-            if(modApp->pipelines(true).size() > 1) {
-                OORef<ModifierApplication> clonedModApp = cloneHelper.cloneObject(modApp, false);
-                if(predecessorModApp)
-                    predecessorModApp->setInput(clonedModApp);
+            // Clone all modification nodes along the way if they are shared by multiple pipeline branches.
+            if(modNode->pipelines(true).size() > 1) {
+                OORef<ModificationNode> clonedModNode = cloneHelper.cloneObject(modNode, false);
+                if(predecessorModNode)
+                    predecessorModNode->setInput(clonedModNode);
                 else
-                    selectedPipeline()->setDataProvider(clonedModApp);
-                predecessorModApp = clonedModApp;
+                    selectedPipeline()->setHead(clonedModNode);
+                predecessorModNode = clonedModNode;
             }
             else {
-                predecessorModApp = modApp;
+                predecessorModNode = modNode;
             }
 
             // Terminate pipeline walk at the target object to be made independent.
-            if(currentObj == pipelineObj) {
-                // Clone the selected modifier if it is referenced by multiple modapps.
-                if(predecessorModApp->modifier()) {
-                    if(predecessorModApp->modifier()->modifierApplications().size() > 1)
-                        predecessorModApp->setModifier(cloneHelper.cloneObject(predecessorModApp->modifier(), true));
+            if(currentNode == pipelineNode) {
+                // Clone the selected modifier if it is referenced by multiple nodes.
+                if(predecessorModNode->modifier()) {
+                    if(predecessorModNode->modifier()->nodes().size() > 1)
+                        predecessorModNode->setModifier(cloneHelper.cloneObject(predecessorModNode->modifier(), true));
                 }
-                return predecessorModApp;
+                return predecessorModNode;
             }
-            currentObj = predecessorModApp->input();
+            currentNode = predecessorModNode->input();
         }
-        else if(currentObj == pipelineObj) {
-            // If the object to be made independent is not a modifier application, simply clone it.
-            if(currentObj->pipelines(true).size() > 1) {
-                OORef<PipelineObject> clonedObject = cloneHelper.cloneObject(currentObj, false);
-                if(predecessorModApp)
-                    predecessorModApp->setInput(clonedObject);
+        else if(currentNode == pipelineNode) {
+            // If the node to be made independent is not a modifier node, simply clone it.
+            if(currentNode->pipelines(true).size() > 1) {
+                OORef<PipelineNode> clonedNode = cloneHelper.cloneObject(currentNode, false);
+                if(predecessorModNode)
+                    predecessorModNode->setInput(clonedNode);
                 else
-                    selectedPipeline()->setDataProvider(clonedObject);
-                return clonedObject;
+                    selectedPipeline()->setHead(clonedNode);
+                return clonedNode;
             }
-            return currentObj;
+            return currentNode;
         }
         else {
             OVITO_ASSERT(false);
@@ -1504,17 +1503,17 @@ void PipelineListModel::toggleModifierGroup()
 
     OORef<ModifierGroup> existingGroup;
 
-    if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(objects.front())) {
-        // If modifier applications are currently selected, put them into a new group.
-        // But first make sure the modifier application aren't already part of an existing group.
-        existingGroup = modApp->modifierGroup();
+    if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(objects.front())) {
+        // If modifier nodes are currently selected, put them into a new group.
+        // But first make sure the modifier nodes aren't already part of an existing group.
+        existingGroup = modNode->modifierGroup();
         if(!existingGroup) {
             // Create a new group.
             OORef<ModifierGroup> group = OORef<ModifierGroup>::create();
             _userInterface.performTransaction(tr("Create modifier group"), [&]() {
                 for(RefTarget* obj : objects) {
-                    if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj)) {
-                        modApp->setModifierGroup(group);
+                    if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(obj)) {
+                        modNode->setModifierGroup(group);
                     }
                 }
             });
@@ -1529,11 +1528,11 @@ void PipelineListModel::toggleModifierGroup()
         existingGroup = dynamic_object_cast<ModifierGroup>(objects.front());
     if(existingGroup) {
         _userInterface.performTransaction(tr("Dissolve modifier group"), [&]() {
-            QVector<ModifierApplication*> groupModApps = existingGroup->modifierApplications();
-            setNextObjectToSelect(groupModApps.front());
-            for(ModifierApplication* modApp : groupModApps) {
-                if(modApp->modifierGroup() == existingGroup)
-                    modApp->setModifierGroup(nullptr);
+            QVector<ModificationNode*> groupModNodes = existingGroup->nodes();
+            setNextObjectToSelect(groupModNodes.front());
+            for(ModificationNode* modNode : groupModNodes) {
+                if(modNode->modifierGroup() == existingGroup)
+                    modNode->setModifierGroup(nullptr);
             }
             existingGroup->deleteReferenceObject();
         });

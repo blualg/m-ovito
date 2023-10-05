@@ -21,16 +21,16 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "CIFImporter.h"
 
 #include <3rdparty/gemmi/cif.hpp>
 #include <3rdparty/gemmi/smcif.hpp> // for reading small molecules
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 namespace cif = gemmi::cif;
 
@@ -125,8 +125,8 @@ void CIFImporter::FrameLoader::loadFile()
         // Parse list of atomic sites.
         std::vector<gemmi::SmallStructure::Site> sites = structure.get_all_unit_cell_sites();
         setParticleCount(sites.size());
-        BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
-        PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+        BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(Particles::PositionProperty);
+        Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
         BufferWriteAccess<int32_t, access_mode::discard_write> typePropertyAccess(typeProperty);
         auto* posIter = posProperty.begin();
         auto* typeIter = typePropertyAccess.begin();
@@ -137,7 +137,7 @@ void CIFImporter::FrameLoader::loadFile()
             posIter->y() = pos.y;
             posIter->z() = pos.z;
             ++posIter;
-            *typeIter++ = addNamedType(ParticlesObject::OOClass(), typeProperty, site.type_symbol.empty() ? site.label.c_str() : site.type_symbol.c_str())->numericId();
+            *typeIter++ = addNamedType(Particles::OOClass(), typeProperty, site.type_symbol.empty() ? site.label.c_str() : site.type_symbol.c_str())->numericId();
             if(site.occ != 1)
                 hasOccupancy = true;
         }
@@ -147,7 +147,7 @@ void CIFImporter::FrameLoader::loadFile()
 
         // Parse the optional site occupancy information.
         if(hasOccupancy) {
-            BufferWriteAccess<FloatType, access_mode::discard_write> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), PropertyObject::FloatDefault);
+            BufferWriteAccess<FloatType, access_mode::discard_write> occupancyProperty = particles()->createProperty(QStringLiteral("Occupancy"), Property::FloatDefault);
             FloatType* occupancyIter = occupancyProperty.begin();
             for(const gemmi::SmallStructure::Site& site : sites) {
                 *occupancyIter++ = site.occ;

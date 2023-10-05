@@ -24,14 +24,12 @@
 
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 
 #include <geogram/Delaunay_psm.h>
 #include <boost/iterator/counting_iterator.hpp>
 
-namespace Ovito::Delaunay {
-
-using namespace Ovito::StdObj;
+namespace Ovito {
 
 /**
  * Generates a Delaunay tessellation of a particle system.
@@ -117,7 +115,7 @@ public:
     };
 
     /// Generates the Delaunay tessellation.
-    bool generateTessellation(const SimulationCellObject* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const SelectionIntType* selectedPoints, ProgressingTask& operation);
+    bool generateTessellation(const SimulationCell* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const SelectionIntType* selectedPoints, ProgressingTask& operation);
 
     /// Returns the total number of tetrahedra in the tessellation.
     size_type numberOfTetrahedra() const { return _dt->nb_cells(); }
@@ -239,7 +237,7 @@ public:
     }
 
     /// Returns the simulation cell geometry.
-    const SimulationCellObject* simCell() const { return _simCell; }
+    const SimulationCell* simCell() const { return _simCell; }
 
 private:
 
@@ -265,7 +263,7 @@ private:
     size_type _numPrimaryTetrahedra = 0;
 
     /// The simulation cell geometry.
-    const SimulationCellObject* _simCell = nullptr;
+    const SimulationCell* _simCell = nullptr;
 };
 
 }   // End of namespace

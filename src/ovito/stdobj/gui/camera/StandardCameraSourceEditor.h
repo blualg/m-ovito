@@ -26,7 +26,7 @@
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * A properties editor for the StandardCameraSource class.

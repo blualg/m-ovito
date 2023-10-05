@@ -24,7 +24,7 @@
 #include <ovito/stdobj/properties/PropertyContainerClass.h>
 #include "PropertySelectionComboBox.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /******************************************************************************
 * Returns the particle property that is currently selected in the combo box.

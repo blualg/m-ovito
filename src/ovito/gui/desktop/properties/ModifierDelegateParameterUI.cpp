@@ -22,7 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/pipeline/DelegatingModifier.h>
 #include <ovito/core/dataset/pipeline/AsynchronousDelegatingModifier.h>
 #include <ovito/core/app/PluginManager.h>
@@ -243,10 +243,10 @@ void ModifierDelegateParameterUI::updatePropertyValue()
 ******************************************************************************/
 void ModifierDelegateParameterUI::setEnabled(bool enabled)
 {
-    if(enabled == isEnabled()) 
+    if(enabled == isEnabled())
         return;
     ParameterUI::setEnabled(enabled);
-    if(comboBox()) 
+    if(comboBox())
         comboBox()->setEnabled(editObject() && isEnabled());
 }
 

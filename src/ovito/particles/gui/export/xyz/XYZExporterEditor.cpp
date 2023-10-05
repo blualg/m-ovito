@@ -26,7 +26,7 @@
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include "XYZExporterEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(XYZExporterEditor);
 SET_OVITO_OBJECT_EDITOR(XYZExporter, XYZExporterEditor);

@@ -23,9 +23,9 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/BondType.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/core/utilities/io/FileManager.h>
@@ -33,7 +33,7 @@
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include "LAMMPSDataImporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSDataImporter);
 DEFINE_PROPERTY_FIELD(LAMMPSDataImporter, atomStyle);
@@ -212,8 +212,14 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
     setImproperCount(nimpropers);
 
     // Create standard particle properties.
-    particles()->createProperty(DataBuffer::Initialized, ParticlesObject::PositionProperty);
-    PropertyObject* typeProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::TypeProperty);
+    Property* positionProperty = particles()->createProperty(DataBuffer::Initialized, Particles::PositionProperty);
+    Property* typeProperty = particles()->createProperty(DataBuffer::Initialized, Particles::TypeProperty);
+
+    // List of all properties that are read from the data file.
+    // This will be used later to remove all excess properties from the container.
+    std::set<Property*> parsedParticleProperties;
+    parsedParticleProperties.insert(positionProperty);
+    parsedParticleProperties.insert(typeProperty);
 
     // Atom type mass table.
     std::vector<FloatType> massTable(natomtypes, 0.0);
@@ -242,7 +248,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
     // Helper function for parsing a LAMMPS type label map.
     // The type label map consists of one line per type, containing the numeric id of the types
     // followed by the human-readable name of the type. The name can be contained in quotes.
-    auto parseTypeLabelMap = [&](int ntypes, const PropertyContainerClass& containerClass, PropertyObject* typedProperty) {
+    auto parseTypeLabelMap = [&](int ntypes, const PropertyContainerClass& containerClass, Property* typedProperty) {
         for(int i = 1; i <= ntypes; i++) {
             // Parse the type's numeric id.
             int typeId, charCount;
@@ -267,7 +273,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
             // Create atom types.
             for(int i = 1; i <= natomtypes; i++)
-                addNumericType(ParticlesObject::OOClass(), typeProperty, i, {});
+                addNumericType(Particles::OOClass(), typeProperty, i, {});
 
             if(natoms != 0) {
                 stream.readLine();
@@ -289,7 +295,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                         .arg(columnMapping.size()));
 
                 // Parse data in the Atoms section line by line:
-                InputColumnReader columnParser(*this, columnMapping, particles());
+                InputColumnReader columnParser(*this, columnMapping, particles(), false);
                 try {
                     for(size_t i = 0; i < (size_t)natoms; i++) {
                         if(!setProgressValueIntermittent(i)) return;
@@ -300,10 +306,11 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 catch(Exception& ex) {
                     throw ex.prependGeneralMessage(tr("Parsing error in line %1 of LAMMPS data file.").arg(stream.lineNumber()));
                 }
+                parsedParticleProperties.merge(columnParser.parsedProperties());
                 columnParser.reset();
 
                 // Range-check atom types.
-                for(auto t : BufferReadAccess<int32_t>(particles()->expectProperty(ParticlesObject::TypeProperty))) {
+                for(auto t : BufferReadAccess<int32_t>(particles()->expectProperty(Particles::TypeProperty))) {
                     if(t < 1 || t > natomtypes)
                         throw Exception(tr("Atom type %1 is out of range in Atoms section of LAMMPS data file. Number of types is %2.").arg(t).arg(natomtypes));
                 }
@@ -311,13 +318,13 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 // Build lookup map of atom identifiers.
                 atomIdMap.reserve(natoms);
                 size_t index = 0;
-                for(auto id : BufferReadAccess<IdentifierIntType>(particles()->expectProperty(ParticlesObject::IdentifierProperty))) {
+                for(auto id : BufferReadAccess<IdentifierIntType>(particles()->expectProperty(Particles::IdentifierProperty))) {
                     atomIdMap.emplace(id, index++);
                 }
 
                 // Some LAMMPS data files contain per-particle diameter information.
                 // OVITO only knows the "Radius" particle property, which is means we have to divide by 2.
-                if(BufferWriteAccess<GraphicsFloatType, access_mode::read_write> radiusProperty = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
+                if(BufferWriteAccess<GraphicsFloatType, access_mode::read_write> radiusProperty = particles()->getMutableProperty(Particles::RadiusProperty)) {
                     for(auto& r : radiusProperty)
                         r *= GraphicsFloatType(0.5);
                 }
@@ -331,11 +338,11 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             ParticleInputColumnMapping columnMapping = createVelocitiesColumnMapping(_atomStyleHints.atomStyle, _atomStyleHints.atomSubStyles);
 
             // Do not parse the atom ID in the first column.
-            OVITO_ASSERT(!columnMapping.empty() && columnMapping[0].property.type() == ParticlesObject::IdentifierProperty);
+            OVITO_ASSERT(!columnMapping.empty() && columnMapping[0].property.type() == Particles::IdentifierProperty);
             columnMapping[0].unmap();
 
             // Access the atomic IDs.
-            BufferReadAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
+            BufferReadAccess<IdentifierIntType> identifierProperty = particles()->getProperty(Particles::IdentifierProperty);
             if(!identifierProperty)
                 throw Exception(tr("Atoms section must precede Velocities section in data file (error in line %1).").arg(stream.lineNumber()));
 
@@ -362,25 +369,26 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
                     columnParser.readElement(atomIndex, stream.line());
                 }
+                parsedParticleProperties.merge(columnParser.parsedProperties());
             }
             catch(Exception& ex) {
                 throw ex.prependGeneralMessage(tr("Parsing error in line %1 of LAMMPS data file.").arg(stream.lineNumber()));
             }
         }
         else if(keyword.startsWith("Atom Type Labels")) {
-            parseTypeLabelMap(natomtypes, ParticlesObject::OOClass(), typeProperty);
+            parseTypeLabelMap(natomtypes, Particles::OOClass(), typeProperty);
         }
         else if(keyword.startsWith("Bond Type Labels")) {
-            parseTypeLabelMap(nbondtypes, BondsObject::OOClass(), bonds()->createProperty(BondsObject::TypeProperty));
+            parseTypeLabelMap(nbondtypes, Bonds::OOClass(), bonds()->createProperty(Bonds::TypeProperty));
         }
         else if(keyword.startsWith("Angle Type Labels")) {
-            parseTypeLabelMap(nangletypes, AnglesObject::OOClass(), angles()->createProperty(AnglesObject::TypeProperty));
+            parseTypeLabelMap(nangletypes, Angles::OOClass(), angles()->createProperty(Angles::TypeProperty));
         }
         else if(keyword.startsWith("Dihedral Type Labels")) {
-            parseTypeLabelMap(ndihedraltypes, DihedralsObject::OOClass(), dihedrals()->createProperty(DihedralsObject::TypeProperty));
+            parseTypeLabelMap(ndihedraltypes, Dihedrals::OOClass(), dihedrals()->createProperty(Dihedrals::TypeProperty));
         }
         else if(keyword.startsWith("Improper Type Labels")) {
-            parseTypeLabelMap(nimpropertypes, ImpropersObject::OOClass(), impropers()->createProperty(ImpropersObject::TypeProperty));
+            parseTypeLabelMap(nimpropertypes, Impropers::OOClass(), impropers()->createProperty(Impropers::TypeProperty));
         }
         else if(keyword.startsWith("Masses")) {
             hasTypeMasses = true;
@@ -424,7 +432,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                         atomTypeName = ParticleType::guessTypeNameFromMass(mass);
                     }
 
-                    type = static_object_cast<ParticleType>(addNumericType(ParticlesObject::OOClass(), typeProperty, atomType, atomTypeName));
+                    type = static_object_cast<ParticleType>(addNumericType(Particles::OOClass(), typeProperty, atomType, atomTypeName));
                 }
                 if(mass != 0 && mass != type->mass()) {
                     ParticleType* mutableType = typeProperty->makeMutable(type);
@@ -456,19 +464,19 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
         else if(keyword.startsWith("Bonds")) {
 
             // Get the atomic IDs, which have already been read.
-            BufferReadAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
+            BufferReadAccess<IdentifierIntType> identifierProperty = particles()->getProperty(Particles::IdentifierProperty);
             if(!identifierProperty)
                 throw Exception(tr("Atoms section must precede Bonds section in data file (error in line %1).").arg(stream.lineNumber()));
 
             // Create bonds storage.
-            BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> bondTopologyProperty = bonds()->createProperty(BondsObject::TopologyProperty);
+            BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> bondTopologyProperty = bonds()->createProperty(Bonds::TopologyProperty);
 
             // Create bond type property.
-            PropertyObject* typeProperty = bonds()->createProperty(BondsObject::TypeProperty);
+            Property* typeProperty = bonds()->createProperty(Bonds::TypeProperty);
 
             // Create bond types.
             for(int i = 1; i <= nbondtypes; i++)
-                addNumericType(BondsObject::OOClass(), typeProperty, i, {});
+                addNumericType(Bonds::OOClass(), typeProperty, i, {});
 
             setProgressMaximum(nbonds);
             BufferWriteAccess<int32_t, access_mode::discard_write> typePropertyAccess(typeProperty);
@@ -531,19 +539,19 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
         else if(keyword.startsWith("Angles")) {
 
             // Get the atomic IDs, which have already been read.
-            BufferReadAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
+            BufferReadAccess<IdentifierIntType> identifierProperty = particles()->getProperty(Particles::IdentifierProperty);
             if(!identifierProperty)
                 throw Exception(tr("Atoms section must precede Angles section in data file (error in line %1).").arg(stream.lineNumber()));
 
             // Create angles topology storage.
-            BufferWriteAccess<ParticleIndexTriplet, access_mode::discard_write> angleTopologyProperty = angles()->createProperty(AnglesObject::TopologyProperty);
+            BufferWriteAccess<ParticleIndexTriplet, access_mode::discard_write> angleTopologyProperty = angles()->createProperty(Angles::TopologyProperty);
 
             // Create angle type property.
-            PropertyObject* typeProperty = angles()->createProperty(AnglesObject::TypeProperty);
+            Property* typeProperty = angles()->createProperty(Angles::TypeProperty);
 
             // Create angle types.
             for(int i = 1; i <= nangletypes; i++)
-                addNumericType(AnglesObject::OOClass(), typeProperty, i, {});
+                addNumericType(Angles::OOClass(), typeProperty, i, {});
 
             setProgressMaximum(nangles);
             BufferWriteAccess<int32_t, access_mode::discard_write> typePropertyAccess(typeProperty);
@@ -593,19 +601,19 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
         else if(keyword.startsWith("Dihedrals")) {
 
             // Get the atomic IDs, which have already been read.
-            BufferReadAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
+            BufferReadAccess<IdentifierIntType> identifierProperty = particles()->getProperty(Particles::IdentifierProperty);
             if(!identifierProperty)
                 throw Exception(tr("Atoms section must precede Dihedrals section in data file (error in line %1).").arg(stream.lineNumber()));
 
             // Create dihedrals topology storage.
-            BufferWriteAccess<ParticleIndexQuadruplet, access_mode::discard_write> dihedralTopologyProperty = dihedrals()->createProperty(DihedralsObject::TopologyProperty);
+            BufferWriteAccess<ParticleIndexQuadruplet, access_mode::discard_write> dihedralTopologyProperty = dihedrals()->createProperty(Dihedrals::TopologyProperty);
 
             // Create dihedral type property.
-            PropertyObject* typeProperty = dihedrals()->createProperty(DihedralsObject::TypeProperty);
+            Property* typeProperty = dihedrals()->createProperty(Dihedrals::TypeProperty);
 
             // Create dihedral types.
             for(int i = 1; i <= ndihedraltypes; i++)
-                addNumericType(DihedralsObject::OOClass(), typeProperty, i, {});
+                addNumericType(Dihedrals::OOClass(), typeProperty, i, {});
 
             setProgressMaximum(ndihedrals);
             BufferWriteAccess<int32_t, access_mode::discard_write> typePropertyAccess(typeProperty);
@@ -655,19 +663,19 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
         else if(keyword.startsWith("Impropers")) {
 
             // Get the atomic IDs, which have already been read.
-            BufferReadAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
+            BufferReadAccess<IdentifierIntType> identifierProperty = particles()->getProperty(Particles::IdentifierProperty);
             if(!identifierProperty)
                 throw Exception(tr("Atoms section must precede Impropers section in data file (error in line %1).").arg(stream.lineNumber()));
 
             // Create improper topology storage.
-            BufferWriteAccess<ParticleIndexQuadruplet, access_mode::discard_write> improperTopologyProperty = impropers()->createProperty(ImpropersObject::TopologyProperty);
+            BufferWriteAccess<ParticleIndexQuadruplet, access_mode::discard_write> improperTopologyProperty = impropers()->createProperty(Impropers::TopologyProperty);
 
             // Create improper type property.
-            PropertyObject* typeProperty = impropers()->createProperty(ImpropersObject::TypeProperty);
+            Property* typeProperty = impropers()->createProperty(Impropers::TypeProperty);
 
             // Create improper types.
             for(int i = 1; i <= nimpropertypes; i++)
-                addNumericType(ImpropersObject::OOClass(), typeProperty, i, {});
+                addNumericType(Impropers::OOClass(), typeProperty, i, {});
 
             setProgressMaximum(nimpropers);
             BufferWriteAccess<int32_t, access_mode::discard_write> typePropertyAccess(typeProperty);
@@ -717,13 +725,15 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
         else if(keyword.startsWith("Ellipsoids")) {
 
             // Get the atomic IDs, which have already been read.
-            BufferReadAccess<IdentifierIntType> identifierProperty = particles()->getProperty(ParticlesObject::IdentifierProperty);
+            BufferReadAccess<IdentifierIntType> identifierProperty = particles()->getProperty(Particles::IdentifierProperty);
             if(!identifierProperty)
                 throw Exception(tr("Atoms section must precede Ellipsoids section in data file (error in line %1).").arg(stream.lineNumber()));
 
             // Create properties for ellipsoidal particles.
-            BufferWriteAccess<Vector3G, access_mode::discard_write> asphericalShapeProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::AsphericalShapeProperty);
-            BufferWriteAccess<QuaternionG, access_mode::discard_write> orientationProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::OrientationProperty);
+            BufferWriteAccess<Vector3G, access_mode::discard_write> asphericalShapeProperty = particles()->createProperty(DataBuffer::Initialized, Particles::AsphericalShapeProperty);
+            BufferWriteAccess<QuaternionG, access_mode::discard_write> orientationProperty = particles()->createProperty(DataBuffer::Initialized, Particles::OrientationProperty);
+            parsedParticleProperties.insert(static_object_cast<Property>(asphericalShapeProperty.buffer()));
+            parsedParticleProperties.insert(static_object_cast<Property>(orientationProperty.buffer()));
 
             setProgressMaximum(nellipsoids);
             for(size_t i = 0; i < (size_t)nellipsoids; i++) {
@@ -778,9 +788,16 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
     if(!foundAtomsSection)
         throw Exception("LAMMPS data file does not contain atomic coordinates.");
 
+    // Remove old properties from the particles which have not been loaded from the data file.
+    for(int index = particles()->properties().size() - 1; index >= 0; index--) {
+        const Property* property = particles()->properties()[index];
+        if(parsedParticleProperties.find(const_cast<Property*>(property)) == parsedParticleProperties.end())
+            particles()->removeProperty(property);
+    }
+
     // Assign masses to particles based on their type.
-    if(hasTypeMasses && !particles()->getProperty(ParticlesObject::MassProperty)) {
-        BufferWriteAccess<FloatType, access_mode::discard_write> massProperty = particles()->createProperty(ParticlesObject::MassProperty);
+    if(hasTypeMasses && !particles()->getProperty(Particles::MassProperty)) {
+        BufferWriteAccess<FloatType, access_mode::discard_write> massProperty = particles()->createProperty(Particles::MassProperty);
         boost::transform(BufferReadAccess<int32_t>(typeProperty), massProperty.begin(), [&](auto atomType) {
             return massTable[atomType - 1];
         });
@@ -938,12 +955,12 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[3].columnName = "x";
         columnMapping[4].columnName = "y";
         columnMapping[5].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::MoleculeProperty);
-        columnMapping.mapStandardColumn(2, ParticlesObject::TypeProperty);
-        columnMapping.mapStandardColumn(3, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::MoleculeProperty);
+        columnMapping.mapStandardColumn(2, Particles::TypeProperty);
+        columnMapping.mapStandardColumn(3, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(4, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(5, Particles::PositionProperty, 2);
         break;
     case AtomStyle_Atomic:
         columnMapping.resize(5);
@@ -952,11 +969,11 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[2].columnName = "x";
         columnMapping[3].columnName = "y";
         columnMapping[4].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
-        columnMapping.mapStandardColumn(2, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(3, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::TypeProperty);
+        columnMapping.mapStandardColumn(2, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(3, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(4, Particles::PositionProperty, 2);
         break;
     case AtomStyle_Body:
         columnMapping.resize(7);
@@ -967,13 +984,13 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[4].columnName = "x";
         columnMapping[5].columnName = "y";
         columnMapping[6].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::TypeProperty);
         // Ignore third column (bodyflag).
-        columnMapping.mapStandardColumn(3, ParticlesObject::MassProperty);
-        columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(6, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(3, Particles::MassProperty);
+        columnMapping.mapStandardColumn(4, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(5, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(6, Particles::PositionProperty, 2);
         break;
     case AtomStyle_Bond:
         columnMapping.resize(6);
@@ -983,12 +1000,12 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[3].columnName = "x";
         columnMapping[4].columnName = "y";
         columnMapping[5].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::MoleculeProperty);
-        columnMapping.mapStandardColumn(2, ParticlesObject::TypeProperty);
-        columnMapping.mapStandardColumn(3, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::MoleculeProperty);
+        columnMapping.mapStandardColumn(2, Particles::TypeProperty);
+        columnMapping.mapStandardColumn(3, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(4, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(5, Particles::PositionProperty, 2);
         break;
     case AtomStyle_Charge:
         columnMapping.resize(6);
@@ -998,12 +1015,12 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[3].columnName = "x";
         columnMapping[4].columnName = "y";
         columnMapping[5].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
-        columnMapping.mapStandardColumn(2, ParticlesObject::ChargeProperty);
-        columnMapping.mapStandardColumn(3, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::TypeProperty);
+        columnMapping.mapStandardColumn(2, Particles::ChargeProperty);
+        columnMapping.mapStandardColumn(3, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(4, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(5, Particles::PositionProperty, 2);
         break;
     case AtomStyle_Dipole:
         columnMapping.resize(9);
@@ -1016,15 +1033,15 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[6].columnName = "mux";
         columnMapping[7].columnName = "muy";
         columnMapping[8].columnName = "muz";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
-        columnMapping.mapStandardColumn(2, ParticlesObject::ChargeProperty);
-        columnMapping.mapStandardColumn(3, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 2);
-        columnMapping.mapStandardColumn(6, ParticlesObject::DipoleOrientationProperty, 0);
-        columnMapping.mapStandardColumn(7, ParticlesObject::DipoleOrientationProperty, 1);
-        columnMapping.mapStandardColumn(8, ParticlesObject::DipoleOrientationProperty, 2);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::TypeProperty);
+        columnMapping.mapStandardColumn(2, Particles::ChargeProperty);
+        columnMapping.mapStandardColumn(3, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(4, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(5, Particles::PositionProperty, 2);
+        columnMapping.mapStandardColumn(6, Particles::DipoleOrientationProperty, 0);
+        columnMapping.mapStandardColumn(7, Particles::DipoleOrientationProperty, 1);
+        columnMapping.mapStandardColumn(8, Particles::DipoleOrientationProperty, 2);
         break;
     case AtomStyle_DPD:
         columnMapping.resize(6);
@@ -1034,12 +1051,12 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[3].columnName = "x";
         columnMapping[4].columnName = "y";
         columnMapping[5].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::TypeProperty);
         columnMapping.mapCustomColumn(2, QStringLiteral("theta"), DataBuffer::FloatDefault);
-        columnMapping.mapStandardColumn(3, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(3, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(4, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(5, Particles::PositionProperty, 2);
         break;
     case AtomStyle_EDPD:
         columnMapping.resize(7);
@@ -1050,13 +1067,13 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[4].columnName = "x";
         columnMapping[5].columnName = "y";
         columnMapping[6].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::TypeProperty);
         columnMapping.mapCustomColumn(2, QStringLiteral("edpd_temp"), DataBuffer::FloatDefault);
         columnMapping.mapCustomColumn(3, QStringLiteral("edpd_cv"), DataBuffer::FloatDefault);
-        columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(6, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(4, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(5, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(6, Particles::PositionProperty, 2);
         break;
     case AtomStyle_MDPD:
         columnMapping.resize(6);
@@ -1066,12 +1083,12 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[3].columnName = "x";
         columnMapping[4].columnName = "y";
         columnMapping[5].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::TypeProperty);
         columnMapping.mapCustomColumn(2, QStringLiteral("rho"), DataBuffer::FloatDefault);
-        columnMapping.mapStandardColumn(3, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(3, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(4, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(5, Particles::PositionProperty, 2);
         break;
     case AtomStyle_Electron:
         columnMapping.resize(8);
@@ -1083,14 +1100,14 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[5].columnName = "x";
         columnMapping[6].columnName = "y";
         columnMapping[7].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
-        columnMapping.mapStandardColumn(2, ParticlesObject::ChargeProperty);
-        columnMapping.mapStandardColumn(3, ParticlesObject::SpinProperty);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::TypeProperty);
+        columnMapping.mapStandardColumn(2, Particles::ChargeProperty);
+        columnMapping.mapStandardColumn(3, Particles::SpinProperty);
         columnMapping.mapCustomColumn(4, QStringLiteral("eradius"), DataBuffer::FloatDefault);
-        columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(6, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(7, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(5, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(6, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(7, Particles::PositionProperty, 2);
         break;
     case AtomStyle_Ellipsoid:
         columnMapping.resize(7);
@@ -1101,13 +1118,13 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[4].columnName = "x";
         columnMapping[5].columnName = "y";
         columnMapping[6].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::TypeProperty);
         columnMapping.mapCustomColumn(2, QStringLiteral("ellipsoidflag"), DataBuffer::Int32);
         columnMapping.mapCustomColumn(3, QStringLiteral("Density"), DataBuffer::FloatDefault);
-        columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(6, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(4, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(5, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(6, Particles::PositionProperty, 2);
         break;
     case AtomStyle_Full:
         columnMapping.resize(7);
@@ -1118,13 +1135,13 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[4].columnName = "x";
         columnMapping[5].columnName = "y";
         columnMapping[6].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::MoleculeProperty);
-        columnMapping.mapStandardColumn(2, ParticlesObject::TypeProperty);
-        columnMapping.mapStandardColumn(3, ParticlesObject::ChargeProperty);
-        columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(6, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::MoleculeProperty);
+        columnMapping.mapStandardColumn(2, Particles::TypeProperty);
+        columnMapping.mapStandardColumn(3, Particles::ChargeProperty);
+        columnMapping.mapStandardColumn(4, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(5, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(6, Particles::PositionProperty, 2);
         break;
     case AtomStyle_Line:
         columnMapping.resize(8);
@@ -1136,14 +1153,14 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[5].columnName = "x";
         columnMapping[6].columnName = "y";
         columnMapping[7].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::MoleculeProperty);
-        columnMapping.mapStandardColumn(2, ParticlesObject::TypeProperty);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::MoleculeProperty);
+        columnMapping.mapStandardColumn(2, Particles::TypeProperty);
         columnMapping.mapCustomColumn(3, QStringLiteral("lineflag"), DataBuffer::Int32);
         columnMapping.mapCustomColumn(4, QStringLiteral("Density"), DataBuffer::FloatDefault);
-        columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(6, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(7, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(5, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(6, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(7, Particles::PositionProperty, 2);
         break;
     case AtomStyle_Meso:
         columnMapping.resize(8);
@@ -1155,14 +1172,14 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[5].columnName = "x";
         columnMapping[6].columnName = "y";
         columnMapping[7].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::TypeProperty);
         columnMapping.mapCustomColumn(2, QStringLiteral("rho"), DataBuffer::FloatDefault);
         columnMapping.mapCustomColumn(3, QStringLiteral("e"), DataBuffer::FloatDefault);
         columnMapping.mapCustomColumn(4, QStringLiteral("cv"), DataBuffer::FloatDefault);
-        columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(6, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(7, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(5, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(6, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(7, Particles::PositionProperty, 2);
         break;
     case AtomStyle_Molecular:
         columnMapping.resize(6);
@@ -1172,12 +1189,12 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[3].columnName = "x";
         columnMapping[4].columnName = "y";
         columnMapping[5].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::MoleculeProperty);
-        columnMapping.mapStandardColumn(2, ParticlesObject::TypeProperty);
-        columnMapping.mapStandardColumn(3, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::MoleculeProperty);
+        columnMapping.mapStandardColumn(2, Particles::TypeProperty);
+        columnMapping.mapStandardColumn(3, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(4, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(5, Particles::PositionProperty, 2);
         break;
     case AtomStyle_Peri:
         columnMapping.resize(7);
@@ -1188,13 +1205,13 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[4].columnName = "x";
         columnMapping[5].columnName = "y";
         columnMapping[6].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::TypeProperty);
         columnMapping.mapCustomColumn(2, QStringLiteral("Volume"), DataBuffer::FloatDefault);
         columnMapping.mapCustomColumn(3, QStringLiteral("Density"), DataBuffer::FloatDefault);
-        columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(6, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(4, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(5, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(6, Particles::PositionProperty, 2);
         break;
     case AtomStyle_SMD:
         columnMapping.resize(13);
@@ -1211,19 +1228,19 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[10].columnName = "x";
         columnMapping[11].columnName = "y";
         columnMapping[12].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::TypeProperty);
         columnMapping.mapCustomColumn(2, QStringLiteral("molecule"), DataBuffer::FloatDefault);
         columnMapping.mapCustomColumn(3, QStringLiteral("Volume"), DataBuffer::FloatDefault);
-        columnMapping.mapStandardColumn(4, ParticlesObject::MassProperty);
+        columnMapping.mapStandardColumn(4, Particles::MassProperty);
         columnMapping.mapCustomColumn(5, QStringLiteral("kernelradius"), DataBuffer::FloatDefault);
         columnMapping.mapCustomColumn(6, QStringLiteral("contactradius"), DataBuffer::FloatDefault);
         columnMapping.mapCustomColumn(7, QStringLiteral("x0"), DataBuffer::FloatDefault);
         columnMapping.mapCustomColumn(8, QStringLiteral("y0"), DataBuffer::FloatDefault);
         columnMapping.mapCustomColumn(9, QStringLiteral("z0"), DataBuffer::FloatDefault);
-        columnMapping.mapStandardColumn(10, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(11, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(12, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(10, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(11, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(12, Particles::PositionProperty, 2);
         break;
     case AtomStyle_Sphere:
         columnMapping.resize(7);
@@ -1234,13 +1251,13 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[4].columnName = "x";
         columnMapping[5].columnName = "y";
         columnMapping[6].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
-        columnMapping.mapStandardColumn(2, ParticlesObject::RadiusProperty);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::TypeProperty);
+        columnMapping.mapStandardColumn(2, Particles::RadiusProperty);
         columnMapping.mapCustomColumn(3, QStringLiteral("Density"), DataBuffer::FloatDefault);
-        columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(6, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(4, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(5, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(6, Particles::PositionProperty, 2);
         break;
     case AtomStyle_Template:
         columnMapping.resize(8);
@@ -1252,14 +1269,14 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[5].columnName = "x";
         columnMapping[6].columnName = "y";
         columnMapping[7].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::MoleculeProperty);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::MoleculeProperty);
         columnMapping.mapCustomColumn(2, QStringLiteral("templateindex"), DataBuffer::Int32);
         columnMapping.mapCustomColumn(3, QStringLiteral("templateatom"), DataBuffer::Int64);
-        columnMapping.mapStandardColumn(4, ParticlesObject::TypeProperty);
-        columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(6, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(7, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(4, Particles::TypeProperty);
+        columnMapping.mapStandardColumn(5, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(6, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(7, Particles::PositionProperty, 2);
         break;
     case AtomStyle_Tri:
         columnMapping.resize(8);
@@ -1271,14 +1288,14 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[5].columnName = "x";
         columnMapping[6].columnName = "y";
         columnMapping[7].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::MoleculeProperty);
-        columnMapping.mapStandardColumn(2, ParticlesObject::TypeProperty);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::MoleculeProperty);
+        columnMapping.mapStandardColumn(2, Particles::TypeProperty);
         columnMapping.mapCustomColumn(3, QStringLiteral("triangleflag"), DataBuffer::Int32);
         columnMapping.mapCustomColumn(4, QStringLiteral("Density"), DataBuffer::FloatDefault);
-        columnMapping.mapStandardColumn(5, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(6, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(7, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(5, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(6, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(7, Particles::PositionProperty, 2);
         break;
     case AtomStyle_Wavepacket:
         columnMapping.resize(11);
@@ -1293,17 +1310,17 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[8].columnName = "x";
         columnMapping[9].columnName = "y";
         columnMapping[10].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
-        columnMapping.mapStandardColumn(2, ParticlesObject::ChargeProperty);
-        columnMapping.mapStandardColumn(3, ParticlesObject::SpinProperty);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::TypeProperty);
+        columnMapping.mapStandardColumn(2, Particles::ChargeProperty);
+        columnMapping.mapStandardColumn(3, Particles::SpinProperty);
         columnMapping.mapCustomColumn(4, QStringLiteral("eradius"), DataBuffer::FloatDefault);
         columnMapping.mapCustomColumn(5, QStringLiteral("etag"), DataBuffer::FloatDefault);
         columnMapping.mapCustomColumn(6, QStringLiteral("cs_re"), DataBuffer::FloatDefault);
         columnMapping.mapCustomColumn(7, QStringLiteral("cs_im"), DataBuffer::FloatDefault);
-        columnMapping.mapStandardColumn(8, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(9, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(10, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(8, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(9, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(10, Particles::PositionProperty, 2);
         break;
     case AtomStyle_Hybrid:
         columnMapping.resize(5);
@@ -1312,11 +1329,11 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         columnMapping[2].columnName = "x";
         columnMapping[3].columnName = "y";
         columnMapping[4].columnName = "z";
-        columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-        columnMapping.mapStandardColumn(1, ParticlesObject::TypeProperty);
-        columnMapping.mapStandardColumn(2, ParticlesObject::PositionProperty, 0);
-        columnMapping.mapStandardColumn(3, ParticlesObject::PositionProperty, 1);
-        columnMapping.mapStandardColumn(4, ParticlesObject::PositionProperty, 2);
+        columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+        columnMapping.mapStandardColumn(1, Particles::TypeProperty);
+        columnMapping.mapStandardColumn(2, Particles::PositionProperty, 0);
+        columnMapping.mapStandardColumn(3, Particles::PositionProperty, 1);
+        columnMapping.mapStandardColumn(4, Particles::PositionProperty, 2);
         for(LAMMPSAtomStyle substyle : atomSubStyles) {
             ParticleInputColumnMapping substyleColumns = createAtomsColumnMapping(substyle, {}, 0);
             for(const InputColumnInfo& substyleColumn : substyleColumns) {
@@ -1335,9 +1352,9 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
         OVITO_ASSERT(false);
     }
     if(columnMapping.size() + 3 == dataColumnCount) {
-        columnMapping.emplace_back(&ParticlesObject::OOClass(), ParticlesObject::PeriodicImageProperty, 0);
-        columnMapping.emplace_back(&ParticlesObject::OOClass(), ParticlesObject::PeriodicImageProperty, 1);
-        columnMapping.emplace_back(&ParticlesObject::OOClass(), ParticlesObject::PeriodicImageProperty, 2);
+        columnMapping.emplace_back(&Particles::OOClass(), Particles::PeriodicImageProperty, 0);
+        columnMapping.emplace_back(&Particles::OOClass(), Particles::PeriodicImageProperty, 1);
+        columnMapping.emplace_back(&Particles::OOClass(), Particles::PeriodicImageProperty, 2);
         columnMapping[columnMapping.size() - 3].columnName = QStringLiteral("nx");
         columnMapping[columnMapping.size() - 2].columnName = QStringLiteral("ny");
         columnMapping[columnMapping.size() - 1].columnName = QStringLiteral("nz");
@@ -1356,19 +1373,19 @@ ParticleInputColumnMapping LAMMPSDataImporter::createVelocitiesColumnMapping(LAM
     columnMapping[1].columnName = "vx";
     columnMapping[2].columnName = "vy";
     columnMapping[3].columnName = "vz";
-    columnMapping.mapStandardColumn(0, ParticlesObject::IdentifierProperty);
-    columnMapping.mapStandardColumn(1, ParticlesObject::VelocityProperty, 0);
-    columnMapping.mapStandardColumn(2, ParticlesObject::VelocityProperty, 1);
-    columnMapping.mapStandardColumn(3, ParticlesObject::VelocityProperty, 2);
+    columnMapping.mapStandardColumn(0, Particles::IdentifierProperty);
+    columnMapping.mapStandardColumn(1, Particles::VelocityProperty, 0);
+    columnMapping.mapStandardColumn(2, Particles::VelocityProperty, 1);
+    columnMapping.mapStandardColumn(3, Particles::VelocityProperty, 2);
     switch(atomStyle) {
     case AtomStyle_Sphere:
         columnMapping.resize(7);
         columnMapping[4].columnName = "wx";
         columnMapping[5].columnName = "wy";
         columnMapping[6].columnName = "wz";
-        columnMapping.mapStandardColumn(4, ParticlesObject::AngularVelocityProperty, 0);
-        columnMapping.mapStandardColumn(5, ParticlesObject::AngularVelocityProperty, 1);
-        columnMapping.mapStandardColumn(6, ParticlesObject::AngularVelocityProperty, 2);
+        columnMapping.mapStandardColumn(4, Particles::AngularVelocityProperty, 0);
+        columnMapping.mapStandardColumn(5, Particles::AngularVelocityProperty, 1);
+        columnMapping.mapStandardColumn(6, Particles::AngularVelocityProperty, 2);
         break;
     case AtomStyle_Electron:
         columnMapping.resize(5);
@@ -1380,9 +1397,9 @@ ParticleInputColumnMapping LAMMPSDataImporter::createVelocitiesColumnMapping(LAM
         columnMapping[4].columnName = "lx";
         columnMapping[5].columnName = "ly";
         columnMapping[6].columnName = "lz";
-        columnMapping.mapStandardColumn(4, ParticlesObject::AngularMomentumProperty, 0);
-        columnMapping.mapStandardColumn(5, ParticlesObject::AngularMomentumProperty, 1);
-        columnMapping.mapStandardColumn(6, ParticlesObject::AngularMomentumProperty, 2);
+        columnMapping.mapStandardColumn(4, Particles::AngularMomentumProperty, 0);
+        columnMapping.mapStandardColumn(5, Particles::AngularMomentumProperty, 1);
+        columnMapping.mapStandardColumn(6, Particles::AngularMomentumProperty, 2);
         break;
     case AtomStyle_Hybrid:
         for(LAMMPSAtomStyle substyle : atomSubStyles) {

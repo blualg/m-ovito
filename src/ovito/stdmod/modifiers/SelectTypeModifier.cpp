@@ -23,13 +23,13 @@
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/core/app/Application.h>
 #include "SelectTypeModifier.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(SelectTypeModifier);
 DEFINE_PROPERTY_FIELD(SelectTypeModifier, sourceProperty);
@@ -45,7 +45,7 @@ SET_PROPERTY_FIELD_LABEL(SelectTypeModifier, selectedTypeNames, "Selected type n
 SelectTypeModifier::SelectTypeModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags)
 {
     // Operate on particles by default.
-    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
+    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("Particles"));
 }
 
 /******************************************************************************
@@ -60,12 +60,12 @@ void SelectTypeModifier::initializeModifier(const ModifierInitializationRequest&
 
         // When the modifier is first inserted, automatically select the most recently added
         // typed property (in GUI mode) or the canonical type property (in script mode).
-        const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
+        const PipelineFlowState& input = request.modificationNode()->evaluateInputSynchronous(request);
         if(const PropertyContainer* container = input.getLeafObject(subject())) {
             PropertyReference bestProperty;
-            for(const PropertyObject* property : container->properties()) {
+            for(const Property* property : container->properties()) {
                 if(property->isTypedProperty()) {
-                    if(ExecutionContext::isInteractive() || property->type() == PropertyObject::GenericTypeProperty) {
+                    if(ExecutionContext::isInteractive() || property->type() == Property::GenericTypeProperty) {
                         bestProperty = PropertyReference(subject().dataClass(), property);
                     }
                 }
@@ -112,17 +112,17 @@ void SelectTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& re
     container->verifyIntegrity();
 
     // Get the input property.
-    const PropertyObject* typePropertyObject = sourceProperty().findInContainer(container);
+    const Property* typePropertyObject = sourceProperty().findInContainer(container);
     if(!typePropertyObject)
         throw Exception(tr("The selected input property '%1' is not present.").arg(sourceProperty().name()));
     if(typePropertyObject->componentCount() != 1)
         throw Exception(tr("The input property '%1' has the wrong number of components. Must be a scalar property.").arg(typePropertyObject->name()));
-    if(typePropertyObject->dataType() != PropertyObject::Int32)
+    if(typePropertyObject->dataType() != Property::Int32)
         throw Exception(tr("The input property '%1' has the wrong data type. Must be a 32-bit integer property.").arg(typePropertyObject->name()));
     BufferReadAccess<int32_t> typeProperty = typePropertyObject;
 
     // Create the selection property.
-    BufferWriteAccess<SelectionIntType, access_mode::discard_write> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty);
+    BufferWriteAccess<SelectionIntType, access_mode::discard_write> selProperty = container->createProperty(Property::GenericSelectionProperty);
 
     // Counts the number of selected elements.
     size_t nSelected = 0;
@@ -155,7 +155,7 @@ void SelectTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& re
         return 0;
     });
 
-    state.addAttribute(QStringLiteral("SelectType.num_selected"), QVariant::fromValue(nSelected), request.modApp());
+    state.addAttribute(QStringLiteral("SelectType.num_selected"), QVariant::fromValue(nSelected), request.modificationNode());
 
     QString statusMessage = tr("%1 out of %2 %3 selected (%4%)")
         .arg(nSelected)
@@ -178,7 +178,7 @@ QVariantList SelectTypeModifier::getElementTypesFromInputState(ModifierApplicati
         // Populate types list based on the selected input property.
         const PipelineFlowState& state = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
         if(const PropertyContainer* container = state.getLeafObject(subject())) {
-            if(const PropertyObject* inputProperty = sourceProperty().findInContainer(container)) {
+            if(const Property* inputProperty = sourceProperty().findInContainer(container)) {
                 for(const ElementType* type : inputProperty->elementTypes()) {
                     if(!type) continue;
                     list.push_back(QVariantMap({
@@ -222,16 +222,16 @@ void SelectTypeModifier::setElementTypeSelectionState(int32_t elementTypeId, con
 * Returns a short piece information (typically a string or color) to be
 * displayed next to the object's title in the pipeline editor.
 ******************************************************************************/
-QVariant SelectTypeModifier::getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const
+QVariant SelectTypeModifier::getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const
 {
     OVITO_ASSERT(ExecutionContext::current().isValid());
     OVITO_ASSERT(scene);
 
     QString shortInfo;
-    if(modApp && subject() && !sourceProperty().isNull() && sourceProperty().containerClass() == subject().dataClass()) {
-        const PipelineFlowState& state = modApp->evaluateInputSynchronous(PipelineEvaluationRequest(scene->animationSettings()));
+    if(node && subject() && !sourceProperty().isNull() && sourceProperty().containerClass() == subject().dataClass()) {
+        const PipelineFlowState& state = node->evaluateInputSynchronous(PipelineEvaluationRequest(scene->animationSettings()));
         if(const PropertyContainer* container = state.getLeafObject(subject())) {
-            if(const PropertyObject* inputProperty = sourceProperty().findInContainer(container)) {
+            if(const Property* inputProperty = sourceProperty().findInContainer(container)) {
                 auto sortedIds = selectedTypeIDs().values();
                 boost::sort(sortedIds);
                 for(int id : sortedIds) {

@@ -26,7 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "Modifier.h"
-#include "ModifierApplication.h"
+#include "ModificationNode.h"
 
 namespace Ovito {
 
@@ -83,8 +83,8 @@ public:
         /// Changes the validity interval of the computation results.
         void setValidityInterval(const TimeInterval& iv) { _validityInterval = iv; }
 
-        /// Returns the object to be set as data source of data objects newly created by the engine.
-        const PipelineObject* dataSource() const { return _request.modApp(); }
+        /// Returns the modification pipeline node.
+        const ModificationNode* modificationNode() const { return _request.modificationNode(); }
 
     private:
 
@@ -124,7 +124,7 @@ protected:
     virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) = 0;
 
     /// This function is called from AsynchronousModifier::evaluateSynchronous() to apply the results from the last
-    /// asycnhronous compute engine during a synchronous pipeline evaluation.
+    /// asynchronous compute engine during a synchronous pipeline evaluation.
     virtual bool applyCachedResultsSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state);
 };
 

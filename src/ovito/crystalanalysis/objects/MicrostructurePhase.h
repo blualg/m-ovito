@@ -28,7 +28,7 @@
 #include <ovito/particles/objects/ParticleType.h>
 #include "BurgersVectorFamily.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /**
  * \brief Data structure representing a phase (e.g. a crystal structure) in a Microstructure.

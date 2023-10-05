@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/rendering/SceneRenderer.h>
@@ -29,7 +29,7 @@
 #include <ovito/core/rendering/CylinderPrimitive.h>
 #include "NucleotidesVis.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(NucleotidesVis);
 DEFINE_PROPERTY_FIELD(NucleotidesVis, cylinderRadius);
@@ -48,13 +48,13 @@ NucleotidesVis::NucleotidesVis(ObjectInitializationFlags flags) : ParticlesVis(f
 /******************************************************************************
 * Computes the bounding box of the visual element.
 ******************************************************************************/
-Box3 NucleotidesVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 NucleotidesVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
 {
-    const ParticlesObject* particles = path.lastAs<ParticlesObject>();
+    const Particles* particles = path.lastAs<Particles>();
     if(!particles) return {};
     particles->verifyIntegrity();
-    const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
-    const PropertyObject* nucleotideAxisProperty = particles->getProperty(ParticlesObject::NucleotideAxisProperty);
+    const Property* positionProperty = particles->getProperty(Particles::PositionProperty);
+    const Property* nucleotideAxisProperty = particles->getProperty(Particles::NucleotideAxisProperty);
 
     // The key type used for caching the computed bounding box:
     using CacheKey = std::tuple<
@@ -97,24 +97,24 @@ Box3 NucleotidesVis::boundingBox(AnimationTime time, const ConstDataObjectPath& 
 * Returns the typed particle property used to determine the rendering colors
 * of particles (if no per-particle colors are defined).
 ******************************************************************************/
-const PropertyObject* NucleotidesVis::getParticleTypeColorProperty(const ParticlesObject* particles) const
+const Property* NucleotidesVis::getParticleTypeColorProperty(const Particles* particles) const
 {
-    return particles->getProperty(ParticlesObject::DNAStrandProperty);
+    return particles->getProperty(Particles::DNAStrandProperty);
 }
 
 /******************************************************************************
 * Returns the typed particle property used to determine the rendering radii
 * of particles (if no per-particle radii are defined).
 ******************************************************************************/
-const PropertyObject* NucleotidesVis::getParticleTypeRadiusProperty(const ParticlesObject* particles) const
+const Property* NucleotidesVis::getParticleTypeRadiusProperty(const Particles* particles) const
 {
-    return particles->getProperty(ParticlesObject::TypeProperty);
+    return particles->getProperty(Particles::TypeProperty);
 }
 
 /******************************************************************************
 * Determines the effective rendering colors for the backbone sites of the nucleotides.
 ******************************************************************************/
-ConstPropertyPtr NucleotidesVis::backboneColors(const ParticlesObject* particles, bool highlightSelection) const
+ConstPropertyPtr NucleotidesVis::backboneColors(const Particles* particles, bool highlightSelection) const
 {
     return particleColors(particles, highlightSelection);
 }
@@ -122,15 +122,15 @@ ConstPropertyPtr NucleotidesVis::backboneColors(const ParticlesObject* particles
 /******************************************************************************
 * Determines the effective rendering colors for the base sites of the nucleotides.
 ******************************************************************************/
-ConstPropertyPtr NucleotidesVis::nucleobaseColors(const ParticlesObject* particles, bool highlightSelection) const
+ConstPropertyPtr NucleotidesVis::nucleobaseColors(const Particles* particles, bool highlightSelection) const
 {
     particles->verifyIntegrity();
 
     // Allocate output color array.
-    PropertyPtr output = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), ParticlesObject::ColorProperty);
+    PropertyPtr output = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), Particles::ColorProperty);
 
     ColorG defaultColor = defaultParticleColor().toDataType<GraphicsFloatType>();
-    if(const PropertyObject* baseProperty = particles->getProperty(ParticlesObject::NucleobaseTypeProperty)) {
+    if(const Property* baseProperty = particles->getProperty(Particles::NucleobaseTypeProperty)) {
         // Assign colors based on base type.
         // Generate a lookup map for base type colors.
         const std::map<int,Color> colorMap = baseProperty->typeColorMap();
@@ -172,7 +172,7 @@ ConstPropertyPtr NucleotidesVis::nucleobaseColors(const ParticlesObject* particl
     }
 
     // Highlight selected sites.
-    if(const PropertyObject* selectionProperty = highlightSelection ? particles->getProperty(ParticlesObject::SelectionProperty) : nullptr)
+    if(const Property* selectionProperty = highlightSelection ? particles->getProperty(Particles::SelectionProperty) : nullptr)
         output->fillSelected<ColorG>(selectionParticleColor().toDataType<GraphicsFloatType>(), *selectionProperty);
 
     return output;
@@ -181,27 +181,27 @@ ConstPropertyPtr NucleotidesVis::nucleobaseColors(const ParticlesObject* particl
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
 {
     if(renderer->isBoundingBoxPass()) {
         TimeInterval validityInterval;
-        renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, renderer->visCache(), validityInterval));
+        renderer->addToLocalBoundingBox(boundingBox(time, path, pipeline, flowState, renderer->visCache(), validityInterval));
         return {};
     }
 
     // Get input data.
-    const ParticlesObject* particles = path.lastAs<ParticlesObject>();
+    const Particles* particles = path.lastAs<Particles>();
     if(!particles) return {};
     particles->verifyIntegrity();
-    const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
+    const Property* positionProperty = particles->getProperty(Particles::PositionProperty);
     if(!positionProperty) return {};
-    const PropertyObject* colorProperty = particles->getProperty(ParticlesObject::ColorProperty);
-    const PropertyObject* baseProperty = particles->getProperty(ParticlesObject::NucleobaseTypeProperty);
-    const PropertyObject* strandProperty = particles->getProperty(ParticlesObject::DNAStrandProperty);
-    const PropertyObject* selectionProperty = renderer->isInteractive() ? particles->getProperty(ParticlesObject::SelectionProperty) : nullptr;
-    const PropertyObject* transparencyProperty = particles->getProperty(ParticlesObject::TransparencyProperty);
-    const PropertyObject* nucleotideAxisProperty = particles->getProperty(ParticlesObject::NucleotideAxisProperty);
-    const PropertyObject* nucleotideNormalProperty = particles->getProperty(ParticlesObject::NucleotideNormalProperty);
+    const Property* colorProperty = particles->getProperty(Particles::ColorProperty);
+    const Property* baseProperty = particles->getProperty(Particles::NucleobaseTypeProperty);
+    const Property* strandProperty = particles->getProperty(Particles::DNAStrandProperty);
+    const Property* selectionProperty = renderer->isInteractive() ? particles->getProperty(Particles::SelectionProperty) : nullptr;
+    const Property* transparencyProperty = particles->getProperty(Particles::TransparencyProperty);
+    const Property* nucleotideAxisProperty = particles->getProperty(Particles::NucleotideAxisProperty);
+    const Property* nucleotideNormalProperty = particles->getProperty(Particles::NucleotideNormalProperty);
 
     // Make sure we don't exceed our internal limits.
     if(particles->elementCount() > (size_t)std::numeric_limits<int>::max()) {
@@ -210,7 +210,7 @@ PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectP
 
     // The type of lookup key used for caching the rendering primitives:
     using NucleotidesCacheKey = RendererResourceKey<struct NucleotidesVisCache,
-        QPointer<PipelineSceneNode>,// Pipeline scene node
+        QPointer<Pipeline>,         // Pipeline scene node
         ConstDataObjectRef,         // Position property
         ConstDataObjectRef,         // Color property
         ConstDataObjectRef,         // Strand property
@@ -232,7 +232,7 @@ PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectP
 
     // Look up the rendering primitives in the vis cache.
     auto& visCache = renderer->visCache().get<NucleotidesCacheValue>(NucleotidesCacheKey(
-        const_cast<PipelineSceneNode*>(contextNode),
+        const_cast<Pipeline*>(pipeline),
         positionProperty,
         colorProperty,
         strandProperty,
@@ -289,7 +289,7 @@ PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectP
 
             // Fill in base orientations.
             if(BufferReadAccess<Vector3> nucleotideNormalArray = nucleotideNormalProperty) {
-                PropertyPtr orientations = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), ParticlesObject::OrientationProperty);
+                PropertyPtr orientations = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), Particles::OrientationProperty);
                 BufferWriteAccess<QuaternionG, access_mode::discard_write> orientationsAccess(orientations);
                 for(size_t i = 0; i < orientations->size(); i++) {
                     if(nucleotideNormalArray[i] != Vector3::Zero() && nucleotideAxisArray[i] != Vector3::Zero()) {
@@ -340,7 +340,7 @@ PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectP
         visCache.pickInfo->setParticles(particles);
     }
 
-    renderer->beginPickObject(contextNode, visCache.pickInfo);
+    renderer->beginPickObject(pipeline, visCache.pickInfo);
 
     renderer->renderParticles(visCache.backbonePrimitive);
     if(visCache.connectionPrimitive.basePositions())

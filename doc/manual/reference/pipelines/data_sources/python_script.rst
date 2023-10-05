@@ -134,5 +134,5 @@ element shown in the following screenshot is an example of such a user-defined p
 
 .. seealso::
 
-  * :py:class:`ovito.pipeline.PythonScriptSource` (Python API)
+  * :py:class:`ovito.pipeline.PythonSource` (Python API)
   * :py:class:`ovito.pipeline.PipelineSourceInterface` (Python API)

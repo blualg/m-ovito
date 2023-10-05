@@ -22,7 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 
 namespace Ovito {
 
@@ -31,29 +31,29 @@ DEFINE_PROPERTY_FIELD(ModifierGroup, isCollapsed);
 SET_PROPERTY_FIELD_LABEL(ModifierGroup, isCollapsed, "Collapsed");
 
 /******************************************************************************
-* This is called from a ModifierApplication whenever it becomes a member of this group.
+* This is called from a ModificationNode whenever it becomes a member of this group.
 ******************************************************************************/
-void ModifierGroup::registerModApp(ModifierApplication* modApp)
+void ModifierGroup::registerNode(ModificationNode* node)
 {
-    connect(modApp, &ModifierApplication::objectEvent, this, &ModifierGroup::modAppEvent, Qt::UniqueConnection);
+    connect(node, &ModificationNode::objectEvent, this, &ModifierGroup::modificationNodeEvent, Qt::UniqueConnection);
     updateCombinedStatus();
-    Q_EMIT modifierAdded(modApp);
+    Q_EMIT modifierAdded(node);
 }
 
 /******************************************************************************
-* This is called from a ModifierApplication whenever it is removed from this group.
+* This is called from a ModificationNode whenever it is removed from this group.
 ******************************************************************************/
-void ModifierGroup::unregisterModApp(ModifierApplication* modApp)
+void ModifierGroup::unregisterNode(ModificationNode* node)
 {
-    disconnect(modApp, &ModifierApplication::objectEvent, this, &ModifierGroup::modAppEvent);
+    disconnect(node, &ModificationNode::objectEvent, this, &ModifierGroup::modificationNodeEvent);
     updateCombinedStatus();
-    Q_EMIT modifierRemoved(modApp);
+    Q_EMIT modifierRemoved(node);
 }
 
 /******************************************************************************
-* Is called when one of the group's modapps has generated an event.
+* Is called when one of the group's nodes has generated an event.
 ******************************************************************************/
-void ModifierGroup::modAppEvent(RefTarget* sender, const ReferenceEvent& event)
+void ModifierGroup::modificationNodeEvent(RefTarget* sender, const ReferenceEvent& event)
 {
     if(event.type() == ReferenceEvent::ObjectStatusChanged) {
         // Update the group's status whenever the status of one of its members changes.
@@ -71,20 +71,20 @@ void ModifierGroup::updateCombinedStatus()
     PipelineStatus combinedStatus(PipelineStatus::Success);
     if(isEnabled()) {
         visitDependents([&](RefMaker* dependent) {
-            if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dependent)) {
-                OVITO_ASSERT(modApp->modifierGroup() == this);
-                if(modApp->isObjectActive())
+            if(ModificationNode* node = dynamic_object_cast<ModificationNode>(dependent)) {
+                OVITO_ASSERT(node->modifierGroup() == this);
+                if(node->isObjectActive())
                     isActive = true;
 
-                if(modApp->modifier() && modApp->modifier()->isEnabled()) {
-                    const PipelineStatus& modAppStatus = modApp->status();
-                    if(combinedStatus.type() == PipelineStatus::Success || modAppStatus.type() == PipelineStatus::Error)
-                        combinedStatus.setType(modAppStatus.type());
-                    if(!modAppStatus.text().isEmpty()) {
+                if(node->modifier() && node->modifier()->isEnabled()) {
+                    const PipelineStatus& nodeStatus = node->status();
+                    if(combinedStatus.type() == PipelineStatus::Success || nodeStatus.type() == PipelineStatus::Error)
+                        combinedStatus.setType(nodeStatus.type());
+                    if(!nodeStatus.text().isEmpty()) {
                         if(!combinedStatus.text().isEmpty())
-                            combinedStatus.setText(combinedStatus.text() + QStringLiteral("\n") + modAppStatus.text());
+                            combinedStatus.setText(combinedStatus.text() + QStringLiteral("\n") + nodeStatus.text());
                         else
-                            combinedStatus.setText(modAppStatus.text());
+                            combinedStatus.setText(nodeStatus.text());
                     }
                 }
             }
@@ -99,47 +99,46 @@ void ModifierGroup::updateCombinedStatus()
 }
 
 /******************************************************************************
-* Returns the list of modifier applications that are part of this group.
+* Returns the list of pipeline nodes that are part of this group.
 ******************************************************************************/
-QVector<ModifierApplication*> ModifierGroup::modifierApplications() const
+QVector<ModificationNode*> ModifierGroup::nodes() const
 {
-    // Gather the list of modapps that are part of the group.
-    QVector<ModifierApplication*> modApps;
+    QVector<ModificationNode*> nodes;
     visitDependents([&](RefMaker* dependent) {
-        if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dependent))
-            modApps.push_back(modApp);
+        if(ModificationNode* node = dynamic_object_cast<ModificationNode>(dependent))
+            nodes.push_back(node);
     });
-    if(!modApps.empty()) {
-        // Order the modapps according to their sequence in the data pipeline.
-        boost::sort(modApps, [](ModifierApplication* a, ModifierApplication* b) {
+    if(!nodes.empty()) {
+        // Order the nodes according to their sequence in the data pipeline.
+        boost::sort(nodes, [](ModificationNode* a, ModificationNode* b) {
             return b->isReferencedBy(a);
         });
 #ifdef OVITO_DEBUG
-        // The input (successor) of the last modapp (the group's tail) should not be part of the modifier group.
-        ModifierApplication* successor = !modApps.empty() ? dynamic_object_cast<ModifierApplication>(modApps.back()->input()) : nullptr;
+        // The input (successor) of the last node (the group's tail) should not be part of the modifier group.
+        ModificationNode* successor = !nodes.empty() ? dynamic_object_cast<ModificationNode>(nodes.back()->input()) : nullptr;
         OVITO_ASSERT(!successor || successor->modifierGroup() != this);
-        // All others should be referenced by the group's head modapp. This ensures that the modapps are all from the same pipeline branch.
-        for(ModifierApplication* modApp : modApps) {
-            OVITO_ASSERT(modApp->modifierGroup() == this);
-            OVITO_ASSERT(modApp->isReferencedBy(modApps.front()));
+        // All others should be referenced by the group's head node. This ensures that the node are all from the same pipeline branch.
+        for(ModificationNode* node : nodes) {
+            OVITO_ASSERT(node->modifierGroup() == this);
+            OVITO_ASSERT(node->isReferencedBy(nodes.front()));
         }
 #endif
     }
 
-    return modApps;
+    return nodes;
 }
 
 /******************************************************************************
 * Returns the list of pipelines that contain this modifier group.
 ******************************************************************************/
-QSet<PipelineSceneNode*> ModifierGroup::pipelines(bool onlyScenePipelines) const
+QSet<Pipeline*> ModifierGroup::pipelines(bool onlyScenePipelines) const
 {
-    QSet<PipelineSceneNode*> pipelineList;
+    QSet<Pipeline*> pipelinesList;
     visitDependents([&](RefMaker* dependent) {
-        if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dependent))
-            pipelineList.unite(modApp->pipelines(onlyScenePipelines));
+        if(ModificationNode* node = dynamic_object_cast<ModificationNode>(dependent))
+            pipelinesList.unite(node->pipelines(onlyScenePipelines));
     });
-    return pipelineList;
+    return pipelinesList;
 }
 
 }   // End of namespace

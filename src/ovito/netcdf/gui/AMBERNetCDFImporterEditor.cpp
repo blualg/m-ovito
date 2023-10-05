@@ -49,7 +49,7 @@
 #include <ovito/core/dataset/io/FileSource.h>
 #include "AMBERNetCDFImporterEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(AMBERNetCDFImporterEditor);
 SET_OVITO_OBJECT_EDITOR(AMBERNetCDFImporter, AMBERNetCDFImporterEditor);

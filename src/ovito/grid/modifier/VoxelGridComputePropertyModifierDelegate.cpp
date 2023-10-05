@@ -25,7 +25,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include "VoxelGridComputePropertyModifierDelegate.h"
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(VoxelGridComputePropertyModifierDelegate);
 

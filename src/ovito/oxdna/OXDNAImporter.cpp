@@ -22,16 +22,16 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/app/Application.h>
 #include "OXDNAImporter.h"
 #include "NucleotidesVis.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(OXDNAImporter);
 DEFINE_PROPERTY_FIELD(OXDNAImporter, topologyFileUrl);
@@ -166,16 +166,16 @@ void OXDNAImporter::FrameLoader::loadFile()
         particles()->setVisElement(OORef<NucleotidesVis>::create());
 
     // Define nucleobase types.
-    PropertyObject* baseProperty = particles()->createProperty(ParticlesObject::NucleobaseTypeProperty);
-    addNumericType(ParticlesObject::OOClass(), baseProperty, 1, QStringLiteral("T"));
-    addNumericType(ParticlesObject::OOClass(), baseProperty, 2, QStringLiteral("C"));
-    addNumericType(ParticlesObject::OOClass(), baseProperty, 3, QStringLiteral("G"));
-    addNumericType(ParticlesObject::OOClass(), baseProperty, 4, QStringLiteral("A"));
+    Property* baseProperty = particles()->createProperty(Particles::NucleobaseTypeProperty);
+    addNumericType(Particles::OOClass(), baseProperty, 1, QStringLiteral("T"));
+    addNumericType(Particles::OOClass(), baseProperty, 2, QStringLiteral("C"));
+    addNumericType(Particles::OOClass(), baseProperty, 3, QStringLiteral("G"));
+    addNumericType(Particles::OOClass(), baseProperty, 4, QStringLiteral("A"));
 
     // Define strands list.
-    PropertyObject* strandsProperty = particles()->createProperty(ParticlesObject::DNAStrandProperty);
+    Property* strandsProperty = particles()->createProperty(Particles::DNAStrandProperty);
     for(int i = 1; i <= numStrands; i++)
-        addNumericType(ParticlesObject::OOClass(), strandsProperty, i, {});
+        addNumericType(Particles::OOClass(), strandsProperty, i, {});
 
     BufferWriteAccess<int32_t, access_mode::discard_write> baseAccess(baseProperty);
     BufferWriteAccess<int32_t, access_mode::discard_write> strandsAccess(strandsProperty);
@@ -208,14 +208,14 @@ void OXDNAImporter::FrameLoader::loadFile()
         if(neighbor2 != -1)
             bonds.push_back({(qlonglong)i, neighbor2});
 
-        *baseTypeIter++ = addNamedType(ParticlesObject::OOClass(), baseProperty, QLatin1String(baseName))->numericId();
+        *baseTypeIter++ = addNamedType(Particles::OOClass(), baseProperty, QLatin1String(baseName))->numericId();
     }
     baseAccess.reset();
     strandsAccess.reset();
 
     // Create and fill bonds topology storage.
     setBondCount(bonds.size());
-    BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> bondTopologyAccess = this->bonds()->createProperty(BondsObject::TopologyProperty);
+    BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> bondTopologyAccess = this->bonds()->createProperty(Bonds::TopologyProperty);
     boost::copy(bonds, bondTopologyAccess.begin());
 
     nextProgressSubStep();
@@ -227,7 +227,7 @@ void OXDNAImporter::FrameLoader::loadFile()
     FloatType simulationTime;
     if(sscanf(stream.readLineTrimLeft(), "t = " FLOATTYPE_SCANF_STRING, &simulationTime) != 1)
         throw Exception(tr("Invalid header format encountered in line %1 of oxDNA configuration file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
-    state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(simulationTime), dataSource());
+    state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(simulationTime), pipelineNode());
 
     // Parse the 2nd line: "b = Lx Ly Lz".
     AffineTransformation cellMatrix = AffineTransformation::Identity();
@@ -240,28 +240,28 @@ void OXDNAImporter::FrameLoader::loadFile()
     FloatType Etot, U, K;
     if(sscanf(stream.readLineTrimLeft(), "E = " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &Etot, &U, &K) != 3)
         throw Exception(tr("Invalid header format encountered in line %1 of oxDNA configuration file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
-    state().setAttribute(QStringLiteral("Etot"), QVariant::fromValue(Etot), dataSource());
-    state().setAttribute(QStringLiteral("U"), QVariant::fromValue(U), dataSource());
-    state().setAttribute(QStringLiteral("K"), QVariant::fromValue(K), dataSource());
+    state().setAttribute(QStringLiteral("Etot"), QVariant::fromValue(Etot), pipelineNode());
+    state().setAttribute(QStringLiteral("U"), QVariant::fromValue(U), pipelineNode());
+    state().setAttribute(QStringLiteral("K"), QVariant::fromValue(K), pipelineNode());
 
     // Define the column data layout in the input file to be parsed.
     ParticleInputColumnMapping columnMapping;
     columnMapping.resize(15);
-    columnMapping.mapStandardColumn(0, ParticlesObject::PositionProperty, 0);
-    columnMapping.mapStandardColumn(1, ParticlesObject::PositionProperty, 1);
-    columnMapping.mapStandardColumn(2, ParticlesObject::PositionProperty, 2);
-    columnMapping.mapStandardColumn(3, ParticlesObject::NucleotideAxisProperty, 0);
-    columnMapping.mapStandardColumn(4, ParticlesObject::NucleotideAxisProperty, 1);
-    columnMapping.mapStandardColumn(5, ParticlesObject::NucleotideAxisProperty, 2);
-    columnMapping.mapStandardColumn(6, ParticlesObject::NucleotideNormalProperty, 0);
-    columnMapping.mapStandardColumn(7, ParticlesObject::NucleotideNormalProperty, 1);
-    columnMapping.mapStandardColumn(8, ParticlesObject::NucleotideNormalProperty, 2);
-    columnMapping.mapStandardColumn(9, ParticlesObject::VelocityProperty, 0);
-    columnMapping.mapStandardColumn(10, ParticlesObject::VelocityProperty, 1);
-    columnMapping.mapStandardColumn(11, ParticlesObject::VelocityProperty, 2);
-    columnMapping.mapStandardColumn(12, ParticlesObject::AngularVelocityProperty, 0);
-    columnMapping.mapStandardColumn(13, ParticlesObject::AngularVelocityProperty, 1);
-    columnMapping.mapStandardColumn(14, ParticlesObject::AngularVelocityProperty, 2);
+    columnMapping.mapStandardColumn(0, Particles::PositionProperty, 0);
+    columnMapping.mapStandardColumn(1, Particles::PositionProperty, 1);
+    columnMapping.mapStandardColumn(2, Particles::PositionProperty, 2);
+    columnMapping.mapStandardColumn(3, Particles::NucleotideAxisProperty, 0);
+    columnMapping.mapStandardColumn(4, Particles::NucleotideAxisProperty, 1);
+    columnMapping.mapStandardColumn(5, Particles::NucleotideAxisProperty, 2);
+    columnMapping.mapStandardColumn(6, Particles::NucleotideNormalProperty, 0);
+    columnMapping.mapStandardColumn(7, Particles::NucleotideNormalProperty, 1);
+    columnMapping.mapStandardColumn(8, Particles::NucleotideNormalProperty, 2);
+    columnMapping.mapStandardColumn(9, Particles::VelocityProperty, 0);
+    columnMapping.mapStandardColumn(10, Particles::VelocityProperty, 1);
+    columnMapping.mapStandardColumn(11, Particles::VelocityProperty, 2);
+    columnMapping.mapStandardColumn(12, Particles::AngularVelocityProperty, 0);
+    columnMapping.mapStandardColumn(13, Particles::AngularVelocityProperty, 1);
+    columnMapping.mapStandardColumn(14, Particles::AngularVelocityProperty, 2);
 
     // Parse data table.
     InputColumnReader columnParser(*this, columnMapping, particles(), false);
@@ -283,8 +283,8 @@ void OXDNAImporter::FrameLoader::loadFile()
     // Displace particle positions. oxDNA stores center of mass coordinates, but OVITO expects particle coordinates to be backbone sphere centers.
     BufferWriteAccess<Point3, access_mode::discard_read_write> centerOfMassPositionsArray = particles()->createProperty(QStringLiteral("Center Of Mass"), DataBuffer::FloatDefault, 3, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z"));
     BufferWriteAccess<Point3, access_mode::discard_write> basePositionsArray = particles()->createProperty(QStringLiteral("Base Position"), DataBuffer::FloatDefault, 3, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z"));
-    BufferWriteAccess<Point3, access_mode::read_write> positionsArray = particles()->getMutableProperty(ParticlesObject::PositionProperty);
-    BufferReadAccess<Vector3> axisVectorArray = particles()->expectProperty(ParticlesObject::NucleotideAxisProperty);
+    BufferWriteAccess<Point3, access_mode::read_write> positionsArray = particles()->getMutableProperty(Particles::PositionProperty);
+    BufferReadAccess<Vector3> axisVectorArray = particles()->expectProperty(Particles::NucleotideAxisProperty);
     for(size_t i = 0; i < numNucleotidesLong; i++) {
         centerOfMassPositionsArray[i] = positionsArray[i];
         positionsArray[i] -= 0.4 * axisVectorArray[i];

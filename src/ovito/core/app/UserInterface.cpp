@@ -29,7 +29,6 @@
 
 #include <QOperatingSystemVersion>
 #include <QAbstractEventDispatcher>
-#include <QProcess>
 
 namespace Ovito {
 

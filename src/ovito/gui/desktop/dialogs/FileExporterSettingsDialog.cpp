@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -172,7 +172,7 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
     scene.visitChildren([this, exporter](SceneNode* node) {
         if(exporter->isSuitableNode(node)) {
             _sceneNodeBox->addItem(node->objectTitle(), QVariant::fromValue(OORef<OvitoObject>(node)));
-            if(node == exporter->nodeToExport())
+            if(node == exporter->sceneNodeToExport())
                 _sceneNodeBox->setCurrentIndex(_sceneNodeBox->count() - 1);
         }
         return true;
@@ -190,7 +190,7 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
     // Update exporter whenever a new source pipeline has been selected by the user.
     connect(_sceneNodeBox, qOverload<int>(&QComboBox::currentIndexChanged), this, [this]() {
         _mainWindow.handleExceptions([&] {
-            _exporter->setNodeToExport(static_object_cast<SceneNode>(_sceneNodeBox->currentData().value<OORef<OvitoObject>>()));
+            _exporter->setSceneNodeToExport(static_object_cast<SceneNode>(_sceneNodeBox->currentData().value<OORef<OvitoObject>>()));
         });
     });
 
@@ -231,7 +231,7 @@ void FileExporterSettingsDialog::updateDataObjectList()
     _mainWindow.handleExceptions([&] {
         std::vector<DataObjectClassPtr> objClasses = _exporter->exportableDataObjectClass();
         if(!objClasses.empty() && _exporter->sceneToExport()) {
-            if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(_exporter->nodeToExport())) {
+            if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(_exporter->sceneNodeToExport())) {
                 if(const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(_exporter->sceneToExport()->animationSettings()->currentTime(), true)) {
                     for(DataObjectClassPtr clazz : objClasses) {
                         OVITO_ASSERT(clazz != nullptr);

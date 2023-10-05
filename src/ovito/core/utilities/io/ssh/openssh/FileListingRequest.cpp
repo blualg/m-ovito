@@ -24,7 +24,7 @@
 #include "FileListingRequest.h"
 #include "OpensshConnection.h"
 
-namespace Ovito::Ssh {
+namespace Ovito {
 
 /******************************************************************************
 * Constructor.

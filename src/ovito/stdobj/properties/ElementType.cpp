@@ -21,14 +21,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/PropertyContainerClass.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include "ElementType.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ElementType);
 DEFINE_PROPERTY_FIELD(ElementType, numericId);
@@ -113,13 +113,13 @@ Color ElementType::getDefaultColor(const PropertyReference& property, const QStr
 
         // The following is for backward compatibility with OVITO 3.3.5, which used to store the
         // default colors in a different branch of the settings registry.
-        if(property.containerClass()->name() == QStringLiteral("ParticlesObject")) {
+        if(property.containerClass()->name() == QStringLiteral("Particles")) {
             // Load particle type colors.
             QVariant v = QSettings().value(QStringLiteral("particles/defaults/color/%1/%2").arg(property.type()).arg(typeName));
             if(v.isValid() && v.typeId() == QMetaType::QColor)
                 return v.value<Color>();
         }
-        else if(property.containerClass()->name() == QStringLiteral("BondsObject")) {
+        else if(property.containerClass()->name() == QStringLiteral("Bonds")) {
             // Load bond type colors.
             QVariant v = QSettings().value(QStringLiteral("bonds/defaults/color/%1/%2").arg(property.type()).arg(typeName));
             if(v.isValid() && v.typeId() == QMetaType::QColor)

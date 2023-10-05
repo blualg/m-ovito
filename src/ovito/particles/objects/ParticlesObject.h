@@ -26,18 +26,18 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
-#include "BondsObject.h"
-#include "AnglesObject.h"
-#include "DihedralsObject.h"
-#include "ImpropersObject.h"
+#include "Bonds.h"
+#include "Angles.h"
+#include "Dihedrals.h"
+#include "Impropers.h"
 #include "BondType.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief This data object type is a container for particle properties.
  */
-class OVITO_PARTICLES_EXPORT ParticlesObject : public PropertyContainer
+class OVITO_PARTICLES_EXPORT Particles : public PropertyContainer
 {
     /// Define a new property metaclass for particle containers.
     class OVITO_PARTICLES_EXPORT OOMetaClass : public PropertyContainerClass
@@ -61,7 +61,7 @@ class OVITO_PARTICLES_EXPORT ParticlesObject : public PropertyContainer
         virtual size_t remapElementIndex(const ConstDataObjectPath& source, size_t elementIndex, const ConstDataObjectPath& dest) const override;
 
         /// Determines which elements are located within the given viewport fence region (=2D polygon).
-        virtual boost::dynamic_bitset<> viewportFenceSelection(const QVector<Point2>& fence, const ConstDataObjectPath& objectPath, PipelineSceneNode* node, const Matrix4& projectionTM) const override;
+        virtual boost::dynamic_bitset<> viewportFenceSelection(const QVector<Point2>& fence, const ConstDataObjectPath& objectPath, Pipeline* pipeline, const Matrix4& projectionTM) const override;
 
         /// Generates a human-readable string representation of the data object reference.
         virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override { return this->displayName(); }
@@ -75,19 +75,20 @@ class OVITO_PARTICLES_EXPORT ParticlesObject : public PropertyContainer
         virtual void initialize() override;
     };
 
-    OVITO_CLASS_META(ParticlesObject, OOMetaClass);
+    OVITO_CLASS_META(Particles, OOMetaClass);
     Q_CLASSINFO("DisplayName", "Particles");
+    Q_CLASSINFO("ClassNameAlias", "TrajectoryObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
 
     /// \brief The list of standard particle properties.
     enum Type {
-        UserProperty = PropertyObject::GenericUserProperty, //< This is reserved for user-defined properties.
-        SelectionProperty = PropertyObject::GenericSelectionProperty,
-        ColorProperty = PropertyObject::GenericColorProperty,
-        TypeProperty = PropertyObject::GenericTypeProperty,
-        IdentifierProperty = PropertyObject::GenericIdentifierProperty,
-        PositionProperty = PropertyObject::FirstSpecificProperty,
+        UserProperty = Property::GenericUserProperty, //< This is reserved for user-defined properties.
+        SelectionProperty = Property::GenericSelectionProperty,
+        ColorProperty = Property::GenericColorProperty,
+        TypeProperty = Property::GenericTypeProperty,
+        IdentifierProperty = Property::GenericIdentifierProperty,
+        PositionProperty = Property::FirstSpecificProperty,
         DisplacementProperty,
         DisplacementMagnitudeProperty,
         PotentialEnergyProperty,
@@ -131,41 +132,41 @@ public:
     };
 
     /// \brief Constructor.
-    Q_INVOKABLE ParticlesObject(ObjectInitializationFlags flags);
+    Q_INVOKABLE Particles(ObjectInitializationFlags flags);
 
     /// Deletes those data elements having a non-zero value in the given selection array.
     /// Returns the number of deleted elements. The original order of the remaining elements is preserved.
     virtual size_t deleteElements(ConstDataBufferPtr selection, size_t selectionCount = std::numeric_limits<size_t>::max()) override;
 
-    /// Duplicates the BondsObject if it is shared with other particle objects.
-    /// After this method returns, the BondsObject is exclusively owned by the ParticlesObject and
+    /// Duplicates the Bonds if it is shared with other particle objects.
+    /// After this method returns, the Bonds is exclusively owned by the Particles and
     /// can be safely modified without expected side effects.
-    BondsObject* makeBondsMutable();
+    Bonds* makeBondsMutable();
 
-    /// Duplicates the AnglesObject if it is shared with other particle objects.
-    /// After this method returns, the AnglesObject is exclusively owned by the ParticlesObject and
+    /// Duplicates the Angles if it is shared with other particle objects.
+    /// After this method returns, the Angles is exclusively owned by the Particles and
     /// can be safely modified without expected side effects.
-    AnglesObject* makeAnglesMutable();
+    Angles* makeAnglesMutable();
 
-    /// Duplicates the DihedralsObject if it is shared with other particle objects.
-    /// After this method returns, the DihedralsObject is exclusively owned by the ParticlesObject and
+    /// Duplicates the Dihedrals if it is shared with other particle objects.
+    /// After this method returns, the Dihedrals is exclusively owned by the Particles and
     /// can be safely modified without expected side effects.
-    DihedralsObject* makeDihedralsMutable();
+    Dihedrals* makeDihedralsMutable();
 
-    /// Duplicates the ImpropersObject if it is shared with other particle objects.
-    /// After this method returns, the ImpropersObject is exclusively owned by the ParticlesObject and
+    /// Duplicates the Impropers if it is shared with other particle objects.
+    /// After this method returns, the Impropers is exclusively owned by the Particles and
     /// can be safely modified without expected side effects.
-    ImpropersObject* makeImpropersMutable();
+    Impropers* makeImpropersMutable();
 
     /// Sorts the particles list with respect to particle IDs.
     /// Does nothing if particles do not have IDs.
     virtual std::vector<size_t> sortById() override;
 
-    /// Convinience method that makes sure that there is a BondsObject.
-    const BondsObject* expectBonds() const;
+    /// Convinience method that makes sure that there is a Bonds.
+    const Bonds* expectBonds() const;
 
-    /// Convinience method that makes sure that there is a BondsObject and the bond topology property.
-    const PropertyObject* expectBondsTopology() const;
+    /// Convinience method that makes sure that there is a Bonds and the bond topology property.
+    const Property* expectBondsTopology() const;
 
     /// Adds a set of new bonds to the particle system.
     void addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, const std::vector<PropertyPtr>& bondProperties = {}, DataOORef<const BondType> bondType = {});
@@ -190,29 +191,29 @@ public:
 private:
 
     /// The bonds list sub-object.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const BondsObject>, bonds, setBonds);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const Bonds>, bonds, setBonds);
 
     /// The angles list sub-object.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const AnglesObject>, angles, setAngles);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const Angles>, angles, setAngles);
 
     /// The dihedrals list sub-object.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const DihedralsObject>, dihedrals, setDihedrals);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const Dihedrals>, dihedrals, setDihedrals);
 
     /// The impropers list sub-object.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const ImpropersObject>, impropers, setImpropers);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const Impropers>, impropers, setImpropers);
 };
 
 /**
  * Encapsulates a reference to a particle property.
  */
-using ParticlePropertyReference = TypedPropertyReference<ParticlesObject>;
+using ParticlePropertyReference = TypedPropertyReference<Particles>;
 
 /**
  * Encapsulates a mapping of input file columns to particle properties.
  */
-using ParticleInputColumnMapping = TypedInputColumnMapping<ParticlesObject>;
+using ParticleInputColumnMapping = TypedInputColumnMapping<Particles>;
 
 }   // End of namespace
 
-Q_DECLARE_METATYPE(Ovito::Particles::ParticlePropertyReference);
-Q_DECLARE_METATYPE(Ovito::Particles::ParticleInputColumnMapping);
+Q_DECLARE_METATYPE(Ovito::ParticlePropertyReference);
+Q_DECLARE_METATYPE(Ovito::ParticleInputColumnMapping);

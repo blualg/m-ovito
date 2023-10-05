@@ -21,12 +21,12 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/mesh/io/ParaViewVTPMeshImporter.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include "ParaViewVTPBondsImporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParaViewVTPBondsImporter);
 IMPLEMENT_OVITO_CLASS(BondsParaViewVTMFileFilter);
@@ -148,7 +148,7 @@ void ParaViewVTPBondsImporter::FrameLoader::loadFile()
                 xml.raiseError(tr("Number of lines does not match to the number of points in the contact network."));
                 break;
             }
-            OVITO_ASSERT(baseBondIndex + numLines != 0); // Calling setBondCount(0) discards an existing BondsObject. We never want that to happen!
+            OVITO_ASSERT(baseBondIndex + numLines != 0); // Calling setBondCount(0) discards an existing Bonds. We never want that to happen!
             setBondCount(baseBondIndex + numLines);
         }
         else if(xml.name().compare(QLatin1String("CellData")) == 0) {
@@ -156,7 +156,7 @@ void ParaViewVTPBondsImporter::FrameLoader::loadFile()
             while(xml.readNextStartElement() && !isCanceled()) {
                 if(xml.name().compare(QLatin1String("DataArray")) == 0) {
                     int vectorComponent = -1;
-                    if(PropertyObject* property = createBondPropertyForDataArray(xml, vectorComponent, preserveExistingData)) {
+                    if(Property* property = createBondPropertyForDataArray(xml, vectorComponent, preserveExistingData)) {
                         if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, xml, vectorComponent, baseBondIndex))
                             break;
                         if(xml.hasError() || isCanceled())
@@ -207,21 +207,21 @@ void ParaViewVTPBondsImporter::FrameLoader::loadFile()
 * Creates the right kind of OVITO property object that will receive the data
 * read from a <DataArray> element.
 ******************************************************************************/
-PropertyObject* ParaViewVTPBondsImporter::FrameLoader::createBondPropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent, bool preserveExistingData)
+Property* ParaViewVTPBondsImporter::FrameLoader::createBondPropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent, bool preserveExistingData)
 {
     int numComponents = std::max(1, xml.attributes().value("NumberOfComponents").toInt());
     auto name = xml.attributes().value("Name");
 
     if(name.compare(QLatin1String("id1"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
         vectorComponent = 0;
-        return bonds()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, BondsObject::ParticleIdentifiersProperty);
+        return bonds()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Bonds::ParticleIdentifiersProperty);
     }
     else if(name.compare(QLatin1String("id2"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
         vectorComponent = 1;
-        return bonds()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, BondsObject::ParticleIdentifiersProperty);
+        return bonds()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Bonds::ParticleIdentifiersProperty);
     }
     else {
-        return bonds()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, PropertyObject::makePropertyNameValid(name.toString()), PropertyObject::FloatDefault, numComponents);
+        return bonds()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Property::makePropertyNameValid(name.toString()), Property::FloatDefault, numComponents);
     }
     return nullptr;
 }
@@ -231,15 +231,15 @@ PropertyObject* ParaViewVTPBondsImporter::FrameLoader::createBondPropertyForData
 ******************************************************************************/
 void BondsParaViewVTMFileFilter::postprocessDatasets(FileSourceImporter::LoadOperationRequest& request)
 {
-    ParticlesObject* particles = request.state.getMutableObject<ParticlesObject>();
+    Particles* particles = request.state.getMutableObject<Particles>();
     if(!particles || !particles->bonds())
         return;
 
-    if(const PropertyObject* bondParticleIdentifiers = particles->bonds()->getProperty(BondsObject::ParticleIdentifiersProperty)) {
+    if(const Property* bondParticleIdentifiers = particles->bonds()->getProperty(Bonds::ParticleIdentifiersProperty)) {
 
         // Build map from particle identifiers to particle indices.
         std::map<int64_t, size_t> idToIndexMap;
-        if(BufferReadAccess<int64_t> particleIdentifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
+        if(BufferReadAccess<int64_t> particleIdentifierProperty = particles->getProperty(Particles::IdentifierProperty)) {
             size_t index = 0;
             for(int64_t id : particleIdentifierProperty) {
                 if(idToIndexMap.insert(std::make_pair(id, index++)).second == false)
@@ -253,7 +253,7 @@ void BondsParaViewVTMFileFilter::postprocessDatasets(FileSourceImporter::LoadOpe
         }
 
         // Perform lookup of particle IDs.
-        BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> bondTopologyArray = particles->makeBondsMutable()->createProperty(BondsObject::TopologyProperty);
+        BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> bondTopologyArray = particles->makeBondsMutable()->createProperty(Bonds::TopologyProperty);
         auto t = bondTopologyArray.begin();
         for(const ParticleIndexPair& bond : BufferReadAccess<ParticleIndexPair>(bondParticleIdentifiers)) {
             auto iter1 = idToIndexMap.find(bond[0]);

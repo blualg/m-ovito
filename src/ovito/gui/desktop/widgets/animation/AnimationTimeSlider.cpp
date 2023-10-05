@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -62,7 +62,7 @@ void AnimationTimeSlider::updateColorPalettes()
     _autoKeyModePalette = QGuiApplication::palette();
     _autoKeyModePalette.setColor(QPalette::Window, QColor(240, 60, 60));
     _sliderPalette = QGuiApplication::palette();
-    _sliderPalette.setColor(QPalette::Button, 
+    _sliderPalette.setColor(QPalette::Button,
         GuiApplication::instance()->usingDarkTheme() ?
         _sliderPalette.color(QPalette::Button).lighter(150) :
         _sliderPalette.color(QPalette::Button).darker(110));
@@ -167,7 +167,7 @@ std::tuple<int,int,int> AnimationTimeSlider::tickRange(int tickWidth)
 ******************************************************************************/
 int AnimationTimeSlider::frameToPos(int frame)
 {
-    if(!animSettings()) 
+    if(!animSettings())
         return 0;
     FloatType fraction = (FloatType)(frame - animSettings()->firstFrame()) / std::max(1, animSettings()->numberOfFrames() - 1);
     QRect clientRect = frameRect();
@@ -258,7 +258,7 @@ void AnimationTimeSlider::mouseMoveEvent(QMouseEvent* event)
 
     if(_dragPos >= 0) {
 
-        if(newFrame == anim->currentFrame()) 
+        if(newFrame == anim->currentFrame())
             return;
 
         _mainWindow.handleExceptions([&] {

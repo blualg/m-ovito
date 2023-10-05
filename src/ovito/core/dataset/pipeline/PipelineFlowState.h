@@ -269,14 +269,14 @@ public:
     }
 
     /// Finds an object of the given type and with the given identifier in the list of data objects stored in this flow state.
-    const DataObject* getObjectBy(const DataObject::OOMetaClass& objectClass, const PipelineObject* dataSource, const QString& identifier) const {
-        return data() ? data()->getObjectBy(objectClass, dataSource, identifier) : nullptr;
+    const DataObject* getObjectBy(const DataObject::OOMetaClass& objectClass, const PipelineNode* createdByNode, const QString& identifier) const {
+        return data() ? data()->getObjectBy(objectClass, createdByNode, identifier) : nullptr;
     }
 
     /// Finds an object of the given type and with the given identifier in the list of data objects stored in this flow state.
     template<class DataObjectClass>
-    const DataObjectClass* getObjectBy(const PipelineObject* dataSource, const QString& identifier) const {
-        return data() ? data()->getObjectBy<DataObjectClass>(dataSource, identifier) : nullptr;
+    const DataObjectClass* getObjectBy(const PipelineNode* createdByNode, const QString& identifier) const {
+        return data() ? data()->getObjectBy<DataObjectClass>(createdByNode, identifier) : nullptr;
     }
 
     /// Finds an object of the given type and under the hierarchy path in this flow state.
@@ -403,18 +403,18 @@ public:
 
     /// Looks up the value for the global attribute with the given base name and creator.
     /// Returns a given default value if the attribute is not defined in this pipeline state.
-    QVariant getAttributeValue(const PipelineObject* dataSource, const QString& attrBaseName, const QVariant& defaultValue = QVariant()) const {
-        return data() ? data()->getAttributeValue(dataSource, attrBaseName, defaultValue) : defaultValue;
+    QVariant getAttributeValue(const PipelineNode* createdByNode, const QString& attrBaseName, const QVariant& defaultValue = QVariant()) const {
+        return data() ? data()->getAttributeValue(createdByNode, attrBaseName, defaultValue) : defaultValue;
     }
 
     /// Inserts a new global attribute into the pipeline state.
-    AttributeDataObject* addAttribute(const QString& key, QVariant value, const PipelineObject* dataSource) {
-        return mutableData()->addAttribute(key, std::move(value), dataSource);
+    AttributeDataObject* addAttribute(const QString& key, QVariant value, const PipelineNode* createdByNode) {
+        return mutableData()->addAttribute(key, std::move(value), createdByNode);
     }
 
     /// Inserts a new global attribute into the pipeline state overwritting any existing attribute with the same name.
-    AttributeDataObject* setAttribute(const QString& key, QVariant value, const PipelineObject* dataSource) {
-        return mutableData()->setAttribute(key, std::move(value), dataSource);
+    AttributeDataObject* setAttribute(const QString& key, QVariant value, const PipelineNode* createdByNode) {
+        return mutableData()->setAttribute(key, std::move(value), createdByNode);
     }
 
     /// Returns a new unique data object identifier that does not collide with the

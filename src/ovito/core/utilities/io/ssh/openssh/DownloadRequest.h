@@ -25,7 +25,7 @@
 #include <ovito/core/Core.h>
 #include "SshRequest.h"
 
-namespace Ovito::Ssh {
+namespace Ovito {
 
 class OpensshConnection;
 

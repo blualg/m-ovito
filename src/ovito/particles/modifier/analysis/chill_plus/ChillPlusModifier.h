@@ -29,7 +29,7 @@
 #include <boost/math/special_functions/spherical_harmonic.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief This modifier implements the Chill+ algorithm [Nguyen & Molinero, J. Phys. Chem. B 2015, 119, 9369-9376]
@@ -78,7 +78,7 @@ private:
     public:
 
         /// Constructor.
-        ChillPlusEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
+        ChillPlusEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
             StructureIdentificationEngine(request, fingerprint, positions, simCell, structureTypes, selection),
             _cutoff(cutoff) {}
 

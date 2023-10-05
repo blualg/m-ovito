@@ -21,15 +21,15 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdmod/StdMod.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "ComputePropertyModifier.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ComputePropertyModifierDelegate);
 
@@ -43,14 +43,14 @@ SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, outputProperty, "Output proper
 SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, onlySelectedElements, "Compute only for selected elements");
 SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, useMultilineFields, "Expand field(s)");
 
-IMPLEMENT_OVITO_CLASS(ComputePropertyModifierApplication);
-DEFINE_VECTOR_REFERENCE_FIELD(ComputePropertyModifierApplication, cachedVisElements);
-DEFINE_RUNTIME_PROPERTY_FIELD(ComputePropertyModifierApplication, inputVariableNames);
-DEFINE_RUNTIME_PROPERTY_FIELD(ComputePropertyModifierApplication, delegateInputVariableNames);
-DEFINE_RUNTIME_PROPERTY_FIELD(ComputePropertyModifierApplication, inputVariableTable);
-SET_PROPERTY_FIELD_CHANGE_EVENT(ComputePropertyModifierApplication, inputVariableNames, ReferenceEvent::ObjectStatusChanged);
-SET_PROPERTY_FIELD_CHANGE_EVENT(ComputePropertyModifierApplication, inputVariableTable, ReferenceEvent::ObjectStatusChanged);
-SET_MODIFIER_APPLICATION_TYPE(ComputePropertyModifier, ComputePropertyModifierApplication);
+IMPLEMENT_OVITO_CLASS(ComputePropertyModificationNode);
+DEFINE_VECTOR_REFERENCE_FIELD(ComputePropertyModificationNode, cachedVisElements);
+DEFINE_RUNTIME_PROPERTY_FIELD(ComputePropertyModificationNode, inputVariableNames);
+DEFINE_RUNTIME_PROPERTY_FIELD(ComputePropertyModificationNode, delegateInputVariableNames);
+DEFINE_RUNTIME_PROPERTY_FIELD(ComputePropertyModificationNode, inputVariableTable);
+SET_PROPERTY_FIELD_CHANGE_EVENT(ComputePropertyModificationNode, inputVariableNames, ReferenceEvent::ObjectStatusChanged);
+SET_PROPERTY_FIELD_CHANGE_EVENT(ComputePropertyModificationNode, inputVariableTable, ReferenceEvent::ObjectStatusChanged);
+SET_MODIFICATION_NODE_TYPE(ComputePropertyModifier, ComputePropertyModificationNode);
 
 /******************************************************************************
 * Constructs a new instance of this class.
@@ -105,7 +105,7 @@ void ComputePropertyModifier::setPropertyComponentCount(int newComponentCount)
 ******************************************************************************/
 void ComputePropertyModifier::adjustPropertyComponentCount()
 {
-    if(delegate() && outputProperty().type() != PropertyObject::GenericUserProperty)
+    if(delegate() && outputProperty().type() != Property::GenericUserProperty)
         setPropertyComponentCount(delegate()->inputContainerClass()->standardPropertyComponentCount(outputProperty().type()));
     else
         setPropertyComponentCount(1);
@@ -116,7 +116,7 @@ void ComputePropertyModifier::adjustPropertyComponentCount()
 ******************************************************************************/
 QStringList ComputePropertyModifier::propertyComponentNames() const
 {
-    if(!outputProperty().isNull() && outputProperty().type() != PropertyObject::GenericUserProperty) {
+    if(!outputProperty().isNull() && outputProperty().type() != Property::GenericUserProperty) {
         return outputProperty().containerClass()->standardPropertyComponentNames(outputProperty().type());
     }
     return {};
@@ -140,7 +140,7 @@ void ComputePropertyModifier::referenceReplaced(const PropertyFieldDescriptor* f
 ******************************************************************************/
 Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
-    ComputePropertyModifierApplication* myModApp = dynamic_object_cast<ComputePropertyModifierApplication>(request.modApp());
+    ComputePropertyModificationNode* myModNode = dynamic_object_cast<ComputePropertyModificationNode>(request.modificationNode());
 
     // Get the delegate object that will take of the specific details.
     if(!delegate())
@@ -158,48 +158,48 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
 
     // Get input selection property and existing property data.
     ConstPropertyPtr selectionProperty;
-    if(onlySelectedElements() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
-        selectionProperty = container->getProperty(PropertyObject::GenericSelectionProperty);
+    if(onlySelectedElements() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
+        selectionProperty = container->getProperty(Property::GenericSelectionProperty);
         if(!selectionProperty)
             throw Exception(tr("Compute property modifier has been restricted to selected elements, but no selection was previously defined."));
     }
 
     // Prepare output property.
     PropertyPtr outp;
-    const PropertyObject* existingProperty = outputProperty().findInContainer(container);
+    const Property* existingProperty = outputProperty().findInContainer(container);
     if(existingProperty && existingProperty->componentCount() == propertyComponentCount()) {
         // Copy existing data.
         outp = CloneHelper::cloneSingleObject(existingProperty, false);
 
         // Reset cached vis elements.
-        if(myModApp)
-            myModApp->setCachedVisElements({});
+        if(myModNode)
+            myModNode->setCachedVisElements({});
     }
     else {
         // Allocate new data array.
-        if(outputProperty().type() != PropertyObject::GenericUserProperty) {
+        if(outputProperty().type() != Property::GenericUserProperty) {
             outp = container->getOOMetaClass().createStandardProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, nelements, outputProperty().type(), objectPath);
         }
         else if(!outputProperty().name().isEmpty() && propertyComponentCount() > 0) {
-            outp = container->getOOMetaClass().createUserProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, nelements, PropertyObject::FloatDefault, propertyComponentCount(), outputProperty().name());
+            outp = container->getOOMetaClass().createUserProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, nelements, Property::FloatDefault, propertyComponentCount(), outputProperty().name());
         }
         else {
             throw Exception(tr("Output property of compute property modifier has not been specified."));
         }
 
-        if(myModApp) {
+        if(myModNode) {
             // Replace vis elements of output property with cached ones and cache any new vis elements.
             // This is required to avoid losing the output property's display settings
             // each time the modifier is re-evaluated or when serializing the modifier.
             OORefVector<DataVis> currentVisElements = outp->visElements();
             // Replace with cached vis elements if they are of the same class type.
-            for(int i = 0; i < currentVisElements.size() && i < myModApp->cachedVisElements().size(); i++) {
-                if(currentVisElements[i]->getOOClass() == myModApp->cachedVisElements()[i]->getOOClass()) {
-                    currentVisElements[i] = myModApp->cachedVisElements()[i];
+            for(int i = 0; i < currentVisElements.size() && i < myModNode->cachedVisElements().size(); i++) {
+                if(currentVisElements[i]->getOOClass() == myModNode->cachedVisElements()[i]->getOOClass()) {
+                    currentVisElements[i] = myModNode->cachedVisElements()[i];
                 }
             }
             outp->setVisElements(currentVisElements);
-            myModApp->setCachedVisElements(std::move(currentVisElements));
+            myModNode->setCachedVisElements(std::move(currentVisElements));
         }
     }
     if(propertyComponentCount() != outp->componentCount())
@@ -222,14 +222,14 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
         engine->setValidityInterval(iv);
     }
 
-    // Store the list of input variables in the ModifierApplication so that the UI component can display it to the user.
-    if(myModApp) {
-        myModApp->setInputVariableNames(engine->inputVariableNames());
-        myModApp->setDelegateInputVariableNames(engine->delegateInputVariableNames());
-        myModApp->setInputVariableTable(engine->inputVariableTable());
+    // Store the list of input variables in the ModificationNode so that the UI component can display it to the user.
+    if(myModNode) {
+        myModNode->setInputVariableNames(engine->inputVariableNames());
+        myModNode->setDelegateInputVariableNames(engine->delegateInputVariableNames());
+        myModNode->setInputVariableTable(engine->inputVariableTable());
         delegate()->notifyDependents(ReferenceEvent::ObjectStatusChanged);
         this->notifyDependents(ReferenceEvent::ObjectStatusChanged);
-        myModApp->notifyDependents(ReferenceEvent::ObjectStatusChanged);
+        myModNode->notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 
     return engine;
@@ -269,7 +269,7 @@ ComputePropertyModifierDelegate::PropertyComputeEngine::PropertyComputeEngine(
         const PipelineFlowState& input,
         const ConstDataObjectPath& containerPath,
         PropertyPtr outputProperty,
-        const PropertyObject* selectionProperty,
+        const Property* selectionProperty,
         QStringList expressions,
         int frameNumber,
         std::unique_ptr<PropertyExpressionEvaluator> evaluator) :

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,7 +28,7 @@
 #include <ovito/stdobj/gui/widgets/DataTablePlotWidget.h>
 #include <ovito/stdobj/gui/properties/PropertyInspectionApplet.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief Data inspector page for data tables and 2d data plots.
@@ -53,11 +53,11 @@ public:
     DataTablePlotWidget* plotWidget() const { return _plotWidget; }
 
     /// Selects a specific data object in this applet.
-    virtual bool selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint) override;
+    virtual bool selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint) override;
 
     /// Determines whether the given property represents a color.
-    virtual bool isColorProperty(const PropertyObject* property) const override {
-        return (property->dataType() == PropertyObject::Float32 || property->dataType() == PropertyObject::Float64) && property->componentCount() == 3 && property->name().contains(QStringLiteral("Color"));
+    virtual bool isColorProperty(const Property* property) const override {
+        return (property->dataType() == Property::Float32 || property->dataType() == Property::Float64) && property->componentCount() == 3 && property->name().contains(QStringLiteral("Color"));
     }
 
     /// Creates an optional ad-hoc property that serves as header column for the table.

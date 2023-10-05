@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,12 +24,12 @@
 
 
 #include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/export/FileColumnParticleExporter.h>
 #include <ovito/stdobj/io/PropertyOutputWriter.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief User interface component for the FileColumnParticleExporter class.

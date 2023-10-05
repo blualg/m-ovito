@@ -100,7 +100,7 @@ public:
         PipelineFlowState state;
 
         /// The FileSource that initiated the load operation.
-        QPointer<PipelineObject> dataSource;
+        QPointer<PipelineNode> pipelineNode;
 
         /// If a loaded data collection consists of sub-collections, this string specifies the
         /// prefix to be prepended to the identifiers of data objects loaded by the file reader.
@@ -135,7 +135,7 @@ public:
         PipelineFlowState& state() { return _loadRequest.state; }
 
         /// Returns the FileSource that owns the file importer.
-        PipelineObject* dataSource() const { return _loadRequest.dataSource; }
+        PipelineNode* pipelineNode() const { return _loadRequest.pipelineNode; }
 
         /// Returns a data structure describing the current load operation.
         const LoadOperationRequest& loadRequest() const { return _loadRequest; }
@@ -209,7 +209,7 @@ public:
     virtual bool isReplaceExistingPossible(Scene* scene, const std::vector<QUrl>& sourceUrls) override;
 
     /// \brief Imports the given file(s) into the scene.
-    virtual OORef<PipelineSceneNode> importFileSet(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode) override;
+    virtual OORef<Pipeline> importFileSet(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode) override;
 
     //////////////////////////// Specific methods ////////////////////////////////
 
@@ -290,7 +290,7 @@ protected:
     /// This method is called when the pipeline scene node for the FileSource is created.
     /// It can be overwritten by importer subclasses to customize the initial pipeline, add modifiers, etc.
     /// The default implementation does nothing.
-    virtual void setupPipeline(PipelineSceneNode* node, FileSource* importObj) {}
+    virtual void setupPipeline(Pipeline* pipeline, FileSource* importObj) {}
 
     /// Checks if a filename matches to the given wildcard pattern.
     static bool matchesWildcardPattern(const QString& pattern, const QString& filename);
@@ -300,7 +300,7 @@ protected:
     virtual bool shouldScanFileForFrames(const QUrl& sourceUrl) const { return isMultiTimestepFile(); }
 
     /// Is called when importing multiple files of different formats.
-    virtual bool importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, PipelineSceneNode* pipeline);
+    virtual bool importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, Pipeline* pipeline);
 
 private:
 

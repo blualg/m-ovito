@@ -27,7 +27,7 @@
 #include <ovito/stdmod/modifiers/ColorByTypeModifier.h>
 #include "ColorByTypeModifierEditor.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ColorByTypeModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ColorByTypeModifier, ColorByTypeModifierEditor);
@@ -52,7 +52,7 @@ void ColorByTypeModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout->addWidget(pclassUI->comboBox());
     pclassUI->setContainerFilter([](const PropertyContainer* container) {
         return
-            container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericColorProperty) 
+            container->getOOMetaClass().isValidStandardPropertyId(Property::GenericColorProperty)
             && std::any_of(container->properties().begin(), container->properties().end(), &isValidInputProperty);
     });
 
@@ -169,7 +169,7 @@ void ColorByTypeModifierEditor::ViewModel::refresh()
         // Populate types list based on the selected input property.
         for(const PipelineFlowState& inputState : editor()->getPipelineInputs()) {
             if(const PropertyContainer* container = inputState.getLeafObject(mod->subject())) {
-                if(const PropertyObject* inputProperty = mod->sourceProperty().findInContainer(container)) {
+                if(const Property* inputProperty = mod->sourceProperty().findInContainer(container)) {
                     for(const ElementType* type : inputProperty->elementTypes()) {
                         if(!type) continue;
                         _elementTypes.push_back(type);

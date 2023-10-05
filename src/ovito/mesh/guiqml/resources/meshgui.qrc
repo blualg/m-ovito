@@ -1,6 +1,6 @@
 <RCC>
     <qresource prefix="/Mesh">
         <file>editors/SurfaceMeshVis.qml</file>
-        <file>editors/TriMeshVis.qml</file>
+        <file>editors/TriangleMeshVis.qml</file>
     </qresource>
 </RCC>

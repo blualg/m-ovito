@@ -46,7 +46,7 @@ Scene::Scene(ObjectInitializationFlags flags, AnimationSettings* animationSettin
     setAnimationSettings(animationSettings);
 
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
-        setNodeName("Scene");
+        setSceneNodeName("Scene");
 
         // The root node does not need a transformation controller.
         setTransformationController(nullptr);
@@ -65,7 +65,7 @@ SceneNode* Scene::getNodeByName(const QString& nodeName) const
 {
     SceneNode* result = nullptr;
     visitChildren([nodeName, &result](SceneNode* node) -> bool {
-        if(node->nodeName() == nodeName) {
+        if(node->sceneNodeName() == nodeName) {
             result = node;
             return false;
         }

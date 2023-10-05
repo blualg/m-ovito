@@ -26,7 +26,7 @@
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include "InputColumnMapping.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /******************************************************************************
  * Maps a file column to a standard property unless there is already another
@@ -35,7 +35,7 @@ namespace Ovito::StdObj {
 bool InputColumnMapping::mapStandardColumn(int column, int typeId, int vectorComponent)
 {
     OVITO_ASSERT(column >= 0 && column < this->size());
-    OVITO_ASSERT(typeId != PropertyObject::GenericUserProperty);
+    OVITO_ASSERT(typeId != Property::GenericUserProperty);
     OVITO_ASSERT(containerClass());
 
     // Check if there is another file column already mapped to the same target property.
@@ -60,7 +60,7 @@ bool InputColumnMapping::mapCustomColumn(int column, const QString& propertyName
 
     // Check if there is another file column already mapped to the same target property.
     for(const InputColumnInfo& columnInfo : *this) {
-        if(columnInfo.property.type() == PropertyObject::GenericUserProperty && columnInfo.property.name() == propertyName && columnInfo.property.vectorComponent() == vectorComponent)
+        if(columnInfo.property.type() == Property::GenericUserProperty && columnInfo.property.name() == propertyName && columnInfo.property.vectorComponent() == vectorComponent)
             return false;
     }
 
@@ -108,7 +108,7 @@ LoadStream& operator>>(LoadStream& stream, InputColumnMapping& m)
             int vectorComponent;
             stream >> vectorComponent;
             if(col.dataType != QMetaType::Void) {
-                if(propertyType == PropertyObject::GenericUserProperty)
+                if(propertyType == Property::GenericUserProperty)
                     col.property = PropertyReference(m.containerClass(), propertyName, vectorComponent);
                 else
                     col.property = PropertyReference(m.containerClass(), propertyType, vectorComponent);
@@ -173,8 +173,8 @@ void InputColumnMapping::validate(const QString& fileFormatName) const
             continue;
 
         // Validate property names.
-        if(m1->property.type() == PropertyObject::GenericUserProperty)
-            PropertyObject::throwIfInvalidPropertyName(m1->property.name());
+        if(m1->property.type() == Property::GenericUserProperty)
+            Property::throwIfInvalidPropertyName(m1->property.name());
 
         numMapped++;
         OVITO_ASSERT(m1->property.containerClass() == containerClass());
@@ -201,7 +201,7 @@ InputColumnReader::InputColumnReader(StandardFrameLoader& frameLoader, const Inp
     : _frameLoader(frameLoader), _mapping(mapping), _container(container)
 {
     if(validateMapping)
-        mapping.validate(frameLoader.dataSource() ? frameLoader.dataSource()->objectTitle() : QString());
+        mapping.validate(frameLoader.pipelineNode() ? frameLoader.pipelineNode()->objectTitle() : QString());
 
     // Create target properties as defined by the mapping.
     for(int i = 0; i < (int)mapping.size(); i++) {
@@ -215,11 +215,11 @@ InputColumnReader::InputColumnReader(StandardFrameLoader& frameLoader, const Inp
 
         if(dataType != QMetaType::Void) {
 
-            if(dataType != PropertyObject::Int8 && dataType != PropertyObject::Int32 && dataType != PropertyObject::Int64 && dataType != PropertyObject::Float32 && dataType != PropertyObject::Float64)
+            if(dataType != Property::Int8 && dataType != Property::Int32 && dataType != Property::Int64 && dataType != Property::Float32 && dataType != Property::Float64)
                 throw Exception(tr("Invalid user-defined target property (data type %1) for input file column %2").arg(dataType).arg(i+1));
 
-            PropertyObject* property;
-            if(pref.type() != PropertyObject::GenericUserProperty) {
+            Property* property;
+            if(pref.type() != Property::GenericUserProperty) {
                 // Create standard property.
                 property = container->createProperty(DataBuffer::Initialized, pref.type());
                 // File reader may want to override the property's name.
@@ -231,11 +231,11 @@ InputColumnReader::InputColumnReader(StandardFrameLoader& frameLoader, const Inp
                 // Determine the number of vector components we need for this user-defined property.
                 int componentCount = vectorComponent + 1;
                 for(const InputColumnInfo& col : mapping)
-                    if(col.property.type() == PropertyObject::GenericUserProperty && col.property.name() == pref.name())
+                    if(col.property.type() == Property::GenericUserProperty && col.property.name() == pref.name())
                         componentCount = std::max(componentCount, col.property.vectorComponent() + 1);
 
                 // Look for existing user-defined property with the same name.
-                if(const PropertyObject* existingProperty = container->getProperty(pref.name())) {
+                if(const Property* existingProperty = container->getProperty(pref.name())) {
                     // If the existing property is incompatible, remove it from the container and create a new one.
                     if(existingProperty->type() != pref.type() || existingProperty->componentCount() != componentCount || existingProperty->dataType() != dataType)
                         container->removeProperty(existingProperty);
@@ -273,11 +273,24 @@ InputColumnReader::InputColumnReader(StandardFrameLoader& frameLoader, const Inp
     // Remove properties from the container which are not being parsed.
     if(removeExistingProperties) {
         for(int index = container->properties().size() - 1; index >= 0; index--) {
-            const PropertyObject* property = container->properties()[index];
+            const Property* property = container->properties()[index];
             if(std::none_of(_properties.cbegin(), _properties.cend(), [&](const TargetPropertyRecord& rec) { return rec.property == property; }))
                 container->removeProperty(property);
         }
     }
+}
+
+/******************************************************************************
+ * Returns a list of properties that have been parsed.
+ *****************************************************************************/
+std::set<Property*> InputColumnReader::parsedProperties() const
+{
+    std::set<Property*> list;
+    for(const TargetPropertyRecord& rec : _properties) {
+        if(rec.property)
+            list.insert(rec.property);
+    }
+    return list;
 }
 
 /******************************************************************************
@@ -396,15 +409,15 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
     if(elementIndex >= prec.count)
         throw Exception(tr("Too many data lines in input file. Expected only %1 lines.").arg(prec.count));
 
-    if(prec.dataType == PropertyObject::Float32) {
+    if(prec.dataType == Property::Float32) {
         if(!parseFloatType(token, token_end, *reinterpret_cast<float*>(prec.data + elementIndex * prec.stride)))
             throw Exception(tr("Invalid floating-point value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
     }
-    else if(prec.dataType == PropertyObject::Float64) {
+    else if(prec.dataType == Property::Float64) {
         if(!parseFloatType(token, token_end, *reinterpret_cast<double*>(prec.data + elementIndex * prec.stride)))
             throw Exception(tr("Invalid floating-point value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
     }
-    else if(prec.dataType == PropertyObject::Int32) {
+    else if(prec.dataType == Property::Int32) {
         int32_t& d = *reinterpret_cast<int32_t*>(prec.data + elementIndex * prec.stride);
         bool ok = parseInt32(token, token_end, d);
         if(prec.elementTypeClass == nullptr) {
@@ -428,12 +441,12 @@ void InputColumnReader::parseField(size_t elementIndex, int columnIndex, const c
             prec.lastTypeId = d;
         }
     }
-    else if(prec.dataType == PropertyObject::Int64) {
+    else if(prec.dataType == Property::Int64) {
         int64_t& d = *reinterpret_cast<int64_t*>(prec.data + elementIndex * prec.stride);
         if(!parseInt64(token, token_end, d))
             throw Exception(tr("Invalid 64-bit integer value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
     }
-    else if(prec.dataType == PropertyObject::Int8) {
+    else if(prec.dataType == Property::Int8) {
         int32_t d32;
         if(!parseInt32(token, token_end, d32) || d32 < (int32_t)std::numeric_limits<int8_t>::lowest() || d32 > (int32_t)std::numeric_limits<int8_t>::max())
             throw Exception(tr("Invalid or out-of-range 8-bit integer value in column %1 (%2): \"%3\"").arg(columnIndex+1).arg(prec.property->name()).arg(QString::fromLocal8Bit(token, token_end - token)));
@@ -462,13 +475,13 @@ void InputColumnReader::readElement(size_t elementIndex, const double* values, i
             throw Exception(tr("Too many data values in input file. Expected only %1 values.").arg(prec->count));
 
         if(prec->data) {
-            if(prec->dataType == PropertyObject::Float32) {
+            if(prec->dataType == Property::Float32) {
                 *reinterpret_cast<float*>(prec->data + elementIndex * prec->stride) = static_cast<float>(*token);
             }
-            else if(prec->dataType == PropertyObject::Float64) {
+            else if(prec->dataType == Property::Float64) {
                 *reinterpret_cast<double*>(prec->data + elementIndex * prec->stride) = *token;
             }
-            else if(prec->dataType == PropertyObject::Int32) {
+            else if(prec->dataType == Property::Int32) {
                 int32_t ival = static_cast<int32_t>(*token);
                 if(prec->elementTypeClass) {
                     // Instantiate a new element type with a numeric ID and add it to the property's type list.
@@ -476,10 +489,10 @@ void InputColumnReader::readElement(size_t elementIndex, const double* values, i
                 }
                 *reinterpret_cast<int32_t*>(prec->data + elementIndex * prec->stride) = ival;
             }
-            else if(prec->dataType == PropertyObject::Int64) {
+            else if(prec->dataType == Property::Int64) {
                 *reinterpret_cast<int64_t*>(prec->data + elementIndex * prec->stride) = static_cast<int64_t>(*token);
             }
-            else if(prec->dataType == PropertyObject::Int8) {
+            else if(prec->dataType == Property::Int8) {
                 *reinterpret_cast<int8_t*>(prec->data + elementIndex * prec->stride) = static_cast<int8_t>(*token);
             }
         }

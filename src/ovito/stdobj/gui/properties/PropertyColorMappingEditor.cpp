@@ -36,7 +36,7 @@
 #include <ovito/core/oo/OvitoClass.h>
 #include "PropertyColorMappingEditor.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(PropertyColorMappingEditor);
 SET_OVITO_OBJECT_EDITOR(PropertyColorMapping, PropertyColorMappingEditor);
@@ -216,7 +216,7 @@ std::optional<std::pair<FloatType, FloatType>> PropertyColorMappingEditor::deter
     if(!container) return {};
 
     // Look up the selected property.
-    const PropertyObject* pseudoColorProperty = mapping->sourceProperty().findInContainer(container);
+    const Property* pseudoColorProperty = mapping->sourceProperty().findInContainer(container);
     if(!pseudoColorProperty) return {};
 
     if(mapping->sourceProperty().vectorComponent() >= (int)pseudoColorProperty->componentCount()) return {};
