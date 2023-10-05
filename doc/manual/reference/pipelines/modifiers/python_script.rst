@@ -147,7 +147,7 @@ The OVITO Python manual contains several :ref:`examples <modifier_script_example
 
 .. seealso::
 
-  :py:class:`ovito.modifiers.PythonScriptModifier` (Python API)
+  :py:class:`ovito.modifiers.PythonModifier` (Python API)
 
 .. _python_settings_dialog:
 
