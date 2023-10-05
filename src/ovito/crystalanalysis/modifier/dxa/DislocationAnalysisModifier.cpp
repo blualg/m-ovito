@@ -23,15 +23,15 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/crystalanalysis/objects/MicrostructurePhase.h>
 #include <ovito/crystalanalysis/objects/DislocationVis.h>
-#include <ovito/particles/objects/BondsObject.h>
+#include <ovito/particles/objects/Bonds.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "DislocationAnalysisModifier.h"
 #include "DislocationAnalysisEngine.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DislocationAnalysisModifier);
 DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, inputCrystalStructure);
@@ -111,7 +111,7 @@ DislocationAnalysisModifier::DislocationAnalysisModifier(ObjectInitializationFla
             stype->setNumericId(id);
             stype->setDimensionality(MicrostructurePhase::Dimensionality::Volumetric);
             stype->setName(ParticleType::getPredefinedStructureTypeName(predefTypes[id]));
-            stype->setColor(ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), stype->name(), id));
+            stype->setColor(ElementType::getDefaultColor(ParticlePropertyReference(Particles::StructureTypeProperty), stype->name(), id));
             addStructureType(std::move(stype));
         }
 
@@ -171,15 +171,15 @@ DislocationAnalysisModifier::DislocationAnalysisModifier(ObjectInitializationFla
 Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get modifier inputs.
-    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
+    const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
-    const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-    const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
+    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
+    const SimulationCell* simCell = input.expectObject<SimulationCell>();
     if(simCell->is2D())
         throw Exception(tr("The DXA modifier does not support 2d simulation cells."));
 
     // Get particle selection.
-    const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
+    const Property* selectionProperty = onlySelectedParticles() ? particles->expectProperty(Particles::SelectionProperty) : nullptr;
 
     // Build list of preferred crystal orientations.
     std::vector<Matrix3> preferredCrystalOrientations;
@@ -188,14 +188,14 @@ Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngin
     }
 
     // Get grain id property created by the GrainSegmentationModifier.
-    const PropertyObject* grainProperty = particles->getProperty(QStringLiteral("Grain"));
+    const Property* grainProperty = particles->getProperty(QStringLiteral("Grain"));
     if(grainProperty && (grainProperty->dataType() != DataBuffer::Int64 || grainProperty->componentCount() != 1))
         grainProperty = nullptr;
 
     // Create an empty surface mesh object.
     DataOORef<SurfaceMesh> defectMesh = DataOORef<SurfaceMesh>::create(ObjectInitializationFlag::DontCreateVisElement, tr("Defect mesh"));
     defectMesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("dxa-defect-mesh")));
-    defectMesh->setDataSource(request.modApp());
+    defectMesh->setCreatedByNode(request.modificationNode());
     defectMesh->setDomain(simCell);
     defectMesh->setVisElement(defectMeshVis());
 
@@ -204,7 +204,7 @@ Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngin
     if(outputInterfaceMesh()) {
         interfaceMesh = DataOORef<SurfaceMesh>::create(ObjectInitializationFlag::DontCreateVisElement, tr("Interface mesh"));
         interfaceMesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("dxa-interface-mesh")));
-        interfaceMesh->setDataSource(request.modApp());
+        interfaceMesh->setCreatedByNode(request.modificationNode());
         interfaceMesh->setDomain(simCell);
         interfaceMesh->setVisElement(interfaceMeshVis());
     }

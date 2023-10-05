@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
 #include <ovito/gui/desktop/mainwin/data_inspector/DataInspectorPanel.h>
@@ -31,7 +31,7 @@
 #include <ovito/core/dataset/data/BufferAccess.h>
 #include "ParticleInspectionApplet.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParticleInspectionApplet);
 
@@ -142,8 +142,8 @@ void ParticleInspectionApplet::updateDistanceTable()
     // Limit distance computation to the first 4 particles:
     int n = std::min(4, visibleElementCount());
 
-    const ParticlesObject* particles = currentState().getObject<ParticlesObject>();
-    BufferReadAccess<Point3> posProperty = particles ? particles->getProperty(ParticlesObject::PositionProperty) : nullptr;
+    const Particles* particles = currentState().getObject<Particles>();
+    BufferReadAccess<Point3> posProperty = particles ? particles->getProperty(Particles::PositionProperty) : nullptr;
     _distanceTable->setRowCount(std::max(1, n * (n-1) / 2));
     int row = 0;
     for(int i = 0; i < n; i++) {
@@ -177,8 +177,8 @@ void ParticleInspectionApplet::updateAngleTable()
     // Limit angle computation to the first 3 particles:
     int n = std::min(3, visibleElementCount());
 
-    const ParticlesObject* particles = currentState().getObject<ParticlesObject>();
-    BufferReadAccess<Point3> posProperty = particles ? particles->getProperty(ParticlesObject::PositionProperty) : nullptr;
+    const Particles* particles = currentState().getObject<Particles>();
+    BufferReadAccess<Point3> posProperty = particles ? particles->getProperty(Particles::PositionProperty) : nullptr;
     _angleTable->setRowCount(n == 3 ? 3 : 1);
     int row = 0;
     for(int i = 0; i < n; i++) {
@@ -229,11 +229,11 @@ void ParticleInspectionApplet::PickingMode::mouseReleaseEvent(ViewportWindowInte
         pickParticle(vpwin, event->pos(), pickResult);
         if(!event->modifiers().testFlag(Qt::ControlModifier))
             _pickedElements.clear();
-        if(pickResult.objNode == _applet->currentPipeline()) {
+        if(pickResult.pipeline == _applet->currentPipeline()) {
             // Don't select the same particle twice. Instead, toggle selection.
             bool alreadySelected = false;
             for(auto p = _pickedElements.begin(); p != _pickedElements.end(); ++p) {
-                if(p->objNode == pickResult.objNode && p->particleIndex == pickResult.particleIndex) {
+                if(p->pipeline == pickResult.pipeline && p->particleIndex == pickResult.particleIndex) {
                     alreadySelected = true;
                     _pickedElements.erase(p);
                     break;
@@ -263,7 +263,7 @@ void ParticleInspectionApplet::PickingMode::mouseMoveEvent(ViewportWindowInterfa
 {
     // Change mouse cursor while hovering over a particle.
     PickResult pickResult;
-    if(pickParticle(vpwin, event->pos(), pickResult) && pickResult.objNode == _applet->currentPipeline())
+    if(pickParticle(vpwin, event->pos(), pickResult) && pickResult.pipeline == _applet->currentPipeline())
         setCursor(SelectionMode::selectionCursor());
     else
         setCursor(QCursor());
@@ -292,12 +292,12 @@ void ParticleInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneR
         std::array<Point3G,4> vertices;
         auto outVertex = vertices.begin();
         for(auto& element : _pickedElements) {
-            const PipelineFlowState& flowState = element.objNode->evaluatePipelineSynchronous(renderer->time(), true);
-            if(const ParticlesObject* particles = flowState.getObject<ParticlesObject>()) {
+            const PipelineFlowState& flowState = element.pipeline->evaluatePipelineSynchronous(renderer->time(), true);
+            if(const Particles* particles = flowState.getObject<Particles>()) {
                 // If particle selection is based on ID, find particle with the given ID.
                 size_t particleIndex = element.particleIndex;
                 if(element.particleId >= 0) {
-                    if(BufferReadAccess<int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty)) {
+                    if(BufferReadAccess<int64_t> identifierProperty = particles->getProperty(Particles::IdentifierProperty)) {
                         if(particleIndex >= identifierProperty.size() || identifierProperty[particleIndex] != element.particleId) {
                             auto iter = boost::find(identifierProperty, element.particleId);
                             if(iter == identifierProperty.cend()) continue;
@@ -305,10 +305,10 @@ void ParticleInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneR
                         }
                     }
                 }
-                if(BufferReadAccess<Point3> posProperty = particles->getProperty(ParticlesObject::PositionProperty)) {
+                if(BufferReadAccess<Point3> posProperty = particles->getProperty(Particles::PositionProperty)) {
                     if(particleIndex < posProperty.size()) {
                         TimeInterval iv;
-                        const AffineTransformation& nodeTM = element.objNode->getWorldTransform(renderer->time(), iv);
+                        const AffineTransformation& nodeTM = element.pipeline->getWorldTransform(renderer->time(), iv);
                         *outVertex++ = (nodeTM * posProperty[particleIndex]).toDataType<GraphicsFloatType>();
                     }
                 }

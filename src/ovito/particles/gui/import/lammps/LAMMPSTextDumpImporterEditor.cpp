@@ -30,7 +30,7 @@
 #include <ovito/core/dataset/io/FileSource.h>
 #include "LAMMPSTextDumpImporterEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSTextDumpImporterEditor);
 SET_OVITO_OBJECT_EDITOR(LAMMPSTextDumpImporter, LAMMPSTextDumpImporterEditor);

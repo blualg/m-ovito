@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,7 +29,7 @@
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
 
-namespace Ovito::StdMod {
+namespace Ovito {
 /**
  * A properties editor for the ManualSelectionModifier class.
  */

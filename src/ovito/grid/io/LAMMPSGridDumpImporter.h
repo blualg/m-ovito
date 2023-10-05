@@ -28,7 +28,7 @@
 #include <ovito/stdobj/io/StandardFrameLoader.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 /**
  * \brief File parser for text-based LAMMPS dump files that store voxel grid data.

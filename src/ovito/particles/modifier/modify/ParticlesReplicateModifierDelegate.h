@@ -26,9 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/stdmod/modifiers/ReplicateModifier.h>
 
-namespace Ovito::Particles {
-
-using namespace Ovito::StdMod;
+namespace Ovito {
 
 /**
  * \brief Delegate for the ReplicateModifier that operates on particles.

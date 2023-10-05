@@ -27,7 +27,7 @@
 #include <ovito/particles/objects/BondsVis.h>
 #include <ovito/particles/objects/BondType.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
 /// This comparison operator is required for using QVariant as key-type in a QMap as done by CreateBondsModifier.
@@ -47,7 +47,7 @@
     QT_END_NAMESPACE
 #endif
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief A modifier that creates bonds between pairs of particles based on their distance.
@@ -93,7 +93,7 @@ private:
 
         /// Constructor.
         BondsEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr particleTypes,
-                const SimulationCellObject* simCell, DataOORef<BondsObject> bondsObject, DataOORef<BondType> bondType, const ParticlesObject* particles, CutoffMode cutoffMode, FloatType maxCutoff, FloatType minCutoff, std::vector<std::vector<FloatType>> pairCutoffsSquared,
+                const SimulationCell* simCell, DataOORef<Bonds> bondsObject, DataOORef<BondType> bondType, const Particles* particles, CutoffMode cutoffMode, FloatType maxCutoff, FloatType minCutoff, std::vector<std::vector<FloatType>> pairCutoffsSquared,
                 std::vector<FloatType> typeVdWRadiusMap, FloatType vdwPrefactor, ConstPropertyPtr moleculeIDs, std::vector<bool> isHydrogenType) :
                     Engine(request),
                     _positions(std::move(positions)),
@@ -127,8 +127,8 @@ private:
         /// This method is called by the system whenever the preliminary pipeline input changes.
         virtual bool pipelineInputChanged() override { return false; }
 
-        /// Returns the generated BondsObject.
-        DataOORef<BondsObject>& bonds() { return _bonds; }
+        /// Returns the generated Bonds.
+        DataOORef<Bonds>& bonds() { return _bonds; }
 
         /// Returns the input particle positions.
         const ConstPropertyPtr& positions() const { return _positions; }
@@ -145,10 +145,10 @@ private:
         ConstPropertyPtr _positions;
         ConstPropertyPtr _particleTypes;
         ConstPropertyPtr _moleculeIDs;
-        DataOORef<const SimulationCellObject> _simCell;
-        DataOORef<const ParticlesObject> _particles;
+        DataOORef<const SimulationCell> _simCell;
+        DataOORef<const Particles> _particles;
         ParticleOrderingFingerprint _inputFingerprint;
-        DataOORef<BondsObject> _bonds;
+        DataOORef<Bonds> _bonds;
         DataOORef<BondType> _bondType;
         size_t _numGeneratedBonds;
     };
@@ -197,7 +197,7 @@ protected:
     virtual bool applyCachedResultsSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
     /// Looks up a particle type in the type list based on the name or the numeric ID.
-    static const ElementType* lookupParticleType(const PropertyObject* typeProperty, const QVariant& typeSpecification);
+    static const ElementType* lookupParticleType(const Property* typeProperty, const QVariant& typeSpecification);
 
 private:
 

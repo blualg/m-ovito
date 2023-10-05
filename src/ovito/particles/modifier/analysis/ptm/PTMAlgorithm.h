@@ -25,7 +25,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/util/NearestNeighborFinder.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <3rdparty/ptm/ptm_functions.h>
 #include <3rdparty/ptm/ptm_initialize_data.h>
 
@@ -33,7 +33,7 @@ extern "C" {
     typedef struct ptm_local_handle* ptm_local_handle_t;
 }
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief This class is a wrapper around the Polyhedral Template Matching algorithm
@@ -232,7 +232,7 @@ public:
     /// \return \c false when the operation has been canceled by the user;
     ///         \c true on success.
     /// \throw Exception on error.
-    bool prepare(BufferReadAccess<Point3> positions, const SimulationCellObject* cell, BufferReadAccess<SelectionIntType> selection = {}) {
+    bool prepare(BufferReadAccess<Point3> positions, const SimulationCell* cell, BufferReadAccess<SelectionIntType> selection = {}) {
         return NearestNeighborFinder::prepare(std::move(positions), cell, std::move(selection));
     }
 

@@ -26,15 +26,15 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/crystalanalysis/data/DislocationNetwork.h>
 #include <ovito/crystalanalysis/objects/MicrostructurePhase.h>
-#include <ovito/stdobj/simcell/PeriodicDomainDataObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/PeriodicDomainObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /**
  * \brief Stores a collection of dislocation segments.
  */
-class OVITO_CRYSTALANALYSIS_EXPORT DislocationNetworkObject : public PeriodicDomainDataObject
+class OVITO_CRYSTALANALYSIS_EXPORT DislocationNetworkObject : public PeriodicDomainObject
 {
     OVITO_CLASS(DislocationNetworkObject)
     Q_CLASSINFO("DisplayName", "Dislocations");

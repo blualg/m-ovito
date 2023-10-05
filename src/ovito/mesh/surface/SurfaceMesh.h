@@ -24,19 +24,19 @@
 
 
 #include <ovito/mesh/Mesh.h>
-#include <ovito/stdobj/simcell/PeriodicDomainDataObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/PeriodicDomainObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include "SurfaceMeshVertices.h"
 #include "SurfaceMeshFaces.h"
 #include "SurfaceMeshRegions.h"
 #include "SurfaceMeshTopology.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 /**
  * \brief A closed mesh representing a surface, i.e. a two-dimensional manifold.
  */
-class OVITO_MESH_EXPORT SurfaceMesh : public PeriodicDomainDataObject
+class OVITO_MESH_EXPORT SurfaceMesh : public PeriodicDomainObject
 {
     OVITO_CLASS(SurfaceMesh)
     Q_CLASSINFO("DisplayName", "Surface mesh");

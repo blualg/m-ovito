@@ -29,7 +29,7 @@
 #include <ovito/grid/objects/VoxelGridVis.h>
 #include "VoxelGridVisEditor.h"
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(VoxelGridVisEditor);
 SET_OVITO_OBJECT_EDITOR(VoxelGridVis, VoxelGridVisEditor);
@@ -67,7 +67,7 @@ void VoxelGridVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
         // Retrieve the VoxelGrid object this vis element is associated with.
         DataOORef<const PropertyContainer> container = dynamic_object_cast<const PropertyContainer>(getVisDataObject());
         // We only show the color mapping panel if the VoxelGrid does not contain the RGB "Color" property.
-        if(container && !container->getProperty(PropertyObject::GenericColorProperty)) {
+        if(container && !container->getProperty(Property::GenericColorProperty)) {
             // Show color mapping panel.
             colorMappingParamUI->setEnabled(true);
             // Set it as property container containing the available properties the user can choose from.

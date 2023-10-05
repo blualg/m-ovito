@@ -27,8 +27,8 @@
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/oo/RefTargetListener.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include "PipelineListItem.h"
 
 namespace Ovito {
@@ -117,8 +117,8 @@ public:
     /// Handles the data supplied by a drag and drop operation that ended with the given action.
     bool dropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent) override;
 
-    /// The list of currently selected PipelineSceneNode.
-    PipelineSceneNode* selectedPipeline() const { return _selectedPipeline.target(); }
+    /// The currently selected pipeline.
+    Pipeline* selectedPipeline() const { return _selectedPipeline.target(); }
 
     /// Returns the container of the dataset being edited.
     DataSetContainer& datasetContainer() { return _userInterface.datasetContainer(); }
@@ -128,9 +128,9 @@ public:
 
     /// Sets the item in the modification list that should be selected on the next list update.
     void setNextObjectToSelect(RefTarget* obj) {
-        if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj)) {
-            if(modApp->modifierGroup() && modApp->modifierGroup()->isCollapsed())
-                obj = modApp->modifierGroup();
+        if(ModificationNode* node = dynamic_object_cast<ModificationNode>(obj)) {
+            if(node->modifierGroup() && node->modifierGroup()->isCollapsed())
+                obj = node->modifierGroup();
         }
         _nextObjectToSelect = obj;
     }
@@ -144,8 +144,8 @@ public:
     /// Deletes the given model items from the data pipeline.
     void deleteItems(const QVector<PipelineListItem*>& items);
 
-    /// Deletes a modifier application from the pipeline.
-    void deleteModifierApplication(ModifierApplication* modApp);
+    /// Deletes a modification node from the pipeline.
+    void deleteModificationNode(ModificationNode* node);
 
     /// Helper method that determines if the given object is part of more than one pipeline.
     static bool isSharedObject(RefTarget* obj);
@@ -230,14 +230,14 @@ private:
     /// Create the pipeline editor entries for the subjects of the given object (and their subobjects).
     void createListItemsForSubobjects(const DataObject* dataObj, PipelineListItem* parentItem);
 
-    /// Replaces the a pipeline item with an independent copy.
-    PipelineObject* makeElementIndependentImpl(PipelineObject* pipelineObj, CloneHelper& cloneHelper);
+    /// Replaces the a pipeline node with an independent copy.
+    PipelineNode* makeElementIndependentImpl(PipelineNode* node, CloneHelper& cloneHelper);
 
     /// Extracts the list of model indices from a drag and drop data record.
     QVector<int> indexListFromMimeData(const QMimeData* data) const;
 
     /// Moves a sequence of modifiers to a new position in the pipeline.
-    bool moveModifierRange(OORef<ModifierApplication> head, OORef<ModifierApplication> tail, PipelineObject* insertBefore, ModifierApplication* insertAfter);
+    bool moveModifierRange(OORef<ModificationNode> head, OORef<ModificationNode> tail, PipelineNode* insertBefore, ModificationNode* insertAfter);
 
     /// List of visible items in the model.
     std::vector<OORef<PipelineListItem>> _items;
@@ -248,8 +248,8 @@ private:
     /// List of selected items that were selected prior to the list refresh.
     std::vector<OORef<PipelineListItem>> _previouslySelectedItems;
 
-    /// Holds reference to the currently selected PipelineSceneNode.
-    RefTargetListener<PipelineSceneNode> _selectedPipeline;
+    /// Holds reference to the currently selected pipeline.
+    RefTargetListener<Pipeline> _selectedPipeline;
 
     /// The item in the list that should be selected on the next list update.
     OORef<RefTarget> _nextObjectToSelect;
@@ -267,7 +267,7 @@ private:
     std::vector<int> _itemsRefreshPending;
 
     /// The pipeline that was selected last time the list model was refreshed.
-    QPointer<PipelineSceneNode> _previouslySelectedPipeline;
+    QPointer<Pipeline> _previouslySelectedPipeline;
 
     // Status icons:
     QPixmap _statusInfoIcon;

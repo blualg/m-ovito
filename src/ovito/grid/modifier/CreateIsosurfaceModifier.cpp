@@ -24,15 +24,15 @@
 #include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshBuilder.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/Application.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "CreateIsosurfaceModifier.h"
 #include "MarchingCubes.h"
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CreateIsosurfaceModifier);
 DEFINE_PROPERTY_FIELD(CreateIsosurfaceModifier, subject);
@@ -119,7 +119,7 @@ void CreateIsosurfaceModifier::initializeModifier(const ModifierInitializationRe
 
     // Use the first available voxel grid from the input state as data source when the modifier is newly created.
     if(sourceProperty().isNull() && subject().dataPath().isEmpty() && ExecutionContext::isInteractive()) {
-        const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
+        const PipelineFlowState& input = request.modificationNode()->evaluateInputSynchronous(request);
         if(const VoxelGrid* grid = input.getObject<VoxelGrid>()) {
             setSubject(PropertyContainerReference(&grid->getOOMetaClass(), grid->identifier()));
         }
@@ -127,9 +127,9 @@ void CreateIsosurfaceModifier::initializeModifier(const ModifierInitializationRe
 
     // Use the first available property from the input grid as data source when the modifier is newly created.
     if(sourceProperty().isNull() && subject() && ExecutionContext::isInteractive()) {
-        const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
+        const PipelineFlowState& input = request.modificationNode()->evaluateInputSynchronous(request);
         if(const VoxelGrid* grid = dynamic_object_cast<VoxelGrid>(input.getLeafObject(subject()))) {
-            for(const PropertyObject* property : grid->properties()) {
+            for(const Property* property : grid->properties()) {
                 setSourceProperty(VoxelPropertyReference(property, (property->componentCount() > 1) ? 0 : -1));
                 break;
             }
@@ -161,12 +161,12 @@ Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(c
     OVITO_ASSERT(voxelGrid->domain());
     if(voxelGrid->domain()->is2D())
         throw Exception(tr("Cannot generate isosurface for a two-dimensional voxel grid. Input must be a 3d grid."));
-    const PropertyObject* property = sourceProperty().findInContainer(voxelGrid);
+    const Property* property = sourceProperty().findInContainer(voxelGrid);
     if(!property)
         throw Exception(tr("The selected voxel property with the name '%1' does not exist.").arg(sourceProperty().name()));
     if(sourceProperty().vectorComponent() >= (int)property->componentCount())
         throw Exception(tr("The selected vector component is out of range. The property '%1' contains only %2 values per voxel.").arg(sourceProperty().name()).arg(property->componentCount()));
-    if(property->dataType() != PropertyObject::FloatDefault)
+    if(property->dataType() != Property::FloatDefault)
         throw Exception(tr("Wrong data type. Can construct isosurface only for standard-precision floating-point values."));
 
     for(size_t dim = 0; dim < 3; dim++)
@@ -180,7 +180,7 @@ Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(c
     // Collect the set of voxel grid properties that should be transferred over to the isosurface mesh vertices.
     std::vector<ConstPropertyPtr> auxiliaryProperties;
     if(transferFieldValues()) {
-        for(const PropertyObject* property : voxelGrid->properties()) {
+        for(const Property* property : voxelGrid->properties()) {
             auxiliaryProperties.push_back(property);
         }
     }
@@ -188,14 +188,14 @@ Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(c
     // Create an empty surface mesh object.
     DataOORef<SurfaceMesh> mesh = DataOORef<SurfaceMesh>::create(ObjectInitializationFlag::DontCreateVisElement, tr("Isosurface"));
     mesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("isosurface")));
-    mesh->setDataSource(request.modApp());
+    mesh->setCreatedByNode(request.modificationNode());
     mesh->setDomain(voxelGrid->domain());
     mesh->setVisElement(surfaceMeshVis());
 
     // Create an empty data table for the field value histogram.
     DataOORef<DataTable> histogram = DataOORef<DataTable>::create(DataTable::Histogram, sourceProperty().nameWithComponent());
     histogram->setIdentifier(input.generateUniqueIdentifier<DataTable>(QStringLiteral("isosurface-histogram")));
-    histogram->setDataSource(request.modApp());
+    histogram->setCreatedByNode(request.modificationNode());
     histogram->setAxisLabelX(sourceProperty().nameWithComponent());
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
@@ -298,7 +298,7 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
 
     // Compute a histogram of the input field values.
     _histogram->setElementCount(64);
-    PropertyPtr histogramValues = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, _histogram->elementCount(), PropertyObject::Int64, 1, tr("Count"));
+    PropertyPtr histogramValues = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, _histogram->elementCount(), Property::Int64, 1, tr("Count"));
     FloatType binSize = (maxValue - minValue) / histogramValues->size();
     int histogramSizeMin1 = histogramValues->size() - 1;
     BufferWriteAccess<int64_t, access_mode::read_write> histogramAccess(histogramValues);
@@ -330,15 +330,15 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::applyResults(const Modif
 /******************************************************************************
 * Transfers voxel grid properties to the vertices of a surfaces mesh.
 ******************************************************************************/
-bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshBuilder& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, const SimulationCellObject& gridDomain, VoxelGrid::GridDimensions gridShape, VoxelGrid::GridType gridType)
+bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshBuilder& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, const SimulationCell& gridDomain, VoxelGrid::GridDimensions gridShape, VoxelGrid::GridType gridType)
 {
     OVITO_ASSERT(Task::current() && Task::current()->isProgressingTask());
 
     // Create destination properties for transferring voxel values to the surface vertices.
     std::vector<std::pair<RawBufferReadAccess, RawBufferAccess<access_mode::discard_write>>> propertyMapping;
     for(const ConstPropertyPtr& fieldProperty : fieldProperties) {
-        PropertyObject* vertexProperty;
-        if(fieldProperty->type() < PropertyObject::FirstSpecificProperty && SurfaceMeshVertices::OOClass().isValidStandardPropertyId(fieldProperty->type())) {
+        Property* vertexProperty;
+        if(fieldProperty->type() < Property::FirstSpecificProperty && SurfaceMeshVertices::OOClass().isValidStandardPropertyId(fieldProperty->type())) {
             // Input voxel property is also a standard property for mesh vertices.
             vertexProperty = mesh.createVertexProperty(DataBuffer::Initialized, static_cast<SurfaceMeshVertices::Type>(fieldProperty->type()));
             OVITO_ASSERT(vertexProperty->dataType() == fieldProperty->dataType());
@@ -385,8 +385,8 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshBuild
                     x1_vc[dim] = qBound(0, (int)fl + 1, (int)gridShape[dim] - 1);
                 }
                 else {
-                    x0_vc[dim] = SimulationCellObject::modulo((int)fl, gridShape[dim]);
-                    x1_vc[dim] = SimulationCellObject::modulo((int)fl + 1, gridShape[dim]);
+                    x0_vc[dim] = SimulationCell::modulo((int)fl, gridShape[dim]);
+                    x1_vc[dim] = SimulationCell::modulo((int)fl + 1, gridShape[dim]);
                 }
             }
             cornerWeights[0] = x0.x() * x0.y() * x0.z();

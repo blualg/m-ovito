@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief This modifier wraps around the atomic positions in directions with periodic boundary

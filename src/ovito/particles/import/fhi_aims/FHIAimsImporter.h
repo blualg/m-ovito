@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include "../ParticleImporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief File parser for 'geometry.in' files of the FHI-aims code.

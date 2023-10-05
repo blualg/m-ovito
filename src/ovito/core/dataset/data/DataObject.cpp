@@ -28,11 +28,12 @@ namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DataObject);
 DEFINE_PROPERTY_FIELD(DataObject, identifier);
-DEFINE_RUNTIME_PROPERTY_FIELD(DataObject, dataSource);
+DEFINE_RUNTIME_PROPERTY_FIELD(DataObject, createdByNodeInternal);
 DEFINE_VECTOR_REFERENCE_FIELD(DataObject, visElements);
 DEFINE_REFERENCE_FIELD(DataObject, editableProxy);
 SET_PROPERTY_FIELD_LABEL(DataObject, visElements, "Visual elements");
 SET_PROPERTY_FIELD_LABEL(DataObject, editableProxy, "Editable proxy");
+SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(DataObject, createdByNodeInternal, "dataSource"); // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
 * Generates a human-readable string representation of the data object reference.
@@ -240,6 +241,22 @@ ConstDataObjectPath DataObject::exclusiveDataObjectPath() const
     while(obj && !path.empty());
     std::reverse(path.begin(), path.end());
     return path;
+}
+
+/******************************************************************************
+* Returns the pipeline stage that created this data object (may be null).
+******************************************************************************/
+PipelineNode* DataObject::createdByNode() const
+{
+    return static_object_cast<PipelineNode>(createdByNodeInternal().data());
+}
+
+/******************************************************************************
+* Sets the pipeline stage that created this data object.
+******************************************************************************/
+void DataObject::setCreatedByNode(PipelineNode* pipelineNode)
+{
+    setCreatedByNodeInternal(pipelineNode);
 }
 
 /******************************************************************************

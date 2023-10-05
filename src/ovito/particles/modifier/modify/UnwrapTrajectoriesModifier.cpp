@@ -21,27 +21,27 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/particles/objects/BondsObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/particles/objects/Bonds.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/concurrent/ForEach.h>
 #include "UnwrapTrajectoriesModifier.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(UnwrapTrajectoriesModifier);
 
-IMPLEMENT_OVITO_CLASS(UnwrapTrajectoriesModifierApplication);
-SET_MODIFIER_APPLICATION_TYPE(UnwrapTrajectoriesModifier, UnwrapTrajectoriesModifierApplication);
+IMPLEMENT_OVITO_CLASS(UnwrapTrajectoriesModificationNode);
+SET_MODIFICATION_NODE_TYPE(UnwrapTrajectoriesModifier, UnwrapTrajectoriesModificationNode);
 
 /******************************************************************************
 * Asks the modifier whether it can be applied to the given input data.
 ******************************************************************************/
 bool UnwrapTrajectoriesModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    return input.containsObject<ParticlesObject>();
+    return input.containsObject<Particles>();
 }
 
 /******************************************************************************
@@ -50,20 +50,20 @@ bool UnwrapTrajectoriesModifier::OOMetaClass::isApplicableTo(const DataCollectio
 Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     if(input) {
-        if(UnwrapTrajectoriesModifierApplication* unwrapModApp = dynamic_object_cast<UnwrapTrajectoriesModifierApplication>(request.modApp())) {
+        if(UnwrapTrajectoriesModificationNode* unwrapModNode = dynamic_object_cast<UnwrapTrajectoriesModificationNode>(request.modificationNode())) {
 
             // If the periodic image flags property is present, use it to unwrap particle positions.
-            const ParticlesObject* inputParticles = input.expectObject<ParticlesObject>();
-            if(inputParticles->getProperty(ParticlesObject::PeriodicImageProperty)) {
+            const Particles* inputParticles = input.expectObject<Particles>();
+            if(inputParticles->getProperty(Particles::PeriodicImageProperty)) {
                 PipelineFlowState output = input;
-                unwrapModApp->unwrapParticleCoordinates(request, output);
+                unwrapModNode->unwrapParticleCoordinates(request, output);
                 return output;
             }
 
             // Without the periodic image flags information, we have to scan the particle trajectories
             // from beginning to end before making them continuous.
-            return unwrapModApp->detectPeriodicCrossings(request).then(*unwrapModApp, [state = input, request]() mutable {
-                static_object_cast<UnwrapTrajectoriesModifierApplication>(request.modApp())->unwrapParticleCoordinates(request, state);
+            return unwrapModNode->detectPeriodicCrossings(request).then(*unwrapModNode, [state = input, request]() mutable {
+                static_object_cast<UnwrapTrajectoriesModificationNode>(request.modificationNode())->unwrapParticleCoordinates(request, state);
                 return std::move(state);
             });
         }
@@ -85,10 +85,10 @@ void UnwrapTrajectoriesModifier::evaluateSynchronous(const ModifierEvaluationReq
     AnimationTime time = request.time();
     int sourceFrame = state.data()->sourceFrame();
     if(sourceFrame != -1)
-        time = request.modApp()->sourceFrameToAnimationTime(sourceFrame);
+        time = request.modificationNode()->sourceFrameToAnimationTime(sourceFrame);
 
-    if(UnwrapTrajectoriesModifierApplication* unwrapModApp = dynamic_object_cast<UnwrapTrajectoriesModifierApplication>(request.modApp())) {
-        unwrapModApp->unwrapParticleCoordinates(request, state);
+    if(UnwrapTrajectoriesModificationNode* unwrapModNode = dynamic_object_cast<UnwrapTrajectoriesModificationNode>(request.modificationNode())) {
+        unwrapModNode->unwrapParticleCoordinates(request, state);
     }
 }
 
@@ -96,7 +96,7 @@ void UnwrapTrajectoriesModifier::evaluateSynchronous(const ModifierEvaluationReq
 * Processes all frames of the input trajectory to detect periodic crossings
 * of the particles.
 ******************************************************************************/
-SharedFuture<> UnwrapTrajectoriesModifierApplication::detectPeriodicCrossings(const ModifierEvaluationRequest& request)
+SharedFuture<> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(const ModifierEvaluationRequest& request)
 {
     if(_unwrapOperation.isValid() == false || _unwrapOperation.isCanceled()) {
 
@@ -131,7 +131,7 @@ SharedFuture<> UnwrapTrajectoriesModifierApplication::detectPeriodicCrossings(co
 * Throws away the precomputed unwrapping information and interrupts
 * any computation currently in progress.
 ******************************************************************************/
-void UnwrapTrajectoriesModifierApplication::invalidateUnwrapData()
+void UnwrapTrajectoriesModificationNode::invalidateUnwrapData()
 {
     _unwrappedUpToTime = AnimationTime::negativeInfinity();
     _unwrapRecords.clear();
@@ -142,52 +142,52 @@ void UnwrapTrajectoriesModifierApplication::invalidateUnwrapData()
 /******************************************************************************
 * Is called when a RefTarget referenced by this object has generated an event.
 ******************************************************************************/
-bool UnwrapTrajectoriesModifierApplication::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+bool UnwrapTrajectoriesModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(event.type() == ReferenceEvent::TargetChanged && source == input()) {
         invalidateUnwrapData();
     }
-    return ModifierApplication::referenceEvent(source, event);
+    return ModificationNode::referenceEvent(source, event);
 }
 
 /******************************************************************************
 * Gets called when the data object of the node has been replaced.
 ******************************************************************************/
-void UnwrapTrajectoriesModifierApplication::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+void UnwrapTrajectoriesModificationNode::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
     if(field == PROPERTY_FIELD(input)) {
         invalidateUnwrapData();
     }
-    ModifierApplication::referenceReplaced(field, oldTarget, newTarget, listIndex);
+    ModificationNode::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
 * Rescales the times of all animation keys from the old animation interval to the new interval.
 ******************************************************************************/
-void UnwrapTrajectoriesModifierApplication::rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval)
+void UnwrapTrajectoriesModificationNode::rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval)
 {
-    ModifierApplication::rescaleTime(oldAnimationInterval, newAnimationInterval);
+    ModificationNode::rescaleTime(oldAnimationInterval, newAnimationInterval);
     invalidateUnwrapData();
 }
 
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void UnwrapTrajectoriesModificationNode::unwrapParticleCoordinates(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-    const ParticlesObject* inputParticles = state.expectObject<ParticlesObject>();
+    const Particles* inputParticles = state.expectObject<Particles>();
     inputParticles->verifyIntegrity();
 
     // If the periodic image flags particle property is present, use it to unwrap particle positions.
-    if(BufferReadAccess<Vector3I> particlePeriodicImageProperty = inputParticles->getProperty(ParticlesObject::PeriodicImageProperty)) {
+    if(BufferReadAccess<Vector3I> particlePeriodicImageProperty = inputParticles->getProperty(Particles::PeriodicImageProperty)) {
         // Get current simulation cell.
-        const SimulationCellObject* cell = state.expectObject<SimulationCellObject>();
+        const SimulationCell* cell = state.expectObject<SimulationCell>();
 
         // Make a modifiable copy of the particles object.
-        ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();
+        Particles* outputParticles = state.expectMutableObject<Particles>();
 
         // Make a modifiable copy of the particle position property.
-        BufferWriteAccess<Point3, access_mode::read_write> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
+        BufferWriteAccess<Point3, access_mode::read_write> posProperty = outputParticles->expectMutableProperty(Particles::PositionProperty);
         const Vector3I* pbcShift = particlePeriodicImageProperty.cbegin();
         for(Point3& p : posProperty) {
             p += cell->cellMatrix() * (*pbcShift++).toDataType<FloatType>();
@@ -195,8 +195,8 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const Modi
 
         // Unwrap bonds by adjusting their PBC shift vectors.
         if(outputParticles->bonds()) {
-            if(BufferReadAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
-                BufferWriteAccess<Vector3I, access_mode::read_write> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
+            if(BufferReadAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(Bonds::TopologyProperty)) {
+                BufferWriteAccess<Vector3I, access_mode::read_write> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, Bonds::PeriodicImageProperty);
                 for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
                     size_t particleIndex1 = topologyProperty[bondIndex][0];
                     size_t particleIndex2 = topologyProperty[bondIndex][1];
@@ -211,7 +211,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const Modi
 
         // After unwrapping the particles, the PBC image flags are obsolete.
         // It's time to remove the particle property.
-        outputParticles->removeProperty(outputParticles->getProperty(ParticlesObject::PeriodicImageProperty));
+        outputParticles->removeProperty(outputParticles->getProperty(Particles::PeriodicImageProperty));
 
         state.setStatus(tr("Unwrapping particle positions using stored PBC image information."));
 
@@ -235,7 +235,7 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const Modi
             OVITO_ASSERT(iter != unflipRecords().rend());
         }
         const std::array<int,3>& flipState = iter->second;
-        SimulationCellObject* simCellObj = state.expectMutableObject<SimulationCellObject>();
+        SimulationCell* simCellObj = state.expectMutableObject<SimulationCell>();
         AffineTransformation cell = simCellObj->cellMatrix();
         cell.column(2) += cell.column(0) * flipState[1] + cell.column(1) * flipState[2];
         cell.column(1) += cell.column(0) * flipState[0];
@@ -246,16 +246,16 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const Modi
         return;
 
     // Get current simulation cell.
-    const SimulationCellObject* simCell = state.expectObject<SimulationCellObject>();
+    const SimulationCell* simCell = state.expectObject<SimulationCell>();
 
     // Make a modifiable copy of the particles object.
-    ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();
+    Particles* outputParticles = state.expectMutableObject<Particles>();
 
     // Make a modifiable copy of the particle position property.
-    BufferWriteAccess<Point3, access_mode::read_write> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
+    BufferWriteAccess<Point3, access_mode::read_write> posProperty = outputParticles->expectMutableProperty(Particles::PositionProperty);
 
     // Get particle identifiers.
-    BufferReadAccess<IdentifierIntType> identifierProperty = outputParticles->getProperty(ParticlesObject::IdentifierProperty);
+    BufferReadAccess<IdentifierIntType> identifierProperty = outputParticles->getProperty(Particles::IdentifierProperty);
     if(identifierProperty && identifierProperty.size() != posProperty.size())
         identifierProperty.reset();
 
@@ -279,8 +279,8 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const Modi
 
     // Unwrap bonds by adjusting their PBC shift vectors.
     if(outputParticles->bonds()) {
-        if(BufferReadAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
-            BufferWriteAccess<Vector3I, access_mode::read_write> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
+        if(BufferReadAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(Bonds::TopologyProperty)) {
+            BufferWriteAccess<Vector3I, access_mode::read_write> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, Bonds::PeriodicImageProperty);
             for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
                 size_t particleIndex1 = topologyProperty[bondIndex][0];
                 size_t particleIndex2 = topologyProperty[bondIndex][1];
@@ -308,23 +308,23 @@ void UnwrapTrajectoriesModifierApplication::unwrapParticleCoordinates(const Modi
 /******************************************************************************
 * Calculates the information that is needed to unwrap particle coordinates.
 ******************************************************************************/
-void UnwrapTrajectoriesModifierApplication::WorkingData::operator()(int frame, const PipelineFlowState& state)
+void UnwrapTrajectoriesModificationNode::WorkingData::operator()(int frame, const PipelineFlowState& state)
 {
-    AnimationTime time = _modApp->sourceFrameToAnimationTime(frame);
+    AnimationTime time = _modNode->sourceFrameToAnimationTime(frame);
 
     // Get simulation cell geometry and boundary conditions.
-    const SimulationCellObject* cell = state.getObject<SimulationCellObject>();
+    const SimulationCell* cell = state.getObject<SimulationCell>();
     if(!cell)
         throw Exception(tr("Input data contains no simulation cell information at frame %1.").arg(frame));
     if(!cell->hasPbcCorrected())
         throw Exception(tr("No periodic boundary conditions set for the simulation cell."));
     AffineTransformation reciprocalCellMatrix = cell->inverseMatrix();
 
-    const ParticlesObject* particles = state.getObject<ParticlesObject>();
+    const Particles* particles = state.getObject<Particles>();
     if(!particles)
         throw Exception(tr("Input data contains no particles at frame %1.").arg(frame));
-    BufferReadAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-    BufferReadAccess<IdentifierIntType> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+    BufferReadAccess<Point3> posProperty = particles->expectProperty(Particles::PositionProperty);
+    BufferReadAccess<IdentifierIntType> identifierProperty = particles->getProperty(Particles::IdentifierProperty);
     if(identifierProperty && identifierProperty.size() != posProperty.size())
         identifierProperty.reset();
 
@@ -353,7 +353,7 @@ void UnwrapTrajectoriesModifierApplication::WorkingData::operator()(int frame, c
             }
             // Emit a timeline record whever a flipping occurred.
             if(flipState != _currentFlipState)
-                _modApp->_unflipRecords.emplace_back(time, flipState);
+                _modNode->_unflipRecords.emplace_back(time, flipState);
             _currentFlipState = flipState;
         }
         _previousCell = cell;
@@ -381,7 +381,7 @@ void UnwrapTrajectoriesModifierApplication::WorkingData::operator()(int frame, c
                     int shift = (int)std::round(delta[dim]);
                     if(shift != 0) {
                         // Create a new record when particle has crossed a periodic cell boundary.
-                        _modApp->_unwrapRecords.emplace(result.first->first, std::make_tuple(time, (qint8)dim, (qint16)shift));
+                        _modNode->_unwrapRecords.emplace(result.first->first, std::make_tuple(time, (qint8)dim, (qint16)shift));
                     }
                 }
             }
@@ -390,16 +390,16 @@ void UnwrapTrajectoriesModifierApplication::WorkingData::operator()(int frame, c
         index++;
     }
 
-    _modApp->_unwrappedUpToTime = time;
-    _modApp->setStatus(tr("Processed input trajectory frame %1 of %2.").arg(frame).arg(_modApp->numberOfSourceFrames()));
+    _modNode->_unwrappedUpToTime = time;
+    _modNode->setStatus(tr("Processed input trajectory frame %1 of %2.").arg(frame).arg(_modNode->numberOfSourceFrames()));
 }
 
 /******************************************************************************
 * Saves the class' contents to an output stream.
 ******************************************************************************/
-void UnwrapTrajectoriesModifierApplication::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
+void UnwrapTrajectoriesModificationNode::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
-    ModifierApplication::saveToStream(stream, excludeRecomputableData);
+    ModificationNode::saveToStream(stream, excludeRecomputableData);
     stream.beginChunk(0x02);
     stream << unwrappedUpToTime();
     stream.endChunk();
@@ -425,9 +425,9 @@ void UnwrapTrajectoriesModifierApplication::saveToStream(ObjectSaveStream& strea
 /******************************************************************************
 * Loads the class' contents from an input stream.
 ******************************************************************************/
-void UnwrapTrajectoriesModifierApplication::loadFromStream(ObjectLoadStream& stream)
+void UnwrapTrajectoriesModificationNode::loadFromStream(ObjectLoadStream& stream)
 {
-    ModifierApplication::loadFromStream(stream);
+    ModificationNode::loadFromStream(stream);
     stream.expectChunk(0x02);
     stream >> _unwrappedUpToTime;
     stream.closeChunk();
@@ -458,14 +458,14 @@ void UnwrapTrajectoriesModifierApplication::loadFromStream(ObjectLoadStream& str
 * This method is called once for this object after it has been completely
 * loaded from a stream.
 ******************************************************************************/
-void UnwrapTrajectoriesModifierApplication::loadFromStreamComplete(ObjectLoadStream& stream)
+void UnwrapTrajectoriesModificationNode::loadFromStreamComplete(ObjectLoadStream& stream)
 {
-    ModifierApplication::loadFromStreamComplete(stream);
+    ModificationNode::loadFromStreamComplete(stream);
 
     // For backward compatibility with OVITO 3.7:
     // Convert legacy time values from ticks to frames. This requires access to the AnimationSettings object, which is stored at scene level.
     if(stream.formatVersion() <= 30008) {
-        QSet<PipelineSceneNode*> pipelines = this->pipelines(true);
+        QSet<Pipeline*> pipelines = this->pipelines(true);
         if(!pipelines.empty()) {
             if(Scene* scene = (*pipelines.begin())->scene()) {
                 if(scene->animationSettings()) {

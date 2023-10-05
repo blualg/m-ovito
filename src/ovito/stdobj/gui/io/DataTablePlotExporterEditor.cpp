@@ -26,7 +26,7 @@
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include "DataTablePlotExporterEditor.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DataTablePlotExporterEditor);
 SET_OVITO_OBJECT_EDITOR(DataTablePlotExporter, DataTablePlotExporterEditor);

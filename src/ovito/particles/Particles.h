@@ -33,28 +33,21 @@
 #include <ovito/stdobj/StdObj.h>
 
 namespace Ovito {
-    namespace Particles {
-
-        using namespace Ovito::Mesh;
-        using namespace Ovito::Grid;
-        using namespace Ovito::StdObj;
-
-        class ParticleType;
-        class ParticlesObject;
-        class BondType;
-        class BondsObject;
-        class AnglesObject;
-        class DihedralsObject;
-        class ImpropersObject;
-        class ParticlesVis;
-        class BondsVis;
-        class VectorVis;
-        class ParticleBondMap;
-        class TrajectoryObject;
-        class ParticleImporter;
-        class NearestNeighborFinder;
-        class CutoffNeighborFinder;
-    }
+    class ParticleType;
+    class Particles;
+    class BondType;
+    class Bonds;
+    class Angles;
+    class Dihedrals;
+    class Impropers;
+    class ParticlesVis;
+    class BondsVis;
+    class VectorVis;
+    class ParticleBondMap;
+    class TrajectoryLines;
+    class ParticleImporter;
+    class NearestNeighborFinder;
+    class CutoffNeighborFinder;
 }
 
 #endif

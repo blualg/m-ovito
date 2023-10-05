@@ -24,13 +24,13 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/BondsObject.h>
+#include <ovito/particles/objects/Bonds.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Extends the current particle selection by adding particles to the selection
@@ -86,7 +86,7 @@ private:
     public:
 
         /// Constructor.
-        ExpandSelectionEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations) :
+        ExpandSelectionEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations) :
             Engine(request),
             _numIterations(numIterations),
             _positions(std::move(positions)),
@@ -116,7 +116,7 @@ private:
 
         void setNumSelectedParticlesOutput(size_t count) { _numSelectedParticlesOutput = count; }
 
-        const DataOORef<const SimulationCellObject>& simCell() const { return _simCell; }
+        const DataOORef<const SimulationCell>& simCell() const { return _simCell; }
 
         const ConstPropertyPtr& positions() const { return _positions; }
 
@@ -125,7 +125,7 @@ private:
     protected:
 
         const int _numIterations;
-        DataOORef<const SimulationCellObject> _simCell;
+        DataOORef<const SimulationCell> _simCell;
         ConstPropertyPtr _positions;
         ConstPropertyPtr _inputSelection;
         PropertyPtr _outputSelection;
@@ -140,7 +140,7 @@ private:
     public:
 
         /// Constructor.
-        ExpandSelectionNearestEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, int numNearestNeighbors) :
+        ExpandSelectionNearestEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations, int numNearestNeighbors) :
             ExpandSelectionEngine(request, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
             _numNearestNeighbors(numNearestNeighbors) {}
 
@@ -158,7 +158,7 @@ private:
     public:
 
         /// Constructor.
-        ExpandSelectionCutoffEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, FloatType cutoff) :
+        ExpandSelectionCutoffEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations, FloatType cutoff) :
             ExpandSelectionEngine(request, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
             _cutoffRange(cutoff) {}
 
@@ -176,7 +176,7 @@ private:
     public:
 
         /// Constructor.
-        ExpandSelectionBondedEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, ConstPropertyPtr inputSelection, int numIterations, ConstPropertyPtr bondTopology) :
+        ExpandSelectionBondedEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations, ConstPropertyPtr bondTopology) :
             ExpandSelectionEngine(request, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
             _bondTopology(std::move(bondTopology)) {}
 

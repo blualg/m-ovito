@@ -50,7 +50,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         renderMeshWireframeImplementation(primitive);
 
     // The mesh object to be rendered.
-    const TriMeshObject& mesh = *primitive.mesh();
+    const TriangleMesh& mesh = *primitive.mesh();
 
     // Check size limits of the mesh.
     if(mesh.faceCount() > std::numeric_limits<int32_t>::max() / (3 * sizeof(MeshPrimitive::RenderVertex))) {
@@ -118,7 +118,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     }
 
     // The lookup key for the buffer cache.
-    RendererResourceKey<struct MeshBufferCache, DataOORef<const TriMeshObject>, std::vector<ColorA>, ColorA, Color> meshCacheKey{
+    RendererResourceKey<struct MeshBufferCache, DataOORef<const TriangleMesh>, std::vector<ColorA>, ColorA, Color> meshCacheKey{
         primitive.mesh(),
         primitive.materialColors(),
         primitive.uniformColor(),
@@ -214,7 +214,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         const Vector3 direction = modelViewTM().inverse().column(2);
 
         // The caching key for the index buffer.
-        RendererResourceKey<struct DepthSortingCache, DataOORef<const TriMeshObject>, Vector3> indexBufferCacheKey{ primitive.mesh(), direction };
+        RendererResourceKey<struct DepthSortingCache, DataOORef<const TriangleMesh>, Vector3> indexBufferCacheKey{ primitive.mesh(), direction };
 
         // Create index buffer with three entries per triangle face.
         QOpenGLBuffer indexBuffer = shader.createCachedBuffer(std::move(indexBufferCacheKey), sizeof(GLsizei), QOpenGLBuffer::IndexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer, BufferReadAccess<int32_t> subset) {
@@ -354,7 +354,7 @@ ConstDataBufferPtr OpenGLSceneRenderer::generateMeshWireframeLines(const MeshPri
     OVITO_ASSERT(primitive.mesh());
 
     // Cache the wireframe geometry generated for the current mesh.
-    RendererResourceKey<struct WireframeCache, DataOORef<const TriMeshObject>> cacheKey(primitive.mesh());
+    RendererResourceKey<struct WireframeCache, DataOORef<const TriangleMesh>> cacheKey(primitive.mesh());
     ConstDataBufferPtr& wireframeLines = OpenGLResourceManager::instance()->lookup<ConstDataBufferPtr>(std::move(cacheKey), currentResourceFrame());
 
     if(!wireframeLines) {

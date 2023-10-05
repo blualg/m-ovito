@@ -24,15 +24,15 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/BondsObject.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Bonds.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/properties/Property.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief A visualization element for rendering bonds.
@@ -42,7 +42,7 @@ class OVITO_PARTICLES_EXPORT BondsVis : public DataVis
     OVITO_CLASS(BondsVis)
     Q_CLASSINFO("DisplayName", "Bonds");
 
-    Q_PROPERTY(Ovito::Particles::BondsVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
+    Q_PROPERTY(Ovito::BondsVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
 
 public:
 
@@ -65,20 +65,20 @@ public:
     Q_INVOKABLE BondsVis(ObjectInitializationFlags flags);
 
     /// Renders the visual element.
-    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
+    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;
 
     /// Computes the bounding box of the visual element.
-    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
+    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
 
     /// Returns the display color used for selected bonds.
     ColorG selectionBondColor() const { return ColorG(1,0,0); }
 
     /// Determines the display colors of half-bonds.
     /// Returns an array with two colors per full bond, because the two half-bonds may have different colors.
-    std::vector<ColorG> halfBondColors(const ParticlesObject* particles, bool highlightSelection, ColoringMode coloringMode, bool ignoreBondColorProperty) const;
+    std::vector<ColorG> halfBondColors(const Particles* particles, bool highlightSelection, ColoringMode coloringMode, bool ignoreBondColorProperty) const;
 
     /// Determines the bond widths used for rendering.
-    ConstPropertyPtr bondWidths(const BondsObject* bonds) const;
+    ConstPropertyPtr bondWidths(const Bonds* bonds) const;
 
 protected:
 
@@ -111,24 +111,24 @@ class OVITO_PARTICLES_EXPORT BondPickInfo : public ObjectPickInfo
 public:
 
     /// Constructor.
-    BondPickInfo(DataOORef<const ParticlesObject> particles, DataOORef<const SimulationCellObject> simulationCell) : _particles(std::move(particles)), _simulationCell(std::move(simulationCell)) {}
+    BondPickInfo(DataOORef<const Particles> particles, DataOORef<const SimulationCell> simulationCell) : _particles(std::move(particles)), _simulationCell(std::move(simulationCell)) {}
 
     /// Returns the particles object.
-    const DataOORef<const ParticlesObject>& particles() const { OVITO_ASSERT(_particles); return _particles; }
+    const DataOORef<const Particles>& particles() const { OVITO_ASSERT(_particles); return _particles; }
 
     /// Returns the simulation cell.
-    const DataOORef<const SimulationCellObject>& simulationCell() const { return _simulationCell; }
+    const DataOORef<const SimulationCell>& simulationCell() const { return _simulationCell; }
 
     /// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
-    virtual QString infoString(PipelineSceneNode* objectNode, quint32 subobjectId) override;
+    virtual QString infoString(Pipeline* pipeline, quint32 subobjectId) override;
 
 private:
 
     /// The particles object.
-    DataOORef<const ParticlesObject> _particles;
+    DataOORef<const Particles> _particles;
 
     /// The simulation cell object.
-    DataOORef<const SimulationCellObject> _simulationCell;
+    DataOORef<const SimulationCell> _simulationCell;
 };
 
 }   // End of namespace

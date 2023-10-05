@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,16 +22,16 @@
 
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/objects/BondsVis.h>
-#include <ovito/particles/objects/BondsObject.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Bonds.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
 #include "BondPickingHelper.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /******************************************************************************
 * Finds the bond under the mouse cursor.
@@ -46,10 +46,10 @@ bool BondPickingHelper::pickBond(ViewportWindowInterface* vpwin, const QPoint& c
         if(BondPickInfo* pickInfo = dynamic_object_cast<BondPickInfo>(vpPickResult.pickInfo())) {
             if(pickInfo->particles()->bonds()) {
                 size_t bondIndex = vpPickResult.subobjectId() / 2;
-                const PropertyObject* topologyProperty = pickInfo->particles()->bonds()->getTopology();
+                const Property* topologyProperty = pickInfo->particles()->bonds()->getTopology();
                 if(topologyProperty && topologyProperty->size() > bondIndex) {
                     // Save reference to the selected bond.
-                    result.sceneNode = vpPickResult.pipelineNode();
+                    result.pipeline = vpPickResult.pipeline();
                     result.bondIndex = bondIndex;
                     return true;
                 }
@@ -57,7 +57,7 @@ bool BondPickingHelper::pickBond(ViewportWindowInterface* vpwin, const QPoint& c
         }
     }
 
-    result.sceneNode = nullptr;
+    result.pipeline = nullptr;
     return false;
 }
 

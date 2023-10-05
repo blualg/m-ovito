@@ -26,9 +26,9 @@
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/stdobj/properties/GenericPropertyModifier.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * \brief Assigns colors to data elements based on a typed property.

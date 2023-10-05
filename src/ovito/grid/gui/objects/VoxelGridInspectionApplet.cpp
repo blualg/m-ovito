@@ -24,7 +24,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "VoxelGridInspectionApplet.h"
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(VoxelGridInspectionApplet);
 
@@ -97,8 +97,8 @@ void VoxelGridInspectionApplet::onCurrentContainerChanged(const DataObject* data
 /******************************************************************************
 * Determines the text shown in cells of the vertical header column.
 ******************************************************************************/
-QVariant VoxelGridInspectionApplet::headerColumnText(int section) 
-{ 
+QVariant VoxelGridInspectionApplet::headerColumnText(int section)
+{
     if(const VoxelGrid* grid = static_object_cast<VoxelGrid>(selectedContainerObject())) {
         std::array<size_t, 3> coords = grid->voxelCoords(section);
         if(grid->domain() && grid->domain()->is2D() && grid->shape()[2] <= 1) {

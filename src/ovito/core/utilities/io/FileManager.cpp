@@ -36,8 +36,6 @@
 
 namespace Ovito {
 
-using namespace Ovito::Ssh;
-
 /******************************************************************************
 * Create a QIODevice that permits reading data from the file referred to by this handle.
 ******************************************************************************/

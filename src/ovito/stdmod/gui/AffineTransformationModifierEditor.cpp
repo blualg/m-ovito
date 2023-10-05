@@ -26,10 +26,10 @@
 #include <ovito/gui/desktop/properties/AffineTransformationParameterUI.h>
 #include <ovito/gui/desktop/properties/ModifierDelegateFixedListParameterUI.h>
 #include <ovito/stdmod/modifiers/AffineTransformationModifier.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include "AffineTransformationModifierEditor.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(AffineTransformationModifierEditor);
 SET_OVITO_OBJECT_EDITOR(AffineTransformationModifier, AffineTransformationModifierEditor);
@@ -259,7 +259,7 @@ void AffineTransformationModifierEditor::onReducedCoordinatesOptionChanged()
     if(!mod) return;
 
     const PipelineFlowState& input = getPipelineInput();
-    const SimulationCellObject* cell = input.getObject<SimulationCellObject>();
+    const SimulationCell* cell = input.getObject<SimulationCell>();
     if(!cell) return;
 
     // Automatically convert translation vector to/from reduced cell coordinates.
@@ -273,7 +273,7 @@ void AffineTransformationModifierEditor::onReducedCoordinatesOptionChanged()
         tm.translation() = tm * (cell->matrix() * tm.translation());
     }
     for(size_t dim = 0; dim < 3; dim++)
-        if(std::abs(tm.translation()[dim]) < FLOATTYPE_EPSILON) 
+        if(std::abs(tm.translation()[dim]) < FLOATTYPE_EPSILON)
             tm.translation()[dim] = 0;
 
     mod->setTransformationTM(tm);

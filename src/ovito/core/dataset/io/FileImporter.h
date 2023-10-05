@@ -140,7 +140,7 @@ public:
     /// \return \c The new pipeline if the file has been successfully imported.
     //          \c nullptr if the operation has been canceled by the user.
     /// \throw Exception when the import operation has failed.
-    virtual OORef<PipelineSceneNode> importFileSet(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode) = 0;
+    virtual OORef<Pipeline> importFileSet(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode) = 0;
 
     /// \brief Tries to detect the format of the given file.
     /// \param existingImporterHint Optional existing importer object, which is tested first agains the file. Providing this importer can speed up the auto-detection.

@@ -37,7 +37,7 @@
 #include <ovito/core/viewport/overlays/TextLabelOverlay.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/scene/Scene.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include "TextLabelOverlayEditor.h"
 
 namespace Ovito {
@@ -138,11 +138,11 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
     _pipelineComboBox = new PopupUpdateComboBox();
     connect(_pipelineComboBox, &PopupUpdateComboBox::dropDownActivated, this, &TextLabelOverlayEditor::updateSourcesList);
 
-    CustomParameterUI* sourcePUI = new CustomParameterUI(this, "sourceNode", _pipelineComboBox,
+    CustomParameterUI* sourcePUI = new CustomParameterUI(this, "pipeline", _pipelineComboBox,
             // updateWidgetFunction:
             [this](const QVariant& value) {
                 _pipelineComboBox->clear();
-                if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(value.value<PipelineSceneNode*>())) {
+                if(Pipeline* pipeline = value.value<Pipeline*>()) {
                     _pipelineComboBox->addItem(pipeline->objectTitle(), QVariant::fromValue(pipeline));
                 }
                 else {
@@ -178,7 +178,7 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
 ******************************************************************************/
 bool TextLabelOverlayEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-    if(source == editObject() && event.type() == ReferenceEvent::TargetChanged && static_cast<const TargetChangedEvent&>(event).field() == PROPERTY_FIELD(TextLabelOverlay::sourceNode)) {
+    if(source == editObject() && event.type() == ReferenceEvent::TargetChanged && static_cast<const TargetChangedEvent&>(event).field() == PROPERTY_FIELD(TextLabelOverlay::pipeline)) {
         updateEditorFields();
     }
     else if(source == sourcePipeline() && (event.type() == ReferenceEvent::PreliminaryStateAvailable || event.type() == ReferenceEvent::TargetChanged)) {
@@ -198,11 +198,11 @@ void TextLabelOverlayEditor::updateSourcesList()
     _pipelineComboBox->clear();
     if(TextLabelOverlay* overlay = static_object_cast<TextLabelOverlay>(editObject())) {
         // Enumerate all pipelines in the scene.
-        visitScenePipelines([&](PipelineSceneNode* pipeline) {
+        visitScenePipelines([&](Pipeline* pipeline) {
             _pipelineComboBox->addItem(pipeline->objectTitle(), QVariant::fromValue(pipeline));
             return true;
         });
-        _pipelineComboBox->setCurrentIndex(_pipelineComboBox->findData(QVariant::fromValue(overlay->sourceNode())));
+        _pipelineComboBox->setCurrentIndex(_pipelineComboBox->findData(QVariant::fromValue(overlay->pipeline())));
     }
     if(_pipelineComboBox->count() == 0)
         _pipelineComboBox->addItem(tr("‹none›"));
@@ -215,9 +215,9 @@ void TextLabelOverlayEditor::updateEditorFields()
 {
     QString str;
     QStringList variableNames;
-    PipelineSceneNode* pipeline = nullptr;
+    Pipeline* pipeline = nullptr;
     if(TextLabelOverlay* overlay = static_object_cast<TextLabelOverlay>(editObject())) {
-        if((pipeline = overlay->sourceNode())) {
+        if((pipeline = overlay->pipeline())) {
             handleExceptions([&] {
                 const PipelineFlowState& flowState = pipeline->evaluatePipelineSynchronous(currentAnimationTime(), false);
                 if(flowState.data()) {

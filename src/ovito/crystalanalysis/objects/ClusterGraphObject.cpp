@@ -23,7 +23,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include "ClusterGraphObject.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ClusterGraphObject);
 DEFINE_RUNTIME_PROPERTY_FIELD(ClusterGraphObject, storage);

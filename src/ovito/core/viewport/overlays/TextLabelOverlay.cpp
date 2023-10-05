@@ -42,7 +42,7 @@ DEFINE_PROPERTY_FIELD(TextLabelOverlay, offsetY);
 DEFINE_PROPERTY_FIELD(TextLabelOverlay, textColor);
 DEFINE_PROPERTY_FIELD(TextLabelOverlay, outlineColor);
 DEFINE_PROPERTY_FIELD(TextLabelOverlay, outlineEnabled);
-DEFINE_REFERENCE_FIELD(TextLabelOverlay, sourceNode);
+DEFINE_REFERENCE_FIELD(TextLabelOverlay, pipeline);
 DEFINE_PROPERTY_FIELD(TextLabelOverlay, valueFormatString);
 SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, alignment, "Position");
 SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, font, "Font");
@@ -52,11 +52,12 @@ SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, offsetY, "Offset Y");
 SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, textColor, "Text color");
 SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, outlineColor, "Outline color");
 SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, outlineEnabled, "Enable outline");
-SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, sourceNode, "Attributes source");
+SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, pipeline, "Attributes source");
 SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, valueFormatString, "Number format");
 SET_PROPERTY_FIELD_UNITS(TextLabelOverlay, offsetX, PercentParameterUnit);
 SET_PROPERTY_FIELD_UNITS(TextLabelOverlay, offsetY, PercentParameterUnit);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(TextLabelOverlay, fontSize, FloatParameterUnit, 0);
+SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(TextLabelOverlay, pipeline, "sourceNode"); // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
 * Constructor.
@@ -80,8 +81,8 @@ TextLabelOverlay::TextLabelOverlay(ObjectInitializationFlags flags) : ViewportOv
 void TextLabelOverlay::initializeOverlay(Viewport* viewport)
 {
     // Automatically connect to the currently selected pipeline.
-    if(!sourceNode() && viewport->scene())
-        setSourceNode(dynamic_object_cast<PipelineSceneNode>(viewport->scene()->selection()->firstNode()));
+    if(!pipeline() && viewport->scene())
+        setPipeline(dynamic_object_cast<Pipeline>(viewport->scene()->selection()->firstNode()));
 }
 
 /******************************************************************************
@@ -90,8 +91,8 @@ void TextLabelOverlay::initializeOverlay(Viewport* viewport)
 void TextLabelOverlay::sceneNodeAdded(SceneNode* node)
 {
     // Automatically connect to the new pipeline.
-    if(!sourceNode())
-        setSourceNode(dynamic_object_cast<PipelineSceneNode>(node));
+    if(!pipeline())
+        setPipeline(dynamic_object_cast<Pipeline>(node));
 }
 
 /******************************************************************************
@@ -127,17 +128,17 @@ QVariant TextLabelOverlay::getPipelineEditorShortInfo(Scene* scene) const
 void TextLabelOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect)
 {
     if(!renderer->waitForLongOperationsEnabled()) {
-        const PipelineFlowState& flowState = sourceNode() ? sourceNode()->evaluatePipelineSynchronous(renderer->time(), true) : PipelineFlowState();
+        const PipelineFlowState& flowState = pipeline() ? pipeline()->evaluatePipelineSynchronous(renderer->time(), true) : PipelineFlowState();
         renderImplementation(renderer, physicalViewportRect, flowState);
     }
     else {
         // Check alignment parameter.
         checkAlignmentParameterValue(alignment());
 
-        if(sourceNode()) {
+        if(pipeline()) {
             PipelineEvaluationRequest request(renderer->time());
             request.setThrowOnError(renderer->renderSettings().stopOnPipelineError());
-            PipelineEvaluationFuture pipelineEvaluation = sourceNode()->evaluatePipeline(request);
+            PipelineEvaluationFuture pipelineEvaluation = pipeline()->evaluatePipeline(request);
             if(!pipelineEvaluation.waitForFinished())
                 return;
             renderImplementation(renderer, physicalViewportRect, pipelineEvaluation.result());

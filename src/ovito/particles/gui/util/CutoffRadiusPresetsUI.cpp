@@ -23,7 +23,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include "CutoffRadiusPresetsUI.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 ChemicalElement ChemicalElements[] = {
     { ChemicalElement::Unknown, 0, NULL}, // X

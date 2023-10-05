@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "DataVis.h"
 
@@ -30,22 +30,22 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS(DataVis);
 
 /******************************************************************************
-* Returns all pipeline nodes whose pipeline produced this visualization element.
+* Returns all pipelines that produced this visualization element.
 ******************************************************************************/
-QSet<PipelineSceneNode*> DataVis::pipelines(bool onlyScenePipelines) const
+QSet<Pipeline*> DataVis::pipelines(bool onlyScenePipelines) const
 {
     OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "DataVis::pipelines", "This function may only be called from the main thread.");
 
-    QSet<PipelineSceneNode*> pipelineList;
+    QSet<Pipeline*> pipelinesList;
     visitDependents([&](RefMaker* dependent) {
-        if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(dependent)) {
+        if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(dependent)) {
             if(pipeline->visElements().contains(const_cast<DataVis*>(this))) {
                 if(!onlyScenePipelines || pipeline->isInScene())
-                    pipelineList.insert(pipeline);
+                    pipelinesList.insert(pipeline);
             }
         }
     });
-    return pipelineList;
+    return pipelinesList;
 }
 
 }   // End of namespace

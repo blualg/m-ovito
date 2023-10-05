@@ -21,15 +21,15 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include "XTCImporter.h"
 
 #include <xdrfile/xdrfile.h>
 #include <xdrfile/xdrfile_xtc.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(XTCImporter);
 
@@ -161,7 +161,7 @@ void XTCImporter::FrameLoader::loadFile()
     // Transfer atomic coordinates to property storage. Also convert from nanometer units to angstroms.
     size_t numParticles = xtcFrame.xyz.size();
     setParticleCount(numParticles);
-    BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+    BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(Particles::PositionProperty);
     std::transform(xtcFrame.xyz.cbegin(), xtcFrame.xyz.cend(), posProperty.begin(), [](const Point_3<float>& p) {
         return (p * 10.0f).toDataType<FloatType>();
     });
@@ -170,8 +170,8 @@ void XTCImporter::FrameLoader::loadFile()
     // Convert cell vectors from nanometers to angstroms.
     simulationCell()->setCellMatrix(AffineTransformation((xtcFrame.cell * 10.0f).toDataType<FloatType>()));
 
-    state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(xtcFrame.step), dataSource());
-    state().setAttribute(QStringLiteral("Time"), QVariant::fromValue((FloatType)xtcFrame.time), dataSource());
+    state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(xtcFrame.step), pipelineNode());
+    state().setAttribute(QStringLiteral("Time"), QVariant::fromValue((FloatType)xtcFrame.time), pipelineNode());
 
     // Call base implementation to finalize the loaded particle data.
     ParticleImporter::FrameLoader::loadFile();

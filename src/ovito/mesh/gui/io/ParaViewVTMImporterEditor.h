@@ -26,7 +26,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/dataset/io/FileImporterEditor.h>
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 /**
  * \brief A properties editor for the ParaViewVTMImporter class.

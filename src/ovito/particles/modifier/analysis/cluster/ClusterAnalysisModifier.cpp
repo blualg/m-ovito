@@ -21,13 +21,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/BondsObject.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Bonds.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticleBondMap.h>
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/stdobj/table/DataTable.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/app/Application.h>
@@ -35,7 +35,7 @@
 
 #include <boost/range/combine.hpp>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ClusterAnalysisModifier);
 DEFINE_PROPERTY_FIELD(ClusterAnalysisModifier, neighborMode);
@@ -76,7 +76,7 @@ ClusterAnalysisModifier::ClusterAnalysisModifier(ObjectInitializationFlags flags
 ******************************************************************************/
 bool ClusterAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    return input.containsObject<ParticlesObject>();
+    return input.containsObject<Particles>();
 }
 
 /******************************************************************************
@@ -85,39 +85,39 @@ bool ClusterAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get the current particle positions.
-    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
+    const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
-    const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
 
     // Get simulation cell.
-    const SimulationCellObject* inputCell = input.expectObject<SimulationCellObject>();
+    const SimulationCell* inputCell = input.expectObject<SimulationCell>();
 
     // Get particle selection.
-    const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
+    const Property* selectionProperty = onlySelectedParticles() ? particles->expectProperty(Particles::SelectionProperty) : nullptr;
 
     // If there are bonds, get their periodic image property.
     PropertyPtr periodicImageBondProperty;
     if(unwrapParticleCoordinates() && particles->bonds()) {
         // Create a copy of the input bond PBC vectors so that it is safe to modify them.
-        periodicImageBondProperty = ConstPropertyPtr(particles->bonds()->getProperty(BondsObject::PeriodicImageProperty)).makeCopy();
+        periodicImageBondProperty = ConstPropertyPtr(particles->bonds()->getProperty(Bonds::PeriodicImageProperty)).makeCopy();
         // If no PBC vectors are present, create ad-hoc vectors initialized to zero.
         if(!periodicImageBondProperty)
-            periodicImageBondProperty = BondsObject::OOClass().createStandardProperty(DataBuffer::Initialized, particles->bonds()->elementCount(), BondsObject::PeriodicImageProperty);
+            periodicImageBondProperty = Bonds::OOClass().createStandardProperty(DataBuffer::Initialized, particles->bonds()->elementCount(), Bonds::PeriodicImageProperty);
     }
 
     // Get particle masses, needed for center-of-mass calculation.
     ConstPropertyPtr masses;
     if(computeCentersOfMass() || computeRadiusOfGyration()) {
-        if(const PropertyObject* massProperty = particles->getProperty(ParticlesObject::MassProperty)) {
+        if(const Property* massProperty = particles->getProperty(Particles::MassProperty)) {
             // Directly use per-particle mass information.
             masses = massProperty;
         }
-        else if(const PropertyObject* typeProperty = particles->getProperty(ParticlesObject::TypeProperty)) {
+        else if(const Property* typeProperty = particles->getProperty(Particles::TypeProperty)) {
             // Use per-type mass information and generate a per-particle mass array from it.
             std::map<int,FloatType> massMap = ParticleType::typeMassMap(typeProperty);
             // Use the per-type masses only if there is at least one type having a positive mass.
             if(!massMap.empty() && boost::algorithm::any_of(massMap, [](const auto& i) { return i.second > 0; })) {
-                PropertyPtr massProperty = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), ParticlesObject::MassProperty);
+                PropertyPtr massProperty = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), Particles::MassProperty);
                 boost::transform(BufferReadAccess<int32_t>(typeProperty), BufferWriteAccess<FloatType, access_mode::discard_write>(massProperty).begin(), [&](int32_t t) {
                     auto iter = massMap.find(t);
                     if(iter != massMap.end()) return iter->second;
@@ -142,7 +142,7 @@ Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(co
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     if(neighborMode() == CutoffRange) {
-        const PropertyObject* bondTopology = (periodicImageBondProperty && particles->bonds()) ? particles->bonds()->getProperty(BondsObject::TopologyProperty) : nullptr;
+        const Property* bondTopology = (periodicImageBondProperty && particles->bonds()) ? particles->bonds()->getProperty(Bonds::TopologyProperty) : nullptr;
         return std::make_shared<CutoffClusterAnalysisEngine>(
             request,
             particles,
@@ -529,7 +529,7 @@ void ClusterAnalysisModifier::BondClusterAnalysisEngine::doClustering(std::vecto
 void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     ClusterAnalysisModifier* modifier = static_object_cast<ClusterAnalysisModifier>(request.modifier());
-    ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+    Particles* particles = state.expectMutableObject<Particles>();
 
     if(_inputFingerprint.hasChanged(particles))
         throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
@@ -548,7 +548,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(const Modifier
         clusterColors[0] = ColorG(0.8f, 0.8f, 0.8f);
 
         // Assign colors to particles according to the clusters they belong to.
-        BufferWriteAccess<ColorG, access_mode::discard_write> colorsArray = particles->createProperty(ParticlesObject::ColorProperty);
+        BufferWriteAccess<ColorG, access_mode::discard_write> colorsArray = particles->createProperty(Particles::ColorProperty);
         boost::transform(BufferReadAccess<int64_t>(particleClusters()), colorsArray.begin(), [&](int64_t cluster) {
             OVITO_ASSERT(cluster >= 0 && (size_t)cluster < clusterColors.size());
             return clusterColors[cluster];
@@ -565,12 +565,12 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(const Modifier
         }
     }
 
-    state.addAttribute(QStringLiteral("ClusterAnalysis.cluster_count"), QVariant::fromValue(numClusters()), request.modApp());
+    state.addAttribute(QStringLiteral("ClusterAnalysis.cluster_count"), QVariant::fromValue(numClusters()), request.modificationNode());
     if(modifier->sortBySize())
-        state.addAttribute(QStringLiteral("ClusterAnalysis.largest_size"), QVariant::fromValue(largestClusterSize()), request.modApp());
+        state.addAttribute(QStringLiteral("ClusterAnalysis.largest_size"), QVariant::fromValue(largestClusterSize()), request.modificationNode());
 
     // Output a data table with the cluster list.
-    DataTable* table = state.createObject<DataTable>(QStringLiteral("clusters"), request.modApp(), DataTable::Scatter, tr("Cluster list"), _clusterSizes, _clusterIds);
+    DataTable* table = state.createObject<DataTable>(QStringLiteral("clusters"), request.modificationNode(), DataTable::Scatter, tr("Cluster list"), _clusterSizes, _clusterIds);
 
     // Output centers of mass.
     if(modifier->computeCentersOfMass() && _centersOfMass)

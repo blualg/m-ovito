@@ -24,11 +24,11 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/particles/objects/BondsObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/particles/objects/Bonds.h>
 #include <ovito/stdobj/properties/PropertyExpressionEvaluator.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Helper class that evaluates one or more math expressions for every particle.
@@ -47,7 +47,7 @@ public:
 protected:
 
     /// Initializes the list of input variables from the given input state.
-    virtual void createInputVariables(const std::vector<ConstPropertyPtr>& inputProperties, const SimulationCellObject* simCell, const QVariantMap& attributes, int animationFrame) override;
+    virtual void createInputVariables(const std::vector<ConstPropertyPtr>& inputProperties, const SimulationCell* simCell, const QVariantMap& attributes, int animationFrame) override;
 };
 
 /**

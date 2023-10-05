@@ -23,7 +23,7 @@
 #include <ovito/mesh/Mesh.h>
 #include "RenderableSurfaceMesh.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(RenderableSurfaceMesh);
 DEFINE_RUNTIME_PROPERTY_FIELD(RenderableSurfaceMesh, surfaceMesh);

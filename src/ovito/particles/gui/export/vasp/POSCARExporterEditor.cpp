@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "POSCARExporterEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(POSCARExporterEditor);
 SET_OVITO_OBJECT_EDITOR(POSCARExporter, POSCARExporterEditor);

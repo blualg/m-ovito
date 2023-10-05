@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,12 +24,10 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/stdmod/modifiers/SliceModifier.h>
 
-namespace Ovito::Particles {
-
-using namespace Ovito::StdMod;
+namespace Ovito {
 
 /**
  * \brief Function for the SliceModifier that operates on particles.

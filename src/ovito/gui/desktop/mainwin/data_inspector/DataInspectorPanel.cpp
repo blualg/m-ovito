@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -104,7 +104,7 @@ DataInspectorPanel::DataInspectorPanel(MainWindow& mainWindow) :
 /******************************************************************************
 * Is called when the user clicked on the tab bar.
 ******************************************************************************/
-void DataInspectorPanel::changeEvent(QEvent* event) 
+void DataInspectorPanel::changeEvent(QEvent* event)
 {
     if(event->type() == QEvent::EnabledChange) {
         // Temporarily disable updates of the inspector widget while the widget is disabled.
@@ -164,11 +164,11 @@ void DataInspectorPanel::open()
 ******************************************************************************/
 void DataInspectorPanel::onSceneSelectionChanged(SelectionSet* selection)
 {
-    // Find the first selected PipelineSceneNode and make it the active node:
-    PipelineSceneNode* selectedNode = nullptr;
+    // Find the first selected Pipeline and make it the active node:
+    Pipeline* selectedNode = nullptr;
     if(selection) {
         for(SceneNode* node : selection->nodes()) {
-            selectedNode = dynamic_object_cast<PipelineSceneNode>(node);
+            selectedNode = dynamic_object_cast<Pipeline>(node);
             if(selectedNode) break;
         }
     }
@@ -366,7 +366,7 @@ void DataInspectorPanel::onCurrentPageChanged(int index)
 /******************************************************************************
 * Selects a specific data object in the data inspector.
 ******************************************************************************/
-bool DataInspectorPanel::selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint)
+bool DataInspectorPanel::selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
 {
     // Obtain the output of the currently selected pipeline.
     if(!updatePipelineOutput())
@@ -383,7 +383,7 @@ bool DataInspectorPanel::selectDataObject(PipelineObject* dataSource, const QStr
         applet->updateDisplay();
 
         // Check if this applet contains the requested data object.
-        if(applet->selectDataObject(dataSource, objectIdentifierHint, modeHint)) {
+        if(applet->selectDataObject(createdByNode, objectIdentifierHint, modeHint)) {
             // If yes, switch to the tab and we are done.
             _tabBar->setCurrentIndex(_appletsToTabs[appletIndex]);
             return true;

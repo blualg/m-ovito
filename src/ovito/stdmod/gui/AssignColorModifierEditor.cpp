@@ -27,7 +27,7 @@
 #include <ovito/stdmod/modifiers/AssignColorModifier.h>
 #include "AssignColorModifierEditor.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(AssignColorModifierEditor);
 SET_OVITO_OBJECT_EDITOR(AssignColorModifier, AssignColorModifierEditor);

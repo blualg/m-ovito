@@ -26,7 +26,7 @@
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include <ovito/gui/desktop/properties/ParameterUI.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief UI component for selecting the PropertyContainer a Modifier should operate on.

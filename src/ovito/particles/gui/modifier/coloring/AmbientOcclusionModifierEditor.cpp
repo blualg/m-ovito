@@ -28,7 +28,7 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "AmbientOcclusionModifierEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(AmbientOcclusionModifierEditor);
 SET_OVITO_OBJECT_EDITOR(AmbientOcclusionModifier, AmbientOcclusionModifierEditor);

@@ -25,7 +25,7 @@
 #include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include "SurfaceMeshDeleteSelectedModifierDelegate.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshRegionsDeleteSelectedModifierDelegate);
 

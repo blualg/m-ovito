@@ -21,15 +21,15 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "QuantumEspressoImporter.h"
 
 #include <boost/algorithm/string.hpp>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(QuantumEspressoImporter);
 
@@ -204,13 +204,13 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
 
             // Create particle properties.
             setParticleCount(natoms);
-            posAccess = particles()->createProperty(ParticlesObject::PositionProperty);
-            PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-            PropertyObject* massProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::MassProperty);
+            posAccess = particles()->createProperty(Particles::PositionProperty);
+            Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
+            Property* massProperty = particles()->createProperty(DataBuffer::Initialized, Particles::MassProperty);
 
             // Add the registered atom types.
             for(int i = 0; i < ntypes; i++) {
-                const ElementType* type = addNamedType(ParticlesObject::OOClass(), typeProperty, type_names[i]);
+                const ElementType* type = addNamedType(Particles::OOClass(), typeProperty, type_names[i]);
                 static_object_cast<ParticleType>(typeProperty->makeMutable(type))->setMass(type_masses[i]);
             }
 
@@ -224,7 +224,7 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
                 // Parse atom type name.
                 const char* token_end = line;
                 while(*token_end > ' ') ++token_end;
-                int typeId = addNamedType(ParticlesObject::OOClass(), typeProperty, QLatin1String(line, token_end))->numericId();
+                int typeId = addNamedType(Particles::OOClass(), typeProperty, QLatin1String(line, token_end))->numericId();
                 typeAccess[i] = typeId;
                 if(typeId >= 1 && typeId <= type_masses.size())
                     massAccess[i] = type_masses[typeId-1];

@@ -27,7 +27,7 @@
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/stdobj/gui/properties/PropertyInspectionApplet.h>
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 class SurfaceMeshInspectionApplet;  // defined below
 
@@ -123,7 +123,7 @@ public:
     virtual QWidget* createWidget() override;
 
     /// Selects a specific data object in this applet.
-    virtual bool selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint) override;
+    virtual bool selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint) override;
 
 private Q_SLOTS:
 

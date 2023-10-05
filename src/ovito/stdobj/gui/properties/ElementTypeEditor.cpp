@@ -22,14 +22,14 @@
 
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include <ovito/stdobj/properties/ElementType.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/gui/desktop/properties/ColorParameterUI.h>
 #include <ovito/gui/desktop/properties/StringParameterUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "ElementTypeEditor.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ElementTypeEditor);
 SET_OVITO_OBJECT_EDITOR(ElementType, ElementTypeEditor);

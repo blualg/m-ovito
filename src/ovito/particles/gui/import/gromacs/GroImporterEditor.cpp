@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "GroImporterEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(GroImporterEditor);
 SET_OVITO_OBJECT_EDITOR(GroImporter, GroImporterEditor);
@@ -51,7 +51,7 @@ void GroImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
     // Center simulation cell.
     BooleanParameterUI* recenterCellUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::recenterCell));
     sublayout->addWidget(recenterCellUI->checkBox());
-    
+
     // Generate bonds.
     BooleanParameterUI* generateBondsUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::generateBonds));
     sublayout->addWidget(generateBondsUI->checkBox());

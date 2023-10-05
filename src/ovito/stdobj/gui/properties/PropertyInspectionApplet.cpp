@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdobj/gui/StdObjGui.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyExpressionEvaluator.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
 #include <ovito/gui/desktop/widgets/general/CopyableTableView.h>
@@ -29,7 +29,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "PropertyInspectionApplet.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(PropertyInspectionApplet);
 
@@ -88,16 +88,16 @@ void PropertyInspectionApplet::onCurrentContainerChanged()
 /******************************************************************************
 * Selects a specific data object in this applet.
 ******************************************************************************/
-bool PropertyInspectionApplet::selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint)
+bool PropertyInspectionApplet::selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
 {
     // Check the property container list in case the requested data object is a PropertyContainer.
-    if(DataInspectionApplet::selectDataObject(dataSource, objectIdentifierHint, modeHint))
+    if(DataInspectionApplet::selectDataObject(createdByNode, objectIdentifierHint, modeHint))
         return true;
 
     // Check the property columns in case the requested data object is a property object.
     const auto& properties = _tableModel->properties();
-    auto iter = boost::find_if(properties, [&](const PropertyObject* property) {
-        return property->dataSource() == dataSource &&
+    auto iter = boost::find_if(properties, [&](const Property* property) {
+        return property->createdByNode() == createdByNode &&
             (objectIdentifierHint.isEmpty() || property->identifier().startsWith(objectIdentifierHint));
     });
     if(iter != properties.end()) {
@@ -129,7 +129,7 @@ void PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyCon
 
     // Try to preserve the columns of the model as far as possible.
     auto iter_pair = std::mismatch(_properties.begin(), _properties.end(), newProperties.begin(), newProperties.end(),
-        [](const PropertyObject* prop1, const PropertyObject* prop2) {
+        [](const Property* prop1, const Property* prop2) {
             return prop1->type() == prop2->type() && prop1->name() == prop2->name();
         });
 
@@ -228,7 +228,7 @@ QVariant PropertyInspectionApplet::PropertyTableModel::data(const QModelIndex& i
             QString str;
             for(size_t component = 0; component < property->componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(" ");
-                if(property->dataType() == PropertyObject::Int32) {
+                if(property->dataType() == Property::Int32) {
                     BufferReadAccess<int32_t*> data(property);
                     str += QString::number(data.get(elementIndex, component));
                     if(property->elementTypes().empty() == false) {
@@ -238,19 +238,19 @@ QVariant PropertyInspectionApplet::PropertyTableModel::data(const QModelIndex& i
                         }
                     }
                 }
-                else if(property->dataType() == PropertyObject::Int64) {
+                else if(property->dataType() == Property::Int64) {
                     BufferReadAccess<int64_t*> data(property);
                     str += QString::number(data.get(elementIndex, component));
                 }
-                else if(property->dataType() == PropertyObject::Int8) {
+                else if(property->dataType() == Property::Int8) {
                     BufferReadAccess<int8_t*> data(property);
                     str += QString::number(data.get(elementIndex, component));
                 }
-                else if(property->dataType() == PropertyObject::Float32) {
+                else if(property->dataType() == Property::Float32) {
                     BufferReadAccess<float*> data(property);
                     str += QString::number(data.get(elementIndex, component));
                 }
-                else if(property->dataType() == PropertyObject::Float64) {
+                else if(property->dataType() == Property::Float64) {
                     BufferReadAccess<double*> data(property);
                     str += QString::number(data.get(elementIndex, component));
                 }
@@ -269,7 +269,7 @@ QVariant PropertyInspectionApplet::PropertyTableModel::data(const QModelIndex& i
                 else if(property->dataType() == DataBuffer::Float64)
                     return static_cast<QColor>(BufferReadAccess<ColorT<double>>(property)[elementIndex]);
             }
-            else if(property->dataType() == PropertyObject::Int32 && property->componentCount() == 1 && property->elementTypes().empty() == false) {
+            else if(property->dataType() == Property::Int32 && property->componentCount() == 1 && property->elementTypes().empty() == false) {
                 BufferReadAccess<int32_t> data(property);
                 if(const ElementType* ptype = property->elementType(data[elementIndex]))
                     return static_cast<QColor>(ptype->color());

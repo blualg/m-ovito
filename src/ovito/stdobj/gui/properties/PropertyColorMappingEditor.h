@@ -29,7 +29,7 @@
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
 #include <ovito/stdobj/properties/PropertyColorMapping.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * A properties editor for the PropertyColorMapping class.

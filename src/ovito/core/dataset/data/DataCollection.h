@@ -216,11 +216,11 @@ public:
     }
 
     /// Finds an object of the given type and with the given identifier in the list of data objects stored in this flow state.
-    const DataObject* getObjectBy(const DataObject::OOMetaClass& objectClass, const PipelineObject* dataSource, const QString& identifier) const;
+    const DataObject* getObjectBy(const DataObject::OOMetaClass& objectClass, const PipelineNode* dataSource, const QString& identifier) const;
 
     /// Finds an object of the given type and with the given identifier in the list of data objects stored in this flow state.
     template<class DataObjectClass>
-    const DataObjectClass* getObjectBy(const PipelineObject* dataSource, const QString& identifier) const {
+    const DataObjectClass* getObjectBy(const PipelineNode* dataSource, const QString& identifier) const {
         return static_object_cast<DataObjectClass>(getObjectBy(DataObjectClass::OOClass(), dataSource, identifier));
     }
 
@@ -317,9 +317,9 @@ public:
     /// Instantiates a new data object, passes the given parameters to its class constructor,
     /// assigns the given data source object, and finally inserts the data object into this pipeline flow state.
     template<class DataObjectType, typename... Args>
-    DataObjectType* createObject(const PipelineObject* dataSource, Args&&... args) {
+    DataObjectType* createObject(const PipelineNode* createdByNode, Args&&... args) {
         OORef<DataObjectType> obj = OORef<DataObjectType>::create(std::forward<Args>(args)...);
-        obj->setDataSource(const_cast<PipelineObject*>(dataSource));
+        obj->setCreatedByNode(const_cast<PipelineNode*>(createdByNode));
         addObject(obj);
         return obj;
     }
@@ -328,8 +328,8 @@ public:
     /// assign a unique identifier to the object, assigns the given data source object, and
     /// finally inserts the data object into this pipeline flow state.
     template<class DataObjectType, typename... Args>
-    DataObjectType* createObject(const QString& baseName, const PipelineObject* dataSource, Args&&... args) {
-        DataObjectType* obj = createObject<DataObjectType, Args...>(dataSource, std::forward<Args>(args)...);
+    DataObjectType* createObject(const QString& baseName, const PipelineNode* createdByNode, Args&&... args) {
+        DataObjectType* obj = createObject<DataObjectType, Args...>(createdByNode, std::forward<Args>(args)...);
         OVITO_ASSERT(!baseName.isEmpty());
         obj->setIdentifier(generateUniqueIdentifier<DataObjectType>(baseName));
         return obj;
@@ -339,18 +339,18 @@ public:
     /// assign a unique identifier to the object, assigns the given data source object and visual element, and
     /// finally inserts the data object into this pipeline flow state.
     template<class DataObjectType, typename... Args>
-    DataObjectType* createObjectWithVis(const QString& baseName, const PipelineObject* dataSource, DataVis* visElement, Args&&... args) {
-        DataObjectType* obj = createObject<DataObjectType>(baseName, dataSource, ObjectInitializationFlag::DontCreateVisElement, std::forward<Args>(args)...);
+    DataObjectType* createObjectWithVis(const QString& baseName, const PipelineNode* createdByNode, DataVis* visElement, Args&&... args) {
+        DataObjectType* obj = createObject<DataObjectType>(baseName, createdByNode, ObjectInitializationFlag::DontCreateVisElement, std::forward<Args>(args)...);
         obj->setVisElement(visElement);
         return obj;
     }
 
     /// Instantiates a new data object, passes the given parameters to its class constructor,
-    /// assigns the given data source object and visual element, and
-    /// finally inserts the data object into this pipeline flow state.
+    /// assigns the pipeline creator node and visual element, and
+    /// finally inserts the data object into this data collection.
     template<class DataObjectType, typename... Args>
-    DataObjectType* createObjectWithVis(const PipelineObject* dataSource, DataVis* visElement, Args&&... args) {
-        DataObjectType* obj = createObject<DataObjectType>(dataSource, ObjectInitializationFlag::DontCreateVisElement, std::forward<Args>(args)...);
+    DataObjectType* createObjectWithVis(const PipelineNode* createdByNode, DataVis* visElement, Args&&... args) {
+        DataObjectType* obj = createObject<DataObjectType>(createdByNode, ObjectInitializationFlag::DontCreateVisElement, std::forward<Args>(args)...);
         obj->setVisElement(visElement);
         return obj;
     }
@@ -379,13 +379,13 @@ public:
 
     /// Looks up the value for the global attribute with the given base name and creator.
     /// Returns a given default value if the attribute is not defined in this pipeline state.
-    QVariant getAttributeValue(const PipelineObject* dataSource, const QString& attrBaseName, const QVariant& defaultValue = QVariant()) const;
+    QVariant getAttributeValue(const PipelineNode* createdByNode, const QString& attrBaseName, const QVariant& defaultValue = QVariant()) const;
 
     /// Inserts a new global attribute into the pipeline state.
-    AttributeDataObject* addAttribute(const QString& key, QVariant value, const PipelineObject* dataSource);
+    AttributeDataObject* addAttribute(const QString& key, QVariant value, const PipelineNode* createdByNode);
 
     /// Inserts a new global attribute into the pipeline state overwritting any existing attribute with the same name.
-    AttributeDataObject* setAttribute(const QString& key, QVariant value, const PipelineObject* dataSource);
+    AttributeDataObject* setAttribute(const QString& key, QVariant value, const PipelineNode* createdByNode);
 
     /// Returns a new unique data object identifier that does not collide with the
     /// identifiers of any existing data object of the given type in the same data

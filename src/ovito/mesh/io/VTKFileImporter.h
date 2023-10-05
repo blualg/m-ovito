@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/io/FileSourceImporter.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 /**
  * \brief File parser for VTK files containing triangle mesh data.

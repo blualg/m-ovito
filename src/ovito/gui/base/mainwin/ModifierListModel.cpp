@@ -491,10 +491,10 @@ void ModifierListModel::updateActionState()
     if(currentItem) {
         if(AnimationSettings* anim = _userInterface.datasetContainer().activeAnimationSettings()) {
             _userInterface.handleExceptions([&] {
-                if(PipelineObject* pipelineObject = dynamic_object_cast<PipelineObject>(currentItem->object())) {
-                    inputState = pipelineObject->evaluateSynchronous(PipelineEvaluationRequest(anim));
+                if(PipelineNode* pipelineNode = dynamic_object_cast<PipelineNode>(currentItem->object())) {
+                    inputState = pipelineNode->evaluateSynchronous(PipelineEvaluationRequest(anim));
                 }
-                else if(PipelineSceneNode* pipeline = _pipelineListModel->selectedPipeline()) {
+                else if(Pipeline* pipeline = _pipelineListModel->selectedPipeline()) {
                     inputState = pipeline->evaluatePipelineSynchronous(anim->currentTime(), false);
                 }
             });

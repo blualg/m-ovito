@@ -21,14 +21,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/mesh/Mesh.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/simcell/SimulationCellVis.h>
 #include <ovito/mesh/io/ParaViewVTPMeshImporter.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include "ParaViewVTUSimulationCellImporter.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParaViewVTUSimulationCellImporter);
 

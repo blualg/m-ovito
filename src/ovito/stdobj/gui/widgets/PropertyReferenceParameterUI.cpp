@@ -25,7 +25,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include "PropertyReferenceParameterUI.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(PropertyReferenceParameterUI);
 
@@ -225,14 +225,14 @@ void PropertyReferenceParameterUI::addItemsToComboBox(const PropertyContainer* c
     if(!_nullPropertyItem.isEmpty())
         _comboBox->addItem(PropertyReference{}, _nullPropertyItem);
 
-    for(const PropertyObject* property : container->properties()) {
+    for(const Property* property : container->properties()) {
 
         // The client can apply a filter to the displayed property list.
         if(_propertyFilter && !_propertyFilter(property))
             continue;
 
         // Properties with a non-numeric data type cannot be used as source properties.
-        if(property->dataType() != PropertyObject::Int8 && property->dataType() != PropertyObject::Int32 && property->dataType() != PropertyObject::Int64 && property->dataType() != PropertyObject::Float32 && property->dataType() != PropertyObject::Float64)
+        if(property->dataType() != Property::Int8 && property->dataType() != Property::Int32 && property->dataType() != Property::Int64 && property->dataType() != Property::Float32 && property->dataType() != Property::Float64)
             continue;
 
         if(_componentsMode != ShowOnlyComponents || (property->componentCount() <= 1 && property->componentNames().empty())) {

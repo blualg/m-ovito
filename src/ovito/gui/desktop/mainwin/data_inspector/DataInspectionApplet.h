@@ -26,7 +26,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/core/oo/OvitoObject.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 
 namespace Ovito {
 
@@ -66,10 +66,10 @@ public:
     virtual void deactivate() {}
 
     /// Selects a specific data object in this applet.
-    virtual bool selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint);
+    virtual bool selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint);
 
     /// Returns the currently selected data pipeline in the scene.
-    PipelineSceneNode* currentPipeline() const;
+    Pipeline* currentPipeline() const;
 
     /// Returns the current output of the data pipeline displayed in the applet.
     const PipelineFlowState& currentState() const;

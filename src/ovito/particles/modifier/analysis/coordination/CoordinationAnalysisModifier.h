@@ -26,12 +26,12 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/util/CutoffNeighborFinder.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief This modifier computes the coordination number of each particle (i.e. the number of neighbors within a given cutoff radius).
@@ -75,7 +75,7 @@ private:
     public:
 
         /// Constructor.
-        CoordinationAnalysisEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCellObject* simCell,
+        CoordinationAnalysisEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCell* simCell,
                 FloatType cutoff, int rdfSampleCount, ConstPropertyPtr particleTypes, boost::container::flat_map<int,QString> uniqueTypeIds) :
             Engine(request),
             _positions(std::move(positions)),
@@ -85,7 +85,7 @@ private:
             _computePartialRdfs(particleTypes),
             _particleTypes(std::move(particleTypes)),
             _uniqueTypeIds(std::move(uniqueTypeIds)),
-            _coordinationNumbers(ParticlesObject::OOClass().createStandardProperty(DataBuffer::Initialized, fingerprint.particleCount(), ParticlesObject::CoordinationProperty)),
+            _coordinationNumbers(Particles::OOClass().createStandardProperty(DataBuffer::Initialized, fingerprint.particleCount(), Particles::CoordinationProperty)),
             _inputFingerprint(std::move(fingerprint))
         {
             size_t componentCount = _computePartialRdfs ? (this->uniqueTypeIds().size() * (this->uniqueTypeIds().size()+1) / 2) : 1;
@@ -98,7 +98,7 @@ private:
                     }
                 }
             }
-            _rdfY = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, rdfSampleCount, PropertyObject::FloatDefault, componentCount, QStringLiteral("g(r)"), 0, std::move(componentNames));
+            _rdfY = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, rdfSampleCount, Property::FloatDefault, componentCount, QStringLiteral("g(r)"), 0, std::move(componentNames));
         }
 
         /// Computes the modifier's results.
@@ -123,7 +123,7 @@ private:
         const ConstPropertyPtr& selection() const { return _selection; }
 
         /// Returns the simulation cell data.
-        const DataOORef<const SimulationCellObject>& cell() const { return _simCell; }
+        const DataOORef<const SimulationCell>& cell() const { return _simCell; }
 
         /// Returns the cutoff radius.
         FloatType cutoff() const { return _cutoff; }
@@ -134,7 +134,7 @@ private:
     private:
 
         const FloatType _cutoff;
-        DataOORef<const SimulationCellObject> _simCell;
+        DataOORef<const SimulationCell> _simCell;
         bool _computePartialRdfs;
         boost::container::flat_map<int,QString> _uniqueTypeIds;
         ConstPropertyPtr _positions;

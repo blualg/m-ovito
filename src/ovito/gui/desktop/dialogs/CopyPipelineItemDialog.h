@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,7 +37,7 @@ class CopyPipelineItemDialog : public QDialog
 public:
 
     /// Constructor.
-    CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* parentWindow, PipelineSceneNode* sourcePipeline, QVector<OORef<PipelineObject>> pipelineObjects);
+    CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* parentWindow, Pipeline* sourcePipeline, QVector<OORef<PipelineNode>> pipelineNodes);
 
 private Q_SLOTS:
 
@@ -47,13 +47,13 @@ private Q_SLOTS:
 private:
 
     /// The parent window.
-    MainWindow& _mainWindow; 
+    MainWindow& _mainWindow;
 
     /// The source pipeline.
-    OORef<PipelineSceneNode> _sourcePipeline;
+    OORef<Pipeline> _sourcePipeline;
 
-    /// The pipeline objects to be copied.
-    QVector<OORef<PipelineObject>> _pipelineObjects;
+    /// The pipeline nodes to be copied.
+    QVector<OORef<PipelineNode>> _pipelineNodes;
 
     /// Target pipeline selector.
     QComboBox* _destinationPipelineList;

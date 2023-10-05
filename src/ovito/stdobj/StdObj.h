@@ -29,21 +29,21 @@
 
 #include <ovito/core/Core.h>
 
-namespace Ovito::StdObj
+namespace Ovito
 {
-    class PropertyObject;
+    class Property;
     class PropertyContainer;
     class PropertyContainerClass;
     using PropertyContainerClassPtr = const PropertyContainerClass*;
-    using PropertyPtr = DataOORef<PropertyObject>;
-    using ConstPropertyPtr = DataOORef<const PropertyObject>;
+    using PropertyPtr = DataOORef<Property>;
+    using ConstPropertyPtr = DataOORef<const Property>;
     class PropertyReference;
     template<class PropertyContainerType> class TypedPropertyReference;
     class ElementType;
     class InputColumnMapping;
     template<class PropertyContainerType> class TypedInputColumnMapping;
     class InputColumnReader;
-    class SimulationCellObject;
+    class SimulationCell;
     class SimulationCellVis;
     class DataTable;
     class PropertyColorMapping;

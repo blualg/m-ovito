@@ -21,18 +21,18 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdmod/gui/StdModGui.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
 #include <ovito/core/rendering/MarkerPrimitive.h>
 #include <ovito/core/rendering/LinePrimitive.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
-#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
+#include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/widgets/general/ViewportModeButton.h>
@@ -45,7 +45,7 @@
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include "SliceModifierEditor.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(SliceModifierEditor);
 SET_OVITO_OBJECT_EDITOR(SliceModifier, SliceModifierEditor);
@@ -191,7 +191,7 @@ void SliceModifierEditor::onCoordinateTypeChanged()
     if(!mod) return;
 
     const PipelineFlowState& input = getPipelineInput();
-    const SimulationCellObject* cell = input.getObject<SimulationCellObject>();
+    const SimulationCell* cell = input.getObject<SimulationCell>();
     if(!cell) return;
 
     // Get the plane info.
@@ -247,7 +247,7 @@ void SliceModifierEditor::onAlignPlaneToView()
     if(!vp) return;
 
     // Get the object to world transformation for the currently selected object.
-    PipelineSceneNode* pipeline = selectedPipeline();
+    Pipeline* pipeline = selectedPipeline();
     if(!pipeline) return;
     AnimationTime time = currentAnimationTime();
     const AffineTransformation& nodeTM = pipeline->getWorldTransform(time, interval);
@@ -269,7 +269,7 @@ void SliceModifierEditor::onAlignPlaneToView()
 
         // Convert to reduced cell coordinates if requested.
         if(mod->reducedCoordinates()) {
-            if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
+            if(const SimulationCell* cell = input.getObject<SimulationCell>()) {
                 newPlaneLocal = cell->inverseMatrix() * newPlaneLocal;
             }
         }
@@ -296,7 +296,7 @@ void SliceModifierEditor::onAlignViewToPlane()
         if(!vp) return;
 
         // Get the object to world transformation for the currently selected object
-        PipelineSceneNode* pipeline = selectedPipeline();
+        Pipeline* pipeline = selectedPipeline();
         if(!pipeline) return;
         AnimationTime time = currentAnimationTime();
         const AffineTransformation& nodeTM = pipeline->getWorldTransform(time, interval);
@@ -338,7 +338,7 @@ void SliceModifierEditor::onCenterOfBox()
 {
     if(SliceModifier* mod = static_object_cast<SliceModifier>(editObject())) {
         performTransaction(tr("Center plane in box"), [&]() {
-            mod->centerPlaneInSimulationCell(modifierApplication(), currentAnimationTime());
+            mod->centerPlaneInSimulationCell(modificationNode(), currentAnimationTime());
         });
     }
 }
@@ -443,13 +443,13 @@ void PickPlanePointsInputMode::alignPlane(SliceModifier* mod)
         if(worldPlane.normal.equals(Vector3::Zero(), FLOATTYPE_EPSILON))
             throw Exception(tr("Cannot set the new slicing plane. The three selected points are colinear."));
 
-        // Get the object-to-world transformation for the currently selected object.
-        ModifierApplication* modApp = _editor->modifierApplication();
-        if(!modApp) return;
-        PipelineSceneNode* node = _editor->selectedPipeline();
-        if(!node) return;
+        // Get the object-to-world transformation for the currently selected pipeline.
+        ModificationNode* modNode = _editor->modificationNode();
+        if(!modNode) return;
+        Pipeline* pipeline = _editor->selectedPipeline();
+        if(!pipeline) return;
         TimeInterval interval;
-        const AffineTransformation& nodeTM = node->getWorldTransform(_editor->currentAnimationTime(), interval);
+        const AffineTransformation& nodeTM = pipeline->getWorldTransform(_editor->currentAnimationTime(), interval);
 
         // Transform new plane from world to object space.
         Plane3 localPlane = nodeTM.inverse() * worldPlane;
@@ -457,7 +457,7 @@ void PickPlanePointsInputMode::alignPlane(SliceModifier* mod)
         // Convert to reduced cell coordinates if requested.
         if(mod->reducedCoordinates()) {
             const PipelineFlowState& input = _editor->getPipelineInput();
-            if(const SimulationCellObject* cell = input.getObject<SimulationCellObject>()) {
+            if(const SimulationCell* cell = input.getObject<SimulationCell>()) {
                 localPlane = cell->inverseMatrix() * localPlane;
             }
         }
@@ -503,7 +503,7 @@ void PickPlanePointsInputMode::renderOverlay3D(Viewport* vp, SceneRenderer* rend
             renderer->renderLines(lines);
         }
         else if(npoints == 3) {
-            DataOORef<TriMeshObject> tri = DataOORef<TriMeshObject>::create(ObjectInitializationFlag::DontCreateVisElement);
+            DataOORef<TriangleMesh> tri = DataOORef<TriangleMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
             tri->setVertexCount(3);
             tri->setVertex(0, _pickedPoints[0]);
             tri->setVertex(1, _pickedPoints[1]);

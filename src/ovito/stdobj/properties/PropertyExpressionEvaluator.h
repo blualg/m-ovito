@@ -24,13 +24,13 @@
 
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 
 #include <muparser/muParser.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief Helper class that evaluates one or more math expressions for every data element.
@@ -72,7 +72,7 @@ public:
     virtual QString inputVariableTable() const;
 
     /// Returns the stored simulation cell information.
-    const SimulationCellObject* simCell() const { return _simCell; }
+    const SimulationCell* simCell() const { return _simCell; }
 
     /// Sets the name of the variable that provides the index of the current element.
     void setIndexVarName(QString name) { _indexVarName = std::move(name); }
@@ -244,7 +244,7 @@ public:
 protected:
 
     /// Initializes the list of input variables from the given input state.
-    virtual void createInputVariables(const std::vector<ConstPropertyPtr>& inputProperties, const SimulationCellObject* simCell, const QVariantMap& attributes, int animationFrame);
+    virtual void createInputVariables(const std::vector<ConstPropertyPtr>& inputProperties, const SimulationCell* simCell, const QVariantMap& attributes, int animationFrame);
 
     /// Updates the stored value of variables that depends on the current element index.
     virtual void updateVariables(Worker& worker, size_t elementIndex) {
@@ -297,7 +297,7 @@ protected:
     QString _elementDescriptionName;
 
     /// The simulation cell information.
-    DataOORef<const SimulationCellObject> _simCell;
+    DataOORef<const SimulationCell> _simCell;
 };
 
 }   // End of namespace

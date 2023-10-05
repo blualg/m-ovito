@@ -21,16 +21,16 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/particles/objects/BondsObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/particles/objects/Bonds.h>
 #include <ovito/particles/objects/BondsVis.h>
 #include <ovito/core/oo/CloneHelper.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/app/Application.h>
 #include "ParticlesCombineDatasetsModifierDelegate.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParticlesCombineDatasetsModifierDelegate);
 
@@ -55,19 +55,19 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
     const PipelineFlowState& secondaryState = additionalInputs.front();
 
     // Get the particles from secondary dataset.
-    const ParticlesObject* secondaryParticles = secondaryState.getObject<ParticlesObject>();
+    const Particles* secondaryParticles = secondaryState.getObject<Particles>();
     if(!secondaryParticles)
         return PipelineStatus::Success;
-    const PropertyObject* secondaryPosProperty = secondaryParticles->expectProperty(ParticlesObject::PositionProperty);
+    const Property* secondaryPosProperty = secondaryParticles->expectProperty(Particles::PositionProperty);
 
     // Get the positions from the primary dataset.
-    const ParticlesObject* primaryParticles = state.getObject<ParticlesObject>();
+    const Particles* primaryParticles = state.getObject<Particles>();
     // If primary dataset does not contain particles yet, simply copy the particles from the secondary dataset over to the first.
     if(!primaryParticles) {
         state.addObject(secondaryParticles);
         return PipelineStatus::Success;
     }
-    ParticlesObject* particles = state.makeMutable(primaryParticles);
+    Particles* particles = state.makeMutable(primaryParticles);
 
     size_t primaryParticleCount = particles->elementCount();
     size_t secondaryParticleCount = secondaryParticles->elementCount();
@@ -78,21 +78,21 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
     // Extend all property arrays of primary dataset and copy data from secondary set if it contains a matching property.
     if(secondaryParticleCount != 0) {
         particles->setElementCount(totalParticleCount);
-        for(PropertyObject* prop : particles->makePropertiesMutable()) {
+        for(Property* prop : particles->makePropertiesMutable()) {
             OVITO_ASSERT(prop->size() == totalParticleCount);
 
             // Find corresponding property in second dataset.
-            const PropertyObject* secondProp;
-            if(prop->type() != ParticlesObject::UserProperty)
+            const Property* secondProp;
+            if(prop->type() != Particles::UserProperty)
                 secondProp = secondaryParticles->getProperty(prop->type());
             else
                 secondProp = secondaryParticles->getProperty(prop->name());
             if(secondProp && secondProp->size() == secondaryParticleCount && secondProp->componentCount() == prop->componentCount() && secondProp->dataType() == prop->dataType()) {
                 prop->copyRangeFrom(*secondProp, 0, primaryParticleCount, secondaryParticleCount);
             }
-            else if(prop->type() != ParticlesObject::UserProperty) {
+            else if(prop->type() != Particles::UserProperty) {
                 ConstDataObjectPath containerPath = { secondaryParticles };
-                PropertyPtr temporaryProp = ParticlesObject::OOClass().createStandardProperty(DataBuffer::Initialized, secondaryParticles->elementCount(), prop->type(), containerPath);
+                PropertyPtr temporaryProp = Particles::OOClass().createStandardProperty(DataBuffer::Initialized, secondaryParticles->elementCount(), prop->type(), containerPath);
                 prop->copyRangeFrom(*temporaryProp, 0, primaryParticleCount, secondaryParticleCount);
             }
 
@@ -100,12 +100,12 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
             mergeElementTypes(prop, secondProp, cloneHelper);
 
             // Assign unique particle and molecule IDs.
-            if(prop->type() == ParticlesObject::IdentifierProperty && primaryParticleCount != 0) {
+            if(prop->type() == Particles::IdentifierProperty && primaryParticleCount != 0) {
                 BufferWriteAccess<IdentifierIntType, access_mode::read_write> identifiers(prop);
                 auto maxId = *std::max_element(identifiers.cbegin(), identifiers.cbegin() + primaryParticleCount);
                 std::iota(identifiers.begin() + primaryParticleCount, identifiers.end(), maxId + 1);
             }
-            else if(prop->type() == ParticlesObject::MoleculeProperty && primaryParticleCount != 0) {
+            else if(prop->type() == Particles::MoleculeProperty && primaryParticleCount != 0) {
                 BufferWriteAccess<IdentifierIntType, access_mode::read_write> identifiers(prop);
                 auto maxId = *std::max_element(identifiers.cbegin(), identifiers.cbegin() + primaryParticleCount);
                 for(auto* mol_id = identifiers.begin() + primaryParticleCount; mol_id != identifiers.end(); ++mol_id)
@@ -115,11 +115,11 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
     }
 
     // Copy particle properties from second dataset which do not exist in the primary dataset yet.
-    for(const PropertyObject* prop : secondaryParticles->properties()) {
+    for(const Property* prop : secondaryParticles->properties()) {
         if(prop->size() != secondaryParticleCount) continue;
 
         // Check if the property already exists in the output.
-        if(prop->type() != ParticlesObject::UserProperty) {
+        if(prop->type() != Particles::UserProperty) {
             if(particles->getProperty(prop->type()))
                 continue;
         }
@@ -154,12 +154,12 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
             primaryElements = primaryMutableElements;
             primaryMutableElements->makePropertiesMutable();
             primaryMutableElements->setElementCount(totalElementCount);
-            for(PropertyObject* prop : primaryMutableElements->makePropertiesMutable()) {
+            for(Property* prop : primaryMutableElements->makePropertiesMutable()) {
                 OVITO_ASSERT(prop->size() == totalElementCount);
 
                 // Find corresponding property in second dataset.
-                const PropertyObject* secondProp;
-                if(prop->type() != PropertyObject::GenericUserProperty)
+                const Property* secondProp;
+                if(prop->type() != Property::GenericUserProperty)
                     secondProp = secondaryElements->getProperty(prop->type());
                 else
                     secondProp = secondaryElements->getProperty(prop->name());
@@ -167,7 +167,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
                     OVITO_ASSERT(prop->stride() == secondProp->stride());
                     prop->copyRangeFrom(*secondProp, 0, primaryElementCount, secondaryElementCount);
                 }
-                else if(prop->type() != PropertyObject::GenericUserProperty) {
+                else if(prop->type() != Property::GenericUserProperty) {
                     ConstDataObjectPath containerPath = { secondaryParticles, secondaryElements };
                     PropertyPtr temporaryProp = secondaryElements->getOOMetaClass().createStandardProperty(DataBuffer::Initialized, secondaryElementCount, prop->type(), containerPath);
                     prop->copyRangeFrom(*temporaryProp, 0, primaryElementCount, secondaryElementCount);
@@ -181,11 +181,11 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
         // Copy properties from second dataset which do not exist in the primary dataset yet.
         if(secondaryElements) {
             PropertyContainer* primaryMutableElements = particles->makeMutable(primaryElements);
-            for(const PropertyObject* prop : secondaryElements->properties()) {
+            for(const Property* prop : secondaryElements->properties()) {
                 if(prop->size() != secondaryElementCount) continue;
 
                 // Check if the property already exists in the output.
-                if(prop->type() != PropertyObject::GenericUserProperty) {
+                if(prop->type() != Property::GenericUserProperty) {
                     if(primaryMutableElements->getProperty(prop->type()))
                         continue;
                 }
@@ -195,7 +195,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
                 }
 
                 // Put the property into the output.
-                OORef<PropertyObject> clonedProperty = cloneHelper.cloneObject(prop, false);
+                OORef<Property> clonedProperty = cloneHelper.cloneObject(prop, false);
                 clonedProperty->resize(totalElementCount, true);
                 primaryMutableElements->addProperty(clonedProperty);
 
@@ -208,7 +208,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
             }
 
             // Shift particle indices stored in the topology array of the second container.
-            const PropertyObject* topologyProperty = primaryMutableElements->getProperty(topologyPropertyId);
+            const Property* topologyProperty = primaryMutableElements->getProperty(topologyPropertyId);
             if(topologyProperty && primaryParticleCount != 0) {
                 BufferWriteAccess<int64_t*, access_mode::read_write> mutableTopologyProperty = primaryMutableElements->makeMutable(topologyProperty);
                 for(auto idx = mutableTopologyProperty.begin() + (primaryElementCount * mutableTopologyProperty.componentCount()); idx != mutableTopologyProperty.end(); ++idx) {
@@ -219,55 +219,55 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
     };
 
     // Merge bonds.
-    const BondsObject* primaryBonds = particles->bonds();
-    const BondsObject* secondaryBonds = secondaryParticles->bonds();
+    const Bonds* primaryBonds = particles->bonds();
+    const Bonds* secondaryBonds = secondaryParticles->bonds();
     if(primaryBonds || secondaryBonds) {
         // Create the primary bonds object if it doesn't exist yet.
         if(!primaryBonds) {
-            particles->setBonds(DataOORef<BondsObject>::create());
+            particles->setBonds(DataOORef<Bonds>::create());
             particles->makeBondsMutable()->setVisElements(secondaryBonds->visElements());
             primaryBonds = particles->bonds();
         }
-        mergeTopologyLists(primaryBonds, secondaryBonds, BondsObject::TopologyProperty);
+        mergeTopologyLists(primaryBonds, secondaryBonds, Bonds::TopologyProperty);
     }
 
     // Merge angles.
-    const AnglesObject* primaryAngles = particles->angles();
-    const AnglesObject* secondaryAngles = secondaryParticles->angles();
+    const Angles* primaryAngles = particles->angles();
+    const Angles* secondaryAngles = secondaryParticles->angles();
     if(primaryAngles || secondaryAngles) {
         // Create the primary angles object if it doesn't exist yet.
         if(!primaryAngles) {
-            particles->setAngles(DataOORef<AnglesObject>::create());
+            particles->setAngles(DataOORef<Angles>::create());
             particles->makeAnglesMutable()->setVisElements(secondaryAngles->visElements());
             primaryAngles = particles->angles();
         }
-        mergeTopologyLists(primaryAngles, secondaryAngles, AnglesObject::TopologyProperty);
+        mergeTopologyLists(primaryAngles, secondaryAngles, Angles::TopologyProperty);
     }
 
     // Merge dihedrals.
-    const DihedralsObject* primaryDihedrals = particles->dihedrals();
-    const DihedralsObject* secondaryDihedrals = secondaryParticles->dihedrals();
+    const Dihedrals* primaryDihedrals = particles->dihedrals();
+    const Dihedrals* secondaryDihedrals = secondaryParticles->dihedrals();
     if(primaryDihedrals || secondaryDihedrals) {
         // Create the primary dihedrals object if it doesn't exist yet.
         if(!primaryDihedrals) {
-            particles->setDihedrals(DataOORef<DihedralsObject>::create());
+            particles->setDihedrals(DataOORef<Dihedrals>::create());
             particles->makeDihedralsMutable()->setVisElements(secondaryDihedrals->visElements());
             primaryDihedrals = particles->dihedrals();
         }
-        mergeTopologyLists(primaryDihedrals, secondaryDihedrals, DihedralsObject::TopologyProperty);
+        mergeTopologyLists(primaryDihedrals, secondaryDihedrals, Dihedrals::TopologyProperty);
     }
 
     // Merge impropers.
-    const ImpropersObject* primaryImpropers = particles->impropers();
-    const ImpropersObject* secondaryImpropers = secondaryParticles->impropers();
+    const Impropers* primaryImpropers = particles->impropers();
+    const Impropers* secondaryImpropers = secondaryParticles->impropers();
     if(primaryImpropers || secondaryImpropers) {
         // Create the primary impropers object if it doesn't exist yet.
         if(!primaryImpropers) {
-            particles->setImpropers(DataOORef<ImpropersObject>::create());
+            particles->setImpropers(DataOORef<Impropers>::create());
             particles->makeImpropersMutable()->setVisElements(secondaryImpropers->visElements());
             primaryImpropers = particles->impropers();
         }
-        mergeTopologyLists(primaryImpropers, secondaryImpropers, ImpropersObject::TopologyProperty);
+        mergeTopologyLists(primaryImpropers, secondaryImpropers, Impropers::TopologyProperty);
     }
 
     int secondaryFrame = secondaryState.data() ? secondaryState.data()->sourceFrame() : 1;

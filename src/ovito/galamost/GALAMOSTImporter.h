@@ -28,7 +28,7 @@
 
 #include <QXmlStreamReader>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief File parser for data files of the GALAMOST MD code.
@@ -85,7 +85,7 @@ private:
     private:
 
         /// Parses the contents of an XML element and stores the parsed values in a target property.
-        PropertyObject* parsePropertyData(QXmlStreamReader& xml, PropertyObject* property);
+        Property* parsePropertyData(QXmlStreamReader& xml, Property* property);
     };
 };
 

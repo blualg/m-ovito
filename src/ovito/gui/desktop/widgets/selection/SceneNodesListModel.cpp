@@ -330,7 +330,7 @@ void SceneNodesListModel::deleteItem(int index)
         if(SceneNode* node = sceneNodes()[pipelineIndex]) {
             _mainWindow.performTransaction(tr("Delete pipeline"), [&]() {
                 bool wasSelected = node->isSelected();
-                node->deleteNode();
+                node->deleteSceneNode();
 
                 // Automatically select one of the remaining nodes.
                 Scene* scene = _sceneListener.target();

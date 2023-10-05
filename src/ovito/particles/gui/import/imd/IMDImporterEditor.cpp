@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "IMDImporterEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(IMDImporterEditor);
 SET_OVITO_OBJECT_EDITOR(IMDImporter, IMDImporterEditor);

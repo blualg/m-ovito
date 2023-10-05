@@ -28,7 +28,7 @@
 
 #include <QXmlStreamReader>
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 class ParaViewVTMImporter; // defined below
 

@@ -22,7 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/core/dataset/scene/Scene.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/data/camera/AbstractCameraObject.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
@@ -158,15 +158,15 @@ void ViewportMenu::onShowViewTypeMenu()
 
     // Pipeline evaulation performed in the following requires a valid execution context.
     _mainWindow.handleExceptions([&] {
-        // Find all camera nodes in the scene.
-        _viewport->scene()->visitObjectNodes([this, viewNodeGroup](PipelineSceneNode* node) -> bool {
-            const PipelineFlowState& state = node->evaluatePipelineSynchronous(_viewport->scene()->animationSettings()->currentTime(), false);
+        // Find all cameras in the scene.
+        _viewport->scene()->visitPipelines([this, viewNodeGroup](Pipeline* pipeline) -> bool {
+            const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(_viewport->scene()->animationSettings()->currentTime(), false);
             if(state.data() && state.data()->containsObject<AbstractCameraObject>()) {
-                // Add a menu entry for this camera node.
-                QAction* action = viewNodeGroup->addAction(node->nodeName());
+                // Add a menu entry for this camera.
+                QAction* action = viewNodeGroup->addAction(pipeline->sceneNodeName());
                 action->setCheckable(true);
-                action->setChecked(_viewport->viewNode() == node);
-                action->setData(QVariant::fromValue((void*)node));
+                action->setChecked(_viewport->viewNode() == pipeline);
+                action->setData(QVariant::fromValue((void*)pipeline));
             }
             return true;
         });
@@ -245,11 +245,11 @@ void ViewportMenu::onAdjustView()
 ******************************************************************************/
 void ViewportMenu::onViewNode(QAction* action)
 {
-    PipelineSceneNode* viewNode = static_cast<PipelineSceneNode*>(action->data().value<void*>());
-    OVITO_CHECK_OBJECT_POINTER(viewNode);
+    Pipeline* pipeline = static_cast<Pipeline*>(action->data().value<void*>());
+    OVITO_CHECK_OBJECT_POINTER(pipeline);
 
-    _mainWindow.performTransaction(tr("Set camera"), [this, viewNode]() {
-        _viewport->setViewNode(viewNode);
+    _mainWindow.performTransaction(tr("Set camera"), [this, pipeline]() {
+        _viewport->setViewNode(pipeline);
         OVITO_ASSERT(_viewport->viewType() == Viewport::VIEW_SCENENODE);
     });
 }
@@ -264,7 +264,7 @@ void ViewportMenu::onCreateCamera()
         AnimationSuspender animSuspender(_mainWindow);
 
         // Create and initialize the camera object.
-        OORef<PipelineSceneNode> cameraNode;
+        OORef<Pipeline> cameraPipeline;
         {
             UndoSuspender noUndo;
 
@@ -274,14 +274,14 @@ void ViewportMenu::onCreateCamera()
                 throw Exception(tr("OVITO has been built without support for camera objects."));
 
             // Note: The StandardCameraSource constructor will adopt the current parameters of this Viewport automatically.
-            OORef<PipelineObject> cameraSource = static_object_cast<PipelineObject>(cameraSourceType->createInstance());
+            OORef<PipelineNode> cameraSource = static_object_cast<PipelineNode>(cameraSourceType->createInstance());
 
             // Create an object node with a data source for the camera.
-            cameraNode = OORef<PipelineSceneNode>::create();
-            cameraNode->setDataProvider(std::move(cameraSource));
+            cameraPipeline = OORef<Pipeline>::create();
+            cameraPipeline->setHead(std::move(cameraSource));
 
-            // Give the new node a name.
-            cameraNode->setNodeName(scene->makeNameUnique(tr("Camera")));
+            // Give the new scene node a name.
+            cameraPipeline->setSceneNodeName(scene->makeNameUnique(tr("Camera")));
 
             // Position camera node to match the current view.
             AffineTransformation tm = _viewport->projectionParams().inverseViewMatrix;
@@ -290,14 +290,14 @@ void ViewportMenu::onCreateCamera()
                 tm = tm * AffineTransformation::translation(
                         Vector3(0, 0, -_viewport->projectionParams().znear + FloatType(0.2) * (_viewport->projectionParams().zfar -_viewport->projectionParams().znear)));
             }
-            cameraNode->transformationController()->setTransformationValue(AnimationTime(0), tm, true);
+            cameraPipeline->transformationController()->setTransformationValue(AnimationTime(0), tm, true);
         }
 
         // Insert node into scene.
-        scene->addChildNode(cameraNode);
+        scene->addChildNode(cameraPipeline);
 
         // Set new camera as view node for current viewport.
-        _viewport->setViewNode(cameraNode);
+        _viewport->setViewNode(cameraPipeline);
         OVITO_ASSERT(_viewport->viewType() == Viewport::VIEW_SCENENODE);
     });
 }

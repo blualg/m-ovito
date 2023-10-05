@@ -26,7 +26,7 @@
 
 #include <qwt/qwt_plot_renderer.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DataTablePlotExporter);
 DEFINE_PROPERTY_FIELD(DataTablePlotExporter, plotWidth);

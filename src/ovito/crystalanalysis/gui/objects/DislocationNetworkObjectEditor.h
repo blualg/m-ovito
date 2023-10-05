@@ -26,7 +26,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /**
  * \brief A properties editor for the DislocationNetworkObject class.

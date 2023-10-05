@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/oo/RefTarget.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief Stores a selection set of particles or other elements and provides corresponding modification functions.

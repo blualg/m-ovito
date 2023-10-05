@@ -26,7 +26,7 @@
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief Dialog box that lets the user edit an InputColumnMapping.

@@ -29,7 +29,7 @@
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/io/FileImporter.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
@@ -422,7 +422,7 @@ Future<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvaluationR
 
                     // Set up the load request to be submitted to the FileSourceImporter.
                     FileSourceImporter::LoadOperationRequest loadRequest;
-                    loadRequest.dataSource = this;
+                    loadRequest.pipelineNode = this;
                     loadRequest.fileHandle = fileHandle;
                     loadRequest.frame = frameInfo;
                     loadRequest.isNewlyImportedFile = (dataCollection() == nullptr);

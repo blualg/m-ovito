@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,13 +22,13 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/core/dataset/data/DataCollection.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/app/Application.h>
 #include "ParaViewPVDImporter.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParaViewPVDImporter);
 DEFINE_REFERENCE_FIELD(ParaViewPVDImporter, childImporter);
@@ -134,9 +134,9 @@ Future<PipelineFlowState> ParaViewPVDImporter::loadFrame(const LoadOperationRequ
     _childImporter.set(this, PROPERTY_FIELD(childImporter), fsImporter);
 
     // Delegate file parsing to sub-importer.
-    return fsImporter->loadFrame(request).then([timestep, dataSource = request.dataSource](PipelineFlowState state) {
+    return fsImporter->loadFrame(request).then([timestep, pipelineNode = request.pipelineNode](PipelineFlowState state) {
         // Inject 'timestep' attribute from PVD file into the pipeline state.
-        state.setAttribute(QStringLiteral("Timestep"), timestep, dataSource);
+        state.setAttribute(QStringLiteral("Timestep"), timestep, pipelineNode);
         return state;
     });
 }

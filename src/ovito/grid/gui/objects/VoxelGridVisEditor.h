@@ -26,7 +26,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 /**
  * \brief A properties editor for the VoxelGridVis class.

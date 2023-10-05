@@ -24,9 +24,9 @@
 
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief Widget that allows the user to select a property from a list (or enter a custom property name).
@@ -50,7 +50,7 @@ public:
 
     /// \brief Adds a property to the end of the list.
     /// \param property The property to add.
-    void addItem(const PropertyObject* property, int vectorComponent = -1, bool isChildItem = false) {
+    void addItem(const Property* property, int vectorComponent = -1, bool isChildItem = false) {
         OVITO_ASSERT(property != nullptr);
         OVITO_ASSERT(containerClass() != nullptr);
         OVITO_ASSERT(!isChildItem || !isEditable());
@@ -62,8 +62,8 @@ public:
 
     /// \brief Adds multiple properties to the combo box.
     /// \param list The list of properties to add.
-    void addItems(const QVector<PropertyObject*>& list) {
-        for(PropertyObject* p : list)
+    void addItems(const QVector<Property*>& list) {
+        for(Property* p : list)
             addItem(p);
     }
 

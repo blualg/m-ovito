@@ -26,7 +26,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * Properties editor for the ConstructSurfaceModifier class.

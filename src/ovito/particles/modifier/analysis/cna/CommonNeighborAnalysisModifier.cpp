@@ -23,17 +23,17 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/util/NearestNeighborFinder.h>
 #include <ovito/particles/util/CutoffNeighborFinder.h>
-#include <ovito/particles/objects/BondsObject.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Bonds.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticleBondMap.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "CommonNeighborAnalysisModifier.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CommonNeighborAnalysisModifier);
 DEFINE_PROPERTY_FIELD(CommonNeighborAnalysisModifier, cutoff);
@@ -66,15 +66,15 @@ CommonNeighborAnalysisModifier::CommonNeighborAnalysisModifier(ObjectInitializat
 Future<AsynchronousModifier::EnginePtr> CommonNeighborAnalysisModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get modifier input.
-    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
+    const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
-    const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-    const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
+    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
+    const SimulationCell* simCell = input.expectObject<SimulationCell>();
     if(simCell->is2D())
         throw Exception(tr("The CNA modifier does not support 2d simulation cells."));
 
     // Get particle selection.
-    const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
+    const Property* selectionProperty = onlySelectedParticles() ? particles->expectProperty(Particles::SelectionProperty) : nullptr;
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     if(mode() == AdaptiveCutoffMode) {
@@ -85,8 +85,8 @@ Future<AsynchronousModifier::EnginePtr> CommonNeighborAnalysisModifier::createEn
     }
     else if(mode() == BondMode) {
         particles->expectBonds()->verifyIntegrity();
-        const PropertyObject* topologyProperty = particles->expectBonds()->expectProperty(BondsObject::TopologyProperty);
-        const PropertyObject* periodicImagesProperty = particles->expectBonds()->getProperty(BondsObject::PeriodicImageProperty);
+        const Property* topologyProperty = particles->expectBonds()->expectProperty(Bonds::TopologyProperty);
+        const Property* periodicImagesProperty = particles->expectBonds()->getProperty(Bonds::PeriodicImageProperty);
         return std::make_shared<BondCNAEngine>(request, particles, posProperty, simCell, structureTypes(), selectionProperty, topologyProperty, periodicImagesProperty);
     }
     else {
@@ -846,11 +846,11 @@ void CommonNeighborAnalysisModifier::CNAEngine::applyResults(const ModifierEvalu
     StructureIdentificationEngine::applyResults(request, state);
 
     // Also output structure type counts, which have been computed by the base class.
-    state.addAttribute(QStringLiteral("CommonNeighborAnalysis.counts.OTHER"), QVariant::fromValue(getTypeCount(OTHER)), request.modApp());
-    state.addAttribute(QStringLiteral("CommonNeighborAnalysis.counts.FCC"), QVariant::fromValue(getTypeCount(FCC)), request.modApp());
-    state.addAttribute(QStringLiteral("CommonNeighborAnalysis.counts.HCP"), QVariant::fromValue(getTypeCount(HCP)), request.modApp());
-    state.addAttribute(QStringLiteral("CommonNeighborAnalysis.counts.BCC"), QVariant::fromValue(getTypeCount(BCC)), request.modApp());
-    state.addAttribute(QStringLiteral("CommonNeighborAnalysis.counts.ICO"), QVariant::fromValue(getTypeCount(ICO)), request.modApp());
+    state.addAttribute(QStringLiteral("CommonNeighborAnalysis.counts.OTHER"), QVariant::fromValue(getTypeCount(OTHER)), request.modificationNode());
+    state.addAttribute(QStringLiteral("CommonNeighborAnalysis.counts.FCC"), QVariant::fromValue(getTypeCount(FCC)), request.modificationNode());
+    state.addAttribute(QStringLiteral("CommonNeighborAnalysis.counts.HCP"), QVariant::fromValue(getTypeCount(HCP)), request.modificationNode());
+    state.addAttribute(QStringLiteral("CommonNeighborAnalysis.counts.BCC"), QVariant::fromValue(getTypeCount(BCC)), request.modificationNode());
+    state.addAttribute(QStringLiteral("CommonNeighborAnalysis.counts.ICO"), QVariant::fromValue(getTypeCount(ICO)), request.modificationNode());
 }
 
 /******************************************************************************
@@ -861,7 +861,7 @@ void CommonNeighborAnalysisModifier::BondCNAEngine::applyResults(const ModifierE
     CNAEngine::applyResults(request, state);
 
     // Output the bond property containing the CNA indices.
-    ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+    Particles* particles = state.expectMutableObject<Particles>();
     particles->makeMutable(particles->expectBonds())->createProperty(cnaIndices());
 }
 

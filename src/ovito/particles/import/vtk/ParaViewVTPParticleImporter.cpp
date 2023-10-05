@@ -21,16 +21,16 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshReadAccess.h>
 #include <ovito/mesh/io/ParaViewVTPMeshImporter.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include "ParaViewVTPParticleImporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParaViewVTPParticleImporter);
 IMPLEMENT_OVITO_CLASS(ParticlesParaViewVTMFileFilter);
@@ -134,7 +134,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                 xml.raiseError(tr("Number of vertices does not match number of points. This file parser can only read datasets consisting of vertices only."));
                 break;
             }
-            OVITO_ASSERT(baseParticleIndex + numParticles != 0); // Calling setParticleCount(0) discards an existing ParticlesObject. We never want that to happen!
+            OVITO_ASSERT(baseParticleIndex + numParticles != 0); // Calling setParticleCount(0) discards an existing Particles. We never want that to happen!
             setParticleCount(baseParticleIndex + numParticles);
         }
         else if(xml.name().compare(QLatin1String("PointData")) == 0 || xml.name().compare(QLatin1String("Points")) == 0 || xml.name().compare(QLatin1String("Verts")) == 0) {
@@ -142,21 +142,21 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
             while(xml.readNextStartElement() && !isCanceled()) {
                 if(xml.name().compare(QLatin1String("DataArray")) == 0) {
                     int vectorComponent = -1;
-                    if(PropertyObject* property = createParticlePropertyForDataArray(xml, vectorComponent, preserveExistingData)) {
+                    if(Property* property = createParticlePropertyForDataArray(xml, vectorComponent, preserveExistingData)) {
                         if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, xml, vectorComponent, baseParticleIndex))
                             break;
                         if(xml.hasError() || isCanceled())
                             break;
 
                         // Create particle types if this is a typed property.
-                        OvitoClassPtr elementTypeClass = ParticlesObject::OOClass().typedPropertyElementClass(property->type());
+                        OvitoClassPtr elementTypeClass = Particles::OOClass().typedPropertyElementClass(property->type());
                         if(!elementTypeClass && property->name() == QStringLiteral("Material Type")) elementTypeClass = &ElementType::OOClass();
                         if(elementTypeClass) {
                             for(int t : BufferReadAccess<int32_t>(property).subrange(baseParticleIndex)) {
                                 if(!property->elementType(t)) {
                                     DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance());
                                     elementType->setNumericId(t);
-                                    elementType->initializeType(PropertyReference(&ParticlesObject::OOClass(), property), ExecutionContext::isInteractive());
+                                    elementType->initializeType(PropertyReference(&Particles::OOClass(), property), ExecutionContext::isInteractive());
                                     if(elementTypeClass == &ParticleType::OOClass()) {
                                         // Load mesh-based shape of the particle type as specified in the VTM container file.
                                         loadParticleShape(static_object_cast<ParticleType>(elementType.get()));
@@ -193,7 +193,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 
     // Convert superquadric 'Blockiness' values from the Aspherix simulation to 'Roundness' values used by OVITO particle visualization.
     bool transposeOrientations = false;
-    if(PropertyObject* roundnessProperty = particles()->getMutableProperty(ParticlesObject::SuperquadricRoundnessProperty)) {
+    if(Property* roundnessProperty = particles()->getMutableProperty(Particles::SuperquadricRoundnessProperty)) {
         for(auto& v : BufferWriteAccess<Vector_2<GraphicsFloatType>, access_mode::read_write>(roundnessProperty).subrange(baseParticleIndex)) {
             // Blockiness1: "north-south" blockiness
             // Blockiness2: "east-west" blockiness
@@ -210,10 +210,10 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
     }
 
     // Convert 3x3 'Tensor' property into particle orientation.
-    if(const PropertyObject* tensorProperty = particles()->getProperty(QStringLiteral("Tensor"))) {
-        if(tensorProperty->dataType() == PropertyObject::FloatDefault && tensorProperty->componentCount() == 9) {
+    if(const Property* tensorProperty = particles()->getProperty(QStringLiteral("Tensor"))) {
+        if(tensorProperty->dataType() == Property::FloatDefault && tensorProperty->componentCount() == 9) {
             BufferWriteAccess<QuaternionG, access_mode::write> orientations(
-                particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::OrientationProperty),
+                particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Particles::OrientationProperty),
                 !preserveExistingData);
             auto* q = orientations.begin() + baseParticleIndex;
             for(const Matrix3& tensor : BufferReadAccess<Matrix3>(tensorProperty).subrange(baseParticleIndex)) {
@@ -228,7 +228,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
     }
 
     // Reset "Radius" property of particles with a mesh-based shape to zero to get correct scaling.
-    if(const PropertyObject* typeProperty = particles()->getProperty(ParticlesObject::TypeProperty)) {
+    if(const Property* typeProperty = particles()->getProperty(Particles::TypeProperty)) {
         std::vector<int> typesWithMeshShape;
         for(const ElementType* type : typeProperty->elementTypes()) {
             if(const ParticleType* particleType = dynamic_object_cast<ParticleType>(type))
@@ -237,11 +237,11 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
         }
         if(typesWithMeshShape.size() == typeProperty->elementTypes().size()) {
             // If all particle shapes are mesh-based, simply remove the "Radius" property, which is not used in this case anyway.
-            if(const PropertyObject* radiusProperty = particles()->getProperty(ParticlesObject::RadiusProperty))
+            if(const Property* radiusProperty = particles()->getProperty(Particles::RadiusProperty))
                 particles()->removeProperty(radiusProperty);
         }
         else if(!typesWithMeshShape.empty()) {
-            if(BufferWriteAccess<GraphicsFloatType, access_mode::write> radiusArray = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
+            if(BufferWriteAccess<GraphicsFloatType, access_mode::write> radiusArray = particles()->getMutableProperty(Particles::RadiusProperty)) {
                 auto* radius = radiusArray.begin() + baseParticleIndex;
                 for(auto t : BufferReadAccess<int32_t>(typeProperty).subrange(baseParticleIndex)) {
                     if(std::find(typesWithMeshShape.cbegin(), typesWithMeshShape.cend(), t) != typesWithMeshShape.cend())
@@ -264,7 +264,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 * Creates the right kind of OVITO property object that will receive the data
 * read from a <DataArray> element.
 ******************************************************************************/
-PropertyObject* ParaViewVTPParticleImporter::FrameLoader::createParticlePropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent, bool preserveExistingData)
+Property* ParaViewVTPParticleImporter::FrameLoader::createParticlePropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent, bool preserveExistingData)
 {
     int numComponents = std::max(1, xml.attributes().value("NumberOfComponents").toInt());
     auto name = xml.attributes().value("Name");
@@ -273,65 +273,65 @@ PropertyObject* ParaViewVTPParticleImporter::FrameLoader::createParticleProperty
         return nullptr;
     }
     else if(name.compare(QLatin1String("points"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
-        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::PositionProperty);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Particles::PositionProperty);
     }
     else if(name.compare(QLatin1String("id"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
-        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::IdentifierProperty);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Particles::IdentifierProperty);
     }
     else if(name.compare(QLatin1String("type"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
-        PropertyObject* property = particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Material Type"), PropertyObject::Int32);
+        Property* property = particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Material Type"), Property::Int32);
         property->setTitle(tr("Material types"));
         return property;
     }
     else if(name.compare(QLatin1String("shapetype"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
-        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::TypeProperty);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Particles::TypeProperty);
     }
     else if(name.compare(QLatin1String("mass"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
-        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::MassProperty);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Particles::MassProperty);
     }
     else if(name.compare(QLatin1String("radius"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
-        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::RadiusProperty);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Particles::RadiusProperty);
     }
     else if(name.compare(QLatin1String("v"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
-        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::VelocityProperty);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Particles::VelocityProperty);
     }
     else if(name.compare(QLatin1String("omega"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
-        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::AngularVelocityProperty);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Particles::AngularVelocityProperty);
     }
     else if(name.compare(QLatin1String("tq"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
-        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::TorqueProperty);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Particles::TorqueProperty);
     }
     else if(name.compare(QLatin1String("f"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
-        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, ParticlesObject::ForceProperty);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Particles::ForceProperty);
     }
     else if(name.compare(QLatin1String("density"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
-        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Density"), PropertyObject::FloatDefault);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Density"), Property::FloatDefault);
     }
     else if(name.compare(QLatin1String("tensor"), Qt::CaseInsensitive) == 0 && numComponents == 9) {
-        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Tensor"), PropertyObject::FloatDefault, 9);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Tensor"), Property::FloatDefault, 9);
     }
     else if(name.compare(QLatin1String("shapex"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
         vectorComponent = 0;
-        return particles()->createProperty(DataBuffer::Initialized, ParticlesObject::AsphericalShapeProperty);
+        return particles()->createProperty(DataBuffer::Initialized, Particles::AsphericalShapeProperty);
     }
     else if(name.compare(QLatin1String("shapey"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
         vectorComponent = 1;
-        return particles()->createProperty(DataBuffer::Initialized, ParticlesObject::AsphericalShapeProperty);
+        return particles()->createProperty(DataBuffer::Initialized, Particles::AsphericalShapeProperty);
     }
     else if(name.compare(QLatin1String("shapez"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
         vectorComponent = 2;
-        return particles()->createProperty(DataBuffer::Initialized, ParticlesObject::AsphericalShapeProperty);
+        return particles()->createProperty(DataBuffer::Initialized, Particles::AsphericalShapeProperty);
     }
     else if(name.compare(QLatin1String("blockiness1"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
         vectorComponent = 0;
-        return particles()->createProperty(DataBuffer::Initialized, ParticlesObject::SuperquadricRoundnessProperty);
+        return particles()->createProperty(DataBuffer::Initialized, Particles::SuperquadricRoundnessProperty);
     }
     else if(name.compare(QLatin1String("blockiness2"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
         vectorComponent = 1;
-        return particles()->createProperty(DataBuffer::Initialized, ParticlesObject::SuperquadricRoundnessProperty);
+        return particles()->createProperty(DataBuffer::Initialized, Particles::SuperquadricRoundnessProperty);
     }
     else {
-        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, PropertyObject::makePropertyNameValid(name.toString()), PropertyObject::FloatDefault, numComponents);
+        return particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Property::makePropertyNameValid(name.toString()), Property::FloatDefault, numComponents);
     }
     return nullptr;
 }
@@ -361,7 +361,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
     // Note: Invoking a file importer is currently only allowed from the main thread. This may change in the future.
     const QUrl& geometryFileUrl = _particleShapeFiles[particleType->numericId()].location;
     Future<PipelineFlowState> stateFuture = Application::instance()->fileManager().fetchUrl(geometryFileUrl)
-            .then(*particleType, [particleType, dataSource=dataSource()](const FileHandle& fileHandle) {
+            .then(*particleType, [particleType, pipelineNode=pipelineNode()](const FileHandle& fileHandle) {
 
         // Detect geometry file format and create an importer for it.
         // Note: For loading particle shape geometries we only accept FileSourceImporters.
@@ -371,7 +371,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
 
         // Set up a file load request to be passed to the importer.
         LoadOperationRequest loadRequest;
-        loadRequest.dataSource = dataSource;
+        loadRequest.pipelineNode = pipelineNode;
         loadRequest.fileHandle = fileHandle;
         loadRequest.frame = Frame(fileHandle);
         loadRequest.state = PipelineFlowState(DataOORef<const DataCollection>::create(), PipelineStatus::Success);
@@ -388,11 +388,11 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
         return;
 
     // Look for a triangle mesh or a surface mesh.
-    DataOORef<const TriMeshObject> meshObj = state.getObject<TriMeshObject>();
+    DataOORef<const TriangleMesh> meshObj = state.getObject<TriangleMesh>();
     if(!meshObj) {
         if(const SurfaceMesh* surfaceMesh = state.getObject<SurfaceMesh>()) {
             // Convert surface mesh to triangle mesh.
-            DataOORef<TriMeshObject> triMesh = DataOORef<TriMeshObject>::create(ObjectInitializationFlag::DontCreateVisElement);
+            DataOORef<TriangleMesh> triMesh = DataOORef<TriangleMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
             SurfaceMeshReadAccess(surfaceMesh).convertToTriMesh(*triMesh, false);
             meshObj = std::move(triMesh);
         }
@@ -402,7 +402,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
     state.reset();
 
     // Show sharp edges of the mesh.
-    DataOORef<TriMeshObject> mutableMeshObj = std::move(meshObj).makeMutable();
+    DataOORef<TriangleMesh> mutableMeshObj = std::move(meshObj).makeMutable();
     mutableMeshObj->determineEdgeVisibility();
 
     particleType->setShapeMesh(std::move(mutableMeshObj));
@@ -429,8 +429,8 @@ void ParticlesParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMB
     // Resize particles object to zero elements in the existing pipeline state.
     // This is mainly done to remove the existing particles in those animation frames in which the VTM file has empty data blocks.
     for(const DataObject* obj : request.state.data()->objects()) {
-        if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(obj)) {
-            ParticlesObject* mutableParticles = request.state.mutableData()->makeMutable(particles);
+        if(const Particles* particles = dynamic_object_cast<Particles>(obj)) {
+            Particles* mutableParticles = request.state.mutableData()->makeMutable(particles);
             mutableParticles->setElementCount(0);
             if(mutableParticles->bonds())
                 mutableParticles->makeBondsMutable()->setElementCount(0);

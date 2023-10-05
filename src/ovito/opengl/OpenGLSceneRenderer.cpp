@@ -23,8 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/scene/SceneNode.h>
 #include <ovito/core/dataset/scene/Scene.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
-#include <ovito/core/dataset/pipeline/PipelineObject.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/dataset/DataSet.h>

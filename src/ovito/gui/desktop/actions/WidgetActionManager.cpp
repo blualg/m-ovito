@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,7 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/dataset/scene/Scene.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/app/Application.h>
@@ -75,7 +75,7 @@ WidgetActionManager::WidgetActionManager(QObject* parent, MainWindow& mainWindow
 void WidgetActionManager::on_ClonePipeline_triggered()
 {
     if(SelectionSet* selection = userInterface().datasetContainer().activeSelectionSet()) {
-        if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(selection->firstNode())) {
+        if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(selection->firstNode())) {
             ClonePipelineDialog dialog(mainWindow(), pipeline, &mainWindow());
             dialog.exec();
         }
@@ -88,13 +88,13 @@ void WidgetActionManager::on_ClonePipeline_triggered()
 void WidgetActionManager::on_RenamePipeline_triggered()
 {
     if(SelectionSet* selection = userInterface().datasetContainer().activeSelectionSet()) {
-        if(OORef<PipelineSceneNode> pipeline = dynamic_object_cast<PipelineSceneNode>(selection->firstNode())) {
+        if(OORef<Pipeline> pipeline = dynamic_object_cast<Pipeline>(selection->firstNode())) {
             QString oldPipelineName = pipeline->objectTitle();
             bool ok;
             QString pipelineName = QInputDialog::getText(&mainWindow(), tr("Rename pipeline"), tr("New pipeline name:                                         "), QLineEdit::Normal, oldPipelineName, &ok).trimmed();
             if(ok && pipelineName != oldPipelineName) {
                 mainWindow().performTransaction(tr("Rename pipeline"), [&]() {
-                    pipeline->setNodeName(pipelineName);
+                    pipeline->setSceneNodeName(pipelineName);
                 });
             }
         }
@@ -122,8 +122,8 @@ void WidgetActionManager::on_NewPipelineFileSource_triggered()
             OORef<FileSource> fileSource = OORef<FileSource>::create();
 
             // Create pipeline scene node.
-            OORef<PipelineSceneNode> pipeline = OORef<PipelineSceneNode>::create();
-            pipeline->setDataProvider(fileSource);
+            OORef<Pipeline> pipeline = OORef<Pipeline>::create();
+            pipeline->setHead(fileSource);
 
             // Insert pipeline into scene.
             scene->addChildNode(pipeline);
@@ -131,7 +131,7 @@ void WidgetActionManager::on_NewPipelineFileSource_triggered()
             // Select new object in the scene.
             scene->selection()->setNode(pipeline);
         }
-    }); 
+    });
 }
 
 /******************************************************************************

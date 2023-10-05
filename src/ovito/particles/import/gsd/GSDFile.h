@@ -27,7 +27,7 @@
 #include "GSDImporter.h"
 #include <gsd/gsd.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 template<typename T> inline gsd_type gsdDataType() { OVITO_ASSERT(false); return GSD_TYPE_UINT8; }
 template<> inline gsd_type gsdDataType<uint8_t>() { return GSD_TYPE_UINT8; }
@@ -115,20 +115,20 @@ public:
         if(!chunk) throw Exception(GSDImporter::tr("GSD file I/O error. Chunk %1 does not exist.").arg(chunkName));
         switch(chunk->type) {
             case GSD_TYPE_INT8:
-                return { PropertyObject::Int8, chunk->M };
+                return { Property::Int8, chunk->M };
             case GSD_TYPE_UINT8:
             case GSD_TYPE_INT16:
             case GSD_TYPE_UINT16:
             case GSD_TYPE_INT32:
-                return { PropertyObject::Int32, chunk->M };
+                return { Property::Int32, chunk->M };
             case GSD_TYPE_UINT32: // Note: We map unsigned int32 to the signed int64 in OVITO to avoid overflows.
             case GSD_TYPE_INT64:
             case GSD_TYPE_UINT64:
-                return { PropertyObject::Int64, chunk->M };
+                return { Property::Int64, chunk->M };
             case GSD_TYPE_FLOAT:
-                return { PropertyObject::Float32, chunk->M };
+                return { Property::Float32, chunk->M };
             case GSD_TYPE_DOUBLE:
-                return { PropertyObject::Float64, chunk->M };
+                return { Property::Float64, chunk->M };
             default:
                 throw Exception(GSDImporter::tr("GSD file I/O error. Unknown chunk data type."));
         }

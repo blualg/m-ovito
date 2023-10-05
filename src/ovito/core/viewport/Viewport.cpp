@@ -583,7 +583,7 @@ void Viewport::updateViewportTitle()
         case VIEW_RIGHT: newTitle = tr("Right"); break;
         case VIEW_ORTHO: newTitle = tr("Ortho"); break;
         case VIEW_PERSPECTIVE: newTitle = tr("Perspective"); break;
-        case VIEW_SCENENODE: newTitle = viewNode() ? viewNode()->nodeName() : tr("No view node"); break;
+        case VIEW_SCENENODE: newTitle = viewNode() ? viewNode()->sceneNodeName() : tr("No view node"); break;
         default: OVITO_ASSERT(false); // Unknown viewport type
     }
     _viewportTitle.set(this, PROPERTY_FIELD(viewportTitle), std::move(newTitle));

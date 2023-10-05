@@ -41,8 +41,6 @@
 
 namespace Ovito {
 
-using namespace Ovito::Ssh;
-
 /// List SFTP jobs that are waiting to be executed.
 QQueue<RemoteFileJob*> RemoteFileJob::_queuedJobs;
 
@@ -280,7 +278,7 @@ void DownloadRemoteFileJob::connectionEstablished()
 #ifdef OVITO_SSH_CLIENT
     if(LibsshConnection* libsshConnection = qobject_cast<LibsshConnection*>(_connection)) {
         _promise.setProgressText(tr("Opening SCP channel to remote host %1").arg(libsshConnection->hostname()));
-        Ovito::Ssh::ScpChannel* scpChannel = new ScpChannel(libsshConnection, _url.path());
+        ScpChannel* scpChannel = new ScpChannel(libsshConnection, _url.path());
         connect(scpChannel, &ScpChannel::receivingFile, this, &DownloadRemoteFileJob::receivingFile);
         connect(scpChannel, &ScpChannel::receivedData, this, &DownloadRemoteFileJob::receivedData);
         connect(scpChannel, &ScpChannel::receivedFileComplete, this, &DownloadRemoteFileJob::receivedFileComplete);

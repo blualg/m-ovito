@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,14 +24,12 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/BondsObject.h>
+#include <ovito/particles/objects/Bonds.h>
 #include <ovito/particles/util/ParticleExpressionEvaluator.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
 #include <ovito/stdmod/modifiers/ComputePropertyModifier.h>
 
-namespace Ovito::Particles {
-
-using namespace Ovito::StdMod;
+namespace Ovito {
 
 /**
  * \brief Delegate plugin for the ComputePropertyModifier that operates on bonds.
@@ -50,7 +48,7 @@ class OVITO_PARTICLES_EXPORT BondsComputePropertyModifierDelegate : public Compu
         virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
         /// Indicates which class of data objects the modifier delegate is able to operate on.
-        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return BondsObject::OOClass(); }
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return Bonds::OOClass(); }
 
         /// The name by which Python scripts can refer to this modifier delegate.
         virtual QString pythonDataName() const override { return QStringLiteral("bonds"); }

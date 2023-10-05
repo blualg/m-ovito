@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "AcklandJonesModifierEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(AcklandJonesModifierEditor);
 SET_OVITO_OBJECT_EDITOR(AcklandJonesModifier, AcklandJonesModifierEditor);

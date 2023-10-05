@@ -26,7 +26,7 @@
 #include <ovito/mesh/io/ParaViewVTPMeshImporter.h>
 #include "ParaViewVTIGridImporter.h"
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParaViewVTIGridImporter);
 
@@ -72,7 +72,7 @@ void ParaViewVTIGridImporter::FrameLoader::loadFile()
     QString gridIdentifier = loadRequest().dataBlockPrefix;
     VoxelGrid* gridObj = state().getMutableLeafObject<VoxelGrid>(VoxelGrid::OOClass(), gridIdentifier);
     if(!gridObj) {
-        gridObj = state().createObject<VoxelGrid>(dataSource());
+        gridObj = state().createObject<VoxelGrid>(pipelineNode());
         gridObj->setIdentifier(gridIdentifier);
         VoxelGridVis* vis = gridObj->visElement<VoxelGridVis>();
         if(!gridIdentifier.isEmpty()) {
@@ -183,7 +183,7 @@ void ParaViewVTIGridImporter::FrameLoader::loadFile()
             while(xml.readNextStartElement() && !isCanceled()) {
                 if(xml.name().compare(QStringLiteral("DataArray")) == 0) {
                     int vectorComponent = -1;
-                    if(PropertyObject* property = createGridPropertyForDataArray(gridObj, xml)) {
+                    if(Property* property = createGridPropertyForDataArray(gridObj, xml)) {
                         if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, xml, vectorComponent))
                             break;
                     }
@@ -225,12 +225,12 @@ void ParaViewVTIGridImporter::FrameLoader::loadFile()
 * Creates the right kind of OVITO property object that will receive the data
 * read from a <DataArray> element.
 ******************************************************************************/
-PropertyObject* ParaViewVTIGridImporter::FrameLoader::createGridPropertyForDataArray(VoxelGrid* gridObj, QXmlStreamReader& xml)
+Property* ParaViewVTIGridImporter::FrameLoader::createGridPropertyForDataArray(VoxelGrid* gridObj, QXmlStreamReader& xml)
 {
     int numComponents = std::max(1, xml.attributes().value("NumberOfComponents").toInt());
     auto name = xml.attributes().value("Name");
 
-    return gridObj->createProperty(PropertyObject::makePropertyNameValid(name.toString()), PropertyObject::FloatDefault, numComponents);
+    return gridObj->createProperty(Property::makePropertyNameValid(name.toString()), Property::FloatDefault, numComponents);
 }
 
 }   // End of namespace

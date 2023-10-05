@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "IdentifyDiamondModifierEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(IdentifyDiamondModifierEditor);
 SET_OVITO_OBJECT_EDITOR(IdentifyDiamondModifier, IdentifyDiamondModifierEditor);

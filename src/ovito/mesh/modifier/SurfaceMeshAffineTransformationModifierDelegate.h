@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,12 +25,10 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
-#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
+#include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 #include <ovito/stdmod/modifiers/AffineTransformationModifier.h>
 
-namespace Ovito::Mesh {
-
-using namespace Ovito::StdMod;
+namespace Ovito {
 
 /**
  * \brief Delegate for the AffineTransformationModifier that operates on surface meshes.
@@ -50,8 +48,8 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshAffineTransformationModifierDelegate : pub
             QVector<DataObjectReference> result;
             if(input.containsObject<SurfaceMesh>())
                 result.push_back(DataObjectReference(&SurfaceMesh::OOClass()));
-            if(input.containsObject<TriMeshObject>())
-                result.push_back(DataObjectReference(&TriMeshObject::OOClass()));
+            if(input.containsObject<TriangleMesh>())
+                result.push_back(DataObjectReference(&TriangleMesh::OOClass()));
             return result;
         }
 

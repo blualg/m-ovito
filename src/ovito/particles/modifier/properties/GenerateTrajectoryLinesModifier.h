@@ -25,12 +25,12 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/TrajectoryVis.h>
-#include <ovito/particles/objects/TrajectoryObject.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/TrajectoryLines.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Generates trajectory lines for particles.
@@ -110,19 +110,20 @@ private:
 /**
  * Used by the GenerateTrajectoryLinesModifier to store the generated trajectory lines.
  */
-class OVITO_PARTICLES_EXPORT GenerateTrajectoryLinesModifierApplication : public ModifierApplication
+class OVITO_PARTICLES_EXPORT GenerateTrajectoryLinesModificationNode : public ModificationNode
 {
-    OVITO_CLASS(GenerateTrajectoryLinesModifierApplication)
+    OVITO_CLASS(GenerateTrajectoryLinesModificationNode)
+    Q_CLASSINFO("ClassNameAlias", "GenerateTrajectoryLinesModifierApplication");  // For backward compatibility with OVITO 3.9.2
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE GenerateTrajectoryLinesModifierApplication(ObjectInitializationFlags flags) : ModifierApplication(flags) {}
+    Q_INVOKABLE GenerateTrajectoryLinesModificationNode(ObjectInitializationFlags flags) : ModificationNode(flags) {}
 
 private:
 
     /// The cached trajectory line data.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const TrajectoryObject>, trajectoryData, setTrajectoryData, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const TrajectoryLines>, trajectoryData, setTrajectoryData, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
 }   // End of namespace

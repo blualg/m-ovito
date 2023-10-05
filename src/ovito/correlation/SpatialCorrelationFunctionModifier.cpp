@@ -22,19 +22,19 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "SpatialCorrelationFunctionModifier.h"
 
 #include <kissfft/kiss_fftnd.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(SpatialCorrelationFunctionModifier);
 DEFINE_PROPERTY_FIELD(SpatialCorrelationFunctionModifier, sourceProperty1);
@@ -127,7 +127,7 @@ SpatialCorrelationFunctionModifier::SpatialCorrelationFunctionModifier(ObjectIni
 ******************************************************************************/
 bool SpatialCorrelationFunctionModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    return input.containsObject<ParticlesObject>();
+    return input.containsObject<Particles>();
 }
 
 /******************************************************************************
@@ -140,10 +140,10 @@ void SpatialCorrelationFunctionModifier::initializeModifier(const ModifierInitia
 
     // Use the first available particle property from the input state as data source when the modifier is newly created.
     if((sourceProperty1().isNull() || sourceProperty2().isNull()) && ExecutionContext::isInteractive()) {
-        const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
-        if(const ParticlesObject* container = input.getObject<ParticlesObject>()) {
+        const PipelineFlowState& input = request.modificationNode()->evaluateInputSynchronous(request);
+        if(const Particles* container = input.getObject<Particles>()) {
             ParticlePropertyReference bestProperty;
-            for(const PropertyObject* property : container->properties()) {
+            for(const Property* property : container->properties()) {
                 bestProperty = ParticlePropertyReference(property, (property->componentCount() > 1) ? 0 : -1);
             }
             if(!bestProperty.isNull()) {
@@ -168,20 +168,20 @@ Future<AsynchronousModifier::EnginePtr> SpatialCorrelationFunctionModifier::crea
         throw Exception(tr("please select a second input particle property."));
 
     // Get the current positions.
-    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
+    const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
-    const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
 
     // Get the current selected properties.
-    const PropertyObject* property1 = sourceProperty1().findInContainer(particles);
-    const PropertyObject* property2 = sourceProperty2().findInContainer(particles);
+    const Property* property1 = sourceProperty1().findInContainer(particles);
+    const Property* property2 = sourceProperty2().findInContainer(particles);
     if(!property1)
         throw Exception(tr("The selected input particle property with the name '%1' does not exist.").arg(sourceProperty1().name()));
     if(!property2)
         throw Exception(tr("The selected input particle property with the name '%1' does not exist.").arg(sourceProperty2().name()));
 
     // Get simulation cell.
-    const SimulationCellObject* inputCell = input.expectObject<SimulationCellObject>();
+    const SimulationCell* inputCell = input.expectObject<SimulationCell>();
     if((inputCell->is2D() ? inputCell->volume2D() : inputCell->volume3D()) < FLOATTYPE_EPSILON)
         throw Exception(tr("Simulation cell is degenerate. Cannot compute correlation function."));
 
@@ -204,7 +204,7 @@ Future<AsynchronousModifier::EnginePtr> SpatialCorrelationFunctionModifier::crea
 /******************************************************************************
 * Map property onto grid.
 ******************************************************************************/
-std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::mapToSpatialGrid(const PropertyObject* property,
+std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::mapToSpatialGrid(const Property* property,
                                                                               size_t propertyVectorComponent,
                                                                               const AffineTransformation& reciprocalCellMatrix,
                                                                               int nX, int nY, int nZ,
@@ -231,12 +231,12 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
                 int binIndexY = int( fractionalPos.y() * nY );
                 int binIndexZ = int( fractionalPos.z() * nZ );
                 FloatType window = 1;
-                if(pbc[0]) binIndexX = SimulationCellObject::modulo(binIndexX, nX);
+                if(pbc[0]) binIndexX = SimulationCell::modulo(binIndexX, nX);
                 else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.x()));
-                if(pbc[1]) binIndexY = SimulationCellObject::modulo(binIndexY, nY);
+                if(pbc[1]) binIndexY = SimulationCell::modulo(binIndexY, nY);
                 else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.y()));
                 if(is2D) binIndexZ = 0;
-                else if(pbc[2]) binIndexZ = SimulationCellObject::modulo(binIndexZ, nZ);
+                else if(pbc[2]) binIndexZ = SimulationCell::modulo(binIndexZ, nZ);
                 else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.z()));
                 if(!applyWindow) window = 1;
                 if(binIndexX >= 0 && binIndexX < nX && binIndexY >= 0 && binIndexY < nY && binIndexZ >= 0 && binIndexZ < nZ) {
@@ -258,12 +258,12 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
                         int binIndexY = int( fractionalPos.y() * nY );
                         int binIndexZ = int( fractionalPos.z() * nZ );
                         FloatType window = 1;
-                        if(pbc[0]) binIndexX = SimulationCellObject::modulo(binIndexX, nX);
+                        if(pbc[0]) binIndexX = SimulationCell::modulo(binIndexX, nX);
                         else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.x()));
-                        if(pbc[1]) binIndexY = SimulationCellObject::modulo(binIndexY, nY);
+                        if(pbc[1]) binIndexY = SimulationCell::modulo(binIndexY, nY);
                         else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.y()));
                         if(is2D) binIndexZ = 0;
-                        else if(pbc[2]) binIndexZ = SimulationCellObject::modulo(binIndexZ, nZ);
+                        else if(pbc[2]) binIndexZ = SimulationCell::modulo(binIndexZ, nZ);
                         else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.z()));
                         if(!applyWindow) window = 1;
                         if(binIndexX >= 0 && binIndexX < nX && binIndexY >= 0 && binIndexY < nY && binIndexZ >= 0 && binIndexZ < nZ) {
@@ -430,7 +430,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
     }
 
     // Averaged reciprocal space correlation function.
-    _reciprocalSpaceCorrelation = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, numberOfWavevectorBins, PropertyObject::FloatDefault, 1, tr("C(q)"));
+    _reciprocalSpaceCorrelation = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, numberOfWavevectorBins, Property::FloatDefault, 1, tr("C(q)"));
     _reciprocalSpaceCorrelationRange = 2 * FLOATTYPE_PI * minReciprocalSpaceVector * numberOfWavevectorBins;
 
     std::vector<int> numberOfValues(numberOfWavevectorBins, 0);
@@ -457,9 +457,9 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
                         continue;
 
                     // Compute wavevector.
-                    int iX = SimulationCellObject::modulo(binIndexX+nX/2, nX)-nX/2;
-                    int iY = SimulationCellObject::modulo(binIndexY+nY/2, nY)-nY/2;
-                    int iZ = SimulationCellObject::modulo(binIndexZ+nZ/2, nZ)-nZ/2;
+                    int iX = SimulationCell::modulo(binIndexX+nX/2, nX)-nX/2;
+                    int iY = SimulationCell::modulo(binIndexY+nY/2, nY)-nY/2;
+                    int iZ = SimulationCell::modulo(binIndexZ+nZ/2, nZ)-nZ/2;
                     OVITO_ASSERT(!cell()->is2D() || iZ == 0);
                     // This is the reciprocal space vector (without a factor of 2*pi).
                     Vector4 wavevector = FloatType(iX)*reciprocalCellMatrix.row(0) +
@@ -530,9 +530,9 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
                     continue;
 
                 // Compute distance. (FIXME! Check that this is actually correct for even and odd numbers of grid points.)
-                FloatType fracX = FloatType(SimulationCellObject::modulo(binIndexX+nX/2, nX)-nX/2)/nX;
-                FloatType fracY = FloatType(SimulationCellObject::modulo(binIndexY+nY/2, nY)-nY/2)/nY;
-                FloatType fracZ = FloatType(SimulationCellObject::modulo(binIndexZ+nZ/2, nZ)-nZ/2)/nZ;
+                FloatType fracX = FloatType(SimulationCell::modulo(binIndexX+nX/2, nX)-nX/2)/nX;
+                FloatType fracY = FloatType(SimulationCell::modulo(binIndexY+nY/2, nY)-nY/2)/nY;
+                FloatType fracZ = FloatType(SimulationCell::modulo(binIndexZ+nZ/2, nZ)-nZ/2)/nZ;
                 OVITO_ASSERT(!cell()->is2D() || fracZ == 0.0);
                 // This is the real space vector.
                 Vector3 distance = fracX*cellMatrix.column(0) +
@@ -719,20 +719,20 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::perform()
 void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     // Output real-space correlation function to the pipeline as a data table.
-    DataTable* realSpaceCorrelationObj = state.createObject<DataTable>(QStringLiteral("correlation-real-space"), request.modApp(), DataTable::Line, tr("Real-space correlation"), realSpaceCorrelation());
+    DataTable* realSpaceCorrelationObj = state.createObject<DataTable>(QStringLiteral("correlation-real-space"), request.modificationNode(), DataTable::Line, tr("Real-space correlation"), realSpaceCorrelation());
     realSpaceCorrelationObj->setAxisLabelX(tr("Distance r"));
     realSpaceCorrelationObj->setIntervalStart(0);
     realSpaceCorrelationObj->setIntervalEnd(_realSpaceCorrelationRange);
 
     // Output real-space RDF to the pipeline as a data table.
-    DataTable* realSpaceRDFObj = state.createObject<DataTable>(QStringLiteral("correlation-real-space-rdf"), request.modApp(), DataTable::Line, tr("Real-space RDF"), realSpaceRDF());
+    DataTable* realSpaceRDFObj = state.createObject<DataTable>(QStringLiteral("correlation-real-space-rdf"), request.modificationNode(), DataTable::Line, tr("Real-space RDF"), realSpaceRDF());
     realSpaceRDFObj->setAxisLabelX(tr("Distance r"));
     realSpaceRDFObj->setIntervalStart(0);
     realSpaceRDFObj->setIntervalEnd(_realSpaceCorrelationRange);
 
     // Output short-ranged part of the real-space correlation function to the pipeline as a data table.
     if(neighCorrelation()) {
-        DataTable* neighCorrelationObj = state.createObject<DataTable>(QStringLiteral("correlation-neighbor"), request.modApp(), DataTable::Line, tr("Neighbor correlation"), neighCorrelation());
+        DataTable* neighCorrelationObj = state.createObject<DataTable>(QStringLiteral("correlation-neighbor"), request.modificationNode(), DataTable::Line, tr("Neighbor correlation"), neighCorrelation());
         neighCorrelationObj->setAxisLabelX(tr("Distance r"));
         neighCorrelationObj->setIntervalStart(0);
         neighCorrelationObj->setIntervalEnd(neighCutoff());
@@ -740,24 +740,24 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::applyResults
 
     // Output short-ranged part of the RDF to the pipeline as a data table.
     if(neighRDF()) {
-        DataTable* neighRDFObj = state.createObject<DataTable>(QStringLiteral("correlation-neighbor-rdf"), request.modApp(), DataTable::Line, tr("Neighbor RDF"), neighRDF());
+        DataTable* neighRDFObj = state.createObject<DataTable>(QStringLiteral("correlation-neighbor-rdf"), request.modificationNode(), DataTable::Line, tr("Neighbor RDF"), neighRDF());
         neighRDFObj->setAxisLabelX(tr("Distance r"));
         neighRDFObj->setIntervalStart(0);
         neighRDFObj->setIntervalEnd(neighCutoff());
     }
 
     // Output reciprocal-space correlation function to the pipeline as a data table.
-    DataTable* reciprocalSpaceCorrelationObj = state.createObject<DataTable>(QStringLiteral("correlation-reciprocal-space"), request.modApp(), DataTable::Line, tr("Reciprocal-space correlation"), reciprocalSpaceCorrelation());
+    DataTable* reciprocalSpaceCorrelationObj = state.createObject<DataTable>(QStringLiteral("correlation-reciprocal-space"), request.modificationNode(), DataTable::Line, tr("Reciprocal-space correlation"), reciprocalSpaceCorrelation());
     reciprocalSpaceCorrelationObj->setAxisLabelX(tr("Wavevector q"));
     reciprocalSpaceCorrelationObj->setIntervalStart(0);
     reciprocalSpaceCorrelationObj->setIntervalEnd(_reciprocalSpaceCorrelationRange);
 
     // Output global attributes.
-    state.addAttribute(QStringLiteral("CorrelationFunction.mean1"), QVariant::fromValue(mean1()), request.modApp());
-    state.addAttribute(QStringLiteral("CorrelationFunction.mean2"), QVariant::fromValue(mean2()), request.modApp());
-    state.addAttribute(QStringLiteral("CorrelationFunction.variance1"), QVariant::fromValue(variance1()), request.modApp());
-    state.addAttribute(QStringLiteral("CorrelationFunction.variance2"), QVariant::fromValue(variance2()), request.modApp());
-    state.addAttribute(QStringLiteral("CorrelationFunction.covariance"), QVariant::fromValue(covariance()), request.modApp());
+    state.addAttribute(QStringLiteral("CorrelationFunction.mean1"), QVariant::fromValue(mean1()), request.modificationNode());
+    state.addAttribute(QStringLiteral("CorrelationFunction.mean2"), QVariant::fromValue(mean2()), request.modificationNode());
+    state.addAttribute(QStringLiteral("CorrelationFunction.variance1"), QVariant::fromValue(variance1()), request.modificationNode());
+    state.addAttribute(QStringLiteral("CorrelationFunction.variance2"), QVariant::fromValue(variance2()), request.modificationNode());
+    state.addAttribute(QStringLiteral("CorrelationFunction.covariance"), QVariant::fromValue(covariance()), request.modificationNode());
 }
 
 }   // End of namespace

@@ -21,13 +21,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/particles/objects/BondsObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/particles/objects/Bonds.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "ParticlesDeleteSelectedModifierDelegate.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParticlesDeleteSelectedModifierDelegate);
 IMPLEMENT_OVITO_CLASS(BondsDeleteSelectedModifierDelegate);
@@ -38,8 +38,8 @@ IMPLEMENT_OVITO_CLASS(BondsDeleteSelectedModifierDelegate);
 ******************************************************************************/
 QVector<DataObjectReference> ParticlesDeleteSelectedModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(input.containsObject<ParticlesObject>())
-        return { DataObjectReference(&ParticlesObject::OOClass()) };
+    if(input.containsObject<Particles>())
+        return { DataObjectReference(&Particles::OOClass()) };
     return {};
 }
 
@@ -56,12 +56,12 @@ PipelineStatus ParticlesDeleteSelectedModifierDelegate::apply(const ModifierEval
     size_t numDeletedImpropers = 0;
 
     // Get the particle selection.
-    if(const ParticlesObject* inputParticles = state.getObject<ParticlesObject>()) {
+    if(const Particles* inputParticles = state.getObject<Particles>()) {
         inputParticles->verifyIntegrity();
         numParticles += inputParticles->elementCount();
-        if(ConstPropertyPtr selProperty = inputParticles->getProperty(ParticlesObject::SelectionProperty)) {
+        if(ConstPropertyPtr selProperty = inputParticles->getProperty(Particles::SelectionProperty)) {
             // Make sure we can safely modify the particles object.
-            ParticlesObject* outputParticles = state.makeMutable(inputParticles);
+            Particles* outputParticles = state.makeMutable(inputParticles);
 
             // Keep track of how many bonds, angles, etc there are.
             size_t oldBondCount = outputParticles->bonds() ? outputParticles->bonds()->elementCount() : 0;
@@ -105,9 +105,9 @@ PipelineStatus ParticlesDeleteSelectedModifierDelegate::apply(const ModifierEval
 ******************************************************************************/
 QVector<DataObjectReference> BondsDeleteSelectedModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(const ParticlesObject* particles = input.getObject<ParticlesObject>()) {
-        if(particles->bonds() && particles->bonds()->getProperty(BondsObject::SelectionProperty))
-            return { DataObjectReference(&ParticlesObject::OOClass()) };
+    if(const Particles* particles = input.getObject<Particles>()) {
+        if(particles->bonds() && particles->bonds()->getProperty(Bonds::SelectionProperty))
+            return { DataObjectReference(&Particles::OOClass()) };
     }
     return {};
 }
@@ -121,14 +121,14 @@ PipelineStatus BondsDeleteSelectedModifierDelegate::apply(const ModifierEvaluati
     size_t numSelected = 0;
 
     // Get the bond selection.
-    if(const ParticlesObject* inputParticles = state.getObject<ParticlesObject>()) {
-        if(const BondsObject* inputBonds = inputParticles->bonds()) {
+    if(const Particles* inputParticles = state.getObject<Particles>()) {
+        if(const Bonds* inputBonds = inputParticles->bonds()) {
             inputBonds->verifyIntegrity();
             numBonds += inputBonds->elementCount();
-            if(ConstPropertyPtr selProperty = inputBonds->getProperty(BondsObject::SelectionProperty)) {
+            if(ConstPropertyPtr selProperty = inputBonds->getProperty(Bonds::SelectionProperty)) {
                 // Make sure we can safely modify the particles and the bonds object it contains.
-                ParticlesObject* outputParticles = state.makeMutable(inputParticles);
-                BondsObject* outputBonds = outputParticles->makeBondsMutable();
+                Particles* outputParticles = state.makeMutable(inputParticles);
+                Bonds* outputBonds = outputParticles->makeBondsMutable();
 
                 // Remove selection property.
                 outputBonds->removeProperty(selProperty);

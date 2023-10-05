@@ -26,9 +26,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/stdmod/modifiers/SliceModifier.h>
 
-namespace Ovito::CrystalAnalysis {
-
-using namespace Ovito::StdMod;
+namespace Ovito {
 
 /**
  * \brief Slice function that operates on dislocation lines.

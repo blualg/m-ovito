@@ -25,7 +25,7 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "ParticleType.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParticleType);
 DEFINE_PROPERTY_FIELD(ParticleType, radius);
@@ -79,24 +79,24 @@ void ParticleType::initializeType(const PropertyReference& property, bool loadUs
 
     // Load standard display radius.
     // First load the hardcoded default radius and freeze it, then load the user-defined default radius.
-    setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), false, DisplayRadius));
+    setRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.type()), nameOrNumericId(), numericId(), false, DisplayRadius));
     freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::radius)});
     if(loadUserDefaults)
-        setRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), true, DisplayRadius));
+        setRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.type()), nameOrNumericId(), numericId(), true, DisplayRadius));
 
     // Load standard van der Waals radius.
     // First load the hardcoded default radius and freeze it, then load the user-defined default radius.
-    setVdwRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), false, VanDerWaalsRadius));
+    setVdwRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.type()), nameOrNumericId(), numericId(), false, VanDerWaalsRadius));
     freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::vdwRadius)});
     if(loadUserDefaults)
-        setVdwRadius(getDefaultParticleRadius(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), true, VanDerWaalsRadius));
+        setVdwRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.type()), nameOrNumericId(), numericId(), true, VanDerWaalsRadius));
 
     // Load standard mass.
     // First load the hardcoded default mass and freeze it, then load the user-defined default mass.
-    setMass(getDefaultParticleMass(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), false));
+    setMass(getDefaultParticleMass(static_cast<Particles::Type>(property.type()), nameOrNumericId(), numericId(), false));
     freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::mass)});
     if(loadUserDefaults)
-        setMass(getDefaultParticleMass(static_cast<ParticlesObject::Type>(property.type()), nameOrNumericId(), numericId(), true));
+        setMass(getDefaultParticleMass(static_cast<Particles::Type>(property.type()), nameOrNumericId(), numericId(), true));
 }
 
 /******************************************************************************
@@ -146,7 +146,7 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, MainThreadOperation oper
     operation.setProgressText(tr("Loading mesh geometry file %1").arg(sourceUrl.fileName()));
 
     // Temporarily disable undo recording while loading the geometry data.
-    DataOORef<TriMeshObject> meshObj;
+    DataOORef<TriangleMesh> meshObj;
     {
         UndoSuspender noUndo;
 
@@ -183,7 +183,7 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, MainThreadOperation oper
         }
         if(!state)
             throw Exception(tr("The loaded geometry file does not provide any valid mesh data."));
-        meshObj = DataOORef<TriMeshObject>::makeCopy(state.expectObject<TriMeshObject>());
+        meshObj = DataOORef<TriangleMesh>::makeCopy(state.expectObject<TriangleMesh>());
 
         // Throw away any visual elements attached to the mesh object.
         meshObj->setVisElement(nullptr);
@@ -354,11 +354,11 @@ const std::array<ParticleType::PredefinedStructuralType, ParticleType::NUMBER_OF
 /******************************************************************************
 * Returns the default radius for a particle type.
 ******************************************************************************/
-FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int numericTypeId, bool loadUserDefaults, RadiusVariant radiusVariant)
+FloatType ParticleType::getDefaultParticleRadius(Particles::Type typeClass, const QString& particleTypeName, int numericTypeId, bool loadUserDefaults, RadiusVariant radiusVariant)
 {
     // Interactive execution context means that we are supposed to load the user-defined
     // settings from the settings store.
-    if(loadUserDefaults && typeClass != ParticlesObject::UserProperty) {
+    if(loadUserDefaults && typeClass != Particles::UserProperty) {
 
 #ifndef OVITO_DISABLE_QSETTINGS
         // Use the type's name, property type and container class to look up the
@@ -379,7 +379,7 @@ FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass
 #endif
     }
 
-    if(typeClass == ParticlesObject::TypeProperty) {
+    if(typeClass == Particles::TypeProperty) {
         for(const PredefinedChemicalType& predefType : _predefinedParticleTypes) {
             if(predefType.name == particleTypeName) {
                 if(radiusVariant == DisplayRadius)
@@ -401,9 +401,9 @@ FloatType ParticleType::getDefaultParticleRadius(ParticlesObject::Type typeClass
 /******************************************************************************
 * Changes the default radius for a particle type.
 ******************************************************************************/
-void ParticleType::setDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, FloatType radius, RadiusVariant radiusVariant)
+void ParticleType::setDefaultParticleRadius(Particles::Type typeClass, const QString& particleTypeName, FloatType radius, RadiusVariant radiusVariant)
 {
-    if(typeClass == ParticlesObject::UserProperty)
+    if(typeClass == Particles::UserProperty)
         return;
 
 #ifndef OVITO_DISABLE_QSETTINGS
@@ -421,9 +421,9 @@ void ParticleType::setDefaultParticleRadius(ParticlesObject::Type typeClass, con
 /******************************************************************************
 * Returns the default mass for a particle type.
 ******************************************************************************/
-FloatType ParticleType::getDefaultParticleMass(ParticlesObject::Type typeClass, const QString& particleTypeName, int numericTypeId, bool loadUserDefaults)
+FloatType ParticleType::getDefaultParticleMass(Particles::Type typeClass, const QString& particleTypeName, int numericTypeId, bool loadUserDefaults)
 {
-    if(typeClass == ParticlesObject::TypeProperty) {
+    if(typeClass == Particles::TypeProperty) {
         for(const PredefinedChemicalType& predefType : _predefinedParticleTypes) {
             if(predefType.name == particleTypeName) {
                 return predefType.mass;

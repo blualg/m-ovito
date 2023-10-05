@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -97,7 +97,7 @@ void AttributeFileExporterEditor::createUI(const RolloutInsertionParameters& rol
 bool AttributeFileExporterEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(source == editObject() && event.type() == ReferenceEvent::ReferenceChanged) {
-        if(static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(FileExporter::nodeToExport)) {
+        if(static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(FileExporter::sceneNodeToExport)) {
             updateAttributesList();
         }
     }
@@ -113,7 +113,7 @@ void AttributeFileExporterEditor::updateAttributesList()
 
     // Retrieve the data to be exported.
     AttributeFileExporter* exporter = static_object_cast<AttributeFileExporter>(editObject());
-    if(!exporter || !exporter->nodeToExport()) return;
+    if(!exporter || !exporter->sceneNodeToExport()) return;
 
     try {
         QVariantMap attrMap;

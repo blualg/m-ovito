@@ -22,24 +22,24 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/io/FileSource.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/simcell/SimulationCellVis.h>
 #include "StandardFrameLoader.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /******************************************************************************
 * Returns the simulation cell object, newly creating it first if necessary.
 ******************************************************************************/
-SimulationCellObject* StandardFrameLoader::simulationCell()
+SimulationCell* StandardFrameLoader::simulationCell()
 {
     if(!_simulationCell) {
-        _simulationCell = state().getMutableObject<SimulationCellObject>();
+        _simulationCell = state().getMutableObject<SimulationCell>();
         if(!_simulationCell) {
-            _simulationCell = state().createObject<SimulationCellObject>(dataSource(), AffineTransformation::Zero(), true, true, true, false);
+            _simulationCell = state().createObject<SimulationCell>(pipelineNode(), AffineTransformation::Zero(), true, true, true, false);
             _isSimulationCellNewlyCreated = true;
         }
     }
@@ -70,10 +70,10 @@ void StandardFrameLoader::loadFile()
     // This is needed for the Python code generator to detect manual changes subsequently made by the user.
     if(_simulationCell) {
         _simulationCell->freezeInitialParameterValues({
-            SHADOW_PROPERTY_FIELD(SimulationCellObject::pbcX),
-            SHADOW_PROPERTY_FIELD(SimulationCellObject::pbcY),
-            SHADOW_PROPERTY_FIELD(SimulationCellObject::pbcZ),
-            SHADOW_PROPERTY_FIELD(SimulationCellObject::is2D)});
+            SHADOW_PROPERTY_FIELD(SimulationCell::pbcX),
+            SHADOW_PROPERTY_FIELD(SimulationCell::pbcY),
+            SHADOW_PROPERTY_FIELD(SimulationCell::pbcZ),
+            SHADOW_PROPERTY_FIELD(SimulationCell::is2D)});
     }
 }
 

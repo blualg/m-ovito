@@ -27,7 +27,7 @@
 #include <ovito/particles/modifier/analysis/StructureIdentificationModifier.h>
 #include <ovito/crystalanalysis/modifier/dxa/StructureAnalysis.h>
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /*
  * Extracts dislocation lines from a crystal.

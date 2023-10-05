@@ -24,7 +24,7 @@
 #include <ovito/grid/objects/VoxelGrid.h>
 #include "VoxelGridColorCodingModifierDelegate.h"
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(VoxelGridColorCodingModifierDelegate);
 

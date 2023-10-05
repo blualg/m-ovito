@@ -24,7 +24,7 @@
 #include "SurfaceMeshVertices.h"
 #include "SurfaceMeshVis.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshVertices);
 
@@ -38,16 +38,16 @@ PropertyPtr SurfaceMeshVertices::OOMetaClass::createStandardPropertyInternal(Dat
 
     switch(type) {
     case PositionProperty:
-        dataType = PropertyObject::FloatDefault;
+        dataType = Property::FloatDefault;
         componentCount = 3;
         OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Point3));
         break;
     case SelectionProperty:
-        dataType = PropertyObject::IntSelection;
+        dataType = Property::IntSelection;
         componentCount = 1;
         break;
     case ColorProperty:
-        dataType = PropertyObject::FloatGraphics;
+        dataType = Property::FloatGraphics;
         componentCount = 3;
         OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Color));
         break;
@@ -98,9 +98,9 @@ void SurfaceMeshVertices::OOMetaClass::initialize()
     const QStringList xyzList = QStringList() << "X" << "Y" << "Z";
     const QStringList rgbList = QStringList() << "R" << "G" << "B";
 
-    registerStandardProperty(SelectionProperty, tr("Selection"), PropertyObject::IntSelection, emptyList);
-    registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::FloatGraphics, rgbList, nullptr, tr("Vertex colors"));
-    registerStandardProperty(PositionProperty, tr("Position"), PropertyObject::FloatDefault, xyzList, nullptr, tr("Vertex positions"));
+    registerStandardProperty(SelectionProperty, tr("Selection"), Property::IntSelection, emptyList);
+    registerStandardProperty(ColorProperty, tr("Color"), Property::FloatGraphics, rgbList, nullptr, tr("Vertex colors"));
+    registerStandardProperty(PositionProperty, tr("Position"), Property::FloatDefault, xyzList, nullptr, tr("Vertex positions"));
 }
 
 /******************************************************************************
@@ -143,8 +143,8 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshVertices::getVecto
 
         ConstDataBufferPtr vectorProperty = path.lastAs<DataBuffer>();
         if(vectorProperty && vectorProperty->componentCount() == 3) {
-            OVITO_ASSERT(vectorProperty->dataType() == PropertyObject::FloatDefault);
-            if(vectorProperty->dataType() == PropertyObject::FloatDefault) {
+            OVITO_ASSERT(vectorProperty->dataType() == Property::FloatDefault);
+            if(vectorProperty->dataType() == Property::FloatDefault) {
                 // Does the mesh have cutting planes and do we need to perform point culling?
                 if(!mesh->cuttingPlanes().empty()) {
                     // Create a copy of the vector property in which the values of culled points

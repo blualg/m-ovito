@@ -23,15 +23,15 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/util/CutoffNeighborFinder.h>
 #include <ovito/particles/util/NearestNeighborFinder.h>
-#include <ovito/particles/objects/BondsObject.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Bonds.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "ExpandSelectionModifier.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ExpandSelectionModifier);
 DEFINE_PROPERTY_FIELD(ExpandSelectionModifier, mode);
@@ -62,7 +62,7 @@ ExpandSelectionModifier::ExpandSelectionModifier(ObjectInitializationFlags flags
 ******************************************************************************/
 bool ExpandSelectionModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    return input.containsObject<ParticlesObject>();
+    return input.containsObject<Particles>();
 }
 
 /******************************************************************************
@@ -72,17 +72,17 @@ bool ExpandSelectionModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 Future<AsynchronousModifier::EnginePtr> ExpandSelectionModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get the input particles.
-    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
+    const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
 
     // Get the particle positions.
-    const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
 
     // Get the current particle selection.
-    const PropertyObject* inputSelection = particles->expectProperty(ParticlesObject::SelectionProperty);
+    const Property* inputSelection = particles->expectProperty(Particles::SelectionProperty);
 
     // Get simulation cell.
-    const SimulationCellObject* inputCell = input.expectObject<SimulationCellObject>();
+    const SimulationCell* inputCell = input.expectObject<SimulationCell>();
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     if(mode() == CutoffRange) {
@@ -208,7 +208,7 @@ void ExpandSelectionModifier::ExpandSelectionCutoffEngine::expandSelection()
 void ExpandSelectionModifier::ExpandSelectionEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     // Get the output particles.
-    ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+    Particles* particles = state.expectMutableObject<Particles>();
     if(_inputFingerprint.hasChanged(particles))
         throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
@@ -216,7 +216,7 @@ void ExpandSelectionModifier::ExpandSelectionEngine::applyResults(const Modifier
     particles->createProperty(outputSelection());
 
     // Report the number of newly selected particles as a pipeline attribute.
-    state.addAttribute(QStringLiteral("ExpandSelection.num_added"), QVariant::fromValue(numSelectedParticlesOutput() - numSelectedParticlesInput()), request.modApp());
+    state.addAttribute(QStringLiteral("ExpandSelection.num_added"), QVariant::fromValue(numSelectedParticlesOutput() - numSelectedParticlesInput()), request.modificationNode());
 
     QString msg = tr("Added %1 particles to selection.\n"
             "Old selection count was: %2\n"

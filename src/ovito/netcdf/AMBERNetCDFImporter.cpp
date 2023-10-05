@@ -41,8 +41,8 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/utilities/concurrent/Future.h>
@@ -54,7 +54,7 @@
 #include <netcdf.h>
 #include <QtMath>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(AMBERNetCDFImporter);
 DEFINE_PROPERTY_FIELD(AMBERNetCDFImporter, useCustomColumnMapping);
@@ -365,7 +365,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
     NetCDFFile ncFile;
     QString title = ncFile.open(filename);
     if(!title.isEmpty())
-        state().setAttribute(QStringLiteral("NetCDF_Title"), QVariant::fromValue(title), dataSource());
+        state().setAttribute(QStringLiteral("NetCDF_Title"), QVariant::fromValue(title), pipelineNode());
 
     // Scan NetCDF file and enumerate supported column names.
     ParticleInputColumnMapping columnMapping = ncFile.detectColumnMapping(movieFrame);
@@ -393,21 +393,21 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
                 size_t countp[2] = { 1, 1 };
                 int value;
                 NCERR( nc_get_vara_int(ncFile._ncid, varId, startp, countp, &value) );
-                state().setAttribute(QString::fromLocal8Bit(name), QVariant::fromValue(value), dataSource());
+                state().setAttribute(QString::fromLocal8Bit(name), QVariant::fromValue(value), pipelineNode());
             }
             else if(type == NC_INT64) {
                 size_t startp[2] = { movieFrame, 0 };
                 size_t countp[2] = { 1, 1 };
                 qlonglong value;
                 NCERR( nc_get_vara_longlong(ncFile._ncid, varId, startp, countp, &value) );
-                state().setAttribute(QString::fromLocal8Bit(name), QVariant::fromValue(value), dataSource());
+                state().setAttribute(QString::fromLocal8Bit(name), QVariant::fromValue(value), pipelineNode());
             }
             else if(type == NC_FLOAT || type == NC_DOUBLE) {
                 size_t startp[2] = { movieFrame, 0 };
                 size_t countp[2] = { 1, 1 };
                 double value;
                 NCERR( nc_get_vara_double(ncFile._ncid, varId, startp, countp, &value) );
-                state().setAttribute(QString::fromLocal8Bit(name), QVariant::fromValue(value), dataSource());
+                state().setAttribute(QString::fromLocal8Bit(name), QVariant::fromValue(value), pipelineNode());
             }
         }
     }
@@ -493,14 +493,14 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
     setParticleCount(particleCount);
 
     // Now iterate over all NetCDF variables and load the appropriate frame data.
-    std::vector<PropertyObject*> loadedProperties;
+    std::vector<Property*> loadedProperties;
     for(const InputColumnInfo& column : columnMapping) {
         if(isCanceled())
             return;
         if(&column != &columnMapping.front())
             nextProgressSubStep();
 
-        PropertyObject* property = nullptr;
+        Property* property = nullptr;
         QString columnName = column.columnName;
         QString propertyName = column.property.name();
         int dataType = column.dataType;
@@ -522,8 +522,8 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
             continue;
 
         // Create property to load this information into.
-        ParticlesObject::Type propertyType = (ParticlesObject::Type)column.property.type();
-        if(propertyType != ParticlesObject::UserProperty) {
+        Particles::Type propertyType = (Particles::Type)column.property.type();
+        if(propertyType != Particles::UserProperty) {
             // Create standard property.
             property = particles()->createProperty(DataBuffer::Initialized, propertyType);
         }
@@ -588,11 +588,11 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
                 return;
 
             // Create particles types if this is the typed property.
-            if(OvitoClassPtr elementTypeClass = ParticlesObject::OOClass().typedPropertyElementClass(property->type())) {
+            if(OvitoClassPtr elementTypeClass = Particles::OOClass().typedPropertyElementClass(property->type())) {
 
                 // Create particle types.
                 for(int ptype : BufferReadAccess<int32_t>(property)) {
-                    addNumericType(ParticlesObject::OOClass(), property, ptype, {}, elementTypeClass);
+                    addNumericType(Particles::OOClass(), property, ptype, {}, elementTypeClass);
                 }
 
                 // Since we created particle types on the go while reading the particles, the assigned particle type IDs
@@ -620,7 +620,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
 
     // Remove properties from the existing container which are not being parsed.
     for(int index = particles()->properties().size() - 1; index >= 0; index--) {
-        const PropertyObject* property = particles()->properties()[index];
+        const Property* property = particles()->properties()[index];
         if(std::find(loadedProperties.cbegin(), loadedProperties.cend(), property) == loadedProperties.cend())
             particles()->removeProperty(property);
     }
@@ -630,7 +630,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
     // If the input file does not contain simulation cell size, use bounding box of particles as simulation cell.
     if(!pbc[0] || !pbc[1] || !pbc[2]) {
 
-        BufferReadAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty);
+        BufferReadAccess<Point3> posProperty = particles()->getProperty(Particles::PositionProperty);
         if(posProperty && posProperty.size() != 0) {
             Box3 boundingBox;
             boundingBox.addPoints(posProperty);
@@ -664,39 +664,39 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
  *****************************************************************************/
 InputColumnInfo AMBERNetCDFImporter::mapVariableToColumn(const QString& name, int dataType, size_t componentCount)
 {
-    ParticlesObject::Type standardType = ParticlesObject::UserProperty;
+    Particles::Type standardType = Particles::UserProperty;
 
     // Map variables of the AMBER convention and some more to OVITO's standard properties.
     QString loweredName = name.toLower();
-    if(loweredName == "coordinates" || loweredName == "unwrapped_coordinates") standardType = ParticlesObject::PositionProperty;
-    else if(loweredName == "velocities") standardType = ParticlesObject::VelocityProperty;
-    else if(loweredName == "id" || loweredName == "identifier") standardType = ParticlesObject::IdentifierProperty;
-    else if(loweredName == "type" || loweredName == "element" || loweredName == "atom_types" || loweredName == "species") standardType = ParticlesObject::TypeProperty;
-    else if(loweredName == "mass") standardType = ParticlesObject::MassProperty;
-    else if(loweredName == "radius") standardType = ParticlesObject::RadiusProperty;
-    else if(loweredName == "color") standardType = ParticlesObject::ColorProperty;
-    else if(loweredName == "c_cna" || loweredName == "pattern") standardType = ParticlesObject::StructureTypeProperty;
-    else if(loweredName == "c_epot") standardType = ParticlesObject::PotentialEnergyProperty;
-    else if(loweredName == "c_kpot") standardType = ParticlesObject::KineticEnergyProperty;
-    else if(loweredName == "selection") standardType = ParticlesObject::SelectionProperty;
-    else if(loweredName == "forces" || loweredName == "force") standardType = ParticlesObject::ForceProperty;
+    if(loweredName == "coordinates" || loweredName == "unwrapped_coordinates") standardType = Particles::PositionProperty;
+    else if(loweredName == "velocities") standardType = Particles::VelocityProperty;
+    else if(loweredName == "id" || loweredName == "identifier") standardType = Particles::IdentifierProperty;
+    else if(loweredName == "type" || loweredName == "element" || loweredName == "atom_types" || loweredName == "species") standardType = Particles::TypeProperty;
+    else if(loweredName == "mass") standardType = Particles::MassProperty;
+    else if(loweredName == "radius") standardType = Particles::RadiusProperty;
+    else if(loweredName == "color") standardType = Particles::ColorProperty;
+    else if(loweredName == "c_cna" || loweredName == "pattern") standardType = Particles::StructureTypeProperty;
+    else if(loweredName == "c_epot") standardType = Particles::PotentialEnergyProperty;
+    else if(loweredName == "c_kpot") standardType = Particles::KineticEnergyProperty;
+    else if(loweredName == "selection") standardType = Particles::SelectionProperty;
+    else if(loweredName == "forces" || loweredName == "force") standardType = Particles::ForceProperty;
 
     // Try to directly map variable name to a standard property name.
-    if(standardType == ParticlesObject::UserProperty)
-        standardType = (ParticlesObject::Type)ParticlesObject::OOClass().standardPropertyTypeId(name);
+    if(standardType == Particles::UserProperty)
+        standardType = (Particles::Type)Particles::OOClass().standardPropertyTypeId(name);
 
     InputColumnInfo column;
     column.columnName = name;
 
     // Only map to standard property if data layout matches.
-    if(standardType != ParticlesObject::UserProperty) {
-        if(componentCount == ParticlesObject::OOClass().standardPropertyComponentCount(standardType)) {
-            column.mapStandardColumn(&ParticlesObject::OOClass(), standardType);
+    if(standardType != Particles::UserProperty) {
+        if(componentCount == Particles::OOClass().standardPropertyComponentCount(standardType)) {
+            column.mapStandardColumn(&Particles::OOClass(), standardType);
             return column;
         }
     }
 
-    column.mapCustomColumn(&ParticlesObject::OOClass(), PropertyObject::makePropertyNameValid(name), dataType);
+    column.mapCustomColumn(&Particles::OOClass(), Property::makePropertyNameValid(name), dataType);
     return column;
 }
 

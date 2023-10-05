@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/dataset/DataSet.h>
@@ -30,7 +30,7 @@
 #include "VectorVis.h"
 #include "ParticlesVis.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(VectorVis);
 IMPLEMENT_OVITO_CLASS(VectorPickInfo);
@@ -104,15 +104,15 @@ void VectorVis::loadFromStreamComplete(ObjectLoadStream& stream)
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 VectorVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 VectorVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
 {
     const PropertyContainer* container = path.lastAs<PropertyContainer>(1);
     if(!container) return {};
     auto [basePositions, vectorProperty] = container->getVectorVisData(path, flowState, visCache);
     OVITO_ASSERT(!basePositions || basePositions->size() == container->elementCount());
-    OVITO_ASSERT(!basePositions || basePositions->dataType() == PropertyObject::FloatDefault);
+    OVITO_ASSERT(!basePositions || basePositions->dataType() == Property::FloatDefault);
     OVITO_ASSERT(!basePositions || (basePositions->componentCount() == 3 && basePositions->dataType() == DataBuffer::FloatDefault));
-    if(vectorProperty && ((vectorProperty->dataType() != PropertyObject::Float32 && vectorProperty->dataType() != PropertyObject::Float64) || vectorProperty->componentCount() != 3))
+    if(vectorProperty && ((vectorProperty->dataType() != Property::Float32 && vectorProperty->dataType() != Property::Float64) || vectorProperty->componentCount() != 3))
         vectorProperty = nullptr;
 
     // The key type used for caching the computed bounding box:
@@ -148,9 +148,9 @@ Box3 VectorVis::arrowBoundingBox(const DataBuffer* vectorProperty, const DataBuf
     if(!basePositions || !vectorProperty)
         return Box3();
 
-    OVITO_ASSERT(basePositions->dataType() == PropertyObject::FloatDefault);
+    OVITO_ASSERT(basePositions->dataType() == Property::FloatDefault);
     OVITO_ASSERT(basePositions->componentCount() == 3);
-    OVITO_ASSERT(vectorProperty->dataType() == PropertyObject::Float32 || vectorProperty->dataType() == PropertyObject::Float64);
+    OVITO_ASSERT(vectorProperty->dataType() == Property::Float32 || vectorProperty->dataType() == Property::Float64);
     OVITO_ASSERT(vectorProperty->componentCount() == 3);
     OVITO_ASSERT(basePositions->size() == vectorProperty->size());
 
@@ -160,7 +160,7 @@ Box3 VectorVis::arrowBoundingBox(const DataBuffer* vectorProperty, const DataBuf
     BufferReadAccess<Point3> positions(basePositions);
     const Point3* p = positions.cbegin();
 
-    if(vectorProperty->dataType() == PropertyObject::Float64) {
+    if(vectorProperty->dataType() == Property::Float64) {
         BufferReadAccess<Vector_3<double>> vectorData(vectorProperty);
         for(const Vector_3<double>& v : vectorData) {
             if(v != Vector_3<double>::Zero())
@@ -174,7 +174,7 @@ Box3 VectorVis::arrowBoundingBox(const DataBuffer* vectorProperty, const DataBuf
             if(m > maxMagnitude) maxMagnitude = m;
         }
     }
-    else if(vectorProperty->dataType() == PropertyObject::Float32) {
+    else if(vectorProperty->dataType() == Property::Float32) {
         BufferReadAccess<Vector_3<float>> vectorData(vectorProperty);
         for(const Vector_3<float>& v : vectorData) {
             if(v != Vector_3<float>::Zero())
@@ -200,13 +200,13 @@ Box3 VectorVis::arrowBoundingBox(const DataBuffer* vectorProperty, const DataBuf
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
 {
     PipelineStatus status;
 
     if(renderer->isBoundingBoxPass()) {
         TimeInterval validityInterval;
-        renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, renderer->visCache(), validityInterval));
+        renderer->addToLocalBoundingBox(boundingBox(time, path, pipeline, flowState, renderer->visCache(), validityInterval));
         return status;
     }
 
@@ -218,12 +218,12 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
     OVITO_ASSERT(!basePositions || basePositions->size() == container->elementCount());
     OVITO_ASSERT(!basePositions || basePositions->dataType() == DataBuffer::FloatDefault);
     OVITO_ASSERT(!basePositions || (basePositions->componentCount() == 3 && basePositions->dataType() == DataBuffer::FloatDefault));
-    if(vectorProperty && ((vectorProperty->dataType() != PropertyObject::Float32 && vectorProperty->dataType() != PropertyObject::Float64) || vectorProperty->componentCount() != 3))
+    if(vectorProperty && ((vectorProperty->dataType() != Property::Float32 && vectorProperty->dataType() != Property::Float64) || vectorProperty->componentCount() != 3))
         vectorProperty.reset();
 
-    const PropertyObject* vectorColorProperty = nullptr;
-    if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(container))
-        vectorColorProperty = particles->getProperty(ParticlesObject::VectorColorProperty);
+    const Property* vectorColorProperty = nullptr;
+    if(const Particles* particles = dynamic_object_cast<Particles>(container))
+        vectorColorProperty = particles->getProperty(Particles::VectorColorProperty);
 
     // Make sure we don't exceed our internal limits.
     if(vectorProperty && vectorProperty->size() > (size_t)std::numeric_limits<int>::max()) {
@@ -231,7 +231,7 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
     }
 
     // Look for selected pseudo-coloring property.
-    const PropertyObject* pseudoColorProperty = nullptr;
+    const Property* pseudoColorProperty = nullptr;
     int pseudoColorPropertyComponent = 0;
     PseudoColorMapping pseudoColorMapping;
     if(coloringMode() == PseudoColoring && colorMapping() && colorMapping()->sourceProperty() && !vectorColorProperty) {
@@ -362,7 +362,7 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
     }
 
     if(renderer->isPicking()) {
-        renderer->beginPickObject(contextNode, OORef<VectorPickInfo>::create(this, path));
+        renderer->beginPickObject(pipeline, OORef<VectorPickInfo>::create(this, path));
     }
     AffineTransformation oldTM = renderer->worldTransform();
     renderer->setWorldTransform(AffineTransformation::translation(offset()) * oldTM);
@@ -381,7 +381,7 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
 ******************************************************************************/
 size_t VectorPickInfo::elementIndexFromSubObjectID(quint32 subobjID) const
 {
-    if(const PropertyObject* vectorProperty = dataPath().lastAs<PropertyObject>()) {
+    if(const Property* vectorProperty = dataPath().lastAs<Property>()) {
         size_t elementIndex = 0;
         if(vectorProperty->dataType() == DataBuffer::Float32) {
             BufferReadAccess<Vector_3<float>> vectorData(vectorProperty);
@@ -411,7 +411,7 @@ size_t VectorPickInfo::elementIndexFromSubObjectID(quint32 subobjID) const
 * Returns a human-readable string describing the picked object,
 * which will be displayed in the status bar by OVITO.
 ******************************************************************************/
-QString VectorPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjectId)
+QString VectorPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
 {
     size_t elementIndex = elementIndexFromSubObjectID(subobjectId);
     if(elementIndex != std::numeric_limits<size_t>::max()) {

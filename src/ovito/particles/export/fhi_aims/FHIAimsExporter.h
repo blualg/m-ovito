@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include "../ParticleExporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Exporter that outputs the particles to a FHI-aims file.

@@ -24,7 +24,7 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "SurfaceMeshColorCodingModifierDelegate.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshVerticesColorCodingModifierDelegate);
 IMPLEMENT_OVITO_CLASS(SurfaceMeshFacesColorCodingModifierDelegate);

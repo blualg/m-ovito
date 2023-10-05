@@ -26,7 +26,7 @@
 #include <ovito/gui/desktop/properties/StringParameterUI.h>
 #include "BurgersVectorFamilyEditor.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(BurgersVectorFamilyEditor);
 SET_OVITO_OBJECT_EDITOR(BurgersVectorFamily, BurgersVectorFamilyEditor);

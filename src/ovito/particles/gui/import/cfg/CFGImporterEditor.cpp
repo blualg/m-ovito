@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "CFGImporterEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CFGImporterEditor);
 SET_OVITO_OBJECT_EDITOR(CFGImporter, CFGImporterEditor);

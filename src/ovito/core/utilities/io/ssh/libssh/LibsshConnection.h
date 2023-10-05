@@ -38,7 +38,7 @@
     #undef min
 #endif
 
-namespace Ovito::Ssh {
+namespace Ovito {
 
 class LibsshConnection : public SshConnection
 {

@@ -21,8 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include "LAMMPSBinaryDumpImporter.h"
@@ -31,7 +31,7 @@
 #include <QtEndian>
 #include <QRegularExpression>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSBinaryDumpImporter);
 DEFINE_PROPERTY_FIELD(LAMMPSBinaryDumpImporter, columnMapping);
@@ -362,9 +362,9 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
     if(!header.parse(*file))
         throw Exception(tr("Failed to read binary LAMMPS dump file: Invalid file header."));
 
-    state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(header.ntimestep), dataSource());
+    state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(header.ntimestep), pipelineNode());
     if(header.simulationTime != std::numeric_limits<double>::lowest())
-        state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(header.simulationTime), dataSource());
+        state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(header.simulationTime), pipelineNode());
 
     setProgressMaximum(header.natoms);
     setParticleCount(header.natoms);
@@ -452,7 +452,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
         // the type of particle coordinates. Reduced coordinates are found in columns
         // "xs, ys, zs" or "xsu, ysu, zsu".
         for(int i = 0; i < (int)_columnMapping.size() && i < fileColumnNames.size(); i++) {
-            if(_columnMapping[i].property.type() == ParticlesObject::PositionProperty) {
+            if(_columnMapping[i].property.type() == Particles::PositionProperty) {
                 reducedCoordinates = (
                         fileColumnNames[i] == "xs" || fileColumnNames[i] == "xsu" ||
                         fileColumnNames[i] == "ys" || fileColumnNames[i] == "ysu" ||
@@ -468,7 +468,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
         // Assume reduced coordinates if all particle coordinates are within the [-0.02,1.02] interval.
         // We allow coordinates to be slightly outside the [0,1] interval, because LAMMPS
         // wraps around particles at the periodic boundaries only occasionally.
-        if(BufferReadAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty)) {
+        if(BufferReadAccess<Point3> posProperty = particles()->getProperty(Particles::PositionProperty)) {
             // Compute bound box of particle positions.
             Box3 boundingBox;
             boundingBox.addPoints(posProperty);
@@ -480,7 +480,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
 
     if(reducedCoordinates) {
         // Convert all atom coordinates from reduced to absolute (Cartesian) format.
-        if(BufferWriteAccess<Point3, access_mode::read_write> posProperty = particles()->getMutableProperty(ParticlesObject::PositionProperty)) {
+        if(BufferWriteAccess<Point3, access_mode::read_write> posProperty = particles()->getMutableProperty(Particles::PositionProperty)) {
             const AffineTransformation simCell = simulationCell()->cellMatrix();
             for(Point3& p : posProperty)
                 p = simCell * p;
@@ -491,8 +491,8 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
         // If a "diameter" column was loaded and stored in the "Radius" particle property,
         // we need to divide values by two.
         for(int i = 0; i < (int)_columnMapping.size() && i < fileColumnNames.size(); i++) {
-            if(_columnMapping[i].property.type() == ParticlesObject::RadiusProperty && fileColumnNames[i] == "diameter") {
-                if(BufferWriteAccess<GraphicsFloatType, access_mode::read_write> radiusProperty = particles()->getMutableProperty(ParticlesObject::RadiusProperty)) {
+            if(_columnMapping[i].property.type() == Particles::RadiusProperty && fileColumnNames[i] == "diameter") {
+                if(BufferWriteAccess<GraphicsFloatType, access_mode::read_write> radiusProperty = particles()->getMutableProperty(Particles::RadiusProperty)) {
                     for(auto& r : radiusProperty)
                         r *= 0.5f;
                 }
@@ -502,8 +502,8 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
 
         // Same for the "c_diameter[1..3]" columns being mapped to the "Aspherical Shape" property.
         for(int i = 0; i < (int)_columnMapping.size() && i < fileColumnNames.size(); i++) {
-            if(_columnMapping[i].property.type() == ParticlesObject::AsphericalShapeProperty && (fileColumnNames[i] == "c_diameter[1]" || fileColumnNames[i] == "c_diameter[2]" || fileColumnNames[i] == "c_diameter[3]")) {
-                if(BufferWriteAccess<Vector3G, access_mode::read_write> shapeProperty = particles()->getMutableProperty(ParticlesObject::AsphericalShapeProperty)) {
+            if(_columnMapping[i].property.type() == Particles::AsphericalShapeProperty && (fileColumnNames[i] == "c_diameter[1]" || fileColumnNames[i] == "c_diameter[2]" || fileColumnNames[i] == "c_diameter[3]")) {
+                if(BufferWriteAccess<Vector3G, access_mode::read_write> shapeProperty = particles()->getMutableProperty(Particles::AsphericalShapeProperty)) {
                     for(auto& s : shapeProperty) {
                         s.x() *= 0.5f;
                         s.y() *= 0.5f;
@@ -517,9 +517,9 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
 
     // Detect dimensionality of system. It's a 2D system if no file column has been mapped to the Position.Z particle property.
     if(std::none_of(_columnMapping.begin(), _columnMapping.end(), [](const InputColumnInfo& column) {
-        return column.property.type() == ParticlesObject::PositionProperty && column.property.vectorComponent() == 2;
+        return column.property.type() == Particles::PositionProperty && column.property.vectorComponent() == 2;
     }) && std::any_of(_columnMapping.begin(), _columnMapping.end(), [](const InputColumnInfo& column) {
-        return column.property.type() == ParticlesObject::PositionProperty && column.property.vectorComponent() != 2;
+        return column.property.type() == Particles::PositionProperty && column.property.vectorComponent() != 2;
     })) {
         simulationCell()->setIs2D(true);
     }

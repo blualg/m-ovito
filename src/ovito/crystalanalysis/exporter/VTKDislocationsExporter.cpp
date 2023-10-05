@@ -23,12 +23,12 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/crystalanalysis/objects/RenderableDislocationLines.h>
 #include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/app/Application.h>
 #include "VTKDislocationsExporter.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(VTKDislocationsExporter);
 

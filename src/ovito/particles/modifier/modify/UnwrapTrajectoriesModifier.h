@@ -24,11 +24,11 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief This modifier unwraps the positions of particles that have crossed a periodic boundary
@@ -69,9 +69,10 @@ public:
 /**
  * Used by the UnwrapTrajectoriesModifier to store the information for unfolding the particle trajectories.
  */
-class OVITO_PARTICLES_EXPORT UnwrapTrajectoriesModifierApplication : public ModifierApplication
+class OVITO_PARTICLES_EXPORT UnwrapTrajectoriesModificationNode : public ModificationNode
 {
-    OVITO_CLASS(UnwrapTrajectoriesModifierApplication)
+    OVITO_CLASS(UnwrapTrajectoriesModificationNode)
+    Q_CLASSINFO("ClassNameAlias", "UnwrapTrajectoriesModifierApplication");  // For backward compatibility with OVITO 3.9.2
 
 public:
 
@@ -84,7 +85,7 @@ public:
     using UnflipData = std::vector<std::pair<AnimationTime, std::array<int,3>>>;
 
     /// Constructor.
-    Q_INVOKABLE UnwrapTrajectoriesModifierApplication(ObjectInitializationFlags flags) : ModifierApplication(flags) {}
+    Q_INVOKABLE UnwrapTrajectoriesModificationNode(ObjectInitializationFlags flags) : ModificationNode(flags) {}
 
     /// Indicates the animation time up to which trajectories have already been unwrapped.
     AnimationTime unwrappedUpToTime() const { return _unwrappedUpToTime; }
@@ -141,9 +142,9 @@ private:
 
     /// Working state used during processing of the input trajectory.
     struct WorkingData {
-        UnwrapTrajectoriesModifierApplication* _modApp;
+        UnwrapTrajectoriesModificationNode* _modNode;
         std::unordered_map<qlonglong,Point3> _previousPositions;
-        DataOORef<const SimulationCellObject> _previousCell;
+        DataOORef<const SimulationCell> _previousCell;
         std::array<int,3> _currentFlipState{{0,0,0}};
 
         /// Calculates the information that is needed to unwrap particle coordinates.

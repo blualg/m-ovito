@@ -67,7 +67,7 @@ OORef<DataSet> GuiDataSetContainer::loadDataset(const QString& filename)
             if(Scene* scene = vp->scene()) {
                 std::vector<OORef<PipelineSceneNode>> fileSourcePipelines;
                 QStringList itemsList;
-                scene->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+                scene->visitPipelines([&](PipelineSceneNode* pipeline) {
                     if(dynamic_object_cast<FileSource>(pipeline->pipelineSource())) {
                         fileSourcePipelines.emplace_back(pipeline);
                         itemsList.push_back(pipeline->objectTitle());
@@ -108,7 +108,7 @@ OORef<DataSet> GuiDataSetContainer::loadDataset(const QString& filename)
                         scene->selection()->setNode(fileSourcePipelines[keepIndex]);
                         for(const auto& pipeline : fileSourcePipelines) {
                             if(pipeline != fileSourcePipelines[keepIndex]) {
-                                pipeline->deleteNode();
+                                pipeline->deleteSceneNode();
                             }
                         }
                     }
@@ -368,7 +368,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileI
     // Do not create any animation keys during import.
     AnimationSuspender animSuspender(mainWindow());
 
-    if(OORef<PipelineSceneNode> pipeline = importer->importFileSet(scene, std::move(urlImporters), importMode, true, ImportFileDialog::multiFileImportMode())) {
+    if(OORef<Pipeline> pipeline = importer->importFileSet(scene, std::move(urlImporters), importMode, true, ImportFileDialog::multiFileImportMode())) {
         if(importMode == FileImporter::ResetScene) {
             mainWindow().undoStack()->clear();
             currentSet()->setFilePath(QString());

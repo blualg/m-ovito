@@ -21,13 +21,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/PluginManager.h>
 #include "PropertyColorMapping.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(PropertyColorMapping);
 DEFINE_REFERENCE_FIELD(PropertyColorMapping, colorGradient);
@@ -84,7 +84,7 @@ PseudoColorMapping PropertyColorMapping::pseudoColorMapping() const
 /******************************************************************************
 * Determines the min/max range of values stored in the given property array.
 ******************************************************************************/
-std::optional<std::pair<FloatType, FloatType>> PropertyColorMapping::determineValueRange(const PropertyObject* pseudoColorProperty, int pseudoColorPropertyComponent) const
+std::optional<std::pair<FloatType, FloatType>> PropertyColorMapping::determineValueRange(const Property* pseudoColorProperty, int pseudoColorPropertyComponent) const
 {
     OVITO_ASSERT(pseudoColorProperty);
     OVITO_ASSERT(pseudoColorPropertyComponent >= 0 && pseudoColorPropertyComponent < pseudoColorProperty->componentCount());

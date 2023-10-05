@@ -29,7 +29,7 @@
 #include <ovito/core/dataset/io/FileSource.h>
 #include "XYZImporterEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(XYZImporterEditor);
 SET_OVITO_OBJECT_EDITOR(XYZImporter, XYZImporterEditor);

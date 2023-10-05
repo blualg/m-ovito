@@ -25,12 +25,12 @@
 
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/rendering/LinePrimitive.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Utility class that supports the picking of particles in the viewports.
@@ -56,8 +56,8 @@ public:
         /// The identifier of the picked particle.
         IdentifierIntType particleId;
 
-        /// The scene node that contains the picked particle.
-        OORef<PipelineSceneNode> objNode;
+        /// The pipeline that produced the picked particle.
+        OORef<Pipeline> pipeline;
     };
 
     /// \brief Finds the particle under the mouse cursor.

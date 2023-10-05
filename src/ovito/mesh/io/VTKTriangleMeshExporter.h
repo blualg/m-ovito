@@ -29,7 +29,7 @@
 #include <ovito/core/dataset/io/FileExporter.h>
 #include <ovito/core/utilities/io/CompressedTextWriter.h>
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 /**
  * \brief Exporter that writes VTK files.

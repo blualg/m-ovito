@@ -30,7 +30,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "ClusterAnalysisModifierEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ClusterAnalysisModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ClusterAnalysisModifier, ClusterAnalysisModifierEditor);

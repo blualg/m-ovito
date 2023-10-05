@@ -27,7 +27,7 @@
 #include "MarchingCubesRegionsLookupTable.h"
 #include "MarchingCubesVolumeLookupTable.h"
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 /******************************************************************************
  * Constructor.

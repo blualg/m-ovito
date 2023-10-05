@@ -29,7 +29,7 @@
 
 #include <QXmlStreamReader>
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 /**
  * \brief File parser for reading the simulation cell geometry from a ParaView VTR (RectilinearGrid) file as written by the Aspherix simulation code.

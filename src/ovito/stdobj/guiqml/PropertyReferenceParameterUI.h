@@ -28,7 +28,7 @@
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief UI component that allows the user to select a property object in a modifier's pipeline input.
@@ -38,7 +38,7 @@ class PropertyReferenceParameterUI : public ParameterUI
     Q_OBJECT
     QML_ELEMENT
     OVITO_CLASS(PropertyReferenceParameterUI)
-    
+
     Q_PROPERTY(QVariant propertyContainer READ propertyContainer WRITE setPropertyContainer)
     Q_PROPERTY(PropertyComponentsMode componentsMode READ componentsMode WRITE setComponentsMode)
     Q_PROPERTY(AcceptablePropertyType acceptablePropertyType READ acceptablePropertyType WRITE setAcceptablePropertyType)
@@ -85,18 +85,18 @@ public:
     virtual void setCurrentValue(const QVariant& val) override;
 
     /// Returns whether the model lists each component of a property separately.
-    PropertyComponentsMode componentsMode() const { return _componentsMode; }   
+    PropertyComponentsMode componentsMode() const { return _componentsMode; }
 
     /// Sets whether the model should list each component of a property separately.
-    void setComponentsMode(PropertyComponentsMode mode) { _componentsMode = mode; } 
+    void setComponentsMode(PropertyComponentsMode mode) { _componentsMode = mode; }
 
     /// Returns which kinds of properties the user can choose from.
     AcceptablePropertyType acceptablePropertyType() const { return _acceptablePropertyType; }
 
     /// Sets which kinds of properties the user can choose from.
-    void setAcceptablePropertyType(AcceptablePropertyType type) { 
+    void setAcceptablePropertyType(AcceptablePropertyType type) {
         if(_acceptablePropertyType != type) {
-            _acceptablePropertyType = type; 
+            _acceptablePropertyType = type;
             updatePropertyList();
             updateUI();
         }
@@ -139,12 +139,12 @@ private:
         const std::vector<PropertyReference>& properties() const { return _properties; }
 
         /// Updates the entire list model.
-        void resetList(std::vector<PropertyReference> properties, std::vector<QString> texts) { 
-            beginResetModel(); 
+        void resetList(std::vector<PropertyReference> properties, std::vector<QString> texts) {
+            beginResetModel();
             _properties = std::move(properties);
             _texts = std::move(texts);
             OVITO_ASSERT(_properties.size() == _texts.size());
-            endResetModel(); 
+            endResetModel();
         }
 
     private:

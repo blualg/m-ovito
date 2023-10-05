@@ -26,7 +26,7 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include "LoadTrajectoryModifierEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(LoadTrajectoryModifierEditor);
 SET_OVITO_OBJECT_EDITOR(LoadTrajectoryModifier, LoadTrajectoryModifierEditor);

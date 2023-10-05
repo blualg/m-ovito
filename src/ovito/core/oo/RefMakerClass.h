@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -80,9 +80,8 @@ public:
     /// Returns the list of property fields of the class, including those of all parent classes.
     const std::vector<const PropertyFieldDescriptor*>& propertyFields() const { return _propertyFields; }
 
-    /// If this is the descriptor of a RefMaker-derived class then this method will return
-    /// the reference field with the given identifier that has been defined in the RefMaker-derived
-    /// class or one of its super classes. If no such field is defined, then NULL is returned.
+    /// Looks up the reference field with the given identifier that has been defined in the RefMaker-derived
+    /// class or one of its super classes. If no such field is defined, nullptr is returned.
     const PropertyFieldDescriptor* findPropertyField(const char* identifier, bool searchSuperClasses = false) const;
 
     /// This method is called by the ObjectSaveStream class when saving one or more object instances of
@@ -98,7 +97,7 @@ public:
         return std::make_unique<RefMakerClass::SerializedClassInfo>();
     }
 
-    /// Lets the object class provide a custom function that takes are of the deserialization of a serialized property field. 
+    /// Lets the object class provide a custom function that takes are of the deserialization of a serialized property field.
     virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const { return nullptr; }
 
 protected:

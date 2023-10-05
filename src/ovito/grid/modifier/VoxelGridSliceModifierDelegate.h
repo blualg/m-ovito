@@ -27,9 +27,7 @@
 #include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/stdmod/modifiers/SliceModifier.h>
 
-namespace Ovito::Grid {
-
-using namespace Ovito::StdMod;
+namespace Ovito {
 
 /**
  * \brief Slice function that operates on voxel grids.

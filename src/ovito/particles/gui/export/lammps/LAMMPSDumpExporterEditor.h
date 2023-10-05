@@ -26,7 +26,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/gui/export/FileColumnParticleExporterEditor.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief User interface component for the LAMMPSDumpExporter class.

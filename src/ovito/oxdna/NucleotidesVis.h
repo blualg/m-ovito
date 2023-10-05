@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesVis.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief A visualization element for rendering DNA nucleotides.
@@ -42,22 +42,22 @@ public:
     Q_INVOKABLE NucleotidesVis(ObjectInitializationFlags flags);
 
     /// Renders the visual element.
-    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
+    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;
 
     /// Computes the bounding box of the visual element.
-    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
+    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
 
     /// Determines the effective rendering colors for the backbone sites of the nucleotides.
-    ConstPropertyPtr backboneColors(const ParticlesObject* particles, bool highlightSelection) const;
+    ConstPropertyPtr backboneColors(const Particles* particles, bool highlightSelection) const;
 
     /// Determines the effective rendering colors for the base sites of the nucleotides.
-    ConstPropertyPtr nucleobaseColors(const ParticlesObject* particles, bool highlightSelection) const;
+    ConstPropertyPtr nucleobaseColors(const Particles* particles, bool highlightSelection) const;
 
     /// Returns the typed particle property used to determine the rendering colors of particles (if no per-particle colors are defined).
-    virtual const PropertyObject* getParticleTypeColorProperty(const ParticlesObject* particles) const override;
+    virtual const Property* getParticleTypeColorProperty(const Particles* particles) const override;
 
     /// Returns the typed particle property used to determine the rendering radii of particles (if no per-particle radii are defined).
-    virtual const PropertyObject* getParticleTypeRadiusProperty(const ParticlesObject* particles) const override;
+    virtual const Property* getParticleTypeRadiusProperty(const Particles* particles) const override;
 
 private:
 

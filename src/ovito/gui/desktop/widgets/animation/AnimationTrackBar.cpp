@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,13 +36,13 @@ using namespace std;
 * The constructor of the AnimationTrackBar class.
 ******************************************************************************/
 AnimationTrackBar::AnimationTrackBar(MainWindow& mainWindow, AnimationTimeSlider* timeSlider, QWidget* parent) :
-    QFrame(parent), 
+    QFrame(parent),
     _mainWindow(mainWindow),
-    _timeSlider(timeSlider), 
-    _keyPen(Qt::black), 
-    _selectedKeyPen(QColor(255,255,255)), 
+    _timeSlider(timeSlider),
+    _keyPen(Qt::black),
+    _selectedKeyPen(QColor(255,255,255)),
     _selectionCursor(Qt::CrossCursor),
-    _isDragging(false), 
+    _isDragging(false),
     _dragStartPos(-1)
 {
     _keyBrushes[0] = QBrush(QColor(150,150,200));   // Color for float controller keys
@@ -188,11 +188,11 @@ void AnimationTrackBar::onRebuildControllerList()
     // Traverse object graphs of selected scene nodes to find all animation controllers.
     if(SelectionSet* selection = mainWindow().datasetContainer().activeSelectionSet()) {
         for(SceneNode* node : selection->nodes()) {
-            if(PipelineSceneNode* objNode = dynamic_object_cast<PipelineSceneNode>(node))
-                findControllers(objNode);
+            if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(node))
+                findControllers(pipeline);
         }
     }
-    
+
     _deferredUpdateScheduled = false;
     update();
 }

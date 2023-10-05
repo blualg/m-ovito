@@ -29,7 +29,7 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyExpressionEvaluator.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * \brief Base class for ExpressionSelectionModifier delegates that operate on different kinds of data.
@@ -113,7 +113,7 @@ public:
     }
 
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return expression(); }
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return expression(); }
 
 Q_SIGNALS:
 

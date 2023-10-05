@@ -21,13 +21,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include "TrajectoryVis.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(TrajectoryVis);
 DEFINE_PROPERTY_FIELD(TrajectoryVis, lineWidth);
@@ -80,12 +80,12 @@ void TrajectoryVis::loadFromStreamComplete(ObjectLoadStream& stream)
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 TrajectoryVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 TrajectoryVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
 {
-    const TrajectoryObject* trajObj = path.lastAs<TrajectoryObject>();
+    const TrajectoryLines* trajectoryLines = path.lastAs<TrajectoryLines>();
 
     // Get the simulation cell.
-    const SimulationCellObject* simulationCell = wrappedLines() ? flowState.getObject<SimulationCellObject>() : nullptr;
+    const SimulationCell* simulationCell = wrappedLines() ? flowState.getObject<SimulationCell>() : nullptr;
 
     // The key type used for caching the computed bounding box:
     using CacheKey = RendererResourceKey<struct TrajectoryVisBoundBoxCache,
@@ -95,14 +95,14 @@ Box3 TrajectoryVis::boundingBox(AnimationTime time, const ConstDataObjectPath& p
     >;
 
     // Look up the bounding box in the vis cache.
-    auto& bbox = visCache.get<Box3>(CacheKey(trajObj, lineWidth(), simulationCell));
+    auto& bbox = visCache.get<Box3>(CacheKey(trajectoryLines, lineWidth(), simulationCell));
 
     // Check if the cached bounding box information is still up to date.
     if(bbox.isEmpty()) {
         // If not, recompute bounding box from trajectory data.
-        if(trajObj) {
+        if(trajectoryLines) {
             if(!simulationCell) {
-                if(BufferReadAccess<Point3> posProperty = trajObj->getProperty(TrajectoryObject::PositionProperty)) {
+                if(BufferReadAccess<Point3> posProperty = trajectoryLines->getProperty(TrajectoryLines::PositionProperty)) {
                     bbox.addPoints(posProperty);
                 }
             }
@@ -118,26 +118,26 @@ Box3 TrajectoryVis::boundingBox(AnimationTime time, const ConstDataObjectPath& p
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus TrajectoryVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus TrajectoryVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
 {
     PipelineStatus status;
 
     if(renderer->isBoundingBoxPass()) {
         TimeInterval validityInterval;
-        renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, renderer->visCache(), validityInterval));
+        renderer->addToLocalBoundingBox(boundingBox(time, path, pipeline, flowState, renderer->visCache(), validityInterval));
         return status;
     }
 
-    const TrajectoryObject* trajObj = path.lastAs<TrajectoryObject>();
+    const TrajectoryLines* trajectoryLines = path.lastAs<TrajectoryLines>();
 
     // Get the simulation cell.
-    const SimulationCellObject* simulationCell = wrappedLines() ? flowState.getObject<SimulationCellObject>() : nullptr;
+    const SimulationCell* simulationCell = wrappedLines() ? flowState.getObject<SimulationCell>() : nullptr;
 
     // Look for selected pseudo-coloring property.
-    const PropertyObject* pseudoColorProperty = nullptr;
+    const Property* pseudoColorProperty = nullptr;
     int pseudoColorPropertyComponent = 0;
-    if(coloringMode() == PseudoColoring && colorMapping() && colorMapping()->sourceProperty() && !trajObj->getProperty(TrajectoryObject::ColorProperty)) {
-        pseudoColorProperty = colorMapping()->sourceProperty().findInContainer(trajObj);
+    if(coloringMode() == PseudoColoring && colorMapping() && colorMapping()->sourceProperty() && !trajectoryLines->getProperty(TrajectoryLines::ColorProperty)) {
+        pseudoColorProperty = colorMapping()->sourceProperty().findInContainer(trajectoryLines);
         if(!pseudoColorProperty) {
             status = PipelineStatus(PipelineStatus::Error, tr("The property with the name '%1' does not exist.").arg(colorMapping()->sourceProperty().name()));
         }
@@ -173,7 +173,7 @@ PipelineStatus TrajectoryVis::render(AnimationTime time, const ConstDataObjectPa
 
     // Look up the rendering primitives in the vis cache.
     auto& visCache = renderer->visCache().get<CacheValue>(CacheKey(
-            trajObj,
+            trajectoryLines,
             lineWidth(),
             lineColor(),
             shadingMode(),
@@ -195,14 +195,14 @@ PipelineStatus TrajectoryVis::render(AnimationTime time, const ConstDataObjectPa
         visCache.cornerPseudoColors.reset();
 
         FloatType lineDiameter = lineWidth();
-        if(trajObj && lineDiameter > 0) {
-            trajObj->verifyIntegrity();
+        if(trajectoryLines && lineDiameter > 0) {
+            trajectoryLines->verifyIntegrity();
 
-            // Retrieve the line data stored in the TrajectoryObject.
-            BufferReadAccess<Point3> posProperty = trajObj->getProperty(TrajectoryObject::PositionProperty);
-            BufferReadAccess<int32_t> timeProperty = trajObj->getProperty(TrajectoryObject::SampleTimeProperty);
-            BufferReadAccess<int64_t> idProperty = trajObj->getProperty(TrajectoryObject::ParticleIdentifierProperty);
-            BufferReadAccess<ColorG> colorProperty = trajObj->getProperty(TrajectoryObject::ColorProperty);
+            // Retrieve the line data stored in the TrajectoryLines.
+            BufferReadAccess<Point3> posProperty = trajectoryLines->getProperty(TrajectoryLines::PositionProperty);
+            BufferReadAccess<int32_t> timeProperty = trajectoryLines->getProperty(TrajectoryLines::SampleTimeProperty);
+            BufferReadAccess<int64_t> idProperty = trajectoryLines->getProperty(TrajectoryLines::ParticleIdentifierProperty);
+            BufferReadAccess<ColorG> colorProperty = trajectoryLines->getProperty(TrajectoryLines::ColorProperty);
             RawBufferReadAccess pseudoColorArray(pseudoColorProperty);
             if(posProperty.valid() && timeProperty.valid() && idProperty.valid() && posProperty.size() >= 2) {
 
@@ -309,7 +309,7 @@ PipelineStatus TrajectoryVis::render(AnimationTime time, const ConstDataObjectPa
         }
     }
 
-    renderer->beginPickObject(contextNode);
+    renderer->beginPickObject(pipeline);
     renderer->renderCylinders(visCache.segments);
     renderer->renderParticles(visCache.corners);
     renderer->endPickObject();
@@ -320,7 +320,7 @@ PipelineStatus TrajectoryVis::render(AnimationTime time, const ConstDataObjectPa
 /******************************************************************************
 * Clips a trajectory line at the periodic box boundaries.
 ******************************************************************************/
-void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const SimulationCellObject* simulationCell, const std::function<void(const Point3&, const Point3&, GraphicsFloatType, GraphicsFloatType)>& segmentCallback)
+void TrajectoryVis::clipTrajectoryLine(const Point3& v1, const Point3& v2, const SimulationCell* simulationCell, const std::function<void(const Point3&, const Point3&, GraphicsFloatType, GraphicsFloatType)>& segmentCallback)
 {
     OVITO_ASSERT(simulationCell);
 

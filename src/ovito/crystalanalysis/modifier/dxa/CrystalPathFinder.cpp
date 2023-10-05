@@ -23,7 +23,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include "CrystalPathFinder.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /******************************************************************************
 * Finds an atom-to-atom path from atom 1 to atom 2 that lies entirely in the

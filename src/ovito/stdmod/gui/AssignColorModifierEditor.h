@@ -26,7 +26,7 @@
 #include <ovito/stdmod/gui/StdModGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * A properties editor for the AssignColorModifier class.

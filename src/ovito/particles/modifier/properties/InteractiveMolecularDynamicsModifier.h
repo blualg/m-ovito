@@ -31,7 +31,7 @@
 
 #include <QTcpSocket>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief A modifier that updates the particle positions using real-time MD trajectory data it receives from a

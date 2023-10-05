@@ -22,11 +22,11 @@
 
 #include <ovito/grid/Grid.h>
 #include <ovito/grid/objects/VoxelGrid.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "VoxelGridAffineTransformationModifierDelegate.h"
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(VoxelGridAffineTransformationModifierDelegate);
 

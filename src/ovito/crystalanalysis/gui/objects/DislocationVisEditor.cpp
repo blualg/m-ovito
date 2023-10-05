@@ -30,7 +30,7 @@
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
 #include "DislocationVisEditor.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DislocationVisEditor);
 SET_OVITO_OBJECT_EDITOR(DislocationVis, DislocationVisEditor);

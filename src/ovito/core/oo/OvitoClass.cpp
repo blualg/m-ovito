@@ -79,11 +79,31 @@ void OvitoClass::initialize()
         // Fetch display name assigned to the Qt object class.
         if(int idx = qtMetaObject()->indexOfClassInfo("DisplayName"); idx >= 0)
             setDisplayName(QString::fromUtf8(qtMetaObject()->classInfo(idx).value()));
-
-        // Load name alias assigned to the Qt object class.
-        if(int idx = qtMetaObject()->indexOfClassInfo("ClassNameAlias"); idx >= 0)
-            setNameAlias(QString::fromUtf8(qtMetaObject()->classInfo(idx).value()));
     }
+}
+
+/******************************************************************************
+* Checks if this class is known under the given name.
+******************************************************************************/
+bool OvitoClass::isKnownUnderName(const QString& name) const
+{
+    if(name == this->name())
+        return true;
+
+    // Consider name aliases assigned to the Qt object class.
+    if(qtMetaObject()) {
+        int infoCount = qtMetaObject()->classInfoCount();
+        for(int i = qtMetaObject()->classInfoOffset(); i < infoCount; i++) {
+            const QMetaClassInfo& classInfo = qtMetaObject()->classInfo(i);
+            if(qstrcmp(classInfo.name(), "ClassNameAlias") == 0) {
+                OVITO_ASSERT(qtMetaObject()->indexOfClassInfo("ClassNameAlias") >= 0);
+                if(name == classInfo.value())
+                    return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 /******************************************************************************

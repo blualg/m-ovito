@@ -21,12 +21,12 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/mesh/Mesh.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include "SurfaceMesh.h"
 #include "SurfaceMeshVis.h"
 #include "SurfaceMeshReadAccess.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMesh);
 DEFINE_PROPERTY_FIELD(SurfaceMesh, spaceFillingRegion);
@@ -44,7 +44,7 @@ constexpr SurfaceMesh::size_type SurfaceMesh::InvalidIndex;
 /******************************************************************************
 * Constructs an empty surface mesh object.
 ******************************************************************************/
-SurfaceMesh::SurfaceMesh(ObjectInitializationFlags flags, const QString& title) : PeriodicDomainDataObject(flags, title),
+SurfaceMesh::SurfaceMesh(ObjectInitializationFlags flags, const QString& title) : PeriodicDomainObject(flags, title),
     _spaceFillingRegion(SurfaceMesh::InvalidIndex)
 {
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {

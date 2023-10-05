@@ -25,12 +25,12 @@
 
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include <ovito/stdobj/properties/PropertyExpressionEvaluator.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/gui/desktop/mainwin/data_inspector/DataInspectionApplet.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief Data inspector page for property-based data.
@@ -60,7 +60,7 @@ public:
     const PropertyContainer* selectedContainerObject() const { return static_object_cast<PropertyContainer>(selectedDataObject()); }
 
     /// Selects a specific data object in this applet.
-    virtual bool selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint) override;
+    virtual bool selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint) override;
 
 protected:
 
@@ -79,8 +79,8 @@ protected:
     virtual QVariant headerColumnText(int section) { return section; }
 
     /// Determines whether the given property represents a color.
-    virtual bool isColorProperty(const PropertyObject* property) const {
-        return property->type() == PropertyObject::GenericColorProperty;
+    virtual bool isColorProperty(const Property* property) const {
+        return property->type() == Property::GenericColorProperty;
     }
 
     /// Creates an optional ad-hoc property that serves as header column for the table.

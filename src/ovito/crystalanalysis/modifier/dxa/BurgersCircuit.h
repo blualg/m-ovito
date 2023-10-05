@@ -27,7 +27,7 @@
 #include <ovito/crystalanalysis/data/ClusterVector.h>
 #include "InterfaceMesh.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 struct DislocationNode;     // Defined in DislocationNetwork.h
 

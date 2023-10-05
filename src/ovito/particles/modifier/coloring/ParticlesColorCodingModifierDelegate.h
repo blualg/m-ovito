@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,13 +24,11 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/particles/objects/BondsObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/particles/objects/Bonds.h>
 #include <ovito/stdmod/modifiers/ColorCodingModifier.h>
 
-namespace Ovito::Particles {
-
-using namespace Ovito::StdMod;
+namespace Ovito {
 
 /**
  * \brief Function for the ColorCodingModifier that operates on particles.
@@ -49,7 +47,7 @@ class ParticlesColorCodingModifierDelegate : public ColorCodingModifierDelegate
         virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
         /// Indicates which class of data objects the modifier delegate is able to operate on.
-        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return ParticlesObject::OOClass(); }
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return Particles::OOClass(); }
 
         /// The name by which Python scripts can refer to this modifier delegate.
         virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
@@ -82,7 +80,7 @@ class ParticleVectorsColorCodingModifierDelegate : public ColorCodingModifierDel
         virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
         /// Indicates which class of data objects the modifier delegate is able to operate on.
-        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return ParticlesObject::OOClass(); }
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return Particles::OOClass(); }
 
         /// The name by which Python scripts can refer to this modifier delegate.
         virtual QString pythonDataName() const override { return QStringLiteral("vectors"); }
@@ -100,7 +98,7 @@ public:
 protected:
 
     /// \brief returns the ID of the standard property that will receive the computed colors.
-    virtual int outputColorPropertyId() const override { return ParticlesObject::VectorColorProperty; }
+    virtual int outputColorPropertyId() const override { return Particles::VectorColorProperty; }
 };
 
 /**
@@ -120,7 +118,7 @@ class BondsColorCodingModifierDelegate : public ColorCodingModifierDelegate
         virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
         /// Indicates which class of data objects the modifier delegate is able to operate on.
-        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return BondsObject::OOClass(); }
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return Bonds::OOClass(); }
 
         /// The name by which Python scripts can refer to this modifier delegate.
         virtual QString pythonDataName() const override { return QStringLiteral("bonds"); }

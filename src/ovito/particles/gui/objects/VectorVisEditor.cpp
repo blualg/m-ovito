@@ -34,7 +34,7 @@
 #include <ovito/stdobj/gui/properties/PropertyColorMappingEditor.h>
 #include "VectorVisEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(VectorVisEditor);
 SET_OVITO_OBJECT_EDITOR(VectorVis, VectorVisEditor);
@@ -86,7 +86,7 @@ void VectorVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     layout->addWidget(new QLabel(tr("Coloring:")), row++, 0, 1, 3);
     _coloringModeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(VectorVis::coloringMode));
     layout->addWidget(_coloringModeUI->addRadioButton(VectorVis::UniformColoring, tr("Uniform:")), row, 1);
-    
+
     // Uniform color.
     _arrowColorUI = new ColorParameterUI(this, PROPERTY_FIELD(VectorVis::arrowColor));
     layout->addWidget(_arrowColorUI->colorPicker(), row++, 2);
@@ -136,8 +136,8 @@ void VectorVisEditor::updateColoringOptions()
 
     // Do the vector arrows, which are associated with the particles, have explicit RGB colors assigned ("Vector Color" property exists)?
     bool hasExplicitColors = false;
-    if(const ParticlesObject* particles = dynamic_object_cast<ParticlesObject>(container.get()))
-        hasExplicitColors = particles->getProperty(ParticlesObject::VectorColorProperty) != nullptr;
+    if(const Particles* particles = dynamic_object_cast<Particles>(container.get()))
+        hasExplicitColors = particles->getProperty(Particles::VectorColorProperty) != nullptr;
 
     VectorVis::ColoringMode coloringMode = editObject() ? static_object_cast<VectorVis>(editObject())->coloringMode() : VectorVis::UniformColoring;
     if(container && coloringMode == VectorVis::PseudoColoring && !hasExplicitColors) {

@@ -27,9 +27,9 @@
 #include <ovito/stdobj/properties/PropertyColorMapping.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
-#include "TrajectoryObject.h"
+#include "TrajectoryLines.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief A visualization element for rendering particle trajectory lines.
@@ -59,14 +59,14 @@ public:
     Q_INVOKABLE TrajectoryVis(ObjectInitializationFlags flags);
 
     /// \brief Renders the associated data object.
-    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
+    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;
 
     /// \brief Computes the display bounding box of the data object.
-    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
+    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
 
 public:
 
-    Q_PROPERTY(Ovito::Particles::TrajectoryVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
+    Q_PROPERTY(Ovito::TrajectoryVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
 
 protected:
 
@@ -76,7 +76,7 @@ protected:
 private:
 
     /// Clips a trajectory line at the periodic box boundaries.
-    static void clipTrajectoryLine(const Point3& v1, const Point3& v2, const SimulationCellObject* simulationCell, const std::function<void(const Point3&, const Point3&, GraphicsFloatType, GraphicsFloatType)>& segmentCallback);
+    static void clipTrajectoryLine(const Point3& v1, const Point3& v2, const SimulationCell* simulationCell, const std::function<void(const Point3&, const Point3&, GraphicsFloatType, GraphicsFloatType)>& segmentCallback);
 
     /// Controls the display width of trajectory lines.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, lineWidth, setLineWidth, PROPERTY_FIELD_MEMORIZE);

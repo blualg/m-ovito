@@ -32,7 +32,7 @@
 #include <ovito/core/dataset/io/FileSource.h>
 #include "CalculateDisplacementsModifierEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CalculateDisplacementsModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CalculateDisplacementsModifier, CalculateDisplacementsModifierEditor);

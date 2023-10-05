@@ -27,7 +27,7 @@
 #include <ovito/particles/modifier/analysis/cna/CommonNeighborAnalysisModifier.h>
 #include <ovito/crystalanalysis/data/ClusterGraph.h>
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /*
  * Determines the local structure of each atom.
@@ -95,7 +95,7 @@ public:
     /// Constructor.
     StructureAnalysis(
             ConstPropertyPtr positions,
-            const SimulationCellObject* simCell,
+            const SimulationCell* simCell,
             LatticeStructureType inputCrystalType,
             ConstPropertyPtr particleSelection,
             PropertyPtr outputStructures,
@@ -121,7 +121,7 @@ public:
     const ConstPropertyPtr& positions() const { return _positions; }
 
     /// Returns the input simulation cell.
-    const DataOORef<const SimulationCellObject>& cell() const { return _simCell; }
+    const DataOORef<const SimulationCell>& cell() const { return _simCell; }
 
     /// Returns the array of atom structure types.
     const PropertyPtr& structureTypes() const { return _structureTypes; }
@@ -218,7 +218,7 @@ private:
     BufferReadAccessAndRef<SelectionIntType> _particleSelection;
     const std::shared_ptr<ClusterGraph> _clusterGraph;
     std::atomic<FloatType> _maximumNeighborDistance;
-    DataOORef<const SimulationCellObject> _simCell;
+    DataOORef<const SimulationCell> _simCell;
     std::vector<Matrix3> _preferredCrystalOrientations;
 
     static CoordinationStructure _coordinationStructures[NUM_COORD_TYPES];

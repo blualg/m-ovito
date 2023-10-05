@@ -31,7 +31,7 @@
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /*
  * Identifies dislocation lines in a crystal and generates a line model of these defects.

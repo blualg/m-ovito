@@ -21,13 +21,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdmod/StdMod.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "ReplicateModifier.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ReplicateModifier);
 DEFINE_PROPERTY_FIELD(ReplicateModifier, numImagesX);
@@ -68,7 +68,7 @@ ReplicateModifier::ReplicateModifier(ObjectInitializationFlags flags) : MultiDel
 bool ReplicateModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
     return MultiDelegatingModifier::OOMetaClass::isApplicableTo(input)
-        && input.containsObject<SimulationCellObject>();
+        && input.containsObject<SimulationCell>();
 }
 
 /******************************************************************************
@@ -113,7 +113,7 @@ void ReplicateModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
 
     // Resize the simulation cell if enabled.
     if(adjustBoxSize()) {
-        SimulationCellObject* cellObj = state.expectMutableObject<SimulationCellObject>();
+        SimulationCell* cellObj = state.expectMutableObject<SimulationCell>();
         AffineTransformation simCell = cellObj->cellMatrix();
         Box3I newImages = replicaRange();
         simCell.translation() += (FloatType)newImages.minc.x() * simCell.column(0);

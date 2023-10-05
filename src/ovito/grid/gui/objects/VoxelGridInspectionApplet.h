@@ -27,7 +27,7 @@
 #include <ovito/stdobj/gui/properties/PropertyInspectionApplet.h>
 #include <ovito/grid/objects/VoxelGrid.h>
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 /**
  * \brief Data inspector page for voxel grid objects.

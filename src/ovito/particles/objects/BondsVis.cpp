@@ -21,17 +21,17 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/BondsObject.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Bonds.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include "BondsVis.h"
 #include "ParticlesVis.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(BondsVis);
 IMPLEMENT_OVITO_CLASS(BondPickInfo);
@@ -59,18 +59,18 @@ BondsVis::BondsVis(ObjectInitializationFlags flags) : DataVis(flags),
 /******************************************************************************
 * Computes the bounding box of the visual element.
 ******************************************************************************/
-Box3 BondsVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 BondsVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
 {
-    const BondsObject* bonds = path.lastAs<BondsObject>(0);
-    const ParticlesObject* particles = path.lastAs<ParticlesObject>(1);
+    const Bonds* bonds = path.lastAs<Bonds>(0);
+    const Particles* particles = path.lastAs<Particles>(1);
     if(!bonds || !particles) return {};
     particles->verifyIntegrity();
     bonds->verifyIntegrity();
-    const PropertyObject* bondTopologyProperty = bonds->getProperty(BondsObject::TopologyProperty);
-    const PropertyObject* bondPeriodicImageProperty = bonds->getProperty(BondsObject::PeriodicImageProperty);
-    const PropertyObject* bondWidthProperty = bonds->getProperty(BondsObject::WidthProperty);
-    const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
-    const SimulationCellObject* simulationCell = flowState.getObject<SimulationCellObject>();
+    const Property* bondTopologyProperty = bonds->getProperty(Bonds::TopologyProperty);
+    const Property* bondPeriodicImageProperty = bonds->getProperty(Bonds::PeriodicImageProperty);
+    const Property* bondWidthProperty = bonds->getProperty(Bonds::WidthProperty);
+    const Property* positionProperty = particles->getProperty(Particles::PositionProperty);
+    const SimulationCell* simulationCell = flowState.getObject<SimulationCell>();
 
     // The key type used for caching the computed bounding box:
     using CacheKey = RendererResourceKey<struct BondsVisBoundingBoxCache,
@@ -142,37 +142,37 @@ Box3 BondsVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, 
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus BondsVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus BondsVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
 {
     if(renderer->isBoundingBoxPass()) {
         TimeInterval validityInterval;
-        renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, renderer->visCache(), validityInterval));
+        renderer->addToLocalBoundingBox(boundingBox(time, path, pipeline, flowState, renderer->visCache(), validityInterval));
         return {};
     }
 
-    const BondsObject* bonds = path.lastAs<BondsObject>(0);
-    const ParticlesObject* particles = path.lastAs<ParticlesObject>(1);
+    const Bonds* bonds = path.lastAs<Bonds>(0);
+    const Particles* particles = path.lastAs<Particles>(1);
     if(!bonds || !particles) return {};
     particles->verifyIntegrity();
     bonds->verifyIntegrity();
-    const PropertyObject* bondTopologyProperty = bonds->getProperty(BondsObject::TopologyProperty);
-    const PropertyObject* bondPeriodicImageProperty = bonds->getProperty(BondsObject::PeriodicImageProperty);
-    const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
-    const SimulationCellObject* simulationCell = flowState.getObject<SimulationCellObject>();
-    const PropertyObject* bondTypeProperty = (coloringMode() == ByTypeColoring) ? bonds->getProperty(BondsObject::TypeProperty) : nullptr;
-    const PropertyObject* bondColorProperty = bonds->getProperty(BondsObject::ColorProperty);
-    const PropertyObject* bondWidthProperty = bonds->getProperty(BondsObject::WidthProperty);
-    const PropertyObject* bondSelectionProperty = renderer->isInteractive() ? bonds->getProperty(BondsObject::SelectionProperty) : nullptr;
-    const PropertyObject* transparencyProperty = bonds->getProperty(BondsObject::TransparencyProperty);
+    const Property* bondTopologyProperty = bonds->getProperty(Bonds::TopologyProperty);
+    const Property* bondPeriodicImageProperty = bonds->getProperty(Bonds::PeriodicImageProperty);
+    const Property* positionProperty = particles->getProperty(Particles::PositionProperty);
+    const SimulationCell* simulationCell = flowState.getObject<SimulationCell>();
+    const Property* bondTypeProperty = (coloringMode() == ByTypeColoring) ? bonds->getProperty(Bonds::TypeProperty) : nullptr;
+    const Property* bondColorProperty = bonds->getProperty(Bonds::ColorProperty);
+    const Property* bondWidthProperty = bonds->getProperty(Bonds::WidthProperty);
+    const Property* bondSelectionProperty = renderer->isInteractive() ? bonds->getProperty(Bonds::SelectionProperty) : nullptr;
+    const Property* transparencyProperty = bonds->getProperty(Bonds::TransparencyProperty);
 
     // Obtain particle-related properties and the vis element.
     const ParticlesVis* particleVis = particles->visElement<ParticlesVis>();
-    const PropertyObject* particleRadiusProperty = particles->getProperty(ParticlesObject::RadiusProperty);
-    const PropertyObject* particleTransparencyProperty = particles->getProperty(ParticlesObject::TransparencyProperty);
-    const PropertyObject* particleColorProperty = nullptr;
-    const PropertyObject* particleTypeProperty = nullptr;
+    const Property* particleRadiusProperty = particles->getProperty(Particles::RadiusProperty);
+    const Property* particleTransparencyProperty = particles->getProperty(Particles::TransparencyProperty);
+    const Property* particleColorProperty = nullptr;
+    const Property* particleTypeProperty = nullptr;
     if(coloringMode() == ParticleBasedColoring && particleVis) {
-        particleColorProperty = particles->getProperty(ParticlesObject::ColorProperty);
+        particleColorProperty = particles->getProperty(Particles::ColorProperty);
         particleTypeProperty = particleVis->getParticleTypeColorProperty(particles);
     }
 
@@ -370,7 +370,7 @@ PipelineStatus BondsVis::render(AnimationTime time, const ConstDataObjectPath& p
 
     if(renderer->isPicking()) {
         OORef<BondPickInfo> pickInfo = OORef<BondPickInfo>::create(particles, simulationCell);
-        renderer->beginPickObject(contextNode, pickInfo);
+        renderer->beginPickObject(pipeline, pickInfo);
     }
     renderer->renderCylinders(visCache.cylinders);
     if(renderer->isPicking()) {
@@ -379,7 +379,7 @@ PipelineStatus BondsVis::render(AnimationTime time, const ConstDataObjectPath& p
 
     if(visCache.vertices.positions() && renderNodalVertices) {
         if(renderer->isPicking())
-            renderer->beginPickObject(contextNode);
+            renderer->beginPickObject(pipeline);
         renderer->renderParticles(visCache.vertices);
         if(renderer->isPicking())
             renderer->endPickObject();
@@ -393,26 +393,26 @@ PipelineStatus BondsVis::render(AnimationTime time, const ConstDataObjectPath& p
 * Returns an array with two colors per full bond, because the two half-bonds
 * may have different colors.
 ******************************************************************************/
-std::vector<ColorG> BondsVis::halfBondColors(const ParticlesObject* particles, bool highlightSelection, ColoringMode coloringMode, bool ignoreBondColorProperty) const
+std::vector<ColorG> BondsVis::halfBondColors(const Particles* particles, bool highlightSelection, ColoringMode coloringMode, bool ignoreBondColorProperty) const
 {
     OVITO_ASSERT(particles != nullptr);
     particles->verifyIntegrity();
-    const BondsObject* bonds = particles->bonds();
+    const Bonds* bonds = particles->bonds();
     if(!bonds) return {};
     bonds->verifyIntegrity();
 
     // Get bond-related properties which determine the bond coloring.
-    BufferReadAccess<ParticleIndexPair> topologyProperty = bonds->getProperty(BondsObject::TopologyProperty);
-    BufferReadAccess<ColorG> bondColorProperty = !ignoreBondColorProperty ? bonds->getProperty(BondsObject::ColorProperty) : nullptr;
-    const PropertyObject* bondTypeProperty = (coloringMode == ByTypeColoring) ? bonds->getProperty(BondsObject::TypeProperty) : nullptr;
-    BufferReadAccess<SelectionIntType> bondSelectionProperty = highlightSelection ? bonds->getProperty(BondsObject::SelectionProperty) : nullptr;
+    BufferReadAccess<ParticleIndexPair> topologyProperty = bonds->getProperty(Bonds::TopologyProperty);
+    BufferReadAccess<ColorG> bondColorProperty = !ignoreBondColorProperty ? bonds->getProperty(Bonds::ColorProperty) : nullptr;
+    const Property* bondTypeProperty = (coloringMode == ByTypeColoring) ? bonds->getProperty(Bonds::TypeProperty) : nullptr;
+    BufferReadAccess<SelectionIntType> bondSelectionProperty = highlightSelection ? bonds->getProperty(Bonds::SelectionProperty) : nullptr;
 
     // Get particle-related properties and the vis element.
     const ParticlesVis* particleVis = particles->visElement<ParticlesVis>();
     BufferReadAccess<ColorG> particleColorProperty;
-    const PropertyObject* particleTypeProperty = nullptr;
+    const Property* particleTypeProperty = nullptr;
     if(coloringMode == ParticleBasedColoring && particleVis) {
-        particleColorProperty = particles->getProperty(ParticlesObject::ColorProperty);
+        particleColorProperty = particles->getProperty(Particles::ColorProperty);
         particleTypeProperty = particleVis->getParticleTypeColorProperty(particles);
     }
 
@@ -512,7 +512,7 @@ std::vector<ColorG> BondsVis::halfBondColors(const ParticlesObject* particles, b
 * Returns a human-readable string describing the picked object,
 * which will be displayed in the status bar by OVITO.
 ******************************************************************************/
-QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjectId)
+QString BondPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
 {
     QString str;
     size_t bondIndex = subobjectId / 2;
@@ -524,12 +524,12 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
             str = tr("Bond: ");
 
             // Bond length
-            BufferReadAccess<Point3> posProperty = particles()->getProperty(ParticlesObject::PositionProperty);
+            BufferReadAccess<Point3> posProperty = particles()->getProperty(Particles::PositionProperty);
             if(posProperty && posProperty.size() > index1 && posProperty.size() > index2) {
                 const Point3& p1 = posProperty[index1];
                 const Point3& p2 = posProperty[index2];
                 Vector3 delta = p2 - p1;
-                if(BufferReadAccess<Vector3I> periodicImageProperty = particles()->bonds()->getProperty(BondsObject::PeriodicImageProperty)) {
+                if(BufferReadAccess<Vector3I> periodicImageProperty = particles()->bonds()->getProperty(Bonds::PeriodicImageProperty)) {
                     if(simulationCell()) {
                         delta += simulationCell()->cellMatrix() * periodicImageProperty[bondIndex].toDataType<FloatType>();
                     }
@@ -542,7 +542,7 @@ QString BondPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjec
             str += particles()->bonds()->elementInfoString(bondIndex);
 
             // Pair type info.
-            const PropertyObject* typeProperty = particles()->getProperty(ParticlesObject::TypeProperty);
+            const Property* typeProperty = particles()->getProperty(Particles::TypeProperty);
             if(typeProperty && typeProperty->size() > index1 && typeProperty->size() > index2) {
                 BufferReadAccess<int32_t> typeData(typeProperty);
                 const ElementType* type1 = typeProperty->elementType(typeData[index1]);
@@ -575,12 +575,12 @@ bool BondsVis::loadPropertyFieldFromStream(ObjectLoadStream& stream, const RefMa
 /******************************************************************************
 * Determines the display bond widths.
 ******************************************************************************/
-ConstPropertyPtr BondsVis::bondWidths(const BondsObject* bonds) const
+ConstPropertyPtr BondsVis::bondWidths(const Bonds* bonds) const
 {
     bonds->verifyIntegrity();
 
     // Take bond widths directly from the 'Width' property if available.
-    ConstPropertyPtr output = bonds->getProperty(BondsObject::WidthProperty);
+    ConstPropertyPtr output = bonds->getProperty(Bonds::WidthProperty);
     if(output) {
         // Check if the width array contains any zero entries.
         BufferReadAccess<GraphicsFloatType> widthArray(output);
@@ -593,7 +593,7 @@ ConstPropertyPtr BondsVis::bondWidths(const BondsObject* bonds) const
     }
     else {
         // Allocate output array.
-        output.reset(BondsObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, bonds->elementCount(), BondsObject::WidthProperty));
+        output.reset(Bonds::OOClass().createStandardProperty(DataBuffer::Uninitialized, bonds->elementCount(), Bonds::WidthProperty));
 
         // Assign the uniform default width to all bonds.
         output.makeMutableInplace()->fill<GraphicsFloatType>(bondWidth());

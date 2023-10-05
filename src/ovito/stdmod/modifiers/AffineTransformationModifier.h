@@ -26,7 +26,7 @@
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/core/dataset/pipeline/DelegatingModifier.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * \brief Base class for AffineTransformationModifier delegates that operate on different kinds of data.
@@ -116,11 +116,11 @@ public:
 
     /// Copies positions from one buffer to another while transforming them.
     /// If enabled, the transformation is only applied to selected elements.
-    void transformCoordinates(const PipelineFlowState& inputState, const PropertyObject* input, PropertyObject* output, const PropertyObject* selection);
+    void transformCoordinates(const PipelineFlowState& inputState, const Property* input, Property* output, const Property* selection);
 
     /// Copies vectors from one buffer to another while transforming them.
     /// If enabled, the transformation is only applied to selected elements.
-    void transformVectors(const PipelineFlowState& inputState, const PropertyObject* input, PropertyObject* output, const PropertyObject* selection);
+    void transformVectors(const PipelineFlowState& inputState, const Property* input, Property* output, const Property* selection);
 
 protected:
 

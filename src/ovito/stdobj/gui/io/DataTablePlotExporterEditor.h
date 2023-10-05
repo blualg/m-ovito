@@ -26,7 +26,7 @@
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief User interface component for the DataTablePlotExporter class.

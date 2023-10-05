@@ -27,7 +27,7 @@
 #include <ovito/core/utilities/MemoryPool.h>
 #include "Cluster.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /**
  * This class stores the graph of clusters.

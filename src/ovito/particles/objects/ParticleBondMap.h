@@ -24,12 +24,12 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/BondsObject.h>
+#include <ovito/particles/objects/Bonds.h>
 
 #include <boost/iterator/iterator_facade.hpp>
 #include <utility>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * A helper data structure describing a single bond between two particles.
@@ -113,7 +113,7 @@ public:
 public:
 
     /// Initializes the helper class.
-    ParticleBondMap(const BondsObject& bonds);
+    ParticleBondMap(const Bonds& bonds);
 
     /// Initializes the helper class.
     ParticleBondMap(ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages = {});

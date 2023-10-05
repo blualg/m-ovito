@@ -32,13 +32,8 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/grid/Grid.h>
 
-namespace Ovito::CrystalAnalysis
+namespace Ovito
 {
-    using namespace Ovito::Particles;
-    using namespace Ovito::Mesh;
-    using namespace Ovito::StdObj;
-    using namespace Ovito::Grid;
-
     class MicrostructurePhase;
     class BurgersVectorFamily;
     class DislocationVis;

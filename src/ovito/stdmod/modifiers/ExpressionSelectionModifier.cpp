@@ -22,17 +22,17 @@
 
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/stdobj/properties/PropertyExpressionEvaluator.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/viewport/Viewport.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/app/Application.h>
 #include "ExpressionSelectionModifier.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ExpressionSelectionModifier);
 DEFINE_PROPERTY_FIELD(ExpressionSelectionModifier, expression);
@@ -101,7 +101,7 @@ PipelineStatus ExpressionSelectionModifierDelegate::apply(const ModifierEvaluati
     std::atomic_size_t nselected(0);
 
     // Generate the output selection property.
-    BufferWriteAccess<SelectionIntType, access_mode::discard_write> selProperty = container->createProperty(PropertyObject::GenericSelectionProperty);
+    BufferWriteAccess<SelectionIntType, access_mode::discard_write> selProperty = container->createProperty(Property::GenericSelectionProperty);
 
     // Evaluate Boolean expression for every input data element.
     evaluator->evaluate([&selProperty, &nselected](size_t elementIndex, size_t componentIndex, double value) {
@@ -120,9 +120,9 @@ PipelineStatus ExpressionSelectionModifierDelegate::apply(const ModifierEvaluati
         state.intersectStateValidity(request.time());
 
     // Report the total number of selected elements as a pipeline attribute.
-    state.addAttribute(QStringLiteral("ExpressionSelection.count"), QVariant::fromValue(nselected.load()), request.modApp());
+    state.addAttribute(QStringLiteral("ExpressionSelection.count"), QVariant::fromValue(nselected.load()), request.modificationNode());
     // For backward compatibility with OVITO 2.9.0.
-    state.addAttribute(QStringLiteral("SelectExpression.num_selected"), QVariant::fromValue(nselected.load()), request.modApp());
+    state.addAttribute(QStringLiteral("SelectExpression.num_selected"), QVariant::fromValue(nselected.load()), request.modificationNode());
 
     // Update status display in the UI.
     QString statusMessage = tr("%1 out of %2 elements selected (%3%)").arg(nselected.load()).arg(selProperty.size()).arg((FloatType)nselected.load() * 100 / std::max((size_t)1,selProperty.size()), 0, 'f', 1);

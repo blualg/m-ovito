@@ -21,14 +21,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/BondsObject.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Bonds.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "BondsComputePropertyModifierDelegate.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(BondsComputePropertyModifierDelegate);
 
@@ -38,9 +38,9 @@ IMPLEMENT_OVITO_CLASS(BondsComputePropertyModifierDelegate);
 ******************************************************************************/
 QVector<DataObjectReference> BondsComputePropertyModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(const ParticlesObject* particles = input.getObject<ParticlesObject>()) {
+    if(const Particles* particles = input.getObject<Particles>()) {
         if(particles->bonds())
-            return { DataObjectReference(&ParticlesObject::OOClass()) };
+            return { DataObjectReference(&Particles::OOClass()) };
     }
     return {};
 }
@@ -91,7 +91,7 @@ BondsComputePropertyModifierDelegate::Engine::Engine(
             std::move(expressions),
             frameNumber,
             std::make_unique<BondExpressionEvaluator>()),
-    _inputFingerprint(input.expectObject<ParticlesObject>())
+    _inputFingerprint(input.expectObject<Particles>())
 {
 }
 
@@ -144,7 +144,7 @@ void BondsComputePropertyModifierDelegate::Engine::perform()
 ******************************************************************************/
 void BondsComputePropertyModifierDelegate::Engine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-    if(_inputFingerprint.hasChanged(state.expectObject<ParticlesObject>()))
+    if(_inputFingerprint.hasChanged(state.expectObject<Particles>()))
         throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
     PropertyComputeEngine::applyResults(request, state);

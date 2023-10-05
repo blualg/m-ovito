@@ -32,7 +32,7 @@
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include "SurfaceMeshVisEditor.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshVisEditor);
 SET_OVITO_OBJECT_EDITOR(SurfaceMeshVis, SurfaceMeshVisEditor);

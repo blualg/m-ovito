@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief Base class for modifiers that operate on properties and which have no

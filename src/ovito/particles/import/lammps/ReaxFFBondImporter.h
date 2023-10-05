@@ -25,10 +25,10 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/import/ParticleImporter.h>
-#include <ovito/particles/objects/BondsObject.h>
+#include <ovito/particles/objects/Bonds.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief File parser for ReaxFF trajectory files containing bond information as written by the LAMMPS 'fix reax/c/bonds' command.

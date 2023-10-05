@@ -24,14 +24,14 @@
 #include <ovito/core/utilities/concurrent/Task.h>
 #include "NearestNeighborFinder.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 #define TREE_DEPTH_LIMIT 17
 
 /******************************************************************************
 * Prepares the neighbor list builder.
 ******************************************************************************/
-bool NearestNeighborFinder::prepare(BufferReadAccess<Point3> posProperty, const SimulationCellObject* cellData, BufferReadAccess<SelectionIntType> selectionProperty)
+bool NearestNeighborFinder::prepare(BufferReadAccess<Point3> posProperty, const SimulationCell* cellData, BufferReadAccess<SelectionIntType> selectionProperty)
 {
     OVITO_ASSERT(posProperty);
     OVITO_ASSERT(cellData);

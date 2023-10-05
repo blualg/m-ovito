@@ -21,21 +21,21 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdmod/StdMod.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/UserInterface.h>
 #include "ManualSelectionModifier.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ManualSelectionModifier);
 
-IMPLEMENT_OVITO_CLASS(ManualSelectionModifierApplication);
-SET_MODIFIER_APPLICATION_TYPE(ManualSelectionModifier, ManualSelectionModifierApplication);
-DEFINE_REFERENCE_FIELD(ManualSelectionModifierApplication, selectionSet);
-SET_PROPERTY_FIELD_LABEL(ManualSelectionModifierApplication, selectionSet, "Element selection set");
+IMPLEMENT_OVITO_CLASS(ManualSelectionModificationNode);
+SET_MODIFICATION_NODE_TYPE(ManualSelectionModifier, ManualSelectionModificationNode);
+DEFINE_REFERENCE_FIELD(ManualSelectionModificationNode, selectionSet);
+SET_PROPERTY_FIELD_LABEL(ManualSelectionModificationNode, selectionSet, "Element selection set");
 
 /******************************************************************************
 * Constructs the modifier object.
@@ -43,7 +43,7 @@ SET_PROPERTY_FIELD_LABEL(ManualSelectionModifierApplication, selectionSet, "Elem
 ManualSelectionModifier::ManualSelectionModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags)
 {
     // Operate on particles by default.
-    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
+    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("Particles"));
 }
 
 /******************************************************************************
@@ -55,8 +55,8 @@ void ManualSelectionModifier::initializeModifier(const ModifierInitializationReq
     Modifier::initializeModifier(request);
 
     // Take a snapshot of the existing selection state at the time the modifier is created.
-    if(!getSelectionSet(request.modApp(), false)) {
-        resetSelection(request.modApp(), request.modApp()->evaluateInputSynchronous(request));
+    if(!getSelectionSet(request.modificationNode(), false)) {
+        resetSelection(request.modificationNode(), request.modificationNode()->evaluateInputSynchronous(request));
     }
 }
 
@@ -68,8 +68,8 @@ void ManualSelectionModifier::propertyChanged(const PropertyFieldDescriptor* fie
     // Whenever the subject of this modifier is changed, reset the selection.
     if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
         PipelineEvaluationRequest request(ExecutionContext::current().ui().datasetContainer().currentAnimationTime());
-        for(ModifierApplication* modApp : modifierApplications()) {
-            resetSelection(modApp, modApp->evaluateInputSynchronous(request));
+        for(ModificationNode* node : nodes()) {
+            resetSelection(node, node->evaluateInputSynchronous(request));
         }
     }
     GenericPropertyModifier::propertyChanged(field);
@@ -81,7 +81,7 @@ void ManualSelectionModifier::propertyChanged(const PropertyFieldDescriptor* fie
 void ManualSelectionModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     // Retrieve the selection stored in the modifier application.
-    ElementSelectionSet* selectionSet = getSelectionSet(request.modApp(), false);
+    ElementSelectionSet* selectionSet = getSelectionSet(request.modificationNode(), false);
     if(!selectionSet)
         throw Exception(tr("No stored selection set available. Please reset the selection state."));
 
@@ -90,23 +90,23 @@ void ManualSelectionModifier::evaluateSynchronous(const ModifierEvaluationReques
         container->verifyIntegrity();
 
         PipelineStatus status = selectionSet->applySelection(
-                container->createProperty(PropertyObject::GenericSelectionProperty),
-                container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty) ?
-                    container->getProperty(PropertyObject::GenericIdentifierProperty) : nullptr);
+                container->createProperty(Property::GenericSelectionProperty),
+                container->getOOMetaClass().isValidStandardPropertyId(Property::GenericIdentifierProperty) ?
+                    container->getProperty(Property::GenericIdentifierProperty) : nullptr);
 
         state.setStatus(std::move(status));
     }
 }
 
 /******************************************************************************
-* Returns the selection set object stored in the ModifierApplication, or, if
+* Returns the selection set object stored in the ModificationNode, or, if
 * it does not exist, creates one.
 ******************************************************************************/
-ElementSelectionSet* ManualSelectionModifier::getSelectionSet(ModifierApplication* modApp, bool createIfNotExist)
+ElementSelectionSet* ManualSelectionModifier::getSelectionSet(ModificationNode* modApp, bool createIfNotExist)
 {
-    ManualSelectionModifierApplication* myModApp = dynamic_object_cast<ManualSelectionModifierApplication>(modApp);
+    ManualSelectionModificationNode* myModApp = dynamic_object_cast<ManualSelectionModificationNode>(modApp);
     if(!myModApp)
-        throw Exception(tr("Manual selection modifier is not associated with a ManualSelectionModifierApplication."));
+        throw Exception(tr("Manual selection modifier is not associated with a ManualSelectionModificationNode."));
 
     ElementSelectionSet* selectionSet = myModApp->selectionSet();
     if(!selectionSet && createIfNotExist)
@@ -118,7 +118,7 @@ ElementSelectionSet* ManualSelectionModifier::getSelectionSet(ModifierApplicatio
 /******************************************************************************
 * Adopts the selection state from the modifier's input.
 ******************************************************************************/
-void ManualSelectionModifier::resetSelection(ModifierApplication* modApp, const PipelineFlowState& state)
+void ManualSelectionModifier::resetSelection(ModificationNode* modApp, const PipelineFlowState& state)
 {
     if(subject()) {
         const PropertyContainer* container = state.expectLeafObject(subject());
@@ -129,7 +129,7 @@ void ManualSelectionModifier::resetSelection(ModifierApplication* modApp, const 
 /******************************************************************************
 * Selects all elements.
 ******************************************************************************/
-void ManualSelectionModifier::selectAll(ModifierApplication* modApp, const PipelineFlowState& state)
+void ManualSelectionModifier::selectAll(ModificationNode* modApp, const PipelineFlowState& state)
 {
     if(subject()) {
         const PropertyContainer* container = state.expectLeafObject(subject());
@@ -140,7 +140,7 @@ void ManualSelectionModifier::selectAll(ModifierApplication* modApp, const Pipel
 /******************************************************************************
 * Deselects all elements.
 ******************************************************************************/
-void ManualSelectionModifier::clearSelection(ModifierApplication* modApp, const PipelineFlowState& state)
+void ManualSelectionModifier::clearSelection(ModificationNode* modApp, const PipelineFlowState& state)
 {
     if(subject()) {
         const PropertyContainer* container = state.expectLeafObject(subject());
@@ -151,7 +151,7 @@ void ManualSelectionModifier::clearSelection(ModifierApplication* modApp, const 
 /******************************************************************************
 * Inverts the selection state of all elements.
 ******************************************************************************/
-void ManualSelectionModifier::invertSelection(ModifierApplication* modApp, const PipelineFlowState& state)
+void ManualSelectionModifier::invertSelection(ModificationNode* modApp, const PipelineFlowState& state)
 {
     if(subject()) {
         const PropertyContainer* container = state.expectLeafObject(subject());
@@ -162,7 +162,7 @@ void ManualSelectionModifier::invertSelection(ModifierApplication* modApp, const
 /******************************************************************************
 * Toggles the selection state of a single element.
 ******************************************************************************/
-void ManualSelectionModifier::toggleElementSelection(ModifierApplication* modApp, const PipelineFlowState& state, size_t elementIndex)
+void ManualSelectionModifier::toggleElementSelection(ModificationNode* modApp, const PipelineFlowState& state, size_t elementIndex)
 {
     ElementSelectionSet* selectionSet = getSelectionSet(modApp, false);
     if(!selectionSet)
@@ -176,7 +176,7 @@ void ManualSelectionModifier::toggleElementSelection(ModifierApplication* modApp
 /******************************************************************************
 * Replaces the selection.
 ******************************************************************************/
-void ManualSelectionModifier::setSelection(ModifierApplication* modApp, const PipelineFlowState& state, const boost::dynamic_bitset<>& selection, ElementSelectionSet::SelectionMode mode)
+void ManualSelectionModifier::setSelection(ModificationNode* modApp, const PipelineFlowState& state, const boost::dynamic_bitset<>& selection, ElementSelectionSet::SelectionMode mode)
 {
     if(subject()) {
         const PropertyContainer* container = state.expectLeafObject(subject());

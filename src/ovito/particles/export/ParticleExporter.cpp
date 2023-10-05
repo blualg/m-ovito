@@ -21,13 +21,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/particles/objects/BondsObject.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/particles/objects/Bonds.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include "ParticleExporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParticleExporter);
 
@@ -41,10 +41,10 @@ PipelineFlowState ParticleExporter::getParticleData(int frame) const
     if(!state)
         return {};
 
-    const ParticlesObject* particles = state.getObject<ParticlesObject>();
+    const Particles* particles = state.getObject<Particles>();
     if(!particles)
         throw Exception(tr("The selected data collection does not contain any particles that can be exported."));
-    if(!particles->getProperty(ParticlesObject::PositionProperty))
+    if(!particles->getProperty(Particles::PositionProperty))
         throw Exception(tr("The particles to be exported do not have any coordinates ('Position' property is missing)."));
 
     // Verify data, make sure array length is consistent for all particle properties.

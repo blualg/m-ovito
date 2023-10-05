@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,10 +24,10 @@
 
 
 #include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/viewport/Viewport.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Utility class that supports the picking of bonds in the viewports.
@@ -41,8 +41,8 @@ public:
         /// The index of the picked bond.
         size_t bondIndex;
 
-        /// The scene node that contains the picked bond.
-        OORef<PipelineSceneNode> sceneNode;
+        /// The pipeline that produced the picked bond.
+        OORef<Pipeline> pipeline;
     };
 
     /// \brief Finds the bond under the mouse cursor.

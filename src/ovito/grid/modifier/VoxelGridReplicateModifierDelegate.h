@@ -26,9 +26,7 @@
 #include <ovito/grid/Grid.h>
 #include <ovito/stdmod/modifiers/ReplicateModifier.h>
 
-namespace Ovito::Grid {
-
-using namespace Ovito::StdMod;
+namespace Ovito {
 
 /**
  * \brief Delegate for the ReplicateModifier that operates on voxel grids.

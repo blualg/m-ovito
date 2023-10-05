@@ -21,8 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
 #include "AMBERNetCDFExporter.h"
 
@@ -30,7 +30,7 @@
 #include <netcdf.h>
 #include <QtMath>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 const char NC_FRAME_STR[]         = "frame";
 const char NC_SPATIAL_STR[]       = "spatial";
@@ -150,12 +150,12 @@ void AMBERNetCDFExporter::closeOutputFile(bool exportCompleted)
 bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
     // Get particles and their positions.
-    const ParticlesObject* particles = state.expectObject<ParticlesObject>();
+    const Particles* particles = state.expectObject<Particles>();
     particles->verifyIntegrity();
-    const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
 
     // Get simulation cell info.
-    const SimulationCellObject* simulationCell = state.getObject<SimulationCellObject>();
+    const SimulationCell* simulationCell = state.getObject<SimulationCell>();
     const AffineTransformation simCell = simulationCell ? simulationCell->cellMatrix() : AffineTransformation::Zero();
     size_t atomsCount = particles->elementCount();
 
@@ -191,7 +191,7 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
         for(auto c = columnMapping().begin(); c != columnMapping().end(); ++c) {
 
             // Skip the particle position property. It has already been emitted above.
-            if(c->type() == ParticlesObject::PositionProperty)
+            if(c->type() == Particles::PositionProperty)
                 continue;
 
             // We can export a particle property only as a whole to a NetCDF file, not individual components.
@@ -199,10 +199,10 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
             if(std::find_if(columnMapping().begin(), c, [c](const ParticlePropertyReference& pr) { return pr.name() == c->name(); }) != c)
                 continue;
 
-            const PropertyObject* prop = c->findInContainer(particles);
+            const Property* prop = c->findInContainer(particles);
             if(!prop) {
                 // Skip the identifier property if it doesn't exist.
-                if(c->type() == ParticlesObject::IdentifierProperty)
+                if(c->type() == Particles::IdentifierProperty)
                     continue;
                 throw Exception(tr("Invalid list of particle properties to be exported. The property '%1' does not exist.").arg(c->name()));
             }
@@ -213,19 +213,19 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
             // All other properties are output as NetCDF variables under their normal name.
             const char* mangledName = nullptr;
             dims[2] = 0;
-            if(prop->type() != ParticlesObject::UserProperty) {
-                if(prop->type() == ParticlesObject::ForceProperty) {
+            if(prop->type() != Particles::UserProperty) {
+                if(prop->type() == Particles::ForceProperty) {
                     mangledName = "forces";
                     dims[2] = _spatial_dim;
                 }
-                else if(prop->type() == ParticlesObject::VelocityProperty) {
+                else if(prop->type() == Particles::VelocityProperty) {
                     mangledName = "velocities";
                     dims[2] = _spatial_dim;
                 }
-                else if(prop->type() == ParticlesObject::TypeProperty) {
+                else if(prop->type() == Particles::TypeProperty) {
                     mangledName = "atom_types";
                 }
-                else if(prop->type() == ParticlesObject::IdentifierProperty) {
+                else if(prop->type() == Particles::IdentifierProperty) {
                     mangledName = "identifier";
                 }
             }
@@ -333,7 +333,7 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
     for(const NCOutputColumn& outColumn : _columns) {
 
         // Look up the property to be exported.
-        const PropertyObject* prop = outColumn.property.findInContainer(particles);
+        const Property* prop = outColumn.property.findInContainer(particles);
         if(!prop)
             throw Exception(tr("The property '%1' cannot be exported, because it does not exist at frame %2.").arg(outColumn.property.name()).arg(frameNumber));
         if((int)prop->componentCount() != outColumn.componentCount)

@@ -31,7 +31,7 @@
 #include <ovito/stdobj/gui/properties/PropertyColorMappingEditor.h>
 #include "TrajectoryVisEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(TrajectoryVisEditor);
 SET_OVITO_OBJECT_EDITOR(TrajectoryVis, TrajectoryVisEditor);
@@ -97,11 +97,11 @@ void TrajectoryVisEditor::createUI(const RolloutInsertionParameters& rolloutPara
 ******************************************************************************/
 void TrajectoryVisEditor::updateColoringOptions()
 {
-    // Retrieve the TrajectoryObject this vis element is associated with.
-    DataOORef<const TrajectoryObject> trajectoryObject = dynamic_object_cast<const TrajectoryObject>(getVisDataObject());
+    // Retrieve the TrajectoryLines this vis element is associated with.
+    DataOORef<const TrajectoryLines> trajectoryObject = dynamic_object_cast<const TrajectoryLines>(getVisDataObject());
 
     // Do lines have explicit RGB colors assigned ("Color" property exists)?
-    bool hasExplicitColors = (trajectoryObject && trajectoryObject->getProperty(TrajectoryObject::ColorProperty));
+    bool hasExplicitColors = (trajectoryObject && trajectoryObject->getProperty(TrajectoryLines::ColorProperty));
 
     TrajectoryVis::ColoringMode coloringMode = editObject() ? static_object_cast<TrajectoryVis>(editObject())->coloringMode() : TrajectoryVis::UniformColoring;
     if(trajectoryObject && coloringMode == TrajectoryVis::PseudoColoring && !hasExplicitColors) {

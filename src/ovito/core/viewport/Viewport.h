@@ -27,7 +27,7 @@
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
 #include <ovito/core/viewport/overlays/ViewportOverlay.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/scene/Scene.h>
 #include "ViewportSettings.h"
 #include "ViewportWindowInterface.h"
@@ -322,7 +322,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, isGridVisible, setGridVisible, PROPERTY_FIELD_NO_UNDO);
 
     /// The scene node (camera) that has been selected as the view node.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineSceneNode>, viewNode, setViewNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Pipeline>, viewNode, setViewNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
     /// The title of the viewport.
     DECLARE_PROPERTY_FIELD_FLAGS(QString, viewportTitle, PROPERTY_FIELD_NO_UNDO);

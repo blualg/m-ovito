@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,7 +22,7 @@
 
 #include <ovito/gui/base/GUIBase.h>
 #include <ovito/core/dataset/data/DataObject.h>
-#include <ovito/core/dataset/pipeline/PipelineObject.h>
+#include <ovito/core/dataset/pipeline/PipelineNode.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include "PipelineListItem.h"
 
@@ -55,9 +55,9 @@ PipelineListItem::PipelineListItem(RefTarget* object, PipelineItemType itemType,
 bool PipelineListItem::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     // The list must be updated if a modifier has been added or removed
-    // from a PipelineObject, or if a data object has been added/removed from the data source.
-    if((event.type() == ReferenceEvent::ReferenceAdded || event.type() == ReferenceEvent::ReferenceRemoved || event.type() == ReferenceEvent::ReferenceChanged) && dynamic_object_cast<PipelineObject>(object())) {
-        if(event.type() == ReferenceEvent::ReferenceChanged && static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(ModifierApplication::modifierGroup)) {
+    // from a PipelineNode, or if a data object has been added/removed from the data source.
+    if((event.type() == ReferenceEvent::ReferenceAdded || event.type() == ReferenceEvent::ReferenceRemoved || event.type() == ReferenceEvent::ReferenceChanged) && dynamic_object_cast<PipelineNode>(object())) {
+        if(event.type() == ReferenceEvent::ReferenceChanged && static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(ModificationNode::modifierGroup)) {
             Q_EMIT itemChanged(this);
         }
         Q_EMIT subitemsChanged(this);
@@ -118,7 +118,7 @@ const PipelineStatus& PipelineListItem::status() const
 /******************************************************************************
 * Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
 ******************************************************************************/
-QVariant PipelineListItem::shortInfo(PipelineSceneNode* selectedPipeline) const
+QVariant PipelineListItem::shortInfo(Pipeline* selectedPipeline) const
 {
     OVITO_ASSERT(ExecutionContext::current().isValid());
     if(ActiveObject* activeObject = dynamic_object_cast<ActiveObject>(object())) {

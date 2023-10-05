@@ -21,16 +21,16 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdmod/StdMod.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/app/Application.h>
 #include "AssignColorModifier.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(AssignColorModifierDelegate);
 
@@ -95,8 +95,8 @@ PipelineStatus AssignColorModifierDelegate::apply(const ModifierEvaluationReques
 
     // Get the input selection property.
     ConstPropertyPtr selProperty;
-    if(container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
-        if(const PropertyObject* selPropertyObj = container->getProperty(PropertyObject::GenericSelectionProperty)) {
+    if(container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
+        if(const Property* selPropertyObj = container->getProperty(Property::GenericSelectionProperty)) {
             selProperty = selPropertyObj;
 
             // Clear selection if requested.
@@ -110,7 +110,7 @@ PipelineStatus AssignColorModifierDelegate::apply(const ModifierEvaluationReques
     mod->colorController()->getColorValue(request.time(), color, state.mutableStateValidity());
 
     // Create the color output property.
-    PropertyObject* colorProperty = container->createProperty(selProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, outputColorPropertyId(), objectPath);
+    Property* colorProperty = container->createProperty(selProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, outputColorPropertyId(), objectPath);
     // Assign color to selected elements (or all elements if there is no selection).
     colorProperty->fillSelected<ColorG>(color.toDataType<GraphicsFloatType>(), selProperty.get());
 

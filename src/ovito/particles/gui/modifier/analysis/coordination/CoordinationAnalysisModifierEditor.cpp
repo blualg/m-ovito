@@ -28,10 +28,10 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/OpenDataInspectorButton.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "CoordinationAnalysisModifierEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CoordinationAnalysisModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CoordinationAnalysisModifier, CoordinationAnalysisModifierEditor);
@@ -97,7 +97,7 @@ void CoordinationAnalysisModifierEditor::createUI(const RolloutInsertionParamete
 void CoordinationAnalysisModifierEditor::plotRDF()
 {
     // Look up the data table in the modifier's pipeline output.
-    OORef<DataTable> table = getPipelineOutput().getObjectBy<DataTable>(modifierApplication(), QStringLiteral("coordination-rdf"));
+    OORef<DataTable> table = getPipelineOutput().getObjectBy<DataTable>(modificationNode(), QStringLiteral("coordination-rdf"));
 
     // Determine X plotting range.
     if(table) {

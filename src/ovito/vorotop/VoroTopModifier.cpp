@@ -23,12 +23,12 @@
 
 #include <ovito/vorotop/VoroTopPlugin.h>
 #include <ovito/particles/util/NearestNeighborFinder.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "VoroTopModifier.h"
 #include "Filter.h"
 
@@ -73,7 +73,7 @@ bool VoroTopModifier::loadFilterDefinition(const QString& filepath)
         OORef<ParticleType> stype = OORef<ParticleType>::create();
         stype->setNumericId(i);
         stype->setName(filter->structureTypeLabel(i));
-        stype->initializeType(ParticlePropertyReference(ParticlesObject::StructureTypeProperty));
+        stype->initializeType(ParticlePropertyReference(Particles::StructureTypeProperty));
         addStructureType(std::move(stype));
     }
 
@@ -90,19 +90,19 @@ bool VoroTopModifier::loadFilterDefinition(const QString& filepath)
 Future<AsynchronousModifier::EnginePtr> VoroTopModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get the current positions.
-    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
+    const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
-    const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
 
     // The Voro++ library uses 32-bit integers. It cannot handle more than 2^31 input points.
     if(particles->elementCount() > std::numeric_limits<int>::max())
         throw Exception(tr("VoroTop analysis modifier is limited to a maximum of %1 particles in the current program version.").arg(std::numeric_limits<int>::max()));
 
     // Get simulation cell.
-    const SimulationCellObject* inputCell = input.expectObject<SimulationCellObject>();
+    const SimulationCell* inputCell = input.expectObject<SimulationCell>();
 
     // Get selection particle property.
-    const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
+    const Property* selectionProperty = onlySelectedParticles() ? particles->expectProperty(Particles::SelectionProperty) : nullptr;
 
     // Get particle radii.
     ConstPropertyPtr radii;

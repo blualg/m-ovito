@@ -26,9 +26,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/stdmod/modifiers/AffineTransformationModifier.h>
 
-namespace Ovito::CrystalAnalysis {
-
-using namespace Ovito::StdMod;
+namespace Ovito {
 
 /**
  * \brief Delegate for the AffineTransformationModifier that operates on dislocation lines.

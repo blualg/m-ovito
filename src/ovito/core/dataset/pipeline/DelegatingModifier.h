@@ -71,7 +71,7 @@ public:
         }
     };
 
-    Q_CLASSINFO("ClassNameAlias", "AsynchronousModifierDelegate");  // For backward compatibility with OVITO 3.2.1.
+    Q_CLASSINFO("ClassNameAlias", "AsynchronousModifierDelegate");  // For backward compatibility with OVITO 3.2.1
     OVITO_CLASS_META(ModifierDelegate, ModifierDelegateClass)
 
 #ifdef OVITO_QML_GUI
@@ -96,7 +96,7 @@ public:
 
 #ifdef OVITO_QML_GUI
     /// Asks the delegate whether it can operate on  the given input pipeline state.
-    Q_INVOKABLE bool canOperateOnInput(ModifierApplication* modApp) const;
+    Q_INVOKABLE bool canOperateOnInput(ModificationNode* modApp) const;
 #endif
 
 private:

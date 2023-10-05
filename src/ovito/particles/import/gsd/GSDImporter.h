@@ -25,12 +25,12 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/import/ParticleImporter.h>
-#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
+#include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
 #include <QReadWriteLock>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 class GSDFile;  // Defined in GSDFile.h
 
@@ -79,11 +79,11 @@ public:
     }
 
     /// Stores the particle shape geometry generated from a JSON string in the internal cache.
-    void storeParticleShapeInCache(const QByteArray& jsonString, const DataOORef<const TriMeshObject>& mesh);
+    void storeParticleShapeInCache(const QByteArray& jsonString, const DataOORef<const TriangleMesh>& mesh);
 
     /// Looks up a particle shape geometry in the internal cache that was previously
     /// generated from a JSON string.
-    DataOORef<const TriMeshObject> lookupParticleShapeInCache(const QByteArray& jsonString) const;
+    DataOORef<const TriangleMesh> lookupParticleShapeInCache(const QByteArray& jsonString) const;
 
 protected:
 
@@ -93,7 +93,7 @@ protected:
 private:
 
     /// A lookup map that holds geometries that have been generated from JSON strings.
-    QHash<QByteArray, DataOORef<const TriMeshObject>> _particleShapeCache;
+    QHash<QByteArray, DataOORef<const TriangleMesh>> _particleShapeCache;
 
     /// Synchronization object for multi-threaded access to the particle shape cache.
     mutable QReadWriteLock _cacheSynchronization;
@@ -118,7 +118,7 @@ private:
         virtual void loadFile() override;
 
         /// Reads the values of a particle or bond property from the GSD file.
-        PropertyObject* readOptionalProperty(GSDFile& gsd, const char* chunkName, uint64_t frameNumber, int propertyType, PropertyContainer* container, const void* defaultValue, size_t defaultValueSize);
+        Property* readOptionalProperty(GSDFile& gsd, const char* chunkName, uint64_t frameNumber, int propertyType, PropertyContainer* container, const void* defaultValue, size_t defaultValueSize);
 
         /// Parse the JSON string containing a particle shape definition.
         void parseParticleShape(int typeId, const QByteArray& shapeSpecString);
@@ -142,7 +142,7 @@ private:
         void parseSphereUnionShape(int typeId, QJsonObject definition, const QByteArray& shapeSpecString);
 
         /// Assigns a mesh-based shape to a particle type.
-        void setParticleTypeShape(int typeId, DataOORef<const TriMeshObject> shapeMesh);
+        void setParticleTypeShape(int typeId, DataOORef<const TriangleMesh> shapeMesh);
 
     private:
 

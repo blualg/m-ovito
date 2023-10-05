@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //  Copyright 2017 Lars Pastewka
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -31,7 +31,7 @@
 class QwtPlot;
 class QwtPlotCurve;
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * A properties editor for the SpatialCorrelationFunctionModifier class.

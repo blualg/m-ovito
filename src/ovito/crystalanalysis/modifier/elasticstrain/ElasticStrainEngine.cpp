@@ -23,12 +23,12 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/crystalanalysis/objects/ClusterGraphObject.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "ElasticStrainEngine.h"
 #include "ElasticStrainModifier.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /******************************************************************************
 * Constructor.
@@ -36,7 +36,7 @@ namespace Ovito::CrystalAnalysis {
 ElasticStrainEngine::ElasticStrainEngine(
         const ModifierEvaluationRequest& request,
         ParticleOrderingFingerprint fingerprint,
-        ConstPropertyPtr positions, const SimulationCellObject* simCell,
+        ConstPropertyPtr positions, const SimulationCell* simCell,
         int inputCrystalStructure, std::vector<Matrix3> preferredCrystalOrientations,
         bool calculateDeformationGradients, bool calculateStrainTensors,
         FloatType latticeConstant, FloatType caRatio, bool pushStrainTensorsForward) :
@@ -45,9 +45,9 @@ ElasticStrainEngine::ElasticStrainEngine(
     _inputCrystalStructure(inputCrystalStructure),
     _latticeConstant(latticeConstant),
     _pushStrainTensorsForward(pushStrainTensorsForward),
-    _volumetricStrains(ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized, positions->size(), DataBuffer::FloatDefault, 1, QStringLiteral("Volumetric Strain"))),
-    _strainTensors(calculateStrainTensors ? ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, positions->size(), ParticlesObject::ElasticStrainTensorProperty) : nullptr),
-    _deformationGradients(calculateDeformationGradients ? ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, positions->size(), ParticlesObject::ElasticDeformationGradientProperty) : nullptr)
+    _volumetricStrains(Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, positions->size(), DataBuffer::FloatDefault, 1, QStringLiteral("Volumetric Strain"))),
+    _strainTensors(calculateStrainTensors ? Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, positions->size(), Particles::ElasticStrainTensorProperty) : nullptr),
+    _deformationGradients(calculateDeformationGradients ? Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, positions->size(), Particles::ElasticDeformationGradientProperty) : nullptr)
 {
     setAtomClusters(_structureAnalysis->atomClusters());
     if(inputCrystalStructure == StructureAnalysis::LATTICE_FCC || inputCrystalStructure == StructureAnalysis::LATTICE_BCC || inputCrystalStructure == StructureAnalysis::LATTICE_CUBIC_DIAMOND) {
@@ -190,11 +190,11 @@ void ElasticStrainEngine::applyResults(const ModifierEvaluationRequest& request,
     StructureIdentificationEngine::applyResults(request, state);
 
     // Output cluster graph.
-    ClusterGraphObject* clusterGraphObj = state.createObject<ClusterGraphObject>(request.modApp());
+    ClusterGraphObject* clusterGraphObj = state.createObject<ClusterGraphObject>(request.modificationNode());
     clusterGraphObj->setStorage(clusterGraph());
 
     // Output particle properties.
-    ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+    Particles* particles = state.expectMutableObject<Particles>();
     particles->createProperty(atomClusters());
     if(modifier->calculateStrainTensors() && strainTensors())
         particles->createProperty(strainTensors());

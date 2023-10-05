@@ -24,11 +24,11 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/BondsObject.h>
+#include <ovito/particles/objects/Bonds.h>
 #include <ovito/stdobj/properties/ElementType.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Stores the properties of a bond type, e.g. name, color, and radius.
@@ -48,7 +48,7 @@ public:
     //////////////////////////////////// Utility methods ////////////////////////////////
 
     /// Builds a map from type identifiers to bond radii.
-    static std::map<int,FloatType> typeRadiusMap(const PropertyObject* typeProperty) {
+    static std::map<int,FloatType> typeRadiusMap(const Property* typeProperty) {
         std::map<int,FloatType> m;
         for(const ElementType* type : typeProperty->elementTypes())
             if(const BondType* bondType = dynamic_object_cast<BondType>(type))

@@ -25,11 +25,11 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Calculates ambient occlusion lighting for particles.

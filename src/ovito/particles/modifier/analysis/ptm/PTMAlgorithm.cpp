@@ -24,7 +24,7 @@
 #include "PTMAlgorithm.h"
 
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /******************************************************************************
 * Creates the algorithm object.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2018 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,7 +30,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include "ParticlesComputePropertyModifierDelegateEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParticlesComputePropertyModifierDelegateEditor);
 SET_OVITO_OBJECT_EDITOR(ParticlesComputePropertyModifierDelegate, ParticlesComputePropertyModifierDelegateEditor);
@@ -96,8 +96,8 @@ bool ParticlesComputePropertyModifierDelegateEditor::referenceEvent(RefTarget* s
 ******************************************************************************/
 void ParticlesComputePropertyModifierDelegateEditor::updateVariablesList()
 {
-    if(ComputePropertyModifierApplication* modApp = dynamic_object_cast<ComputePropertyModifierApplication>(modifierApplication())) {
-        const QStringList& inputVariableNames = modApp->delegateInputVariableNames();
+    if(ComputePropertyModificationNode* modNode = dynamic_object_cast<ComputePropertyModificationNode>(modificationNode())) {
+        const QStringList& inputVariableNames = modNode->delegateInputVariableNames();
         for(AutocompleteLineEdit* box : neighborExpressionLineEdits)
             box->setWordList(inputVariableNames);
         for(AutocompleteTextEdit* box : neighborExpressionTextEdits)
@@ -147,7 +147,7 @@ void ParticlesComputePropertyModifierDelegateEditor::updateExpressionFields()
 
     QStringList standardPropertyComponentNames;
     if(ComputePropertyModifier* modifier = dynamic_object_cast<ComputePropertyModifier>(delegate->modifier())) {
-        if(!modifier->outputProperty().isNull() && modifier->outputProperty().type() != PropertyObject::GenericUserProperty) {
+        if(!modifier->outputProperty().isNull() && modifier->outputProperty().type() != Property::GenericUserProperty) {
             standardPropertyComponentNames = modifier->outputProperty().containerClass()->standardPropertyComponentNames(modifier->outputProperty().type());
         }
     }

@@ -28,7 +28,7 @@
 #include <ovito/gui/desktop/widgets/general/AutocompleteTextEdit.h>
 #include "ExpressionSelectionModifierEditor.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ExpressionSelectionModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ExpressionSelectionModifier, ExpressionSelectionModifierEditor);

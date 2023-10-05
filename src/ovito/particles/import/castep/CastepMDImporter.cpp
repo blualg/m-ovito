@@ -21,15 +21,15 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "CastepMDImporter.h"
 
 #include <boost/algorithm/string.hpp>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CastepMDImporter);
 
@@ -163,12 +163,12 @@ void CastepMDImporter::FrameLoader::loadFile()
 
     // Create the particle properties.
     setParticleCount(coords.size());
-    BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+    BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(Particles::PositionProperty);
     boost::copy(coords, posProperty.begin());
 
-    PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+    Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
     boost::transform(types, BufferWriteAccess<int32_t, access_mode::discard_write>(typeProperty).begin(), [&](const QString& typeName) {
-        return addNamedType(ParticlesObject::OOClass(), typeProperty, typeName)->numericId();
+        return addNamedType(Particles::OOClass(), typeProperty, typeName)->numericId();
     });
 
     // Since we created particle types on the go while reading the particles, the particle type ordering
@@ -177,11 +177,11 @@ void CastepMDImporter::FrameLoader::loadFile()
     typeProperty->sortElementTypesByName();
 
     if(velocities.size() == coords.size()) {
-        BufferWriteAccess<Vector3, access_mode::discard_write> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty);
+        BufferWriteAccess<Vector3, access_mode::discard_write> velocityProperty = particles()->createProperty(Particles::VelocityProperty);
         boost::copy(velocities, velocityProperty.begin());
     }
     if(forces.size() == coords.size()) {
-        BufferWriteAccess<Vector3, access_mode::discard_write> forceProperty = particles()->createProperty(ParticlesObject::ForceProperty);
+        BufferWriteAccess<Vector3, access_mode::discard_write> forceProperty = particles()->createProperty(Particles::ForceProperty);
         boost::copy(forces, forceProperty.begin());
     }
 

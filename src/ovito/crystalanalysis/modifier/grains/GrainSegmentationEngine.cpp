@@ -24,7 +24,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/particles/util/NearestNeighborFinder.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/particles/util/PTMNeighborFinder.h>
 #include "GrainSegmentationEngine.h"
@@ -40,7 +40,7 @@
 #include <sys/time.h>
 #endif
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /******************************************************************************
 * Constructor.
@@ -52,7 +52,7 @@ GrainSegmentationEngine1::GrainSegmentationEngine1(
             ConstPropertyPtr structureProperty,
             ConstPropertyPtr orientationProperty,
             ConstPropertyPtr correspondenceProperty,
-            const SimulationCellObject* simCell,
+            const SimulationCell* simCell,
             GrainSegmentationModifier::MergeAlgorithm algorithmType,
             bool handleCoherentInterfaces,
             bool outputBonds) :
@@ -572,7 +572,7 @@ void GrainSegmentationEngine2::perform()
         return;
 
     // Allocate and fill output array storing the grain IDs (1-based identifiers).
-    _grainIds =  DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, _numClusters - 1, PropertyObject::IntIdentifier, 1, QStringLiteral("Grain Identifier"));
+    _grainIds =  DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, _numClusters - 1, Property::IntIdentifier, 1, QStringLiteral("Grain Identifier"));
     boost::algorithm::iota_n(BufferWriteAccess<IdentifierIntType, access_mode::discard_write>(_grainIds).begin(), IdentifierIntType{1}, _grainIds->size());
     if(isCanceled())
         return;
@@ -581,7 +581,7 @@ void GrainSegmentationEngine2::perform()
     _grainSizes = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, _numClusters - 1, DataBuffer::Int64, 1, QStringLiteral("Grain Size"));
 
     // Allocate output array storing the structure type of grains.
-    _grainStructureTypes = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, _numClusters - 1, PropertyObject::Int32, 1, QStringLiteral("Structure Type"));
+    _grainStructureTypes = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, _numClusters - 1, Property::Int32, 1, QStringLiteral("Structure Type"));
     boost::copy(clusterStructureTypes, BufferWriteAccess<int32_t, access_mode::discard_write>(_grainStructureTypes).begin());
     // Transfer the set of PTM crystal structure types to the structure column of the grain table.
     for(const ElementType* type : _engine1->structureTypes()->elementTypes()) {

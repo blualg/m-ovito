@@ -21,12 +21,12 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
 #include "POSCARExporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(POSCARExporter);
 DEFINE_PROPERTY_FIELD(POSCARExporter, writeReducedCoordinates);
@@ -38,14 +38,14 @@ SET_PROPERTY_FIELD_LABEL(POSCARExporter, writeReducedCoordinates, "Output reduce
 bool POSCARExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
     // Get particle positions and velocities.
-    const ParticlesObject* particles = state.expectObject<ParticlesObject>();
+    const Particles* particles = state.expectObject<Particles>();
     particles->verifyIntegrity();
-    BufferReadAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-    BufferReadAccess<Vector3> velocityProperty = particles->getProperty(ParticlesObject::VelocityProperty);
+    BufferReadAccess<Point3> posProperty = particles->expectProperty(Particles::PositionProperty);
+    BufferReadAccess<Vector3> velocityProperty = particles->getProperty(Particles::VelocityProperty);
     size_t particleCount = particles->elementCount();
 
     // Get simulation cell info.
-    const SimulationCellObject* simulationCell = state.getObject<SimulationCellObject>();
+    const SimulationCell* simulationCell = state.getObject<SimulationCell>();
     if(!simulationCell)
         throw Exception(tr("No simulation cell available. Cannot write POSCAR file."));
 
@@ -58,7 +58,7 @@ bool POSCARExporter::exportData(const PipelineFlowState& state, int frameNumber,
 
     // Count number of particles per particle type.
     QMap<int,int> particleCounts;
-    const PropertyObject* particleTypeProperty = particles->getProperty(ParticlesObject::TypeProperty);
+    const Property* particleTypeProperty = particles->getProperty(Particles::TypeProperty);
     BufferReadAccess<int32_t> particleTypeArray(particleTypeProperty);
     if(particleTypeProperty) {
         for(int ptype : particleTypeArray)

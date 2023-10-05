@@ -24,7 +24,7 @@
 #include <ovito/stdobj/gui/widgets/PropertyContainerParameterUI.h>
 #include "InvertSelectionModifierEditor.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(InvertSelectionModifierEditor);
 SET_OVITO_OBJECT_EDITOR(InvertSelectionModifier, InvertSelectionModifierEditor);
@@ -46,7 +46,7 @@ void InvertSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
 
     // List only property container that support element selection.
     pclassUI->setContainerFilter([](const PropertyContainer* container) {
-        return container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty);
+        return container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty);
     });
 }
 

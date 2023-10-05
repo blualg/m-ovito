@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //  Copyright 2020 Peter Mahler Larsen
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -30,12 +30,12 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "GrainSegmentationModifierEditor.h"
 
 #include <3rdparty/qwt/qwt_plot_zoneitem.h>
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(GrainSegmentationModifierEditor);
 SET_OVITO_OBJECT_EDITOR(GrainSegmentationModifier, GrainSegmentationModifierEditor);
@@ -108,8 +108,8 @@ void GrainSegmentationModifierEditor::createUI(const RolloutInsertionParameters&
 
     QPushButton* btn = new QPushButton(tr("Show list of grains"));
     connect(btn, &QPushButton::clicked, this, [this]() {
-        if(modifierApplication())
-            mainWindow().openDataInspector(modifierApplication(), QStringLiteral("grains"), 1); // Note: Mode hint "1" switches to table view.
+        if(modificationNode())
+            mainWindow().openDataInspector(modificationNode(), QStringLiteral("grains"), 1); // Note: Mode hint "1" switches to table view.
     });
     layout->addWidget(btn);
 
@@ -147,23 +147,23 @@ void GrainSegmentationModifierEditor::plotMerges()
 {
     GrainSegmentationModifier* modifier = static_object_cast<GrainSegmentationModifier>(editObject());
 
-    if(modifier && modifierApplication()) {
+    if(modifier && modificationNode()) {
         // Request the modifier's pipeline output.
         const PipelineFlowState& state = getPipelineOutput();
 
         // Look up the data table in the modifier's pipeline output.
-        _mergePlotWidget->setTable(state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("grains-merge")));
+        _mergePlotWidget->setTable(state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("grains-merge")));
 
         // Indicate the current merge threshold in the plot.
         FloatType mergingThreshold = modifier->mergingThreshold();
         if(modifier->mergeAlgorithm() == GrainSegmentationModifier::GraphClusteringAutomatic) {
-            mergingThreshold = state.getAttributeValue(modifierApplication(), QStringLiteral("GrainSegmentation.auto_merge_threshold"), mergingThreshold).value<FloatType>();
+            mergingThreshold = state.getAttributeValue(modificationNode(), QStringLiteral("GrainSegmentation.auto_merge_threshold"), mergingThreshold).value<FloatType>();
         }
         _mergeRangeIndicator->setInterval(std::numeric_limits<double>::lowest(), mergingThreshold);
         _mergeRangeIndicator->show();
 
         // Look up the data table in the modifier's pipeline output.
-        _logPlotWidget->setTable(state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("grains-log")));
+        _logPlotWidget->setTable(state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("grains-log")));
 
         // Indicate the current log threshold in the plot.
         _logRangeIndicator->setInterval(0, mergingThreshold);

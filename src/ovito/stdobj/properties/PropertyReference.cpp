@@ -22,11 +22,11 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
-#include "PropertyObject.h"
+#include "Property.h"
 #include "PropertyReference.h"
 #include "PropertyContainer.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /******************************************************************************
 * Constructs a reference to a standard property.
@@ -38,9 +38,9 @@ PropertyReference::PropertyReference(PropertyContainerClassPtr pclass, int typeI
 }
 
 /******************************************************************************
-* Constructs a reference based on an existing PropertyObject.
+* Constructs a reference based on an existing Property.
 ******************************************************************************/
-PropertyReference::PropertyReference(PropertyContainerClassPtr pclass, const PropertyObject* property, int vectorComponent) :
+PropertyReference::PropertyReference(PropertyContainerClassPtr pclass, const Property* property, int vectorComponent) :
     _containerClass(pclass),
     _type(property->type()), _name(property->name()), _vectorComponent(vectorComponent)
 {
@@ -172,7 +172,7 @@ QDebug operator<<(QDebug debug, const PropertyReference& r)
 /******************************************************************************
 * Finds the referenced property in the given property container object.
 ******************************************************************************/
-const PropertyObject* PropertyReference::findInContainer(const PropertyContainer* container) const
+const Property* PropertyReference::findInContainer(const PropertyContainer* container) const
 {
     if(isNull())
         return nullptr;

@@ -25,7 +25,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/app/ApplicationService.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief A service class that performs registration of QML types.

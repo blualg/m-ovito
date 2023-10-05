@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,9 +27,9 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 /**
  * \brief This object stores a data grid made of voxels.
@@ -72,8 +72,8 @@ public:
 
     /// \brief The list of predefined voxel grid properties.
     enum Type {
-        UserProperty = PropertyObject::GenericUserProperty, //< This is reserved for user-defined properties.
-        ColorProperty = PropertyObject::GenericColorProperty
+        UserProperty = Property::GenericUserProperty, //< This is reserved for user-defined properties.
+        ColorProperty = Property::GenericColorProperty
     };
 
     /// \brief Constructor.
@@ -81,7 +81,7 @@ public:
 
     /// Returns the spatial domain this voxel grid is embedded in after making sure it
     /// can safely be modified.
-    SimulationCellObject* mutableDomain() {
+    SimulationCell* mutableDomain() {
         return makeMutable(domain());
     }
 
@@ -130,7 +130,7 @@ private:
     DECLARE_SHADOW_PROPERTY_FIELD(gridType);
 
     /// The domain the object is embedded in.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const SimulationCellObject>, domain, setDomain, PROPERTY_FIELD_NO_SUB_ANIM);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const SimulationCell>, domain, setDomain, PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
 /**
@@ -145,5 +145,5 @@ using VoxelInputColumnMapping = TypedInputColumnMapping<VoxelGrid>;
 
 }   // End of namespace
 
-Q_DECLARE_METATYPE(Ovito::Grid::VoxelPropertyReference);
-Q_DECLARE_METATYPE(Ovito::Grid::VoxelInputColumnMapping);
+Q_DECLARE_METATYPE(Ovito::VoxelPropertyReference);
+Q_DECLARE_METATYPE(Ovito::VoxelInputColumnMapping);
