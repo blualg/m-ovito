@@ -237,6 +237,7 @@ void IdentifyDiamondModifier::DiamondIdentificationEngine::applyResults(const Mo
     StructureIdentificationEngine::applyResults(request, state);
 
     // Also output structure type counts, which have been computed by the base class.
+    state.addAttribute(QStringLiteral("IdentifyDiamond.counts.OTHER"), QVariant::fromValue(getTypeCount(OTHER)), request.modificationNode());
     state.addAttribute(QStringLiteral("IdentifyDiamond.counts.CUBIC_DIAMOND"), QVariant::fromValue(getTypeCount(CUBIC_DIAMOND)), request.modificationNode());
     state.addAttribute(QStringLiteral("IdentifyDiamond.counts.CUBIC_DIAMOND_FIRST_NEIGHBOR"), QVariant::fromValue(getTypeCount(CUBIC_DIAMOND_FIRST_NEIGH)), request.modificationNode());
     state.addAttribute(QStringLiteral("IdentifyDiamond.counts.CUBIC_DIAMOND_SECOND_NEIGHBOR"), QVariant::fromValue(getTypeCount(CUBIC_DIAMOND_SECOND_NEIGH)), request.modificationNode());
