@@ -22,61 +22,60 @@
 
 #pragma once
 
-
 #include <ovito/particles/Particles.h>
 #include <ovito/stdobj/properties/PropertyColorMapping.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
-#include "TrajectoryLines.h"
 
 namespace Ovito {
 
 /**
- * \brief A visualization element for rendering particle trajectory lines.
+ * \brief A visualization element for rendering lines.
  */
-class OVITO_PARTICLES_EXPORT TrajectoryVis : public DataVis
+class OVITO_PARTICLES_EXPORT LinesVis : public DataVis
 {
-    OVITO_CLASS(TrajectoryVis)
-    Q_CLASSINFO("DisplayName", "Trajectory lines");
+    OVITO_CLASS(LinesVis)
+    Q_CLASSINFO("DisplayName", "Lines");
 
 public:
-
-    /// The shading modes supported by the trajectory vis element.
-    enum ShadingMode {
+    /// The shading modes supported by the lines vis element.
+    enum ShadingMode
+    {
         NormalShading = CylinderPrimitive::ShadingMode::NormalShading,
         FlatShading = CylinderPrimitive::ShadingMode::FlatShading
     };
     Q_ENUM(ShadingMode);
 
-    /// The coloring modes supported by the trajectory vis element.
-    enum ColoringMode {
+    /// The coloring modes supported by the lines vis element.
+    enum ColoringMode
+    {
         UniformColoring,
         PseudoColoring,
     };
     Q_ENUM(ColoringMode);
 
     /// \brief Constructor.
-    Q_INVOKABLE TrajectoryVis(ObjectInitializationFlags flags);
+    Q_INVOKABLE LinesVis(ObjectInitializationFlags flags);
 
     /// \brief Renders the associated data object.
-    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;
+    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState,
+                                  SceneRenderer* renderer, const Pipeline* pipeline) override;
 
     /// \brief Computes the display bounding box of the data object.
-    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
+    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline,
+                             const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
 
 public:
-
-    Q_PROPERTY(Ovito::TrajectoryVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
+    Q_PROPERTY(Ovito::LinesVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
 
 protected:
-
     /// This method is called once for this object after it has been completely loaded from a stream.
     virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
 private:
-
     /// Clips a trajectory line at the periodic box boundaries.
-    static void clipTrajectoryLine(const Point3& v1, const Point3& v2, const SimulationCell* simulationCell, const std::function<void(const Point3&, const Point3&, GraphicsFloatType, GraphicsFloatType)>& segmentCallback);
+    static void clipLine(const Point3& v1, const Point3& v2, const SimulationCell* simulationCell,
+                         const std::function<void(const Point3&, const Point3&, GraphicsFloatType, GraphicsFloatType)>& segmentCallback);
 
     /// Controls the display width of trajectory lines.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, lineWidth, setLineWidth, PROPERTY_FIELD_MEMORIZE);
@@ -91,13 +90,13 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, wrappedLines, setWrappedLines);
 
     /// Controls the shading mode for lines.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(TrajectoryVis::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(LinesVis::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls how the lines are being colored.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(TrajectoryVis::ColoringMode, coloringMode, setColoringMode);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(LinesVis::ColoringMode, coloringMode, setColoringMode);
 
     /// Transfer function for pseudo-color visualization of a trajectory line property.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PropertyColorMapping>, colorMapping, setColorMapping);
 };
 
-}   // End of namespace
+}  // namespace Ovito

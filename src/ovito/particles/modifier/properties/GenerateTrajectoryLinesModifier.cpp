@@ -72,7 +72,7 @@ GenerateTrajectoryLinesModifier::GenerateTrajectoryLinesModifier(ObjectInitializ
 {
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the vis element for rendering the trajectories created by the modifier.
-        setTrajectoryVis(OORef<TrajectoryVis>::create(flags));
+        setTrajectoryVis(OORef<LinesVis>::create(flags));
     }
 }
 

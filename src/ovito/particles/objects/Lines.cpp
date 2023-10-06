@@ -21,47 +21,63 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include "TrajectoryLines.h"
+#include "Lines.h"
 #include "LinesVis.h"
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(TrajectoryLines);
+IMPLEMENT_OVITO_CLASS(Lines);
 
 /******************************************************************************
-* Registers all standard properties with the property traits class.
-******************************************************************************/
-void TrajectoryLines::OOMetaClass::initialize()
+ * Registers all standard properties with the property traits class.
+ ******************************************************************************/
+void Lines::OOMetaClass::initialize()
 {
-    Lines::OOMetaClass::initialize();
+    PropertyContainerClass::initialize();
 
-    setPropertyClassDisplayName(tr("Trajectories"));
+    setPropertyClassDisplayName(tr("Lines"));
     setElementDescriptionName(QStringLiteral("vertex"));
-    setPythonName(QStringLiteral("trajectories"));
+    setPythonName(QStringLiteral("lines"));
 
     const QStringList emptyList;
-    registerStandardProperty(SampleTimeProperty, tr("Time"), Property::Int32, emptyList);
-    registerStandardProperty(ParticleIdentifierProperty, tr("Particle Identifier"), Property::Int64, emptyList);
+    const QStringList xyzList = QStringList() << "X"
+                                              << "Y"
+                                              << "Z";
+    const QStringList rgbList = QStringList() << "R"
+                                              << "G"
+                                              << "B";
+    registerStandardProperty(ColorProperty, tr("Color"), Property::FloatGraphics, rgbList);
+    registerStandardProperty(PositionProperty, tr("Position"), Property::FloatDefault, xyzList);
+    registerStandardProperty(SegmentProperty, tr("Segment"), Property::Int64, emptyList);
 }
 
 /******************************************************************************
-* Creates a storage object for standard properties.
-******************************************************************************/
-PropertyPtr TrajectoryLines::OOMetaClass::createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const
+ * Creates a storage object for standard properties.
+ ******************************************************************************/
+PropertyPtr Lines::OOMetaClass::createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type,
+                                                               const ConstDataObjectPath& containerPath) const
 {
     int dataType;
     size_t componentCount;
 
     switch(type) {
-        case SampleTimeProperty:
-            dataType = Property::Int32;
-            componentCount = 1;
+        case PositionProperty:
+            dataType = Property::FloatDefault;
+            componentCount = 3;
+            OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Point3));
             break;
-        case ParticleIdentifierProperty:
+        case ColorProperty:
+            dataType = Property::FloatGraphics;
+            componentCount = 3;
+            OVITO_ASSERT(componentCount * sizeof(GraphicsFloatType) == sizeof(ColorG));
+            break;
+        case SegmentProperty:
             dataType = Property::Int64;
             componentCount = 1;
             break;
-        default: return Lines::OOMetaClass::createStandardPropertyInternal(init, elementCount, type, containerPath);
+        default:
+            OVITO_ASSERT_MSG(false, "Lines::createStandardProperty()", "Invalid standard property type");
+            throw Exception(tr("This is not a valid standard property type: %1").arg(type));
     }
 
     const QStringList& componentNames = standardPropertyComponentNames(type);
@@ -69,15 +85,16 @@ PropertyPtr TrajectoryLines::OOMetaClass::createStandardPropertyInternal(DataBuf
 
     OVITO_ASSERT(componentCount == standardPropertyComponentCount(type));
 
-    PropertyPtr property = PropertyPtr::create(DataBuffer::Uninitialized, elementCount, dataType, componentCount, propertyName, type, componentNames);
+    PropertyPtr property =
+        PropertyPtr::create(DataBuffer::Uninitialized, elementCount, dataType, componentCount, propertyName, type, componentNames);
 
     // Initialize memory if requested.
     if(init == DataBuffer::Initialized && !containerPath.empty()) {
         // Certain standard properties need to be initialized with default values determined by the attached visual element.
         if(type == ColorProperty) {
-            if(const TrajectoryLines* trajectory = dynamic_object_cast<TrajectoryLines>(containerPath.back())) {
-                if(LinesVis* trajectoryVis = dynamic_object_cast<LinesVis>(trajectory->visElement())) {
-                    property->fill<ColorG>(trajectoryVis->lineColor().toDataType<GraphicsFloatType>());
+            if(const Lines* lines = dynamic_object_cast<Lines>(containerPath.back())) {
+                if(LinesVis* linesVis = dynamic_object_cast<LinesVis>(lines->visElement())) {
+                    property->fill<ColorG>(linesVis->lineColor().toDataType<GraphicsFloatType>());
                     init = DataBuffer::Uninitialized;
                 }
             }
@@ -93,9 +110,9 @@ PropertyPtr TrajectoryLines::OOMetaClass::createStandardPropertyInternal(DataBuf
 }
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-TrajectoryLines::TrajectoryLines(ObjectInitializationFlags flags) : Lines(flags)
+ * Constructor.
+ ******************************************************************************/
+Lines::Lines(ObjectInitializationFlags flags) : PropertyContainer(flags)
 {
     // Assign the default data object identifier.
     setIdentifier(OOClass().pythonName());
@@ -108,4 +125,4 @@ TrajectoryLines::TrajectoryLines(ObjectInitializationFlags flags) : Lines(flags)
     }
 }
 
-}   // End of namespace
+}  // namespace Ovito

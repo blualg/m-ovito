@@ -22,56 +22,51 @@
 
 #pragma once
 
-
 #include <ovito/particles/Particles.h>
-// #include <ovito/stdobj/lines/Lines.h>
-#include "Lines.h"
+#include <ovito/stdobj/properties/PropertyContainer.h>
 
 namespace Ovito {
 
 /**
- * \brief Stores trajectory lines of a particles dataset.
+ * \brief Stores lines of a particles dataset.
  */
-class OVITO_PARTICLES_EXPORT TrajectoryLines : public Lines
+class OVITO_PARTICLES_EXPORT Lines : public PropertyContainer
 {
+public:
     /// Define a new property metaclass for this property container type.
-    class OVITO_PARTICLES_EXPORT OOMetaClass : public Lines::OOMetaClass
+    class OVITO_PARTICLES_EXPORT OOMetaClass : public PropertyContainerClass
     {
     public:
-
         /// Inherit constructor from base class.
-        using Lines::OOMetaClass::OOMetaClass;
+        using PropertyContainerClass::PropertyContainerClass;
 
         /// Creates a storage object for standard properties.
-        virtual PropertyPtr createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const override;
+        virtual PropertyPtr createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type,
+                                                           const ConstDataObjectPath& containerPath) const override;
 
     protected:
-
         /// Is called by the system after construction of the meta-class instance.
         virtual void initialize() override;
     };
 
-    OVITO_CLASS_META(TrajectoryLines, OOMetaClass);
-    Q_CLASSINFO("DisplayName", "Particle trajectories");
-    Q_CLASSINFO("ClassNameAlias", "TrajectoryObject");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASS_META(Lines, OOMetaClass);
+    Q_CLASSINFO("DisplayName", "Lines");
 
 public:
-
     /// \brief The list of standard properties.
-    enum Type {
+    enum Type
+    {
         ColorProperty = Property::GenericColorProperty,
         PositionProperty = Property::FirstSpecificProperty,
-        SampleTimeProperty,
-        ParticleIdentifierProperty
+        SegmentProperty = Property::FirstSpecificProperty + 3
     };
 
     /// \brief Constructor.
-    Q_INVOKABLE TrajectoryLines(ObjectInitializationFlags flags);
+    Q_INVOKABLE Lines(ObjectInitializationFlags flags);
 
 private:
-
     /// The cached bounding box of the trajectory coordinates.
     Box3 _boundingBox;
 };
 
-}   // End of namespace
+}  // namespace Ovito
