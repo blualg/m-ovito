@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,9 +44,9 @@ protected:
     virtual void hideEvent(QHideEvent* event) override {
         // When the button becomes hidden from the user, automatically deactivate the viewport input mode.
         // This is to prevent the viewport mode from remaining active when the user switches to another command panel tab.
-        if(!event->spontaneous() && isChecked()) 
+        if(!event->spontaneous() && isChecked())
             click();
-        
+
         QPushButton::hideEvent(event);
     }
 };

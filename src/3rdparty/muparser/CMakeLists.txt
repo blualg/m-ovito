@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2021 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -39,7 +39,7 @@ INCLUDE(GenerateExportHeader)
 GENERATE_EXPORT_HEADER(muParser BASE_NAME MUPARSER)
 TARGET_INCLUDE_DIRECTORIES(muParser PUBLIC "${CMAKE_CURRENT_BINARY_DIR}")
 
-# Make sure the muParser library gets compiled with the same standard flags as the other OVITO modules, which actively 
+# Make sure the muParser library gets compiled with the same standard flags as the other OVITO modules, which actively
 # use the Qt framework. In particular, Qt 6 requires UNICODE strings on Windows platform.
 FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
 TARGET_LINK_LIBRARIES(muParser PUBLIC Qt6::Core)

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,9 +51,9 @@ public:
 
     /// \brief Returns a pointer to the properties editor this parameter UI belongs to.
     /// \return The editor in which this parameter UI is used or NULL if the parameter UI is used outside of a PropertiesEditor.
-    PropertiesEditor* editor() const { 
+    PropertiesEditor* editor() const {
         OVITO_ASSERT(!this->parent() || qobject_cast<PropertiesEditor*>(this->parent()));
-        return static_cast<PropertiesEditor*>(this->parent()); 
+        return static_cast<PropertiesEditor*>(this->parent());
     }
 
     /// \brief Returns the main window that is hosting this parameter UI.
@@ -82,8 +82,8 @@ public:
     }
 
     /// Executes a functor provided by the caller that performs undoable actions in an interactive context.
-    /// If an exception is thrown by the functor, the error message is displayed 
-    /// to the user, and this function returns false. 
+    /// If an exception is thrown by the functor, the error message is displayed
+    /// to the user, and this function returns false.
     template<typename Function>
     bool performActions(UndoableTransaction& transaction, Function&& func) {
         return editor()->performActions(transaction, std::forward<Function>(func));

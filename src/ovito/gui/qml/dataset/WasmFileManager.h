@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,7 +45,7 @@ public:
     /// \return A Future that will provide the list of file names.
     virtual Future<QStringList> listDirectoryContents(TaskManager& taskManager, const QUrl& url) override;
 
-    /// \brief Opens a file dialog in the browser allowing the user to import a file from the local computer into the application. 
+    /// \brief Opens a file dialog in the browser allowing the user to import a file from the local computer into the application.
     static void importFileIntoMemory(MainWindow* mainWindow, const QString& acceptedFileTypes, std::function<void(const QUrl&)> callback);
 
 #ifdef Q_OS_WASM
@@ -62,10 +62,10 @@ public:
 
 private Q_SLOTS:
 
-    /// Internal callback method. 
+    /// Internal callback method.
     void importedFileDataReady();
 
-    /// Internal callback method. 
+    /// Internal callback method.
     void importedFileDataCanceled();
 
 #endif

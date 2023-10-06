@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -156,11 +156,11 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     gridlayout3->addWidget(_editPlaybackBtn, 2, 2);
     connect(_editPlaybackBtn, &QPushButton::clicked, this, [&]() {
         if(!editObject()) return;
-        ModalPropertiesEditorDialog(editObject(), OORef<FileSourcePlaybackRateEditor>::create(), container(), 
+        ModalPropertiesEditorDialog(editObject(), OORef<FileSourcePlaybackRateEditor>::create(), container(),
             mainWindow(), tr("Configure Trajectory Playback"), tr("Change trajectory playback"), "manual:scene_objects.file_source.configure_playback").exec();
         updateDisplayedInformation();
     });
-    
+
     gridlayout3->setColumnMinimumWidth(0, maxLabelWidth);
     gridlayout1->setColumnMinimumWidth(0, maxLabelWidth);
     gridlayout2->setColumnMinimumWidth(0, maxLabelWidth);
@@ -313,7 +313,7 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
     // Ask user whether existing data objects should be maintained.
     bool keepExistingDataCollection = false;
     if(fileSource->dataCollection() && fileSource->userHasChangedDataCollection()) {
-        QMessageBox msgBox(QMessageBox::Question, tr("Import new file"), 
+        QMessageBox msgBox(QMessageBox::Question, tr("Import new file"),
             tr("Do you want to keep your changes?"),
             QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel,
             parentWindow());
@@ -354,7 +354,7 @@ void FileSourceEditor::onReloadFrame()
     if(FileSource* fileSource = static_object_cast<FileSource>(editObject())) {
         handleExceptions([&] {
             // Request a complete reloading of the current frame from the external file,
-            // including a refresh of the file from the remote location if it is not a 
+            // including a refresh of the file from the remote location if it is not a
             // local file.
             fileSource->reloadFrame(true, fileSource->dataCollectionFrame());
         });
@@ -373,7 +373,7 @@ void FileSourceEditor::onReloadAnimation()
             int oldFrameCount = fileSource->frames().size();
             fileSource->updateListOfFrames(true).finally(*fileSource, [fileSource, oldFrameCount, anim=OORef<AnimationSettings>(mainWindow().datasetContainer().activeAnimationSettings())](Task& task) noexcept {
                 if(!task.isCanceled() && fileSource->frames().size() > oldFrameCount && anim) {
-                    AnimationTime time = fileSource->sourceFrameToAnimationTime(fileSource->frames().size() - 1);               
+                    AnimationTime time = fileSource->sourceFrameToAnimationTime(fileSource->frames().size() - 1);
                     anim->setCurrentFrame(time.frame());
                 }
             });

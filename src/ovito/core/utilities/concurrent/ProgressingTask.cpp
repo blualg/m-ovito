@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -166,7 +166,7 @@ void ProgressingTask::beginProgressSubStepsWithWeights(std::vector<int> weights)
 }
 
 /******************************************************************************
-* Completes the current sub-step in the sequence started with beginProgressSubSteps() 
+* Completes the current sub-step in the sequence started with beginProgressSubSteps()
 * or beginProgressSubStepsWithWeights() and moves to the next one.
 ******************************************************************************/
 void ProgressingTask::nextProgressSubStep()
@@ -189,7 +189,7 @@ void ProgressingTask::nextProgressSubStep()
 }
 
 /******************************************************************************
-* Completes a sub-step sequence started with beginProgressSubSteps() or 
+* Completes a sub-step sequence started with beginProgressSubSteps() or
 * beginProgressSubStepsWithWeights().
 ******************************************************************************/
 void ProgressingTask::endProgressSubSteps()

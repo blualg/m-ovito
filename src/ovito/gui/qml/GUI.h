@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,7 +43,7 @@
 ******************************************************************************/
 namespace Ovito {
         class MainWindow;
-        class WasmDataSetContainer;     
+        class WasmDataSetContainer;
         class QuickViewportWindow;
 }
 

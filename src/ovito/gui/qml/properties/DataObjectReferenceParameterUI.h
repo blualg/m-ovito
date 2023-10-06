@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,14 +38,14 @@ class DataObjectReferenceParameterUI : public ParameterUI
     Q_OBJECT
     QML_ELEMENT
     OVITO_CLASS(DataObjectReferenceParameterUI)
-    
+
     Q_PROPERTY(QString dataObjectType READ dataObjectType WRITE setDataObjectType)
     Q_PROPERTY(QAbstractItemModel* model MEMBER _model CONSTANT)
 
 public:
 
     /// Constructor.
-    DataObjectReferenceParameterUI() : _model(new Model(this)) { 
+    DataObjectReferenceParameterUI() : _model(new Model(this)) {
         connect(this, &ParameterUI::editObjectReplaced, this, &DataObjectReferenceParameterUI::updateDataObjectList);
     }
 
@@ -71,7 +71,7 @@ public:
 
 private:
 
-    class Model : public QAbstractListModel 
+    class Model : public QAbstractListModel
     {
     public:
 
@@ -88,21 +88,21 @@ private:
         virtual QVariant data(const QModelIndex &index, int role) const override;
 
         /// Returns the model's role names.
-        virtual QHash<int, QByteArray> roleNames() const override { 
+        virtual QHash<int, QByteArray> roleNames() const override {
             return {
                 { Qt::DisplayRole, "label" },
                 { Qt::UserRole, "reference" }
-            }; 
+            };
         }
 
         /// Returns the list of acceptable data objects in the modifier's pipeline input.
         const std::vector<DataObjectReference>& dataObjects() const { return _dataObjects; }
 
         /// Updates the entire list model.
-        void resetList(std::vector<DataObjectReference> dataObjects) { 
-            beginResetModel(); 
+        void resetList(std::vector<DataObjectReference> dataObjects) {
+            beginResetModel();
             _dataObjects = std::move(dataObjects);
-            endResetModel(); 
+            endResetModel();
         }
 
     private:

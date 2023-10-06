@@ -65,10 +65,10 @@ OORef<DataSet> GuiDataSetContainer::loadDataset(const QString& filename)
     if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
         if(Viewport* vp = viewportConfig->activeViewport()) {
             if(Scene* scene = vp->scene()) {
-                std::vector<OORef<PipelineSceneNode>> fileSourcePipelines;
+                std::vector<OORef<Pipeline>> fileSourcePipelines;
                 QStringList itemsList;
-                scene->visitPipelines([&](PipelineSceneNode* pipeline) {
-                    if(dynamic_object_cast<FileSource>(pipeline->pipelineSource())) {
+                scene->visitPipelines([&](Pipeline* pipeline) {
+                    if(dynamic_object_cast<FileSource>(pipeline->source())) {
                         fileSourcePipelines.emplace_back(pipeline);
                         itemsList.push_back(pipeline->objectTitle());
                     }

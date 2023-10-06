@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,8 +26,8 @@
 namespace Ovito {
 
 /******************************************************************************
-* Actives the workaround, which means receiving mouse events will be disabled 
-* for all Qt Quick items. 
+* Actives the workaround, which means receiving mouse events will be disabled
+* for all Qt Quick items.
 ******************************************************************************/
 void MouseGrabWorkaround::setActive(bool active, QQuickItem* activeItem)
 {

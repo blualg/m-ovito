@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,7 +26,7 @@
 #include <ovito/gui/qml/GUI.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
-namespace Ovito { 
+namespace Ovito {
 
 /**
  * \brief Manages the DataSet being edited.

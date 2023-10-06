@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,7 +46,7 @@ public:
 
     /// Returns the main window this panel is part of.
     MainWindow* mainWindow() const {
-        return static_cast<MainWindow*>(parentItem()); 
+        return static_cast<MainWindow*>(parentItem());
     }
 
     /// Arranges the viewport windows within the container.

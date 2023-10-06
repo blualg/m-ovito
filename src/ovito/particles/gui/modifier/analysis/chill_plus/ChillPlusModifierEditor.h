@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //  Copyright (2019) Henrik Andersen Sveinsson
 //
 //  This file is part of OVITO (Open Visualization Tool).

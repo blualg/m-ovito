@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,7 +30,7 @@
 #include <ovito/opengl/OpenGLSceneRenderer.h>
 #include "QuickViewportWindow.h"
 
-#include <QQuickOpenGLUtils> 
+#include <QQuickOpenGLUtils>
 
 namespace Ovito {
 
@@ -54,7 +54,7 @@ QuickViewportWindow::QuickViewportWindow() : ViewportWindowInterface(nullptr, nu
 /******************************************************************************
 * Destructor.
 ******************************************************************************/
-QuickViewportWindow::~QuickViewportWindow() 
+QuickViewportWindow::~QuickViewportWindow()
 {
     releaseRenderingResources();
 }
@@ -79,7 +79,7 @@ void QuickViewportWindow::setViewport(Viewport* vp)
 }
 
 /******************************************************************************
-* Releases the renderer resources held by the viewport's surface and picking renderers. 
+* Releases the renderer resources held by the viewport's surface and picking renderers.
 ******************************************************************************/
 void QuickViewportWindow::releaseRenderingResources()
 {
@@ -306,7 +306,7 @@ ViewportPickResult QuickViewportWindow::pick(const QPointF& pos)
 /******************************************************************************
 * Makes the OpenGL context used by the viewport window for rendering the current context.
 ******************************************************************************/
-void QuickViewportWindow::makeOpenGLContextCurrent() 
+void QuickViewportWindow::makeOpenGLContextCurrent()
 {
     OVITO_ASSERT(window()->rendererInterface()->graphicsApi() == QSGRendererInterface::OpenGL);
 }
@@ -325,7 +325,7 @@ void QuickViewportWindow::renderViewport()
     // Invalidate picking buffer every time the visible contents of the viewport change.
     _pickingRenderer->reset();
 
-    // Don't render anything if viewport updates are currently suspended. 
+    // Don't render anything if viewport updates are currently suspended.
     if(viewport()->dataset()->viewportConfig()->isSuspended())
         return;
 
@@ -334,7 +334,7 @@ void QuickViewportWindow::renderViewport()
     static bool hasCheckedFragDepthExtension = false;
     if(!hasCheckedFragDepthExtension) {
         hasCheckedFragDepthExtension = true;
-        if(QOpenGLContext::currentContext()->hasExtension("EXT_frag_depth") == false) 
+        if(QOpenGLContext::currentContext()->hasExtension("EXT_frag_depth") == false)
             Q_EMIT viewportError(tr("WARNING: WebGL extension 'EXT_frag_depth' is not supported by your browser.\nWithout this capability, visual artifacts are expected."));
     }
 #endif

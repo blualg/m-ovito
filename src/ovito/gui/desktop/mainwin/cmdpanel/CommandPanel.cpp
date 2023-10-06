@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -54,7 +54,7 @@ CommandPanel::CommandPanel(MainWindow& mainWindow, QWidget* parent) : QWidget(pa
 /******************************************************************************
 * Loads the layout of the widgets from the settings store.
 ******************************************************************************/
-void CommandPanel::restoreLayout() 
+void CommandPanel::restoreLayout()
 {
     _modifyPage->restoreLayout();
     _renderPage->restoreLayout();
@@ -64,7 +64,7 @@ void CommandPanel::restoreLayout()
 /******************************************************************************
 * Saves the layout of the widgets to the settings store.
 ******************************************************************************/
-void CommandPanel::saveLayout() 
+void CommandPanel::saveLayout()
 {
     _modifyPage->saveLayout();
     _renderPage->saveLayout();
@@ -74,9 +74,9 @@ void CommandPanel::saveLayout()
 
 /******************************************************************************
 * This Qt item delegate class renders the list items of the pipeline editor and other list views.
-* It extends the QStyledItemDelegate base class by displaying the 
+* It extends the QStyledItemDelegate base class by displaying the
 * PipelineStatus::shortInfo() value next to the title of each pipeline entry.
-******************************************************************************/ 
+******************************************************************************/
 void ExtendedListItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
     // Render the item exactly like QStyledItemDelegate::paint().

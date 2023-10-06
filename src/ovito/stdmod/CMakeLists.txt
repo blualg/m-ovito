@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2021 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -44,7 +44,7 @@ OVITO_STANDARD_PLUGIN(StdMod
     PLUGIN_DEPENDENCIES
         StdObj
         Mesh
-    PRECOMPILED_HEADERS 
+    PRECOMPILED_HEADERS
         StdMod.h
 )
 

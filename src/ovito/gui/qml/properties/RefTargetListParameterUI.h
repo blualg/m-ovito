@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,7 +36,7 @@ class RefTargetListParameterUI : public ParameterUI
     Q_OBJECT
     QML_ELEMENT
     OVITO_CLASS(RefTargetListParameterUI)
-    
+
     Q_PROPERTY(QAbstractTableModel* model READ model CONSTANT)
 
 public:
@@ -56,9 +56,9 @@ public:
     void updateColumns(int columnStartIndex, int columnEndIndex) { _model->updateColumns(columnStartIndex, columnEndIndex); }
 
     /// Returns the internal model used to populate the list view or table view widget.
-    QAbstractTableModel* model() { 
+    QAbstractTableModel* model() {
         if(!_model) _model = createModel();
-        return _model; 
+        return _model;
     }
 
 protected:
@@ -83,8 +83,8 @@ protected:
 
         /// Returns the model's role names.
         virtual QHash<int, QByteArray> roleNames() const override {
-            return { 
-                { Qt::DisplayRole, "reftarget" } 
+            return {
+                { Qt::DisplayRole, "reftarget" }
             };
         }
 

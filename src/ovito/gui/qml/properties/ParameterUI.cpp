@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -95,7 +95,7 @@ void ParameterUI::updatePropertyField()
 /******************************************************************************
 * Returns the units object for this parameter (if it is a numerical parameter).
 ******************************************************************************/
-ParameterUnit* ParameterUI::parameterUnit() const 
+ParameterUnit* ParameterUI::parameterUnit() const
 {
     if(editObject() && propertyField() && propertyField()->numericalParameterInfo()) {
         return editObject()->dataset()->unitsManager().getUnit(propertyField()->numericalParameterInfo()->unitType);

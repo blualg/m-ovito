@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -76,8 +76,8 @@ public Q_SLOTS:
     }
 
     /// Hides any messages currently displayed in the window's status bar.
-    virtual void clearStatusBarMessage() override { 
-        showStatusBarMessage(QString()); 
+    virtual void clearStatusBarMessage() override {
+        showStatusBarMessage(QString());
     }
 
     /// Shows the online manual and opens the given help page.

@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -26,7 +26,7 @@ OVITO_STANDARD_PLUGIN(StdObjGui
         resources/stdobjgui.qrc
         StdObjGuiRegistrationService.cpp
         PropertyReferenceParameterUI.cpp
-    PLUGIN_DEPENDENCIES 
+    PLUGIN_DEPENDENCIES
         StdObj
     GUI_PLUGIN
 )

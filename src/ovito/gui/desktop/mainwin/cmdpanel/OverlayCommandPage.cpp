@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -144,7 +144,7 @@ OverlayCommandPage::OverlayCommandPage(MainWindow& mainWindow, QWidget* parent) 
 /******************************************************************************
 * Loads the layout of the widgets from the settings store.
 ******************************************************************************/
-void OverlayCommandPage::restoreLayout() 
+void OverlayCommandPage::restoreLayout()
 {
     QSettings settings;
     settings.beginGroup("app/mainwindow/viewportlayers");
@@ -156,7 +156,7 @@ void OverlayCommandPage::restoreLayout()
 /******************************************************************************
 * Saves the layout of the widgets to the settings store.
 ******************************************************************************/
-void OverlayCommandPage::saveLayout() 
+void OverlayCommandPage::saveLayout()
 {
     QSettings settings;
     settings.beginGroup("app/mainwindow/viewportlayers");
@@ -261,7 +261,7 @@ void OverlayCommandPage::onLayerMoveUp()
         }
         // Make sure the new overlay gets selected in the UI.
         overlayListModel()->setNextToSelectObject(layer);
-        _overlayListWidget->setFocus(); 
+        _overlayListWidget->setFocus();
     });
 }
 
@@ -295,7 +295,7 @@ void OverlayCommandPage::onLayerMoveDown()
         }
         // Make sure the new overlay gets selected in the UI.
         overlayListModel()->setNextToSelectObject(layer);
-        _overlayListWidget->setFocus(); 
+        _overlayListWidget->setFocus();
     });
 }
 

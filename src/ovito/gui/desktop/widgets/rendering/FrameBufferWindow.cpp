@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -79,7 +79,7 @@ FrameBufferWindow::FrameBufferWindow(MainWindow& mainWindow, QWidget* parent) :
     QColor bgcolor = pal.color(QPalette::Window);
     bgcolor.setAlpha(170);
     pal.setColor(QPalette::Window, bgcolor);
-    progressWidget->setPalette(std::move(pal)); 
+    progressWidget->setPalette(std::move(pal));
     progressWidget->setBackgroundRole(QPalette::Window);
     progressWidgetContainerLayout->addWidget(progressWidget, 0, 0, Qt::AlignHCenter | Qt::AlignTop);
     _progressLayout = new QVBoxLayout(progressWidget);

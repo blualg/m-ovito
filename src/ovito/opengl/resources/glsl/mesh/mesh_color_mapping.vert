@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -46,7 +46,7 @@ void main()
 
     // Pass face selection state to fragment shader.
     selected_face_fs = pseudocolor.g;
- 
+
     // Transform vertex normal from object to view space.
     normal_fs = vec3(normal_tm * vec4(normal, 0.0));
 }

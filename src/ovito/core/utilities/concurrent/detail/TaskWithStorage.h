@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,11 +47,11 @@ public:
     /// \brief Constructor assigning the task's results storage and forwarding any extra arguments to the task class constructor.
     /// \param initialResult The value to assign to the results storage tuple.
     template<typename InitialValue>
-    explicit TaskWithStorage(Task::State initialState, InitialValue&& initialResult) : 
+    explicit TaskWithStorage(Task::State initialState, InitialValue&& initialResult) :
 #ifndef Q_CC_MSVC
-    TaskBase(initialState, static_cast<Tuple*>(this)), Tuple(std::forward<InitialValue>(initialResult)) 
+    TaskBase(initialState, static_cast<Tuple*>(this)), Tuple(std::forward<InitialValue>(initialResult))
 #else
-    TaskBase(initialState, &_tuple), _tuple(std::forward<InitialValue>(initialResult)) 
+    TaskBase(initialState, &_tuple), _tuple(std::forward<InitialValue>(initialResult))
 #endif
     {
 #ifdef OVITO_DEBUG
@@ -61,7 +61,7 @@ public:
     }
 
     /// \brief Constructor which leaves results storage uninitialized.
-    explicit TaskWithStorage(Task::State initialState = Task::NoState) noexcept : 
+    explicit TaskWithStorage(Task::State initialState = Task::NoState) noexcept :
 #ifndef Q_CC_MSVC
     TaskBase(initialState, std::tuple_size_v<Tuple> != 0 ? static_cast<Tuple*>(this) : nullptr) {}
 #else
@@ -71,16 +71,16 @@ public:
 protected:
 
     /// Provides direct read/write access to the internal results tuple.
-    Tuple& resultsTupleStorage() { 
+    Tuple& resultsTupleStorage() {
 #ifndef Q_CC_MSVC
-        return static_cast<Tuple&>(*this); 
+        return static_cast<Tuple&>(*this);
 #else
-        return _tuple; 
+        return _tuple;
 #endif
     }
 
     /// Provides direct read/write access to the first tuple element of the internal results storage.
-    decltype(auto) resultsStorage() { 
+    decltype(auto) resultsStorage() {
         if constexpr(std::tuple_size_v<Tuple> != 0)
             return std::get<0>(resultsTupleStorage());
     }

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -77,7 +77,7 @@ Future<QStringList> WasmFileManager::listDirectoryContents(TaskManager& taskMana
 #ifdef Q_OS_WASM
 
 /******************************************************************************
-* Internal callback method. JavaScript will call this function when the 
+* Internal callback method. JavaScript will call this function when the
 * imported file data is ready.
 ******************************************************************************/
 void WasmFileManager::importedFileDataReady(char* content, size_t contentSize, const char* fileName, int fileImportId)
@@ -94,7 +94,7 @@ void WasmFileManager::importedFileDataReady(char* content, size_t contentSize, c
     auto callback = std::move(callbackIter->second);
     _importOperationCallbacks.erase(callbackIter);
 
-    // Generate a unique ID for the file to avoid name clashes if 
+    // Generate a unique ID for the file to avoid name clashes if
     // the user imports several different files having the same filename.
     // Generate the URL under which the imported file will be accessible in the application.
     QUrl url;
@@ -111,7 +111,7 @@ void WasmFileManager::importedFileDataReady(char* content, size_t contentSize, c
 }
 
 /******************************************************************************
-* Internal callback method. JavaScript will call this function when the file 
+* Internal callback method. JavaScript will call this function when the file
 * import operation has been canceled by the user.
 ******************************************************************************/
 void WasmFileManager::importedFileDataCanceled(int fileImportId)
@@ -140,8 +140,8 @@ extern "C" EMSCRIPTEN_KEEPALIVE void ovitoFileDataReady(char* content, size_t co
 }
 
 /******************************************************************************
-* Global callback function called by the JavaScript side if the user has 
-* canceled the file import operation. 
+* Global callback function called by the JavaScript side if the user has
+* canceled the file import operation.
 ******************************************************************************/
 extern "C" EMSCRIPTEN_KEEPALIVE void ovitoFileDataCanceled(int fileImportId)
 {
@@ -150,8 +150,8 @@ extern "C" EMSCRIPTEN_KEEPALIVE void ovitoFileDataCanceled(int fileImportId)
 }
 
 /******************************************************************************
-* Opens a file dialog in the browser allowing the user to import a file from 
-* the local computer into the application. 
+* Opens a file dialog in the browser allowing the user to import a file from
+* the local computer into the application.
 ******************************************************************************/
 void WasmFileManager::importFileIntoMemory(MainWindow* mainWindow, const QString& acceptedFileTypes, std::function<void(const QUrl&)> callback)
 {
@@ -233,8 +233,8 @@ void WasmFileManager::importFileIntoMemory(MainWindow* mainWindow, const QString
 #else  // !Q_OS_WASM
 
 /******************************************************************************
-* Opens a file dialog in the browser allowing the user to import a file from 
-* the local computer into the application. 
+* Opens a file dialog in the browser allowing the user to import a file from
+* the local computer into the application.
 ******************************************************************************/
 void WasmFileManager::importFileIntoMemory(MainWindow* mainWindow, const QString& acceptedFileTypes, std::function<void(const QUrl&)> callback)
 {
@@ -269,12 +269,12 @@ void WasmFileManager::importFileIntoMemory(MainWindow* mainWindow, const QString
     QObject::connect(importDialog, SIGNAL(accepted()), importDialog, SLOT(deleteLater()));
     QObject::connect(importDialog, SIGNAL(rejected()), this_, SLOT(importedFileDataCanceled()));
     QObject::connect(importDialog, SIGNAL(rejected()), importDialog, SLOT(deleteLater()));
-    
+
     QMetaObject::invokeMethod(importDialog, "open");
 }
 
 /******************************************************************************
-* Internal callback method. JavaScript will call this function when the 
+* Internal callback method. JavaScript will call this function when the
 * imported file data is ready.
 ******************************************************************************/
 void WasmFileManager::importedFileDataReady()
@@ -300,8 +300,8 @@ void WasmFileManager::importedFileDataReady()
         return;
     }
     QByteArray fileContent = file.readAll();
-    
-    // Generate a unique ID for the file to avoid name clashes if 
+
+    // Generate a unique ID for the file to avoid name clashes if
     // the user imports several different files having the same filename.
     // Generate the URL under which the imported file will be accessible in the application.
     QUrl url;
@@ -318,7 +318,7 @@ void WasmFileManager::importedFileDataReady()
 }
 
 /******************************************************************************
-* Internal callback method. JavaScript will call this function when the file 
+* Internal callback method. JavaScript will call this function when the file
 * import operation has been canceled by the user.
 ******************************************************************************/
 void WasmFileManager::importedFileDataCanceled()

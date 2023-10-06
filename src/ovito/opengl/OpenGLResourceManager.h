@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,7 +42,7 @@ class OVITO_OPENGLRENDERER_EXPORT OpenGLResourceManager : public RendererResourc
 public:
 
     /// Returns the thread-local instance of the class.
-    static OpenGLResourceManager* instance(); 
+    static OpenGLResourceManager* instance();
 
     /// Default constructor.
     OpenGLResourceManager() = default;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -93,7 +93,7 @@ protected:
     /// Updates the scrollbars of the widget.
     void updateScrollBarRange();
 
-    /// Calculates the drawing rectangle for the framebuffer image within the viewport. 
+    /// Calculates the drawing rectangle for the framebuffer image within the viewport.
     QRect calculateViewportRect() const;
 
 private Q_SLOTS:
@@ -126,7 +126,7 @@ private:
     /// The background for transparent framebuffer images.
     QBrush _backgroundBrush;
 
-    /// A label that is shown to indicate the current image zoom factor. 
+    /// A label that is shown to indicate the current image zoom factor.
     QLabel* _zoomFactorDisplay;
 
     /// For animating the visibility of the zoom factor indicator.

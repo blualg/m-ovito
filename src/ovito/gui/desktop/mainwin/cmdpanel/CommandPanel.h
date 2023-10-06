@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -80,7 +80,7 @@ private:
 
 /******************************************************************************
 * This Qt item delegate class renders the list items of the pipeline editor and other list views.
-* It extends the QStyledItemDelegate base class by displaying the 
+* It extends the QStyledItemDelegate base class by displaying the
 * PipelineStatus::shortInfo() value next to the title of each pipeline entry.
 ******************************************************************************/
 class ExtendedListItemDelegate : public QStyledItemDelegate

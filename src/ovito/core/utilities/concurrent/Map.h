@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,7 +43,7 @@ auto map_sequential(InputRange&& inputRange, Executor&& executor, Function&& f)
         std::forward<InputRange>(inputRange),
         std::forward<Executor>(executor),
         // Iteration start function:
-        [f = std::forward<Function>(f)](typename InputRange::const_reference iterValue, std::vector<result_value_type>&) mutable { 
+        [f = std::forward<Function>(f)](typename InputRange::const_reference iterValue, std::vector<result_value_type>&) mutable {
             return std::forward<Function>(f)(iterValue);
         },
         // Iteration complete function:

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,14 +38,14 @@ class OVITO_GUI_EXPORT QuickViewportWindow : public QQuickFramebufferObject, pub
 {
     Q_OBJECT
     QML_ELEMENT
-    
+
     Q_PROPERTY(Ovito::Viewport* viewport READ viewport NOTIFY viewportReplaced)
 
 public:
 
     /// Constructor.
     QuickViewportWindow();
-    
+
     /// Destructor.
     virtual ~QuickViewportWindow();
 
@@ -122,7 +122,7 @@ Q_SIGNALS:
 
 private:
 
-    class Renderer : public QQuickFramebufferObject::Renderer 
+    class Renderer : public QQuickFramebufferObject::Renderer
     {
     public:
 
@@ -144,13 +144,13 @@ private:
         virtual void render() override {
             _vpwin->renderViewport();
         }
-    
+
     private:
         /// Pointer to the viewport window to which this renderer belongs.
         QuickViewportWindow* _vpwin;
     };
 
-    /// Releases the renderer resources held by the viewport's surface and picking renderers. 
+    /// Releases the renderer resources held by the viewport's surface and picking renderers.
     void releaseRenderingResources();
 
     /// Renders the contents of the viewport window.

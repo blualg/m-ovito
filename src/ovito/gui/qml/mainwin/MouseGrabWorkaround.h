@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,14 +44,14 @@ public:
     QQuickItem* container() const { return _container; }
     void setContainer(QQuickItem* container) { _container = container; }
 
-    /// Actives the workaround, which means receiving mouse events will be disabled for all Qt Quick items. 
+    /// Actives the workaround, which means receiving mouse events will be disabled for all Qt Quick items.
     Q_INVOKABLE void setActive(bool active, QQuickItem* activeItem);
     bool isActive() const { return _isActive; }
 
 private:
 
     void disableMouseEventHandling(QQuickItem* item, QQuickItem* activeItem);
-    
+
     bool _isActive = false;
     QQuickItem* _container = nullptr;
 

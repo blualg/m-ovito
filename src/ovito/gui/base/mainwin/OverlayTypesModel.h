@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,7 +41,7 @@ public:
     /// Constructs an action for a Python overlay script.
     static OverlayAction* createForScript(const QString& fileName, const QDir& directory);
 
-    /// Returns the overlay class descriptor if this action represents a built-in overlay type. 
+    /// Returns the overlay class descriptor if this action represents a built-in overlay type.
     OvitoClassPtr layerClass() const { return _layerClass; }
 
     /// The absolute path of the modifier script if this action represents a Python-based modifier function.
@@ -49,7 +49,7 @@ public:
 
 private:
 
-    /// The Ovito class descriptor of the viewport layer subclass. 
+    /// The Ovito class descriptor of the viewport layer subclass.
     OvitoClassPtr _layerClass = nullptr;
 
     /// The path to the overlay script on disk.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -62,7 +62,7 @@ public:
     const QString& propertyName() const { return _propertyName; }
 
     /// Sets the name of the object property exposed by this ParameterUI instance.
-    void setPropertyName(const QString& name) { 
+    void setPropertyName(const QString& name) {
         if(name != _propertyName) {
             _propertyName = name;
             updatePropertyField();
@@ -72,8 +72,8 @@ public:
     /// Returns the C++ RefMaker property or reference field that is exposed by this QML property source.
     const PropertyFieldDescriptor* propertyField() const { return _propertyField; }
 
-    /// Set the target property for the QML value source. 
-    /// This method will be called by the QML engine when assigning a value source. 
+    /// Set the target property for the QML value source.
+    /// This method will be called by the QML engine when assigning a value source.
     virtual void setTarget(const QQmlProperty& prop) override { _qmlProperty = prop; }
 
     /// Updates the displayed value in the UI.

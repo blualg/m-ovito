@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2019 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -21,7 +21,7 @@
 #######################################################################################
 
 IF(NOT TARGET NetCDFIntegration)
-    MESSAGE(FATAL_ERROR 
+    MESSAGE(FATAL_ERROR
         "The NetCDF file reader/writer plugin cannot be built without the HDF5 and NetCDF libraries. "
         "Please disable the plugin by setting OVITO_BUILD_PLUGIN_NETCDFPLUGIN to OFF, "
         "or make sure the required HDF5 and NetCDF libraries are found by the CMake script.")

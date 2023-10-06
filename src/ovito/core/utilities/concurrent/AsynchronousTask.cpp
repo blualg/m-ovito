@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,15 +29,15 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AsynchronousTaskBase::AsynchronousTaskBase(State initialState, void* resultsStorage) noexcept : ProgressingTask(State(initialState | Task::IsAsynchronous), resultsStorage) 
+AsynchronousTaskBase::AsynchronousTaskBase(State initialState, void* resultsStorage) noexcept : ProgressingTask(State(initialState | Task::IsAsynchronous), resultsStorage)
 {
     QRunnable::setAutoDelete(false);
-}   
+}
 
 /******************************************************************************
 * Destructor.
 ******************************************************************************/
-AsynchronousTaskBase::~AsynchronousTaskBase() 
+AsynchronousTaskBase::~AsynchronousTaskBase()
 {
     // If task was never submitted for execution, cancel and finish it.
     if(!isFinished()) {
@@ -49,7 +49,7 @@ AsynchronousTaskBase::~AsynchronousTaskBase()
 /******************************************************************************
 * Submits the task for execution to a thread pool.
 ******************************************************************************/
-void AsynchronousTaskBase::startInThreadPool(QThreadPool* pool, bool showInUserInterface) 
+void AsynchronousTaskBase::startInThreadPool(QThreadPool* pool, bool showInUserInterface)
 {
     OVITO_ASSERT(pool);
     OVITO_ASSERT(!this->_thisTask);
@@ -59,7 +59,7 @@ void AsynchronousTaskBase::startInThreadPool(QThreadPool* pool, bool showInUserI
     // Store a shared_ptr to this task to keep it alive while running.
     this->_thisTask = this->shared_from_this();
     this->_submittedToPool = pool;
-    
+
     // Inherit execution context from parent task.
     _executionContext = ExecutionContext::current();
     OVITO_ASSERT(_executionContext.isValid());
@@ -68,10 +68,10 @@ void AsynchronousTaskBase::startInThreadPool(QThreadPool* pool, bool showInUserI
     if(showInUserInterface) {
         _executionContext.ui().taskManager().registerTask(*this);
     }
-    
+
     // Mark this task as started.
     this->setStarted();
-    
+
     // Submit to thread pool.
     pool->start(this);
 }
@@ -79,7 +79,7 @@ void AsynchronousTaskBase::startInThreadPool(QThreadPool* pool, bool showInUserI
 /******************************************************************************
 * Runs the task's work function immediately in the current thread.
 ******************************************************************************/
-void AsynchronousTaskBase::startInThisThread(bool showInUserInterface) 
+void AsynchronousTaskBase::startInThisThread(bool showInUserInterface)
 {
     OVITO_ASSERT(!this->_thisTask);
     OVITO_ASSERT(!this->_submittedToPool);
@@ -104,14 +104,14 @@ void AsynchronousTaskBase::startInThisThread(bool showInUserInterface)
 /******************************************************************************
 * Implementation of QRunnable.
 ******************************************************************************/
-void AsynchronousTaskBase::run() 
+void AsynchronousTaskBase::run()
 {
     OVITO_ASSERT(isStarted());
     OVITO_ASSERT(_executionContext.isValid());
-    
+
     // Execute the work function in the original execution context.
     ExecutionContext::Scope execScope(std::move(_executionContext));
-    
+
     try {
         // Execute the work function in the scope of this task object.
         Task::Scope taskScope(this);

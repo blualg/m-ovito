@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -52,7 +52,7 @@ void main()
 	vec3 surface_normal;
 
 	bool skip = false;
-	float x;	// Normalized location along cylinder (used for color interpolation). 
+	float x;	// Normalized location along cylinder (used for color interpolation).
 
 	if(ln < 1e-7 * cylinder_length) {
 		// Handle case where view ray is parallel to cylinder axis:

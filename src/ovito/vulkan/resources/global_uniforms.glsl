@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,9 +32,9 @@ layout(std140, binding = 0) uniform UniformBufferObject {
 
 bool is_perspective()
 {
-    return GlobalUniforms.projection_matrix[0][3] != 0.0 
-        || GlobalUniforms.projection_matrix[1][3] != 0.0 
-        || GlobalUniforms.projection_matrix[2][3] != 0.0 
+    return GlobalUniforms.projection_matrix[0][3] != 0.0
+        || GlobalUniforms.projection_matrix[1][3] != 0.0
+        || GlobalUniforms.projection_matrix[2][3] != 0.0
         || GlobalUniforms.projection_matrix[3][3] != 1.0;
 }
 

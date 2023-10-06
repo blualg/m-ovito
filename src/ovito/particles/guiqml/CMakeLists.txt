@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -25,7 +25,7 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
     SOURCES
         resources/particlesgui.qrc
         ParticlesGui.cpp
-    PLUGIN_DEPENDENCIES 
+    PLUGIN_DEPENDENCIES
         Particles
     GUI_PLUGIN
 )
