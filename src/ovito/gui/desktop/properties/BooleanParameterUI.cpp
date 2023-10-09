@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -122,6 +122,21 @@ void BooleanParameterUI::setEnabled(bool enabled)
             checkBox()->setEnabled(parameterObject() && isEnabled());
         else
             checkBox()->setEnabled(editObject() && isEnabled());
+    }
+}
+
+/******************************************************************************
+ * Sets the visibility state of the UI.
+ ******************************************************************************/
+void BooleanParameterUI::setVisible(bool visible)
+{
+    if(visible == isVisible()) return;
+    PropertyParameterUI::setVisible(visible);
+    if(checkBox()) {
+        if(isReferenceFieldUI())
+            checkBox()->setVisible(parameterObject() && isVisible());
+        else
+            checkBox()->setVisible(editObject() && isVisible());
     }
 }
 

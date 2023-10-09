@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,24 +30,25 @@
 #include <ovito/gui/desktop/properties/ColorParameterUI.h>
 #include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
 #include <ovito/stdobj/gui/properties/PropertyColorMappingEditor.h>
-#include "TrajectoryVisEditor.h"
+#include "LinesVisEditor.h"
+#include <ovito/particles/modifier/properties/GenerateTrajectoryLinesModifier.h>
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(TrajectoryVisEditor);
-SET_OVITO_OBJECT_EDITOR(LinesVis, TrajectoryVisEditor);
+IMPLEMENT_OVITO_CLASS(LinesVisEditor);
+SET_OVITO_OBJECT_EDITOR(LinesVis, LinesVisEditor);
 
 /******************************************************************************
-* Sets up the UI widgets of the editor.
-******************************************************************************/
-void TrajectoryVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
+ * Sets up the UI widgets of the editor.
+ ******************************************************************************/
+void LinesVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
     // Create a rollout.
     QWidget* rollout = createRollout(tr("Trajectory display"), rolloutParams, "manual:visual_elements.trajectory_lines");
 
     // Create the rollout contents.
     QGridLayout* layout = new QGridLayout(rollout);
-    layout->setContentsMargins(4,4,4,4);
+    layout->setContentsMargins(4, 4, 4, 4);
     layout->setSpacing(4);
     layout->setColumnStretch(2, 1);
     layout->setColumnMinimumWidth(0, 20);
@@ -82,21 +83,30 @@ void TrajectoryVisEditor::createUI(const RolloutInsertionParameters& rolloutPara
     BooleanParameterUI* showUpToCurrentTimeUI = new BooleanParameterUI(this, PROPERTY_FIELD(LinesVis::showUpToCurrentTime));
     layout->addWidget(showUpToCurrentTimeUI->checkBox(), 6, 0, 1, 3);
 
+    // Only enable "showUpToCurrentTimeUI" if a TrajectoryLinesObject is displayed
+    connect(this, &PropertiesEditor::pipelineInputChanged, this, [=]() {
+        // Retrieve the (Trajectory)Lines this vis element is associated with.
+        // Returns nullptr if pure lines object
+        DataOORef<const TrajectoryLines> trajectoryObject = dynamic_object_cast<const TrajectoryLines>(getVisDataObject());
+        showUpToCurrentTimeUI->setEnabled(static_cast<bool>(trajectoryObject));
+        showUpToCurrentTimeUI->setVisible(static_cast<bool>(trajectoryObject));
+    });
+
     // Open a sub-editor for the property color mapping.
     _colorMappingParamUI = new SubObjectParameterUI(this, PROPERTY_FIELD(LinesVis::colorMapping), rolloutParams.after(rollout));
 
     // Whenever the pipeline input of the vis element changes, update the list of available
     // properties in the color mapping editor.
-    connect(this, &PropertiesEditor::pipelineInputChanged, this, &TrajectoryVisEditor::updateColoringOptions);
+    connect(this, &PropertiesEditor::pipelineInputChanged, this, &LinesVisEditor::updateColoringOptions);
 
     // Update the coloring controls when a parameter of the vis element has been changed.
-    connect(this, &PropertiesEditor::contentsChanged, this, &TrajectoryVisEditor::updateColoringOptions);
+    connect(this, &PropertiesEditor::contentsChanged, this, &LinesVisEditor::updateColoringOptions);
 }
 
 /******************************************************************************
-* Updates the coloring controls shown in the UI.
-******************************************************************************/
-void TrajectoryVisEditor::updateColoringOptions()
+ * Updates the coloring controls shown in the UI.
+ ******************************************************************************/
+void LinesVisEditor::updateColoringOptions()
 {
     // Retrieve the (Trajectory)Lines this vis element is associated with.
     DataOORef<const Lines> trajectoryObject = dynamic_object_cast<const Lines>(getVisDataObject());
@@ -123,4 +133,4 @@ void TrajectoryVisEditor::updateColoringOptions()
     _coloringModeUI->buttonGroup()->button(LinesVis::UniformColoring)->setEnabled(trajectoryObject && !hasExplicitColors);
 }
 
-}   // End of namespace
+}  // namespace Ovito

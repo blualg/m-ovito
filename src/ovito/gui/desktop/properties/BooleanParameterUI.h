@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2033 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -58,6 +58,9 @@ public:
 
     /// Sets the enabled state of the UI.
     virtual void setEnabled(bool enabled) override;
+
+    /// Sets the visibility state of the UI.
+    virtual void setVisible(bool visible) override;
 
     /// Sets the tooltip text for the check box.
     void setToolTip(const QString& text) const { if(checkBox()) checkBox()->setToolTip(text); }

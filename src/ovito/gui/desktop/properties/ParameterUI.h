@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -74,6 +74,18 @@ public:
     /// \sa isEnabled()
     bool isDisabled() const { return !isEnabled(); }
 
+    /// \brief Returns the visible state of the UI.
+    /// \return \c true if this UI is visible;
+    ///         \c false otherwise.
+    /// \sa setVisible()
+    bool isVisible() const { return _visible; }
+
+    /// \brief Returns the invisible state of the UI. This is just the inverse of the visible state.
+    /// \return \c false if this UI is visible;
+    ///         \c true otherwise.
+    /// \sa isEnabled()
+    bool isInvisible() const { return !isVisible(); }
+
     /// Executes a functor and catches any exceptions thrown during its execution.
     /// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
     template<typename Function>
@@ -102,6 +114,8 @@ public:
     Q_PROPERTY(Ovito::RefTarget* editObject READ editObject)
     Q_PROPERTY(bool isEnabled READ isEnabled WRITE setEnabled)
     Q_PROPERTY(bool isDisabled READ isDisabled WRITE setDisabled)
+    Q_PROPERTY(bool isVisible READ isVisible WRITE setVisible)
+    Q_PROPERTY(bool isInvisible READ isInvisible WRITE setInvisible)
 
 Q_SIGNALS:
 
@@ -137,6 +151,17 @@ public Q_SLOTS:
     /// \sa isDisabled()
     void setDisabled(bool disabled) { setEnabled(!disabled); }
 
+    /// \brief Sets the visible state of the UI.
+    /// \param visible Controls whether the UI is visible.
+    /// \sa isVisible()
+    virtual void setVisible(bool visible) { _visible = visible; }
+
+    /// \brief Sets thevisible state of the UI. This is just the reverse of setVisible().
+    /// \param invisible Controls whether the UI is not visible.
+    /// \sa setVisible()
+    /// \sa isInvisible()
+    void setInvisible(bool invisible) { setVisible(!invisible); }
+
     /// \brief Sets the object whose property is being displayed in this parameter UI.
     /// \sa editObject()
     virtual void setEditObject(RefTarget* newObject) {
@@ -151,6 +176,9 @@ private:
 
     /// Stores whether this UI is enabled.
     bool _enabled = true;
+
+    /// Stores whether this UI is visible.
+    bool _visible = true;
 };
 
 /**
