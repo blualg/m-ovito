@@ -129,7 +129,7 @@ QSize FrameBufferWidget::sizeHint() const
 void FrameBufferWidget::updateScrollBarRange()
 {
     QSize areaSize = viewport()->size();
-    QSize imageSize = frameBuffer() ? frameBuffer()->image().size() * zoomFactor() : QSize(0,0);
+    QSize imageSize = frameBuffer() ? frameBuffer()->size() * zoomFactor() : QSize(0,0);
     verticalScrollBar()->setPageStep(areaSize.height() * ScrollBarScale);
     horizontalScrollBar()->setPageStep(areaSize.width() * ScrollBarScale);
     horizontalScrollBar()->setSingleStep(zoomFactor() * 8 * ScrollBarScale);
@@ -152,7 +152,7 @@ void FrameBufferWidget::resizeEvent(QResizeEvent* event)
 QRect FrameBufferWidget::calculateViewportRect() const
 {
     QSize areaSize = viewport()->size();
-    QSize imageSize = frameBuffer()->image().size() * zoomFactor();
+    QSize imageSize = frameBuffer()->size() * zoomFactor();
     QPoint origin(-horizontalScrollBar()->value() / ScrollBarScale, -verticalScrollBar()->value() / ScrollBarScale);
     if(imageSize.width() < areaSize.width()) origin.rx() = (areaSize.width() - imageSize.width()) / 2;
     if(imageSize.height() < areaSize.height()) origin.ry() = (areaSize.height() - imageSize.height()) / 2;
@@ -171,9 +171,9 @@ void FrameBufferWidget::paintEvent(QPaintEvent* event)
             painter.eraseRect(event->rect());
         painter.setBrushOrigin(imageRect.topLeft());
         painter.fillRect(imageRect, _backgroundBrush);
-        if(imageRect.width() < frameBuffer()->image().width() || imageRect.height() < frameBuffer()->image().height())
+        if(imageRect.width() < frameBuffer()->width() || imageRect.height() < frameBuffer()->height())
             painter.setRenderHint(QPainter::SmoothPixmapTransform);
-        painter.drawImage(imageRect, frameBuffer()->image());
+        painter.drawImage(imageRect, frameBuffer()->displayImage());
     }
     else {
         painter.eraseRect(event->rect());
@@ -333,7 +333,7 @@ void FrameBufferWidget::onFrameBufferContentChanged(const QRect& changedRegion)
 {
     // Repaint only a portion of the image.
     QRect vprect = calculateViewportRect();
-    QSize imageSize = frameBuffer()->image().size();
+    QSize imageSize = frameBuffer()->size();
     QRectF updateRect(
         (qreal)changedRegion.x() / imageSize.width()  * vprect.width()  + vprect.x(),
         (qreal)changedRegion.y() / imageSize.height() * vprect.height() + vprect.y(),

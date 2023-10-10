@@ -144,6 +144,12 @@ void SceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewportRect
 {
     endPickObject();
     _scene.reset();
+    if(frameBuffer()) {
+        if(renderingSuccessful)
+            frameBuffer()->commitChanges();
+        else
+            frameBuffer()->discardChanges();
+    }
 }
 
 /******************************************************************************
