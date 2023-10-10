@@ -89,7 +89,7 @@ void LinesVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
         // Returns nullptr if pure lines object
         DataOORef<const TrajectoryLines> trajectoryObject = dynamic_object_cast<const TrajectoryLines>(getVisDataObject());
         showUpToCurrentTimeUI->setEnabled(static_cast<bool>(trajectoryObject));
-        showUpToCurrentTimeUI->setVisible(static_cast<bool>(trajectoryObject));
+        showUpToCurrentTimeUI->checkBox()->setVisible(static_cast<bool>(trajectoryObject));
     });
 
     // Open a sub-editor for the property color mapping.

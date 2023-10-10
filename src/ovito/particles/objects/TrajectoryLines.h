@@ -56,22 +56,8 @@ class OVITO_PARTICLES_EXPORT TrajectoryLines : public Lines
     Q_CLASSINFO("ClassNameAlias", "TrajectoryObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
-
-    /// \brief The list of standard properties.
-    enum Type {
-        ColorProperty = Property::GenericColorProperty,
-        PositionProperty = Property::FirstSpecificProperty,
-        SampleTimeProperty,
-        ParticleIdentifierProperty
-    };
-
     /// \brief Constructor.
     Q_INVOKABLE TrajectoryLines(ObjectInitializationFlags flags);
-
-private:
-
-    /// The cached bounding box of the trajectory coordinates.
-    Box3 _boundingBox;
 };
 
 }   // End of namespace

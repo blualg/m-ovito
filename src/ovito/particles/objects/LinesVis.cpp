@@ -133,7 +133,11 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
     }
 
     const Lines* lines = path.lastAs<Lines>();
-    const bool isTrajectoryLines = dynamic_cast<const TrajectoryLines*>(lines) != nullptr;
+    if(!lines) {
+        return {};
+    }
+    // Is it a plain Lines or a TrajectoryLines object?
+    const bool isPlainLines = &lines->getOOClass() == &Lines::OOClass();
 
     // Get the simulation cell.
     const SimulationCell* simulationCell = wrappedLines() ? flowState.getObject<SimulationCell>() : nullptr;
@@ -200,26 +204,24 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
         if(lines && lineDiameter > 0) {
             lines->verifyIntegrity();
 
-            // Retrieve the line data stored in the TrajectoryLines.
+            // Retrieve the line position data stored in the Lines.
             BufferReadAccess<Point3> posProperty = lines->getProperty(Lines::PositionProperty);
 
-            bool timePropertyValid = true;
             BufferReadAccess<int32_t> timeProperty;
             BufferReadAccess<int64_t> idProperty;
-            if(isTrajectoryLines) {
-                // TrajectoryLines object containing SampleTimeProperty and ParticleIdentifierProperty
-                timeProperty = lines->getProperty(TrajectoryLines::SampleTimeProperty);
-                timePropertyValid = timeProperty.valid();
-                idProperty = lines->getProperty(TrajectoryLines::ParticleIdentifierProperty);
+
+            if(isPlainLines) {
+                idProperty = lines->getProperty(Lines::SegmentProperty);
             }
             else {
-                idProperty = lines->getProperty(Lines::SegmentProperty);
-                // The lines property does not contain timeProperty -> timePropertyValid always true
+                // TrajectoryLines object containing SampleTimeProperty and ParticleIdentifierProperty
+                timeProperty = lines->getProperty(TrajectoryLines::SampleTimeProperty);
+                idProperty = lines->getProperty(TrajectoryLines::ParticleIdentifierProperty);
             }
 
             BufferReadAccess<ColorG> colorProperty = lines->getProperty(Lines::ColorProperty);
             RawBufferReadAccess pseudoColorArray(pseudoColorProperty);
-            if(posProperty.valid() && timePropertyValid && idProperty.valid() && posProperty.size() >= 2) {
+            if(posProperty.valid() && posProperty.size() >= 2) {
                 // Determine the number of line segments and corner points to render.
                 BufferFactory<Point3G> cornerPoints(0);
                 BufferFactory<Point3G> baseSegmentPoints(0);
@@ -232,14 +234,15 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                     pseudoColorArray ? BufferFactory<GraphicsFloatType>(0) : BufferFactory<GraphicsFloatType>{};
                 const Point3* pos = posProperty.cbegin();
                 // Lines does not have sample time. It's only valid for TrajectoryLines
-                const int32_t* sampleTime = (isTrajectoryLines) ? timeProperty.cbegin() : nullptr;
-                const int64_t* id = idProperty.cbegin();
+                const int32_t* sampleTime = (timeProperty) ? timeProperty.cbegin() : nullptr;
+                const int64_t* id = (idProperty) ? idProperty.cbegin() : nullptr;
                 const ColorG* color = colorProperty ? colorProperty.cbegin() : nullptr;
                 if(!simulationCell) {
                     // Don't increment sampleTime if timeProperty is not present (i.e. not TrajectoryLines object)
-                    for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end; ++pos, (sampleTime) ? ++sampleTime : nullptr, ++id) {
+                    for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end;
+                        ++pos, (sampleTime) ? ++sampleTime : nullptr, (id) ? ++id : nullptr) {
                         // Use short circuit to avoid dereferencing sampleTime nullptr
-                        if(id[0] == id[1] && (!sampleTime || sampleTime[1] <= endFrame)) {
+                        if((!id || id[0] == id[1]) && (!sampleTime || sampleTime[1] <= endFrame)) {
                             baseSegmentPoints.push_back(pos[0].toDataType<GraphicsFloatType>());
                             headSegmentPoints.push_back(pos[1].toDataType<GraphicsFloatType>());
                             if(color) {
@@ -252,7 +255,7 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                                 segmentPseudoColors.push_back(
                                     pseudoColorArray.get<GraphicsFloatType>(pos - posProperty.cbegin() + 1, pseudoColorPropertyComponent));
                             }
-                            if(pos + 1 != pos_end && id[1] == id[2] && sampleTime[2] <= endFrame) {
+                            if(pos + 1 != pos_end && (!id || id[1] == id[2]) && (!sampleTime || sampleTime[2] <= endFrame)) {
                                 cornerPoints.push_back(pos[1].toDataType<GraphicsFloatType>());
                                 if(color)
                                     cornerColors.push_back(color[1]);
@@ -266,9 +269,10 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                 }
                 else {
                     // Don't increment sampleTime if timeProperty is not present (i.e. not TrajectoryLines object)
-                    for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end; ++pos, (sampleTime) ? ++sampleTime : nullptr, ++id) {
+                    for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end;
+                        ++pos, (sampleTime) ? ++sampleTime : nullptr, (id) ? ++id : nullptr) {
                         // Use short circuit to avoid dereferencing sampleTime nullptr
-                        if(id[0] == id[1] && (!sampleTime || sampleTime[1] <= endFrame)) {
+                        if((!id || id[0] == id[1]) && (!sampleTime || sampleTime[1] <= endFrame)) {
                             clipLine(pos[0], pos[1], simulationCell,
                                      [&](const Point3& p1, const Point3& p2, GraphicsFloatType t1, GraphicsFloatType t2) {
                                          baseSegmentPoints.push_back(p1.toDataType<GraphicsFloatType>());
@@ -287,7 +291,7 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                                          }
                                      });
                             // Use short circuit to avoid dereferencing sampleTime nullptr
-                            if(pos + 1 != pos_end && id[1] == id[2] && (!sampleTime || sampleTime[2] <= endFrame)) {
+                            if(pos + 1 != pos_end && (!id || id[1] == id[2]) && (!sampleTime || sampleTime[2] <= endFrame)) {
                                 cornerPoints.push_back(simulationCell->wrapPoint(pos[1]).toDataType<GraphicsFloatType>());
                                 if(color)
                                     cornerColors.push_back(color[1]);

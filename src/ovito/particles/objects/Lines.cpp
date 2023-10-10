@@ -114,9 +114,6 @@ PropertyPtr Lines::OOMetaClass::createStandardPropertyInternal(DataBuffer::Buffe
  ******************************************************************************/
 Lines::Lines(ObjectInitializationFlags flags) : PropertyContainer(flags)
 {
-    // Assign the default data object identifier.
-    setIdentifier(OOClass().pythonName());
-
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         if(!flags.testFlag(ObjectInitializationFlag::DontCreateVisElement)) {
             // Create and attach a default visualization element for rendering the trajectory lines.

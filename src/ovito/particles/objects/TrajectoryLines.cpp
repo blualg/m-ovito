@@ -99,13 +99,6 @@ TrajectoryLines::TrajectoryLines(ObjectInitializationFlags flags) : Lines(flags)
 {
     // Assign the default data object identifier.
     setIdentifier(OOClass().pythonName());
-
-    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
-        if(!flags.testFlag(ObjectInitializationFlag::DontCreateVisElement)) {
-            // Create and attach a default visualization element for rendering the trajectory lines.
-            setVisElement(OORef<LinesVis>::create(flags));
-        }
-    }
 }
 
 }   // End of namespace
