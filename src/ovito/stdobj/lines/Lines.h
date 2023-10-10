@@ -30,11 +30,11 @@ namespace Ovito {
 /**
  * \brief Stores lines of a particles dataset.
  */
-class OVITO_PARTICLES_EXPORT Lines : public PropertyContainer
+class OVITO_STDOBJ_EXPORT Lines : public PropertyContainer
 {
 public:
     /// Define a new property metaclass for this property container type.
-    class OVITO_PARTICLES_EXPORT OOMetaClass : public PropertyContainerClass
+    class OVITO_STDOBJ_EXPORT OOMetaClass : public PropertyContainerClass
     {
     public:
         /// Inherit constructor from base class.
@@ -54,6 +54,8 @@ public:
 
 public:
     /// \brief The list of standard properties.
+    /// SampleTimeProperty and ParticleIdentifierProperty are only used in the derived
+    /// particles/TrajectoryLines class
     enum Type
     {
         ColorProperty = Property::GenericColorProperty,

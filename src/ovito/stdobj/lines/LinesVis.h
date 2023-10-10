@@ -32,7 +32,7 @@ namespace Ovito {
 /**
  * \brief A visualization element for rendering lines.
  */
-class OVITO_PARTICLES_EXPORT LinesVis : public DataVis
+class OVITO_STDOBJ_EXPORT LinesVis : public DataVis
 {
     OVITO_CLASS(LinesVis)
     Q_CLASSINFO("DisplayName", "Lines");

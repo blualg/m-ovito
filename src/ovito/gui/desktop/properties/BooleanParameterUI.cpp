@@ -126,21 +126,6 @@ void BooleanParameterUI::setEnabled(bool enabled)
 }
 
 /******************************************************************************
- * Sets the visibility state of the UI.
- ******************************************************************************/
-void BooleanParameterUI::setVisible(bool visible)
-{
-    if(visible == isVisible()) return;
-    PropertyParameterUI::setVisible(visible);
-    if(checkBox()) {
-        if(isReferenceFieldUI())
-            checkBox()->setVisible(parameterObject() && isVisible());
-        else
-            checkBox()->setVisible(editObject() && isVisible());
-    }
-}
-
-/******************************************************************************
 * Takes the value entered by the user and stores it in the property field
 * this property UI is bound to.
 ******************************************************************************/

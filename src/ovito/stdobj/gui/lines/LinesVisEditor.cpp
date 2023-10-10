@@ -21,8 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/particles/objects/LinesVis.h>
-#include <ovito/particles/objects/Lines.h>
+#include <ovito/stdobj/lines/Lines.h>
+#include <ovito/stdobj/lines/LinesVis.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
@@ -31,7 +31,6 @@
 #include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
 #include <ovito/stdobj/gui/properties/PropertyColorMappingEditor.h>
 #include "LinesVisEditor.h"
-#include <ovito/particles/modifier/properties/GenerateTrajectoryLinesModifier.h>
 
 namespace Ovito {
 
@@ -44,7 +43,7 @@ SET_OVITO_OBJECT_EDITOR(LinesVis, LinesVisEditor);
 void LinesVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
     // Create a rollout.
-    QWidget* rollout = createRollout(tr("Trajectory display"), rolloutParams, "manual:visual_elements.trajectory_lines");
+    QWidget* rollout = createRollout(tr("Lines display"), rolloutParams, "manual:visual_elements.lines");
 
     // Create the rollout contents.
     QGridLayout* layout = new QGridLayout(rollout);
@@ -86,10 +85,11 @@ void LinesVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     // Only enable "showUpToCurrentTimeUI" if a TrajectoryLinesObject is displayed
     connect(this, &PropertiesEditor::pipelineInputChanged, this, [=]() {
         // Retrieve the (Trajectory)Lines this vis element is associated with.
-        // Returns nullptr if pure lines object
-        DataOORef<const TrajectoryLines> trajectoryObject = dynamic_object_cast<const TrajectoryLines>(getVisDataObject());
-        showUpToCurrentTimeUI->setEnabled(static_cast<bool>(trajectoryObject));
-        showUpToCurrentTimeUI->checkBox()->setVisible(static_cast<bool>(trajectoryObject));
+        if(getVisDataObject()) {
+            const bool isPlainLines = &getVisDataObject()->getOOClass() == &Lines::OOClass();
+            showUpToCurrentTimeUI->setEnabled(!isPlainLines);
+            showUpToCurrentTimeUI->checkBox()->setVisible(!isPlainLines);
+        }
     });
 
     // Open a sub-editor for the property color mapping.

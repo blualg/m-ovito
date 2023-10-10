@@ -25,9 +25,8 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/rendering/SceneRenderer.h>
-#include "Lines.h"
+#include <ovito/stdobj/lines/Lines.h>
 #include "LinesVis.h"
-#include "TrajectoryLines.h"
 
 namespace Ovito {
 
@@ -215,8 +214,8 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
             }
             else {
                 // TrajectoryLines object containing SampleTimeProperty and ParticleIdentifierProperty
-                timeProperty = lines->getProperty(TrajectoryLines::SampleTimeProperty);
-                idProperty = lines->getProperty(TrajectoryLines::ParticleIdentifierProperty);
+                timeProperty = lines->getProperty(Lines::SampleTimeProperty);
+                idProperty = lines->getProperty(Lines::ParticleIdentifierProperty);
             }
 
             BufferReadAccess<ColorG> colorProperty = lines->getProperty(Lines::ColorProperty);

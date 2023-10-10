@@ -26,9 +26,11 @@ OVITO_STANDARD_PLUGIN(StdObj
         camera/StandardCameraObject.cpp
         camera/StandardCameraSource.cpp
         camera/TargetObject.cpp
-        simcell/SimulationCell.cpp
-        simcell/SimulationCellVis.cpp
-        simcell/PeriodicDomainObject.cpp
+        io/DataTableExporter.cpp
+        io/PropertyOutputWriter.cpp
+        io/StandardFrameLoader.cpp
+        lines/Lines.cpp
+        lines/LinesVis.cpp
         properties/Property.cpp
         properties/PropertyReference.cpp
         properties/PropertyContainerClass.cpp
@@ -38,10 +40,10 @@ OVITO_STANDARD_PLUGIN(StdObj
         properties/PropertyExpressionEvaluator.cpp
         properties/InputColumnMapping.cpp
         properties/PropertyColorMapping.cpp
+        simcell/SimulationCell.cpp
+        simcell/SimulationCellVis.cpp
+        simcell/PeriodicDomainObject.cpp
         table/DataTable.cpp
-        io/DataTableExporter.cpp
-        io/PropertyOutputWriter.cpp
-        io/StandardFrameLoader.cpp
         util/ElementSelectionSet.cpp
     LIB_DEPENDENCIES
         muParser

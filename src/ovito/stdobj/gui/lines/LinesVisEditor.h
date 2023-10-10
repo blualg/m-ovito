@@ -30,7 +30,7 @@ namespace Ovito {
 /**
  * \brief A properties editor for the LinesVis class.
  */
-class LinesVisEditor : public PropertiesEditor
+class OVITO_STDOBJGUI_EXPORT LinesVisEditor : public PropertiesEditor
 {
     OVITO_CLASS(LinesVisEditor)
 

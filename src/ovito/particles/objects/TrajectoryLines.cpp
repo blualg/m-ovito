@@ -21,8 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
+#include <ovito/stdobj/lines/LinesVis.h>
 #include "TrajectoryLines.h"
-#include "LinesVis.h"
 
 namespace Ovito {
 

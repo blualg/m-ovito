@@ -24,8 +24,7 @@
 
 
 #include <ovito/particles/Particles.h>
-// #include <ovito/stdobj/lines/Lines.h>
-#include "Lines.h"
+#include <ovito/stdobj/lines/Lines.h>
 
 namespace Ovito {
 

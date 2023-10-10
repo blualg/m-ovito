@@ -24,7 +24,7 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/LinesVis.h>
+#include <ovito/stdobj/lines/LinesVis.h>
 #include <ovito/particles/objects/TrajectoryLines.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
