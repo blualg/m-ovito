@@ -317,7 +317,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
 
             // Copy re-ordered trajectory ids.
             BufferWriteAccess<int64_t, access_mode::discard_read_write> trajIdProperty =
-                trajectoryLines->createProperty(Lines::SegmentProperty);
+                trajectoryLines->createProperty(Lines::SectionProperty);
             piter = permutation.cbegin();
             for(int64_t& id : trajIdProperty) {
                 id = idData[*piter++];

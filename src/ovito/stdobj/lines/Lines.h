@@ -62,8 +62,7 @@ public:
         ColorProperty = Property::GenericColorProperty,
         PositionProperty = Property::FirstSpecificProperty,
         SampleTimeProperty,
-        ParticleIdentifierProperty,
-        SegmentProperty
+        SectionProperty
     };
 
     /// \brief Constructor.
