@@ -22,7 +22,6 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/Particles.h>
-#include <ovito/particles/objects/TrajectoryLines.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
@@ -73,6 +72,7 @@ GenerateTrajectoryLinesModifier::GenerateTrajectoryLinesModifier(ObjectInitializ
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the vis element for rendering the trajectories created by the modifier.
         setTrajectoryVis(OORef<LinesVis>::create(flags));
+        trajectoryVis()->setTitle(tr("Trajectory lines"));
     }
 }
 
@@ -292,27 +292,32 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
             return false;
 
         // Do not create undo records while computing the trajectories.
-        DataOORef<TrajectoryLines> trajectoryLines = DataOORef<TrajectoryLines>::create();
+        DataOORef<Lines> trajectoryLines = DataOORef<Lines>::create();
+        trajectoryLines->setTitle(tr("Particle trajectories"));
+        trajectoryLines->setIdentifier(state.generateUniqueIdentifier<Lines>(QStringLiteral("trajectories")));
         {
             UndoSuspender noUndo;
 
             // Copy re-ordered trajectory points.
             trajectoryLines->setElementCount(pointData.size());
-            BufferWriteAccess<Point3, access_mode::discard_read_write> trajPosProperty = trajectoryLines->createProperty(TrajectoryLines::PositionProperty);
+            BufferWriteAccess<Point3, access_mode::discard_read_write> trajPosProperty =
+                trajectoryLines->createProperty(Lines::PositionProperty);
             auto piter = permutation.cbegin();
             for(Point3& p : trajPosProperty) {
                 p = pointData[*piter++];
             }
 
             // Copy re-ordered trajectory time stamps.
-            BufferWriteAccess<int32_t, access_mode::discard_write> trajTimeProperty = trajectoryLines->createProperty(TrajectoryLines::SampleTimeProperty);
+            BufferWriteAccess<int32_t, access_mode::discard_write> trajTimeProperty =
+                trajectoryLines->createProperty(Lines::SampleTimeProperty);
             piter = permutation.cbegin();
             for(int& t : trajTimeProperty) {
                 t = sampleFrames[timeData[*piter++]];
             }
 
             // Copy re-ordered trajectory ids.
-            BufferWriteAccess<int64_t, access_mode::discard_read_write> trajIdProperty = trajectoryLines->createProperty(TrajectoryLines::ParticleIdentifierProperty);
+            BufferWriteAccess<int64_t, access_mode::discard_read_write> trajIdProperty =
+                trajectoryLines->createProperty(Lines::SegmentProperty);
             piter = permutation.cbegin();
             for(int64_t& id : trajIdProperty) {
                 id = idData[*piter++];
@@ -327,13 +332,14 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
 
                     // Create a corresponding output property of the trajectory lines.
                     RawBufferAccess<access_mode::discard_write> samplingProperty;
-                    if(inputProperty->type() < Property::FirstSpecificProperty && TrajectoryLines::OOClass().isValidStandardPropertyId(inputProperty->type())) {
+                    if(inputProperty->type() < Property::FirstSpecificProperty &&
+                       Lines::OOClass().isValidStandardPropertyId(inputProperty->type())) {
                         // Input particle property is also a standard property for trajectory lines.
                         samplingProperty = trajectoryLines->createProperty(inputProperty->type());
                         OVITO_ASSERT(samplingProperty.dataType() == inputProperty->dataType());
                         OVITO_ASSERT(samplingProperty.stride() == inputProperty->stride());
                     }
-                    else if(TrajectoryLines::OOClass().standardPropertyTypeId(inputProperty->name()) != 0) {
+                    else if(Lines::OOClass().standardPropertyTypeId(inputProperty->name()) != 0) {
                         // Input property name is that of a standard property for trajectory lines.
                         // Must rename the property to avoid naming conflict, because user properties may not have a standard property name.
                         QString newPropertyName = inputProperty->name() + tr("_particles");

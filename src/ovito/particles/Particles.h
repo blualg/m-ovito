@@ -44,7 +44,6 @@ namespace Ovito {
     class BondsVis;
     class VectorVis;
     class ParticleBondMap;
-    class TrajectoryLines;
     class ParticleImporter;
     class NearestNeighborFinder;
     class CutoffNeighborFinder;

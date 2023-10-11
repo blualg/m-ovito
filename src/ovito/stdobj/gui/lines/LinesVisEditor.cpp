@@ -82,16 +82,6 @@ void LinesVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     BooleanParameterUI* showUpToCurrentTimeUI = new BooleanParameterUI(this, PROPERTY_FIELD(LinesVis::showUpToCurrentTime));
     layout->addWidget(showUpToCurrentTimeUI->checkBox(), 6, 0, 1, 3);
 
-    // Only enable "showUpToCurrentTimeUI" if a TrajectoryLinesObject is displayed
-    connect(this, &PropertiesEditor::pipelineInputChanged, this, [=]() {
-        // Retrieve the (Trajectory)Lines this vis element is associated with.
-        if(getVisDataObject()) {
-            const bool isPlainLines = &getVisDataObject()->getOOClass() == &Lines::OOClass();
-            showUpToCurrentTimeUI->setEnabled(!isPlainLines);
-            showUpToCurrentTimeUI->checkBox()->setVisible(!isPlainLines);
-        }
-    });
-
     // Open a sub-editor for the property color mapping.
     _colorMappingParamUI = new SubObjectParameterUI(this, PROPERTY_FIELD(LinesVis::colorMapping), rolloutParams.after(rollout));
 

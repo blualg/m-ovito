@@ -48,6 +48,8 @@ void Lines::OOMetaClass::initialize()
                                               << "B";
     registerStandardProperty(ColorProperty, tr("Color"), Property::FloatGraphics, rgbList);
     registerStandardProperty(PositionProperty, tr("Position"), Property::FloatDefault, xyzList);
+    registerStandardProperty(SampleTimeProperty, tr("Time"), Property::Int32, emptyList);
+    registerStandardProperty(ParticleIdentifierProperty, tr("Particle Identifier"), Property::Int64, emptyList);
     registerStandardProperty(SegmentProperty, tr("Segment"), Property::Int64, emptyList);
 }
 
@@ -70,6 +72,14 @@ PropertyPtr Lines::OOMetaClass::createStandardPropertyInternal(DataBuffer::Buffe
             dataType = Property::FloatGraphics;
             componentCount = 3;
             OVITO_ASSERT(componentCount * sizeof(GraphicsFloatType) == sizeof(ColorG));
+            break;
+        case SampleTimeProperty:
+            dataType = Property::Int32;
+            componentCount = 1;
+            break;
+        case ParticleIdentifierProperty:
+            dataType = Property::Int64;
+            componentCount = 1;
             break;
         case SegmentProperty:
             dataType = Property::Int64;

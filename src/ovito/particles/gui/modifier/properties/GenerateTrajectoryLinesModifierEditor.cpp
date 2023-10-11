@@ -147,8 +147,8 @@ void GenerateTrajectoryLinesModifierEditor::createUI(const RolloutInsertionParam
     SubObjectParameterUI* trajectoryVisSubEditorUI = new SubObjectParameterUI(this, PROPERTY_FIELD(GenerateTrajectoryLinesModifier::trajectoryVis), rolloutParams.after(rollout));
 
     // Whenever the pipeline output of the modifier changes, update visibility of the visual element for the trajectory lines.
-    connect(this, &PropertiesEditor::pipelineOutputChanged, this, [this,trajectoryVisSubEditorUI]() {
-        trajectoryVisSubEditorUI->setEnabled(getPipelineOutput().getObject<TrajectoryLines>() != nullptr);
+    connect(this, &PropertiesEditor::pipelineOutputChanged, this, [this, trajectoryVisSubEditorUI]() {
+        trajectoryVisSubEditorUI->setEnabled(getPipelineOutput().getObject<Lines>() != nullptr);
     });
 }
 

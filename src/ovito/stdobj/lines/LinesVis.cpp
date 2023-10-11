@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_LABEL(LinesVis, lineWidth, "Line width");
 SET_PROPERTY_FIELD_LABEL(LinesVis, lineColor, "Line color");
 SET_PROPERTY_FIELD_LABEL(LinesVis, shadingMode, "Shading mode");
 SET_PROPERTY_FIELD_LABEL(LinesVis, showUpToCurrentTime, "Show up to current time only");
-SET_PROPERTY_FIELD_LABEL(LinesVis, wrappedLines, "Wrap trajectory lines around");
+SET_PROPERTY_FIELD_LABEL(LinesVis, wrappedLines, "Wrap lines around");
 SET_PROPERTY_FIELD_LABEL(LinesVis, coloringMode, "Coloring mode");
 SET_PROPERTY_FIELD_LABEL(LinesVis, colorMapping, "Color mapping");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(LinesVis, lineWidth, WorldParameterUnit, 0);
@@ -135,8 +135,6 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
     if(!lines) {
         return {};
     }
-    // Is it a plain Lines or a TrajectoryLines object?
-    const bool isPlainLines = &lines->getOOClass() == &Lines::OOClass();
 
     // Get the simulation cell.
     const SimulationCell* simulationCell = wrappedLines() ? flowState.getObject<SimulationCell>() : nullptr;
@@ -205,22 +203,12 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
 
             // Retrieve the line position data stored in the Lines.
             BufferReadAccess<Point3> posProperty = lines->getProperty(Lines::PositionProperty);
-
-            BufferReadAccess<int32_t> timeProperty;
-            BufferReadAccess<int64_t> idProperty;
-
-            if(isPlainLines) {
-                idProperty = lines->getProperty(Lines::SegmentProperty);
-            }
-            else {
-                // TrajectoryLines object containing SampleTimeProperty and ParticleIdentifierProperty
-                timeProperty = lines->getProperty(Lines::SampleTimeProperty);
-                idProperty = lines->getProperty(Lines::ParticleIdentifierProperty);
-            }
+            BufferReadAccess<int64_t> segProperty = lines->getProperty(Lines::SegmentProperty);
+            BufferReadAccess<int32_t> timeProperty = lines->getProperty(Lines::SampleTimeProperty);
 
             BufferReadAccess<ColorG> colorProperty = lines->getProperty(Lines::ColorProperty);
             RawBufferReadAccess pseudoColorArray(pseudoColorProperty);
-            if(posProperty.valid() && posProperty.size() >= 2) {
+            if(posProperty.valid() && segProperty.valid() && posProperty.size() >= 2) {
                 // Determine the number of line segments and corner points to render.
                 BufferFactory<Point3G> cornerPoints(0);
                 BufferFactory<Point3G> baseSegmentPoints(0);
@@ -234,7 +222,7 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                 const Point3* pos = posProperty.cbegin();
                 // Lines does not have sample time. It's only valid for TrajectoryLines
                 const int32_t* sampleTime = (timeProperty) ? timeProperty.cbegin() : nullptr;
-                const int64_t* id = (idProperty) ? idProperty.cbegin() : nullptr;
+                const int64_t* id = (segProperty) ? segProperty.cbegin() : nullptr;
                 const ColorG* color = colorProperty ? colorProperty.cbegin() : nullptr;
                 if(!simulationCell) {
                     // Don't increment sampleTime if timeProperty is not present (i.e. not TrajectoryLines object)

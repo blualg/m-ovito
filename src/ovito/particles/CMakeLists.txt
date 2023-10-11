@@ -34,7 +34,6 @@ SET(SourceFiles
     objects/Angles.cpp
     objects/Dihedrals.cpp
     objects/Impropers.cpp
-    objects/TrajectoryLines.cpp
     objects/VectorVis.cpp
     modifier/coloring/AmbientOcclusionModifier.cpp
     modifier/modify/WrapPeriodicImagesModifier.cpp
@@ -107,7 +106,6 @@ SET(SourceFiles
 IF(OVITO_BUILD_PLUGIN_STDMOD)
     LIST(APPEND SourceFiles
         modifier/coloring/ParticlesColorCodingModifierDelegate.cpp
-        modifier/coloring/TrajectoryColorCodingModifierDelegate.cpp
         modifier/coloring/ParticlesAssignColorModifierDelegate.cpp
         modifier/modify/ParticlesSliceModifierDelegate.cpp
         modifier/modify/ParticlesAffineTransformationModifierDelegate.cpp

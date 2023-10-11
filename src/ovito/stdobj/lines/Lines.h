@@ -51,11 +51,12 @@ public:
 
     OVITO_CLASS_META(Lines, OOMetaClass);
     Q_CLASSINFO("DisplayName", "Lines");
+    Q_CLASSINFO("ClassNameAlias", "TrajectoryLines");   // For backward compatibility with OVITO 3.9.2
+    Q_CLASSINFO("ClassNameAlias", "TrajectoryObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
     /// \brief The list of standard properties.
-    /// SampleTimeProperty and ParticleIdentifierProperty are only used in the derived
-    /// particles/TrajectoryLines class
+    /// SampleTimeProperty are used by the GenerateTrajectoryLinesModifier
     enum Type
     {
         ColorProperty = Property::GenericColorProperty,
