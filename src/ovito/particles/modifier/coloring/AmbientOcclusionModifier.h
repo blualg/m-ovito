@@ -52,11 +52,7 @@ class OVITO_PARTICLES_EXPORT AmbientOcclusionModifier : public AsynchronousModif
 
     Q_CLASSINFO("DisplayName", "Ambient occlusion");
     Q_CLASSINFO("Description", "Perform an ambient occlusion calculation to shade particles.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Coloring");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 

@@ -40,11 +40,7 @@ class OVITO_PARTICLES_EXPORT WignerSeitzAnalysisModifier : public ReferenceConfi
 
     Q_CLASSINFO("DisplayName", "Wigner-Seitz defect analysis");
     Q_CLASSINFO("Description", "Identify point defects (vacancies and interstitials) in crystals.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Analysis");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 

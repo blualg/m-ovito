@@ -34,12 +34,6 @@ class OVITO_CORE_EXPORT PipelineStatus
 {
     Q_GADGET
 
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(QString text READ text)
-    Q_PROPERTY(QString shortInfo READ shortInfo)
-    Q_PROPERTY(int type READ type)
-#endif
-
 public:
 
     enum StatusType {

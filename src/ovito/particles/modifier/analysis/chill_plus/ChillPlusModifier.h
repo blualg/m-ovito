@@ -41,11 +41,7 @@ class OVITO_PARTICLES_EXPORT ChillPlusModifier : public StructureIdentificationM
 
     Q_CLASSINFO("DisplayName", "Chill+");
     Q_CLASSINFO("Description", "Identify hexagonal ice, cubic ice, hydrate and other arrangements of water molecules.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Structure identification");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 

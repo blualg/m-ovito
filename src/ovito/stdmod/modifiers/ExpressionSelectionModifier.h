@@ -84,11 +84,6 @@ class OVITO_STDMOD_EXPORT ExpressionSelectionModifier : public DelegatingModifie
     Q_CLASSINFO("Description", "Select particles or other elements using a user-defined criterion.");
     Q_CLASSINFO("ModifierCategory", "Selection");
 
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(QString inputVariableTable READ inputVariableTable NOTIFY objectStatusChanged)
-    Q_PROPERTY(QStringList inputVariableNames READ inputVariableNames NOTIFY objectStatusChanged)
-#endif
-
 public:
 
     /// Constructor.
@@ -106,22 +101,11 @@ public:
             _variableNames = std::move(variableNames);
             _variableTable = std::move(variableTable);
             notifyDependents(ReferenceEvent::ObjectStatusChanged);
-#ifdef OVITO_QML_GUI
-            Q_EMIT objectStatusChanged();
-#endif
         }
     }
 
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return expression(); }
-
-Q_SIGNALS:
-
-#ifdef OVITO_QML_GUI
-    /// This signal is emitted whenever the status of this object changes.
-    /// The signal is used in the QML GUI to update the display.
-    void objectStatusChanged();
-#endif
 
 protected:
 

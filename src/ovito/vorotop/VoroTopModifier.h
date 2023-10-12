@@ -43,11 +43,7 @@ class OVITO_VOROTOP_EXPORT VoroTopModifier : public StructureIdentificationModif
 
     Q_CLASSINFO("DisplayName", "VoroTop analysis");
     Q_CLASSINFO("Description", "Identify local structures based on Voronoi polyhedron topology.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Structure identification");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 

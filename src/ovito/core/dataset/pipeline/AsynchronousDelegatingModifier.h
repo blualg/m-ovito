@@ -61,10 +61,6 @@ public:
 
     OVITO_CLASS_META(AsynchronousDelegatingModifier, DelegatingModifierClass)
 
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(Ovito::ModifierDelegate* delegate READ delegate WRITE setDelegate NOTIFY referenceReplacedSignal)
-#endif
-
 public:
 
     /// Constructor.

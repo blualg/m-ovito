@@ -61,20 +61,6 @@ Modifier* ModifierDelegate::modifier() const
     return result;
 }
 
-#ifdef OVITO_QML_GUI
-/******************************************************************************
-* Asks the delegate whether it can operate on  the given input pipeline state.
-******************************************************************************/
-bool ModifierDelegate::canOperateOnInput(ModificationNode* modApp) const
-{
-    if(modApp) {
-        const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
-        return !getOOMetaClass().getApplicableObjects(input).empty();
-    }
-    return false;
-}
-#endif
-
 /******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.
 ******************************************************************************/

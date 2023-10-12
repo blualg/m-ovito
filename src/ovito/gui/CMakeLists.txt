@@ -22,11 +22,7 @@
 
 ADD_SUBDIRECTORY(base)
 IF(OVITO_BUILD_APP)
-    IF(NOT OVITO_QML_GUI)
-        ADD_SUBDIRECTORY(desktop)
-    ELSE()
-        ADD_SUBDIRECTORY(qml)
-    ENDIF()
+    ADD_SUBDIRECTORY(desktop)
 ENDIF()
 
 # Propagate list of plugins to parent scope.

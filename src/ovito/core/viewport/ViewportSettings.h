@@ -34,10 +34,6 @@ class OVITO_CORE_EXPORT ViewportSettings : public QObject
 {
     Q_OBJECT
 
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(bool constrainCameraRotation READ constrainCameraRotation WRITE setConstrainCameraRotation NOTIFY settingsChanged)
-#endif
-
 public:
 
     /// Standard colors for drawing various things in the viewports.

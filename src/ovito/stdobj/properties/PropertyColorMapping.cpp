@@ -119,37 +119,4 @@ void PropertyColorMapping::reverseRange()
     setEndValue(oldStartValue);
 }
 
-#ifdef OVITO_QML_GUI
-/******************************************************************************
-* Returns the class name of the selected color gradient.
-******************************************************************************/
-QString PropertyColorMapping::colorGradientType() const
-{
-    return colorGradient() ? colorGradient()->getOOClass().name() : QString();
-}
-
-/******************************************************************************
-* Assigns a new color gradient based on its class name.
-******************************************************************************/
-void PropertyColorMapping::setColorGradientType(const QString& typeName, ExecutionContext executionContext)
-{
-    OvitoClassPtr descriptor = PluginManager::instance().findClass(QString(), typeName);
-    if(!descriptor) {
-        qWarning() << "setColorGradientType: Color gradient class" << typeName << "does not exist.";
-        return;
-    }
-    OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance(dataset(), executionContext));
-    if(gradient) {
-        setColorGradient(std::move(gradient));
-#ifndef OVITO_DISABLE_QSETTINGS
-        QSettings settings;
-        settings.beginGroup(PropertyColorMapping::OOClass().plugin()->pluginId());
-        settings.beginGroup(PropertyColorMapping::OOClass().name());
-        settings.setValue(PROPERTY_FIELD(PropertyColorMapping::colorGradient).identifier(),
-                QVariant::fromValue(OvitoClass::encodeAsString(descriptor)));
-#endif
-    }
-}
-#endif
-
 }   // End of namespace

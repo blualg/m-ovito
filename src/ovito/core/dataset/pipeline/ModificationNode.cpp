@@ -166,16 +166,6 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
         if(modifier())
             modifier()->notifyDependents(ReferenceEvent::PipelineInputChanged);
     }
-#ifdef OVITO_QML_GUI
-    else if(event.type() == ReferenceEvent::PipelineInputChanged && source == modifier()) {
-        // Inform the QML GUI that the modifier's input has changed.
-        Q_EMIT modifierInputChanged();
-    }
-    else if(event.type() == ReferenceEvent::PipelineCacheUpdated && source == input()) {
-        // Inform the QML GUI that the modifier's input has changed.
-        Q_EMIT modifierInputChanged();
-    }
-#endif
     return PipelineNode::referenceEvent(source, event);
 }
 
@@ -240,12 +230,6 @@ void ModificationNode::notifyDependentsImpl(const ReferenceEvent& event)
         // Invalidate cached results when this modification node or the modifier changes.
         pipelineCache().invalidate(static_cast<const TargetChangedEvent&>(event).unchangedInterval());
     }
-#ifdef OVITO_QML_GUI
-    else if(event.type() == ReferenceEvent::PipelineCacheUpdated) {
-        // Inform the QML GUI that the modifier's results are available.
-        Q_EMIT modifierResultsComplete();
-    }
-#endif
     PipelineNode::notifyDependentsImpl(event);
 }
 

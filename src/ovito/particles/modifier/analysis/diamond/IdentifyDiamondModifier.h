@@ -37,11 +37,7 @@ class OVITO_PARTICLES_EXPORT IdentifyDiamondModifier : public StructureIdentific
 
     Q_CLASSINFO("DisplayName", "Identify diamond structure");
     Q_CLASSINFO("Description", "Identify particles arranged in cubic and hexagonal diamond structures.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Structure identification");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 

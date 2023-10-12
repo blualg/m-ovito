@@ -39,11 +39,7 @@ class OVITO_STDMOD_EXPORT ManualSelectionModifier : public GenericPropertyModifi
 
     Q_CLASSINFO("DisplayName", "Manual selection");
     Q_CLASSINFO("Description", "Select individual particles or bonds using the mouse.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Selection");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 

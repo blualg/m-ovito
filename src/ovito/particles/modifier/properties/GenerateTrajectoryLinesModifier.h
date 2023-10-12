@@ -52,11 +52,7 @@ class OVITO_PARTICLES_EXPORT GenerateTrajectoryLinesModifier : public Modifier
     OVITO_CLASS_META(GenerateTrajectoryLinesModifier, GenerateTrajectoryLinesModifierClass)
     Q_CLASSINFO("DisplayName", "Generate trajectory lines");
     Q_CLASSINFO("Description", "Visualize trajectory lines of moving particles.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Visualization");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 

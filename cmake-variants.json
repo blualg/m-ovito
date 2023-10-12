@@ -14,39 +14,5 @@
                 "buildType": "Release"
             }
         }
-    },
-    "platform": {
-        "default": "desktop",
-        "description": "Selects the type of platform to build for",
-        "choices": {
-            "desktop": {
-                "short": "Desktop",
-                "long": "Builds the desktop version of OVITO",
-                "settings": {
-                    "OVITO_QML_GUI" : "OFF",
-                    "OVITO_BUILD_APP" : "ON",
-                    "OVITO_BUILD_PLUGIN_NETCDFPLUGIN" : "ON",
-                    "OVITO_BUILD_PLUGIN_GALAMOST" : "ON",
-                    "OVITO_BUILD_PLUGIN_CRYSTALANALYSIS" : "ON",
-                    "OVITO_DISABLE_THREADING": "OFF",
-                    "OVITO_QT5_RESOURCE_OPTIONS" : "",
-                    "OVITO_REDISTRIBUTABLE_PACKAGE" : "ON"
-                }
-            },
-            "web": {
-                "short": "Web",
-                "long": "Builds the browser version of OVITO",
-                "settings": {
-                    "OVITO_QML_GUI" : "ON",
-                    "OVITO_BUILD_APP" : "OFF",
-                    "OVITO_BUILD_PLUGIN_NETCDFPLUGIN" : "OFF",
-                    "OVITO_BUILD_PLUGIN_GALAMOST" : "OFF",
-                    "OVITO_BUILD_PLUGIN_CRYSTALANALYSIS" : "OFF",
-                    "OVITO_DISABLE_THREADING": "ON",
-                    "OVITO_QT5_RESOURCE_OPTIONS" : "-no-compress",
-                    "OVITO_REDISTRIBUTABLE_PACKAGE" : "OFF"
-                }
-            }
-        }
-    }    
+    }
 }
