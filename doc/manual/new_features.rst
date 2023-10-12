@@ -5,6 +5,17 @@ Changelog
 =========
 
 ---------------------------
+Version 3.9.3 (31-Oct-2023)
+---------------------------
+
+* Fix: Segfault when using the "Open with..." context menu function in macOS Finder to open a state file
+* Fix: Section "Modifier templates" of list of available modifiers not updated correctly
+* Fix: LAMMPS data file reader: Settings of vis element for `Velocity` property get lost after loading a state file
+* :ref:`particles.modifiers.construct_surface_mesh` modifier: Option `Map particles to regions` may yield invalid results when used with option `Use only selected input particles`
+* :ref:`particles.modifiers.expand_selection` modifier: New output attribute `ExpandSelection.num_added`
+* :ref:`particles.modifiers.identify_diamond_structure` modifier: Output missing attribute `IdentifyDiamond.counts.OTHER`
+
+---------------------------
 Version 3.9.2 (31-Aug-2023)
 ---------------------------
 
