@@ -306,10 +306,13 @@ PipelineStatus SimulationCellAffineTransformationModifierDelegate::apply(const M
  ******************************************************************************/
 QVector<DataObjectReference> LinesAffineTransformationModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(input.containsObject<Lines>()) {
-        return {DataObjectReference(&Lines::OOClass())};
+    // Gather list of all lines objects in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(Lines::OOClass())) {
+        objects.push_back(path);
     }
-    return {};
+    qDebug() << "objects" << objects;
+    return objects;
 }
 
 /******************************************************************************
@@ -321,25 +324,26 @@ PipelineStatus LinesAffineTransformationModifierDelegate::apply(
 {
     const AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
 
-    // Transform the Lines.
-    if(const Lines* inputLines = state.getObject<Lines>()) {
-        inputLines->verifyIntegrity();
+    for(const DataObject* obj : state.data()->objects()) {
+        // Transform the Lines.
+        if(const Lines* inputLines = dynamic_object_cast<Lines>(obj)) {
+            inputLines->verifyIntegrity();
 
-        // Get the input line coordinates (as strong reference to force creation of a mutable clone below).
-        ConstPropertyPtr inputPositionProperty = inputLines->expectProperty(Lines::PositionProperty);
+            // Get the input line coordinates (as strong reference to force creation of a mutable clone below).
+            ConstPropertyPtr inputPositionProperty = inputLines->expectProperty(Lines::PositionProperty);
 
-        // Make sure we can safely modify the lines object.
-        Lines* outputLines = state.makeMutable(inputLines);
+            // Make sure we can safely modify the lines object.
+            Lines* outputLines = state.makeMutable(inputLines);
 
-        // Create an uninitialized copy of the particle position property.
-        Property* outputPositionProperty = outputLines->makePropertyMutable(inputPositionProperty, DataBuffer::Uninitialized);
+            // Create an uninitialized copy of the particle position property.
+            Property* outputPositionProperty = outputLines->makePropertyMutable(inputPositionProperty, DataBuffer::Uninitialized);
 
-        // Let the modifier do the actual coordinate transformation work.
-        AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
-        // nullptr since "selection" is currently not supported for Lines objects
-        mod->transformCoordinates(inputState, inputPositionProperty, outputPositionProperty, nullptr);
+            // Let the modifier do the actual coordinate transformation work.
+            AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
+            // nullptr since "selection" is currently not supported for Lines objects
+            mod->transformCoordinates(inputState, inputPositionProperty, outputPositionProperty, nullptr);
+        }
     }
-
     return PipelineStatus::Success;
 }
 
