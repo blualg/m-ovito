@@ -127,6 +127,18 @@ PipelineStatus LinesReplicateModifierDelegate::apply(const ModifierEvaluationReq
                         }
                     }
                 }
+                else if(property->type() == Lines::SectionProperty) {
+                    BufferWriteAccess<int64_t, access_mode::read_write> sectionsArray(property);
+                    int64_t* s = sectionsArray.begin();
+                    auto minmax = std::minmax_element(sectionsArray.cbegin(), sectionsArray.cbegin() + oldVertexCount);
+                    auto minSec = *minmax.first;
+                    auto maxSec = *minmax.second;
+                    for(size_t c = 1; c < numCopies; c++) {
+                        auto offset = (maxSec - minSec + 1) * c;
+                        for(auto id = sectionsArray.begin() + c * oldVertexCount, id_end = id + oldVertexCount; id != id_end; ++id)
+                            *id += offset;
+                    }
+                }
             }
         }
     }
