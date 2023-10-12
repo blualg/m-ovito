@@ -141,8 +141,7 @@ OORef<OvitoObject> OvitoClass::createInstance(ObjectInitializationFlags flags) c
             plugin()->loadPlugin();
         }
         catch(Exception& ex) {
-            ex.prependGeneralMessage(OvitoObject::tr("Could not create instance of class %1. Failed to load plugin '%2'").arg(name()).arg(plugin()->pluginId()));
-            throw ex;
+            throw ex.prependGeneralMessage(OvitoObject::tr("Could not create instance of class %1. Failed to load plugin '%2'").arg(name()).arg(plugin()->pluginId()));
         }
     }
 #endif
@@ -267,8 +266,7 @@ OvitoClassPtr OvitoClass::deserializeRTTI(LoadStream& stream)
         return clazz;
     }
     catch(Exception& ex) {
-        ex.prependGeneralMessage(OvitoObject::tr("File cannot be loaded, because it contains object types that are not (or no longer) available in this program version."));
-        throw ex;
+        throw ex.prependGeneralMessage(OvitoObject::tr("File cannot be loaded, because it contains object types that are not (or no longer) available in this program version."));
     }
 }
 

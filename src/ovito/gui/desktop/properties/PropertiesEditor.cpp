@@ -61,8 +61,7 @@ OORef<PropertiesEditor> PropertiesEditor::create(MainWindow& mainWindow, RefTarg
         }
     }
     catch(Exception& ex) {
-        ex.prependGeneralMessage(tr("Failed to create editor component for the '%1' object.").arg(obj->objectTitle()));
-        mainWindow.reportError(ex);
+        mainWindow.reportError(ex.prependGeneralMessage(tr("Failed to create editor component for the '%1' object.").arg(obj->objectTitle())));
     }
     return nullptr;
 }

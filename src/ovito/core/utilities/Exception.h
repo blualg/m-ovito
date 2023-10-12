@@ -116,6 +116,11 @@ public:
     /// \return A reference to this Exception object.
     Exception& prependGeneralMessage(const QString& message);
 
+    /// Prepends some text to the first message string of the exception.
+    /// \param message The text to preprend.
+    /// \return A reference to this Exception object.
+    Exception& prependToMessage(const QString& text);
+
     /// Sets the list of error messages stored in this exception object.
     /// \param messages The new list of messages, which completely replaces any existing messages.
     void setMessages(const QStringList& messages) { this->_messages = messages; }
@@ -129,6 +134,13 @@ public:
     /// Logs the error message(s) stored in this Exception object by printing them to the console.
     /// No modal dialog box is shown in GUI mode.
     void logError() const;
+
+    /// Associates the exception with traceback information, e.g., from a Python exception.
+    void setTraceback(const QString& tb) { _traceback = tb; }
+
+    /// Returns optional traceback information associated with the exception, e.g., if the exception
+    /// was raised by Python code.
+    const QString& traceback() const { return _traceback; }
 
 #ifndef OVITO_DISABLE_THREADING
 
@@ -145,9 +157,12 @@ public:
 
 private:
 
-    /// The message strings describing the exception.
-    /// This list is ordered with the most general error description coming first followed by the more detailed information.
+    /// Message strings describing the error.
+    /// List is ordered with the most general description coming first followed by the more detailed information.
     QStringList _messages;
+
+    /// Optional traceback information (e.g. from Python).
+    QString _traceback;
 };
 
 }   // namespace Ovito

@@ -28,6 +28,7 @@
 #include <ovito/gui/desktop/dialogs/ModalPropertiesEditorDialog.h>
 #include <ovito/gui/desktop/dialogs/ImportFileDialog.h>
 #include <ovito/gui/desktop/dialogs/ImportRemoteFileDialog.h>
+#include <ovito/gui/desktop/dialogs/MessageBox.h>
 #include <ovito/gui/desktop/dataset/io/FileImporterEditor.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
@@ -313,7 +314,7 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
     // Ask user whether existing data objects should be maintained.
     bool keepExistingDataCollection = false;
     if(fileSource->dataCollection() && fileSource->userHasChangedDataCollection()) {
-        QMessageBox msgBox(QMessageBox::Question, tr("Import new file"),
+        MessageBox msgBox(QMessageBox::Question, tr("Import new file"),
             tr("Do you want to keep your changes?"),
             QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel,
             parentWindow());

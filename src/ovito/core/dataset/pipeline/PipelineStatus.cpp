@@ -26,6 +26,16 @@
 namespace Ovito {
 
 /******************************************************************************
+* Constructs a status object with error status and a text string taken from
+* the given exception object.
+******************************************************************************/
+PipelineStatus::PipelineStatus(const Exception& exception, const QString& messageSeparator) :
+    _type(Error),
+    _text(exception.messages().join(messageSeparator))
+{
+}
+
+/******************************************************************************
 * Writes a status object to a file stream.
 ******************************************************************************/
 SaveStream& operator<<(SaveStream& stream, const PipelineStatus& s)

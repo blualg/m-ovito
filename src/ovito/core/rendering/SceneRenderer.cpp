@@ -259,9 +259,10 @@ void SceneRenderer::renderDataObject(const DataObject* dataObj, const Pipeline* 
             }
             catch(Exception& ex) {
                 status = ex;
-                ex.prependGeneralMessage(tr("Visual element '%1' reported an error during rendering.").arg(vis->objectTitle()));
+                ex.prependToMessage(tr("Visual element '%1' reported an error during rendering: ").arg(vis->objectTitle()));
                 // If the vis element fails, interrupt rendering process in console mode; swallow exceptions in GUI mode.
-                if(!isInteractive()) throw;
+                if(!isInteractive())
+                    throw;
             }
             // Unless the vis element has indicated that it is in control of the status,
             // automatically adopt the outcome of the rendering operation as status code.
