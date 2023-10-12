@@ -44,7 +44,7 @@ protected:
 /**
  * \brief Delegate for the ReplicateModifier that operates on lines.
  */
-class LinesReplicateModifierDelegate : public ReplicateModifierDelegate
+class OVITO_STDMOD_EXPORT LinesReplicateModifierDelegate : public ReplicateModifierDelegate
 {
     /// Give the modifier delegate its own metaclass.
     class OOMetaClass : public ReplicateModifierDelegate::OOMetaClass
