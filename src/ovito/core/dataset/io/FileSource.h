@@ -41,11 +41,6 @@ class OVITO_CORE_EXPORT FileSource : public BasePipelineSource
 	OVITO_CLASS(FileSource)
 	Q_CLASSINFO("DisplayName", "External file source");
 
-#ifdef OVITO_QML_GUI
-	Q_PROPERTY(QString currentFileName READ currentFileName NOTIFY currentFileChanged)
-	Q_PROPERTY(QString currentDirectoryPath READ currentDirectoryPath NOTIFY currentFileChanged)
-#endif
-
 public:
 
 	/// Constructor.

@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2022 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -294,23 +294,6 @@ FUNCTION(deploy_qt_framework_files)
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qcertonlybackend${_qt_dll_suffix}.dll" DESTINATION "plugins/tls/")
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qopensslbackend${_qt_dll_suffix}.dll" DESTINATION "plugins/tls/")
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qschannelbackend${_qt_dll_suffix}.dll" DESTINATION "plugins/tls/")
-
-        # Install QML modules.
-    #   IF(OVITO_QML_GUI)
-    #       OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../qml/QtQuick.2/qtquick2plugin${_qt_dll_suffix}.dll" DESTINATION "qml/QtQuick.2/")
-    #       OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../qml/QtQuick/Layouts/qquicklayoutsplugin${_qt_dll_suffix}.dll" DESTINATION "qml/QtQuick/Layouts/")
-    #       OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../qml/QtQuick/Controls.2/qtquickcontrols2plugin${_qt_dll_suffix}.dll" DESTINATION "qml/QtQuick/Controls.2/")
-
-    #       EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" "-E" "copy_if_different" "${QtBinaryPath}/../qml/QtQuick.2/qmldir" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/qml/QtQuick.2/")
-    #       EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" "-E" "copy_if_different" "${QtBinaryPath}/../qml/QtQuick.2/plugins.qmltypes" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/qml/QtQuick.2/")
-    #       EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" "-E" "copy_if_different" "${QtBinaryPath}/../qml/QtQuick/Layouts/qmldir" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/qml/QtQuick/Layouts/")
-    #       EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" "-E" "copy_if_different" "${QtBinaryPath}/../qml/QtQuick/Layouts/plugins.qmltypes" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/qml/QtQuick/Layouts/")
-    #       EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" "-E" "copy_if_different" "${QtBinaryPath}/../qml/QtQuick/Layouts/qmldir" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/qml/QtQuick/Layouts/")
-    #       EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" "-E" "copy_if_different" "${QtBinaryPath}/../qml/QtQuick/Layouts/plugins.qmltypes" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/qml/QtQuick/Layouts/")
-
-    #       INSTALL(FILES "${QtBinaryPath}/../qml/QtQuick.2/qmldir" DESTINATION "${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/qml/QtQuick.2/")
-    #       INSTALL(FILES "${QtBinaryPath}/../qml/QtQuick.2/plugins.qmltypes" DESTINATION "${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/qml/QtQuick.2/")
-    #   ENDIF()
 
     ENDIF()
 ENDFUNCTION()

@@ -38,11 +38,7 @@ class OVITO_STDMOD_EXPORT HistogramModifier : public GenericPropertyModifier
     OVITO_CLASS(HistogramModifier)
     Q_CLASSINFO("DisplayName", "Histogram");
     Q_CLASSINFO("Description", "Compute the histogram or distribution of some quantity.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Analysis");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 

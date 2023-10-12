@@ -50,11 +50,7 @@ class OVITO_PARTICLES_EXPORT LoadTrajectoryModifier : public Modifier
 
     Q_CLASSINFO("DisplayName", "Load trajectory");
     Q_CLASSINFO("Description", "Load atomic trajectories or dynamic bonds from a trajectory file.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Modification");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,11 +30,11 @@ namespace Ovito {
 ******************************************************************************/
 void VulkanSceneRenderer::initImagePrimitivePipelines()
 {
-    // Are extended dynamic states supported by the Vulkan device? 
+    // Are extended dynamic states supported by the Vulkan device?
     // If yes, we can use them to switch depth testing on or off on demand.
     uint32_t extraDynamicStateCount = context()->supportsExtendedDynamicState() ? 1 : 0;
     VkDynamicState extraDynamicState = VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT;
-    
+
     // Specify the descriptor layout binding for the sampler.
     VkSampler sampler = context()->samplerNearest();
     VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
@@ -59,9 +59,9 @@ void VulkanSceneRenderer::initImagePrimitivePipelines()
         2 * sizeof(Point_2<float>), // vertexPushConstantSize
         0, // fragmentPushConstantSize
         0, // vertexBindingDescriptionCount
-        nullptr, 
+        nullptr,
         0, // vertexAttributeDescriptionCount
-        nullptr, 
+        nullptr,
         VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP, // topology
         extraDynamicStateCount, // extraDynamicStateCount
         &extraDynamicState, // pExtraDynamicStates

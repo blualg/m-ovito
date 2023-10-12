@@ -41,10 +41,6 @@ class OVITO_STDMOD_EXPORT ColorCodingModifierDelegate : public ModifierDelegate
 {
     OVITO_CLASS(ColorCodingModifierDelegate)
 
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(Ovito::DataObjectReference inputContainerRef READ inputContainerRef NOTIFY propertyValueChangedSignal)
-#endif
-
 public:
 
     /// Applies the modifier operation to the data in a pipeline flow state.
@@ -125,11 +121,6 @@ public:
     Q_CLASSINFO("Description", "Colors elements based on property values.");
     Q_CLASSINFO("ModifierCategory", "Coloring");
 
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(Ovito::ColorCodingGradient* colorGradient READ colorGradient WRITE setColorGradient NOTIFY referenceReplacedSignal)
-    Q_PROPERTY(QString colorGradientType READ colorGradientType WRITE setColorGradientType NOTIFY referenceReplacedSignal)
-#endif
-
 public:
 
     /// Constructor.
@@ -158,14 +149,6 @@ public:
     ColorCodingModifierDelegate* delegate() const {
         return static_object_cast<ColorCodingModifierDelegate>(DelegatingModifier::delegate());
     }
-
-#ifdef OVITO_QML_GUI
-    /// Returns the class name of the selected color gradient.
-    QString colorGradientType() const;
-
-    /// Assigns a new color gradient based on its class name.
-    void setColorGradientType(const QString& typeName);
-#endif
 
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return sourceProperty().nameWithComponent(); }

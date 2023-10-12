@@ -88,11 +88,7 @@ protected:
     /// \note When this method is overridden in sub-classes then the base implementation of this method
     ///       should always be called from the new implementation to allow the base classes to handle
     ///       messages for their specific reference fields.
-    virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) {
-#ifdef OVITO_QML_GUI
-        Q_EMIT referenceReplacedSignal();
-#endif
-    }
+    virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) {}
 
     /// \brief Is called when a RefTarget has been added to a VectorReferenceField of this RefMaker.
     /// \param field Specifies the reference field of this RefMaker to which a new entry has been added.
@@ -144,11 +140,7 @@ protected:
     /// \note When this method is overridden in sub-classes then the base implementation of this method
     ///       should always be called from the new implementation to allow the base classes to handle
     ///       messages for their specific property fields.
-    virtual void propertyChanged(const PropertyFieldDescriptor* field) {
-#ifdef OVITO_QML_GUI
-        Q_EMIT propertyValueChangedSignal();
-#endif
-    }
+    virtual void propertyChanged(const PropertyFieldDescriptor* field) {}
 
     /// \brief Stops observing a RefTarget object.
     /// \param target All references hold by the RefMaker to the this target are cleared.
@@ -226,16 +218,6 @@ private Q_SLOTS:
 
     /// This Qt slot receives signals from the target objects referenced by this object.
     void receiveObjectEvent(RefTarget* sender, const ReferenceEvent& event);
-
-Q_SIGNALS:
-
-#ifdef OVITO_QML_GUI
-    /// This Qt signal is emitted whenever the value of a property field changes.
-    void propertyValueChangedSignal();
-
-    /// This Qt signal is emitted whenever the value of a reference field changes.
-    void referenceReplacedSignal();
-#endif
 
 public:
 

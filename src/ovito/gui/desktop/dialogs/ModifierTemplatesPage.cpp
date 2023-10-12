@@ -24,6 +24,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/mainwin/cmdpanel/CommandPanel.h>
 #include <ovito/gui/desktop/mainwin/cmdpanel/ModifyCommandPage.h>
+#include <ovito/gui/desktop/dialogs/MessageBox.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/gui/base/mainwin/PipelineListModel.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
@@ -180,16 +181,16 @@ void ModifierTemplatesPage::onCreateTemplate()
         connect(buttonBox, &QDialogButtonBox::accepted, [this, &dlg, nameBox, &itemList]() {
             QString name = nameBox->currentText().trimmed();
             if(name.isEmpty()) {
-                QMessageBox::critical(&dlg, tr("Create modifier template"), tr("Please enter a name for the new modifier template."));
+                MessageBox::critical(&dlg, tr("Create modifier template"), tr("Please enter a name for the new modifier template."));
                 return;
             }
             if(ModifierTemplates::get()->templateList().contains(name)) {
-                if(QMessageBox::question(&dlg, tr("Create modifier template"), tr("A modifier template with the same name '%1' already exists. Do you want to replace it?").arg(name), QMessageBox::Yes | QMessageBox::Cancel) != QMessageBox::Yes)
+                if(MessageBox::question(&dlg, tr("Create modifier template"), tr("A modifier template with the same name '%1' already exists. Do you want to replace it?").arg(name), QMessageBox::Yes | QMessageBox::Cancel) != QMessageBox::Yes)
                     return;
             }
             int selCount = boost::count_if(itemList, [](QTreeWidgetItem* item) { return item->checkState(0) == Qt::Checked; });
             if(!selCount) {
-                QMessageBox::critical(&dlg, tr("Create modifier template"), tr("Please check at least one modifier to include in the new template."));
+                MessageBox::critical(&dlg, tr("Create modifier template"), tr("Please check at least one modifier to include in the new template."));
                 return;
             }
             dlg.accept();
@@ -253,7 +254,7 @@ void ModifierTemplatesPage::onRenameTemplate()
                     break;
                 }
                 else {
-                    QMessageBox::critical(settingsDialog(), tr("Rename modifier template"), tr("A modifier template with the name '%1' already exists. Please choose a different name.").arg(newTemplateName));
+                    MessageBox::critical(settingsDialog(), tr("Rename modifier template"), tr("A modifier template with the name '%1' already exists. Please choose a different name.").arg(newTemplateName));
                 }
             }
         }

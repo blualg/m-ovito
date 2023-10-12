@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -104,7 +104,7 @@ private:
     QAction* _moveLayerDownAction;
 
     /// The splitter widget separating the layer list and the properties panel.
-    QSplitter* _splitter;   
+    QSplitter* _splitter;
 };
 
 }   // End of namespace

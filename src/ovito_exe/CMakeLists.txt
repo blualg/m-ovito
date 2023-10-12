@@ -48,27 +48,9 @@ TARGET_LINK_LIBRARIES(Ovito PRIVATE Core)
 
 # The executable depends on the gui module.
 TARGET_LINK_LIBRARIES(Ovito PRIVATE Gui)
-IF(NOT OVITO_QML_GUI)
-    TARGET_LINK_LIBRARIES(Ovito PRIVATE
-        Qt6::Core
-        Qt6::Gui)
-ELSE()
-    FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Qml Quick QuickControls2 QuickControls2Impl QuickLayouts QuickTemplates2 LabsQmlModels Svg REQUIRED)
-    TARGET_LINK_LIBRARIES(Ovito PRIVATE
-        Qt6::Core
-        Qt6::Gui
-        Qt6::Qml
-        Qt6::Quick
-        Qt6::QuickControls2
-        Qt6::QuickControls2Impl
-        Qt6::QuickLayouts
-        Qt6::QuickTemplates2
-        Qt6::LabsQmlModels
-        Qt6::Svg)
-    IF(NOT OVITO_DISABLE_THREADING)
-        TARGET_LINK_LIBRARIES(Ovito PRIVATE Qt6::QmlWorkerScript)
-    ENDIF()
-ENDIF()
+TARGET_LINK_LIBRARIES(Ovito PRIVATE
+    Qt6::Core
+    Qt6::Gui)
 
 # Enable SYCL.
 IF(OVITO_USE_SYCL STREQUAL OpenSYCL)

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -38,11 +38,7 @@ class OVITO_PARTICLES_EXPORT AcklandJonesModifier : public StructureIdentificati
     OVITO_CLASS(AcklandJonesModifier)
     Q_CLASSINFO("DisplayName", "Ackland-Jones analysis");
     Q_CLASSINFO("Description", "Identify common crystalline structures based on local bond angles.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Structure identification");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 

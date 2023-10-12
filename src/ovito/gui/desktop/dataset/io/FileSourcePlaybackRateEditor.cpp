@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -162,11 +162,11 @@ void FileSourcePlaybackRateEditor::updateInformation()
 {
     FileSource* fileSource = static_object_cast<FileSource>(editObject());
     AnimationSettings* animationSettings = mainWindow().datasetContainer().activeAnimationSettings();
-    if(!fileSource || !animationSettings) return; 
+    if(!fileSource || !animationSettings) return;
 
     _numTrajectoryFramesDisplay->setText(tr("%n frame(s)", nullptr, fileSource->frames().size()));
 
-    _numAnimationFramesDisplay->setText(tr("%n frame(s)", nullptr, animationSettings->numberOfFrames()) + 
+    _numAnimationFramesDisplay->setText(tr("%n frame(s)", nullptr, animationSettings->numberOfFrames()) +
         (!animationSettings->autoAdjustInterval() ? tr(" (fixed)") : QString()));
 
     if(fileSource->restrictToFrame() < 0) {

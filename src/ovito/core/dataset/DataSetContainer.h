@@ -38,10 +38,6 @@ class OVITO_CORE_EXPORT DataSetContainer : public RefMaker
 {
     OVITO_CLASS(DataSetContainer)
 
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(Ovito::DataSet* currentSet READ currentSet WRITE setCurrentSet NOTIFY dataSetChanged)
-#endif
-
 public:
 
     /// \brief Constructor.

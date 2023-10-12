@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -62,7 +62,7 @@ protected:
 
     /// Returns the OpenGL texture used as depth buffer (only on OpenGGL ES1 platform).
     GLuint depthTextureId() const { return _framebufferTexturesGLES[1]; }
-    
+
 private:
 
     /// The OpenGL offscreen framebuffer used on desktop OpenGL platform.

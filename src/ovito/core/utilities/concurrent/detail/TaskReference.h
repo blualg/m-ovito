@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,7 +31,7 @@ namespace Ovito::detail {
 /**
  * \brief A smart-pointer referencing a shared Task object, which expresses a dependency on the Task's results.
  *
- * This is used by the classes Future and SharedFuture to express their dependency on a Task. 
+ * This is used by the classes Future and SharedFuture to express their dependency on a Task.
  * If the number of dependents of the Task reaches zero, the Task is automatically canceled.
  */
 class OVITO_CORE_EXPORT TaskReference

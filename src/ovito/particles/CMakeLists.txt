@@ -136,11 +136,7 @@ OVITO_STANDARD_PLUGIN(Particles
 
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_APP)
-    IF(NOT OVITO_QML_GUI)
-        ADD_SUBDIRECTORY(gui)
-    ELSE()
-        ADD_SUBDIRECTORY(guiqml)
-    ENDIF()
+    ADD_SUBDIRECTORY(gui)
 ENDIF()
 
 # Propagate list of plugins to parent scope.

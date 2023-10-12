@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2021 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -44,7 +44,7 @@ OVITO_STANDARD_PLUGIN(OpenGLRenderer
         Qt6::OpenGL
 )
 
-IF(NOT OVITO_QML_GUI AND NOT OVITO_BUILD_CONDA)
+IF(NOT OVITO_BUILD_CONDA)
     # Find OpenGL library.
     FIND_PACKAGE(OpenGL REQUIRED)
 

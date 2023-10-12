@@ -24,6 +24,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/mainwin/OvitoStyle.h>
 #include <ovito/gui/desktop/dataset/GuiDataSetContainer.h>
+#include <ovito/gui/desktop/dialogs/MessageBox.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/app/undo/UndoStack.h>
 #include "GuiApplication.h"
@@ -327,8 +328,7 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
                 }
             }
             catch(Exception& ex) {
-                ex.prependGeneralMessage(tr("An error occurred while loading the user's default session state from the file: %1").arg(defaultsFilePath));
-                userInterface.reportError(ex);
+                userInterface.reportError(ex.prependGeneralMessage(tr("An error occurred while loading the user's default session state from the file: %1").arg(defaultsFilePath)));
             }
         }
     }
@@ -426,7 +426,7 @@ void GuiApplication::reportError(const Exception& ex, bool blocking)
 
     // In GUI mode, display a message box (application modal).
     if(guiMode()) {
-        QMessageBox msgbox;
+        MessageBox msgbox;
         msgbox.setWindowTitle(tr("Error - %1").arg(applicationName()));
         msgbox.setStandardButtons(QMessageBox::Ok);
         msgbox.setText(ex.message());
@@ -435,12 +435,18 @@ void GuiApplication::reportError(const Exception& ex, bool blocking)
 
         // If the exception is associated with additional message strings,
         // show them in the Details section of the message box dialog.
+        QString detailText;
         if(ex.messages().size() > 1) {
-            QString detailText;
             for(int i = 1; i < ex.messages().size(); i++)
                 detailText += ex.messages()[i] + QStringLiteral("\n");
-            msgbox.setDetailedText(detailText);
         }
+        // Also show traceback information.
+        if(!ex.traceback().isEmpty()) {
+            if(!detailText.isEmpty())
+                detailText += QChar('\n');
+            detailText += ex.traceback();
+        }
+        msgbox.setDetailedText(std::move(detailText));
 
         // Show message box.
         msgbox.exec();

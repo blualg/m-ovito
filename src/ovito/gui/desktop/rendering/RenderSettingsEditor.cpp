@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -298,7 +298,7 @@ void RenderSettingsEditor::onSwitchRenderer()
 
     // Filter out internal renderer implementations, which should not be visible to the user.
     // Internal renderer implementation have no UI description string assigned.
-    rendererClasses.erase(std::remove_if(rendererClasses.begin(), rendererClasses.end(), 
+    rendererClasses.erase(std::remove_if(rendererClasses.begin(), rendererClasses.end(),
         [](OvitoClassPtr clazz) { return clazz->descriptionString().isEmpty(); }), rendererClasses.end());
 
     // Preferred ordering of renderers:

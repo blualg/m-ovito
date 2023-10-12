@@ -166,16 +166,6 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
         if(modifier())
             modifier()->notifyDependents(ReferenceEvent::PipelineInputChanged);
     }
-#ifdef OVITO_QML_GUI
-    else if(event.type() == ReferenceEvent::PipelineInputChanged && source == modifier()) {
-        // Inform the QML GUI that the modifier's input has changed.
-        Q_EMIT modifierInputChanged();
-    }
-    else if(event.type() == ReferenceEvent::PipelineCacheUpdated && source == input()) {
-        // Inform the QML GUI that the modifier's input has changed.
-        Q_EMIT modifierInputChanged();
-    }
-#endif
     return PipelineNode::referenceEvent(source, event);
 }
 
@@ -240,12 +230,6 @@ void ModificationNode::notifyDependentsImpl(const ReferenceEvent& event)
         // Invalidate cached results when this modification node or the modifier changes.
         pipelineCache().invalidate(static_cast<const TargetChangedEvent&>(event).unchangedInterval());
     }
-#ifdef OVITO_QML_GUI
-    else if(event.type() == ReferenceEvent::PipelineCacheUpdated) {
-        // Inform the QML GUI that the modifier's results are available.
-        Q_EMIT modifierResultsComplete();
-    }
-#endif
     PipelineNode::notifyDependentsImpl(event);
 }
 
@@ -367,9 +351,9 @@ Future<PipelineFlowState> ModificationNode::evaluateInternal(const PipelineEvalu
                 catch(Exception& ex) {
                     if(throwOnError)
                         throw;
-                    setStatus(PipelineStatus(PipelineStatus::Error, ex.messages().join(QChar('\n'))));
-                    ex.prependGeneralMessage(tr("Modifier '%1' reported:").arg(modifier()->objectTitle()));
-                    inputData.setStatus(PipelineStatus(PipelineStatus::Error, ex.messages().join(QChar(' '))));
+                    setStatus(PipelineStatus(ex));
+                    ex.prependToMessage(tr("Modifier '%1' reported: ").arg(modifier()->objectTitle()));
+                    inputData.setStatus(PipelineStatus(ex, QStringLiteral(" ")));
                     return std::move(inputData);
                 }
                 catch(...) {
@@ -409,7 +393,7 @@ PipelineFlowState ModificationNode::evaluateInternalSynchronous(const PipelineEv
             if(request.throwOnError())
                 throw;
             // Turn exceptions thrown during modifier evaluation into an error pipeline state (unless throwOnError is set).
-            state.setStatus(PipelineStatus(PipelineStatus::Error, ex.messages().join(QStringLiteral(": "))));
+            state.setStatus(PipelineStatus(ex, QStringLiteral(": ")));
         }
         catch(const std::bad_alloc&) {
             if(request.throwOnError())

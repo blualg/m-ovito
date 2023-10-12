@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,6 +24,16 @@
 #include "PipelineStatus.h"
 
 namespace Ovito {
+
+/******************************************************************************
+* Constructs a status object with error status and a text string taken from
+* the given exception object.
+******************************************************************************/
+PipelineStatus::PipelineStatus(const Exception& exception, const QString& messageSeparator) :
+    _type(Error),
+    _text(exception.messages().join(messageSeparator))
+{
+}
 
 /******************************************************************************
 * Writes a status object to a file stream.

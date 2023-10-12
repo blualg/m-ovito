@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,10 +32,10 @@ namespace Ovito {
 
 template<typename InputRange, class Executor, typename StartIterFunc, typename CompleteIterFunc, typename... ResultType>
 auto for_each_sequential(
-    InputRange&& inputRange, 
-    Executor&& executor, 
-    StartIterFunc&& startFunc, 
-    CompleteIterFunc&& completeFunc, 
+    InputRange&& inputRange,
+    Executor&& executor,
+    StartIterFunc&& startFunc,
+    CompleteIterFunc&& completeFunc,
     ResultType&&... initialResult)
 {
     // The type of future returned by the user function.
@@ -58,17 +58,17 @@ auto for_each_sequential(
 
         /// Constructor.
         ForEachTask(
-            InputRange&& inputRange, 
-            Executor&& executor, 
-            StartIterFunc&& startFunc, 
-            CompleteIterFunc&& completeFunc, 
-            ResultType&&... initialResult) : 
+            InputRange&& inputRange,
+            Executor&& executor,
+            StartIterFunc&& startFunc,
+            CompleteIterFunc&& completeFunc,
+            ResultType&&... initialResult) :
                 detail::ContinuationTask<task_tuple_type, task_base_class>(Task::Started, std::forward_as_tuple(std::forward<ResultType>(initialResult)...)),
                 _range(std::forward<InputRange>(inputRange)),
                 _executor(std::forward<Executor>(executor)),
                 _startFunc(std::forward<StartIterFunc>(startFunc)),
                 _completeFunc(std::forward<CompleteIterFunc>(completeFunc)),
-                _iterator(std::begin(_range)) 
+                _iterator(std::begin(_range))
         {
             // Determine the number of iterations we are going to perform.
             if constexpr(is_with_progress)
@@ -102,7 +102,7 @@ auto for_each_sequential(
                 output_future_type future;
                 try {
                     Task::Scope taskScope(this);
-                    // Call the user-provided function with the current loop value and, optionally, the task's result storage 
+                    // Call the user-provided function with the current loop value and, optionally, the task's result storage
                     if constexpr(detail::is_invocable_v<std::decay_t<StartIterFunc>, decltype(*_iterator), std::decay_t<ResultType>&...> && std::tuple_size_v<task_tuple_type> == 1)
                         future = std::invoke(_startFunc, *_iterator, this->resultsStorage());
                     else
@@ -189,8 +189,8 @@ auto for_each_sequential(
 
     // Launch the task.
     return launchTask<false>(std::make_shared<ForEachTask>(
-        std::forward<InputRange>(inputRange), 
-        std::forward<Executor>(executor), 
+        std::forward<InputRange>(inputRange),
+        std::forward<Executor>(executor),
         std::forward<StartIterFunc>(startFunc),
         std::forward<CompleteIterFunc>(completeFunc),
         std::forward<ResultType>(initialResult)...));

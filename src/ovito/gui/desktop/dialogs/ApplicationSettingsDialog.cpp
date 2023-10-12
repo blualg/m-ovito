@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -117,7 +117,7 @@ void ApplicationSettingsDialog::onCancel()
 {
     try {
         setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
-        
+
         // Let all pages restore their settings to the old values.
         for(const OORef<ApplicationSettingsDialogPage>& page : _pages)
             page->restoreValues(_tabWidget);

@@ -54,7 +54,6 @@ INCLUDE(cmake/Plugins.cmake)
 # Define build options.
 OPTION(OVITO_DOUBLE_PRECISION_FP "Use double-precision floating-point numbers." "ON")
 OPTION(OVITO_BUILD_APP "Build the OVITO desktop application." "ON")
-OPTION(OVITO_QML_GUI "Use an alternative (experimental) graphical user interface, which is based on Qt's QML module instead of Widgets." "OFF")
 OPTION(OVITO_BUILD_MONOLITHIC "Build the application as a monolithic executable, statically linking in all plugins." "OFF")
 OPTION(OVITO_REDISTRIBUTABLE_PACKAGE "Create a redistributable program package that includes third-party libraries." "OFF")
 OPTION(OVITO_BUILD_APPSTORE_VERSION "Build binaries for the Apple App Store and Windows Store." "OFF")

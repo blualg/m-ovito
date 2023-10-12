@@ -115,18 +115,37 @@ LoadStream& operator>>(LoadStream& stream, ImageInfo& i)
 /******************************************************************************
 * Clears the framebuffer with a uniform color.
 ******************************************************************************/
-void FrameBuffer::clear(const ColorA& color, const QRect& rect)
+void FrameBuffer::clear(const ColorA& color, const QRect& rect, bool delayed)
 {
-    QRect bufferRect = _image.rect();
-    if(rect.isNull() || rect == bufferRect) {
-        _image.fill(color);
-        update(bufferRect);
+    commitChanges();
+    if(!delayed) {
+        QRect bufferRect = _image.rect();
+        if(rect.isNull() || rect == bufferRect) {
+            _image.fill(color);
+            update(bufferRect);
+        }
+        else {
+            QPainter painter(&_image);
+            painter.setCompositionMode(QPainter::CompositionMode_Source);
+            painter.fillRect(rect, color);
+            update(rect);
+        }
     }
     else {
-        QPainter painter(&_image);
-        painter.setCompositionMode(QPainter::CompositionMode_Source);
-        painter.fillRect(rect, color);
-        update(rect);
+        _delayedClearRect = rect.isNull() ? _image.rect() : rect;
+        _delayedClearColor = color;
+    }
+}
+
+/******************************************************************************
+* Performs a delayed clear buffer operation.
+******************************************************************************/
+void FrameBuffer::commitChanges()
+{
+    if(!_delayedClearRect.isNull()) {
+        QRect rect = std::exchange(_delayedClearRect, QRect());
+        clear(_delayedClearColor, rect);
+        OVITO_ASSERT(_delayedClearRect.isNull());
     }
 }
 
@@ -203,7 +222,8 @@ void FrameBuffer::renderTextPrimitive(const TextPrimitive& primitive, const QRec
 bool FrameBuffer::autoCrop()
 {
     QImage image = this->image().convertToFormat(QImage::Format_ARGB32);
-    if(image.width() <= 0 || image.height() <= 0) return false;
+    if(image.width() <= 0 || image.height() <= 0)
+        return false;
 
     auto determineCropRect = [&image](QRgb backgroundColor) -> QRect {
         int x1 = 0, y1 = 0;

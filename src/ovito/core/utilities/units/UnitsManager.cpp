@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -74,7 +74,7 @@ FloatType FloatParameterUnit::parseString(const QString& valueString)
 /******************************************************************************
 * Returns the positive step size used by spinner widgets for this parameter unit type.
 ******************************************************************************/
-FloatType FloatParameterUnit::stepSize(FloatType currentValue, bool upDirection) 
+FloatType FloatParameterUnit::stepSize(FloatType currentValue, bool upDirection)
 {
     int exponent;
     currentValue = nativeToUser(currentValue);
@@ -98,7 +98,7 @@ FloatType FloatParameterUnit::roundValue(FloatType value)
 /******************************************************************************
 * Converts a numeric value to a string.
 ******************************************************************************/
-QString FloatParameterUnit::formatValue(FloatType value) 
+QString FloatParameterUnit::formatValue(FloatType value)
 {
     return QString::number(value);
 }

@@ -40,10 +40,6 @@ class OVITO_STDMOD_EXPORT ComputePropertyModifierDelegate : public ModifierDeleg
 {
     OVITO_CLASS(ComputePropertyModifierDelegate)
 
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(Ovito::DataObjectReference inputContainerRef READ inputContainerRef NOTIFY propertyValueChangedSignal)
-#endif
-
 protected:
 
     /// Constructor.
@@ -176,11 +172,6 @@ class OVITO_STDMOD_EXPORT ComputePropertyModifier : public AsynchronousDelegatin
     Q_CLASSINFO("Description", "Enter a user-defined formula to set properties of particles, bonds and other elements.");
     Q_CLASSINFO("ModifierCategory", "Modification");
 
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(int propertyComponentCount READ propertyComponentCount WRITE setPropertyComponentCount NOTIFY propertyValueChangedSignal)
-    Q_PROPERTY(QStringList propertyComponentNames READ propertyComponentNames NOTIFY propertyValueChangedSignal)
-#endif
-
 public:
 
     /// \brief Constructs a new instance of this class.
@@ -263,10 +254,6 @@ class OVITO_STDMOD_EXPORT ComputePropertyModificationNode : public AsynchronousM
 {
     OVITO_CLASS(ComputePropertyModificationNode)
     Q_CLASSINFO("ClassNameAlias", "ComputePropertyModifierApplication");  // For backward compatibility with OVITO 3.9.2
-
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(QString inputVariableTable READ inputVariableTable NOTIFY objectStatusChanged)
-#endif
 
 public:
 

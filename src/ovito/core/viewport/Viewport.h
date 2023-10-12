@@ -42,13 +42,6 @@ class OVITO_CORE_EXPORT Viewport : public RefTarget
 {
     OVITO_CLASS(Viewport)
 
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(QString title READ viewportTitle NOTIFY viewportChanged)
-    Q_PROPERTY(bool gridVisible READ isGridVisible WRITE setGridVisible NOTIFY viewportChanged)
-    Q_PROPERTY(bool previewMode READ renderPreviewMode WRITE setRenderPreviewMode NOTIFY viewportChanged)
-    Q_PROPERTY(Ovito::Viewport::ViewType viewType READ viewType WRITE setViewType NOTIFY viewportChanged)
-#endif
-
 public:
 
     /// View types.

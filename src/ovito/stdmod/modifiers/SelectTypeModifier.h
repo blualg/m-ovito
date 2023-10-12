@@ -51,16 +51,6 @@ public:
     /// Modifies the input data synchronously.
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
-#ifdef OVITO_QML_GUI
-    /// This helper method is called by the QML GUI (SelectTypeModifier.qml) to extract the list of element types
-    /// from the input pipeline output state.
-    Q_INVOKABLE QVariantList getElementTypesFromInputState(ModifierApplication* modApp) const;
-
-    /// Toggles the selection state for the given element types.
-    /// This helper method is called by the QML GUI (SelectTypeModifier.qml) to make changes to the modifier.
-    Q_INVOKABLE void setElementTypeSelectionState(int32_t elementTypeId, const QString& elementTypeName, bool selectionState);
-#endif
-
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override;
 

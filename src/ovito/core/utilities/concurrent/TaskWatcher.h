@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,14 +56,14 @@ public:
     void watch(Task* task, bool pendingAssignment = true);
 
     /// Makes this watcher monitor the given task.
-    void watch(const TaskPtr& task, bool pendingAssignment = true) { 
+    void watch(const TaskPtr& task, bool pendingAssignment = true) {
         watch(task.get(), pendingAssignment);
     }
 
     /// Detaches this watcher from the task.
-    void reset() { 
+    void reset() {
         if(isWatching())
-            watch(nullptr); 
+            watch(nullptr);
     }
 
     /// Returns true if the task monitored by this object has been canceled.

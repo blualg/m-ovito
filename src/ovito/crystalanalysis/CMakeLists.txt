@@ -64,7 +64,7 @@ OVITO_STANDARD_PLUGIN(CrystalAnalysis
 )
 
 # Build corresponding GUI plugin.
-IF(OVITO_BUILD_APP AND NOT OVITO_QML_GUI)
+IF(OVITO_BUILD_APP)
     ADD_SUBDIRECTORY(gui)
 ENDIF()
 

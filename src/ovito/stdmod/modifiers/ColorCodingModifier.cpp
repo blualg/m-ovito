@@ -314,39 +314,6 @@ void ColorCodingModifier::reverseRange()
     setEndValueController(std::move(oldStartValue));
 }
 
-#ifdef OVITO_QML_GUI
-/******************************************************************************
-* Returns the class name of the selected color gradient.
-******************************************************************************/
-QString ColorCodingModifier::colorGradientType() const
-{
-    return colorGradient() ? colorGradient()->getOOClass().name() : QString();
-}
-
-/******************************************************************************
-* Assigns a new color gradient based on its class name.
-******************************************************************************/
-void ColorCodingModifier::setColorGradientType(const QString& typeName)
-{
-    OvitoClassPtr descriptor = PluginManager::instance().findClass(QString(), typeName);
-    if(!descriptor) {
-        qWarning() << "setColorGradientType: Color gradient class" << typeName << "does not exist.";
-        return;
-    }
-    OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance());
-    if(gradient) {
-        setColorGradient(std::move(gradient));
-#ifndef OVITO_DISABLE_QSETTINGS
-        QSettings settings;
-        settings.beginGroup(ColorCodingModifier::OOClass().plugin()->pluginId());
-        settings.beginGroup(ColorCodingModifier::OOClass().name());
-        settings.setValue(PROPERTY_FIELD(ColorCodingModifier::colorGradient).identifier(),
-                QVariant::fromValue(OvitoClass::encodeAsString(descriptor)));
-#endif
-    }
-}
-#endif
-
 /******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,7 +29,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-FrameBufferWidget::FrameBufferWidget(QWidget* parent) : QAbstractScrollArea(parent), 
+FrameBufferWidget::FrameBufferWidget(QWidget* parent) : QAbstractScrollArea(parent),
     _zoomAnimation(this, "zoomFactor"),
     _horizontalScrollAnimation(horizontalScrollBar(), "value"),
     _verticalScrollAnimation(verticalScrollBar(), "value")
@@ -44,7 +44,7 @@ FrameBufferWidget::FrameBufferWidget(QWidget* parent) : QAbstractScrollArea(pare
     // Pick dark gray as background color.
     QPalette pal = viewport()->palette();
     pal.setColor(QPalette::Window, QColor(38,38,38));
-    viewport()->setPalette(std::move(pal)); 
+    viewport()->setPalette(std::move(pal));
     viewport()->setAutoFillBackground(false); // We fill the background in paintEvent().
     viewport()->setBackgroundRole(QPalette::Window);
 
@@ -59,7 +59,7 @@ FrameBufferWidget::FrameBufferWidget(QWidget* parent) : QAbstractScrollArea(pare
     painter.fillRect(0, 16, 16, 16, c2);
     _backgroundBrush.setTextureImage(std::move(img));
 
-    // Create the label that indicates the current zoom factor. 
+    // Create the label that indicates the current zoom factor.
     _zoomFactorDisplay = new QLabel("Hello", this);
     _zoomFactorDisplay->hide();
     _zoomFactorDisplay->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -129,7 +129,7 @@ QSize FrameBufferWidget::sizeHint() const
 void FrameBufferWidget::updateScrollBarRange()
 {
     QSize areaSize = viewport()->size();
-    QSize imageSize = frameBuffer() ? frameBuffer()->image().size() * zoomFactor() : QSize(0,0);
+    QSize imageSize = frameBuffer() ? frameBuffer()->size() * zoomFactor() : QSize(0,0);
     verticalScrollBar()->setPageStep(areaSize.height() * ScrollBarScale);
     horizontalScrollBar()->setPageStep(areaSize.width() * ScrollBarScale);
     horizontalScrollBar()->setSingleStep(zoomFactor() * 8 * ScrollBarScale);
@@ -147,12 +147,12 @@ void FrameBufferWidget::resizeEvent(QResizeEvent* event)
 }
 
 /******************************************************************************
-* Calculates the drawing rectangle for the framebuffer image within the viewport. 
+* Calculates the drawing rectangle for the framebuffer image within the viewport.
 ******************************************************************************/
 QRect FrameBufferWidget::calculateViewportRect() const
 {
     QSize areaSize = viewport()->size();
-    QSize imageSize = frameBuffer()->image().size() * zoomFactor();
+    QSize imageSize = frameBuffer()->size() * zoomFactor();
     QPoint origin(-horizontalScrollBar()->value() / ScrollBarScale, -verticalScrollBar()->value() / ScrollBarScale);
     if(imageSize.width() < areaSize.width()) origin.rx() = (areaSize.width() - imageSize.width()) / 2;
     if(imageSize.height() < areaSize.height()) origin.ry() = (areaSize.height() - imageSize.height()) / 2;
@@ -171,9 +171,9 @@ void FrameBufferWidget::paintEvent(QPaintEvent* event)
             painter.eraseRect(event->rect());
         painter.setBrushOrigin(imageRect.topLeft());
         painter.fillRect(imageRect, _backgroundBrush);
-        if(imageRect.width() < frameBuffer()->image().width() || imageRect.height() < frameBuffer()->image().height())
+        if(imageRect.width() < frameBuffer()->width() || imageRect.height() < frameBuffer()->height())
             painter.setRenderHint(QPainter::SmoothPixmapTransform);
-        painter.drawImage(imageRect, frameBuffer()->image());
+        painter.drawImage(imageRect, frameBuffer()->displayImage());
     }
     else {
         painter.eraseRect(event->rect());
@@ -239,7 +239,7 @@ void FrameBufferWidget::wheelEvent(QWheelEvent* event)
     if(QPoint pixelDelta = event->pixelDelta(); !pixelDelta.isNull()) {
         horizontalScrollBar()->setValue(horizontalScrollBar()->value() - pixelDelta.x() * ScrollBarScale);
         verticalScrollBar()->setValue(verticalScrollBar()->value() - pixelDelta.y() * ScrollBarScale);
-    } 
+    }
     else if(QPoint degreeDelta = event->angleDelta() / 8; !degreeDelta.isNull()) {
         horizontalScrollBar()->setValue(horizontalScrollBar()->value() - degreeDelta.x() * ScrollBarScale);
         verticalScrollBar()->setValue(verticalScrollBar()->value() - degreeDelta.y() * ScrollBarScale);
@@ -250,7 +250,7 @@ void FrameBufferWidget::wheelEvent(QWheelEvent* event)
 /******************************************************************************
 * Handles mouse press events.
 ******************************************************************************/
-void FrameBufferWidget::mousePressEvent(QMouseEvent* event) 
+void FrameBufferWidget::mousePressEvent(QMouseEvent* event)
 {
     _mouseLastPosition = ViewportInputMode::getMousePosition(event);
     event->accept();
@@ -259,7 +259,7 @@ void FrameBufferWidget::mousePressEvent(QMouseEvent* event)
 /******************************************************************************
 * Handles mouse move events.
 ******************************************************************************/
-void FrameBufferWidget::mouseMoveEvent(QMouseEvent* event) 
+void FrameBufferWidget::mouseMoveEvent(QMouseEvent* event)
 {
     QPointF mousePosition = ViewportInputMode::getMousePosition(event);
     QPoint pixelDelta = (mousePosition - _mouseLastPosition).toPoint();
@@ -329,11 +329,11 @@ void FrameBufferWidget::onFrameBufferResize()
 /******************************************************************************
 * This handles contentChanged() signals from the frame buffer.
 ******************************************************************************/
-void FrameBufferWidget::onFrameBufferContentChanged(const QRect& changedRegion) 
+void FrameBufferWidget::onFrameBufferContentChanged(const QRect& changedRegion)
 {
     // Repaint only a portion of the image.
     QRect vprect = calculateViewportRect();
-    QSize imageSize = frameBuffer()->image().size();
+    QSize imageSize = frameBuffer()->size();
     QRectF updateRect(
         (qreal)changedRegion.x() / imageSize.width()  * vprect.width()  + vprect.x(),
         (qreal)changedRegion.y() / imageSize.height() * vprect.height() + vprect.y(),
@@ -345,7 +345,7 @@ void FrameBufferWidget::onFrameBufferContentChanged(const QRect& changedRegion)
 /******************************************************************************
 * Updates the transparency of the zoom value indicator.
 ******************************************************************************/
-void FrameBufferWidget::zoomLabelAnimationChanged(const QVariant& value) 
+void FrameBufferWidget::zoomLabelAnimationChanged(const QVariant& value)
 {
     QPalette palette = _zoomFactorDisplay->palette();
     QColor color(70, 70, 255);

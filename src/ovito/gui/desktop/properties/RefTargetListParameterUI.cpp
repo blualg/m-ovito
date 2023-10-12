@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -345,7 +345,7 @@ bool RefTargetListParameterUI::referenceEvent(RefTarget* source, const Reference
                 }
 #endif
             }
-        }       
+        }
     }
     else if(event.type() == ReferenceEvent::TitleChanged || event.type() == ReferenceEvent::TargetChanged) {
         OVITO_ASSERT(_targetToRow.size() == _targets.size());
