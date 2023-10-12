@@ -62,6 +62,8 @@ Exception& Exception::prependToMessage(const QString& text)
 
 void Exception::logError() const
 {
+    if(!traceback().isEmpty())
+        qCritical().noquote() << traceback();
     for(const QString& msg : _messages) {
         qCritical().noquote() << msg;
     }
