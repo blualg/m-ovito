@@ -311,7 +311,6 @@ QVector<DataObjectReference> LinesAffineTransformationModifierDelegate::OOMetaCl
     for(const ConstDataObjectPath& path : input.getObjectsRecursive(Lines::OOClass())) {
         objects.push_back(path);
     }
-    qDebug() << "objects" << objects;
     return objects;
 }
 
@@ -324,11 +323,10 @@ PipelineStatus LinesAffineTransformationModifierDelegate::apply(
 {
     const AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
 
+    // Loop over all lines objects in data collection
     for(const DataObject* obj : state.data()->objects()) {
         // Transform the Lines.
         if(const Lines* inputLines = dynamic_object_cast<Lines>(obj)) {
-            inputLines->verifyIntegrity();
-
             // Get the input line coordinates (as strong reference to force creation of a mutable clone below).
             ConstPropertyPtr inputPositionProperty = inputLines->expectProperty(Lines::PositionProperty);
 
