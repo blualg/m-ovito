@@ -121,7 +121,7 @@ Lines::Lines(ObjectInitializationFlags flags) : PropertyContainer(flags)
 {
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         if(!flags.testFlag(ObjectInitializationFlag::DontCreateVisElement)) {
-            // Create and attach a default visualization element for rendering the trajectory lines.
+            // Create and attach a default visualization element for rendering the lines.
             setVisElement(OORef<LinesVis>::create(flags));
         }
     }

@@ -60,7 +60,7 @@ LinesVis::LinesVis(ObjectInitializationFlags flags)
       _coloringMode(UniformColoring)
 {
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
-        // Create a color mapping object for pseudo-color visualization of a trajectory property.
+        // Create a color mapping object for pseudo-color visualization of a local line property.
         setColorMapping(OORef<PropertyColorMapping>::create(flags));
     }
 }
@@ -163,7 +163,7 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
 
     // The key type used for caching the rendering primitive:
     using CacheKey = RendererResourceKey<struct LinesVisCache,
-                                         ConstDataObjectRef,  // Trajectory data object
+                                         ConstDataObjectRef,  // Lines data object
                                          FloatType,           // Line width
                                          Color,               // Line color,
                                          ShadingMode,         // Shading mode
@@ -225,7 +225,7 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                 const int64_t* id = (secProperty) ? secProperty.cbegin() : nullptr;
                 const ColorG* color = colorProperty ? colorProperty.cbegin() : nullptr;
                 if(!simulationCell) {
-                    // Don't increment sampleTime if timeProperty is not present (i.e. not TrajectoryLines object)
+                    // Don't increment sampleTime if timeProperty is not present (i.e. not in Lines object)
                     for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end;
                         ++pos, (sampleTime) ? ++sampleTime : nullptr, (id) ? ++id : nullptr) {
                         // Use short circuit to avoid dereferencing sampleTime nullptr
@@ -255,7 +255,7 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                     }
                 }
                 else {
-                    // Don't increment sampleTime if timeProperty is not present (i.e. not TrajectoryLines object)
+                    // Don't increment sampleTime if timeProperty is not present (i.e. not in Lines object)
                     for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end;
                         ++pos, (sampleTime) ? ++sampleTime : nullptr, (id) ? ++id : nullptr) {
                         // Use short circuit to avoid dereferencing sampleTime nullptr
@@ -343,7 +343,7 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
 }
 
 /******************************************************************************
- * Clips a line at the periodic box boundaries.
+ * Clips a linear line segment at the periodic box boundaries.
  ******************************************************************************/
 void LinesVis::clipLine(const Point3& v1, const Point3& v2, const SimulationCell* simulationCell,
                         const std::function<void(const Point3&, const Point3&, GraphicsFloatType, GraphicsFloatType)>& segmentCallback)

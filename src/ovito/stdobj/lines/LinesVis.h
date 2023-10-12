@@ -74,20 +74,20 @@ protected:
     virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
 private:
-    /// Clips a trajectory line at the periodic box boundaries.
+    /// Clips a linear line segment at the periodic box boundaries.
     static void clipLine(const Point3& v1, const Point3& v2, const SimulationCell* simulationCell,
                          const std::function<void(const Point3&, const Point3&, GraphicsFloatType, GraphicsFloatType)>& segmentCallback);
 
-    /// Controls the display width of trajectory lines.
+    /// Controls the display width of the lines.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, lineWidth, setLineWidth, PROPERTY_FIELD_MEMORIZE);
 
-    /// Controls the color of the trajectory lines.
+    /// Controls the color of the lines.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, lineColor, setLineColor, PROPERTY_FIELD_MEMORIZE);
 
-    /// Controls the whether the trajectory lines are rendered only up to the current animation time.
+    /// Controls the whether the lines are rendered only up to the current animation time.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, showUpToCurrentTime, setShowUpToCurrentTime);
 
-    /// Controls the whether the displayed trajectory lines are wrapped at periodic boundaries of the simulation cell.
+    /// Controls the whether the displayed lines are wrapped at periodic boundaries of the simulation cell.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, wrappedLines, setWrappedLines);
 
     /// Controls the shading mode for lines.

@@ -28,7 +28,7 @@
 namespace Ovito {
 
 /**
- * \brief Stores lines of a particles dataset.
+ * \brief Stores a set of (poly)lines.
  */
 class OVITO_STDOBJ_EXPORT Lines : public PropertyContainer
 {
@@ -56,12 +56,11 @@ public:
 
 public:
     /// \brief The list of standard properties.
-    /// SampleTimeProperty are used by the GenerateTrajectoryLinesModifier
     enum Type
     {
         ColorProperty = Property::GenericColorProperty,
         PositionProperty = Property::FirstSpecificProperty,
-        SampleTimeProperty,
+        SampleTimeProperty, // Is used by the GenerateTrajectoryLinesModifier
         SectionProperty
     };
 
@@ -69,7 +68,7 @@ public:
     Q_INVOKABLE Lines(ObjectInitializationFlags flags);
 
 private:
-    /// The cached bounding box of the trajectory coordinates.
+    /// The cached bounding box of the vertex coordinates.
     Box3 _boundingBox;
 };
 
