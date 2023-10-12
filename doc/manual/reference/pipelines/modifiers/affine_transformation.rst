@@ -59,6 +59,7 @@ You can select the types of data elements that should get transformed by the mod
   :ref:`Simulation cell <scene_objects.simulation_cell>`          Applies the affine transformation to the origin of the :ref:`simulation cell <scene_objects.simulation_cell>` and the linear part to the three cell vectors.
   :ref:`Surfaces <scene_objects.surface_mesh>`                    Applies the affine transformation to the vertices of :ref:`surface meshes <scene_objects.surface_mesh>` and :ref:`triangle meshes <scene_objects.triangle_mesh>`.
   :ref:`Voxel grids <scene_objects.voxel_grid>`                   Applies the affine transformation to the domain shape of a :ref:`voxel grid <scene_objects.voxel_grid>`.
+  :ref:`Lines <scene_objects.lines>`                              Applies the affine transformation to all :ref:`lines <scene_objects.lines>`.
   :ref:`Dislocations <scene_objects.dislocations>`                Applies the affine transformation to a set of :ref:`dislocation lines <scene_objects.dislocations>`.
   =============================================================== =================================================================================
 
