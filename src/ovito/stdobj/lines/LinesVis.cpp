@@ -224,41 +224,47 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                 const int32_t* sampleTime = (timeProperty) ? timeProperty.cbegin() : nullptr;
                 const int64_t* id = (secProperty) ? secProperty.cbegin() : nullptr;
                 const ColorG* color = colorProperty ? colorProperty.cbegin() : nullptr;
+
                 if(!simulationCell) {
-                    // Don't increment sampleTime if timeProperty is not present (i.e. not in Lines object)
+                    // Don't increment sampleTime if timeProperty is not present
                     for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end;
                         ++pos, (sampleTime) ? ++sampleTime : nullptr, (id) ? ++id : nullptr) {
-                        // Use short circuit to avoid dereferencing sampleTime nullptr
+                        // Use short circuit to avoid dereferencing nullptr
                         if((!id || id[0] == id[1]) && (!sampleTime || sampleTime[1] <= endFrame)) {
-                            baseSegmentPoints.push_back(pos[0].toDataType<GraphicsFloatType>());
-                            headSegmentPoints.push_back(pos[1].toDataType<GraphicsFloatType>());
-                            if(color) {
-                                segmentColors.push_back(color[0]);
-                                segmentColors.push_back(color[1]);
-                            }
-                            else if(pseudoColorArray) {
-                                segmentPseudoColors.push_back(
-                                    pseudoColorArray.get<GraphicsFloatType>(pos - posProperty.cbegin() + 0, pseudoColorPropertyComponent));
-                                segmentPseudoColors.push_back(
-                                    pseudoColorArray.get<GraphicsFloatType>(pos - posProperty.cbegin() + 1, pseudoColorPropertyComponent));
-                            }
-                            if(pos + 1 != pos_end && (!id || id[1] == id[2]) && (!sampleTime || sampleTime[2] <= endFrame)) {
-                                cornerPoints.push_back(pos[1].toDataType<GraphicsFloatType>());
-                                if(color)
-                                    cornerColors.push_back(color[1]);
-                                else if(pseudoColorArray)
-                                    cornerPseudoColors.push_back(pseudoColorArray.get<GraphicsFloatType>(pos - posProperty.cbegin() + 1,
-                                                                                                         pseudoColorPropertyComponent));
+                            clipLine(pos[0], pos[1], simulationCell, lines->cuttingPlanes(),
+                                     [&](const Point3& p1, const Point3& p2, GraphicsFloatType t1, GraphicsFloatType t2) {
+                                         baseSegmentPoints.push_back(pos[0].toDataType<GraphicsFloatType>());
+                                         headSegmentPoints.push_back(pos[1].toDataType<GraphicsFloatType>());
+                                         if(color) {
+                                             segmentColors.push_back(color[0]);
+                                             segmentColors.push_back(color[1]);
+                                         }
+                                         else if(pseudoColorArray) {
+                                             segmentPseudoColors.push_back(pseudoColorArray.get<GraphicsFloatType>(
+                                                 pos - posProperty.cbegin() + 0, pseudoColorPropertyComponent));
+                                             segmentPseudoColors.push_back(pseudoColorArray.get<GraphicsFloatType>(
+                                                 pos - posProperty.cbegin() + 1, pseudoColorPropertyComponent));
+                                         }
+                                     });
+                            if(pos + 1 != pos_end) {
+                                clipPoint(pos[1], simulationCell, lines->cuttingPlanes(), [&](const Point3& p1) {
+                                    cornerPoints.push_back(p1.toDataType<GraphicsFloatType>());
+                                    if(color)
+                                        cornerColors.push_back(color[1]);
+                                    else if(pseudoColorArray)
+                                        cornerPseudoColors.push_back(pseudoColorArray.get<GraphicsFloatType>(pos - posProperty.cbegin() + 1,
+                                                                                                             pseudoColorPropertyComponent));
+                                });
                             }
                         }
                         if(color) ++color;
                     }
                 }
                 else {
-                    // Don't increment sampleTime if timeProperty is not present (i.e. not in Lines object)
+                    // Don't increment sampleTime if timeProperty is not present
                     for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end;
                         ++pos, (sampleTime) ? ++sampleTime : nullptr, (id) ? ++id : nullptr) {
-                        // Use short circuit to avoid dereferencing sampleTime nullptr
+                        // Use short circuit to avoid dereferencing nullptr
                         if((!id || id[0] == id[1]) && (!sampleTime || sampleTime[1] <= endFrame)) {
                             clipLine(pos[0], pos[1], simulationCell, lines->cuttingPlanes(),
                                      [&](const Point3& p1, const Point3& p2, GraphicsFloatType t1, GraphicsFloatType t2) {
@@ -277,14 +283,15 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                                              segmentPseudoColors.push_back((GraphicsFloatType(1) - t2) * ps1 + t2 * ps2);
                                          }
                                      });
-                            // Use short circuit to avoid dereferencing sampleTime nullptr
-                            if(pos + 1 != pos_end && (!id || id[1] == id[2]) && (!sampleTime || sampleTime[2] <= endFrame)) {
-                                cornerPoints.push_back(simulationCell->wrapPoint(pos[1]).toDataType<GraphicsFloatType>());
-                                if(color)
-                                    cornerColors.push_back(color[1]);
-                                else if(pseudoColorArray)
-                                    cornerPseudoColors.push_back(pseudoColorArray.get<GraphicsFloatType>(pos - posProperty.cbegin() + 1,
-                                                                                                         pseudoColorPropertyComponent));
+                            if(pos + 1 != pos_end) {
+                                clipPoint(pos[1], simulationCell, lines->cuttingPlanes(), [&](const Point3& p1) {
+                                    cornerPoints.push_back(p1.toDataType<GraphicsFloatType>());
+                                    if(color)
+                                        cornerColors.push_back(color[1]);
+                                    else if(pseudoColorArray)
+                                        cornerPseudoColors.push_back(pseudoColorArray.get<GraphicsFloatType>(pos - posProperty.cbegin() + 1,
+                                                                                                             pseudoColorPropertyComponent));
+                                });
                             }
                         }
                         if(color) ++color;
@@ -343,12 +350,11 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
 }
 
 /******************************************************************************
- * Clips a linear line segment at the periodic box boundaries.
+ * Clips a linear line segment at the periodic box boundaries or cutting planes.
  ******************************************************************************/
 void LinesVis::clipLine(const Point3& v1, const Point3& v2, const SimulationCell* simulationCell, const QVector<Plane3>& clippingPlanes,
                         const std::function<void(const Point3&, const Point3&, GraphicsFloatType, GraphicsFloatType)>& segmentCallback)
 {
-    qDebug() << "ClipLines" << v1 << v2;
     auto clippingFunction = [&clippingPlanes, &segmentCallback](Point3 p1, Point3 p2, Ovito::GraphicsFloatType t1,
                                                                 Ovito::GraphicsFloatType t2) {
         bool isClipped = false;
@@ -371,66 +377,97 @@ void LinesVis::clipLine(const Point3& v1, const Point3& v2, const SimulationCell
         }
     };
 
-    OVITO_ASSERT(simulationCell);
-
-    Point3 rp1 = simulationCell->absoluteToReduced(v1);
-    Vector3 shiftVector = Vector3::Zero();
-    for(size_t dim = 0; dim < 3; dim++) {
-        if(simulationCell->hasPbcCorrected(dim)) {
-            while(rp1[dim] >= 1) {
-                rp1[dim] -= 1;
-                shiftVector[dim] -= 1;
-            }
-            while(rp1[dim] < 0) {
-                rp1[dim] += 1;
-                shiftVector[dim] += 1;
-            }
-        }
-    }
-    Point3 rp2 = simulationCell->absoluteToReduced(v2) + shiftVector;
-    FloatType t1 = 0;
-    FloatType smallestT;
-    bool clippedDimensions[3] = {false, false, false};
-    do {
-        size_t crossDim;
-        FloatType crossDir;
-        smallestT = FLOATTYPE_MAX;
+    if(simulationCell) {
+        Point3 rp1 = simulationCell->absoluteToReduced(v1);
+        Vector3 shiftVector = Vector3::Zero();
         for(size_t dim = 0; dim < 3; dim++) {
-            if(simulationCell->hasPbcCorrected(dim) && !clippedDimensions[dim]) {
-                int d = (int)std::floor(rp2[dim]) - (int)std::floor(rp1[dim]);
-                if(d == 0) continue;
-                FloatType t;
-                if(d > 0)
-                    t = (std::ceil(rp1[dim]) - rp1[dim]) / (rp2[dim] - rp1[dim]);
-                else
-                    t = (std::floor(rp1[dim]) - rp1[dim]) / (rp2[dim] - rp1[dim]);
-                if(t >= 0 && t < smallestT) {
-                    smallestT = t;
-                    crossDim = dim;
-                    crossDir = (d > 0) ? 1 : -1;
+            if(simulationCell->hasPbcCorrected(dim)) {
+                while(rp1[dim] >= 1) {
+                    rp1[dim] -= 1;
+                    shiftVector[dim] -= 1;
+                }
+                while(rp1[dim] < 0) {
+                    rp1[dim] += 1;
+                    shiftVector[dim] += 1;
                 }
             }
         }
-        if(smallestT != FLOATTYPE_MAX) {
-            clippedDimensions[crossDim] = true;
-            Point3 intersection = rp1 + smallestT * (rp2 - rp1);
-            intersection[crossDim] = std::round(intersection[crossDim]);
-            FloatType t2 = (FloatType(1) - smallestT) * t1 + smallestT;
-            Point3 rp1abs = simulationCell->reducedToAbsolute(rp1);
-            Point3 intabs = simulationCell->reducedToAbsolute(intersection);
-            if(!intabs.equals(rp1abs)) {
-                OVITO_ASSERT(t2 <= FloatType(1) + FLOATTYPE_EPSILON);
-                clippingFunction(rp1abs, intabs, t1, t2);
+        Point3 rp2 = simulationCell->absoluteToReduced(v2) + shiftVector;
+        FloatType t1 = 0;
+        FloatType smallestT;
+        bool clippedDimensions[3] = {false, false, false};
+        do {
+            size_t crossDim;
+            FloatType crossDir;
+            smallestT = FLOATTYPE_MAX;
+            for(size_t dim = 0; dim < 3; dim++) {
+                if(simulationCell->hasPbcCorrected(dim) && !clippedDimensions[dim]) {
+                    int d = (int)std::floor(rp2[dim]) - (int)std::floor(rp1[dim]);
+                    if(d == 0) continue;
+                    FloatType t;
+                    if(d > 0)
+                        t = (std::ceil(rp1[dim]) - rp1[dim]) / (rp2[dim] - rp1[dim]);
+                    else
+                        t = (std::floor(rp1[dim]) - rp1[dim]) / (rp2[dim] - rp1[dim]);
+                    if(t >= 0 && t < smallestT) {
+                        smallestT = t;
+                        crossDim = dim;
+                        crossDir = (d > 0) ? 1 : -1;
+                    }
+                }
             }
-            shiftVector[crossDim] -= crossDir;
-            rp1 = intersection;
-            rp1[crossDim] -= crossDir;
-            rp2[crossDim] -= crossDir;
-            t1 = t2;
-        }
-    } while(smallestT != FLOATTYPE_MAX);
+            if(smallestT != FLOATTYPE_MAX) {
+                clippedDimensions[crossDim] = true;
+                Point3 intersection = rp1 + smallestT * (rp2 - rp1);
+                intersection[crossDim] = std::round(intersection[crossDim]);
+                FloatType t2 = (FloatType(1) - smallestT) * t1 + smallestT;
+                Point3 rp1abs = simulationCell->reducedToAbsolute(rp1);
+                Point3 intabs = simulationCell->reducedToAbsolute(intersection);
+                if(!intabs.equals(rp1abs)) {
+                    OVITO_ASSERT(t2 <= FloatType(1) + FLOATTYPE_EPSILON);
+                    clippingFunction(rp1abs, intabs, t1, t2);
+                }
+                shiftVector[crossDim] -= crossDir;
+                rp1 = intersection;
+                rp1[crossDim] -= crossDir;
+                rp2[crossDim] -= crossDir;
+                t1 = t2;
+            }
+        } while(smallestT != FLOATTYPE_MAX);
 
-    clippingFunction(simulationCell->reducedToAbsolute(rp1), simulationCell->reducedToAbsolute(rp2), t1, 1);
+        clippingFunction(simulationCell->reducedToAbsolute(rp1), simulationCell->reducedToAbsolute(rp2), t1, 1);
+    }
+    else {
+        clippingFunction(v1, v2, 1, 1);
+    }
+}
+
+/******************************************************************************
+ * Clips a point at the periodic box boundaries or cutting planes.
+ ******************************************************************************/
+void LinesVis::clipPoint(const Point3& v1, const SimulationCell* simulationCell, const QVector<Plane3>& clippingPlanes,
+                         const std::function<void(const Point3&)>& segmentCallback)
+{
+    auto clippingFunction = [&clippingPlanes, &segmentCallback](Point3 p1) {
+        bool isClipped = false;
+        for(const Plane3& plane : clippingPlanes) {
+            FloatType c1 = plane.pointDistance(p1);
+            if(c1 >= 0) {
+                isClipped = true;
+                break;
+            }
+        }
+        if(!isClipped) {
+            segmentCallback(p1);
+        }
+    };
+
+    if(simulationCell) {
+        clippingFunction(simulationCell->wrapPoint(v1));
+    }
+    else {
+        clippingFunction(v1);
+    }
 }
 
 }  // namespace Ovito

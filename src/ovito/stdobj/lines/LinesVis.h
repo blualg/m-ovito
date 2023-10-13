@@ -74,9 +74,13 @@ protected:
     virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
 private:
-    /// Clips a linear line segment at the periodic box boundaries.
+    /// Clips a linear line segment at the periodic box boundaries or cutting planes.
     static void clipLine(const Point3& v1, const Point3& v2, const SimulationCell* simulationCell, const QVector<Plane3>& clippingPlanes,
                          const std::function<void(const Point3&, const Point3&, GraphicsFloatType, GraphicsFloatType)>& segmentCallback);
+
+    /// Clips a point at the periodic box boundaries or cutting planes.
+    static void clipPoint(const Point3& v1, const SimulationCell* simulationCell, const QVector<Plane3>& clippingPlanes,
+                          const std::function<void(const Point3&)>& segmentCallback);
 
     /// Controls the display width of the lines.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, lineWidth, setLineWidth, PROPERTY_FIELD_MEMORIZE);
