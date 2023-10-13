@@ -437,8 +437,7 @@ void LinesVis::clipPoint(const Point3& v1, const SimulationCell* simulationCell,
     auto clippingFunction = [&clippingPlanes, &segmentCallback](Point3 p1) {
         bool isClipped = false;
         for(const Plane3& plane : clippingPlanes) {
-            FloatType c1 = plane.pointDistance(p1);
-            if(c1 >= 0) {
+            if(plane.classifyPoint(p1) > 0) {
                 isClipped = true;
                 break;
             }

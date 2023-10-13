@@ -69,7 +69,21 @@ public:
     /// \brief Constructor.
     Q_INVOKABLE Lines(ObjectInitializationFlags flags);
 
+    std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
+                                                                        MixedKeyCache& visCache) const;
+
 private:
+    /// Tests whether the given spatial point is culled by the cutting planes set for this object.
+    bool isPointCulled(const Point3& p) const
+    {
+        for(const Plane3& plane : cuttingPlanes()) {
+            if(plane.classifyPoint(p) > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /// The planar cuts to be applied to geometry after its has been transformed into a non-periodic representation.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QVector<Plane3>, cuttingPlanes, setCuttingPlanes);
 

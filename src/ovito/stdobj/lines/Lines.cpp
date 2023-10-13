@@ -22,6 +22,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/stdobj/lines/LinesVis.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include "Lines.h"
 
 namespace Ovito {
@@ -129,4 +130,60 @@ Lines::Lines(ObjectInitializationFlags flags) : PropertyContainer(flags)
     }
 }
 
+/******************************************************************************
+ * Returns the base point and vector information for visualizing a vector
+ * property from this container using a VectorVis element.
+ ******************************************************************************/
+std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> Lines::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
+                                                                           MixedKeyCache& visCache) const
+{
+    // Get lines object
+    if(const Lines* lines = path.lastAs<Lines>(1)) {
+        OVITO_ASSERT(path.lastAs<Lines>(1) == this);
+
+        if(const LinesVis* linesVis = dynamic_object_cast<LinesVis>(lines->visElement())) {
+            // Get the simulation cell.
+            const SimulationCell* simulationCell = linesVis->wrappedLines() ? state.getObject<SimulationCell>() : nullptr;
+            // Get the input data buffer
+            ConstDataBufferPtr vectorProperty = path.lastAs<DataBuffer>();
+            if(vectorProperty && vectorProperty->componentCount() == 3) {
+                OVITO_ASSERT(vectorProperty->dataType() == Property::FloatDefault);
+                if(vectorProperty->dataType() == Property::FloatDefault) {
+                    if(BufferReadAccess<Point3> positions = getProperty(PositionProperty)) {
+                        BufferWriteAccessAndRef<Vector3, access_mode::write> filteredVectors = vectorProperty.makeCopy();
+                        // wrap points
+                        if(simulationCell) {
+                            ConstDataBufferPtr wrappedPositionsPtr = getProperty(PositionProperty);
+                            // Todo this copy is useless and could be unitilized
+                            BufferWriteAccessAndRef<Point3, access_mode::write> wrappedPositions = wrappedPositionsPtr.makeCopy();
+                            // BufferWriteAccessAndRef<Point3, access_mode::write> wrappedPositions =
+                            // Lines::OOClass().createStandardProperty(DataBuffer::Uninitialized, 0, Lines::PositionProperty);
+
+                            for(size_t i = 0; i < positions.size(); ++i) {
+                                wrappedPositions[i] = simulationCell->wrapPoint(positions[i]);
+                                if(isPointCulled(wrappedPositions[i])) {
+                                    filteredVectors[i].setZero();
+                                }
+                            }
+                            wrappedPositionsPtr = wrappedPositions.take();
+                            vectorProperty = filteredVectors.take();
+                            return {std::move(wrappedPositionsPtr), std::move(vectorProperty)};
+                        }
+                        // use unwrapped points
+                        else {
+                            for(size_t i = 0; i < positions.size(); ++i) {
+                                if(isPointCulled(positions[i])) {
+                                    filteredVectors[i].setZero();
+                                }
+                            }
+                            vectorProperty = filteredVectors.take();
+                            return {getProperty(PositionProperty), std::move(vectorProperty)};
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return {};
+}
 }  // namespace Ovito
