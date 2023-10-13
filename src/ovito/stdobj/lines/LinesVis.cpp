@@ -225,47 +225,12 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                 const int64_t* id = (secProperty) ? secProperty.cbegin() : nullptr;
                 const ColorG* color = colorProperty ? colorProperty.cbegin() : nullptr;
 
-                if(!simulationCell) {
-                    // Don't increment sampleTime if timeProperty is not present
-                    for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end;
-                        ++pos, (sampleTime) ? ++sampleTime : nullptr, (id) ? ++id : nullptr) {
-                        // Use short circuit to avoid dereferencing nullptr
-                        if((!id || id[0] == id[1]) && (!sampleTime || sampleTime[1] <= endFrame)) {
-                            clipLine(pos[0], pos[1], simulationCell, lines->cuttingPlanes(),
-                                     [&](const Point3& p1, const Point3& p2, GraphicsFloatType t1, GraphicsFloatType t2) {
-                                         baseSegmentPoints.push_back(pos[0].toDataType<GraphicsFloatType>());
-                                         headSegmentPoints.push_back(pos[1].toDataType<GraphicsFloatType>());
-                                         if(color) {
-                                             segmentColors.push_back(color[0]);
-                                             segmentColors.push_back(color[1]);
-                                         }
-                                         else if(pseudoColorArray) {
-                                             segmentPseudoColors.push_back(pseudoColorArray.get<GraphicsFloatType>(
-                                                 pos - posProperty.cbegin() + 0, pseudoColorPropertyComponent));
-                                             segmentPseudoColors.push_back(pseudoColorArray.get<GraphicsFloatType>(
-                                                 pos - posProperty.cbegin() + 1, pseudoColorPropertyComponent));
-                                         }
-                                     });
-                            if(pos + 1 != pos_end) {
-                                clipPoint(pos[1], simulationCell, lines->cuttingPlanes(), [&](const Point3& p1) {
-                                    cornerPoints.push_back(p1.toDataType<GraphicsFloatType>());
-                                    if(color)
-                                        cornerColors.push_back(color[1]);
-                                    else if(pseudoColorArray)
-                                        cornerPseudoColors.push_back(pseudoColorArray.get<GraphicsFloatType>(pos - posProperty.cbegin() + 1,
-                                                                                                             pseudoColorPropertyComponent));
-                                });
-                            }
-                        }
-                        if(color) ++color;
-                    }
-                }
-                else {
-                    // Don't increment sampleTime if timeProperty is not present
-                    for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end;
-                        ++pos, (sampleTime) ? ++sampleTime : nullptr, (id) ? ++id : nullptr) {
-                        // Use short circuit to avoid dereferencing nullptr
-                        if((!id || id[0] == id[1]) && (!sampleTime || sampleTime[1] <= endFrame)) {
+                // Don't increment sampleTime if timeProperty is not present
+                for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end;
+                    ++pos, (sampleTime) ? ++sampleTime : nullptr, (id) ? ++id : nullptr) {
+                    // Use short circuit to avoid dereferencing nullptr
+                    if((!id || id[0] == id[1]) && (!sampleTime || sampleTime[1] <= endFrame)) {
+                        if(simulationCell) {
                             clipLine(pos[0], pos[1], simulationCell, lines->cuttingPlanes(),
                                      [&](const Point3& p1, const Point3& p2, GraphicsFloatType t1, GraphicsFloatType t2) {
                                          baseSegmentPoints.push_back(p1.toDataType<GraphicsFloatType>());
@@ -283,18 +248,39 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                                              segmentPseudoColors.push_back((GraphicsFloatType(1) - t2) * ps1 + t2 * ps2);
                                          }
                                      });
-                            if(pos + 1 != pos_end) {
-                                clipPoint(pos[1], simulationCell, lines->cuttingPlanes(), [&](const Point3& p1) {
-                                    cornerPoints.push_back(p1.toDataType<GraphicsFloatType>());
-                                    if(color)
-                                        cornerColors.push_back(color[1]);
-                                    else if(pseudoColorArray)
-                                        cornerPseudoColors.push_back(pseudoColorArray.get<GraphicsFloatType>(pos - posProperty.cbegin() + 1,
-                                                                                                             pseudoColorPropertyComponent));
-                                });
-                            }
                         }
-                        if(color) ++color;
+                        else {
+                            // clipLine accounts for simulationCell = nullptr
+                            clipLine(pos[0], pos[1], simulationCell, lines->cuttingPlanes(),
+                                     [&](const Point3& p1, const Point3& p2, GraphicsFloatType t1, GraphicsFloatType t2) {
+                                         baseSegmentPoints.push_back(pos[0].toDataType<GraphicsFloatType>());
+                                         headSegmentPoints.push_back(pos[1].toDataType<GraphicsFloatType>());
+                                         if(color) {
+                                             segmentColors.push_back(color[0]);
+                                             segmentColors.push_back(color[1]);
+                                         }
+                                         else if(pseudoColorArray) {
+                                             segmentPseudoColors.push_back(pseudoColorArray.get<GraphicsFloatType>(
+                                                 pos - posProperty.cbegin() + 0, pseudoColorPropertyComponent));
+                                             segmentPseudoColors.push_back(pseudoColorArray.get<GraphicsFloatType>(
+                                                 pos - posProperty.cbegin() + 1, pseudoColorPropertyComponent));
+                                         }
+                                     });
+                        }
+                        if(pos + 1 != pos_end) {
+                            // clipPoint accounts for simulationCell = nullptr
+                            clipPoint(pos[1], simulationCell, lines->cuttingPlanes(), [&](const Point3& p1) {
+                                cornerPoints.push_back(p1.toDataType<GraphicsFloatType>());
+                                if(color)
+                                    cornerColors.push_back(color[1]);
+                                else if(pseudoColorArray)
+                                    cornerPseudoColors.push_back(pseudoColorArray.get<GraphicsFloatType>(pos - posProperty.cbegin() + 1,
+                                                                                                         pseudoColorPropertyComponent));
+                            });
+                        }
+                    }
+                    if(color) {
+                        ++color;
                     }
                 }
 
