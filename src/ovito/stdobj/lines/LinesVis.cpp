@@ -260,7 +260,7 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                         ++pos, (sampleTime) ? ++sampleTime : nullptr, (id) ? ++id : nullptr) {
                         // Use short circuit to avoid dereferencing sampleTime nullptr
                         if((!id || id[0] == id[1]) && (!sampleTime || sampleTime[1] <= endFrame)) {
-                            clipLine(pos[0], pos[1], simulationCell,
+                            clipLine(pos[0], pos[1], simulationCell, lines->cuttingPlanes(),
                                      [&](const Point3& p1, const Point3& p2, GraphicsFloatType t1, GraphicsFloatType t2) {
                                          baseSegmentPoints.push_back(p1.toDataType<GraphicsFloatType>());
                                          headSegmentPoints.push_back(p2.toDataType<GraphicsFloatType>());
@@ -345,9 +345,32 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
 /******************************************************************************
  * Clips a linear line segment at the periodic box boundaries.
  ******************************************************************************/
-void LinesVis::clipLine(const Point3& v1, const Point3& v2, const SimulationCell* simulationCell,
+void LinesVis::clipLine(const Point3& v1, const Point3& v2, const SimulationCell* simulationCell, const QVector<Plane3>& clippingPlanes,
                         const std::function<void(const Point3&, const Point3&, GraphicsFloatType, GraphicsFloatType)>& segmentCallback)
 {
+    qDebug() << "ClipLines" << v1 << v2;
+    auto clippingFunction = [&clippingPlanes, &segmentCallback](Point3 p1, Point3 p2, Ovito::GraphicsFloatType t1,
+                                                                Ovito::GraphicsFloatType t2) {
+        bool isClipped = false;
+        for(const Plane3& plane : clippingPlanes) {
+            FloatType c1 = plane.pointDistance(p1);
+            FloatType c2 = plane.pointDistance(p2);
+            if(c1 >= 0 && c2 >= 0.0) {
+                isClipped = true;
+                break;
+            }
+            else if(c1 > FLOATTYPE_EPSILON && c2 < -FLOATTYPE_EPSILON) {
+                p1 += (p2 - p1) * (c1 / (c1 - c2));
+            }
+            else if(c1 < -FLOATTYPE_EPSILON && c2 > FLOATTYPE_EPSILON) {
+                p2 += (p1 - p2) * (c2 / (c2 - c1));
+            }
+        }
+        if(!isClipped) {
+            segmentCallback(p1, p2, t1, t2);
+        }
+    };
+
     OVITO_ASSERT(simulationCell);
 
     Point3 rp1 = simulationCell->absoluteToReduced(v1);
@@ -397,7 +420,7 @@ void LinesVis::clipLine(const Point3& v1, const Point3& v2, const SimulationCell
             Point3 intabs = simulationCell->reducedToAbsolute(intersection);
             if(!intabs.equals(rp1abs)) {
                 OVITO_ASSERT(t2 <= FloatType(1) + FLOATTYPE_EPSILON);
-                segmentCallback(rp1abs, intabs, t1, t2);
+                clippingFunction(rp1abs, intabs, t1, t2);
             }
             shiftVector[crossDim] -= crossDir;
             rp1 = intersection;
@@ -407,7 +430,7 @@ void LinesVis::clipLine(const Point3& v1, const Point3& v2, const SimulationCell
         }
     } while(smallestT != FLOATTYPE_MAX);
 
-    segmentCallback(simulationCell->reducedToAbsolute(rp1), simulationCell->reducedToAbsolute(rp2), t1, 1);
+    clippingFunction(simulationCell->reducedToAbsolute(rp1), simulationCell->reducedToAbsolute(rp2), t1, 1);
 }
 
 }  // namespace Ovito

@@ -75,7 +75,7 @@ protected:
 
 private:
     /// Clips a linear line segment at the periodic box boundaries.
-    static void clipLine(const Point3& v1, const Point3& v2, const SimulationCell* simulationCell,
+    static void clipLine(const Point3& v1, const Point3& v2, const SimulationCell* simulationCell, const QVector<Plane3>& clippingPlanes,
                          const std::function<void(const Point3&, const Point3&, GraphicsFloatType, GraphicsFloatType)>& segmentCallback);
 
     /// Controls the display width of the lines.

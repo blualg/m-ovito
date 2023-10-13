@@ -22,7 +22,9 @@
 
 #pragma once
 
-#include <ovito/particles/Particles.h>
+#include <ovito/core/utilities/linalg/LinAlg.h>
+// #include <ovito/particles/Particles.h>
+#include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 
 namespace Ovito {
@@ -68,6 +70,9 @@ public:
     Q_INVOKABLE Lines(ObjectInitializationFlags flags);
 
 private:
+    /// The planar cuts to be applied to geometry after its has been transformed into a non-periodic representation.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QVector<Plane3>, cuttingPlanes, setCuttingPlanes);
+
     /// The cached bounding box of the vertex coordinates.
     Box3 _boundingBox;
 };

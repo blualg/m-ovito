@@ -44,6 +44,37 @@ protected:
 };
 
 /**
+ * \brief Slice function that operates on lines.
+ */
+class OVITO_STDMOD_EXPORT LinesSliceModifierDelegate : public SliceModifierDelegate
+{
+    /// Give the modifier delegate its own metaclass.
+    class LinesSliceModifierDelegateClass : public SliceModifierDelegate::OOMetaClass
+    {
+    public:
+        /// Inherit constructor from base class.
+        using SliceModifierDelegate::OOMetaClass::OOMetaClass;
+
+        /// Asks the metaclass which data objects in the given input data collection the modifier delegate can operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("lines"); }
+    };
+
+    OVITO_CLASS_META(LinesSliceModifierDelegate, LinesSliceModifierDelegateClass)
+    Q_CLASSINFO("DisplayName", "Lines");
+
+public:
+    /// Constructor.
+    Q_INVOKABLE LinesSliceModifierDelegate(ObjectInitializationFlags flags) : SliceModifierDelegate(flags) {}
+
+    /// \brief Applies a slice operation to a data object.
+    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState,
+                                 const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+};
+
+/**
  * \brief The slice modifier performs a cut through a dataset.
  */
 class OVITO_STDMOD_EXPORT SliceModifier : public MultiDelegatingModifier

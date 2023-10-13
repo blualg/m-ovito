@@ -27,6 +27,8 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(Lines);
+DEFINE_PROPERTY_FIELD(Lines, cuttingPlanes);
+SET_PROPERTY_FIELD_LABEL(Lines, cuttingPlanes, "Cutting planes");
 
 /******************************************************************************
  * Registers all standard properties with the property traits class.
