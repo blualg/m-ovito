@@ -36,7 +36,8 @@ IMPLEMENT_OVITO_CLASS(PickingOpenGLSceneRenderer);
 ******************************************************************************/
 PickingOpenGLSceneRenderer::PickingOpenGLSceneRenderer(ObjectInitializationFlags flags) : OffscreenInteractiveOpenGLSceneRenderer(flags)
 {
-    setPicking(true);
+    setPickingPass(true);
+    setImagePass(false);
 }
 
 /******************************************************************************
@@ -128,7 +129,6 @@ bool PickingOpenGLSceneRenderer::renderFrame(const QRect& viewportRect, MainThre
 void PickingOpenGLSceneRenderer::resetPickingBuffer()
 {
     discardFramebufferImage();
-
     OffscreenInteractiveOpenGLSceneRenderer::resetPickingBuffer();
 }
 

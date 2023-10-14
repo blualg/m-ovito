@@ -411,7 +411,7 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
 ******************************************************************************/
 void DislocationVis::renderOverlayMarker(AnimationTime time, const DataObject* dataObject, const PipelineFlowState& flowState, int segmentIndex, SceneRenderer* renderer, const Pipeline* pipeline)
 {
-    if(renderer->isPicking())
+    if(!renderer->isImagePass())
         return;
 
     // Get the dislocations.

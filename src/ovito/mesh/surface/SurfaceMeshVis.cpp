@@ -296,7 +296,7 @@ PipelineStatus SurfaceMeshVis::render(AnimationTime time, const ConstDataObjectP
         renderer->renderMesh(visCache.surfacePrimitive);
     }
     if(showCap() && visCache.capPrimitive.mesh()) {
-        if(!renderer->isPicking() || cap_alpha >= 1)
+        if(renderer->isImagePass() || cap_alpha >= 1)
             renderer->renderMesh(visCache.capPrimitive);
     }
     renderer->endPickObject();
