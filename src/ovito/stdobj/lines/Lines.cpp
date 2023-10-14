@@ -153,12 +153,12 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> Lines::getVectorVisData(const
                         BufferWriteAccessAndRef<Vector3, access_mode::write> filteredVectors = vectorProperty.makeCopy();
                         // wrap points
                         if(simulationCell) {
+                            // create output buffer for wrapped points
                             ConstDataBufferPtr wrappedPositionsPtr = getProperty(PositionProperty);
-                            // Todo this copy is useless and could be unitilized
-                            BufferWriteAccessAndRef<Point3, access_mode::write> wrappedPositions = wrappedPositionsPtr.makeCopy();
-                            // BufferWriteAccessAndRef<Point3, access_mode::write> wrappedPositions =
-                            // Lines::OOClass().createStandardProperty(DataBuffer::Uninitialized, 0, Lines::PositionProperty);
-
+                            BufferWriteAccessAndRef<Point3, access_mode::discard_write> wrappedPositions =
+                                Lines::OOClass().createStandardProperty(DataBuffer::Uninitialized, lines->elementCount(),
+                                                                        Lines::PositionProperty);
+                            // process points
                             for(size_t i = 0; i < positions.size(); ++i) {
                                 wrappedPositions[i] = simulationCell->wrapPoint(positions[i]);
                                 if(isPointCulled(wrappedPositions[i])) {
@@ -171,6 +171,7 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> Lines::getVectorVisData(const
                         }
                         // use unwrapped points
                         else {
+                            // process points
                             for(size_t i = 0; i < positions.size(); ++i) {
                                 if(isPointCulled(positions[i])) {
                                     filteredVectors[i].setZero();
