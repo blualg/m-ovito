@@ -481,7 +481,7 @@ void PickPlanePointsInputMode::alignPlane(SliceModifier* mod)
 ******************************************************************************/
 void PickPlanePointsInputMode::renderOverlay3D(Viewport* vp, SceneRenderer* renderer)
 {
-    if(renderer->isPicking())
+    if(!renderer->isImagePass())
         return;
 
     int npoints = _numPickedPoints;

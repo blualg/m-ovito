@@ -829,17 +829,14 @@ void ParticlesVis::renderPrimitiveParticles(const Particles* particles, SceneRen
         primitive.setParticleShape(primitiveParticleShape);
         primitive.setShadingMode(primitiveShadingMode);
 
-        if(renderer->isPicking()) {
-            // Look up or create the pick info record with the latest particle data.
-            OORef<ParticlePickInfo>& pickingInfo = renderer->visCache().get<OORef<ParticlePickInfo>>(ConstDataObjectRef(particles));
-            if(!pickingInfo)
-                pickingInfo = OORef<ParticlePickInfo>::create(this, particles);
-            renderer->beginPickObject(pipeline, pickingInfo);
-        }
+        // Look up or create the pick info record with the latest particle data.
+        auto& pickingInfo = renderer->visCache().get<OORef<ParticlePickInfo>>(ConstDataObjectRef(particles));
+        if(!pickingInfo)
+            pickingInfo = OORef<ParticlePickInfo>::create(this, particles);
+        renderer->beginPickObject(pipeline, pickingInfo);
         // Render the particle primitive.
         renderer->renderParticles(primitive);
-        if(renderer->isPicking())
-            renderer->endPickObject();
+        renderer->endPickObject();
     }
 }
 

@@ -87,7 +87,7 @@ PipelineStatus TargetVis::render(AnimationTime time, const ConstDataObjectPath& 
         LinePrimitive iconPrimitive;
         iconPrimitive.setUniformColor(ViewportSettings::getSettings().viewportColor(pipeline->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_CAMERAS));
         iconPrimitive.setPositions(vertexPositions);
-        if(renderer->isPicking())
+        if(!renderer->isImagePass())
             iconPrimitive.setLineWidth(renderer->defaultLinePickingWidth());
 
         // Render the lines.

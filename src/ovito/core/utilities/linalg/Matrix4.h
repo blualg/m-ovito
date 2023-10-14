@@ -368,6 +368,8 @@ public:
     /// \brief Generates an orthogonal projection matrix.
     static Q_DECL_CONSTEXPR Matrix_4<T> ortho(T left, T right, T bottom, T top, T znear, T zfar) {
         OVITO_ASSERT(znear < zfar);
+        OVITO_ASSERT(right != left);
+        OVITO_ASSERT(top != bottom);
         return { T(2)/(right-left), T(0),  T(0), -(right+left)/(right-left),
                  T(0), T(2)/(top-bottom), T(0), -(top+bottom)/(top-bottom),
                  T(0), T(0), T(-2)/(zfar-znear), -(zfar+znear)/(zfar-znear),
@@ -377,6 +379,8 @@ public:
     /// \brief Generates a perspective projection matrix.
     static Q_DECL_CONSTEXPR Matrix_4<T> frustum(T left, T right, T bottom, T top, T znear, T zfar) {
         OVITO_ASSERT(znear < zfar);
+        OVITO_ASSERT(right != left);
+        OVITO_ASSERT(top != bottom);
         return { T(2)*znear/(right-left), T(0),  (right + left) / (right - left), T(0),
                  T(0), T(2)*znear/(top-bottom), (top + bottom) / (top - bottom), T(0),
                  T(0), T(0), -(zfar + znear) / (zfar - znear), -(T(2)*zfar*znear)/(zfar - znear),
@@ -417,6 +421,7 @@ template<typename T>
 Q_DECL_CONSTEXPR inline Vector_3<T> operator*(const Matrix_4<T>& a, const Vector_3<T>& v)
 {
     T s = a(3,0)*v[0] + a(3,1)*v[1] + a(3,2)*v[2] + a(3,3);
+    OVITO_ASSERT(s != 0);
     return {
         (a(0,0)*v[0] + a(0,1)*v[1] + a(0,2)*v[2]) / s,
         (a(1,0)*v[0] + a(1,1)*v[1] + a(1,2)*v[2]) / s,
@@ -430,6 +435,7 @@ template<typename T>
 Q_DECL_CONSTEXPR inline Point_3<T> operator*(const Matrix_4<T>& a, const Point_3<T>& v)
 {
     T s = a(3,0)*v[0] + a(3,1)*v[1] + a(3,2)*v[2] + a(3,3);
+    OVITO_ASSERT(s != 0);
     return {
         (a(0,0)*v[0] + a(0,1)*v[1] + a(0,2)*v[2] + a(0,3)) / s,
         (a(1,0)*v[0] + a(1,1)*v[1] + a(1,2)*v[2] + a(1,3)) / s,

@@ -98,7 +98,7 @@ public:
 
     /// Passes the base object ID to the shader in picking mode.
     void setPickingBaseId(GLint baseId) {
-        OVITO_ASSERT(_renderer->isPicking());
+        OVITO_ASSERT(_renderer->isPickingPass());
         OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("picking_base_id", baseId));
     }
 
@@ -241,7 +241,7 @@ public:
 
         // Ordered drawing is not support by picking shaders, which access the gl_InstanceID special variable.
         // That's because the 'baseInstance' parameter does not affect the shader-visible value of gl_InstanceID according to the OpenGL specification.
-        OVITO_ASSERT(!_renderer->isPicking());
+        OVITO_ASSERT(!_renderer->isPickingPass());
 
         // Are we using a geometry shader? If yes, render point primitives only.
         if(usingGeometryShader()) {

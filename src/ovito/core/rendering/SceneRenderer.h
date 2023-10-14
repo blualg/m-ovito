@@ -196,11 +196,17 @@ public:
 	/// Sets the interactive mode of the scene renderer.
 	void setInteractive(bool isInteractive) { _isInteractive = isInteractive; }
 
-	/// Returns whether object picking mode is active.
-	bool isPicking() const { return _isPicking; }
+	/// Returns whether object picking information is recorded during the current rendering pass.
+	bool isPickingPass() const { return _isPickingPass; }
 
-	/// Sets whether object picking mode is active.
-	void setPicking(bool enable) { _isPicking = enable; }
+	/// Sets whether whether object picking information is recorded during the current rendering pass.
+	void setPickingPass(bool enable) { _isPickingPass = enable; }
+
+	/// Returns whether a visual image is being produced during the current rendering pass (i.e., not just recording object picking information).
+	bool isImagePass() const { return _isImagePass; }
+
+	/// Sets whether a visual image is being produced during the current rendering pass (i.e., not just recording object picking information).
+	void setImagePass(bool enable) { _isImagePass = enable; }
 
 	/// Returns whether bounding box calculation pass is active.
 	bool isBoundingBoxPass() const { return _isBoundingBoxPass; }
@@ -323,8 +329,11 @@ private:
 	/// The data cache to be used by visualization elements.
 	MixedKeyCache* _visCache = nullptr;
 
-	/// Indicates that an object picking pass is active.
-	bool _isPicking = false;
+	/// Indicates that object picking information is being recorded during the current rendering pass.
+	bool _isPickingPass = false;
+
+	/// Indicates that this is a rendering pass that produces a visual image (not just for recording object picking information).
+	bool _isImagePass = true;
 
 	/// Indicates that this is a real-time renderer for an interactive viewport.
 	bool _isInteractive = false;

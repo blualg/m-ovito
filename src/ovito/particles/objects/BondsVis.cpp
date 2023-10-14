@@ -205,6 +205,7 @@ PipelineStatus BondsVis::render(AnimationTime time, const ConstDataObjectPath& p
     struct CacheValue {
         CylinderPrimitive cylinders;
         ParticlePrimitive vertices;
+        OORef<BondPickInfo> pickInfo;
     };
 
     // Lookup the rendering primitive in the vis cache.
@@ -367,22 +368,17 @@ PipelineStatus BondsVis::render(AnimationTime time, const ConstDataObjectPath& p
     }
     if(!visCache.cylinders.basePositions())
         return {};
+    if(!visCache.pickInfo)
+        visCache.pickInfo = OORef<BondPickInfo>::create(particles, simulationCell);
 
-    if(renderer->isPicking()) {
-        OORef<BondPickInfo> pickInfo = OORef<BondPickInfo>::create(particles, simulationCell);
-        renderer->beginPickObject(pipeline, pickInfo);
-    }
+    renderer->beginPickObject(pipeline, visCache.pickInfo);
     renderer->renderCylinders(visCache.cylinders);
-    if(renderer->isPicking()) {
-        renderer->endPickObject();
-    }
+    renderer->endPickObject();
 
     if(visCache.vertices.positions() && renderNodalVertices) {
-        if(renderer->isPicking())
-            renderer->beginPickObject(pipeline);
+        renderer->beginPickObject(pipeline);
         renderer->renderParticles(visCache.vertices);
-        if(renderer->isPicking())
-            renderer->endPickObject();
+        renderer->endPickObject();
     }
 
     return {};

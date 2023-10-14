@@ -273,7 +273,7 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
         transparency = transparencyController()->getFloatValue(time, iv);
 
     // Lookup the rendering primitive in the vis cache.
-    auto& arrows = renderer->visCache().get<CylinderPrimitive>(CacheKey(
+    auto& [arrows, pickInfo] = renderer->visCache().get<std::pair<CylinderPrimitive, OORef<VectorPickInfo>>>(CacheKey(
             vectorProperty,
             basePositions,
             shadingMode(),
@@ -360,17 +360,16 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
             arrows.setTransparencies(std::move(transparencyBuffer));
         }
     }
-
-    if(renderer->isPicking()) {
-        renderer->beginPickObject(pipeline, OORef<VectorPickInfo>::create(this, path));
+    if(!pickInfo) {
+        pickInfo = OORef<VectorPickInfo>::create(this, path);
     }
+
+    renderer->beginPickObject(pipeline, pickInfo);
     AffineTransformation oldTM = renderer->worldTransform();
     renderer->setWorldTransform(AffineTransformation::translation(offset()) * oldTM);
     renderer->renderCylinders(arrows);
     renderer->setWorldTransform(oldTM);
-    if(renderer->isPicking()) {
-        renderer->endPickObject();
-    }
+    renderer->endPickObject();
 
     return status;
 }

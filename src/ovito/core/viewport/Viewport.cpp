@@ -453,7 +453,7 @@ bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
             updateViewport();
         }
     }
-    else if(source == viewNode() && event.type() == ReferenceEvent::TitleChanged) {
+    else if(source == viewNode() && event.type() == ReferenceEvent::TitleChanged && !isBeingLoaded()) {
         // Update viewport title when camera node has been renamed.
         updateViewportTitle();
         updateViewport();
@@ -541,7 +541,7 @@ void Viewport::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget*
 void Viewport::propertyChanged(const PropertyFieldDescriptor* field)
 {
     RefTarget::propertyChanged(field);
-    if(field == PROPERTY_FIELD(viewType)) {
+    if(field == PROPERTY_FIELD(viewType) && !isBeingLoaded()) {
         updateViewportTitle();
     }
     else if(field == PROPERTY_FIELD(cameraUpDirection) && !isBeingLoaded()) {
@@ -659,7 +659,7 @@ void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset,
         renderer->beginFrame(time, scene(), _projParams, this, vpRect, nullptr);
 
         // Render viewport "underlays".
-        if(renderPreviewMode() && !renderer->isPicking()) {
+        if(renderPreviewMode() && renderer->isImagePass()) {
             if(boost::algorithm::any_of(underlays(), [](ViewportOverlay* layer) { return layer->isEnabled(); })) {
                 QRect renderViewportRect = this->renderViewportRect(dataset);
                 if(!renderViewportRect.isEmpty()) {
@@ -684,7 +684,7 @@ void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset,
         renderer->renderFrame(vpRect, renderOperation);
 
         // Render viewport "overlays".
-        if(renderPreviewMode() && !renderer->isPicking()) {
+        if(renderPreviewMode() && renderer->isImagePass()) {
             if(boost::algorithm::any_of(overlays(), [](ViewportOverlay* layer) { return layer->isEnabled(); })) {
                 QRect renderViewportRect = this->renderViewportRect(dataset);
                 if(!renderViewportRect.isEmpty()) {
@@ -703,16 +703,15 @@ void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset,
         }
 
         // Let GUI window render its own graphics on top of the scene.
-        if(!renderer->isPicking()) {
+        if(renderer->isImagePass())
             window()->renderGui(renderer);
-        }
 
         // Finish rendering.
         renderer->endFrame(true, vpRect);
         renderer->endRender();
 
         // Discard unused vis element resources.
-        if(!renderer->isPicking())
+        if(renderer->isImagePass())
             Application::instance()->visCache().discardUnusedObjects();
 
         userInterface._viewportBeingRendered = nullptr;
@@ -834,6 +833,8 @@ Box2 Viewport::renderFrameRect(DataSet* dataset) const
 ******************************************************************************/
 FloatType Viewport::nonScalingSize(const Point3& worldPosition)
 {
+    OVITO_ASSERT(std::isfinite(_projParams.fieldOfView));
+
     // Get window size in device-independent pixels.
     int height = window() ? window()->viewportWindowDeviceIndependentSize().height() : 0;
     if(height == 0)
@@ -842,14 +843,14 @@ FloatType Viewport::nonScalingSize(const Point3& worldPosition)
     constexpr FloatType baseSize = 60;
 
     if(isPerspectiveProjection()) {
-
         Point3 p = projectionParams().viewMatrix * worldPosition;
+        if(p == Point3::Origin())
+            return 1;
         Point3 p1 = projectionParams().projectionMatrix * p;
         Point3 p2 = projectionParams().projectionMatrix * (p + Vector3(0,1,0));
         FloatType dist = (p1 - p2).length();
         if(std::abs(dist) < FLOATTYPE_EPSILON)
             return 1;
-
         return FloatType(0.8) * baseSize / dist / (FloatType)height;
     }
     else {
@@ -898,7 +899,7 @@ Ray3 Viewport::viewportRay(const Point2& viewportPoint)
         Point3 ndc2(viewportPoint.x(), viewportPoint.y(), 0);
         Point3 p1 = projectionParams().inverseViewMatrix * (projectionParams().inverseProjectionMatrix * ndc1);
         Point3 p2 = projectionParams().inverseViewMatrix * (projectionParams().inverseProjectionMatrix * ndc2);
-        return { Point3::Origin() + _projParams.inverseViewMatrix.translation(), p1 - p2 };
+        return { Point3::Origin() + projectionParams().inverseViewMatrix.translation(), p1 - p2 };
     }
     else {
         Point3 ndc(viewportPoint.x(), viewportPoint.y(), -1);
