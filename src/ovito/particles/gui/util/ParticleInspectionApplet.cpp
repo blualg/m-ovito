@@ -276,7 +276,7 @@ void ParticleInspectionApplet::PickingMode::mouseMoveEvent(ViewportWindowInterfa
 ******************************************************************************/
 void ParticleInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneRenderer* renderer)
 {
-    if(!renderer->isInteractive() || renderer->isPicking())
+    if(!renderer->isInteractive() || !renderer->isImagePass())
         return;
 
     // Render the highlight markers for the selected particles.

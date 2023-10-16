@@ -125,6 +125,7 @@ void SceneRenderer::beginFrame(AnimationTime time, Scene* scene, const ViewProje
                                const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
     OVITO_ASSERT(!_scene);
+    OVITO_ASSERT(isImagePass() || isPickingPass());
 
     _time = time;
     _scene = scene;
@@ -211,7 +212,7 @@ bool SceneRenderer::renderNode(SceneNode* node)
     }
 
     // Render trajectory when node transformation is animated.
-    if(isInteractive() && !isPicking()) {
+    if(isInteractive() && isImagePass()) {
         renderNodeTrajectory(node);
     }
 
@@ -293,7 +294,7 @@ void SceneRenderer::renderDataObject(const DataObject* dataObj, const Pipeline* 
 ******************************************************************************/
 bool SceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
 {
-    OVITO_ASSERT(!isPicking());
+    OVITO_ASSERT(isImagePass());
     OVITO_ASSERT(viewport());
 
     for(ViewportOverlay* layer : (underlays ? viewport()->underlays() : viewport()->overlays())) {
@@ -523,7 +524,7 @@ FloatType SceneRenderer::projectedPixelSize(const Point3& worldPosition) const
 ******************************************************************************/
 quint32 SceneRenderer::beginPickObject(const Pipeline* pipeline, ObjectPickInfo* pickInfo)
 {
-    if(isPicking()) {
+    if(isPickingPass()) {
         _currentObjectPickingRecord.pipeline = const_cast<Pipeline*>(pipeline);
         _currentObjectPickingRecord.pickInfo = pickInfo;
         _currentObjectPickingRecord.baseObjectID = _nextAvailablePickingID;
@@ -537,13 +538,14 @@ quint32 SceneRenderer::beginPickObject(const Pipeline* pipeline, ObjectPickInfo*
 ******************************************************************************/
 quint32 SceneRenderer::registerSubObjectIDs(quint32 subObjectCount, const ConstDataBufferPtr& indices)
 {
-    OVITO_ASSERT(isPicking());
-
-    quint32 baseObjectID = _nextAvailablePickingID;
-    if(indices)
-        _currentObjectPickingRecord.indexedRanges.push_back(std::make_pair(indices, _nextAvailablePickingID - _currentObjectPickingRecord.baseObjectID));
-    _nextAvailablePickingID += subObjectCount;
-    return baseObjectID;
+    if(isPickingPass()) {
+        quint32 baseObjectID = _nextAvailablePickingID;
+        if(indices)
+            _currentObjectPickingRecord.indexedRanges.push_back(std::make_pair(indices, _nextAvailablePickingID - _currentObjectPickingRecord.baseObjectID));
+        _nextAvailablePickingID += subObjectCount;
+        return baseObjectID;
+    }
+    return 0;
 }
 
 /******************************************************************************
@@ -551,7 +553,7 @@ quint32 SceneRenderer::registerSubObjectIDs(quint32 subObjectCount, const ConstD
 ******************************************************************************/
 void SceneRenderer::endPickObject()
 {
-    if(isPicking()) {
+    if(isPickingPass()) {
         if(_currentObjectPickingRecord.pipeline) {
             _objectPickingRecords.push_back(std::move(_currentObjectPickingRecord));
         }
@@ -644,13 +646,14 @@ std::tuple<FloatType, Box2I> SceneRenderer::determineGridRange(Viewport* vp)
 ******************************************************************************/
 void SceneRenderer::renderGrid()
 {
-    if(isPicking())
+    if(!isImagePass())
         return;
 
     FloatType gridSpacing;
     Box2I gridRange;
     std::tie(gridSpacing, gridRange) = determineGridRange(viewport());
-    if(gridSpacing <= 0) return;
+    if(gridSpacing <= 0)
+        return;
 
     // Determine how many grid lines need to be rendered.
     int xstart = gridRange.minc.x();
@@ -720,7 +723,7 @@ void SceneRenderer::renderGrid()
  ******************************************************************************/
 void SceneRenderer::renderTextDefaultImplementation(const TextPrimitive& primitive)
 {
-    if(primitive.text().isEmpty() || isPicking())
+    if(primitive.text().isEmpty() || !isImagePass())
         return;
 
     qreal devicePixelRatio = this->devicePixelRatio();

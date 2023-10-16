@@ -188,6 +188,7 @@ void OpenGLSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const Vie
     QRect openGLViewportRect(viewportRect.x() * antialiasingLevel(), viewportRect.y() * antialiasingLevel(), viewportRect.width() * antialiasingLevel(), viewportRect.height() * antialiasingLevel());
 
     SceneRenderer::beginFrame(time, scene, params, vp, openGLViewportRect, frameBuffer);
+    OVITO_ASSERT(isPickingPass() != isImagePass());
 
     if(Application::instance()->headlessMode()) {
         throw RendererException(tr(
@@ -301,14 +302,14 @@ void OpenGLSceneRenderer::initializeGLState()
     OVITO_CHECK_OPENGL(this, this->glViewport(viewportRect().x(), viewportRect().y(), viewportRect().width(), viewportRect().height()));
 
     // When rendering an interactive viewport, use viewport background color to clear frame buffer.
-    if(viewport() && viewport()->window() && isInteractive() && !isPicking()) {
+    if(viewport() && viewport()->window() && isInteractive() && isImagePass()) {
         if(!viewport()->renderPreviewMode())
             setClearColor(Viewport::viewportColor(ViewportSettings::COLOR_VIEWPORT_BKG));
         else
             setClearColor(renderSettings().backgroundColorAt(time()));
     }
     else {
-        if(!isPicking())
+        if(isImagePass())
             setClearColor(ColorA(renderSettings().backgroundColorAt(time()), 0));
     }
     OVITO_REPORT_OPENGL_ERRORS(this);
@@ -390,7 +391,7 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
     makeContextCurrent();
 
     // Transparency should never play a role in a picking render pass.
-    OVITO_ASSERT(!isPicking());
+    OVITO_ASSERT(isImagePass());
 
     // Prepare for order-independent transparency pass.
     if(orderIndependentTransparency()) {
@@ -547,7 +548,7 @@ void OpenGLSceneRenderer::renderLines(const LinePrimitive& primitive)
 void OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
 {
     // Render particles immediately if they are all fully opaque. Otherwise defer rendering to a later time.
-    if(isPicking() || !primitive.transparencies())
+    if(!isImagePass() || !primitive.transparencies())
         renderParticlesImplementation(primitive);
     else {
         if(orderIndependentTransparency()) {
@@ -614,7 +615,7 @@ void OpenGLSceneRenderer::renderImage(const ImagePrimitive& primitive)
 void OpenGLSceneRenderer::renderCylinders(const CylinderPrimitive& primitive)
 {
     // Render primitives immediately if they are all fully opaque. Otherwise defer rendering to a later time.
-    if(isPicking() || !primitive.transparencies())
+    if(!isImagePass() || !primitive.transparencies())
         renderCylindersImplementation(primitive);
     else
         _translucentCylinders.emplace_back(worldTransform(), primitive);
@@ -634,7 +635,7 @@ void OpenGLSceneRenderer::renderMarkers(const MarkerPrimitive& primitive)
 void OpenGLSceneRenderer::renderMesh(const MeshPrimitive& primitive)
 {
     // Render mesh immediately if it is fully opaque. Otherwise defer rendering to a later time.
-    if(isPicking() || primitive.isFullyOpaque())
+    if(!isImagePass() || primitive.isFullyOpaque())
         renderMeshImplementation(primitive);
     else
         _translucentMeshes.emplace_back(worldTransform(), primitive);

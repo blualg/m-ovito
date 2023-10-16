@@ -154,7 +154,7 @@ void SimulationCellVis::renderWireframe(AnimationTime time, const SimulationCell
     LinePrimitive linePrimitive;
     linePrimitive.setPositions(lineVertices);
     linePrimitive.setUniformColor(ViewportSettings::getSettings().viewportColor(pipeline->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_UNSELECTED));
-    if(renderer->isPicking())
+    if(!renderer->isImagePass())
         linePrimitive.setLineWidth(renderer->defaultLinePickingWidth());
 
     const AffineTransformation oldTM = renderer->worldTransform();

@@ -43,7 +43,7 @@ void OpenGLSceneRenderer::renderMarkersImplementation(const MarkerPrimitive& pri
 
     case MarkerPrimitive::BoxShape:
 
-        if(isPicking())
+        if(isPickingPass())
             shader.load("marker_box", "marker/marker_box.vert", "marker/marker_box.frag");
         else
             shader.load("marker_box_picking", "marker/marker_box_picking.vert", "marker/marker_box_picking.frag");
@@ -56,10 +56,10 @@ void OpenGLSceneRenderer::renderMarkersImplementation(const MarkerPrimitive& pri
     shader.setInstanceCount(primitive.positions()->size());
 
     // Are we rendering semi-transparent markers?
-    bool useBlending = !isPicking() && primitive.color().a() < 1.0;
+    bool useBlending = !isPickingPass() && primitive.color().a() < 1.0;
     if(useBlending) shader.enableBlending();
 
-    if(isPicking()) {
+    if(isPickingPass()) {
         // Pass picking base ID to shader.
         shader.setPickingBaseId(registerSubObjectIDs(primitive.positions()->size()));
     }

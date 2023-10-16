@@ -70,7 +70,7 @@ public:
     Q_INVOKABLE Lines(ObjectInitializationFlags flags);
 
     std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
-                                                                        MixedKeyCache& visCache) const;
+                                                                        MixedKeyCache& visCache) const override;
 
 private:
     /// Tests whether the given spatial point is culled by the cutting planes set for this object.
