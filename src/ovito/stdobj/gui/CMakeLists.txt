@@ -26,6 +26,7 @@ OVITO_STANDARD_PLUGIN(StdObjGui
         camera/StandardCameraSourceEditor.cpp
         io/DataTablePlotExporter.cpp
         io/DataTablePlotExporterEditor.cpp
+        lines/LinesInspectionApplet.cpp
         lines/LinesVisEditor.cpp
         properties/PropertyInspectionApplet.cpp
         properties/PropertyObjectEditor.cpp
