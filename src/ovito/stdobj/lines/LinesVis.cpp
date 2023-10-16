@@ -31,6 +31,7 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(LinesVis);
+IMPLEMENT_OVITO_CLASS(LinesPickInfo);
 DEFINE_PROPERTY_FIELD(LinesVis, lineWidth);
 DEFINE_PROPERTY_FIELD(LinesVis, lineColor);
 DEFINE_PROPERTY_FIELD(LinesVis, shadingMode);
@@ -46,6 +47,76 @@ SET_PROPERTY_FIELD_LABEL(LinesVis, wrappedLines, "Wrap lines around");
 SET_PROPERTY_FIELD_LABEL(LinesVis, coloringMode, "Coloring mode");
 SET_PROPERTY_FIELD_LABEL(LinesVis, colorMapping, "Color mapping");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(LinesVis, lineWidth, WorldParameterUnit, 0);
+
+/******************************************************************************
+ * Returns a human-readable string describing the picked object,
+ * which will be displayed in the status bar by OVITO.
+ ******************************************************************************/
+QString LinesPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
+{
+    QString str;
+
+    if(!linesObj()) {
+        return str;
+    }
+
+    for(size_t i = 0; i < 2; ++i) {
+        int index = segmentIndexFromSubObjectID(subobjectId) + i;
+        if(index == -1) {
+            return str;
+        }
+
+        if(!str.isEmpty()) str += " ";
+        str += (i == 0) ? tr("<b>Head:</b> ") : tr("<sep><b>Tail:</b> ");
+        str += QStringLiteral("<key>Index:</key> ");
+        str += QString::number(index);
+        str += QStringLiteral("</val>");
+
+        for(const Property* property : linesObj()->properties()) {
+            if(property->type() == Property::GenericColorProperty) continue;
+
+            if(!str.isEmpty()) str += QStringLiteral("<sep>");
+
+            str += QStringLiteral("<key>");
+            str += property->name().toHtmlEscaped();
+            str += QStringLiteral(":</key> <val>");
+
+            if(property->dataType() == Property::Int32) {
+                BufferReadAccess<int*> data(property);
+                for(size_t component = 0; component < data.componentCount(); component++) {
+                    if(component != 0) str += QStringLiteral(", ");
+                    str += QString::number(data.get(index, component));
+                }
+            }
+            else if(property->dataType() == Property::Int64) {
+                BufferReadAccess<int64_t*> data(property);
+                for(size_t component = 0; component < property->componentCount(); component++) {
+                    if(component != 0) str += QStringLiteral(", ");
+                    str += QString::number(data.get(index, component));
+                }
+            }
+            else if(property->dataType() == Property::Float32) {
+                BufferReadAccess<float*> data(property);
+                for(size_t component = 0; component < property->componentCount(); component++) {
+                    if(component != 0) str += QStringLiteral(", ");
+                    str += QString::number(data.get(index, component));
+                }
+            }
+            else if(property->dataType() == Property::Float64) {
+                BufferReadAccess<double*> data(property);
+                for(size_t component = 0; component < property->componentCount(); component++) {
+                    if(component != 0) str += QStringLiteral(", ");
+                    str += QString::number(data.get(index, component));
+                }
+            }
+            else {
+                str += QStringLiteral("<%1>").arg(property->dataTypeName());
+            }
+            str += QStringLiteral("</val>");
+        }
+    }
+    return str;
+}
 
 /******************************************************************************
  * Constructor.
@@ -178,6 +249,7 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
         CylinderPrimitive segments;
         ParticlePrimitive corners;
         ConstDataBufferPtr cornerPseudoColors;
+        OORef<LinesPickInfo> pickInfo;
     };
 
     int endFrame = showUpToCurrentTime() ? time.frame() : std::numeric_limits<int>::max();
@@ -197,6 +269,9 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
         visCache.corners.setPositions(nullptr);
         visCache.cornerPseudoColors.reset();
 
+        // map from viewport object ids to line segments
+        std::vector<int> subobjToSegmentMap;
+
         FloatType lineDiameter = lineWidth();
         if(lines && lineDiameter > 0) {
             lines->verifyIntegrity();
@@ -209,6 +284,7 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
             BufferReadAccess<ColorG> colorProperty = lines->getProperty(Lines::ColorProperty);
             RawBufferReadAccess pseudoColorArray(pseudoColorProperty);
             if(posProperty.valid() && posProperty.size() >= 2) {
+                subobjToSegmentMap.reserve(posProperty.size());
                 // Determine the number of line segments and corner points to render.
                 BufferFactory<Point3G> cornerPoints(0);
                 BufferFactory<Point3G> baseSegmentPoints(0);
@@ -225,6 +301,8 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                 const int64_t* id = (secProperty) ? secProperty.cbegin() : nullptr;
                 const ColorG* color = colorProperty ? colorProperty.cbegin() : nullptr;
 
+                // subObject index map to allow picking in the viewport
+                int subobjIndex = 0;
                 // Don't increment sampleTime if timeProperty is not present
                 for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end;
                     ++pos, (sampleTime) ? ++sampleTime : nullptr, (id) ? ++id : nullptr) {
@@ -278,7 +356,9 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                                                                                                          pseudoColorPropertyComponent));
                             });
                         }
+                        subobjToSegmentMap.push_back(subobjIndex);
                     }
+                    subobjIndex++;
                     if(color) {
                         ++color;
                     }
@@ -305,6 +385,7 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                 visCache.cornerPseudoColors = cornerPseudoColors.take();
             }
         }
+        visCache.pickInfo = OORef<LinesPickInfo>::create(lines, std::move(subobjToSegmentMap));
     }
 
     if(!visCache.segments.basePositions()) return status;
@@ -327,8 +408,10 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
         }
     }
 
-    renderer->beginPickObject(pipeline);
+    renderer->beginPickObject(pipeline, visCache.pickInfo);
     renderer->renderCylinders(visCache.segments);
+    renderer->endPickObject();
+    renderer->beginPickObject(pipeline);
     renderer->renderParticles(visCache.corners);
     renderer->endPickObject();
 

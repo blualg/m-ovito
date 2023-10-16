@@ -26,8 +26,60 @@
 #include <ovito/stdobj/properties/PropertyColorMapping.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
+#include <ovito/core/rendering/SceneRenderer.h>
 
 namespace Ovito {
+
+/**
+ * \brief This information record is attached to a lines segment by theLiensVis when rendering
+ * them in the viewports. It facilitates the picking of dislocations with the mouse.
+ */
+class OVITO_STDOBJ_EXPORT LinesPickInfo : public ObjectPickInfo
+{
+    OVITO_CLASS(LinesPickInfo)
+
+public:
+    /// Constructor.
+    // LinesPickInfo(LinesVis* visElement, const Lines* linesObj, std::vector<int>&& subobjToSegmentMap)
+    //     : _visElement(visElement), _linesObj(linesObj), _subobjToSegmentMap(std::move(subobjToSegmentMap))
+    // {
+    // }
+
+    /// Constructor.
+    LinesPickInfo(const Lines* linesObj, std::vector<int>&& subobjToSegmentMap)
+        : _linesObj(linesObj), _subobjToSegmentMap(std::move(subobjToSegmentMap))
+    {
+    }
+
+    /// The data object containing the lines.
+    const Lines* linesObj() const { return _linesObj; }
+
+    /// Returns the vis element that rendered the lines.
+    // const LinesVis* visElement() const { return _visElement; }
+
+    /// \brief Given an sub-object ID returned by the Viewport::pick() method, looks up the
+    /// corresponding lines segment.
+    int segmentIndexFromSubObjectID(quint32 subobjID) const
+    {
+        if(subobjID < _subobjToSegmentMap.size())
+            return _subobjToSegmentMap[subobjID];
+        else
+            return -1;
+    }
+
+    /// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
+    virtual QString infoString(Pipeline* pipeline, quint32 subobjectId) override;
+
+private:
+    /// The data object containing the dislocations.
+    OORef<Lines> _linesObj = nullptr;
+
+    /// The vis element that rendered the dislocations.
+    // OORef<LinesVis> _visElement;
+
+    // This array is used to map sub-object picking IDs back to line segments.
+    std::vector<int> _subobjToSegmentMap;
+};
 
 /**
  * \brief A visualization element for rendering lines.
