@@ -331,8 +331,8 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                             // clipLine accounts for simulationCell = nullptr
                             clipLine(pos[0], pos[1], simulationCell, lines->cuttingPlanes(),
                                      [&](const Point3& p1, const Point3& p2, GraphicsFloatType t1, GraphicsFloatType t2) {
-                                         baseSegmentPoints.push_back(pos[0].toDataType<GraphicsFloatType>());
-                                         headSegmentPoints.push_back(pos[1].toDataType<GraphicsFloatType>());
+                                         baseSegmentPoints.push_back(p1.toDataType<GraphicsFloatType>());
+                                         headSegmentPoints.push_back(p2.toDataType<GraphicsFloatType>());
                                          if(color) {
                                              segmentColors.push_back(color[0]);
                                              segmentColors.push_back(color[1]);
