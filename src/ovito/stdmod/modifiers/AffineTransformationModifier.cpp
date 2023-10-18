@@ -333,12 +333,12 @@ PipelineStatus LinesAffineTransformationModifierDelegate::apply(
             // Make sure we can safely modify the lines object.
             Lines* outputLines = state.makeMutable(inputLines);
 
-            // Create an uninitialized copy of the particle position property.
+            // Create an uninitialized copy of the position property.
             Property* outputPositionProperty = outputLines->makePropertyMutable(inputPositionProperty, DataBuffer::Uninitialized);
 
-            // Let the modifier do the actual coordinate transformation work.
+            // Let the modifier class do the actual coordinate transformation work.
             AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
-            // nullptr since "selection" is currently not supported for Lines objects
+            // Note: passing nullptr since "Selection" property is currently not supported by Lines objects.
             mod->transformCoordinates(inputState, inputPositionProperty, outputPositionProperty, nullptr);
         }
     }
