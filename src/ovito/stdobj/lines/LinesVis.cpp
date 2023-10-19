@@ -34,6 +34,7 @@ IMPLEMENT_OVITO_CLASS(LinesVis);
 IMPLEMENT_OVITO_CLASS(LinesPickInfo);
 DEFINE_PROPERTY_FIELD(LinesVis, lineWidth);
 DEFINE_PROPERTY_FIELD(LinesVis, lineColor);
+DEFINE_PROPERTY_FIELD(LinesVis, roundedCaps);
 DEFINE_PROPERTY_FIELD(LinesVis, shadingMode);
 DEFINE_PROPERTY_FIELD(LinesVis, showUpToCurrentTime);
 DEFINE_PROPERTY_FIELD(LinesVis, wrappedLines);
@@ -41,6 +42,7 @@ DEFINE_PROPERTY_FIELD(LinesVis, coloringMode);
 DEFINE_REFERENCE_FIELD(LinesVis, colorMapping);
 SET_PROPERTY_FIELD_LABEL(LinesVis, lineWidth, "Line width");
 SET_PROPERTY_FIELD_LABEL(LinesVis, lineColor, "Line color");
+SET_PROPERTY_FIELD_LABEL(LinesVis, roundedCaps, "Rounded line ends");
 SET_PROPERTY_FIELD_LABEL(LinesVis, shadingMode, "Shading mode");
 SET_PROPERTY_FIELD_LABEL(LinesVis, showUpToCurrentTime, "Show up to current time only");
 SET_PROPERTY_FIELD_LABEL(LinesVis, wrappedLines, "Wrap lines around");
@@ -125,6 +127,7 @@ LinesVis::LinesVis(ObjectInitializationFlags flags)
     : DataVis(flags),
       _lineWidth(0.2),
       _lineColor(0.6, 0.6, 0.6),
+      _roundedCaps(false),
       _shadingMode(FlatShading),
       _showUpToCurrentTime(false),
       _wrappedLines(false),
@@ -236,6 +239,7 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
     using CacheKey = RendererResourceKey<struct LinesVisCache,
                                          ConstDataObjectRef,  // Lines data object
                                          FloatType,           // Line width
+                                         bool,                // Rounded line end caps
                                          Color,               // Line color,
                                          ShadingMode,         // Shading mode
                                          int,                 // End frame
@@ -255,8 +259,8 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
     int endFrame = showUpToCurrentTime() ? time.frame() : std::numeric_limits<int>::max();
 
     // Look up the rendering primitives in the vis cache.
-    auto& visCache = renderer->visCache().get<CacheValue>(CacheKey(lines, lineWidth(), lineColor(), shadingMode(), endFrame, simulationCell,
-                                                                   pseudoColorProperty, pseudoColorPropertyComponent));
+    auto& visCache = renderer->visCache().get<CacheValue>(CacheKey(lines, lineWidth(), roundedCaps(), lineColor(), shadingMode(), endFrame,
+                                                                   simulationCell, pseudoColorProperty, pseudoColorPropertyComponent));
 
     // The shading mode for corner spheres.
     ParticlePrimitive::ShadingMode cornerShadingMode =
@@ -303,6 +307,17 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
 
                 // subObject index map to allow picking in the viewport
                 int subobjIndex = 0;
+
+                // segment callback used by the "clipLines" function
+                const auto clipPointCallback = [&](const Point3& p1) {
+                    cornerPoints.push_back(p1.toDataType<GraphicsFloatType>());
+                    if(color)
+                        cornerColors.push_back(color[1]);
+                    else if(pseudoColorArray)
+                        cornerPseudoColors.push_back(
+                            pseudoColorArray.get<GraphicsFloatType>(pos - posProperty.cbegin() + 1, pseudoColorPropertyComponent));
+                };
+
                 // Don't increment sampleTime if timeProperty is not present
                 for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end;
                     ++pos, (sampleTime) ? ++sampleTime : nullptr, (id) ? ++id : nullptr) {
@@ -345,16 +360,15 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                                          }
                                      });
                         }
-                        if(pos + 1 != pos_end) {
+                        if(!roundedCaps() && (pos + 1 != pos_end) && (!id || id[1] == (id + 1)[1])) {
                             // clipPoint accounts for simulationCell = nullptr
-                            clipPoint(pos[1], simulationCell, lines->cuttingPlanes(), [&](const Point3& p1) {
-                                cornerPoints.push_back(p1.toDataType<GraphicsFloatType>());
-                                if(color)
-                                    cornerColors.push_back(color[1]);
-                                else if(pseudoColorArray)
-                                    cornerPseudoColors.push_back(pseudoColorArray.get<GraphicsFloatType>(pos - posProperty.cbegin() + 1,
-                                                                                                         pseudoColorPropertyComponent));
-                            });
+                            clipPoint(pos[1], simulationCell, lines->cuttingPlanes(), clipPointCallback);
+                        }
+                        else if(roundedCaps()) {
+                            clipPoint(pos[0], simulationCell, lines->cuttingPlanes(), clipPointCallback);
+                            if((pos + 1 == pos_end) || (!id || id[1] != (id + 1)[1])) {
+                                clipPoint(pos[1], simulationCell, lines->cuttingPlanes(), clipPointCallback);
+                            }
                         }
                         subobjToSegmentMap.push_back(subobjIndex);
                     }

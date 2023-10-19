@@ -144,7 +144,10 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, showUpToCurrentTime, setShowUpToCurrentTime);
 
     /// Controls the whether the displayed lines are wrapped at periodic boundaries of the simulation cell.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, wrappedLines, setWrappedLines);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, wrappedLines, setWrappedLines, PROPERTY_FIELD_MEMORIZE);
+
+    /// Controls the whether the displayed lines are wrapped at periodic boundaries of the simulation cell.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, roundedCaps, setRoundedCaps, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the shading mode for lines.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(LinesVis::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
