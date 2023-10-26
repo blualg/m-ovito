@@ -309,10 +309,13 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                 int subobjIndex = 0;
 
                 // segment callback used by the "clipLines" function
-                const auto clipPointCallback = [&](const Point3& p1) {
+                // TODO: this can be a templated lambda with (colorIndex) in cpp 20
+                const auto clipPointCallback = [&](const Point3& p1, int colorIndex) {
                     cornerPoints.push_back(p1.toDataType<GraphicsFloatType>());
-                    if(color)
-                        cornerColors.push_back(color[1]);
+                    if(color) {
+                        OVITO_ASSERT(colorIndex < 2);
+                        cornerColors.push_back(color[colorIndex]);
+                    }
                     else if(pseudoColorArray)
                         cornerPseudoColors.push_back(
                             pseudoColorArray.get<GraphicsFloatType>(pos - posProperty.cbegin() + 1, pseudoColorPropertyComponent));
@@ -362,12 +365,15 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                         }
                         if(!roundedCaps() && (pos + 1 != pos_end) && (!id || id[1] == (id + 1)[1])) {
                             // clipPoint accounts for simulationCell = nullptr
-                            clipPoint(pos[1], simulationCell, lines->cuttingPlanes(), clipPointCallback);
+                            clipPoint(pos[1], simulationCell, lines->cuttingPlanes(),
+                                      std::bind(clipPointCallback, std::placeholders::_1, 1));
                         }
                         else if(roundedCaps()) {
-                            clipPoint(pos[0], simulationCell, lines->cuttingPlanes(), clipPointCallback);
+                            clipPoint(pos[0], simulationCell, lines->cuttingPlanes(),
+                                      std::bind(clipPointCallback, std::placeholders::_1, 0));
                             if((pos + 1 == pos_end) || (!id || id[1] != (id + 1)[1])) {
-                                clipPoint(pos[1], simulationCell, lines->cuttingPlanes(), clipPointCallback);
+                                clipPoint(pos[1], simulationCell, lines->cuttingPlanes(),
+                                          std::bind(clipPointCallback, std::placeholders::_1, 1));
                             }
                         }
                         subobjToSegmentMap.push_back(subobjIndex);
