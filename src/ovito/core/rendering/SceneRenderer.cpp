@@ -78,7 +78,7 @@ Box3 SceneRenderer::computeSceneBoundingBox(AnimationTime time, Scene* scene, co
         _scene = scene;
         setProjParams(params);
 
-        // Perform bounding box rendering pass.
+        // Perform bounding box render pass.
         if(renderScene()) {
 
             // Include other visual content that is only visible in the interactive viewports.

@@ -40,6 +40,7 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CoordinateTripodOverlayEditor);
+DEFINE_REFERENCE_FIELD(CoordinateTripodOverlayEditor, viewport);
 SET_OVITO_OBJECT_EDITOR(CoordinateTripodOverlay, CoordinateTripodOverlayEditor);
 
 /******************************************************************************
@@ -95,6 +96,15 @@ void CoordinateTripodOverlayEditor::createUI(const RolloutInsertionParameters& r
 
     int row = 0;
 
+    // Perspective distortion.
+    _perspectiveDistortionUI = new BooleanParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::perspectiveDistortion));
+    styleLayout->addWidget(_perspectiveDistortionUI->checkBox(), row++, 0, 1, 2);
+    styleLayout->setRowMinimumHeight(row++, 4);
+    connect(this, &PropertiesEditor::contentsReplaced, this, [this]() {
+        setViewport(editObject() ? this->activeViewport() : nullptr);
+        _perspectiveDistortionUI->setEnabled(viewport() && viewport()->isPerspectiveProjection());
+    });
+
     FloatParameterUI* sizePUI = new FloatParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::tripodSize));
     styleLayout->addWidget(sizePUI->label(), row, 0);
     styleLayout->addLayout(sizePUI->createFieldLayout(), row++, 1);
@@ -118,6 +128,7 @@ void CoordinateTripodOverlayEditor::createUI(const RolloutInsertionParameters& r
     styleLayout->addWidget(labelFontPUI->label(), row, 0);
     styleLayout->addWidget(labelFontPUI->fontPicker(), row++, 1);
 
+#if 0 // Deprecated since OVITO 3.9.2
     styleLayout->setRowMinimumHeight(row++, 8);
     IntegerRadioButtonParameterUI* tripodStyleUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::tripodStyle));
     styleLayout->addWidget(new QLabel(tr("Axis style:")), row, 0);
@@ -126,6 +137,7 @@ void CoordinateTripodOverlayEditor::createUI(const RolloutInsertionParameters& r
     hlayout->addWidget(tripodStyleUI->addRadioButton(CoordinateTripodOverlay::FlatArrows, tr("Flat")));
     hlayout->addWidget(tripodStyleUI->addRadioButton(CoordinateTripodOverlay::SolidArrows, tr("Solid")));
     styleLayout->addLayout(hlayout, row++, 1);
+#endif
 
     // Create a second rollout.
     rollout = createRollout(tr("Coordinate axes"), rolloutParams);
@@ -241,6 +253,17 @@ void CoordinateTripodOverlayEditor::createUI(const RolloutInsertionParameters& r
         Vector3ParameterUI* axisDirPUI = new Vector3ParameterUI(this, PROPERTY_FIELD(CoordinateTripodOverlay::axis4Dir), dim);
         sublayout->addLayout(axisDirPUI->createFieldLayout(), 3, dim, 1, 1);
     }
+}
+
+/******************************************************************************
+* This method is called when a reference target changes.
+******************************************************************************/
+bool CoordinateTripodOverlayEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+{
+    if(source == viewport() && event.type() == ReferenceEvent::TargetChanged && static_cast<const TargetChangedEvent&>(event).field() == PROPERTY_FIELD(Viewport::viewType)) {
+        _perspectiveDistortionUI->setEnabled(viewport() && viewport()->isPerspectiveProjection());
+    }
+    return PropertiesEditor::referenceEvent(source, event);
 }
 
 }   // End of namespace

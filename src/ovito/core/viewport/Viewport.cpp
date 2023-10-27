@@ -779,9 +779,9 @@ void Viewport::adjustProjectionForRenderFrame(DataSet* dataset, ViewProjectionPa
 
     if(_projParams.isPerspective) {
         if(renderAspectRatio < windowAspectRatio)
-            params.fieldOfView = atan(tan(params.fieldOfView/2) / (VIEWPORT_RENDER_FRAME_SIZE / windowAspectRatio * renderAspectRatio))*2;
+            params.fieldOfView = std::atan(std::tan(params.fieldOfView/2) / (VIEWPORT_RENDER_FRAME_SIZE / windowAspectRatio * renderAspectRatio))*2;
         else
-            params.fieldOfView = atan(tan(params.fieldOfView/2) / VIEWPORT_RENDER_FRAME_SIZE)*2;
+            params.fieldOfView = std::atan(std::tan(params.fieldOfView/2) / VIEWPORT_RENDER_FRAME_SIZE)*2;
         params.projectionMatrix = Matrix4::perspective(params.fieldOfView, FloatType(1) / params.aspectRatio, params.znear, params.zfar);
     }
     else {
