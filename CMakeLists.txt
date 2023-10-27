@@ -74,7 +74,7 @@ SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 6.2)
 FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
 
 # Look for optional Vulkan SDK (requires version 1.1 or above).
-FIND_PACKAGE(Vulkan)
+#FIND_PACKAGE(Vulkan)
 
 # Look for DPC++ SYCL implementation.
 IF(OVITO_USE_SYCL STREQUAL DPC++)
