@@ -281,6 +281,19 @@ InputColumnReader::InputColumnReader(StandardFrameLoader& frameLoader, const Inp
 }
 
 /******************************************************************************
+ * Returns a list of properties that have been parsed.
+ *****************************************************************************/
+std::set<PropertyObject*> InputColumnReader::parsedProperties() const
+{
+    std::set<PropertyObject*> list;
+    for(const TargetPropertyRecord& rec : _properties) {
+        if(rec.property)
+            list.insert(rec.property);
+    }
+    return list;
+}
+
+/******************************************************************************
  * Tells the parser to read the names of element types from the given file column
  *****************************************************************************/
 void InputColumnReader::readTypeNamesFromColumn(int nameColumn, int numericIdColumn)

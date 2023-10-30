@@ -212,8 +212,14 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
     setImproperCount(nimpropers);
 
     // Create standard particle properties.
-    particles()->createProperty(DataBuffer::Initialized, ParticlesObject::PositionProperty);
+    PropertyObject* positionProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::PositionProperty);
     PropertyObject* typeProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::TypeProperty);
+
+    // List of all properties that are read from the data file.
+    // This will be used later to remove all excess properties from the container.
+    std::set<PropertyObject*> parsedParticleProperties;
+    parsedParticleProperties.insert(positionProperty);
+    parsedParticleProperties.insert(typeProperty);
 
     // Atom type mass table.
     std::vector<FloatType> massTable(natomtypes, 0.0);
@@ -289,7 +295,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                         .arg(columnMapping.size()));
 
                 // Parse data in the Atoms section line by line:
-                InputColumnReader columnParser(*this, columnMapping, particles());
+                InputColumnReader columnParser(*this, columnMapping, particles(), false);
                 try {
                     for(size_t i = 0; i < (size_t)natoms; i++) {
                         if(!setProgressValueIntermittent(i)) return;
@@ -300,6 +306,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 catch(Exception& ex) {
                     throw ex.prependGeneralMessage(tr("Parsing error in line %1 of LAMMPS data file.").arg(stream.lineNumber()));
                 }
+                parsedParticleProperties.merge(columnParser.parsedProperties());
                 columnParser.reset();
 
                 // Range-check atom types.
@@ -362,6 +369,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
                     columnParser.readElement(atomIndex, stream.line());
                 }
+                parsedParticleProperties.merge(columnParser.parsedProperties());
             }
             catch(Exception& ex) {
                 throw ex.prependGeneralMessage(tr("Parsing error in line %1 of LAMMPS data file.").arg(stream.lineNumber()));
@@ -777,6 +785,13 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
     if(!foundAtomsSection)
         throw Exception("LAMMPS data file does not contain atomic coordinates.");
+
+    // Remove old properties from the particles which have not been loaded from the data file.
+    for(int index = particles()->properties().size() - 1; index >= 0; index--) {
+        const PropertyObject* property = particles()->properties()[index];
+        if(parsedParticleProperties.find(const_cast<PropertyObject*>(property)) == parsedParticleProperties.end())
+            particles()->removeProperty(property);
+    }
 
     // Assign masses to particles based on their type.
     if(hasTypeMasses && !particles()->getProperty(ParticlesObject::MassProperty)) {

@@ -97,6 +97,7 @@
 #include <QPair>
 #include <QVariant>
 #include <QMap>
+#include <QProcess>
 #ifndef OVITO_DISABLE_THREADING
     #include <QThreadPool>
     #include <QWaitCondition>
