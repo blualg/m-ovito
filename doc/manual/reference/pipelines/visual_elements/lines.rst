@@ -14,6 +14,9 @@ Lines
 This :ref:`visual element <visual_elements>` renders continuous lines. The visual element is automatically attached to line objects
 created by the :ref:`particles.modifiers.generate_trajectory_lines` modifier or the :py:attr:`lines.create() <ovito.data.DataCollection.lines>` method.
 
+The option :guilabel:Rounded line ends provides hemispherical caps at the ends of lines. Without this option, lines end with a flat face. 
+While this feature alters the visual appearance, it does not modify the underlying lines object.
+
 The option :guilabel:`Wrap lines around` folds lines leaving the periodic simulation
 cell back into the cell. Note that this option can only yield correct results if the simulation cell size
 does not change with time (fixed box dimensions).
