@@ -112,6 +112,8 @@ ClonePipelineDialog::ClonePipelineDialog(MainWindow& mainWindow, PipelineSceneNo
                             "}");
     mainLayout->insertWidget(0, noticeWidget);
 #endif
+
+    resize(sizeHint());
 }
 
 /******************************************************************************
