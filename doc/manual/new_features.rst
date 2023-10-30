@@ -14,6 +14,8 @@ Version 3.9.3 (31-Oct-2023)
 * :ref:`particles.modifiers.construct_surface_mesh` modifier: Option `Map particles to regions` may yield invalid results when used with option `Use only selected input particles`
 * :ref:`particles.modifiers.expand_selection` modifier: New output attribute `ExpandSelection.num_added`
 * :ref:`particles.modifiers.identify_diamond_structure` modifier: Output missing attribute `IdentifyDiamond.counts.OTHER`
+* |ovito-pro| Added support for Python 3.12
+* |ovito-pro| Updated third-party components: OpenSSL 1.1.1w, PySide6 6.5.3, Python 3.11.6
 
 ---------------------------
 Version 3.9.2 (31-Aug-2023)
