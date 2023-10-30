@@ -105,10 +105,7 @@ public:
     int listIndexFromCategoryIndex(int categoryIndex) const;
 
     /// Returns the category index for the modifier templates.
-    int modifierTemplatesCategory() const { return (int)_actionsPerCategory.size() - 2; }
-
-    /// Returns the category index for the Python modifiers.
-    int modifierScriptsCategory() const { return (int)_actionsPerCategory.size() - 1; }
+    int modifierTemplatesCategory() const { return (int)_actionsPerCategory.size() - 1; }
 
     /// Returns whether sorting of available modifiers into categories is enabled.
     bool useCategories() const { return _useCategories; }
