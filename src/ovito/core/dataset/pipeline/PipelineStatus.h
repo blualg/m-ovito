@@ -63,7 +63,7 @@ public:
     PipelineStatus(const QString& text, T&& shortInfo) : _text(text), _shortInfo(std::forward<T>(shortInfo)) {}
 
     /// Constructs a status object with error status and a text string taken from the given exception object.
-    PipelineStatus(const Exception& exception, QChar messageSeparator = QChar('\n')) : _type(Error), _text(exception.messages().join(messageSeparator)) {}
+    PipelineStatus(const Exception& exception, const QString& messageSeparator = QStringLiteral("\n"));
 
     /// Returns the type of status stores in this object.
     StatusType type() const { return _type; }

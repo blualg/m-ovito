@@ -23,6 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/ViewportsPanel.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/dialogs/MessageBox.h>
 #include <ovito/core/app/PluginManager.h>
 #include "ViewportSettingsPage.h"
 
@@ -192,7 +193,7 @@ bool ViewportSettingsPage::validateValues(QTabWidget* tabWidget)
     if(isVulkanSelected != wasVulkanSelected && isVulkanSelected) {
         // Warn the user that some Vulkan implementations may be incompatible with Ovito and can 
         // render the application unusable.
-        QMessageBox msgBox(settingsDialog());
+        MessageBox msgBox(settingsDialog());
         msgBox.setIcon(QMessageBox::Question);
         msgBox.setText("Are you sure you want to enable the Vulkan-based viewport renderer?");
         msgBox.setInformativeText(tr(

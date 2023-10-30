@@ -104,8 +104,8 @@ Future<PipelineFlowState> TransformingDataVis::transformData(const PipelineEvalu
             // error state of the pipeline output and the vis element itself (to display it in the GUI).
             setStatus(ex);
             setManualErrorStateControl(true);
-            ex.prependGeneralMessage(tr("Visual element '%1' reported:").arg(objectTitle()));
-            inputData.setStatus(PipelineStatus(ex, QChar(' ')));
+            ex.prependToMessage(tr("Visual element '%1' reported: ").arg(objectTitle()));
+            inputData.setStatus(PipelineStatus(ex, QStringLiteral(" ")));
             return std::move(inputData);
         }
         catch(...) {

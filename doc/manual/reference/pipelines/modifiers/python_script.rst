@@ -65,7 +65,7 @@ for the first time.
 
   In case you want to perform an action via Python script that changes the program state (including the structure of the pipeline itself), e.g.,
   importing another dataset into the scene, adding another modifier to the current pipeline, or performing some data export or image rendering operation,
-  you can do that instead using the :menuselection:`File --> Run Python script` menu function.
+  you can do that instead using the :menuselection:`File --> Run Python Script` menu function.
 
 .. _particles.modifiers.python_script.save_as_template:
 

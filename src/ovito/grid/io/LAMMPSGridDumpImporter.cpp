@@ -305,7 +305,7 @@ void LAMMPSGridDumpImporter::FrameLoader::loadFile()
                     }
                 }
                 catch(Exception& ex) {
-                    throw ex.prependGeneralMessage(tr("Parsing error in line %1 of LAMMPS grid dump file.").arg(lineNumber));
+                    throw ex.prependToMessage(tr("Parsing error in line %1 of LAMMPS grid dump file: ").arg(lineNumber));
                 }
                 if(s) {
                     stream.munmap();
