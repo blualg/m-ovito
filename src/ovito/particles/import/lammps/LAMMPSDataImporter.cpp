@@ -732,6 +732,8 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             // Create properties for ellipsoidal particles.
             BufferWriteAccess<Vector3G, access_mode::discard_write> asphericalShapeProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::AsphericalShapeProperty);
             BufferWriteAccess<QuaternionG, access_mode::discard_write> orientationProperty = particles()->createProperty(DataBuffer::Initialized, ParticlesObject::OrientationProperty);
+            parsedParticleProperties.insert(static_object_cast<PropertyObject>(asphericalShapeProperty.buffer()));
+            parsedParticleProperties.insert(static_object_cast<PropertyObject>(orientationProperty.buffer()));
 
             setProgressMaximum(nellipsoids);
             for(size_t i = 0; i < (size_t)nellipsoids; i++) {

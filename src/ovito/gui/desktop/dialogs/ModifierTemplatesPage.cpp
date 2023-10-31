@@ -24,7 +24,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/mainwin/cmdpanel/CommandPanel.h>
 #include <ovito/gui/desktop/mainwin/cmdpanel/ModifyCommandPage.h>
-#include <ovito/gui/desktop/dialogs/MessageBox.h>
+#include <ovito/gui/desktop/dialogs/MessageDialog.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/gui/base/mainwin/PipelineListModel.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
@@ -128,7 +128,7 @@ void ModifierTemplatesPage::onCreateTemplate()
                     currentGroup = modApp->modifierGroup();
                 }
                 if(modApp->modifier()) {
-                    QTreeWidgetItem* listItem = currentGroupItem 
+                    QTreeWidgetItem* listItem = currentGroupItem
                         ? new QTreeWidgetItem(currentGroupItem, {modApp->modifier()->objectTitle()})
                         : new QTreeWidgetItem(modifierListWidget, {modApp->modifier()->objectTitle()});
                     listItem->setFlags(Qt::ItemFlags(Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemNeverHasChildren));
@@ -173,7 +173,7 @@ void ModifierTemplatesPage::onCreateTemplate()
         else {
             nameBox->setCurrentText(tr("Custom modifier template 1"));
         }
-        
+
         mainLayout->addWidget(nameBox);
 
         mainLayout->addSpacing(12);
@@ -181,16 +181,16 @@ void ModifierTemplatesPage::onCreateTemplate()
         connect(buttonBox, &QDialogButtonBox::accepted, [this, &dlg, nameBox, &itemList]() {
             QString name = nameBox->currentText().trimmed();
             if(name.isEmpty()) {
-                MessageBox::critical(&dlg, tr("Create modifier template"), tr("Please enter a name for the new modifier template."));
+                MessageDialog::critical(&dlg, tr("Create modifier template"), tr("Please enter a name for the new modifier template."));
                 return;
             }
             if(ModifierTemplates::get()->templateList().contains(name)) {
-                if(MessageBox::question(&dlg, tr("Create modifier template"), tr("A modifier template with the same name '%1' already exists. Do you want to replace it?").arg(name), QMessageBox::Yes | QMessageBox::Cancel) != QMessageBox::Yes)
+                if(MessageDialog::question(&dlg, tr("Create modifier template"), tr("A modifier template with the same name '%1' already exists. Do you want to replace it?").arg(name), QMessageBox::Yes | QMessageBox::Cancel) != QMessageBox::Yes)
                     return;
             }
             int selCount = boost::count_if(itemList, [](QTreeWidgetItem* item) { return item->checkState(0) == Qt::Checked; });
             if(!selCount) {
-                MessageBox::critical(&dlg, tr("Create modifier template"), tr("Please check at least one modifier to include in the new template."));
+                MessageDialog::critical(&dlg, tr("Create modifier template"), tr("Please check at least one modifier to include in the new template."));
                 return;
             }
             dlg.accept();
@@ -254,7 +254,7 @@ void ModifierTemplatesPage::onRenameTemplate()
                     break;
                 }
                 else {
-                    MessageBox::critical(settingsDialog(), tr("Rename modifier template"), tr("A modifier template with the name '%1' already exists. Please choose a different name.").arg(newTemplateName));
+                    MessageDialog::critical(settingsDialog(), tr("Rename modifier template"), tr("A modifier template with the name '%1' already exists. Please choose a different name.").arg(newTemplateName));
                 }
             }
         }
@@ -318,7 +318,7 @@ void ModifierTemplatesPage::saveValues(QTabWidget* tabWidget)
 }
 
 /******************************************************************************
-* Lets the settings page restore the original values of changed settings when 
+* Lets the settings page restore the original values of changed settings when
 * the user presses the Cancel button.
 ******************************************************************************/
 void ModifierTemplatesPage::restoreValues(QTabWidget* tabWidget)

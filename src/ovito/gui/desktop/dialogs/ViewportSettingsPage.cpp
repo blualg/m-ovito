@@ -23,7 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/ViewportsPanel.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/gui/desktop/dialogs/MessageBox.h>
+#include <ovito/gui/desktop/dialogs/MessageDialog.h>
 #include <ovito/core/app/PluginManager.h>
 #include "ViewportSettingsPage.h"
 
@@ -133,10 +133,10 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
                 case 1: // VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
                     title += tr(" (integrated GPU)");
                     break;
-                case 2: // VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU 
+                case 2: // VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
                     title += tr(" (discrete GPU)");
                     break;
-                case 3: // VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU  
+                case 3: // VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU
                     title += tr(" (virtual GPU)");
                     break;
                 }
@@ -191,9 +191,9 @@ bool ViewportSettingsPage::validateValues(QTabWidget* tabWidget)
     bool wasVulkanSelected = (settings.value("rendering/selected_graphics_api").toString() == "Vulkan");
     bool isVulkanSelected = (_graphicsSystem->checkedId() == 1);
     if(isVulkanSelected != wasVulkanSelected && isVulkanSelected) {
-        // Warn the user that some Vulkan implementations may be incompatible with Ovito and can 
+        // Warn the user that some Vulkan implementations may be incompatible with Ovito and can
         // render the application unusable.
-        MessageBox msgBox(settingsDialog());
+        MessageDialog msgBox(settingsDialog());
         msgBox.setIcon(QMessageBox::Question);
         msgBox.setText("Are you sure you want to enable the Vulkan-based viewport renderer?");
         msgBox.setInformativeText(tr(
