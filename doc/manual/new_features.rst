@@ -8,13 +8,13 @@ Changelog
 Version 3.9.3 (31-Oct-2023)
 ---------------------------
 
-* Fix: Segfault when using the "Open with..." context menu function in macOS Finder to open a state file
-* Fix: Section "Modifier templates" of list of available modifiers not updated correctly
-* Fix: LAMMPS data file reader: Settings of vis element for `Velocity` property get lost after loading a state file
+* Fix: Segfault when using macOS Finder to open a state file while OVITO is already running
+* Fix: Section "Modifier templates" of available modifiers list not updated correctly when adding/removing templates
+* Fix: LAMMPS data file reader: vector vis settings of `Velocity` property lost after loading a state file
 * :ref:`particles.modifiers.construct_surface_mesh` modifier: Option `Map particles to regions` may yield invalid results when used with option `Use only selected input particles`
-* :ref:`particles.modifiers.expand_selection` modifier: New output attribute `ExpandSelection.num_added`
-* :ref:`particles.modifiers.identify_diamond_structure` modifier: Output missing attribute `IdentifyDiamond.counts.OTHER`
-* |ovito-pro| Added support for Python 3.12
+* :ref:`particles.modifiers.expand_selection` modifier: Added output attribute `ExpandSelection.num_added`
+* :ref:`particles.modifiers.identify_diamond_structure` modifier: Added missing output attribute `IdentifyDiamond.counts.OTHER`
+* |ovito-pro| PyPI and conda packages for Python 3.12
 * |ovito-pro| Updated third-party components: OpenSSL 1.1.1w, PySide6 6.5.3, Python 3.11.6
 
 ---------------------------
