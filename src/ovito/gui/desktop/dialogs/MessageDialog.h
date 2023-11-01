@@ -33,19 +33,19 @@ namespace Ovito {
  * On macOS, this wrapper class prevents QMessageBox from using the native dialog window,
  * which shows various issues since Qt 6.4.
  */
-class MessageBox : public QMessageBox
+class MessageDialog : public QMessageBox
 {
 public:
 
     /// Constructor.
-    MessageBox(QWidget* parent = nullptr) : QMessageBox(parent) {
+    MessageDialog(QWidget* parent = nullptr) : QMessageBox(parent) {
 #ifdef Q_OS_MACOS
         QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs, true);
 #endif
     }
 
     /// Constructor.
-    MessageBox(QMessageBox::Icon icon, const QString& title, const QString& text, QMessageBox::StandardButtons buttons = NoButton, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint)
+    MessageDialog(QMessageBox::Icon icon, const QString& title, const QString& text, QMessageBox::StandardButtons buttons = NoButton, QWidget* parent = nullptr, Qt::WindowFlags f = Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint)
         : QMessageBox(icon, title, text, buttons, parent, f) {
 #ifdef Q_OS_MACOS
         QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs, true);
@@ -54,7 +54,7 @@ public:
 
 #ifdef Q_OS_MACOS
     /// Destructor.
-    ~MessageBox() {
+    ~MessageDialog() {
         QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs, false);
     }
 #endif

@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/dialogs/MessageBox.h>
+#include <ovito/gui/desktop/dialogs/MessageDialog.h>
 #include <ovito/core/app/Application.h>
 #include "GuiFileManager.h"
 
@@ -86,7 +86,7 @@ bool GuiFileManager::askUserForKbiResponse(const QString& hostname, const QStrin
 bool GuiFileManager::detectedUnknownSshServer(const QString& hostname, const QString& unknownHostMessage, const QString& hostPublicKeyHash)
 {
     if(Application::instance()->guiMode()) {
-        return MessageBox::question(nullptr, tr("SSH Unknown Remote Host"),
+        return MessageDialog::question(nullptr, tr("SSH Unknown Remote Host"),
             tr("<p>OVITO is connecting to unknown remote host <b>%1</b> via SSH.</p><p>%2</p><p>Host key fingerprint is %3</p><p>Are you sure you want to continue connecting?</p>")
             .arg(hostname.toHtmlEscaped()).arg(unknownHostMessage.toHtmlEscaped()).arg(hostPublicKeyHash),
             QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes;

@@ -24,7 +24,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/mainwin/OvitoStyle.h>
 #include <ovito/gui/desktop/dataset/GuiDataSetContainer.h>
-#include <ovito/gui/desktop/dialogs/MessageBox.h>
+#include <ovito/gui/desktop/dialogs/MessageDialog.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/app/undo/UndoStack.h>
 #include "GuiApplication.h"
@@ -426,7 +426,7 @@ void GuiApplication::reportError(const Exception& ex, bool blocking)
 
     // In GUI mode, display a message box (application modal).
     if(guiMode()) {
-        MessageBox msgbox;
+        MessageDialog msgbox;
         msgbox.setWindowTitle(tr("Error - %1").arg(applicationName()));
         msgbox.setStandardButtons(QMessageBox::Ok);
         msgbox.setText(ex.message());

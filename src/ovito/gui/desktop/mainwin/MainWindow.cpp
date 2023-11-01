@@ -30,7 +30,7 @@
 #include <ovito/gui/desktop/widgets/display/CoordinateDisplayWidget.h>
 #include <ovito/gui/desktop/widgets/general/StatusBar.h>
 #include <ovito/gui/desktop/widgets/selection/SceneNodeSelectionBox.h>
-#include <ovito/gui/desktop/dialogs/MessageBox.h>
+#include <ovito/gui/desktop/dialogs/MessageDialog.h>
 #include <ovito/gui/desktop/actions/WidgetActionManager.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/gui/base/actions/ActionManager.h>
@@ -669,7 +669,7 @@ void MainWindow::reportError(const Exception& ex, bool blocking)
 void MainWindow::reportError(const Exception& exception, QWidget* window)
 {
     // Prepare a message box dialog.
-    QPointer<MessageBox> msgbox = new MessageBox();
+    QPointer<MessageDialog> msgbox = new MessageDialog();
     msgbox->setWindowTitle(tr("Error - %1").arg(Application::applicationName()));
     msgbox->setStandardButtons(QMessageBox::Ok);
     msgbox->setText(exception.message());
