@@ -8,14 +8,14 @@ Changelog
 Version 3.9.3 (01-Nov-2023)
 ---------------------------
 
-* :ref:`particles.modifiers.expand_selection` modifier: Added output attribute `ExpandSelection.num_added`
+* :ref:`particles.modifiers.expand_selection` modifier: Added new output attribute `ExpandSelection.num_added`
 * :ref:`particles.modifiers.identify_diamond_structure` modifier: Added missing output attribute `IdentifyDiamond.counts.OTHER`
-* Fix: Segfault when using macOS Finder to open a state file while OVITO is already running
 * Fix: Section "Modifier templates" of available modifiers list not updated correctly when adding/removing templates
 * Fix: LAMMPS data file reader: vector vis settings of `Velocity` property lost after loading a state file
+* Fix: Segfault when opening a .ovito state file with macOS Finder while OVITO is already running
 * Fix: :ref:`particles.modifiers.construct_surface_mesh` modifier: Option `Map particles to regions` may yield invalid results when used with option `Use only selected input particles`
 * Updated third-party components: OpenSSL 1.1.1w, Qt/PySide6 6.5.3, Python 3.11.6
-* |ovito-pro| Packages for Python 3.12
+* |ovito-pro| PyPI packages for Python 3.12
 
 ---------------------------
 Version 3.9.2 (31-Aug-2023)
