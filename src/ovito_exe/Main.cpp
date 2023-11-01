@@ -20,13 +20,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef OVITO_QML_GUI
-    #include <ovito/gui/desktop/GUI.h>
-    #include <ovito/gui/desktop/app/GuiApplication.h>
-#else
-    #include <ovito/core/Core.h>
-    #include <ovito/gui/qml/app/WasmApplication.h>
-#endif
+#include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/app/GuiApplication.h>
 
 #if defined(OVITO_BUILD_PLUGIN_PYSCRIPT) && !defined(OVITO_BUILD_BASIC)
     // Explicitly build 'ovito' executable against Python library.
@@ -51,11 +46,7 @@ int main(int argc, char** argv)
 #endif
 
     // Initialize the application.
-#ifndef OVITO_QML_GUI
     std::shared_ptr<Ovito::GuiApplication> app = std::make_shared<Ovito::GuiApplication>();
-#else
-    std::shared_ptr<Ovito::WasmApplication> app = std::make_shared<Ovito::WasmApplication>();
-#endif
 
     int result = 1;
     if(app->initialize(argc, argv)) {

@@ -139,12 +139,6 @@ public:
         return nullptr;
     }
 
-#ifdef OVITO_QML_GUI
-    /// This helper method is called by the QML GUI (StructureListParameter.qml) to extract the identification counts
-    /// from the cached pipeline output state after the modifier has been evaluated.
-    Q_INVOKABLE QVector<int64_t> getStructureCountsFromModifierResults(ModificationNode* node) const;
-#endif
-
 protected:
 
     /// Saves the class' contents to the given stream.

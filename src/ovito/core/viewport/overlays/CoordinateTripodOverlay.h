@@ -155,6 +155,9 @@ private:
 
     /// Controls the outlining of the text and axis arrows.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, outlineEnabled, setOutlineEnabled, PROPERTY_FIELD_MEMORIZE);
+
+    /// Switches on perspective distortion of the tripod (if placed in a perspective viewport).
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, perspectiveDistortion, setPerspectiveDistortion, PROPERTY_FIELD_MEMORIZE);
 };
 
 }   // End of namespace

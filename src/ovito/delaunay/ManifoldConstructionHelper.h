@@ -397,6 +397,15 @@ public:
             }
         }
 
+        // Update tesselation user field to reflect the compressed empty region IDs
+        for(DelaunayTessellation::CellIterator cellIter = _tessellation.begin_cells(); cellIter != _tessellation.end_cells(); ++cellIter) {
+            DelaunayTessellation::CellHandle cell = *cellIter;
+            int currentRegionId = _tessellation.getUserField(cell);
+            if(currentRegionId >= _filledRegionCount) {
+                _tessellation.setUserField(cell, regionMapping[findRegion(currentRegionId - _filledRegionCount)]);
+            }
+        }
+
         // Create a single space-filling empty region if there is no filled region at all.
         if(_emptyRegionCount == 0 && _filledRegionCount == 0) {
             regionGrower.grow(1);

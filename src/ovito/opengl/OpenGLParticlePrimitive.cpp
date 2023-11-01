@@ -48,14 +48,14 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
         case ParticlePrimitive::SquareCubicShape:
             if(primitive.shadingMode() == ParticlePrimitive::NormalShading) {
                 if(!useGeometryShaders()) {
-                    if(!isPicking())
+                    if(!isPickingPass())
                         shader.load("cube", "particles/cube/cube.vert", "particles/cube/cube.frag");
                     else
                         shader.load("cube_picking", "particles/cube/cube_picking.vert", "particles/cube/cube_picking.frag");
                     shader.setVerticesPerInstance(14); // Cube rendered as triangle strip.
                 }
                 else {
-                    if(!isPicking())
+                    if(!isPickingPass())
                         shader.load("cube.geom", "particles/cube/cube.geom.vert", "particles/cube/cube.frag", "particles/cube/cube.geom");
                     else
                         shader.load("cube_picking.geom", "particles/cube/cube_picking.geom.vert", "particles/cube/cube_picking.frag", "particles/cube/cube_picking.geom");
@@ -64,14 +64,14 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
             }
             else {
                 if(!useGeometryShaders()) {
-                    if(!isPicking())
+                    if(!isPickingPass())
                         shader.load("square", "particles/square/square.vert", "particles/square/square.frag");
                     else
                         shader.load("square_picking", "particles/square/square_picking.vert", "particles/square/square_picking.frag");
                     shader.setVerticesPerInstance(4); // Square rendered as triangle strip.
                 }
                 else {
-                    if(!isPicking())
+                    if(!isPickingPass())
                         shader.load("square.geom", "particles/square/square.geom.vert", "particles/square/square.frag", "particles/square/square.geom");
                     else
                         shader.load("square_picking.geom", "particles/square/square_picking.geom.vert", "particles/square/square_picking.frag", "particles/square/square_picking.geom");
@@ -82,14 +82,14 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
         case ParticlePrimitive::BoxShape:
             if(primitive.shadingMode() == ParticlePrimitive::NormalShading) {
                 if(!useGeometryShaders()) {
-                    if(!isPicking())
+                    if(!isPickingPass())
                         shader.load("box", "particles/box/box.vert", "particles/box/box.frag");
                     else
                         shader.load("box_picking", "particles/box/box_picking.vert", "particles/box/box_picking.frag");
                     shader.setVerticesPerInstance(14); // Box rendered as triangle strip.
                 }
                 else {
-                    if(!isPicking())
+                    if(!isPickingPass())
                         shader.load("box.geom", "particles/box/box.geom.vert", "particles/box/box.frag", "particles/box/box.geom");
                     else
                         shader.load("box_picking.geom", "particles/box/box_picking.geom.vert", "particles/box/box_picking.frag", "particles/box/box_picking.geom");
@@ -102,14 +102,14 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
             if(primitive.shadingMode() == ParticlePrimitive::NormalShading) {
                 if(primitive.renderingQuality() >= ParticlePrimitive::HighQuality) {
                     if(!useGeometryShaders()) {
-                        if(!isPicking())
+                        if(!isPickingPass())
                             shader.load("sphere", "particles/sphere/sphere.vert", "particles/sphere/sphere.frag");
                         else
                             shader.load("sphere_picking", "particles/sphere/sphere_picking.vert", "particles/sphere/sphere_picking.frag");
                         shader.setVerticesPerInstance(4); // Billboard quad geometry rendered as triangle strip.
                     }
                     else {
-                        if(!isPicking())
+                        if(!isPickingPass())
                             shader.load("sphere.geom", "particles/sphere/sphere.geom.vert", "particles/sphere/sphere.frag", "particles/sphere/sphere.geom");
                         else
                             shader.load("sphere_picking.geom", "particles/sphere/sphere_picking.geom.vert", "particles/sphere/sphere_picking.frag", "particles/sphere/sphere_picking.geom");
@@ -118,14 +118,14 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
                 }
                 else if(primitive.renderingQuality() >= ParticlePrimitive::MediumQuality) {
                     if(!useGeometryShaders()) {
-                        if(!isPicking())
+                        if(!isPickingPass())
                             shader.load("imposter", "particles/imposter/imposter.vert", "particles/imposter/imposter.frag");
                         else
                             shader.load("imposter_picking", "particles/imposter/imposter_picking.vert", "particles/imposter/imposter_picking.frag");
                         shader.setVerticesPerInstance(4); // Square rendered as triangle strip.
                     }
                     else {
-                        if(!isPicking())
+                        if(!isPickingPass())
                             shader.load("imposter.geom", "particles/imposter/imposter.geom.vert", "particles/imposter/imposter.frag", "particles/imposter/imposter.geom");
                         else
                             shader.load("imposter_picking.geom", "particles/imposter/imposter_picking.geom.vert", "particles/imposter/imposter_picking.frag", "particles/imposter/imposter_picking.geom");
@@ -134,14 +134,14 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
                 }
                 else {
                     if(!useGeometryShaders()) {
-                        if(!isPicking())
+                        if(!isPickingPass())
                             shader.load("imposter_flat", "particles/imposter_flat/imposter_flat.vert", "particles/imposter_flat/imposter_flat.frag");
                         else
                             shader.load("imposter_flat_picking", "particles/imposter_flat/imposter_flat_picking.vert", "particles/imposter_flat/imposter_flat_picking.frag");
                         shader.setVerticesPerInstance(4); // Square rendered as triangle strip.
                     }
                     else {
-                        if(!isPicking())
+                        if(!isPickingPass())
                             shader.load("imposter_flat.geom", "particles/imposter_flat/imposter_flat.geom.vert", "particles/imposter_flat/imposter_flat.frag", "particles/imposter_flat/imposter_flat.geom");
                         else
                             shader.load("imposter_flat_picking.geom", "particles/imposter_flat/imposter_flat_picking.geom.vert", "particles/imposter_flat/imposter_flat_picking.frag", "particles/imposter_flat/imposter_flat_picking.geom");
@@ -151,14 +151,14 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
             }
             else {
                 if(!useGeometryShaders()) {
-                    if(!isPicking())
+                    if(!isPickingPass())
                         shader.load("circle", "particles/circle/circle.vert", "particles/circle/circle.frag");
                     else
                         shader.load("circle_picking", "particles/circle/circle_picking.vert", "particles/circle/circle_picking.frag");
                     shader.setVerticesPerInstance(4); // Square rendered as triangle strip.
                 }
                 else {
-                    if(!isPicking())
+                    if(!isPickingPass())
                         shader.load("circle.geom", "particles/circle/circle.geom.vert", "particles/circle/circle.frag", "particles/circle/circle.geom");
                     else
                         shader.load("circle_picking.geom", "particles/circle/circle_picking.geom.vert", "particles/circle/circle_picking.frag", "particles/circle/circle_picking.geom");
@@ -168,14 +168,14 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
             break;
         case ParticlePrimitive::EllipsoidShape:
             if(!useGeometryShaders()) {
-                if(!isPicking())
+                if(!isPickingPass())
                     shader.load("ellipsoid", "particles/ellipsoid/ellipsoid.vert", "particles/ellipsoid/ellipsoid.frag");
                 else
                     shader.load("ellipsoid_picking", "particles/ellipsoid/ellipsoid_picking.vert", "particles/ellipsoid/ellipsoid_picking.frag");
                 shader.setVerticesPerInstance(14); // Box rendered as triangle strip.
             }
             else {
-                if(!isPicking())
+                if(!isPickingPass())
                     shader.load("ellipsoid.geom", "particles/ellipsoid/ellipsoid.geom.vert", "particles/ellipsoid/ellipsoid.frag", "particles/ellipsoid/ellipsoid.geom");
                 else
                     shader.load("ellipsoid_picking.geom", "particles/ellipsoid/ellipsoid_picking.geom.vert", "particles/ellipsoid/ellipsoid_picking.frag", "particles/ellipsoid/ellipsoid_picking.geom");
@@ -184,14 +184,14 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
             break;
         case ParticlePrimitive::SuperquadricShape:
             if(!useGeometryShaders()) {
-                if(!isPicking())
+                if(!isPickingPass())
                     shader.load("superquadric", "particles/superquadric/superquadric.vert", "particles/superquadric/superquadric.frag");
                 else
                     shader.load("superquadric_picking", "particles/superquadric/superquadric_picking.vert", "particles/superquadric/superquadric_picking.frag");
                 shader.setVerticesPerInstance(14); // Box rendered as triangle strip.
             }
             else {
-                if(!isPicking())
+                if(!isPickingPass())
                     shader.load("superquadric.geom", "particles/superquadric/superquadric.geom.vert", "particles/superquadric/superquadric.frag", "particles/superquadric/superquadric.geom");
                 else
                     shader.load("superquadric_picking.geom", "particles/superquadric/superquadric_picking.geom.vert", "particles/superquadric/superquadric_picking.frag", "particles/superquadric/superquadric_picking.geom");
@@ -216,12 +216,12 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
     }
 
     // Are we rendering semi-transparent particles?
-    bool useBlending = !isPicking() && (primitive.transparencies() != nullptr) && !orderIndependentTransparency();
+    bool useBlending = !isPickingPass() && (primitive.transparencies() != nullptr) && !orderIndependentTransparency();
     if(useBlending)
         shader.enableBlending();
 
     // Pass picking base ID to shader.
-    if(isPicking()) {
+    if(isPickingPass()) {
         shader.setPickingBaseId(registerSubObjectIDs(primitive.positions()->size()/*, primitive.indices()*/));
     }
     OVITO_REPORT_OPENGL_ERRORS(this);
@@ -240,7 +240,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
         shader.setAttributeValue("radius", primitive.uniformRadius());
     }
 
-    if(!isPicking()) {
+    if(!isPickingPass()) {
         // Upload particle colors.
         if(primitive.colors()) {
             QOpenGLBuffer colorsBuffer = shader.uploadDataBuffer(primitive.colors(), OpenGLShaderHelper::PerInstance);
@@ -315,7 +315,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
     }
     else {
         // Render the particles in back-to-front order.
-        OVITO_ASSERT(!isPicking() && !orderIndependentTransparency());
+        OVITO_ASSERT(!isPickingPass() && !orderIndependentTransparency());
 
         // Viewing direction in object space:
         const Vector3 direction = modelViewTM().inverse().column(2);

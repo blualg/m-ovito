@@ -53,7 +53,7 @@ void OpenGLSceneRenderer::renderThinLinesImplementation(const LinePrimitive& pri
 {
     // Activate the right OpenGL shader program.
     OpenGLShaderHelper shader(this);
-    if(isPicking())
+    if(isPickingPass())
         shader.load("line_thin_picking", "lines/line_picking.vert", "lines/line.frag");
     else if(primitive.colors())
         shader.load("line_thin", "lines/line.vert", "lines/line.frag");
@@ -73,7 +73,7 @@ void OpenGLSceneRenderer::renderThinLinesImplementation(const LinePrimitive& pri
     QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(primitive.positions(), OpenGLShaderHelper::PerVertex);
     shader.bindBuffer(positionsBuffer, "position", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerVertex);
 
-    if(!isPicking()) {
+    if(!isPickingPass()) {
         if(primitive.colors()) {
             OVITO_ASSERT(primitive.colors()->size() == primitive.positions()->size());
             // Upload vertex colors.
@@ -104,7 +104,7 @@ void OpenGLSceneRenderer::renderThickLinesImplementation(const LinePrimitive& pr
 
     // Activate the right OpenGL shader program.
     OpenGLShaderHelper shader(this);
-    if(isPicking())
+    if(isPickingPass())
         shader.load("line_thick_picking", "lines/thick_line_picking.vert", "lines/line.frag");
     else if(primitive.colors())
         shader.load("line_thick", "lines/thick_line.vert", "lines/line.frag");
@@ -125,7 +125,7 @@ void OpenGLSceneRenderer::renderThickLinesImplementation(const LinePrimitive& pr
     shader.bindBuffer(positionsBuffer, "position_from", GL_FLOAT, 3, 2 * sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
     shader.bindBuffer(positionsBuffer, "position_to", GL_FLOAT, 3, 2 * sizeof(Point_3<float>), sizeof(Point_3<float>), OpenGLShaderHelper::PerInstance);
 
-    if(!isPicking()) {
+    if(!isPickingPass()) {
         if(primitive.colors()) {
             OVITO_ASSERT(primitive.colors()->size() == primitive.positions()->size());
             // Upload vertex colors.

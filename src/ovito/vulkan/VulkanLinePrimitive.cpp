@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -76,9 +76,9 @@ VulkanPipeline& VulkanSceneRenderer::createLinePrimitivePipeline(VulkanPipeline&
             sizeof(Matrix_4<float>), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             2, // vertexBindingDescriptionCount
-            vertexBindingDesc, 
+            vertexBindingDesc,
             2, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_LINE_LIST, // topology
             extraDynamicStateCount,
             extraDynamicState.data()
@@ -104,20 +104,20 @@ VulkanPipeline& VulkanSceneRenderer::createLinePrimitivePipeline(VulkanPipeline&
         };
 
         pipeline.create(*context(),
-            QStringLiteral("lines/thin_uniform_color"), 
+            QStringLiteral("lines/thin_uniform_color"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>), // vertexPushConstantSize
             sizeof(ColorAT<float>),  // fragmentPushConstantSize
             1, // vertexBindingDescriptionCount
-            vertexBindingDesc, 
+            vertexBindingDesc,
             1, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_LINE_LIST, // topology
             extraDynamicStateCount,
             extraDynamicState.data()
         );
     }
-    
+
     // Create pipeline for shader "thin_picking":
     if(&pipeline == &_linePrimitivePipelines.thinPicking)
     {
@@ -137,22 +137,22 @@ VulkanPipeline& VulkanSceneRenderer::createLinePrimitivePipeline(VulkanPipeline&
         };
 
         pipeline.create(*context(),
-            QStringLiteral("lines/thin_picking"), 
+            QStringLiteral("lines/thin_picking"),
             defaultRenderPass(),
             sizeof(Matrix_4<float>) + sizeof(uint32_t), // vertexPushConstantSize
             0, // fragmentPushConstantSize
             1, // vertexBindingDescriptionCount
-            vertexBindingDesc, 
+            vertexBindingDesc,
             1, // vertexAttributeDescriptionCount
-            vertexAttrDesc, 
+            vertexAttrDesc,
             VK_PRIMITIVE_TOPOLOGY_LINE_LIST, // topology
             extraDynamicStateCount,
             extraDynamicState.data()
-        );    
+        );
     }
 
     OVITO_ASSERT(pipeline.isCreated());
-    return pipeline; 
+    return pipeline;
 }
 
 /******************************************************************************
@@ -204,7 +204,7 @@ void VulkanSceneRenderer::renderThinLinesImplementation(const LinePrimitive& pri
         }
     }
 
-    // Specify line width if the Vulkan implementation supports it. 
+    // Specify line width if the Vulkan implementation supports it.
     if(context()->supportsWideLines()) {
         FloatType effectiveLineWidth = (primitive.lineWidth() <= 0) ? devicePixelRatio() : primitive.lineWidth();
         deviceFunctions()->vkCmdSetLineWidth(currentCommandBuffer(), static_cast<float>(effectiveLineWidth));
@@ -224,7 +224,7 @@ void VulkanSceneRenderer::renderThinLinesImplementation(const LinePrimitive& pri
 
         // Bind vertex buffers for vertex positions and colors.
         std::array<VkBuffer, 2> buffers = {
-            context()->uploadDataBuffer(primitive.positions(), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT), 
+            context()->uploadDataBuffer(primitive.positions(), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT),
             context()->uploadDataBuffer(primitive.colors(), currentResourceFrame(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)
         };
         std::array<VkDeviceSize, 2> offsets = { 0, 0 };

@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2021 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -44,17 +44,13 @@ OVITO_STANDARD_PLUGIN(StdMod
     PLUGIN_DEPENDENCIES
         StdObj
         Mesh
-    PRECOMPILED_HEADERS 
+    PRECOMPILED_HEADERS
         StdMod.h
 )
 
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_APP)
-    IF(NOT OVITO_QML_GUI)
-        ADD_SUBDIRECTORY(gui)
-    ELSE()
-        ADD_SUBDIRECTORY(guiqml)
-    ENDIF()
+    ADD_SUBDIRECTORY(gui)
 ENDIF()
 
 # Propagate list of plugins to parent scope.

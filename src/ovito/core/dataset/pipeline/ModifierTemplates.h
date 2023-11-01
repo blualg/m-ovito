@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -43,7 +43,7 @@ private:
 
 public:
 
-    /// \brief Returns the singleton instance of this class. 
+    /// \brief Returns the singleton instance of this class.
     static ModifierTemplates* get();
 
     /// \brief Returns the names of the stored modifier templates.

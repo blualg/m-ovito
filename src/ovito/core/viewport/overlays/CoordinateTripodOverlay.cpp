@@ -57,6 +57,7 @@ DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, axis4Color);
 DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, tripodStyle);
 DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, outlineColor);
 DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, outlineEnabled);
+DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, perspectiveDistortion);
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, alignment, "Position");
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, tripodSize, "Overall size");
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, lineWidth, "Line width");
@@ -67,6 +68,7 @@ SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, offsetY, "Offset Y");
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, tripodStyle, "Style");
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, outlineColor, "Outline color");
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, outlineEnabled, "Enable outline");
+SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, perspectiveDistortion, "Perspective distortion");
 SET_PROPERTY_FIELD_UNITS(CoordinateTripodOverlay, offsetX, PercentParameterUnit);
 SET_PROPERTY_FIELD_UNITS(CoordinateTripodOverlay, offsetY, PercentParameterUnit);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CoordinateTripodOverlay, tripodSize, FloatParameterUnit, 1e-4);
@@ -86,7 +88,8 @@ CoordinateTripodOverlay::CoordinateTripodOverlay(ObjectInitializationFlags flags
         _axis1Color(1,0,0), _axis2Color(0,0.8,0), _axis3Color(0.2,0.2,1), _axis4Color(1,0,1),
         _tripodStyle(FlatArrows),
         _outlineColor(1,1,1),
-        _outlineEnabled(false)
+        _outlineEnabled(false),
+        _perspectiveDistortion(false)
 {
 }
 
@@ -130,12 +133,14 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
     else if(alignment() & Qt::AlignBottom) origin.ry() += physicalViewportRect.height() - margin;
     else if(alignment() & Qt::AlignVCenter) origin.ry() += FloatType(0.5) * physicalViewportRect.height();
 
-    // Project axes to screen.
+    const ViewProjectionParameters& projParams = renderer->projParams();
+
+    // Project axes to view space.
     Vector3 axisDirs[4] = {
-            renderer->projParams().viewMatrix * axis1Dir(),
-            renderer->projParams().viewMatrix * axis2Dir(),
-            renderer->projParams().viewMatrix * axis3Dir(),
-            renderer->projParams().viewMatrix * axis4Dir()
+            projParams.viewMatrix * axis1Dir(),
+            projParams.viewMatrix * axis2Dir(),
+            projParams.viewMatrix * axis3Dir(),
+            projParams.viewMatrix * axis4Dir()
     };
 
     // Get axis colors.
@@ -171,7 +176,7 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
         // Look up the image primitive for the axis arrow in the cache.
         auto& [imagePrimitive, offset] = renderer->visCache().get<std::tuple<ImagePrimitive, QPointF>>(
             RendererResourceKey<struct SolidJointImageCache, Matrix3, FloatType>{
-                renderer->projParams().viewMatrix.linear(),
+                projParams.viewMatrix.linear(),
                 lineWidth
             });
 
@@ -190,13 +195,13 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
             QPainter painter(&textureImage);
             painter.setRenderHint(QPainter::Antialiasing);
             painter.setWindow(pixelBounds);
-            paintSolidJoint(painter, QPointF(0,0), renderer->projParams().viewMatrix, lineWidth);
+            paintSolidJoint(painter, QPointF(0,0), projParams.viewMatrix, lineWidth);
             painter.end(); // Release the QImage we've been painting into.
             offset = imageRect.topLeft();
             imagePrimitive.setImage(std::move(textureImage));
         }
 
-        // Render the prepared image buffer into the output framebuffer.
+        // Render the prepared image into the output framebuffer.
         QPoint alignedPos = (origin + offset).toPoint();
         imagePrimitive.setRectWindow(QRect(alignedPos, imagePrimitive.image().size()));
         renderer->renderImage(imagePrimitive);
@@ -214,13 +219,38 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
         Vector3 dir3d = tripodSize * axisDirs[axis];
         dir3d.y() = -dir3d.y();
         Vector2 dir2d(dir3d.x(), dir3d.y());
+
+        // Apply perspective distortion to tripod axis.
+        if(perspectiveDistortion() && projParams.isPerspective) {
+            // Calculate the tripod's origin in normalized device coordinates.
+            FloatType vporiginX =  (origin.x() - physicalViewportRect.left()) / physicalViewportRect.width()  * 2.0 - 1.0;
+            FloatType vporiginY = -(origin.y() - physicalViewportRect.top())  / physicalViewportRect.height() * 2.0 + 1.0;
+            FloatType distance = projParams.zfar;
+            // Calculate the screen-space points on the near and far clipping planes.
+            Point3 p1 = projParams.inverseProjectionMatrix * Point3(vporiginX, vporiginY, 1);
+            Point3 p2 = projParams.inverseProjectionMatrix * Point3(vporiginX, vporiginY, 0);
+            Vector3 rayDir = (p1 - p2).safelyNormalized();
+            // View-space position of the tripod's origin.
+            Point3 viewSpaceOrigin = Point3::Origin() + rayDir * (distance / -rayDir.z());
+            // View-space position of the tripod's tip. Scale the axis length with the distance from the viewer.
+            Point3 viewSpaceTip = viewSpaceOrigin + (std::tan(projParams.fieldOfView / 2) * distance * axisDirs[axis]);
+            // Screen-space position of the tripod's tip.
+            Point3 screenSpaceTip = projParams.projectionMatrix * viewSpaceTip;
+            // Screen-space direction of the tripod axis.
+            dir2d = Point2(screenSpaceTip.x(), screenSpaceTip.y()) - Point2(vporiginX, vporiginY);
+            dir2d.y() = -dir2d.y();
+            dir2d.x() /= projParams.aspectRatio;
+            dir2d *= this->tripodSize() * physicalViewportRect.height();
+        }
+
         FloatType labelMargin = lineWidth * 2.5;
 
         // Look up the image primitive for the axis arrow in the cache.
         auto& [imagePrimitive, offset, addedMargin] = renderer->visCache().get<std::tuple<ImagePrimitive, QPointF, FloatType>>(
-            RendererResourceKey<struct ArrowAxisImageCache, TripodStyle, Vector3, FloatType, Color>{
+            RendererResourceKey<struct ArrowAxisImageCache, TripodStyle, Vector3, Vector2, FloatType, Color>{
                 tripodStyle(),
                 dir3d,
+                dir2d,
                 lineWidth,
                 axisColors[axis]
             });
@@ -257,7 +287,7 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
             imagePrimitive.setImage(std::move(textureImage));
         }
 
-        // Render the prepared image buffer into the output framebuffer.
+        // Paint the prepared image into the output framebuffer.
         labelMargin += addedMargin;
         QPoint alignedPos = (origin + offset).toPoint();
         imagePrimitive.setRectWindow(QRect(alignedPos, imagePrimitive.image().size()));

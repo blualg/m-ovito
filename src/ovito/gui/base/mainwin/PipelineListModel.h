@@ -40,11 +40,6 @@ class OVITO_GUIBASE_EXPORT PipelineListModel : public QAbstractListModel
 {
     Q_OBJECT
 
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(Ovito::RefTarget* selectedObject READ selectedObject NOTIFY selectedItemChanged)
-    Q_PROPERTY(int selectedIndex READ selectedIndex NOTIFY selectedItemChanged)
-#endif
-
 public:
 
     enum ItemRoles {

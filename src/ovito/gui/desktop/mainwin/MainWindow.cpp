@@ -30,6 +30,7 @@
 #include <ovito/gui/desktop/widgets/display/CoordinateDisplayWidget.h>
 #include <ovito/gui/desktop/widgets/general/StatusBar.h>
 #include <ovito/gui/desktop/widgets/selection/SceneNodeSelectionBox.h>
+#include <ovito/gui/desktop/dialogs/MessageBox.h>
 #include <ovito/gui/desktop/actions/WidgetActionManager.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/gui/base/actions/ActionManager.h>
@@ -670,7 +671,7 @@ void MainWindow::reportError(const Exception& ex, bool blocking)
 void MainWindow::reportError(const Exception& exception, QWidget* window)
 {
     // Prepare a message box dialog.
-    QPointer<QMessageBox> msgbox = new QMessageBox();
+    QPointer<MessageBox> msgbox = new MessageBox();
     msgbox->setWindowTitle(tr("Error - %1").arg(Application::applicationName()));
     msgbox->setStandardButtons(QMessageBox::Ok);
     msgbox->setText(exception.message());
@@ -715,12 +716,18 @@ void MainWindow::reportError(const Exception& exception, QWidget* window)
 
     // If the exception is associated with additional message strings,
     // show them in the Details section of the message box dialog.
+    QString detailText;
     if(exception.messages().size() > 1) {
-        QString detailText;
         for(int i = 1; i < exception.messages().size(); i++)
             detailText += exception.messages()[i] + QStringLiteral("\n");
-        msgbox->setDetailedText(detailText);
     }
+    // Also show traceback information.
+    if(!exception.traceback().isEmpty()) {
+        if(!detailText.isEmpty())
+            detailText += QChar('\n');
+        detailText += exception.traceback();
+    }
+    msgbox->setDetailedText(std::move(detailText));
 
     // Show message box.
     msgbox->exec();

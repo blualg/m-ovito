@@ -166,58 +166,6 @@ void SelectTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& re
     state.setStatus(PipelineStatus(std::move(statusMessage)));
 }
 
-#ifdef OVITO_QML_GUI
-/******************************************************************************
-* This helper method is called by the QML GUI (SelectTypeModifier.qml) to extract
-* the list of element types from the input pipeline output state.
-******************************************************************************/
-QVariantList SelectTypeModifier::getElementTypesFromInputState(ModifierApplication* modApp) const
-{
-    QVariantList list;
-    if(modApp && subject() && !sourceProperty().isNull() && sourceProperty().containerClass() == subject().dataClass()) {
-        // Populate types list based on the selected input property.
-        const PipelineFlowState& state = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
-        if(const PropertyContainer* container = state.getLeafObject(subject())) {
-            if(const Property* inputProperty = sourceProperty().findInContainer(container)) {
-                for(const ElementType* type : inputProperty->elementTypes()) {
-                    if(!type) continue;
-                    list.push_back(QVariantMap({
-                        {"checked", selectedTypeIDs().contains(type->numericId()) || selectedTypeNames().contains(type->name())},
-                        {"id", type->numericId()},
-                        {"name", type->nameOrNumericId()},
-                        {"color", (QColor)type->color()}}));
-                }
-            }
-        }
-    }
-    return list;
-}
-
-/******************************************************************************
-* Toggles the selection state for the given element types.
-* This helper method is called by the QML GUI (SelectTypeModifier.qml) to make changes to the modifier.
-******************************************************************************/
-void SelectTypeModifier::setElementTypeSelectionState(int32_t elementTypeId, const QString& elementTypeName, bool selectionState)
-{
-    if(selectionState) {
-        QSet<int32_t> newSelectionSet = selectedTypeIDs();
-        newSelectionSet.insert(elementTypeId);
-        setSelectedTypeIDs(std::move(newSelectionSet));
-    }
-    else {
-        QSet<int32_t> newSelectionSet = selectedTypeIDs();
-        if(newSelectionSet.remove(elementTypeId)) {
-            setSelectedTypeIDs(std::move(newSelectionSet));
-        }
-        else {
-            QSet<QString> newNamedSelectionSet = selectedTypeNames();
-            newNamedSelectionSet.remove(elementTypeName);
-            setSelectedTypeNames(std::move(newNamedSelectionSet));
-        }
-    }
-}
-#endif
-
 /******************************************************************************
 * Returns a short piece information (typically a string or color) to be
 * displayed next to the object's title in the pipeline editor.

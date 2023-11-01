@@ -37,13 +37,6 @@ class OVITO_STDOBJ_EXPORT ElementType : public DataObject
 {
     OVITO_CLASS(ElementType)
 
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(int numericId READ numericId WRITE setNumericId NOTIFY propertyValueChangedSignal)
-    Q_PROPERTY(QString name READ name WRITE setName NOTIFY propertyValueChangedSignal)
-    Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY propertyValueChangedSignal)
-    Q_PROPERTY(bool enabled READ enabled WRITE setEnabled NOTIFY propertyValueChangedSignal)
-#endif
-
 public:
 
     /// \brief Constructs a new type.

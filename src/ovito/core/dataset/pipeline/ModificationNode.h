@@ -126,19 +126,6 @@ public:
     /// Asks this object to delete itself.
     virtual void deleteReferenceObject() override;
 
-Q_SIGNALS:
-
-#ifdef OVITO_QML_GUI
-    /// This signal is emitted whenever the modifier function was completed and the modifier's results
-    /// for the current animation frame become available in the cache of this modifier node.
-    /// The signal is used in the QML GUI to update the results displayed in the modifier's panel.
-    void modifierResultsComplete();
-
-    /// This signal is emitted whenever the upstream pipeline has been modified and the input of the
-    /// modification node changes. The signal is used in the QML GUI to update the inputs displayed in the modifier's panel.
-    void modifierInputChanged();
-#endif
-
 protected:
 
     /// \brief Asks the object for the result of the data pipeline.

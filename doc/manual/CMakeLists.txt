@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2021 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -45,18 +45,18 @@ IF(OVITO_BUILD_APP)
     STRING(TIMESTAMP current_year "%Y")
 
     # Tell Interpshinx where to find the scripting reference manual files when building the user manual.
-    # Use the existing Sphinx output tree of the scripting reference manual for resolving cross-references if it exists 
+    # Use the existing Sphinx output tree of the scripting reference manual for resolving cross-references if it exists
     # in the python/ sub-directory (only the case when building OVITO Pro).
     # Otherwise, fall back to using the online version of the scripting reference at https://ovito.org/docs/current/python/.
     # For further information, see the 'intersphinx_mapping' configuration variable in the file 'conf.py'.
     IF(OVITO_BUILD_PROFESSIONAL)
         SET(OVITO_PYDOC_INTERSPHINX_LOCATION "${OVITO_SHARE_DIRECTORY}/doc/manual/html/python/objects.inv")
     ENDIF()
-    
+
     if(OVITO_BUILD_DOCUMENTATION_STRICT) # Turn warnings into errors
-        set(BUILD_DOCUMENTATION_STRICT "-W") 
+        set(BUILD_DOCUMENTATION_STRICT "-W")
     else()
-        set(BUILD_DOCUMENTATION_STRICT "") 
+        set(BUILD_DOCUMENTATION_STRICT "")
     endif()
 
     # Build reStructuredText documentation using Sphinx.
@@ -64,20 +64,20 @@ IF(OVITO_BUILD_APP)
         # Create the destination directory for the generated HTML files:
         COMMAND "${CMAKE_COMMAND}" -E make_directory "${OVITO_SHARE_DIRECTORY}/doc/manual/html"
         # Run Sphinx command to generate HTML files:
-        COMMAND "${CMAKE_COMMAND}" -E env "OVITO_PYDOC_INTERSPHINX_LOCATION=${OVITO_PYDOC_INTERSPHINX_LOCATION}" 
+        COMMAND "${CMAKE_COMMAND}" -E env "OVITO_PYDOC_INTERSPHINX_LOCATION=${OVITO_PYDOC_INTERSPHINX_LOCATION}"
             "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/sphinx-build.py"  # Run the sphinx-build.py script through the system's Python interpreter
-            "."                                           # Sphinx source directory 
+            "."                                           # Sphinx source directory
             "${OVITO_SHARE_DIRECTORY}/doc/manual/html/"   # Destination directory
-            -a -E                                         # Always write all output files. Don’t use a saved environment. 
+            -a -E                                         # Always write all output files. Don’t use a saved environment.
             -n                                            # Run in nit-picky mode
              "${BUILD_DOCUMENTATION_STRICT}"               # Turn warnings into errors
-            # Additional config settings passed to Sphinx, which are added to the options found in conf.py: 
+            # Additional config settings passed to Sphinx, which are added to the options found in conf.py:
             -D "version=${OVITO_VERSION_STRING}"
             -D "release=${OVITO_VERSION_STRING}"
             -D "copyright=${current_year} OVITO GmbH, Germany"
 
         # Extract the link targets from the Intersphinx inventory file and write them to a text file.
-        # The file will be used by the OVITO application to open the correct HTML page corresponding to 
+        # The file will be used by the OVITO application to open the correct HTML page corresponding to
         # a help topic ID. See UserInterface::openHelpTopic() method for further information.
         COMMAND "${CMAKE_COMMAND}" -E env DYLD_FALLBACK_LIBRARY_PATH=/opt/local/lib "${Python3_EXECUTABLE}"
             -m sphinx.ext.intersphinx "${OVITO_SHARE_DIRECTORY}/doc/manual/html/objects.inv"
@@ -88,7 +88,7 @@ IF(OVITO_BUILD_APP)
 
     # Are we building OVITO Pro?
     IF(TARGET scripting_documentation_prerun)
-        # Build user manual after the scripting reference manual was built for the first time (pre-run), 
+        # Build user manual after the scripting reference manual was built for the first time (pre-run),
         # because Intersphinx need its inventory database.
         ADD_DEPENDENCIES(documentation scripting_documentation_prerun)
         # Build the final version of the scripting reference after the user manual, to make

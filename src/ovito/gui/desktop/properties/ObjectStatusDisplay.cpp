@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -51,9 +51,9 @@ ObjectStatusDisplay::~ObjectStatusDisplay()
 /******************************************************************************
 * Returns the UI widget managed by this ParameterUI.
 ******************************************************************************/
-StatusWidget* ObjectStatusDisplay::statusWidget() const 
-{ 
-    return _widget; 
+StatusWidget* ObjectStatusDisplay::statusWidget() const
+{
+    return _widget;
 }
 
 /******************************************************************************
@@ -94,7 +94,7 @@ void ObjectStatusDisplay::resetUI()
 ******************************************************************************/
 void ObjectStatusDisplay::setEnabled(bool enabled)
 {
-    if(enabled == isEnabled()) 
+    if(enabled == isEnabled())
         return;
     ParameterUI::setEnabled(enabled);
     if(statusWidget())

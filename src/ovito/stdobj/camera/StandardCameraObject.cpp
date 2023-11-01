@@ -193,7 +193,7 @@ PipelineStatus CameraVis::render(AnimationTime time, const ConstDataObjectPath& 
     }
 
     if(!renderer->isBoundingBoxPass()) {
-        if(!renderer->isPicking()) {
+        if(renderer->isImagePass()) {
             // The key type used for caching the geometry primitive:
             using CacheKey = RendererResourceKey<struct CameraCone,
                 FloatType,                  // Camera target distance
@@ -305,7 +305,7 @@ PipelineStatus CameraVis::render(AnimationTime time, const ConstDataObjectPath& 
         LinePrimitive cameraPrimitives;
         cameraPrimitives.setPositions(_cameraIconVertices);
         cameraPrimitives.setUniformColor(ViewportSettings::getSettings().viewportColor(pipeline->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_CAMERAS));
-        if(renderer->isPicking())
+        if(!renderer->isImagePass())
             cameraPrimitives.setLineWidth(renderer->defaultLinePickingWidth());
 
         renderer->beginPickObject(pipeline);

@@ -104,7 +104,8 @@ Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(c
     OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClass->createInstance());
 
     // Activate picking mode, because we want to render particles using false colors.
-    renderer->setPicking(true);
+    renderer->setImagePass(false);
+    renderer->setPickingPass(true);
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     return std::make_shared<AmbientOcclusionEngine>(request, validityInterval, particles, resolution, samplingCount(), posProperty, std::move(radii), boundingBox, std::move(renderer));

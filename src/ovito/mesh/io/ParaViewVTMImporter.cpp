@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -292,14 +292,13 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
                         request.state.setStatus(PipelineStatus(statusType, std::move(statusString)));
                     }
                     catch(Exception& ex) {
-                        ex.prependGeneralMessage(tr("Failed to load VTK multi-block dataset '%1': %2").arg(request.dataBlockPrefix).arg(filename));
-                        throw ex;
+                        throw ex.prependGeneralMessage(tr("Failed to load VTK multi-block dataset '%1': %2").arg(request.dataBlockPrefix).arg(filename));
                     }
                 });
             }
             catch(Exception& ex) {
                 // Handle file errors, e.g. if the data block file referenced in the VTM file does not exist.
-                request.state.setStatus(PipelineStatus(ex, QChar(' ')));
+                request.state.setStatus(PipelineStatus(ex, QStringLiteral(" ")));
                 ex.prependGeneralMessage(tr("Failed to access data file referenced by block '%1' in VTK multi-block file.").arg(request.dataBlockPrefix));
                 ExecutionContext::current().ui().reportError(ex);
                 // We treat such an error as recoverable and continue with loading the remaining data blocks.

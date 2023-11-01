@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -59,7 +59,7 @@ void AnimationKey::loadFromStreamComplete(ObjectLoadStream& stream)
 {
     RefTarget::loadFromStreamComplete(stream);
 
-    // For backward compatibility with OVITO 3.7: 
+    // For backward compatibility with OVITO 3.7:
     // Convert legacy time value. This requires access to the AnimationSettings object, which is stored in the scene.
     if(stream.formatVersion() <= 30008 && stream.datasetToBePopulated()) {
         if(Viewport* vp = stream.datasetToBePopulated()->viewportConfig()->activeViewport()) {

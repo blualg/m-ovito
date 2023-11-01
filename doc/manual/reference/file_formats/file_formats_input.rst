@@ -226,3 +226,5 @@ OVITO can directly read the following file formats:
     -
 
 *OVITO Pro* additionally provides the option for you to write :ref:`custom file readers in Python <writing_custom_file_readers>` to import more formats.
+
+.. seealso:: :py:func:`ovito.io.import_file` (Python API)

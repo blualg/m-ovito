@@ -51,8 +51,19 @@ Exception& Exception::prependGeneralMessage(const QString& message)
     return *this;
 }
 
+Exception& Exception::prependToMessage(const QString& text)
+{
+    if(!_messages.empty())
+        _messages.front().prepend(text);
+    else
+        _messages.push_back(text);
+    return *this;
+}
+
 void Exception::logError() const
 {
+    if(!traceback().isEmpty())
+        qCritical().noquote() << traceback();
     for(const QString& msg : _messages) {
         qCritical().noquote() << msg;
     }

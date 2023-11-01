@@ -56,10 +56,6 @@ class OVITO_CORE_EXPORT DataSet final : public RefTarget
 
     OVITO_CLASS_META(DataSet, DataSetClass)
 
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(Ovito::ViewportConfiguration* viewportConfiguration READ viewportConfig WRITE setViewportConfig NOTIFY viewportConfigReplaced)
-#endif
-
 public:
 
     /// \brief Constructs an empty dataset.

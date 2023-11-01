@@ -43,11 +43,7 @@ class OVITO_STDMOD_EXPORT ColorByTypeModifier : public GenericPropertyModifier
     Q_CLASSINFO("DisplayName", "Color by type (Pro)");
 #endif
     Q_CLASSINFO("Description", "Color data elements according to a typed property.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Coloring");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 
@@ -59,12 +55,6 @@ public:
 
     /// Modifies the input data synchronously.
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-#ifdef OVITO_QML_GUI
-    /// This helper method is called by the QML GUI (ColorByTypeModifier.qml) to extract the list of element types
-    /// from the input pipeline output state.
-    Q_INVOKABLE QVariantList getElementTypesFromInputState(ModifierApplication* modApp) const;
-#endif
 
 protected:
 

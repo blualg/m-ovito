@@ -41,6 +41,7 @@ Here is a (nearly complete) list of the program features that are available in *
   - :ref:`particles.modifiers.color_by_type`
 
 - :ref:`file_formats.input.ase_database` and :ref:`file_formats.input.ase_trajectory`
+- :ref:`file_formats.output.gltf`
 - Use of Miller indices in the :ref:`particles.modifiers.slice` modifier
 
 Please visit `www.ovito.org <https://www.ovito.org/about/ovito-pro/>`__ for further details on OVITO Pro, our support services, and pricing.

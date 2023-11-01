@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -75,7 +75,7 @@ OverlayAction* OverlayAction::createForScript(const QString& fileName, const QDi
     // Give the action an icon.
     static QIcon icon = QIcon::fromTheme("overlay_action_icon");
     action->setIcon(icon);
-    
+
     return action;
 }
 
@@ -151,7 +151,7 @@ OverlayAction* OverlayTypesModel::actionFromIndex(int index) const
 /******************************************************************************
 * Returns the number of rows in the model.
 ******************************************************************************/
-int OverlayTypesModel::rowCount(const QModelIndex& parent) const 
+int OverlayTypesModel::rowCount(const QModelIndex& parent) const
 {
     return _actions.size() + 1; // First entry is the "Add layer..." item.
 }

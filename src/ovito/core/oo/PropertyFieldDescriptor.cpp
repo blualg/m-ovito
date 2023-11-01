@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -78,10 +78,10 @@ PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, O
 }
 
 /// Constructor for a property field that stores a vector of references to RefTarget objects.
-PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, OvitoClassPtr targetClass, const char* identifier, PropertyFieldFlags flags, 
+PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, OvitoClassPtr targetClass, const char* identifier, PropertyFieldFlags flags,
         int (*vectorReferenceCountFunc)(const RefMaker*), RefTarget* (*vectorReferenceGetFunc)(const RefMaker*, int), void (*vectorReferenceSetFunc)(RefMaker*, int, const RefTarget*),
         void (*vectorReferenceRemoveFunc)(RefMaker*, int), void (*vectorReferenceInsertFunc)(RefMaker*, int, OORef<RefTarget>))
-    : _definingClassDescriptor(definingClass), _targetClassDescriptor(targetClass), _identifier(identifier), _flags(flags), 
+    : _definingClassDescriptor(definingClass), _targetClassDescriptor(targetClass), _identifier(identifier), _flags(flags),
         _vectorReferenceCountFunc(vectorReferenceCountFunc), _vectorReferenceGetFunc(vectorReferenceGetFunc), _vectorReferenceSetFunc(vectorReferenceSetFunc),
         _vectorReferenceRemoveFunc(vectorReferenceRemoveFunc), _vectorReferenceInsertFunc(vectorReferenceInsertFunc)
 {

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -42,10 +42,10 @@ public:
     /// Constructs a time value from a numeric value.
     Q_DECL_CONSTEXPR explicit AnimationTime(value_type ticks) noexcept : _value(ticks) {}
 
-    /// Returns the animation frame corresponding to this time value.   
+    /// Returns the animation frame corresponding to this time value.
     Q_DECL_CONSTEXPR int frame() const noexcept { return static_cast<int>(_value / TicksPerFrame); }
 
-    /// Returns the animation time value.   
+    /// Returns the animation time value.
     Q_DECL_CONSTEXPR value_type ticks() const noexcept { return _value; }
 
     /// Equal comparison.
@@ -81,7 +81,7 @@ public:
     /// Returns the largest time value (positive infinity).
     static Q_DECL_CONSTEXPR AnimationTime positiveInfinity() noexcept { return AnimationTime(std::numeric_limits<value_type>::max()); }
 
-    /// Constructs a time value corresponding to the given frame.   
+    /// Constructs a time value corresponding to the given frame.
     static Q_DECL_CONSTEXPR AnimationTime fromFrame(int frame) noexcept { return AnimationTime(TicksPerFrame * static_cast<value_type>(frame)); }
 
     /// \brief Writes an animation time to a binary output stream.

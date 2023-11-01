@@ -52,11 +52,7 @@ class OVITO_GRID_EXPORT CreateIsosurfaceModifier : public AsynchronousModifier
 
     Q_CLASSINFO("DisplayName", "Create isosurface");
     Q_CLASSINFO("Description", "Compute the isosurface of a scalar value field.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Visualization");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 

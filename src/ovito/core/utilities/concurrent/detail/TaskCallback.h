@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,7 +39,7 @@ private:
     }
 
     /// Invokes the registered callback function. Delegates the call to the function pointer provided by a derived class.
-    void callProgressChanged(qlonglong progress, qlonglong maximum) noexcept { 
+    void callProgressChanged(qlonglong progress, qlonglong maximum) noexcept {
         if(this->_progressChanged)
             this->_progressChanged(this, progress, maximum);
     }
@@ -51,7 +51,7 @@ private:
     }
 
 protected:
-    
+
     /// The type of function pointer provided by the derived class.
     using state_changed_fn = bool(TaskCallbackBase* f, int state) noexcept;
 
@@ -65,7 +65,7 @@ protected:
     explicit TaskCallbackBase(
         state_changed_fn* stateChanged,
         progress_changed_fn* progressChanged = nullptr,
-        text_changed_fn* textChanged = nullptr) noexcept : 
+        text_changed_fn* textChanged = nullptr) noexcept :
             _stateChanged(stateChanged),
             _progressChanged(progressChanged),
             _textChanged(textChanged) {}
@@ -81,16 +81,16 @@ protected:
 
     /// Linked list of callbacks (pointer to next callback object).
     TaskCallbackBase* _nextInList = nullptr;
-    
+
     friend class Ovito::Task;
     friend class Ovito::ProgressingTask;
 };
 
 template<typename Derived>
-class TaskCallback : protected TaskCallbackBase 
+class TaskCallback : protected TaskCallbackBase
 {
 public:
-    
+
     explicit TaskCallback() noexcept : TaskCallbackBase(&TaskCallback::stateChangedImpl) {}
 
     ~TaskCallback() {
@@ -116,7 +116,7 @@ public:
     Task* callbackTask() const { return _task; }
 
 private:
-    
+
     /// The static function to be registered as callback with the base class.
     static bool stateChangedImpl(TaskCallbackBase* cb, int state) noexcept {
         auto& self = *static_cast<Derived*>(cb);
@@ -131,17 +131,17 @@ private:
 };
 
 template<typename Derived>
-class ProgressTaskCallback : protected TaskCallback<Derived> 
+class ProgressTaskCallback : protected TaskCallback<Derived>
 {
 public:
-    
+
     explicit ProgressTaskCallback() noexcept {
         this->_progressChanged = &ProgressTaskCallback::progressChangedImpl;
         this->_textChanged = &ProgressTaskCallback::textChangedImpl;
     }
 
 private:
-    
+
     /// The static function to be registered as callback with the base class.
     static void progressChangedImpl(TaskCallbackBase* cb, qlonglong progress, qlonglong maximum) noexcept {
         auto& self = *static_cast<Derived*>(cb);

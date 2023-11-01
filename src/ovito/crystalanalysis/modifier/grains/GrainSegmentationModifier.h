@@ -51,12 +51,8 @@ class OVITO_CRYSTALANALYSIS_EXPORT GrainSegmentationModifier : public Asynchrono
 
     OVITO_CLASS_META(GrainSegmentationModifier, GrainSegmentationModifierClass)
 
-    Q_CLASSINFO("DisplayName", "Grain segmentation (experimental)");
-#ifndef OVITO_QML_GUI
+    Q_CLASSINFO("DisplayName", "Grain segmentation");
     Q_CLASSINFO("ModifierCategory", "Analysis");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 

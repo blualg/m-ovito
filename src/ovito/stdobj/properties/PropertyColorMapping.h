@@ -38,23 +38,10 @@ class OVITO_STDOBJ_EXPORT PropertyColorMapping : public RefTarget
     OVITO_CLASS(PropertyColorMapping)
     Q_CLASSINFO("DisplayName", "Color mapping");
 
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(Ovito::ColorCodingGradient* colorGradient READ colorGradient WRITE setColorGradient NOTIFY referenceReplacedSignal)
-    Q_PROPERTY(QString colorGradientType READ colorGradientType WRITE setColorGradientType NOTIFY referenceReplacedSignal)
-#endif
-
 public:
 
     /// Constructor.
     Q_INVOKABLE PropertyColorMapping(ObjectInitializationFlags flags);
-
-#ifdef OVITO_QML_GUI
-    /// Returns the class name of the selected color gradient.
-    QString colorGradientType() const;
-
-    /// Assigns a new color gradient based on its class name.
-    void setColorGradientType(const QString& typeName, ExecutionContext executionContext = ExecutionContext::Type::Interactive);
-#endif
 
     /// Creates a PseudoColorMapping that can be used for rendering of graphics primitives.
     PseudoColorMapping pseudoColorMapping() const;

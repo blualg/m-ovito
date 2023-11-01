@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -58,14 +58,14 @@ void main()
         orientation_tm = mat3(0.0);
     }
 
-    // Apply additional scaling to cylinder radius due to model-view transformation. 
+    // Apply additional scaling to cylinder radius due to model-view transformation.
     float viewspace_radius = radius_gs[0] * length(modelview_matrix[0]);
 
     // Transform cylinder to eye coordinates.
     vec3 cylinder_view_base_ = (modelview_matrix * vec4(base_gs[0], 1.0)).xyz;
     vec3 cylinder_view_axis_ = (modelview_matrix * vec4(orientation_tm[2], 0.0)).xyz;
 
-    for(int corner = 0; corner < 14; corner++) 
+    for(int corner = 0; corner < 14; corner++)
     {
         // Apply model-view-projection matrix to box vertex position.
         gl_Position = modelview_projection_matrix * vec4(base_gs[0] + (orientation_tm * unit_box_triangle_strip[corner]), 1.0);

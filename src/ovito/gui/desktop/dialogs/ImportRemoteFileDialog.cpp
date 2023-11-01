@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/dialogs/MessageBox.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/utilities/io/ssh/SshConnection.h>
@@ -66,7 +67,7 @@ ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindow& mainWindow, const QVe
     clearURLHistoryButton->setIcon(QIcon::fromTheme("edit_clear"));
     clearURLHistoryButton->setToolTip(tr("Clear history"));
     connect(clearURLHistoryButton, &QToolButton::clicked, [this]() {
-        if(QMessageBox::question(this, tr("Clear history"),
+        if(MessageBox::question(this, tr("Clear history"),
                                        tr("Do you really want to delete the history of recently used remote URLs? This operation cannot be undone."),
                                        QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Yes) == QMessageBox::Yes) {
             QString text = _urlEdit->currentText();

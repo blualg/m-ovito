@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,13 +34,13 @@ namespace Ovito::detail {
 
 // Invoke the method, expanding the tuple of bound arguments.
 template <class R, class Tuple, size_t... Idx, class... Args>
-R Apply(Tuple&& bound, std::index_sequence<Idx...>, Args&&... free) 
+R Apply(Tuple&& bound, std::index_sequence<Idx...>, Args&&... free)
 {
     return std::invoke(std::get<Idx>(std::forward<Tuple>(bound))..., std::forward<Args>(free)...);
 }
 
 template <class F, class... BoundArgs>
-class FrontBinder 
+class FrontBinder
 {
     using BoundArgsT = std::tuple<F, BoundArgs...>;
     using Idx = std::make_index_sequence<sizeof...(BoundArgs) + 1>;
@@ -75,13 +75,13 @@ public:
         // arguments are stored by value or rvalue reference, we move them.
         return Apply<R>(std::move(bound_args_), Idx(), std::forward<FreeArgs>(free_args)...);
     }
-};  
+};
 
 template <class F, class... BoundArgs>
 using bind_front_t = FrontBinder<std::decay_t<F>, std::decay_t<BoundArgs>...>;
 
 template <class F, class... BoundArgs>
-constexpr bind_front_t<F, BoundArgs...> bind_front(F&& func, BoundArgs&&... args) 
+constexpr bind_front_t<F, BoundArgs...> bind_front(F&& func, BoundArgs&&... args)
 {
     return bind_front_t<F, BoundArgs...>(
         std::in_place, std::forward<F>(func),

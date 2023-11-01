@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -73,7 +73,7 @@ QString OverlayListItem::title(Viewport* selectedViewport) const
 {
     OVITO_ASSERT(selectedViewport);
     switch(_itemType) {
-    case Layer:  
+    case Layer:
         return overlay() ? overlay()->objectTitle() : QString();
     case ViewportHeader: return tr("Active viewport: %1").arg(selectedViewport->viewportTitle());
     case SceneLayer: return tr("3D scene layer");

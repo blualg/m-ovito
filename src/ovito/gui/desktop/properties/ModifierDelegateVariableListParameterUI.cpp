@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,7 +35,7 @@ DEFINE_VECTOR_REFERENCE_FIELD(ModifierDelegateVariableListParameterUI, delegates
 * Constructor.
 ******************************************************************************/
 ModifierDelegateVariableListParameterUI::ModifierDelegateVariableListParameterUI(PropertiesEditor* parentEditor, const OvitoClass& delegateType) :
-    ParameterUI(parentEditor), 
+    ParameterUI(parentEditor),
     _delegateType(delegateType),
     _containerWidget(new QWidget())
 {
@@ -96,7 +96,7 @@ void ModifierDelegateVariableListParameterUI::updateUI()
 
     // Update the contents of the combo boxes.
     for(int index = 0; index < _delegateBoxes.size(); index++) {
-        ModifierDelegateParameterUI::populateComboBox(_delegateBoxes[index], editor(), modifier, delegates()[index], 
+        ModifierDelegateParameterUI::populateComboBox(_delegateBoxes[index], editor(), modifier, delegates()[index],
             delegates()[index] ? delegates()[index]->inputDataObject() : DataObjectReference(), _delegateType);
     }
 }
@@ -157,7 +157,7 @@ void ModifierDelegateVariableListParameterUI::referenceInserted(const PropertyFi
         QVBoxLayout* layout = static_cast<QVBoxLayout*>(containerWidget()->layout());
         layout->insertLayout(listIndex, sublayout);
         OVITO_ASSERT(layout->count() == delegates().size() + 1);
-        ModifierDelegateParameterUI::populateComboBox(comboBox, editor(), static_object_cast<MultiDelegatingModifier>(editObject()), newTarget, 
+        ModifierDelegateParameterUI::populateComboBox(comboBox, editor(), static_object_cast<MultiDelegatingModifier>(editObject()), newTarget,
             newTarget ? static_object_cast<ModifierDelegate>(newTarget)->inputDataObject() : DataObjectReference(), _delegateType);
         editor()->container()->updateRolloutsLater();
     }
@@ -193,7 +193,7 @@ void ModifierDelegateVariableListParameterUI::referenceReplaced(const PropertyFi
     if(field == PROPERTY_FIELD(delegates) && containerWidget()) {
         QVBoxLayout* layout = static_cast<QVBoxLayout*>(containerWidget()->layout());
         QComboBox* comboBox = _delegateBoxes[listIndex];
-        ModifierDelegateParameterUI::populateComboBox(comboBox, editor(), static_object_cast<MultiDelegatingModifier>(editObject()), newTarget, 
+        ModifierDelegateParameterUI::populateComboBox(comboBox, editor(), static_object_cast<MultiDelegatingModifier>(editObject()), newTarget,
             newTarget ? static_object_cast<ModifierDelegate>(newTarget)->inputDataObject() : DataObjectReference(), _delegateType);
     }
     ParameterUI::referenceReplaced(field, oldTarget, newTarget, listIndex);
@@ -204,10 +204,10 @@ void ModifierDelegateVariableListParameterUI::referenceReplaced(const PropertyFi
 ******************************************************************************/
 void ModifierDelegateVariableListParameterUI::setEnabled(bool enabled)
 {
-    if(enabled == isEnabled()) 
+    if(enabled == isEnabled())
         return;
     ParameterUI::setEnabled(enabled);
-    if(containerWidget()) 
+    if(containerWidget())
         containerWidget()->setEnabled(editObject() && isEnabled());
 }
 
