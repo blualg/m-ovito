@@ -37,11 +37,9 @@ mat3 calc_shape_orientation(in vec4 orientation, in vec3 aspherical_shape, in fl
     else
         quat = orientation / norm;
 
-    mat3 rot = mat3(1.0 - 2.0 * (quat.y * quat.y + quat.z * quat.z), 2.0 * (quat.x * quat.y + quat.w * quat.z),
-                    2.0 * (quat.x * quat.z - quat.w * quat.y), 2.0 * (quat.x * quat.y - quat.w * quat.z),
-                    1.0 - 2.0 * (quat.x * quat.x + quat.z * quat.z), 2.0 * (quat.y * quat.z + quat.w * quat.x),
-                    2.0 * (quat.x * quat.z + quat.w * quat.y), 2.0 * (quat.y * quat.z - quat.w * quat.x),
-                    1.0 - 2.0 * (quat.x * quat.x + quat.y * quat.y));
+    mat3 rot = mat3(1.0 - 2.0*(quat.y*quat.y + quat.z*quat.z),       2.0*(quat.x*quat.y + quat.w*quat.z),       2.0*(quat.x*quat.z - quat.w*quat.y),
+                          2.0*(quat.x*quat.y - quat.w*quat.z), 1.0 - 2.0*(quat.x*quat.x + quat.z*quat.z),       2.0*(quat.y*quat.z + quat.w*quat.x),
+                          2.0*(quat.x*quat.z + quat.w*quat.y),       2.0*(quat.y*quat.z - quat.w*quat.x), 1.0 - 2.0*(quat.x*quat.x + quat.y*quat.y));
     rot[0] *= axes.x;
     rot[1] *= axes.y;
     rot[2] *= axes.z;
