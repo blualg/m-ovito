@@ -5,6 +5,12 @@ Changelog
 =========
 
 ---------------------------
+Version 3.9.4 (04-Nov-2023)
+---------------------------
+
+* Fix: OpenGL rendering of ellipsoidal/superquadric/box particles with wrong orientations (regression since v3.9.0)
+
+---------------------------
 Version 3.9.3 (01-Nov-2023)
 ---------------------------
 
