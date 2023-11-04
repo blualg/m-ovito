@@ -132,7 +132,7 @@ bool IMDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     textStream() << "#C";
     for(size_t i = 0; i < columnWriter.columnCount(); i++) {
         QString columnName;
-        if(i < columnNames.size())
+        if(i < (size_t)columnNames.size())
             columnName = columnNames[i];
         else {
             const PropertyReference& pref = columnWriter.propertyRef(i);
