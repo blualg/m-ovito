@@ -754,6 +754,56 @@ void TriangleMesh::createSuperellipsoid(int resolutionU, int resolutionV, FloatT
 }
 
 /******************************************************************************
+* Creates an axis-aligned box geometry.
+******************************************************************************/
+void TriangleMesh::createBox(const Box3& box)
+{
+    clear();
+
+    // Create a box with 8 vertices and 12 triangular faces.
+    setVertexCount(8);
+    setFaceCount(12);
+
+    // Add vertices.
+    vertex(0) = box.minc;
+    vertex(1) = Point3(box.minc.x(), box.minc.y(), box.maxc.z());
+    vertex(2) = Point3(box.minc.x(), box.maxc.y(), box.minc.z());
+    vertex(3) = Point3(box.minc.x(), box.maxc.y(), box.maxc.z());
+    vertex(4) = Point3(box.maxc.x(), box.minc.y(), box.minc.z());
+    vertex(5) = Point3(box.maxc.x(), box.minc.y(), box.maxc.z());
+    vertex(6) = Point3(box.maxc.x(), box.maxc.y(), box.minc.z());
+    vertex(7) = box.maxc;
+
+    // Add faces.
+    TriMeshFace& f1 = face(0);
+    f1.setVertices(0, 1, 2);
+    TriMeshFace& f2 = face(1);
+    f2.setVertices(1, 3, 2);
+    TriMeshFace& f3 = face(2);
+    f3.setVertices(4, 6, 5);
+    TriMeshFace& f4 = face(3);
+    f4.setVertices(5, 6, 7);
+    TriMeshFace& f5 = face(4);
+    f5.setVertices(0, 4, 1);
+    TriMeshFace& f6 = face(5);
+    f6.setVertices(1, 4, 5);
+    TriMeshFace& f7 = face(6);
+    f7.setVertices(2, 3, 6);
+    TriMeshFace& f8 = face(7);
+    f8.setVertices(3, 7, 6);
+    TriMeshFace& f9 = face(8);
+    f9.setVertices(0, 2, 4);
+    TriMeshFace& f10 = face(9);
+    f10.setVertices(2, 6, 4);
+    TriMeshFace& f11 = face(10);
+    f11.setVertices(1, 5, 3);
+    TriMeshFace& f12 = face(11);
+    f12.setVertices(3, 5, 7);
+
+    invalidateVertices();
+}
+
+/******************************************************************************
 * Determines whether the mesh forms a closed manifold, i.e. each triangle has
 * three adjacent triangles with correct orientation.
 ******************************************************************************/

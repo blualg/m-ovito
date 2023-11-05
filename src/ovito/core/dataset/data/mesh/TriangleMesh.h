@@ -608,6 +608,9 @@ public:
     /// Creates a unit superellipsoid.
     void createSuperellipsoid(int resolutionU, int resolutionV, FloatType epsilon1, FloatType epsilon2);
 
+    /// Creates an axis-aligned box geometry.
+    void createBox(const Box3& box);
+
     /************************************* Information *************************************/
 
     /// Determines whether the mesh forms a closed manifold, i.e. each triangle has three adjacent
