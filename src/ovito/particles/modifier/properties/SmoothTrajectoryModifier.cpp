@@ -245,22 +245,24 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
     // Interpolate particle positions.
     const Particles* particles1 = state1.expectObject<Particles>();
     const Particles* particles2 = state2.getObject<Particles>();
-    if(!particles2 || particles1->elementCount() != particles2->elementCount())
-        throw Exception(tr("Cannot interpolate between consecutive simulation frames, because they contain different numbers of particles."));
+    if(!particles2)
+        throw Exception(tr("Cannot interpolate between consecutive simulation frames, because the second frame contains no particles at all."));
     particles1->verifyIntegrity();
     particles2->verifyIntegrity();
     BufferReadAccess<Point3> posProperty2 = particles2->expectProperty(Particles::PositionProperty);
     BufferReadAccess<IdentifierIntType> idProperty1 = particles1->getProperty(Particles::IdentifierProperty);
     BufferReadAccess<IdentifierIntType> idProperty2 = particles2->getProperty(Particles::IdentifierProperty);
+    if((!idProperty1 || !idProperty2) && particles1->elementCount() != particles2->elementCount())
+        throw Exception(tr("Cannot interpolate between consecutive simulation frames, because they contain different numbers of particles but no unique identifiers."));
     Particles* outputParticles = state1.makeMutable(particles1);
     BufferWriteAccess<Point3, access_mode::read_write> outputPositions = outputParticles->createProperty(DataBuffer::Initialized, Particles::PositionProperty);
     std::unordered_map<IdentifierIntType, size_t> idmap;
     if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
 
-        // Build ID-to-index map.
+        // Build ID-to-index map for second frame.
         size_t index = 0;
         for(auto id : idProperty2) {
-            if(!idmap.insert(std::make_pair(id,index)).second)
+            if(!idmap.insert(std::make_pair(id, index)).second)
                 throw Exception(tr("Detected duplicate particle ID: %1. Cannot interpolate trajectories in this case.").arg(id));
             index++;
         }
@@ -269,10 +271,10 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
             auto id = idProperty1.cbegin();
             for(Point3& p1 : outputPositions) {
                 auto mapEntry = idmap.find(*id);
-                if(mapEntry == idmap.end())
-                    throw Exception(tr("Cannot interpolate between consecutive frames, because the identity of particles changes between frames."));
-                Vector3 delta = cell1->wrapVector(posProperty2[mapEntry->second] - p1);
-                p1 += delta * t;
+                if(mapEntry != idmap.end()) {
+                    Vector3 delta = cell1->wrapVector(posProperty2[mapEntry->second] - p1);
+                    p1 += delta * t;
+                }
                 ++id;
             }
         }
@@ -280,9 +282,9 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
             auto id = idProperty1.cbegin();
             for(Point3& p1 : outputPositions) {
                 auto mapEntry = idmap.find(*id);
-                if(mapEntry == idmap.end())
-                    throw Exception(tr("Cannot interpolate between consecutive frames, because the identity of particles changes between frames."));
-                p1 += (posProperty2[mapEntry->second] - p1) * t;
+                if(mapEntry != idmap.end()) {
+                    p1 += (posProperty2[mapEntry->second] - p1) * t;
+                }
                 ++id;
             }
         }
@@ -309,14 +311,20 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
             auto id = idProperty1.cbegin();
             for(QuaternionG& q1 : outputOrientations) {
                 auto mapEntry = idmap.find(*id);
-                OVITO_ASSERT(mapEntry != idmap.end());
-                q1 = QuaternionG::interpolateSafely(q1, orientationProperty2[mapEntry->second], static_cast<GraphicsFloatType>(t));
+                if(mapEntry != idmap.end()) {
+                    const QuaternionG& q2 = orientationProperty2[mapEntry->second];
+                    if(q1.dot(q2) < 0)
+                        q1 = -q1;
+                    q1 = QuaternionG::interpolateSafely(q1, q2, static_cast<GraphicsFloatType>(t));
+                }
                 ++id;
             }
         }
         else {
             const QuaternionG* q2 = orientationProperty2.cbegin();
             for(QuaternionG& q1 : outputOrientations) {
+                if(q1.dot(*q2) < 0)
+                    q1 = -q1;
                 q1 = QuaternionG::interpolateSafely(q1, *q2++, static_cast<GraphicsFloatType>(t));
             }
         }
@@ -333,8 +341,9 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
                     auto id = idProperty1.cbegin();
                     for(auto& v1 : data1) {
                         auto mapEntry = idmap.find(*id);
-                        OVITO_ASSERT(mapEntry != idmap.end());
-                        v1 = v1 * (1.0f - t) + data2[mapEntry->second] * t;
+                        if(mapEntry != idmap.end()) {
+                            v1 = v1 * (1.0f - t) + data2[mapEntry->second] * t;
+                        }
                         ++id;
                     }
                 }
@@ -356,8 +365,9 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
                     auto id = idProperty1.cbegin();
                     for(auto& v1 : data1) {
                         auto mapEntry = idmap.find(*id);
-                        OVITO_ASSERT(mapEntry != idmap.end());
-                        v1 = v1 * (1.0 - t) + data2[mapEntry->second] * t;
+                        if(mapEntry != idmap.end()) {
+                            v1 = v1 * (1.0 - t) + data2[mapEntry->second] * t;
+                        }
                         ++id;
                     }
                 }
@@ -486,10 +496,18 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
                     for(QuaternionG& qout : outputOrientations) {
                         if(auto mapEntry = idmap.find(*id); mapEntry != idmap.end()) {
                             const QuaternionG& q2 = orientationProperty2[mapEntry->second];
-                            qout.x() += q2.x();
-                            qout.y() += q2.y();
-                            qout.z() += q2.z();
-                            qout.w() += q2.w();
+                            if(qout.dot(q2) >= 0) {
+                                qout.x() += q2.x();
+                                qout.y() += q2.y();
+                                qout.z() += q2.z();
+                                qout.w() += q2.w();
+                            }
+                            else {
+                                qout.x() -= q2.x();
+                                qout.y() -= q2.y();
+                                qout.z() -= q2.z();
+                                qout.w() -= q2.w();
+                            }
                         }
                         ++id;
                     }
@@ -543,10 +561,18 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
                 if(BufferReadAccess<QuaternionG> orientationProperty2 = particles2->getProperty(Particles::OrientationProperty)) {
                     const auto* q2 = orientationProperty2.cbegin();
                     for(auto* qout = outputOrientations.begin(), *qend = qout + std::min(outputOrientations.size(), orientationProperty2.size()); qout != qend; ++qout, ++q2) {
-                        qout->x() += q2->x();
-                        qout->y() += q2->y();
-                        qout->z() += q2->z();
-                        qout->w() += q2->w();
+                        if(qout->dot(*q2) >= 0) {
+                            qout->x() += q2->x();
+                            qout->y() += q2->y();
+                            qout->z() += q2->z();
+                            qout->w() += q2->w();
+                        }
+                        else {
+                            qout->x() -= q2->x();
+                            qout->y() -= q2->y();
+                            qout->z() -= q2->z();
+                            qout->w() -= q2->w();
+                        }
                     }
                 }
             }
