@@ -66,6 +66,8 @@ public:
     Point_3<T> minc;
     /// The upper XYZ coordinates of the box.
     Point_3<T> maxc;
+    /// The type of a single element of the box.
+    typedef T element_type;
 
     /////////////////////////////// Constructors /////////////////////////////////
 
