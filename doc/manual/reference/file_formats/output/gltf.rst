@@ -3,6 +3,8 @@
 glTF file exporter |ovito-pro|
 ------------------------------
 
+.. versionadded:: 3.10.0
+
 This file format writer exports the entire visualization scene from OVITO to a 3d model file in the `glTF <https://www.khronos.org/gltf/>`__ format, which can be imported in other
 applications such as *Blender* or *PowerPoint*.
 

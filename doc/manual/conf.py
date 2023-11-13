@@ -176,6 +176,9 @@ html_static_path = ['_static']
 # or fully qualified paths (eg. https://...)
 html_css_files = ['style.css']
 
+# The base URL which points to the root of the HTML documentation.
+html_baseurl = "https://docs.ovito.org/"
+
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
 # directly to the root of the documentation.
