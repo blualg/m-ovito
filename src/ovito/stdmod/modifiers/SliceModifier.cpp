@@ -31,6 +31,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/lines/Lines.h>
 #include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/app/PluginManager.h>
@@ -61,6 +62,60 @@ SET_PROPERTY_FIELD_LABEL(SliceModifier, planeVis, "Plane");
 SET_PROPERTY_FIELD_UNITS(SliceModifier, normalController, WorldParameterUnit);
 SET_PROPERTY_FIELD_UNITS(SliceModifier, distanceController, WorldParameterUnit);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SliceModifier, widthController, WorldParameterUnit, 0);
+
+IMPLEMENT_OVITO_CLASS(LinesSliceModifierDelegate);
+
+/******************************************************************************
+ * Asks the metaclass which data objects in the given input data collection the
+ * modifier delegate can operate on.
+ ******************************************************************************/
+QVector<DataObjectReference> LinesSliceModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
+{
+    // Gather list of all lines objects in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(Lines::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
+}
+
+/******************************************************************************
+ * Performs the slicing of the lines.
+ ******************************************************************************/
+PipelineStatus LinesSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state,
+                                                 const PipelineFlowState& inputState,
+                                                 const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+{
+    SliceModifier* mod = static_object_cast<SliceModifier>(request.modifier());
+    QString statusMessage;
+
+    // Obtain modifier parameter values.
+    Plane3 plane;
+    FloatType sliceWidth;
+    std::tie(plane, sliceWidth) = mod->slicingPlane(request.time(), state.mutableStateValidity(), state);
+    sliceWidth /= 2;
+    bool invert = mod->inverse();
+
+    // Loop over all lines objects in data collection
+    for(const DataObject* obj : inputState.data()->objects()) {
+        // Transform the Lines.
+        if(const Lines* inputLines = dynamic_object_cast<Lines>(obj)) {
+            // Make sure we can safely modify the lines object.
+            Lines* outputLines = state.makeMutable(inputLines);
+
+            QVector<Plane3> planes = outputLines->cuttingPlanes();
+            if(sliceWidth <= 0) {
+                planes.push_back(plane);
+            }
+            else {
+                planes.push_back(Plane3(plane.normal, plane.dist + sliceWidth));
+                planes.push_back(Plane3(-plane.normal, -plane.dist + sliceWidth));
+            }
+            outputLines->setCuttingPlanes(std::move(planes));
+        }
+    }
+    return PipelineStatus::Success;
+}
 
 /******************************************************************************
 * Constructs the modifier object.

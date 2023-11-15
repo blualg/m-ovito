@@ -1,0 +1,162 @@
+////////////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright 2023 OVITO GmbH, Germany
+//
+//  This file is part of OVITO (Open Visualization Tool).
+//
+//  OVITO is free software; you can redistribute it and/or modify it either under the
+//  terms of the GNU General Public License version 3 as published by the Free Software
+//  Foundation (the "GPL") or, at your option, under the terms of the MIT License.
+//  If you do not alter this notice, a recipient may use your version of this
+//  file under either the GPL or the MIT License.
+//
+//  You should have received a copy of the GPL along with this program in a
+//  file LICENSE.GPL.txt.  You should have received a copy of the MIT License along
+//  with this program in a file LICENSE.MIT.txt
+//
+//  This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND,
+//  either express or implied. See the GPL or the MIT License for the specific language
+//  governing rights and limitations.
+//
+////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+
+#include <ovito/particles/Particles.h>
+#include <ovito/stdobj/properties/PropertyColorMapping.h>
+#include <ovito/core/dataset/data/DataVis.h>
+#include <ovito/core/rendering/CylinderPrimitive.h>
+#include <ovito/core/rendering/SceneRenderer.h>
+
+namespace Ovito {
+
+/**
+ * \brief This information record is attached to a lines segment by theLiensVis when rendering
+ * them in the viewports. It facilitates the picking of dislocations with the mouse.
+ */
+class OVITO_STDOBJ_EXPORT LinesPickInfo : public ObjectPickInfo
+{
+    OVITO_CLASS(LinesPickInfo)
+
+public:
+    /// Constructor.
+    // LinesPickInfo(LinesVis* visElement, const Lines* linesObj, std::vector<int>&& subobjToSegmentMap)
+    //     : _visElement(visElement), _linesObj(linesObj), _subobjToSegmentMap(std::move(subobjToSegmentMap))
+    // {
+    // }
+
+    /// Constructor.
+    LinesPickInfo(const Lines* linesObj, std::vector<int>&& subobjToSegmentMap)
+        : _linesObj(linesObj), _subobjToSegmentMap(std::move(subobjToSegmentMap))
+    {
+    }
+
+    /// The data object containing the lines.
+    const Lines* linesObj() const { return _linesObj; }
+
+    /// Returns the vis element that rendered the lines.
+    // const LinesVis* visElement() const { return _visElement; }
+
+    /// \brief Given an sub-object ID returned by the Viewport::pick() method, looks up the
+    /// corresponding lines segment.
+    int segmentIndexFromSubObjectID(quint32 subobjID) const
+    {
+        if(subobjID < _subobjToSegmentMap.size())
+            return _subobjToSegmentMap[subobjID];
+        else
+            return -1;
+    }
+
+    /// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
+    virtual QString infoString(Pipeline* pipeline, quint32 subobjectId) override;
+
+private:
+    /// The data object containing the dislocations.
+    OORef<Lines> _linesObj = nullptr;
+
+    /// The vis element that rendered the dislocations.
+    // OORef<LinesVis> _visElement;
+
+    // This array is used to map sub-object picking IDs back to line segments.
+    std::vector<int> _subobjToSegmentMap;
+};
+
+/**
+ * \brief A visualization element for rendering lines.
+ */
+class OVITO_STDOBJ_EXPORT LinesVis : public DataVis
+{
+    OVITO_CLASS(LinesVis)
+    Q_CLASSINFO("DisplayName", "Lines");
+    Q_CLASSINFO("ClassNameAlias", "TrajectoryVis");  // For backward compatibility with OVITO 3.9.2
+
+public:
+    /// The shading modes supported by the lines vis element.
+    enum ShadingMode
+    {
+        NormalShading = CylinderPrimitive::ShadingMode::NormalShading,
+        FlatShading = CylinderPrimitive::ShadingMode::FlatShading
+    };
+    Q_ENUM(ShadingMode);
+
+    /// The coloring modes supported by the lines vis element.
+    enum ColoringMode
+    {
+        UniformColoring,
+        PseudoColoring,
+    };
+    Q_ENUM(ColoringMode);
+
+    /// \brief Constructor.
+    Q_INVOKABLE LinesVis(ObjectInitializationFlags flags);
+
+    /// \brief Renders the associated data object.
+    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState,
+                                  SceneRenderer* renderer, const Pipeline* pipeline) override;
+
+    /// \brief Computes the display bounding box of the data object.
+    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline,
+                             const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
+
+public:
+    Q_PROPERTY(Ovito::LinesVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
+
+protected:
+    /// This method is called once for this object after it has been completely loaded from a stream.
+    virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
+
+private:
+    /// Clips a linear line segment at the periodic box boundaries or cutting planes.
+    static void clipLine(const Point3& v1, const Point3& v2, const SimulationCell* simulationCell, const QVector<Plane3>& clippingPlanes,
+                         const std::function<void(const Point3&, const Point3&, GraphicsFloatType, GraphicsFloatType)>& segmentCallback);
+
+    /// Clips a point at the periodic box boundaries or cutting planes.
+    static void clipPoint(const Point3& v1, const SimulationCell* simulationCell, const QVector<Plane3>& clippingPlanes,
+                          const std::function<void(const Point3&)>& segmentCallback);
+
+    /// Controls the display width of the lines.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, lineWidth, setLineWidth, PROPERTY_FIELD_MEMORIZE);
+
+    /// Controls the color of the lines.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, lineColor, setLineColor, PROPERTY_FIELD_MEMORIZE);
+
+    /// Controls the whether the lines are rendered only up to the current animation time.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, showUpToCurrentTime, setShowUpToCurrentTime);
+
+    /// Controls the whether the displayed lines are wrapped at periodic boundaries of the simulation cell.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, wrappedLines, setWrappedLines, PROPERTY_FIELD_MEMORIZE);
+
+    /// Controls the whether the displayed lines are wrapped at periodic boundaries of the simulation cell.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, roundedCaps, setRoundedCaps, PROPERTY_FIELD_MEMORIZE);
+
+    /// Controls the shading mode for lines.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(LinesVis::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
+
+    /// Controls how the lines are being colored.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(LinesVis::ColoringMode, coloringMode, setColoringMode);
+
+    /// Transfer function for pseudo-color visualization of a trajectory line property.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PropertyColorMapping>, colorMapping, setColorMapping);
+};
+
+}  // namespace Ovito

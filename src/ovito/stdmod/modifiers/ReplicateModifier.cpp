@@ -22,6 +22,7 @@
 
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/lines/Lines.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
@@ -45,6 +46,104 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ReplicateModifier, numImagesY, IntegerParam
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ReplicateModifier, numImagesZ, IntegerParameterUnit, 1);
 
 IMPLEMENT_OVITO_CLASS(ReplicateModifierDelegate);
+
+IMPLEMENT_OVITO_CLASS(LinesReplicateModifierDelegate);
+
+/******************************************************************************
+ * Indicates which data objects in the given input data collection the modifier
+ * delegate is able to operate on.
+ ******************************************************************************/
+QVector<DataObjectReference> LinesReplicateModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
+{
+    // Gather list of all lines objects in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(Lines::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
+}
+
+/******************************************************************************
+ * Applies the modifier operation to the data in a pipeline flow state.
+ ******************************************************************************/
+PipelineStatus LinesReplicateModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state,
+                                                     const PipelineFlowState& inputState,
+                                                     const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+{
+    ReplicateModifier* mod = static_object_cast<ReplicateModifier>(request.modifier());
+
+    // Loop over all lines objects in data collection
+    // Get number of images
+    std::array<int, 3> nPBC;
+    nPBC[0] = std::max(mod->numImagesX(), 1);
+    nPBC[1] = std::max(mod->numImagesY(), 1);
+    nPBC[2] = std::max(mod->numImagesZ(), 1);
+    size_t numCopies = nPBC[0] * nPBC[1] * nPBC[2];
+
+    // Get range of new images
+    const Box3I& newImages = mod->replicaRange();
+
+    // Get the simulation cell
+    const SimulationCell* cell = state.expectObject<SimulationCell>();
+    const AffineTransformation& cellMatrix = cell->matrix();
+
+    for(const DataObject* obj : state.data()->objects()) {
+        // Replicate the Lines.
+        if(const Lines* inputLines = dynamic_object_cast<Lines>(obj)) {
+            // Skip if there's nothing to do
+            if(numCopies <= 1 || !inputLines || inputLines->elementCount() == 0) {
+                continue;
+            }
+
+            // Extend lines property arrays.
+            size_t oldVertexCount = inputLines->elementCount();
+            size_t newVertexCount = oldVertexCount * numCopies;
+
+            // Ensure that the lines can be modified.
+            Lines* outputLines = state.makeMutable(inputLines);
+            outputLines->replicate(numCopies);
+
+            // Replicate lines (vertex) property values.
+            for(Property* property : outputLines->makePropertiesMutable()) {
+                OVITO_ASSERT(property->size() == newVertexCount);
+
+                // Shift vertex positions by the periodicity vector.
+                if(property->type() == Lines::PositionProperty) {
+                    BufferWriteAccess<Point3, access_mode::read_write> positionArray(property);
+                    Point3* p = positionArray.begin();
+                    for(int imageX = newImages.minc.x(); imageX <= newImages.maxc.x(); imageX++) {
+                        for(int imageY = newImages.minc.y(); imageY <= newImages.maxc.y(); imageY++) {
+                            for(int imageZ = newImages.minc.z(); imageZ <= newImages.maxc.z(); imageZ++) {
+                                if(imageX != 0 || imageY != 0 || imageZ != 0) {
+                                    const Vector3 imageDelta = cellMatrix * Vector3(imageX, imageY, imageZ);
+                                    for(size_t i = 0; i < oldVertexCount; i++) {
+                                        *p++ += imageDelta;
+                                    }
+                                }
+                                else {
+                                    p += oldVertexCount;
+                                }
+                            }
+                        }
+                    }
+                }
+                else if(property->type() == Lines::SectionProperty) {
+                    BufferWriteAccess<int64_t, access_mode::read_write> sectionsArray(property);
+                    int64_t* s = sectionsArray.begin();
+                    auto minmax = std::minmax_element(sectionsArray.cbegin(), sectionsArray.cbegin() + oldVertexCount);
+                    auto minSec = *minmax.first;
+                    auto maxSec = *minmax.second;
+                    for(size_t c = 1; c < numCopies; c++) {
+                        auto offset = (maxSec - minSec + 1) * c;
+                        for(auto id = sectionsArray.begin() + c * oldVertexCount, id_end = id + oldVertexCount; id != id_end; ++id)
+                            *id += offset;
+                    }
+                }
+            }
+        }
+    }
+    return PipelineStatus::Success;
+}
 
 /******************************************************************************
 * Constructs the modifier object.

@@ -148,7 +148,7 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshVertices::getVecto
                 // Does the mesh have cutting planes and do we need to perform point culling?
                 if(!mesh->cuttingPlanes().empty()) {
                     // Create a copy of the vector property in which the values of culled points
-                    // will be nulled out to hide the arrow glyphs for these points.
+                    // will be nulled out to hide the arrow glyphs at these points.
                     BufferWriteAccessAndRef<Vector3, access_mode::write> filteredVectors = vectorProperty.makeCopy();
                     if(BufferReadAccess<Point3> positions = getProperty(PositionProperty)) {
                         Vector3* v = filteredVectors.begin();

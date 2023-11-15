@@ -478,7 +478,7 @@ Version 3.7.0 (15-Feb-2022)
 Version 3.6.0 (19-Nov-2021)
 ---------------------------
 
-* :ref:`visual_elements.vectors`, :ref:`visual_elements.surface_mesh`, :ref:`visual_elements.voxel_grid`, :ref:`visual_elements.trajectory_lines` visual elements: Added direct color mapping option as a faster alternative to the :ref:`particles.modifiers.color_coding` modifier.
+* :ref:`visual_elements.vectors`, :ref:`visual_elements.surface_mesh`, :ref:`visual_elements.voxel_grid`, :ref:`visual_elements.lines` visual elements: Added direct color mapping option as a faster alternative to the :ref:`particles.modifiers.color_coding` modifier.
 * :ref:`visual_elements.bonds` visual element: Added explicit control of the coloring mode.
 * Made number and :ref:`viewport_layouts` configurable by the user.
 * Visibility of pipelines can be controlled on a :ref:`usage.viewports.menu` per viewport basis.

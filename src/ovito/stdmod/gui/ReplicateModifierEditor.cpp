@@ -75,7 +75,7 @@ void ReplicateModifierEditor::createUI(const RolloutInsertionParameters& rollout
     topLayout->setSpacing(12);
 
     ModifierDelegateFixedListParameterUI* delegatesPUI = new ModifierDelegateFixedListParameterUI(this, rolloutParams.after(rollout));
-    topLayout->addWidget(delegatesPUI->listWidget());
+    topLayout->addWidget(delegatesPUI->listWidget(103));
 }
 
 }   // End of namespace

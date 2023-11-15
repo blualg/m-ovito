@@ -22,39 +22,28 @@
 
 #pragma once
 
-
-#include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/gui/desktop/properties/PropertiesEditor.h>
+#include <ovito/stdobj/gui/StdObjGui.h>
+#include <ovito/stdobj/lines/Lines.h>
+#include <ovito/stdobj/gui/properties/PropertyInspectionApplet.h>
 
 namespace Ovito {
-
 /**
- * \brief A properties editor for the TrajectoryVis class.
+ * \brief Data inspector page for lines.
  */
-class TrajectoryVisEditor : public PropertiesEditor
+class OVITO_STDOBJGUI_EXPORT LinesInspectionApplet : public PropertyInspectionApplet
 {
-    OVITO_CLASS(TrajectoryVisEditor)
+    OVITO_CLASS(LinesInspectionApplet)
+    Q_CLASSINFO("DisplayName", "Lines");
 
 public:
-
     /// Constructor.
-    Q_INVOKABLE TrajectoryVisEditor() {}
+    Q_INVOKABLE LinesInspectionApplet() : PropertyInspectionApplet(Lines::OOClass()) {}
 
-protected:
+    /// Returns the key value for this applet that is used for ordering the applet tabs.
+    virtual int orderingKey() const override { return 250; }
 
-    /// Creates the user interface controls for the editor.
-    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
-
-private Q_SLOTS:
-
-    /// Updates the coloring controls shown in the UI.
-    void updateColoringOptions();
-
-private:
-
-    IntegerRadioButtonParameterUI* _coloringModeUI;
-    ColorParameterUI* _lineColorUI;
-    SubObjectParameterUI* _colorMappingParamUI;
+    /// Lets the applet create the UI widget that is to be placed into the data inspector panel.
+    virtual QWidget* createWidget() override;
 };
 
-}   // End of namespace
+}  // namespace Ovito
