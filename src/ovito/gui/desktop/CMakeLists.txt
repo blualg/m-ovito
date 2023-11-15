@@ -80,6 +80,7 @@ OVITO_STANDARD_PLUGIN(Gui
         widgets/general/HtmlListWidget.cpp
         widgets/general/ViewportModeButton.cpp
         widgets/general/StatusBar.cpp
+        widgets/general/MenuToolButton.cpp
         widgets/general/PopupUpdateComboBox.cpp
         widgets/general/CopyableTableView.cpp
         widgets/animation/AnimationTimeSpinner.cpp
