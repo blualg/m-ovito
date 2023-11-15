@@ -228,6 +228,29 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     FloatParameterUI* massPUI = new FloatParameterUI(this, PROPERTY_FIELD(ParticleType::mass));
     gridLayout->addWidget(massPUI->label(), 0, 0);
     gridLayout->addLayout(massPUI->createFieldLayout(), 0, 1);
+    // Reset mass paramter - can't use createPresetsMenuButton because we only
+    // offer reset but not the other options
+    // Don't use PROPERTY_FIELD_RESETTABLE to give custom (better) tooltip
+    MenuToolButton* presetsMenuButton = new MenuToolButton();
+    {
+        const QString& parameterName = PROPERTY_FIELD(ParticleType::mass)->displayName();
+        QAction* loadPresetAction =
+            presetsMenuButton->createAction(QIcon::fromTheme("particles_settings_restore"), tr("Reset %1 to default").arg(parameterName));
+        loadPresetAction->setStatusTip(
+            tr("Reset current %1 back to the hard-coded default value for this particle type.").arg(parameterName));
+        connect(loadPresetAction, &QAction::triggered, this, [this, parameterName]() {
+            if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
+                performTransaction(tr("Reset particle type %1").arg(parameterName), [&]() {
+                    ptype->setMass(ParticleType::getDefaultParticleMass(static_cast<Particles::Type>(ptype->ownerProperty().type()),
+                                                                        ptype->nameOrNumericId(), ptype->numericId(), false));
+                    mainWindow().showStatusBarMessage(
+                        tr("Reset %1 of particle type '%2' to default value.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
+                });
+            }
+        });
+    }
+    gridLayout->addWidget(presetsMenuButton, 0, 2);
+
     massPUI->spinner()->setStandardValue(0.0);
     massPUI->textBox()->setPlaceholderText(tr("‹unspecified›"));
 
