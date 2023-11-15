@@ -30,31 +30,32 @@ This option changes between a dark (default) and a white viewport background.
 3D graphics
 """""""""""
 
-Graphics hardware interface
-  Selects the application programming interface used by OVITO for rendering the contents of the interactive
-  viewports. Currently, OVITO supports the graphics interfaces `OpenGL <https://www.opengl.org/>`__ and `Vulkan <https://www.vulkan.org/>`__ (latter only available on certain platforms).
-  The OpenGL-based viewport renderer is more mature and should work well on most systems.
-  Vulkan is a more modern programming interface, but some graphics drivers still exhibit compatibility problems.
-  Please inform the OVITO developers about any problems you encounter on your system.
+..
+  Graphics hardware interface
+    Selects the application programming interface used by OVITO for rendering the contents of the interactive
+    viewports. Currently, OVITO supports the graphics interfaces `OpenGL <https://www.opengl.org/>`__ and `Vulkan <https://www.vulkan.org/>`__ (latter only available on certain platforms).
+    The OpenGL-based viewport renderer is more mature and should work well on most systems.
+    Vulkan is a more modern programming interface, but some graphics drivers still exhibit compatibility problems.
+    Please inform the OVITO developers about any problems you encounter on your system.
 
-  The Vulkan interface provides the advantage of letting you explicitly select the graphics
-  device OVITO should use if the system contains more than one GPU or integrated graphics unit. In contrast,
-  you have to make the device selection on the `operating system or graphics driver level <https://answers.microsoft.com/en-us/windows/forum/windows_10-hardware/select-gpu-to-use-by-specific-applications/eb671f52-5c24-428d-a7a0-02a36e91ee2f>`__
-  when using the OpenGL interface.
+    The Vulkan interface provides the advantage of letting you explicitly select the graphics
+    device OVITO should use if the system contains more than one GPU or integrated graphics unit. In contrast,
+    you have to make the device selection on the `operating system or graphics driver level <https://answers.microsoft.com/en-us/windows/forum/windows_10-hardware/select-gpu-to-use-by-specific-applications/eb671f52-5c24-428d-a7a0-02a36e91ee2f>`__
+    when using the OpenGL interface.
 
-  .. note::
+    .. note::
 
-    The Vulkan renderer option is *not* available on the macOS platform or in OVITO for Anaconda builds.
+      The Vulkan renderer option is *not* available on the macOS platform or in OVITO for Anaconda builds.
 
-  .. note::
+    .. note::
 
-    The Vulkan renderer has been temporarily removed from OVITO in release 3.9.0, because major changes were made to the
-    internal scene rendering system. We intend to add Vulkan support back in once the Vulkan renderer code has been ported to the
-    new programming interfaces and all issues have been resolved. Please contact support@ovito.org if you have any questions.
+      The Vulkan renderer has been temporarily removed from OVITO in release 3.9.0, because major changes were made to the
+      internal scene rendering system. We intend to add Vulkan support back in once the Vulkan renderer code has been ported to the
+      new programming interfaces and all issues have been resolved. Please contact support@ovito.org if you have any questions.
 
-  Select :menuselection:`System Information` from the :menuselection:`Help` menu of OVITO to access further information
-  about the graphics hardware found in your system. Please attach this information in case you
-  report any graphics compatibility problems to the OVITO developers.
+    Select :menuselection:`System Information` from the :menuselection:`Help` menu of OVITO to access further information
+    about the graphics hardware found in your system. Please attach this information in case you
+    report any graphics compatibility problems to the OVITO developers.
 
 Transparency rendering method
   This option affects the rendering of semi-transparent objects when they occlude other objects
