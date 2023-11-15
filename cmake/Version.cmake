@@ -35,7 +35,7 @@ SET(OVITO_VERSION_REVISION      "0")
 # Format version 30008 - OVITO ver>3.5.4: Added viewport layouts.
 # Format version 30009 - OVITO ver>=3.8.0: New DataSet structure (per-viewport Scene, per-scene AnimationSettings, new AnimationTime data type)
 # Format version 30010 - OVITO ver>=3.9.0: New property data types (Float32, Float64, Int8)
-# Format version 30011 - OVITO ver>=3.10.0: Renamed and/or merged several classes
+# Format version 30011 - OVITO ver>=3.9.3: Renamed and/or merged several classes, added RemoteExportSettings to dataset
 #
 SET(OVITO_FILE_FORMAT_VERSION   "30011")
 
