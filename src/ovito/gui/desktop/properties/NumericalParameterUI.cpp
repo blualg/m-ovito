@@ -73,6 +73,11 @@ void NumericalParameterUI::initUIControls(const QString& labelText)
         spinner()->setMaxValue(propertyField()->numericalParameterInfo()->maxValue);
     }
 
+    // create the reset button -> will be added to the layout in createFieldLayout()
+    if(propertyField()->flags().testFlag(PROPERTY_FIELD_RESETTABLE)) {
+        createResetAction();
+    }
+
     // Create animate button if parameter is animation (i.e. it's a reference to a Controller object).
     if(isReferenceFieldUI() && propertyField()->targetClass()->isDerivedFrom(Controller::OOClass())) {
         _animateButton = new QToolButton();
@@ -206,9 +211,13 @@ QLayout* NumericalParameterUI::createFieldLayout() const
     layout->setSpacing(0);
     layout->addWidget(textBox());
     layout->addWidget(spinner());
+    // Show menu button, if any actions are defined
+    if(menuToolButton()) {
+        layout->addWidget(menuToolButton());
+    }
     if(animateButton())
         layout->addWidget(animateButton());
     return layout;
 }
 
-}   // End of namespace
+}  // namespace Ovito

@@ -59,7 +59,9 @@ enum PropertyFieldFlag
     /// Blocks propagating messages sent by the target.
     PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES      = (1<<11),
     /// Automatically opens a sub-editor for the given reference field.
-    PROPERTY_FIELD_OPEN_SUBEDITOR               = (1<<12)
+    PROPERTY_FIELD_OPEN_SUBEDITOR               = (1<<12),
+    /// Automatically create a UI to reset this property field to its default.
+    PROPERTY_FIELD_RESETTABLE                   = (1<<13)
 };
 Q_DECLARE_FLAGS(PropertyFieldFlags, PropertyFieldFlag);
 
