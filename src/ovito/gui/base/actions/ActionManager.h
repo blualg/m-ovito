@@ -231,9 +231,6 @@ public:
     /// \param action The action to be deletes.
     void deleteAction(QAction* action);
 
-    /// Shows the online manual and opens the given help page.
-    void openHelpTopic(const QString& page);
-
     /// \brief Returns the number of rows in this list model.
     virtual int rowCount(const QModelIndex& parent) const override { return _actions.size(); }
 
@@ -242,6 +239,11 @@ public:
 
     /// \brief Returns the flags for an item in this list model.
     virtual Qt::ItemFlags flags(const QModelIndex& index) const override;
+
+public Q_SLOTS:
+
+    /// Shows the online manual and opens the given help page.
+    void openHelpTopic(const QString& page);
 
 Q_SIGNALS:
 
