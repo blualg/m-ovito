@@ -8,11 +8,12 @@ Offloading animation rendering to remote machines |ovito-pro|
   :align: right
 
 Rendering locally can be time-consuming, and configuring a scene on a headless
-remote computer cluster can be a complex and error-prone task. The "Render on
-Remote Computer" function in OVITO Pro allows you to configure a scene locally
-and effortlessly render it on a remote machine.
+remote computer cluster can be a complex and error-prone task. The
+:guilabel:`Render on Remote Computer` function in OVITO Pro allows you to
+configure a scene locally and effortlessly render it on a remote machine. A
+tutorial for this feature can be found :ref:`here <usage.remote_rendering>`.
 
-The "Render on Remote Computer" function instructs OVITO Pro to prepare a bundle
+The :guilabel:`Render on Remote Computer` function instructs OVITO Pro to prepare a bundle
 directory that can be sent to a different computer, such as a computer cluster,
 enabling rendering on parallel scale. To achieve this, OVITO Pro either remaps
 all file paths used in the current scene to remote paths, pointing to the same
@@ -28,46 +29,48 @@ Setting up the remote render in your local OVITO Pro instance
 To prepare remote rendering follow these steps from your local OVITO Pro
 instance:
 
-#. Configure your viewports and render settings as you would for rendering an
-   image or video on your local computer. Adjust settings such as resolution,
-   animation range, and render engine as needed. Notably, you do not need to
-   specify the "render output" file path, as this will be handled automatically.
+#. Configure your viewports and :ref:`render settings <core.render_settings>` as
+   you would for rendering an image or video on your local computer. Adjust
+   settings such as resolution, animation range, and render engine as needed.
+   Notably, you do not need to specify the :guilabel:`render output` file path,
+   as this will be handled automatically.
 
-#. Click on "File" -> "Render on Remote Computer..." to open the "Remote Render
-   Settings" dialog window. In this dialog, you will find a table listing all
-   the file paths used in the current OVITO scene ("Current path" in the left
-   column). Paths starting with `sftp://` are loaded from a remote server, other
-   parths point to local files. For each "Current path," you can either enter a
-   new "Remote target path" or check the "Bundle data" checkbox.
+#. Click on :guilabel:`File` -> :guilabel:`Render on Remote Computer...` to
+   open the *Remote Render Settings* dialog window. In this dialog, you will
+   find a table listing all the file paths used in the current OVITO scene
+   (*Current path* in the left column). Paths starting with `sftp://` are loaded
+   from a remote server, other parths point to local files. For each *Current path*,
+   you can either enter a new *Remote target path* or check the *Bundle data*
+   checkbox.
 
    - Remapping paths from a *current* to *remote target path* is useful when
      the data currently used in the OVITO scene is also available on
      the remote computer. For example, if the structures displayed in OVITO are
-     loaded from "/User/daniel/data" and stored on the remote server under
-     "/scratch/daniel/simulation_data," you can remap these paths accordingly.
+     loaded from `/User/daniel/data` and stored on the remote server under
+     `/scratch/daniel/simulation_data`, you can remap these paths accordingly.
 
-   - Alternatively, you can toggle "Bundle data". In this case, OVITO Pro will
+   - Alternatively, you can toggle *Bundle data*. In this case, OVITO Pro will
      collect all data used in the scene form this source directory and copy it
-     into the bundle directory. In this case, "Remote target path" will be
+     into the bundle directory. In this case, *Remote target path* will be
      managed automatically. When you decide to pack remote (`sftp://`) files,
-     they will be downloaded once you click "Export". This might take a
+     they will be downloaded once you click :guilabel:`Export`. This might take a
      substantial amount of time, depending on file sizes and network speed.
 
 #. Additionally, you can configure the number of cores per render task (i.e. per
-   worker) using the "Cores per task" option. A value of 0 will utilize all
+   worker) using the *Cores per task* option. A value of 0 will utilize all
    available cores on a node. For instance, on a compute node containing 96
-   cores, setting "Cores per task" to 8 means that each node will spawn 12
-   workers, rendering 12 images concurrently. A "Cores per task" of 0 on the
+   cores, setting *Cores per task* to 8 means that each node will spawn 12
+   workers, rendering 12 images concurrently. A *Cores per task* of 0 on the
    other hand will spawn 1 worker running on 96 cores.
 
-#. Finally, use the "Choose..." button to open the file explorer and select a
+#. Finally, use the :guilabel:`Choose...` button to open the file explorer and select a
    directory for saving the bundle. Please note that this directory must be
    empty; otherwise, an error message will be displayed.
 
-#. If you click "Close" all your settings in the Remote Rendering
+#. If you click :guilabel:`Close` all your settings in the Remote Rendering
    Settings dialog will be saved and the dialog window is closed. This can be
-   used to save your configuration into the OVITO state file. Clicking "Export"
-   will start the bundling process.
+   used to save your configuration into the OVITO state file. Clicking 
+   :guilabel:`Export` will start the bundling process.
 
 Transferring the Bundle Directory
 ---------------------------------
