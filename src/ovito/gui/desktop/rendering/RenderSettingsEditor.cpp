@@ -297,7 +297,7 @@ void RenderSettingsEditor::onSwitchRenderer()
     QVector<OvitoClassPtr> rendererClasses = PluginManager::instance().listClasses(SceneRenderer::OOClass());
 
     // Filter out internal renderer implementations, which should not be visible to the user.
-    // Internal renderer implementation have no UI description string assigned.
+    // Internal renderer implementation have no UI description string.
     rendererClasses.erase(std::remove_if(rendererClasses.begin(), rendererClasses.end(),
         [](OvitoClassPtr clazz) { return clazz->descriptionString().isEmpty(); }), rendererClasses.end());
 
@@ -306,7 +306,7 @@ void RenderSettingsEditor::onSwitchRenderer()
         "StandardSceneRenderer",
         "TachyonRenderer",
         "OSPRayRenderer",
-        "POVRayRenderer"
+        "OffscreenAnariRenderer"
     };
     std::sort(rendererClasses.begin(), rendererClasses.end(), [&displayOrdering](OvitoClassPtr a, OvitoClassPtr b) {
         int ia = displayOrdering.indexOf(a->name());
