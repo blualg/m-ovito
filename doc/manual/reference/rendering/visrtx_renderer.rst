@@ -7,6 +7,8 @@ VisRTX renderer (experimental) |ovito-pro|
   :width: 30%
   :align: right
 
+.. versionadded:: 3.10.0
+
 VisRTX is a scientific visualization renderer based on the NVIDIA OptiX™ Ray Tracing Engine.
 It offers hardware accelerated ray-tracing and can generate high-fidelity scene renderings including
 global illumination effects and shadows. Compared to CPU-based ray-tracing
