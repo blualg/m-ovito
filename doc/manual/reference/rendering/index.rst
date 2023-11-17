@@ -25,6 +25,7 @@ Rendering engine                                                 Description
 :ref:`OpenGL renderer <rendering.opengl_renderer>`               Hardware-accelerated renderer, which is also used for real-time display in the interactive viewports
 :ref:`Tachyon renderer <rendering.tachyon_renderer>` |ovito-pro| Software-based ray-tracing renderer, with support for ambient occlusion lighting, shadows and depth of field
 :ref:`OSPRay renderer <rendering.ospray_renderer>` |ovito-pro|   Another highly optimized software rendering engine with similar features as the Tachyon renderer but reduced memory requirements
+:ref:`VisRTX renderer <rendering.visrtx_renderer>` |ovito-pro|   Scientific visualization ray-tracing renderer running on NVIDIA CUDA-capable GPUs providing almost real-time rendering performance.
 ================================================================ ===============================================================================================================
 
 .. toctree::
@@ -35,3 +36,4 @@ Rendering engine                                                 Description
   opengl_renderer
   ospray_renderer
   tachyon_renderer
+  visrtx_renderer
