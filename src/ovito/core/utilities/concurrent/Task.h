@@ -207,8 +207,9 @@ public:
     /// \brief Suspends execution until the given task has reached the 'finished' state.
     ///        If the awaited task gets canceled while waiting, the task waiting for it gets canceled too.
     /// \param task The task to wait for.
+    /// \param throwOnError If the awaited task finished with an error state, throw it as an exception.
     /// \return false if either \a task or this operation have been canceled.
-    [[nodiscard]] static bool waitFor(detail::TaskReference awaitedTask);
+    [[nodiscard]] static bool waitFor(detail::TaskReference awaitedTask, bool throwOnError = true);
 
 protected:
 
