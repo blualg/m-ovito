@@ -69,7 +69,7 @@ property, the file reader provides a user option to sort atoms by ID during impo
 Extended XYZ format
 """""""""""""""""""
 
-The extended XYZ format is an enhanced version of the basic XYZ format, allowing extra columns to be present in the file for
+The `extended XYZ format <https://github.com/libAtoms/extxyz>`__ is an enhanced version of the basic XYZ format, allowing extra columns to be present in the file for
 additional per-atom properties as well as standardizing the format of the comment line to include the simulation cell geometry,
 boundary conditions, and other per-frame parameters. Here is an example::
 
@@ -195,17 +195,20 @@ Python parameters
 
 The XYZ file reader accepts the following optional keyword parameters in a call to the :py:func:`~ovito.io.import_file` or :py:meth:`~ovito.pipeline.FileSource.load` Python functions.
 
-.. py:function:: import_file(location, columns = None, rescale_reduced_coords = True, sort_particles = False)
+.. py:function:: import_file(location, columns = None, rescale_reduced_coords = False, sort_particles = False)
   :noindex:
 
   :param columns: A list of OVITO particle property names, one for each data column in the xyz file. Overrides the mapping
                   that otherwise gets set up automatically as described above. List entries may be set to ``None``
                   to skip individual file columns during parsing.
   :type columns: list[str | None] | None
-  :param rescale_reduced_coords: If set to ``True``, and if the extended XYZ file specifies the dimensions of the simulation cell,
-                                 and if all atomic coordinates are either in the range [0,1] or [-0.5,0.5], the file reader
-                                 will convert the reduced coordinates to Cartesian coordinates before storing them into the ``Position`` particle property.
+  :param rescale_reduced_coords: If set to ``True``, and if the XYZ file contains the dimensions of the simulation cell,
+                                 and if all atomic coordinates are either in the range :math:`[0,1]` or the range :math:`[-0.5,+0.5]`, the file reader
+                                 will convert the reduced coordinates to Cartesian coordinates.
   :type sort_particles: bool
   :param sort_particles: Makes the file reader reorder the loaded particles before passing them to the pipeline.
                          Sorting is based on the values of the ``Particle Identifier`` property loaded from the xyz file, if any.
   :type sort_particles: bool
+
+.. versionchanged:: 3.10.0
+  New default value ``rescale_reduced_coords=False``.

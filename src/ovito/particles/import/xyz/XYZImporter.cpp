@@ -277,8 +277,10 @@ void XYZImporter::FrameLoader::loadFile()
 
     if((index = commentLine.indexOf(QStringLiteral("Lattice=\""), 0, Qt::CaseInsensitive)) >= 0) {
         // Extended XYZ format: Lattice="R11 R21 R31 R12 R22 R32 R13 R23 R33"
-        // See https://web.archive.org/web/20190811094343/https://libatoms.github.io/QUIP/io.html#extendedxyz for details.
-        // Or see https://atomsk.univ-lille.fr/doc/en/format_xyz.html.
+        // For details see:
+        //   - https://github.com/libAtoms/extxyz
+        //   - https://web.archive.org/web/20190811094343/https://libatoms.github.io/QUIP/io.html#extendedxyz
+        //   - https://atomsk.univ-lille.fr/doc/en/format_xyz.html
 
         QString latticeStr = commentLine.mid(index + 9);
         latticeStr.truncate(latticeStr.indexOf("\""));
@@ -457,34 +459,36 @@ void XYZImporter::FrameLoader::loadFile()
         hasSimulationCell = true;
     }
 
-    BufferWriteAccess<Point3, access_mode::read_write> posProperty = particles()->getMutableProperty(Particles::PositionProperty);
-    if(posProperty && numParticlesLong != 0) {
-        Box3 boundingBox;
-        boundingBox.addPoints(posProperty);
+    if(!hasSimulationCell || _autoRescaleCoordinates) {
+        BufferWriteAccess<Point3, access_mode::read_write> posProperty = particles()->getMutableProperty(Particles::PositionProperty);
+        if(posProperty && numParticlesLong != 0) {
+            Box3 boundingBox;
+            boundingBox.addPoints(posProperty);
 
-        if(!hasSimulationCell) {
-            // If the input file does not contain simulation cell info,
-            // use bounding box of particles as simulation cell.
-            simulationCell()->setCellMatrix(AffineTransformation(
-                    Vector3(boundingBox.sizeX(), 0, 0),
-                    Vector3(0, boundingBox.sizeY(), 0),
-                    Vector3(0, 0, boundingBox.sizeZ()),
-                    boundingBox.minc - Point3::Origin()));
-        }
-        else if(_autoRescaleCoordinates) {
-            // Determine if coordinates are given in reduced format and need to be rescaled to absolute format.
-            // Assume reduced format if all coordinates are within the [0,1] or [-0.5,+0.5] range (plus some small epsilon).
-            if(Box3(Point3(FloatType(-0.01)), Point3(FloatType(1.01))).containsBox(boundingBox)) {
-                // Convert all atom coordinates from reduced to absolute (Cartesian) format.
-                const AffineTransformation simCell = simulationCell()->cellMatrix();
-                for(Point3& p : posProperty)
-                    p = simCell * p;
+            if(!hasSimulationCell) {
+                // If the input file does not contain simulation cell info,
+                // use bounding box of particles as simulation cell.
+                simulationCell()->setCellMatrix(AffineTransformation(
+                        Vector3(boundingBox.sizeX(), 0, 0),
+                        Vector3(0, boundingBox.sizeY(), 0),
+                        Vector3(0, 0, boundingBox.sizeZ()),
+                        boundingBox.minc - Point3::Origin()));
             }
-            else if(Box3(Point3(FloatType(-0.51)), Point3(FloatType(0.51))).containsBox(boundingBox)) {
-                // Convert all atom coordinates from reduced to absolute (Cartesian) format.
-                const AffineTransformation simCell = simulationCell()->cellMatrix();
-                for(Point3& p : posProperty)
-                    p = simCell * (p + Vector3(FloatType(0.5)));
+            else if(_autoRescaleCoordinates) {
+                // Determine if coordinates are given in reduced format and need to be rescaled to absolute format.
+                // Assume reduced format if all coordinates are within the [0,1] or [-0.5,+0.5] range (plus some small epsilon).
+                if(Box3(Point3(FloatType(-0.01)), Point3(FloatType(1.01))).containsBox(boundingBox)) {
+                    // Convert all atom coordinates from reduced to absolute (Cartesian) format.
+                    const AffineTransformation simCell = simulationCell()->cellMatrix();
+                    for(Point3& p : posProperty)
+                        p = simCell * p;
+                }
+                else if(Box3(Point3(FloatType(-0.51)), Point3(FloatType(0.51))).containsBox(boundingBox)) {
+                    // Convert all atom coordinates from reduced to absolute (Cartesian) format.
+                    const AffineTransformation simCell = simulationCell()->cellMatrix();
+                    for(Point3& p : posProperty)
+                        p = simCell * (p + Vector3(FloatType(0.5)));
+                }
             }
         }
     }

@@ -31,7 +31,7 @@ OVITO can export data in the following file formats:
 
   * - XYZ
     - A simple column-based text format, which is documented `here <http://en.wikipedia.org/wiki/XYZ_file_format>`__ and
-      `here <https://web.archive.org/web/20190811094343/https://libatoms.github.io/QUIP/io.html#extendedxyz>`__.
+      `here <https://github.com/libAtoms/extxyz>`__.
     - :ref:`particles <scene_objects.particles>`
     -
 
