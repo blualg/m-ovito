@@ -18,7 +18,7 @@ visualize several simulations using the same data analysis pipeline and camera s
 .. _usage.spinner_widgets:
 
 Spinner controls
-------------------------
+----------------
 
 .. image:: /images/command_panel/spinner_widget.*
   :width: 30%
