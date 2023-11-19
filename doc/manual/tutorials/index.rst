@@ -10,6 +10,7 @@ Tutorials
 
   marker_particles
   turntable_animation
+  remote_rendering
 
 .. rubric:: :ref:`Motion visualization with marker particles <tutorials.marker_particles>`
 
@@ -31,6 +32,12 @@ This tutorial teaches you how to create an animated movie of a simulation snapsh
 showing the model from all sides by slowly rotating it.
 You will learn about OVITO's keyframe-based :ref:`parameter animation system <usage.animation>`
 and different ways of repositioning a model in the three-dimensional scene.
+
+.. rubric:: :ref:`Remote rendering tutorial <tutorials.remote_rendering>`
+
+This tutorial, we will demonstrate how to render a video from multiple sources
+on a remote high-performance compute cluster using the :ref:`usage.remote_rendering` 
+function of OVITO Pro.
 
 .. - Identify local chemical ordering (PTM modifier)
 .. - How to use the DXA modifier to analyze dislocations

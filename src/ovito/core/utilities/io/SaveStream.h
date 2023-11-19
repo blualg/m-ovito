@@ -79,6 +79,12 @@ public:
     /// \sa close()
     bool isOpen() const { return _isOpen; }
 
+    /// Registers a callback function, which will be called for each URL being serialized.
+    void setUrlCallback(std::function<void(QUrl&)>&& urlCallback) { _urlCallback = std::move(urlCallback); }
+
+    /// Returns the registered URL callback function.
+    const std::function<void(QUrl&)>& urlCallback() const { return _urlCallback; }
+
     /// \brief Writes an array of raw bytes to the output stream.
     /// \param buffer A pointer to the beginning of the data.
     /// \param numBytes The number of bytes to be written.
@@ -130,29 +136,30 @@ public:
     QDataStream& dataStream() { return _os; }
 
 private:
-
     /// Checks the status of the underlying output stream and throws an exception if an error has occurred.
     void checkErrorCondition();
 
     /// Writes a C++ enum to the stream.
-    template<typename T>
-    void writeValue(T enumValue, const std::true_type&) {
+    template <typename T>
+    void writeValue(T enumValue, const std::true_type&)
+    {
         dataStream() << (qint32)enumValue;
         checkErrorCondition();
     }
 
     /// Writes a non-enum to the stream.
-    template<typename T>
-    void writeValue(T v, const std::false_type&) {
+    template <typename T>
+    void writeValue(T v, const std::false_type&)
+    {
         dataStream() << v;
         checkErrorCondition();
     }
 
-    template<typename T> friend SaveStream& operator<<(SaveStream& stream, const T& v);
-    friend OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const QUrl& url);
+    template <typename T>
+    friend SaveStream& operator<<(SaveStream& stream, const T& v);
+    friend OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, QUrl url);
 
 private:
-
     /// Indicates the output stream is still open.
     bool _isOpen = false;
 
@@ -164,6 +171,9 @@ private:
 
     /// Maps pointers to IDs.
     std::map<void*, quint64> _pointerMap;
+
+    /// Optional callback function to be called for each URL being serialized.
+    std::function<void(QUrl&)> _urlCallback;
 };
 
 /// \brief Writes a value to a SaveStream.
@@ -278,7 +288,7 @@ inline SaveStream& operator<<(SaveStream& stream, const boost::dynamic_bitset<>&
 /// \param url The URL to store.
 /// \return The destination stream.
 /// \throw Exception if an I/O error has occurred.
-extern OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const QUrl& url);
+extern OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, QUrl url);
 
 /// \brief Writes a reference to an OvitoObject derived class type to the stream.
 /// \relates SaveStream

@@ -171,4 +171,48 @@ void PropertyParameterUI::openAnimationKeyEditor()
     dlg.exec();
 }
 
+/******************************************************************************
+ * Returns a menu tool button associated to this PropertyParameterUI
+ * creates a new button if one doesn't exist yet.
+ ******************************************************************************/
+MenuToolButton* PropertyParameterUI::createMenuToolButton(QWidget* parent)
+{
+    if(!_menuToolButton) {
+        _menuToolButton = new MenuToolButton(parent);
+    }
+    return _menuToolButton;
+}
+
+/******************************************************************************
+ * Create a new action in the menuToolButton with the given text and icon
+ * Creates a new MenuToolButton if one doesn't exist yet.
+ ******************************************************************************/
+QAction* PropertyParameterUI::createAction(const QString& text, const QIcon& icon)
+{
+    return createMenuToolButton()->createAction(icon, text);
+}
+
+/******************************************************************************
+ * Create a new action in the menuToolButton with the given text and icon
+ * Creates a new MenuToolButton if one doesn't exist yet.
+ ******************************************************************************/
+QAction* PropertyParameterUI::createResetAction()
+{
+    QAction* resetAction = createMenuToolButton()->createAction(QIcon::fromTheme("particles_settings_restore"), tr("Reset to default"));
+    connect(resetAction, &QAction::triggered, this, [this]() {
+        if(!editObject()) {
+            return;
+        }
+        // Create new instance of the same class as the edited object. Filled with its default parameters.
+        OORef<RefTarget> tempInstance = static_object_cast<RefTarget>(editObject()->getOOClass().createInstance());
+        // update tempInstance with defaults from the current object instance
+        editObject()->copyInitialParametersToObject(tempInstance);
+        // updated the editObject with defaults from tempInstance
+        performTransaction(tr("Reset parameter value to default"),
+                           [&]() { editObject()->copyPropertyFieldValue(propertyField(), *tempInstance); });
+        memorizeDefaultParameterValue();
+    });
+    return resetAction;
+}
+
 }   // End of namespace

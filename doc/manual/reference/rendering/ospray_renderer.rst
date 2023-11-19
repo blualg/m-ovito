@@ -16,6 +16,9 @@ For more information on the capabilities of the OSPRay engine and its technical 
 please visit the website https://www.ospray.org.
 The OSPRay documentation contains more in-depth information on this rendering engine's various parameters.
 
+The "More Options" (vertical ellipsis) button next to each nummerical parameter opens a context menu with 
+the option to reset each paramter to its default value.
+
 Quality settings
 """"""""""""""""
 
@@ -36,7 +39,7 @@ Denoising filter
   Applies a denoising filter to the rendered image to reduce Monte Carlo noise inherent to stochastic  
   methods such as path tracing.
 
-Depth of field<
+Depth of field
   Only objects exactly at a distance from the camera specified by the *focal length* will appear sharp when depth-of-field rendering is active.
   Objects closer to or further from the camera will appear blurred. If you want a specific object to be in the focus, use the :guilabel:`Pick in viewport` button
   and click on that object in the viewport to be rendered. The *focal length* parameter will be automatically adjusted so that the picked location is in focus.

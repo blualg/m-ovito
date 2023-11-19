@@ -77,6 +77,11 @@ BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport& vp, MainWindo
     for(const QMetaObject* metaType : ViewportWindowInterface::registry()) {
 #else
     const QMetaObject* viewportImplementation = nullptr;
+    QByteArray selectedGraphicsApi = qgetenv("OVITO_VIEWPORT_RENDERER");
+#if 0
+    if(selectedGraphicsApi.isEmpty())
+        selectedGraphicsApi = settings.value("rendering/selected_graphics_api").toString().toUtf8();
+#endif
     ViewportWindowInterface* (*viewportWindowConstructor)(Viewport*, UserInterface*, QWidget*) = nullptr;
     for(auto [metaType, constructor] : ViewportWindowInterface::registry()) {
 #endif
@@ -86,7 +91,7 @@ BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport& vp, MainWindo
             viewportWindowConstructor = constructor;
 #endif
         }
-        else if(qstrcmp(metaType->className(), "Ovito::VulkanViewportWindow") == 0 && settings.value("rendering/selected_graphics_api").toString() == "Vulkan") {
+        else if(qstrcmp(metaType->className(), "Ovito::VulkanViewportWindow") == 0 && selectedGraphicsApi.compare("vulkan", Qt::CaseInsensitive) == 0) {
             viewportImplementation = metaType;
 #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
             viewportWindowConstructor = constructor;
@@ -94,7 +99,7 @@ BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport& vp, MainWindo
             break;
         }
 #ifdef OVITO_BUILD_PROFESSIONAL
-        else if(qstrcmp(metaType->className(), "Ovito::AnariViewportWindow") == 0 && settings.value("rendering/selected_graphics_api").toString() == "Anari") {
+        else if(qstrcmp(metaType->className(), "Ovito::AnariViewportWindow") == 0 && selectedGraphicsApi.compare("anari", Qt::CaseInsensitive) == 0) {
             viewportImplementation = metaType;
 #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
             viewportWindowConstructor = constructor;

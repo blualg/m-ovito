@@ -62,8 +62,10 @@ private:
     QButtonGroup* _upDirectionGroup;
     QCheckBox* _constrainCameraRotationBox;
     QButtonGroup* _colorScheme;
+#if 0
     QButtonGroup* _graphicsSystem;
     QComboBox* _vulkanDevices;
+#endif
     QComboBox* _transparencyRenderingMethod;
 };
 

@@ -1,3 +1,4 @@
+
 ////////////////////////////////////////////////////////////////////////////////////////
 //
 //  Copyright 2023 OVITO GmbH, Germany
@@ -22,39 +23,33 @@
 
 #pragma once
 
-
-#include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/gui/desktop/properties/PropertiesEditor.h>
+#include <ovito/gui/desktop/GUI.h>
 
 namespace Ovito {
 
 /**
- * \brief A properties editor for the TrajectoryVis class.
+ * A drop-down menu for selecting an action.
  */
-class TrajectoryVisEditor : public PropertiesEditor
+class OVITO_GUI_EXPORT MenuToolButton : public QToolButton
 {
-    OVITO_CLASS(TrajectoryVisEditor)
+    Q_OBJECT
 
 public:
+    /// \brief Constructs the ToolButtonMenu.
+    /// \param parent The parent widget for the ToolButtonMenu.
+    MenuToolButton(QWidget* parent = nullptr);
 
-    /// Constructor.
-    Q_INVOKABLE TrajectoryVisEditor() {}
+    /// Creates a new action and adds it to the ToolButtonMenu.
+    /// \param icon Icon for the action.
+    /// \param label Human readable label for the action.
+    /// \return The pointer to the QAction that was added to the menu.
+    QAction* createAction(const QIcon& icon, const QString& label);
 
-protected:
-
-    /// Creates the user interface controls for the editor.
-    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
-
-private Q_SLOTS:
-
-    /// Updates the coloring controls shown in the UI.
-    void updateColoringOptions();
+    /// \brief Creates a new seperator in the menu.
+    void createMenuSeperator();
 
 private:
-
-    IntegerRadioButtonParameterUI* _coloringModeUI;
-    ColorParameterUI* _lineColorUI;
-    SubObjectParameterUI* _colorMappingParamUI;
+    QMenu* _menu = nullptr;
 };
 
-}   // End of namespace
+}  // namespace Ovito

@@ -140,7 +140,7 @@ Missing XCB system libraries
                libfontconfig1 libfreetype6 libopengl0 libglx0 libx11-6
 
       # On CentOS/RHEL systems:
-      sudo yum install libxcb xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm
+      sudo yum install libxcb xcb-util-cursor xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm
 
     Debian users should also pay attention to `this thread in the OVITO support forum <https://www.ovito.org/forum/topic/installation-problem/#postid-2272>`__.
 

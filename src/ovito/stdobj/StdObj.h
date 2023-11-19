@@ -44,6 +44,8 @@ namespace Ovito
     template<class PropertyContainerType> class TypedInputColumnMapping;
     class InputColumnReader;
     class SimulationCell;
+    class Lines;
+    class LinesVis;
     class SimulationCellVis;
     class DataTable;
     class PropertyColorMapping;

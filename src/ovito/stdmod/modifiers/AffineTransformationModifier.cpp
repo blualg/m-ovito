@@ -22,6 +22,7 @@
 
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/stdobj/lines/Lines.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/simcell/PeriodicDomainObject.h>
 #include <ovito/stdobj/properties/Property.h>
@@ -44,6 +45,7 @@ SET_PROPERTY_FIELD_LABEL(AffineTransformationModifier, relativeMode, "Relative t
 SET_PROPERTY_FIELD_LABEL(AffineTransformationModifier, translationReducedCoordinates, "Relative transformation");
 
 IMPLEMENT_OVITO_CLASS(AffineTransformationModifierDelegate);
+IMPLEMENT_OVITO_CLASS(LinesAffineTransformationModifierDelegate);
 IMPLEMENT_OVITO_CLASS(SimulationCellAffineTransformationModifierDelegate);
 
 /******************************************************************************
@@ -295,6 +297,51 @@ PipelineStatus SimulationCellAffineTransformationModifierDelegate::apply(const M
         }
     }
 
+    return PipelineStatus::Success;
+}
+
+/******************************************************************************
+ * Asks the metaclass which data objects in the given input data collection the
+ * modifier delegate can operate on.
+ ******************************************************************************/
+QVector<DataObjectReference> LinesAffineTransformationModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
+{
+    // Gather list of all lines objects in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(Lines::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
+}
+
+/******************************************************************************
+ * Applies the modifier operation to the data in a pipeline flow state.
+ ******************************************************************************/
+PipelineStatus LinesAffineTransformationModifierDelegate::apply(
+    const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState,
+    const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+{
+    const AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
+
+    // Loop over all lines objects in data collection
+    for(const DataObject* obj : state.data()->objects()) {
+        // Transform the Lines.
+        if(const Lines* inputLines = dynamic_object_cast<Lines>(obj)) {
+            // Get the input line coordinates (as strong reference to force creation of a mutable clone below).
+            ConstPropertyPtr inputPositionProperty = inputLines->expectProperty(Lines::PositionProperty);
+
+            // Make sure we can safely modify the lines object.
+            Lines* outputLines = state.makeMutable(inputLines);
+
+            // Create an uninitialized copy of the position property.
+            Property* outputPositionProperty = outputLines->makePropertyMutable(inputPositionProperty, DataBuffer::Uninitialized);
+
+            // Let the modifier class do the actual coordinate transformation work.
+            AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
+            // Note: passing nullptr since "Selection" property is currently not supported by Lines objects.
+            mod->transformCoordinates(inputState, inputPositionProperty, outputPositionProperty, nullptr);
+        }
+    }
     return PipelineStatus::Success;
 }
 

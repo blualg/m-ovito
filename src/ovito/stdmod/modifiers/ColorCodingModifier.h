@@ -24,6 +24,7 @@
 
 
 #include <ovito/stdmod/StdMod.h>
+#include <ovito/stdobj/lines/Lines.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/core/dataset/pipeline/DelegatingModifier.h>
@@ -62,6 +63,38 @@ protected:
 
     /// Returns the ID of the standard property that will receive the computed colors.
     virtual int outputColorPropertyId() const { return Property::GenericColorProperty; }
+};
+
+/**
+ * \brief Function for the ColorCodingModifier that operates on lines.
+ */
+class LinesColorCodingModifierDelegate : public ColorCodingModifierDelegate
+{
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public ColorCodingModifierDelegate::OOMetaClass
+    {
+    public:
+        /// Inherit constructor from base class.
+        using ColorCodingModifierDelegate::OOMetaClass::OOMetaClass;
+
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return Lines::OOClass(); }
+
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("lines"); }
+    };
+
+    OVITO_CLASS_META(LinesColorCodingModifierDelegate, OOMetaClass)
+
+    Q_CLASSINFO("DisplayName", "Lines");
+    Q_CLASSINFO("ClassNameAlias", "TrajectoryColorCodingModifierDelegate");  // For backward compatibility with OVITO 3.9.2
+
+public:
+    /// Constructor.
+    Q_INVOKABLE LinesColorCodingModifierDelegate(ObjectInitializationFlags flags) : ColorCodingModifierDelegate(flags) {}
 };
 
 /**

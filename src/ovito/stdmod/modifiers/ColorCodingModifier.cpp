@@ -36,6 +36,22 @@
 
 namespace Ovito {
 
+IMPLEMENT_OVITO_CLASS(LinesColorCodingModifierDelegate);
+
+/******************************************************************************
+ * Indicates which data objects in the given input data collection the modifier
+ * delegate is able to operate on.
+ ******************************************************************************/
+QVector<DataObjectReference> LinesColorCodingModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
+{
+    // Gather list of all (trajectory) lines objects in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(Lines::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
+}
+
 IMPLEMENT_OVITO_CLASS(ColorCodingModifierDelegate);
 
 IMPLEMENT_OVITO_CLASS(ColorCodingModifier);
@@ -319,9 +335,11 @@ PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationReques
     PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
 
     // Check if the source property is the right kind of property.
-    if(sourceProperty.containerClass() != &container->getOOMetaClass())
+    if(sourceProperty.containerClass() != &container->getOOMetaClass()) {
         throw Exception(tr("Color coding modifier was set to operate on '%1', but the selected input is a '%2' property.")
-            .arg(getOOMetaClass().pythonDataName()).arg(sourceProperty.containerClass()->propertyClassDisplayName()));
+                            .arg(getOOMetaClass().pythonDataName())
+                            .arg(sourceProperty.containerClass()->propertyClassDisplayName()));
+    }
 
     // Make sure input data structure is ok.
     container->verifyIntegrity();

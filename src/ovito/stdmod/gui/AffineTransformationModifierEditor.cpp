@@ -163,7 +163,7 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
     topLayout->setSpacing(12);
 
     ModifierDelegateFixedListParameterUI* delegatesPUI = new ModifierDelegateFixedListParameterUI(this, rolloutParams.after(rollout));
-    topLayout->addWidget(delegatesPUI->listWidget(138));
+    topLayout->addWidget(delegatesPUI->listWidget(141));
 
     BooleanParameterUI* selectionUI = new BooleanParameterUI(this, PROPERTY_FIELD(AffineTransformationModifier::selectionOnly));
     topLayout->addWidget(selectionUI->checkBox());

@@ -24,8 +24,8 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/TrajectoryVis.h>
-#include <ovito/particles/objects/TrajectoryLines.h>
+#include <ovito/stdobj/lines/Lines.h>
+#include <ovito/stdobj/lines/LinesVis.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
@@ -100,7 +100,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlePropertyReference, particleProperty, setParticleProperty);
 
     /// The vis element for rendering the trajectory lines.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<TrajectoryVis>, trajectoryVis, setTrajectoryVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<LinesVis>, trajectoryVis, setTrajectoryVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 };
 
 /**
@@ -119,7 +119,8 @@ public:
 private:
 
     /// The cached trajectory line data.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const TrajectoryLines>, trajectoryData, setTrajectoryData, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const Lines>, trajectoryData, setTrajectoryData,
+                                             PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
 }   // End of namespace

@@ -39,7 +39,7 @@ This will turn off the visualization of the corresponding data in the interactiv
   :ref:`Surface mesh <visual_elements.surface_mesh>`                 Renders a smooth polygonal :ref:`surface mesh <scene_objects.surface_mesh>`
   :ref:`Triangle mesh <visual_elements.triangle_mesh>`               Renders a :ref:`triangle mesh <scene_objects.triangle_mesh>` loaded from a mesh geometry file
   :ref:`Voxel grid <visual_elements.voxel_grid>`                     Renders a :ref:`voxel grid <scene_objects.voxel_grid>`
-  :ref:`Trajectory lines <visual_elements.trajectory_lines>`         Renders a set of continuous lines to visualize the particle trajectories created with the :ref:`particles.modifiers.generate_trajectory_lines` modifier
+  :ref:`Lines <visual_elements.lines>`                               Renders a set of continuous lines to visualize the particle trajectories created with the :ref:`particles.modifiers.generate_trajectory_lines` modifier or drawn using the :py:attr:`lines.create() <ovito.data.DataCollection.lines>` method
   :ref:`Dislocations <visual_elements.dislocations>`                 Renders dislocation lines extracted by the :ref:`particles.modifiers.dislocation_analysis` modifier
   ================================================================== =================
 
@@ -58,5 +58,5 @@ This will turn off the visualization of the corresponding data in the interactiv
   surface_mesh  
   triangle_mesh  
   voxel_grid  
-  trajectory_lines  
+  lines  
   dislocations  

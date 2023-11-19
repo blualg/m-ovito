@@ -16,4 +16,5 @@ Advanced topics
   customize_init_state
   viewport_layouts
   code_generation
+  remote_rendering
   scale_bar

@@ -10,6 +10,9 @@ OpenGL renderer
 This is the default built-in :ref:`rendering engine <usage.rendering>`,
 which is also used by OVITO for rendering the interactive viewports.
 
+The "More Options" (vertical ellipsis) button next to each nummerical parameter opens a context menu with 
+the option to reset each paramter to its default value.
+
 Parameters
 """"""""""
 

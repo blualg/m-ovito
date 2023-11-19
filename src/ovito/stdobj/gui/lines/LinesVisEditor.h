@@ -20,23 +20,37 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/particles/Particles.h>
-#include <ovito/stdobj/properties/PropertyContainer.h>
-#include "TrajectoryColorCodingModifierDelegate.h"
+#pragma once
+
+#include <ovito/particles/gui/ParticlesGui.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(TrajectoryColorCodingModifierDelegate);
-
-/******************************************************************************
-* Indicates which data objects in the given input data collection the modifier
-* delegate is able to operate on.
-******************************************************************************/
-QVector<DataObjectReference> TrajectoryColorCodingModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
+/**
+ * \brief A properties editor for the LinesVis class.
+ */
+class OVITO_STDOBJGUI_EXPORT LinesVisEditor : public PropertiesEditor
 {
-    if(input.containsObject<TrajectoryLines>())
-        return { DataObjectReference(&TrajectoryLines::OOClass()) };
-    return {};
-}
+    OVITO_CLASS(LinesVisEditor)
 
-}   // End of namespace
+public:
+    /// Constructor.
+    Q_INVOKABLE LinesVisEditor() {}
+
+protected:
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+
+private Q_SLOTS:
+
+    /// Updates the coloring controls shown in the UI.
+    void updateColoringOptions();
+
+private:
+    IntegerRadioButtonParameterUI* _coloringModeUI;
+    ColorParameterUI* _lineColorUI;
+    SubObjectParameterUI* _colorMappingParamUI;
+};
+
+}  // namespace Ovito
