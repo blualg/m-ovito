@@ -67,7 +67,7 @@ public:
 private:
 
     /// Controls the number of sub-pixels to render.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, antialiasingLevel, setAntialiasingLevel);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, antialiasingLevel, setAntialiasingLevel, PROPERTY_FIELD_RESETTABLE);
 
     /// The active renderer implementation (OpenGL or Vulkan).
     OORef<SceneRenderer> _internalRenderer;

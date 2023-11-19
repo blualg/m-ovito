@@ -13,6 +13,9 @@ is slightly better than the one provided by the :ref:`OSPRay renderer <rendering
 but it requires more memory. Both rendering engines offer higher visual quality than the :ref:`OpenGL renderer <rendering.opengl_renderer>`
 but are typically considerably slower.
 
+The "More Options" (vertical ellipsis) button next to each nummerical parameter opens a context menu with 
+the option to reset each paramter to its default value.
+
 Parameters
 """"""""""
 
