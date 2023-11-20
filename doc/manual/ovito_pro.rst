@@ -26,6 +26,7 @@ Here is a (nearly complete) list of the program features that are available in *
 
   - :ref:`Tachyon <rendering.tachyon_renderer>`
   - :ref:`OSPRay <rendering.ospray_renderer>`
+  - :ref:`VisRTX <rendering.visrtx_renderer>`
 
 - :ref:`Multi-viewport layout rendering <viewport_layouts.rendering>`
 - Additional modifier functions:
