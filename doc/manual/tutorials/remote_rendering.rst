@@ -187,6 +187,7 @@ required by your infrastructure. In our example the ``submit.sh.template`` file
 looks like this:
 
 .. code-block:: bash
+
     #!/bin/bash
     #SBATCH -N 1
     #SBATCH -C cpu
