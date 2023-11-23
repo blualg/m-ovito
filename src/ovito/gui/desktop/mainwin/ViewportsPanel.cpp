@@ -72,16 +72,17 @@ BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport& vp, MainWindo
 {
     // Select the viewport window implementation to use.
     QSettings settings;
-#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
-    const QMetaObject* viewportImplementation = nullptr;
-    for(const QMetaObject* metaType : ViewportWindowInterface::registry()) {
-#else
-    const QMetaObject* viewportImplementation = nullptr;
+
     QByteArray selectedGraphicsApi = qgetenv("OVITO_VIEWPORT_RENDERER");
 #if 0
     if(selectedGraphicsApi.isEmpty())
         selectedGraphicsApi = settings.value("rendering/selected_graphics_api").toString().toUtf8();
 #endif
+
+    const QMetaObject* viewportImplementation = nullptr;
+#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
+    for(const QMetaObject* metaType : ViewportWindowInterface::registry()) {
+#else
     ViewportWindowInterface* (*viewportWindowConstructor)(Viewport*, UserInterface*, QWidget*) = nullptr;
     for(auto [metaType, constructor] : ViewportWindowInterface::registry()) {
 #endif
