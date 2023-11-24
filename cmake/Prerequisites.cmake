@@ -20,6 +20,36 @@
 #
 #######################################################################################
 
+# Determines the SONAME of a shared library, which is required
+# to install the library in the OVITO program directory.
+# The SONAME is the name of the library file without the full version number.
+# This function is only available on Unix/Linux based platforms.
+FUNCTION(get_library_soname OUTPUT_VAR LIBRARY_FILE)
+
+    # Use the objdump command to read out the SONAME of the shared library.
+    EXECUTE_PROCESS(COMMAND objdump -p "${LIBRARY_FILE}" COMMAND grep "SONAME" OUTPUT_VARIABLE _output_var OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
+    STRING(REPLACE "SONAME" "" lib_soname "${_output_var}")
+    STRING(STRIP "${lib_soname}" lib_soname)
+    IF(NOT lib_soname)
+
+        IF(APPLE)
+            # On macOS platform, fall back to using the otool to determine the install name of the dyld library.
+            EXECUTE_PROCESS(COMMAND otool -D "${LIBRARY_FILE}" OUTPUT_VARIABLE _output_var OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
+            # Extract the second line from otool output.
+            STRING(REGEX MATCH "^[^\n]*\n([^\n]*)\n" _output_var "${_output_var}")
+            # If an absolute path is returned, extract the file name from it.
+            GET_FILENAME_COMPONENT(lib_soname "${_output_var}" NAME)
+        ENDIF()
+
+        IF(NOT lib_soname)
+            MESSAGE(FATAL_ERROR "Failed to determine SONAME of shared library: ${LIBRARY_FILE}")
+        ENDIF()
+    ENDIF()
+
+    SET(${OUTPUT_VAR} ${lib_soname} PARENT_SCOPE)
+
+ENDFUNCTION()
+
 # This function installs a third-party shared library/DLL in the OVITO program directory
 # so that it can be distributed together with the program.
 # On Unix/Linux based platforms it takes care of installing symbolic links as well.
@@ -73,7 +103,7 @@ MACRO(OVITO_INSTALL_SHARED_LIB shared_lib)
                 GET_FILENAME_COMPONENT(lib_version_name "${lib_version}" NAME)
                 IF(NOT lib_version_name STREQUAL symlink_target_name AND NOT OVITO_BUILD_PYPI)
                     MESSAGE("Installing symlink ${lib_version_name} to ${symlink_target_name}")
-                    EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink ${symlink_target_name} "${_abs_dest_dir}/${lib_version_name}")
+                    EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink ${symlink_target_name} "${_abs_dest_dir}/${lib_version_name}" COMMAND_ERROR_IS_FATAL ANY)
                     IF(NOT APPLE)
                         INSTALL(FILES "${_abs_dest_dir}/${lib_version_name}" DESTINATION "${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/${destination_dir}/")
                     ENDIF()
@@ -88,28 +118,21 @@ MACRO(OVITO_INSTALL_SHARED_LIB shared_lib)
 
         FOREACH(lib_file ${lib_files})
             MESSAGE("Installing shared library ${lib_file}")
-            EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" "-E" "copy_if_different" "${lib_file}" "${_abs_dest_dir}/" RESULT_VARIABLE _error_var)
-            IF(_error_var)
-                MESSAGE(FATAL_ERROR "Failed to copy shared library into build directory: ${lib_file}")
-            ENDIF()
+            EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" "-E" "copy_if_different" "${lib_file}" "${_abs_dest_dir}/" COMMAND_ERROR_IS_FATAL ANY)
             IF(WIN32 OR NOT OVITO_BUILD_PYPI)
                 INSTALL(FILES "${lib_file}" DESTINATION "${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/${destination_dir}/")
             ELSE()
                 # Detect if this .so file is a linker script starting with the string "INPUT".
                 # The TBB libraries use this special GNU ld feature instead of regular symbolic links to create aliases of a shared library in the same directory.
                 FILE(READ "${lib_file}" _SO_FILE_HEADER LIMIT 5 HEX)
-                IF("${_SO_FILE_HEADER}" STREQUAL "494e505554") # 494e505554 = "INPUT"
+                IF("${_SO_FILE_HEADER}" STREQUAL "494e505554") # 0x494e505554 = "INPUT"
                     INSTALL(FILES "${lib_file}" DESTINATION "${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/${destination_dir}/")
                 ELSE()
+                    # When building a Python wheel, we need to rename the shared library to its SONAME.
+                    # That's because the Python wheel format does not support symbolic links.
                     # Use the objdump command to read out the SONAME of the shared library.
+                    get_library_soname(lib_soname "${lib_file}")
                     GET_FILENAME_COMPONENT(lib_filename "${lib_file}" NAME)
-                    EXECUTE_PROCESS(COMMAND objdump -p "${lib_file}" COMMAND grep "SONAME" OUTPUT_VARIABLE _output_var RESULT_VARIABLE _error_var OUTPUT_STRIP_TRAILING_WHITESPACE)
-                    STRING(REPLACE "SONAME" "" lib_soname "${_output_var}")
-                    STRING(STRIP "${lib_soname}" lib_soname)
-                    IF(_error_var OR NOT lib_soname)
-                        MESSAGE(FATAL_ERROR "Failed to determine SONAME of shared library: ${lib_file}")
-                    ENDIF()
-                    # Use the SONAME as file name when installing the library in the OVITO directory.
                     FILE(RENAME "${_abs_dest_dir}/${lib_filename}" "${_abs_dest_dir}/${lib_soname}")
                     INSTALL(PROGRAMS "${_abs_dest_dir}/${lib_soname}" DESTINATION "${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/${destination_dir}/")
                 ENDIF()
@@ -200,8 +223,8 @@ FUNCTION(deploy_qt_framework_files)
             GET_TARGET_PROPERTY(lib_soname Qt6::${component} IMPORTED_SONAME_RELEASE)
             CONFIGURE_FILE("${lib}" "${OVITO_LIBRARY_DIRECTORY}" COPYONLY)
             GET_FILENAME_COMPONENT(lib_realname "${lib}" NAME)
-            EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${lib_realname}" "${OVITO_LIBRARY_DIRECTORY}/${lib_soname}")
-            EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "../${lib_soname}" "${OVITO_LIBRARY_DIRECTORY}/lib/${lib_soname}")
+            EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${lib_realname}" "${OVITO_LIBRARY_DIRECTORY}/${lib_soname}" COMMAND_ERROR_IS_FATAL ANY)
+            EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "../${lib_soname}" "${OVITO_LIBRARY_DIRECTORY}/lib/${lib_soname}" COMMAND_ERROR_IS_FATAL ANY)
             INSTALL(FILES "${lib}" DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/")
             INSTALL(FILES "${OVITO_LIBRARY_DIRECTORY}/${lib_soname}" DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/")
             INSTALL(FILES "${OVITO_LIBRARY_DIRECTORY}/lib/${lib_soname}" DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/lib/")
@@ -235,7 +258,7 @@ FUNCTION(deploy_qt_framework_files)
         OVITO_INSTALL_SHARED_LIB("${OVITO_XKBCOMMON_DEP}" DESTINATION "./lib")
         UNSET(OVITO_XKBCOMMON_DEP CACHE)
         # Additionally, place a symlink into the parent lib/ovito/ directory.
-        EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "lib/libxkbcommon.so.0" "${OVITO_LIBRARY_DIRECTORY}/libxkbcommon.so.0")
+        EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "lib/libxkbcommon.so.0" "${OVITO_LIBRARY_DIRECTORY}/libxkbcommon.so.0" COMMAND_ERROR_IS_FATAL ANY)
         INSTALL(FILES "${OVITO_LIBRARY_DIRECTORY}/libxkbcommon.so.0" DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/")
 
         # Distribute libxkbcommon-x11.so with Ovito, which is a dependency of the Qt XCB plugin that might not be present on all systems.
