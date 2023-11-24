@@ -27,7 +27,7 @@
 FUNCTION(get_library_soname OUTPUT_VAR LIBRARY_FILE)
 
     # Use the objdump command to read out the SONAME of the shared library.
-    EXECUTE_PROCESS(COMMAND objdump -p "${LIBRARY_FILE}" COMMAND grep "SONAME" OUTPUT_VARIABLE _output_var OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
+    EXECUTE_PROCESS(COMMAND objdump -p "${LIBRARY_FILE}" COMMAND grep "SONAME" OUTPUT_VARIABLE _output_var OUTPUT_STRIP_TRAILING_WHITESPACE)
     STRING(REPLACE "SONAME" "" lib_soname "${_output_var}")
     STRING(STRIP "${lib_soname}" lib_soname)
     IF(NOT lib_soname)
@@ -35,8 +35,10 @@ FUNCTION(get_library_soname OUTPUT_VAR LIBRARY_FILE)
         IF(APPLE)
             # On macOS platform, fall back to using the otool to determine the install name of the dyld library.
             EXECUTE_PROCESS(COMMAND otool -D "${LIBRARY_FILE}" OUTPUT_VARIABLE _output_var OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
-            # Extract the second line from otool output.
-            STRING(REGEX MATCH "^[^\n]*\n([^\n]*)\n" _output_var "${_output_var}")
+            # _output_var contains a two lines: The first line is the file path of the library, the second line is the install name.
+            # Extract the second line.
+            STRING(REGEX REPLACE "\n" ";" _output_var "${_output_var}")
+            LIST(GET _output_var 1 _output_var)
             # If an absolute path is returned, extract the file name from it.
             GET_FILENAME_COMPONENT(lib_soname "${_output_var}" NAME)
         ENDIF()
