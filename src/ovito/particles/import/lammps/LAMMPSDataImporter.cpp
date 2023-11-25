@@ -267,7 +267,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
     for(;;) {
         // Skip blank line after keyword.
         if(stream.eof()) break;
-        stream.readLine();
+        stream.readLine(); // Skip empty line after keyword.
 
         if(keyword.startsWith("Atoms")) {
 
@@ -276,8 +276,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 addNumericType(Particles::OOClass(), typeProperty, i, {});
 
             if(natoms != 0) {
-                stream.readLine();
-                detectAtomStyle(stream.line(), keyword, _atomStyleHints);
+                detectAtomStyle(stream.readNonEmptyLine(), keyword, _atomStyleHints);
                 if(_atomStyleHints.atomStyle == AtomStyle_Unknown)
                     throw Exception(tr("LAMMPS atom style of the data file could not be detected, or the number of file columns is not as expected for the selected LAMMPS atom style."));
                 if(_atomStyleHints.atomStyle == AtomStyle_Hybrid && _atomStyleHints.atomSubStyles.empty())
@@ -1482,8 +1481,8 @@ Future<LAMMPSDataImporter::LAMMPSAtomStyleHints> LAMMPSDataImporter::inspectFile
                     // Try to guess the LAMMPS atom style from the 'Atoms' keyword line or the first data line.
                     LAMMPSAtomStyleHints styleHints;
                     QByteArray keyword = QByteArray(stream.line()).trimmed();
-                    stream.readLine();
-                    detectAtomStyle(stream.readLine(), keyword, styleHints);
+                    stream.readLine(); // Skip empty line
+                    detectAtomStyle(stream.readNonEmptyLine(), keyword, styleHints);
                     return styleHints;
                 }
                 stream.readLineTrimLeft();
