@@ -59,7 +59,7 @@ OPTION(OVITO_USE_PRECOMPILED_HEADERS "Use precompiled C++ headers to speed up bu
 OPTION(OVITO_USE_UNITY_BUILD "Use unity builds to speed up compilation (requires CMake 3.16)." "OFF")
 OPTION(OVITO_DISABLE_THREADING "Disable multi-threading code (meant only for development purposes)." "OFF")
 OPTION(OVITO_USE_GIT_REVISION_NUMBER "Include Git revision information in OVITO version string." "OFF")
-OPTION(OVITO_BUILD_SSH_CLIENT "Build the integrated SSH client for remote file access (requires libssh)." "ON")
+OPTION(OVITO_BUILD_SSH_CLIENT "Build the integrated SSH client for remote file access (requires libssh)." "OFF")
 OPTION(OVITO_LIBSSH_RUNTIME_LINKING "Load libssh at runtime" "OFF")
 OPTION(OVITO_USE_SYCL "Build with SYCL support" "OFF")
 SET(OVITO_USE_SYCL OFF CACHE STRING "SYCL implementation to use")
