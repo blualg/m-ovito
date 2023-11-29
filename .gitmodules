@@ -1,0 +1,3 @@
+[submodule "tests/files"]
+	path = tests/files
+	url = https://gitlab.com/ovito-org/ovito_test_files.git
