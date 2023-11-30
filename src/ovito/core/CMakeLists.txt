@@ -31,8 +31,8 @@ IF(NOT EMSCRIPTEN)
 ENDIF()
 
 # Locate the libssh library, needed for the built-in SSH client.
-IF(OVITO_BUILD_SSH_CLIENT AND NOT EMSCRIPTEN)
-    FIND_PACKAGE(libssh QUIET)
+IF(OVITO_BUILD_SSH_CLIENT)
+    FIND_PACKAGE(libssh REQUIRED)
 ENDIF()
 
 # Locate the Boost library.
@@ -162,19 +162,14 @@ ENDIF()
 
 # Include optional SSH client code.
 IF(OVITO_BUILD_SSH_CLIENT)
-    IF(libssh_FOUND)
-        MESSAGE(STATUS "Found libssh. Will build integrated SSH client.")
-        LIST(APPEND SourceFiles
-            utilities/io/ssh/libssh/LibsshConnection.cpp
-            utilities/io/ssh/libssh/SshChannel.cpp
-            utilities/io/ssh/libssh/ProcessChannel.cpp
-            utilities/io/ssh/libssh/ScpChannel.cpp
-            utilities/io/ssh/libssh/LsChannel.cpp
-            utilities/io/ssh/libssh/LibsshWrapper.cpp
-        )
-    ELSE()
-        MESSAGE("libssh not found. OVITO will be built without integrated SSH client.")
-    ENDIF()
+    LIST(APPEND SourceFiles
+        utilities/io/ssh/libssh/LibsshConnection.cpp
+        utilities/io/ssh/libssh/SshChannel.cpp
+        utilities/io/ssh/libssh/ProcessChannel.cpp
+        utilities/io/ssh/libssh/ScpChannel.cpp
+        utilities/io/ssh/libssh/LsChannel.cpp
+        utilities/io/ssh/libssh/LibsshWrapper.cpp
+    )
 ENDIF()
 
 # Build the askpass utility, which is needed for the external OpenSSH-based client.
@@ -224,7 +219,7 @@ IF(ZLIB_FOUND)
 ENDIF()
 
 # Link to Libssh.
-IF(OVITO_BUILD_SSH_CLIENT AND libssh_FOUND)
+IF(OVITO_BUILD_SSH_CLIENT)
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_SSH_CLIENT)
     IF(OVITO_LIBSSH_RUNTIME_LINKING)
         TARGET_COMPILE_DEFINITIONS(Core PRIVATE OVITO_LIBSSH_RUNTIME_LINKING)
@@ -376,7 +371,7 @@ IF(OVITO_BUILD_CONDA AND UNIX AND NOT APPLE)
 ENDIF()
 
 # Deploy the libssh library and its dependencies.
-IF(OVITO_BUILD_SSH_CLIENT AND libssh_FOUND AND NOT EMSCRIPTEN AND NOT OVITO_BUILD_CONDA)
+IF(OVITO_BUILD_SSH_CLIENT AND NOT EMSCRIPTEN AND NOT OVITO_BUILD_CONDA)
     IF(WIN32)
         # Install libssh.dylib
         GET_TARGET_PROPERTY(LIBSSH_LIBRARY_LOCATION ssh LOCATION)

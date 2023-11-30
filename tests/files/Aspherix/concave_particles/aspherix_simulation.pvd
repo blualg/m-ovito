@@ -1,7 +1,0 @@
-<VTKFile type="Collection" version="1.0" byte_order="LittleEndian" header_type="UInt64">
-<Collection>
-<DataSet timestep="0" part="0" file="dump_particle_0.vtm"/>
-<DataSet timestep="8" part="0" file="dump_particle_4000.vtm"/>
-<DataSet timestep="16" part="0" file="dump_particle_8000.vtm"/>
-</Collection>
-</VTKFile>

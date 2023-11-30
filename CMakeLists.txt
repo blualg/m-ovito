@@ -21,17 +21,13 @@
 #######################################################################################
 
 # Make sure we have a recent version of CMake.
-CMAKE_MINIMUM_REQUIRED(VERSION 3.12.0 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.19.0 FATAL_ERROR)
 CMAKE_POLICY(VERSION 3.12.0)
 
 # Choose CMake policies.
-IF(NOT CMAKE_VERSION VERSION_LESS "3.17")
-    CMAKE_POLICY(SET CMP0100 NEW)   # Let AUTOMOC and AUTOUIC process .hh files.
-    CMAKE_POLICY(SET CMP0099 NEW)   # Link properties are transitive over private dependency on static libraries.
-ENDIF()
-IF(NOT CMAKE_VERSION VERSION_LESS "3.13")
-    CMAKE_POLICY(SET CMP0079 NEW)   # Allows use of target_link_libraries() with targets defined in other directories.
-ENDIF()
+CMAKE_POLICY(SET CMP0100 NEW)   # Let AUTOMOC and AUTOUIC process .hh files.
+CMAKE_POLICY(SET CMP0099 NEW)   # Link properties are transitive over private dependency on static libraries.
+CMAKE_POLICY(SET CMP0079 NEW)   # Allows use of target_link_libraries() with targets defined in other directories.
 IF(NOT CMAKE_VERSION VERSION_LESS "3.27")
     CMAKE_POLICY(SET CMP0144 NEW)   # find_package() uses upper-case <PACKAGENAME>_ROOT variables.
 ENDIF()
@@ -63,7 +59,7 @@ OPTION(OVITO_USE_PRECOMPILED_HEADERS "Use precompiled C++ headers to speed up bu
 OPTION(OVITO_USE_UNITY_BUILD "Use unity builds to speed up compilation (requires CMake 3.16)." "OFF")
 OPTION(OVITO_DISABLE_THREADING "Disable multi-threading code (meant only for development purposes)." "OFF")
 OPTION(OVITO_USE_GIT_REVISION_NUMBER "Include Git revision information in OVITO version string." "OFF")
-OPTION(OVITO_BUILD_SSH_CLIENT "Build the integrated SSH client for remote file access (requires libssh)." "ON")
+OPTION(OVITO_BUILD_SSH_CLIENT "Build the integrated SSH client for remote file access (requires libssh)." "OFF")
 OPTION(OVITO_LIBSSH_RUNTIME_LINKING "Load libssh at runtime" "OFF")
 OPTION(OVITO_USE_SYCL "Build with SYCL support" "OFF")
 SET(OVITO_USE_SYCL OFF CACHE STRING "SYCL implementation to use")
