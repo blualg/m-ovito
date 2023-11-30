@@ -18,11 +18,19 @@ this renderer can achieve almost real-time performance on modern GPU hardware.
 **VisRTX requires NVIDIA hardware with CUDA support and a current NVIDIA graphics driver.**
 The renderer is not available on the macOS platform.
 
+.. caution::
+
+  VisRTX is currently under active development by the *HPC Visualization Developer Technology* team at NVIDIA
+  in corporation with the OVITO developers, who integrate the technology.
+  It is still considered experimental and not yet feature-complete.
+  For more information, visit https://github.com/NVIDIA/VisRTX. Please report any issues you encounter
+  to the `OVITO developers <https://gitlab.com/stuko/ovito/-/issues>`__.
+
 .. note::
 
-  VisRTX is currently under active development by the *HPC Visualization Developer Technology* team at NVIDIA,
-  so expect more features and capabilities to be added in the future.
-  For more information, visit https://github.com/NVIDIA/VisRTX.
+  On first use of the VisRTX renderer, it will compile RTX shader programs for your specific GPU hardware.
+  This process can take up to several minutes, but happens only once. The compiled shader programs are cached
+  on disk and reused in subsequent OVITO sessions.
 
 Parameters
 ----------
