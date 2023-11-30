@@ -29,13 +29,13 @@ Local setup
 
 To follow this tutorial, you will need two example time series, which can be
 downloaded from the OVITO git repository:
-`RDX.reax.dump <https://gitlab.com/stuko/ovito/-/raw/v3.9.2/tests/files/LAMMPS/RDX.reax.dump?ref_type=tags&inline=false>`__, 
-and 
+`RDX.reax.dump <https://gitlab.com/stuko/ovito/-/raw/v3.9.2/tests/files/LAMMPS/RDX.reax.dump?ref_type=tags&inline=false>`__,
+and
 `water.unwrapped.lammpstrj.gz
 <https://gitlab.com/stuko/ovito/-/raw/master/tests/files/LAMMPS/water.unwrapped.lammpstrj.gz?ref_type=heads&inline=false>`__.
 
 Place the first file, ``RDX.reax.dump``, in a local directory. Within this
-tutorial, the local path will be ``C:\Users\daniel\Downloads\RDX.reax.dump``. 
+tutorial, the local path will be ``C:\Users\daniel\Downloads\RDX.reax.dump``.
 This represents the common scenario where a simulation was performed on a remote
 cluster and subsequently all results have been downloaded to the local file
 system.
@@ -60,12 +60,12 @@ the x-direction (to prevent overlap with the second example file) using the
 Next, use OVITO Pro's :ref:`Load remote file <usage.import.remote>`
 functionality with the remote path
 ``sftp://magikarp//scratch/daniel/simulations/water.unwrapped.lammpstrj.gz``. In
-the import file prompt, select :ref:`Add to scene <usage.import.multiple_datasets>` 
+the import file prompt, select :ref:`Add to scene <usage.import.multiple_datasets>`
 to load the second data set into the scene.
 
 At this point, both samples should be visible side-by-side in the viewport.
 Next, apply any desired modifiers. For this tutorial, we will color the water
-molecules by their molecule identifier using the 
+molecules by their molecule identifier using the
 :ref:`particles.modifiers.color_coding` modifier. This is also the time to configure
 viewport overlays, camera angles, and other settings required for your render.
 
@@ -78,8 +78,8 @@ makes most sense  when rendering multiple images, we will select
 :guilabel:`Complete animation` to render the full sequence. There is no need to
 check :guilabel:`Save to file`
 as this option is handled automatically during the remote rendering process.
-Change the renderer from :ref:`OpenGL <rendering.opengl_renderer>` (the default) 
-to :ref:`Tachyon <rendering.tachyon_renderer>`, 
+Change the renderer from :ref:`OpenGL <rendering.opengl_renderer>` (the default)
+to :ref:`Tachyon <rendering.tachyon_renderer>`,
 :ref:`OSPRay <rendering.ospray_renderer>`, or :ref:`VisRTX <rendering.visrtx_renderer>`.
 This step is necessary because most compute clusters do not provide
 the required OpenGL libraries, and some compatibility testing might be required.
@@ -87,7 +87,7 @@ the required OpenGL libraries, and some compatibility testing might be required.
 After configuring everything as we would for a local rendering instead of
 hitting :guilabel:`Render active viewport` and walking away to grab some coffee, we will
 instead go to :menuselection:`File --> Render on remote computer...`. This
-opens the :menuselection:`Remote render settings` dialog window. 
+opens the :menuselection:`Remote render settings` dialog window.
 
 .. image:: ../images/tutorials/remote_render/export_dialog.png
    :width: 40%
@@ -111,7 +111,7 @@ the path from ``sftp://magikarp/scratch/daniel/simulations/`` to
 original location will be available at the new path once the bundle is moved to
 the remote computer. Ensure the remote path is correct.
 
-Set the number of cores per rendering task. By default, this is set to *all available*, 
+Set the number of cores per rendering task. By default, this is set to *all available*,
 but you may want to adjust it based on your needs. For example, on a
 compute node with 96 cores, setting *Cores per task* to 8 means that each node
 will spawn 12 workers, rendering 12 images concurrently. Generally, more workers
@@ -120,7 +120,7 @@ might be required for optimal performance.
 
 Lastly, define a directory for the remote bundle, selected using
 the :guilabel:`Choose...` button. In this case, it's ``C:\Users\daniel\Downloads\remote_render_tutorial``.
-The selected directory must be empty. Once everything is set up, hit 
+The selected directory must be empty. Once everything is set up, hit
 :guilabel:`Export` to write the actual file bundle.
 
 Pack and transfer
@@ -151,7 +151,7 @@ directory into a single zip file and transfer it to the remote machine:
     PS C:\Users\daniel\Downloads> Compress-Archive .\remote_render_tutorial\ .\remote_render_tutorial.zip
     PS C:\Users\daniel\Downloads> scp .\remote_render_tutorial.zip magikarp:/scratch/daniel/render
     remote_render_tutorial.zip                                                            100%   29KB  14.6MB/s   00:00
-    
+
 Rendering on the remote machine
 -------------------------------
 
@@ -178,15 +178,16 @@ straight from the path. This will create a new conda environment called
         ...
     daniel@magikarp:/scratch/daniel/render/remote_render_tutorial$ conda activate ovito
 
-OVITO Pro has generated a `slurm <https://slurm.schedmd.com/quickstart.html>`__ 
+OVITO Pro has generated a `slurm <https://slurm.schedmd.com/quickstart.html>`__
 batch job script template, ``submit.sh.template``,
 which you can modify to fit your cluster's job submission system. You might need
 to adjust job constraints like walltime, partition, or others. Submit the
 rendering task to your cluster's job manager. Remember to load any modules
-required by your infrastructure. In our example the ``submit.sh.template`` file 
+required by your infrastructure. In our example the ``submit.sh.template`` file
 looks like this:
 
 .. code-block:: bash
+
     #!/bin/bash
     #SBATCH -N 1
     #SBATCH -C cpu
@@ -215,8 +216,8 @@ rendering is complete, the final images and video will be stored in the bundle
 directory:
 
 .. code-block:: bash
-    
-    (remote_render_ovito) daniel@magikarp:/scratch/daniel/render/remote_render_tutorial$ tree . 
+
+    (remote_render_ovito) daniel@magikarp:/scratch/daniel/render/remote_render_tutorial$ tree .
     .
     ├── config.json
     ├── data

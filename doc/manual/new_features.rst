@@ -497,7 +497,7 @@ Version 3.6.0 (19-Nov-2021)
 * |ovito-pro| Added the ``input_format`` keyword parameter to the :py:func:`ovito.io.import_file` Python function for specifying the file format explicitly.
 * |ovito-pro| Upgraded OSPRay to version 2.7.1.
 * |ovito-pro| Renamed :py:meth:`ovito.vis.Viewport.create_qt_widget() <ovito.vis.Viewport.create_qt_widget>` method and made it work in all distributions of the ``ovito`` Python module.
-* |ovito-pro| Added experimental :py:meth:`ovito.vis.Viewport.create_jupyter_widget() <ovito.vis.Viewport.create_jupyter_widget>` method for embedding OVITO viewports in Jupyter notebooks (see `demo binder <https://gitlab.com/stuko/ovito-binder>`_).
+* |ovito-pro| Added experimental :py:meth:`ovito.vis.Viewport.create_jupyter_widget() <ovito.vis.Viewport.create_jupyter_widget>` method for embedding OVITO viewports in Jupyter notebooks (see `demo binder <https://gitlab.com/ovito-org/ovito-binder>`_).
 * |ovito-pro| Support for site-wide software licenses.
 * |ovito-pro| Fix: Bounding box clipping artifact when rendering rotated superquadrics particles with OSPRay or Tachyon renderers.
 * |ovito-pro| Fix: Warning "This plugin does not support createPlatformOpenGLContext!" when running in headless mode on Linux machines.
