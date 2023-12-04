@@ -4,6 +4,28 @@
 Changelog
 =========
 
+----------------------------
+Version 3.10.0 (xx-Dec-2023)
+----------------------------
+
+* :ref:`viewport_layers.coordinate_tripod`: Added perspective distortion option to exactly align axes directions with simulation cell edges
+* :ref:`particles.modifiers.smooth_trajectory` modifier: Now supports trajectories with varying number of particles
+* :ref:`particles.modifiers.smooth_trajectory` modifier: Fixed wrong interpolation/averaging of particle orientations
+* :ref:`file_formats.input.lammps_data`: Tolerate more than one empty line after file section titles
+* :ref:`file_formats.input.xyz`: Automatic detection of reduced coordinates turned off by default, because extended XYZ files with reduced coordinates are very rare
+* |ovito-python| Some Python functions now return true NumPy arrays instead of Python tuples
+* |ovito-python| New Python classes :py:class:`ovito.data.Lines` and :py:class:`ovito.vis.LinesVis` for visualizing 3d line segments
+* |ovito-python| New Python function :py:meth:`DislocationSegment.point_along_line() <ovito.data.DislocationSegment.point_along_line>`
+* |ovito-python| New parameter trait type :py:class:`ovito.traits.FilePath`, :py:class:`~ovito.traits.Vector2`, and :py:class:`~ovito.traits.Vector3`
+* |ovito-python| Renamed classes :py:class:`~ovito.traits.OvitoObject` and :py:class:`~ovito.traits.Color`
+* |ovito-python| Restricted :py:meth:`ovito.Scene.load` to session state files written by *OVITO Pro* or the Python module
+* |ovito-python| Added function parameter ``pipeline_node`` to :py:meth:`ModifierInterface.modify() <ovito.pipeline.ModifierInterface.modify>`
+* |ovito-pro| Added :ref:`file_formats.output.gltf`
+* |ovito-pro| Added :ref:`rendering.visrtx_renderer` and corresponding Python class :py:class:`ovito.vis.AnariRenderer`
+* |ovito-pro| Added :ref:`usage.remote_rendering`
+* |ovito-pro| OSPRay & Tachyon renderers: Added buttons to reset numeric parameters to their default values
+* |ovito-pro| :ref:`User-defined parameters <writing_custom_modifiers.advanced_interface.user_params>` can now be grouped in the UI by means of the new ``ovito_group`` metadata attribute
+
 ---------------------------
 Version 3.9.4 (04-Nov-2023)
 ---------------------------
@@ -21,7 +43,7 @@ Version 3.9.3 (01-Nov-2023)
 * Fix: Segfault when opening a .ovito state file with macOS Finder while OVITO is already running
 * Fix: :ref:`particles.modifiers.construct_surface_mesh` modifier: Option `Map particles to regions` may yield invalid results when used with option `Use only selected input particles`
 * Updated third-party components: OpenSSL 1.1.1w, Qt/PySide6 6.5.3, Python 3.11.6
-* |ovito-pro| PyPI packages for Python 3.12
+* |ovito-python| PyPI packages for Python 3.12
 
 ---------------------------
 Version 3.9.2 (31-Aug-2023)
@@ -29,10 +51,10 @@ Version 3.9.2 (31-Aug-2023)
 
 * Support Ctrl+C copy to clipboard in table of distances, angles, and dislocations in the data inspector
 * Fix: Text label viewport layer accidentally disables 3d depth test in interactive viewports if used as an underlay
-* |ovito-pro| :py:meth:`~ovito.vis.Viewport.render_image` and :py:meth:`~ovito.vis.Viewport.render_anim` now raise exceptions in case an error occurs in any of the scene pipelines (can be changed via new parameter `stop_on_error`)
+* |ovito-python| :py:meth:`~ovito.vis.Viewport.render_image` and :py:meth:`~ovito.vis.Viewport.render_anim` now raise exceptions in case an error occurs in any of the scene pipelines (can be changed via new parameter `stop_on_error`)
+* |ovito-python| New flag :py:attr:`Pipeline.preliminary_updates <ovito.pipeline.Pipeline.preliminary_updates>`
+* |ovito-python| Corrected data column headers in XYZ, LAMMPS dump, and IMD files written via :py:func:`~ovito.io.export_file` if a vector property was specified in the `columns` list
 * |ovito-pro| New class-based programming interface for custom viewport overlays: :py:class:`ovito.vis.ViewportOverlayInterface`
-* |ovito-pro| New flag :py:attr:`Pipeline.preliminary_updates <ovito.pipeline.Pipeline.preliminary_updates>`
-* |ovito-pro| Corrected data column headers in XYZ, LAMMPS dump, and IMD files written via :py:func:`~ovito.io.export_file` if a vector property was specified in the `columns` list
 * |ovito-pro| Build Conda package as monolithic binaries for improved performance of the Python interface
 * |ovito-pro| Updated third-party components: OpenSSL 1.1.1v, PySide6 6.5.2, Python 3.11.5
 
@@ -41,9 +63,9 @@ Version 3.9.1 (06-Aug-2023)
 ---------------------------
 
 * Fix: Voronoi Analysis modifier crashes if simulation cell is degenerate or atom count is zero, and option `Generate neighbor bonds` is turned on
-* |ovito-pro| New Python class :py:class:`ovito.pipeline.PipelineSourceInterface`
-* |ovito-pro| New Python method :py:meth:`ModifierInterface.compute_trajectory_length() <ovito.pipeline.ModifierInterface.compute_trajectory_length>`, which gives user-defined modifiers control over the timeline length
-* |ovito-pro| New Python field :py:attr:`Modifier.title <ovito.pipeline.Modifier.title>`
+* |ovito-python| New Python class :py:class:`ovito.pipeline.PipelineSourceInterface`
+* |ovito-python| New Python method :py:meth:`ModifierInterface.compute_trajectory_length() <ovito.pipeline.ModifierInterface.compute_trajectory_length>`, which gives user-defined modifiers control over the timeline length
+* |ovito-python| New Python field :py:attr:`Modifier.title <ovito.pipeline.Modifier.title>`
 * |ovito-pro| Fixed :command:`ovitos -m pip install` failure for packages that require a build step
 
 ---------------------------
@@ -112,10 +134,10 @@ OVITO Pro and the OVITO Python module can additionally read :ref:`ASE trajectory
 * Search patterns for trajectory file series: Avoid asterisk in file extensions containing digits, e.g. :file:`snapshot0000.h5` → :file:`snapshot*.h5`
 * Data table file exporter does not require a :py:attr:`~ovito.data.DataTable.y`-property anymore
 * Automatic name mangling of atom attributes imported from LAMMPS dump, GSD, and XYZ files in case they do not conform to OVITO's property naming rules
-* The :ref:`Vulkan viewport renderer <application_settings.viewports.graphics_implementation>` has been temporarily disabled in this release
-* |ovito-pro| New Python methods :py:meth:`Property.add_type_id <ovito.data.Property.add_type_id>` and :py:meth:`Property.add_type_name <ovito.data.Property.add_type_name>`
-* |ovito-pro| New Python method :py:meth:`VoxelGrid.view <ovito.data.VoxelGrid.view>`
-* |ovito-pro| Performance optimizations for property data access from Python code
+* The :ref:`Vulkan viewport renderer <application_settings.viewports.graphics_implementation>` has been removed
+* |ovito-python| New Python methods :py:meth:`Property.add_type_id <ovito.data.Property.add_type_id>` and :py:meth:`Property.add_type_name <ovito.data.Property.add_type_name>`
+* |ovito-python| New Python method :py:meth:`VoxelGrid.view <ovito.data.VoxelGrid.view>`
+* |ovito-python| Performance optimizations for property data access from Python code
 
 ---------------------------
 Version 3.8.5 (19-Jun-2023)
@@ -136,7 +158,7 @@ Version 3.8.4 (03-May-2023)
 * Fix: ffmpeg video encoding crashes on Windows if output path contains non-ascii characters
 * Silence console message "Numeric mode unsupported in the posix collation implementation" on Linux by enabling ICU support in Qt build
 * |ovito-pro| Fix: Segfault in PySide6 package initialization on Linux when adding a Python layer to a viewport
-* |ovito-pro| Fix: Interchanged xz/yz simulation box shear components in :py:func:`~ovito.io.lammps.lammps_to_ovito` Python function
+* |ovito-python| Fix: Interchanged xz/yz simulation box shear components in :py:func:`~ovito.io.lammps.lammps_to_ovito` Python function
 
 ---------------------------
 Version 3.8.3 (16-Apr-2023)
@@ -144,7 +166,7 @@ Version 3.8.3 (16-Apr-2023)
 
 * Further improved performance of sequential loading of compressed trajectory files
 * Fixed regression (since v3.8.0): :py:meth:`Viewport.render_anim() <ovito.vis.Viewport.render_anim>` renders only first animation frame
-* |ovito-pro| Python exceptions raised in user-defined modifier functions are now propagated up the call chain to where the pipeline evaluation was triggered
+* |ovito-python| Python exceptions raised in user-defined modifier functions are now propagated up the call chain to where the pipeline evaluation was triggered
 * |ovito-pro| Included ``bz2`` and `sqlite3` standard modules, which were missing in embedded Python interpreter on Linux
 
 ---------------------------
@@ -182,7 +204,7 @@ for vectorized computation of neighbor lists for many or all particles at once.
 
 .. rubric:: Further changes:
 
-* LAMMPS data file reader: Accept '#' in type names, which are referenced in data sections of the file
+* :ref:`file_formats.input.lammps_data`: Accept '#' in type names, which are referenced in data sections of the file
 
 ---------------------------
 Version 3.8.0 (03-Mar-2023)
@@ -306,8 +328,8 @@ when particles get removed from the simulation over time.
 * New option to clip surfaces at open box boundaries (see :py:attr:`SurfaceMeshVis.clip_at_domain_boundaries <ovito.vis.SurfaceMeshVis.clip_at_domain_boundaries>`).
 * :ref:`particles.modifiers.cluster_analysis` modifier: Abort calculation of center of mass and radius of gyration if masses of all input particles are zero.
 * |ovito-pro| Added user option that makes OVITO Pro import multiple files of the same kind as separate objects into the scene.
-* |ovito-pro| Accept ``os.PathLike`` objects in Python functions :py:func:`~ovito.io.import_file` and :py:func:`~ovito.io.export_file`.
-* |ovito-pro| :py:meth:`PropertyContainer.create_property <ovito.data.PropertyContainer.create_property>`: Accept ``data`` values that are broadcastable to shape of property array.
+* |ovito-python| Accept ``os.PathLike`` objects in Python functions :py:func:`~ovito.io.import_file` and :py:func:`~ovito.io.export_file`.
+* |ovito-python| :py:meth:`PropertyContainer.create_property <ovito.data.PropertyContainer.create_property>`: Accept ``data`` values that are broadcastable to shape of property array.
 
 ----------------------------
 Version 3.7.12 (16-Dec-2022)

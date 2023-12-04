@@ -107,6 +107,11 @@ rst_prolog = """
 
 .. |ovito-pro| replace:: :ovito-pro-tag-role:`<a class="ovito-pro-tag" href="https://www.ovito.org/about/ovito-pro/" data-tooltip="This program feature is only available in OVITO Pro and not OVITO Basic. Click to learn more." data-tooltip-position="right">pro</a>`
 
+.. role:: ovito-python-tag-role(raw)
+   :format: html
+
+.. |ovito-python| replace:: :ovito-python-tag-role:`<a class="ovito-py-tag" href="https://docs.ovito.org/python/" data-tooltip="This program feature is part of the OVITO Python module." data-tooltip-position="right">py</a>`
+
 .. |br| raw:: html
 
   <br/>

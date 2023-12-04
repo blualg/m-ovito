@@ -252,7 +252,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
         for(int i = 1; i <= ntypes; i++) {
             // Parse the type's numeric id.
             int typeId, charCount;
-            const char* line = stream.readLine();
+            const char* line = stream.readNonEmptyLine();
             if(sscanf(line, "%i%n", &typeId, &charCount) != 1 || typeId < 1 || typeId > ntypes)
                 throw Exception(tr("Invalid type label entry in line %1: %2").arg(stream.lineNumber()).arg(stream.lineString()));
             line += charCount;
@@ -350,12 +350,12 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             try {
                 for(size_t i = 0; i < (size_t)natoms; i++) {
                     if(!setProgressValueIntermittent(i)) return;
-                    stream.readLine();
+                    const char* line = (i == 0) ? stream.readNonEmptyLine() : stream.readLine();
 
                     // Parse the atom ID at the beginning of the line to perform remapping to
                     // the correct particle index.
                     qlonglong atomId;
-                    if(sscanf(stream.line(), "%llu", &atomId) != 1)
+                    if(sscanf(line, "%llu", &atomId) != 1)
                         throw Exception(tr("Invalid atom ID in line %1").arg(stream.lineNumber()));
 
                     size_t atomIndex = i;
@@ -366,7 +366,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                         atomIndex = iter->second;
                     }
 
-                    columnParser.readElement(atomIndex, stream.line());
+                    columnParser.readElement(atomIndex, line);
                 }
                 parsedParticleProperties.merge(columnParser.parsedProperties());
             }
@@ -393,7 +393,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             hasTypeMasses = true;
             // Parse atom type masses and also optional atom type names, which some data files list as comments in the Masses section.
             for(int i = 1; i <= natomtypes; i++) {
-                const char* start = stream.readLine();
+                const char* start = stream.readNonEmptyLine();
 
                 // Parse mass information.
                 int atomType = 0;
@@ -483,7 +483,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             ParticleIndexPair* bond = bondTopologyProperty.begin();
             for(size_t i = 0; i < (size_t)nbonds; i++, ++bond, ++bondType) {
                 if(!setProgressValueIntermittent(i)) return;
-                const char* line = stream.readLine();
+                const char* line = (i == 0) ? stream.readNonEmptyLine() : stream.readLine();
 
                 qlonglong bondId;
                 int charCount;
@@ -558,7 +558,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             ParticleIndexTriplet* angle = angleTopologyProperty.begin();
             for(size_t i = 0; i < (size_t)nangles; i++, ++angle, ++angleType) {
                 if(!setProgressValueIntermittent(i)) return;
-                const char* line = stream.readLine();
+                const char* line = (i == 0) ? stream.readNonEmptyLine() : stream.readLine();
 
                 qlonglong angleId;
                 int charCount;
@@ -620,7 +620,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             ParticleIndexQuadruplet* dihedral = dihedralTopologyProperty.begin();
             for(size_t i = 0; i < (size_t)ndihedrals; i++, ++dihedral, ++dihedralType) {
                 if(!setProgressValueIntermittent(i)) return;
-                const char* line = stream.readLine();
+                const char* line = (i == 0) ? stream.readNonEmptyLine() : stream.readLine();
 
                 qlonglong dihedralId;
                 int charCount;
@@ -682,7 +682,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             ParticleIndexQuadruplet* improper = improperTopologyProperty.begin();
             for(size_t i = 0; i < (size_t)nimpropers; i++, ++improper, ++improperType) {
                 if(!setProgressValueIntermittent(i)) return;
-                const char* line = stream.readLine();
+                const char* line = (i == 0) ? stream.readNonEmptyLine() : stream.readLine();
 
                 qlonglong improperId;
                 int charCount;
@@ -737,7 +737,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             setProgressMaximum(nellipsoids);
             for(size_t i = 0; i < (size_t)nellipsoids; i++) {
                 if(!setProgressValueIntermittent(i)) return;
-                const char* line = stream.readLine();
+                const char* line = (i == 0) ? stream.readNonEmptyLine() : stream.readLine();
 
                 qlonglong atomId;
                 int charCount;
