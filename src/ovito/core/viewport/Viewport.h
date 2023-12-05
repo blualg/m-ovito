@@ -174,14 +174,14 @@ public:
     /// \param index The position at which to insert the overlay.
     /// \param layer The overlay to insert.
     /// \undoable
-    void insertOverlay(int index, ViewportOverlay* layer) {
-        _overlays.insert(this, PROPERTY_FIELD(overlays), index, layer);
+    void insertOverlay(qsizetype index, OORef<ViewportOverlay> layer) {
+        _overlays.insert(this, PROPERTY_FIELD(overlays), index, std::move(layer));
     }
 
     /// \brief Removes an overlay from this viewport.
     /// \param index The index of the overlay to remove.
     /// \undoable
-    void removeOverlay(int index) {
+    void removeOverlay(qsizetype index) {
         _overlays.remove(this, PROPERTY_FIELD(overlays), index);
     }
 
@@ -189,14 +189,14 @@ public:
     /// \param index The position at which to insert the underlay into the stack.
     /// \param layer The underlay to insert.
     /// \undoable
-    void insertUnderlay(int index, ViewportOverlay* layer) {
-        _underlays.insert(this, PROPERTY_FIELD(underlays), index, layer);
+    void insertUnderlay(qsizetype index, OORef<ViewportOverlay> layer) {
+        _underlays.insert(this, PROPERTY_FIELD(underlays), index, std::move(layer));
     }
 
     /// \brief Removes an underlay from this viewport.
     /// \param index The index of the underlay to remove.
     /// \undoable
-    void removeUnderlay(int index) {
+    void removeUnderlay(qsizetype index) {
         _underlays.remove(this, PROPERTY_FIELD(underlays), index);
     }
 

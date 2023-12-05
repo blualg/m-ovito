@@ -88,7 +88,7 @@ public:
     ///
     /// \undoable
     /// \sa children(), addChildNode(), removeChildNode()
-    void insertChildNode(int index, SceneNode* newChild);
+    void insertChildNode(qsizetype index, OORef<SceneNode> newChild);
 
     /// \brief Adds a child scene node to this node.
     /// \param newChild The node that becomes a child of this node. If \a newChild is already a child
@@ -111,7 +111,7 @@ public:
     ///
     /// \undoable
     /// \sa children(), insertChildNode(), addChildNode()
-    void removeChildNode(int index);
+    void removeChildNode(qsizetype index);
 
     /// \brief Returns whether the given node is a parent of this node.
     bool isChildOf(SceneNode* node) const {

@@ -119,10 +119,9 @@ public:
     }
 
     /// Inserts an element type into the list of types.
-    const ElementType* insertElementType(int index, const ElementType* type) {
-        OVITO_ASSERT(elementTypes().contains(const_cast<ElementType*>(type)) == false);
-        _elementTypes.insert(this, PROPERTY_FIELD(elementTypes), index, type);
-        return type;
+    void insertElementType(qsizetype index, DataOORef<const ElementType> type) {
+        OVITO_ASSERT(elementTypes().contains(type) == false);
+        _elementTypes.insert(this, PROPERTY_FIELD(elementTypes), index, std::move(type));
     }
 
     /// Creates and returns a new numeric element type with the given numeric ID and, optionally, a human-readable name.
@@ -172,7 +171,7 @@ public:
     }
 
     /// Removes a single element type from this object.
-    void removeElementType(int index) {
+    void removeElementType(qsizetype index) {
         _elementTypes.remove(this, PROPERTY_FIELD(elementTypes), index);
     }
 

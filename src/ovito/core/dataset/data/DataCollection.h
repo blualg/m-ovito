@@ -58,7 +58,7 @@ public:
     void addObject(const DataObject* obj);
 
     /// \brief Inserts an additional data object into this state.
-    void insertObject(int index, const DataObject* obj);
+    void insertObject(qsizetype index, DataOORef<const DataObject> obj);
 
     /// \brief Replaces a data object with a new one.
     bool replaceObject(const DataObject* oldObj, const DataObject* newObj);
@@ -67,7 +67,7 @@ public:
     void removeObject(const DataObject* obj) { replaceObject(obj, nullptr); }
 
     /// \brief Removes a data object from this state.
-    void removeObjectByIndex(int index);
+    void removeObjectByIndex(qsizetype index);
 
     /// \brief Finds an object of the given type in the list of data objects stored in this flow state.
     const DataObject* getObject(const DataObject::OOMetaClass& objectClass) const;

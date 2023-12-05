@@ -308,7 +308,7 @@ void SceneNode::invalidateBoundingBox()
 /******************************************************************************
 * Adds a child scene node to this node.
 ******************************************************************************/
-void SceneNode::insertChildNode(int index, SceneNode* newChild)
+void SceneNode::insertChildNode(qsizetype index, OORef<SceneNode> newChild)
 {
     OVITO_CHECK_OBJECT_POINTER(newChild);
 
@@ -342,7 +342,7 @@ void SceneNode::insertChildNode(int index, SceneNode* newChild)
 /******************************************************************************
 * Removes a child node from this parent node.
 ******************************************************************************/
-void SceneNode::removeChildNode(int index)
+void SceneNode::removeChildNode(qsizetype index)
 {
     OVITO_ASSERT(index >= 0 && index < children().size());
 

@@ -77,13 +77,13 @@ public:
 
     /// \brief Attaches a visualization element to this data object that will be responsible for rendering the
     ///        data.
-    void insertVisElement(int index, DataVis* vis) {
+    void insertVisElement(qsizetype index, OORef<DataVis> vis) {
         OVITO_ASSERT(vis != nullptr);
-        _visElements.insert(this, PROPERTY_FIELD(visElements), index, vis);
+        _visElements.insert(this, PROPERTY_FIELD(visElements), index, std::move(vis));
     }
 
     /// \brief Detaches a visualization element from this data object.
-    void removeVisElement(int index) {
+    void removeVisElement(qsizetype index) {
         _visElements.remove(this, PROPERTY_FIELD(visElements), index);
     }
 

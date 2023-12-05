@@ -56,7 +56,7 @@ void DataCollection::addObject(const DataObject* obj)
 /******************************************************************************
 * Inserts an additional data object into this state.
 ******************************************************************************/
-void DataCollection::insertObject(int index, const DataObject* obj)
+void DataCollection::insertObject(qsizetype index, DataOORef<const DataObject> obj)
 {
     OVITO_CHECK_OBJECT_POINTER(obj);
 
@@ -65,13 +65,13 @@ void DataCollection::insertObject(int index, const DataObject* obj)
 
     OVITO_ASSERT_MSG(!contains(obj), "DataCollection::insertObject", "Cannot insert the same data object more than once.");
     OVITO_ASSERT(index >= 0 && index <= objects().size());
-    _objects.insert(this, PROPERTY_FIELD(objects), index, obj);
+    _objects.insert(this, PROPERTY_FIELD(objects), index, std::move(obj));
 }
 
 /******************************************************************************
 * Replaces a data object with a new one.
 ******************************************************************************/
-void DataCollection::removeObjectByIndex(int index)
+void DataCollection::removeObjectByIndex(qsizetype index)
 {
     OVITO_ASSERT(index >= 0 && index < objects().size());
     _objects.remove(this, PROPERTY_FIELD(objects), index);

@@ -51,16 +51,16 @@ public:
 	void addChild(OORef<ViewportLayoutCell> child, FloatType weight = 1.0);
 
 	/// Inserts a sub-cell into this cell's list of children.
-	void insertChild(int index, OORef<ViewportLayoutCell> child, FloatType weight);
+	void insertChild(qsizetype index, OORef<ViewportLayoutCell> child, FloatType weight);
 
 	/// Inserts a sub-cell into this cell's list of children.
 	/// This is an overload of the method above, which is used in the Python binding layer.
-	void insertChild(int index, OORef<ViewportLayoutCell> child) {
+	void insertChild(qsizetype index, OORef<ViewportLayoutCell> child) {
 		insertChild(index, std::move(child), 1.0);
 	}
 
 	/// Removes a sub-cell from this cell's list of children.
-	void removeChild(int index);
+	void removeChild(qsizetype index);
 
 	/// Returns true if this cell's children have all the same size.
 	bool isEvenlySubdivided() const;

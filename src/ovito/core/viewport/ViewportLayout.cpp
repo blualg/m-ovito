@@ -57,7 +57,7 @@ void ViewportLayoutCell::addChild(OORef<ViewportLayoutCell> child, FloatType wei
 /******************************************************************************
 * Inserts a sub-cell into this cell's list of children.
 ******************************************************************************/
-void ViewportLayoutCell::insertChild(int index, OORef<ViewportLayoutCell> child, FloatType weight)
+void ViewportLayoutCell::insertChild(qsizetype index, OORef<ViewportLayoutCell> child, FloatType weight)
 {
     OVITO_ASSERT(index >= 0 && index <= children().size());
     _children.insert(this, PROPERTY_FIELD(children), index, std::move(child));
@@ -71,7 +71,7 @@ void ViewportLayoutCell::insertChild(int index, OORef<ViewportLayoutCell> child,
 /******************************************************************************
 * Removes a sub-cell from this cell's list of children.
 ******************************************************************************/
-void ViewportLayoutCell::removeChild(int index)
+void ViewportLayoutCell::removeChild(qsizetype index)
 {
     OVITO_ASSERT(index >= 0 && index < children().size());
     _children.remove(this, PROPERTY_FIELD(children), index);
