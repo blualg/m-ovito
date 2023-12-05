@@ -60,7 +60,7 @@ This option changes between a dark (default) and a white viewport background.
 Transparency rendering method
   This option affects the rendering of semi-transparent objects when they occlude other objects
   or overlap with each other. Both available rendering methods represent different approximations of how a true rendition of
-  semi-transparent objects would look like - which is not achievable in real-time visualization using OpenGL/Vulkan.
+  semi-transparent objects would look like - which is not achievable in real-time visualization using OpenGL.
 
   Back-to-front ordered rendering (default) gives correct results if there is only one kind of semi-transparent object in the scene,
   e.g. just particles, but likely fails to render a mixture of different semi-transparent objects correctly, e.g. semi-transparent particles combined with
