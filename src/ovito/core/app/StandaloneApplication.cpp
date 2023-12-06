@@ -169,17 +169,29 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
             OVITO_ASSERT(ExecutionContext::current().isValid());
             Task::Scope taskScope(promise.task());
             try {
-                // Let the application perform further initialization steps.
-                postStartupInitialization();
+                try {
+                    // Let the application perform further initialization steps.
+                    postStartupInitialization();
 
-                if(promise.isCanceled()) {
-                    // If someone has canceled the startup process, close the window and quit the application.
-                    ExecutionContext::current().ui().shutdown();
-                    QCoreApplication::exit(1);
+                    if(promise.isCanceled()) {
+                        // If someone has canceled the startup process, close the window and quit the application.
+                        ExecutionContext::current().ui().shutdown();
+                        QCoreApplication::exit(1);
+                    }
+                    else {
+                        // Startup phase is completed.
+                        promise.setFinished();
+                    }
                 }
-                else {
-                    // Startup phase is completed.
-                    promise.setFinished();
+                catch(const Exception&) {
+                    throw;
+                }
+                catch(const std::bad_alloc&) {
+                    throw Exception(tr("Not enough memory."));
+                }
+                catch(const std::exception& ex) {
+                    qWarning() << "WARNING: non-standard exception thrown during application startup:" << ex.what();
+                    throw Exception(tr("Exception: %1").arg(QString::fromLatin1(ex.what())));
                 }
             }
             catch(const Exception& ex) {
