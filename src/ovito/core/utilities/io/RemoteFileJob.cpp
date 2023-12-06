@@ -418,7 +418,11 @@ void DownloadRemoteFileJob::storeReceivedData()
 
         // Write data into local file.
         if(!buffer.isEmpty() && _localFile->write(buffer) == -1)
-            throw Exception(tr("Failed to write downloaded data to temporary file: %1").arg(_localFile->errorString()));
+            throw Exception(tr("Failed to write received data to temporary file: %1").arg(_localFile->errorString()));
+
+        // At the end of the download, we need to flush the file buffer to disk. This is indicated by an empty receive buffer.
+        if(buffer.isEmpty() && !_localFile->flush())
+            throw Exception(tr("Failed to write received data to temporary local file '%1': %2").arg(_localFile->fileName()).arg(_localFile->errorString()));
     }
     catch(Exception&) {
         _promise.captureException();
