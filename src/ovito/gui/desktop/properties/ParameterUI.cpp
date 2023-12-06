@@ -179,6 +179,7 @@ MenuToolButton* PropertyParameterUI::createMenuToolButton(QWidget* parent)
 {
     if(!_menuToolButton) {
         _menuToolButton = new MenuToolButton(parent);
+        _menuToolButton->setToolTip(tr("Presets"));
     }
     return _menuToolButton;
 }
@@ -199,6 +200,7 @@ QAction* PropertyParameterUI::createAction(const QString& text, const QIcon& ico
 QAction* PropertyParameterUI::createResetAction()
 {
     QAction* resetAction = createMenuToolButton()->createAction(QIcon::fromTheme("particles_settings_restore"), tr("Reset to default"));
+    resetAction->setStatusTip(tr("Reset %1 to its default value").arg(propertyField()->displayName()));
     connect(resetAction, &QAction::triggered, this, [this]() {
         if(!editObject()) {
             return;
@@ -208,7 +210,7 @@ QAction* PropertyParameterUI::createResetAction()
         // update tempInstance with defaults from the current object instance
         editObject()->copyInitialParametersToObject(tempInstance);
         // updated the editObject with defaults from tempInstance
-        performTransaction(tr("Reset parameter value to default"),
+        performTransaction(tr("Reset %1 to its default value").arg(propertyField()->displayName()),
                            [&]() { editObject()->copyPropertyFieldValue(propertyField(), *tempInstance); });
         memorizeDefaultParameterValue();
     });

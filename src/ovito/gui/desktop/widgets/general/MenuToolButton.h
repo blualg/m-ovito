@@ -49,7 +49,7 @@ public:
     void createMenuSeperator();
 
 private:
-    QMenu* _menu = nullptr;
+    QPointer<QMenu> _menu = nullptr;
 };
 
 }  // namespace Ovito

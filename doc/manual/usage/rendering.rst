@@ -36,13 +36,16 @@ See the :ref:`reference section <rendering>` to learn more about the rendering c
 .. |ospray-image| image:: /images/rendering/renderer_example_ospray.*  
    :width: 100%
    :align: middle
+.. |visrtx-image| image:: /images/rendering/renderer_example_visrtx.*  
+   :width: 100%
+   :align: middle
 
 
-============================= ============================= =============================
-OpenGL renderer:              Tachyon renderer: |ovito-pro|  OSPRay renderer: |ovito-pro|
-============================= ============================= =============================
-|opengl-image|                |tachyon-image|               |ospray-image|
-============================= ============================= =============================
+============================= ============================= ============================= =============================
+OpenGL renderer:              Tachyon renderer: |ovito-pro| OSPRay renderer: |ovito-pro|  VisRTX renderer: |ovito-pro|
+============================= ============================= ============================= =============================
+|opengl-image|                |tachyon-image|               |ospray-image|                |visrtx-image|
+============================= ============================= ============================= ============================= 
   
 .. _usage.rendering.animation:
 
