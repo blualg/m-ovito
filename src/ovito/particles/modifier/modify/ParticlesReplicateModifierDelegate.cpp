@@ -21,14 +21,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/BondsObject.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Bonds.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "ParticlesReplicateModifierDelegate.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParticlesReplicateModifierDelegate);
 
@@ -38,8 +38,8 @@ IMPLEMENT_OVITO_CLASS(ParticlesReplicateModifierDelegate);
 ******************************************************************************/
 QVector<DataObjectReference> ParticlesReplicateModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(input.containsObject<ParticlesObject>())
-        return { DataObjectReference(&ParticlesObject::OOClass()) };
+    if(input.containsObject<Particles>())
+        return { DataObjectReference(&Particles::OOClass()) };
     return {};
 }
 
@@ -49,7 +49,7 @@ QVector<DataObjectReference> ParticlesReplicateModifierDelegate::OOMetaClass::ge
 PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     ReplicateModifier* mod = static_object_cast<ReplicateModifier>(request.modifier());
-    const ParticlesObject* inputParticles = state.getObject<ParticlesObject>();
+    const Particles* inputParticles = state.getObject<Particles>();
 
     std::array<int,3> nPBC;
     nPBC[0] = std::max(mod->numImagesX(),1);
@@ -65,20 +65,20 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
     size_t oldParticleCount = inputParticles->elementCount();
     size_t newParticleCount = oldParticleCount * numCopies;
 
-    const SimulationCellObject* cell = state.expectObject<SimulationCellObject>();
+    const SimulationCell* cell = state.expectObject<SimulationCell>();
     const AffineTransformation cellMatrix = cell->matrix();
 
     // Ensure that the particles can be modified.
-    ParticlesObject* outputParticles = state.makeMutable(inputParticles);
+    Particles* outputParticles = state.makeMutable(inputParticles);
     outputParticles->replicate(numCopies);
 
     // Replicate particle property values.
     Box3I newImages = mod->replicaRange();
-    for(PropertyObject* property : outputParticles->makePropertiesMutable()) {
+    for(Property* property : outputParticles->makePropertiesMutable()) {
         OVITO_ASSERT(property->size() == newParticleCount);
 
         // Shift particle positions by the periodicity vector.
-        if(property->type() == ParticlesObject::PositionProperty) {
+        if(property->type() == Particles::PositionProperty) {
             BufferWriteAccess<Point3, access_mode::read_write> positionArray(property);
             Point3* p = positionArray.begin();
             for(int imageX = newImages.minc.x(); imageX <= newImages.maxc.x(); imageX++) {
@@ -98,7 +98,7 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
         }
 
         // Assign unique IDs to duplicated particles.
-        if(mod->uniqueIdentifiers() && (property->type() == ParticlesObject::IdentifierProperty || property->type() == ParticlesObject::MoleculeProperty)) {
+        if(mod->uniqueIdentifiers() && (property->type() == Particles::IdentifierProperty || property->type() == Particles::MoleculeProperty)) {
             BufferWriteAccess<IdentifierIntType, access_mode::read_write> propertyData(property);
             auto minmax = std::minmax_element(propertyData.cbegin(), propertyData.cbegin() + oldParticleCount);
             auto minID = *minmax.first;
@@ -116,22 +116,22 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
         size_t oldBondCount = outputParticles->bonds()->elementCount();
         size_t newBondCount = oldBondCount * numCopies;
 
-        BufferReadAccessAndRef<Vector3I> oldPeriodicImages = outputParticles->bonds()->getProperty(BondsObject::PeriodicImageProperty);
+        BufferReadAccessAndRef<Vector3I> oldPeriodicImages = outputParticles->bonds()->getProperty(Bonds::PeriodicImageProperty);
 
         // Replicate bond property values.
-        BondsObject* mutableBonds = outputParticles->makeBondsMutable();
+        Bonds* mutableBonds = outputParticles->makeBondsMutable();
         mutableBonds->replicate(numCopies);
-        for(PropertyObject* property : mutableBonds->makePropertiesMutable()) {
+        for(Property* property : mutableBonds->makePropertiesMutable()) {
             OVITO_ASSERT(property->size() == newBondCount);
 
             size_t destinationIndex = 0;
             Point3I image;
 
             // TODO: Special handling of the particle identifiers property.
-            OVITO_ASSERT(property->type() != BondsObject::ParticleIdentifiersProperty);
+            OVITO_ASSERT(property->type() != Bonds::ParticleIdentifiersProperty);
 
             // Special handling for the topology property.
-            if(property->type() == BondsObject::TopologyProperty) {
+            if(property->type() == Bonds::TopologyProperty) {
                 BufferWriteAccess<ParticleIndexPair, access_mode::read_write> topologyArray(property);
                 for(image[0] = newImages.minc.x(); image[0] <= newImages.maxc.x(); image[0]++) {
                     for(image[1] = newImages.minc.y(); image[1] <= newImages.maxc.y(); image[1]++) {
@@ -140,7 +140,7 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
                                 Point3I newImage;
                                 for(size_t dim = 0; dim < 3; dim++) {
                                     int i = image[dim] + (oldPeriodicImages ? oldPeriodicImages[bindex][dim] : 0) - newImages.minc[dim];
-                                    newImage[dim] = SimulationCellObject::modulo(i, nPBC[dim]) + newImages.minc[dim];
+                                    newImage[dim] = SimulationCell::modulo(i, nPBC[dim]) + newImages.minc[dim];
                                 }
                                 OVITO_ASSERT(newImage.x() >= newImages.minc.x() && newImage.x() <= newImages.maxc.x());
                                 OVITO_ASSERT(newImage.y() >= newImages.minc.y() && newImage.y() <= newImages.maxc.y());
@@ -160,7 +160,7 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
                     }
                 }
             }
-            else if(property->type() == BondsObject::PeriodicImageProperty) {
+            else if(property->type() == Bonds::PeriodicImageProperty) {
                 // Special handling for the PBC shift vector property.
                 OVITO_ASSERT(oldPeriodicImages);
                 BufferWriteAccess<Vector3I, access_mode::read_write> pbcImagesArray(property);
@@ -189,16 +189,16 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
         size_t oldAngleCount = outputParticles->angles()->elementCount();
 
         // Replicate angle property values.
-        AnglesObject* mutableAngles = outputParticles->makeAnglesMutable();
+        Angles* mutableAngles = outputParticles->makeAnglesMutable();
         mutableAngles->replicate(numCopies);
-        for(PropertyObject* property : mutableAngles->makePropertiesMutable()) {
+        for(Property* property : mutableAngles->makePropertiesMutable()) {
             size_t destinationIndex = 0;
             Point3I image;
 
             // Special handling for the topology property.
-            if(property->type() == AnglesObject::TopologyProperty) {
+            if(property->type() == Angles::TopologyProperty) {
                 BufferWriteAccess<ParticleIndexTriplet, access_mode::read_write> topologyArray(property);
-                BufferReadAccess<Point3> positionArray(inputParticles->expectProperty(ParticlesObject::PositionProperty));
+                BufferReadAccess<Point3> positionArray(inputParticles->expectProperty(Particles::PositionProperty));
                 for(image[0] = newImages.minc.x(); image[0] <= newImages.maxc.x(); image[0]++) {
                     for(image[1] = newImages.minc.y(); image[1] <= newImages.maxc.y(); image[1]++) {
                         for(image[2] = newImages.minc.z(); image[2] <= newImages.maxc.z(); image[2]++) {
@@ -212,7 +212,7 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
                                             if(cell->hasPbc(dim)) {
                                                 int imageDelta = (int)std::floor(cell->inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
                                                 int i = image[dim] - newImages.minc[dim] - imageDelta;
-                                                newImage[dim] = SimulationCellObject::modulo(i, nPBC[dim]) + newImages.minc[dim];
+                                                newImage[dim] = SimulationCell::modulo(i, nPBC[dim]) + newImages.minc[dim];
                                             }
                                         }
                                     }
@@ -235,16 +235,16 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
         size_t oldDihedralCount = outputParticles->dihedrals()->elementCount();
 
         // Replicate dihedral property values.
-        DihedralsObject* mutableDihedrals = outputParticles->makeDihedralsMutable();
+        Dihedrals* mutableDihedrals = outputParticles->makeDihedralsMutable();
         mutableDihedrals->replicate(numCopies);
-        for(PropertyObject* property : mutableDihedrals->makePropertiesMutable()) {
+        for(Property* property : mutableDihedrals->makePropertiesMutable()) {
             size_t destinationIndex = 0;
             Point3I image;
 
             // Special handling for the topology property.
-            if(property->type() == DihedralsObject::TopologyProperty) {
+            if(property->type() == Dihedrals::TopologyProperty) {
                 BufferWriteAccess<ParticleIndexQuadruplet, access_mode::read_write> topologyArray(property);
-                BufferReadAccess<Point3> positionArray(inputParticles->expectProperty(ParticlesObject::PositionProperty));
+                BufferReadAccess<Point3> positionArray(inputParticles->expectProperty(Particles::PositionProperty));
                 for(image[0] = newImages.minc.x(); image[0] <= newImages.maxc.x(); image[0]++) {
                     for(image[1] = newImages.minc.y(); image[1] <= newImages.maxc.y(); image[1]++) {
                         for(image[2] = newImages.minc.z(); image[2] <= newImages.maxc.z(); image[2]++) {
@@ -258,7 +258,7 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
                                             if(cell->hasPbc(dim)) {
                                                 int imageDelta = (int)std::floor(cell->inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
                                                 int i = image[dim] - newImages.minc[dim] - imageDelta;
-                                                newImage[dim] = SimulationCellObject::modulo(i, nPBC[dim]) + newImages.minc[dim];
+                                                newImage[dim] = SimulationCell::modulo(i, nPBC[dim]) + newImages.minc[dim];
                                             }
                                         }
                                     }
@@ -281,16 +281,16 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
         size_t oldImproperCount = outputParticles->impropers()->elementCount();
 
         // Replicate improper property values.
-        ImpropersObject* mutableImpropers = outputParticles->makeImpropersMutable();
+        Impropers* mutableImpropers = outputParticles->makeImpropersMutable();
         mutableImpropers->replicate(numCopies);
-        for(PropertyObject* property : mutableImpropers->makePropertiesMutable()) {
+        for(Property* property : mutableImpropers->makePropertiesMutable()) {
             size_t destinationIndex = 0;
             Point3I image;
 
             // Special handling for the topology property.
-            if(property->type() == ImpropersObject::TopologyProperty) {
+            if(property->type() == Impropers::TopologyProperty) {
                 BufferWriteAccess<ParticleIndexQuadruplet, access_mode::read_write> topologyArray(property);
-                BufferReadAccess<Point3> positionArray(inputParticles->expectProperty(ParticlesObject::PositionProperty));
+                BufferReadAccess<Point3> positionArray(inputParticles->expectProperty(Particles::PositionProperty));
                 for(image[0] = newImages.minc.x(); image[0] <= newImages.maxc.x(); image[0]++) {
                     for(image[1] = newImages.minc.y(); image[1] <= newImages.maxc.y(); image[1]++) {
                         for(image[2] = newImages.minc.z(); image[2] <= newImages.maxc.z(); image[2]++) {
@@ -304,7 +304,7 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
                                             if(cell->hasPbc(dim)) {
                                                 int imageDelta = (int)std::floor(cell->inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
                                                 int i = image[dim] - newImages.minc[dim] - imageDelta;
-                                                newImage[dim] = SimulationCellObject::modulo(i, nPBC[dim]) + newImages.minc[dim];
+                                                newImage[dim] = SimulationCell::modulo(i, nPBC[dim]) + newImages.minc[dim];
                                             }
                                         }
                                     }

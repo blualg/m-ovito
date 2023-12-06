@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,7 @@ noperspective out vec3 ray_dir;
 
 // This function is used called by vertex or geometry shaders to calculate the ray (in view space)
 // that goes through the current vertex. The interpolated output is used by the fragment shader to
-// calculate the view ray going through each fragment. 
+// calculate the view ray going through each fragment.
 void calculate_view_ray_through_vertex()
 {
     vec2 viewport_position = vec2(gl_Position.x / gl_Position.w, gl_Position.y / gl_Position.w);

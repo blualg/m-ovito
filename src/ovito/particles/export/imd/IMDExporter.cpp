@@ -21,13 +21,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/export/FileColumnParticleExporter.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
 #include "IMDExporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(IMDExporter);
 
@@ -36,11 +36,11 @@ IMPLEMENT_OVITO_CLASS(IMDExporter);
 ******************************************************************************/
 bool IMDExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
-    const ParticlesObject* particles = state.expectObject<ParticlesObject>();
+    const Particles* particles = state.expectObject<Particles>();
     particles->verifyIntegrity();
 
     // Get simulation cell info.
-    const SimulationCellObject* simulationCell = state.expectObject<SimulationCellObject>();
+    const SimulationCell* simulationCell = state.expectObject<SimulationCell>();
 
     const AffineTransformation& simCell = simulationCell->cellMatrix();
     size_t atomsCount = particles->elementCount();
@@ -48,27 +48,27 @@ bool IMDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     ParticlesOutputColumnMapping colMapping;
     ParticlesOutputColumnMapping filteredMapping;
     bool exportIdentifiers = false;
-    const PropertyObject* posProperty = nullptr;
-    const PropertyObject* typeProperty = nullptr;
-    const PropertyObject* identifierProperty = nullptr;
-    const PropertyObject* velocityProperty = nullptr;
-    const PropertyObject* massProperty = nullptr;
+    const Property* posProperty = nullptr;
+    const Property* typeProperty = nullptr;
+    const Property* identifierProperty = nullptr;
+    const Property* velocityProperty = nullptr;
+    const Property* massProperty = nullptr;
     for(const ParticlePropertyReference& pref : columnMapping()) {
-        if(pref.type() == ParticlesObject::PositionProperty) {
-            posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+        if(pref.type() == Particles::PositionProperty) {
+            posProperty = particles->expectProperty(Particles::PositionProperty);
         }
-        else if(pref.type() == ParticlesObject::TypeProperty) {
-            typeProperty = particles->expectProperty(ParticlesObject::TypeProperty);
+        else if(pref.type() == Particles::TypeProperty) {
+            typeProperty = particles->expectProperty(Particles::TypeProperty);
         }
-        else if(pref.type() == ParticlesObject::IdentifierProperty) {
-            identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+        else if(pref.type() == Particles::IdentifierProperty) {
+            identifierProperty = particles->getProperty(Particles::IdentifierProperty);
             exportIdentifiers = true;
         }
-        else if(pref.type() == ParticlesObject::VelocityProperty) {
-            velocityProperty = particles->expectProperty(ParticlesObject::VelocityProperty);
+        else if(pref.type() == Particles::VelocityProperty) {
+            velocityProperty = particles->expectProperty(Particles::VelocityProperty);
         }
-        else if(pref.type() == ParticlesObject::MassProperty) {
-            massProperty = particles->expectProperty(ParticlesObject::MassProperty);
+        else if(pref.type() == Particles::MassProperty) {
+            massProperty = particles->expectProperty(Particles::MassProperty);
         }
         else filteredMapping.push_back(pref);
     }
@@ -83,7 +83,7 @@ bool IMDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
         }
         else {
             textStream() << "1 ";
-            colMapping.emplace_back(ParticlesObject::IdentifierProperty);
+            colMapping.emplace_back(Particles::IdentifierProperty);
             columnNames.push_back("number");
         }
     }
@@ -132,7 +132,7 @@ bool IMDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     textStream() << "#C";
     for(size_t i = 0; i < columnWriter.columnCount(); i++) {
         QString columnName;
-        if(i < columnNames.size())
+        if(i < (size_t)columnNames.size())
             columnName = columnNames[i];
         else {
             const PropertyReference& pref = columnWriter.propertyRef(i);

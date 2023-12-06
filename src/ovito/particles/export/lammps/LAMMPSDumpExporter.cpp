@@ -21,11 +21,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include "LAMMPSDumpExporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSDumpExporter);
 
@@ -35,11 +35,11 @@ IMPLEMENT_OVITO_CLASS(LAMMPSDumpExporter);
 bool LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
 {
     // Get particles.
-    const ParticlesObject* particles = state.expectObject<ParticlesObject>();
+    const Particles* particles = state.expectObject<Particles>();
     particles->verifyIntegrity();
 
     // Get simulation cell info.
-    const SimulationCellObject* simulationCell = state.getObject<SimulationCellObject>();
+    const SimulationCell* simulationCell = state.getObject<SimulationCell>();
     if(!simulationCell)
         throw Exception(tr("No simulation cell available. Cannot write LAMMPS file."));
 
@@ -103,47 +103,47 @@ bool LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNum
         const PropertyReference& pref = columnWriter.propertyRef(i);
         QString columnName;
         switch(pref.type()) {
-        case ParticlesObject::PositionProperty:
+        case Particles::PositionProperty:
             if(pref.vectorComponent() == 0) columnName = QStringLiteral("x");
             else if(pref.vectorComponent() == 1) columnName = QStringLiteral("y");
             else if(pref.vectorComponent() == 2) columnName = QStringLiteral("z");
             else columnName = pref.nameWithComponent();
             break;
-        case ParticlesObject::VelocityProperty:
+        case Particles::VelocityProperty:
             if(pref.vectorComponent() == 0) columnName = QStringLiteral("vx");
             else if(pref.vectorComponent() == 1) columnName = QStringLiteral("vy");
             else if(pref.vectorComponent() == 2) columnName = QStringLiteral("vz");
             else columnName = pref.nameWithComponent();
             break;
-        case ParticlesObject::ForceProperty:
+        case Particles::ForceProperty:
             if(pref.vectorComponent() == 0) columnName = QStringLiteral("fx");
             else if(pref.vectorComponent() == 1) columnName = QStringLiteral("fy");
             else if(pref.vectorComponent() == 2) columnName = QStringLiteral("fz");
             else columnName = pref.nameWithComponent();
             break;
-        case ParticlesObject::PeriodicImageProperty:
+        case Particles::PeriodicImageProperty:
             if(pref.vectorComponent() == 0) columnName = QStringLiteral("ix");
             else if(pref.vectorComponent() == 1) columnName = QStringLiteral("iy");
             else if(pref.vectorComponent() == 2) columnName = QStringLiteral("iz");
             else columnName = pref.nameWithComponent();
             break;
-        case ParticlesObject::IdentifierProperty: columnName = QStringLiteral("id"); break;
-        case ParticlesObject::TypeProperty: columnName = QStringLiteral("type"); break;
-        case ParticlesObject::MassProperty: columnName = QStringLiteral("mass"); break;
-        case ParticlesObject::SelectionProperty: columnName = QStringLiteral("selection"); break;
-        case ParticlesObject::RadiusProperty: columnName = QStringLiteral("radius"); break;
-        case ParticlesObject::MoleculeProperty: columnName = QStringLiteral("mol"); break;
-        case ParticlesObject::ChargeProperty: columnName = QStringLiteral("q"); break;
-        case ParticlesObject::PotentialEnergyProperty: columnName = QStringLiteral("c_epot"); break;
-        case ParticlesObject::KineticEnergyProperty: columnName = QStringLiteral("c_kpot"); break;
-        case ParticlesObject::OrientationProperty:
+        case Particles::IdentifierProperty: columnName = QStringLiteral("id"); break;
+        case Particles::TypeProperty: columnName = QStringLiteral("type"); break;
+        case Particles::MassProperty: columnName = QStringLiteral("mass"); break;
+        case Particles::SelectionProperty: columnName = QStringLiteral("selection"); break;
+        case Particles::RadiusProperty: columnName = QStringLiteral("radius"); break;
+        case Particles::MoleculeProperty: columnName = QStringLiteral("mol"); break;
+        case Particles::ChargeProperty: columnName = QStringLiteral("q"); break;
+        case Particles::PotentialEnergyProperty: columnName = QStringLiteral("c_epot"); break;
+        case Particles::KineticEnergyProperty: columnName = QStringLiteral("c_kpot"); break;
+        case Particles::OrientationProperty:
             if(pref.vectorComponent() == 0) columnName = QStringLiteral("quati");
             else if(pref.vectorComponent() == 1) columnName = QStringLiteral("quatj");
             else if(pref.vectorComponent() == 2) columnName = QStringLiteral("quatk");
             else if(pref.vectorComponent() == 3) columnName = QStringLiteral("quatw");
             else columnName = pref.nameWithComponent();
             break;
-        case ParticlesObject::AsphericalShapeProperty:
+        case Particles::AsphericalShapeProperty:
             if(pref.vectorComponent() == 0) columnName = QStringLiteral("c_shape[1]");
             else if(pref.vectorComponent() == 1) columnName = QStringLiteral("c_shape[2]");
             else if(pref.vectorComponent() == 2) columnName = QStringLiteral("c_shape[3]");

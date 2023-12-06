@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include "LibsshWrapper.h"
 
-namespace Ovito::Ssh {
+namespace Ovito {
 
 #ifdef OVITO_LIBSSH_RUNTIME_LINKING
 QLibrary LibsshWrapper::libssh;

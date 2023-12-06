@@ -27,7 +27,7 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief A data object type that consists of a set of data columns, which are typically used to generate 2d data plots.
@@ -69,10 +69,10 @@ public:
     Q_INVOKABLE DataTable(ObjectInitializationFlags flags, PlotMode plotMode = Line, const QString& title = QString(), ConstPropertyPtr y = {}, ConstPropertyPtr x = {});
 
     /// Assigns a property array as x-coordinates of the data points (for the purpose of plotting).
-    void setX(const PropertyObject* property);
+    void setX(const Property* property);
 
     /// Assigns a property array as y-coordinates of the data points (for the purpose of plotting).
-    void setY(const PropertyObject* property);
+    void setY(const Property* property);
 
     /// Returns the data array containing the x-coordinates of the data points.
     /// If no explicit x-coordinate data is available, the array is dynamically generated
@@ -98,10 +98,10 @@ private:
     DECLARE_SHADOW_PROPERTY_FIELD(plotMode);
 
     /// Property containing the X coordinates of data points for plotting.
-    DECLARE_REFERENCE_FIELD_FLAGS(const PropertyObject*, x, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_SUB_ANIM);
+    DECLARE_REFERENCE_FIELD_FLAGS(const Property*, x, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_SUB_ANIM);
 
     /// Property containing the Y coordinates of data points for plotting.
-    DECLARE_REFERENCE_FIELD_FLAGS(const PropertyObject*, y, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_SUB_ANIM);
+    DECLARE_REFERENCE_FIELD_FLAGS(const Property*, y, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
 /**
@@ -111,4 +111,4 @@ using DataTablePropertyReference = TypedPropertyReference<DataTable>;
 
 }   // End of namespace
 
-Q_DECLARE_METATYPE(Ovito::StdObj::DataTablePropertyReference);
+Q_DECLARE_METATYPE(Ovito::DataTablePropertyReference);

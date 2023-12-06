@@ -21,16 +21,16 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/grid/objects/VoxelGridVis.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "GaussianCubeImporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(GaussianCubeImporter);
 DEFINE_PROPERTY_FIELD(GaussianCubeImporter, gridType);
@@ -138,8 +138,8 @@ void GaussianCubeImporter::FrameLoader::loadFile()
 
     // Create the particle properties.
     setParticleCount(numAtoms);
-    BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
-    PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+    BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(Particles::PositionProperty);
+    Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
 
     // Read atomic coordinates and types.
     Point3* p = posProperty.begin();
@@ -160,9 +160,9 @@ void GaussianCubeImporter::FrameLoader::loadFile()
     // Translate atomic numbers into element names.
     for(auto atomicNumber : typePropertyAccess) {
         if(atomicNumber >= 0 && atomicNumber < ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES)
-            addNumericType(ParticlesObject::OOClass(), typeProperty, atomicNumber, ParticleType::getPredefinedParticleTypeName(static_cast<ParticleType::PredefinedParticleType>(atomicNumber)));
+            addNumericType(Particles::OOClass(), typeProperty, atomicNumber, ParticleType::getPredefinedParticleTypeName(static_cast<ParticleType::PredefinedParticleType>(atomicNumber)));
         else
-            addNumericType(ParticlesObject::OOClass(), typeProperty, atomicNumber, {});
+            addNumericType(Particles::OOClass(), typeProperty, atomicNumber, {});
     }
 
     // Release property accessors.
@@ -209,7 +209,7 @@ void GaussianCubeImporter::FrameLoader::loadFile()
     VoxelGrid* voxelGrid = state().getMutableObject<VoxelGrid>();
     VoxelGridVis* newVoxelGridVis = nullptr;
     if(!voxelGrid) {
-        voxelGrid = state().createObject<VoxelGrid>(dataSource());
+        voxelGrid = state().createObject<VoxelGrid>(pipelineNode());
         newVoxelGridVis = voxelGrid->visElement<VoxelGridVis>();
         newVoxelGridVis->setEnabled(false);
         newVoxelGridVis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled)});
@@ -222,7 +222,7 @@ void GaussianCubeImporter::FrameLoader::loadFile()
     voxelGrid->setContent(gridSize[0] * gridSize[1] * gridSize[2], {});
 
     // Create the voxel grid property.
-    PropertyObject* property = voxelGrid->createProperty(QStringLiteral("Property"), DataBuffer::FloatDefault, nfields, std::move(componentNames));
+    Property* property = voxelGrid->createProperty(QStringLiteral("Property"), DataBuffer::FloatDefault, nfields, std::move(componentNames));
     BufferWriteAccess<FloatType*, access_mode::discard_read_write> fieldQuantity(property);
 
     // Parse voxel data.

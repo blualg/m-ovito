@@ -26,11 +26,11 @@
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/core/utilities/io/CompressedTextWriter.h>
 #include <ovito/core/utilities/concurrent/Promise.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include "CAExporter.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CAExporter);
 
@@ -72,7 +72,7 @@ bool CAExporter::exportFrame(int frameNumber, const QString& filePath, MainThrea
         return false;
 
     // Get simulation cell info.
-    const SimulationCellObject* simulationCell = state.expectObject<SimulationCellObject>();
+    const SimulationCell* simulationCell = state.expectObject<SimulationCell>();
 
     // Get dislocation lines.
     const DislocationNetworkObject* dislocationObj = state.getObject<DislocationNetworkObject>();
@@ -217,7 +217,7 @@ bool CAExporter::exportFrame(int frameNumber, const QString& filePath, MainThrea
 
     if(defectMesh && defectMesh->topology()->isClosed()) {
         defectMesh->verifyMeshIntegrity();
-        const PropertyObject* vertexCoords = defectMesh->vertices()->getProperty(SurfaceMeshVertices::PositionProperty);
+        const Property* vertexCoords = defectMesh->vertices()->getProperty(SurfaceMeshVertices::PositionProperty);
         const SurfaceMeshTopology* topology = defectMesh->topology();
 
         // Serialize list of vertices.

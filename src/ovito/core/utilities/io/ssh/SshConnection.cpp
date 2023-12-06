@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include "SshConnection.h"
 
-namespace Ovito::Ssh {
+namespace Ovito {
 
 /******************************************************************************
 * Returns the user's preferred SSH implementation.

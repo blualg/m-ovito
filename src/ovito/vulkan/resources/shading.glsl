@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -36,9 +36,9 @@ vec4 shadeSurfaceColor(in vec3 surface_normal, in vec4 color)
     }
     else {
         float reflz = max(0.0, 2.0 * dot(surface_normal, specular_lightdir) * surface_normal.z - specular_lightdir.z);
-        
+
         // Compute pow(reflz, shininess):
-        float specular = reflz * reflz; 
+        float specular = reflz * reflz;
         specular = 0.25 * specular * specular * specular;
 
         float diffuse = abs(surface_normal.z) * diffuse_strength;

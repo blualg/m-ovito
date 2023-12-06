@@ -24,8 +24,8 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyColorMapping.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
@@ -33,7 +33,7 @@
 #include <ovito/core/rendering/CylinderPrimitive.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Visualizes vector properties using arrow glyphs.
@@ -73,10 +73,10 @@ public:
     Q_INVOKABLE VectorVis(ObjectInitializationFlags flags);
 
     /// \brief Lets the visualization element render the data object.
-    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
+    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;
 
     /// \brief Computes the bounding box of the object.
-    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
+    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
 
     /// Returns the transparency parameter.
     FloatType transparency() const { return transparencyController()->getFloatValue(AnimationTime(0)); }
@@ -86,7 +86,7 @@ public:
 
 public:
 
-    Q_PROPERTY(Ovito::Particles::VectorVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
+    Q_PROPERTY(Ovito::VectorVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
 
 protected:
 
@@ -153,7 +153,7 @@ public:
     const ConstDataObjectRefPath& dataPath() const { return _dataPath; }
 
     /// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
-    virtual QString infoString(PipelineSceneNode* objectNode, quint32 subobjectId) override;
+    virtual QString infoString(Pipeline* pipeline, quint32 subobjectId) override;
 
     /// Given an sub-object ID returned by the Viewport::pick() method, looks up the
     /// corresponding data element index.

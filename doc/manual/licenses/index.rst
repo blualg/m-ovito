@@ -28,10 +28,6 @@ The table lists the licenses of the included components and, if they are used un
     - License
     - Instructions
 
-  * - OVITO legacy code
-    - :ref:`license <appendix.license.ovito_legacy>`
-    -
-
   * - `Qt <https://www.qt.io/developers/>`__
     - LGPL v3
     - :ref:`Info <appendix.license.qt6.instructions>`
@@ -66,6 +62,10 @@ The table lists the licenses of the included components and, if they are used un
 
   * - `OpenSSL <https://openssl.org>`__
     - :ref:`license <appendix.license.openssl>`
+    -
+
+  * - OVITO legacy code
+    - :ref:`license <appendix.license.ovito_legacy>`
     -
 
   * - `ffmpeg <https://ffmpeg.org>`__
@@ -132,16 +132,16 @@ The table lists the licenses of the included components and, if they are used un
     - Apache 2.0
     -
 
-  * - `Intel Open Volume Kernel Library <https://www.openvkl.org>`__
-    - Apache 2.0
-    -
-
   * - `Intel RenderKit common C++/CMake infrastructure <https://github.com/ospray/rkcommon>`__
     - Apache 2.0
     -
 
-  * - `Threading Building Blocks <https://www.threadingbuildingblocks.org/>`__
+  * - `oneAPI Threading Building Blocks <https://www.threadingbuildingblocks.org/>`__
     - Apache 2.0
+    -
+
+  * - `ISPC <https://ispc.github.io>`__
+    - :ref:`license <appendix.license.ispc>`
     -
 
   * - `GEMMI (GEneral MacroMolecular I/O) <https://github.com/project-gemmi/gemmi>`__
@@ -154,10 +154,6 @@ The table lists the licenses of the included components and, if they are used un
 
   * - XTC/XDR file I/O routines
     - :ref:`license <appendix.license.xdrfile>`
-    -
-
-  * - `Vulkan Memory Allocator <https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator>`__
-    - :ref:`license <appendix.license.vma>`
     -
 
   * - `LAMMPS <https://www.lammps.org/>`__
@@ -215,8 +211,8 @@ The table lists the licenses of the included components and, if they are used un
   pegtl
   PySide6.instructions
   xdrfile
-  vma
   traits
   libsodium
   visrtx
   glm
+  ispc

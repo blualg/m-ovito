@@ -25,7 +25,7 @@
 #include "SurfaceMeshFaces.h"
 #include "SurfaceMeshVis.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshFaces);
 
@@ -39,21 +39,21 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataBu
 
     switch(type) {
     case SelectionProperty:
-        dataType = PropertyObject::IntSelection;
+        dataType = Property::IntSelection;
         componentCount = 1;
         break;
     case RegionProperty:
     case FaceTypeProperty:
-        dataType = PropertyObject::Int32;
+        dataType = Property::Int32;
         componentCount = 1;
         break;
     case ColorProperty:
-        dataType = PropertyObject::FloatGraphics;
+        dataType = Property::FloatGraphics;
         componentCount = 3;
         break;
     case BurgersVectorProperty:
     case CrystallographicNormalProperty:
-        dataType = PropertyObject::FloatDefault;
+        dataType = Property::FloatDefault;
         componentCount = 3;
         OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Vector3));
         break;
@@ -113,12 +113,12 @@ void SurfaceMeshFaces::OOMetaClass::initialize()
     const QStringList xyzList = QStringList() << "X" << "Y" << "Z";
     const QStringList rgbList = QStringList() << "R" << "G" << "B";
 
-    registerStandardProperty(SelectionProperty, tr("Selection"), PropertyObject::IntSelection, emptyList);
-    registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::FloatGraphics, rgbList, nullptr, tr("Face colors"));
-    registerStandardProperty(FaceTypeProperty, tr("Type"), PropertyObject::Int32, emptyList);
-    registerStandardProperty(RegionProperty, tr("Region"), PropertyObject::Int32, emptyList);
-    registerStandardProperty(BurgersVectorProperty, tr("Burgers Vector"), PropertyObject::FloatDefault, xyzList, nullptr, tr("Burgers vectors"));
-    registerStandardProperty(CrystallographicNormalProperty, tr("Crystallographic Normal"), PropertyObject::FloatDefault, xyzList);
+    registerStandardProperty(SelectionProperty, tr("Selection"), Property::IntSelection, emptyList);
+    registerStandardProperty(ColorProperty, tr("Color"), Property::FloatGraphics, rgbList, nullptr, tr("Face colors"));
+    registerStandardProperty(FaceTypeProperty, tr("Type"), Property::Int32, emptyList);
+    registerStandardProperty(RegionProperty, tr("Region"), Property::Int32, emptyList);
+    registerStandardProperty(BurgersVectorProperty, tr("Burgers Vector"), Property::FloatDefault, xyzList, nullptr, tr("Burgers vectors"));
+    registerStandardProperty(CrystallographicNormalProperty, tr("Crystallographic Normal"), Property::FloatDefault, xyzList);
 }
 
 /******************************************************************************
@@ -151,8 +151,8 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshFaces::getVectorVi
             BufferWriteAccessAndRef<Vector3, access_mode::write> filteredVectors;
             vectorProperty = path.lastAs<DataBuffer>();
             if(vectorProperty && vectorProperty->componentCount() == 3) {
-                OVITO_ASSERT(vectorProperty->dataType() == PropertyObject::FloatDefault);
-                if(vectorProperty->dataType() == PropertyObject::FloatDefault) {
+                OVITO_ASSERT(vectorProperty->dataType() == Property::FloatDefault);
+                if(vectorProperty->dataType() == Property::FloatDefault) {
                     // Does the mesh have cutting planes and do we need to perform point culling?
                     if(!mesh->cuttingPlanes().empty()) {
                         // Create a copy of the vector property in which the values of culled points

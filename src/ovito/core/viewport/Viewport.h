@@ -27,7 +27,7 @@
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
 #include <ovito/core/viewport/overlays/ViewportOverlay.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/scene/Scene.h>
 #include "ViewportSettings.h"
 #include "ViewportWindowInterface.h"
@@ -41,13 +41,6 @@ namespace Ovito {
 class OVITO_CORE_EXPORT Viewport : public RefTarget
 {
     OVITO_CLASS(Viewport)
-
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(QString title READ viewportTitle NOTIFY viewportChanged)
-    Q_PROPERTY(bool gridVisible READ isGridVisible WRITE setGridVisible NOTIFY viewportChanged)
-    Q_PROPERTY(bool previewMode READ renderPreviewMode WRITE setRenderPreviewMode NOTIFY viewportChanged)
-    Q_PROPERTY(Ovito::Viewport::ViewType viewType READ viewType WRITE setViewType NOTIFY viewportChanged)
-#endif
 
 public:
 
@@ -181,14 +174,14 @@ public:
     /// \param index The position at which to insert the overlay.
     /// \param layer The overlay to insert.
     /// \undoable
-    void insertOverlay(int index, ViewportOverlay* layer) {
-        _overlays.insert(this, PROPERTY_FIELD(overlays), index, layer);
+    void insertOverlay(qsizetype index, OORef<ViewportOverlay> layer) {
+        _overlays.insert(this, PROPERTY_FIELD(overlays), index, std::move(layer));
     }
 
     /// \brief Removes an overlay from this viewport.
     /// \param index The index of the overlay to remove.
     /// \undoable
-    void removeOverlay(int index) {
+    void removeOverlay(qsizetype index) {
         _overlays.remove(this, PROPERTY_FIELD(overlays), index);
     }
 
@@ -196,14 +189,14 @@ public:
     /// \param index The position at which to insert the underlay into the stack.
     /// \param layer The underlay to insert.
     /// \undoable
-    void insertUnderlay(int index, ViewportOverlay* layer) {
-        _underlays.insert(this, PROPERTY_FIELD(underlays), index, layer);
+    void insertUnderlay(qsizetype index, OORef<ViewportOverlay> layer) {
+        _underlays.insert(this, PROPERTY_FIELD(underlays), index, std::move(layer));
     }
 
     /// \brief Removes an underlay from this viewport.
     /// \param index The index of the underlay to remove.
     /// \undoable
-    void removeUnderlay(int index) {
+    void removeUnderlay(qsizetype index) {
         _underlays.remove(this, PROPERTY_FIELD(underlays), index);
     }
 
@@ -322,7 +315,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, isGridVisible, setGridVisible, PROPERTY_FIELD_NO_UNDO);
 
     /// The scene node (camera) that has been selected as the view node.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineSceneNode>, viewNode, setViewNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Pipeline>, viewNode, setViewNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
     /// The title of the viewport.
     DECLARE_PROPERTY_FIELD_FLAGS(QString, viewportTitle, PROPERTY_FIELD_NO_UNDO);

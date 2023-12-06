@@ -1,7 +1,0 @@
-<RCC>
-    <qresource prefix="/StdObj">
-        <file>editors/PropertyObject.qml</file>
-        <file>editors/SimulationCellObject.qml</file>
-        <file>editors/SimulationCellVis.qml</file>
-    </qresource>
-</RCC>

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,11 +21,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdmod/StdMod.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "ClearSelectionModifier.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ClearSelectionModifier);
 
@@ -35,7 +35,7 @@ IMPLEMENT_OVITO_CLASS(ClearSelectionModifier);
 ClearSelectionModifier::ClearSelectionModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags)
 {
     // Operate on particles by default.
-    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
+    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("Particles"));
 }
 
 /******************************************************************************
@@ -47,7 +47,7 @@ void ClearSelectionModifier::evaluateSynchronous(const ModifierEvaluationRequest
         throw Exception(tr("No input element type selected."));
 
     PropertyContainer* container = state.expectMutableLeafObject(subject());
-    if(const PropertyObject* selProperty = container->getProperty(PropertyObject::GenericSelectionProperty))
+    if(const Property* selProperty = container->getProperty(Property::GenericSelectionProperty))
         container->removeProperty(selProperty);
 }
 

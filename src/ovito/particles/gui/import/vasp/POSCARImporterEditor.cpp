@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "POSCARImporterEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(POSCARImporterEditor);
 SET_OVITO_OBJECT_EDITOR(POSCARImporter, POSCARImporterEditor);
@@ -51,7 +51,7 @@ void POSCARImporterEditor::createUI(const RolloutInsertionParameters& rolloutPar
     // Center simulation cell.
     BooleanParameterUI* recenterCellUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::recenterCell));
     sublayout->addWidget(recenterCellUI->checkBox());
-    
+
     // Generate bonds
     BooleanParameterUI* generateBondsUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::generateBonds));
     sublayout->addWidget(generateBondsUI->checkBox());

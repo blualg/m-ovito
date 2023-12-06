@@ -61,7 +61,7 @@ OVITO can directly read the following file formats:
 
   * - XYZ
     - Simple column-based text format for particle data, which is documented `here <http://en.wikipedia.org/wiki/XYZ_file_format>`__.
-      OVITO can read the `extended XYZ format <https://web.archive.org/web/20190811094343/https://libatoms.github.io/QUIP/io.html#extendedxyz>`__,
+      OVITO can read the :ref:`extended XYZ format <file_formats.input.xyz.extended_format>`,
       which supports arbitrary sets of particle data columns, and can store additional information such as the simulation cell geometry and boundary conditions.
     - :ref:`particles <scene_objects.particles>`
     - :ref:`Details <file_formats.input.xyz>`
@@ -226,3 +226,5 @@ OVITO can directly read the following file formats:
     -
 
 *OVITO Pro* additionally provides the option for you to write :ref:`custom file readers in Python <writing_custom_file_readers>` to import more formats.
+
+.. seealso:: :py:func:`ovito.io.import_file` (Python API)

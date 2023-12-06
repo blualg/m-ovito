@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -156,7 +156,7 @@ public:
     }
 
     /// Moves @p __rhs into the container.
-    template<typename _Tp> 
+    template<typename _Tp>
     std::enable_if_t<std::is_move_constructible<_Decay_if_not_any<_Tp>>::value, any_moveonly&> operator=(_Tp&& __rhs)
     {
         *this = any_moveonly(std::move(__rhs));
@@ -268,7 +268,7 @@ private:
 
     // Manage external contained object.
     template<typename _Tp>
-    struct _Manager_external 
+    struct _Manager_external
     {
         static void _S_manage(_Op __which, const any_moveonly* __anyp, _Arg* __arg);
 

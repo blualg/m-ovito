@@ -22,7 +22,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/rendering/SceneRenderer.h>
@@ -30,7 +30,7 @@
 #include <ovito/core/rendering/CylinderPrimitive.h>
 #include "ParticlesVis.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParticlesVis);
 IMPLEMENT_OVITO_CLASS(ParticlePickInfo);
@@ -59,15 +59,15 @@ ParticlesVis::ParticlesVis(ObjectInitializationFlags flags) : DataVis(flags),
 /******************************************************************************
 * Computes the bounding box of the visual element.
 ******************************************************************************/
-Box3 ParticlesVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 ParticlesVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
 {
-    const ParticlesObject* particles = path.lastAs<ParticlesObject>();
+    const Particles* particles = path.lastAs<Particles>();
     if(!particles) return {};
     particles->verifyIntegrity();
-    const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
-    const PropertyObject* radiusProperty = particles->getProperty(ParticlesObject::RadiusProperty);
-    const PropertyObject* typeProperty = particles->getProperty(ParticlesObject::TypeProperty);
-    const PropertyObject* shapeProperty = particles->getProperty(ParticlesObject::AsphericalShapeProperty);
+    const Property* positionProperty = particles->getProperty(Particles::PositionProperty);
+    const Property* radiusProperty = particles->getProperty(Particles::RadiusProperty);
+    const Property* typeProperty = particles->getProperty(Particles::TypeProperty);
+    const Property* shapeProperty = particles->getProperty(Particles::AsphericalShapeProperty);
 
     // The key type used for caching the computed bounding box:
     using CacheKey = RendererResourceKey<struct ParticlesVisBoundingBoxCache,
@@ -101,9 +101,9 @@ Box3 ParticlesVis::boundingBox(AnimationTime time, const ConstDataObjectPath& pa
 /******************************************************************************
 * Computes the bounding box of the particles.
 ******************************************************************************/
-Box3 ParticlesVis::particleBoundingBox(BufferReadAccess<Point3> positionProperty, const PropertyObject* typeProperty, BufferReadAccess<GraphicsFloatType> radiusProperty, BufferReadAccess<Vector3G> shapeProperty, bool includeParticleRadius) const
+Box3 ParticlesVis::particleBoundingBox(BufferReadAccess<Point3> positionProperty, const Property* typeProperty, BufferReadAccess<GraphicsFloatType> radiusProperty, BufferReadAccess<Vector3G> shapeProperty, bool includeParticleRadius) const
 {
-    OVITO_ASSERT(typeProperty == nullptr || typeProperty->type() == ParticlesObject::TypeProperty);
+    OVITO_ASSERT(typeProperty == nullptr || typeProperty->type() == Particles::TypeProperty);
     if(particleShape() != Sphere && particleShape() != Box && particleShape() != Cylinder && particleShape() != Spherocylinder)
         shapeProperty.reset();
 
@@ -206,27 +206,27 @@ Box3 ParticlesVis::particleBoundingBox(BufferReadAccess<Point3> positionProperty
 * Returns the typed particle property used to determine the rendering colors
 * of particles (if no per-particle colors are defined).
 ******************************************************************************/
-const PropertyObject* ParticlesVis::getParticleTypeColorProperty(const ParticlesObject* particles) const
+const Property* ParticlesVis::getParticleTypeColorProperty(const Particles* particles) const
 {
-    return particles->getProperty(ParticlesObject::TypeProperty);
+    return particles->getProperty(Particles::TypeProperty);
 }
 
 /******************************************************************************
 * Determines the display particle colors.
 ******************************************************************************/
-ConstPropertyPtr ParticlesVis::particleColors(const ParticlesObject* particles, bool highlightSelection) const
+ConstPropertyPtr ParticlesVis::particleColors(const Particles* particles, bool highlightSelection) const
 {
     OVITO_ASSERT(particles);
     particles->verifyIntegrity();
 
     // Take particle colors directly from the 'Color' property if available.
-    ConstPropertyPtr output = particles->getProperty(ParticlesObject::ColorProperty);
+    ConstPropertyPtr output = particles->getProperty(Particles::ColorProperty);
     if(!output) {
         // Allocate new output color array.
-        output.reset(ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), ParticlesObject::ColorProperty));
+        output.reset(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), Particles::ColorProperty));
 
         const ColorG defaultColor = defaultParticleColor().toDataType<GraphicsFloatType>();
-        if(const PropertyObject* typeProperty = getParticleTypeColorProperty(particles)) {
+        if(const Property* typeProperty = getParticleTypeColorProperty(particles)) {
             OVITO_ASSERT(typeProperty->size() == output->size());
             // Assign colors based on particle types.
             // Generate a lookup map for particle type colors.
@@ -269,7 +269,7 @@ ConstPropertyPtr ParticlesVis::particleColors(const ParticlesObject* particles, 
     }
 
     // Highlight selected particles with a special color.
-    if(const PropertyObject* selectionProperty = highlightSelection ? particles->getProperty(ParticlesObject::SelectionProperty) : nullptr)
+    if(const Property* selectionProperty = highlightSelection ? particles->getProperty(Particles::SelectionProperty) : nullptr)
         output.makeMutableInplace()->fillSelected<ColorG>(selectionParticleColor().toDataType<GraphicsFloatType>(), *selectionProperty);
 
     return output;
@@ -279,15 +279,15 @@ ConstPropertyPtr ParticlesVis::particleColors(const ParticlesObject* particles, 
 * Returns the typed particle property used to determine the rendering radii
 * of particles (if no per-particle radii are defined).
 ******************************************************************************/
-const PropertyObject* ParticlesVis::getParticleTypeRadiusProperty(const ParticlesObject* particles) const
+const Property* ParticlesVis::getParticleTypeRadiusProperty(const Particles* particles) const
 {
-    return particles->getProperty(ParticlesObject::TypeProperty);
+    return particles->getProperty(Particles::TypeProperty);
 }
 
 /******************************************************************************
 * Determines the display particle radii.
 ******************************************************************************/
-ConstPropertyPtr ParticlesVis::particleRadii(const ParticlesObject* particles, bool includeGlobalScaleFactor) const
+ConstPropertyPtr ParticlesVis::particleRadii(const Particles* particles, bool includeGlobalScaleFactor) const
 {
     particles->verifyIntegrity();
     GraphicsFloatType defaultRadius = defaultParticleRadius();
@@ -295,7 +295,7 @@ ConstPropertyPtr ParticlesVis::particleRadii(const ParticlesObject* particles, b
         defaultRadius *= radiusScaleFactor();
 
     // Take particle radii directly from the 'Radius' property if available.
-    ConstPropertyPtr output = particles->getProperty(ParticlesObject::RadiusProperty);
+    ConstPropertyPtr output = particles->getProperty(Particles::RadiusProperty);
     if(output) {
         // Check if the radius array contains any zero entries.
         BufferReadAccess<GraphicsFloatType> radiusArray(output);
@@ -303,7 +303,7 @@ ConstPropertyPtr ParticlesVis::particleRadii(const ParticlesObject* particles, b
             radiusArray.reset();
 
             // Copy per-type radii to those particles whose "Radius" property value is zero.
-            if(const PropertyObject* typeProperty = getParticleTypeRadiusProperty(particles)) {
+            if(const Property* typeProperty = getParticleTypeRadiusProperty(particles)) {
                 // Build a lookup map for particle type radii.
                 std::map<int,FloatType> radiusMap = ParticleType::typeRadiusMap(typeProperty);
                 // Skip the following loop if all per-type radii are zero.
@@ -333,9 +333,9 @@ ConstPropertyPtr ParticlesVis::particleRadii(const ParticlesObject* particles, b
     }
     else {
         // Allocate output array.
-        output.reset(ParticlesObject::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), ParticlesObject::RadiusProperty));
+        output.reset(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), Particles::RadiusProperty));
 
-        if(const PropertyObject* typeProperty = getParticleTypeRadiusProperty(particles)) {
+        if(const Property* typeProperty = getParticleTypeRadiusProperty(particles)) {
             OVITO_ASSERT(typeProperty->size() == output->size());
 
             // Assign radii based on particle types.
@@ -376,9 +376,9 @@ ConstPropertyPtr ParticlesVis::particleRadii(const ParticlesObject* particles, b
 /******************************************************************************
 * Determines the display radius of a single particle.
 ******************************************************************************/
-GraphicsFloatType ParticlesVis::particleRadius(size_t particleIndex, BufferReadAccess<GraphicsFloatType> radiusProperty, const PropertyObject* typeProperty) const
+GraphicsFloatType ParticlesVis::particleRadius(size_t particleIndex, BufferReadAccess<GraphicsFloatType> radiusProperty, const Property* typeProperty) const
 {
-    OVITO_ASSERT(typeProperty == nullptr || typeProperty->type() == ParticlesObject::TypeProperty);
+    OVITO_ASSERT(typeProperty == nullptr || typeProperty->type() == Particles::TypeProperty);
 
     if(radiusProperty && radiusProperty.size() > particleIndex) {
         // Take particle radius directly from the radius property.
@@ -400,7 +400,7 @@ GraphicsFloatType ParticlesVis::particleRadius(size_t particleIndex, BufferReadA
 /******************************************************************************
 * Determines the display color of a single particle.
 ******************************************************************************/
-ColorG ParticlesVis::particleColor(size_t particleIndex, BufferReadAccess<ColorG> colorProperty, const PropertyObject* typeProperty, BufferReadAccess<SelectionIntType> selectionProperty) const
+ColorG ParticlesVis::particleColor(size_t particleIndex, BufferReadAccess<ColorG> colorProperty, const Property* typeProperty, BufferReadAccess<SelectionIntType> selectionProperty) const
 {
     // Check if particle is selected.
     if(selectionProperty && selectionProperty.size() > particleIndex) {
@@ -427,7 +427,7 @@ ColorG ParticlesVis::particleColor(size_t particleIndex, BufferReadAccess<ColorG
 /******************************************************************************
 * Returns the actual rendering quality used to render the particles.
 ******************************************************************************/
-ParticlePrimitive::RenderingQuality ParticlesVis::effectiveRenderingQuality(SceneRenderer* renderer, const ParticlesObject* particles) const
+ParticlePrimitive::RenderingQuality ParticlesVis::effectiveRenderingQuality(SceneRenderer* renderer, const Particles* particles) const
 {
     ParticlePrimitive::RenderingQuality renderQuality = renderingQuality();
     if(renderQuality == ParticlePrimitive::AutoQuality) {
@@ -446,7 +446,7 @@ ParticlePrimitive::RenderingQuality ParticlesVis::effectiveRenderingQuality(Scen
 /******************************************************************************
 * Returns the effective primtive shape for rendering the particles.
 ******************************************************************************/
-ParticlePrimitive::ParticleShape ParticlesVis::effectiveParticleShape(ParticleShape shape, const PropertyObject* shapeProperty, const PropertyObject* orientationProperty, const PropertyObject* roundnessProperty)
+ParticlePrimitive::ParticleShape ParticlesVis::effectiveParticleShape(ParticleShape shape, const Property* shapeProperty, const Property* orientationProperty, const Property* roundnessProperty)
 {
     if(shape == Sphere) {
         if(roundnessProperty != nullptr) return ParticlePrimitive::SuperquadricShape;
@@ -472,22 +472,22 @@ ParticlePrimitive::ParticleShape ParticlesVis::effectiveParticleShape(ParticleSh
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus ParticlesVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus ParticlesVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
 {
     // Handle bounding-box computation in a separate method.
     if(renderer->isBoundingBoxPass()) {
         TimeInterval validityInterval;
-        renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, renderer->visCache(), validityInterval));
+        renderer->addToLocalBoundingBox(boundingBox(time, path, pipeline, flowState, renderer->visCache(), validityInterval));
         return {};
     }
 
     // Get input particle data.
-    const ParticlesObject* particles = path.lastAs<ParticlesObject>();
+    const Particles* particles = path.lastAs<Particles>();
     if(!particles) return {};
     particles->verifyIntegrity();
 
     // Make sure there the 'Position' property is present.
-    if(!particles->getProperty(ParticlesObject::PositionProperty))
+    if(!particles->getProperty(Particles::PositionProperty))
         throw Exception(tr("Cannot display particles, because the 'Position' property is not present."));
 
     // Make sure we don't exceed the internal limits. Rendering of more than 2 billion particles is not yet supported by OVITO.
@@ -497,13 +497,13 @@ PipelineStatus ParticlesVis::render(AnimationTime time, const ConstDataObjectPat
     }
 
     // Render all mesh-based particle types.
-    renderMeshBasedParticles(particles, renderer, contextNode);
+    renderMeshBasedParticles(particles, renderer, pipeline);
 
     // Render all primitive particle types.
-    renderPrimitiveParticles(particles, renderer, contextNode);
+    renderPrimitiveParticles(particles, renderer, pipeline);
 
     // Render all (sphero-)cylindric particle types.
-    renderCylindricParticles(particles, renderer, contextNode);
+    renderCylindricParticles(particles, renderer, pipeline);
 
     return {};
 }
@@ -511,16 +511,16 @@ PipelineStatus ParticlesVis::render(AnimationTime time, const ConstDataObjectPat
 /******************************************************************************
 * Renders particle types that have a mesh-based shape assigned.
 ******************************************************************************/
-void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+void ParticlesVis::renderMeshBasedParticles(const Particles* particles, SceneRenderer* renderer, const Pipeline* pipeline)
 {
     // Get input particle data.
-    const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
-    const PropertyObject* radiusProperty = particles->getProperty(ParticlesObject::RadiusProperty);
-    const PropertyObject* colorProperty = particles->getProperty(ParticlesObject::ColorProperty);
-    const PropertyObject* typeProperty = particles->getProperty(ParticlesObject::TypeProperty);
-    const PropertyObject* selectionProperty = renderer->isInteractive() ? particles->getProperty(ParticlesObject::SelectionProperty) : nullptr;
-    const PropertyObject* transparencyProperty = particles->getProperty(ParticlesObject::TransparencyProperty);
-    const PropertyObject* orientationProperty = particles->getProperty(ParticlesObject::OrientationProperty);
+    const Property* positionProperty = particles->getProperty(Particles::PositionProperty);
+    const Property* radiusProperty = particles->getProperty(Particles::RadiusProperty);
+    const Property* colorProperty = particles->getProperty(Particles::ColorProperty);
+    const Property* typeProperty = particles->getProperty(Particles::TypeProperty);
+    const Property* selectionProperty = renderer->isInteractive() ? particles->getProperty(Particles::SelectionProperty) : nullptr;
+    const Property* transparencyProperty = particles->getProperty(Particles::TransparencyProperty);
+    const Property* orientationProperty = particles->getProperty(Particles::OrientationProperty);
     if(!positionProperty || !typeProperty)
         return;
 
@@ -642,7 +642,7 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
         // Update the pick info record with the latest particle data.
         t.pickInfo->setParticles(particles);
 
-        renderer->beginPickObject(contextNode, t.pickInfo);
+        renderer->beginPickObject(pipeline, t.pickInfo);
         renderer->renderMesh(t.meshPrimitive);
         renderer->endPickObject();
     }
@@ -651,14 +651,14 @@ void ParticlesVis::renderMeshBasedParticles(const ParticlesObject* particles, Sc
 /******************************************************************************
 * Renders all particles with a primitive shape (spherical, box, (super)quadrics).
 ******************************************************************************/
-void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+void ParticlesVis::renderPrimitiveParticles(const Particles* particles, SceneRenderer* renderer, const Pipeline* pipeline)
 {
     // Determine whether all particle types use the same uniform shape or not.
     ParticlesVis::ParticleShape uniformShape = particleShape();
     OVITO_ASSERT(uniformShape != ParticleShape::Default);
     if(uniformShape == ParticleShape::Default)
         return;
-    const PropertyObject* typeProperty = particles->getProperty(ParticlesObject::TypeProperty);
+    const Property* typeProperty = particles->getProperty(Particles::TypeProperty);
     if(typeProperty) {
         for(const ElementType* etype : typeProperty->elementTypes()) {
             if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(etype)) {
@@ -683,16 +683,16 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
     }
 
     // Get input particle data.
-    const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
-    const PropertyObject* radiusProperty = particles->getProperty(ParticlesObject::RadiusProperty);
-    const PropertyObject* colorProperty = particles->getProperty(ParticlesObject::ColorProperty);
-    const PropertyObject* typeColorProperty = getParticleTypeColorProperty(particles);
-    const PropertyObject* typeRadiusProperty = getParticleTypeRadiusProperty(particles);
-    const PropertyObject* selectionProperty = renderer->isInteractive() ? particles->getProperty(ParticlesObject::SelectionProperty) : nullptr;
-    const PropertyObject* transparencyProperty = particles->getProperty(ParticlesObject::TransparencyProperty);
-    const PropertyObject* asphericalShapeProperty = particles->getProperty(ParticlesObject::AsphericalShapeProperty);
-    const PropertyObject* orientationProperty = particles->getProperty(ParticlesObject::OrientationProperty);
-    const PropertyObject* roundnessProperty = particles->getProperty(ParticlesObject::SuperquadricRoundnessProperty);
+    const Property* positionProperty = particles->getProperty(Particles::PositionProperty);
+    const Property* radiusProperty = particles->getProperty(Particles::RadiusProperty);
+    const Property* colorProperty = particles->getProperty(Particles::ColorProperty);
+    const Property* typeColorProperty = getParticleTypeColorProperty(particles);
+    const Property* typeRadiusProperty = getParticleTypeRadiusProperty(particles);
+    const Property* selectionProperty = renderer->isInteractive() ? particles->getProperty(Particles::SelectionProperty) : nullptr;
+    const Property* transparencyProperty = particles->getProperty(Particles::TransparencyProperty);
+    const Property* asphericalShapeProperty = particles->getProperty(Particles::AsphericalShapeProperty);
+    const Property* orientationProperty = particles->getProperty(Particles::OrientationProperty);
+    const Property* roundnessProperty = particles->getProperty(Particles::SuperquadricRoundnessProperty);
     if(!positionProperty)
         return;
 
@@ -829,31 +829,28 @@ void ParticlesVis::renderPrimitiveParticles(const ParticlesObject* particles, Sc
         primitive.setParticleShape(primitiveParticleShape);
         primitive.setShadingMode(primitiveShadingMode);
 
-        if(renderer->isPicking()) {
-            // Look up or create the pick info record with the latest particle data.
-            OORef<ParticlePickInfo>& pickingInfo = renderer->visCache().get<OORef<ParticlePickInfo>>(ConstDataObjectRef(particles));
-            if(!pickingInfo)
-                pickingInfo = OORef<ParticlePickInfo>::create(this, particles);
-            renderer->beginPickObject(contextNode, pickingInfo);
-        }
+        // Look up or create the pick info record with the latest particle data.
+        auto& pickingInfo = renderer->visCache().get<OORef<ParticlePickInfo>>(ConstDataObjectRef(particles));
+        if(!pickingInfo)
+            pickingInfo = OORef<ParticlePickInfo>::create(this, particles);
+        renderer->beginPickObject(pipeline, pickingInfo);
         // Render the particle primitive.
         renderer->renderParticles(primitive);
-        if(renderer->isPicking())
-            renderer->endPickObject();
+        renderer->endPickObject();
     }
 }
 
 /******************************************************************************
 * Renders all particles with a (sphero-)cylindrical shape.
 ******************************************************************************/
-void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+void ParticlesVis::renderCylindricParticles(const Particles* particles, SceneRenderer* renderer, const Pipeline* pipeline)
 {
     // Determine whether all particle types use the same uniform shape or not.
     ParticlesVis::ParticleShape uniformShape = particleShape();
     OVITO_ASSERT(uniformShape != ParticleShape::Default);
     if(uniformShape == ParticleShape::Default)
         return;
-    const PropertyObject* typeProperty = particles->getProperty(ParticlesObject::TypeProperty);
+    const Property* typeProperty = particles->getProperty(Particles::TypeProperty);
     if(typeProperty) {
         for(const ElementType* etype : typeProperty->elementTypes()) {
             if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(etype)) {
@@ -876,13 +873,13 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
     }
 
     // Get input particle data.
-    const PropertyObject* positionProperty = particles->getProperty(ParticlesObject::PositionProperty);
-    const PropertyObject* radiusProperty = particles->getProperty(ParticlesObject::RadiusProperty);
-    const PropertyObject* colorProperty = particles->getProperty(ParticlesObject::ColorProperty);
-    const PropertyObject* selectionProperty = renderer->isInteractive() ? particles->getProperty(ParticlesObject::SelectionProperty) : nullptr;
-    const PropertyObject* transparencyProperty = particles->getProperty(ParticlesObject::TransparencyProperty);
-    const PropertyObject* asphericalShapeProperty = particles->getProperty(ParticlesObject::AsphericalShapeProperty);
-    const PropertyObject* orientationProperty = particles->getProperty(ParticlesObject::OrientationProperty);
+    const Property* positionProperty = particles->getProperty(Particles::PositionProperty);
+    const Property* radiusProperty = particles->getProperty(Particles::RadiusProperty);
+    const Property* colorProperty = particles->getProperty(Particles::ColorProperty);
+    const Property* selectionProperty = renderer->isInteractive() ? particles->getProperty(Particles::SelectionProperty) : nullptr;
+    const Property* transparencyProperty = particles->getProperty(Particles::TransparencyProperty);
+    const Property* asphericalShapeProperty = particles->getProperty(Particles::AsphericalShapeProperty);
+    const Property* orientationProperty = particles->getProperty(Particles::OrientationProperty);
     if(!positionProperty)
         return;
 
@@ -1058,14 +1055,14 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
         visCache.pickInfo->setParticles(particles);
 
         // Render the particle primitive.
-        renderer->beginPickObject(contextNode, visCache.pickInfo);
+        renderer->beginPickObject(pipeline, visCache.pickInfo);
         renderer->renderCylinders(visCache.cylinderPrimitive);
         renderer->endPickObject();
         if(visCache.spheresPrimitives[0].positions()) {
-            renderer->beginPickObject(contextNode, visCache.pickInfo);
+            renderer->beginPickObject(pipeline, visCache.pickInfo);
             renderer->renderParticles(visCache.spheresPrimitives[0]);
             renderer->endPickObject();
-            renderer->beginPickObject(contextNode, visCache.pickInfo);
+            renderer->beginPickObject(pipeline, visCache.pickInfo);
             renderer->renderParticles(visCache.spheresPrimitives[1]);
             renderer->endPickObject();
         }
@@ -1075,35 +1072,35 @@ void ParticlesVis::renderCylindricParticles(const ParticlesObject* particles, Sc
 /******************************************************************************
 * Render a marker around a particle to highlight it in the viewports.
 ******************************************************************************/
-void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject* particles, SceneRenderer* renderer) const
+void ParticlesVis::highlightParticle(size_t particleIndex, const Particles* particles, SceneRenderer* renderer) const
 {
     if(!renderer->isBoundingBoxPass()) {
 
         // Fetch properties of selected particle which are needed to render the overlay.
-        const PropertyObject* posProperty = nullptr;
-        const PropertyObject* radiusProperty = nullptr;
-        const PropertyObject* colorProperty = nullptr;
-        const PropertyObject* selectionProperty = nullptr;
-        const PropertyObject* shapeProperty = nullptr;
-        const PropertyObject* orientationProperty = nullptr;
-        const PropertyObject* roundnessProperty = nullptr;
-        const PropertyObject* typeProperty = nullptr;
-        for(const PropertyObject* property : particles->properties()) {
-            if(property->type() == ParticlesObject::PositionProperty && property->size() >= particleIndex)
+        const Property* posProperty = nullptr;
+        const Property* radiusProperty = nullptr;
+        const Property* colorProperty = nullptr;
+        const Property* selectionProperty = nullptr;
+        const Property* shapeProperty = nullptr;
+        const Property* orientationProperty = nullptr;
+        const Property* roundnessProperty = nullptr;
+        const Property* typeProperty = nullptr;
+        for(const Property* property : particles->properties()) {
+            if(property->type() == Particles::PositionProperty && property->size() >= particleIndex)
                 posProperty = property;
-            else if(property->type() == ParticlesObject::RadiusProperty && property->size() >= particleIndex)
+            else if(property->type() == Particles::RadiusProperty && property->size() >= particleIndex)
                 radiusProperty = property;
-            else if(property->type() == ParticlesObject::TypeProperty && property->size() >= particleIndex)
+            else if(property->type() == Particles::TypeProperty && property->size() >= particleIndex)
                 typeProperty = property;
-            else if(property->type() == ParticlesObject::ColorProperty && property->size() >= particleIndex)
+            else if(property->type() == Particles::ColorProperty && property->size() >= particleIndex)
                 colorProperty = property;
-            else if(property->type() == ParticlesObject::SelectionProperty && property->size() >= particleIndex)
+            else if(property->type() == Particles::SelectionProperty && property->size() >= particleIndex)
                 selectionProperty = property;
-            else if(property->type() == ParticlesObject::AsphericalShapeProperty && property->size() >= particleIndex)
+            else if(property->type() == Particles::AsphericalShapeProperty && property->size() >= particleIndex)
                 shapeProperty = property;
-            else if(property->type() == ParticlesObject::OrientationProperty && property->size() >= particleIndex)
+            else if(property->type() == Particles::OrientationProperty && property->size() >= particleIndex)
                 orientationProperty = property;
-            else if(property->type() == ParticlesObject::SuperquadricRoundnessProperty && property->size() >= particleIndex)
+            else if(property->type() == Particles::SuperquadricRoundnessProperty && property->size() >= particleIndex)
                 roundnessProperty = property;
         }
         if(!posProperty || particleIndex >= posProperty->size())
@@ -1257,18 +1254,18 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const ParticlesObject
     }
     else {
         // Fetch properties of selected particle needed to compute the bounding box.
-        const PropertyObject* posProperty = nullptr;
-        const PropertyObject* radiusProperty = nullptr;
-        const PropertyObject* shapeProperty = nullptr;
-        const PropertyObject* typeProperty = nullptr;
-        for(const PropertyObject* property : particles->properties()) {
-            if(property->type() == ParticlesObject::PositionProperty && property->size() >= particleIndex)
+        const Property* posProperty = nullptr;
+        const Property* radiusProperty = nullptr;
+        const Property* shapeProperty = nullptr;
+        const Property* typeProperty = nullptr;
+        for(const Property* property : particles->properties()) {
+            if(property->type() == Particles::PositionProperty && property->size() >= particleIndex)
                 posProperty = property;
-            else if(property->type() == ParticlesObject::RadiusProperty && property->size() >= particleIndex)
+            else if(property->type() == Particles::RadiusProperty && property->size() >= particleIndex)
                 radiusProperty = property;
-            else if(property->type() == ParticlesObject::AsphericalShapeProperty && property->size() >= particleIndex)
+            else if(property->type() == Particles::AsphericalShapeProperty && property->size() >= particleIndex)
                 shapeProperty = property;
-            else if(property->type() == ParticlesObject::TypeProperty && property->size() >= particleIndex)
+            else if(property->type() == Particles::TypeProperty && property->size() >= particleIndex)
                 typeProperty = property;
         }
         if(!posProperty)
@@ -1311,7 +1308,7 @@ size_t ParticlePickInfo::particleIndexFromSubObjectID(quint32 subobjID) const
 * Returns a human-readable string describing the picked object,
 * which will be displayed in the status bar by OVITO.
 ******************************************************************************/
-QString ParticlePickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjectId)
+QString ParticlePickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
 {
     size_t particleIndex = particleIndexFromSubObjectID(subobjectId);
     return particles()->elementInfoString(particleIndex);

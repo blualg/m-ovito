@@ -24,13 +24,13 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/BondsObject.h>
+#include <ovito/particles/objects/Bonds.h>
 #include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief A modifier that creates coordination polyhedra around atoms.
@@ -53,11 +53,7 @@ class OVITO_PARTICLES_EXPORT CoordinationPolyhedraModifier : public Asynchronous
 
     Q_CLASSINFO("DisplayName", "Coordination polyhedra");
     Q_CLASSINFO("Description", "Visualize atomic coordination polyhedra.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Visualization");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 
@@ -99,7 +95,7 @@ private:
         virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
         /// Returns the simulation cell geometry.
-        const SimulationCellObject* cell() const { return _mesh->domain(); }
+        const SimulationCell* cell() const { return _mesh->domain(); }
 
         /// Returns the list of particle properties to copy over to the generated mesh.
         const std::vector<ConstPropertyPtr>& particleProperties() const { return _particleProperties; }

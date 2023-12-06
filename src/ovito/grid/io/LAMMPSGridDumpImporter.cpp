@@ -22,11 +22,11 @@
 
 #include <ovito/grid/Grid.h>
 #include <ovito/grid/objects/VoxelGrid.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "LAMMPSGridDumpImporter.h"
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSGridDumpImporter);
 
@@ -150,14 +150,14 @@ void LAMMPSGridDumpImporter::FrameLoader::loadFile()
             if(stream.lineStartsWith("ITEM: TIMESTEP")) {
                 if(sscanf(stream.readLine(), "%llu", &timestep) != 1)
                     throw Exception(tr("LAMMPS grid dump file parsing error. Invalid timestep number (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
-                state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timestep), dataSource());
+                state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timestep), pipelineNode());
                 break;
             }
             else if(stream.lineStartsWithToken("ITEM: TIME")) {
                 FloatType simulationTime;
                 if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING, &simulationTime) != 1)
                     throw Exception(tr("LAMMPS grid dump file parsing error. Invalid time value (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
-                state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(simulationTime), dataSource());
+                state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(simulationTime), pipelineNode());
                 break;
             }
             else if(stream.lineStartsWith("ITEM: BOX BOUNDS xy xz yz")) {
@@ -245,7 +245,7 @@ void LAMMPSGridDumpImporter::FrameLoader::loadFile()
                 for(int i = 0; i < fileColumnNames.size(); i++) {
                     QString propertyName = fileColumnNames[i];
                     int vectorComponent = 0;
-                    int dataType = PropertyObject::FloatDefault;
+                    int dataType = Property::FloatDefault;
 
                     // Parse LAMMPS column name, which should have the form <fix/compute name>:<grid name>:<data field>.
                     QStringList tokens = fileColumnNames[i].split(QChar(':'));
@@ -256,7 +256,7 @@ void LAMMPSGridDumpImporter::FrameLoader::loadFile()
                         // Extract vector component from 3rd field.
                         if(tokens[2] == QStringLiteral("count")) {
                             propertyName += QStringLiteral("_count");
-                            dataType = PropertyObject::Int64;
+                            dataType = Property::Int64;
                         }
                         else if(tokens[2].startsWith(QStringLiteral("data[")) && tokens[2].endsWith(QChar(']'))) {
                             unsigned int index = tokens[2].mid(5, tokens[2].size() - 6).toUInt();
@@ -272,14 +272,14 @@ void LAMMPSGridDumpImporter::FrameLoader::loadFile()
                             gridIdentifier = tokens[1];
                     }
 
-                    columnMapping.mapCustomColumn(i, PropertyObject::makePropertyNameValid(propertyName), dataType, vectorComponent);
+                    columnMapping.mapCustomColumn(i, Property::makePropertyNameValid(propertyName), dataType, vectorComponent);
                     columnMapping[i].columnName = fileColumnNames[i];
                 }
 
                 // Create the destination voxel grid.
                 VoxelGrid* voxelGrid = state().getMutableLeafObject<VoxelGrid>(VoxelGrid::OOClass(), gridIdentifier);
                 if(!voxelGrid) {
-                    voxelGrid = state().createObject<VoxelGrid>(dataSource());
+                    voxelGrid = state().createObject<VoxelGrid>(pipelineNode());
                     voxelGrid->setIdentifier(gridIdentifier);
                 }
                 voxelGrid->setShape(gridDims);
@@ -305,7 +305,7 @@ void LAMMPSGridDumpImporter::FrameLoader::loadFile()
                     }
                 }
                 catch(Exception& ex) {
-                    throw ex.prependGeneralMessage(tr("Parsing error in line %1 of LAMMPS grid dump file.").arg(lineNumber));
+                    throw ex.prependToMessage(tr("Parsing error in line %1 of LAMMPS grid dump file: ").arg(lineNumber));
                 }
                 if(s) {
                     stream.munmap();

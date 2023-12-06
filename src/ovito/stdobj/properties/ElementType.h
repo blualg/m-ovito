@@ -27,22 +27,15 @@
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/core/dataset/data/DataObject.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
- * \brief Describes the basic properties (unique ID, name & color) of a "type" of elements stored in a PropertyObject.
+ * \brief Describes the basic properties (unique ID, name & color) of a "type" of elements stored in a Property.
  *        This serves as generic base class for particle types, bond types, structural types, etc.
  */
 class OVITO_STDOBJ_EXPORT ElementType : public DataObject
 {
     OVITO_CLASS(ElementType)
-
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(int numericId READ numericId WRITE setNumericId NOTIFY propertyValueChangedSignal)
-    Q_PROPERTY(QString name READ name WRITE setName NOTIFY propertyValueChangedSignal)
-    Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY propertyValueChangedSignal)
-    Q_PROPERTY(bool enabled READ enabled WRITE setEnabled NOTIFY propertyValueChangedSignal)
-#endif
 
 public:
 

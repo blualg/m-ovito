@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,10 +24,10 @@
 
 
 #include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/particles/objects/AnglesObject.h>
+#include <ovito/particles/objects/Angles.h>
 #include <ovito/stdobj/gui/properties/PropertyInspectionApplet.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 
 /**
@@ -41,7 +41,7 @@ class AngleInspectionApplet : public PropertyInspectionApplet
 public:
 
     /// Constructor.
-    Q_INVOKABLE AngleInspectionApplet() : PropertyInspectionApplet(AnglesObject::OOClass()) {}
+    Q_INVOKABLE AngleInspectionApplet() : PropertyInspectionApplet(Angles::OOClass()) {}
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 15; }

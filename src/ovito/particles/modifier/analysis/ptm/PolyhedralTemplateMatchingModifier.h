@@ -25,11 +25,11 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/modifier/analysis/StructureIdentificationModifier.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include "PTMAlgorithm.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief A modifier that uses the Polyhedral Template Matching (PTM) method to identify
@@ -64,7 +64,7 @@ private:
     public:
 
         /// Constructor.
-        PTMEngine(const ModifierEvaluationRequest& request, ConstPropertyPtr positions, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr particleTypes, const SimulationCellObject* simCell,
+        PTMEngine(const ModifierEvaluationRequest& request, ConstPropertyPtr positions, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr particleTypes, const SimulationCell* simCell,
                 const OORefVector<ElementType>& structureTypes, const OORefVector<ElementType>& orderingTypes, ConstPropertyPtr selection,
                 bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient);
 

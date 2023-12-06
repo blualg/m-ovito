@@ -21,13 +21,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/PluginManager.h>
 #include "PropertyColorMapping.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(PropertyColorMapping);
 DEFINE_REFERENCE_FIELD(PropertyColorMapping, colorGradient);
@@ -84,7 +84,7 @@ PseudoColorMapping PropertyColorMapping::pseudoColorMapping() const
 /******************************************************************************
 * Determines the min/max range of values stored in the given property array.
 ******************************************************************************/
-std::optional<std::pair<FloatType, FloatType>> PropertyColorMapping::determineValueRange(const PropertyObject* pseudoColorProperty, int pseudoColorPropertyComponent) const
+std::optional<std::pair<FloatType, FloatType>> PropertyColorMapping::determineValueRange(const Property* pseudoColorProperty, int pseudoColorPropertyComponent) const
 {
     OVITO_ASSERT(pseudoColorProperty);
     OVITO_ASSERT(pseudoColorPropertyComponent >= 0 && pseudoColorPropertyComponent < pseudoColorProperty->componentCount());
@@ -118,38 +118,5 @@ void PropertyColorMapping::reverseRange()
     setStartValue(endValue());
     setEndValue(oldStartValue);
 }
-
-#ifdef OVITO_QML_GUI
-/******************************************************************************
-* Returns the class name of the selected color gradient.
-******************************************************************************/
-QString PropertyColorMapping::colorGradientType() const
-{
-    return colorGradient() ? colorGradient()->getOOClass().name() : QString();
-}
-
-/******************************************************************************
-* Assigns a new color gradient based on its class name.
-******************************************************************************/
-void PropertyColorMapping::setColorGradientType(const QString& typeName, ExecutionContext executionContext)
-{
-    OvitoClassPtr descriptor = PluginManager::instance().findClass(QString(), typeName);
-    if(!descriptor) {
-        qWarning() << "setColorGradientType: Color gradient class" << typeName << "does not exist.";
-        return;
-    }
-    OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance(dataset(), executionContext));
-    if(gradient) {
-        setColorGradient(std::move(gradient));
-#ifndef OVITO_DISABLE_QSETTINGS
-        QSettings settings;
-        settings.beginGroup(PropertyColorMapping::OOClass().plugin()->pluginId());
-        settings.beginGroup(PropertyColorMapping::OOClass().name());
-        settings.setValue(PROPERTY_FIELD(PropertyColorMapping::colorGradient).identifier(),
-                QVariant::fromValue(OvitoClass::encodeAsString(descriptor)));
-#endif
-    }
-}
-#endif
 
 }   // End of namespace

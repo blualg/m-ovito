@@ -71,12 +71,8 @@ public:
         }
     };
 
-    Q_CLASSINFO("ClassNameAlias", "AsynchronousModifierDelegate");  // For backward compatibility with OVITO 3.2.1.
+    Q_CLASSINFO("ClassNameAlias", "AsynchronousModifierDelegate");  // For backward compatibility with OVITO 3.2.1
     OVITO_CLASS_META(ModifierDelegate, ModifierDelegateClass)
-
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled NOTIFY propertyValueChangedSignal)
-#endif
 
 protected:
 
@@ -93,11 +89,6 @@ public:
 
     /// \brief Returns the modifier owning this delegate.
     Modifier* modifier() const;
-
-#ifdef OVITO_QML_GUI
-    /// Asks the delegate whether it can operate on  the given input pipeline state.
-    Q_INVOKABLE bool canOperateOnInput(ModifierApplication* modApp) const;
-#endif
 
 private:
 
@@ -139,10 +130,6 @@ public:
     };
 
     OVITO_CLASS_META(DelegatingModifier, DelegatingModifierClass)
-
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(Ovito::ModifierDelegate* delegate READ delegate WRITE setDelegate NOTIFY referenceReplacedSignal)
-#endif
 
 public:
 

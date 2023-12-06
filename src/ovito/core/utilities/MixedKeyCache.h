@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -95,7 +95,7 @@ public:
 
 private:
 
-    /// Stores all key-value pairs of the cache. 
+    /// Stores all key-value pairs of the cache.
     /// Note we are using std::deque instead of std::vector here, because we require stability of pointers to elements in the container.
     /// get() returns references to elements in the cache, which must remain valid even when additional objects are added to the cache.
     std::deque<std::tuple<any_moveonly, any_moveonly, bool>> _entries;

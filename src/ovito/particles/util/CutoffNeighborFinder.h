@@ -24,10 +24,10 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/properties/Property.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief This utility class finds all neighbor particles within a cutoff radius of a central particle.
@@ -79,7 +79,7 @@ public:
     /// \return \c false when the operation has been canceled by the user;
     ///         \c true on success.
     /// \throw Exception on error.
-    bool prepare(FloatType cutoffRadius, BufferReadAccess<Point3> positions, const SimulationCellObject* simCell, BufferReadAccess<SelectionIntType> selectionProperty);
+    bool prepare(FloatType cutoffRadius, BufferReadAccess<Point3> positions, const SimulationCell* simCell, BufferReadAccess<SelectionIntType> selectionProperty);
 
     /// Returns the cutoff radius set via prepare().
     FloatType cutoffRadius() const { return _cutoffRadius; }
@@ -169,7 +169,7 @@ private:
     FloatType _cutoffRadiusSquared = 0;
 
     // Simulation cell.
-    DataOORef<const SimulationCellObject> simCell;
+    DataOORef<const SimulationCell> simCell;
 
     /// Number of bins in each spatial direction.
     int binDim[3];

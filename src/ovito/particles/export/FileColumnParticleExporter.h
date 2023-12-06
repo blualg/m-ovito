@@ -27,9 +27,9 @@
 #include <ovito/stdobj/io/PropertyOutputWriter.h>
 #include "ParticleExporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
-using ParticlesOutputColumnMapping = TypedOutputColumnMapping<ParticlesObject>;
+using ParticlesOutputColumnMapping = TypedOutputColumnMapping<Particles>;
 
 /**
  * \brief Abstract base class for export services that can export an arbitrary list of particle properties.
@@ -53,7 +53,7 @@ public:
 
 public:
 
-    Q_PROPERTY(Ovito::Particles::ParticlesOutputColumnMapping columnMapping READ columnMapping WRITE setColumnMapping)
+    Q_PROPERTY(Ovito::ParticlesOutputColumnMapping columnMapping READ columnMapping WRITE setColumnMapping)
 
 private:
 
@@ -63,4 +63,4 @@ private:
 
 }   // End of namespace
 
-Q_DECLARE_METATYPE(Ovito::Particles::ParticlesOutputColumnMapping);
+Q_DECLARE_METATYPE(Ovito::ParticlesOutputColumnMapping);

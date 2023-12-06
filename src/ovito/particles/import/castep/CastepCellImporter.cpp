@@ -21,15 +21,15 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "CastepCellImporter.h"
 
 #include <boost/algorithm/string.hpp>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CastepCellImporter);
 
@@ -169,12 +169,12 @@ void CastepCellImporter::FrameLoader::loadFile()
             }
 
             setParticleCount(coords.size());
-            BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+            BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(Particles::PositionProperty);
             boost::copy(coords, posProperty.begin());
 
-            PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+            Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
             boost::transform(types, BufferWriteAccess<int32_t, access_mode::discard_write>(typeProperty).begin(), [&](const QString& typeName) {
-                return addNamedType(ParticlesObject::OOClass(), typeProperty, typeName)->numericId();
+                return addNamedType(Particles::OOClass(), typeProperty, typeName)->numericId();
             });
             typeProperty->sortElementTypesByName();
 
@@ -191,7 +191,7 @@ void CastepCellImporter::FrameLoader::loadFile()
                 line = readNonCommentLine();
             }
 
-            BufferWriteAccess<Vector3, access_mode::discard_write> velocityProperty = particles()->createProperty(ParticlesObject::VelocityProperty);
+            BufferWriteAccess<Vector3, access_mode::discard_write> velocityProperty = particles()->createProperty(Particles::VelocityProperty);
             if(velocities.size() != velocityProperty.size())
                 throw Exception(tr("Invalid number of velocity vectors in CASTEP file."));
             boost::copy(velocities, velocityProperty.begin());

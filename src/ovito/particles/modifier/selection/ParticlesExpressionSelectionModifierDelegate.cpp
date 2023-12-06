@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,11 +22,11 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/util/ParticleExpressionEvaluator.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/particles/objects/BondsObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/particles/objects/Bonds.h>
 #include "ParticlesExpressionSelectionModifierDelegate.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParticlesExpressionSelectionModifierDelegate);
 IMPLEMENT_OVITO_CLASS(BondsExpressionSelectionModifierDelegate);
@@ -37,8 +37,8 @@ IMPLEMENT_OVITO_CLASS(BondsExpressionSelectionModifierDelegate);
 ******************************************************************************/
 QVector<DataObjectReference> ParticlesExpressionSelectionModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(input.containsObject<ParticlesObject>())
-        return { DataObjectReference(&ParticlesObject::OOClass()) };
+    if(input.containsObject<Particles>())
+        return { DataObjectReference(&Particles::OOClass()) };
     return {};
 }
 
@@ -58,9 +58,9 @@ std::unique_ptr<PropertyExpressionEvaluator> ParticlesExpressionSelectionModifie
 ******************************************************************************/
 QVector<DataObjectReference> BondsExpressionSelectionModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(const ParticlesObject* particles = input.getObject<ParticlesObject>()) {
+    if(const Particles* particles = input.getObject<Particles>()) {
         if(particles->bonds())
-            return { DataObjectReference(&ParticlesObject::OOClass()) };
+            return { DataObjectReference(&Particles::OOClass()) };
     }
     return {};
 }

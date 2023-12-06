@@ -26,10 +26,10 @@
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/stdobj/properties/GenericPropertyModifier.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/stdobj/properties/Property.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * \brief Injects the values of a property taken from a different animation time.
@@ -39,11 +39,7 @@ class OVITO_STDMOD_EXPORT FreezePropertyModifier : public GenericPropertyModifie
     OVITO_CLASS(FreezePropertyModifier)
     Q_CLASSINFO("DisplayName", "Freeze property");
     Q_CLASSINFO("Description", "Copy the values of a varying property from one trajectory frame to all others.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Modification");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 
@@ -60,7 +56,7 @@ public:
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return sourceProperty().name(); }
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return sourceProperty().name(); }
 
 protected:
 
@@ -85,19 +81,20 @@ private:
 /**
  * Used by the FreezePropertyModifier to store the values of the selected property.
  */
-class OVITO_STDMOD_EXPORT FreezePropertyModifierApplication : public ModifierApplication
+class OVITO_STDMOD_EXPORT FreezePropertyModificationNode : public ModificationNode
 {
-    OVITO_CLASS(FreezePropertyModifierApplication)
+    OVITO_CLASS(FreezePropertyModificationNode)
+    Q_CLASSINFO("ClassNameAlias", "FreezePropertyModifierApplication");  // For backward compatibility with OVITO 3.9.2
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE FreezePropertyModifierApplication(ObjectInitializationFlags flags) : ModifierApplication(flags) {}
+    Q_INVOKABLE FreezePropertyModificationNode(ObjectInitializationFlags flags) : ModificationNode(flags) {}
 
     /// Makes a copy of the given source property and, optionally, of the provided
     /// element identifier list, which will allow to restore the saved property
     /// values even if the order of particles changes.
-    void updateStoredData(const PropertyObject* property, const PropertyObject* identifiers, TimeInterval validityInterval);
+    void updateStoredData(const Property* property, const Property* identifiers, TimeInterval validityInterval);
 
     /// Returns true if the frozen state for given animation time is already stored.
     bool hasFrozenState(AnimationTime time) const { return _validityInterval.contains(time); }
@@ -117,10 +114,10 @@ protected:
 private:
 
     /// The stored copy of the property.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const PropertyObject>, property, setProperty, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_SAVE_RECOMPUTABLE_DATA);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const Property>, property, setProperty, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_SAVE_RECOMPUTABLE_DATA);
 
     /// A copy of the element identifiers, taken at the time when the property values were saved.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const PropertyObject>, identifiers, setIdentifiers, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_SAVE_RECOMPUTABLE_DATA);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const Property>, identifiers, setIdentifiers, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_SAVE_RECOMPUTABLE_DATA);
 
     /// The cached visalization elements that are attached to the output property.
     DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, cachedVisElements, setCachedVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);

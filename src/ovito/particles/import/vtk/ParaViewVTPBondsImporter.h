@@ -29,7 +29,7 @@
 
 #include <QXmlStreamReader>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief File reader for contact network data in ParaView VTP (vtkPolyData) files written by the Aspherix simulation code.
@@ -75,7 +75,7 @@ private:
         virtual void loadFile() override;
 
         /// Creates the right kind of OVITO property object that will receive the data read from a <DataArray> element.
-        PropertyObject* createBondPropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent, bool preserveExistingData);
+        Property* createBondPropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent, bool preserveExistingData);
     };
 };
 

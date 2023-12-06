@@ -24,7 +24,7 @@
 #include "DislocationNetworkObject.h"
 #include "DislocationVis.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DislocationNetworkObject);
 DEFINE_RUNTIME_PROPERTY_FIELD(DislocationNetworkObject, storage);
@@ -39,7 +39,7 @@ static const std::shared_ptr<DislocationNetwork> defaultStorage = std::make_shar
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DislocationNetworkObject::DislocationNetworkObject(ObjectInitializationFlags flags) : PeriodicDomainDataObject(flags), _storage(defaultStorage)
+DislocationNetworkObject::DislocationNetworkObject(ObjectInitializationFlags flags) : PeriodicDomainObject(flags), _storage(defaultStorage)
 {
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         if(!flags.testFlag(ObjectInitializationFlag::DontCreateVisElement)) {
@@ -78,7 +78,7 @@ const std::shared_ptr<DislocationNetwork>& DislocationNetworkObject::modifiableS
 ******************************************************************************/
 void DislocationNetworkObject::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
 {
-    PeriodicDomainDataObject::updateEditableProxies(state, dataPath);
+    PeriodicDomainObject::updateEditableProxies(state, dataPath);
 
     // Note: 'this' may no longer exist at this point, because the base method implementation may
     // have already replaced it with a mutable copy.

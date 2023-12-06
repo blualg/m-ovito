@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,8 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
-#include <ovito/core/dataset/pipeline/PipelineObject.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 
 namespace Ovito {
@@ -46,36 +45,38 @@ Modifier::Modifier(ObjectInitializationFlags flags) : RefTarget(flags),
 }
 
 /******************************************************************************
-* Create a new modifier application that refers to this modifier instance.
+* Creates a new modification node for inserting this modifier into a pipeline.
 ******************************************************************************/
-OORef<ModifierApplication> Modifier::createModifierApplication()
+OORef<ModificationNode> Modifier::createModificationNode()
 {
-    // Look which ModifierApplication class has been registered for this Modifier class.
+    // Look which ModificationNode class has been registered for this Modifier class.
     for(OvitoClassPtr clazz = &getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {
-        if(OvitoClassPtr modAppClass = ModifierApplication::registry().getModAppClass(clazz)) {
-            if(!modAppClass->isDerivedFrom(ModifierApplication::OOClass()))
-                throw Exception(tr("The modifier application class %1 assigned to the Modifier-derived class %2 is not derived from ModifierApplication.").arg(modAppClass->name(), clazz->name()));
+        if(OvitoClassPtr nodeClass = ModificationNode::registry().getModificationNodeType(clazz)) {
+            if(!nodeClass->isDerivedFrom(ModificationNode::OOClass()))
+                throw Exception(tr("The modification node class %1 assigned to the Modifier-derived class %2 is not derived from ModificationNode.").arg(nodeClass->name(), clazz->name()));
 #ifdef OVITO_DEBUG
             for(OvitoClassPtr superClazz = clazz->superClass(); superClazz != nullptr; superClazz = superClazz->superClass()) {
-                if(OvitoClassPtr modAppSuperClass = ModifierApplication::registry().getModAppClass(superClazz)) {
-                    if(!modAppClass->isDerivedFrom(*modAppSuperClass))
-                        throw Exception(tr("The modifier application class %1 assigned to the Modifier-derived class %2 is not derived from the ModifierApplication specialization %3.").arg(modAppClass->name(), clazz->name(), modAppSuperClass->name()));
+                if(OvitoClassPtr nodeSuperClass = ModificationNode::registry().getModificationNodeType(superClazz)) {
+                    if(!nodeClass->isDerivedFrom(*nodeSuperClass))
+                        throw Exception(tr("The modification node class %1 assigned to the Modifier-derived class %2 is not derived from the ModificationNode specialization %3.").arg(nodeClass->name(), clazz->name(), nodeSuperClass->name()));
                 }
             }
 #endif
-            return static_object_cast<ModifierApplication>(modAppClass->createInstance());
+            return static_object_cast<ModificationNode>(nodeClass->createInstance());
         }
     }
-    return OORef<ModifierApplication>::create();
+
+    // Fall back to generic node type.
+    return OORef<ModificationNode>::create();
 }
 
 /******************************************************************************
 * Returns the number of animation frames this modifier provides.
 ******************************************************************************/
-int Modifier::numberOfOutputFrames(ModifierApplication* modApp) const
+int Modifier::numberOfOutputFrames(ModificationNode* node) const
 {
-    OVITO_ASSERT(modApp);
-    if(PipelineObject* input = modApp->input())
+    OVITO_ASSERT(node);
+    if(PipelineNode* input = node->input())
         return input->numberOfSourceFrames();
     return 1;
 }
@@ -92,42 +93,42 @@ Future<PipelineFlowState> Modifier::evaluate(const ModifierEvaluationRequest& re
 }
 
 /******************************************************************************
-* Returns the list of applications associated with this modifier.
+* Returns the list of pipeline nodes that reference this modifier.
 ******************************************************************************/
-QVector<ModifierApplication*> Modifier::modifierApplications() const
+QVector<ModificationNode*> Modifier::nodes() const
 {
-    QVector<ModifierApplication*> apps;
+    QVector<ModificationNode*> list;
     visitDependents([&](RefMaker* dependent) {
-        ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dependent);
-        if(modApp != nullptr && modApp->modifier() == this)
-            apps.push_back(modApp);
+        ModificationNode* node = dynamic_object_cast<ModificationNode>(dependent);
+        if(node != nullptr && node->modifier() == this)
+            list.push_back(node);
     });
-    return apps;
+    return list;
 }
 
 /******************************************************************************
-* Returns one of the applications of this modifier in a pipeline.
+* Returns one of the pipelines nodes referencing this modifier in a pipeline.
 ******************************************************************************/
-ModifierApplication* Modifier::someModifierApplication() const
+ModificationNode* Modifier::someNode() const
 {
-    ModifierApplication* result = nullptr;
+    ModificationNode* result = nullptr;
     visitDependents([&](RefMaker* dependent) {
-        ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(dependent);
-        if(modApp != nullptr && modApp->modifier() == this)
-            result = modApp;
+        ModificationNode* node = dynamic_object_cast<ModificationNode>(dependent);
+        if(node != nullptr && node->modifier() == this)
+            result = node;
     });
     return result;
 }
 
 /******************************************************************************
-* Returns the current status of the modifier's applications.
+* Returns the current status of the modifier's pipeline node(s).
 ******************************************************************************/
 PipelineStatus Modifier::globalStatus() const
 {
-    // Combine the status values of all ModifierApplications into a single status.
+    // Combine the status values of all ModificationNodes into a single status.
     PipelineStatus result;
-    for(ModifierApplication* modApp : modifierApplications()) {
-        PipelineStatus s = modApp->status();
+    for(ModificationNode* node : nodes()) {
+        PipelineStatus s = node->status();
 
         if(result.text().isEmpty())
             result.setText(s.text());

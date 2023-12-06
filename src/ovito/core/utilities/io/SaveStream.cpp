@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -174,12 +174,17 @@ SaveStream& operator<<(SaveStream& stream, const OvitoClassPtr& clazz)
 /******************************************************************************
 * Writes a URL to a SaveStream.
 ******************************************************************************/
-SaveStream& operator<<(SaveStream& stream, const QUrl& url)
+SaveStream& operator<<(SaveStream& stream, QUrl url)
 {
+    // Let the optional callback function process the URL.
+    if(stream.urlCallback())
+        std::invoke(stream.urlCallback(), url);
+
     // Write original URL to stream.
     stream.writeValue(url, std::false_type());
-    // Additionally write the path relative to current output file to stream.
-    // Currently this only works if the file referenced by the URL is in the same directory as the stream destination file.
+
+    // Additionally write the path relative to current output file.
+    // This only works if the file referenced by the URL is in the same directory as the stream destination file.
     QString relativePath;
     if(url.isLocalFile() && !url.isRelative()) {
         // Extract relative portion of path (only if both the scene file path and the external file path are absolute).
@@ -191,6 +196,7 @@ SaveStream& operator<<(SaveStream& stream, const QUrl& url)
         }
     }
     stream << relativePath;
+
     return stream;
 }
 

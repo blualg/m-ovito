@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,7 +35,7 @@ class OVITO_CORE_EXPORT ImageInfo
 public:
 
     /// Default constructor.
-    ImageInfo() : _imageWidth(0), _imageHeight(0) {}
+    ImageInfo() = default;
 
     /// Comparison operator.
     bool operator==(const ImageInfo& other) const {
@@ -82,10 +82,10 @@ public:
 private:
 
     /// The width of the image in pixels.
-    int _imageWidth;
+    int _imageWidth = 0;
 
     /// The height of the image in pixels.
-    int _imageHeight;
+    int _imageHeight = 0;
 
     /// The filename of the image on disk.
     QString _filename;
@@ -121,10 +121,21 @@ public:
     FrameBuffer(int width, int height, QObject* parent = nullptr);
 
     /// Returns the internal QImage that is used to store the pixel data.
-    QImage& image() { return _image; }
+    QImage& image() {
+        commitChanges();
+        return _image;
+    }
 
     /// Returns the internal QImage that is used to store the pixel data.
-    const QImage& image() const { return _image; }
+    const QImage& image() const {
+        const_cast<FrameBuffer*>(this)->commitChanges();
+        return _image;
+    }
+
+    /// Returns the internal QImage to be displayed in the frame buffer window.
+    const QImage& displayImage() const {
+        return _image;
+    }
 
     /// Returns the width of the image.
     int width() const { return _image.width(); }
@@ -137,6 +148,7 @@ public:
 
     /// Sets the size of the frame buffer image.
     void setSize(const QSize& newSize) {
+        commitChanges();
         if(newSize == size())
             return;
         _info.setImageWidth(newSize.width());
@@ -149,11 +161,12 @@ public:
     const ImageInfo& info() const { return _info; }
 
     /// Clears the framebuffer with a uniform color.
-    void clear(const ColorA& color = ColorA(0,0,0,0), const QRect& rect = QRect());
+    void clear(const ColorA& color = ColorA(0,0,0,0), const QRect& rect = QRect(), bool delayed = false);
 
     /// This method must be called each time the contents of the frame buffer have been modified.
     /// Fires the contentChanged() signal.
     void update(const QRect& changedRegion) {
+        commitChanges();
         Q_EMIT contentChanged(changedRegion);
     }
 
@@ -165,6 +178,14 @@ public:
 
     /// Renders a text primitive directly into the framebuffer.
     void renderTextPrimitive(const TextPrimitive& primitive, const QRect& viewportRect, bool update = true);
+
+    /// Applies a delayed clear buffer operation.
+    void commitChanges();
+
+    /// Discards a delayed clear buffer operation.
+    void discardChanges() {
+        _delayedClearRect = {};
+    }
 
 Q_SIGNALS:
 
@@ -181,6 +202,12 @@ private:
 
     /// The descriptor of the image.
     ImageInfo _info;
+
+    /// Saved rect to be cleared at some later time.
+    QRect _delayedClearRect;
+
+    /// Uniform color for delayed buffer clearing.
+    ColorA _delayedClearColor;
 };
 
 }   // End of namespace

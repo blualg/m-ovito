@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,7 +27,7 @@
 #include <ovito/stdmod/modifiers/ColorByTypeModifier.h>
 #include "ColorByTypeModifierEditor.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ColorByTypeModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ColorByTypeModifier, ColorByTypeModifierEditor);
@@ -39,7 +39,7 @@ void ColorByTypeModifierEditor::createUI(const RolloutInsertionParameters& rollo
 {
     QWidget* rollout = createRollout(tr("Color by type"), rolloutParams, "manual:particles.modifiers.color_by_type");
 #ifdef OVITO_BUILD_BASIC
-    disableRollout(rollout, tr("This program feature is only available in OVITO Pro &mdash; the extended version of our software. Please visit <a href=\"https://www.ovito.org/about/ovito-pro/\">www.ovito.org</a> for more information."));
+    disableRollout(rollout, tr("This program feature is only available in OVITO Pro &mdash; the complete version of this software. Please visit <a href=\"https://www.ovito.org/about/ovito-pro/\">www.ovito.org</a> for more information."));
 #endif
 
     // Create the rollout contents.
@@ -52,7 +52,7 @@ void ColorByTypeModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout->addWidget(pclassUI->comboBox());
     pclassUI->setContainerFilter([](const PropertyContainer* container) {
         return
-            container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericColorProperty) 
+            container->getOOMetaClass().isValidStandardPropertyId(Property::GenericColorProperty)
             && std::any_of(container->properties().begin(), container->properties().end(), &isValidInputProperty);
     });
 
@@ -169,7 +169,7 @@ void ColorByTypeModifierEditor::ViewModel::refresh()
         // Populate types list based on the selected input property.
         for(const PipelineFlowState& inputState : editor()->getPipelineInputs()) {
             if(const PropertyContainer* container = inputState.getLeafObject(mod->subject())) {
-                if(const PropertyObject* inputProperty = mod->sourceProperty().findInContainer(container)) {
+                if(const Property* inputProperty = mod->sourceProperty().findInContainer(container)) {
                     for(const ElementType* type : inputProperty->elementTypes()) {
                         if(!type) continue;
                         _elementTypes.push_back(type);

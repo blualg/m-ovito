@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,8 +23,8 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/base/actions/ActionManager.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/oo/CloneHelper.h>
 #include "CopyPipelineItemDialog.h"
 
@@ -33,8 +33,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-CopyPipelineItemDialog::CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* parent, PipelineSceneNode* sourcePipeline, QVector<OORef<PipelineObject>> pipelineObjects) :
-    QDialog(parent), _mainWindow(mainWindow), _sourcePipeline(sourcePipeline), _pipelineObjects(std::move(pipelineObjects))
+CopyPipelineItemDialog::CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* parent, Pipeline* sourcePipeline, QVector<OORef<PipelineNode>> pipelineNodes) :
+    QDialog(parent), _mainWindow(mainWindow), _sourcePipeline(sourcePipeline), _pipelineNodes(std::move(pipelineNodes))
 {
     setWindowTitle(tr("Copy Pipeline Items"));
 
@@ -51,7 +51,7 @@ CopyPipelineItemDialog::CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* 
     // Populate list of scene pipelines.
     if(Scene* scene = _mainWindow.datasetContainer().activeScene()) {
         scene->visitChildren([&](SceneNode* node) -> bool {
-            if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(node)) {
+            if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(node)) {
                 QString itemLabel = pipeline->objectTitle();
                 if(pipeline == sourcePipeline)
                     itemLabel += tr(" (source pipeline)");
@@ -79,16 +79,16 @@ CopyPipelineItemDialog::CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* 
     gridLayout->addWidget(_insertAtEndBtn, 1, 1);
     gridLayout->addWidget(_insertAtStartBtn, 2, 1);
     _insertAtEndBtn->setChecked(true);
-    
+
     // Only allow insertion at beginning of pipeline if it's a pipeline source
     // that is being cloned.
-    if(!boost::algorithm::all_of(_pipelineObjects, [](const auto& item) {
-        return ModifierApplication::OOClass().isMember(item);
+    if(!boost::algorithm::all_of(_pipelineNodes, [](const auto& item) {
+        return ModificationNode::OOClass().isMember(item);
     })) {
         _insertAtStartBtn->setChecked(true);
         _insertAtEndBtn->setEnabled(false);
     }
-    
+
     _shareBetweenPipelinesBox = new QCheckBox(tr("Share with source pipeline (do not duplicate)"));
     gridLayout->addWidget(_shareBetweenPipelinesBox, 3, 0, 1, 2);
 
@@ -108,47 +108,47 @@ void CopyPipelineItemDialog::onAccept()
 {
     setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
     _mainWindow.performTransaction(tr("Copy pipeline item"), [this]() {
-        OORef<PipelineSceneNode> destinationPipeline = static_object_cast<PipelineSceneNode>(_destinationPipelineList->currentData().value<OORef<OvitoObject>>());
+        OORef<Pipeline> destinationPipeline = static_object_cast<Pipeline>(_destinationPipelineList->currentData().value<OORef<OvitoObject>>());
         CloneHelper cloneHelper;
 
         // Do not create any animation keys during cloning.
         AnimationSuspender animSuspender(_mainWindow);
 
-        OORef<PipelineObject> precedingObj;
-        for(auto item = _pipelineObjects.crbegin(); item != _pipelineObjects.crend(); ++item) {
-            if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(*item)) {
-                // Copy modifier application.
-                OORef<ModifierApplication> clonedModApp = cloneHelper.cloneObject(modApp, false);
-                clonedModApp->setInput(nullptr); // To avoid cyclic reference errors.
+        OORef<PipelineNode> precedingNode;
+        for(auto node = _pipelineNodes.crbegin(); node != _pipelineNodes.crend(); ++node) {
+            if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(*node)) {
+                // Copy modification node.
+                OORef<ModificationNode> clonedModNode = cloneHelper.cloneObject(modNode, false);
+                clonedModNode->setInput(nullptr); // avoid cyclic reference errors
                 if(!_shareBetweenPipelinesBox->isChecked()) {
-                    clonedModApp->setModifier(cloneHelper.cloneObject(clonedModApp->modifier(), true));
+                    clonedModNode->setModifier(cloneHelper.cloneObject(clonedModNode->modifier(), true));
                 }
-                if(!precedingObj) {
+                if(!precedingNode) {
                     if(_insertAtEndBtn->isChecked()) {
                         // Append copied modifiers at end of current pipeline.
-                        precedingObj = destinationPipeline->dataProvider();
+                        precedingNode = destinationPipeline->head();
                     }
                     else {
                         // Prepend copied modifiers at beginning of current pipeline, right after the existing pipeline source.
-                        precedingObj = destinationPipeline->pipelineSource();
+                        precedingNode = destinationPipeline->source();
                     }
                 }
-                clonedModApp->setInput(precedingObj);
-                precedingObj = clonedModApp;
+                clonedModNode->setInput(precedingNode);
+                precedingNode = clonedModNode;
             }
             else {
                 // Copy or clone pipeline source.
-                precedingObj = _shareBetweenPipelinesBox->isChecked() ? *item : cloneHelper.cloneObject(*item, false);
+                precedingNode = _shareBetweenPipelinesBox->isChecked() ? *node : cloneHelper.cloneObject(*node, false);
             }
         }
 
         if(_insertAtEndBtn->isChecked()) {
             // Append copied modifiers at end of current pipeline.
-            destinationPipeline->setDataProvider(precedingObj);
+            destinationPipeline->setHead(precedingNode);
         }
         else {
             // Prepend copied modifiers at beginning of current pipeline, right after the existing pipeline source.
-            destinationPipeline->setPipelineSource(precedingObj);
+            destinationPipeline->setSource(precedingNode);
         }
     });
     accept();

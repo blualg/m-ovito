@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,7 +29,7 @@
 namespace Ovito {
 
 /**
- * \brief A properties editor for the TriMeshVis class.
+ * \brief A properties editor for the TriangleMeshVis class.
  */
 class TriMeshVisEditor : public PropertiesEditor
 {

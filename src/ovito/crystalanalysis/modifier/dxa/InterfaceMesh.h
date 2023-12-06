@@ -27,7 +27,7 @@
 #include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include "ElasticMapping.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 struct BurgersCircuit;              // defined in BurgersCircuit.h
 struct BurgersCircuitSearchStruct;  // defined in DislocationTracer.cpp

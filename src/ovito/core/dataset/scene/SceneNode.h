@@ -68,7 +68,7 @@ public:
     AffineTransformation getLocalTransform(AnimationTime time, TimeInterval& validityInterval) const;
 
     /// \brief Returns the parent node of this node in the scene tree graph.
-    /// \return This node's parent node or \c NULL if this is the root node.
+    /// \return This node's parent node or \c nullptr if this is the root node.
     SceneNode* parentNode() const { return _parentNode; }
 
     /// \brief Deletes this node from the scene.
@@ -76,7 +76,7 @@ public:
     /// This will also deletes all child nodes.
     ///
     /// \undoable
-    Q_INVOKABLE virtual void deleteNode();
+    Q_INVOKABLE virtual void deleteSceneNode();
 
     /// \brief Inserts a scene node into this node's list of children.
     /// \param index The position at which to insert the child node into the list of children.
@@ -88,7 +88,7 @@ public:
     ///
     /// \undoable
     /// \sa children(), addChildNode(), removeChildNode()
-    void insertChildNode(int index, SceneNode* newChild);
+    void insertChildNode(qsizetype index, OORef<SceneNode> newChild);
 
     /// \brief Adds a child scene node to this node.
     /// \param newChild The node that becomes a child of this node. If \a newChild is already a child
@@ -111,7 +111,7 @@ public:
     ///
     /// \undoable
     /// \sa children(), insertChildNode(), addChildNode()
-    void removeChildNode(int index);
+    void removeChildNode(qsizetype index);
 
     /// \brief Returns whether the given node is a parent of this node.
     bool isChildOf(SceneNode* node) const {
@@ -142,24 +142,24 @@ public:
         return true;
     }
 
-    /// \brief Recursively visits all object nodes below this parent node
-    ///        and invokes the given visitor function for every PipelineSceneNode.
+    /// \brief Recursively visits all pipelines below this parent scene node
+    ///        and invokes the given visitor function for every pipeline.
     ///
-    /// \param fn A function that takes an PipelineSceneNode pointer as argument and returns a boolean value.
-    /// \return true if all object nodes have been visited; false if the loop has been
+    /// \param fn A function that takes an Pipeline pointer as argument and returns a boolean value.
+    /// \return true if all pipelines in the scene have been visited; false if the loop has been
     ///         terminated early because the visitor function has returned false.
     ///
     /// The visitor function must return a boolean value to indicate whether
-    /// it wants to continue visit more nodes. A return value of false
-    /// leads to early termination and no further nodes are visited.
+    /// it wants to continue visit more pipelines. A return value of false
+    /// leads to early termination and no further pipelines are visited.
     template<class Function>
-    bool visitObjectNodes(Function&& fn) const {
+    bool visitPipelines(Function&& fn) const {
         for(SceneNode* child : children()) {
-            if(PipelineSceneNode* objNode = dynamic_object_cast<PipelineSceneNode>(child)) {
-                if(!fn(objNode))
+            if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(child)) {
+                if(!fn(pipeline))
                     return false;
             }
-            else if(!child->visitObjectNodes(fn))
+            else if(!child->visitPipelines(fn))
                 return false;
         }
         return true;
@@ -167,7 +167,7 @@ public:
 
     /// \brief Binds this scene node to a target node and creates a LookAtController
     ///        that lets this scene node look at the target.
-    /// \param targetNode The target to look at or \c NULL to unbind the node from its old target.
+    /// \param targetNode The target to look at or \c nullptr to unbind the node from its old target.
     /// \return The newly created LookAtController assigned as rotation controller for this node.
     ///
     /// The target node will automatically be deleted if this SceneNode is deleted and vice versa.
@@ -213,7 +213,7 @@ public:
     Scene* scene() const;
 
     /// \brief Returns the title of this object.
-    virtual QString objectTitle() const override { return _nodeName; }
+    virtual QString objectTitle() const override { return sceneNodeName(); }
 
     /// Shows/hides this node in the given viewport, i.e. turns rendering on or off.
     void setPerViewportVisibility(Viewport* vp, bool visible);
@@ -265,7 +265,7 @@ private:
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Controller>, transformationController, setTransformationController, PROPERTY_FIELD_ALWAYS_DEEP_COPY);
 
     /// The name of this scene node.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, nodeName, setNodeName);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, sceneNodeName, setSceneNodeName);
 
     /// The display color of the node.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(Color, displayColor, setDisplayColor);

@@ -22,13 +22,13 @@
 
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include "ScatterPlotModifier.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ScatterPlotModifier);
 DEFINE_PROPERTY_FIELD(ScatterPlotModifier, selectXAxisInRange);
@@ -78,7 +78,7 @@ ScatterPlotModifier::ScatterPlotModifier(ObjectInitializationFlags flags) : Gene
     _yAxisRangeEnd(0)
 {
     // Operate on particle properties by default.
-    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
+    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("Particles"));
 }
 
 /******************************************************************************
@@ -91,10 +91,10 @@ void ScatterPlotModifier::initializeModifier(const ModifierInitializationRequest
 
     // Use the first available property from the input state as data source when the modifier is newly created.
     if((xAxisProperty().isNull() || yAxisProperty().isNull()) && subject() && ExecutionContext::isInteractive()) {
-        const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
+        const PipelineFlowState& input = request.modificationNode()->evaluateInputSynchronous(request);
         if(const PropertyContainer* container = input.getLeafObject(subject())) {
             PropertyReference bestProperty;
-            for(const PropertyObject* property : container->properties()) {
+            for(const Property* property : container->properties()) {
                 bestProperty = PropertyReference(subject().dataClass(), property, (property->componentCount() > 1) ? 0 : -1);
             }
             if(xAxisProperty().isNull() && !bestProperty.isNull()) {
@@ -152,10 +152,10 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     container->verifyIntegrity();
 
     // Get the input properties.
-    const PropertyObject* xProperty = xAxisProperty().findInContainer(container);
+    const Property* xProperty = xAxisProperty().findInContainer(container);
     if(!xProperty)
         throw Exception(tr("The selected input property '%1' is not present.").arg(xAxisProperty().name()));
-    const PropertyObject* yProperty = yAxisProperty().findInContainer(container);
+    const Property* yProperty = yAxisProperty().findInContainer(container);
     if(!yProperty)
         throw Exception(tr("The selected input property '%1' is not present.").arg(yAxisProperty().name()));
 
@@ -181,18 +181,18 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     // Create output selection.
     BufferWriteAccess<SelectionIntType, access_mode::discard_write> outputSelection;
     size_t numSelected = 0;
-    if((selectXAxisInRange() || selectYAxisInRange()) && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
+    if((selectXAxisInRange() || selectYAxisInRange()) && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
         // First make sure we can safely modify the property container.
         PropertyContainer* mutableContainer = state.expectMutableLeafObject(subject());
         // Add the selection property to the output container.
-        outputSelection = mutableContainer->createProperty(PropertyObject::GenericSelectionProperty);
+        outputSelection = mutableContainer->createProperty(Property::GenericSelectionProperty);
         boost::fill(outputSelection, 1);
         numSelected = outputSelection.size();
     }
 
     // Create output arrays.
-    PropertyPtr out_x = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, container->elementCount(), PropertyObject::FloatDefault, 1, xAxisProperty().nameWithComponent());
-    PropertyPtr out_y = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, container->elementCount(), PropertyObject::FloatDefault, 1, yAxisProperty().nameWithComponent());
+    PropertyPtr out_x = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, container->elementCount(), Property::FloatDefault, 1, xAxisProperty().nameWithComponent());
+    PropertyPtr out_y = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, container->elementCount(), Property::FloatDefault, 1, yAxisProperty().nameWithComponent());
     BufferWriteAccess<FloatType, access_mode::discard_read_write> out_x_access(out_x);
     BufferWriteAccess<FloatType, access_mode::discard_read_write> out_y_access(out_y);
 
@@ -229,10 +229,10 @@ void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     out_y_access.reset();
 
     // Output a data table object with the scatter points.
-    DataTable* table = state.createObject<DataTable>(QStringLiteral("scatter"), request.modApp(),
+    DataTable* table = state.createObject<DataTable>(QStringLiteral("scatter"), request.modificationNode(),
         DataTable::Scatter, tr("%1 vs. %2").arg(yAxisProperty().nameWithComponent()).arg(xAxisProperty().nameWithComponent()),
         std::move(out_y), std::move(out_x));
-    OVITO_ASSERT(table == state.getObjectBy<DataTable>(request.modApp(), QStringLiteral("scatter")));
+    OVITO_ASSERT(table == state.getObjectBy<DataTable>(request.modificationNode(), QStringLiteral("scatter")));
 
     QString statusMessage;
     if(outputSelection) {

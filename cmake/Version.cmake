@@ -24,8 +24,8 @@
 
 # This is the canonical program version number:
 SET(OVITO_VERSION_MAJOR         "3")
-SET(OVITO_VERSION_MINOR         "9")
-SET(OVITO_VERSION_REVISION      "3")
+SET(OVITO_VERSION_MINOR         "10")
+SET(OVITO_VERSION_REVISION      "0")
 
 # Increment the following version counter every time the .ovito file format
 # changes in a backward-incompatible way.
@@ -35,8 +35,9 @@ SET(OVITO_VERSION_REVISION      "3")
 # Format version 30008 - OVITO ver>3.5.4: Added viewport layouts.
 # Format version 30009 - OVITO ver>=3.8.0: New DataSet structure (per-viewport Scene, per-scene AnimationSettings, new AnimationTime data type)
 # Format version 30010 - OVITO ver>=3.9.0: New property data types (Float32, Float64, Int8)
+# Format version 30011 - OVITO ver>=3.9.3: Renamed and/or merged several classes, added RemoteExportSettings to dataset
 #
-SET(OVITO_FILE_FORMAT_VERSION   "30010")
+SET(OVITO_FILE_FORMAT_VERSION   "30011")
 
 # The application's default version string:
 SET(OVITO_VERSION_STRING "${OVITO_VERSION_MAJOR}.${OVITO_VERSION_MINOR}.${OVITO_VERSION_REVISION}")

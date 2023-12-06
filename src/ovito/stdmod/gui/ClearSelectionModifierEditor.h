@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/stdmod/modifiers/ClearSelectionModifier.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * A properties editor for the ClearSelectionModifier class.

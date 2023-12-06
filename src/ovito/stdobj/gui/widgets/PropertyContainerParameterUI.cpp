@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,7 +26,7 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "PropertyContainerParameterUI.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(PropertyContainerParameterUI);
 
@@ -177,7 +177,7 @@ void PropertyContainerParameterUI::setEnabled(bool enabled)
 {
     if(enabled == isEnabled()) return;
     PropertyParameterUI::setEnabled(enabled);
-    if(comboBox()) 
+    if(comboBox())
         comboBox()->setEnabled(editObject() && isEnabled());
 }
 

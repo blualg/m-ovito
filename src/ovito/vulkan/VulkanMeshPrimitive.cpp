@@ -351,7 +351,7 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     if(primitive.useInstancedRendering() && primitive.perInstanceTMs()->size() == 0)
         return;
 
-    const TriMeshObject& mesh = *primitive.mesh();
+    const TriangleMesh& mesh = *primitive.mesh();
 
     // Check size limits of the mesh.
     if(mesh.faceCount() * 3 > std::numeric_limits<VkDeviceSize>::max() / sizeof(MeshPrimitive::RenderVertex)) {
@@ -448,7 +448,7 @@ void VulkanSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     deviceFunctions()->vkCmdBindDescriptorSets(currentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &globalUniformsSet, 0, nullptr);
 
     // The lookup key for the Vulkan buffer cache.
-    RendererResourceKey<struct VulkanMeshPrimitiveCache, DataOORef<const TriMeshObject>, std::vector<ColorA>, ColorA, Color> meshCacheKey{
+    RendererResourceKey<struct VulkanMeshPrimitiveCache, DataOORef<const TriangleMesh>, std::vector<ColorA>, ColorA, Color> meshCacheKey{
         primitive.mesh(),
         primitive.materialColors(),
         primitive.uniformColor(),
@@ -668,7 +668,7 @@ ConstDataBufferPtr VulkanSceneRenderer::generateMeshWireframeLines(const MeshPri
     OVITO_ASSERT(primitive.emphasizeEdges());
 
     // Cache the wireframe geometry generated for the current mesh.
-    RendererResourceKey<struct WireframeCache, DataOORef<const TriMeshObject>> cacheKey(primitive.mesh());
+    RendererResourceKey<struct WireframeCache, DataOORef<const TriangleMesh>> cacheKey(primitive.mesh());
     ConstDataBufferPtr& wireframeLines = context()->lookup<ConstDataBufferPtr>(std::move(cacheKey), currentResourceFrame());
 
     if(!wireframeLines) {

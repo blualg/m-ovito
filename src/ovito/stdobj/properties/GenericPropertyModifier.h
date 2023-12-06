@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief Base class for modifiers that operate on properties and which have no

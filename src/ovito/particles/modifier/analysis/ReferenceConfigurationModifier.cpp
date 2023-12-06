@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,14 +21,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "ReferenceConfigurationModifier.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ReferenceConfigurationModifier);
 DEFINE_REFERENCE_FIELD(ReferenceConfigurationModifier, referenceConfiguration);
@@ -65,7 +65,7 @@ ReferenceConfigurationModifier::ReferenceConfigurationModifier(ObjectInitializat
 ******************************************************************************/
 bool ReferenceConfigurationModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    return input.containsObject<ParticlesObject>();
+    return input.containsObject<Particles>();
 }
 
 /******************************************************************************
@@ -86,9 +86,9 @@ TimeInterval ReferenceConfigurationModifier::validityInterval(const ModifierEval
 * Asks the modifier for the set of animation time intervals that should be
 * cached by the upstream pipeline.
 ******************************************************************************/
-void ReferenceConfigurationModifier::inputCachingHints(TimeIntervalUnion& cachingIntervals, ModifierApplication* modApp)
+void ReferenceConfigurationModifier::inputCachingHints(TimeIntervalUnion& cachingIntervals, ModificationNode* node)
 {
-    AsynchronousModifier::inputCachingHints(cachingIntervals, modApp);
+    AsynchronousModifier::inputCachingHints(cachingIntervals, node);
 
     // Only need to communicate caching hints when reference configuration is provided by the upstream pipeline.
     if(!referenceConfiguration()) {
@@ -96,16 +96,16 @@ void ReferenceConfigurationModifier::inputCachingHints(TimeIntervalUnion& cachin
             // When using a relative reference configuration, we need to build the corresponding set of shifted time intervals.
             TimeIntervalUnion originalIntervals = cachingIntervals;
             for(const TimeInterval& iv : originalIntervals) {
-                int startFrame = modApp->animationTimeToSourceFrame(iv.start());
-                int endFrame = modApp->animationTimeToSourceFrame(iv.end());
-                AnimationTime shiftedStartTime = modApp->sourceFrameToAnimationTime(startFrame + referenceFrameOffset());
-                AnimationTime shiftedEndTime = modApp->sourceFrameToAnimationTime(endFrame + referenceFrameOffset());
+                int startFrame = node->animationTimeToSourceFrame(iv.start());
+                int endFrame = node->animationTimeToSourceFrame(iv.end());
+                AnimationTime shiftedStartTime = node->sourceFrameToAnimationTime(startFrame + referenceFrameOffset());
+                AnimationTime shiftedEndTime = node->sourceFrameToAnimationTime(endFrame + referenceFrameOffset());
                 cachingIntervals.add(TimeInterval(shiftedStartTime, shiftedEndTime));
             }
         }
         else {
             // When using a static reference configuration, ask the upstream pipeline to cache the corresponding animation frame.
-            cachingIntervals.add(modApp->sourceFrameToAnimationTime(referenceFrameNumber()));
+            cachingIntervals.add(node->sourceFrameToAnimationTime(referenceFrameNumber()));
         }
     }
 }
@@ -153,7 +153,7 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
         // If the source frame attribute is not present, fall back to inferring it from the current animation time.
         int currentFrame = input.data() ? input.data()->sourceFrame() : -1;
         if(currentFrame < 0)
-            currentFrame = request.modApp()->animationTimeToSourceFrame(request.time());
+            currentFrame = request.modificationNode()->animationTimeToSourceFrame(request.time());
 
         // Use frame offset relative to current configuration.
         referenceFrame = currentFrame + referenceFrameOffset();
@@ -170,15 +170,15 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
     SharedFuture<PipelineFlowState> refState;
     if(!referenceConfiguration()) {
         // Convert frame to animation time.
-        AnimationTime referenceTime = request.modApp()->sourceFrameToAnimationTime(referenceFrame);
+        AnimationTime referenceTime = request.modificationNode()->sourceFrameToAnimationTime(referenceFrame);
 
         // Set up the pipeline request for obtaining the reference configuration.
         PipelineEvaluationRequest referenceRequest = request;
         referenceRequest.setTime(referenceTime);
-        inputCachingHints(referenceRequest.modifiableCachingIntervals(), request.modApp());
+        inputCachingHints(referenceRequest.modifiableCachingIntervals(), request.modificationNode());
 
         // Send the request to the upstream pipeline.
-        refState = request.modApp()->evaluateInput(referenceRequest);
+        refState = request.modificationNode()->evaluateInput(referenceRequest);
     }
     else {
         if(referenceConfiguration()->numberOfSourceFrames() > 0) {
@@ -234,8 +234,8 @@ Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEn
 ReferenceConfigurationModifier::RefConfigEngineBase::RefConfigEngineBase(
     const ModifierEvaluationRequest& request,
     const TimeInterval& validityInterval,
-    ConstPropertyPtr positions, const SimulationCellObject* simCell,
-    ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef,
+    ConstPropertyPtr positions, const SimulationCell* simCell,
+    ConstPropertyPtr refPositions, const SimulationCell* simCellRef,
     ConstPropertyPtr identifiers, ConstPropertyPtr refIdentifiers,
     AffineMappingType affineMapping, bool useMinimumImageConvention) :
     Engine(request, validityInterval),

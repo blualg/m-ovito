@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,7 +28,7 @@
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/table/DataTable.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * \brief This modifier computes a value histogram for a property.
@@ -38,11 +38,7 @@ class OVITO_STDMOD_EXPORT HistogramModifier : public GenericPropertyModifier
     OVITO_CLASS(HistogramModifier)
     Q_CLASSINFO("DisplayName", "Histogram");
     Q_CLASSINFO("Description", "Compute the histogram or distribution of some quantity.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Analysis");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 
@@ -68,7 +64,7 @@ public:
     }
 
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return sourceProperty().nameWithComponent(); }
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return sourceProperty().nameWithComponent(); }
 
 protected:
 

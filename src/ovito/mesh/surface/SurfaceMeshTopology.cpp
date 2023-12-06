@@ -21,11 +21,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/mesh/Mesh.h>
-#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
+#include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include "SurfaceMeshTopology.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshTopology);
 
@@ -286,7 +286,7 @@ void SurfaceMeshTopology::flipFaces()
 * vertex coordinates. Thus, it is the respondisbility of the caller to assign
 * coordinates to the vertices of the generated TriMesh.
 ******************************************************************************/
-void SurfaceMeshTopology::convertToTriMesh(TriMeshObject& output) const
+void SurfaceMeshTopology::convertToTriMesh(TriangleMesh& output) const
 {
     // Create output vertices.
     output.setVertexCount(vertexCount());

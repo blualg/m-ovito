@@ -24,13 +24,13 @@
 
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include <ovito/core/utilities/io/CompressedTextWriter.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief This class lists the properties to be written to an output file as data columns.
@@ -120,7 +120,7 @@ public:
     size_t columnCount() const { return _properties.size(); }
 
     /// Returns the property that will be written to the i-th file column.
-    const PropertyObject* property(size_t columnIndex) const {
+    const Property* property(size_t columnIndex) const {
         OVITO_ASSERT(columnIndex < _properties.size());
         return _properties[columnIndex];
     }
@@ -138,7 +138,7 @@ public:
         if(_properties[columnIndex])
             return PropertyReference(&_sourceContainer->getOOMetaClass(), _properties[columnIndex], _vectorComponents[columnIndex]);
         else
-            return PropertyReference(&_sourceContainer->getOOMetaClass(), PropertyObject::GenericIdentifierProperty, 0);
+            return PropertyReference(&_sourceContainer->getOOMetaClass(), Property::GenericIdentifierProperty, 0);
     }
 
     // Determines whether the i-th column contains a vector property component.
@@ -154,8 +154,8 @@ private:
     const PropertyContainer* _sourceContainer;
 
     /// Stores the source properties for each column in the output file.
-    /// A nullptr instead of a PropertyObject means that the implicit element indices should be output in this file column.
-    std::vector<const PropertyObject*> _properties;
+    /// A nullptr instead of a Property means that the implicit element indices should be output in this file column.
+    std::vector<const Property*> _properties;
 
     /// Stores the source vector component for each output column.
     std::vector<int> _vectorComponents;
@@ -172,4 +172,4 @@ private:
 
 }   // End of namespace
 
-Q_DECLARE_METATYPE(Ovito::StdObj::OutputColumnMapping);
+Q_DECLARE_METATYPE(Ovito::OutputColumnMapping);

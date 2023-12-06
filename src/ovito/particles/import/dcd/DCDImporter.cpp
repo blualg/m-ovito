@@ -21,12 +21,12 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include "DCDImporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DCDImporter);
 
@@ -400,7 +400,7 @@ void DCDImporter::FrameLoader::loadFile()
 
     // Allocate position particle property.
     setParticleCount(header.natoms);
-    BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
+    BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(Particles::PositionProperty);
 
     // Copy coordinates to property array.
     auto iter_x = coords[0].cbegin();
@@ -478,8 +478,8 @@ void DCDImporter::FrameLoader::loadFile()
     posProperty.reset();
 
     int timestep = header.istart + header.nsavc * frame().byteOffset;
-    state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timestep), dataSource());
-    state().setAttribute(QStringLiteral("Time"), QVariant::fromValue((FloatType)(header.delta * timestep)), dataSource());
+    state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timestep), pipelineNode());
+    state().setAttribute(QStringLiteral("Time"), QVariant::fromValue((FloatType)(header.delta * timestep)), pipelineNode());
 
     // Call base implementation to finalize the loaded particle data.
     ParticleImporter::FrameLoader::loadFile();

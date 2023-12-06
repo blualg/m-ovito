@@ -28,9 +28,7 @@
 #include "DislocationAnalysisModifier.h"
 #include "DislocationAnalysisEngine.h"
 
-namespace Ovito::CrystalAnalysis {
-
-using namespace Ovito::Delaunay;
+namespace Ovito {
 
 /** Find the most common element in the [first, last) range.
 

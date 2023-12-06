@@ -24,7 +24,7 @@
 
 #include <ovito/core/Core.h>
 
-namespace Ovito::Ssh {
+namespace Ovito {
 
 struct OVITO_CORE_EXPORT SshConnectionParameters
 {

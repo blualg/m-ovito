@@ -25,8 +25,8 @@
 
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/particles/objects/BondsObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/particles/objects/Bonds.h>
 #include <ovito/particles/modifier/analysis/ptm/PTMAlgorithm.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
@@ -36,7 +36,7 @@
 #include <boost/intrusive/rbtree_algorithms.hpp>
 #include <unordered_set>
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 union NodeUnion
 {
@@ -344,7 +344,7 @@ public:
             ConstPropertyPtr structureProperty,
             ConstPropertyPtr orientationProperty,
             ConstPropertyPtr correspondenceProperty,
-            const SimulationCellObject* simCell,
+            const SimulationCell* simCell,
             GrainSegmentationModifier::MergeAlgorithm algorithmType,
             bool handleCoherentInterfaces,
             bool outputBonds);
@@ -377,7 +377,7 @@ public:
     const ConstPropertyPtr& positions() const { return _positions; }
 
     /// Returns the simulation cell data.
-    const DataOORef<const SimulationCellObject>& cell() const { return _simCell; }
+    const DataOORef<const SimulationCell>& cell() const { return _simCell; }
 
     // Returns the merge distances for the scatter plot
     const PropertyPtr& mergeDistance() const { return _mergeDistance; }
@@ -493,7 +493,7 @@ private:
     ConstPropertyPtr _positions;
 
     /// The simulation cell geometry.
-    DataOORef<const SimulationCellObject> _simCell;
+    DataOORef<const SimulationCell> _simCell;
 
     /// Used to detect changes in the input dataset that invalidate cached computation results.
     ParticleOrderingFingerprint _inputFingerprint;
@@ -557,7 +557,7 @@ public:
         _mergingThreshold(mergingThreshold),
         _adoptOrphanAtoms(adoptOrphanAtoms),
         _minGrainAtomCount(minGrainAtomCount),
-        _atomClusters(ParticlesObject::OOClass().createUserProperty(DataBuffer::Initialized, _numParticles, PropertyObject::Int64, 1, QStringLiteral("Grain"))) {}
+        _atomClusters(Particles::OOClass().createUserProperty(DataBuffer::Initialized, _numParticles, Property::Int64, 1, QStringLiteral("Grain"))) {}
 
     /// Performs the computation.
     virtual void perform() override;

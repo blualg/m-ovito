@@ -107,6 +107,11 @@ rst_prolog = """
 
 .. |ovito-pro| replace:: :ovito-pro-tag-role:`<a class="ovito-pro-tag" href="https://www.ovito.org/about/ovito-pro/" data-tooltip="This program feature is only available in OVITO Pro and not OVITO Basic. Click to learn more." data-tooltip-position="right">pro</a>`
 
+.. role:: ovito-python-tag-role(raw)
+   :format: html
+
+.. |ovito-python| replace:: :ovito-python-tag-role:`<a class="ovito-py-tag" href="https://docs.ovito.org/python/" data-tooltip="This program feature is part of the OVITO Python module." data-tooltip-position="right">py</a>`
+
 .. |br| raw:: html
 
   <br/>
@@ -175,6 +180,9 @@ html_static_path = ['_static']
 # These paths are either relative to html_static_path
 # or fully qualified paths (eg. https://...)
 html_css_files = ['style.css']
+
+# The base URL which points to the root of the HTML documentation.
+html_baseurl = "https://docs.ovito.org/"
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied

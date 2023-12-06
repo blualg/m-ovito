@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -41,10 +41,10 @@ public:
     /// Constructor.
     MoveOverlayInputMode(PropertiesEditor* editor);
 
-    /// Called when the viewport input handler becomes the current one. 
+    /// Called when the viewport input handler becomes the current one.
     virtual void activated(bool temporary) override;
 
-    /// Called when the viewport input handler no longer is the current one. 
+    /// Called when the viewport input handler no longer is the current one.
     virtual void deactivated(bool temporary) override;
 
     /// Handles the mouse down events for a Viewport.

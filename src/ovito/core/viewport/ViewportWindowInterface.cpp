@@ -94,7 +94,8 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
     viewportScalingTM(1,1) = tripodPixelSize / imageSize.height();
     viewportScalingTM(0,3) = -1.0 + viewportScalingTM(0,0);
     viewportScalingTM(1,3) = -1.0 + viewportScalingTM(1,1);
-    ViewProjectionParameters projParams = viewport()->projectionParams();
+    ViewProjectionParameters originalProjParams = viewport()->projectionParams();
+    ViewProjectionParameters projParams = originalProjParams;
     projParams.projectionMatrix = viewportScalingTM * Matrix4::ortho(-1.4, 1.4, -1.4, 1.4, -2.0, 2.0);
     projParams.inverseProjectionMatrix = projParams.projectionMatrix.inverse();
     projParams.viewMatrix.setIdentity();
@@ -156,6 +157,7 @@ void ViewportWindowInterface::renderOrientationIndicator(SceneRenderer* renderer
 
     // Restore old rendering attributes.
     renderer->setDepthTestEnabled(true);
+    renderer->setProjParams(originalProjParams);
 }
 
 /******************************************************************************

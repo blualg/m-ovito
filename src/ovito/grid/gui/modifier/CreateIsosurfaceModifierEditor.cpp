@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,14 +30,14 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
 #include <ovito/grid/modifier/CreateIsosurfaceModifier.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "CreateIsosurfaceModifierEditor.h"
 
 #include <qwt/qwt_plot_marker.h>
 #include <qwt/qwt_plot_picker.h>
 #include <qwt/qwt_picker_machine.h>
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CreateIsosurfaceModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CreateIsosurfaceModifier, CreateIsosurfaceModifierEditor);
@@ -94,7 +94,7 @@ void CreateIsosurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
     BooleanParameterUI* transferFieldValuesUI = new BooleanParameterUI(this, PROPERTY_FIELD(CreateIsosurfaceModifier::transferFieldValues));
     layout2->addWidget(transferFieldValuesUI->checkBox(), row++, 1, 1, 1);
 
-    _plotWidget = new StdObj::DataTablePlotWidget();
+    _plotWidget = new DataTablePlotWidget();
     _plotWidget->setMinimumHeight(200);
     _plotWidget->setMaximumHeight(200);
     _isoLevelIndicator = new QwtPlotMarker();
@@ -135,7 +135,7 @@ void CreateIsosurfaceModifierEditor::plotHistogram()
 {
     CreateIsosurfaceModifier* modifier = static_object_cast<CreateIsosurfaceModifier>(editObject());
 
-    if(modifier && modifierApplication()) {
+    if(modifier && modificationNode()) {
         _isoLevelIndicator->setXValue(modifier->isolevel());
         _isoLevelIndicator->show();
 
@@ -143,7 +143,7 @@ void CreateIsosurfaceModifierEditor::plotHistogram()
         const PipelineFlowState& state = getPipelineOutput();
 
         // Look up the generated data table in the modifier's pipeline output.
-        const DataTable* table = state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("isosurface-histogram"));
+        const DataTable* table = state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("isosurface-histogram"));
         _plotWidget->setTable(table);
     }
     else {

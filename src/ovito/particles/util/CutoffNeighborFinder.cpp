@@ -25,12 +25,12 @@
 #include <ovito/core/dataset/DataSet.h>
 #include "CutoffNeighborFinder.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /******************************************************************************
 * Initialization function.
 ******************************************************************************/
-bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, BufferReadAccess<Point3> positions, const SimulationCellObject* cell, BufferReadAccess<SelectionIntType> selectionProperty)
+bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, BufferReadAccess<Point3> positions, const SimulationCell* cell, BufferReadAccess<SelectionIntType> selectionProperty)
 {
     OVITO_ASSERT(positions);
     Task* currentTask = Task::current();
@@ -62,7 +62,7 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, BufferReadAccess<Poin
         if(boundingBox.sizeX() <= FLOATTYPE_EPSILON) boundingBox.maxc.x() = boundingBox.minc.x() + 1.0;
         if(boundingBox.sizeY() <= FLOATTYPE_EPSILON) boundingBox.maxc.y() = boundingBox.minc.y() + 1.0;
         if(boundingBox.sizeZ() <= FLOATTYPE_EPSILON) boundingBox.maxc.z() = boundingBox.minc.z() + 1.0;
-        simCell = DataOORef<SimulationCellObject>::create(
+        simCell = DataOORef<SimulationCell>::create(
                 ObjectInitializationFlag::DontCreateVisElement, AffineTransformation(
                     Vector3(boundingBox.sizeX(), 0, 0),
                     Vector3(0, boundingBox.sizeY(), 0),
@@ -213,7 +213,7 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, BufferReadAccess<Poin
                         shift = -binLocation[k] / binDim[k];
                     a.pbcShift[k] = shift;
                     a.pos += (FloatType)shift * simCell->matrix().column(k);
-                    binLocation[k] = SimulationCellObject::modulo(binLocation[k], binDim[k]);
+                    binLocation[k] = SimulationCell::modulo(binLocation[k], binDim[k]);
                 }
             }
             else if(binLocation[k] < 0) {

@@ -24,7 +24,7 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
 #include <ovito/core/rendering/FrameBuffer.h>
@@ -40,7 +40,7 @@ class OVITO_CORE_EXPORT TextLabelOverlay : public ViewportOverlay
     OVITO_CLASS(TextLabelOverlay)
     Q_CLASSINFO("DisplayName", "Text label")
 
-    Q_PROPERTY(Ovito::PipelineSceneNode* sourceNode READ sourceNode WRITE setSourceNode)
+    Q_PROPERTY(Ovito::Pipeline* pipeline READ pipeline WRITE setPipeline)
 
 public:
 
@@ -49,6 +49,9 @@ public:
 
     /// Is called when the overlay is being newly attached to a viewport.
     virtual void initializeOverlay(Viewport* viewport) override;
+
+    /// Informs the overlay that a new scene node has been inserted into the scene.
+    virtual void sceneNodeAdded(SceneNode* node) override;
 
     /// Lets the overlay paint its contents into the framebuffer.
     virtual void render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect) override;
@@ -101,8 +104,8 @@ private:
     /// Controls the outlining of the font.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, outlineEnabled, setOutlineEnabled, PROPERTY_FIELD_MEMORIZE);
 
-    /// The PipelineSceneNode providing global attributes that can be reference in the text.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(PipelineSceneNode*, sourceNode, setSourceNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
+    /// The pipeline providing global attributes that can be reference in the text.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Pipeline*, pipeline, setPipeline, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
     /// Controls the formatting of floating-point variable values referenced in the text string.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, valueFormatString, setValueFormatString);

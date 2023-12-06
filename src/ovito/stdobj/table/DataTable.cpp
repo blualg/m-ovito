@@ -23,7 +23,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include "DataTable.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DataTable);
 DEFINE_PROPERTY_FIELD(DataTable, intervalStart);
@@ -76,10 +76,10 @@ DataTable::DataTable(ObjectInitializationFlags flags, PlotMode plotMode, const Q
 /******************************************************************************
 * Assigns a property array as x-coordinates of the data points (for the purpose of plotting).
 ******************************************************************************/
-void DataTable::setX(const PropertyObject* property)
+void DataTable::setX(const Property* property)
 {
     _x.set(this, PROPERTY_FIELD(x), property);
-    if(property && !properties().contains(const_cast<PropertyObject*>(property))) {
+    if(property && !properties().contains(const_cast<Property*>(property))) {
         addProperty(property);
     }
 }
@@ -87,10 +87,10 @@ void DataTable::setX(const PropertyObject* property)
 /******************************************************************************
 * Assigns a property array as y-coordinates of the data points (for the purpose of plotting).
 ******************************************************************************/
-void DataTable::setY(const PropertyObject* property)
+void DataTable::setY(const Property* property)
 {
     _y.set(this, PROPERTY_FIELD(y), property);
-    if(property && !properties().contains(const_cast<PropertyObject*>(property))) {
+    if(property && !properties().contains(const_cast<Property*>(property))) {
         addProperty(property);
     }
 }
@@ -102,11 +102,11 @@ void DataTable::setY(const PropertyObject* property)
 ******************************************************************************/
 ConstPropertyPtr DataTable::getXValues() const
 {
-    if(const PropertyObject* xProperty = x()) {
+    if(const Property* xProperty = x()) {
         return xProperty;
     }
     else if(y() && elementCount() != 0 && (intervalStart() != 0 || intervalEnd() != 0)) {
-        const PropertyObject* yProperty = y();
+        const Property* yProperty = y();
         PropertyFactory<FloatType> xdata(OOClass(), elementCount(), axisLabelX());
         FloatType binSize = (intervalEnd() - intervalStart()) / elementCount();
         FloatType x = intervalStart() + binSize * FloatType(0.5);

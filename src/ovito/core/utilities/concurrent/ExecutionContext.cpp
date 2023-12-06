@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,7 +28,7 @@ namespace Ovito {
 /*******************************************************x***********************
 * Returns the context the current thread performs its actions in.
 ******************************************************************************/
-ExecutionContext& ExecutionContext::current() noexcept 
+ExecutionContext& ExecutionContext::current() noexcept
 {
     // The active execution context in the current thread.
     static thread_local ExecutionContext _current;

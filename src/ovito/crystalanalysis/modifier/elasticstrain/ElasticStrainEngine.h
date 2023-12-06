@@ -27,7 +27,7 @@
 #include <ovito/particles/modifier/analysis/StructureIdentificationModifier.h>
 #include <ovito/crystalanalysis/modifier/dxa/StructureAnalysis.h>
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /*
  * Computation engine of the ElasticStrainModifier, which performs the actual strain tensor calculation.
@@ -38,7 +38,7 @@ public:
 
     /// Constructor.
     ElasticStrainEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint,
-            ConstPropertyPtr positions, const SimulationCellObject* simCell,
+            ConstPropertyPtr positions, const SimulationCell* simCell,
             int inputCrystalStructure, std::vector<Matrix3> preferredCrystalOrientations,
             bool calculateDeformationGradients, bool calculateStrainTensors,
             FloatType latticeConstant, FloatType caRatio, bool pushStrainTensorsForward);

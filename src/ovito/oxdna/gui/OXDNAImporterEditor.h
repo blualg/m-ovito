@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,7 +27,7 @@
 #include <ovito/oxdna/OXDNAImporter.h>
 #include <ovito/gui/desktop/dataset/io/FileImporterEditor.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief A properties editor for the OXDNAImporter class.
@@ -55,7 +55,7 @@ private Q_SLOTS:
     void onChooseTopologyFile();
 
 private:
-    
+
     QLineEdit* _topologyFileField;
     QPushButton* _pickTopologyFileBtn;
 };

@@ -29,10 +29,10 @@
 #include <ovito/mesh/surface/SurfaceMeshFaces.h>
 #include <ovito/mesh/surface/SurfaceMeshRegions.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/properties/Property.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 /**
  * Utility class that provides efficient read-only access to the data of an existing surface mesh object.
@@ -154,7 +154,7 @@ public:
     bool areOppositeFaces(face_index face1, face_index face2) const { return topology()->areOppositeFaces(face1, face2); }
 
     /// Returns the simulation domain the surface mesh is embedded in.
-    const SimulationCellObject* domain() const { return _domain; }
+    const SimulationCell* domain() const { return _domain; }
 
     /// Returns whether the mesh's domain has periodic boundary conditions applied in the given direction.
     bool hasPbc(size_t dim) const { return domain() ? domain()->hasPbc(dim) : false; }
@@ -180,42 +180,42 @@ public:
     std::optional<std::pair<region_index, FloatType>> locatePoint(const Point3& location, FloatType epsilon = FLOATTYPE_EPSILON, const boost::dynamic_bitset<>& faceSubset = boost::dynamic_bitset<>()) const;
 
     /// Returns one of the standard vertex properties (or null if the property is not defined).
-    const PropertyObject* vertexProperty(SurfaceMeshVertices::Type ptype) const {
+    const Property* vertexProperty(SurfaceMeshVertices::Type ptype) const {
         return vertices()->getProperty(ptype);
     }
 
     /// Returns one of the standard vertex properties (throws exception if the property is not defined).
-    const PropertyObject* expectVertexProperty(SurfaceMeshVertices::Type ptype) const {
+    const Property* expectVertexProperty(SurfaceMeshVertices::Type ptype) const {
         return vertices()->expectProperty(ptype);
     }
 
     /// Returns one of the standard face properties (or null if the property is not defined).
-    const PropertyObject* faceProperty(SurfaceMeshFaces::Type ptype) const {
+    const Property* faceProperty(SurfaceMeshFaces::Type ptype) const {
         return faces()->getProperty(ptype);
     }
 
     /// Returns one of the standard face properties (throws exception if the property is not defined).
-    const PropertyObject* expectFaceProperty(SurfaceMeshFaces::Type ptype) const {
+    const Property* expectFaceProperty(SurfaceMeshFaces::Type ptype) const {
         return faces()->expectProperty(ptype);
     }
 
     /// Returns a user face property (or null if the property is not defined).
-    const PropertyObject* faceProperty(const QString& name) const {
+    const Property* faceProperty(const QString& name) const {
         return faces()->getProperty(name);
     }
 
     /// Returns one of the standard region properties (or null if the property is not defined).
-    const PropertyObject* regionProperty(SurfaceMeshRegions::Type ptype) const {
+    const Property* regionProperty(SurfaceMeshRegions::Type ptype) const {
         return regions()->getProperty(ptype);
     }
 
     /// Returns one of the standard region properties (throws exception if the property is not defined).
-    const PropertyObject* expectRegionProperty(SurfaceMeshRegions::Type ptype) const {
+    const Property* expectRegionProperty(SurfaceMeshRegions::Type ptype) const {
         return regions()->expectProperty(ptype);
     }
 
-    /// Triangulates the polygonal faces of this mesh and outputs the results as a TriMeshObject.
-    void convertToTriMesh(TriMeshObject& outputMesh, bool smoothShading, const boost::dynamic_bitset<>& faceSubset = boost::dynamic_bitset<>{}, std::vector<size_t>* originalFaceMap = nullptr, bool autoGenerateOppositeFaces = false) const;
+    /// Triangulates the polygonal faces of this mesh and outputs the results as a TriangleMesh.
+    void convertToTriMesh(TriangleMesh& outputMesh, bool smoothShading, const boost::dynamic_bitset<>& faceSubset = boost::dynamic_bitset<>{}, std::vector<size_t>* originalFaceMap = nullptr, bool autoGenerateOppositeFaces = false) const;
 
     /// Computes the unit normal vector of a mesh face.
     Vector3 computeFaceNormal(face_index face, const BufferReadAccess<Point3>& vertexPositions) const;
@@ -248,7 +248,7 @@ protected:
     const SurfaceMeshVertices* _vertices; ///< The vertex properties of the surface mesh.
     const SurfaceMeshFaces* _faces; ///< The face properties of the surface mesh.
     const SurfaceMeshRegions* _regions; ///< The region properties of the surface mesh.
-    const SimulationCellObject* _domain; ///< The simulation cell object of the surface mesh.
+    const SimulationCell* _domain; ///< The simulation cell object of the surface mesh.
 };
 
 }   // End of namespace

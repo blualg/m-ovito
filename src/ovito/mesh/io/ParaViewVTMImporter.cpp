@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,7 +22,7 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/core/dataset/data/DataCollection.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/utilities/concurrent/Reduce.h>
@@ -32,7 +32,7 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "ParaViewVTMImporter.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParaViewVTMFileFilter);
 IMPLEMENT_OVITO_CLASS(ParaViewVTMImporter);
@@ -147,13 +147,13 @@ std::vector<ParaViewVTMBlockInfo> ParaViewVTMImporter::loadVTMFile(const FileHan
                 // Determine the range of blocks that are part of the current piece-wise dataset.
                 // Also count the number of block pieces that are not empty.
                 int pieceCount = 0;
-                auto iter = std::find_if(datasetList.rbegin(), datasetList.rend(), [&](const ParaViewVTMBlockInfo& block) { 
+                auto iter = std::find_if(datasetList.rbegin(), datasetList.rend(), [&](const ParaViewVTMBlockInfo& block) {
                     if(block.blockPath != blockBranch) return true;
                     if(!block.location.isEmpty()) pieceCount++;
                     return false;
                 });
                 OVITO_ASSERT(pieceCount <= datasetList.size());
-                // Update the pieceCount field of all partial blocks belonging to the current piece-wise dataset. 
+                // Update the pieceCount field of all partial blocks belonging to the current piece-wise dataset.
                 int pieceIndex = pieceCount;
                 std::for_each(datasetList.rbegin(), iter, [&](ParaViewVTMBlockInfo& block) {
                     block.pieceCount = pieceCount;
@@ -210,11 +210,11 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
         modifiedRequest.filters.back()->preprocessDatasets(blockDatasets, modifiedRequest, *this);
     }
 
-    OORef<PipelineObject> fileSource = request.dataSource.data();
+    OORef<PipelineNode> fileSource = request.pipelineNode.data();
     if(!fileSource)
         throw Exception(QStringLiteral("Object requesting the data import has been deleted."));
 
-    // Load each dataset referenced by the VTM file. 
+    // Load each dataset referenced by the VTM file.
     Future<ExtendedLoadRequest> future = reduce_sequential(std::move(modifiedRequest), std::move(blockDatasets), ObjectExecutor(fileSource, true), [](const ParaViewVTMBlockInfo& blockInfo, ExtendedLoadRequest& request) {
 
         // We can skip empty datasets which are not associated with a VTK file.
@@ -226,7 +226,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
         request.blockInfo = blockInfo;
         request.appendData = (blockInfo.pieceIndex > 0); // Append data (instead of replacing it) when loading subsequent partial blocks of a piece-wise (parallel) dataset.
 
-        OORef<PipelineObject> fileSource = request.dataSource.data();
+        OORef<PipelineNode> fileSource = request.pipelineNode.data();
         if(!fileSource)
             throw Exception(QStringLiteral("Object requesting the data import has been deleted."));
 
@@ -269,8 +269,8 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
                     filter->configureImporter(request.blockInfo, request, importer);
 
                 // Parse the referenced file.
-                // Note: We need to keep the FileSourceImporter object while the asynchronous parsing process is 
-                // in progress. That's why we store an otherwise unused pointer to it in the lambda function. 
+                // Note: We need to keep the FileSourceImporter object while the asynchronous parsing process is
+                // in progress. That's why we store an otherwise unused pointer to it in the lambda function.
                 return importer->loadFrame(request).then([importer, filename = file.sourceUrl().fileName(), &request, lastStatus](Future<PipelineFlowState> blockDataFuture) mutable {
                     try {
                         request.state = blockDataFuture.result();
@@ -292,17 +292,16 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
                         request.state.setStatus(PipelineStatus(statusType, std::move(statusString)));
                     }
                     catch(Exception& ex) {
-                        ex.prependGeneralMessage(tr("Failed to load VTK multi-block dataset '%1': %2").arg(request.dataBlockPrefix).arg(filename));
-                        throw ex;
+                        throw ex.prependGeneralMessage(tr("Failed to load VTK multi-block dataset '%1': %2").arg(request.dataBlockPrefix).arg(filename));
                     }
                 });
             }
             catch(Exception& ex) {
                 // Handle file errors, e.g. if the data block file referenced in the VTM file does not exist.
-                request.state.setStatus(PipelineStatus(ex, QChar(' ')));
+                request.state.setStatus(PipelineStatus(ex, QStringLiteral(" ")));
                 ex.prependGeneralMessage(tr("Failed to access data file referenced by block '%1' in VTK multi-block file.").arg(request.dataBlockPrefix));
                 ExecutionContext::current().ui().reportError(ex);
-                // We treat such an error as recoverable and continue with loading the remaining data blocks. 
+                // We treat such an error as recoverable and continue with loading the remaining data blocks.
                 return Future<>::createImmediateEmpty();
             }
         });

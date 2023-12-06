@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,13 +45,13 @@ public:
     DataInspectorPanel(MainWindow& mainWindow);
 
     /// Selects a specific data object in the data inspector.
-    bool selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint);
+    bool selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint);
 
     /// Returns the main window this panel is part of.
     MainWindow& mainWindow() const { return _mainWindow; }
 
     /// Returns the currently selected pipeline whose output is being shown by the data inspector.
-    PipelineSceneNode* selectedPipeline() const { return _selectedPipeline; }
+    Pipeline* selectedPipeline() const { return _selectedPipeline; }
 
     /// Returns the most recent output data of the selected pipeline, which is displayed in the data inspector panel.
     const PipelineFlowState& pipelineOutput() const { return _pipelineOutput; }
@@ -98,7 +98,7 @@ protected Q_SLOTS:
 Q_SIGNALS:
 
     /// Signal is emitted whenenver a different pipeline becomes the selected one.
-    void selectedPipelineChanged(PipelineSceneNode* newPipeline);
+    void selectedPipelineChanged(Pipeline* newPipeline);
 
 protected:
 
@@ -147,7 +147,7 @@ private:
     QStackedWidget* _appletContainer;
 
     /// Listens to messages from the currently selected pipeline.
-    OORef<PipelineSceneNode> _selectedPipeline;
+    OORef<Pipeline> _selectedPipeline;
 
     /// Helper object which asks the scene pipelines to compute their results.
     OORef<ScenePreparation> _scenePreparation;

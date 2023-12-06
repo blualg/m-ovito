@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,13 +24,13 @@
 #include <ovito/gui/desktop/properties/ColorParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
-#include <ovito/core/dataset/data/mesh/TriMeshVis.h>
+#include <ovito/core/dataset/data/mesh/TriangleMeshVis.h>
 #include "TriMeshVisEditor.h"
 
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(TriMeshVisEditor);
-SET_OVITO_OBJECT_EDITOR(TriMeshVis, TriMeshVisEditor);
+SET_OVITO_OBJECT_EDITOR(TriangleMeshVis, TriMeshVisEditor);
 
 /******************************************************************************
 * Sets up the UI widgets of the editor.
@@ -46,15 +46,15 @@ void TriMeshVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     layout->setSpacing(4);
     layout->setColumnStretch(1, 1);
 
-    ColorParameterUI* colorUI = new ColorParameterUI(this, PROPERTY_FIELD(TriMeshVis::color));
+    ColorParameterUI* colorUI = new ColorParameterUI(this, PROPERTY_FIELD(TriangleMeshVis::color));
     layout->addWidget(colorUI->label(), 0, 0);
     layout->addWidget(colorUI->colorPicker(), 0, 1);
 
-    FloatParameterUI* transparencyUI = new FloatParameterUI(this, PROPERTY_FIELD(TriMeshVis::transparencyController));
+    FloatParameterUI* transparencyUI = new FloatParameterUI(this, PROPERTY_FIELD(TriangleMeshVis::transparencyController));
     layout->addWidget(transparencyUI->label(), 1, 0);
     layout->addLayout(transparencyUI->createFieldLayout(), 1, 1);
 
-    BooleanParameterUI* highlightEdgesUI = new BooleanParameterUI(this, PROPERTY_FIELD(TriMeshVis::highlightEdges));
+    BooleanParameterUI* highlightEdgesUI = new BooleanParameterUI(this, PROPERTY_FIELD(TriangleMeshVis::highlightEdges));
     layout->addWidget(highlightEdgesUI->checkBox(), 2, 0, 1, 2);
 }
 

@@ -26,7 +26,7 @@
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include "FileExporter.h"
@@ -44,7 +44,7 @@ DEFINE_PROPERTY_FIELD(FileExporter, everyNthFrame);
 DEFINE_PROPERTY_FIELD(FileExporter, floatOutputPrecision);
 DEFINE_REFERENCE_FIELD(FileExporter, datasetToExport);
 DEFINE_REFERENCE_FIELD(FileExporter, sceneToExport);
-DEFINE_REFERENCE_FIELD(FileExporter, nodeToExport);
+DEFINE_REFERENCE_FIELD(FileExporter, sceneNodeToExport);
 DEFINE_PROPERTY_FIELD(FileExporter, dataObjectToExport);
 SET_PROPERTY_FIELD_LABEL(FileExporter, outputFilename, "Output filename");
 SET_PROPERTY_FIELD_LABEL(FileExporter, exportAnimation, "Export animation");
@@ -55,6 +55,7 @@ SET_PROPERTY_FIELD_LABEL(FileExporter, endFrame, "End frame");
 SET_PROPERTY_FIELD_LABEL(FileExporter, everyNthFrame, "Every Nth frame");
 SET_PROPERTY_FIELD_LABEL(FileExporter, floatOutputPrecision, "Numeric output precision");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(FileExporter, floatOutputPrecision, IntegerParameterUnit, 1, std::numeric_limits<FloatType>::max_digits10);
+SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(FileExporter, sceneNodeToExport, "nodeToExport"); // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
 * Constructs a new instance of the class.
@@ -104,12 +105,12 @@ void FileExporter::selectDefaultExportableData(DataSet* dataset, Scene* scene)
 
     // Export the entire frame interval of the selected pipeline by default.
     if(endFrame() < startFrame()) {
-        if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(nodeToExport())) {
-            if(pipeline->dataProvider()) {
-                int nframes = pipeline->dataProvider()->numberOfSourceFrames();
-                int start = pipeline->dataProvider()->sourceFrameToAnimationTime(0).frame();
+        if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(sceneNodeToExport())) {
+            if(pipeline->head()) {
+                int nframes = pipeline->head()->numberOfSourceFrames();
+                int start = pipeline->head()->sourceFrameToAnimationTime(0).frame();
                 if(start < startFrame()) setStartFrame(start);
-                int end = (pipeline->dataProvider()->sourceFrameToAnimationTime(nframes) - 1).frame();
+                int end = (pipeline->head()->sourceFrameToAnimationTime(nframes) - 1).frame();
                 if(end > endFrame()) setEndFrame(end);
             }
         }
@@ -122,23 +123,23 @@ void FileExporter::selectDefaultExportableData(DataSet* dataset, Scene* scene)
     }
 
     // By default, export the data of the selected pipeline.
-    if(!nodeToExport() && sceneToExport()) {
+    if(!sceneNodeToExport() && sceneToExport()) {
         if(SceneNode* selectedNode = sceneToExport()->selection()->firstNode()) {
             if(isSuitableNode(selectedNode)) {
-                setNodeToExport(selectedNode);
+                setSceneNodeToExport(selectedNode);
             }
         }
     }
 
     // If no scene node is currently selected, pick the first suitable node from the scene.
-    if(!nodeToExport() && sceneToExport()) {
+    if(!sceneNodeToExport() && sceneToExport()) {
         if(isSuitableNode(sceneToExport())) {
-            setNodeToExport(sceneToExport());
+            setSceneNodeToExport(sceneToExport());
         }
         else {
             sceneToExport()->visitChildren([this](SceneNode* node) {
                 if(isSuitableNode(node)) {
-                    setNodeToExport(node);
+                    setSceneNodeToExport(node);
                     return false;
                 }
                 return true;
@@ -155,7 +156,7 @@ void FileExporter::selectDefaultExportableData(DataSet* dataset, Scene* scene)
 ******************************************************************************/
 bool FileExporter::isSuitableNode(SceneNode* node) const
 {
-    if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(node)) {
+    if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(node)) {
         if(sceneToExport()) {
             return isSuitablePipelineOutput(pipeline->evaluatePipelineSynchronous(sceneToExport()->animationSettings()->currentTime(), true));
         }
@@ -190,7 +191,7 @@ PipelineFlowState FileExporter::getPipelineDataToBeExported(int frame, bool requ
     if(!sceneToExport())
         throw Exception(tr("No scene has been specified for file export."));
 
-    PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(nodeToExport());
+    Pipeline* pipeline = dynamic_object_cast<Pipeline>(sceneNodeToExport());
     if(!pipeline)
         throw Exception(tr("The scene node to be exported is not a data pipeline."));
 
@@ -230,7 +231,7 @@ bool FileExporter::doExport(MainThreadOperation operation)
     if(!sceneToExport())
         throw Exception(tr("No scene has been specified for file export."));
 
-    if(!nodeToExport()) {
+    if(!sceneNodeToExport()) {
         QString errorMsg = tr("There is no data in the current scene that can be exported to the selected file format.");
         const std::vector<DataObjectClassPtr>& objClasses = exportableDataObjectClass();
         if(!objClasses.empty()) {

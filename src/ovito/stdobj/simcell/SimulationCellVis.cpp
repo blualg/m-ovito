@@ -30,9 +30,9 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
 #include "SimulationCellVis.h"
-#include "SimulationCellObject.h"
+#include "SimulationCell.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(SimulationCellVis);
 DEFINE_PROPERTY_FIELD(SimulationCellVis, cellLineWidth);
@@ -57,9 +57,9 @@ SimulationCellVis::SimulationCellVis(ObjectInitializationFlags flags) : DataVis(
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 SimulationCellVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 SimulationCellVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
 {
-    const SimulationCellObject* cellObject = path.lastAs<SimulationCellObject>();
+    const SimulationCell* cellObject = path.lastAs<SimulationCell>();
     if(!cellObject)
         return {};
 
@@ -75,18 +75,18 @@ Box3 SimulationCellVis::boundingBox(AnimationTime time, const ConstDataObjectPat
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus SimulationCellVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus SimulationCellVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
 {
-    const SimulationCellObject* cell = path.lastAs<SimulationCellObject>();
+    const SimulationCell* cell = path.lastAs<SimulationCell>();
     if(!cell) return {};
 
     if(renderer->isInteractive() && !renderer->viewport()->renderPreviewMode()) {
         if(!renderer->isBoundingBoxPass()) {
-            renderWireframe(time, cell, flowState, renderer, contextNode);
+            renderWireframe(time, cell, flowState, renderer, pipeline);
         }
         else {
             TimeInterval validityInterval;
-            renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, renderer->visCache(), validityInterval));
+            renderer->addToLocalBoundingBox(boundingBox(time, path, pipeline, flowState, renderer->visCache(), validityInterval));
         }
     }
     else {
@@ -94,11 +94,11 @@ PipelineStatus SimulationCellVis::render(AnimationTime time, const ConstDataObje
             return {};      // Do nothing if rendering has been disabled by the user.
 
         if(!renderer->isBoundingBoxPass()) {
-            renderSolid(time, cell, flowState, renderer, contextNode);
+            renderSolid(time, cell, flowState, renderer, pipeline);
         }
         else {
             TimeInterval validityInterval;
-            Box3 bb = boundingBox(time, path, contextNode, flowState, renderer->visCache(), validityInterval);
+            Box3 bb = boundingBox(time, path, pipeline, flowState, renderer->visCache(), validityInterval);
             renderer->addToLocalBoundingBox(bb.padBox(cellLineWidth()));
         }
     }
@@ -109,7 +109,7 @@ PipelineStatus SimulationCellVis::render(AnimationTime time, const ConstDataObje
 /******************************************************************************
 * Renders the given simulation cell using lines.
 ******************************************************************************/
-void SimulationCellVis::renderWireframe(AnimationTime time, const SimulationCellObject* cell, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+void SimulationCellVis::renderWireframe(AnimationTime time, const SimulationCell* cell, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
 {
     OVITO_ASSERT(!renderer->isBoundingBoxPass());
 
@@ -153,8 +153,8 @@ void SimulationCellVis::renderWireframe(AnimationTime time, const SimulationCell
     // Prepare line drawing primitive.
     LinePrimitive linePrimitive;
     linePrimitive.setPositions(lineVertices);
-    linePrimitive.setUniformColor(ViewportSettings::getSettings().viewportColor(contextNode->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_UNSELECTED));
-    if(renderer->isPicking())
+    linePrimitive.setUniformColor(ViewportSettings::getSettings().viewportColor(pipeline->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_UNSELECTED));
+    if(!renderer->isImagePass())
         linePrimitive.setLineWidth(renderer->defaultLinePickingWidth());
 
     const AffineTransformation oldTM = renderer->worldTransform();
@@ -162,7 +162,7 @@ void SimulationCellVis::renderWireframe(AnimationTime time, const SimulationCell
     if(cell->is2D())
         cellMatrix(2,3) = 0; // For 2D cells, implicitly set z-coordinate of origin to zero.
     renderer->setWorldTransform(oldTM * cellMatrix);
-    renderer->beginPickObject(contextNode);
+    renderer->beginPickObject(pipeline);
     renderer->renderLines(linePrimitive);
     renderer->endPickObject();
     renderer->setWorldTransform(oldTM);
@@ -171,7 +171,7 @@ void SimulationCellVis::renderWireframe(AnimationTime time, const SimulationCell
 /******************************************************************************
 * Renders the given simulation cell using solid shading mode.
 ******************************************************************************/
-void SimulationCellVis::renderSolid(AnimationTime time, const SimulationCellObject* cell, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+void SimulationCellVis::renderSolid(AnimationTime time, const SimulationCell* cell, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
 {
     OVITO_ASSERT(!renderer->isBoundingBoxPass());
 
@@ -249,7 +249,7 @@ void SimulationCellVis::renderSolid(AnimationTime time, const SimulationCellObje
         visCache.corners.setUniformRadius(cellLineWidth());
         visCache.corners.setUniformColor(cellColor());
     }
-    renderer->beginPickObject(contextNode);
+    renderer->beginPickObject(pipeline);
     renderer->renderCylinders(visCache.edges);
     renderer->renderParticles(visCache.corners);
     renderer->endPickObject();

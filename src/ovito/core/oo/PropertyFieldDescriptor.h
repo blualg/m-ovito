@@ -59,7 +59,9 @@ enum PropertyFieldFlag
     /// Blocks propagating messages sent by the target.
     PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES      = (1<<11),
     /// Automatically opens a sub-editor for the given reference field.
-    PROPERTY_FIELD_OPEN_SUBEDITOR               = (1<<12)
+    PROPERTY_FIELD_OPEN_SUBEDITOR               = (1<<12),
+    /// Automatically create a UI to reset this property field to its default.
+    PROPERTY_FIELD_RESETTABLE                   = (1<<13)
 };
 Q_DECLARE_FLAGS(PropertyFieldFlags, PropertyFieldFlag);
 
@@ -111,6 +113,9 @@ public:
 
     /// Returns the unique identifier of the reference field.
     const char* identifier() const { return _identifier; }
+
+    /// Returns the alias identifier of the reference field (used for backward compatibility) if defined.
+    const char* identifierAlias() const { return _identifierAlias; }
 
     /// Returns the RefMaker derived class that owns the reference.
     const RefMakerClass* definingClass() const { return _definingClassDescriptor; }
@@ -231,6 +236,9 @@ protected:
 
     /// The type of reference event to generate each time this property field's value changes.
     int _extraChangeEventType = 0;
+
+    /// The alias identifier of the reference field. This can be set for backward compatibility with older OVITO versions.
+    const char* _identifierAlias = nullptr;
 
     friend class RefMaker;
     friend class RefTarget;

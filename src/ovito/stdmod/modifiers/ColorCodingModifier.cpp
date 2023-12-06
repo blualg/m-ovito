@@ -21,10 +21,10 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdmod/StdMod.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/data/AttributeDataObject.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
@@ -34,7 +34,23 @@
 #include <ovito/core/app/PluginManager.h>
 #include "ColorCodingModifier.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
+
+IMPLEMENT_OVITO_CLASS(LinesColorCodingModifierDelegate);
+
+/******************************************************************************
+ * Indicates which data objects in the given input data collection the modifier
+ * delegate is able to operate on.
+ ******************************************************************************/
+QVector<DataObjectReference> LinesColorCodingModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
+{
+    // Gather list of all (trajectory) lines objects in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(Lines::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
+}
 
 IMPLEMENT_OVITO_CLASS(ColorCodingModifierDelegate);
 
@@ -136,10 +152,10 @@ void ColorCodingModifier::initializeModifier(const ModifierInitializationRequest
 
     // When the modifier is inserted, automatically select the most recently added property from the input.
     if(sourceProperty().isNull() && delegate() && ExecutionContext::isInteractive()) {
-        const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
+        const PipelineFlowState& input = request.modificationNode()->evaluateInputSynchronous(request);
         if(const PropertyContainer* container = input.getLeafObject(delegate()->inputContainerRef())) {
             PropertyReference bestProperty;
-            for(const PropertyObject* property : container->properties()) {
+            for(const Property* property : container->properties()) {
                 bestProperty = PropertyReference(delegate()->inputContainerClass(), property, (property->componentCount() > 1) ? 0 : -1);
             }
             if(!bestProperty.isNull())
@@ -178,7 +194,7 @@ bool ColorCodingModifier::determinePropertyValueRange(const PipelineFlowState& s
     const PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
 
     // Look up the selected property.
-    const PropertyObject* property = sourceProperty().findInContainer(container);
+    const Property* property = sourceProperty().findInContainer(container);
     if(!property)
         return false;
 
@@ -190,8 +206,8 @@ bool ColorCodingModifier::determinePropertyValueRange(const PipelineFlowState& s
     int vecComponent = std::max(0, sourceProperty().vectorComponent());
 
     // Access the input selection if coloring is restricted to the currently selected elements.
-    BufferReadAccess<SelectionIntType> selection = (colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty))
-        ? container->getProperty(PropertyObject::GenericSelectionProperty) : nullptr;
+    BufferReadAccess<SelectionIntType> selection = (colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty))
+        ? container->getProperty(Property::GenericSelectionProperty) : nullptr;
 
     // Iterate over the property array to find the lowest/highest value.
     FloatType maxValue = std::numeric_limits<FloatType>::lowest();
@@ -228,8 +244,8 @@ bool ColorCodingModifier::adjustRange(AnimationTime time)
     // Loop over all input data.
     bool success = false;
     PipelineEvaluationRequest request(time);
-    for(ModifierApplication* modApp : modifierApplications()) {
-        const PipelineFlowState& inputState = modApp->evaluateInputSynchronous(request);
+    for(ModificationNode* node : nodes()) {
+        const PipelineFlowState& inputState = node->evaluateInputSynchronous(request);
 
         // Determine the minimum and maximum values of the selected property.
         success |= determinePropertyValueRange(inputState, minValue, maxValue);
@@ -262,10 +278,10 @@ bool ColorCodingModifier::adjustRangeGlobal(MainThreadOperation& operation, int 
     for(int frame = startFrame; frame <= endFrame && !operation.isCanceled(); frame++) {
         operation.setProgressText(tr("Analyzing frame %1").arg(frame));
 
-        for(ModifierApplication* modApp : modifierApplications()) {
+        for(ModificationNode* node : nodes()) {
 
             // Evaluate data pipeline up to this color coding modifier.
-            SharedFuture<PipelineFlowState> stateFuture = modApp->evaluateInput(PipelineEvaluationRequest(AnimationTime::fromFrame(frame)));
+            SharedFuture<PipelineFlowState> stateFuture = node->evaluateInput(PipelineEvaluationRequest(AnimationTime::fromFrame(frame)));
             if(!stateFuture.waitForFinished())
                 break;
 
@@ -298,39 +314,6 @@ void ColorCodingModifier::reverseRange()
     setEndValueController(std::move(oldStartValue));
 }
 
-#ifdef OVITO_QML_GUI
-/******************************************************************************
-* Returns the class name of the selected color gradient.
-******************************************************************************/
-QString ColorCodingModifier::colorGradientType() const
-{
-    return colorGradient() ? colorGradient()->getOOClass().name() : QString();
-}
-
-/******************************************************************************
-* Assigns a new color gradient based on its class name.
-******************************************************************************/
-void ColorCodingModifier::setColorGradientType(const QString& typeName)
-{
-    OvitoClassPtr descriptor = PluginManager::instance().findClass(QString(), typeName);
-    if(!descriptor) {
-        qWarning() << "setColorGradientType: Color gradient class" << typeName << "does not exist.";
-        return;
-    }
-    OORef<ColorCodingGradient> gradient = static_object_cast<ColorCodingGradient>(descriptor->createInstance());
-    if(gradient) {
-        setColorGradient(std::move(gradient));
-#ifndef OVITO_DISABLE_QSETTINGS
-        QSettings settings;
-        settings.beginGroup(ColorCodingModifier::OOClass().plugin()->pluginId());
-        settings.beginGroup(ColorCodingModifier::OOClass().name());
-        settings.setValue(PROPERTY_FIELD(ColorCodingModifier::colorGradient).identifier(),
-                QVariant::fromValue(OvitoClass::encodeAsString(descriptor)));
-#endif
-    }
-}
-#endif
-
 /******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/
@@ -352,9 +335,11 @@ PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationReques
     PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
 
     // Check if the source property is the right kind of property.
-    if(sourceProperty.containerClass() != &container->getOOMetaClass())
+    if(sourceProperty.containerClass() != &container->getOOMetaClass()) {
         throw Exception(tr("Color coding modifier was set to operate on '%1', but the selected input is a '%2' property.")
-            .arg(getOOMetaClass().pythonDataName()).arg(sourceProperty.containerClass()->propertyClassDisplayName()));
+                            .arg(getOOMetaClass().pythonDataName())
+                            .arg(sourceProperty.containerClass()->propertyClassDisplayName()));
+    }
 
     // Make sure input data structure is ok.
     container->verifyIntegrity();
@@ -368,8 +353,8 @@ PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationReques
 
     // Get the selection property if enabled by the user.
     ConstPropertyPtr selectionProperty;
-    if(mod->colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
-        selectionProperty = container->getProperty(PropertyObject::GenericSelectionProperty);
+    if(mod->colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
+        selectionProperty = container->getProperty(Property::GenericSelectionProperty);
     }
 
     // Get modifier's parameter values.
@@ -381,8 +366,8 @@ PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationReques
         if(mod->determinePropertyValueRange(state, minValue, maxValue)) {
             startValue = minValue;
             endValue = maxValue;
-            state.setAttribute(QStringLiteral("ColorCoding.RangeMin"), minValue, request.modApp());
-            state.setAttribute(QStringLiteral("ColorCoding.RangeMax"), maxValue, request.modApp());
+            state.setAttribute(QStringLiteral("ColorCoding.RangeMin"), minValue, request.modificationNode());
+            state.setAttribute(QStringLiteral("ColorCoding.RangeMax"), maxValue, request.modificationNode());
         }
     }
     else {

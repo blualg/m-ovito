@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -73,6 +73,15 @@ public:
         PropertyFieldChangeEventSetter(NativePropertyFieldDescriptor* propfield, ReferenceEvent::Type eventType) {
             OVITO_ASSERT(propfield->_extraChangeEventType == 0);
             propfield->_extraChangeEventType = eventType;
+        }
+    };
+
+    // Internal helper class that is used to specify the alias for a property field's identifier. Do not use this class directly but use the
+    // SET_PROPERTY_FIELD_ALIAS_IDENTIFIER macro instead.
+    struct PropertyFieldAliasIdentifierSetter {
+        PropertyFieldAliasIdentifierSetter(NativePropertyFieldDescriptor* propfield, const char* identifierAlias) {
+            OVITO_ASSERT(!propfield->_identifierAlias);
+            propfield->_identifierAlias = identifierAlias;
         }
     };
 };
@@ -229,6 +238,10 @@ public:
 #define SET_PROPERTY_FIELD_CHANGE_EVENT(DefiningClass, name, eventType)                                     \
     static Ovito::NativePropertyFieldDescriptor::PropertyFieldChangeEventSetter __changeEventSetter##DefiningClass##name(PROPERTY_FIELD(DefiningClass::name), eventType);
 
+/// Use this macro to give a property field an alias identifier.
+#define SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(DefiningClass, name, aliasName)                                     \
+    static Ovito::NativePropertyFieldDescriptor::PropertyFieldAliasIdentifierSetter __aliasSetter##DefiningClass##name(PROPERTY_FIELD(DefiningClass::name), aliasName);
+
 /// Adds a property field to a class definition.
 /// The first parameter specifies the data type of the property field.
 /// The second parameter determines the name of the property field. It must be unique within the current class.
@@ -336,7 +349,7 @@ public:
 /// This macros returns a reference to the PropertyFieldDescriptor of a shadow property field.
 #define SHADOW_PROPERTY_FIELD(RefMakerClassPlusStorageFieldName) \
         RefMakerClassPlusStorageFieldName##__shadow__propdescr()
-        
+
 /// Adds the capability to take a snapshot to an existing property field of a class.
 /// A shadow property field is created by this macro, which holds a copy of the original property field value.
 #define DECLARE_SHADOW_PROPERTY_FIELD(fieldname) \

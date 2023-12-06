@@ -21,12 +21,12 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include "ParcasFileImporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParcasFileImporter);
 
@@ -196,8 +196,8 @@ void ParcasFileImporter::FrameLoader::loadFile()
     size_t numAtoms = (size_t)natoms;
     setParticleCount(numAtoms);
 
-    state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue((int)frame_num), dataSource());
-    state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(simu_time), dataSource());
+    state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue((int)frame_num), pipelineNode());
+    state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(simu_time), pipelineNode());
 
     // Create particle properties for extra fields.
     std::vector<BufferWriteAccess<FloatType, access_mode::discard_write>> extraProperties;
@@ -211,16 +211,16 @@ void ParcasFileImporter::FrameLoader::loadFile()
         qDebug() << "Field-" << (i+1) << " name: " << field_name << " unit: " << field_unit;
 #endif
 
-        ParticlesObject::Type propertyType = ParticlesObject::UserProperty;
+        Particles::Type propertyType = Particles::UserProperty;
         QString propertyName = QString(field_name).trimmed();
-        if(propertyName == "Epot") propertyType = ParticlesObject::PotentialEnergyProperty;
-        else if(propertyName == "Ekin") propertyType = ParticlesObject::KineticEnergyProperty;
+        if(propertyName == "Epot") propertyType = Particles::PotentialEnergyProperty;
+        else if(propertyName == "Ekin") propertyType = Particles::KineticEnergyProperty;
 
-        PropertyObject* property;
-        if(propertyType != ParticlesObject::UserProperty)
+        Property* property;
+        if(propertyType != Particles::UserProperty)
             property = particles()->createProperty(DataBuffer::Initialized, propertyType);
         else
-            property = particles()->createProperty(DataBuffer::Initialized, propertyName, PropertyObject::FloatDefault);
+            property = particles()->createProperty(DataBuffer::Initialized, propertyName, Property::FloatDefault);
         extraProperties.emplace_back(property);
     }
 
@@ -236,16 +236,16 @@ void ParcasFileImporter::FrameLoader::loadFile()
     simulationCell()->setPbcFlags(box_x < 0, box_y < 0, box_z < 0);
 
     // Create the required standard properties.
-    BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
-    PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
-    BufferWriteAccess<int64_t, access_mode::discard_write> identifierProperty = particles()->createProperty(ParticlesObject::IdentifierProperty);
+    BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(Particles::PositionProperty);
+    Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
+    BufferWriteAccess<int64_t, access_mode::discard_write> identifierProperty = particles()->createProperty(Particles::IdentifierProperty);
 
     // Create particle types list.
     std::vector<std::array<char,5>> types(maxtype - mintype + 1);
     for(int i = mintype; i <= maxtype; i++) {
         stream.read(types[i - mintype].data(), 4);
         types[i - mintype][4] = '\0';
-        addNumericType(ParticlesObject::OOClass(), typeProperty, i, QString::fromUtf8(types[i - mintype].data()).trimmed());
+        addNumericType(Particles::OOClass(), typeProperty, i, QString::fromUtf8(types[i - mintype].data()).trimmed());
     }
 
     // The actual header is now parsed. Check the offsets.

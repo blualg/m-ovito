@@ -26,7 +26,7 @@
 #include <ovito/mesh/Mesh.h>
 #include <ovito/core/dataset/data/DataObject.h>
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 /**
  * A polygonal mesh stored as a half-edge data structure.
@@ -188,7 +188,7 @@ public:
     /// Note that this class holds only the mesh topology and no
     /// vertex coordinates. Thus, it is the responsibility of the caller to set the
     /// vertex coordinates for the generated TriMesh.
-    void convertToTriMesh(TriMeshObject& output) const;
+    void convertToTriMesh(TriangleMesh& output) const;
 
     /// Deletes a face from the mesh.
     /// A hole in the mesh will be left behind at the location of the deleted face.

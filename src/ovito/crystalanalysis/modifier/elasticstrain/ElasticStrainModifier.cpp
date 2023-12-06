@@ -22,13 +22,13 @@
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/crystalanalysis/objects/MicrostructurePhase.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "ElasticStrainModifier.h"
 #include "ElasticStrainEngine.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ElasticStrainModifier);
 DEFINE_PROPERTY_FIELD(ElasticStrainModifier, inputCrystalStructure);
@@ -73,7 +73,7 @@ ElasticStrainModifier::ElasticStrainModifier(ObjectInitializationFlags flags) : 
             stype->setNumericId(id);
             stype->setDimensionality(MicrostructurePhase::Dimensionality::Volumetric);
             stype->setName(ParticleType::getPredefinedStructureTypeName(predefTypes[id]));
-            stype->setColor(ElementType::getDefaultColor(ParticlePropertyReference(ParticlesObject::StructureTypeProperty), stype->name(), id));
+            stype->setColor(ElementType::getDefaultColor(ParticlePropertyReference(Particles::StructureTypeProperty), stype->name(), id));
             addStructureType(std::move(stype));
         }
     }
@@ -85,10 +85,10 @@ ElasticStrainModifier::ElasticStrainModifier(ObjectInitializationFlags flags) : 
 Future<AsynchronousModifier::EnginePtr> ElasticStrainModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get modifier inputs.
-    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
+    const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
-    const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-    const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
+    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
+    const SimulationCell* simCell = input.expectObject<SimulationCell>();
     if(simCell->is2D())
         throw Exception(tr("The elastic strain calculation modifier does not support 2d simulation cells."));
 

@@ -31,7 +31,7 @@ namespace Ovito {
 ******************************************************************************/
 void OpenGLSceneRenderer::renderImageImplementation(const ImagePrimitive& primitive)
 {
-    if(primitive.image().isNull() || isPicking() || primitive.windowRect().isEmpty())
+    if(primitive.image().isNull() || !isImagePass() || primitive.windowRect().isEmpty())
         return;
 
     rebindVAO();

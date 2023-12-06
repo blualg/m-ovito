@@ -24,7 +24,7 @@
 #include <ovito/core/app/Application.h>
 #include "VTKVoxelGridExporter.h"
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(VTKVoxelGridExporter);
 
@@ -82,7 +82,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
     textStream() << "ASCII\n";
     textStream() << "DATASET STRUCTURED_POINTS\n";
     textStream() << "DIMENSIONS " << dims[0] << " " << dims[1] << " " << dims[2] << "\n";
-    if(const SimulationCellObject* domain = voxelGrid->domain()) {
+    if(const SimulationCell* domain = voxelGrid->domain()) {
         textStream() << "ORIGIN " << domain->cellOrigin().x() << " " << domain->cellOrigin().y() << " " << domain->cellOrigin().z() << "\n";
         textStream() << "SPACING";
         textStream() << " " << domain->cellVector1().length() / std::max(dims[0], (size_t)1);
@@ -96,19 +96,19 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
     }
     textStream() << "POINT_DATA " << voxelGrid->elementCount() << "\n";
 
-    for(const PropertyObject* prop : voxelGrid->properties()) {
-        if(prop->dataType() == PropertyObject::Int8 || prop->dataType() == PropertyObject::Int32 || prop->dataType() == PropertyObject::Int64 || prop->dataType() == PropertyObject::Float32 || prop->dataType() == PropertyObject::Float64) {
+    for(const Property* prop : voxelGrid->properties()) {
+        if(prop->dataType() == Property::Int8 || prop->dataType() == Property::Int32 || prop->dataType() == Property::Int64 || prop->dataType() == Property::Float32 || prop->dataType() == Property::Float64) {
 
             // Write header of data field.
             QString dataName = prop->name();
             dataName.remove(QChar(' '));
-            if((prop->dataType() == PropertyObject::Float32 || prop->dataType() == PropertyObject::Float64) && prop->componentCount() == 3) {
+            if((prop->dataType() == Property::Float32 || prop->dataType() == Property::Float64) && prop->componentCount() == 3) {
                 textStream() << "\nVECTORS " << dataName << " double\n";
             }
             else if(prop->componentCount() <= 4) {
-                if(prop->dataType() == PropertyObject::Int32 || prop->dataType() == PropertyObject::Int8)
+                if(prop->dataType() == Property::Int32 || prop->dataType() == Property::Int8)
                     textStream() << "\nSCALARS " << dataName << " int " << prop->componentCount() << "\n";
-                else if(prop->dataType() == PropertyObject::Int64)
+                else if(prop->dataType() == Property::Int64)
                     textStream() << "\nSCALARS " << dataName << " long " << prop->componentCount() << "\n";
                 else
                     textStream() << "\nSCALARS " << dataName << " double " << prop->componentCount() << "\n";
@@ -119,7 +119,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
             // Write payload data.
             size_t cmpnts = prop->componentCount();
             OVITO_ASSERT(prop->stride() == prop->dataTypeSize() * cmpnts);
-            if(prop->dataType() == PropertyObject::Float32) {
+            if(prop->dataType() == Property::Float32) {
                 BufferReadAccess<float*> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
                     if(operation.isCanceled())
@@ -131,7 +131,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
                     textStream() << "\n";
                 }
             }
-            else if(prop->dataType() == PropertyObject::Float64) {
+            else if(prop->dataType() == Property::Float64) {
                 BufferReadAccess<double*> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
                     if(operation.isCanceled())
@@ -143,7 +143,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
                     textStream() << "\n";
                 }
             }
-            else if(prop->dataType() == PropertyObject::Int8) {
+            else if(prop->dataType() == Property::Int8) {
                 BufferReadAccess<int8_t*> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
                     if(operation.isCanceled())
@@ -155,7 +155,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
                     textStream() << "\n";
                 }
             }
-            else if(prop->dataType() == PropertyObject::Int32) {
+            else if(prop->dataType() == Property::Int32) {
                 BufferReadAccess<int32_t*> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
                     if(operation.isCanceled())
@@ -167,7 +167,7 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
                     textStream() << "\n";
                 }
             }
-            else if(prop->dataType() == PropertyObject::Int64) {
+            else if(prop->dataType() == Property::Int64) {
                 BufferReadAccess<int64_t*> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
                     if(operation.isCanceled())

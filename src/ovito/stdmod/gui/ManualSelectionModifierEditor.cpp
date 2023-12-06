@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,7 @@
 #include <ovito/stdmod/modifiers/ManualSelectionModifier.h>
 #include <ovito/stdobj/gui/widgets/PropertyContainerParameterUI.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
@@ -35,7 +35,7 @@
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include "ManualSelectionModifierEditor.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ManualSelectionModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ManualSelectionModifier, ManualSelectionModifierEditor);
@@ -222,7 +222,7 @@ void ManualSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
 
     // List only property containers that support element selection.
     pclassUI->setContainerFilter([](const PropertyContainer* container) {
-        return container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)
+        return container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)
             && container->getOOMetaClass().supportsViewportPicking();
     });
 
@@ -283,8 +283,8 @@ void ManualSelectionModifierEditor::resetSelection()
 
     performTransaction(tr("Reset selection"), [this,mod]() {
         PipelineEvaluationRequest request(currentAnimationTime());
-        for(ModifierApplication* modApp : modifierApplications()) {
-            mod->resetSelection(modApp, modApp->evaluateInputSynchronous(request));
+        for(ModificationNode* node : modificationNodes()) {
+            mod->resetSelection(node, node->evaluateInputSynchronous(request));
         }
     });
 }
@@ -299,8 +299,8 @@ void ManualSelectionModifierEditor::selectAll()
 
     performTransaction(tr("Select all"), [this,mod]() {
         PipelineEvaluationRequest request(currentAnimationTime());
-        for(ModifierApplication* modApp : modifierApplications()) {
-            mod->selectAll(modApp, modApp->evaluateInputSynchronous(request));
+        for(ModificationNode* node : modificationNodes()) {
+            mod->selectAll(node, node->evaluateInputSynchronous(request));
         }
     });
 }
@@ -315,8 +315,8 @@ void ManualSelectionModifierEditor::clearSelection()
 
     performTransaction(tr("Clear selection"), [this,mod]() {
         PipelineEvaluationRequest request(currentAnimationTime());
-        for(ModifierApplication* modApp : modifierApplications()) {
-            mod->clearSelection(modApp, modApp->evaluateInputSynchronous(request));
+        for(ModificationNode* node : modificationNodes()) {
+            mod->clearSelection(node, node->evaluateInputSynchronous(request));
         }
     });
 }
@@ -331,8 +331,8 @@ void ManualSelectionModifierEditor::invertSelection()
 
     performTransaction(tr("Invert selection"), [this,mod]() {
         PipelineEvaluationRequest request(currentAnimationTime());
-        for(ModifierApplication* modApp : modifierApplications()) {
-            mod->invertSelection(modApp, modApp->evaluateInputSynchronous(request));
+        for(ModificationNode* node : modificationNodes()) {
+            mod->invertSelection(node, node->evaluateInputSynchronous(request));
         }
     });
 }
@@ -347,14 +347,14 @@ void ManualSelectionModifierEditor::onElementPicked(const ViewportPickResult& pi
 
     performTransaction(tr("Toggle selection"), [this, mod, elementIndex, &pickedObjectPath, &pickResult]() {
         PipelineEvaluationRequest request(currentAnimationTime());
-        for(ModifierApplication* modApp : modifierApplications()) {
+        for(ModificationNode* node : modificationNodes()) {
 
             // Make sure we are in the right data pipeline.
-            if(!modApp->pipelines(true).contains(pickResult.pipelineNode()))
+            if(!node->pipelines(true).contains(pickResult.pipeline()))
                 continue;
 
             // Get the modifier's input data.
-            const PipelineFlowState& modInput = modApp->evaluateInputSynchronous(request);
+            const PipelineFlowState& modInput = node->evaluateInputSynchronous(request);
             const ConstDataObjectPath& inputObjectPath = modInput.expectObject(mod->subject());
 
             // Look up the right element in the modifier's input.
@@ -363,7 +363,7 @@ void ManualSelectionModifierEditor::onElementPicked(const ViewportPickResult& pi
             // into an index into the modifier's input data collection.
             size_t translatedIndex = mod->subject().dataClass()->remapElementIndex(pickedObjectPath, elementIndex, inputObjectPath);
             if(translatedIndex != std::numeric_limits<size_t>::max()) {
-                mod->toggleElementSelection(modApp, modInput, translatedIndex);
+                mod->toggleElementSelection(node, modInput, translatedIndex);
                 break;
             }
             else {
@@ -383,19 +383,19 @@ void ManualSelectionModifierEditor::onFence(const QVector<Point2>& fence, Viewpo
 
     performTransaction(tr("Select"), [this, mod, &fence, viewport, mode]() {
         PipelineEvaluationRequest request(currentAnimationTime());
-        for(ModifierApplication* modApp : modifierApplications()) {
+        for(ModificationNode* node : modificationNodes()) {
 
             // Get the modifier's input data.
-            const PipelineFlowState& modInput = modApp->evaluateInputSynchronous(request);
+            const PipelineFlowState& modInput = node->evaluateInputSynchronous(request);
             const ConstDataObjectPath& inputObjectPath = modInput.expectObject(mod->subject());
 
-            // Iterate of the nodes that use this pipeline.
+            // Iterate over the pipelines.
             // We'll need their object-to-world transformation.
-            for(PipelineSceneNode* node : modApp->pipelines(true)) {
+            for(Pipeline* pipeline : node->pipelines(true)) {
 
                 // Set up projection matrix transforming elements from object space to screen space.
                 TimeInterval interval;
-                const AffineTransformation& nodeTM = node->getWorldTransform(request.time(), interval);
+                const AffineTransformation& nodeTM = pipeline->getWorldTransform(request.time(), interval);
                 Matrix4 ndcToScreen = Matrix4::Identity();
                 ndcToScreen(0,0) = 0.5 * viewport->windowSize().width();
                 ndcToScreen(1,1) = 0.5 * viewport->windowSize().height();
@@ -404,10 +404,10 @@ void ManualSelectionModifierEditor::onFence(const QVector<Point2>& fence, Viewpo
                 ndcToScreen(1,1) = -ndcToScreen(1,1);   // Vertical flip.
                 Matrix4 projectionTM = ndcToScreen * viewport->projectionParams().projectionMatrix * (viewport->projectionParams().viewMatrix * nodeTM);
 
-                // Determine which particles are within the closed fence polygon.
-                boost::dynamic_bitset<> selection = mod->subject().dataClass()->viewportFenceSelection(fence, inputObjectPath, node, projectionTM);
+                // Determine which elements are within the closed fence polygon.
+                boost::dynamic_bitset<> selection = mod->subject().dataClass()->viewportFenceSelection(fence, inputObjectPath, pipeline, projectionTM);
                 if(selection.size() != 0) {
-                    mod->setSelection(modApp, modInput, selection, mode);
+                    mod->setSelection(node, modInput, selection, mode);
                 }
                 else {
                     throw Exception(tr("Sorry, making a fence-based selection is not supported for %1.").arg(mod->subject().dataClass()->elementDescriptionName()));

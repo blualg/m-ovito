@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2019 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,7 +27,7 @@
 #include <ovito/crystalanalysis/data/ClusterVector.h>
 #include "InterfaceMesh.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 struct DislocationNode;     // Defined in DislocationNetwork.h
 

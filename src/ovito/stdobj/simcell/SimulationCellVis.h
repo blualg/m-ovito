@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,10 +26,10 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/data/DataVis.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
- * \brief A visual element that renders a SimulationCellObject as a wireframe box.
+ * \brief A visual element that renders a SimulationCell as a wireframe box.
  */
 class OVITO_STDOBJ_EXPORT SimulationCellVis : public DataVis
 {
@@ -42,10 +42,10 @@ public:
     Q_INVOKABLE SimulationCellVis(ObjectInitializationFlags flags);
 
     /// \brief Lets the visualization element render the data object.
-    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
+    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;
 
     /// \brief Computes the bounding box of the object.
-    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
+    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
 
     /// \brief Indicates whether this object should be surrounded by a selection marker in the viewports when it is selected.
     virtual bool showSelectionMarker() override { return false; }
@@ -53,10 +53,10 @@ public:
 protected:
 
     /// Renders the given simulation using wireframe mode.
-    void renderWireframe(AnimationTime time, const SimulationCellObject* cell, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode);
+    void renderWireframe(AnimationTime time, const SimulationCell* cell, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline);
 
     /// Renders the given simulation using solid shading mode.
-    void renderSolid(AnimationTime time, const SimulationCellObject* cell, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode);
+    void renderSolid(AnimationTime time, const SimulationCell* cell, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline);
 
 protected:
 

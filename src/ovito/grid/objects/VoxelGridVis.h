@@ -31,7 +31,7 @@
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 /**
  * \brief A visualization element for rendering VoxelGrid data objects.
@@ -47,10 +47,10 @@ public:
     Q_INVOKABLE VoxelGridVis(ObjectInitializationFlags flags);
 
     /// Lets the visualization element render the data object.
-    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
+    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;
 
     /// Computes the bounding box of the object.
-    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
+    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
 
     /// Returns the transparency parameter.
     FloatType transparency() const { return transparencyController() ? transparencyController()->getFloatValue(AnimationTime(0)) : 0; }
@@ -99,7 +99,7 @@ public:
     const VoxelGridVis* visElement() const { return _visElement; }
 
     /// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
-    virtual QString infoString(PipelineSceneNode* objectNode, quint32 subobjectId) override;
+    virtual QString infoString(Pipeline* pipeline, quint32 subobjectId) override;
 
 private:
 

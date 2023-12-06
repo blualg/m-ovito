@@ -25,7 +25,7 @@
 #include "BurgersVectorFamily.h"
 #include "MicrostructurePhase.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(BurgersVectorFamily);
 DEFINE_PROPERTY_FIELD(BurgersVectorFamily, burgersVector);

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -34,7 +34,7 @@ namespace Ovito {
 * The constructor of the animation settings dialog.
 ******************************************************************************/
 AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, QWidget* parent) :
-        QDialog(parent), 
+        QDialog(parent),
         UndoableTransaction(mainWindow, tr("Change animation settings")),
         _mainWindow(mainWindow),
         _animSettings(mainWindow.datasetContainer().activeAnimationSettings())

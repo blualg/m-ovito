@@ -30,9 +30,7 @@
 #include <ovito/crystalanalysis/data/ClusterGraph.h>
 #include "StructureAnalysis.h"
 
-namespace Ovito::CrystalAnalysis {
-
-using namespace Ovito::Delaunay;
+namespace Ovito {
 
 /**
  * Computes the elastic mapping from the physical configuration to a stress-free reference state.

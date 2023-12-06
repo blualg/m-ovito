@@ -31,7 +31,7 @@
 
 #include <QTcpSocket>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief A modifier that updates the particle positions using real-time MD trajectory data it receives from a
@@ -54,11 +54,7 @@ class OVITO_PARTICLES_EXPORT InteractiveMolecularDynamicsModifier : public Modif
     OVITO_CLASS_META(InteractiveMolecularDynamicsModifier, OOMetaClass)
     Q_CLASSINFO("DisplayName", "Interactive molecular dynamics");
     Q_CLASSINFO("Description", "Visualize live atomic trajectories from a running MD simulation as they are being calculated.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Visualization");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 

@@ -23,6 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/ViewportsPanel.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/dialogs/MessageDialog.h>
 #include <ovito/core/app/PluginManager.h>
 #include "ViewportSettingsPage.h"
 
@@ -82,7 +83,7 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
     layout2 = new QGridLayout(colorsGroupBox);
 
     _colorScheme = new QButtonGroup(page);
-    QRadioButton* darkColorScheme = new QRadioButton(tr("Dark"), colorsGroupBox);
+    QRadioButton* darkColorScheme = new QRadioButton(tr("Dark (default)"), colorsGroupBox);
     QRadioButton* lightColorScheme = new QRadioButton(tr("Light"), colorsGroupBox);
     layout2->addWidget(darkColorScheme, 0, 0, 1, 1);
     layout2->addWidget(lightColorScheme, 0, 1, 1, 1);
@@ -99,6 +100,7 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
     layout2 = new QGridLayout(graphicsGroupBox);
     layout2->setColumnStretch(2, 1);
 
+#if 0
     layout2->addWidget(new QLabel(tr("Graphics hardware interface:")), 0, 0);
     _graphicsSystem = new QButtonGroup(page);
     QRadioButton* openglOption = new QRadioButton(tr("OpenGL"), graphicsGroupBox);
@@ -175,17 +177,21 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
         openglOption->setChecked(true);
     _vulkanDevices->setEnabled(vulkanOption->isChecked());
     connect(vulkanOption, &QAbstractButton::toggled, _vulkanDevices, &QComboBox::setEnabled);
+#endif
 
     // Transparency rendering method.
     _transparencyRenderingMethod = new QComboBox();
-    _transparencyRenderingMethod->addItem(tr("Back-to-Front Ordered"), QVariant::fromValue(1));
+    _transparencyRenderingMethod->addItem(tr("Back-to-Front Ordered (default)"), QVariant::fromValue(1));
     _transparencyRenderingMethod->addItem(tr("Weighted Blended Order-Independent"), QVariant::fromValue(2));
     _transparencyRenderingMethod->setCurrentIndex(
         _transparencyRenderingMethod->findData(settings.value("rendering/transparency_method", 1)));
     layout2->addWidget(new QLabel(tr("Transparency rendering method:")), 3, 0);
     layout2->addWidget(_transparencyRenderingMethod, 3, 1, 1, 2);
+
+#if 0
     _transparencyRenderingMethod->setEnabled(openglOption->isChecked());
     connect(openglOption, &QAbstractButton::toggled, _transparencyRenderingMethod, &QComboBox::setEnabled);
+#endif
 
     layout1->addStretch();
 }
@@ -196,7 +202,7 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 bool ViewportSettingsPage::validateValues(QTabWidget* tabWidget)
 {
     QSettings settings;
-
+#if 0
     // Check if user has selected a different 3D graphics API than before.
     bool recreateViewportWindows = false;
     bool wasVulkanSelected = (settings.value("rendering/selected_graphics_api").toString() == "Vulkan");
@@ -204,7 +210,7 @@ bool ViewportSettingsPage::validateValues(QTabWidget* tabWidget)
     if(isVulkanSelected != wasVulkanSelected && isVulkanSelected) {
         // Warn the user that some Vulkan implementations may be incompatible with Ovito and can
         // render the application unusable.
-        QMessageBox msgBox(settingsDialog());
+        MessageDialog msgBox(settingsDialog());
         msgBox.setIcon(QMessageBox::Question);
         msgBox.setText("Are you sure you want to enable the Vulkan-based viewport renderer?");
         msgBox.setInformativeText(tr(
@@ -223,6 +229,7 @@ bool ViewportSettingsPage::validateValues(QTabWidget* tabWidget)
             return false;
         }
     }
+#endif
 
     return true;
 }
@@ -236,6 +243,7 @@ void ViewportSettingsPage::saveValues(QTabWidget* tabWidget)
 
     // Check if user has selected a different 3D graphics API than before.
     bool recreateViewportWindows = false;
+#if 0
     QString oldGraphicsApi = settings.value("rendering/selected_graphics_api").toString();
     QString newGraphicsApi;
     if(_graphicsSystem->checkedId() == 1) newGraphicsApi = "Vulkan";
@@ -254,6 +262,7 @@ void ViewportSettingsPage::saveValues(QTabWidget* tabWidget)
         settings.setValue("rendering/vulkan/selected_device", _vulkanDevices->currentIndex());
         recreateViewportWindows = true;
     }
+#endif
 
     // Check if a different transparency rendering method was selected by the user.
     if(settings.value("rendering/transparency_method", 1).toInt() != _transparencyRenderingMethod->currentData().toInt()) {

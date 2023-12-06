@@ -29,7 +29,7 @@
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 /*
  * Constructs an isosurface from a data grid.
@@ -52,11 +52,7 @@ class OVITO_GRID_EXPORT CreateIsosurfaceModifier : public AsynchronousModifier
 
     Q_CLASSINFO("DisplayName", "Create isosurface");
     Q_CLASSINFO("Description", "Compute the isosurface of a scalar value field.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Visualization");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 
@@ -82,10 +78,10 @@ public:
     void setIsolevel(FloatType value) { if(isolevelController()) isolevelController()->setFloatValue(AnimationTime(0), value); }
 
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return tr("%1=%2").arg(sourceProperty().nameWithComponent()).arg(isolevel()); }
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return tr("%1=%2").arg(sourceProperty().nameWithComponent()).arg(isolevel()); }
 
     /// Transfers voxel grid properties to the vertices of a surfaces mesh.
-    static bool transferPropertiesFromGridToMesh(SurfaceMeshBuilder& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, const SimulationCellObject& gridDomain, VoxelGrid::GridDimensions gridShape, VoxelGrid::GridType gridType);
+    static bool transferPropertiesFromGridToMesh(SurfaceMeshBuilder& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, const SimulationCell& gridDomain, VoxelGrid::GridDimensions gridShape, VoxelGrid::GridType gridType);
 
 protected:
 

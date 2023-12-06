@@ -39,7 +39,7 @@ SET_PROPERTY_FIELD_LABEL(BasePipelineSource, dataCollectionFrame, "Active frame 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-BasePipelineSource::BasePipelineSource(ObjectInitializationFlags flags) : CachingPipelineObject(flags),
+BasePipelineSource::BasePipelineSource(ObjectInitializationFlags flags) : PipelineNode(flags),
     _dataCollectionFrame(-1),
     _userHasChangedDataCollection(false)
 {
@@ -84,8 +84,8 @@ Future<PipelineFlowState> BasePipelineSource::postprocessDataCollection(int anim
             if(throwOnError)
                 throw;
             setStatus(ex);
-            ex.prependGeneralMessage(tr("Pipeline source reported:"));
-            return PipelineFlowState(dataCollection(), PipelineStatus(ex, QChar(' ')), frameInterval);
+            ex.prependToMessage(tr("Pipeline source reported: "));
+            return PipelineFlowState(dataCollection(), PipelineStatus(ex, QStringLiteral(" ")), frameInterval);
         }
         catch(const std::bad_alloc&) {
             setStatus(PipelineStatus(PipelineStatus::Error, tr("Not enough memory.")));
@@ -129,7 +129,7 @@ Future<PipelineFlowState> BasePipelineSource::postprocessCachedState(const Pipel
         }
     }
 
-    return CachingPipelineObject::postprocessCachedState(request, state);
+    return PipelineNode::postprocessCachedState(request, state);
 }
 
 /******************************************************************************
@@ -174,7 +174,7 @@ bool BasePipelineSource::referenceEvent(RefTarget* source, const ReferenceEvent&
         // Set dirty flag when user modifies on of the visual elements associated with the current data collection.
         _userHasChangedDataCollection.set(this, PROPERTY_FIELD(userHasChangedDataCollection), true);
     }
-    return CachingPipelineObject::referenceEvent(source, event);
+    return PipelineNode::referenceEvent(source, event);
 }
 
 /******************************************************************************

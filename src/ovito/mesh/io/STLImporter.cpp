@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,13 +22,13 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
-#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
-#include <ovito/core/dataset/data/mesh/TriMeshVis.h>
+#include <ovito/core/dataset/data/mesh/TriangleMesh.h>
+#include <ovito/core/dataset/data/mesh/TriangleMeshVis.h>
 #include "STLImporter.h"
 
 #include <QtEndian>
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(STLImporter);
 
@@ -37,7 +37,7 @@ IMPLEMENT_OVITO_CLASS(STLImporter);
 ******************************************************************************/
 bool STLImporter::OOMetaClass::importsDataType(const DataObject::OOMetaClass& dataObjectType) const
 {
-    return TriMeshObject::OOClass().isDerivedFrom(dataObjectType);
+    return TriangleMesh::OOClass().isDerivedFrom(dataObjectType);
 }
 
 /******************************************************************************
@@ -91,9 +91,9 @@ void STLImporter::FrameLoader::loadFile()
     setProgressText(tr("Reading STL file %1").arg(fileHandle().toString()));
 
     // Add mesh to the data collection.
-    TriMeshObject* mesh = state().getMutableObject<TriMeshObject>();
+    TriangleMesh* mesh = state().getMutableObject<TriangleMesh>();
     if(!mesh)
-        mesh = state().createObject<TriMeshObject>(dataSource());
+        mesh = state().createObject<TriangleMesh>(pipelineNode());
     else
         mesh->clear();
     mesh->setIdentifier(QStringLiteral("mesh"));

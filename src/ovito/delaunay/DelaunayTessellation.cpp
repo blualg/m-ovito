@@ -27,12 +27,12 @@
 #include <boost/functional/hash.hpp>
 #include <cstdlib>
 
-namespace Ovito::Delaunay {
+namespace Ovito {
 
 /******************************************************************************
 * Generates the tessellation.
 ******************************************************************************/
-bool DelaunayTessellation::generateTessellation(const SimulationCellObject* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const SelectionIntType* selectedPoints, ProgressingTask& operation)
+bool DelaunayTessellation::generateTessellation(const SimulationCell* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const SelectionIntType* selectedPoints, ProgressingTask& operation)
 {
     operation.setProgressMaximum(0);
 

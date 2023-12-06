@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,8 +37,8 @@ void main()
 {
     // Apply instance transformation.
     vec3 instance_position = vec3(
-        dot(instance_tm_row1, position), 
-        dot(instance_tm_row2, position), 
+        dot(instance_tm_row1, position),
+        dot(instance_tm_row2, position),
         dot(instance_tm_row3, position));
 
 	// Apply model-view-projection matrix to vertex.
@@ -50,8 +50,8 @@ void main()
     // Apply instance transformation to normal vector.
     // Note: We are assuming a pure rotation here.
     vec3 instance_normal = vec3(
-        dot(instance_tm_row1, vec4(normal, 0.0)), 
-        dot(instance_tm_row2, vec4(normal, 0.0)), 
+        dot(instance_tm_row1, vec4(normal, 0.0)),
+        dot(instance_tm_row2, vec4(normal, 0.0)),
         dot(instance_tm_row3, vec4(normal, 0.0)));
 
     // Transform vertex normal from object to view space.

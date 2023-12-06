@@ -31,12 +31,12 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/OpenDataInspectorButton.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "HistogramModifierEditor.h"
 
 #include <qwt/qwt_plot_zoneitem.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(HistogramModifierEditor);
 SET_OVITO_OBJECT_EDITOR(HistogramModifier, HistogramModifierEditor);
@@ -202,13 +202,13 @@ void HistogramModifierEditor::plotHistogram()
         _selectionRangeIndicator->hide();
     }
 
-    if(modifier && modifierApplication()) {
+    if(modifier && modificationNode()) {
         // Request the modifier's pipeline output.
         const PipelineFlowState& state = getPipelineOutput();
 
         // Look up the generated data table in the modifier's pipeline output.
         QString tableName = QStringLiteral("histogram[%1]").arg(modifier->sourceProperty().nameWithComponent());
-        const DataTable* table = state.getObjectBy<DataTable>(modifierApplication(), tableName);
+        const DataTable* table = state.getObjectBy<DataTable>(modificationNode(), tableName);
         _plotWidget->setTable(table);
     }
     else {

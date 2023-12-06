@@ -1,3 +1,0 @@
-The MLIP package documentation (CFG file format):
-
-https://gitlab.com/ashapeev/mlip-2-paper-supp-info/-/blob/96bbf713bbc3175031701a09c34c38f482e5113f/manual.pdf

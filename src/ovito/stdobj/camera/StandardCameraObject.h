@@ -29,7 +29,7 @@
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/core/rendering/LinePrimitive.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * The standard camera data object.
@@ -59,7 +59,7 @@ public:
     Q_INVOKABLE StandardCameraObject(ObjectInitializationFlags flags);
 
     /// With a target camera, indicates the distance between the camera and its target.
-    static FloatType getTargetDistance(AnimationTime time, const PipelineSceneNode* node);
+    static FloatType getTargetDistance(AnimationTime time, const Pipeline* pipeline);
 
     /// \brief Returns a structure describing the camera's projection.
     /// \param[in] time The animation time for which the camera's projection parameters should be determined.
@@ -104,10 +104,10 @@ public:
     Q_INVOKABLE CameraVis(ObjectInitializationFlags flags) : DataVis(flags) {}
 
     /// \brief Lets the vis element render a camera object.
-    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode) override;
+    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;
 
     /// \brief Computes the bounding box of the object.
-    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
+    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
 
 private:
 

@@ -21,12 +21,12 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/VectorVis.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "ParticlesColorCodingModifierDelegate.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParticlesColorCodingModifierDelegate);
 IMPLEMENT_OVITO_CLASS(ParticleVectorsColorCodingModifierDelegate);
@@ -38,8 +38,8 @@ IMPLEMENT_OVITO_CLASS(BondsColorCodingModifierDelegate);
 ******************************************************************************/
 QVector<DataObjectReference> ParticlesColorCodingModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(input.containsObject<ParticlesObject>())
-        return { DataObjectReference(&ParticlesObject::OOClass()) };
+    if(input.containsObject<Particles>())
+        return { DataObjectReference(&Particles::OOClass()) };
     return {};
 }
 
@@ -49,10 +49,10 @@ QVector<DataObjectReference> ParticlesColorCodingModifierDelegate::OOMetaClass::
 ******************************************************************************/
 QVector<DataObjectReference> ParticleVectorsColorCodingModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(const ParticlesObject* particles = input.getObject<ParticlesObject>()) {
-        for(const PropertyObject* property : particles->properties()) {
+    if(const Particles* particles = input.getObject<Particles>()) {
+        for(const Property* property : particles->properties()) {
             if(property->visElement<VectorVis>() != nullptr)
-                return { DataObjectReference(&ParticlesObject::OOClass()) };
+                return { DataObjectReference(&Particles::OOClass()) };
         }
     }
     return {};
@@ -64,9 +64,9 @@ QVector<DataObjectReference> ParticleVectorsColorCodingModifierDelegate::OOMetaC
 ******************************************************************************/
 QVector<DataObjectReference> BondsColorCodingModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(const ParticlesObject* particles = input.getObject<ParticlesObject>()) {
+    if(const Particles* particles = input.getObject<Particles>()) {
         if(particles->bonds())
-            return { DataObjectReference(&ParticlesObject::OOClass()) };
+            return { DataObjectReference(&Particles::OOClass()) };
     }
     return {};
 }

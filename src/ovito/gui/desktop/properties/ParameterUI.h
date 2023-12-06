@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/app/undo/UndoableTransaction.h>
+#include <ovito/gui/desktop/widgets/general/MenuToolButton.h>
 #include "PropertiesEditor.h"
 
 namespace Ovito {
@@ -51,9 +52,9 @@ public:
 
     /// \brief Returns a pointer to the properties editor this parameter UI belongs to.
     /// \return The editor in which this parameter UI is used or NULL if the parameter UI is used outside of a PropertiesEditor.
-    PropertiesEditor* editor() const { 
+    PropertiesEditor* editor() const {
         OVITO_ASSERT(!this->parent() || qobject_cast<PropertiesEditor*>(this->parent()));
-        return static_cast<PropertiesEditor*>(this->parent()); 
+        return static_cast<PropertiesEditor*>(this->parent());
     }
 
     /// \brief Returns the main window that is hosting this parameter UI.
@@ -82,8 +83,8 @@ public:
     }
 
     /// Executes a functor provided by the caller that performs undoable actions in an interactive context.
-    /// If an exception is thrown by the functor, the error message is displayed 
-    /// to the user, and this function returns false. 
+    /// If an exception is thrown by the functor, the error message is displayed
+    /// to the user, and this function returns false.
     template<typename Function>
     bool performActions(UndoableTransaction& transaction, Function&& func) {
         return editor()->performActions(transaction, std::forward<Function>(func));
@@ -206,6 +207,26 @@ public:
     /// method must call the base implementation before any other action is taken.
     virtual void resetUI() override;
 
+    /// \brief Returns the menu tool button associated to this PropertyParameterUI
+    [[nodiscard]] MenuToolButton* menuToolButton() const { return _menuToolButton; }
+
+    /// \brief Returns the menu tool button associated to this PropertyParameterUI.
+    /// Creates a new MenuToolButton if one doesn't exist yet.
+    /// \param parent parent widget for the MenuToolButton
+    /// \return pointer to the MenuToolButton
+    [[nodiscard]] MenuToolButton* createMenuToolButton(QWidget* parent = nullptr);
+
+    /// \brief Create a new action in the menuToolButton with the given text and icon
+    /// Creates a new MenuToolButton if one doesn't exist yet.
+    /// \return pointer to the new action
+    [[nodiscard]] QAction* createAction(const QString& text, const QIcon& icon);
+
+    /// \brief Creates a new action in the menuToolButton that can be used to reset the parameter
+    /// managed by this PropertyParameterUI to its default value
+    /// Creates a new MenuToolButton if one doesn't exist yet.
+    /// \return pointer to the reset action
+    QAction* createResetAction();
+
 public:
 
     Q_PROPERTY(const char* propertyName READ propertyName)
@@ -238,6 +259,9 @@ private:
 
     /// The name of the Qt property being edited or NULL.
     const char* _propertyName = nullptr;
+
+    /// The MenuToolButton associated to this PropertyParameterUI
+    QPointer<MenuToolButton> _menuToolButton = nullptr;
 };
 
 }   // End of namespace

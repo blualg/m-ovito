@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -91,10 +91,10 @@ private:
     /// The container widget managed by this parameter UI.
     QPointer<QWidget> _containerWidget;
 
-    /// The QAction for each delegate that removes it. 
+    /// The QAction for each delegate that removes it.
     QVector<QAction*> _removeDelegateActions;
 
-    /// The QComboBox for each delegate. 
+    /// The QComboBox for each delegate.
     QVector<QComboBox*> _delegateBoxes;
 
     /// The current list of delegates.

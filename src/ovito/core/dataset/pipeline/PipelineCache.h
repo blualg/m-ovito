@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,7 +32,7 @@ namespace Ovito {
 
 /**
  * \brief A data cache for PipelineFlowState objects, which is used in the implementation of the PipelineSceneNode
- *        and the CachingPipelineObject class.
+ *        and the PipelineNode class.
  */
 class OVITO_CORE_EXPORT PipelineCache final
 {
@@ -51,7 +51,7 @@ public:
     const PipelineFlowState& evaluatePipelineSynchronous(const PipelineEvaluationRequest& request);
 
     /// Performs a synchronous evaluation of a pipeline stage.
-    const PipelineFlowState& evaluatePipelineStageSynchronous(const PipelineEvaluationRequest& request);
+    PipelineFlowState evaluatePipelineStageSynchronous(const PipelineEvaluationRequest& request);
 
     /// Looks up the pipeline state for the given animation time.
     const PipelineFlowState& getAt(AnimationTime time) const;
@@ -71,6 +71,12 @@ public:
 
     /// Enables or disables the precomputation and caching of all frames of the animation.
     void setPrecomputeAllFrames(bool enable);
+
+    /// Returns whether caching is enabled or not.
+    bool isEnabled() const { return _isEnabled; }
+
+    /// Enables/disables this cache.
+    void setEnabled(bool enabled) { _isEnabled = enabled; }
 
 private:
 
@@ -139,6 +145,9 @@ private:
 
     /// Indicates that a pipeline evaluation is being prepared. During this phase, the cache may not be invalidated or a new evaluation be requested.
     bool _preparingEvaluation = false;
+
+    /// Controls whether caching is enabled or not.
+    bool _isEnabled = true;
 };
 
 }   // End of namespace

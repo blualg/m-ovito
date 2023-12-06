@@ -31,7 +31,7 @@
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include "LAMMPSDumpLocalImporterEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSDumpLocalImporterEditor);
 SET_OVITO_OBJECT_EDITOR(LAMMPSDumpLocalImporter, LAMMPSDumpLocalImporterEditor);

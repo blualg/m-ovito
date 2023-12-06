@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,11 +24,11 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/io/StandardFrameLoader.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Base class for file parsers that read particle datasets.
@@ -69,19 +69,19 @@ protected:
         FrameLoader(const LoadOperationRequest& request, bool recenterCell) : StandardFrameLoader::StandardFrameLoader(request), _recenterCell(recenterCell) {}
 
         /// Returns the particles container object, newly creating it first if necessary.
-        ParticlesObject* particles();
+        Particles* particles();
 
         /// Returns the bonds container object, newly creating it first if necessary.
-        BondsObject* bonds();
+        Bonds* bonds();
 
         /// Returns the angles container object, newly creating it first if necessary.
-        AnglesObject* angles();
+        Angles* angles();
 
         /// Returns the dihedrals container object, newly creating it first if necessary.
-        DihedralsObject* dihedrals();
+        Dihedrals* dihedrals();
 
         /// Returns the impropers container object, newly creating it first if necessary.
-        ImpropersObject* impropers();
+        Impropers* impropers();
 
         /// Creates a particles container object (if the particle count is non-zero) and adjusts the number of elements of the property container.
         void setParticleCount(size_t count);
@@ -142,19 +142,19 @@ protected:
     private:
 
         /// The particles container object.
-        ParticlesObject* _particles = nullptr;
+        Particles* _particles = nullptr;
 
         /// The bonds container object.
-        BondsObject* _bonds = nullptr;
+        Bonds* _bonds = nullptr;
 
         /// The angles container object.
-        AnglesObject* _angles = nullptr;
+        Angles* _angles = nullptr;
 
         /// The dihedrals container object.
-        DihedralsObject* _dihedrals = nullptr;
+        Dihedrals* _dihedrals = nullptr;
 
         /// The impropers container object.
-        ImpropersObject* _impropers = nullptr;
+        Impropers* _impropers = nullptr;
 
         /// Controls the dynamic centering of the simulation cell during import.
         bool _recenterCell = false;
@@ -183,7 +183,7 @@ protected:
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
     /// Is called when importing multiple files of different formats.
-    virtual bool importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, PipelineSceneNode* pipeline) override;
+    virtual bool importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, Pipeline* pipeline) override;
 
 private:
 

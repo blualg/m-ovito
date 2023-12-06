@@ -21,17 +21,13 @@
 #######################################################################################
 
 # Make sure we have a recent version of CMake.
-CMAKE_MINIMUM_REQUIRED(VERSION 3.12.0 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.19.0 FATAL_ERROR)
 CMAKE_POLICY(VERSION 3.12.0)
 
 # Choose CMake policies.
-IF(NOT CMAKE_VERSION VERSION_LESS "3.17")
-    CMAKE_POLICY(SET CMP0100 NEW)   # Let AUTOMOC and AUTOUIC process .hh files.
-    CMAKE_POLICY(SET CMP0099 NEW)   # Link properties are transitive over private dependency on static libraries.
-ENDIF()
-IF(NOT CMAKE_VERSION VERSION_LESS "3.13")
-    CMAKE_POLICY(SET CMP0079 NEW)   # Allows use of target_link_libraries() with targets defined in other directories.
-ENDIF()
+CMAKE_POLICY(SET CMP0100 NEW)   # Let AUTOMOC and AUTOUIC process .hh files.
+CMAKE_POLICY(SET CMP0099 NEW)   # Link properties are transitive over private dependency on static libraries.
+CMAKE_POLICY(SET CMP0079 NEW)   # Allows use of target_link_libraries() with targets defined in other directories.
 IF(NOT CMAKE_VERSION VERSION_LESS "3.27")
     CMAKE_POLICY(SET CMP0144 NEW)   # find_package() uses upper-case <PACKAGENAME>_ROOT variables.
 ENDIF()
@@ -54,7 +50,6 @@ INCLUDE(cmake/Plugins.cmake)
 # Define build options.
 OPTION(OVITO_DOUBLE_PRECISION_FP "Use double-precision floating-point numbers." "ON")
 OPTION(OVITO_BUILD_APP "Build the OVITO desktop application." "ON")
-OPTION(OVITO_QML_GUI "Use an alternative (experimental) graphical user interface, which is based on Qt's QML module instead of Widgets." "OFF")
 OPTION(OVITO_BUILD_MONOLITHIC "Build the application as a monolithic executable, statically linking in all plugins." "OFF")
 OPTION(OVITO_REDISTRIBUTABLE_PACKAGE "Create a redistributable program package that includes third-party libraries." "OFF")
 OPTION(OVITO_BUILD_APPSTORE_VERSION "Build binaries for the Apple App Store and Windows Store." "OFF")
@@ -64,7 +59,7 @@ OPTION(OVITO_USE_PRECOMPILED_HEADERS "Use precompiled C++ headers to speed up bu
 OPTION(OVITO_USE_UNITY_BUILD "Use unity builds to speed up compilation (requires CMake 3.16)." "OFF")
 OPTION(OVITO_DISABLE_THREADING "Disable multi-threading code (meant only for development purposes)." "OFF")
 OPTION(OVITO_USE_GIT_REVISION_NUMBER "Include Git revision information in OVITO version string." "OFF")
-OPTION(OVITO_BUILD_SSH_CLIENT "Build the integrated SSH client for remote file access (requires libssh)." "ON")
+OPTION(OVITO_BUILD_SSH_CLIENT "Build the integrated SSH client for remote file access (requires libssh)." "OFF")
 OPTION(OVITO_LIBSSH_RUNTIME_LINKING "Load libssh at runtime" "OFF")
 OPTION(OVITO_NO_EVENT_LOOP "Do not require a Qt event loop when doing headless processing" "OFF")
 OPTION(OVITO_USE_SYCL "Build with SYCL support" "OFF")
@@ -76,7 +71,7 @@ SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 6.2)
 FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
 
 # Look for optional Vulkan SDK (requires version 1.1 or above).
-FIND_PACKAGE(Vulkan)
+#FIND_PACKAGE(Vulkan)
 
 # Look for DPC++ SYCL implementation.
 IF(OVITO_USE_SYCL STREQUAL DPC++)

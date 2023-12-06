@@ -24,12 +24,12 @@
 
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyContainerClass.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief Defines the mapping of a column in an imported data file to a target property in OVITO.
@@ -69,7 +69,7 @@ public:
     /// \param vectorComponent The component index if the target property is a vector property.
     void mapStandardColumn(PropertyContainerClassPtr pclass, int typeId, int vectorComponent = 0) {
         OVITO_ASSERT(pclass);
-        OVITO_ASSERT(typeId != PropertyObject::GenericUserProperty);
+        OVITO_ASSERT(typeId != Property::GenericUserProperty);
         this->property = PropertyReference(pclass, typeId, vectorComponent);
         this->dataType = pclass->standardPropertyDataType(typeId);
     }
@@ -244,6 +244,9 @@ public:
     /// \brief Sorts the created element types either by numeric ID or by name, depending on how they were stored in the input file.
     void sortElementTypes();
 
+    /// Returns a list of properties that have been parsed.
+    std::set<Property*> parsedProperties() const;
+
     /// \brief Explicitly release the target properties written to by this class.
     void reset() { _properties.clear(); }
 
@@ -265,7 +268,7 @@ private:
     StandardFrameLoader& _frameLoader;
 
     struct TargetPropertyRecord {
-        PropertyObject* property = nullptr;
+        Property* property = nullptr;
         RawBufferAccess<access_mode::read_write> propertyArray;
         uint8_t* data;
         size_t stride;
@@ -289,5 +292,5 @@ private:
 
 }   // End of namespace
 
-Q_DECLARE_METATYPE(Ovito::StdObj::InputColumnInfo);
-Q_DECLARE_METATYPE(Ovito::StdObj::InputColumnMapping);
+Q_DECLARE_METATYPE(Ovito::InputColumnInfo);
+Q_DECLARE_METATYPE(Ovito::InputColumnMapping);

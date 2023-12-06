@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -22,14 +22,14 @@
 
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include <ovito/stdobj/properties/ElementType.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/gui/desktop/properties/RefTargetListParameterUI.h>
 #include "PropertyObjectEditor.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(PropertyObjectEditor);
-SET_OVITO_OBJECT_EDITOR(PropertyObject, PropertyObjectEditor);
+SET_OVITO_OBJECT_EDITOR(Property, PropertyObjectEditor);
 
 /******************************************************************************
 * Sets up the UI widgets of the editor.
@@ -95,7 +95,7 @@ void PropertyObjectEditor::createUI(const RolloutInsertionParameters& rolloutPar
     sublayout->setContentsMargins(0,0,0,0);
     layout->addWidget(subEditorContainer);
 
-    RefTargetListParameterUI* elementTypesListUI = new CustomRefTargetListParameterUI(this, PROPERTY_FIELD(PropertyObject::elementTypes), RolloutInsertionParameters().insertInto(subEditorContainer));
+    RefTargetListParameterUI* elementTypesListUI = new CustomRefTargetListParameterUI(this, PROPERTY_FIELD(Property::elementTypes), RolloutInsertionParameters().insertInto(subEditorContainer));
     QTableView* tableWidget = elementTypesListUI->tableWidget(250);
     layout->insertWidget(0, tableWidget);
     tableWidget->verticalHeader()->setDefaultSectionSize(tableWidget->verticalHeader()->minimumSectionSize());

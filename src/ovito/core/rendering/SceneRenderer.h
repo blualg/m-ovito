@@ -30,7 +30,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/viewport/ViewProjectionParameters.h>
@@ -48,7 +48,7 @@
 namespace Ovito {
 
 /**
- * Abstract base class for object-specific information used in the picking system.
+ * Abstract base class for object-specific information used in the object picking system.
  */
 class OVITO_CORE_EXPORT ObjectPickInfo : public OvitoObject
 {
@@ -62,7 +62,7 @@ protected:
 public:
 
 	/// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
-	virtual QString infoString(PipelineSceneNode* objectNode, quint32 subobjectId) { return {}; }
+	virtual QString infoString(Pipeline* pipeline, quint32 subobjectId) { return {}; }
 };
 
 /**
@@ -74,10 +74,9 @@ class OVITO_CORE_EXPORT SceneRenderer : public RefTarget
 
 public:
 
-	struct ObjectPickingRecord
-	{
+	struct ObjectPickingRecord {
 		quint32 baseObjectID;
-		OORef<PipelineSceneNode> objectNode;
+		OORef<Pipeline> pipeline;
 		OORef<ObjectPickInfo> pickInfo;
 		std::vector<std::pair<ConstDataBufferPtr, quint32>> indexedRanges;
 	};
@@ -197,11 +196,17 @@ public:
 	/// Sets the interactive mode of the scene renderer.
 	void setInteractive(bool isInteractive) { _isInteractive = isInteractive; }
 
-	/// Returns whether object picking mode is active.
-	bool isPicking() const { return _isPicking; }
+	/// Returns whether object picking information is recorded during the current rendering pass.
+	bool isPickingPass() const { return _isPickingPass; }
 
-	/// Sets whether object picking mode is active.
-	void setPicking(bool enable) { _isPicking = enable; }
+	/// Sets whether whether object picking information is recorded during the current rendering pass.
+	void setPickingPass(bool enable) { _isPickingPass = enable; }
+
+	/// Returns whether a visual image is being produced during the current rendering pass (i.e., not just recording object picking information).
+	bool isImagePass() const { return _isImagePass; }
+
+	/// Sets whether a visual image is being produced during the current rendering pass (i.e., not just recording object picking information).
+	void setImagePass(bool enable) { _isImagePass = enable; }
 
 	/// Returns whether bounding box calculation pass is active.
 	bool isBoundingBoxPass() const { return _isBoundingBoxPass; }
@@ -219,7 +224,7 @@ public:
 	}
 
 	/// When picking mode is active, this registers an object being rendered.
-	quint32 beginPickObject(const PipelineSceneNode* objNode, ObjectPickInfo* pickInfo = nullptr);
+	quint32 beginPickObject(const Pipeline* pipeline, ObjectPickInfo* pickInfo = nullptr);
 
 	/// Registers a range of sub-IDs belonging to the current object being rendered.
 	quint32 registerSubObjectIDs(quint32 subObjectCount, const ConstDataBufferPtr& indices = {});
@@ -274,7 +279,7 @@ protected:
 	void renderModifiers(bool renderOverlay);
 
 	/// \brief Renders the visual representation of the modifiers.
-	void renderModifiers(PipelineSceneNode* pipeline, bool renderOverlay);
+	void renderModifiers(Pipeline* pipeline, bool renderOverlay);
 
 	/// \brief Gets the trajectory of motion of a node. The returned data buffer stores an array of
 	///        Point3 (if the node's position is animated) or a null pointer (if the node's position is static).
@@ -295,7 +300,7 @@ protected:
 private:
 
 	/// Renders a data object and all its sub-objects.
-	void renderDataObject(const DataObject* dataObj, const PipelineSceneNode* pipeline, const PipelineFlowState& state, ConstDataObjectPath& dataObjectPath);
+	void renderDataObject(const DataObject* dataObj, const Pipeline* pipeline, const PipelineFlowState& state, ConstDataObjectPath& dataObjectPath);
 
 	/// The render settings for the current rendering pass.
 	const RenderSettings* _renderSettings = nullptr;
@@ -324,8 +329,11 @@ private:
 	/// The data cache to be used by visualization elements.
 	MixedKeyCache* _visCache = nullptr;
 
-	/// Indicates that an object picking pass is active.
-	bool _isPicking = false;
+	/// Indicates that object picking information is being recorded during the current rendering pass.
+	bool _isPickingPass = false;
+
+	/// Indicates that this is a rendering pass that produces a visual image (not just for recording object picking information).
+	bool _isImagePass = true;
 
 	/// Indicates that this is a real-time renderer for an interactive viewport.
 	bool _isInteractive = false;
@@ -358,13 +366,13 @@ class OVITO_CORE_EXPORT ViewportPickResult
 public:
 
 	/// Indicates whether an object was picked or not.
-	bool isValid() const { return (bool)_pipelineNode; }
+	bool isValid() const { return (bool)_pipeline; }
 
-	/// Returns the scene node that has been picked.
-	PipelineSceneNode* pipelineNode() const { return _pipelineNode; }
+	/// Returns the pipeline that has been picked.
+	Pipeline* pipeline() const { return _pipeline; }
 
-	/// Sets the scene node that has been picked.
-	void setPipelineNode(PipelineSceneNode* node) { _pipelineNode = node; }
+	/// Sets the pipeline that has been picked.
+	void setPipeline(Pipeline* pipeline) { _pipeline = pipeline; }
 
 	/// Returns the object-specific data at the pick location.
 	ObjectPickInfo* pickInfo() const { return _pickInfo; }
@@ -386,8 +394,8 @@ public:
 
 private:
 
-	/// The scene node that was picked.
-	OORef<PipelineSceneNode> _pipelineNode;
+	/// The pipeline that was picked.
+	OORef<Pipeline> _pipeline;
 
 	/// The object-specific data at the pick location.
 	OORef<ObjectPickInfo> _pickInfo;

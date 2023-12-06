@@ -25,10 +25,10 @@
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
+#include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 #include "VoxelGridVis.h"
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(VoxelGridVis);
 DEFINE_REFERENCE_FIELD(VoxelGridVis, transparencyController);
@@ -78,7 +78,7 @@ void VoxelGridVis::loadFromStreamComplete(ObjectLoadStream& stream)
 /******************************************************************************
 * Computes the bounding box of the displayed data.
 ******************************************************************************/
-Box3 VoxelGridVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 VoxelGridVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
 {
     if(const VoxelGrid* gridObj = path.lastAs<VoxelGrid>()) {
         if(gridObj->domain()) {
@@ -95,14 +95,14 @@ Box3 VoxelGridVis::boundingBox(AnimationTime time, const ConstDataObjectPath& pa
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
 {
     PipelineStatus status;
 
     // Check if this is just the bounding box computation pass.
     if(renderer->isBoundingBoxPass()) {
         TimeInterval validityInterval;
-        renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, renderer->visCache(), validityInterval));
+        renderer->addToLocalBoundingBox(boundingBox(time, path, pipeline, flowState, renderer->visCache(), validityInterval));
         return status;
     }
 
@@ -114,11 +114,11 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
     gridObj->verifyIntegrity();
 
     // Look for 'Color' voxel property.
-    const PropertyObject* colorProperty = gridObj->getProperty(VoxelGrid::ColorProperty);
+    const Property* colorProperty = gridObj->getProperty(VoxelGrid::ColorProperty);
     BufferReadAccess<ColorG> colorArray(colorProperty);
 
     // Look for selected pseudo-coloring property.
-    const PropertyObject* pseudoColorProperty = nullptr;
+    const Property* pseudoColorProperty = nullptr;
     int pseudoColorPropertyComponent = 0;
     if(!colorProperty && colorMapping() && colorMapping()->sourceProperty()) {
         pseudoColorProperty = colorMapping()->sourceProperty().findInContainer(gridObj);
@@ -182,7 +182,7 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
                     trianglesPerCell = 8;
             }
 
-            DataOORef<TriMeshObject> mesh = DataOORef<TriMeshObject>::create(ObjectInitializationFlag::DontCreateVisElement);
+            DataOORef<TriangleMesh> mesh = DataOORef<TriangleMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
             if(colorArray) {
                 if(interpolateColors()) mesh->setHasVertexColors(true);
                 else mesh->setHasFaceColors(true);
@@ -636,7 +636,7 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
     primitives.volumeFaces.setPseudoColorMapping(colorMapping()->pseudoColorMapping());
 
     if(primitives.volumeFaces.mesh()) {
-        renderer->beginPickObject(contextNode, primitives.pickInfo);
+        renderer->beginPickObject(pipeline, primitives.pickInfo);
         renderer->renderMesh(primitives.volumeFaces);
         renderer->endPickObject();
     }
@@ -648,7 +648,7 @@ PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPat
 * Returns a human-readable string describing the picked object,
 * which will be displayed in the status bar by OVITO.
 ******************************************************************************/
-QString VoxelGridPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjectId)
+QString VoxelGridPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
 {
     QString str = voxelGrid()->objectTitle();
 

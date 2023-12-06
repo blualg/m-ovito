@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include "LibsshConnection.h"
 
-namespace Ovito::Ssh {
+namespace Ovito {
 
 /******************************************************************************
 * Constructor.

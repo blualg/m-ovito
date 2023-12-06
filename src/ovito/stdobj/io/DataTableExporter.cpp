@@ -23,7 +23,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include "DataTableExporter.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DataTableExporter);
 
@@ -84,11 +84,11 @@ bool DataTableExporter::exportFrame(int frameNumber, const QString& filePath, Ma
     size_t row_count = table->elementCount();
     int xDataType = xstorage ? xstorage->dataType() : 0;
 
-    BufferReadAccess<int8_t*> xaccessInt8(xDataType == PropertyObject::Int8 ? xstorage : nullptr);
-    BufferReadAccess<int32_t*> xaccessInt32(xDataType == PropertyObject::Int32 ? xstorage : nullptr);
-    BufferReadAccess<int64_t*> xaccessInt64(xDataType == PropertyObject::Int64 ? xstorage : nullptr);
-    BufferReadAccess<float*> xaccessFloat32(xDataType == PropertyObject::Float32 ? xstorage : nullptr);
-    BufferReadAccess<double*> xaccessFloat64(xDataType == PropertyObject::Float64 ? xstorage : nullptr);
+    BufferReadAccess<int8_t*> xaccessInt8(xDataType == Property::Int8 ? xstorage : nullptr);
+    BufferReadAccess<int32_t*> xaccessInt32(xDataType == Property::Int32 ? xstorage : nullptr);
+    BufferReadAccess<int64_t*> xaccessInt64(xDataType == Property::Int64 ? xstorage : nullptr);
+    BufferReadAccess<float*> xaccessFloat32(xDataType == Property::Float32 ? xstorage : nullptr);
+    BufferReadAccess<double*> xaccessFloat64(xDataType == Property::Float64 ? xstorage : nullptr);
 
     if(!table->title().isEmpty())
         textStream() << "# " << table->title() << " (" << (quint64)row_count << " data points):\n";
@@ -116,17 +116,17 @@ bool DataTableExporter::exportFrame(int frameNumber, const QString& filePath, Ma
     std::vector<RawBufferReadAccess> outputProperties;
     if(ystorage)
         outputProperties.emplace_back(ystorage);
-    for(const PropertyObject* propObj : table->properties()) {
-        if(propObj == table->x() || propObj == table->y())
+    for(const Property* property : table->properties()) {
+        if(property == table->x() || property == table->y())
             continue;
-        outputProperties.emplace_back(propObj);
-        if(propObj->componentNames().size() == propObj->componentCount()) {
-            for(size_t col = 0; col < propObj->componentCount(); col++) {
-                textStream() << " " << formatColumnName(QStringLiteral("%1.%2").arg(propObj->name()).arg(propObj->componentNames()[col]));
+        outputProperties.emplace_back(property);
+        if(property->componentNames().size() == property->componentCount()) {
+            for(size_t col = 0; col < property->componentCount(); col++) {
+                textStream() << " " << formatColumnName(QStringLiteral("%1.%2").arg(property->name()).arg(property->componentNames()[col]));
             }
         }
         else {
-            textStream() << " " << formatColumnName(propObj->name());
+            textStream() << " " << formatColumnName(property->name());
         }
     }
 
@@ -160,15 +160,15 @@ bool DataTableExporter::exportFrame(int frameNumber, const QString& filePath, Ma
         // Write the data column(s).
         for(const auto& array : outputProperties) {
             for(size_t col = 0; col < array.componentCount(); col++) {
-                if(array.dataType() == PropertyObject::Int8)
+                if(array.dataType() == Property::Int8)
                     textStream() << static_cast<qint32>(*reinterpret_cast<const int8_t*>(array.cdata(row, col))) << " ";
-                else if(array.dataType() == PropertyObject::Int32)
+                else if(array.dataType() == Property::Int32)
                     textStream() << static_cast<qint32>(*reinterpret_cast<const int32_t*>(array.cdata(row, col))) << " ";
-                else if(array.dataType() == PropertyObject::Int64)
+                else if(array.dataType() == Property::Int64)
                     textStream() << static_cast<qint64>(*reinterpret_cast<const int64_t*>(array.cdata(row, col))) << " ";
-                else if(array.dataType() == PropertyObject::Float32)
+                else if(array.dataType() == Property::Float32)
                     textStream() << *reinterpret_cast<const float*>(array.cdata(row, col)) << " ";
-                else if(array.dataType() == PropertyObject::Float64)
+                else if(array.dataType() == Property::Float64)
                     textStream() << *reinterpret_cast<const double*>(array.cdata(row, col)) << " ";
                 else
                     textStream() << "<?> ";

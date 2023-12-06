@@ -24,11 +24,11 @@
 
 
 #include <ovito/stdmod/StdMod.h>
-#include <ovito/core/dataset/data/mesh/TriMeshVis.h>
+#include <ovito/core/dataset/data/mesh/TriangleMeshVis.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/pipeline/DelegatingModifier.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * \brief Base class for delegates of the SliceModifier, which perform the slice operation on different kinds of data.
@@ -41,6 +41,37 @@ protected:
 
     /// Abstract class constructor.
     using ModifierDelegate::ModifierDelegate;
+};
+
+/**
+ * \brief Slice function that operates on lines.
+ */
+class OVITO_STDMOD_EXPORT LinesSliceModifierDelegate : public SliceModifierDelegate
+{
+    /// Give the modifier delegate its own metaclass.
+    class LinesSliceModifierDelegateClass : public SliceModifierDelegate::OOMetaClass
+    {
+    public:
+        /// Inherit constructor from base class.
+        using SliceModifierDelegate::OOMetaClass::OOMetaClass;
+
+        /// Asks the metaclass which data objects in the given input data collection the modifier delegate can operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("lines"); }
+    };
+
+    OVITO_CLASS_META(LinesSliceModifierDelegate, LinesSliceModifierDelegateClass)
+    Q_CLASSINFO("DisplayName", "Lines");
+
+public:
+    /// Constructor.
+    Q_INVOKABLE LinesSliceModifierDelegate(ObjectInitializationFlags flags) : SliceModifierDelegate(flags) {}
+
+    /// \brief Applies a slice operation to a data object.
+    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState,
+                                 const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
 /**
@@ -75,7 +106,7 @@ public:
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
     /// Lets the modifier render itself into the viewport.
-    virtual void renderModifierVisual(const ModifierEvaluationRequest& request, PipelineSceneNode* contextNode, SceneRenderer* renderer, bool renderOverlay) override;
+    virtual void renderModifierVisual(const ModifierEvaluationRequest& request, Pipeline* pipeline, SceneRenderer* renderer, bool renderOverlay) override;
 
     /// Modifies the input data synchronously.
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
@@ -104,10 +135,10 @@ public:
     std::tuple<Plane3, FloatType> slicingPlane(AnimationTime time, TimeInterval& validityInterval, const PipelineFlowState& state);
 
     /// Moves the plane along its current normal vector to position in the center of the simulation cell.
-    void centerPlaneInSimulationCell(ModifierApplication* modApp, AnimationTime time);
+    void centerPlaneInSimulationCell(ModificationNode* node, AnimationTime time);
 
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override;
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override;
 
 protected:
 
@@ -118,7 +149,7 @@ protected:
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
     /// Renders the modifier's visual representation and computes its bounding box.
-    void renderVisual(AnimationTime time, PipelineSceneNode* contextNode, SceneRenderer* renderer, const PipelineFlowState& state);
+    void renderVisual(AnimationTime time, Pipeline* pipeline, SceneRenderer* renderer, const PipelineFlowState& state);
 
     /// Renders the plane in the viewport.
     void renderPlane(SceneRenderer* renderer, const Plane3& plane, const Box3& box, const ColorA& color) const;
@@ -153,7 +184,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, reducedCoordinates, setReducedCoordinates);
 
     /// The vis element for plane.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<TriMeshVis>, planeVis, setPlaneVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<TriangleMeshVis>, planeVis, setPlaneVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
 };
 
 }   // End of namespace

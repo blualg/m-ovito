@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * A properties editor for the ColorByTypeModifier class.
@@ -47,11 +47,11 @@ protected:
     virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
     /// Determines if the given property is a valid input property for the Select Type modifier.
-    static bool isValidInputProperty(const PropertyObject* property) { return property->isTypedProperty(); }
+    static bool isValidInputProperty(const Property* property) { return property->isTypedProperty(); }
 
 private:
 
-    class ViewModel : public QAbstractTableModel 
+    class ViewModel : public QAbstractTableModel
     {
     public:
 
@@ -73,7 +73,7 @@ private:
         /// Returns the item flags for the given index.
         virtual Qt::ItemFlags flags(const QModelIndex& index) const override;
 
-        /// Returns the number of columns of the table model. 
+        /// Returns the number of columns of the table model.
         int columnCount(const QModelIndex& parent = QModelIndex()) const override { return 2; }
 
         /// Updates the contents of the model.

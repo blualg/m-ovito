@@ -29,7 +29,7 @@
 #include <ovito/gui/desktop/widgets/general/CopyableTableView.h>
 #include "DislocationInspectionApplet.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DislocationInspectionApplet);
 
@@ -200,7 +200,7 @@ int DislocationInspectionApplet::PickingMode::pickDislocation(ViewportWindowInte
     if(vpPickResult.isValid()) {
         // Check if that was a dislocation.
         DislocationPickInfo* pickInfo = dynamic_object_cast<DislocationPickInfo>(vpPickResult.pickInfo());
-        if(pickInfo && vpPickResult.pipelineNode() == _applet->currentPipeline()) {
+        if(pickInfo && vpPickResult.pipeline() == _applet->currentPipeline()) {
             return pickInfo->segmentIndexFromSubObjectID(vpPickResult.subobjectId());
         }
     }

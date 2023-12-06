@@ -23,18 +23,18 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/util/NearestNeighborFinder.h>
 #include <ovito/particles/modifier/analysis/cna/CommonNeighborAnalysisModifier.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "IdentifyDiamondModifier.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(IdentifyDiamondModifier);
 
 /******************************************************************************
-* Constructs the modifier object.
-******************************************************************************/
+ * Constructs the modifier object.
+ ******************************************************************************/
 IdentifyDiamondModifier::IdentifyDiamondModifier(ObjectInitializationFlags flags) : StructureIdentificationModifier(flags)
 {
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
@@ -50,37 +50,37 @@ IdentifyDiamondModifier::IdentifyDiamondModifier(ObjectInitializationFlags flags
 }
 
 /******************************************************************************
-* Creates and initializes a computation engine that will compute the
-* modifier's results.
-******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> IdentifyDiamondModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+ * Creates and initializes a computation engine that will compute the
+ * modifier's results.
+ ******************************************************************************/
+Future<AsynchronousModifier::EnginePtr> IdentifyDiamondModifier::createEngine(const ModifierEvaluationRequest& request,
+                                                                              const PipelineFlowState& input)
 {
     // Get modifier input.
-    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
+    const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
-    const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-    const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
+    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
+    const SimulationCell* simCell = input.expectObject<SimulationCell>();
     if(simCell->is2D())
         throw Exception(tr("The modifier does not support 2d simulation cells."));
 
     // Get particle selection.
-    const PropertyObject* selectionProperty = onlySelectedParticles() ? particles->expectProperty(ParticlesObject::SelectionProperty) : nullptr;
+    const Property* selectionProperty = onlySelectedParticles() ? particles->expectProperty(Particles::SelectionProperty) : nullptr;
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     return std::make_shared<DiamondIdentificationEngine>(request, particles, posProperty, simCell, structureTypes(), selectionProperty);
 }
 
 /******************************************************************************
-* Performs the actual analysis. This method is executed in a worker thread.
-******************************************************************************/
+ * Performs the actual analysis. This method is executed in a worker thread.
+ ******************************************************************************/
 void IdentifyDiamondModifier::DiamondIdentificationEngine::perform()
 {
     setProgressText(tr("Finding nearest neighbors"));
 
     // Prepare the neighbor list builder.
     NearestNeighborFinder neighborFinder(4);
-    if(!neighborFinder.prepare(positions(), cell(), selection()))
-        return;
+    if(!neighborFinder.prepare(positions(), cell(), selection())) return;
 
     // This data structure stores information about a single neighbor.
     struct NeighborInfo {
@@ -88,14 +88,13 @@ void IdentifyDiamondModifier::DiamondIdentificationEngine::perform()
         int index;
     };
     // This array will be filled with the four nearest neighbors of each atom.
-    std::vector<std::array<NeighborInfo,4>> neighLists(positions()->size());
+    std::vector<std::array<NeighborInfo, 4>> neighLists(positions()->size());
 
     // Determine four nearest neighbors of each atom and store vectors in the working array.
     BufferReadAccess<SelectionIntType> selectionData(selection());
     parallelForWithProgress(positions()->size(), [&](size_t index) {
         // Skip particles that are not included in the analysis.
-        if(selectionData && selectionData[index] == 0)
-            return;
+        if(selectionData && selectionData[index] == 0) return;
         NearestNeighborFinder::Query<4> neighQuery(neighborFinder);
         neighQuery.findNeighbors(index);
         for(int i = 0; i < neighQuery.results().size(); i++) {
@@ -120,33 +119,31 @@ void IdentifyDiamondModifier::DiamondIdentificationEngine::perform()
         output[index] = OTHER;
 
         // Skip particles that are not included in the analysis.
-        if(selectionData && selectionData[index] == 0)
-            return;
+        if(selectionData && selectionData[index] == 0) return;
 
-        const std::array<NeighborInfo,4>& nlist = neighLists[index];
+        const std::array<NeighborInfo, 4>& nlist = neighLists[index];
 
         // Generate list of second nearest neighbors.
-        std::array<Vector3,12> secondNeighbors;
+        std::array<Vector3, 12> secondNeighbors;
         auto vout = secondNeighbors.begin();
         for(size_t i = 0; i < 4; i++) {
             if(nlist[i].index == -1) return;
             const Vector3& v0 = nlist[i].vec;
-            const std::array<NeighborInfo,4>& nlist2 = neighLists[nlist[i].index];
+            const std::array<NeighborInfo, 4>& nlist2 = neighLists[nlist[i].index];
             for(size_t j = 0; j < 4; j++) {
                 Vector3 v = v0 + nlist2[j].vec;
                 if(v.isZero(1e-2f)) continue;
                 if(vout == secondNeighbors.end()) return;
                 *vout++ = v;
             }
-            if(vout != secondNeighbors.begin() + i*3 + 3) return;
+            if(vout != secondNeighbors.begin() + i * 3 + 3) return;
         }
 
         // Compute a local CNA cutoff radius from the average distance of the 12 second nearest neighbors.
         FloatType sum = 0;
-        for(const Vector3& v : secondNeighbors)
-            sum += v.length();
+        for(const Vector3& v : secondNeighbors) sum += v.length();
         sum /= 12;
-        const FloatType factor = FloatType(1.2071068);   // = sqrt(2.0) * ((1.0 + sqrt(0.5)) / 2)
+        const FloatType factor = FloatType(1.2071068);  // = sqrt(2.0) * ((1.0 + sqrt(0.5)) / 2)
         FloatType localCutoff = sum * factor;
         FloatType localCutoffSquared = localCutoff * localCutoff;
 
@@ -154,30 +151,33 @@ void IdentifyDiamondModifier::DiamondIdentificationEngine::perform()
         CommonNeighborAnalysisModifier::NeighborBondArray neighborArray;
         for(int ni1 = 0; ni1 < 12; ni1++) {
             neighborArray.setNeighborBond(ni1, ni1, false);
-            for(int ni2 = ni1+1; ni2 < 12; ni2++)
-                neighborArray.setNeighborBond(ni1, ni2, (secondNeighbors[ni1] - secondNeighbors[ni2]).squaredLength() <= localCutoffSquared);
+            for(int ni2 = ni1 + 1; ni2 < 12; ni2++)
+                neighborArray.setNeighborBond(ni1, ni2,
+                                              (secondNeighbors[ni1] - secondNeighbors[ni2]).squaredLength() <= localCutoffSquared);
         }
 
         // Determine whether second nearest neighbors form FCC or HCP using common neighbor analysis.
         int n421 = 0;
         int n422 = 0;
         for(int ni = 0; ni < 12; ni++) {
-
             // Determine number of neighbors the two atoms have in common.
             unsigned int commonNeighbors;
             int numCommonNeighbors = CommonNeighborAnalysisModifier::findCommonNeighbors(neighborArray, ni, commonNeighbors);
             if(numCommonNeighbors != 4) return;
 
             // Determine the number of bonds among the common neighbors.
-            CommonNeighborAnalysisModifier::CNAPairBond neighborBonds[12*12];
+            CommonNeighborAnalysisModifier::CNAPairBond neighborBonds[12 * 12];
             int numNeighborBonds = CommonNeighborAnalysisModifier::findNeighborBonds(neighborArray, commonNeighbors, 12, neighborBonds);
             if(numNeighborBonds != 2) return;
 
             // Determine the number of bonds in the longest continuous chain.
             int maxChainLength = CommonNeighborAnalysisModifier::calcMaxChainLength(neighborBonds, numNeighborBonds);
-            if(maxChainLength == 1) n421++;
-            else if(maxChainLength == 2) n422++;
-            else return;
+            if(maxChainLength == 1)
+                n421++;
+            else if(maxChainLength == 2)
+                n422++;
+            else
+                return;
         }
         if(n421 == 12 && typeIdentificationEnabled(CUBIC_DIAMOND))
             output[index] = CUBIC_DIAMOND;
@@ -189,12 +189,10 @@ void IdentifyDiamondModifier::DiamondIdentificationEngine::perform()
     // Mark first neighbors of crystalline atoms.
     for(size_t index = 0; index < output.size(); index++) {
         int ctype = output[index];
-        if(ctype != CUBIC_DIAMOND && ctype != HEX_DIAMOND)
-            continue;
-        if(selectionData && selectionData[index] == 0)
-            continue;
+        if(ctype != CUBIC_DIAMOND && ctype != HEX_DIAMOND) continue;
+        if(selectionData && selectionData[index] == 0) continue;
 
-        const std::array<NeighborInfo,4>& nlist = neighLists[index];
+        const std::array<NeighborInfo, 4>& nlist = neighLists[index];
         for(size_t i = 0; i < 4; i++) {
             OVITO_ASSERT(nlist[i].index != -1);
             if(output[nlist[i].index] == OTHER) {
@@ -209,12 +207,10 @@ void IdentifyDiamondModifier::DiamondIdentificationEngine::perform()
     // Mark second neighbors of crystalline atoms.
     for(size_t index = 0; index < output.size(); index++) {
         int ctype = output[index];
-        if(ctype != CUBIC_DIAMOND_FIRST_NEIGH && ctype != HEX_DIAMOND_FIRST_NEIGH)
-            continue;
-        if(selectionData && selectionData[index] == 0)
-            continue;
+        if(ctype != CUBIC_DIAMOND_FIRST_NEIGH && ctype != HEX_DIAMOND_FIRST_NEIGH) continue;
+        if(selectionData && selectionData[index] == 0) continue;
 
-        const std::array<NeighborInfo,4>& nlist = neighLists[index];
+        const std::array<NeighborInfo, 4>& nlist = neighLists[index];
         for(size_t i = 0; i < 4; i++) {
             if(nlist[i].index != -1 && output[nlist[i].index] == OTHER) {
                 if(ctype == CUBIC_DIAMOND_FIRST_NEIGH)
@@ -230,19 +226,20 @@ void IdentifyDiamondModifier::DiamondIdentificationEngine::perform()
 }
 
 /******************************************************************************
-* Injects the computed results of the engine into the data pipeline.
-******************************************************************************/
+ * Injects the computed results of the engine into the data pipeline.
+ ******************************************************************************/
 void IdentifyDiamondModifier::DiamondIdentificationEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     StructureIdentificationEngine::applyResults(request, state);
 
     // Also output structure type counts, which have been computed by the base class.
-    state.addAttribute(QStringLiteral("IdentifyDiamond.counts.CUBIC_DIAMOND"), QVariant::fromValue(getTypeCount(CUBIC_DIAMOND)), request.modApp());
-    state.addAttribute(QStringLiteral("IdentifyDiamond.counts.CUBIC_DIAMOND_FIRST_NEIGHBOR"), QVariant::fromValue(getTypeCount(CUBIC_DIAMOND_FIRST_NEIGH)), request.modApp());
-    state.addAttribute(QStringLiteral("IdentifyDiamond.counts.CUBIC_DIAMOND_SECOND_NEIGHBOR"), QVariant::fromValue(getTypeCount(CUBIC_DIAMOND_SECOND_NEIGH)), request.modApp());
-    state.addAttribute(QStringLiteral("IdentifyDiamond.counts.HEX_DIAMOND"), QVariant::fromValue(getTypeCount(HEX_DIAMOND)), request.modApp());
-    state.addAttribute(QStringLiteral("IdentifyDiamond.counts.HEX_DIAMOND_FIRST_NEIGHBOR"), QVariant::fromValue(getTypeCount(HEX_DIAMOND_FIRST_NEIGH)), request.modApp());
-    state.addAttribute(QStringLiteral("IdentifyDiamond.counts.HEX_DIAMOND_SECOND_NEIGHBOR"), QVariant::fromValue(getTypeCount(HEX_DIAMOND_SECOND_NEIGH)), request.modApp());
+    state.addAttribute(QStringLiteral("IdentifyDiamond.counts.OTHER"), QVariant::fromValue(getTypeCount(OTHER)), request.modificationNode());
+    state.addAttribute(QStringLiteral("IdentifyDiamond.counts.CUBIC_DIAMOND"), QVariant::fromValue(getTypeCount(CUBIC_DIAMOND)), request.modificationNode());
+    state.addAttribute(QStringLiteral("IdentifyDiamond.counts.CUBIC_DIAMOND_FIRST_NEIGHBOR"), QVariant::fromValue(getTypeCount(CUBIC_DIAMOND_FIRST_NEIGH)), request.modificationNode());
+    state.addAttribute(QStringLiteral("IdentifyDiamond.counts.CUBIC_DIAMOND_SECOND_NEIGHBOR"), QVariant::fromValue(getTypeCount(CUBIC_DIAMOND_SECOND_NEIGH)), request.modificationNode());
+    state.addAttribute(QStringLiteral("IdentifyDiamond.counts.HEX_DIAMOND"), QVariant::fromValue(getTypeCount(HEX_DIAMOND)), request.modificationNode());
+    state.addAttribute(QStringLiteral("IdentifyDiamond.counts.HEX_DIAMOND_FIRST_NEIGHBOR"), QVariant::fromValue(getTypeCount(HEX_DIAMOND_FIRST_NEIGH)), request.modificationNode());
+    state.addAttribute(QStringLiteral("IdentifyDiamond.counts.HEX_DIAMOND_SECOND_NEIGHBOR"), QVariant::fromValue(getTypeCount(HEX_DIAMOND_SECOND_NEIGH)), request.modificationNode());
 }
 
-}   // End of namespace
+}  // namespace Ovito::Particles

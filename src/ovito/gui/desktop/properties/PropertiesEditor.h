@@ -129,13 +129,13 @@ public:
     /// Returns the current output data produced by the object being edited.
     PipelineFlowState getPipelineOutput() const;
 
-    /// Returns the first ModifierApplication of the modifier currently being edited.
+    /// Returns the first ModificationNode of the modifier currently being edited.
     /// If this editor does not host a modifier, nullptr is returned.
-    ModifierApplication* modifierApplication() const;
+    ModificationNode* modificationNode() const;
 
-    /// Returns the list of all ModifierApplications of the modifier currently being edited.
+    /// Returns the list of all ModificationNode of the modifier currently being edited.
     /// If this editor does not host a modifier, an empty list is returned.
-    QVector<ModifierApplication*> modifierApplications() const;
+    QVector<ModificationNode*> modificationNodes() const;
 
     /// For an editor of a DataVis element, returns the DataObject which the DataVis element is attached to.
     ConstDataObjectRef getVisDataObject() const;
@@ -185,14 +185,14 @@ public:
     template<typename Function>
     bool visitScenePipelines(Function&& fn) const {
         if(Scene* scene = mainWindow().datasetContainer().activeScene())
-            return scene->visitObjectNodes(std::forward<Function>(fn));
+            return scene->visitPipelines(std::forward<Function>(fn));
         return true;
     }
 
     /// Returns the pipeline that is currently selected.
-    PipelineSceneNode* selectedPipeline() const {
+    Pipeline* selectedPipeline() const {
         if(Scene* scene = mainWindow().datasetContainer().activeScene())
-            return dynamic_object_cast<PipelineSceneNode>(scene->selection()->firstNode());
+            return dynamic_object_cast<Pipeline>(scene->selection()->firstNode());
         return nullptr;
     }
 

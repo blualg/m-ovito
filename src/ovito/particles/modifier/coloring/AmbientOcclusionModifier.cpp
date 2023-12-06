@@ -22,17 +22,17 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesVis.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/rendering/FrameBuffer.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include "AmbientOcclusionModifier.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(AmbientOcclusionModifier);
 DEFINE_PROPERTY_FIELD(AmbientOcclusionModifier, intensity);
@@ -60,7 +60,7 @@ AmbientOcclusionModifier::AmbientOcclusionModifier(ObjectInitializationFlags fla
 ******************************************************************************/
 bool AmbientOcclusionModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    return input.containsObject<ParticlesObject>();
+    return input.containsObject<Particles>();
 }
 
 /******************************************************************************
@@ -77,12 +77,12 @@ Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(c
     }
 
     // Get modifier input.
-    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
+    const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
-    const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-    const PropertyObject* typeProperty = particles->getProperty(ParticlesObject::TypeProperty);
-    const PropertyObject* radiusProperty = particles->getProperty(ParticlesObject::RadiusProperty);
-    const PropertyObject* shapeProperty = particles->getProperty(ParticlesObject::AsphericalShapeProperty);
+    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
+    const Property* typeProperty = particles->getProperty(Particles::TypeProperty);
+    const Property* radiusProperty = particles->getProperty(Particles::RadiusProperty);
+    const Property* shapeProperty = particles->getProperty(Particles::AsphericalShapeProperty);
 
     // Compute bounding box of input particles.
     Box3 boundingBox;
@@ -104,7 +104,8 @@ Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(c
     OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClass->createInstance());
 
     // Activate picking mode, because we want to render particles using false colors.
-    renderer->setPicking(true);
+    renderer->setImagePass(false);
+    renderer->setPickingPass(true);
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     return std::make_shared<AmbientOcclusionEngine>(request, validityInterval, particles, resolution, samplingCount(), posProperty, std::move(radii), boundingBox, std::move(renderer));
@@ -122,7 +123,7 @@ AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(const M
     _particleRadii(std::move(particleRadii)),
     _boundingBox(boundingBox),
     _renderer(std::move(renderer)),
-    _brightness(DataBufferPtr::create(DataBuffer::Initialized, fingerprint.particleCount(), PropertyObject::FloatDefault, 1)),
+    _brightness(DataBufferPtr::create(DataBuffer::Initialized, fingerprint.particleCount(), Property::FloatDefault, 1)),
     _inputFingerprint(std::move(fingerprint))
 {
     OVITO_ASSERT(_particleRadii->size() == _positions->size());
@@ -282,7 +283,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::applyResults(const Modifi
     AmbientOcclusionModifier* modifier = static_object_cast<AmbientOcclusionModifier>(request.modifier());
     OVITO_ASSERT(modifier);
 
-    ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+    Particles* particles = state.expectMutableObject<Particles>();
     if(_inputFingerprint.hasChanged(particles))
         throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
     OVITO_ASSERT(brightness() && particles->elementCount() == brightness()->size());
@@ -294,7 +295,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::applyResults(const Modifi
 
     // Get output property object.
     BufferReadAccess<FloatType> brightnessValues(brightness());
-    BufferWriteAccess<ColorG, access_mode::read_write> colorProperty = particles->createProperty(DataBuffer::Initialized, ParticlesObject::ColorProperty, {particles});
+    BufferWriteAccess<ColorG, access_mode::read_write> colorProperty = particles->createProperty(DataBuffer::Initialized, Particles::ColorProperty, {particles});
     const FloatType* b = brightnessValues.cbegin();
     for(ColorG& c : colorProperty) {
         GraphicsFloatType factor = FloatType(1) - intensity + static_cast<GraphicsFloatType>(*b);

@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2021 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -25,7 +25,7 @@ FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
 SET(_qt_source_dir "${_qt_import_prefix}")
 GET_FILENAME_COMPONENT(_qt_source_dir "${_qt_source_dir}" PATH)
 GET_FILENAME_COMPONENT(_qt_source_dir "${_qt_source_dir}" PATH)
-GET_FILENAME_COMPONENT(_qt_source_dir "${_qt_source_dir}" PATH) 
+GET_FILENAME_COMPONENT(_qt_source_dir "${_qt_source_dir}" PATH)
 SET(_qtplugins_source_dir "${_qt_source_dir}/plugins")
 SET(QT_LIBRARY_DIRS "${_qt_source_dir}/lib")
 
@@ -127,7 +127,7 @@ INSTALL(CODE "
     SET(IGNORE_ITEM_LIST \"Python\")
 
     # Collect the filenames of the Shiboken and PySide libraries.
-    # These shared objects need to be preserved by adding them to the IGNORE_ITEM list of FIXUP_BUNDLE(). 
+    # These shared objects need to be preserved by adding them to the IGNORE_ITEM list of FIXUP_BUNDLE().
     FILE(GLOB PYSIDE_DYNLIBS \"\${CMAKE_INSTALL_PREFIX}/${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks/Python.framework/Versions/*.*/lib/python*/site-packages/PySide*/*.dylib\")
     FILE(GLOB PYSIDE_SOLIBS \"\${CMAKE_INSTALL_PREFIX}/${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks/Python.framework/Versions/*.*/lib/python*/site-packages/PySide*/*.so\")
     FILE(GLOB SHIBOKEN_DYNLIBS \"\${CMAKE_INSTALL_PREFIX}/${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks/Python.framework/Versions/*.*/lib/python*/site-packages/shiboken*/*.dylib\")
@@ -157,15 +157,16 @@ INSTALL(CODE "
 ")
 
 IF(OVITO_BUILD_PLUGIN_OSPRAY AND NOT OVITO_BUILD_BASIC)
-    # Extend the rpath information of the rkcommon library such that OSPRay extension modules loaded by dlopen()
+    # Extend the rpath information of the rkcommon and libispcrt libraries such that extension modules loaded via dlopen()
     # are found in the Frameworks/ directory at runtime.
     INSTALL(CODE "
         SET(lib \"\${CMAKE_INSTALL_PREFIX}/${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks/librkcommon.dylib\")
         MESSAGE(\"Adding rpath to \${lib}\")
-        EXECUTE_PROCESS(COMMAND install_name_tool -add_rpath \"@loader_path/\" \"\${lib}\" RESULT_VARIABLE install_name_tool_result)
-        IF(install_name_tool_result)
-            MESSAGE(FATAL_ERROR \"install_name_tool returned error code \${install_name_tool_result}\")
-        ENDIF()
+        EXECUTE_PROCESS(COMMAND install_name_tool -add_rpath \"@loader_path/\" \"\${lib}\" COMMAND_ERROR_IS_FATAL ANY)
+
+        SET(lib \"\${CMAKE_INSTALL_PREFIX}/${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks/libispcrt.dylib\")
+        MESSAGE(\"Adding rpath to \${lib}\")
+        EXECUTE_PROCESS(COMMAND install_name_tool -add_rpath \"@loader_path/\" \"\${lib}\" COMMAND_ERROR_IS_FATAL ANY)
     ")
 ENDIF()
 
@@ -185,7 +186,7 @@ IF(OVITO_BUILD_PLUGIN_PYSCRIPT AND NOT OVITO_BUILD_BASIC)
         FILE(GLOB DylibsToSymlink \"\${BundlePath}/Contents/MacOS/*.dylib\")
         FOREACH(FILE_ENTRY \${DylibsToSymlink})
             GET_FILENAME_COMPONENT(FILE_ENTRY_NAME \"\${FILE_ENTRY}\" NAME)
-            EXECUTE_PROCESS(COMMAND \"\${CMAKE_COMMAND}\" -E create_symlink \"../../../\${FILE_ENTRY_NAME}\" \"\${BundlePath}/Contents/MacOS/Ovito.app/Contents/MacOS/\${FILE_ENTRY_NAME}\")
+            EXECUTE_PROCESS(COMMAND \"\${CMAKE_COMMAND}\" -E create_symlink \"../../../\${FILE_ENTRY_NAME}\" \"\${BundlePath}/Contents/MacOS/Ovito.app/Contents/MacOS/\${FILE_ENTRY_NAME}\" COMMAND_ERROR_IS_FATAL ANY)
         ENDFOREACH()
     ")
 

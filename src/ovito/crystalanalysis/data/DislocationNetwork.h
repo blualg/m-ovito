@@ -24,12 +24,12 @@
 
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/crystalanalysis/modifier/dxa/InterfaceMesh.h>
 #include <ovito/crystalanalysis/modifier/dxa/BurgersCircuit.h>
 #include "ClusterVector.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /**
  * Every dislocation segment is delimited by two dislocation nodes.
@@ -216,7 +216,28 @@ struct DislocationSegment
     }
 
     /// Computes the location of a point along the segment line.
-    Point3 getPointOnLine(FloatType t) const;
+    Point3 getPointOnLine(FloatType t) const
+    {
+        if(line.empty()) return Point3::Origin();
+
+        t *= calculateLength();
+
+        FloatType sum = 0;
+        auto i1 = line.begin();
+        for(;;) {
+            auto i2 = i1 + 1;
+            if(i2 == line.end()) break;
+            Vector3 delta = *i2 - *i1;
+            FloatType len = delta.length();
+            if(sum + len >= t && len != 0) {
+                return *i1 + (((t - sum) / len) * delta);
+            }
+            sum += len;
+            i1 = i2;
+        }
+
+        return line.back();
+    };
 };
 
 /// Returns true if this node is the forward node of its segment, that is,

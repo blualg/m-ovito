@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,7 @@
 
 
 #include <ovito/vorotop/VoroTopPlugin.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/particles/modifier/analysis/StructureIdentificationModifier.h>
 #include "Filter.h"
 
@@ -43,11 +43,7 @@ class OVITO_VOROTOP_EXPORT VoroTopModifier : public StructureIdentificationModif
 
     Q_CLASSINFO("DisplayName", "VoroTop analysis");
     Q_CLASSINFO("Description", "Identify local structures based on Voronoi polyhedron topology.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Structure identification");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 
@@ -77,7 +73,7 @@ private:
 
         /// Constructor.
         VoroTopAnalysisEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, const TimeInterval& validityInterval, ConstPropertyPtr positions, ConstPropertyPtr selection,
-                            ConstPropertyPtr radii, const SimulationCellObject* simCell, const QString& filterFile, std::shared_ptr<Filter> filter, const OORefVector<ElementType>& structureTypes) :
+                            ConstPropertyPtr radii, const SimulationCell* simCell, const QString& filterFile, std::shared_ptr<Filter> filter, const OORefVector<ElementType>& structureTypes) :
             StructureIdentificationEngine(request, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
             _filterFile(filterFile),
             _filter(std::move(filter)),

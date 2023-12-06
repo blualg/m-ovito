@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -39,7 +39,7 @@ class QwtPlotZoomer;
 class QwtPlotMagnifier;
 class QwtPlotPanner;
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief A widget that plots the data of a DataTable.
@@ -63,8 +63,8 @@ public:
     bool mouseNavigationEnabled() const { return _mouseNavigationEnabled; }
 
     /// Controls whether the plot widget accepts and handles mouse navigation input.
-    void setMouseNavigationEnabled(bool on) { 
-        _mouseNavigationEnabled = on; 
+    void setMouseNavigationEnabled(bool on) {
+        _mouseNavigationEnabled = on;
     }
 
     /// Resets the plot.

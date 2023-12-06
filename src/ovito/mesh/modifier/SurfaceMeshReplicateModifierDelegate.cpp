@@ -22,12 +22,12 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "SurfaceMeshReplicateModifierDelegate.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshReplicateModifierDelegate);
 
@@ -186,9 +186,9 @@ PipelineStatus SurfaceMeshReplicateModifierDelegate::apply(const ModifierEvaluat
                         if(imageShift != Vector3I::Zero()) {
                             size_t imageIndex = v2 / oldVertexCount;
                             Point3I image(imageIndex / nPBC[1] / nPBC[2], (imageIndex / nPBC[2]) % nPBC[1], imageIndex % nPBC[2]);
-                            Point3I newImage(SimulationCellObject::modulo(image[0] + imageShift[0], nPBC[0]),
-                                            SimulationCellObject::modulo(image[1] + imageShift[1], nPBC[1]),
-                                            SimulationCellObject::modulo(image[2] + imageShift[2], nPBC[2]));
+                            Point3I newImage(SimulationCell::modulo(image[0] + imageShift[0], nPBC[0]),
+                                            SimulationCell::modulo(image[1] + imageShift[1], nPBC[1]),
+                                            SimulationCell::modulo(image[2] + imageShift[2], nPBC[2]));
                             size_t newImageIndex = (newImage[0] * nPBC[1] * nPBC[2]) + (newImage[1] * nPBC[2]) + newImage[2];
                             SurfaceMesh::vertex_index new_v2 = v2wrapped + newImageIndex * oldVertexCount;
                             topology->transferFaceBoundaryToVertex(edge, new_v2);

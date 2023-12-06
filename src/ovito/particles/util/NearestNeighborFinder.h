@@ -24,12 +24,12 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/core/utilities/BoundedPriorityQueue.h>
 #include <ovito/core/utilities/MemoryPool.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief This utility class finds the *k* nearest neighbors of a particle or around some point in space.
@@ -117,7 +117,7 @@ public:
     /// \return \c false when the operation has been canceled by the user;
     ///         \c true on success.
     /// \throw Exception on error.
-    bool prepare(BufferReadAccess<Point3> posProperty, const SimulationCellObject* cellData, BufferReadAccess<SelectionIntType> selectionProperty);
+    bool prepare(BufferReadAccess<Point3> posProperty, const SimulationCell* cellData, BufferReadAccess<SelectionIntType> selectionProperty);
 
     /// Returns the maximum number of neighbors this class will find.
     int maxNeighbors() const { return numNeighbors; }
@@ -299,7 +299,7 @@ private:
     std::vector<NeighborListAtom> atoms;
 
     /// Simulation cell.
-    DataOORef<const SimulationCellObject> simCell;
+    DataOORef<const SimulationCell> simCell;
 
     /// Simulation cell matrix.
     AffineTransformation cellMatrix;

@@ -30,10 +30,10 @@
 #include <ovito/mesh/surface/SurfaceMeshRegions.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshReadAccess.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/properties/Property.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 /**
  * Utility class that provides efficient mutable access to the data of a surface mesh object.
@@ -51,7 +51,7 @@ public:
             PropertyContainer::Grower(builder.mutableVertices()),
             _topo(builder.mutableTopology()),
             _vertexPositions(mutableProperty(SurfaceMeshVertices::PositionProperty)) {
-                OVITO_ASSERT(builder.mutableVertices()->properties().contains(static_object_cast<PropertyObject>(_vertexPositions.buffer())));
+                OVITO_ASSERT(builder.mutableVertices()->properties().contains(static_object_cast<Property>(_vertexPositions.buffer())));
         }
 
         void reset() {
@@ -205,7 +205,7 @@ public:
     void setSpaceFillingRegion(region_index region) { mutableMesh()->setSpaceFillingRegion(region); }
 
     /// Replaces the simulation box of the mesh.
-    void setDomain(const SimulationCellObject* domain) {
+    void setDomain(const SimulationCell* domain) {
         mutableMesh()->setDomain(domain);
         _domain = domain;
     }
@@ -276,81 +276,81 @@ public:
     }
 
     /// Returns one of the standard vertex properties (or null if the property is not defined).
-    PropertyObject* mutableVertexProperty(SurfaceMeshVertices::Type ptype, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
+    Property* mutableVertexProperty(SurfaceMeshVertices::Type ptype, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
         return mutableVertices()->getMutableProperty(ptype, cloneMode);
     }
 
     /// Returns one of the standard face properties (or null if the property is not defined).
-    PropertyObject* mutableFaceProperty(SurfaceMeshFaces::Type ptype, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
+    Property* mutableFaceProperty(SurfaceMeshFaces::Type ptype, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
         return mutableFaces()->getMutableProperty(ptype, cloneMode);
     }
 
     /// Returns one of the standard region properties (or null if the property is not defined).
-    PropertyObject* mutableRegionProperty(SurfaceMeshRegions::Type ptype, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
+    Property* mutableRegionProperty(SurfaceMeshRegions::Type ptype, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
         return mutableRegions()->getMutableProperty(ptype, cloneMode);
     }
 
     /// Returns a user vertex property (or null if the property is not defined).
-    PropertyObject* mutableVertexProperty(const QString& name, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
+    Property* mutableVertexProperty(const QString& name, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
         return mutableVertices()->getMutableProperty(name, cloneMode);
     }
 
     /// Returns a user face property (or null if the property is not defined).
-    PropertyObject* mutableFaceProperty(const QString& name, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
+    Property* mutableFaceProperty(const QString& name, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
         return mutableFaces()->getMutableProperty(name, cloneMode);
     }
 
     /// Attaches an existing property object to the vertices of the mesh.
-    void addVertexProperty(const PropertyObject* property) {
+    void addVertexProperty(const Property* property) {
         OVITO_ASSERT(property->type() == 0 || vertices()->getProperty(property->type()) == nullptr);
         mutableVertices()->addProperty(property);
     }
 
     /// Attaches an existing property object to the faces of the mesh.
-    void addFaceProperty(const PropertyObject* property) {
+    void addFaceProperty(const Property* property) {
         OVITO_ASSERT(property->type() == 0 || faces()->getProperty(property->type()) == nullptr);
         mutableFaces()->addProperty(property);
     }
 
     /// Attaches an existing property object to the regions of the mesh.
-    void addRegionProperty(const PropertyObject* property) {
+    void addRegionProperty(const Property* property) {
         OVITO_ASSERT(property->type() == 0 || regions()->getProperty(property->type()) == nullptr);
         mutableRegions()->addProperty(property);
     }
 
     /// Adds a new standard face property to the mesh.
-    PropertyObject* createVertexProperty(DataBuffer::BufferInitialization init, SurfaceMeshVertices::Type ptype) {
+    Property* createVertexProperty(DataBuffer::BufferInitialization init, SurfaceMeshVertices::Type ptype) {
         return mutableVertices()->createProperty(init, ptype);
     }
 
     /// Adds a new standard face property to the mesh.
-    PropertyObject* createFaceProperty(DataBuffer::BufferInitialization init, SurfaceMeshFaces::Type ptype) {
+    Property* createFaceProperty(DataBuffer::BufferInitialization init, SurfaceMeshFaces::Type ptype) {
         return mutableFaces()->createProperty(init, ptype);
     }
 
     /// Adds a new standard region property to the mesh.
-    PropertyObject* createRegionProperty(DataBuffer::BufferInitialization init, SurfaceMeshRegions::Type ptype) {
+    Property* createRegionProperty(DataBuffer::BufferInitialization init, SurfaceMeshRegions::Type ptype) {
         return mutableRegions()->createProperty(init, ptype);
     }
 
     /// Add a new user-defined vertex property to the mesh.
-    PropertyObject* createVertexProperty(DataBuffer::BufferInitialization init, const QString& name, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList()) {
+    Property* createVertexProperty(DataBuffer::BufferInitialization init, const QString& name, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList()) {
         return mutableVertices()->createProperty(init, name, dataType, componentCount, std::move(componentNames));
     }
 
     /// Add a new user-defined face property to the mesh.
-    PropertyObject* createFaceProperty(DataBuffer::BufferInitialization init, const QString& name, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList()) {
+    Property* createFaceProperty(DataBuffer::BufferInitialization init, const QString& name, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList()) {
         return mutableFaces()->createProperty(init, name, dataType, componentCount, std::move(componentNames));
     }
 
     /// Add a new user-defined region property to the mesh.
-    PropertyObject* createRegionProperty(DataBuffer::BufferInitialization init, const QString& name, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList()) {
+    Property* createRegionProperty(DataBuffer::BufferInitialization init, const QString& name, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList()) {
         return mutableRegions()->createProperty(init, name, dataType, componentCount, std::move(componentNames));
     }
 
     /// Deletes one of the standard properties associated with the mesh regions.
     void removeRegionProperty(SurfaceMeshRegions::Type ptype) {
-        if(const PropertyObject* property = regions()->getProperty(ptype))
+        if(const Property* property = regions()->getProperty(ptype))
             mutableRegions()->removeProperty(property);
     }
 

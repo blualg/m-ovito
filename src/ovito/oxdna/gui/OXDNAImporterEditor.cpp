@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,7 @@
 #include <ovito/gui/desktop/dialogs/HistoryFileDialog.h>
 #include "OXDNAImporterEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(OXDNAImporterEditor);
 SET_OVITO_OBJECT_EDITOR(OXDNAImporter, OXDNAImporterEditor);

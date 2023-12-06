@@ -21,12 +21,12 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/mesh/Mesh.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "SurfaceMeshAffineTransformationModifierDelegate.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(SurfaceMeshAffineTransformationModifierDelegate);
 
@@ -53,7 +53,7 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(const Modi
             ConstPropertyPtr inputPositionProperty = newVertices->expectProperty(SurfaceMeshVertices::PositionProperty);
 
             // Create an uninitialized copy of the vertex position property.
-            PropertyObject* outputPositionProperty = newVertices->makePropertyMutable(inputPositionProperty, DataBuffer::Uninitialized);
+            Property* outputPositionProperty = newVertices->makePropertyMutable(inputPositionProperty, DataBuffer::Uninitialized);
 
             // Let the modifier do the actual coordinate transformation work.
             mod->transformCoordinates(inputState, inputPositionProperty, outputPositionProperty, newVertices->getProperty(SurfaceMeshVertices::SelectionProperty));
@@ -68,11 +68,11 @@ PipelineStatus SurfaceMeshAffineTransformationModifierDelegate::apply(const Modi
             }
         }
         // Process TriangleMesh objects.
-        else if(const TriMeshObject* existingMeshObj = dynamic_object_cast<TriMeshObject>(obj)) {
+        else if(const TriangleMesh* existingMeshObj = dynamic_object_cast<TriangleMesh>(obj)) {
             const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
 
-            // Create a copy of the TriMeshObject.
-            TriMeshObject* newMeshObj = state.makeMutable(existingMeshObj);
+            // Create a copy of the TriangleMesh.
+            TriangleMesh* newMeshObj = state.makeMutable(existingMeshObj);
 
             // Apply transformation to the vertices coordinates.
             for(Point3& p : newMeshObj->vertices())

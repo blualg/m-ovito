@@ -27,7 +27,7 @@
 #include <ovito/particles/modifier/analysis/StructureIdentificationModifier.h>
 #include <ovito/crystalanalysis/modifier/dxa/StructureAnalysis.h>
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /*
  * Extracts dislocation lines from a crystal.
@@ -37,11 +37,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT ElasticStrainModifier : public StructureIdent
     OVITO_CLASS(ElasticStrainModifier)
 
     Q_CLASSINFO("DisplayName", "Elastic strain calculation");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Analysis");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 

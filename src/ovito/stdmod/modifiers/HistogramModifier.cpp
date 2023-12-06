@@ -22,15 +22,15 @@
 
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "HistogramModifier.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(HistogramModifier);
 DEFINE_PROPERTY_FIELD(HistogramModifier, numberOfBins);
@@ -76,7 +76,7 @@ HistogramModifier::HistogramModifier(ObjectInitializationFlags flags) : GenericP
     _onlySelectedElements(false)
 {
     // Operate on particle properties by default.
-    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
+    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("Particles"));
 }
 
 /******************************************************************************
@@ -89,10 +89,10 @@ void HistogramModifier::initializeModifier(const ModifierInitializationRequest& 
 
     // Use the first available property from the input state as data source when the modifier is newly created.
     if(sourceProperty().isNull() && subject() && ExecutionContext::isInteractive()) {
-        const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
+        const PipelineFlowState& input = request.modificationNode()->evaluateInputSynchronous(request);
         if(const PropertyContainer* container = input.getLeafObject(subject())) {
             PropertyReference bestProperty;
-            for(const PropertyObject* property : container->properties()) {
+            for(const Property* property : container->properties()) {
                 bestProperty = PropertyReference(subject().dataClass(), property, (property->componentCount() > 1) ? 0 : -1);
             }
             if(!bestProperty.isNull()) {
@@ -139,7 +139,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
     container->verifyIntegrity();
 
     // Get the input property.
-    const PropertyObject* property = sourceProperty().findInContainer(container);
+    const Property* property = sourceProperty().findInContainer(container);
     if(!property)
         throw Exception(tr("The selected input property '%1' is not present.").arg(sourceProperty().name()));
 
@@ -150,17 +150,17 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
 
     // Get the input selection if filtering was enabled by the user.
     BufferReadAccess<SelectionIntType> inputSelection;
-    if(onlySelectedElements() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
-        inputSelection = container->expectProperty(PropertyObject::GenericSelectionProperty);
+    if(onlySelectedElements() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
+        inputSelection = container->expectProperty(Property::GenericSelectionProperty);
     }
 
     // Create storage for output selection.
     BufferWriteAccess<SelectionIntType, access_mode::discard_write> outputSelection;
-    if(selectInRange() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
+    if(selectInRange() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
         // First make sure we can safely modify the property container.
         PropertyContainer* mutableContainer = state.expectMutableLeafObject(subject());
         // Add the selection property to the output container.
-        outputSelection = mutableContainer->createProperty(PropertyObject::GenericSelectionProperty);
+        outputSelection = mutableContainer->createProperty(Property::GenericSelectionProperty);
     }
 
     // Create selection property for output.
@@ -174,12 +174,12 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
     FloatType intervalEnd = xAxisRangeEnd();
 
     // Allocate output data array.
-    PropertyPtr histogram = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, std::max(1, numberOfBins()), PropertyObject::Int64, 1, tr("Count"));
+    PropertyPtr histogram = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, std::max(1, numberOfBins()), Property::Int64, 1, tr("Count"));
     BufferWriteAccess<int64_t, access_mode::read_write> histogramAccess(histogram);
     int histogramSizeMin1 = histogram->size() - 1;
 
     if(property->size() > 0) {
-        if(property->dataType() == PropertyObject::Float32) {
+        if(property->dataType() == Property::Float32) {
             BufferReadAccess<float*> array(property);
             // Determine value range.
             if(!fixXAxisRange()) {
@@ -222,7 +222,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
                 }
             }
         }
-        else if(property->dataType() == PropertyObject::Float64) {
+        else if(property->dataType() == Property::Float64) {
             BufferReadAccess<double*> array(property);
             // Determine value range.
             if(!fixXAxisRange()) {
@@ -265,7 +265,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
                 }
             }
         }
-        else if(property->dataType() == PropertyObject::Int32) {
+        else if(property->dataType() == Property::Int32) {
             BufferReadAccess<int32_t*> array(property);
             // Determine value range.
             if(!fixXAxisRange()) {
@@ -308,7 +308,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
                 }
             }
         }
-        else if(property->dataType() == PropertyObject::Int64) {
+        else if(property->dataType() == Property::Int64) {
             BufferReadAccess<int64_t*> array(property);
             // Determine value range.
             if(!fixXAxisRange()) {
@@ -351,7 +351,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
                 }
             }
         }
-        else if(property->dataType() == PropertyObject::Int8) {
+        else if(property->dataType() == Property::Int8) {
             BufferReadAccess<int8_t*> array(property);
             // Determine value range.
             if(!fixXAxisRange()) {
@@ -406,7 +406,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
     // Output a data table with the histogram data.
     DataTable* table = state.createObject<DataTable>(
         QStringLiteral("histogram[%1]").arg(sourceProperty().nameWithComponent()),
-        request.modApp(), DataTable::Histogram, sourceProperty().nameWithComponent(), std::move(histogram));
+        request.modificationNode(), DataTable::Histogram, sourceProperty().nameWithComponent(), std::move(histogram));
     table->setAxisLabelX(sourceProperty().nameWithComponent());
     table->setIntervalStart(intervalStart);
     table->setIntervalEnd(intervalEnd);

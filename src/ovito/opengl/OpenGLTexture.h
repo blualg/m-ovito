@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -32,7 +32,7 @@ namespace Ovito {
 
 /**
  * \brief A wrapper class for OpenGL textures.
- * 
+ *
  * Note that we cannot simply use a plain QOpenGLTexture, because its implementation contains a bug,
  * which requires the QOpenGLContext in which the QOpenGLTexture was created to outlive the QOpenGLTexture.
  */

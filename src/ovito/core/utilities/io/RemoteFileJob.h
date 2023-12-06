@@ -30,10 +30,8 @@
 
 namespace Ovito {
 
-namespace Ssh {
-    // Defined elsewhere:
-    class SshConnection;
-}
+// Defined elsewhere:
+class SshConnection;
 
 /**
  * \brief Base class for background jobs that access remote files and directories via SSH.
@@ -87,7 +85,7 @@ protected:
     const QUrl _url;
 
     /// The SSH connection.
-    Ovito::Ssh::SshConnection* _connection = nullptr;
+    Ovito::SshConnection* _connection = nullptr;
 
 #ifndef Q_OS_WASM
     /// The Qt network request reply.

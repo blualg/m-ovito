@@ -24,15 +24,13 @@
 
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include <ovito/core/utilities/concurrent/ProgressingTask.h>
 #include <ovito/delaunay/DelaunayTessellation.h>
 
-namespace Ovito::Delaunay {
-
-using namespace Ovito::Mesh;
+namespace Ovito {
 
 /**
  * Constructs a SurfaceMesh structure from a DelaunayTessellation representing the separating surface manifold
@@ -59,7 +57,7 @@ public:
 
     /// Constructor.
     ManifoldConstructionHelper(DelaunayTessellation& tessellation, SurfaceMeshBuilder& outputMesh, FloatType alpha, bool createRegions,
-            const PropertyObject* positions) : _tessellation(tessellation), _mesh(outputMesh), _alpha(alpha), _createRegions(createRegions), _positions(positions) { OVITO_ASSERT(_tessellation.simCell()); }
+            const Property* positions) : _tessellation(tessellation), _mesh(outputMesh), _alpha(alpha), _createRegions(createRegions), _positions(positions) { OVITO_ASSERT(_tessellation.simCell()); }
 
     /// Returns the number of filled regions that have been identified.
     SurfaceMesh::size_type filledRegionCount() const { return _filledRegionCount; }
@@ -126,7 +124,7 @@ public:
         _emptyRegionCount = 0;
 
         // Flags indicating which periodic cell directions are connected by a surface through the cell boundary.
-        const SimulationCellObject* simCell = _tessellation.simCell();
+        const SimulationCell* simCell = _tessellation.simCell();
         bool surfaceCrossesBoundaries[3] = { false, false, false };
         bool detectBoundaryCrossings = simCell->hasPbc();
 
@@ -370,10 +368,10 @@ public:
             return false;
 
         // Create the "Exterior" region property in the output mesh.
-        PropertyObject* regionPropertyIsExterior = _mesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsExteriorProperty);
+        Property* regionPropertyIsExterior = _mesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::IsExteriorProperty);
 
         // Get access to the region volume property.
-        PropertyObject* regionPropertyVolume = _mesh.mutableRegionProperty(SurfaceMeshRegions::VolumeProperty);
+        Property* regionPropertyVolume = _mesh.mutableRegionProperty(SurfaceMeshRegions::VolumeProperty);
 
         OVITO_ASSERT(_mesh.regionCount() == _filledRegionCount);
 
@@ -396,6 +394,15 @@ public:
         for(SurfaceMesh::region_index& region : faceRegions) {
             if(region >= _filledRegionCount) {
                 region = regionMapping[findRegion(region - _filledRegionCount)];
+            }
+        }
+
+        // Update tesselation user field to reflect the compressed empty region IDs
+        for(DelaunayTessellation::CellIterator cellIter = _tessellation.begin_cells(); cellIter != _tessellation.end_cells(); ++cellIter) {
+            DelaunayTessellation::CellHandle cell = *cellIter;
+            int currentRegionId = _tessellation.getUserField(cell);
+            if(currentRegionId >= _filledRegionCount) {
+                _tessellation.setUserField(cell, regionMapping[findRegion(currentRegionId - _filledRegionCount)]);
             }
         }
 
@@ -584,7 +591,7 @@ private:
 
             // Put region property into container.
             size_t nreg = regionVolumes.size();
-            _mesh.mutableRegions()->setContent(nreg, { static_object_cast<PropertyObject>(regionVolumes.take()) });
+            _mesh.mutableRegions()->setContent(nreg, { static_object_cast<Property>(regionVolumes.take()) });
 
             if(_mesh.regionCount() > 0) {
                 // Shift filled region IDs to start at index 0.
@@ -804,10 +811,10 @@ private:
         }
 
         // Store the vertex coordinates in the mesh.
-        _mesh.mutableVertices()->setContent(topo->vertexCount(), { static_object_cast<PropertyObject>(vertexPositions.take()) });
+        _mesh.mutableVertices()->setContent(topo->vertexCount(), { static_object_cast<Property>(vertexPositions.take()) });
 
         // Store the per-face region information in the mesh.
-        _mesh.mutableFaces()->setContent(topo->faceCount(), { static_object_cast<PropertyObject>(faceRegions.take()) });
+        _mesh.mutableFaces()->setContent(topo->faceCount(), { static_object_cast<Property>(faceRegions.take()) });
 
         return !operation.isCanceled();
     }

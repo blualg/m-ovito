@@ -30,8 +30,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/stdobj/StdObj.h>
 
-namespace Ovito::Mesh {
-    using namespace Ovito::StdObj;
+namespace Ovito {
     class SurfaceMesh;
     class SurfaceMeshReadAccess;
     class SurfaceMeshBuilder;

@@ -24,12 +24,12 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/particles/util/NearestNeighborFinder.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/particles/modifier/analysis/ReferenceConfigurationModifier.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Performs the Wigner-Seitz cell analysis to identify point defects in crystals.
@@ -40,11 +40,7 @@ class OVITO_PARTICLES_EXPORT WignerSeitzAnalysisModifier : public ReferenceConfi
 
     Q_CLASSINFO("DisplayName", "Wigner-Seitz defect analysis");
     Q_CLASSINFO("Description", "Identify point defects (vacancies and interstitials) in crystals.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Analysis");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 
@@ -64,8 +60,8 @@ private:
     public:
 
         /// Constructor.
-        WignerSeitzAnalysisEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
-                PipelineFlowState referenceState, ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef, AffineMappingType affineMapping,
+        WignerSeitzAnalysisEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCell* simCell,
+                PipelineFlowState referenceState, ConstPropertyPtr refPositions, const SimulationCell* simCellRef, AffineMappingType affineMapping,
                 ConstPropertyPtr typeProperty, int ptypeMinId, int ptypeMaxId, ConstPropertyPtr referenceTypeProperty, ConstPropertyPtr referenceIdentifierProperty) :
             RefConfigEngineBase(request, validityInterval, std::move(positions), simCell, std::move(refPositions), simCellRef,
                 nullptr, nullptr, affineMapping, false),

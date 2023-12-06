@@ -27,7 +27,6 @@
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
 #include <ovito/core/dataset/data/DataVis.h>
-#include <ovito/core/dataset/pipeline/PipelineObject.h>
 
 namespace Ovito {
 
@@ -78,13 +77,13 @@ public:
 
     /// \brief Attaches a visualization element to this data object that will be responsible for rendering the
     ///        data.
-    void insertVisElement(int index, DataVis* vis) {
+    void insertVisElement(qsizetype index, OORef<DataVis> vis) {
         OVITO_ASSERT(vis != nullptr);
-        _visElements.insert(this, PROPERTY_FIELD(visElements), index, vis);
+        _visElements.insert(this, PROPERTY_FIELD(visElements), index, std::move(vis));
     }
 
     /// \brief Detaches a visualization element from this data object.
-    void removeVisElement(int index) {
+    void removeVisElement(qsizetype index) {
         _visElements.remove(this, PROPERTY_FIELD(visElements), index);
     }
 
@@ -184,6 +183,12 @@ public:
     /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
     virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const;
 
+    /// Returns the pipeline stage that created this data object (may be null).
+    PipelineNode* createdByNode() const;
+
+    /// Sets the pipeline stage that created this data object.
+    void setCreatedByNode(PipelineNode* pipelineNode);
+
 protected:
 
     /// Is called when a RefTarget referenced by this object has generated an event.
@@ -218,8 +223,8 @@ private:
     /// The attached visual elements that are responsible for rendering this object's data.
     DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, visElements, setVisElements, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_MEMORIZE);
 
-    /// The pipeline object that created this data object (may be null).
-    DECLARE_RUNTIME_PROPERTY_FIELD(QPointer<PipelineObject>, dataSource, setDataSource);
+    /// The pipeline stage that created this data object (may be null).
+    DECLARE_RUNTIME_PROPERTY_FIELD(QPointer<RefTarget>, createdByNodeInternal, setCreatedByNodeInternal);
 
     /// The attached editable proxy object.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<RefTarget>, editableProxy, setEditableProxy, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);

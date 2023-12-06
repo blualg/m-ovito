@@ -29,7 +29,6 @@
 
 #include <QOperatingSystemVersion>
 #include <QAbstractEventDispatcher>
-#include <QProcess>
 
 namespace Ovito {
 
@@ -90,6 +89,8 @@ void UserInterface::shutdown()
 ******************************************************************************/
 void UserInterface::reportError(const Exception& ex, bool blocking)
 {
+    if(!ex.traceback().isEmpty())
+        qInfo().noquote() << ex.traceback();
     for(auto msg = ex.messages().crbegin(); msg != ex.messages().crend(); ++msg) {
         qInfo().noquote() << "ERROR:" << *msg;
     }

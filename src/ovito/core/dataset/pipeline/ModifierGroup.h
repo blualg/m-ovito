@@ -29,7 +29,7 @@
 namespace Ovito {
 
 /**
- * \brief A logical group of ModifierApplication objects, which is used in the GUI to group
+ * \brief A logical group of modification pipeline nodes, which is used in the GUI to group
  *        modifiers in the pipeline editor.
  */
 class OVITO_CORE_EXPORT ModifierGroup : public ActiveObject
@@ -42,39 +42,39 @@ public:
     /// \brief Constructs a modifier group object.
     Q_INVOKABLE ModifierGroup(ObjectInitializationFlags flags) : ActiveObject(flags), _isCollapsed(false) {}
 
-    /// \brief Returns the list of modifier applications that are part of this group.
-    QVector<ModifierApplication*> modifierApplications() const;
+    /// \brief Returns the list of pipeline nodes that are part of this group.
+    QVector<ModificationNode*> nodes() const;
 
     /// \brief Returns the list of pipelines that contain this modifier group.
     /// \param onlyScenePipelines If true, pipelines which are currently not part of the scene are ignored.
-    QSet<PipelineSceneNode*> pipelines(bool onlyScenePipelines) const;
+    QSet<Pipeline*> pipelines(bool onlyScenePipelines) const;
 
 Q_SIGNALS:
 
     /// Signal is emitted every time a modifier is added to the group.
-    void modifierAdded(ModifierApplication* modApp);
+    void modifierAdded(ModificationNode* node);
 
     /// Signal is emitted every time a modifier is removed from the group.
-    void modifierRemoved(ModifierApplication* modApp);
+    void modifierRemoved(ModificationNode* node);
 
 private Q_SLOTS:
 
-    /// \brief Is called when one of the group's modapps has generated an event.
-    void modAppEvent(RefTarget* sender, const ReferenceEvent& event);
+    /// \brief Is called when one of the group's modification nodes has generated an event.
+    void modificationNodeEvent(RefTarget* sender, const ReferenceEvent& event);
 
 private:
 
-    /// This is called from a ModifierApplication whenever it becomes a member of this group.
-    void registerModApp(ModifierApplication* modApp);
+    /// This is called from a ModificationNode whenever it becomes a member of this group.
+    void registerNode(ModificationNode* node);
 
-    /// This is called from a ModifierApplication whenever it is removed from this group.
-    void unregisterModApp(ModifierApplication* modApp);
+    /// This is called from a ModificationNode whenever it is removed from this group.
+    void unregisterNode(ModificationNode* node);
 
-    /// This is called whenever one of the group's member modapps changes.
+    /// This is called whenever one of the group's member nodes changes.
     /// It computes the combined status of the entire group.
     void updateCombinedStatus();
 
-    friend class ModifierApplication;
+    friend class ModificationNode;
 
 private:
 

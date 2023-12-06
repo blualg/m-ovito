@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2013 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include "../FileColumnParticleExporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Exporter that writes the particles to a LAMMPS data file.

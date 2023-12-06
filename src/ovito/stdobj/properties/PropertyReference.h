@@ -25,7 +25,7 @@
 
 #include <ovito/stdobj/StdObj.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief A generic reference to a property.
@@ -46,8 +46,8 @@ public:
         OVITO_ASSERT(!_name.isEmpty());
     }
 
-    /// \brief Constructs a reference based on an existing PropertyObject.
-    PropertyReference(PropertyContainerClassPtr pclass, const PropertyObject* property, int vectorComponent = -1);
+    /// \brief Constructs a reference based on an existing Property.
+    PropertyReference(PropertyContainerClassPtr pclass, const Property* property, int vectorComponent = -1);
 
     /// \brief Returns the type of property being referenced.
     int type() const { return _type; }
@@ -103,7 +103,7 @@ public:
     QString nameWithComponent() const;
 
     /// Finds the referenced property in the given property container object.
-    const PropertyObject* findInContainer(const PropertyContainer* container) const;
+    const Property* findInContainer(const PropertyContainer* container) const;
 
     /// Returns a new property reference that uses the same name as the current one, but with a different property container class.
     PropertyReference convertToContainerClass(PropertyContainerClassPtr containerClass) const;
@@ -161,8 +161,8 @@ public:
     /// \brief Constructs a reference to a user-defined property.
     TypedPropertyReference(const QString& name, int vectorComponent = -1) : PropertyReference(&PropertyContainerType::OOClass(), name, vectorComponent) {}
 
-    /// \brief Constructs a reference based on an existing PropertyObject.
-    TypedPropertyReference(const PropertyObject* property, int vectorComponent = -1) : PropertyReference(&PropertyContainerType::OOClass(), property, vectorComponent) {}
+    /// \brief Constructs a reference based on an existing Property.
+    TypedPropertyReference(const Property* property, int vectorComponent = -1) : PropertyReference(&PropertyContainerType::OOClass(), property, vectorComponent) {}
 
     /// \brief Compares two references for equality.
     bool operator==(const TypedPropertyReference& other) const { return PropertyReference::operator==(other); }
@@ -188,4 +188,4 @@ public:
 
 }   // End of namespace
 
-Q_DECLARE_METATYPE(Ovito::StdObj::PropertyReference);
+Q_DECLARE_METATYPE(Ovito::PropertyReference);

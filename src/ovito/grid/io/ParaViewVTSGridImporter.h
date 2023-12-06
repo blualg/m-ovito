@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,7 +30,7 @@
 
 #include <QXmlStreamReader>
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 /**
  * \brief File parser for reading a VoxelGrid from a ParaView VTS (StructuredGrid) file.

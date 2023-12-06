@@ -24,7 +24,7 @@
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "SurfaceMeshBuilder.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 /******************************************************************************
 * Constructor that takes an existing SurfaceMesh object.

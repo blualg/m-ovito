@@ -36,13 +36,13 @@
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/dataset/scene/Scene.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/stdmod/viewport/ColorLegendOverlay.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include "ColorLegendOverlayEditor.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ColorLegendOverlayEditor);
 SET_OVITO_OBJECT_EDITOR(ColorLegendOverlay, ColorLegendOverlayEditor);
@@ -235,9 +235,9 @@ void ColorLegendOverlayEditor::updateSourcesList()
 
     _sourcesComboBox->clear();
     if(ColorLegendOverlay* overlay = static_object_cast<ColorLegendOverlay>(editObject())) {
-        // List all ColorCodingModifiers, typed PropertyObjects, and PropertyColorMappings in the scene. To find them, visit all
+        // List all ColorCodingModifiers, typed properties, and PropertyColorMappings in the scene. To find them, visit all
         // pipelines and iterate over their modifier applications and output data collections.
-        visitScenePipelines([&](PipelineSceneNode* pipeline) {
+        visitScenePipelines([&](Pipeline* pipeline) {
 
             // Go through the visual elements of the pipeline and look if any one has a PropertyColorMapping attached to it.
             for(DataVis* vis : pipeline->visElements()) {
@@ -256,15 +256,15 @@ void ColorLegendOverlayEditor::updateSourcesList()
                 }
             }
 
-            // Walk along the pipeline stages to find ModifierApplications associated with a ColorCodingModifier:
-            PipelineObject* obj = pipeline->dataProvider();
-            while(obj) {
-                if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj)) {
-                    if(ColorCodingModifier* mod = dynamic_object_cast<ColorCodingModifier>(modApp->modifier())) {
+            // Walk along the pipeline to find modification node associated with a ColorCodingModifier:
+            PipelineNode* node = pipeline->head();
+            while(node) {
+                if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(node)) {
+                    if(ColorCodingModifier* mod = dynamic_object_cast<ColorCodingModifier>(modNode->modifier())) {
                         // Prepend color coding modifiers to the front of the list.
                         _sourcesComboBox->insertItem(0, tr("Color coding: %1").arg(mod->sourceProperty().nameWithComponent()), QVariant::fromValue(mod));
                     }
-                    obj = modApp->input();
+                    node = modNode->input();
                 }
                 else break;
             }
@@ -274,8 +274,8 @@ void ColorLegendOverlayEditor::updateSourcesList()
 
                 // Now evaluate the pipeline and look for typed properties in its output data collection.
                 const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(currentAnimationTime(), false);
-                for(const ConstDataObjectPath& dataPath : state.getObjectsRecursive(PropertyObject::OOClass())) {
-                    const PropertyObject* property = static_object_cast<PropertyObject>(dataPath.back());
+                for(const ConstDataObjectPath& dataPath : state.getObjectsRecursive(Property::OOClass())) {
+                    const Property* property = static_object_cast<Property>(dataPath.back());
 
                     // Check if the property is a typed property, i.e. it has one or more ElementType objects attached to it.
                     if(property->isTypedProperty() && dataPath.size() >= 2) {

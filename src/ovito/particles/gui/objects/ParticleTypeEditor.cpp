@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,7 +23,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/gui/util/ParticleSettingsPage.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/gui/desktop/properties/ColorParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
@@ -36,8 +36,9 @@
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
 #include "ParticleTypeEditor.h"
+#include <ovito/gui/desktop/widgets/general/MenuToolButton.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParticleTypeEditor);
 SET_OVITO_OBJECT_EDITOR(ParticleType, ParticleTypeEditor);
@@ -122,7 +123,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
         // Loads the default parameter value.
         [](ParticleType* ptype) { ptype->setColor(ElementType::getDefaultColor(ptype->ownerProperty(), ptype->nameOrNumericId(), ptype->numericId(), true)); },
         // Saves the current parameter value as new default preset.
-        [](const ParticleType* ptype) { ElementType::setDefaultColor(ParticlePropertyReference(ParticlesObject::TypeProperty), ptype->nameOrNumericId(), ptype->color()); },
+        [](const ParticleType* ptype) { ElementType::setDefaultColor(ParticlePropertyReference(Particles::TypeProperty), ptype->nameOrNumericId(), ptype->color()); },
         // Determines if the current parameter value differs from the saved default value or not.
         [](const ParticleType* ptype) { return (ptype->color() == ElementType::getDefaultColor(ptype->ownerProperty(), ptype->nameOrNumericId(), ptype->numericId(), true)); }
     );
@@ -131,11 +132,11 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     // Display radius presets menu.
     QToolButton* displayRadiusPresetsMenuButton = createPresetsMenuButton(tr("display radius"),
         // Loads the default parameter value.
-        [](ParticleType* ptype) { ptype->setRadius(ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::DisplayRadius)); },
+        [](ParticleType* ptype) { ptype->setRadius(ParticleType::getDefaultParticleRadius(static_cast<Particles::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::DisplayRadius)); },
         // Saves the current parameter value as new default preset.
-        [](const ParticleType* ptype) { ParticleType::setDefaultParticleRadius(ParticlesObject::TypeProperty, ptype->nameOrNumericId(), ptype->radius(), ParticleType::DisplayRadius); },
+        [](const ParticleType* ptype) { ParticleType::setDefaultParticleRadius(Particles::TypeProperty, ptype->nameOrNumericId(), ptype->radius(), ParticleType::DisplayRadius); },
         // Determines if the current parameter value differs from the saved default value or not.
-        [](const ParticleType* ptype) { return (ptype->radius() == ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::DisplayRadius)); }
+        [](const ParticleType* ptype) { return (ptype->radius() == ParticleType::getDefaultParticleRadius(static_cast<Particles::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::DisplayRadius)); }
     );
     gridLayout->addWidget(displayRadiusPresetsMenuButton, 1, 2);
 
@@ -196,7 +197,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
                     // Build list of file importers that can import triangle meshes.
                     QVector<const FileImporterClass*> meshImporters;
                     for(const FileImporterClass* importerClass : PluginManager::instance().metaclassMembers<FileSourceImporter>()) {
-                        if(importerClass->importsDataType(TriMeshObject::OOClass()))
+                        if(importerClass->importsDataType(TriangleMesh::OOClass()))
                             meshImporters.push_back(importerClass);
                     }
 
@@ -227,6 +228,29 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     FloatParameterUI* massPUI = new FloatParameterUI(this, PROPERTY_FIELD(ParticleType::mass));
     gridLayout->addWidget(massPUI->label(), 0, 0);
     gridLayout->addLayout(massPUI->createFieldLayout(), 0, 1);
+    // Reset mass paramter - can't use createPresetsMenuButton because we only
+    // offer reset but not the other options
+    // Don't use PROPERTY_FIELD_RESETTABLE to give custom (better) tooltip
+    MenuToolButton* presetsMenuButton = new MenuToolButton();
+    {
+        const QString& parameterName = PROPERTY_FIELD(ParticleType::mass)->displayName();
+        QAction* loadPresetAction =
+            presetsMenuButton->createAction(QIcon::fromTheme("particles_settings_restore"), tr("Reset %1 to default").arg(parameterName));
+        loadPresetAction->setStatusTip(
+            tr("Reset current %1 back to the hard-coded default value for this particle type.").arg(parameterName));
+        connect(loadPresetAction, &QAction::triggered, this, [this, parameterName]() {
+            if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
+                performTransaction(tr("Reset particle type %1").arg(parameterName), [&]() {
+                    ptype->setMass(ParticleType::getDefaultParticleMass(static_cast<Particles::Type>(ptype->ownerProperty().type()),
+                                                                        ptype->nameOrNumericId(), ptype->numericId(), false));
+                    mainWindow().showStatusBarMessage(
+                        tr("Reset %1 of particle type '%2' to default value.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
+                });
+            }
+        });
+    }
+    gridLayout->addWidget(presetsMenuButton, 0, 2);
+
     massPUI->spinner()->setStandardValue(0.0);
     massPUI->textBox()->setPlaceholderText(tr("‹unspecified›"));
 
@@ -240,11 +264,11 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     // VDW radius presets menu.
     QToolButton* vdwRadiusPresetsMenuButton = createPresetsMenuButton(tr("VdW radius"),
         // Loads the default parameter value.
-        [](ParticleType* ptype) { ptype->setVdwRadius(ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::VanDerWaalsRadius)); },
+        [](ParticleType* ptype) { ptype->setVdwRadius(ParticleType::getDefaultParticleRadius(static_cast<Particles::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::VanDerWaalsRadius)); },
         // Saves the current parameter value as new default preset.
-        [](const ParticleType* ptype) { ParticleType::setDefaultParticleRadius(ParticlesObject::TypeProperty, ptype->nameOrNumericId(), ptype->vdwRadius(), ParticleType::VanDerWaalsRadius); },
+        [](const ParticleType* ptype) { ParticleType::setDefaultParticleRadius(Particles::TypeProperty, ptype->nameOrNumericId(), ptype->vdwRadius(), ParticleType::VanDerWaalsRadius); },
         // Determines if the current parameter value differs from the saved default value or not.
-        [](const ParticleType* ptype) { return (ptype->vdwRadius() == ParticleType::getDefaultParticleRadius(static_cast<ParticlesObject::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::VanDerWaalsRadius)); }
+        [](const ParticleType* ptype) { return (ptype->vdwRadius() == ParticleType::getDefaultParticleRadius(static_cast<Particles::Type>(ptype->ownerProperty().type()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::VanDerWaalsRadius)); }
     );
     gridLayout->addWidget(vdwRadiusPresetsMenuButton, 1, 2);
 }
@@ -254,9 +278,9 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
 ******************************************************************************/
 QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& parameterName, std::function<void(ParticleType*)> resetFunc, std::function<void(const ParticleType*)> setDefaultFunc, std::function<bool(const ParticleType*)> isUnchangedFunc)
 {
-    QToolButton* presetsMenuButton = new QToolButton();
-    QMenu* presetsMenu = new QMenu(presetsMenuButton);
-    QAction* loadPresetAction = presetsMenu->addAction(QIcon::fromTheme("particles_settings_restore"), tr("Reset %1 to default").arg(parameterName));
+    MenuToolButton* presetsMenuButton = new MenuToolButton();
+    QAction* loadPresetAction =
+        presetsMenuButton->createAction(QIcon::fromTheme("particles_settings_restore"), tr("Reset %1 to default").arg(parameterName));
     loadPresetAction->setStatusTip(tr("Reset current %1 back to user-defined or hard-coded default value for this particle type.").arg(parameterName));
     connect(loadPresetAction, &QAction::triggered, this, [this,parameterName,resetFunc]() {
         if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
@@ -266,7 +290,8 @@ QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& paramete
             });
         }
     });
-    QAction* savePresetAction = presetsMenu->addAction(QIcon::fromTheme("file_save_as"), tr("Use current %1 as new default").arg(parameterName));
+    QAction* savePresetAction =
+        presetsMenuButton->createAction(QIcon::fromTheme("file_save_as"), tr("Use current %1 as new default").arg(parameterName));
     savePresetAction->setStatusTip(tr("Save current %1 as future default value for this particle type.").arg(parameterName));
     connect(savePresetAction, &QAction::triggered, this, [this,parameterName,setDefaultFunc]() {
         if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
@@ -275,19 +300,13 @@ QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& paramete
             mainWindow().showStatusBarMessage(tr("Stored current %1 as default for particle type '%2'.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
         }
     });
-    presetsMenu->addSeparator();
-    QAction* editPresetAction = presetsMenu->addAction(QIcon::fromTheme("application_preferences"), tr("Edit presets..."));
+    presetsMenuButton->createMenuSeperator();
+    QAction* editPresetAction = presetsMenuButton->createAction(QIcon::fromTheme("application_preferences"), tr("Edit presets..."));
     connect(editPresetAction, &QAction::triggered, this, [this]() {
         ApplicationSettingsDialog dlg(mainWindow(), &ParticleSettingsPage::OOClass());
         dlg.exec();
         Q_EMIT contentsChanged(editObject());
     });
-    presetsMenuButton->setStyleSheet(
-        "QToolButton { padding: 0px; margin: 0px; border: none; background-color: transparent; } "
-        "QToolButton::menu-indicator { image: none; } ");
-    presetsMenuButton->setPopupMode(QToolButton::InstantPopup);
-    presetsMenuButton->setIcon(QIcon::fromTheme("edit_pipeline_menu"));
-    presetsMenuButton->setMenu(presetsMenu);
     presetsMenuButton->setEnabled(false);
     presetsMenuButton->setToolTip(tr("Presets"));
 

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //  Copyright 2019 Henrik Andersen Sveinsson
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -29,7 +29,7 @@
 #include <boost/math/special_functions/spherical_harmonic.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief This modifier implements the Chill+ algorithm [Nguyen & Molinero, J. Phys. Chem. B 2015, 119, 9369-9376]
@@ -41,11 +41,7 @@ class OVITO_PARTICLES_EXPORT ChillPlusModifier : public StructureIdentificationM
 
     Q_CLASSINFO("DisplayName", "Chill+");
     Q_CLASSINFO("Description", "Identify hexagonal ice, cubic ice, hydrate and other arrangements of water molecules.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Structure identification");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 
@@ -78,7 +74,7 @@ private:
     public:
 
         /// Constructor.
-        ChillPlusEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
+        ChillPlusEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
             StructureIdentificationEngine(request, fingerprint, positions, simCell, structureTypes, selection),
             _cutoff(cutoff) {}
 

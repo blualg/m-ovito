@@ -21,9 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/particles/objects/TrajectoryObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
@@ -32,7 +31,7 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "GenerateTrajectoryLinesModifier.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(GenerateTrajectoryLinesModifier);
 DEFINE_PROPERTY_FIELD(GenerateTrajectoryLinesModifier, onlySelectedParticles);
@@ -54,9 +53,9 @@ SET_PROPERTY_FIELD_LABEL(GenerateTrajectoryLinesModifier, transferParticleProper
 SET_PROPERTY_FIELD_LABEL(GenerateTrajectoryLinesModifier, particleProperty, "Particle property");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(GenerateTrajectoryLinesModifier, everyNthFrame, IntegerParameterUnit, 1);
 
-IMPLEMENT_OVITO_CLASS(GenerateTrajectoryLinesModifierApplication);
-DEFINE_REFERENCE_FIELD(GenerateTrajectoryLinesModifierApplication, trajectoryData);
-SET_MODIFIER_APPLICATION_TYPE(GenerateTrajectoryLinesModifier, GenerateTrajectoryLinesModifierApplication);
+IMPLEMENT_OVITO_CLASS(GenerateTrajectoryLinesModificationNode);
+DEFINE_REFERENCE_FIELD(GenerateTrajectoryLinesModificationNode, trajectoryData);
+SET_MODIFICATION_NODE_TYPE(GenerateTrajectoryLinesModifier, GenerateTrajectoryLinesModificationNode);
 
 /******************************************************************************
 * Constructor.
@@ -72,7 +71,8 @@ GenerateTrajectoryLinesModifier::GenerateTrajectoryLinesModifier(ObjectInitializ
 {
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the vis element for rendering the trajectories created by the modifier.
-        setTrajectoryVis(OORef<TrajectoryVis>::create(flags));
+        setTrajectoryVis(OORef<LinesVis>::create(flags));
+        trajectoryVis()->setTitle(tr("Trajectory lines"));
     }
 }
 
@@ -95,7 +95,7 @@ void GenerateTrajectoryLinesModifier::initializeModifier(const ModifierInitializ
 ******************************************************************************/
 bool GenerateTrajectoryLinesModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    return input.containsObject<ParticlesObject>();
+    return input.containsObject<Particles>();
 }
 
 /******************************************************************************
@@ -104,9 +104,9 @@ bool GenerateTrajectoryLinesModifier::OOMetaClass::isApplicableTo(const DataColl
 void GenerateTrajectoryLinesModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     // Inject the precomputed trajectory lines, which are stored in the modifier application, into the pipeline.
-    if(GenerateTrajectoryLinesModifierApplication* myModApp = dynamic_object_cast<GenerateTrajectoryLinesModifierApplication>(request.modApp())) {
-        if(myModApp->trajectoryData()) {
-            state.addObject(myModApp->trajectoryData());
+    if(GenerateTrajectoryLinesModificationNode* myModNode = dynamic_object_cast<GenerateTrajectoryLinesModificationNode>(request.modificationNode())) {
+        if(myModNode->trajectoryData()) {
+            state.addObject(myModNode->trajectoryData());
         }
     }
 }
@@ -116,17 +116,18 @@ void GenerateTrajectoryLinesModifier::evaluateSynchronous(const ModifierEvaluati
 ******************************************************************************/
 bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime currentTime, MainThreadOperation operation)
 {
-    for(ModifierApplication* modApp : modifierApplications()) {
-        GenerateTrajectoryLinesModifierApplication* myModApp = dynamic_object_cast<GenerateTrajectoryLinesModifierApplication>(modApp);
-        if(!myModApp) continue;
+    for(ModificationNode* modNode : nodes()) {
+        GenerateTrajectoryLinesModificationNode* myModNode = dynamic_object_cast<GenerateTrajectoryLinesModificationNode>(modNode);
+        if(!myModNode)
+            continue;
 
         // Get input particles.
-        SharedFuture<PipelineFlowState> stateFuture = myModApp->evaluateInput(PipelineEvaluationRequest(currentTime));
+        SharedFuture<PipelineFlowState> stateFuture = myModNode->evaluateInput(PipelineEvaluationRequest(currentTime));
         if(!stateFuture.waitForFinished())
             return false;
 
         const PipelineFlowState& state = stateFuture.result();
-        const ParticlesObject* particles = state.getObject<ParticlesObject>();
+        const Particles* particles = state.getObject<Particles>();
         if(!particles)
             throw Exception(tr("Cannot generate trajectory lines. The pipeline data contains no particles."));
         particles->verifyIntegrity();
@@ -135,8 +136,8 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
         std::vector<size_t> selectedIndices;
         std::set<int64_t> selectedIdentifiers;
         if(onlySelectedParticles()) {
-            if(BufferReadAccess<SelectionIntType> selectionProperty = particles->getProperty(ParticlesObject::SelectionProperty)) {
-                BufferReadAccess<int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+            if(BufferReadAccess<SelectionIntType> selectionProperty = particles->getProperty(Particles::SelectionProperty)) {
+                BufferReadAccess<int64_t> identifierProperty = particles->getProperty(Particles::IdentifierProperty);
                 if(identifierProperty && identifierProperty.size() == selectionProperty.size()) {
                     const auto* s = selectionProperty.cbegin();
                     for(auto id : identifierProperty)
@@ -160,7 +161,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
         }
         else {
             startFrame = 0;
-            endFrame = myModApp->numberOfSourceFrames() - 1;
+            endFrame = myModNode->numberOfSourceFrames() - 1;
         }
         if(startFrame >= endFrame)
             throw Exception(tr("The current simulation sequence consists only of a single frame. Thus, no trajectory lines were created."));
@@ -177,21 +178,21 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
         std::vector<int32_t> timeData;
         std::vector<int64_t> idData;
         std::vector<std::byte> samplingPropertyData;
-        std::vector<DataOORef<const SimulationCellObject>> cells;
+        std::vector<DataOORef<const SimulationCell>> cells;
         int timeIndex = 0;
         for(int frame : sampleFrames) {
             operation.setProgressText(tr("Generating trajectory lines (frame %1 of %2)").arg(operation.progressValue()+1).arg(operation.progressMaximum()));
 
-            SharedFuture<PipelineFlowState> stateFuture = myModApp->evaluateInput(PipelineEvaluationRequest(myModApp->sourceFrameToAnimationTime(frame)));
+            SharedFuture<PipelineFlowState> stateFuture = myModNode->evaluateInput(PipelineEvaluationRequest(myModNode->sourceFrameToAnimationTime(frame)));
             if(!stateFuture.waitForFinished())
                 return false;
 
             const PipelineFlowState& state = stateFuture.result();
-            const ParticlesObject* particles = state.getObject<ParticlesObject>();
+            const Particles* particles = state.getObject<Particles>();
             if(!particles)
                 throw Exception(tr("Input data contains no particles at frame %1.").arg(frame));
             particles->verifyIntegrity();
-            BufferReadAccess<Point3> posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+            BufferReadAccess<Point3> posProperty = particles->expectProperty(Particles::PositionProperty);
 
             // Get the particle property to be sampled.
             RawBufferReadAccess particleSamplingProperty;
@@ -206,7 +207,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
 
             if(onlySelectedParticles()) {
                 if(!selectedIdentifiers.empty()) {
-                    BufferReadAccess<int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+                    BufferReadAccess<int64_t> identifierProperty = particles->getProperty(Particles::IdentifierProperty);
                     if(!identifierProperty || identifierProperty.size() != posProperty.size())
                         throw Exception(tr("Input particles do not possess identifiers at frame %1.").arg(frame));
 
@@ -246,7 +247,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
             else {
                 // Add coordinates of all particles.
                 pointData.insert(pointData.end(), posProperty.cbegin(), posProperty.cend());
-                BufferReadAccess<int64_t> identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
+                BufferReadAccess<int64_t> identifierProperty = particles->getProperty(Particles::IdentifierProperty);
                 if(identifierProperty && identifierProperty.size() == posProperty.size()) {
                     // Particles with IDs.
                     idData.insert(idData.end(), identifierProperty.cbegin(), identifierProperty.cend());
@@ -263,7 +264,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
 
             // Onbtain the simulation cell geometry at the current animation time.
             if(unwrapTrajectories()) {
-                if(const SimulationCellObject* simCellObj = state.getObject<SimulationCellObject>()) {
+                if(const SimulationCell* simCellObj = state.getObject<SimulationCell>()) {
                     cells.push_back(simCellObj);
                 }
                 else {
@@ -291,56 +292,62 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
             return false;
 
         // Do not create undo records while computing the trajectories.
-        DataOORef<TrajectoryObject> trajObj = DataOORef<TrajectoryObject>::create();
+        DataOORef<Lines> trajectoryLines = DataOORef<Lines>::create();
+        trajectoryLines->setTitle(tr("Particle trajectories"));
+        trajectoryLines->setIdentifier(state.generateUniqueIdentifier<Lines>(QStringLiteral("trajectories")));
         {
             UndoSuspender noUndo;
 
             // Copy re-ordered trajectory points.
-            trajObj->setElementCount(pointData.size());
-            BufferWriteAccess<Point3, access_mode::discard_read_write> trajPosProperty = trajObj->createProperty(TrajectoryObject::PositionProperty);
+            trajectoryLines->setElementCount(pointData.size());
+            BufferWriteAccess<Point3, access_mode::discard_read_write> trajPosProperty =
+                trajectoryLines->createProperty(Lines::PositionProperty);
             auto piter = permutation.cbegin();
             for(Point3& p : trajPosProperty) {
                 p = pointData[*piter++];
             }
 
             // Copy re-ordered trajectory time stamps.
-            BufferWriteAccess<int32_t, access_mode::discard_write> trajTimeProperty = trajObj->createProperty(TrajectoryObject::SampleTimeProperty);
+            BufferWriteAccess<int32_t, access_mode::discard_write> trajTimeProperty =
+                trajectoryLines->createProperty(Lines::SampleTimeProperty);
             piter = permutation.cbegin();
             for(int& t : trajTimeProperty) {
                 t = sampleFrames[timeData[*piter++]];
             }
 
             // Copy re-ordered trajectory ids.
-            BufferWriteAccess<int64_t, access_mode::discard_read_write> trajIdProperty = trajObj->createProperty(TrajectoryObject::ParticleIdentifierProperty);
+            BufferWriteAccess<int64_t, access_mode::discard_read_write> trajIdProperty =
+                trajectoryLines->createProperty(Lines::SectionProperty);
             piter = permutation.cbegin();
             for(int64_t& id : trajIdProperty) {
                 id = idData[*piter++];
             }
 
             // Create the trajectory line property receiving the sampled particle property values.
-            if(transferParticleProperties() && particleProperty() && particleProperty().type() != ParticlesObject::PositionProperty) {
-                if(const PropertyObject* inputProperty = particleProperty().findInContainer(particles)) {
-                    OVITO_ASSERT(samplingPropertyData.size() == inputProperty->stride() * trajObj->elementCount());
-                    if(samplingPropertyData.size() != inputProperty->stride() * trajObj->elementCount())
+            if(transferParticleProperties() && particleProperty() && particleProperty().type() != Particles::PositionProperty) {
+                if(const Property* inputProperty = particleProperty().findInContainer(particles)) {
+                    OVITO_ASSERT(samplingPropertyData.size() == inputProperty->stride() * trajectoryLines->elementCount());
+                    if(samplingPropertyData.size() != inputProperty->stride() * trajectoryLines->elementCount())
                         throw Exception(tr("Sampling buffer size mismatch. Sampled particle property '%1' seems to have a varying component count.").arg(inputProperty->name()));
 
                     // Create a corresponding output property of the trajectory lines.
                     RawBufferAccess<access_mode::discard_write> samplingProperty;
-                    if(inputProperty->type() < PropertyObject::FirstSpecificProperty && TrajectoryObject::OOClass().isValidStandardPropertyId(inputProperty->type())) {
+                    if(inputProperty->type() < Property::FirstSpecificProperty &&
+                       Lines::OOClass().isValidStandardPropertyId(inputProperty->type())) {
                         // Input particle property is also a standard property for trajectory lines.
-                        samplingProperty = trajObj->createProperty(inputProperty->type());
+                        samplingProperty = trajectoryLines->createProperty(inputProperty->type());
                         OVITO_ASSERT(samplingProperty.dataType() == inputProperty->dataType());
                         OVITO_ASSERT(samplingProperty.stride() == inputProperty->stride());
                     }
-                    else if(TrajectoryObject::OOClass().standardPropertyTypeId(inputProperty->name()) != 0) {
+                    else if(Lines::OOClass().standardPropertyTypeId(inputProperty->name()) != 0) {
                         // Input property name is that of a standard property for trajectory lines.
                         // Must rename the property to avoid naming conflict, because user properties may not have a standard property name.
                         QString newPropertyName = inputProperty->name() + tr("_particles");
-                        samplingProperty = trajObj->createProperty(newPropertyName, inputProperty->dataType(), inputProperty->componentCount(), inputProperty->componentNames());
+                        samplingProperty = trajectoryLines->createProperty(newPropertyName, inputProperty->dataType(), inputProperty->componentCount(), inputProperty->componentNames());
                     }
                     else {
                         // Input property is a user property for trajectory lines.
-                        samplingProperty = trajObj->createProperty(inputProperty->name(), inputProperty->dataType(), inputProperty->componentCount(), inputProperty->componentNames());
+                        samplingProperty = trajectoryLines->createProperty(inputProperty->name(), inputProperty->dataType(), inputProperty->componentCount(), inputProperty->componentNames());
                     }
 
                     // Copy property values from temporary sampling buffer to destination trajectory line property.
@@ -370,8 +377,8 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
                     if(!operation.incrementProgressValue())
                         return false;
                     if(id[0] == id[1]) {
-                        const SimulationCellObject* cell1 = cells[timeData[piter[0]]];
-                        const SimulationCellObject* cell2 = cells[timeData[piter[1]]];
+                        const SimulationCell* cell1 = cells[timeData[piter[0]]];
+                        const SimulationCell* cell2 = cells[timeData[piter[1]]];
                         if(cell1 && cell2) {
                             const Point3& p1 = pos[0];
                             Point3 p2 = pos[1];
@@ -391,13 +398,13 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
                 }
             }
 
-            trajObj->setVisElement(trajectoryVis());
+            trajectoryLines->setVisElement(trajectoryVis());
 
             // Enable undo recording again from here on, because the trajectory line generation should be an undoable operation.
         }
 
-        // Store generated trajectory lines in the ModifierApplication.
-        myModApp->setTrajectoryData(std::move(trajObj));
+        // Store generated trajectory lines in the ModificationNode.
+        myModNode->setTrajectoryData(std::move(trajectoryLines));
     }
     return true;
 }
@@ -413,8 +420,8 @@ void GenerateTrajectoryLinesModifier::loadFromStreamComplete(ObjectLoadStream& s
     // For backward compatibility with OVITO 3.7:
     // Convert legacy time values from ticks to frames. This requires access to the AnimationSettings object, which is stored in the scene.
     if(stream.formatVersion() <= 30008) {
-        if(ModifierApplication* modApp = someModifierApplication()) {
-            QSet<PipelineSceneNode*> pipelines = modApp->pipelines(true);
+        if(ModificationNode* modNode = someNode()) {
+            QSet<Pipeline*> pipelines = modNode->pipelines(true);
             if(!pipelines.empty()) {
                 if(Scene* scene = (*pipelines.begin())->scene()) {
                     if(scene->animationSettings()) {

@@ -27,6 +27,7 @@
 #include <ovito/gui/desktop/dialogs/ImportFileDialog.h>
 #include <ovito/gui/desktop/dialogs/ImportRemoteFileDialog.h>
 #include <ovito/gui/desktop/dialogs/FileExporterSettingsDialog.h>
+#include <ovito/gui/desktop/dialogs/MessageDialog.h>
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/app/Application.h>
@@ -52,7 +53,7 @@ void WidgetActionManager::on_Quit_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_HelpAbout_triggered()
 {
-    QMessageBox msgBox(QMessageBox::NoIcon, Application::applicationName(),
+    MessageDialog msgBox(QMessageBox::NoIcon, Application::applicationName(),
             tr("<h3>%1 (Open Visualization Tool)</h3>"
                 "<p>Version %2</p>").arg(Application::applicationName()).arg(Application::applicationVersionString()),
             QMessageBox::Ok, &mainWindow());

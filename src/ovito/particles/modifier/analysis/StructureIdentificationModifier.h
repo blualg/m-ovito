@@ -25,12 +25,12 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Base class for modifiers that assign a structure type to each particle.
@@ -59,7 +59,7 @@ public:
     public:
 
         /// Constructor.
-        StructureIdentificationEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection = {});
+        StructureIdentificationEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection = {});
 
         /// Injects the computed results into the data pipeline.
         virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
@@ -84,7 +84,7 @@ public:
         const ConstPropertyPtr& selection() const { return _selection; }
 
         /// Returns the simulation cell data.
-        const DataOORef<const SimulationCellObject>& cell() const { return _simCell; }
+        const DataOORef<const SimulationCell>& cell() const { return _simCell; }
 
         /// Returns whether a given structural type is enabled for identification.
         bool typeIdentificationEnabled(int typeId) const {
@@ -121,7 +121,7 @@ public:
 
         ConstPropertyPtr _positions;
         ConstPropertyPtr _selection;
-        DataOORef<const SimulationCellObject> _simCell;
+        DataOORef<const SimulationCell> _simCell;
         const PropertyPtr _structures;
         ParticleOrderingFingerprint _inputFingerprint;
         std::vector<int64_t> _typeCounts;
@@ -138,12 +138,6 @@ public:
             if(type->numericId() == id) return type;
         return nullptr;
     }
-
-#ifdef OVITO_QML_GUI
-    /// This helper method is called by the QML GUI (StructureListParameter.qml) to extract the identification counts
-    /// from the cached pipeline output state after the modifier has been evaluated.
-    Q_INVOKABLE QVector<int64_t> getStructureCountsFromModifierResults(ModifierApplication* modApp) const;
-#endif
 
 protected:
 

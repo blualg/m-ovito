@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,7 +29,7 @@
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/gui/desktop/properties/RefTargetListParameterUI.h>
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /**
  * List box that displays the dislocation types.
@@ -51,7 +51,7 @@ public:
     }
 
     /// Obtains the current statistics from the pipeline.
-    void updateDislocationCounts(const PipelineFlowState& state, ModifierApplication* modApp);
+    void updateDislocationCounts(const PipelineFlowState& state, ModificationNode* node);
 
     /// Sets the object whose property is being displayed in this parameter UI.
     virtual void setEditObject(RefTarget* newObject) override {

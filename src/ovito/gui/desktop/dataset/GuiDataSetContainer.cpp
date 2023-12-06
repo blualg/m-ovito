@@ -35,6 +35,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/dataset/io/FileImporterEditor.h>
 #include <ovito/gui/desktop/dialogs/ImportFileDialog.h>
+#include <ovito/gui/desktop/dialogs/MessageDialog.h>
 #include "GuiDataSetContainer.h"
 
 namespace Ovito {
@@ -65,10 +66,10 @@ OORef<DataSet> GuiDataSetContainer::loadDataset(const QString& filename)
     if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
         if(Viewport* vp = viewportConfig->activeViewport()) {
             if(Scene* scene = vp->scene()) {
-                std::vector<OORef<PipelineSceneNode>> fileSourcePipelines;
+                std::vector<OORef<Pipeline>> fileSourcePipelines;
                 QStringList itemsList;
-                scene->visitObjectNodes([&](PipelineSceneNode* pipeline) {
-                    if(dynamic_object_cast<FileSource>(pipeline->pipelineSource())) {
+                scene->visitPipelines([&](Pipeline* pipeline) {
+                    if(dynamic_object_cast<FileSource>(pipeline->source())) {
                         fileSourcePipelines.emplace_back(pipeline);
                         itemsList.push_back(pipeline->objectTitle());
                     }
@@ -108,7 +109,7 @@ OORef<DataSet> GuiDataSetContainer::loadDataset(const QString& filename)
                         scene->selection()->setNode(fileSourcePipelines[keepIndex]);
                         for(const auto& pipeline : fileSourcePipelines) {
                             if(pipeline != fileSourcePipelines[keepIndex]) {
-                                pipeline->deleteNode();
+                                pipeline->deleteSceneNode();
                             }
                         }
                     }
@@ -219,7 +220,7 @@ bool GuiDataSetContainer::askForSaveChanges()
         message = tr("The current program session has not been saved. Do you want to save it?");
     }
 
-    QMessageBox::StandardButton result = QMessageBox::question(&mainWindow(), tr("Save changes"),
+    QMessageBox::StandardButton result = MessageDialog::question(&mainWindow(), tr("Save changes"),
         message,
         QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel, QMessageBox::Cancel);
     if(result == QMessageBox::Cancel)
@@ -304,7 +305,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileI
     OORef<FileImporter> importer = urlImporters.front().second;
     if(importer->isReplaceExistingPossible(scene, urls)) {
         // Ask user if the existing pipeline should be preserved or reset.
-        QMessageBox msgBox(QMessageBox::Question, tr("Import file"),
+        MessageDialog msgBox(QMessageBox::Question, tr("Import file"),
                 tr("Do you want to reset the existing pipeline?"),
                 QMessageBox::Yes | QMessageBox::Cancel, &mainWindow());
 #ifdef OVITO_BUILD_PROFESSIONAL
@@ -346,7 +347,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileI
     }
     else if(scene->children().empty() == false) {
         // Ask user if the current scene should be completely replaced by the imported data.
-        QMessageBox::StandardButton result = QMessageBox::question(&mainWindow(), tr("Import file"),
+        QMessageBox::StandardButton result = MessageDialog::question(&mainWindow(), tr("Import file"),
             tr("Do you want to keep the existing objects in the current scene?"),
             QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel, QMessageBox::Cancel);
 
@@ -368,7 +369,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileI
     // Do not create any animation keys during import.
     AnimationSuspender animSuspender(mainWindow());
 
-    if(OORef<PipelineSceneNode> pipeline = importer->importFileSet(scene, std::move(urlImporters), importMode, true, ImportFileDialog::multiFileImportMode())) {
+    if(OORef<Pipeline> pipeline = importer->importFileSet(scene, std::move(urlImporters), importMode, true, ImportFileDialog::multiFileImportMode())) {
         if(importMode == FileImporter::ResetScene) {
             mainWindow().undoStack()->clear();
             currentSet()->setFilePath(QString());

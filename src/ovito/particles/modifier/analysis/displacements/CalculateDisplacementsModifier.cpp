@@ -21,12 +21,12 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "CalculateDisplacementsModifier.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CalculateDisplacementsModifier);
 DEFINE_REFERENCE_FIELD(CalculateDisplacementsModifier, vectorVis);
@@ -52,7 +52,7 @@ CalculateDisplacementsModifier::CalculateDisplacementsModifier(ObjectInitializat
 
         // In GUI mode, visualize the displacement magnitude by default.
         if(ExecutionContext::isInteractive())
-            vectorVis()->colorMapping()->setSourceProperty(ParticlePropertyReference(ParticlesObject::DisplacementMagnitudeProperty));
+            vectorVis()->colorMapping()->setSourceProperty(ParticlePropertyReference(Particles::DisplacementMagnitudeProperty));
     }
 }
 
@@ -62,26 +62,26 @@ CalculateDisplacementsModifier::CalculateDisplacementsModifier(ObjectInitializat
 Future<AsynchronousModifier::EnginePtr> CalculateDisplacementsModifier::createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval)
 {
     // Get the current particle positions.
-    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
+    const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
-    const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
 
     // Get the reference particle position.
-    const ParticlesObject* refParticles = referenceState.getObject<ParticlesObject>();
+    const Particles* refParticles = referenceState.getObject<Particles>();
     if(!refParticles)
         throw Exception(tr("Reference configuration does not contain particles."));
     refParticles->verifyIntegrity();
-    const PropertyObject* refPosProperty = refParticles->expectProperty(ParticlesObject::PositionProperty);
+    const Property* refPosProperty = refParticles->expectProperty(Particles::PositionProperty);
 
     // Get the simulation cells.
-    const SimulationCellObject* inputCell = input.expectObject<SimulationCellObject>();
-    const SimulationCellObject* refCell = referenceState.getObject<SimulationCellObject>();
+    const SimulationCell* inputCell = input.expectObject<SimulationCell>();
+    const SimulationCell* refCell = referenceState.getObject<SimulationCell>();
     if(!refCell)
         throw Exception(tr("Reference configuration does not contain simulation cell info."));
 
     // Get particle identifiers.
-    const PropertyObject* identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
-    const PropertyObject* refIdentifierProperty = refParticles->getProperty(ParticlesObject::IdentifierProperty);
+    const Property* identifierProperty = particles->getProperty(Particles::IdentifierProperty);
+    const Property* refIdentifierProperty = refParticles->getProperty(Particles::IdentifierProperty);
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     return std::make_shared<DisplacementEngine>(
@@ -168,7 +168,7 @@ void CalculateDisplacementsModifier::DisplacementEngine::applyResults(const Modi
 {
     CalculateDisplacementsModifier* modifier = static_object_cast<CalculateDisplacementsModifier>(request.modifier());
 
-    ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+    Particles* particles = state.expectMutableObject<Particles>();
 
     if(_inputFingerprint.hasChanged(particles))
         throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));

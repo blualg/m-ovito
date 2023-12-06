@@ -26,11 +26,11 @@
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/dataset/scene/Scene.h>
-#include <ovito/core/dataset/scene/PipelineSceneNode.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "ColorLegendOverlay.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ColorLegendOverlay);
 DEFINE_PROPERTY_FIELD(ColorLegendOverlay, alignment);
@@ -127,16 +127,16 @@ void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
 
         // Find a ColorCodingModifier in the scene that we can connect to.
         if(!modifier() && !sourceProperty() && !colorMapping() && viewport->scene()) {
-            viewport->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
-                PipelineObject* obj = pipeline->dataProvider();
-                while(obj) {
-                    if(ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(obj)) {
-                        if(ColorCodingModifier* mod = dynamic_object_cast<ColorCodingModifier>(modApp->modifier())) {
+            viewport->scene()->visitPipelines([&](Pipeline* pipeline) {
+                PipelineNode* node = pipeline->head();
+                while(node) {
+                    if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(node)) {
+                        if(ColorCodingModifier* mod = dynamic_object_cast<ColorCodingModifier>(modNode->modifier())) {
                             setModifier(mod);
                             if(mod->isEnabled())
                                 return false; // Stop search.
                         }
-                        obj = modApp->input();
+                        node = modNode->input();
                     }
                     else break;
                 }
@@ -147,10 +147,10 @@ void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
         // If there is no ColorCodingModifier in the scene, initialize the overlay to use
         // the first available typed property as color source.
         if(!modifier() && !sourceProperty() && !colorMapping() && viewport->scene()) {
-            viewport->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+            viewport->scene()->visitPipelines([&](Pipeline* pipeline) {
                 const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(viewport->scene()->animationSettings()->currentTime(), false);
-                for(const ConstDataObjectPath& dataPath : state.getObjectsRecursive(PropertyObject::OOClass())) {
-                    const PropertyObject* property = static_object_cast<PropertyObject>(dataPath.back());
+                for(const ConstDataObjectPath& dataPath : state.getObjectsRecursive(Property::OOClass())) {
+                    const Property* property = static_object_cast<Property>(dataPath.back());
                     // Check if the property is a typed property, i.e. it has one or more ElementType objects attached to it.
                     if(property->isTypedProperty() && dataPath.size() >= 2) {
                         setSourceProperty(dataPath);
@@ -163,7 +163,7 @@ void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
 
         // If we still don't have a valid source, look for a visual element in the scene which uses pseudo-color mapping.
         if(!modifier() && !sourceProperty() && !colorMapping() && viewport->scene()) {
-            viewport->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+            viewport->scene()->visitPipelines([&](Pipeline* pipeline) {
                 for(DataVis* vis : pipeline->visElements()) {
                     if(vis->isEnabled()) {
                         for(const PropertyFieldDescriptor* field : vis->getOOMetaClass().propertyFields()) {
@@ -252,7 +252,7 @@ QVariant ColorLegendOverlay::getPipelineEditorShortInfo(Scene* scene) const
 ******************************************************************************/
 void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect)
 {
-    DataOORef<const PropertyObject> typedProperty;
+    DataOORef<const Property> typedProperty;
 
     // Reset auto-generated label texts. Will be newly set by rendering code.
     _autoTitleText.clear();
@@ -270,7 +270,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
     }
     else if(sourceProperty()) {
         // Look up the typed property in one of the scene's pipeline outputs.
-        renderer->scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+        renderer->scene()->visitPipelines([&](Pipeline* pipeline) {
 
             // Evaluate pipeline and obtain output data collection.
             if(renderer->waitForLongOperationsEnabled()) {
@@ -370,23 +370,23 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
             // This requires a partial pipeline evaluation up to the color coding modifier.
             startValue = std::numeric_limits<FloatType>::quiet_NaN();
             endValue = std::numeric_limits<FloatType>::quiet_NaN();
-            if(ModifierApplication* modApp = modifier()->someModifierApplication()) {
+            if(ModificationNode* modNode = modifier()->someNode()) {
                 QVariant minValue, maxValue;
                 PipelineEvaluationRequest request(renderer->time());
                 request.setThrowOnError(renderer->renderSettings().stopOnPipelineError());
                 if(renderer->waitForLongOperationsEnabled()) {
-                    SharedFuture<PipelineFlowState> stateFuture = modApp->evaluate(request);
+                    SharedFuture<PipelineFlowState> stateFuture = modNode->evaluate(request);
                     if(!stateFuture.waitForFinished())
                         return;
 
                     const PipelineFlowState& state = stateFuture.result();
-                    minValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMin"));
-                    maxValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMax"));
+                    minValue = state.getAttributeValue(modNode, QStringLiteral("ColorCoding.RangeMin"));
+                    maxValue = state.getAttributeValue(modNode, QStringLiteral("ColorCoding.RangeMax"));
                 }
                 else {
-                    const PipelineFlowState& state = modApp->evaluateSynchronous(request);
-                    minValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMin"));
-                    maxValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMax"));
+                    const PipelineFlowState& state = modNode->evaluateSynchronous(request);
+                    minValue = state.getAttributeValue(modNode, QStringLiteral("ColorCoding.RangeMin"));
+                    maxValue = state.getAttributeValue(modNode, QStringLiteral("ColorCoding.RangeMax"));
                 }
                 if(minValue.isValid() && maxValue.isValid()) {
                     startValue = minValue.value<FloatType>();
@@ -944,7 +944,7 @@ void ColorLegendOverlay::drawContinuousColorMap(SceneRenderer* renderer, const Q
 /******************************************************************************
 * Draws the color legend for a typed property.
 ******************************************************************************/
-void ColorLegendOverlay::drawDiscreteColorMap(SceneRenderer* renderer, const QRectF& colorBarRect, FloatType legendSize, const PropertyObject* property)
+void ColorLegendOverlay::drawDiscreteColorMap(SceneRenderer* renderer, const QRectF& colorBarRect, FloatType legendSize, const Property* property)
 {
     qreal devicePixelRatio = renderer->devicePixelRatio();
 

@@ -46,11 +46,11 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     OVITO_REPORT_OPENGL_ERRORS(this);
 
     // Render wireframe lines.
-    if(primitive.emphasizeEdges() && !isPicking())
+    if(primitive.emphasizeEdges() && !isPickingPass())
         renderMeshWireframeImplementation(primitive);
 
     // The mesh object to be rendered.
-    const TriMeshObject& mesh = *primitive.mesh();
+    const TriangleMesh& mesh = *primitive.mesh();
 
     // Check size limits of the mesh.
     if(mesh.faceCount() > std::numeric_limits<int32_t>::max() / (3 * sizeof(MeshPrimitive::RenderVertex))) {
@@ -64,7 +64,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 
     // Decide whether per-pixel pseudo-color mapping is used.
     bool renderWithPseudoColorMapping = false;
-    if(primitive.pseudoColorMapping().isValid() && !isPicking() && !primitive.useInstancedRendering()) {
+    if(primitive.pseudoColorMapping().isValid() && !isPickingPass() && !primitive.useInstancedRendering()) {
         if(!mesh.hasVertexColors() && mesh.hasVertexPseudoColors())
             renderWithPseudoColorMapping = true;
         else if(!mesh.hasFaceColors() && mesh.hasFacePseudoColors())
@@ -74,7 +74,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     // Activate the right OpenGL shader program.
     OpenGLShaderHelper shader(this);
     if(!primitive.useInstancedRendering()) {
-        if(isPicking())
+        if(isPickingPass())
             shader.load("mesh_picking", "mesh/mesh_picking.vert", "mesh/mesh_picking.frag");
         else if(renderWithPseudoColorMapping)
             shader.load("mesh_color_mapping", "mesh/mesh_color_mapping.vert", "mesh/mesh_color_mapping.frag");
@@ -84,7 +84,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     }
     else {
         OVITO_ASSERT(!renderWithPseudoColorMapping); // Note: Color mapping has not been implemented yet for instanced mesh primtives.
-        if(!isPicking()) {
+        if(!isPickingPass()) {
             if(!primitive.perInstanceColors())
                 shader.load("mesh_instanced", "mesh/mesh_instanced.vert", "mesh/mesh_instanced.frag");
             else
@@ -98,7 +98,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     shader.setVerticesPerInstance(mesh.faceCount() * 3);
 
     // Are we rendering a semi-transparent mesh?
-    bool useBlending = !isPicking() && !primitive.isFullyOpaque() && !orderIndependentTransparency();
+    bool useBlending = !isPickingPass() && !primitive.isFullyOpaque() && !orderIndependentTransparency();
     if(useBlending) shader.enableBlending();
 
     // Turn back-face culling off if requested.
@@ -107,18 +107,18 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     }
 
     // Apply optional positive depth-offset to mesh faces to make the wireframe lines fully visible.
-    if(primitive.emphasizeEdges() && !isPicking()) {
+    if(primitive.emphasizeEdges() && !isPickingPass()) {
         OVITO_CHECK_OPENGL(this, glEnable(GL_POLYGON_OFFSET_FILL));
         OVITO_CHECK_OPENGL(this, glPolygonOffset(1.0f, 1.0f));
     }
 
     // Pass picking base ID to shader.
-    if(isPicking()) {
+    if(isPickingPass()) {
         shader.setPickingBaseId(registerSubObjectIDs(primitive.useInstancedRendering() ? primitive.perInstanceTMs()->size() : mesh.faceCount()));
     }
 
     // The lookup key for the buffer cache.
-    RendererResourceKey<struct MeshBufferCache, DataOORef<const TriMeshObject>, std::vector<ColorA>, ColorA, Color> meshCacheKey{
+    RendererResourceKey<struct MeshBufferCache, DataOORef<const TriangleMesh>, std::vector<ColorA>, ColorA, Color> meshCacheKey{
         primitive.mesh(),
         primitive.materialColors(),
         primitive.uniformColor(),
@@ -128,23 +128,23 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     // Upload vertex buffer to GPU memory.
     QOpenGLBuffer meshBuffer = shader.createCachedBuffer(std::move(meshCacheKey), sizeof(MeshPrimitive::RenderVertex), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer, BufferReadAccess<int32_t> subset) {
         OVITO_ASSERT(!subset);
-        bool highlightSelectedFaces = isInteractive() && !isPicking();
+        bool highlightSelectedFaces = isInteractive() && !isPickingPass();
         primitive.generateRenderableVertices(reinterpret_cast<MeshPrimitive::RenderVertex*>(buffer), highlightSelectedFaces, renderWithPseudoColorMapping);
     });
 
     // Bind vertex buffer to vertex attributes.
     shader.bindBuffer(meshBuffer, "position", GL_FLOAT, 3, sizeof(MeshPrimitive::RenderVertex), offsetof(MeshPrimitive::RenderVertex, position), OpenGLShaderHelper::PerVertex);
-    if(!isPicking())
+    if(!isPickingPass())
         shader.bindBuffer(meshBuffer, "normal",   GL_FLOAT, 3, sizeof(MeshPrimitive::RenderVertex), offsetof(MeshPrimitive::RenderVertex, normal),   OpenGLShaderHelper::PerVertex);
 
     if(!renderWithPseudoColorMapping) {
-        if(!isPicking() && (!primitive.useInstancedRendering() || !primitive.perInstanceColors())) {
+        if(!isPickingPass() && (!primitive.useInstancedRendering() || !primitive.perInstanceColors())) {
             // Rendering with true RGBA colors.
             shader.bindBuffer(meshBuffer, "color", GL_FLOAT, 4, sizeof(MeshPrimitive::RenderVertex), offsetof(MeshPrimitive::RenderVertex, color), OpenGLShaderHelper::PerVertex);
         }
     }
     else {
-        OVITO_ASSERT(!isPicking());
+        OVITO_ASSERT(!isPickingPass());
 
         // Rendering  with pseudo-colors and a color mapping function.
         shader.bindBuffer(meshBuffer, "pseudocolor", GL_FLOAT, 2, sizeof(MeshPrimitive::RenderVertex), offsetof(MeshPrimitive::RenderVertex, color), OpenGLShaderHelper::PerVertex);
@@ -174,7 +174,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         shader.bindBuffer(instanceTMBuffer, "instance_tm_row2", GL_FLOAT, 4, 3 * sizeof(Vector_4<float>), 1 * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance);
         shader.bindBuffer(instanceTMBuffer, "instance_tm_row3", GL_FLOAT, 4, 3 * sizeof(Vector_4<float>), 2 * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance);
 
-        if(primitive.perInstanceColors() && !isPicking()) {
+        if(primitive.perInstanceColors() && !isPickingPass()) {
             // Upload the per-instance colors to GPU memory.
             QOpenGLBuffer instanceColorBuffer = shader.uploadDataBuffer(primitive.perInstanceColors(), OpenGLShaderHelper::PerInstance);
 
@@ -188,7 +188,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         shader.draw(GL_TRIANGLES);
     }
     else if(primitive.depthSortingMode() == MeshPrimitive::ConvexShapeMode) {
-        OVITO_ASSERT(!orderIndependentTransparency() && !isPicking());
+        OVITO_ASSERT(!orderIndependentTransparency() && !isPickingPass());
 
         // Assuming that the input mesh is convex, render semi-transparent triangles in two passes:
         // First, render triangles facing away from the viewer, then render triangles facing toward the viewer.
@@ -206,7 +206,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         shader.draw(GL_TRIANGLES);
     }
     else if(!primitive.useInstancedRendering()) {
-        OVITO_ASSERT(!orderIndependentTransparency() && !isPicking());
+        OVITO_ASSERT(!orderIndependentTransparency() && !isPickingPass());
 
         // Create a buffer for an indexed drawing command to render the triangles in back-to-front order.
 
@@ -214,7 +214,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         const Vector3 direction = modelViewTM().inverse().column(2);
 
         // The caching key for the index buffer.
-        RendererResourceKey<struct DepthSortingCache, DataOORef<const TriMeshObject>, Vector3> indexBufferCacheKey{ primitive.mesh(), direction };
+        RendererResourceKey<struct DepthSortingCache, DataOORef<const TriangleMesh>, Vector3> indexBufferCacheKey{ primitive.mesh(), direction };
 
         // Create index buffer with three entries per triangle face.
         QOpenGLBuffer indexBuffer = shader.createCachedBuffer(std::move(indexBufferCacheKey), sizeof(GLsizei), QOpenGLBuffer::IndexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer, BufferReadAccess<int32_t> subset) {
@@ -267,7 +267,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         indexBuffer.release();
     }
     else {
-        OVITO_ASSERT(!orderIndependentTransparency() && !isPicking());
+        OVITO_ASSERT(!orderIndependentTransparency() && !isPickingPass());
         // Render the mesh instances in back-to-front order.
 
         // Viewing direction in object space:
@@ -302,7 +302,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     }
 
     // Reset depth offset.
-    if(primitive.emphasizeEdges() && !isPicking()) {
+    if(primitive.emphasizeEdges() && !isPickingPass()) {
         glDisable(GL_POLYGON_OFFSET_FILL);
     }
 
@@ -354,7 +354,7 @@ ConstDataBufferPtr OpenGLSceneRenderer::generateMeshWireframeLines(const MeshPri
     OVITO_ASSERT(primitive.mesh());
 
     // Cache the wireframe geometry generated for the current mesh.
-    RendererResourceKey<struct WireframeCache, DataOORef<const TriMeshObject>> cacheKey(primitive.mesh());
+    RendererResourceKey<struct WireframeCache, DataOORef<const TriangleMesh>> cacheKey(primitive.mesh());
     ConstDataBufferPtr& wireframeLines = OpenGLResourceManager::instance()->lookup<ConstDataBufferPtr>(std::move(cacheKey), currentResourceFrame());
 
     if(!wireframeLines) {
@@ -369,7 +369,7 @@ ConstDataBufferPtr OpenGLSceneRenderer::generateMeshWireframeLines(const MeshPri
 ******************************************************************************/
 void OpenGLSceneRenderer::renderMeshWireframeImplementation(const MeshPrimitive& primitive)
 {
-    OVITO_ASSERT(!isPicking());
+    OVITO_ASSERT(!isPickingPass());
 
     OpenGLShaderHelper shader(this);
     if(!primitive.useInstancedRendering())

@@ -55,7 +55,7 @@ public:
     /// \param index The index at which to insert the node into the list.
     /// \param node The node to be inserted.
     /// \undoable
-    void insert(int index, SceneNode* node);
+    void insert(qsizetype index, SceneNode* node);
 
     /// \brief Removes a scene node from this selection set.
     /// \param node The node to be unselected.
@@ -65,7 +65,7 @@ public:
     /// \brief Removes a scene node from this selection set.
     /// \param index The index of the node to be unselected.
     /// \undoable
-    void removeByIndex(int index) { _nodes.remove(this, PROPERTY_FIELD(nodes), index); }
+    void removeByIndex(qsizetype index) { _nodes.remove(this, PROPERTY_FIELD(nodes), index); }
 
     /// \brief Clears the selection.
     ///

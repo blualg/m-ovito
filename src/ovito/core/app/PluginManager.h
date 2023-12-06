@@ -43,12 +43,12 @@ public:
 
     /// \brief Finds the plugin class with the given name defined by the plugin.
     /// \param name The class name.
-    /// \return The descriptor for the plugin class with the given name or \c NULL
+    /// \return The descriptor for the plugin class with the given name or \c nullptr
     ///         if no such class is defined by the plugin.
     /// \sa classes()
     OvitoClassPtr findClass(const QString& name) const {
         for(OvitoClassPtr type : classes()) {
-            if(type->name() == name || type->nameAlias() == name)
+            if(type->isKnownUnderName(name))
                 return type;
         }
         return nullptr;

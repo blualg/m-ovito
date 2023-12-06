@@ -22,7 +22,7 @@
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/crystalanalysis/objects/ClusterGraphObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
 #include <ovito/core/rendering/SceneRenderer.h>
@@ -30,7 +30,7 @@
 #include "DislocationVis.h"
 #include "RenderableDislocationLines.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DislocationVis);
 DEFINE_PROPERTY_FIELD(DislocationVis, lineWidth);
@@ -75,12 +75,12 @@ DislocationVis::DislocationVis(ObjectInitializationFlags flags) : TransformingDa
 Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvaluationRequest& request, const DataObject* dataObject, PipelineFlowState&& flowState)
 {
     // Get the input object.
-    const PeriodicDomainDataObject* periodicDomainObj = dynamic_object_cast<PeriodicDomainDataObject>(dataObject);
+    const PeriodicDomainObject* periodicDomainObj = dynamic_object_cast<PeriodicDomainObject>(dataObject);
     if(!periodicDomainObj)
         return std::move(flowState);
 
     // Get the simulation cell (must be 3D).
-    const SimulationCellObject* cellObject = periodicDomainObj->domain();
+    const SimulationCell* cellObject = periodicDomainObj->domain();
     if(!cellObject || cellObject->is2D())
         return std::move(flowState);
 
@@ -129,13 +129,13 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 DislocationVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const PipelineSceneNode* contextNode, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 DislocationVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
 {
     const RenderableDislocationLines* renderableObj = path.lastAs<RenderableDislocationLines>();
     if(!renderableObj) return {};
-    const PeriodicDomainDataObject* domainObj = dynamic_object_cast<PeriodicDomainDataObject>(renderableObj->sourceDataObject().get());
+    const PeriodicDomainObject* domainObj = dynamic_object_cast<PeriodicDomainObject>(renderableObj->sourceDataObject().get());
     if(!domainObj) return {};
-    const SimulationCellObject* cellObject = domainObj->domain();
+    const SimulationCell* cellObject = domainObj->domain();
     if(!cellObject) return {};
 
     // The key type used for caching the computed bounding box:
@@ -182,7 +182,7 @@ Box3 DislocationVis::boundingBox(AnimationTime time, const ConstDataObjectPath& 
 /******************************************************************************
 * Lets the vis element render a data object.
 ******************************************************************************/
-PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
 {
     // Ignore render calls for the original DislocationNetworkObject or MicrostrucureObject.
     // We are only interested in the RenderableDIslocationLines.
@@ -191,7 +191,7 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
     // Just compute the bounding box of the rendered objects if requested.
     if(renderer->isBoundingBoxPass()) {
         TimeInterval validityInterval;
-        renderer->addToLocalBoundingBox(boundingBox(time, path, contextNode, flowState, renderer->visCache(), validityInterval));
+        renderer->addToLocalBoundingBox(boundingBox(time, path, pipeline, flowState, renderer->visCache(), validityInterval));
         return {};
     }
 
@@ -227,12 +227,12 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
         throw Exception(tr("Cannot render more than %1 dislocation segments.").arg(std::numeric_limits<int>::max()));
 
     // Get the original dislocation lines.
-    const PeriodicDomainDataObject* domainObj = dynamic_object_cast<PeriodicDomainDataObject>(renderableLines->sourceDataObject().get());
+    const PeriodicDomainObject* domainObj = dynamic_object_cast<PeriodicDomainObject>(renderableLines->sourceDataObject().get());
     const DislocationNetworkObject* dislocationsObj = dynamic_object_cast<DislocationNetworkObject>(domainObj);
     if(!dislocationsObj) return {};
 
     // Get the simulation cell.
-    const SimulationCellObject* cellObject = domainObj->domain();
+    const SimulationCell* cellObject = domainObj->domain();
     if(!cellObject) return {};
 
     // Lookup the rendering primitives in the vis cache.
@@ -389,7 +389,7 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
         }
     }
 
-    renderer->beginPickObject(contextNode, primitives.pickInfo);
+    renderer->beginPickObject(pipeline, primitives.pickInfo);
 
     // Render dislocation segments.
     renderer->renderCylinders(primitives.segments);
@@ -409,9 +409,9 @@ PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectP
 /******************************************************************************
 * Renders an overlay marker for a single dislocation segment.
 ******************************************************************************/
-void DislocationVis::renderOverlayMarker(AnimationTime time, const DataObject* dataObject, const PipelineFlowState& flowState, int segmentIndex, SceneRenderer* renderer, const PipelineSceneNode* contextNode)
+void DislocationVis::renderOverlayMarker(AnimationTime time, const DataObject* dataObject, const PipelineFlowState& flowState, int segmentIndex, SceneRenderer* renderer, const Pipeline* pipeline)
 {
-    if(renderer->isPicking())
+    if(!renderer->isImagePass())
         return;
 
     // Get the dislocations.
@@ -420,7 +420,7 @@ void DislocationVis::renderOverlayMarker(AnimationTime time, const DataObject* d
         return;
 
     // Get the simulation cell.
-    const SimulationCellObject* cellObject = dislocationsObj->domain();
+    const SimulationCell* cellObject = dislocationsObj->domain();
     if(!cellObject)
         return;
 
@@ -442,7 +442,7 @@ void DislocationVis::renderOverlayMarker(AnimationTime time, const DataObject* d
 
     // Set up transformation.
     TimeInterval iv;
-    const AffineTransformation& nodeTM = contextNode->getWorldTransform(time, iv);
+    const AffineTransformation& nodeTM = pipeline->getWorldTransform(time, iv);
     renderer->setWorldTransform(nodeTM);
     FloatType lineDiameter = std::max(lineWidth() / 2, FloatType(0));
     FloatType headRadius = lineDiameter * (3.0/2.0);
@@ -495,7 +495,7 @@ void DislocationVis::renderOverlayMarker(AnimationTime time, const DataObject* d
 /******************************************************************************
 * Clips a dislocation line at the periodic box boundaries.
 ******************************************************************************/
-void DislocationVis::clipDislocationLine(const std::deque<Point3>& line, const SimulationCellObject& simulationCell, const QVector<Plane3>& clippingPlanes, const std::function<void(const Point3&, const Point3&, bool)>& segmentCallback)
+void DislocationVis::clipDislocationLine(const std::deque<Point3>& line, const SimulationCell& simulationCell, const QVector<Plane3>& clippingPlanes, const std::function<void(const Point3&, const Point3&, bool)>& segmentCallback)
 {
     bool isInitialSegment = true;
     auto clippingFunction = [&clippingPlanes, &segmentCallback, &isInitialSegment](Point3 p1, Point3 p2) {
@@ -682,7 +682,7 @@ QString DislocationVis::formatBurgersVector(const Vector3& b, const Microstructu
 * Returns a human-readable string describing the picked object,
 * which will be displayed in the status bar by OVITO.
 ******************************************************************************/
-QString DislocationPickInfo::infoString(PipelineSceneNode* objectNode, quint32 subobjectId)
+QString DislocationPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
 {
     QString str;
 

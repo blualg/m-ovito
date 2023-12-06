@@ -156,10 +156,10 @@ void NavigationMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent*
 /******************************************************************************
 * Returns the camera object associated with the given viewport.
 ******************************************************************************/
-PipelineObject* NavigationMode::getViewportCamera(Viewport* vp)
+PipelineNode* NavigationMode::getViewportCamera(Viewport* vp)
 {
     if(vp->viewNode() && vp->viewType() == Viewport::VIEW_SCENENODE) {
-        return vp->viewNode()->pipelineSource();
+        return vp->viewNode()->source();
     }
     return nullptr;
 }
@@ -223,7 +223,7 @@ void ZoomMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF 
         }
     }
     else {
-        if(PipelineObject* cameraSource = getViewportCamera(vp)) {
+        if(PipelineNode* cameraSource = getViewportCamera(vp)) {
             FloatType oldFOV = cameraSource->property("zoom").value<FloatType>();
             FloatType newFOV = oldFOV * (FloatType)exp(0.003 * delta.y());
             cameraSource->setProperty("zoom", QVariant::fromValue(newFOV));
@@ -272,7 +272,7 @@ void ZoomMode::zoom(Viewport* vp, FloatType steps, UserInterface& ui)
                 vp->viewNode()->transformationController()->translate(vp->scene()->animationSettings()->currentTime(), Vector3(0,0,-amount), sys);
             }
             else {
-                if(PipelineObject* cameraSource = getViewportCamera(vp)) {
+                if(PipelineNode* cameraSource = getViewportCamera(vp)) {
                     FloatType oldFOV = cameraSource->property("zoom").value<FloatType>();
                     cameraSource->setProperty("zoom", QVariant::fromValue(oldFOV * exp(-steps * FloatType(1e-3))));
                 }
@@ -290,7 +290,7 @@ void ZoomMode::zoom(Viewport* vp, FloatType steps, UserInterface& ui)
 void FOVMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF delta, bool discreteStep)
 {
     FloatType oldFOV = _oldFieldOfView;
-    if(PipelineObject* cameraSource = getViewportCamera(vp)) {
+    if(PipelineNode* cameraSource = getViewportCamera(vp)) {
         oldFOV = cameraSource->property(vp->isPerspectiveProjection() ? "fov" : "zoom").value<FloatType>();
     }
 
@@ -304,7 +304,7 @@ void FOVMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF d
         newFOV = oldFOV * (FloatType)exp(FloatType(6e-3) * delta.y());
     }
 
-    if(PipelineObject* cameraSource = getViewportCamera(vp)) {
+    if(PipelineNode* cameraSource = getViewportCamera(vp)) {
         cameraSource->setProperty(vp->isPerspectiveProjection() ? "fov" : "zoom", QVariant::fromValue(newFOV));
     }
     else {
@@ -468,7 +468,7 @@ bool PickOrbitCenterMode::findIntersection(ViewportWindowInterface* vpwin, const
 ******************************************************************************/
 void PickOrbitCenterMode::renderOverlay3D(Viewport* vp, SceneRenderer* renderer)
 {
-    if(renderer->isPicking() || !vp->scene())
+    if(!renderer->isImagePass() || !vp->scene())
         return;
 
     // Render center of rotation.
@@ -477,19 +477,20 @@ void PickOrbitCenterMode::renderOverlay3D(Viewport* vp, SceneRenderer* renderer)
     renderer->setWorldTransform(AffineTransformation::translation(center - Point3::Origin()) * AffineTransformation::scaling(symbolSize));
 
     if(!renderer->isBoundingBoxPass()) {
-        // Create rendering primitive.
-        BufferFactory<Point3G> basePositions(3);
-        BufferFactory<Point3G> headPositions(3);
-        BufferFactory<ColorG> colors(3);
-        basePositions[0] = Point3G(-1,0,0); headPositions[0] = Point3G(1,0,0); colors[0] = ColorG(1,0,0);
-        basePositions[1] = Point3G(0,-1,0); headPositions[1] = Point3G(0,1,0); colors[1] = ColorG(0,1,0);
-        basePositions[2] = Point3G(0,0,-1); headPositions[2] = Point3G(0,0,1); colors[2] = ColorG(0.4f,0.4f,1);
-        CylinderPrimitive orbitCenterMarker;
-        orbitCenterMarker.setShape(CylinderPrimitive::CylinderShape);
-        orbitCenterMarker.setShadingMode(CylinderPrimitive::NormalShading);
-        orbitCenterMarker.setUniformWidth(0.1);
-        orbitCenterMarker.setPositions(basePositions.take(), headPositions.take());
-        orbitCenterMarker.setColors(colors.take());
+        auto& orbitCenterMarker = renderer->visCache().get<CylinderPrimitive>(RendererResourceKey<struct OrbitGlyphCache>{});
+        if(!orbitCenterMarker.basePositions()) {
+            BufferFactory<Point3G> basePositions(3);
+            BufferFactory<Point3G> headPositions(3);
+            BufferFactory<ColorG> colors(3);
+            basePositions[0] = Point3G(-1,0,0); headPositions[0] = Point3G(1,0,0); colors[0] = ColorG(1,0,0);
+            basePositions[1] = Point3G(0,-1,0); headPositions[1] = Point3G(0,1,0); colors[1] = ColorG(0,1,0);
+            basePositions[2] = Point3G(0,0,-1); headPositions[2] = Point3G(0,0,1); colors[2] = ColorG(0.4f,0.4f,1);
+            orbitCenterMarker.setShape(CylinderPrimitive::CylinderShape);
+            orbitCenterMarker.setShadingMode(CylinderPrimitive::NormalShading);
+            orbitCenterMarker.setUniformWidth(0.1);
+            orbitCenterMarker.setPositions(basePositions.take(), headPositions.take());
+            orbitCenterMarker.setColors(colors.take());
+        }
         renderer->renderCylinders(orbitCenterMarker);
     }
     else {

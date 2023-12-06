@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "DelegatingModifier.h"
 #include "AsynchronousDelegatingModifier.h"
 
@@ -60,20 +60,6 @@ Modifier* ModifierDelegate::modifier() const
     });
     return result;
 }
-
-#ifdef OVITO_QML_GUI
-/******************************************************************************
-* Asks the delegate whether it can operate on  the given input pipeline state.
-******************************************************************************/
-bool ModifierDelegate::canOperateOnInput(ModifierApplication* modApp) const
-{
-    if(modApp) {
-        const PipelineFlowState& input = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
-        return !getOOMetaClass().getApplicableObjects(input).empty();
-    }
-    return false;
-}
-#endif
 
 /******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.
@@ -136,7 +122,7 @@ void DelegatingModifier::evaluateSynchronous(const ModifierEvaluationRequest& re
 void DelegatingModifier::applyDelegate(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     OVITO_ASSERT(!isUndoRecording());
-    OVITO_ASSERT(request.modApp()->modifier() == this);
+    OVITO_ASSERT(request.modifier() == this);
 
     if(!delegate() || !delegate()->isEnabled())
         return;
@@ -225,7 +211,7 @@ void MultiDelegatingModifier::evaluateSynchronous(const ModifierEvaluationReques
 void MultiDelegatingModifier::applyDelegates(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     OVITO_ASSERT(!isUndoRecording());
-    OVITO_ASSERT(request.modApp()->modifier() == this);
+    OVITO_ASSERT(request.modifier() == this);
 
     // Make a shallow copy of the input pipeline state.
     PipelineFlowState inputState = state;

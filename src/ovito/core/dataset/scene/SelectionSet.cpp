@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -45,7 +45,7 @@ void SelectionSet::push_back(SceneNode* node)
 /******************************************************************************
 * Inserts a scene node into this selection set.
 ******************************************************************************/
-void SelectionSet::insert(int index, SceneNode* node)
+void SelectionSet::insert(qsizetype index, SceneNode* node)
 {
     OVITO_CHECK_OBJECT_POINTER(node);
     if(nodes().contains(node))

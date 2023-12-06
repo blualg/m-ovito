@@ -26,7 +26,7 @@
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/core/dataset/pipeline/DelegatingModifier.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * \brief Base class for ReplicateModifier delegates that operate on different kinds of data.
@@ -39,6 +39,38 @@ protected:
 
     /// Abstract class constructor.
     using ModifierDelegate::ModifierDelegate;
+};
+
+/**
+ * \brief Delegate for the ReplicateModifier that operates on lines.
+ */
+class OVITO_STDMOD_EXPORT LinesReplicateModifierDelegate : public ReplicateModifierDelegate
+{
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public ReplicateModifierDelegate::OOMetaClass
+    {
+    public:
+        /// Inherit constructor from base class.
+        using ReplicateModifierDelegate::OOMetaClass::OOMetaClass;
+
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("lines"); }
+    };
+
+    OVITO_CLASS_META(LinesReplicateModifierDelegate, OOMetaClass)
+
+    Q_CLASSINFO("DisplayName", "Lines");
+
+public:
+    /// Constructor.
+    Q_INVOKABLE LinesReplicateModifierDelegate(ObjectInitializationFlags flags) : ReplicateModifierDelegate(flags) {}
+
+    /// Applies the modifier operation to the data in a pipeline flow state.
+    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState,
+                                 const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
 /**
@@ -81,7 +113,7 @@ public:
     Box3I replicaRange() const;
 
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return tr("%1 x %2 x %3").arg(numImagesX()).arg(numImagesY()).arg(numImagesZ()); }
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return tr("%1 x %2 x %3").arg(numImagesX()).arg(numImagesY()).arg(numImagesZ()); }
 
 protected:
 

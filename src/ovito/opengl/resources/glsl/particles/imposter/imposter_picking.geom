@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,12 +37,12 @@ out vec2 uv_fs;
 flat out vec2 radius_and_eyez_fs;
 void main()
 {
-    for(int corner = 0; corner < 4; corner++) 
+    for(int corner = 0; corner < 4; corner++)
     {
         // Transform particle center to view space.
         vec3 eye_position = (modelview_matrix * position_gs[0]).xyz;
 
-        // Apply additional scaling due to model-view transformation to particle radius. 
+        // Apply additional scaling due to model-view transformation to particle radius.
         radius_and_eyez_fs.x = radius_gs[0] * length(modelview_matrix[0]);
 
         // Project corner vertex.

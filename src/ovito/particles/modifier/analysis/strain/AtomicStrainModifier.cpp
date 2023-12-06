@@ -22,14 +22,14 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/util/CutoffNeighborFinder.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ptm/ptm_polar.h>
 #include "AtomicStrainModifier.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(AtomicStrainModifier);
 DEFINE_PROPERTY_FIELD(AtomicStrainModifier, cutoff);
@@ -68,20 +68,20 @@ AtomicStrainModifier::AtomicStrainModifier(ObjectInitializationFlags flags) : Re
 Future<AsynchronousModifier::EnginePtr> AtomicStrainModifier::createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval)
 {
     // Get the current particle positions.
-    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
+    const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
-    const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
 
     // Get the reference particle position.
-    const ParticlesObject* refParticles = referenceState.getObject<ParticlesObject>();
+    const Particles* refParticles = referenceState.getObject<Particles>();
     if(!refParticles)
         throw Exception(tr("Reference configuration does not contain particle positions."));
     refParticles->verifyIntegrity();
-    const PropertyObject* refPosProperty = refParticles->expectProperty(ParticlesObject::PositionProperty);
+    const Property* refPosProperty = refParticles->expectProperty(Particles::PositionProperty);
 
     // Get the simulation cells.
-    const SimulationCellObject* inputCell = input.expectObject<SimulationCellObject>();
-    const SimulationCellObject* refCell = referenceState.getObject<SimulationCellObject>();
+    const SimulationCell* inputCell = input.expectObject<SimulationCell>();
+    const SimulationCell* refCell = referenceState.getObject<SimulationCell>();
     if(!refCell)
         throw Exception(tr("Reference configuration does not contain simulation cell info."));
 
@@ -92,8 +92,8 @@ Future<AsynchronousModifier::EnginePtr> AtomicStrainModifier::createEngineIntern
         throw Exception(tr("Simulation cell is degenerate in the reference configuration."));
 
     // Get particle identifiers.
-    const PropertyObject* identifierProperty = particles->getProperty(ParticlesObject::IdentifierProperty);
-    const PropertyObject* refIdentifierProperty = refParticles->getProperty(ParticlesObject::IdentifierProperty);
+    const Property* identifierProperty = particles->getProperty(Particles::IdentifierProperty);
+    const Property* refIdentifierProperty = refParticles->getProperty(Particles::IdentifierProperty);
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     return std::make_shared<AtomicStrainEngine>(request, validityInterval, particles, posProperty, inputCell, refPosProperty, refCell,
@@ -336,7 +336,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform()
 ******************************************************************************/
 void AtomicStrainModifier::AtomicStrainEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-    ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+    Particles* particles = state.expectMutableObject<Particles>();
 
     if(_inputFingerprint.hasChanged(particles))
         throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
@@ -368,7 +368,7 @@ void AtomicStrainModifier::AtomicStrainEngine::applyResults(const ModifierEvalua
     if(stretchTensors())
         particles->createProperty(stretchTensors());
 
-    state.addAttribute(QStringLiteral("AtomicStrain.invalid_particle_count"), QVariant::fromValue(numInvalidParticles()), request.modApp());
+    state.addAttribute(QStringLiteral("AtomicStrain.invalid_particle_count"), QVariant::fromValue(numInvalidParticles()), request.modificationNode());
 
     if(numInvalidParticles() != 0)
         state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Could not compute local deformation for %1 particles because of too few neighbors. Increase cutoff radius to include more neighbors.").arg(numInvalidParticles())));

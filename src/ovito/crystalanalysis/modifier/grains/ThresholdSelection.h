@@ -24,7 +24,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include "GrainSegmentationEngine.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 namespace {
 

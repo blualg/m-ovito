@@ -30,7 +30,7 @@
     #include <signal.h>
 #endif
 
-namespace Ovito::Ssh {
+namespace Ovito {
 
 /******************************************************************************
 * Returns the path to the "sftp" utility on the user's computer.

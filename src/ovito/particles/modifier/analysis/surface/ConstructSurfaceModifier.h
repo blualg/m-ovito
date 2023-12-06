@@ -24,14 +24,14 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /*
  * Constructs a surface mesh enclosing the particle model.
@@ -102,11 +102,11 @@ private:
               _totalCellVolume(mesh->domain()
                                    ? mesh->domain()->volume3D()
                                    : 0.0),  // totalCellVolume is initialized before _mesh. Therefore mesh has to be used.
-              _particleRegionIds(mapParticlesToRegions ? ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized,
-                                                             positions->size(), PropertyObject::Int32, 1, tr("Region"))
+              _particleRegionIds(mapParticlesToRegions ? Particles::OOClass().createUserProperty(DataBuffer::Uninitialized,
+                                                             positions->size(), Property::Int32, 1, tr("Region"))
                                                        : nullptr),
-              _surfaceDistances(computeSurfaceDistance ? ParticlesObject::OOClass().createUserProperty(DataBuffer::Uninitialized,
-                                                             positions->size(), PropertyObject::FloatDefault, 1, tr("Surface Distance"))
+              _surfaceDistances(computeSurfaceDistance ? Particles::OOClass().createUserProperty(DataBuffer::Uninitialized,
+                                                             positions->size(), Property::FloatDefault, 1, tr("Surface Distance"))
                                                        : nullptr)
         {
         }
@@ -224,8 +224,8 @@ private:
               _smoothingLevel(smoothingLevel),
               _surfaceParticleSelection(
                   selectSurfaceParticles
-                      ? ParticlesObject::OOClass().createStandardProperty(DataBuffer::Initialized,
-                            this->positions()->size(), ParticlesObject::SelectionProperty)
+                      ? Particles::OOClass().createStandardProperty(DataBuffer::Initialized,
+                            this->positions()->size(), Particles::SelectionProperty)
                       : nullptr)
         {
         }

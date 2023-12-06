@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,9 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/stdmod/modifiers/ExpressionSelectionModifier.h>
 
-namespace Ovito::Particles {
-
-using namespace Ovito::StdMod;
+namespace Ovito {
 
 /**
  * \brief Delegate for the ExpressionSelectionModifier that operates on particles.
@@ -47,7 +45,7 @@ class ParticlesExpressionSelectionModifierDelegate : public ExpressionSelectionM
         virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
         /// Indicates which class of data objects the modifier delegate is able to operate on.
-        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return ParticlesObject::OOClass(); }
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return Particles::OOClass(); }
 
         /// The name by which Python scripts can refer to this modifier delegate.
         virtual QString pythonDataName() const override { return QStringLiteral("particles"); }
@@ -82,7 +80,7 @@ class BondsExpressionSelectionModifierDelegate : public ExpressionSelectionModif
         virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
         /// Indicates which class of data objects the modifier delegate is able to operate on.
-        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return BondsObject::OOClass(); }
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return Bonds::OOClass(); }
 
         /// The name by which Python scripts can refer to this modifier delegate.
         virtual QString pythonDataName() const override { return QStringLiteral("bonds"); }

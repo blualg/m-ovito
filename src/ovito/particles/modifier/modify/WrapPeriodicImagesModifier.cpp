@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -21,14 +21,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/particles/objects/BondsObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/particles/objects/Bonds.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "WrapPeriodicImagesModifier.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(WrapPeriodicImagesModifier);
 
@@ -37,7 +37,7 @@ IMPLEMENT_OVITO_CLASS(WrapPeriodicImagesModifier);
 ******************************************************************************/
 bool WrapPeriodicImagesModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    return input.containsObject<ParticlesObject>();
+    return input.containsObject<Particles>();
 }
 
 /******************************************************************************
@@ -45,7 +45,7 @@ bool WrapPeriodicImagesModifier::OOMetaClass::isApplicableTo(const DataCollectio
 ******************************************************************************/
 void WrapPeriodicImagesModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-    const SimulationCellObject* simCellObj = state.expectObject<SimulationCellObject>();
+    const SimulationCell* simCellObj = state.expectObject<SimulationCell>();
     std::array<bool, 3> pbc = simCellObj->pbcFlagsCorrected();
     if(!pbc[0] && !pbc[1] && !pbc[2]) {
         state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("No periodic boundary conditions are enabled for the simulation cell.")));
@@ -58,16 +58,16 @@ void WrapPeriodicImagesModifier::evaluateSynchronous(const ModifierEvaluationReq
     AffineTransformation inverseSimCell = simCellObj->reciprocalCellMatrix();
 
     // Make a modifiable copy of the particles object.
-    ParticlesObject* outputParticles = state.expectMutableObject<ParticlesObject>();
+    Particles* outputParticles = state.expectMutableObject<Particles>();
     outputParticles->verifyIntegrity();
 
     // Make a modifiable copy of the particle position property.
-    BufferWriteAccess<Point3, access_mode::read_write> posProperty = outputParticles->expectMutableProperty(ParticlesObject::PositionProperty);
+    BufferWriteAccess<Point3, access_mode::read_write> posProperty = outputParticles->expectMutableProperty(Particles::PositionProperty);
 
     // Wrap bonds by adjusting their PBC shift vectors.
     if(outputParticles->bonds()) {
-        if(BufferReadAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(BondsObject::TopologyProperty)) {
-            BufferWriteAccess<Vector3I, access_mode::read_write> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, BondsObject::PeriodicImageProperty);
+        if(BufferReadAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(Bonds::TopologyProperty)) {
+            BufferWriteAccess<Vector3I, access_mode::read_write> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, Bonds::PeriodicImageProperty);
             for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
                 size_t particleIndex1 = topologyProperty[bondIndex][0];
                 size_t particleIndex2 = topologyProperty[bondIndex][1];

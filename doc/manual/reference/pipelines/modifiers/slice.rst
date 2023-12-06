@@ -81,6 +81,22 @@ Visualize plane
   Lets the modifier generate polygonal geometry to visualize the plane in rendered images. 
   Otherwise the plane is only indicated in the interactive viewports of OVITO.
 
+Operate on
+  The field :guilabel:`Operate on` selects the type of data elements that will be sliced by the modifier:
+
+  .. table::
+    :widths: auto
+
+    =================== ============================================================================================================
+    Operate on          Description
+    =================== ============================================================================================================
+    Particles           Slices :ref:`particles <scene_objects.particles>` and deletes dangling :ref:`bonds <scene_objects.bonds>`
+    Voxel grids         Slices :ref:`voxel grids <scene_objects.voxel_grid>`
+    Surfaces            Slices :ref:`surface meshs <scene_objects.surface_mesh>`
+    Dislocation lines   Slices :ref:`dislocation lines <scene_objects.dislocations>`
+    Lines               Slices :ref:`lines <scene_objects.lines>`
+    =================== ============================================================================================================
+
 Alignment functions
 """""""""""""""""""
 

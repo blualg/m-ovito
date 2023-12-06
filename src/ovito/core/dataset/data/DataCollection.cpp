@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,7 +56,7 @@ void DataCollection::addObject(const DataObject* obj)
 /******************************************************************************
 * Inserts an additional data object into this state.
 ******************************************************************************/
-void DataCollection::insertObject(int index, const DataObject* obj)
+void DataCollection::insertObject(qsizetype index, DataOORef<const DataObject> obj)
 {
     OVITO_CHECK_OBJECT_POINTER(obj);
 
@@ -65,13 +65,13 @@ void DataCollection::insertObject(int index, const DataObject* obj)
 
     OVITO_ASSERT_MSG(!contains(obj), "DataCollection::insertObject", "Cannot insert the same data object more than once.");
     OVITO_ASSERT(index >= 0 && index <= objects().size());
-    _objects.insert(this, PROPERTY_FIELD(objects), index, obj);
+    _objects.insert(this, PROPERTY_FIELD(objects), index, std::move(obj));
 }
 
 /******************************************************************************
 * Replaces a data object with a new one.
 ******************************************************************************/
-void DataCollection::removeObjectByIndex(int index)
+void DataCollection::removeObjectByIndex(qsizetype index)
 {
     OVITO_ASSERT(index >= 0 && index < objects().size());
     _objects.remove(this, PROPERTY_FIELD(objects), index);
@@ -223,15 +223,16 @@ DataObjectPath DataCollection::makeMutable(const ConstDataObjectPath& path, Clon
 * Finds an object of the given type and with the given identifier in the list
 * of data objects stored in this flow state.
 ******************************************************************************/
-const DataObject* DataCollection::getObjectBy(const DataObject::OOMetaClass& objectClass, const PipelineObject* dataSource, const QString& identifier) const
+const DataObject* DataCollection::getObjectBy(const DataObject::OOMetaClass& objectClass, const PipelineNode* createdByNode, const QString& identifier) const
 {
     OVITO_ASSERT(!identifier.isEmpty());
-    if(!dataSource) return nullptr;
+    if(!createdByNode)
+        return nullptr;
 
     // Look for the data object with the given ID, or with the given ID followed
     // an enumeration index that was appended by generateUniqueIdentifier().
     for(const DataObject* obj : objects()) {
-        if(objectClass.isMember(obj) && obj->dataSource() == dataSource) {
+        if(objectClass.isMember(obj) && obj->createdByNode() == createdByNode) {
             if(obj->identifier() == identifier || obj->identifier().startsWith(identifier + QChar('.')))
                 return obj;
         }
@@ -530,9 +531,9 @@ QVariant DataCollection::getAttributeValue(const QString& attrName, const QVaria
 * Looks up the value for the global attribute with the given base name and creator.
 * Returns a given default value if the attribute is not defined in this pipeline state.
 ******************************************************************************/
-QVariant DataCollection::getAttributeValue(const PipelineObject* dataSource, const QString& attrBaseName, const QVariant& defaultValue) const
+QVariant DataCollection::getAttributeValue(const PipelineNode* createdByNode, const QString& attrBaseName, const QVariant& defaultValue) const
 {
-    if(const AttributeDataObject* attribute = getObjectBy<AttributeDataObject>(dataSource, attrBaseName))
+    if(const AttributeDataObject* attribute = getObjectBy<AttributeDataObject>(createdByNode, attrBaseName))
         return attribute->value();
     else
         return defaultValue;
@@ -541,28 +542,28 @@ QVariant DataCollection::getAttributeValue(const PipelineObject* dataSource, con
 /******************************************************************************
 * Inserts a new global attribute into the pipeline state.
 ******************************************************************************/
-AttributeDataObject* DataCollection::addAttribute(const QString& key, QVariant value, const PipelineObject* dataSource)
+AttributeDataObject* DataCollection::addAttribute(const QString& key, QVariant value, const PipelineNode* createdByNode)
 {
-    return createObject<AttributeDataObject>(key, dataSource, std::move(value));
+    return createObject<AttributeDataObject>(key, createdByNode, std::move(value));
 }
 
 /******************************************************************************
 * Inserts a new global attribute into the pipeline state overwritting any
 * existing attribute with the same name.
 ******************************************************************************/
-AttributeDataObject* DataCollection::setAttribute(const QString& key, QVariant value, const PipelineObject* dataSource)
+AttributeDataObject* DataCollection::setAttribute(const QString& key, QVariant value, const PipelineNode* createdByNode)
 {
     for(const DataObject* obj : objects()) {
         if(const AttributeDataObject* attribute = dynamic_object_cast<AttributeDataObject>(obj)) {
             if(attribute->identifier() == key) {
                 AttributeDataObject* newAttribute = makeMutable(attribute);
                 newAttribute->setValue(std::move(value));
-                newAttribute->setDataSource(const_cast<PipelineObject*>(dataSource));
+                newAttribute->setCreatedByNode(const_cast<PipelineNode*>(createdByNode));
                 return newAttribute;
             }
         }
     }
-    return createObject<AttributeDataObject>(key, dataSource, std::move(value));
+    return createObject<AttributeDataObject>(key, createdByNode, std::move(value));
 }
 
 /******************************************************************************

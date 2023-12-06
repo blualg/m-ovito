@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,12 +24,12 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
-#include <ovito/core/dataset/pipeline/PipelineObject.h>
-#include <ovito/core/dataset/pipeline/AsynchronousModifierApplication.h>
+#include <ovito/core/dataset/pipeline/PipelineNode.h>
+#include <ovito/core/dataset/pipeline/AsynchronousModificationNode.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Base class for analysis modifiers that require a reference configuration.
@@ -69,7 +69,7 @@ public:
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
     /// Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
-    virtual void inputCachingHints(TimeIntervalUnion& cachingIntervals, ModifierApplication* modApp) override;
+    virtual void inputCachingHints(TimeIntervalUnion& cachingIntervals, ModificationNode* node) override;
 
     /// Is called by the ModifierApplication to let the modifier adjust the time interval of a TargetChanged event
     /// received from the upstream pipeline before it is propagated to the downstream pipeline.
@@ -93,8 +93,8 @@ protected:
 
         /// Constructor.
         RefConfigEngineBase(const ModifierEvaluationRequest& request,
-                const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCellObject* simCell,
-                ConstPropertyPtr refPositions, const SimulationCellObject* simCellRef,
+                const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCell* simCell,
+                ConstPropertyPtr refPositions, const SimulationCell* simCellRef,
                 ConstPropertyPtr identifiers, ConstPropertyPtr refIdentifiers,
                 AffineMappingType affineMapping, bool useMinimumImageConvention);
 
@@ -127,10 +127,10 @@ protected:
         const ConstPropertyPtr& refIdentifiers() const { return _refIdentifiers; }
 
         /// Returns the simulation cell data.
-        const DataOORef<SimulationCellObject>& cell() const { return _simCell; }
+        const DataOORef<SimulationCell>& cell() const { return _simCell; }
 
         /// Returns the reference simulation cell data.
-        const DataOORef<SimulationCellObject>& refCell() const { return _simCellRef; }
+        const DataOORef<SimulationCell>& refCell() const { return _simCellRef; }
 
         AffineMappingType affineMapping() const { return _affineMapping; }
 
@@ -150,8 +150,8 @@ protected:
 
     private:
 
-        DataOORef<SimulationCellObject> _simCell;
-        DataOORef<SimulationCellObject> _simCellRef;
+        DataOORef<SimulationCell> _simCell;
+        DataOORef<SimulationCell> _simCellRef;
         AffineTransformation _refToCurTM;
         AffineTransformation _curToRefTM;
         ConstPropertyPtr _positions;
@@ -166,8 +166,8 @@ protected:
 
 protected:
 
-    /// The reference configuration.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineObject>, referenceConfiguration, setReferenceConfiguration, PROPERTY_FIELD_NO_SUB_ANIM);
+    /// The pipeline node producing the reference configuration.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineNode>, referenceConfiguration, setReferenceConfiguration, PROPERTY_FIELD_NO_SUB_ANIM);
 
     /// Controls the whether the homogeneous deformation of the simulation cell is eliminated from the calculated displacement vectors.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(AffineMappingType, affineMapping, setAffineMapping, PROPERTY_FIELD_MEMORIZE);
@@ -186,17 +186,17 @@ protected:
 };
 
 /**
- * This class is no longer used as 02/2020. It's only here for backward compatibility with files written by older OVITO versions.
+ * This class is no longer used as of 02/2020. It's only here for backward compatibility with files written by older OVITO versions.
  * The class can be removed in the future.
  */
-class OVITO_PARTICLES_EXPORT ReferenceConfigurationModifierApplication : public AsynchronousModifierApplication
+class OVITO_PARTICLES_EXPORT ReferenceConfigurationModifierApplication : public AsynchronousModificationNode
 {
     OVITO_CLASS(ReferenceConfigurationModifierApplication)
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ReferenceConfigurationModifierApplication(ObjectInitializationFlags flags) : AsynchronousModifierApplication(flags) {}
+    Q_INVOKABLE ReferenceConfigurationModifierApplication(ObjectInitializationFlags flags) : AsynchronousModificationNode(flags) {}
 };
 
 }   // End of namespace

@@ -41,8 +41,6 @@
 
 namespace Ovito {
 
-using namespace Ovito::Ssh;
-
 /// List SFTP jobs that are waiting to be executed.
 QQueue<RemoteFileJob*> RemoteFileJob::_queuedJobs;
 
@@ -280,7 +278,7 @@ void DownloadRemoteFileJob::connectionEstablished()
 #ifdef OVITO_SSH_CLIENT
     if(LibsshConnection* libsshConnection = qobject_cast<LibsshConnection*>(_connection)) {
         _promise.setProgressText(tr("Opening SCP channel to remote host %1").arg(libsshConnection->hostname()));
-        Ovito::Ssh::ScpChannel* scpChannel = new ScpChannel(libsshConnection, _url.path());
+        ScpChannel* scpChannel = new ScpChannel(libsshConnection, _url.path());
         connect(scpChannel, &ScpChannel::receivingFile, this, &DownloadRemoteFileJob::receivingFile);
         connect(scpChannel, &ScpChannel::receivedData, this, &DownloadRemoteFileJob::receivedData);
         connect(scpChannel, &ScpChannel::receivedFileComplete, this, &DownloadRemoteFileJob::receivedFileComplete);
@@ -329,10 +327,13 @@ void DownloadRemoteFileJob::shutdown(bool success)
     if(success)
         storeReceivedData();
 
-    if(_localFile && success)
+    if(_localFile && success) {
+        _localFile->flush();
         _promise.setResults(FileHandle(url(), _localFile->fileName()));
-    else
+    }
+    else {
         _localFile.reset();
+    }
 
     // Close network connection.
     RemoteFileJob::shutdown(success);
@@ -416,8 +417,12 @@ void DownloadRemoteFileJob::storeReceivedData()
         QByteArray buffer = _networkReply->read(_networkReply->bytesAvailable());
 
         // Write data into local file.
-        if(_localFile->write(buffer) == -1)
-            throw Exception(tr("Failed to write downloaded data to temporary file: %1").arg(_localFile->errorString()));
+        if(!buffer.isEmpty() && _localFile->write(buffer) == -1)
+            throw Exception(tr("Failed to write received data to temporary file: %1").arg(_localFile->errorString()));
+
+        // At the end of the download, we need to flush the file buffer to disk. This is indicated by an empty receive buffer.
+        if(buffer.isEmpty() && !_localFile->flush())
+            throw Exception(tr("Failed to write received data to temporary local file '%1': %2").arg(_localFile->fileName()).arg(_localFile->errorString()));
     }
     catch(Exception&) {
         _promise.captureException();

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,7 +27,7 @@
 #include <ovito/stdmod/modifiers/ReplicateModifier.h>
 #include "ReplicateModifierEditor.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ReplicateModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ReplicateModifier, ReplicateModifierEditor);
@@ -75,7 +75,7 @@ void ReplicateModifierEditor::createUI(const RolloutInsertionParameters& rollout
     topLayout->setSpacing(12);
 
     ModifierDelegateFixedListParameterUI* delegatesPUI = new ModifierDelegateFixedListParameterUI(this, rolloutParams.after(rollout));
-    topLayout->addWidget(delegatesPUI->listWidget());
+    topLayout->addWidget(delegatesPUI->listWidget(103));
 }
 
 }   // End of namespace

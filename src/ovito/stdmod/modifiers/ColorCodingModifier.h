@@ -24,6 +24,7 @@
 
 
 #include <ovito/stdmod/StdMod.h>
+#include <ovito/stdobj/lines/Lines.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/core/dataset/pipeline/DelegatingModifier.h>
@@ -31,7 +32,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/rendering/ColorCodingGradient.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * \brief Base class for ColorCodingModifier delegates that operate on different kinds of data.
@@ -39,10 +40,6 @@ namespace Ovito::StdMod {
 class OVITO_STDMOD_EXPORT ColorCodingModifierDelegate : public ModifierDelegate
 {
     OVITO_CLASS(ColorCodingModifierDelegate)
-
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(Ovito::DataObjectReference inputContainerRef READ inputContainerRef NOTIFY propertyValueChangedSignal)
-#endif
 
 public:
 
@@ -65,7 +62,39 @@ protected:
     using ModifierDelegate::ModifierDelegate;
 
     /// Returns the ID of the standard property that will receive the computed colors.
-    virtual int outputColorPropertyId() const { return PropertyObject::GenericColorProperty; }
+    virtual int outputColorPropertyId() const { return Property::GenericColorProperty; }
+};
+
+/**
+ * \brief Function for the ColorCodingModifier that operates on lines.
+ */
+class LinesColorCodingModifierDelegate : public ColorCodingModifierDelegate
+{
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public ColorCodingModifierDelegate::OOMetaClass
+    {
+    public:
+        /// Inherit constructor from base class.
+        using ColorCodingModifierDelegate::OOMetaClass::OOMetaClass;
+
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+
+        /// Indicates which class of data objects the modifier delegate is able to operate on.
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return Lines::OOClass(); }
+
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("lines"); }
+    };
+
+    OVITO_CLASS_META(LinesColorCodingModifierDelegate, OOMetaClass)
+
+    Q_CLASSINFO("DisplayName", "Lines");
+    Q_CLASSINFO("ClassNameAlias", "TrajectoryColorCodingModifierDelegate");  // For backward compatibility with OVITO 3.9.2
+
+public:
+    /// Constructor.
+    Q_INVOKABLE LinesColorCodingModifierDelegate(ObjectInitializationFlags flags) : ColorCodingModifierDelegate(flags) {}
 };
 
 /**
@@ -91,11 +120,6 @@ public:
     Q_CLASSINFO("DisplayName", "Color coding");
     Q_CLASSINFO("Description", "Colors elements based on property values.");
     Q_CLASSINFO("ModifierCategory", "Coloring");
-
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(Ovito::StdMod::ColorCodingGradient* colorGradient READ colorGradient WRITE setColorGradient NOTIFY referenceReplacedSignal)
-    Q_PROPERTY(QString colorGradientType READ colorGradientType WRITE setColorGradientType NOTIFY referenceReplacedSignal)
-#endif
 
 public:
 
@@ -126,16 +150,8 @@ public:
         return static_object_cast<ColorCodingModifierDelegate>(DelegatingModifier::delegate());
     }
 
-#ifdef OVITO_QML_GUI
-    /// Returns the class name of the selected color gradient.
-    QString colorGradientType() const;
-
-    /// Assigns a new color gradient based on its class name.
-    void setColorGradientType(const QString& typeName);
-#endif
-
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModifierApplication* modApp) const override { return sourceProperty().nameWithComponent(); }
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return sourceProperty().nameWithComponent(); }
 
     /// Sets the start and end value to the minimum and maximum value of the selected input property.
     /// Returns true if successful.

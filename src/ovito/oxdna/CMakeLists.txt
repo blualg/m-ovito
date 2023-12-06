@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2020 OVITO GmbH, Germany
+#  Copyright 2023 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -29,7 +29,7 @@ OVITO_STANDARD_PLUGIN(oxDNA
 )
 
 # Build corresponding GUI plugin.
-IF(OVITO_BUILD_APP AND NOT OVITO_QML_GUI)
+IF(OVITO_BUILD_APP)
     ADD_SUBDIRECTORY(gui)
 ENDIF()
 

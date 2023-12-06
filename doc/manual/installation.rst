@@ -134,15 +134,33 @@ Missing XCB system libraries
     .. code-block:: shell
 
       # On Ubuntu/Debian systems:
-      sudo apt-get install libxcb1 libx11-xcb1 libxcb-glx0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
-                  libxcb-randr0 libxcb-render-util0 libxcb-render0 libxcb-shape0 libxcb-shm0 \
-                  libxcb-sync1 libxcb-xfixes0 libxcb-xinerama0 libxcb-xinput0 libxcb-xkb1 libxcb-cursor0 \
-                  libfontconfig1 libfreetype6 libopengl0 libglx0 libx11-6
+      sudo apt install libxcb1 libx11-xcb1 libxcb-glx0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
+               libxcb-randr0 libxcb-render-util0 libxcb-render0 libxcb-shape0 libxcb-shm0 \
+               libxcb-sync1 libxcb-xfixes0 libxcb-xinerama0 libxcb-xinput0 libxcb-xkb1 libxcb-cursor0 \
+               libfontconfig1 libfreetype6 libopengl0 libglx0 libx11-6
 
       # On CentOS/RHEL systems:
-      sudo yum install libxcb xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm
+      sudo yum install libxcb xcb-util-cursor xcb-util-image xcb-util-keysyms xcb-util-renderutil xcb-util-wm
 
     Debian users should also pay attention to `this thread in the OVITO support forum <https://www.ovito.org/forum/topic/installation-problem/#postid-2272>`__.
+
+Missing OpenGL system libraries
+  .. error::
+
+    You may see the following errors when running :command:`ovito` or importing the OVITO Python module on a Linux machine::
+
+      ./ovito: error while loading shared libraries: libOpenGL.so.0: cannot open shared object file: No such file or directory
+
+      libEGL.so.1: cannot open shared object file: No such file or directory
+
+  .. admonition:: Solution
+
+    Install the required system libraries using your package manager:
+
+    .. code-block:: shell
+
+      # On Ubuntu/Debian systems:
+      sudo apt install libopengl0 libgl1-mesa-glx libegl1
 
 .. _installation.troubleshooting.macos:
 

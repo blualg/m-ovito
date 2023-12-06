@@ -31,7 +31,7 @@
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /*
  * Identifies dislocation lines in a crystal and generates a line model of these defects.
@@ -40,11 +40,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT DislocationAnalysisModifier : public Structur
 {
     OVITO_CLASS(DislocationAnalysisModifier)
     Q_CLASSINFO("DisplayName", "Dislocation analysis (DXA)");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Analysis");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 

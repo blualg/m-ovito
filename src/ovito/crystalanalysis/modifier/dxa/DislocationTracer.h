@@ -28,7 +28,7 @@
 #include <ovito/crystalanalysis/data/DislocationNetwork.h>
 #include "InterfaceMesh.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /**
  * This is the central class for dislocation line tracing.
@@ -61,7 +61,7 @@ public:
     const std::shared_ptr<DislocationNetwork>& network() { return _network; }
 
     /// Returns the simulation cell.
-    const SimulationCellObject* cell() const { return mesh().domain(); }
+    const SimulationCell* cell() const { return mesh().domain(); }
 
     /// Performs a dislocation search on the interface mesh by generating
     /// trial Burgers circuits. Identified dislocation segments are converted to

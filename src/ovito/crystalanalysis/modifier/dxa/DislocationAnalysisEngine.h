@@ -32,9 +32,7 @@
 #include "InterfaceMesh.h"
 #include "DislocationTracer.h"
 
-namespace Ovito::CrystalAnalysis {
-
-using namespace Ovito::Delaunay;
+namespace Ovito {
 
 /*
  * Computation engine of the DislocationAnalysisModifier, which performs the actual dislocation analysis.
@@ -44,7 +42,7 @@ class DislocationAnalysisEngine : public StructureIdentificationModifier::Struct
 public:
 
     /// Constructor.
-    DislocationAnalysisEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCellObject* simCell,
+    DislocationAnalysisEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell,
             const OORefVector<ElementType>& structureTypes, int inputCrystalStructure, int maxTrialCircuitSize, int maxCircuitElongation,
             ConstPropertyPtr particleSelection,
             ConstPropertyPtr crystalClusters,
@@ -89,7 +87,7 @@ public:
     const ConstPropertyPtr& crystalClusters() const { return _crystalClusters; }
 
     /// Computes statistical information on the identified dislocation lines and outputs it to the pipeline as data tables and global attributes.
-    static FloatType generateDislocationStatistics(const PipelineObject* dataSource, PipelineFlowState& state, DislocationNetworkObject* dislocationsObj, bool replaceDataObjects, const MicrostructurePhase* defaultStructure);
+    static FloatType generateDislocationStatistics(const PipelineNode* pipelineNode, PipelineFlowState& state, DislocationNetworkObject* dislocationsObj, bool replaceDataObjects, const MicrostructurePhase* defaultStructure);
 
 private:
 

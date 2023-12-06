@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -71,6 +71,11 @@ void NumericalParameterUI::initUIControls(const QString& labelText)
     if(propertyField()->numericalParameterInfo() != nullptr) {
         spinner()->setMinValue(propertyField()->numericalParameterInfo()->minValue);
         spinner()->setMaxValue(propertyField()->numericalParameterInfo()->maxValue);
+    }
+
+    // create the reset button -> will be added to the layout in createFieldLayout()
+    if(propertyField()->flags().testFlag(PROPERTY_FIELD_RESETTABLE)) {
+        createResetAction();
     }
 
     // Create animate button if parameter is animation (i.e. it's a reference to a Controller object).
@@ -206,9 +211,13 @@ QLayout* NumericalParameterUI::createFieldLayout() const
     layout->setSpacing(0);
     layout->addWidget(textBox());
     layout->addWidget(spinner());
+    // Show menu button, if any actions are defined
+    if(menuToolButton()) {
+        layout->addWidget(menuToolButton());
+    }
     if(animateButton())
         layout->addWidget(animateButton());
     return layout;
 }
 
-}   // End of namespace
+}  // namespace Ovito

@@ -25,7 +25,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "DCDImporterEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(DCDImporterEditor);
 SET_OVITO_OBJECT_EDITOR(DCDImporter, DCDImporterEditor);

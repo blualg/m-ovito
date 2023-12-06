@@ -115,12 +115,6 @@ void RefTarget::notifyDependentsImpl(const ReferenceEvent& event) noexcept
     // Prevent this object from being deleted while emitting the event signal.
     OORef<RefTarget> this_(this);
 
-#ifdef OVITO_QML_GUI
-    // Emit Qt signals for certain events.
-    if(event.type() == ReferenceEvent::TitleChanged)
-        Q_EMIT objectTitleChanged();
-#endif
-
     // Send the signal to the registered dependents.
     Q_EMIT objectEvent(this, event);
 

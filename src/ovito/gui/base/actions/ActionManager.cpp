@@ -354,7 +354,7 @@ void ActionManager::on_EditDelete_triggered()
         if(Scene* scene = userInterface().datasetContainer().activeScene()) {
             // Delete all nodes in selection set.
             for(SceneNode* node : scene->selection()->nodes())
-                node->deleteNode();
+                node->deleteSceneNode();
 
             // Automatically select one of the remaining nodes.
             if(scene->children().isEmpty() == false)
@@ -400,9 +400,9 @@ void ActionManager::openHelpTopic(const QString& helpTopicId)
                     break;
             }
             // Now parse the link target list.
-            QString searchString = QChar('\t') + helpTopicId.mid(7) + QChar(' ');
+            QString searchString = helpTopicId.mid(7) + QChar(' ');
             while(!stream.atEnd()) {
-                QString line = stream.readLine();
+                QString line = stream.readLine().trimmed();
                 if(line.startsWith(searchString)) {
                     int startIndex = line.lastIndexOf(QChar(' '));
                     QString filePath = line.mid(startIndex + 1).trimmed();

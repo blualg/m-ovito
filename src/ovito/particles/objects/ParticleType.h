@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,12 +24,12 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticlesVis.h>
 #include <ovito/stdobj/properties/ElementType.h>
-#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
+#include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Stores the properties of a particle type, e.g. name, color, and radius.
@@ -37,13 +37,6 @@ namespace Ovito::Particles {
 class OVITO_PARTICLES_EXPORT ParticleType : public ElementType
 {
     OVITO_CLASS(ParticleType)
-
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(FloatType radius READ radius WRITE setRadius NOTIFY propertyValueChangedSignal)
-    Q_PROPERTY(FloatType vdwRadius READ vdwRadius WRITE setVdwRadius NOTIFY propertyValueChangedSignal)
-    Q_PROPERTY(Ovito::Particles::ParticlesVis::ParticleShape shape READ shape WRITE setShape NOTIFY propertyValueChangedSignal)
-    Q_PROPERTY(FloatType mass READ mass WRITE setMass NOTIFY propertyValueChangedSignal)
-#endif
 
 public:
 
@@ -106,7 +99,7 @@ public:
     //////////////////////////////////// Utility methods ////////////////////////////////
 
     /// Builds a map from type identifiers to particle radii.
-    static std::map<int,FloatType> typeRadiusMap(const PropertyObject* typeProperty) {
+    static std::map<int,FloatType> typeRadiusMap(const Property* typeProperty) {
         std::map<int,FloatType> m;
         for(const ElementType* type : typeProperty->elementTypes())
             if(const ParticleType* particleType = dynamic_object_cast<ParticleType>(type))
@@ -115,7 +108,7 @@ public:
     }
 
     /// Builds a map from type identifiers to particle masses.
-    static std::map<int,FloatType> typeMassMap(const PropertyObject* typeProperty) {
+    static std::map<int,FloatType> typeMassMap(const Property* typeProperty) {
         std::map<int,FloatType> m;
         for(const ElementType* type : typeProperty->elementTypes())
             if(const ParticleType* particleType = dynamic_object_cast<ParticleType>(type))
@@ -162,13 +155,13 @@ public:
     }
 
     /// Returns the default radius for a named particle type.
-    static FloatType getDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, bool loadUserDefaults, RadiusVariant radiusVariant = DisplayRadius);
+    static FloatType getDefaultParticleRadius(Particles::Type typeClass, const QString& particleTypeName, int particleTypeId, bool loadUserDefaults, RadiusVariant radiusVariant = DisplayRadius);
 
     /// Changes the default radius for a named particle type.
-    static void setDefaultParticleRadius(ParticlesObject::Type typeClass, const QString& particleTypeName, FloatType radius, RadiusVariant radiusVariant = DisplayRadius);
+    static void setDefaultParticleRadius(Particles::Type typeClass, const QString& particleTypeName, FloatType radius, RadiusVariant radiusVariant = DisplayRadius);
 
     /// Returns the default mass for a named particle type.
-    static FloatType getDefaultParticleMass(ParticlesObject::Type typeClass, const QString& particleTypeName, int particleTypeId, bool loadUserDefaults);
+    static FloatType getDefaultParticleMass(Particles::Type typeClass, const QString& particleTypeName, int particleTypeId, bool loadUserDefaults);
 
     /// Performs a reverse lookup. Given a mass value, find the corresponding standard particle type name.
     /// Currently, this method only considers chemical elements from the hard-coded table, because
@@ -201,7 +194,7 @@ private:
     DECLARE_SHADOW_PROPERTY_FIELD(shape);
 
     /// An optional user-defined shape used for rendering particles of this type.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const TriMeshObject>, shapeMesh, setShapeMesh, PROPERTY_FIELD_NO_SUB_ANIM);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const TriangleMesh>, shapeMesh, setShapeMesh, PROPERTY_FIELD_NO_SUB_ANIM);
 
     /// Activates the highlighting of the polygonal edges of the user-defined shape assigned to this particle type.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, highlightShapeEdges, setHighlightShapeEdges, PROPERTY_FIELD_MEMORIZE);

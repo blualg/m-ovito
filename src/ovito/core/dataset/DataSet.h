@@ -56,10 +56,6 @@ class OVITO_CORE_EXPORT DataSet final : public RefTarget
 
     OVITO_CLASS_META(DataSet, DataSetClass)
 
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(Ovito::ViewportConfiguration* viewportConfiguration READ viewportConfig WRITE setViewportConfig NOTIFY viewportConfigReplaced)
-#endif
-
 public:
 
     /// \brief Constructs an empty dataset.
@@ -110,6 +106,26 @@ public:
     /// Note that this method does NOT invoke setFilePath().
     void loadFromFile(const QString& filePath);
 
+    /// \brief Appends an object to this dataset's list of global objects.
+    void addGlobalObject(const RefTarget* target)
+    {
+        if(!_globalObjects.contains(target)) _globalObjects.push_back(this, PROPERTY_FIELD(globalObjects), target);
+    }
+
+    /// \brief Removes an object from this dataset's list of global objects.
+    void removeGlobalObject(int index) { _globalObjects.remove(this, PROPERTY_FIELD(globalObjects), index); }
+
+    /// \brief Looks for a global object of the given type.
+    template <class T>
+    T* findGlobalObject() const
+    {
+        for(RefTarget* obj : globalObjects()) {
+            T* castObj = dynamic_object_cast<T>(obj);
+            if(castObj) return castObj;
+        }
+        return nullptr;
+    }
+
 Q_SIGNALS:
 
     /// \brief This signal is emitted whenever the current viewport configuration of this dataset
@@ -148,6 +164,11 @@ private:
 
     /// The settings for rendering an output image of the scene.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<RenderSettings>, renderSettings, setRenderSettings, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_MEMORIZE);
+
+    /// Global data managed by plugins.
+    DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<RefTarget>, globalObjects, setGlobalObjects,
+                                                    PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_ALWAYS_CLONE |
+                                                        PROPERTY_FIELD_ALWAYS_DEEP_COPY);
 
     /// The file path this DataSet has been saved to.
     QString _filePath;

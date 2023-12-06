@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2016 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,7 +26,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/gui/export/FileColumnParticleExporterEditor.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief User interface component for the LAMMPSDumpExporter class.

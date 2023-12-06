@@ -26,9 +26,7 @@
 #include <ovito/core/utilities/io/ssh/SshConnection.h>
 #include "SshRequest.h"
 
-#include <QProcess>
-
-namespace Ovito::Ssh {
+namespace Ovito {
 
 class OVITO_CORE_EXPORT OpensshConnection : public SshConnection
 {

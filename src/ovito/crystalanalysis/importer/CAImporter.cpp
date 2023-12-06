@@ -27,11 +27,11 @@
 #include <ovito/crystalanalysis/modifier/dxa/DislocationAnalysisEngine.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "CAImporter.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CAImporter);
 
@@ -424,7 +424,7 @@ void CAImporter::FrameLoader::loadFile()
             // Create surface mesh.
             defectSurface = state().getMutableLeafObject<SurfaceMesh>(SurfaceMesh::OOClass(), QStringLiteral("dxa-defect-mesh"));
             if(!defectSurface) {
-                defectSurface = state().createObject<SurfaceMesh>(dataSource(), tr("Defect mesh"));
+                defectSurface = state().createObject<SurfaceMesh>(pipelineNode(), tr("Defect mesh"));
                 defectSurface->setIdentifier(QStringLiteral("dxa-defect-mesh"));
                 SurfaceMeshVis* vis = defectSurface->visElement<SurfaceMeshVis>();
                 vis->setShowCap(true);
@@ -493,7 +493,7 @@ void CAImporter::FrameLoader::loadFile()
             int timestep;
             if(sscanf(stream.line(), "METADATA SIMULATION_TIMESTEP %i", &timestep) != 1)
                 throw Exception(tr("CA file parsing error. Invalid timestep number (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
-            state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timestep), dataSource());
+            state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timestep), pipelineNode());
         }
         else if(stream.lineStartsWith("METADATA ")) {
             // Ignore. This is for future use.
@@ -530,7 +530,7 @@ void CAImporter::FrameLoader::loadFile()
             clusterGraphObj = state().makeMutable(existingClusterGraphObj);
         }
         else {
-            clusterGraphObj = state().createObject<ClusterGraphObject>(dataSource());
+            clusterGraphObj = state().createObject<ClusterGraphObject>(pipelineNode());
         }
         clusterGraphObj->setStorage(std::move(clusterGraph));
     }
@@ -542,7 +542,7 @@ void CAImporter::FrameLoader::loadFile()
             dislocationNetwork = state().makeMutable(existingDislocationsObj);
         }
         else {
-            dislocationNetwork = state().createObject<DislocationNetworkObject>(dataSource());
+            dislocationNetwork = state().createObject<DislocationNetworkObject>(pipelineNode());
         }
         dislocationNetwork->setDomain(simulationCell());
         dislocationNetwork->setStorage(dislocations);
@@ -586,7 +586,7 @@ void CAImporter::FrameLoader::loadFile()
         }
 
         // Compute dislocation line statistics.
-        DislocationAnalysisEngine::generateDislocationStatistics(dataSource(), state(), dislocationNetwork, true, mainStructure);
+        DislocationAnalysisEngine::generateDislocationStatistics(pipelineNode(), state(), dislocationNetwork, true, mainStructure);
     }
 
     state().setStatus(tr("Number of dislocations: %1").arg(numDislocationSegments));

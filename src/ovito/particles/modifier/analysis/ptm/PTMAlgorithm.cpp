@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,7 @@
 #include "PTMAlgorithm.h"
 
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /******************************************************************************
 * Creates the algorithm object.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,11 +24,11 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Smoothly interpolates the particle positions by averaging multiple snapshots.
@@ -52,11 +52,7 @@ class OVITO_PARTICLES_EXPORT SmoothTrajectoryModifier : public Modifier
     Q_CLASSINFO("DisplayName", "Smooth trajectory");
     Q_CLASSINFO("ClassNameAlias", "InterpolateTrajectoryModifier");
     Q_CLASSINFO("Description", "Time-averaged particle positions using a sliding time window.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Modification");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 
@@ -67,7 +63,7 @@ public:
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
     /// Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
-    virtual void inputCachingHints(TimeIntervalUnion& cachingIntervals, ModifierApplication* modApp) override;
+    virtual void inputCachingHints(TimeIntervalUnion& cachingIntervals, ModificationNode* node) override;
 
     /// Is called by the ModifierApplication to let the modifier adjust the time interval of a TargetChanged event
     /// received from the upstream pipeline before it is propagated to the downstream pipeline.
@@ -98,14 +94,14 @@ private:
  * This class is no longer used since 02/2020. It's only here for backward compatibility with files written by older OVITO versions.
  * The class can safely be removed in the future.
  */
-class OVITO_PARTICLES_EXPORT InterpolateTrajectoryModifierApplication : public ModifierApplication
+class OVITO_PARTICLES_EXPORT InterpolateTrajectoryModifierApplication : public ModificationNode
 {
     OVITO_CLASS(InterpolateTrajectoryModifierApplication)
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE InterpolateTrajectoryModifierApplication(ObjectInitializationFlags flags) : ModifierApplication(flags) {}
+    Q_INVOKABLE InterpolateTrajectoryModifierApplication(ObjectInitializationFlags flags) : ModificationNode(flags) {}
 };
 
 }   // End of namespace

@@ -26,7 +26,7 @@
 #include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include "ParaViewVTPMeshImporter.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ParaViewVTPMeshImporter);
 IMPLEMENT_OVITO_CLASS(MeshParaViewVTMFileFilter);
@@ -77,7 +77,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
     if(meshIdentifier.isEmpty()) meshIdentifier = "mesh";
     SurfaceMesh* mesh = state().getMutableLeafObject<SurfaceMesh>(SurfaceMesh::OOClass(), meshIdentifier);
     if(!mesh) {
-        mesh = state().createObject<SurfaceMesh>(dataSource());
+        mesh = state().createObject<SurfaceMesh>(pipelineNode());
         mesh->setIdentifier(meshIdentifier);
         SurfaceMeshVis* vis = mesh->visElement<SurfaceMeshVis>();
         if(vis) {
@@ -150,7 +150,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             // Parse child <DataArray> element containing the point coordinates.
             if(!xml.readNextStartElement())
                 break;
-            PropertyPtr property = parseDataArray(xml, PropertyObject::FloatDefault);
+            PropertyPtr property = parseDataArray(xml, Property::FloatDefault);
             if(!property)
                 break;
 
@@ -181,7 +181,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             // Parse child <DataArray> element containing the offset information.
             if(!xml.readNextStartElement())
                 break;
-            PropertyPtr offsetsArray = parseDataArray(xml, PropertyObject::Int32);
+            PropertyPtr offsetsArray = parseDataArray(xml, Property::Int32);
             if(!offsetsArray)
                 break;
             // Make sure the data array has the expected data layout.
@@ -271,7 +271,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
                 meshBuilder.addFaceProperty(std::move(property));
             }
             else {
-                PropertyObject* existingProperty = property->type() != SurfaceMeshFaces::UserProperty
+                Property* existingProperty = property->type() != SurfaceMeshFaces::UserProperty
                     ? meshBuilder.mutableFaceProperty(static_cast<SurfaceMeshFaces::Type>(property->type()))
                     : meshBuilder.mutableFaceProperty(property->name());
                 if(existingProperty && existingProperty->dataType() == property->dataType() && existingProperty->componentCount() == property->componentCount()) {
@@ -295,7 +295,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             meshBuilder.addVertexProperty(std::move(property));
         }
         else {
-            PropertyObject* existingProperty = property->type() != SurfaceMeshVertices::UserProperty
+            Property* existingProperty = property->type() != SurfaceMeshVertices::UserProperty
                 ? meshBuilder.mutableVertexProperty(static_cast<SurfaceMeshVertices::Type>(property->type()))
                 : meshBuilder.mutableVertexProperty(property->name());
             if(existingProperty && existingProperty->dataType() == property->dataType() && existingProperty->componentCount() == property->componentCount()) {
@@ -362,15 +362,15 @@ PropertyPtr ParaViewVTPMeshImporter::FrameLoader::parseDataArray(QXmlStreamReade
     if(convertToDataType == 0) {
         // Use the 'type' attribute to decide which data type to use for the OVITO property array.
         QString dataType = xml.attributes().value("type").toString();
-        if(dataType == "Float32") convertToDataType = PropertyObject::Float32;
-        else if(dataType == "Float64") convertToDataType = PropertyObject::Float64;
-        else if(dataType == "Int32" || dataType == "UInt32" || dataType == "Int16" || dataType == "UInt16" || dataType == "Int8" || dataType == "UInt8") convertToDataType = PropertyObject::Int32;
-        else if(dataType == "Int64" || dataType == "UInt64") convertToDataType = PropertyObject::Int64;
-        else convertToDataType = PropertyObject::FloatDefault;
+        if(dataType == "Float32") convertToDataType = Property::Float32;
+        else if(dataType == "Float64") convertToDataType = Property::Float64;
+        else if(dataType == "Int32" || dataType == "UInt32" || dataType == "Int16" || dataType == "UInt16" || dataType == "Int8" || dataType == "UInt8") convertToDataType = Property::Int32;
+        else if(dataType == "Int64" || dataType == "UInt64") convertToDataType = Property::Int64;
+        else convertToDataType = Property::FloatDefault;
     }
 
     // Create destination property. Initially with zero elements, will be resized later when the size of the VTK data array is known.
-    PropertyPtr property = DataOORef<PropertyObject>::create(DataBuffer::Uninitialized, 0, convertToDataType, numComponents, PropertyObject::makePropertyNameValid(name));
+    PropertyPtr property = DataOORef<Property>::create(DataBuffer::Uninitialized, 0, convertToDataType, numComponents, Property::makePropertyNameValid(name));
 
     // Delegate parsing of payload to sub-routine.
     if(!parseVTKDataArray(property.get(), xml))

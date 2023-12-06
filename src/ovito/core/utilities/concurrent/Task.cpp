@@ -270,7 +270,7 @@ void Task::removeCallback(detail::TaskCallbackBase* cb) noexcept
 /******************************************************************************
 * Blocks execution until another task finishes.
 ******************************************************************************/
-bool Task::waitFor(detail::TaskReference awaitedTask)
+bool Task::waitFor(detail::TaskReference awaitedTask, bool throwOnError)
 {
     OVITO_ASSERT(awaitedTask);
     OVITO_ASSERT(ExecutionContext::current().isValid());
@@ -299,6 +299,8 @@ bool Task::waitFor(detail::TaskReference awaitedTask)
         }
         else {
             // It's ready, no need to wait.
+            if(throwOnError)
+                awaitedTask->throwPossibleException();
             return true;
         }
     }
@@ -453,6 +455,10 @@ bool Task::waitFor(detail::TaskReference awaitedTask)
     }
 
     OVITO_ASSERT(awaitedTaskPtr->isFinished());
+
+    if(throwOnError)
+        awaitedTaskPtr->throwPossibleException();
+
     return true;
 }
 

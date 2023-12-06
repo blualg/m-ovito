@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,13 +24,13 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/TrajectoryVis.h>
-#include <ovito/particles/objects/TrajectoryObject.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/stdobj/lines/Lines.h>
+#include <ovito/stdobj/lines/LinesVis.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief Generates trajectory lines for particles.
@@ -52,11 +52,7 @@ class OVITO_PARTICLES_EXPORT GenerateTrajectoryLinesModifier : public Modifier
     OVITO_CLASS_META(GenerateTrajectoryLinesModifier, GenerateTrajectoryLinesModifierClass)
     Q_CLASSINFO("DisplayName", "Generate trajectory lines");
     Q_CLASSINFO("Description", "Visualize trajectory lines of moving particles.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Visualization");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 
@@ -104,25 +100,27 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlePropertyReference, particleProperty, setParticleProperty);
 
     /// The vis element for rendering the trajectory lines.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<TrajectoryVis>, trajectoryVis, setTrajectoryVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<LinesVis>, trajectoryVis, setTrajectoryVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 };
 
 /**
  * Used by the GenerateTrajectoryLinesModifier to store the generated trajectory lines.
  */
-class OVITO_PARTICLES_EXPORT GenerateTrajectoryLinesModifierApplication : public ModifierApplication
+class OVITO_PARTICLES_EXPORT GenerateTrajectoryLinesModificationNode : public ModificationNode
 {
-    OVITO_CLASS(GenerateTrajectoryLinesModifierApplication)
+    OVITO_CLASS(GenerateTrajectoryLinesModificationNode)
+    Q_CLASSINFO("ClassNameAlias", "GenerateTrajectoryLinesModifierApplication");  // For backward compatibility with OVITO 3.9.2
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE GenerateTrajectoryLinesModifierApplication(ObjectInitializationFlags flags) : ModifierApplication(flags) {}
+    Q_INVOKABLE GenerateTrajectoryLinesModificationNode(ObjectInitializationFlags flags) : ModificationNode(flags) {}
 
 private:
 
     /// The cached trajectory line data.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const TrajectoryObject>, trajectoryData, setTrajectoryData, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const Lines>, trajectoryData, setTrajectoryData,
+                                             PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
 }   // End of namespace

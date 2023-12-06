@@ -21,16 +21,16 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdmod/StdMod.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "FreezePropertyModifier.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(FreezePropertyModifier);
 DEFINE_PROPERTY_FIELD(FreezePropertyModifier, sourceProperty);
@@ -40,11 +40,11 @@ SET_PROPERTY_FIELD_LABEL(FreezePropertyModifier, sourceProperty, "Property");
 SET_PROPERTY_FIELD_LABEL(FreezePropertyModifier, destinationProperty, "Destination property");
 SET_PROPERTY_FIELD_LABEL(FreezePropertyModifier, freezeTime, "Freeze at frame");
 
-IMPLEMENT_OVITO_CLASS(FreezePropertyModifierApplication);
-DEFINE_REFERENCE_FIELD(FreezePropertyModifierApplication, property);
-DEFINE_REFERENCE_FIELD(FreezePropertyModifierApplication, identifiers);
-DEFINE_VECTOR_REFERENCE_FIELD(FreezePropertyModifierApplication, cachedVisElements);
-SET_MODIFIER_APPLICATION_TYPE(FreezePropertyModifier, FreezePropertyModifierApplication);
+IMPLEMENT_OVITO_CLASS(FreezePropertyModificationNode);
+DEFINE_REFERENCE_FIELD(FreezePropertyModificationNode, property);
+DEFINE_REFERENCE_FIELD(FreezePropertyModificationNode, identifiers);
+DEFINE_VECTOR_REFERENCE_FIELD(FreezePropertyModificationNode, cachedVisElements);
+SET_MODIFICATION_NODE_TYPE(FreezePropertyModifier, FreezePropertyModificationNode);
 
 /******************************************************************************
 * Constructs the modifier object.
@@ -53,7 +53,7 @@ FreezePropertyModifier::FreezePropertyModifier(ObjectInitializationFlags flags) 
     _freezeTime(0)
 {
     // Operate on particles by default.
-    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
+    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("Particles"));
 }
 
 /******************************************************************************
@@ -66,9 +66,9 @@ void FreezePropertyModifier::initializeModifier(const ModifierInitializationRequ
 
     // Use the first available particle property from the input state as data source when the modifier is newly created.
     if(sourceProperty().isNull() && subject() && ExecutionContext::isInteractive()) {
-        const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
+        const PipelineFlowState& input = request.modificationNode()->evaluateInputSynchronous(request);
         if(const PropertyContainer* container = input.getLeafObject(subject())) {
-            for(const PropertyObject* property : container->properties()) {
+            for(const Property* property : container->properties()) {
                 setSourceProperty(PropertyReference(subject().dataClass(), property));
                 setDestinationProperty(sourceProperty());
                 break;
@@ -101,8 +101,8 @@ void FreezePropertyModifier::propertyChanged(const PropertyFieldDescriptor* fiel
 Future<PipelineFlowState> FreezePropertyModifier::evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Check if we already have the frozen property available.
-    if(FreezePropertyModifierApplication* myModApp = dynamic_object_cast<FreezePropertyModifierApplication>(request.modApp())) {
-        if(myModApp->hasFrozenState(AnimationTime::fromFrame(freezeTime()))) {
+    if(FreezePropertyModificationNode* node = dynamic_object_cast<FreezePropertyModificationNode>(request.modificationNode())) {
+        if(node->hasFrozenState(AnimationTime::fromFrame(freezeTime()))) {
             // Perform replacement of the property in the input pipeline state.
             PipelineFlowState output = input;
             evaluateSynchronous(request, output);
@@ -115,20 +115,20 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluate(const ModifierEvaluat
     upstreamRequest.setTime(AnimationTime::fromFrame(freezeTime()));
 
     // Request the frozen state from the upstream pipeline.
-    return request.modApp()->evaluateInput(upstreamRequest)
-        .then(*this, [this, request, modApp = OORef<ModifierApplication>(request.modApp()), state = input](const PipelineFlowState& frozenState) mutable {
+    return request.modificationNode()->evaluateInput(upstreamRequest)
+        .then(*this, [this, request, node = OORef<ModificationNode>(request.modificationNode()), state = input](const PipelineFlowState& frozenState) mutable {
 
             // Extract the input property.
-            if(FreezePropertyModifierApplication* myModApp = dynamic_object_cast<FreezePropertyModifierApplication>(request.modApp())) {
-                if(myModApp->modifier() == this && !sourceProperty().isNull() && subject()) {
+            if(FreezePropertyModificationNode* myModNode = dynamic_object_cast<FreezePropertyModificationNode>(request.modificationNode())) {
+                if(myModNode->modifier() == this && !sourceProperty().isNull() && subject()) {
 
                     const PropertyContainer* container = frozenState.expectLeafObject(subject());
-                    if(const PropertyObject* property = sourceProperty().findInContainer(container)) {
+                    if(const Property* property = sourceProperty().findInContainer(container)) {
 
-                        // Cache the property to be frozen in the ModifierApplication.
-                        myModApp->updateStoredData(property,
-                            container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty)
-                                ? container->getProperty(PropertyObject::GenericIdentifierProperty)
+                        // Cache the property to be frozen in the ModificationNode.
+                        myModNode->updateStoredData(property,
+                            container->getOOMetaClass().isValidStandardPropertyId(Property::GenericIdentifierProperty)
+                                ? container->getProperty(Property::GenericIdentifierProperty)
                                 : nullptr,
                             frozenState.stateValidity());
 
@@ -140,7 +140,7 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluate(const ModifierEvaluat
                         throw Exception(tr("The property '%1' is not present in the input state.").arg(sourceProperty().name()));
                     }
                 }
-                myModApp->invalidateFrozenState();
+                myModNode->invalidateFrozenState();
             }
 
             return std::move(state);
@@ -162,8 +162,8 @@ void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest
     if(destinationProperty().isNull())
         throw Exception(tr("No output property selected."));
 
-    // Retrieve the property values stored in the ModifierApplication.
-    FreezePropertyModifierApplication* myModApp = dynamic_object_cast<FreezePropertyModifierApplication>(request.modApp());
+    // Retrieve the property values stored in the ModificationNode.
+    FreezePropertyModificationNode* myModApp = dynamic_object_cast<FreezePropertyModificationNode>(request.modificationNode());
     if(!myModApp || !myModApp->property())
         throw Exception(tr("No stored property values available."));
 
@@ -172,8 +172,8 @@ void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest
     container->verifyIntegrity();
 
     // Get the property that will be overwritten by the stored one.
-    PropertyObject* outputProperty;
-    if(destinationProperty().type() != PropertyObject::GenericUserProperty) {
+    Property* outputProperty;
+    if(destinationProperty().type() != Property::GenericUserProperty) {
         outputProperty = container->createProperty(DataBuffer::Initialized, destinationProperty().type());
         if(outputProperty->dataType() != myModApp->property()->dataType()
             || outputProperty->componentCount() != myModApp->property()->componentCount()
@@ -189,8 +189,8 @@ void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest
 
     // Check if particle IDs are present and if the order of particles has changed
     // since we took the snapshot of the property values.
-    BufferReadAccess<IdentifierIntType> idProperty = container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericIdentifierProperty)
-        ? container->getProperty(PropertyObject::GenericIdentifierProperty)
+    BufferReadAccess<IdentifierIntType> idProperty = container->getOOMetaClass().isValidStandardPropertyId(Property::GenericIdentifierProperty)
+        ? container->getProperty(Property::GenericIdentifierProperty)
         : nullptr;
     BufferReadAccess<IdentifierIntType> storedIds = myModApp->identifiers();
     if(storedIds && idProperty && (idProperty.size() != storedIds.size() || !boost::equal(idProperty, storedIds))) {
@@ -250,7 +250,7 @@ void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest
 * particle identifier list, which will allow to restore the saved property
 * values even if the order of particles changes.
 ******************************************************************************/
-void FreezePropertyModifierApplication::updateStoredData(const PropertyObject* property, const PropertyObject* identifiers, TimeInterval validityInterval)
+void FreezePropertyModificationNode::updateStoredData(const Property* property, const Property* identifiers, TimeInterval validityInterval)
 {
     CloneHelper cloneHelper;
     setProperty(cloneHelper.cloneObject(property, false));
@@ -261,7 +261,7 @@ void FreezePropertyModifierApplication::updateStoredData(const PropertyObject* p
 /******************************************************************************
 * Is called when a RefTarget referenced by this object has generated an event.
 ******************************************************************************/
-bool FreezePropertyModifierApplication::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+bool FreezePropertyModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(event.type() == ReferenceEvent::TargetChanged) {
         if(source == input()) {
@@ -278,7 +278,7 @@ bool FreezePropertyModifierApplication::referenceEvent(RefTarget* source, const 
             invalidateFrozenState();
         }
     }
-    return ModifierApplication::referenceEvent(source, event);
+    return ModificationNode::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -292,8 +292,8 @@ void FreezePropertyModifier::loadFromStreamComplete(ObjectLoadStream& stream)
     // For backward compatibility with OVITO 3.7:
     // Convert legacy time value from ticks to frames. This requires access to the AnimationSettings object, which is stored in the scene.
     if(stream.formatVersion() <= 30008) {
-        if(ModifierApplication* modApp = someModifierApplication()) {
-            QSet<PipelineSceneNode*> pipelines = modApp->pipelines(true);
+        if(ModificationNode* node = someNode()) {
+            QSet<Pipeline*> pipelines = node->pipelines(true);
             if(!pipelines.empty()) {
                 if(Scene* scene = (*pipelines.begin())->scene()) {
                     if(scene->animationSettings()) {

@@ -19,12 +19,12 @@
     margin: 0px 0px 4px;
 }
 
-/* Make sure two figures in the side bar do not appear side by side. */ 
+/* Make sure two figures in the side bar do not appear side by side. */
 .rst-content .align-right {
     clear: both;
 }
 
-/* Let several default-aligned figures appear side by side. */ 
+/* Let several default-aligned figures appear side by side. */
 .rst-content figure.align-default {
     display: inline-block;
 }
@@ -79,6 +79,24 @@
 .rst-content .section ol li > a.ovito-pro-tag, .rst-content .section ul li > a.ovito-pro-tag {
     margin-top: 0px;
     margin-bottom: 0px;
+}
+
+/* Define the look of the "py" tag, which is used to mark program features in the manual that are part of the Python module. */
+.ovito-py-tag {
+	background-color: rgb(233, 155, 155);
+	color: rgb(64, 64, 64) !important;
+    line-height: 1;
+    text-decoration: none;
+	text-align: center;
+	white-space: nowrap;
+	font-size: 80%;
+	font-weight: normal;
+	font-style: normal;
+    font-family: Lato,proxima-nova,Helvetica Neue,Arial,sans-serif;
+	vertical-align: baseline;
+	border-radius: 0.25rem;
+	padding: 2px 3px !important;
+	/*margin-left: 0.2rem;*/
 }
 
 [data-tooltip] {

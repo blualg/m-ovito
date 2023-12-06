@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -134,7 +134,7 @@ void XFormMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* eve
                 _startPoint = getMousePosition(event);
                 _undoTransaction.begin(inputManager()->userInterface(), undoDisplayName());
                 inputManager()->userInterface().performActions(_undoTransaction, [&] {
-                    viewport()->scene()->selection()->setNode(pickResult.pipelineNode());
+                    viewport()->scene()->selection()->setNode(pickResult.pipeline());
                 });
                 _undoSelectionOperation = _undoTransaction.snapshot();
                 startXForm();
@@ -179,7 +179,7 @@ void XFormMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* even
 
         // Revert the previous x-form operation.
         _undoTransaction.revertTo(_undoSelectionOperation);
-        
+
         inputManager()->userInterface().performActions(_undoTransaction, [&] {
             doXForm();
         });

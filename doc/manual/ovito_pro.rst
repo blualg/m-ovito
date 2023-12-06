@@ -4,12 +4,12 @@
 OVITO Pro
 =========
 
-There exist two variants of our software: **OVITO Basic** and **OVITO Pro**.
+There exist two variants of our desktop application software: **OVITO Basic** and **OVITO Pro**.
 The two versions differ in terms of available program features and licensing conditions.
-This user manual covers both editions of OVITO, and the program features exclusively available in the *Pro* edition are
-specifically marked with the following tag: |ovito-pro|
+This user manual covers both editions, and the program features exclusively available in the *Pro* edition have been
+marked with the following tag found throughout the manual: |ovito-pro|
 
-Here is a (nearly complete) list of the program features that are available in **OVITO Pro** but not in OVITO Basic:
+A (nearly complete) list of the program features available only in *OVITO Pro* and not in *OVITO Basic*:
 
 .. image:: /images/team/ovito_logo_128.*
    :width: 15%
@@ -26,7 +26,9 @@ Here is a (nearly complete) list of the program features that are available in *
 
   - :ref:`Tachyon <rendering.tachyon_renderer>`
   - :ref:`OSPRay <rendering.ospray_renderer>`
+  - :ref:`VisRTX <rendering.visrtx_renderer>`
 
+- :ref:`Remote rendering function <usage.remote_rendering>`
 - :ref:`Multi-viewport layout rendering <viewport_layouts.rendering>`
 - Additional modifier functions:
 
@@ -41,6 +43,7 @@ Here is a (nearly complete) list of the program features that are available in *
   - :ref:`particles.modifiers.color_by_type`
 
 - :ref:`file_formats.input.ase_database` and :ref:`file_formats.input.ase_trajectory`
+- :ref:`file_formats.output.gltf`
 - Use of Miller indices in the :ref:`particles.modifiers.slice` modifier
 
 Please visit `www.ovito.org <https://www.ovito.org/about/ovito-pro/>`__ for further details on OVITO Pro, our support services, and pricing.

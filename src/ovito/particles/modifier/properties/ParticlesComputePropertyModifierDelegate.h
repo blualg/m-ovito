@@ -24,14 +24,12 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/util/ParticleExpressionEvaluator.h>
 #include <ovito/particles/util/ParticleOrderingFingerprint.h>
 #include <ovito/stdmod/modifiers/ComputePropertyModifier.h>
 
-namespace Ovito::Particles {
-
-using namespace Ovito::StdMod;
+namespace Ovito {
 
 /**
  * \brief Delegate plugin for the ComputePropertyModifier that operates on particles.
@@ -50,7 +48,7 @@ class OVITO_PARTICLES_EXPORT ParticlesComputePropertyModifierDelegate : public C
         virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
 
         /// Indicates which class of data objects the modifier delegate is able to operate on.
-        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return ParticlesObject::OOClass(); }
+        virtual const DataObject::OOMetaClass& getApplicableObjectClass() const override { return Particles::OOClass(); }
 
         /// The name by which Python scripts can refer to this modifier delegate.
         virtual QString pythonDataName() const override { return QStringLiteral("particles"); }

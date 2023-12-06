@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,7 +26,7 @@
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
 #include "GaussianCubeImporterEditor.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(GaussianCubeImporterEditor);
 SET_OVITO_OBJECT_EDITOR(GaussianCubeImporter, GaussianCubeImporterEditor);
@@ -48,7 +48,7 @@ void GaussianCubeImporterEditor::createUI(const RolloutInsertionParameters& roll
     QVBoxLayout* sublayout = new QVBoxLayout(gridOptionsBox);
     sublayout->setContentsMargins(4,4,4,4);
     layout->addWidget(gridOptionsBox);
-    
+
     // Grid type
     IntegerRadioButtonParameterUI* gridTypeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(GaussianCubeImporter::gridType));
     sublayout->addWidget(gridTypeUI->addRadioButton(VoxelGrid::GridType::PointData, tr("Point-based grid")));
@@ -58,7 +58,7 @@ void GaussianCubeImporterEditor::createUI(const RolloutInsertionParameters& roll
     sublayout = new QVBoxLayout(atomicOptionsBox);
     sublayout->setContentsMargins(4,4,4,4);
     layout->addWidget(atomicOptionsBox);
-    
+
     // Generate bonds
     BooleanParameterUI* generateBondsUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::generateBonds));
     sublayout->addWidget(generateBondsUI->checkBox());

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -73,7 +73,7 @@ void SceneNodeSelectionBox::renameSceneNode(int index)
         QString newName = QInputDialog::getText(window(), tr("Change pipeline name"), tr("Pipeline name:                                         "), QLineEdit::Normal, oldName, &ok).trimmed();
         if(ok && newName != oldName) {
             _mainWindow.performTransaction(tr("Rename pipeline"), [&]() {
-                sceneNode->setNodeName(newName);
+                sceneNode->setSceneNodeName(newName);
             });
         }
     }

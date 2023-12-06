@@ -26,7 +26,7 @@
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/core/dataset/pipeline/DelegatingModifier.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * \brief Base class for AffineTransformationModifier delegates that operate on different kinds of data.
@@ -74,6 +74,37 @@ public:
 };
 
 /**
+ * \brief Delegate for the AffineTransformationModifier that operates on lines.
+ **/
+class OVITO_STDMOD_EXPORT LinesAffineTransformationModifierDelegate : public AffineTransformationModifierDelegate
+{
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public AffineTransformationModifierDelegate::OOMetaClass
+    {
+    public:
+        /// Inherit constructor from base class.
+        using AffineTransformationModifierDelegate::OOMetaClass::OOMetaClass;
+
+        /// Asks the metaclass which data objects in the given input data collection the modifier delegate can operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("lines"); }
+    };
+
+    OVITO_CLASS_META(LinesAffineTransformationModifierDelegate, OOMetaClass)
+    Q_CLASSINFO("DisplayName", "Lines");
+
+public:
+    /// Constructor.
+    Q_INVOKABLE LinesAffineTransformationModifierDelegate(ObjectInitializationFlags flags) : AffineTransformationModifierDelegate(flags) {}
+
+    /// Applies the modifier operation to the data in a pipeline flow state.
+    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState,
+                                 const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+};
+
+/**
  * \brief This modifier applies an arbitrary affine transformation to the
  *        particles, the simulation box and other entities.
  *
@@ -116,11 +147,11 @@ public:
 
     /// Copies positions from one buffer to another while transforming them.
     /// If enabled, the transformation is only applied to selected elements.
-    void transformCoordinates(const PipelineFlowState& inputState, const PropertyObject* input, PropertyObject* output, const PropertyObject* selection);
+    void transformCoordinates(const PipelineFlowState& inputState, const Property* input, Property* output, const Property* selection);
 
     /// Copies vectors from one buffer to another while transforming them.
     /// If enabled, the transformation is only applied to selected elements.
-    void transformVectors(const PipelineFlowState& inputState, const PropertyObject* input, PropertyObject* output, const PropertyObject* selection);
+    void transformVectors(const PipelineFlowState& inputState, const Property* input, Property* output, const Property* selection);
 
 protected:
 

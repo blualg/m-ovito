@@ -21,13 +21,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "IMDImporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(IMDImporter);
 
@@ -81,25 +81,25 @@ void IMDImporter::FrameLoader::loadFile()
                 const QString& token = tokens[t];
                 int columnIndex = t - 1;
                 columnMapping[columnIndex].columnName = token;
-                if(token == "mass") columnMapping.mapStandardColumn(columnIndex, ParticlesObject::MassProperty);
-                else if(token == "type") columnMapping.mapStandardColumn(columnIndex, ParticlesObject::TypeProperty);
-                else if(token == "number") columnMapping.mapStandardColumn(columnIndex, ParticlesObject::IdentifierProperty);
-                else if(token == "x") columnMapping.mapStandardColumn(columnIndex, ParticlesObject::PositionProperty, 0);
-                else if(token == "y") columnMapping.mapStandardColumn(columnIndex, ParticlesObject::PositionProperty, 1);
-                else if(token == "z") columnMapping.mapStandardColumn(columnIndex, ParticlesObject::PositionProperty, 2);
-                else if(token == "vx") columnMapping.mapStandardColumn(columnIndex, ParticlesObject::VelocityProperty, 0);
-                else if(token == "vy") columnMapping.mapStandardColumn(columnIndex, ParticlesObject::VelocityProperty, 1);
-                else if(token == "vz") columnMapping.mapStandardColumn(columnIndex, ParticlesObject::VelocityProperty, 2);
-                else if(token == "Epot") columnMapping.mapStandardColumn(columnIndex, ParticlesObject::PotentialEnergyProperty);
+                if(token == "mass") columnMapping.mapStandardColumn(columnIndex, Particles::MassProperty);
+                else if(token == "type") columnMapping.mapStandardColumn(columnIndex, Particles::TypeProperty);
+                else if(token == "number") columnMapping.mapStandardColumn(columnIndex, Particles::IdentifierProperty);
+                else if(token == "x") columnMapping.mapStandardColumn(columnIndex, Particles::PositionProperty, 0);
+                else if(token == "y") columnMapping.mapStandardColumn(columnIndex, Particles::PositionProperty, 1);
+                else if(token == "z") columnMapping.mapStandardColumn(columnIndex, Particles::PositionProperty, 2);
+                else if(token == "vx") columnMapping.mapStandardColumn(columnIndex, Particles::VelocityProperty, 0);
+                else if(token == "vy") columnMapping.mapStandardColumn(columnIndex, Particles::VelocityProperty, 1);
+                else if(token == "vz") columnMapping.mapStandardColumn(columnIndex, Particles::VelocityProperty, 2);
+                else if(token == "Epot") columnMapping.mapStandardColumn(columnIndex, Particles::PotentialEnergyProperty);
                 else {
                     bool isStandardProperty = false;
-                    const auto& standardPropertyList = ParticlesObject::OOClass().standardPropertyIds();
+                    const auto& standardPropertyList = Particles::OOClass().standardPropertyIds();
                     QRegularExpression specialCharacters(QStringLiteral("[^A-Za-z\\d_]"));
                     for(int id : standardPropertyList) {
-                        for(size_t component = 0; component < ParticlesObject::OOClass().standardPropertyComponentCount(id); component++) {
-                            QString columnName = ParticlesObject::OOClass().standardPropertyName(id);
+                        for(size_t component = 0; component < Particles::OOClass().standardPropertyComponentCount(id); component++) {
+                            QString columnName = Particles::OOClass().standardPropertyName(id);
                             columnName.remove(specialCharacters);
-                            const QStringList& componentNames = ParticlesObject::OOClass().standardPropertyComponentNames(id);
+                            const QStringList& componentNames = Particles::OOClass().standardPropertyComponentNames(id);
                             if(!componentNames.empty()) {
                                 QString componentName = componentNames[component];
                                 componentName.remove(specialCharacters);
@@ -107,7 +107,7 @@ void IMDImporter::FrameLoader::loadFile()
                                 columnName += componentName;
                             }
                             if(columnName == token) {
-                                columnMapping.mapStandardColumn(columnIndex, (ParticlesObject::Type)id, component);
+                                columnMapping.mapStandardColumn(columnIndex, (Particles::Type)id, component);
                                 isStandardProperty = true;
                                 break;
                             }
@@ -115,7 +115,7 @@ void IMDImporter::FrameLoader::loadFile()
                         if(isStandardProperty) break;
                     }
                     if(!isStandardProperty) {
-                        columnMapping.mapCustomColumn(columnIndex, PropertyObject::makePropertyNameValid(token), PropertyObject::FloatDefault);
+                        columnMapping.mapCustomColumn(columnIndex, Property::makePropertyNameValid(token), Property::FloatDefault);
                     }
                 }
             }

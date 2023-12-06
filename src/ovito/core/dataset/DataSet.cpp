@@ -34,8 +34,10 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS(DataSet);
 DEFINE_REFERENCE_FIELD(DataSet, viewportConfig);
 DEFINE_REFERENCE_FIELD(DataSet, renderSettings);
+DEFINE_VECTOR_REFERENCE_FIELD(DataSet, globalObjects);
 SET_PROPERTY_FIELD_LABEL(DataSet, viewportConfig, "Viewport Configuration");
 SET_PROPERTY_FIELD_LABEL(DataSet, renderSettings, "Render Settings");
+SET_PROPERTY_FIELD_LABEL(DataSet, globalObjects, "Global objects");
 
 /******************************************************************************
 * Constructor.
@@ -214,6 +216,8 @@ void DataSet::loadFromFile(const QString& filePath)
 
     QDataStream dataStream(&fileStream);
     ObjectLoadStream stream(dataStream);
+    if(stream.applicationName() != QStringLiteral("OVITO Pro"))
+        throw Exception(tr("This function can only load session states written by OVITO Pro or the OVITO Python package. Files created with OVITO Basic are no longer supported."));
     stream.setDatasetToBePopulated(this);
     OORef<DataSet> dataSet = stream.loadObject<DataSet>();
     stream.close();

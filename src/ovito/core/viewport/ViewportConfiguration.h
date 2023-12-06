@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -37,11 +37,6 @@ namespace Ovito {
 class OVITO_CORE_EXPORT ViewportConfiguration : public RefTarget
 {
     OVITO_CLASS(ViewportConfiguration)
-
-#ifdef OVITO_QML_GUI
-    Q_PROPERTY(Ovito::Viewport* activeViewport READ activeViewport WRITE setActiveViewport NOTIFY activeViewportChanged)
-    Q_PROPERTY(Ovito::Viewport* maximizedViewport READ maximizedViewport WRITE setMaximizedViewport NOTIFY maximizedViewportChanged)
-#endif
 
 public:
 

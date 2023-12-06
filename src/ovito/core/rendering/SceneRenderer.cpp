@@ -25,10 +25,10 @@
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/dataset/scene/SceneNode.h>
 #include <ovito/core/dataset/scene/Scene.h>
-#include <ovito/core/dataset/pipeline/PipelineObject.h>
+#include <ovito/core/dataset/pipeline/PipelineNode.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
@@ -78,7 +78,7 @@ Box3 SceneRenderer::computeSceneBoundingBox(AnimationTime time, Scene* scene, co
         _scene = scene;
         setProjParams(params);
 
-        // Perform bounding box rendering pass.
+        // Perform bounding box render pass.
         if(renderScene()) {
 
             // Include other visual content that is only visible in the interactive viewports.
@@ -125,6 +125,7 @@ void SceneRenderer::beginFrame(AnimationTime time, Scene* scene, const ViewProje
                                const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
     OVITO_ASSERT(!_scene);
+    OVITO_ASSERT(isImagePass() || isPickingPass());
 
     _time = time;
     _scene = scene;
@@ -144,6 +145,12 @@ void SceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewportRect
 {
     endPickObject();
     _scene.reset();
+    if(frameBuffer()) {
+        if(renderingSuccessful)
+            frameBuffer()->commitChanges();
+        else
+            frameBuffer()->discardChanges();
+    }
 }
 
 /******************************************************************************
@@ -176,7 +183,7 @@ bool SceneRenderer::renderNode(SceneNode* node)
     const AffineTransformation& nodeTM = node->getWorldTransform(time(), interval);
     setWorldTransform(nodeTM);
 
-    if(PipelineSceneNode* pipeline = dynamic_object_cast<PipelineSceneNode>(node)) {
+    if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(node)) {
 
         // Do not render node if it is the view node of the viewport or
         // if it is the target of the view node.
@@ -205,7 +212,7 @@ bool SceneRenderer::renderNode(SceneNode* node)
     }
 
     // Render trajectory when node transformation is animated.
-    if(isInteractive() && !isPicking()) {
+    if(isInteractive() && isImagePass()) {
         renderNodeTrajectory(node);
     }
 
@@ -221,7 +228,7 @@ bool SceneRenderer::renderNode(SceneNode* node)
 /******************************************************************************
 * Renders a data object and all its sub-objects.
 ******************************************************************************/
-void SceneRenderer::renderDataObject(const DataObject* dataObj, const PipelineSceneNode* pipeline, const PipelineFlowState& state, ConstDataObjectPath& dataObjectPath)
+void SceneRenderer::renderDataObject(const DataObject* dataObj, const Pipeline* pipeline, const PipelineFlowState& state, ConstDataObjectPath& dataObjectPath)
 {
     bool isOnStack = false;
 
@@ -253,9 +260,10 @@ void SceneRenderer::renderDataObject(const DataObject* dataObj, const PipelineSc
             }
             catch(Exception& ex) {
                 status = ex;
-                ex.prependGeneralMessage(tr("Visual element '%1' reported an error during rendering.").arg(vis->objectTitle()));
+                ex.prependToMessage(tr("Visual element '%1' reported an error during rendering: ").arg(vis->objectTitle()));
                 // If the vis element fails, interrupt rendering process in console mode; swallow exceptions in GUI mode.
-                if(!isInteractive()) throw;
+                if(!isInteractive())
+                    throw;
             }
             // Unless the vis element has indicated that it is in control of the status,
             // automatically adopt the outcome of the rendering operation as status code.
@@ -286,7 +294,7 @@ void SceneRenderer::renderDataObject(const DataObject* dataObj, const PipelineSc
 ******************************************************************************/
 bool SceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
 {
-    OVITO_ASSERT(!isPicking());
+    OVITO_ASSERT(isImagePass());
     OVITO_ASSERT(viewport());
 
     for(ViewportOverlay* layer : (underlays ? viewport()->underlays() : viewport()->overlays())) {
@@ -405,9 +413,9 @@ void SceneRenderer::renderInteractiveContent()
 ******************************************************************************/
 void SceneRenderer::renderModifiers(bool renderOverlay)
 {
-    // Visit all objects in the scene.
+    // Visit all pipelines in the scene.
     if(scene()) {
-        scene()->visitObjectNodes([&](PipelineSceneNode* pipeline) {
+        scene()->visitPipelines([&](Pipeline* pipeline) {
             renderModifiers(pipeline, renderOverlay);
             return true;
         });
@@ -417,11 +425,11 @@ void SceneRenderer::renderModifiers(bool renderOverlay)
 /******************************************************************************
 * Renders the visual representation of the modifiers in a pipeline.
 ******************************************************************************/
-void SceneRenderer::renderModifiers(PipelineSceneNode* pipeline, bool renderOverlay)
+void SceneRenderer::renderModifiers(Pipeline* pipeline, bool renderOverlay)
 {
-    ModifierApplication* modApp = dynamic_object_cast<ModifierApplication>(pipeline->dataProvider());
-    while(modApp) {
-        Modifier* mod = modApp->modifier();
+    ModificationNode* node = dynamic_object_cast<ModificationNode>(pipeline->head());
+    while(node) {
+        Modifier* mod = node->modifier();
 
         // Setup local transformation.
         TimeInterval interval;
@@ -429,7 +437,7 @@ void SceneRenderer::renderModifiers(PipelineSceneNode* pipeline, bool renderOver
 
         try {
             // Render modifier.
-            mod->renderModifierVisual(ModifierEvaluationRequest(scene()->animationSettings(), modApp), pipeline, this, renderOverlay);
+            mod->renderModifierVisual(ModifierEvaluationRequest(scene()->animationSettings(), node), pipeline, this, renderOverlay);
         }
         catch(const Exception& ex) {
             // Swallow exceptions, because we are in interactive rendering mode.
@@ -437,7 +445,7 @@ void SceneRenderer::renderModifiers(PipelineSceneNode* pipeline, bool renderOver
         }
 
         // Traverse up the pipeline.
-        modApp = dynamic_object_cast<ModifierApplication>(modApp->input());
+        node = dynamic_object_cast<ModificationNode>(node->input());
     }
 }
 
@@ -514,10 +522,10 @@ FloatType SceneRenderer::projectedPixelSize(const Point3& worldPosition) const
 /******************************************************************************
 * When picking mode is active, this registers an object being rendered.
 ******************************************************************************/
-quint32 SceneRenderer::beginPickObject(const PipelineSceneNode* objNode, ObjectPickInfo* pickInfo)
+quint32 SceneRenderer::beginPickObject(const Pipeline* pipeline, ObjectPickInfo* pickInfo)
 {
-    if(isPicking()) {
-        _currentObjectPickingRecord.objectNode = const_cast<PipelineSceneNode*>(objNode);
+    if(isPickingPass()) {
+        _currentObjectPickingRecord.pipeline = const_cast<Pipeline*>(pipeline);
         _currentObjectPickingRecord.pickInfo = pickInfo;
         _currentObjectPickingRecord.baseObjectID = _nextAvailablePickingID;
         return _currentObjectPickingRecord.baseObjectID;
@@ -530,13 +538,14 @@ quint32 SceneRenderer::beginPickObject(const PipelineSceneNode* objNode, ObjectP
 ******************************************************************************/
 quint32 SceneRenderer::registerSubObjectIDs(quint32 subObjectCount, const ConstDataBufferPtr& indices)
 {
-    OVITO_ASSERT(isPicking());
-
-    quint32 baseObjectID = _nextAvailablePickingID;
-    if(indices)
-        _currentObjectPickingRecord.indexedRanges.push_back(std::make_pair(indices, _nextAvailablePickingID - _currentObjectPickingRecord.baseObjectID));
-    _nextAvailablePickingID += subObjectCount;
-    return baseObjectID;
+    if(isPickingPass()) {
+        quint32 baseObjectID = _nextAvailablePickingID;
+        if(indices)
+            _currentObjectPickingRecord.indexedRanges.push_back(std::make_pair(indices, _nextAvailablePickingID - _currentObjectPickingRecord.baseObjectID));
+        _nextAvailablePickingID += subObjectCount;
+        return baseObjectID;
+    }
+    return 0;
 }
 
 /******************************************************************************
@@ -544,12 +553,12 @@ quint32 SceneRenderer::registerSubObjectIDs(quint32 subObjectCount, const ConstD
 ******************************************************************************/
 void SceneRenderer::endPickObject()
 {
-    if(isPicking()) {
-        if(_currentObjectPickingRecord.objectNode) {
+    if(isPickingPass()) {
+        if(_currentObjectPickingRecord.pipeline) {
             _objectPickingRecords.push_back(std::move(_currentObjectPickingRecord));
         }
         _currentObjectPickingRecord.baseObjectID = 0;
-        _currentObjectPickingRecord.objectNode = nullptr;
+        _currentObjectPickingRecord.pipeline = nullptr;
         _currentObjectPickingRecord.pickInfo = nullptr;
         _currentObjectPickingRecord.indexedRanges.clear();
     }
@@ -637,13 +646,14 @@ std::tuple<FloatType, Box2I> SceneRenderer::determineGridRange(Viewport* vp)
 ******************************************************************************/
 void SceneRenderer::renderGrid()
 {
-    if(isPicking())
+    if(!isImagePass())
         return;
 
     FloatType gridSpacing;
     Box2I gridRange;
     std::tie(gridSpacing, gridRange) = determineGridRange(viewport());
-    if(gridSpacing <= 0) return;
+    if(gridSpacing <= 0)
+        return;
 
     // Determine how many grid lines need to be rendered.
     int xstart = gridRange.minc.x();
@@ -713,7 +723,7 @@ void SceneRenderer::renderGrid()
  ******************************************************************************/
 void SceneRenderer::renderTextDefaultImplementation(const TextPrimitive& primitive)
 {
-    if(primitive.text().isEmpty() || isPicking())
+    if(primitive.text().isEmpty() || !isImagePass())
         return;
 
     qreal devicePixelRatio = this->devicePixelRatio();

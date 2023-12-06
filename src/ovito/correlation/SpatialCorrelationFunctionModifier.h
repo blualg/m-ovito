@@ -25,16 +25,16 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/particles/util/CutoffNeighborFinder.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
 #include <complex>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief This modifier computes the spatial correlation function between two particle properties.
@@ -57,11 +57,7 @@ class OVITO_CORRELATIONFUNCTIONPLUGIN_EXPORT SpatialCorrelationFunctionModifier 
 
     Q_CLASSINFO("ClassNameAlias", "CorrelationFunctionModifier");
     Q_CLASSINFO("DisplayName", "Spatial correlation function");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Analysis");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 
@@ -104,7 +100,7 @@ private:
                                   size_t vecComponent1,
                                   ConstPropertyPtr sourceProperty2,
                                   size_t vecComponent2,
-                                  const SimulationCellObject* simCell,
+                                  const SimulationCell* simCell,
                                   FloatType fftGridSpacing,
                                   bool applyWindow,
                                   bool doComputeNeighCorrelation,
@@ -174,7 +170,7 @@ private:
         const ConstPropertyPtr& sourceProperty2() const { return _sourceProperty2; }
 
         /// Returns the simulation cell data.
-        const DataOORef<const SimulationCellObject>& cell() const { return _simCell; }
+        const DataOORef<const SimulationCell>& cell() const { return _simCell; }
 
         /// Returns the FFT cutoff radius.
         FloatType fftGridSpacing() const { return _fftGridSpacing; }
@@ -230,7 +226,7 @@ private:
         std::vector<FloatType> c2rFFT(int nX, int nY, int nZ, std::vector<std::complex<FloatType>>& cData);
 
         /// Map property onto grid.
-        std::vector<FloatType>  mapToSpatialGrid(const PropertyObject* property,
+        std::vector<FloatType>  mapToSpatialGrid(const Property* property,
                               size_t propertyVectorComponent,
                               const AffineTransformation& reciprocalCell,
                               int nX, int nY, int nZ,
@@ -242,7 +238,7 @@ private:
         const bool _applyWindow;
         const FloatType _neighCutoff;
         const AveragingDirectionType _averagingDirection;
-        DataOORef<const SimulationCellObject> _simCell;
+        DataOORef<const SimulationCell> _simCell;
         ConstPropertyPtr _positions;
         ConstPropertyPtr _sourceProperty1;
         ConstPropertyPtr _sourceProperty2;

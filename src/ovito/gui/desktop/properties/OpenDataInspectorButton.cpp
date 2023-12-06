@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,7 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "OpenDataInspectorButton.h"
 
 namespace Ovito {
@@ -35,12 +35,12 @@ OpenDataInspectorButton::OpenDataInspectorButton(PropertiesEditor* editor, const
     : QPushButton(buttonTitle), _editor(editor), _objectNameHint(objectNameHint), _modeHint(modeHint)
 {
     connect(this, &QPushButton::clicked, [this]() {
-        if(!this->editor()->modifierApplication() || !this->editor()->modifierApplication()->modifier() || !this->editor()->modifierApplication()->modifier()->isEnabled()) {
-            QToolTip::showText(mapToGlobal(QPoint(0, height()/2)), tr("No results available, because modifier is turned off."), 
+        if(!this->editor()->modificationNode() || !this->editor()->modificationNode()->modifier() || !this->editor()->modificationNode()->modifier()->isEnabled()) {
+            QToolTip::showText(mapToGlobal(QPoint(0, height()/2)), tr("No results available, because modifier is turned off."),
                 this->editor()->container(), this->editor()->container()->rect(), 3000);
         }
-        else if(!this->editor()->mainWindow().openDataInspector(this->editor()->modifierApplication(), _objectNameHint, _modeHint)) {
-            QToolTip::showText(mapToGlobal(QPoint(0, height()/2)), tr("Results not available yet. Try again later."), 
+        else if(!this->editor()->mainWindow().openDataInspector(this->editor()->modificationNode(), _objectNameHint, _modeHint)) {
+            QToolTip::showText(mapToGlobal(QPoint(0, height()/2)), tr("Results not available yet. Try again later."),
                 this->editor()->container(), this->editor()->container()->rect(), 3000);
         }
         else {

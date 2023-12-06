@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,12 +27,12 @@
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "PolyhedralTemplateMatchingModifierEditor.h"
 
 #include <qwt/qwt_plot_zoneitem.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(PolyhedralTemplateMatchingModifierEditor);
 SET_OVITO_OBJECT_EDITOR(PolyhedralTemplateMatchingModifier, PolyhedralTemplateMatchingModifierEditor);
@@ -140,7 +140,7 @@ void PolyhedralTemplateMatchingModifierEditor::plotHistogram()
     // Request the modifier's pipeline output.
     if(const PipelineFlowState& state = getPipelineOutput()) {
         // Look up the data table in the modifier's pipeline output.
-        _rmsdPlotWidget->setTable(state.getObjectBy<DataTable>(modifierApplication(), QStringLiteral("ptm-rmsd")));
+        _rmsdPlotWidget->setTable(state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("ptm-rmsd")));
     }
     else {
         _rmsdPlotWidget->reset();

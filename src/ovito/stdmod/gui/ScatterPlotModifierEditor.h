@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,7 +29,7 @@
 
 class QwtPlotZoneItem;
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * A properties editor for the ScatterPlotModifier class.

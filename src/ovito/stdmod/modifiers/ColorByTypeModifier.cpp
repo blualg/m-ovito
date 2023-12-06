@@ -23,13 +23,13 @@
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/app/Application.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "ColorByTypeModifier.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ColorByTypeModifier);
 DEFINE_PROPERTY_FIELD(ColorByTypeModifier, sourceProperty);
@@ -47,7 +47,7 @@ ColorByTypeModifier::ColorByTypeModifier(ObjectInitializationFlags flags) : Gene
     _clearSelection(true)
 {
     // Operate on particles by default.
-    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("ParticlesObject"));
+    setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("Particles"));
 }
 
 /******************************************************************************
@@ -62,12 +62,12 @@ void ColorByTypeModifier::initializeModifier(const ModifierInitializationRequest
 
         // When the modifier is first inserted, automatically select the most recently added
         // typed property (in GUI mode) or the canonical type property (in script mode).
-        const PipelineFlowState& input = request.modApp()->evaluateInputSynchronous(request);
+        const PipelineFlowState& input = request.modificationNode()->evaluateInputSynchronous(request);
         if(const PropertyContainer* container = input.getLeafObject(subject())) {
             PropertyReference bestProperty;
-            for(const PropertyObject* property : container->properties()) {
+            for(const Property* property : container->properties()) {
                 if(property->isTypedProperty()) {
-                    if(ExecutionContext::isInteractive() || property->type() == PropertyObject::GenericTypeProperty) {
+                    if(ExecutionContext::isInteractive() || property->type() == Property::GenericTypeProperty) {
                         bestProperty = PropertyReference(subject().dataClass(), property);
                     }
                 }
@@ -113,19 +113,19 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     container->verifyIntegrity();
 
     // Get the input property.
-    const PropertyObject* typePropertyObject = sourceProperty().findInContainer(container);
+    const Property* typePropertyObject = sourceProperty().findInContainer(container);
     if(!typePropertyObject)
         throw Exception(tr("The selected input property '%1' is not present.").arg(sourceProperty().name()));
     if(typePropertyObject->componentCount() != 1)
         throw Exception(tr("The input property '%1' has the wrong number of components. Must be a scalar property.").arg(typePropertyObject->name()));
-    if(typePropertyObject->dataType() != PropertyObject::Int32)
+    if(typePropertyObject->dataType() != Property::Int32)
         throw Exception(tr("The input property '%1' has the wrong data type. Must be a 32-bit integer property.").arg(typePropertyObject->name()));
     BufferReadAccess<int32_t> typeProperty = typePropertyObject;
 
     // Get the selection property if enabled by the user.
     ConstPropertyPtr selectionProperty;
-    if(colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(PropertyObject::GenericSelectionProperty)) {
-        if(const PropertyObject* selPropertyObj = container->getProperty(PropertyObject::GenericSelectionProperty)) {
+    if(colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
+        if(const Property* selPropertyObj = container->getProperty(Property::GenericSelectionProperty)) {
             selectionProperty = selPropertyObj;
 
             // Clear selection if requested.
@@ -136,7 +136,7 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
 
     // Create the color output property.
     BufferWriteAccess<ColorG, access_mode::write> colorProperty(
-        container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, PropertyObject::GenericColorProperty, objectPath),
+        container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, Property::GenericColorProperty, objectPath),
         !selectionProperty);
 
     // Access selection array.
@@ -159,33 +159,5 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     }
 #endif
 }
-
-
-#ifdef OVITO_QML_GUI
-/******************************************************************************
-* This helper method is called by the QML GUI (ColorByTypeModifier.qml) to extract
-* the list of element types from the input pipeline output state.
-******************************************************************************/
-QVariantList ColorByTypeModifier::getElementTypesFromInputState(ModifierApplication* modApp) const
-{
-    QVariantList list;
-    if(modApp && subject() && !sourceProperty().isNull() && sourceProperty().containerClass() == subject().dataClass()) {
-        // Populate types list based on the selected input property.
-        const PipelineFlowState& state = modApp->evaluateInputSynchronous(dataset()->animationSettings()->time());
-        if(const PropertyContainer* container = state.getLeafObject(subject())) {
-            if(const PropertyObject* inputProperty = sourceProperty().findInContainer(container)) {
-                for(const ElementType* type : inputProperty->elementTypes()) {
-                    if(!type) continue;
-                    list.push_back(QVariantMap({
-                        {"id", type->numericId()},
-                        {"name", type->nameOrNumericId()},
-                        {"color", (QColor)type->color()}}));
-                }
-            }
-        }
-    }
-    return list;
-}
-#endif
 
 }   // End of namespace

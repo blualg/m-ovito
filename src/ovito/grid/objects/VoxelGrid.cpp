@@ -24,7 +24,7 @@
 #include "VoxelGrid.h"
 #include "VoxelGridVis.h"
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(VoxelGrid);
 DEFINE_RUNTIME_PROPERTY_FIELD(VoxelGrid, shape);
@@ -53,7 +53,7 @@ void VoxelGrid::OOMetaClass::initialize()
     const QStringList emptyList;
     const QStringList rgbList = QStringList() << "R" << "G" << "B";
 
-    registerStandardProperty(ColorProperty, tr("Color"), PropertyObject::FloatGraphics, rgbList, nullptr, tr("Voxel colors"));
+    registerStandardProperty(ColorProperty, tr("Color"), Property::FloatGraphics, rgbList, nullptr, tr("Voxel colors"));
 }
 
 /******************************************************************************
@@ -66,7 +66,7 @@ PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(DataBuffer::B
 
     switch(type) {
     case ColorProperty:
-        dataType = PropertyObject::FloatGraphics;
+        dataType = Property::FloatGraphics;
         componentCount = 3;
         OVITO_ASSERT(componentCount * sizeof(GraphicsFloatType) == sizeof(ColorG));
         break;

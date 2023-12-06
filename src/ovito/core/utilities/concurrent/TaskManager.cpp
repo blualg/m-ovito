@@ -236,7 +236,7 @@ void TaskManager::shutdown()
 #endif
 
 #ifdef OVITO_USE_SYCL
-    // Close all active SYCL host memory accessors which are associated with NumPy views of PropertyObjects.
+    // Close all active SYCL host memory accessors which are associated with NumPy views of properties.
     for(RegisteredBufferAccess* accessor = _registeredBufferAccessors; accessor != nullptr; accessor = accessor->_next) {
         accessor->_syclAccessor = {};
     }

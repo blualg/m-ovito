@@ -23,12 +23,12 @@
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/particles/objects/BondsVis.h>
-#include <ovito/particles/objects/ParticlesObject.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/particles/objects/Particles.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/Application.h>
 #include "GrainSegmentationModifier.h"
@@ -36,7 +36,7 @@
 
 #include <ptm/ptm_functions.h>
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(GrainSegmentationModifier);
 DEFINE_PROPERTY_FIELD(GrainSegmentationModifier, mergeAlgorithm);
@@ -80,7 +80,7 @@ GrainSegmentationModifier::GrainSegmentationModifier(ObjectInitializationFlags f
 ******************************************************************************/
 bool GrainSegmentationModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    return input.containsObject<ParticlesObject>();
+    return input.containsObject<Particles>();
 }
 
 /******************************************************************************
@@ -101,20 +101,20 @@ void GrainSegmentationModifier::propertyChanged(const PropertyFieldDescriptor* f
 Future<AsynchronousModifier::EnginePtr> GrainSegmentationModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get modifier input.
-    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
+    const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
-    const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
+    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
 
     // Make sure the PTM modifier has been executed first and its output is available.
-    const PropertyObject* structureProperty = particles->getProperty(ParticlesObject::StructureTypeProperty);
+    const Property* structureProperty = particles->getProperty(Particles::StructureTypeProperty);
     if(!structureProperty)
         throw Exception(tr("Grain segmentation requires Polyhedral Template Matching (PTM) output. Please insert the PTM modifier into the pipeline first."));
-    const PropertyObject* orientationProperty = particles->getProperty(ParticlesObject::OrientationProperty);
+    const Property* orientationProperty = particles->getProperty(Particles::OrientationProperty);
     if(!orientationProperty)
         throw Exception(tr("Grain segmentation requires lattice orientation information. Please activate the 'Lattice orientations' option of the PTM modifier."));
-    const PropertyObject* correspondenceProperty = particles->expectProperty("Correspondences", PropertyObject::Int64);
+    const Property* correspondenceProperty = particles->expectProperty("Correspondences", Property::Int64);
 
-    const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
+    const SimulationCell* simCell = input.expectObject<SimulationCell>();
     if(simCell->is2D())
         throw Exception(tr("The grain segmentation modifier does not support 2d simulation cells."));
 
@@ -143,7 +143,7 @@ void GrainSegmentationEngine1::applyResults(const ModifierEvaluationRequest& req
     GrainSegmentationModifier* modifier = static_object_cast<GrainSegmentationModifier>(request.modifier());
     OVITO_ASSERT(modifier);
 
-    ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+    Particles* particles = state.expectMutableObject<Particles>();
     particles->verifyIntegrity();
 
     if(_inputFingerprint.hasChanged(particles))
@@ -154,7 +154,7 @@ void GrainSegmentationEngine1::applyResults(const ModifierEvaluationRequest& req
 
         std::vector<Bond> bonds;
         std::vector<FloatType> disorientations;
-        BufferReadAccess<Point3> positionsArray(particles->expectProperty(ParticlesObject::PositionProperty));
+        BufferReadAccess<Point3> positionsArray(particles->expectProperty(Particles::PositionProperty));
 
         for (auto edge: neighborBonds()) {
             if (isCrystallineBond(edge)) {
@@ -177,7 +177,7 @@ void GrainSegmentationEngine1::applyResults(const ModifierEvaluationRequest& req
         }
 
         // Output disorientation angles as a bond property.
-        PropertyPtr neighborDisorientationAngles = BondsObject::OOClass().createUserProperty(DataBuffer::Uninitialized, bonds.size(), DataBuffer::FloatDefault, 1, QStringLiteral("Disorientation"));
+        PropertyPtr neighborDisorientationAngles = Bonds::OOClass().createUserProperty(DataBuffer::Uninitialized, bonds.size(), DataBuffer::FloatDefault, 1, QStringLiteral("Disorientation"));
         BufferWriteAccess<FloatType, access_mode::discard_write> disorientationAnglesAccess(neighborDisorientationAngles);
         for(size_t i = 0; i < disorientations.size(); i++) {
             disorientationAnglesAccess[i] = disorientations[i];
@@ -189,14 +189,14 @@ void GrainSegmentationEngine1::applyResults(const ModifierEvaluationRequest& req
 
     // Output a data plot with the dendrogram points.
     if(mergeSize() && mergeDistance())
-        state.createObject<DataTable>(QStringLiteral("grains-merge"), request.modApp(), DataTable::Scatter, GrainSegmentationModifier::tr("Merge size vs. distance"), mergeSize(), mergeDistance());
+        state.createObject<DataTable>(QStringLiteral("grains-merge"), request.modificationNode(), DataTable::Scatter, GrainSegmentationModifier::tr("Merge size vs. distance"), mergeSize(), mergeDistance());
 
     // Output a data plot with the log-log dendrogram points.
     if(logMergeSize() && logMergeDistance())
-        state.createObject<DataTable>(QStringLiteral("grains-log"), request.modApp(), DataTable::Scatter, GrainSegmentationModifier::tr("Log distance vs. log merge size"), logMergeDistance(), logMergeSize());
+        state.createObject<DataTable>(QStringLiteral("grains-log"), request.modificationNode(), DataTable::Scatter, GrainSegmentationModifier::tr("Log distance vs. log merge size"), logMergeDistance(), logMergeSize());
 
     if(modifier->mergeAlgorithm() == GrainSegmentationModifier::GraphClusteringAutomatic)
-        state.addAttribute(QStringLiteral("GrainSegmentation.auto_merge_threshold"), QVariant::fromValue(suggestedMergingThreshold()), request.modApp());
+        state.addAttribute(QStringLiteral("GrainSegmentation.auto_merge_threshold"), QVariant::fromValue(suggestedMergingThreshold()), request.modificationNode());
 }
 
 /******************************************************************************
@@ -210,7 +210,7 @@ void GrainSegmentationEngine2::applyResults(const ModifierEvaluationRequest& req
     GrainSegmentationModifier* modifier = static_object_cast<GrainSegmentationModifier>(request.modifier());
     OVITO_ASSERT(modifier);
 
-    ParticlesObject* particles = state.expectMutableObject<ParticlesObject>();
+    Particles* particles = state.expectMutableObject<Particles>();
 
     // Output per-particle properties.
     if(atomClusters()) {
@@ -220,7 +220,7 @@ void GrainSegmentationEngine2::applyResults(const ModifierEvaluationRequest& req
 
             // Assign colors to particles according to the grains they belong to.
             BufferReadAccess<ColorG> grainColorsArray(_grainColors);
-            BufferWriteAccess<ColorG, access_mode::discard_write> particleColorsArray = particles->createProperty(ParticlesObject::ColorProperty);
+            BufferWriteAccess<ColorG, access_mode::discard_write> particleColorsArray = particles->createProperty(Particles::ColorProperty);
             boost::transform(BufferReadAccess<int64_t>(atomClusters()), particleColorsArray.begin(), [&](int64_t cluster) {
                 if(cluster != 0)
                     return grainColorsArray[cluster - 1];
@@ -232,7 +232,7 @@ void GrainSegmentationEngine2::applyResults(const ModifierEvaluationRequest& req
 
     // Output a data table with the list of grains.
     // The X-column consists of the grain IDs, the Y-column contains the grain sizes.
-    DataTable* grainTable = state.createObject<DataTable>(QStringLiteral("grains"), request.modApp(), DataTable::Scatter, GrainSegmentationModifier::tr("Grain list"), _grainSizes, _grainIds);
+    DataTable* grainTable = state.createObject<DataTable>(QStringLiteral("grains"), request.modificationNode(), DataTable::Scatter, GrainSegmentationModifier::tr("Grain list"), _grainSizes, _grainIds);
     // Add extra columns to the table containing other per-grain data.
     grainTable->createProperty(_grainColors);
     grainTable->createProperty(_grainStructureTypes);
@@ -242,7 +242,7 @@ void GrainSegmentationEngine2::applyResults(const ModifierEvaluationRequest& req
     if(atomClusters()->size() != 0)
         numGrains = *boost::max_element(BufferReadAccess<int64_t>(atomClusters()));
 
-    state.addAttribute(QStringLiteral("GrainSegmentation.grain_count"), QVariant::fromValue(numGrains), request.modApp());
+    state.addAttribute(QStringLiteral("GrainSegmentation.grain_count"), QVariant::fromValue(numGrains), request.modificationNode());
 
     state.setStatus(PipelineStatus(
         GrainSegmentationModifier::tr("Found %1 grains").arg(numGrains),

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2017 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,7 @@
 #include <ovito/stdobj/properties/PropertyContainerClass.h>
 #include "PropertySelectionComboBox.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /******************************************************************************
 * Returns the particle property that is currently selected in the combo box.

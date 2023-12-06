@@ -43,7 +43,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
 
     // Decide whether per-pixel pseudo-color mapping is used (instead of direct RGB coloring).
     bool renderWithPseudoColorMapping = false;
-    if(primitive.pseudoColorMapping().isValid() && !isPicking() && primitive.colors() && primitive.colors()->componentCount() == 1)
+    if(primitive.pseudoColorMapping().isValid() && !isPickingPass() && primitive.colors() && primitive.colors()->componentCount() == 1)
         renderWithPseudoColorMapping = true;
     QOpenGLTexture* colorMapTexture = nullptr;
 
@@ -53,14 +53,14 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
         case CylinderPrimitive::CylinderShape:
             if(primitive.shadingMode() == CylinderPrimitive::NormalShading) {
                 if(!useGeometryShaders()) {
-                    if(!isPicking())
+                    if(!isPickingPass())
                         shader.load("cylinder", "cylinder/cylinder.vert", "cylinder/cylinder.frag");
                     else
                         shader.load("cylinder_picking", "cylinder/cylinder_picking.vert", "cylinder/cylinder_picking.frag");
                     shader.setVerticesPerInstance(14); // Box rendered as triangle strip.
                 }
                 else {
-                    if(!isPicking())
+                    if(!isPickingPass())
                         shader.load("cylinder", "cylinder/cylinder.geom.vert", "cylinder/cylinder.frag", "cylinder/cylinder.geom");
                     else
                         shader.load("cylinder_picking", "cylinder/cylinder_picking.geom.vert", "cylinder/cylinder_picking.frag", "cylinder/cylinder_picking.geom");
@@ -68,7 +68,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
                 }
             }
             else {
-                if(!isPicking())
+                if(!isPickingPass())
                     shader.load("cylinder_flat", "cylinder/cylinder_flat.vert", "cylinder/cylinder_flat.frag");
                 else
                     shader.load("cylinder_flat_picking", "cylinder/cylinder_flat_picking.vert", "cylinder/cylinder_flat_picking.frag");
@@ -79,14 +79,14 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
         case CylinderPrimitive::ArrowShape:
             OVITO_ASSERT(!renderWithPseudoColorMapping);
             if(primitive.shadingMode() == CylinderPrimitive::NormalShading) {
-                if(!isPicking())
+                if(!isPickingPass())
                     shader.load("arrow_head", "cylinder/arrow_head.vert", "cylinder/arrow_head.frag");
                 else
                     shader.load("arrow_head_picking", "cylinder/arrow_head_picking.vert", "cylinder/arrow_head_picking.frag");
                 shader.setVerticesPerInstance(14); // Box rendered as triangle strip.
             }
             else {
-                if(!isPicking())
+                if(!isPickingPass())
                     shader.load("arrow_flat", "cylinder/arrow_flat.vert", "cylinder/arrow_flat.frag");
                 else
                     shader.load("arrow_flat_picking", "cylinder/arrow_flat_picking.vert", "cylinder/arrow_flat_picking.frag");
@@ -108,12 +108,12 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
     }
 
     // Are we rendering semi-transparent cylinders?
-    bool useBlending = !isPicking() && (primitive.transparencies() != nullptr) && !orderIndependentTransparency();
+    bool useBlending = !isPickingPass() && (primitive.transparencies() != nullptr) && !orderIndependentTransparency();
     if(useBlending) shader.enableBlending();
 
     // Pass picking base ID to shader.
     GLint pickingBaseId;
-    if(isPicking()) {
+    if(isPickingPass()) {
         pickingBaseId = registerSubObjectIDs(primitive.basePositions()->size());
         shader.setPickingBaseId(pickingBaseId);
     }
@@ -151,7 +151,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
         shader.setAttributeValue("diameter", primitive.uniformWidth());
     }
 
-    if(!isPicking()) {
+    if(!isPickingPass()) {
         // The color and transparency arrays may contain either 1 or 2 values per cylinder primitive.
         // In case two are given, linear interpolation along the primitive will be performed by the
         // renderer (for cylinders but not arrows).
@@ -230,7 +230,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
 #ifdef Q_OS_MACOS
             // Upload a null color map to satisfy the picky OpenGL driver on macOS, which complains about
             // no texture being bound when a sampler1D is defined in the fragment shader.
-            if(!isPicking() && primitive.shape() == CylinderPrimitive::CylinderShape) {
+            if(!isPickingPass() && primitive.shape() == CylinderPrimitive::CylinderShape) {
                 colorMapTexture = OpenGLResourceManager::instance()->uploadColorMap(nullptr, currentResourceFrame());
                 colorMapTexture->bind();
             }
@@ -243,7 +243,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
 
     // Draw cylindric part of the arrows.
     if(primitive.shape() == CylinderPrimitive::ArrowShape && primitive.shadingMode() == CylinderPrimitive::NormalShading) {
-        if(!isPicking())
+        if(!isPickingPass())
             shader.load("arrow_tail", "cylinder/arrow_tail.vert", "cylinder/arrow_tail.frag");
         else {
             shader.load("arrow_tail_picking", "cylinder/arrow_tail_picking.vert", "cylinder/arrow_tail_picking.frag");

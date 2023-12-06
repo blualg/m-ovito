@@ -446,8 +446,7 @@ void RefMaker::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableDa
                 }
             }
             catch(Exception& ex) {
-                ex.prependGeneralMessage(tr("Failed to serialize contents of reference field %1 of class %2.").arg(field->identifier()).arg(field->definingClass()->name()));
-                throw ex;
+                throw ex.prependGeneralMessage(tr("Failed to serialize contents of reference field %1 of class %2.").arg(field->identifier()).arg(field->definingClass()->name()));
             }
             stream.endChunk();
         }
@@ -498,7 +497,7 @@ void RefMaker::loadFromStream(ObjectLoadStream& stream)
             int chunkId = stream.openChunk();
             if(chunkId == 0x02) {
 
-                // Parse target object chunk.
+                // Parse object chunk describing the reference target.
                 if(fieldEntry.field != nullptr) {
                     OVITO_CHECK_POINTER(fieldEntry.field);
                     OVITO_ASSERT(fieldEntry.field->isVector() == ((fieldEntry.field->flags() & PROPERTY_FIELD_VECTOR) != 0));

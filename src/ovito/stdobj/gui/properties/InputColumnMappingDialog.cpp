@@ -24,7 +24,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "InputColumnMappingDialog.h"
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 enum {
     FILE_COLUMN_COLUMN = 0,
@@ -80,7 +80,7 @@ InputColumnMappingDialog::InputColumnMappingDialog(MainWindow& mainWindow, const
     // Calculate the optimum width of the property column.
     QComboBox* box = new QComboBox();
     box->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    QMapIterator<QString, int> i(ParticlesObject::OOClass().standardPropertyIds());
+    QMapIterator<QString, int> i(Particles::OOClass().standardPropertyIds());
     while(i.hasNext()) {
         i.next();
         box->addItem(i.key(), i.value());
@@ -185,7 +185,7 @@ void InputColumnMappingDialog::setMapping(const InputColumnMapping& mapping)
         connect(fileColumnItem, &QCheckBox::clicked, _vectorCmpntSignalMapper, (void (QSignalMapper::*)())&QSignalMapper::map);
         connect(nameItem, &QComboBox::currentTextChanged, _vectorCmpntSignalMapper, (void (QSignalMapper::*)())&QSignalMapper::map);
 
-        _propertyDataTypes.push_back(mapping[i].dataType != QMetaType::Void ? mapping[i].dataType : PropertyObject::FloatDefault);
+        _propertyDataTypes.push_back(mapping[i].dataType != QMetaType::Void ? mapping[i].dataType : Property::FloatDefault);
     }
 
     _tableWidget->resizeRowsToContents();
@@ -211,7 +211,7 @@ void InputColumnMappingDialog::updateVectorComponentList(int columnIndex)
 
     QString propertyName = _propertyBoxes[columnIndex]->currentText();
     int standardProperty = _containerClass->standardPropertyIds().value(propertyName);
-    if(!propertyName.isEmpty() && standardProperty != PropertyObject::GenericUserProperty) {
+    if(!propertyName.isEmpty() && standardProperty != Property::GenericUserProperty) {
         int oldIndex = vecBox->currentIndex();
         _vectorComponentBoxes[columnIndex]->clear();
         for(const QString& name : _containerClass->standardPropertyComponentNames(standardProperty))
@@ -238,7 +238,7 @@ InputColumnMapping InputColumnMappingDialog::mapping() const
         if(_fileColumnBoxes[index]->isChecked()) {
             QString propertyName = _propertyBoxes[index]->currentText().trimmed();
             int typeId = _containerClass->standardPropertyIds().value(propertyName);
-            if(typeId != PropertyObject::GenericUserProperty) {
+            if(typeId != Property::GenericUserProperty) {
                 int vectorCompnt = std::max(0, _vectorComponentBoxes[index]->currentIndex());
                 mapping[index].mapStandardColumn(_containerClass, typeId, vectorCompnt);
             }
@@ -266,7 +266,7 @@ void InputColumnMappingDialog::onSavePreset()
         // Load existing mappings.
         QSettings settings;
         settings.beginGroup("inputcolumnmapping");
-        if(_containerClass->name() != QStringLiteral("ParticlesObject"))
+        if(_containerClass->name() != QStringLiteral("Particles"))
             settings.beginGroup(_containerClass->name());
         int size = settings.beginReadArray("presets");
         QStringList presetNames;
@@ -317,7 +317,7 @@ void InputColumnMappingDialog::onLoadPreset()
         // Load list of presets.
         QSettings settings;
         settings.beginGroup("inputcolumnmapping");
-        if(_containerClass->name() != QStringLiteral("ParticlesObject"))
+        if(_containerClass->name() != QStringLiteral("Particles"))
             settings.beginGroup(_containerClass->name());
         int size = settings.beginReadArray("presets");
         QStringList presetNames;

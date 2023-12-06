@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //  Copyright 2020 Peter Mahler Larsen
 //
 //  This file is part of OVITO (Open Visualization Tool).
@@ -30,7 +30,7 @@
 
 class QwtPlotZoneItem;
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /**
  * Properties editor for the GrainSegmentationModifier class.

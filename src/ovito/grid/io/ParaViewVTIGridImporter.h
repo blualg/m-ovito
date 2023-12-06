@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -29,7 +29,7 @@
 
 #include <QXmlStreamReader>
 
-namespace Ovito::Grid {
+namespace Ovito {
 
 /**
  * \brief File parser for reading a VoxelGrid from a ParaView VTI (ImageData) file.
@@ -86,7 +86,7 @@ private:
     private:
 
         /// Creates the right kind of OVITO property object that will receive the data read from a <DataArray> element.
-        PropertyObject* createGridPropertyForDataArray(VoxelGrid* gridObj, QXmlStreamReader& xml);
+        Property* createGridPropertyForDataArray(VoxelGrid* gridObj, QXmlStreamReader& xml);
     };
 };
 

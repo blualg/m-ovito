@@ -22,9 +22,9 @@
 
 #include <ovito/particles/Particles.h>
 #include "ParticleBondMap.h"
-#include "ParticlesObject.h"
+#include "Particles.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /******************************************************************************
 * Initializes the helper class.
@@ -54,8 +54,8 @@ ParticleBondMap::ParticleBondMap(ConstPropertyPtr bondTopology, ConstPropertyPtr
 /******************************************************************************
 * Initializes the helper class.
 ******************************************************************************/
-ParticleBondMap::ParticleBondMap(const BondsObject& bonds) :
-    ParticleBondMap(bonds.expectProperty(BondsObject::TopologyProperty), bonds.getProperty(BondsObject::PeriodicImageProperty))
+ParticleBondMap::ParticleBondMap(const Bonds& bonds) :
+    ParticleBondMap(bonds.expectProperty(Bonds::TopologyProperty), bonds.getProperty(Bonds::PeriodicImageProperty))
 {
 }
 

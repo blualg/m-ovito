@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2015 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -28,7 +28,7 @@
 #include <ovito/crystalanalysis/data/ClusterVector.h>
 #include "StructureAnalysis.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /**
  * Utility class that can find the shortest connecting path between two atoms

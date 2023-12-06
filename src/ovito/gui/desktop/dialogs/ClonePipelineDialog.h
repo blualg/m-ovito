@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -44,7 +44,7 @@ public:
     };
 
     /// Constructor.
-    ClonePipelineDialog(MainWindow& mainWindow, PipelineSceneNode* node, QWidget* parentWindow = nullptr);
+    ClonePipelineDialog(MainWindow& mainWindow, Pipeline* pipeline, QWidget* parentWindow = nullptr);
 
 private Q_SLOTS:
 
@@ -56,14 +56,14 @@ private Q_SLOTS:
 
 private:
 
-    /// Builds the initial Qt graphics scene to visualize the pipeline layout.
+    /// Builds the initial Qt graphics scene to visualize the pipeline graph.
     void initializeGraphicsScene();
 
-    /// Data structure that is created for every pipeline object.
+    /// Data structure that is created for every pipeline node.
     struct PipelineItemStruct {
         QString title;
-        std::vector<OORef<PipelineObject>> pipelineObjects;
-        std::vector<ModifierApplication*> modApps;
+        std::vector<OORef<PipelineNode>> pipelineNodes;
+        std::vector<ModificationNode*> modNodes;
         QGraphicsItem* connector1;
         QGraphicsItem* connector2;
         QGraphicsItem* connector3;
@@ -74,27 +74,27 @@ private:
         QGraphicsItem* objItem2;
         QGraphicsItem* objItem3;
         QActionGroup* actionGroup;
-        CloneMode cloneMode() const { return (CloneMode)actionGroup->checkedAction()->data().toInt(); }
+        CloneMode cloneMode() const { return static_cast<CloneMode>(actionGroup->checkedAction()->data().toInt()); }
         void setCloneMode(CloneMode mode) { return actionGroup->actions()[mode]->setChecked(true); }
-        bool isModifier() const { return !modApps.empty(); }
+        bool isModifier() const { return !modNodes.empty(); }
     };
 
     /// The parent window.
-    MainWindow& _mainWindow; 
+    MainWindow& _mainWindow;
 
-    /// The graphics scene for the pipeline layout.
+    /// The graphics scene showing the pipeline graph.
     QGraphicsScene _pipelineScene;
 
     /// Widget that displays the current pipeline layout.
     QGraphicsView* _pipelineView;
 
-    /// The original scene node to be cloned.
-    OORef<PipelineSceneNode> _originalNode;
+    /// The original pipeline to be cloned.
+    OORef<Pipeline> _originalPipeline;
 
-    /// One structure for each pipeline object.
+    /// One structure for each pipeline node.
     std::vector<PipelineItemStruct> _pipelineItems;
 
-    /// Distance between the two pipelines.
+    /// Distance between the two pipeline graphs.
     qreal _pipelineSeparation;
 
     QGraphicsItem* _joinLine;

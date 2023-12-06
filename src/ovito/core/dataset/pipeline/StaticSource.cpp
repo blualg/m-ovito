@@ -34,15 +34,16 @@ SET_PROPERTY_FIELD_LABEL(StaticSource, dataCollection, "Data");
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-StaticSource::StaticSource(ObjectInitializationFlags flags, DataCollection* data) : PipelineObject(flags)
+StaticSource::StaticSource(ObjectInitializationFlags flags, DataCollection* data) : PipelineNode(flags)
 {
+    pipelineCache().setEnabled(false);
     setDataCollection(data);
 }
 
 /******************************************************************************
 * Asks the object for the result of the data pipeline.
 ******************************************************************************/
-SharedFuture<PipelineFlowState> StaticSource::evaluate(const PipelineEvaluationRequest& request)
+Future<PipelineFlowState> StaticSource::evaluateInternal(const PipelineEvaluationRequest& request)
 {
     return Future<PipelineFlowState>::createImmediateEmplace(dataCollection(), PipelineStatus::Success);
 }
@@ -50,7 +51,7 @@ SharedFuture<PipelineFlowState> StaticSource::evaluate(const PipelineEvaluationR
 /******************************************************************************
 * Asks the object for the result of the data pipeline.
 ******************************************************************************/
-PipelineFlowState StaticSource::evaluateSynchronous(const PipelineEvaluationRequest& request)
+PipelineFlowState StaticSource::evaluateInternalSynchronous(const PipelineEvaluationRequest& request)
 {
     return PipelineFlowState(dataCollection(), PipelineStatus::Success);
 }
@@ -67,7 +68,7 @@ bool StaticSource::referenceEvent(RefTarget* source, const ReferenceEvent& event
         }
     }
 
-    return PipelineObject::referenceEvent(source, event);
+    return PipelineNode::referenceEvent(source, event);
 }
 
 }   // End of namespace

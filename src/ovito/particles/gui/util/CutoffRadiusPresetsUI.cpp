@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -23,7 +23,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include "CutoffRadiusPresetsUI.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 ChemicalElement ChemicalElements[] = {
     { ChemicalElement::Unknown, 0, NULL}, // X

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -35,7 +35,7 @@
 #include <qwt/qwt_plot_magnifier.h>
 #include <qwt/qwt_plot_panner.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /******************************************************************************
 * Constructor.
@@ -109,8 +109,8 @@ void DataTablePlotWidget::updateDataPlot()
 
     // Determine the current plotting mode.
     DataTable::PlotMode plotMode = DataTable::None;
-    const PropertyObject* y = table() ? table()->y() : nullptr;
-    const PropertyObject* x = table() ? table()->x() : nullptr;
+    const Property* y = table() ? table()->y() : nullptr;
+    const Property* x = table() ? table()->x() : nullptr;
     if(y) {
         if(y->size() > (size_t)std::numeric_limits<int>::max())
             qWarning() << "Number of plot data points exceeds limit:" << y->size() << ">" << std::numeric_limits<int>::max();

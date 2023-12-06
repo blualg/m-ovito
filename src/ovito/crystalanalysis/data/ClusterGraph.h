@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2015 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,7 +27,7 @@
 #include <ovito/core/utilities/MemoryPool.h>
 #include "Cluster.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /**
  * This class stores the graph of clusters.

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -27,7 +27,7 @@
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/io/FileExporter.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief Exporter that writes the graphical plot of a data table to an image file.

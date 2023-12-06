@@ -25,7 +25,7 @@ The field :guilabel:`Operate on` selects the type of data elements the modifier 
   Mesh faces       Colors the facets of a :ref:`surface mesh <scene_objects.surface_mesh>` according to a local property.
   Mesh vertices    Colors the vertices of a :ref:`surface mesh <scene_objects.surface_mesh>` according to a local property.
   Mesh regions     Colors the volumetric components of a :ref:`surface mesh <scene_objects.surface_mesh>`.
-  Trajectory lines Colors :ref:`particle trajectories <scene_objects.particle_trajectory_lines>` created by the :ref:`particles.modifiers.generate_trajectory_lines` modifier.
+  Lines            Colors :ref:`Lines <scene_objects.lines>` created by the :ref:`particles.modifiers.generate_trajectory_lines` modifier or the or added using the :py:attr:`lines.create() <ovito.data.DataCollection.lines>` method.
   ================ =================================================================================
 
 The color getting assigned to an element (e.g. a particle) is determined by the modifier as follows:

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -150,7 +150,7 @@ void parallelFor(T loopCount, Function&& kernel)
 template<typename T, class Kernel>
 Future<> parallelForAsync(T loopCount, Kernel&& kernel, const QString& taskDescription, T progressChunkSize = 1024)
 {
-    class AsyncTask : public ProgressingTask 
+    class AsyncTask : public ProgressingTask
     {
     public:
         /// The type of future associated with this task type. This is used by the launchTask() function.
@@ -160,7 +160,7 @@ Future<> parallelForAsync(T loopCount, Kernel&& kernel, const QString& taskDescr
             setProgressText(taskDescription);
         }
 
-        void operator()(T loopCount, T progressChunkSize) 
+        void operator()(T loopCount, T progressChunkSize)
         {
             setProgressMaximum(loopCount / progressChunkSize);
             size_t num_threads = Application::instance()->idealThreadCount();
@@ -204,7 +204,7 @@ Future<> parallelForAsync(T loopCount, Kernel&& kernel, const QString& taskDescr
 
     // Launch the task and return a future to the caller.
     return launchTask<true>(
-        std::make_shared<AsyncTask>(std::forward<Kernel>(kernel), taskDescription), 
+        std::make_shared<AsyncTask>(std::forward<Kernel>(kernel), taskDescription),
         loopCount, progressChunkSize);
 }
 

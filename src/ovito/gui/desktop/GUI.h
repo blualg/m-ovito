@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -30,8 +30,8 @@
 #include <ovito/gui/base/GUIBase.h>
 
 /******************************************************************************
-* Qt framework classes.
-******************************************************************************/
+ * Qt framework classes.
+ ******************************************************************************/
 #include <QApplication>
 #include <QMenuBar>
 #include <QMenu>
@@ -42,58 +42,58 @@
 #include <QCommandLineParser>
 
 /******************************************************************************
-* Forward declaration of classes.
-******************************************************************************/
-namespace Ovito 
-{
-    class UtilityApplet;
-    class GuiAutoStartObject;
-    class MainWindow;
-    class GuiApplication;
-    class WidgetActionManager;
-    class DataInspectionApplet;
-    class PropertiesPanel;
-    class SpinnerWidget;
-    class ColorPickerWidget;
-    class RolloutContainer;
-    class FrameBufferWindow;
-    class FrameBufferWidget;
-    class AutocompleteTextEdit;
-    class AutocompleteLineEdit;
-    class ElidedTextLabel;
-    class HtmlListWidget;
-    class PropertiesEditor;
-    class AffineTransformationParameterUI;
-    class BooleanParameterUI;
-    class BooleanActionParameterUI;
-    class BooleanGroupBoxParameterUI;
-    class BooleanRadioButtonParameterUI;
-    class ColorParameterUI;
-    class CustomParameterUI;
-    class FilenameParameterUI;
-    class FloatParameterUI;
-    class FontParameterUI;
-    class IntegerRadioButtonParameterUI;
-    class IntegerParameterUI;
-    class ParameterUI;
-    class RefTargetListParameterUI;
-    class StringParameterUI;
-    class SubObjectParameterUI;
-    class VariantComboBoxParameterUI;
-    class Vector3ParameterUI;
-    class ViewportModeAction;
-    class FileExporterSettingsDialog;
-    class CoordinateDisplayWidget;
-    class CommandPanel;
-    class DataInspectorPanel;
-    class ModifyCommandPage;
-    class RenderCommandPage;
-    class OverlayCommandPage;
-    class UtilityCommandPage;
-    class ViewportMenu;
-    class StatusBar;
-    class PopupUpdateComboBox;
-    class ViewportsPanel;
-}
+ * Forward declaration of classes.
+ ******************************************************************************/
+namespace Ovito {
+class UtilityApplet;
+class GuiAutoStartObject;
+class MainWindow;
+class GuiApplication;
+class WidgetActionManager;
+class DataInspectionApplet;
+class PropertiesPanel;
+class SpinnerWidget;
+class ColorPickerWidget;
+class RolloutContainer;
+class FrameBufferWindow;
+class FrameBufferWidget;
+class AutocompleteTextEdit;
+class AutocompleteLineEdit;
+class ElidedTextLabel;
+class HtmlListWidget;
+class PropertiesEditor;
+class AffineTransformationParameterUI;
+class BooleanParameterUI;
+class BooleanActionParameterUI;
+class BooleanGroupBoxParameterUI;
+class BooleanRadioButtonParameterUI;
+class ColorParameterUI;
+class CustomParameterUI;
+class FilenameParameterUI;
+class FloatParameterUI;
+class FontParameterUI;
+class IntegerRadioButtonParameterUI;
+class IntegerParameterUI;
+class ParameterUI;
+class RefTargetListParameterUI;
+class StringParameterUI;
+class SubObjectParameterUI;
+class VariantComboBoxParameterUI;
+class Vector3ParameterUI;
+class ViewportModeAction;
+class FileExporterSettingsDialog;
+class CoordinateDisplayWidget;
+class CommandPanel;
+class DataInspectorPanel;
+class ModifyCommandPage;
+class RenderCommandPage;
+class OverlayCommandPage;
+class UtilityCommandPage;
+class ViewportMenu;
+class StatusBar;
+class MenuToolButton;
+class PopupUpdateComboBox;
+class ViewportsPanel;
+}  // namespace Ovito
 
-#endif // __OVITO_GUI_
+#endif  // __OVITO_GUI_

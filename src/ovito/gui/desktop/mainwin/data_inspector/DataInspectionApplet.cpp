@@ -24,7 +24,7 @@
 #include <ovito/core/dataset/data/DataObject.h>
 #include <ovito/core/dataset/data/DataObjectReference.h>
 #include <ovito/core/dataset/data/DataCollection.h>
-#include <ovito/core/dataset/pipeline/PipelineObject.h>
+#include <ovito/core/dataset/pipeline/PipelineNode.h>
 #include "DataInspectionApplet.h"
 #include "DataInspectorPanel.h"
 
@@ -52,7 +52,7 @@ MainWindow& DataInspectionApplet::mainWindow() const
 /******************************************************************************
 * Returns the currently selected data pipeline in the scene.
 ******************************************************************************/
-PipelineSceneNode* DataInspectionApplet::currentPipeline() const
+Pipeline* DataInspectionApplet::currentPipeline() const
 {
     return inspectorPanel()->selectedPipeline();
 }
@@ -205,7 +205,7 @@ void DataInspectionApplet::updateDataObjectList()
                 item->setText(itemTitle);
             }
             item->setToolTip(tr("Python identifier: \"%1\"").arg(dataObj->identifier()));
-            item->setStatusTip(dataObj->dataSource() ? dataObj->dataSource()->objectTitle() : QString());
+            item->setStatusTip(dataObj->createdByNode() ? dataObj->createdByNode()->objectTitle() : QString());
             item->setData(Qt::UserRole, QVariant::fromValue(path));
 
             // Select again the previously selected data object.
@@ -250,7 +250,7 @@ void DataInspectionApplet::updateDataObjectList()
 /******************************************************************************
 * Selects a specific data object in this applet.
 ******************************************************************************/
-bool DataInspectionApplet::selectDataObject(PipelineObject* dataSource, const QString& objectIdentifierHint, const QVariant& modeHint)
+bool DataInspectionApplet::selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
 {
     if(!_objectSelectionWidget)
         return false;
@@ -260,7 +260,7 @@ bool DataInspectionApplet::selectDataObject(PipelineObject* dataSource, const QS
         QListWidgetItem* item = _objectSelectionWidget->item(i);
         const ConstDataObjectPath& objectPath = item->data(Qt::UserRole).value<ConstDataObjectPath>();
         if(!objectPath.empty()) {
-            if(objectPath.back()->dataSource() == dataSource) {
+            if(objectPath.back()->createdByNode() == createdByNode) {
                 if(objectIdentifierHint.isEmpty() || objectPath.back()->identifier() == objectIdentifierHint || objectPath.back()->identifier().startsWith(objectIdentifierHint + QChar('.'))) {
                     _objectSelectionWidget->setCurrentRow(i);
                     return true;

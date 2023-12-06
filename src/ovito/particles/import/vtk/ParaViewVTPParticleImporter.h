@@ -29,7 +29,7 @@
 
 #include <QXmlStreamReader>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief File reader for point-like particle data from a ParaView VTP (PolyData) file as written by the Aspherix simulation code.
@@ -90,7 +90,7 @@ private:
         virtual void loadFile() override;
 
         /// Creates the right kind of OVITO property object that will receive the data read from a <DataArray> element.
-        PropertyObject* createParticlePropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent, bool preserveExistingData);
+        Property* createParticlePropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent, bool preserveExistingData);
 
         /// Helper method that loads the shape of a particle type from an external geometry file.
         void loadParticleShape(ParticleType* particleType);

@@ -42,14 +42,15 @@ DEFINE_REFERENCE_FIELD(SceneNode, transformationController);
 DEFINE_REFERENCE_FIELD(SceneNode, lookatTargetNode);
 DEFINE_VECTOR_REFERENCE_FIELD(SceneNode, children);
 DEFINE_VECTOR_REFERENCE_FIELD(SceneNode, hiddenInViewports);
-DEFINE_PROPERTY_FIELD(SceneNode, nodeName);
+DEFINE_PROPERTY_FIELD(SceneNode, sceneNodeName);
 DEFINE_PROPERTY_FIELD(SceneNode, displayColor);
 SET_PROPERTY_FIELD_LABEL(SceneNode, transformationController, "Transformation");
 SET_PROPERTY_FIELD_LABEL(SceneNode, lookatTargetNode, "Target");
 SET_PROPERTY_FIELD_LABEL(SceneNode, children, "Children");
-SET_PROPERTY_FIELD_LABEL(SceneNode, nodeName, "Name");
+SET_PROPERTY_FIELD_LABEL(SceneNode, sceneNodeName, "Name");
 SET_PROPERTY_FIELD_LABEL(SceneNode, displayColor, "Display color");
-SET_PROPERTY_FIELD_CHANGE_EVENT(SceneNode, nodeName, ReferenceEvent::TitleChanged);
+SET_PROPERTY_FIELD_CHANGE_EVENT(SceneNode, sceneNodeName, ReferenceEvent::TitleChanged);
+SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(SceneNode, sceneNodeName, "nodeName"); // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
 * Constructor.
@@ -122,19 +123,19 @@ void SceneNode::invalidateWorldTransformation()
 /******************************************************************************
 * Deletes this node from the scene. This will also delete all child nodes.
 ******************************************************************************/
-void SceneNode::deleteNode()
+void SceneNode::deleteSceneNode()
 {
     // Delete target too.
     OORef<SceneNode> tn = lookatTargetNode();
     if(tn) {
         // Clear reference first to prevent infinite recursion.
         _lookatTargetNode.set(this, PROPERTY_FIELD(lookatTargetNode), nullptr);
-        tn->deleteNode();
+        tn->deleteSceneNode();
     }
 
     // Delete all child nodes recursively.
     for(SceneNode* child : children())
-        child->deleteNode();
+        child->deleteSceneNode();
 
     OVITO_ASSERT(children().empty());
 
@@ -212,7 +213,7 @@ bool SceneNode::referenceEvent(RefTarget* source, const ReferenceEvent& event)
     else if(event.type() == ReferenceEvent::TargetDeleted && source == lookatTargetNode()) {
         // Lookat target node has been deleted -> delete this node too.
         if(!isUndoingOrRedoing())
-            deleteNode();
+            deleteSceneNode();
     }
     else if(event.type() == ReferenceEvent::AnimationFramesChanged && children().contains(static_cast<SceneNode*>(source))) {
         onAnimationFramesChanged();
@@ -307,7 +308,7 @@ void SceneNode::invalidateBoundingBox()
 /******************************************************************************
 * Adds a child scene node to this node.
 ******************************************************************************/
-void SceneNode::insertChildNode(int index, SceneNode* newChild)
+void SceneNode::insertChildNode(qsizetype index, OORef<SceneNode> newChild)
 {
     OVITO_CHECK_OBJECT_POINTER(newChild);
 
@@ -341,7 +342,7 @@ void SceneNode::insertChildNode(int index, SceneNode* newChild)
 /******************************************************************************
 * Removes a child node from this parent node.
 ******************************************************************************/
-void SceneNode::removeChildNode(int index)
+void SceneNode::removeChildNode(qsizetype index)
 {
     OVITO_ASSERT(index >= 0 && index < children().size());
 

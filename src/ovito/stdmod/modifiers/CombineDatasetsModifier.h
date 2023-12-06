@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,9 +25,9 @@
 
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/core/dataset/pipeline/DelegatingModifier.h>
-#include <ovito/core/dataset/pipeline/PipelineObject.h>
+#include <ovito/core/dataset/pipeline/PipelineNode.h>
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 /**
  * \brief Base class for CombineDatasetsModifier delegates that operate on different kinds of data.
@@ -42,7 +42,7 @@ protected:
     using ModifierDelegate::ModifierDelegate;
 
     /// Helper method that merges the set of element types defined for a property.
-    void mergeElementTypes(PropertyObject* property1, const PropertyObject* property2, CloneHelper& cloneHelper);
+    void mergeElementTypes(Property* property1, const Property* property2, CloneHelper& cloneHelper);
 };
 
 /**
@@ -66,11 +66,7 @@ class OVITO_STDMOD_EXPORT CombineDatasetsModifier : public MultiDelegatingModifi
 
     Q_CLASSINFO("DisplayName", "Combine datasets");
     Q_CLASSINFO("Description", "Merge particles and bonds from two separate input files into one dataset.");
-#ifndef OVITO_QML_GUI
     Q_CLASSINFO("ModifierCategory", "Modification");
-#else
-    Q_CLASSINFO("ModifierCategory", "-");
-#endif
 
 public:
 
@@ -84,8 +80,8 @@ public:
     virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
     /// Returns the number of animation frames this modifier can provide.
-    virtual int numberOfOutputFrames(ModifierApplication* modApp) const override {
-        int upstreamFrameCount = MultiDelegatingModifier::numberOfOutputFrames(modApp);
+    virtual int numberOfOutputFrames(ModificationNode* node) const override {
+        int upstreamFrameCount = MultiDelegatingModifier::numberOfOutputFrames(node);
         return secondaryDataSource() ? std::max(secondaryDataSource()->numberOfSourceFrames(), upstreamFrameCount) : upstreamFrameCount;
     }
 
@@ -110,7 +106,7 @@ protected:
 private:
 
     /// The source for particle data to be merged into the pipeline.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineObject>, secondaryDataSource, setSecondaryDataSource, PROPERTY_FIELD_NO_SUB_ANIM);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineNode>, secondaryDataSource, setSecondaryDataSource, PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
 }   // End of namespace

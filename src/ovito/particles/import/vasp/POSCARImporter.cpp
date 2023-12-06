@@ -21,15 +21,15 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/grid/objects/VoxelGrid.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "POSCARImporter.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(POSCARImporter);
 
@@ -194,7 +194,7 @@ void POSCARImporter::FrameLoader::loadFile()
         trimmedComment = stream.lineString().trimmed();
     }
     if(!trimmedComment.isEmpty())
-        state().setAttribute(QStringLiteral("Comment"), QVariant::fromValue(trimmedComment), dataSource());
+        state().setAttribute(QStringLiteral("Comment"), QVariant::fromValue(trimmedComment), pipelineNode());
 
     // Read global scaling factor
     FloatType scaling_factor = 0;
@@ -249,8 +249,8 @@ void POSCARImporter::FrameLoader::loadFile()
         isCartesian = true;
 
     // Create the particle properties.
-    PropertyObject* posProperty = particles()->createProperty(ParticlesObject::PositionProperty);
-    PropertyObject* typeProperty = particles()->createProperty(ParticlesObject::TypeProperty);
+    Property* posProperty = particles()->createProperty(Particles::PositionProperty);
+    Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
 
     BufferWriteAccess<Point3, access_mode::discard_write> posAccess(posProperty);
     BufferWriteAccess<int32_t, access_mode::discard_write> typeAccess(typeProperty);
@@ -261,9 +261,9 @@ void POSCARImporter::FrameLoader::loadFile()
     for(int atype = 1; atype <= atomCounts.size(); atype++) {
         int typeId = atype;
         if(atomTypeNames.size() == atomCounts.size() && atomTypeNames[atype-1].isEmpty() == false)
-            typeId = addNamedType(ParticlesObject::OOClass(), typeProperty, atomTypeNames[atype-1])->numericId();
+            typeId = addNamedType(Particles::OOClass(), typeProperty, atomTypeNames[atype-1])->numericId();
         else
-            addNumericType(ParticlesObject::OOClass(), typeProperty, atype, {});
+            addNumericType(Particles::OOClass(), typeProperty, atype, {});
         for(int i = 0; i < atomCounts[atype-1]; i++, ++p, ++a) {
             *a = typeId;
             if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
@@ -289,7 +289,7 @@ void POSCARImporter::FrameLoader::loadFile()
                 isCartesian = true;
 
             // Read atomic velocities.
-            BufferWriteAccess<Vector3, access_mode::discard_read_write> velocityAccess = particles()->createProperty(ParticlesObject::VelocityProperty);
+            BufferWriteAccess<Vector3, access_mode::discard_read_write> velocityAccess = particles()->createProperty(Particles::VelocityProperty);
             auto* v = velocityAccess.begin();
             for(int atype = 1; atype <= atomCounts.size(); atype++) {
                 for(int i = 0; i < atomCounts[atype-1]; i++, ++v) {
@@ -363,7 +363,7 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
     // Create the voxel grid data object.
     VoxelGrid* voxelGrid = state().getMutableObject<VoxelGrid>();
     if(!voxelGrid) {
-        voxelGrid = state().createObject<VoxelGrid>(dataSource(), tr("Charge density"));
+        voxelGrid = state().createObject<VoxelGrid>(pipelineNode(), tr("Charge density"));
         voxelGrid->visElement()->setEnabled(false);
         voxelGrid->visElement()->setTitle(voxelGrid->title());
         voxelGrid->visElement()->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled), SHADOW_PROPERTY_FIELD(ActiveObject::title)});
@@ -427,9 +427,9 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
 /******************************************************************************
 * Parses the values of one field quantity.
 ******************************************************************************/
-PropertyObject* POSCARImporter::FrameLoader::readFieldQuantity(CompressedTextReader& stream, VoxelGrid* grid, const QString& name)
+Property* POSCARImporter::FrameLoader::readFieldQuantity(CompressedTextReader& stream, VoxelGrid* grid, const QString& name)
 {
-    PropertyObject* fieldProperty = grid->createProperty(name, DataBuffer::FloatDefault);
+    Property* fieldProperty = grid->createProperty(name, DataBuffer::FloatDefault);
     BufferWriteAccess<FloatType*, access_mode::discard_read_write> fieldAccess(fieldProperty);
     const char* s = stream.readLine();
     auto* data = fieldAccess.begin();

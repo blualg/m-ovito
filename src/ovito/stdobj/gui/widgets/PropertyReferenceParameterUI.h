@@ -28,7 +28,7 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/gui/desktop/properties/ParameterUI.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief This parameter UI lets the user select a property.
@@ -93,7 +93,7 @@ public:
     void setContainer(const PropertyContainer* container);
 
     /// Installs optional callback function that allows clients to filter the displayed property list.
-    void setPropertyFilter(std::function<bool(const PropertyObject*)> filter) {
+    void setPropertyFilter(std::function<bool(const Property*)> filter) {
         _propertyFilter = std::move(filter);
     }
 
@@ -143,7 +143,7 @@ protected:
     DataOORef<const PropertyContainer> _container;
 
     /// An optional callback function that allows clients to filter the displayed property list.
-    std::function<bool(const PropertyObject*)> _propertyFilter;
+    std::function<bool(const Property*)> _propertyFilter;
 
     /// The UI item text representing the null property in the list.
     QString _nullPropertyItem;

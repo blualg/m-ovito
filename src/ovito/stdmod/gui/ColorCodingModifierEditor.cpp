@@ -35,10 +35,10 @@
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/viewport/ViewportSuspender.h>
 #include <ovito/core/oo/OvitoClass.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "ColorCodingModifierEditor.h"
 
-namespace Ovito::StdMod {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(ColorCodingModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ColorCodingModifier, ColorCodingModifierEditor);
@@ -285,15 +285,16 @@ void ColorCodingModifierEditor::autoRangeChanged()
 {
     ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject());
     if(!mod || !mod->autoAdjustRange()) return;
-    ModifierApplication* modApp = modifierApplication();
-    if(!modApp) return;
+    ModificationNode* modNode = modificationNode();
+    if(!modNode)
+        return;
 
     handleExceptions([&] {
         // Request the modifier's pipeline output.
-        const PipelineFlowState& state = modApp->evaluateSynchronous(currentAnimationTime());
+        const PipelineFlowState& state = modNode->evaluateSynchronous(currentAnimationTime());
 
-        QVariant minValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMin"));
-        QVariant maxValue = state.getAttributeValue(modApp, QStringLiteral("ColorCoding.RangeMax"));
+        QVariant minValue = state.getAttributeValue(modNode, QStringLiteral("ColorCoding.RangeMin"));
+        QVariant maxValue = state.getAttributeValue(modNode, QStringLiteral("ColorCoding.RangeMax"));
         if(minValue.isValid()) {
             _lastAutoRangeMinValue = minValue.value<FloatType>();
             _startValueUI->textBox()->setText(_startValueUI->spinner()->unit()->formatValue(_lastAutoRangeMinValue));
@@ -326,8 +327,8 @@ FloatType ColorCodingModifierEditor::computeRangeValue(FloatType t) const
         else {
             const PipelineFlowState& state = getPipelineOutput();
             if(state) {
-                QVariant minValue = state.getAttributeValue(modifierApplication(), QStringLiteral("ColorCoding.RangeMin"));
-                QVariant maxValue = state.getAttributeValue(modifierApplication(), QStringLiteral("ColorCoding.RangeMax"));
+                QVariant minValue = state.getAttributeValue(modificationNode(), QStringLiteral("ColorCoding.RangeMin"));
+                QVariant maxValue = state.getAttributeValue(modificationNode(), QStringLiteral("ColorCoding.RangeMax"));
                 if(minValue.isValid() && maxValue.isValid()) {
                     return minValue.value<FloatType>() + t * (maxValue.value<FloatType>() - minValue.value<FloatType>());
                 }

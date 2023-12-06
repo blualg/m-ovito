@@ -24,10 +24,10 @@
 
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/stdobj/properties/PropertyObject.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
 
-namespace Ovito::StdObj {
+namespace Ovito {
 
 /**
  * \brief Base class for file parsers that load property objects and/or simulation cell definitions.
@@ -40,7 +40,7 @@ public:
     using FileSourceImporter::FrameLoader::FrameLoader;
 
     /// Returns the simulation cell object, newly creating it first if necessary.
-    SimulationCellObject* simulationCell();
+    SimulationCell* simulationCell();
 
     /// Returns true if the file reader has already loaded a simulation cell definition.
     bool hasSimulationCell() const { return _simulationCell != nullptr; }
@@ -49,17 +49,17 @@ public:
     bool isSimulationCellNewlyCreated() const { return _isSimulationCellNewlyCreated; }
 
     /// Registers a new numeric element type with the given ID and an optional name string.
-    const ElementType* addNumericType(const PropertyContainerClass& containerClass, PropertyObject* typedProperty, int id, const QString& name, OvitoClassPtr elementTypeClass = {}) {
+    const ElementType* addNumericType(const PropertyContainerClass& containerClass, Property* typedProperty, int id, const QString& name, OvitoClassPtr elementTypeClass = {}) {
         return typedProperty->addNumericType(containerClass, id, name, elementTypeClass);
     }
 
     /// Registers a new named element type and automatically gives it a unique numeric ID.
-    const ElementType* addNamedType(const PropertyContainerClass& containerClass, PropertyObject* typedProperty, const QString& name, OvitoClassPtr elementTypeClass = {}) {
+    const ElementType* addNamedType(const PropertyContainerClass& containerClass, Property* typedProperty, const QString& name, OvitoClassPtr elementTypeClass = {}) {
         return typedProperty->addNamedType(containerClass, name, elementTypeClass);
     }
 
     /// Registers a new named element type and automatically gives it a unique numeric ID.
-    const ElementType* addNamedType(const PropertyContainerClass& containerClass, PropertyObject* typedProperty, const QLatin1String& name, OvitoClassPtr elementTypeClass = {}) {
+    const ElementType* addNamedType(const PropertyContainerClass& containerClass, Property* typedProperty, const QLatin1String& name, OvitoClassPtr elementTypeClass = {}) {
         return typedProperty->addNamedType(containerClass, name, elementTypeClass);
     }
 
@@ -71,7 +71,7 @@ protected:
 private:
 
     /// The simulation cell object.
-    SimulationCellObject* _simulationCell = nullptr;
+    SimulationCell* _simulationCell = nullptr;
 
     /// Indicates that the simulation cell object was newly created by this file reader.
     bool _isSimulationCellNewlyCreated = false;

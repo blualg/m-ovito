@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -56,7 +56,7 @@ public:
     template<typename T = DataObjectPtr>
     std::enable_if_t<std::is_same_v<T, const DataObject*>, QString> toUIString() const {
         if(this->empty()) return {};
-        return this->back()->getOOMetaClass().formatDataObjectPath(*this);      
+        return this->back()->getOOMetaClass().formatDataObjectPath(*this);
     }
 
     /// Implicit conversion from DataObjectPath to ConstDataObjectPath.
@@ -71,14 +71,14 @@ public:
     }
 
     /// Returns the n-th to last data object in the path - or null if the path is shorter than requested.
-    auto last(size_type n = 0) const { 
-        return this->size() <= n ? nullptr : to_address((*this)[this->size() - n - 1]); 
+    auto last(size_type n = 0) const {
+        return this->size() <= n ? nullptr : to_address((*this)[this->size() - n - 1]);
     }
 
     /// Returns the n-th to last data object in the path if it's a specific kind of object - or null if the path is shorter than requested.
     template<class DataObjectType>
-    auto lastAs(size_type n = 0) const { 
-        return this->size() <= n ? nullptr : dynamic_object_cast<DataObjectType>(to_address((*this)[this->size() - n - 1])); 
+    auto lastAs(size_type n = 0) const {
+        return this->size() <= n ? nullptr : dynamic_object_cast<DataObjectType>(to_address((*this)[this->size() - n - 1]));
     }
 
 private:
@@ -129,7 +129,7 @@ public:
     bool operator<(const DataObjectReference& other) const {
         if(dataClass() == other.dataClass()) {
             if(dataPath() == other.dataPath() || dataPath().isEmpty() || other.dataPath().isEmpty()) {
-                return false;   
+                return false;
             }
             else return dataPath() < other.dataPath();
         }

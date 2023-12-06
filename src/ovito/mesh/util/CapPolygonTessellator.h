@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2022 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,10 +24,10 @@
 
 
 #include <ovito/mesh/Mesh.h>
-#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
+#include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 #include "polytess/glu.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 /**
  * \brief Tessellates a set of non-convex polygons into triangles.
@@ -43,7 +43,7 @@ public:
     };
 
     /// Constructor.
-    CapPolygonTessellator(TriMeshObject& output, size_t dim, FaceMode faceMode, bool windingRuleNonzero = false) : mesh(output), dimz(dim), _faceMode(faceMode) {
+    CapPolygonTessellator(TriangleMesh& output, size_t dim, FaceMode faceMode, bool windingRuleNonzero = false) : mesh(output), dimz(dim), _faceMode(faceMode) {
         dimx = (dimz + 1) % 3;
         dimy = (dimz + 2) % 3;
         tess = gluNewTess();
@@ -188,7 +188,7 @@ private:
 
     size_t dimx, dimy, dimz;
     GLUtesselator* tess;
-    TriMeshObject& mesh;
+    TriangleMesh& mesh;
     int primitiveType;
     std::vector<int> vertices;
     FaceMode _faceMode;

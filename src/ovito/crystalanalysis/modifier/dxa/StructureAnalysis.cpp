@@ -28,7 +28,7 @@
 #include "StructureAnalysis.h"
 #include "DislocationAnalysisModifier.h"
 
-namespace Ovito::CrystalAnalysis {
+namespace Ovito {
 
 /// Contains the known coordination structures.
 StructureAnalysis::CoordinationStructure StructureAnalysis::_coordinationStructures[NUM_COORD_TYPES];
@@ -58,7 +58,7 @@ void bitmapSort(iterator begin, iterator end, int max)
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-StructureAnalysis::StructureAnalysis(ConstPropertyPtr positions, const SimulationCellObject* simCell,
+StructureAnalysis::StructureAnalysis(ConstPropertyPtr positions, const SimulationCell* simCell,
         LatticeStructureType inputCrystalType, ConstPropertyPtr particleSelection,
         PropertyPtr outputStructures, std::vector<Matrix3> preferredCrystalOrientations,
         bool identifyPlanarDefects) :
@@ -68,7 +68,7 @@ StructureAnalysis::StructureAnalysis(ConstPropertyPtr positions, const Simulatio
     _structureTypes(std::move(outputStructures)),
     _structureTypesArray(_structureTypes),
     _particleSelection(std::move(particleSelection)),
-    _atomClusters(ParticlesObject::OOClass().createStandardProperty(DataBuffer::Initialized, positions->size(), ParticlesObject::ClusterProperty)),
+    _atomClusters(Particles::OOClass().createStandardProperty(DataBuffer::Initialized, positions->size(), Particles::ClusterProperty)),
     _atomClustersArray(_atomClusters),
     _atomSymmetryPermutations(positions->size()),
     _clusterGraph(std::make_shared<ClusterGraph>()),

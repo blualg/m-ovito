@@ -93,7 +93,7 @@ public:
     explicit PipelineEvaluationFuture(const PipelineEvaluationRequest& request) : _request(request) {}
 
     /// Constructs a pipeline evaluation object and initializes it with an existing future.
-    explicit PipelineEvaluationFuture(const PipelineEvaluationRequest& request, SharedFuture<PipelineFlowState>&& future, PipelineSceneNode* pipeline = nullptr) :
+    explicit PipelineEvaluationFuture(const PipelineEvaluationRequest& request, SharedFuture<PipelineFlowState>&& future, Pipeline* pipeline = nullptr) :
         SharedFuture<PipelineFlowState>(std::move(future)),
         _request(request),
         _pipeline(pipeline) {}
@@ -109,7 +109,7 @@ public:
     AnimationTime time() const { OVITO_ASSERT(_request); return _request->time(); }
 
     /// Returns the pipeline that is being evaluated.
-    PipelineSceneNode* pipeline() const { return _pipeline; }
+    Pipeline* pipeline() const { return _pipeline; }
 
 private:
 
@@ -117,7 +117,7 @@ private:
     std::optional<PipelineEvaluationRequest> _request;
 
     /// Pipeline currently being evaluated.
-    PipelineSceneNode* _pipeline = nullptr;
+    Pipeline* _pipeline = nullptr;
 };
 
 }   // End of namespace

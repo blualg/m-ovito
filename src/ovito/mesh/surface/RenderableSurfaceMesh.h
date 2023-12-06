@@ -25,9 +25,9 @@
 
 #include <ovito/mesh/Mesh.h>
 #include <ovito/core/dataset/data/TransformedDataObject.h>
-#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
+#include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 /**
  * \brief A non-periodic triangle mesh that is generated from a periodic SurfaceMesh.
@@ -40,7 +40,7 @@ class OVITO_MESH_EXPORT RenderableSurfaceMesh : public TransformedDataObject
 public:
 
     /// Constructor.
-    Q_INVOKABLE RenderableSurfaceMesh(ObjectInitializationFlags flags, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr, DataOORef<const TriMeshObject> surfaceMesh = {}, DataOORef<const TriMeshObject> capPolygonsMesh = {}, bool backfaceCulling = false)
+    Q_INVOKABLE RenderableSurfaceMesh(ObjectInitializationFlags flags, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr, DataOORef<const TriangleMesh> surfaceMesh = {}, DataOORef<const TriangleMesh> capPolygonsMesh = {}, bool backfaceCulling = false)
         : TransformedDataObject(flags, creator, sourceData),
         _surfaceMesh(std::move(surfaceMesh)),
         _capPolygonsMesh(std::move(capPolygonsMesh)),
@@ -54,10 +54,10 @@ public:
 private:
 
     /// The surface part of the mesh.
-    DECLARE_RUNTIME_PROPERTY_FIELD(DataOORef<const TriMeshObject>, surfaceMesh, setSurfaceMesh);
+    DECLARE_RUNTIME_PROPERTY_FIELD(DataOORef<const TriangleMesh>, surfaceMesh, setSurfaceMesh);
 
     /// The cap polygon part of the mesh.
-    DECLARE_RUNTIME_PROPERTY_FIELD(DataOORef<const TriMeshObject>, capPolygonsMesh, setCapPolygonsMesh);
+    DECLARE_RUNTIME_PROPERTY_FIELD(DataOORef<const TriangleMesh>, capPolygonsMesh, setCapPolygonsMesh);
 
     /// The material colors assigned to the surface mesh (optional).
     DECLARE_RUNTIME_PROPERTY_FIELD(std::vector<ColorA>, materialColors, setMaterialColors);

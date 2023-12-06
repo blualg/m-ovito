@@ -29,11 +29,9 @@
 
 namespace Ovito {
 
-namespace Ssh {
-    // Classes are defined elsewhere:
-    class SshConnection;
-    struct SshConnectionParameters;
-}
+// Classes are defined elsewhere:
+class SshConnection;
+struct SshConnectionParameters;
 
 #ifdef OVITO_ZLIB_SUPPORT
 class GzipIndex; // defined in GzipIODevice.h
@@ -112,10 +110,10 @@ public:
     static QUrl urlFromUserInput(const QString& path);
 
     /// Create a new SSH connection or returns an existing connection having the same parameters.
-    Ssh::SshConnection* acquireSshConnection(const Ssh::SshConnectionParameters& sshParams);
+    SshConnection* acquireSshConnection(const SshConnectionParameters& sshParams);
 
     /// Releases an SSH connection after it is no longer used.
-    void releaseSshConnection(Ssh::SshConnection* connection);
+    void releaseSshConnection(SshConnection* connection);
 
 #ifdef OVITO_ZLIB_SUPPORT
     /// Returns index data for a gzipped file if it exists in the cache.
@@ -211,10 +209,10 @@ private:
     QRecursiveMutex _mutex;
 
     /// Holds open SSH connections, which are currently active.
-    QList<Ssh::SshConnection*> _acquiredConnections;
+    QList<SshConnection*> _acquiredConnections;
 
     /// Holds SSH connections, which are still open but not in use.
-    QList<Ssh::SshConnection*> _unacquiredConnections;
+    QList<SshConnection*> _unacquiredConnections;
 
     friend class DownloadRemoteFileJob;
 };

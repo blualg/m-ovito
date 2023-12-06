@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2021 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -24,7 +24,7 @@
 #include "../picking.glsl"
 
 // Uniforms:
-uniform float line_thickness; // Half line width in viewport space. 
+uniform float line_thickness; // Half line width in viewport space.
 
 // Inputs:
 in vec4 position_from;

@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2020 OVITO GmbH, Germany
+//  Copyright 2023 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -25,11 +25,11 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/import/ParticleImporter.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 /**
  * \brief File parser for the text-based XYZ file format.
@@ -58,7 +58,7 @@ class OVITO_PARTICLES_EXPORT XYZImporter : public ParticleImporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE XYZImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _autoRescaleCoordinates(true) {}
+    Q_INVOKABLE XYZImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _autoRescaleCoordinates(false) {}
 
     /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("XYZ"); }

@@ -21,13 +21,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/mesh/Mesh.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/core/dataset/data/mesh/TriMeshObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "SurfaceMeshReadAccess.h"
 #include "SurfaceMesh.h"
 
-namespace Ovito::Mesh {
+namespace Ovito {
 
 constexpr SurfaceMeshReadAccess::size_type SurfaceMeshReadAccess::InvalidIndex;
 
@@ -231,7 +231,7 @@ std::optional<std::pair<SurfaceMeshReadAccess::region_index, FloatType>> Surface
 /******************************************************************************
 * Triangulates the polygonal faces of this mesh and outputs the results as a TriMesh object.
 ******************************************************************************/
-void SurfaceMeshReadAccess::convertToTriMesh(TriMeshObject& outputMesh, bool smoothShading, const boost::dynamic_bitset<>& faceSubset, std::vector<size_t>* originalFaceMap, bool autoGenerateOppositeFaces) const
+void SurfaceMeshReadAccess::convertToTriMesh(TriangleMesh& outputMesh, bool smoothShading, const boost::dynamic_bitset<>& faceSubset, std::vector<size_t>* originalFaceMap, bool autoGenerateOppositeFaces) const
 {
     size_type faceCount = this->faceCount();
     OVITO_ASSERT(faceSubset.empty() || faceSubset.size() == faceCount);

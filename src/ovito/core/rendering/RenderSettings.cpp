@@ -252,7 +252,7 @@ bool RenderSettings::renderScene(const std::vector<std::pair<Viewport*, QRectF>>
                 }
                 numberOfFrames = (numberOfFrames + everyNthFrame() - 1) / everyNthFrame();
                 if(numberOfFrames < 1)
-                    throw Exception(tr("Invalid rendering range: Frame %1 to %2").arg(customRangeStart()).arg(customRangeEnd()));
+                    throw Exception(tr("Invalid rendering range: frame %1 to %2").arg(customRangeStart()).arg(customRangeEnd()));
                 operation.setProgressMaximum(numberOfFrames);
 
                 // Render frames, one by one.
@@ -260,7 +260,7 @@ bool RenderSettings::renderScene(const std::vector<std::pair<Viewport*, QRectF>>
                     int frameNumber = firstFrameNumber + frameIndex * everyNthFrame() + fileNumberBase();
 
                     operation.setProgressValue(frameIndex);
-                    operation.setProgressText(tr("Rendering animation frame %1 of %2").arg(frameIndex+1).arg(numberOfFrames));
+                    operation.setProgressText(tr("Rendering animation (frame %1 of %2)").arg(frameIndex+1).arg(numberOfFrames));
 
                     MainThreadOperation frameOperation(true);
                     notCanceled = renderFrame(frameNumber, *renderer, frameBuffer, viewportLayout, videoEncoder, frameOperation);
@@ -355,7 +355,7 @@ bool RenderSettings::renderFrame(int frameNumber, SceneRenderer& renderer,
 
                 // Clear frame buffer with background color.
                 ColorA clearColor = generateAlphaChannel() ? ColorA(0,0,0,0) : ColorA(backgroundColorAt(renderTime));
-                frameBuffer.clear(clearColor, destinationRect);
+                frameBuffer.clear(clearColor, destinationRect, true);
 
                 // Render viewport "underlays".
                 if(!renderer.renderOverlays(true, destinationRect, destinationRect, operation)) {

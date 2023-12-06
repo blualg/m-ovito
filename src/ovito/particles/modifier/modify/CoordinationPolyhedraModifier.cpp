@@ -23,14 +23,14 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
-#include <ovito/stdobj/simcell/SimulationCellObject.h>
-#include <ovito/particles/objects/ParticlesObject.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticleBondMap.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModifierApplication.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "CoordinationPolyhedraModifier.h"
 
-namespace Ovito::Particles {
+namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(CoordinationPolyhedraModifier);
 DEFINE_REFERENCE_FIELD(CoordinationPolyhedraModifier, surfaceMeshVis);
@@ -60,7 +60,7 @@ CoordinationPolyhedraModifier::CoordinationPolyhedraModifier(ObjectInitializatio
 ******************************************************************************/
 bool CoordinationPolyhedraModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    if(const ParticlesObject* particles = input.getObject<ParticlesObject>()) {
+    if(const Particles* particles = input.getObject<Particles>()) {
         return particles->bonds() != nullptr;
     }
     return false;
@@ -73,15 +73,15 @@ bool CoordinationPolyhedraModifier::OOMetaClass::isApplicableTo(const DataCollec
 Future<AsynchronousModifier::EnginePtr> CoordinationPolyhedraModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get modifier input.
-    const ParticlesObject* particles = input.expectObject<ParticlesObject>();
+    const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
-    const PropertyObject* posProperty = particles->expectProperty(ParticlesObject::PositionProperty);
-    const PropertyObject* selectionProperty = particles->getProperty(ParticlesObject::SelectionProperty);
+    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
+    const Property* selectionProperty = particles->getProperty(Particles::SelectionProperty);
 
     particles->expectBonds()->verifyIntegrity();
-    const PropertyObject* topologyProperty = particles->expectBondsTopology();
-    const PropertyObject* bondPeriodicImagesProperty = particles->bonds()->getProperty(BondsObject::PeriodicImageProperty);
-    const SimulationCellObject* simCell = input.expectObject<SimulationCellObject>();
+    const Property* topologyProperty = particles->expectBondsTopology();
+    const Property* bondPeriodicImagesProperty = particles->bonds()->getProperty(Bonds::PeriodicImageProperty);
+    const SimulationCell* simCell = input.expectObject<SimulationCell>();
 
     if(!selectionProperty)
         throw Exception(tr("Please first select some particles, for which coordination polyhedra should be generated."));
@@ -89,14 +89,14 @@ Future<AsynchronousModifier::EnginePtr> CoordinationPolyhedraModifier::createEng
     // Collect the set of particle properties that should be transferred over to the surface mesh vertices and mesh regions.
     std::vector<ConstPropertyPtr> particleProperties;
     if(transferParticleProperties()) {
-        for(const PropertyObject* property : particles->properties()) {
+        for(const Property* property : particles->properties()) {
             // Certain properties should never be transferred to the mesh vertices.
-            if(property->type() == ParticlesObject::SelectionProperty) continue;
-            if(property->type() == ParticlesObject::PositionProperty) continue;
-            if(property->type() == ParticlesObject::ColorProperty) continue;
-            if(property->type() == ParticlesObject::VectorColorProperty) continue;
-            if(property->type() == ParticlesObject::PeriodicImageProperty) continue;
-            if(property->type() == ParticlesObject::TransparencyProperty) continue;
+            if(property->type() == Particles::SelectionProperty) continue;
+            if(property->type() == Particles::PositionProperty) continue;
+            if(property->type() == Particles::ColorProperty) continue;
+            if(property->type() == Particles::VectorColorProperty) continue;
+            if(property->type() == Particles::PeriodicImageProperty) continue;
+            if(property->type() == Particles::TransparencyProperty) continue;
             particleProperties.push_back(property);
         }
     }
@@ -104,7 +104,7 @@ Future<AsynchronousModifier::EnginePtr> CoordinationPolyhedraModifier::createEng
     // Create the output data object.
     DataOORef<SurfaceMesh> mesh = DataOORef<SurfaceMesh>::create(ObjectInitializationFlag::DontCreateVisElement, tr("Coordination polyhedra"));
     mesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("coord-polyhedra")));
-    mesh->setDataSource(request.modApp());
+    mesh->setCreatedByNode(request.modificationNode());
     mesh->setDomain(simCell);
     mesh->setVisElement(surfaceMeshVis());
 
@@ -221,7 +221,7 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 
             // Create the corresponding output mesh vertex property.
             PropertyPtr vertexProperty;
-            if(particleProperty->type() < PropertyObject::FirstSpecificProperty && SurfaceMeshVertices::OOClass().isValidStandardPropertyId(particleProperty->type())) {
+            if(particleProperty->type() < Property::FirstSpecificProperty && SurfaceMeshVertices::OOClass().isValidStandardPropertyId(particleProperty->type())) {
                 // Input property is also a standard property for mesh vertices.
                 vertexProperty = meshBuilder.createVertexProperty(DataBuffer::Uninitialized, static_cast<SurfaceMeshVertices::Type>(particleProperty->type()));
                 OVITO_ASSERT(vertexProperty->dataType() == particleProperty->dataType());
@@ -244,7 +244,7 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
 
             // Create the corresponding output mesh region property.
             PropertyPtr regionProperty;
-            if(particleProperty->type() < PropertyObject::FirstSpecificProperty && SurfaceMeshRegions::OOClass().isValidStandardPropertyId(particleProperty->type())) {
+            if(particleProperty->type() < Property::FirstSpecificProperty && SurfaceMeshRegions::OOClass().isValidStandardPropertyId(particleProperty->type())) {
                 // Input property is also a standard property for mesh regions.
                 regionProperty = meshBuilder.createRegionProperty(DataBuffer::Uninitialized, static_cast<SurfaceMeshRegions::Type>(particleProperty->type()));
                 OVITO_ASSERT(regionProperty->dataType() == particleProperty->dataType());
@@ -268,7 +268,7 @@ void CoordinationPolyhedraModifier::ComputePolyhedraEngine::perform()
     }
 
     // Create the "Particle index" region property, which contains the index of the particle that is at the center of each coordination polyhedron.
-    PropertyPtr particleIndexProperty = meshBuilder.createRegionProperty(DataBuffer::Uninitialized, QStringLiteral("Particle Index"), PropertyObject::Int64);
+    PropertyPtr particleIndexProperty = meshBuilder.createRegionProperty(DataBuffer::Uninitialized, QStringLiteral("Particle Index"), Property::Int64);
     std::copy(regionToParticleMap.cbegin(), regionToParticleMap.cend(), BufferWriteAccess<int64_t, access_mode::discard_write>(particleIndexProperty).begin());
 
     // Release data that is no longer needed.
