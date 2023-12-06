@@ -67,6 +67,10 @@ public:
     /// Returns the list of application services created at application startup.
     const std::vector<OORef<ApplicationService>>& applicationServices() const { return _applicationServices; }
 
+    /// Tells the UI to process any pending events in the event queue and return immediately.
+    /// The function can return true to indicate that the running operation should be canceled.
+    virtual bool processEvents() override;
+
 protected Q_SLOTS:
 
     /// Is called at program startup once the event loop is running.
