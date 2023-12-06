@@ -327,10 +327,13 @@ void DownloadRemoteFileJob::shutdown(bool success)
     if(success)
         storeReceivedData();
 
-    if(_localFile && success)
+    if(_localFile && success) {
+        _localFile->flush();
         _promise.setResults(FileHandle(url(), _localFile->fileName()));
-    else
+    }
+    else {
         _localFile.reset();
+    }
 
     // Close network connection.
     RemoteFileJob::shutdown(success);
@@ -414,7 +417,7 @@ void DownloadRemoteFileJob::storeReceivedData()
         QByteArray buffer = _networkReply->read(_networkReply->bytesAvailable());
 
         // Write data into local file.
-        if(_localFile->write(buffer) == -1)
+        if(!buffer.isEmpty() && _localFile->write(buffer) == -1)
             throw Exception(tr("Failed to write downloaded data to temporary file: %1").arg(_localFile->errorString()));
     }
     catch(Exception&) {
