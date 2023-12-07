@@ -38,7 +38,7 @@ namespace Ovito {
 ******************************************************************************/
 void UserInterface::exitWithFatalError(const Exception& ex)
 {
-    // Display fata error message to the user.
+    // Display fatal error message to the user.
     reportError(ex, true);
 
     // Make sure the main event loop is running.

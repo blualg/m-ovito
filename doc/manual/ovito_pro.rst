@@ -49,10 +49,10 @@ A (nearly complete) list of the program features available only in *OVITO Pro* a
 Please visit `www.ovito.org <https://www.ovito.org/about/ovito-pro/>`__ for further details on OVITO Pro, our support services, and pricing.
 By licensing OVITO Pro you support the development and maintenance of both editions our desktop software and the :ref:`OVITO Python module <scripting_manual>`.
 
-.. _credits.ovito_pro_activation:
+.. _license-management:
 
-License management
-==================
+License management |ovito-pro|
+==============================
 
 OVITO Pro must be activated after installation in order to use it on a new computer. During this one-time activation step,
 the validity of the license key and your entitlement to use the software will be verified by our cloud-based licensing server.
