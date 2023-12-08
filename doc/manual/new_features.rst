@@ -8,22 +8,64 @@ Changelog
 Version 3.10.0 (xx-Dec-2023)
 ----------------------------
 
-* :ref:`viewport_layers.coordinate_tripod`: Added perspective distortion option to exactly align axes directions with simulation cell edges
+.. rubric:: Perspective distortion for viewport tripods
+
+The coordinate tripod viewport layer now provides the option to distort the tripod
+according to the perspective projection. Then the axes indicators exactly align with
+the edges of a simulation cell.
+
+.. figure:: /images/new_features/tripod_perspective_3-9-4.*
+  :figwidth: 25%
+
+  OVITO 3.9.4
+
+.. figure:: /images/new_features/tripod_perspective_3-10-0.*
+  :figwidth: 25%
+
+  OVITO 3.10.0
+
+.. rubric:: |ovito-pro| Added gltf output format
+
+Added :ref:`file_formats.output.gltf` to allow the export of 3d scenes. This allows,
+for example, the import of OVITO scenes into Blender or MS PowerPoint.
+
+.. image:: /images/io/gltf_export_powerpoint.*
+  :width: 100%
+
+.. rubric:: |ovito-python| New Python classes to visualize lines.
+
+New Python classes :py:class:`ovito.data.Lines` and :py:class:`ovito.vis.LinesVis`
+for visualizing line segments in 3d space.
+
+.. image:: /images/new_features/lines_spirales_demo.gif
+  :width: 30%
+
+.. rubric:: |ovito-pro| Added the VisRTX renderer.
+
+Added :ref:`rendering.visrtx_renderer` and corresponding Python class :py:class:`ovito.vis.AnariRenderer`.
+VisRTX offers hardware-accelerated ray-tracing and can generate high-fidelity scene renderings including
+global illumination effects and shadows.
+
+TODO: ADD IMAGE
+
+.. rubric:: |ovito-pro| Added remote rendering function.
+
+Added :ref:`usage.remote_rendering` - prepare OVITO scenes on your local computer
+and easly render them on a remote HCP cluster.
+
+TODO: ADD IMAGE
+
 * :ref:`particles.modifiers.smooth_trajectory` modifier: Now supports trajectories with varying number of particles
 * :ref:`particles.modifiers.smooth_trajectory` modifier: Fixed wrong interpolation/averaging of particle orientations
 * :ref:`file_formats.input.lammps_data`: Tolerate more than one empty line after file section titles
 * :ref:`file_formats.input.xyz`: Automatic detection of reduced coordinates turned off by default, because extended XYZ files with reduced coordinates are very rare
 * |ovito-python| Some Python functions now return true NumPy arrays instead of Python tuples
-* |ovito-python| New Python classes :py:class:`ovito.data.Lines` and :py:class:`ovito.vis.LinesVis` for visualizing 3d line segments
 * |ovito-python| New Python function :py:meth:`DislocationSegment.point_along_line() <ovito.data.DislocationSegment.point_along_line>`
 * |ovito-python| New parameter trait type :py:class:`ovito.traits.FilePath`, :py:class:`~ovito.traits.Vector2`, and :py:class:`~ovito.traits.Vector3`
 * |ovito-python| Renamed classes :py:class:`~ovito.traits.OvitoObject` and :py:class:`~ovito.traits.Color`
 * |ovito-python| Restricted :py:meth:`ovito.Scene.load` to session state files written by *OVITO Pro* or the Python module
 * |ovito-python| Added function parameter ``pipeline_node`` to :py:meth:`ModifierInterface.modify() <ovito.pipeline.ModifierInterface.modify>`
-* |ovito-pro| Added :ref:`file_formats.output.gltf`
-* |ovito-pro| Added :ref:`rendering.visrtx_renderer` and corresponding Python class :py:class:`ovito.vis.AnariRenderer`
-* |ovito-pro| Added :ref:`usage.remote_rendering`
-* |ovito-pro| OSPRay & Tachyon renderers: Added buttons to reset numeric parameters to their default values
+* |ovito-pro| OpenGL, OSPRay, and Tachyon renderers: Added buttons to reset numeric parameters to their default values
 * |ovito-pro| :ref:`User-defined parameters <writing_custom_modifiers.advanced_interface.user_params>` can now be grouped in the UI by means of the new ``ovito_group`` metadata attribute
 
 ---------------------------
