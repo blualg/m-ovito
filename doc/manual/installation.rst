@@ -4,22 +4,21 @@
 Installation
 ============
 
-Binary program packages of OVITO for Linux, Windows, and macOS can be downloaded from `www.ovito.org <https://www.ovito.org/>`_.
+Binary program packages of *OVITO Basic* and *OVITO Pro* for Linux, Windows, and macOS can be downloaded from `www.ovito.org <https://www.ovito.org/>`_.
 
 .. _installation.requirements:
 
 System requirements
 ===================
 
-OVITO requires a 64-bit operating system and runs on processors with x86-64 or arm64 architecture.
-The graphical user interface of OVITO requires 3D graphics hardware with support for the `OpenGL <https://en.wikipedia.org/wiki/OpenGL>`_ programming interface (OpenGL 2.1 or newer).
-In general, it is recommended that you install the latest graphics driver provided by your hardware vendor before running OVITO as some older drivers may not fully support modern OpenGL specifications, which can lead to compatibility problems.
+OVITO runs on processors with x86-64 or arm64 architecture. The desktop application requires an environment that has support for the `OpenGL <https://en.wikipedia.org/wiki/OpenGL>`_ 3d graphics interface (OpenGL 2.1 or newer).
+In general, it is recommended that you install the latest graphics driver provided by your hardware vendor, as some older drivers may not fully support modern OpenGL specifications.
 
 Operating system compatibility:
 
-  - Windows 10 (21H2 or later), Windows 11 (21H2 or later) - x86_64 processor architecture
-  - Linux: CentOS Linux 8.4 or later, openSUSE 15.3 or later, Ubuntu 20.04 or later, SUSE Linux Enterprise Server 15 SP3 or later - x86_64 processor architecture
-  - macOS 10.15+ - x86_64 and arm64 (Apple Silicon) processor architectures
+  - 64-bit Windows 10 (21H2 or later), Windows 11 (21H2 or later) -- x86_64 processor architecture
+  - Linux: CentOS Linux 8.4+, openSUSE 15.3+, Ubuntu 20.04+, SUSE Linux Enterprise Server 15+, or any compatible distributions running on x86_64 processors
+  - macOS 10.15+ -- arm64 (Apple Silicon) and Intel processor architectures
 
 .. _installation.instructions:
 
@@ -27,13 +26,13 @@ Installation instructions
 =========================
 
 *Linux*:
-    Extract the downloaded :file:`.tar.xz` archive file using the `tar <https://www.computerhope.com/unix/utar.htm>`_ command: :command:`tar xJfv ovito-{{OVITO_VERSION_STRING}}-x86_64.tar.xz`.
+    Extract the downloaded :file:`.tar.xz` archive file using the tar utility: :command:`tar xJfv ovito-{{OVITO_VERSION_STRING}}-x86_64.tar.xz`.
     This will create a new sub-directory containing the program files.
     Change into that directory and start OVITO by running the executable :command:`./bin/ovito`.
 
 *Windows*:
     Run the installer program :file:`ovito-{{OVITO_VERSION_STRING}}-win64.exe` to install OVITO in a directory of your choice.
-    Note that Windows might ask whether you really want to launch the installer because it was downloaded from the web and is not digitally signed.
+    Note that Windows might ask whether you really want to launch the installer since it was downloaded from the web.
 
 *macOS*:
     Double-click the downloaded :file:`.dmg` disk image file to open it, agree to the program license, and drag the :program:`Ovito` application bundle into your :file:`Applications` folder.
@@ -48,21 +47,21 @@ Note that the OVITO desktop application cannot be run through an SSH connection 
 access to the graphics hardware (OpenGL direct rendering mode). If you simply run :command:`ovito` in an SSH terminal, you will likely get failure messages
 during program startup or just a black application window.
 
-It is possible to run OVITO on a remote machine through an SSH connection using a VirtualGL + VNC setup.
+It is possible to run OVITO on a remote machine through an SSH connection using a VirtualGL + VNC remote desktop setup.
 For further information, please see the `www.virtualgl.org <https://www.virtualgl.org/>`_ website.
 In this mode, OVITO will make use of the graphics hardware of the remote machine, which must be set up to allow running
 applications in a desktop environment. Please contact your local computing center staff to find out whether
-this kind of remote visualization mode is supported by the HPC cluster(s) you work on.
+this kind of remote visualization mode is supported by the HPC cluster you work on.
 
 .. _installation.python:
 
 Python module installation
 ==========================
 
-The **OVITO Pro** program packages ship with an :ref:`integrated Python interpreter <ovitos_interpreter>` (:command:`ovitos`) that gets installed alongside the desktop application,
-allowing you to execute Python scripts written for OVITO.
-Optionally, you can install the ``ovito`` Python module into an external Python interpreter on your system  (e.g. :program:`Anaconda` or the standard :program:`CPython` interpreter) in case you would like to make use of
-OVITO's functionality in script-based workflows. Please refer to :ref:`this section <pydoc:installation>` for further setup instructions.
+The *OVITO Pro* program package includes an :ref:`integrated Python interpreter <ovitos_interpreter>` (:command:`ovitos`) that gets installed alongside with the application,
+allowing you to run Python code written for OVITO and install third-party modules from the `OVITO Extensions Directory <https://ovito-org.github.io/extensions-contrib-page/>`__ for example.
+You can also install the standalone ``ovito`` Python module into an external Python interpreter on your system  (e.g. :program:`Anaconda` or the standard :program:`CPython` interpreter) in case you
+would like to make use of OVITO's functionality in script-based workflows. Please refer to :ref:`this section <pydoc:installation>` for further setup instructions.
 
 .. _installation.troubleshooting:
 
@@ -70,7 +69,7 @@ Troubleshooting
 ===============
 
 If you run into any problems during the installation of OVITO, you can contact the developers through the `online user forum <https://matsci.org/c/ovito/>`__.
-The OVITO team will be happy to help you. The most commonly encountered installation issues on different platforms are addressed here:
+The OVITO team will be happy to help you. The most commonly encountered installation issues on different platforms are addressed in the following:
 
   - :ref:`installation.troubleshooting.windows`
   - :ref:`installation.troubleshooting.linux`
@@ -175,7 +174,7 @@ OVITO Pro license activation fails
 
   .. admonition:: Solution
 
-    During license activation, OVITO Pro needs to create the directory :file:`$HOME/.config/Ovito/` to store the downloaded licensing information.
+    During license activation, *OVITO Pro* needs to create the directory :file:`$HOME/.config/Ovito/` to store the downloaded licensing information.
     The error occurs if creating this directory or storing files in this directory is prevented by insufficient file system permissions.
 
     In many cases, the parent directory, :file:`$HOME/.config/`, is the actual reason for this problem, because it is owned by the wrong macOS user account.
@@ -185,7 +184,7 @@ OVITO Pro license activation fails
     which system user ran the first process creating it.
 
     It can happen that :file:`$HOME/.config/` is owned by the system administrator ("root" user), because it was the root user who first ran an application
-    creating the :file:`.config` directory. As a result, your personal user account, which you are using to install OVITO Pro, can't make further modifications to the directory, which
+    creating the :file:`.config` directory. As a result, your personal user account, which you are using to install *OVITO Pro*, can't make further modifications to the directory, which
     lets the license activation fail. To resolve the problem, ask your system administrator to create the :file:`$HOME/.config/Ovito/` subdirectory for you
     and make it writable by your personal user account -- or follow `these instructions <https://apple.stackexchange.com/a/320686>`__ to correct the ownership
     of the :file:`$HOME/.config/` parent directory yourself.
