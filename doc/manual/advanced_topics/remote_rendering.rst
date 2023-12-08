@@ -148,7 +148,7 @@ To start the rendering task on the remote computer cluster, follow these steps:
    ``frames/`` subdirectory. Moreover, a video file named ``video.mp4`` will appear in
    the main bundle directory.
 
-.. seealso:: :ref:`Remote rendering tutorial <tutorials.remote_rendering>`
+.. seealso:: :ref:`tutorials.remote_rendering`
 
 Additional notes and troubleshooting
 ------------------------------------
