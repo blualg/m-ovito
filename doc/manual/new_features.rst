@@ -55,6 +55,8 @@ and easly render them on a remote HCP cluster.
 
 TODO: ADD IMAGE
 
+.. rubric:: Further changes in this program release:
+
 * :ref:`particles.modifiers.smooth_trajectory` modifier: Now supports trajectories with varying number of particles
 * :ref:`particles.modifiers.smooth_trajectory` modifier: Fixed wrong interpolation/averaging of particle orientations
 * :ref:`file_formats.input.lammps_data`: Tolerate more than one empty line after file section titles
