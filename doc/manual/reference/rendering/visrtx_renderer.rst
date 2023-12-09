@@ -59,7 +59,7 @@ Direct light
 
 Latitude & Longitude
   Latitude (north-south) and longitude (east-west) position of the direct light source relative to the camera (default values: 10.0° and -10.0°).
-  Upon rotation of the viewport camera, this light source will move with the camera, maintaining a constant relative light direction. A value of ``0.0`` places the light source
+  Upon rotation of the viewport camera, this light source will move with the camera, maintaining a constant relative light direction. A value of 0.0° places the light source
   in line with the camera's viewing direction. Input is expected in degrees. The valid parameter range is [-90°, +90°] for latitude and [-180°, +180°] for longitude.
 
 Brightness

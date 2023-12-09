@@ -7,128 +7,127 @@ Remote rendering tutorial
 Introduction
 ------------
 
-In this tutorial, we will demonstrate how to render a video from multiple sources
-on a remote high-performance compute cluster. Additional information can be
-found in the corresponding :ref:`usage.remote_rendering` manual page.
-By leveraging the massively parallel infrastructure, we can significantly
-accelerate the rendering process.
+In this tutorial, we will demonstrate how to render a video, showing multiple
+simulation trajectories, on a high-performance compute cluster.
+See :ref:`usage.remote_rendering` for a description of this program function,
+which is available exclusively in *OVITO Pro*. By leveraging a massively parallel
+computing infrastructure, we can significantly accelerate the visualization process.
 
-OVITO will prepare a bundle locally, which can then be transferred to the
-cluster. It's crucial that all structure files included in the scene are
-accessible on the remote machine. There are two mechanisms to control this: the
-user can either specify the file paths on the remote machine or opt to copy the
+*OVITO Pro* will prepare a bundle of files locally, which can then be transferred onto the
+remote machine. It's crucial that all simulation files used in the visualization scene are
+accessible also on the remote machine, where rendering takes place. There are two mechanisms to control this:
+you can either specify the filesystem paths on the remote machine or opt to copy the
 required files into the bundle.
 
-This tutorial will cover both methods. Please note that this tutorial is written
-with Windows as the local operating system and Linux on the remote compute
-cluster. Consequently, paths and (PowerShell) commands may appear unfamiliar,
-but similar commands should exist on other major operating systems.
+This tutorial will cover both methods. Please note that this tutorial assumes you are running
+Windows on your local desktop machine (and Linux/Unix on the remote compute
+cluster). Consequently, paths and PowerShell commands may appear unfamiliar to Linux/macOS users,
+but similar commands exist on all platforms.
 
 Local setup
 -----------
 
-To follow this tutorial, you will need two example time series, which can be
-downloaded from the OVITO git repository:
-`RDX.reax.dump <https://gitlab.com/stuko/ovito/-/raw/v3.9.2/tests/files/LAMMPS/RDX.reax.dump?ref_type=tags&inline=false>`__,
+To follow this tutorial, you will need two sample trajectories from LAMMPS MD simulations, which can be
+downloaded from a Git repository:
+`RDX.reax.dump <https://gitlab.com/ovito-org/ovito-sample-data/-/raw/master/LAMMPS/RDX.reax.dump?ref_type=tags&inline=false>`__,
 and
 `water.unwrapped.lammpstrj.gz
-<https://gitlab.com/stuko/ovito/-/raw/master/tests/files/LAMMPS/water.unwrapped.lammpstrj.gz?ref_type=heads&inline=false>`__.
+<https://gitlab.com/ovito-org/ovito-sample-data/-/raw/master/LAMMPS/water.unwrapped.lammpstrj.gz?ref_type=heads&inline=false>`__.
 
-Place the first file, ``RDX.reax.dump``, in a local directory. Within this
-tutorial, the local path will be ``C:\Users\daniel\Downloads\RDX.reax.dump``.
-This represents the common scenario where a simulation was performed on a remote
-cluster and subsequently all results have been downloaded to the local file
-system.
+Place the first file, ``RDX.reax.dump``, in a directory on your local desktop computer. In the following tutorial,
+we'll assume the file is located at ``C:\Users\daniel\Downloads\RDX.reax.dump``.
+This represents a common workflow scenario where a simulation is first performed on a
+HPC cluster and then the entire output data is downloaded to the local
+computer for visualization and analysis.
 
-The second file, ``water.unwrapped.lammpstrj.gz``, will represent the case where
-you ran a simulation on a remote HPC cluster and wish to process it without
-downloading all the files to your local file system. We will use OVITO Pro's
-built-in SSH client to access this file remotely. In this example, this file is
-located at ``/scratch/daniel/simulations/water.unwrapped.lammpstrj.gz`` on a
-compute cluster named ``magikarp``.
+The second file, ``water.unwrapped.lammpstrj.gz``, will serve to demonstrate another common scenario:
+you ran the simulation on a remote HPC cluster and wish to visualize and process its output data without
+downloading all files to the local file system. All files stay on the cluster machine.
+We will use OVITO Pro's :ref:`built-in SSH client <usage.import.remote>` to load the data over the network.
+In this example scenario, the trajectory file is stored at ``/scratch/daniel/simulations/water.unwrapped.lammpstrj.gz``
+on the filesystem of a compute cluster named ``magikarp``. If you are following this tutorial and have access to a
+compute cluster, you should store the sample file in some directory on that cluster's filesystem.
+
+Next, we set up the visualization scene to be rendered on the local computer. Begin by
+opening the local file ``RDX.reax.dump`` and translate it by -30 angstroms in
+the x-direction using the :ref:`particles.modifiers.affine_transformation` modifier -- to prevent it from overlapping with
+the second dataset, which were are going to import next.
 
 .. image:: ../images/tutorials/remote_render/sample_setup.png
    :width: 80%
    :align: center
 
-
-First, we set up the scene we want to render on the local computer. Begin by
-opening the local ``RDX.reax.dump`` file and translating it by -30 angstroms in
-the x-direction (to prevent overlap with the second example file) using the
-:ref:`particles.modifiers.affine_transformation` modifier.
-
 Next, use OVITO Pro's :ref:`Load remote file <usage.import.remote>`
-functionality with the remote path
-``sftp://magikarp//scratch/daniel/simulations/water.unwrapped.lammpstrj.gz``. In
-the import file prompt, select :ref:`Add to scene <usage.import.multiple_datasets>`
-to load the second data set into the scene.
+functionality with the URL
+``sftp://magikarp//scratch/daniel/simulations/water.unwrapped.lammpstrj.gz`` to import
+the file from its remote location. When asked by OVITO, select :ref:`Add to scene <usage.import.multiple_datasets>`
+to load the second dataset into the existing scene.
 
-At this point, both samples should be visible side-by-side in the viewport.
-Next, apply any desired modifiers. For this tutorial, we will color the water
-molecules by their molecule identifier using the
+At this point, both simulation trajectories should be visible side-by-side in the viewports.
+Next, you can apply modifiers as desired to build up typical visualization pipelines.
+For this tutorial, we will color the water molecules by their molecule identifiers using the
 :ref:`particles.modifiers.color_coding` modifier. This is also the time to configure
-viewport overlays, camera angles, and other settings required for your render.
+viewport overlays, the camera perspective, and any other settings required for a visualization.
 
 .. image:: ../images/tutorials/remote_render/render_tab.png
     :width: 30%
     :align: left
 
-Finally, go to the render tab and configure its settings. Since remote rendering
-makes most sense  when rendering multiple images, we will select
-:guilabel:`Complete animation` to render the full sequence. There is no need to
-check :guilabel:`Save to file`
-as this option is handled automatically during the remote rendering process.
+Finally, go to the :ref:`render tab <rendering>` and configure the animation rendering options.
+Since rendering on a remote computer makes the most sense when a lot of frames have to be rendered, we will select
+:guilabel:`Complete animation` to render the full trajectory sequence. There is no need to
+check :guilabel:`Save to file` as this option is handled automatically during the remote rendering process.
 Change the renderer from :ref:`OpenGL <rendering.opengl_renderer>` (the default)
 to :ref:`Tachyon <rendering.tachyon_renderer>`,
 :ref:`OSPRay <rendering.ospray_renderer>`, or :ref:`VisRTX <rendering.visrtx_renderer>`.
-This step is necessary because most compute clusters do not provide
-the required OpenGL libraries, and some compatibility testing might be required.
+This step can be necessary because many compute clusters do not provide
+the required system environment for the OpenGL renderer to work on the compute nodes.
 
-After configuring everything as we would for a local rendering instead of
-hitting :guilabel:`Render active viewport` and walking away to grab some coffee, we will
-instead go to :menuselection:`File --> Render on remote computer...`. This
-opens the :menuselection:`Remote render settings` dialog window.
+After configuring everything as we would for local rendering, instead of
+hitting the :guilabel:`Render active viewport` button and grabbing some coffee, we
+select :menuselection:`File --> Render on remote computer...` from the main menu. This
+opens the *Remote render settings* dialog window.
 
 .. image:: ../images/tutorials/remote_render/export_dialog.png
    :width: 40%
    :align: right
 
 You'll be presented with a table containing three columns (*Current path*,
-*Remote target path*, and *Bundle data*), with two rows for each file path used in
-the scene. ``C:\Users\daniel\Downloads\`` indicates a local file, while
-``sftp://magikarp//scratch/daniel/simulations/`` refers to a remote file path.
+*Remote target path*, and *Bundle data*) and two rows, one for each filesystem
+source path used in the current scene. ``C:\Users\daniel\Downloads\`` is where the local file was loaded from,
+while ``sftp://magikarp//scratch/daniel/simulations/`` refers to the remote file path.
 
-Since we do not want to copy them to the server manually we can click the
-*Bundle data* checkbox for the local files located at
+Since we do not want to transfer the local file(s) to the server by hand, we click the
+*Bundle data* checkbox for the files located in
 ``C:\Users\daniel\Downloads\``. This disables the *Remote target path*
-field and instructs OVITO to copy all files used in the current scene that are
-located in ``C:\Users\daniel\Downloads\`` to the bundle directory.
+field and instructs OVITO Pro to copy all files necessary for the visualization from
+``C:\Users\daniel\Downloads\`` to the bundle directory.
 
-The second file ``water.unwrapped.lammpstrj.gz``, which was loaded from a remote
-path is already located on the remote machine. Therefore, we only need to change
-the path from ``sftp://magikarp/scratch/daniel/simulations/`` to
-``/scratch/daniel/simulations/``. This informs OVITO that all files found at the
-original location will be available at the new path once the bundle is moved to
-the remote computer. Ensure the remote path is correct.
+Remember that the second file, ``water.unwrapped.lammpstrj.gz``, is already located on the remote machine.
+Therefore, we only need to map the path by which it is referenced from ``sftp://magikarp/scratch/daniel/simulations/`` to
+``/scratch/daniel/simulations/``, because that's where the file can be accessed
+on the remote cluster. This informs OVITO that all files found at the
+original URL will be available under the new (local) path once the bundle is moved to
+the remote computer.
 
 Set the number of cores per rendering task. By default, this is set to *all available*,
-but you may want to adjust it based on your needs. For example, on a
-compute node with 96 cores, setting *Cores per task* to 8 means that each node
+but you may want to adjust it based on your needs and also the memory requirements of your simulation dataset.
+For example, on a compute node with 96 cores, setting *Cores per task* to 8 means that each node
 will spawn 12 workers, rendering 12 images concurrently. Generally, more workers
 with fewer cores scale better for most rendering tasks, but some benchmarking
-might be required for optimal performance.
+might be required to reach optimal performance.
 
-Lastly, define a directory for the remote bundle, selected using
-the :guilabel:`Choose...` button. In this case, it's ``C:\Users\daniel\Downloads\remote_render_tutorial``.
+Lastly, specify a (local) destination directory for the bundle by clicking
+the :guilabel:`Choose...` button. In this tutorial, it's ``C:\Users\daniel\Downloads\remote_render_tutorial``.
 The selected directory must be empty. Once everything is set up, hit
-:guilabel:`Export` to write the actual file bundle.
+:guilabel:`Export` to let *OVITO Pro* write the actual file bundle.
 
 Pack and transfer
 -----------------
 
-After exporting the bundle directory from OVITO Pro, you can (optionally) save
-the OVITO state and close it. Checking the bundle directory we can find multiple
-files created by OVITO Pro:
+After exporting the bundle directory from *OVITO Pro*, you can (optionally) save
+the session to a *.ovito* file and close the program. In the bundle directory we can find various
+files created by *OVITO Pro*:
 
 .. code-block::
 
@@ -143,8 +142,8 @@ files created by OVITO Pro:
         └─── 0
              └─── RDX.reax.dump
 
-Next, transfer the bundle directory to the HPC cluster. Pack the bundle
-directory into a single zip file and transfer it to the remote machine:
+Next, you should transfer the entire bundle directory to the HPC cluster. One way to do this is by packing the
+directory into a single zip file and uploading it to the remote machine using the :program:`scp` command-line utility:
 
 .. code-block::
 
@@ -155,7 +154,7 @@ directory into a single zip file and transfer it to the remote machine:
 Rendering on the remote machine
 -------------------------------
 
-SSH into the remote machine, unpack the zip archive, and navigate to the bundle directory:
+SSH into the remote machine, unpack the zip archive, and change into the bundle directory:
 
 .. code-block:: bash
 
@@ -166,25 +165,22 @@ SSH into the remote machine, unpack the zip archive, and navigate to the bundle 
     daniel@magikarp:/scratch/daniel/render$ cd remote_render_tutorial/
     daniel@magikarp:/scratch/daniel/render/remote_render_tutorial$
 
-Set up the conda environment. This is done using the ``remote_render_ovito.yml``
-file. Depending on your local infrastructure, you might need to load modules to
-make the correct Python and conda versions available. Here we can run conda
-straight from the path. This will create a new conda environment called
-*remote_render_ovito* which contains all Python packages required.
+Set up the Conda environment using the ``remote_render_ovito.yml``
+file. Depending on your local infrastructure, you might need to load modules first to
+make the correct Python and conda versions available.
+The command ``conda env create`` creates a new conda environment called
+*remote_render_ovito* containing all tools and Python packages (including ``ovito``) required for
+the rendering task.
 
 .. code-block:: bash
 
     daniel@magikarp:/scratch/daniel/render/remote_render_tutorial$ conda env create -f remote_render_ovito.yml
-        ...
-    daniel@magikarp:/scratch/daniel/render/remote_render_tutorial$ conda activate ovito
 
-OVITO Pro has generated a `slurm <https://slurm.schedmd.com/quickstart.html>`__
-batch job script template, ``submit.sh.template``,
-which you can modify to fit your cluster's job submission system. You might need
-to adjust job constraints like walltime, partition, or others. Submit the
-rendering task to your cluster's job manager. Remember to load any modules
-required by your infrastructure. In our example the ``submit.sh.template`` file
-looks like this:
+*OVITO Pro* has also generated a template for a `Slurm <https://slurm.schedmd.com/quickstart.html>`__
+batch job script, ``submit.sh.template``, which you can adapt to your cluster's job submission system.
+You might need to adjust job constraints like walltime, partition, or others. Submit the
+rendering task to your cluster's queueing system. Remember to load any modules
+required by your infrastructure. In our example, the file, after renaming it to ``submit.sh``, looks like this:
 
 .. code-block:: bash
 
@@ -204,15 +200,14 @@ looks like this:
         cd $SLURM_SUBMIT_DIR
         srun -N ${SLURM_NNODES} -n ${SLURM_NNODES} --cpu_bind=none flux start python remote_render_task.py
 
-Once this file is set up we can rename and submit it to the queing system.
+Once this file is set up we can submit it to the queuing system using Slurm's ``sbatch`` command:
 
 .. code-block:: bash
 
-    daniel@magikarp:/scratch/daniel/render/remote_render_tutorial$ submit.sh.template submit.sh
     daniel@magikarp:/scratch/daniel/render/remote_render_tutorial$ sbatch submit.sh
 
-Monitor the job's progress using your cluster's job management tools. When the
-rendering is complete, the final images and video will be stored in the bundle
+Monitor the job's progress using the job management tools of your cluster. When the
+rendering is complete, the final images and video will be found in the bundle
 directory:
 
 .. code-block:: bash
@@ -242,10 +237,11 @@ directory:
     └── video.mp4
 
 Conclusion
-------------
+----------
 
-In this tutorial, we walked through the process of setting up a scene in OVITO
-Pro, exporting it for remote rendering, transferring the necessary files to an
-HPC cluster, setting up the rendering environment, submitting the job, and
-retrieving the final results. By leveraging the power of remote high-performance
-computing, you can significantly accelerate your rendering tasks.
+In this tutorial, we walked through the process of setting up a visualization scene in *OVITO Pro*,
+exporting it for remote rendering, transferring the necessary files to an HPC cluster, setting up the
+rendering environment, submitting the job, and retrieving the rendered video. By leveraging massively parallel
+computing power, you can significantly speed up your animation rendering jobs.
+
+.. seealso:: :ref:`usage.remote_rendering`

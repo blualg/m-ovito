@@ -18,9 +18,9 @@ Tutorials
    :width: 20%
    :align: right
 
-Learn how to highlight a group of atoms, initially located in a narrow region, with a marker color to visualize the atomic motion 
-in the interior of the crystal during the course of the simulation. In particular, this tutorial will introduce you to the 
-:ref:`particles.modifiers.freeze_property` modifier in OVITO, which helps preserve the initial selection state of a group of particles. 
+Learn how to highlight a group of atoms, initially located in a narrow region, with a marker color to visualize the atomic motion
+in the interior of the crystal during the course of the simulation. In particular, this tutorial will introduce you to the
+:ref:`particles.modifiers.freeze_property` modifier in OVITO, which helps preserve the initial selection state of a group of particles.
 
 .. rubric:: :ref:`Turntable animation of a model <tutorials.turntable_animation>`
 
@@ -35,9 +35,8 @@ and different ways of repositioning a model in the three-dimensional scene.
 
 .. rubric:: :ref:`Remote rendering tutorial <tutorials.remote_rendering>`
 
-This tutorial, we will demonstrate how to render a video from multiple sources
-on a remote high-performance compute cluster using the :ref:`usage.remote_rendering` 
-function of OVITO Pro.
+This tutorial walks you through the process of rendering a simulation video on a high-performance computing cluster using
+the :ref:`Render on Remote Computer <usage.remote_rendering>` function of *OVITO Pro*.
 
 .. - Identify local chemical ordering (PTM modifier)
 .. - How to use the DXA modifier to analyze dislocations

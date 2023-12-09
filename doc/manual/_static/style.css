@@ -76,7 +76,7 @@
     display: none !important;
 }
 /* Remove extra line spacing when pro tag appears in content lists. */
-.rst-content .section ol li > a.ovito-pro-tag, .rst-content .section ul li > a.ovito-pro-tag {
+.rst-content .section ol li > a.ovito-pro-tag, .rst-content .section ul li > a.ovito-pro-tag, div.toctree-wrapper ul > li > a.ovito-pro-tag {
     margin-top: 0px;
     margin-bottom: 0px;
 }

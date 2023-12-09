@@ -81,4 +81,4 @@ OVITO User Manual
 
   * :ref:`credits.ovito_pro`
 
-    * :ref:`credits.ovito_pro_activation`
+    * :ref:`license-management`

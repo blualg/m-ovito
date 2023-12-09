@@ -17,6 +17,10 @@ import os
 # Use the Read-The-Docs theme.
 import sphinx_rtd_theme
 
+# Needed for PreferSectionTarget:
+from docutils import nodes
+from docutils.transforms import Transform
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -265,6 +269,73 @@ try:
 except:
     pass
 
+class PreferSectionTarget(Transform):
+    """Prefer target IDs over the section's own
+
+    Given this input text:
+
+        .. _a:
+        .. _b:
+        .. _c:
+
+        Section Title
+        -------------
+
+        A paragraph.
+
+    This parses into:
+
+            <target refid="a">
+            <target refid="b">
+            <target refid="c">
+            <section ids="section-title a b c">
+                ...
+
+    Transforming it gives:
+
+            <target refid="a">
+            <target refid="b">
+            <target refid="c">
+            <section ids="c section-title a b">
+                ...
+
+    Note that the other IDs are all preserved; only the order is modified.
+    Nested subsections are also checked.
+
+    """
+    # Post processing priority from
+    # https://www.sphinx-doc.org/en/master/extdev/appapi.html?highlight=transform#sphinx.application.Sphinx.add_transform
+    default_priority = 700
+
+    def apply(self):
+        """Docutils transform entry point"""
+        # `.findall` is new in docutils 0.18. Fallback to `.traverse`.
+        try:
+            findall = self.document.findall
+        except AttributeError:
+            findall = self.document.traverse
+
+        for node in findall(nodes.section):
+            # Get node directly preceding the section
+            index = node.parent.index(node)
+            if index == 0:
+                continue
+            last = node.parent[index - 1]
+            # Targets are part of the previous section so we should look deeper
+            while isinstance(last, nodes.Node) and last.children:
+                last = last[-1]
+            # Filter away nodes that aren't targets
+            if not isinstance(last, nodes.target):
+                continue
+            # Internal hyperlink targets have refid (external ones have refuri)
+            if "refid" not in last:
+                continue
+            refid = last["refid"]
+            assert refid in node["ids"]
+            # Prefer the target's ID
+            node["ids"].remove(refid)
+            node["ids"].insert(0, refid)
+
 # This hook replaces {{OVITO_VERSION_STRING}} in codeblocks and other contexts with the current OVITO release number.
 # See https://stackoverflow.com/a/56328457
 def ovitoVersionReplace(app, docname, source):
@@ -272,3 +343,4 @@ def ovitoVersionReplace(app, docname, source):
 
 def setup(app):
     app.connect('source-read', ovitoVersionReplace)
+    app.add_transform(PreferSectionTarget)
