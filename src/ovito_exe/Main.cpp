@@ -40,7 +40,7 @@ int main(int argc, char** argv)
 #if defined(OVITO_BUILD_PLUGIN_PYSCRIPT) && !defined(OVITO_BUILD_BASIC)
     // This (useless) call to a Python C API function is needed to force-link the Python library into the executable.
     // We have to make sure the Python lib gets loaded into process memory before any of OVITO's plugin Python modules
-    // are loaded, because they depend on the Python lib but were not explicitly linked to it.
+    // are loaded, because they depend on the Python lib but were not explicitly linking to it.
     if(Py_IsInitialized())
         return 1;
 #endif

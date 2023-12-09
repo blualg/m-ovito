@@ -64,7 +64,7 @@ class OVITO_CORE_EXPORT OvitoObject : public QObject
 
 private:
 
-    // The class descriptor instance.
+    /// The meta-class descriptor for the OvitoObject C++ class.
     static const OvitoClass __OOClass_instance;
 
 public:
@@ -72,18 +72,19 @@ public:
     using ovito_class = OvitoObject;
     using OOMetaClass = OvitoClass;
 
-    /// Returns the type descriptor that every OvitoObject-derived class has.
+    /// Returns the class' meta-class descriptor.
     static const OvitoClass& OOClass() { return __OOClass_instance; }
 
-    /// \brief Default constructor, which initializes the reference count to zero.
+    /// Default constructor initializing the object's reference count to zero.
     OvitoObject() = default;
 
 #ifdef OVITO_DEBUG
-    /// \brief Destructor.
+    /// Destructor.
     virtual ~OvitoObject();
 #endif
 
-    /// Returns true if this object is currently being loaded from an ObjectLoadStream.
+    /// Indicates whether this object is currently being loaded from an ObjectLoadStream,
+    /// which means it is not yet in a fully initialized state.
     bool isBeingLoaded() const;
 
     /// Returns true if this object is about to be deleted, i.e. if the reference count has reached zero
@@ -92,9 +93,7 @@ public:
         return objectReferenceCount() >= INVALID_REFERENCE_COUNT;
     }
 
-    /// \brief Returns the current value of the object's reference counter.
-    /// \return The reference count for this object, i.e. the number of references
-    ///         pointing to this object.
+    /// Returns the current value of the object's reference counter, i.e., the number of strong references pointing to this object.
     const std::atomic<int>& objectReferenceCount() const noexcept { return _referenceCount; }
 
 #ifdef OVITO_DEBUG

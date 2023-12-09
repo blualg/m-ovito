@@ -451,6 +451,15 @@ bool MainWindow::event(QEvent* event)
 }
 
 /******************************************************************************
+* This method is called from UserInterface::submitWork() whenever pending work
+* needs to be performed in the main thread.
+******************************************************************************/
+void MainWindow::pendingWorkArrived()
+{
+    QMetaObject::invokeMethod(this, "executePendingWork", Qt::QueuedConnection);
+}
+
+/******************************************************************************
 * Handles global key input.
 ******************************************************************************/
 void MainWindow::keyPressEvent(QKeyEvent* event)

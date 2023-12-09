@@ -104,9 +104,6 @@ public:
     /// Returns the human-readable name of the application.
     static QString applicationName();
 
-    /// Create the global instance of the right QCoreApplication derived class.
-    virtual void createQtApplication(int& argc, char** argv);
-
 #ifndef Q_OS_WASM
     /// Returns the application-wide network access manager object.
     QNetworkAccessManager* networkAccessManager();
@@ -121,6 +118,15 @@ protected:
 
     /// Is called by UserInterface::shutdown() when application is shutting down.
     virtual void signalAboutToQuit() override;
+
+    /// TThis method is called from UserInterface::submitWork() whenever pending work
+    /// needs to be performed in the main thread.
+    virtual void pendingWorkArrived() override;
+
+private Q_SLOTS:
+
+    /// Executes pending work items waiting in the deferred execution queue.
+    void executePendingWork() { UserInterface::executePendingWork(); }
 
 protected:
 

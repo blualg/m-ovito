@@ -78,6 +78,9 @@ protected Q_SLOTS:
 
 protected:
 
+    /// Create the global instance of the right QCoreApplication derived class.
+    virtual void createQtApplication(int& argc, char** argv);
+
     /// Defines the program's command line parameters.
     virtual void registerCommandLineParameters(QCommandLineParser& parser);
 

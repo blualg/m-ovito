@@ -77,8 +77,7 @@ void OvitoClass::initialize()
         }
 
         // Fetch display name assigned to the Qt object class.
-        if(int idx = qtMetaObject()->indexOfClassInfo("DisplayName"); idx >= 0)
-            setDisplayName(QString::fromUtf8(qtMetaObject()->classInfo(idx).value()));
+        setDisplayName(classMetadata("DisplayName"));
     }
 }
 
@@ -107,24 +106,24 @@ bool OvitoClass::isKnownUnderName(const QString& name) const
 }
 
 /******************************************************************************
-* Returns a human-readable string describing this class.
-******************************************************************************/
-QString OvitoClass::descriptionString() const
-{
-    if(qtMetaObject()) {
-        int index = qtMetaObject()->indexOfClassInfo("Description");
-        if(index >= 0)
-            return QString::fromUtf8(qtMetaObject()->classInfo(index).value());
-    }
-    return QString();
-}
-
-/******************************************************************************
 * Determines if an object is an instance of the class or one of its subclasses.
 ******************************************************************************/
 bool OvitoClass::isMember(const OvitoObject* obj) const
 {
     return obj ? obj->getOOClass().isDerivedFrom(*this) : false;
+}
+
+/******************************************************************************
+* Looks up a string value in the class' metadata table.
+******************************************************************************/
+QString OvitoClass::classMetadata(const char* metadataKey) const
+{
+    if(qtMetaObject()) {
+        int index = qtMetaObject()->indexOfClassInfo(metadataKey);
+        if(index >= 0)
+            return QString::fromUtf8(qtMetaObject()->classInfo(index).value());
+    }
+    return QString();
 }
 
 /******************************************************************************

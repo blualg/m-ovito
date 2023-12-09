@@ -172,16 +172,7 @@ public:
     bool performTransaction(const QString& undoOperationName, Function&& func);
 
     /// Executes the given function at some later time unless the given object is destroyed in the meantime or the user interface is shut down.
-    template<typename Function>
-    void runDeferred(QPointer<const QObject> obj, Function&& f, bool isScriptingContext) {
-        OVITO_ASSERT(obj.isNull() == false);
-        std::lock_guard<std::mutex> lock(_pendingWorkMutex);
-        if(!isShuttingDown())
-            _pendingWork.emplace(std::move(obj), std::forward<Function>(f), isScriptingContext);
-    }
-
-    /// Executes pending work items waiting in the deferred execution queue.
-    void executePendingWork();
+    void submitWork(const QObject* contextObject, fu2::unique_function<void() noexcept> function, bool isScriptingContext);
 
 protected:
 
@@ -191,8 +182,14 @@ protected:
     /// Assigns an UndoStack.
     void setUndoStack(UndoStack* undoStack) { _undoStack = undoStack; }
 
-    /// This pure virtual method is called from shutdown().
+    /// This pure virtual method is called from UserInterface::shutdown().
     virtual void signalAboutToQuit() = 0;
+
+    /// This pure virtual method is called from UserInterface::submitWork().
+    virtual void pendingWorkArrived() = 0;
+
+    /// Executes pending work items waiting in the deferred execution queue.
+    void executePendingWork();
 
 private:
 
@@ -229,20 +226,28 @@ private:
     /// This keeps the UI object itself alive until shutdown() is called.
     std::shared_ptr<UserInterface> _selfGuard;
 
-    /// A piece of work that has been submitted for deferred execution in the user interface thread.
+    /// A piece of work that has been submitted for deferred execution in the main thread.
     struct Work {
+        /// Constructor.
         template<typename Function>
         Work(QPointer<const QObject> obj_, Function&& function_, bool isScriptingContext_) :
             obj(std::move(obj_)), function(std::forward<Function>(function_)), isScriptingContext(isScriptingContext_) {}
+
+        /// The context object this work is associated with.
+        /// If the object is destroyed before the work is executed, the work is canceled.
         QPointer<const QObject> obj;
+
+        /// The function to be executed.
         fu2::unique_function<void() noexcept> function;
+
+        /// Indicates whether the work is being performed in a scripting context or an interactive context.
         bool isScriptingContext;
     };
 
-    /// Stores all pending work items that have been queued for deferred execution in the user interface thread.
+    /// The queue of all pending work items that have been submitted for deferred execution in the main thread.
     std::queue<Work> _pendingWork;
 
-    /// For thread-safe access to the work queue.
+    /// Manages thread-safe concurrent access to the work queue.
     std::mutex _pendingWorkMutex;
 
 #ifdef OVITO_DEBUG

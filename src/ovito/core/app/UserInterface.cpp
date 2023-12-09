@@ -113,25 +113,42 @@ bool UserInterface::processEvents()
 }
 
 /******************************************************************************
+* Executes the given function at some later time unless the given object is
+* destroyed in the meantime or the user interface is shut down.
+******************************************************************************/
+void UserInterface::submitWork(const QObject* contextObject, fu2::unique_function<void() noexcept> function, bool isScriptingContext)
+{
+    OVITO_ASSERT(contextObject);
+    std::lock_guard<std::mutex> lock(_pendingWorkMutex);
+    if(isShuttingDown() == false) {
+        _pendingWork.emplace(contextObject, std::move(function), isScriptingContext);
+        if(_pendingWork.size() == 1)
+            pendingWorkArrived();
+    }
+}
+
+/******************************************************************************
 * Executes pending work items waiting in the queue.
 ******************************************************************************/
 void UserInterface::executePendingWork()
 {
+    // Check that we are really in the main thread here.
     OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
 
     std::unique_lock<std::mutex> lock(_pendingWorkMutex);
     while(!_pendingWork.empty()) {
+        // Grab the next work item from the queue.
         Work work = std::move(_pendingWork.front());
         _pendingWork.pop();
         lock.unlock();
 
-        // Execute work only if the context object still exists and the user interface is not shutting down.
-        // Otherwise, silently cancel the work (but still run the destructor of the callable).
+        // Execute work item only if the context object still exists and the user interface is not shutting down.
+        // Otherwise, silently cancel the work (which still runs the destructor of the work object).
         if(!work.obj.isNull() && !isShuttingDown()) {
-            // Activate the execution context to which the work was submitted.
+            // Establish the execution context in which the work was submitted.
             ExecutionContext::Scope execScope(work.isScriptingContext ? ExecutionContext::Type::Scripting : ExecutionContext::Type::Interactive, shared_from_this());
 
-            // Undo recording may still be active if the GUI is currently performing a extended user operation (e.g. Animation Settings dialog).
+            // Undo recording may still be active if the GUI is currently performing an extended user operation (e.g. Animation Settings dialog may be open).
             // While the asynchronous work is being performed, undo recording should be suspended.
             UndoSuspender noUndo;
 
@@ -139,6 +156,7 @@ void UserInterface::executePendingWork()
             std::move(work.function)();
         }
 
+        // Continue by grabbing the next work item from the queue.
         lock.lock();
     }
 }

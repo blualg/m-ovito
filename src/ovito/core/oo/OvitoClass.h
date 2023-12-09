@@ -69,7 +69,7 @@ public:
 
     /// \brief Returns a human-readable string describing this class.
     /// \return The description string for this class, or an empty string if the developer did not define a description.
-    QString descriptionString() const;
+    QString descriptionString() const { return classMetadata("Description"); }
 
     /// Checks if this class is known under the given name.
     /// This method alias names defined for this class, which are used when looking up the class for a serialized object in a state file.
@@ -86,7 +86,7 @@ public:
     Plugin* plugin() const { return _plugin; }
 
     /// Returns the Qt runtime-type information associated with the C++ class.
-    /// This may be NULL if this is not a native class type.
+    /// This may be a nullptr if this OVITO class is not a native C++ class.
     const QMetaObject* qtMetaObject() const { return _qtClassInfo; }
 
     /// Indicates whether this class can be instantiated at runtime.
@@ -144,6 +144,9 @@ public:
     ///        of a class belonging to this metaclass. May be overridden by sub-metaclasses if they want to restore
     ///        additional meta information for the class from the input stream.
     virtual void loadClassInfo(LoadStream& stream, SerializedClassInfo* classInfo) const {}
+
+    /// Looks up a string value in the class' metadata table.
+    QString classMetadata(const char* metadataKey) const;
 
     /// \brief Creates a new instance of the SerializedClassInfo structure.
     virtual std::unique_ptr<SerializedClassInfo> createClassInfoStructure() const {
@@ -215,7 +218,7 @@ protected:
 template<class T>
 inline const typename T::OOMetaClass* static_class_cast(const OvitoClass* clazz) {
     OVITO_ASSERT_MSG(!clazz || clazz->isDerivedFrom(T::OOClass()), "static_class_cast",
-        qPrintable(QString("Runtime type check failed. The source class %1 is not drived from the target class %2.").arg(clazz->name()).arg(T::OOClass().name())));
+        qPrintable(QStringLiteral("Runtime type check failed. The source class %1 is not drived from the target class %2.").arg(clazz->name()).arg(T::OOClass().name())));
     return static_cast<const typename T::OOMetaClass*>(clazz);
 }
 

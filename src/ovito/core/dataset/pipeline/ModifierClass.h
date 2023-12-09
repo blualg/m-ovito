@@ -46,15 +46,7 @@ public:
     virtual bool isApplicableTo(const DataCollection& input) const { return true; }
 
     /// \brief Returns the category under which the modifier will be displayed in the modifier list box.
-    virtual QString modifierCategory() const {
-        if(qtMetaObject()) {
-            int infoIndex = qtMetaObject()->indexOfClassInfo("ModifierCategory");
-            if(infoIndex != -1) {
-                return QString::fromUtf8(qtMetaObject()->classInfo(infoIndex).value());
-            }
-        }
-        return {};
-    }
+    virtual QString modifierCategory() const { return classMetadata("ModifierCategory"); }
 };
 
 }   // End of namespace

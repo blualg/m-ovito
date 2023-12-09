@@ -38,10 +38,10 @@ class OVITO_CORE_EXPORT ObjectExecutor
 public:
 
     /// Constructor.
-    explicit ObjectExecutor(const QObject* obj, bool deferredExecution) noexcept :
-            _obj(obj),
+    explicit ObjectExecutor(const QObject* contextObject, bool deferredExecution) noexcept :
+            _contextObject(contextObject),
             _deferredExecution(deferredExecution) {
-        OVITO_ASSERT(obj);
+        OVITO_ASSERT(contextObject);
 #ifndef OVITO_NO_EVENT_LOOP
         OVITO_ASSERT(!QCoreApplication::instance() || obj->thread() == QCoreApplication::instance()->thread());
 #endif
@@ -53,15 +53,11 @@ public:
         OVITO_ASSERT(ExecutionContext::current().isValid());
         // Note: Avoiding the use of C++17 capture this-by-copy here, because it is not fully supported by the MSVC 2017 compiler.
         return [f = std::forward<Function>(f), executor = *this, context = ExecutionContext::current()]() mutable noexcept {
-#ifndef OVITO_NO_EVENT_LOOP
-            if(executor.object() && QCoreApplication::instance()) {
+            if(executor.contextObject()) {
                 // When not in the main thread, or if deferred execution was requested, schedule work for later execution in the main thread.
-                if(executor._deferredExecution || QThread::currentThread() != QCoreApplication::instance()->thread()) {
-#else
-            if(executor.object()) {
-                if(executor._deferredExecution) {
-#endif
-                    std::move(context).runDeferred(std::move(executor._obj), std::forward<Function>(f));
+                if(executor._deferredExecution || QThread::currentThread() != executor.contextObject()->thread()) {
+                    // Schedule the work for execution later.
+                    std::move(context).runDeferred(std::move(executor._contextObject), std::forward<Function>(f));
                 }
                 else { // When already in the main thread, execute work immediately.
 
@@ -82,19 +78,16 @@ public:
     template<typename Function>
     void execute(Function&& f) {
         OVITO_ASSERT(ExecutionContext::current().isValid());
-#ifndef OVITO_NO_EVENT_LOOP
-        if(object() && QCoreApplication::instance()) {
-            if(_deferredExecution || QThread::currentThread() != QCoreApplication::instance()->thread()) {
-#else
-        if(object()) {
-            if(_deferredExecution) {
-#endif
-                ExecutionContext::current().runDeferred(object(), std::forward<Function>(f));
+        if(contextObject()) {
+            // If the work was explicitly marked for deferred execution or if we are not running in the
+            // main thread, schedule the work for execution later.
+            if(_deferredExecution || QThread::currentThread() != contextObject()->thread()) {
+                ExecutionContext::current().runDeferred(contextObject(), std::forward<Function>(f));
             }
             else {
+                // Execute the work immediately.
                 // Temporarily suspend undo recording, because asynchronous operations never get recorded by convention.
                 UndoSuspender noUndo;
-                // Execute the work function.
                 std::invoke(std::forward<Function>(f));
             }
         }
@@ -102,14 +95,14 @@ public:
 
     /// Returns the object this executor is associated with.
     /// Work submitted to this executor will be executed in the context of the object.
-    const QObject* object() const { return _obj.data(); }
+    const QObject* contextObject() const { return _contextObject.get(); }
 
 private:
 
     /// The object work will be submitted to. Work will be executed in the context of this object,
     /// which means it will be automatically canceled if the object gets deleted before the work
     /// is done.
-    QPointer<const QObject> _obj;
+    const QPointer<const QObject> _contextObject;
 
     /// Controls whether execution of the work will be deferred until after control is returned to
     /// the event loop even if immediate execution would be possible.

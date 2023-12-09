@@ -177,10 +177,17 @@ protected:
     /// This virtual method is called from UserInterface::shutdown().
     virtual void signalAboutToQuit() override { Q_EMIT aboutToQuit(); }
 
+    /// TThis method is called from UserInterface::submitWork() whenever pending work
+    /// needs to be performed in the main thread.
+    virtual void pendingWorkArrived() override;
+
 private Q_SLOTS:
 
     /// Displays an error message box. This slot is called by reportError().
     void showErrorMessages();
+
+    /// Executes pending work items waiting in the deferred execution queue.
+    void executePendingWork() { UserInterface::executePendingWork(); }
 
 private:
 
