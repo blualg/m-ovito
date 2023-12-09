@@ -224,7 +224,7 @@ void ModificationNode::referenceReplaced(const PropertyFieldDescriptor* field, R
 /******************************************************************************
 * Sends an event to all dependents of this RefTarget.
 ******************************************************************************/
-void ModificationNode::notifyDependentsImpl(const ReferenceEvent& event)
+void ModificationNode::notifyDependentsImpl(const ReferenceEvent& event) noexcept
 {
     if(event.type() == ReferenceEvent::TargetChanged) {
         // Invalidate cached results when this modification node or the modifier changes.
