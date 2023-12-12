@@ -30,8 +30,10 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ScenePreparation);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(ScenePreparation);
 DEFINE_REFERENCE_FIELD(ScenePreparation, scene);
+DEFINE_REFERENCE_FIELD(ScenePreparation, renderSettings);
+DEFINE_REFERENCE_FIELD(ScenePreparation, selectionSet);
 
 /******************************************************************************
 * Constructor.
@@ -212,7 +214,7 @@ void ScenePreparation::pipelineEvaluationFinished()
 }
 
 /******************************************************************************
-* Is called when a RefTarget referenced by this object has generated an event.
+* Is called when a RefTarget referenced by this object generated an event.
 ******************************************************************************/
 bool ScenePreparation::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
@@ -222,6 +224,14 @@ bool ScenePreparation::referenceEvent(RefTarget* source, const ReferenceEvent& e
             // If the scene contents change, we interrupt the pipeline evaluation that is currently in progress and start over.
             restartPreparation();
         }
+    }
+    else if(event.type() == ReferenceEvent::TargetChanged && source == renderSettings()) {
+        // Repaint viewports whenever the user changes the current render settings.
+        Q_EMIT viewportUpdateRequest();
+    }
+    else if(event.type() == ReferenceEvent::TargetChanged && source == selectionSet()) {
+        // Repaint viewports whenever the user selects a different object in the scene.
+        Q_EMIT viewportUpdateRequest();
     }
     else if(event.type() == ReferenceEvent::PreliminaryStateAvailable && source == scene()) {
         // Update viewport window when a new preliminiary state from one of the data pipelines in the scene
@@ -239,11 +249,7 @@ void ScenePreparation::referenceReplaced(const PropertyFieldDescriptor* field, R
 {
     if(field == PROPERTY_FIELD(scene)) {
         restartPreparation();
-
-        // Set up a signal/slot connection that repaints the viewports whenever the scene selection changes.
-        disconnect(_selectionChangedConnection);
-        if(scene() && scene()->selection())
-            _selectionChangedConnection = connect(scene()->selection(), &SelectionSet::selectionChanged, this, &ScenePreparation::viewportUpdateRequest);
+        _selectionSet.set(this, PROPERTY_FIELD(selectionSet), scene() ? scene()->selection() : nullptr);
     }
     RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
@@ -253,11 +259,7 @@ void ScenePreparation::referenceReplaced(const PropertyFieldDescriptor* field, R
 ******************************************************************************/
 void ScenePreparation::renderSettingsReplaced(RenderSettings* newRenderSettings)
 {
-    disconnect(_renderSettingsChangedConnection);
-    if(newRenderSettings) {
-        // Repaint viewports whenever current render settings object signals a change.
-        _renderSettingsChangedConnection = connect(newRenderSettings, &RenderSettings::settingsChanged, this, &ScenePreparation::viewportUpdateRequest);
-    }
+    _renderSettings.set(this, PROPERTY_FIELD(renderSettings), newRenderSettings);
     // Repaint viewports.
     Q_EMIT viewportUpdateRequest();
 }

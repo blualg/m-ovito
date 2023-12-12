@@ -25,7 +25,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SelectionSet);
+IMPLEMENT_OVITO_CLASS2(SelectionSet);
 DEFINE_VECTOR_REFERENCE_FIELD(SelectionSet, nodes);
 SET_PROPERTY_FIELD_LABEL(SelectionSet, nodes, "Nodes");
 
@@ -64,62 +64,6 @@ void SelectionSet::remove(SceneNode* node)
     if(index == -1) return;
     removeByIndex(index);
     OVITO_ASSERT(!nodes().contains(node));
-}
-
-/******************************************************************************
-* Is called when a RefTarget has been added to a VectorReferenceField of this RefMaker.
-******************************************************************************/
-void SelectionSet::referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex)
-{
-    if(field == PROPERTY_FIELD(nodes)) {
-        Q_EMIT selectionChanged(this);
-        if(!_selectionChangeInProgress) {
-            _selectionChangeInProgress = true;
-            QMetaObject::invokeMethod(this, "onSelectionChangeCompleted", Qt::QueuedConnection);
-        }
-    }
-    RefTarget::referenceInserted(field, newTarget, listIndex);
-}
-
-/******************************************************************************
-* Is called when a RefTarget has been removed from a VectorReferenceField of this RefMaker.
-******************************************************************************/
-void SelectionSet::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex)
-{
-    if(field == PROPERTY_FIELD(nodes)) {
-        Q_EMIT selectionChanged(this);
-        if(!_selectionChangeInProgress) {
-            _selectionChangeInProgress = true;
-            QMetaObject::invokeMethod(this, "onSelectionChangeCompleted", Qt::QueuedConnection);
-        }
-    }
-    RefTarget::referenceRemoved(field, oldTarget, listIndex);
-}
-
-/******************************************************************************
-* Is called when a RefTarget has been replaced in a VectorReferenceField of this RefMaker.
-******************************************************************************/
-void SelectionSet::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
-{
-    if(field == PROPERTY_FIELD(nodes)) {
-        Q_EMIT selectionChanged(this);
-        if(!_selectionChangeInProgress) {
-            _selectionChangeInProgress = true;
-            QMetaObject::invokeMethod(this, "onSelectionChangeCompleted", Qt::QueuedConnection);
-        }
-    }
-    RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
-}
-
-/******************************************************************************
-* This method is invoked after the change of the selection set is complete.
-* It emits the selectionChangeComplete() signal.
-******************************************************************************/
-void SelectionSet::onSelectionChangeCompleted()
-{
-    OVITO_ASSERT(_selectionChangeInProgress);
-    _selectionChangeInProgress = false;
-    Q_EMIT selectionChangeComplete(this);
 }
 
 }   // End of namespace

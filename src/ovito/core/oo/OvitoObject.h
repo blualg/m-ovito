@@ -55,12 +55,9 @@ namespace Ovito {
  * to support serialization of their data should override the virtual functions
  * saveToStream() and loadFromStream().
  */
-class OVITO_CORE_EXPORT OvitoObject : public QObject
+class OVITO_CORE_EXPORT OvitoObject : public std::enable_shared_from_this<OvitoObject>
 {
-    Q_OBJECT
-
-    Q_PROPERTY(QString className READ className CONSTANT)
-    Q_PROPERTY(QString pluginId READ pluginId CONSTANT)
+    Q_GADGET
 
 private:
 
@@ -69,32 +66,40 @@ private:
 
 public:
 
+    /// Flags which may be associated with an OvitoObject.
+    enum ObjectFlag
+    {
+        NoFlags               = 0,        //< No flags set.
+        BeingDeleted          = (1 << 0), //< Indicates that this object is in the process of being deleted.
+        BeingLoaded           = (1 << 1), //< Indicates that this object is in the process of being restored from an ObjectLoadStream.
+    };
+    Q_DECLARE_FLAGS(ObjectFlags, ObjectFlag);
+
     using ovito_class = OvitoObject;
     using OOMetaClass = OvitoClass;
 
     /// Returns the class' meta-class descriptor.
     static const OvitoClass& OOClass() { return __OOClass_instance; }
 
+    /// Mimic Qt's string localization function tr() for string literals.
+    static inline QString tr(const char* sourceText) { return QString::fromUtf8(sourceText); }
+
     /// Default constructor initializing the object's reference count to zero.
     OvitoObject() = default;
 
 #ifdef OVITO_DEBUG
-    /// Destructor.
-    virtual ~OvitoObject();
+    /// Note: No need to make the base class destructor virtual, because we use std::shared_ptr to manage an object's lifetime.
+    /// std::shared_ptr will call the right destructor of a derived class automatically.
+    ~OvitoObject();
 #endif
 
     /// Indicates whether this object is currently being loaded from an ObjectLoadStream,
     /// which means it is not yet in a fully initialized state.
-    bool isBeingLoaded() const;
+    bool isBeingLoaded() const { return _flags.testFlag(BeingLoaded); }
 
     /// Returns true if this object is about to be deleted, i.e. if the reference count has reached zero
     /// and aboutToBeDeleted() is being invoked.
-    bool isAboutToBeDeleted() const {
-        return objectReferenceCount() >= INVALID_REFERENCE_COUNT;
-    }
-
-    /// Returns the current value of the object's reference counter, i.e., the number of strong references pointing to this object.
-    const std::atomic<int>& objectReferenceCount() const noexcept { return _referenceCount; }
+    bool isBeingDeleted() const { return _flags.testFlag(BeingDeleted); }
 
 #ifdef OVITO_DEBUG
     /// \brief Returns whether this object has not been deleted yet.
@@ -110,35 +115,34 @@ public:
     /// Returns the class descriptor for this object.
     const OvitoClass& getOOMetaClass() const { return OOClass(); }
 
-    /// This method implements the Executor interface.
-    /// It creates some work that can be submitted for execution later and which will be executed in the context of this object.
-    /// If the object gets deleted in the meantime, the work will be discarded.
+    /// Creates some work that can be submitted for execution later and which will be executed in the context of this object (typically in the main thread).
+    /// If the object gets destroyed before the work is executed, the scheduled work will be discarded.
     template<typename Function>
     auto schedule(Function&& f) const {
-        OVITO_ASSERT(this);
+        OVITO_CHECK_OBJECT_POINTER(this);
         OVITO_ASSERT(ExecutionContext::current().isValid());
-        return [obj = QPointer<const QObject>(this), context = ExecutionContext::current(), f = std::forward<Function>(f)]() mutable noexcept {
-            if(const OvitoObject* self = static_cast<const OvitoObject*>(obj.data())) {
+        return [weakRef = weak_from_this(), context = ExecutionContext::current(), f = std::forward<Function>(f)]() mutable noexcept {
+            if(auto self = weakRef.lock()) {
                 ExecutionContext::Scope execScope(std::move(context));
                 self->execute(std::move(f));
             }
         };
     }
 
-    /// This method implements the Executor interface.
-    /// It executes work in the context of this object.
+    /// Executes some work in the context of this object (typically the main thread).
     template<typename Function>
     void execute(Function&& f) const {
-        OVITO_ASSERT(this);
+        OVITO_CHECK_OBJECT_POINTER(this);
         OVITO_ASSERT(ExecutionContext::current().isValid());
-        if(QThread::currentThread() != this->thread()) {
-            ExecutionContext::current().runDeferred(this, std::forward<Function>(f));
-        }
-        else {
+        // If we are in the main thread already, we can immediately execute the work.
+        // Otherwise, schedule its execution in the main thread.
+        if(ExecutionContext::isMainThread()) {
             // Temporarily suspend undo recording, because deferred operations never get recorded by convention.
             UndoSuspender noUndo;
-            // Execute the work function.
             std::invoke(std::forward<Function>(f));
+        }
+        else {
+            ExecutionContext::current().runDeferred(this, std::forward<Function>(f));
         }
     }
 
@@ -191,32 +195,6 @@ protected:
 
 private:
 
-    /// The current number of references to this object that keep it alive.
-    mutable std::atomic<int> _referenceCount{0};
-
-    /// This is the special value the reference count of the object is set to while it is being deleted:
-    constexpr static auto INVALID_REFERENCE_COUNT = std::numeric_limits<int>::max() / 2;
-
-    /// \brief Increments the reference count by one.
-    void incrementReferenceCount() const noexcept {
-        OVITO_CHECK_OBJECT_POINTER(this);
-        OVITO_ASSERT_MSG(_isAllocatedOnTheHeap, "OvitoObject::incrementReferenceCount()", "Cannot use OORef<> to hold an object that has not been created with OORef<>::create().");
-        OVITO_ASSERT_MSG(!_isBeingDestructed, "OvitoObject::incrementReferenceCount()", "Cannot create new OORef<> for an object that is currently being destructed.");
-        _referenceCount.fetch_add(1);
-    }
-
-    /// \brief Decrements the reference count by one.
-    ///
-    /// When the reference count becomes zero, then the object deletes itself automatically.
-    void decrementReferenceCount() const noexcept {
-        OVITO_CHECK_OBJECT_POINTER(this);
-        OVITO_ASSERT_MSG(_isAllocatedOnTheHeap, "OvitoObject::decrementReferenceCount()", "Cannot use OORef<> to hold an object that was allocated on the stack.");
-        OVITO_ASSERT(_referenceCount.load() >= 1);
-        if(_referenceCount.fetch_sub(1) == 1) {
-            const_cast<OvitoObject*>(this)->deleteObjectInternal();
-        }
-    }
-
     /// Internal method that calls this object's aboutToBeDeleted() routine and the deletes the object.
     /// It is automatically called when the object's reference counter reaches zero.
     Q_INVOKABLE void deleteObjectInternal() noexcept;
@@ -229,6 +207,9 @@ private:
     /// This method is an implementation detail required by the Q_PROPERTY macro above.
     QString pluginId() const { return QString::fromLatin1(getOOClass().pluginId()); }
 
+    /// Bit-wise flags.
+    ObjectFlags _flags = NoFlags;
+
 #ifdef OVITO_DEBUG
     /// This field is initialized with a special value by the class constructor to indicate that
     /// the object is still alive and has not been deleted. When the object is deleted, the
@@ -238,9 +219,6 @@ private:
     /// Indicates that this object lives on the heap, because it has been created by the OORef<>::create() method.
     /// Otherwise it was allocated on the stack, which means the object's reference counting mechanism may not be used.
     bool _isAllocatedOnTheHeap = false;
-
-    /// Indicates that this object's destructor is being run.
-    bool _isBeingDestructed = false;
 
     friend class OvitoClass;
 #endif
@@ -261,7 +239,7 @@ private:
 /// \relates OvitoObject
 template<class T, class U>
 inline T* dynamic_object_cast(U* obj) noexcept {
-    return qobject_cast<T*>(obj);
+    return dynamic_cast<T*>(obj);
 }
 
 /// \brief Dynamic cast operator for subclasses of OvitoObject derived.
@@ -272,7 +250,7 @@ inline T* dynamic_object_cast(U* obj) noexcept {
 /// \relates OvitoObject
 template<class T, class U>
 inline const T* dynamic_object_cast(const U* obj) noexcept {
-    return qobject_cast<const T*>(obj);
+    return dynamic_cast<const T*>(obj);
 }
 
 /// \brief Static cast operator for OvitoObject derived classes.

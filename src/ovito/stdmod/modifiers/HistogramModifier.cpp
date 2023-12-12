@@ -107,7 +107,7 @@ void HistogramModifier::initializeModifier(const ModifierInitializationRequest& 
 ******************************************************************************/
 void HistogramModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isAboutToBeDeleted() && !isUndoingOrRedoing()) {
+    if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isBeingDeleted() && !isUndoingOrRedoing()) {
         // Whenever the selected property class of this modifier changes, update the source property reference accordingly.
         setSourceProperty(sourceProperty().convertToContainerClass(subject().dataClass()));
     }

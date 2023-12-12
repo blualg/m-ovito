@@ -103,6 +103,8 @@ void PropertiesEditor::setEditObject(RefTarget* newObject)
             "PropertiesEditor::setEditObject()", "This properties editor was not made for this object class.");
 
     _editObject.set(this, PROPERTY_FIELD(editObject), newObject);
+
+    OVITO_ASSERT(!newObject || newObject->isBeingEdited());
 }
 
 /******************************************************************************
@@ -200,8 +202,6 @@ bool PropertiesEditor::referenceEvent(RefTarget* source, const ReferenceEvent& e
 void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
     if(field == PROPERTY_FIELD(editObject)) {
-        if(oldTarget) oldTarget->unsetObjectEditingFlag();
-        if(newTarget) newTarget->setObjectEditingFlag();
         Q_EMIT contentsReplaced(editObject());
         Q_EMIT contentsChanged(editObject());
         emitPipelineInputChangedSignal(this);

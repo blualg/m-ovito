@@ -37,8 +37,13 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DataSetContainer);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(DataSetContainer);
 DEFINE_REFERENCE_FIELD(DataSetContainer, currentSet);
+DEFINE_REFERENCE_FIELD(DataSetContainer, activeViewportConfig);
+DEFINE_REFERENCE_FIELD(DataSetContainer, activeViewport);
+DEFINE_REFERENCE_FIELD(DataSetContainer, activeScene);
+DEFINE_REFERENCE_FIELD(DataSetContainer, activeSelectionSet);
+DEFINE_REFERENCE_FIELD(DataSetContainer, activeAnimationSettings);
 
 /******************************************************************************
 * Initializes the dataset manager.
@@ -53,7 +58,74 @@ DataSetContainer::DataSetContainer(TaskManager& taskManager, UserInterface& user
 DataSetContainer::~DataSetContainer()
 {
     setCurrentSet(nullptr);
-    clearAllReferences();
+
+    OVITO_ASSERT(activeViewportConfig() == nullptr);
+    OVITO_ASSERT(activeViewport() == nullptr);
+    OVITO_ASSERT(activeScene() == nullptr);
+    OVITO_ASSERT(activeAnimationSettings() == nullptr);
+    OVITO_ASSERT(activeSelectionSet() == nullptr);
+}
+
+/******************************************************************************
+* Is called when a RefTarget referenced by this object generated an event.
+******************************************************************************/
+bool DataSetContainer::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+{
+    if(source == currentSet()) {
+        if(event.type() == ReferenceEvent::ReferenceChanged) {
+            const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
+            if(refEvent.field() == PROPERTY_FIELD(DataSet::viewportConfig)) {
+                _activeViewportConfig.set(this, PROPERTY_FIELD(activeViewportConfig), currentSet()->viewportConfig());
+            }
+            else if(refEvent.field() == PROPERTY_FIELD(DataSet::renderSettings)) {
+                Q_EMIT renderSettingsReplaced(currentSet()->renderSettings());
+            }
+        }
+        else if(event.type() == ReferenceEvent::TargetChanged) {
+            const TargetChangedEvent& changedEvent = static_cast<const TargetChangedEvent&>(event);
+            if(changedEvent.field() == PROPERTY_FIELD(DataSet::filePath)) {
+                Q_EMIT filePathChanged(currentSet()->filePath());
+            }
+        }
+    }
+    else if(source == activeViewportConfig()) {
+        if(event.type() == ReferenceEvent::ReferenceChanged) {
+            const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
+            if(refEvent.field() == PROPERTY_FIELD(ViewportConfiguration::activeViewport)) {
+                _activeViewport.set(this, PROPERTY_FIELD(activeViewport), activeViewportConfig()->activeViewport());
+            }
+        }
+    }
+    else if(source == activeViewport()) {
+        if(event.type() == ReferenceEvent::ReferenceChanged) {
+            const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
+            if(refEvent.field() == PROPERTY_FIELD(Viewport::scene)) {
+                _activeScene.set(this, PROPERTY_FIELD(activeScene), activeViewport()->scene());
+            }
+        }
+    }
+    else if(source == activeAnimationSettings()) {
+        if(event.type() == ReferenceEvent::TargetChanged) {
+            const TargetChangedEvent& changedEvent = static_cast<const TargetChangedEvent&>(event);
+            if(changedEvent.field() == PROPERTY_FIELD(AnimationSettings::currentFrame)) {
+                Q_EMIT currentFrameChanged(activeAnimationSettings()->currentFrame());
+            }
+            else if(changedEvent.field() == PROPERTY_FIELD(AnimationSettings::firstFrame) || changedEvent.field() == PROPERTY_FIELD(AnimationSettings::lastFrame)) {
+                Q_EMIT animationIntervalChanged(activeAnimationSettings()->firstFrame(), activeAnimationSettings()->lastFrame());
+            }
+        }
+    }
+    else if(source == activeSelectionSet()) {
+        if(event.type() == ReferenceEvent::ReferenceChanged || event.type() == ReferenceEvent::ReferenceAdded || event.type() == ReferenceEvent::ReferenceRemoved) {
+            const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
+            if(refEvent.field() == PROPERTY_FIELD(SelectionSet::nodes)) {
+                Q_EMIT selectionChanged(activeSelectionSet());
+                if(!_selectionChangeCompleteTimer.isActive())
+                    _selectionChangeCompleteTimer.start(0, Qt::CoarseTimer, this);
+            }
+        }
+    }
+    return RefMaker::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -63,23 +135,7 @@ void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor* field, R
 {
     if(field == PROPERTY_FIELD(currentSet)) {
 
-        // Detach old dataset from this container.
-        if(DataSet* oldDataSet = static_object_cast<DataSet>(oldTarget)) {
-            OVITO_ASSERT(oldDataSet->_container == this);
-            oldDataSet->_container = nullptr;
-        }
-
-        // Forward signals from the current dataset.
-        disconnect(_viewportConfigReplacedConnection);
-        disconnect(_renderSettingsReplacedConnection);
-        disconnect(_filePathChangedConnection);
-        if(currentSet()) {
-            currentSet()->_container = this;
-            _viewportConfigReplacedConnection = connect(currentSet(), &DataSet::viewportConfigReplaced, this, &DataSetContainer::onViewportConfigReplaced);
-            _renderSettingsReplacedConnection = connect(currentSet(), &DataSet::renderSettingsReplaced, this, &DataSetContainer::renderSettingsReplaced);
-            _filePathChangedConnection = connect(currentSet(), &DataSet::filePathChanged, this, &DataSetContainer::filePathChanged);
-        }
-
+        // Inform clients about the change.
         Q_EMIT dataSetChanged(currentSet());
 
         // Discard all objects in the vis cache.
@@ -88,110 +144,57 @@ void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor* field, R
         if(currentSet()) {
             Q_EMIT renderSettingsReplaced(currentSet()->renderSettings());
             Q_EMIT filePathChanged(currentSet()->filePath());
-            onViewportConfigReplaced(currentSet()->viewportConfig());
+            _activeViewportConfig.set(this, PROPERTY_FIELD(activeViewportConfig), currentSet()->viewportConfig());
         }
         else {
-            onViewportConfigReplaced(nullptr);
             Q_EMIT renderSettingsReplaced(nullptr);
-            Q_EMIT filePathChanged(QString());
+            Q_EMIT filePathChanged({});
+            _activeViewportConfig.set(this, PROPERTY_FIELD(activeViewportConfig), nullptr);
+        }
+    }
+    else if(field == PROPERTY_FIELD(activeViewportConfig)) {
+        Q_EMIT viewportConfigReplaced(activeViewportConfig());
+        _activeViewport.set(this, PROPERTY_FIELD(activeViewport), activeViewportConfig() ? activeViewportConfig()->activeViewport() : nullptr);
+    }
+    else if(field == PROPERTY_FIELD(activeViewport)) {
+        Q_EMIT activeViewportChanged(activeViewport());
+        _activeScene.set(this, PROPERTY_FIELD(activeScene), activeViewport() ? activeViewport()->scene() : nullptr);
+    }
+    else if(field == PROPERTY_FIELD(activeScene)) {
+        if(_animationPlayback) {
+            _animationPlayback->stopAnimationPlayback();
+            _animationPlayback->setScene(activeScene());
+        }
+        Q_EMIT sceneReplaced(activeScene());
+        _activeAnimationSettings.set(this, PROPERTY_FIELD(activeAnimationSettings), activeScene() ? activeScene()->animationSettings() : nullptr);
+        _activeSelectionSet.set(this, PROPERTY_FIELD(activeSelectionSet), activeScene() ? activeScene()->selection() : nullptr);
+    }
+    else if(field == PROPERTY_FIELD(activeSelectionSet)) {
+        Q_EMIT selectionSetReplaced(activeSelectionSet());
+        Q_EMIT selectionChanged(activeSelectionSet());
+        Q_EMIT selectionChangeComplete(activeSelectionSet());
+    }
+    else if(field == PROPERTY_FIELD(activeAnimationSettings)) {
+        Q_EMIT animationSettingsReplaced(activeAnimationSettings());
+        if(activeAnimationSettings()) {
+            Q_EMIT animationIntervalChanged(activeAnimationSettings()->firstFrame(), activeAnimationSettings()->lastFrame());
+            Q_EMIT currentFrameChanged(activeAnimationSettings()->currentFrame());
+            Q_EMIT timeFormatChanged();
         }
     }
     RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
-* This handler is called when another viewport configuration becomes the active one.
+* Handles timer events for this object.
 ******************************************************************************/
-void DataSetContainer::onViewportConfigReplaced(ViewportConfiguration* viewportConfig)
+void DataSetContainer::timerEvent(QTimerEvent* event)
 {
-    disconnect(_activeViewportChangedConnection);
-    if(viewportConfig) {
-        // Forward signals from the current viewport config.
-        _activeViewportChangedConnection = connect(viewportConfig, &ViewportConfiguration::activeViewportChanged, this, &DataSetContainer::onActiveViewportChanged);
+    if(event->timerId() == _selectionChangeCompleteTimer.timerId()) {
+        OVITO_ASSERT(_selectionChangeCompleteTimer.isActive());
+        _selectionChangeCompleteTimer.stop();
+        Q_EMIT selectionChangeComplete(activeSelectionSet());
     }
-    Q_EMIT viewportConfigReplaced(viewportConfig);
-    onActiveViewportChanged(viewportConfig ? viewportConfig->activeViewport() : nullptr);
-}
-
-/******************************************************************************
-* This handler is called when another viewport becomes the active one.
-******************************************************************************/
-void DataSetContainer::onActiveViewportChanged(Viewport* activeViewport)
-{
-    disconnect(_sceneReplacedConnection);
-    _activeViewport = activeViewport;
-    if(activeViewport) {
-        _sceneReplacedConnection = connect(activeViewport, &Viewport::sceneReplaced, this, &DataSetContainer::onSceneReplaced);
-    }
-    onSceneReplaced(activeViewport ? activeViewport->scene() : nullptr);
-    Q_EMIT activeViewportChanged(activeViewport);
-}
-
-/******************************************************************************
-* This handler is called when another scene becomes the active one.
-******************************************************************************/
-void DataSetContainer::onSceneReplaced(Scene* newScene)
-{
-    if(newScene == _activeScene)
-        return;
-    disconnect(_selectionSetReplacedConnection);
-    _activeScene = newScene;
-    if(_animationPlayback) {
-        _animationPlayback->stopAnimationPlayback();
-        _animationPlayback->setScene(newScene);
-    }
-    if(newScene) {
-        // Forward signals from the current scene.
-        _selectionSetReplacedConnection = connect(newScene, &Scene::selectionSetReplaced, this, &DataSetContainer::onSelectionSetReplaced);
-    }
-    Q_EMIT sceneReplaced(newScene);
-    onAnimationSettingsReplaced(newScene ? newScene->animationSettings() : nullptr);
-    onSelectionSetReplaced(newScene ? newScene->selection() : nullptr);
-}
-
-/******************************************************************************
-* This handler is called when another selection set becomes the active one.
-******************************************************************************/
-void DataSetContainer::onSelectionSetReplaced(SelectionSet* newSelectionSet)
-{
-    if(newSelectionSet == _activeSelectionSet)
-        return;
-    disconnect(_selectionSetChangedConnection);
-    disconnect(_selectionSetChangeCompleteConnection);
-    _activeSelectionSet = newSelectionSet;
-    if(newSelectionSet) {
-        // Forward signals from the current selection set.
-        _selectionSetChangedConnection = connect(newSelectionSet, &SelectionSet::selectionChanged, this, &DataSetContainer::selectionChanged);
-        _selectionSetChangeCompleteConnection = connect(newSelectionSet, &SelectionSet::selectionChangeComplete, this, &DataSetContainer::selectionChangeComplete);
-    }
-    Q_EMIT selectionSetReplaced(newSelectionSet);
-    Q_EMIT selectionChanged(newSelectionSet);
-    Q_EMIT selectionChangeComplete(newSelectionSet);
-}
-
-/******************************************************************************
-* This handler is called when another animation settings object becomes the active one.
-******************************************************************************/
-void DataSetContainer::onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings)
-{
-    if(newAnimationSettings == _activeAnimationSettings)
-        return;
-    disconnect(_animationCurrentFrameChangedConnection);
-    disconnect(_animationIntervalChangedConnection);
-    disconnect(_timeFormatChangedConnection);
-    _activeAnimationSettings = newAnimationSettings;
-    if(newAnimationSettings) {
-        // Forward signals from the current animation settings object.
-        _animationCurrentFrameChangedConnection = connect(newAnimationSettings, &AnimationSettings::currentFrameChanged, this, &DataSetContainer::currentFrameChanged);
-        _animationIntervalChangedConnection = connect(newAnimationSettings, &AnimationSettings::intervalChanged, this, &DataSetContainer::animationIntervalChanged);
-        _timeFormatChangedConnection = connect(newAnimationSettings, &AnimationSettings::timeFormatChanged, this, &DataSetContainer::timeFormatChanged);
-    }
-    if(newAnimationSettings) {
-        Q_EMIT animationIntervalChanged(newAnimationSettings->firstFrame(), newAnimationSettings->lastFrame());
-        Q_EMIT currentFrameChanged(newAnimationSettings->currentFrame());
-        Q_EMIT timeFormatChanged();
-    }
-    Q_EMIT animationSettingsReplaced(newAnimationSettings);
 }
 
 /******************************************************************************

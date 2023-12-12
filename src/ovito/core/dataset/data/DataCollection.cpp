@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DataCollection);
+IMPLEMENT_OVITO_CLASS2(DataCollection);
 DEFINE_VECTOR_REFERENCE_FIELD(DataCollection, objects);
 SET_PROPERTY_FIELD_LABEL(DataCollection, objects, "Data objects");
 
@@ -232,7 +232,7 @@ const DataObject* DataCollection::getObjectBy(const DataObject::OOMetaClass& obj
     // Look for the data object with the given ID, or with the given ID followed
     // an enumeration index that was appended by generateUniqueIdentifier().
     for(const DataObject* obj : objects()) {
-        if(objectClass.isMember(obj) && obj->createdByNode() == createdByNode) {
+        if(objectClass.isMember(obj) && obj->createdByNode().lock().get() == createdByNode) {
             if(obj->identifier() == identifier || obj->identifier().startsWith(identifier + QChar('.')))
                 return obj;
         }
@@ -558,7 +558,7 @@ AttributeDataObject* DataCollection::setAttribute(const QString& key, QVariant v
             if(attribute->identifier() == key) {
                 AttributeDataObject* newAttribute = makeMutable(attribute);
                 newAttribute->setValue(std::move(value));
-                newAttribute->setCreatedByNode(const_cast<PipelineNode*>(createdByNode));
+                newAttribute->setCreatedByNode(createdByNode);
                 return newAttribute;
             }
         }

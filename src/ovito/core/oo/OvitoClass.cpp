@@ -37,12 +37,12 @@ OvitoClass* OvitoClass::_firstNativeMetaClass{};
 /******************************************************************************
 * Constructor used for non-templated classes.
 ******************************************************************************/
-OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const char* pluginId, const QMetaObject* qtClassInfo) :
+OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const char* pluginId, OORef<OvitoObject>(*createInstanceFunc)(ObjectInitializationFlags)) :
+    _createInstanceFunc(createInstanceFunc),
     _name(name),
     _displayName(name),
     _superClass(superClass),
-    _pluginId(pluginId),
-    _qtClassInfo(qtClassInfo)
+    _pluginId(pluginId)
 {
     OVITO_ASSERT(superClass != nullptr || name == QStringLiteral("OvitoObject"));
     OVITO_ASSERT(pluginId != nullptr);
@@ -60,12 +60,9 @@ void OvitoClass::initialize()
     // Class must have been initialized with a plugin id.
     OVITO_ASSERT(_pluginId != nullptr);
 
+#if 0 // TODO
     // Initialize native C++ classes.
     if(qtMetaObject()) {
-
-        // Mark class as instantiable if it has an invokable constructor.
-        if(qtMetaObject()->constructorCount())
-            setIsInstantiable();
 
         // Remove namespace qualifier from Qt's class name.
         _pureClassName = qtMetaObject()->className();
@@ -76,9 +73,11 @@ void OvitoClass::initialize()
             }
         }
 
-        // Fetch display name assigned to the Qt object class.
-        setDisplayName(classMetadata("DisplayName"));
     }
+#endif
+
+    // Fetch display name assigned to the Qt object class.
+    setDisplayName(classMetadata("DisplayName"));
 }
 
 /******************************************************************************
@@ -89,6 +88,7 @@ bool OvitoClass::isKnownUnderName(const QString& name) const
     if(name == this->name())
         return true;
 
+#if 0 // TODO
     // Consider name aliases assigned to the Qt object class.
     if(qtMetaObject()) {
         int infoCount = qtMetaObject()->classInfoCount();
@@ -101,6 +101,7 @@ bool OvitoClass::isKnownUnderName(const QString& name) const
             }
         }
     }
+#endif
 
     return false;
 }
@@ -118,11 +119,13 @@ bool OvitoClass::isMember(const OvitoObject* obj) const
 ******************************************************************************/
 QString OvitoClass::classMetadata(const char* metadataKey) const
 {
+#if 0 // TODO
     if(qtMetaObject()) {
         int index = qtMetaObject()->indexOfClassInfo(metadataKey);
         if(index >= 0)
             return QString::fromUtf8(qtMetaObject()->classInfo(index).value());
     }
+#endif
     return QString();
 }
 
@@ -171,36 +174,8 @@ OORef<OvitoObject> OvitoClass::createInstance(ObjectInitializationFlags flags) c
 ******************************************************************************/
 OORef<OvitoObject> OvitoClass::createInstanceImpl(ObjectInitializationFlags flags) const
 {
-#ifdef OVITO_DEBUG
-    // Check if class hierarchy is consistent.
-    OvitoClassPtr ovitoSuperClass = superClass();
-    while(ovitoSuperClass && ovitoSuperClass->qtMetaObject() == nullptr)
-        ovitoSuperClass = ovitoSuperClass->superClass();
-    OVITO_ASSERT(ovitoSuperClass != nullptr);
-    const QMetaObject* qtSuperClass = qtMetaObject()->superClass();
-    while(qtSuperClass && qtSuperClass != ovitoSuperClass->qtMetaObject())
-        qtSuperClass = qtSuperClass->superClass();
-    OVITO_ASSERT_MSG(qtSuperClass != nullptr, "OvitoClass::createInstanceImpl", qPrintable(QString("Class %1 is not derived from base class %2 as specified by the object type descriptor. Qt super class is %3.").arg(name()).arg(superClass()->name()).arg(qtMetaObject()->superClass()->className())));
-#endif
-
-    OvitoObject* obj;
-
-    if(isDerivedFrom(RefTarget::OOClass())) {
-        obj = qobject_cast<OvitoObject*>(qtMetaObject()->newInstance(Q_ARG(ObjectInitializationFlags, flags)));
-    }
-    else {
-        obj = qobject_cast<OvitoObject*>(qtMetaObject()->newInstance());
-    }
-
-    if(!obj)
-        throw Exception(OvitoObject::tr("Failed to instantiate class '%1'.").arg(name()));
-
-#ifdef OVITO_DEBUG
-    // Mark the object as having been allocated on the heap.
-    obj->_isAllocatedOnTheHeap = true;
-#endif
-
-    return obj;
+    OVITO_ASSERT(_createInstanceFunc != nullptr);
+    return _createInstanceFunc(flags);
 }
 
 /******************************************************************************

@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(AsynchronousDelegatingModifier);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(AsynchronousDelegatingModifier);
 DEFINE_REFERENCE_FIELD(AsynchronousDelegatingModifier, delegate);
 
 /******************************************************************************

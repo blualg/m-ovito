@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
+#include <ovito/core/oo/OORef.h>
 
 namespace Ovito {
 
@@ -172,7 +173,7 @@ public:
     bool performTransaction(const QString& undoOperationName, Function&& func);
 
     /// Executes the given function at some later time unless the given object is destroyed in the meantime or the user interface is shut down.
-    void submitWork(const QObject* contextObject, fu2::unique_function<void() noexcept> function, bool isScriptingContext);
+    void submitWork(const OvitoObject* contextObject, fu2::unique_function<void() noexcept> function, bool isScriptingContext);
 
 protected:
 
@@ -227,15 +228,16 @@ private:
     std::shared_ptr<UserInterface> _selfGuard;
 
     /// A piece of work that has been submitted for deferred execution in the main thread.
-    struct Work {
+    struct Work
+    {
         /// Constructor.
         template<typename Function>
-        Work(QPointer<const QObject> obj_, Function&& function_, bool isScriptingContext_) :
+        Work(OOWeakRef<const OvitoObject> obj_, Function&& function_, bool isScriptingContext_) :
             obj(std::move(obj_)), function(std::forward<Function>(function_)), isScriptingContext(isScriptingContext_) {}
 
         /// The context object this work is associated with.
         /// If the object is destroyed before the work is executed, the work is canceled.
-        QPointer<const QObject> obj;
+        OOWeakRef<const OvitoObject> obj;
 
         /// The function to be executed.
         fu2::unique_function<void() noexcept> function;

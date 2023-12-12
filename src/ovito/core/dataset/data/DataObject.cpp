@@ -26,14 +26,14 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DataObject);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(DataObject);
 DEFINE_PROPERTY_FIELD(DataObject, identifier);
-DEFINE_RUNTIME_PROPERTY_FIELD(DataObject, createdByNodeInternal);
+DEFINE_RUNTIME_PROPERTY_FIELD(DataObject, createdByNode);
 DEFINE_VECTOR_REFERENCE_FIELD(DataObject, visElements);
 DEFINE_REFERENCE_FIELD(DataObject, editableProxy);
 SET_PROPERTY_FIELD_LABEL(DataObject, visElements, "Visual elements");
 SET_PROPERTY_FIELD_LABEL(DataObject, editableProxy, "Editable proxy");
-SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(DataObject, createdByNodeInternal, "dataSource"); // For backward compatibility with OVITO 3.9.2
+SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(DataObject, createdByNode, "dataSource"); // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
 * Generates a human-readable string representation of the data object reference.
@@ -54,7 +54,7 @@ QString DataObject::OOMetaClass::formatDataObjectPath(const ConstDataObjectPath&
 }
 
 /******************************************************************************
-* Is called when a RefTarget referenced by this object has generated an event.
+* Is called when a RefTarget referenced by this object generated an event.
 ******************************************************************************/
 bool DataObject::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
@@ -102,7 +102,7 @@ void DataObject::loadFromStream(ObjectLoadStream& stream)
 bool DataObject::isSafeToModify() const
 {
     OVITO_CHECK_OBJECT_POINTER(this);
-    OVITO_ASSERT(_dataReferenceCount.load() <= objectReferenceCount().load());
+    OVITO_ASSERT(_dataReferenceCount.load() <= weak_from_this().use_count());
 
     if(_dataReferenceCount.load() <= 1) {
         bool isExclusivelyOwned = true;
@@ -130,7 +130,7 @@ bool DataObject::isSafeToModifySubObject(const DataObject* subObject) const
     OVITO_CHECK_OBJECT_POINTER(subObject);
     OVITO_ASSERT(this->hasReferenceTo(subObject));
     OVITO_ASSERT_MSG(this->isSafeToModify(), "DataObject::isSafeToModifySubobject()", qPrintable(QString("Cannot make sub-object %1 mutable, because parent object %2 itself is not safe to modify.").arg(subObject->getOOClass().name()).arg(getOOClass().name())));
-    OVITO_ASSERT(subObject->_dataReferenceCount.load() <= subObject->objectReferenceCount().load());
+    OVITO_ASSERT(subObject->_dataReferenceCount.load() <= subObject->weak_from_this().use_count());
 
     return (subObject->_dataReferenceCount.load() <= 1);
 }
@@ -190,7 +190,7 @@ DataObject* DataObject::makeMutable(const DataObject* subObject, CloneHelper& cl
     OVITO_ASSERT(!subObject || hasReferenceTo(subObject));
 
     if(subObject && !isSafeToModifySubObject(subObject)) {
-        OVITO_ASSERT(subObject->_dataReferenceCount.load() <= subObject->objectReferenceCount().load());
+        OVITO_ASSERT(subObject->_dataReferenceCount.load() <= subObject->weak_from_this().use_count());
         OORef<DataObject> clone = cloneHelper.cloneObject(subObject, false);
         replaceReferencesTo(subObject, clone);
         OVITO_ASSERT(hasReferenceTo(clone));
@@ -241,22 +241,6 @@ ConstDataObjectPath DataObject::exclusiveDataObjectPath() const
     while(obj && !path.empty());
     std::reverse(path.begin(), path.end());
     return path;
-}
-
-/******************************************************************************
-* Returns the pipeline stage that created this data object (may be null).
-******************************************************************************/
-PipelineNode* DataObject::createdByNode() const
-{
-    return static_object_cast<PipelineNode>(createdByNodeInternal().data());
-}
-
-/******************************************************************************
-* Sets the pipeline stage that created this data object.
-******************************************************************************/
-void DataObject::setCreatedByNode(PipelineNode* pipelineNode)
-{
-    setCreatedByNodeInternal(pipelineNode);
 }
 
 /******************************************************************************

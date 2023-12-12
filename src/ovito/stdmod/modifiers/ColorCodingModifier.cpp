@@ -173,7 +173,7 @@ void ColorCodingModifier::initializeModifier(const ModifierInitializationRequest
 void ColorCodingModifier::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
     // Whenever the delegate of this modifier is being replaced, update the source property reference.
-    if(field == PROPERTY_FIELD(DelegatingModifier::delegate) && !isBeingLoaded() && !isAboutToBeDeleted() && !isUndoingOrRedoing()) {
+    if(field == PROPERTY_FIELD(DelegatingModifier::delegate) && !isBeingLoaded() && !isBeingDeleted() && !isUndoingOrRedoing()) {
         setSourceProperty(sourceProperty().convertToContainerClass(delegate() ? delegate()->inputContainerClass() : nullptr));
     }
     DelegatingModifier::referenceReplaced(field, oldTarget, newTarget, listIndex);

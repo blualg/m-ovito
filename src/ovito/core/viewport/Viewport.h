@@ -65,7 +65,7 @@ public:
     Q_INVOKABLE Viewport(ObjectInitializationFlags flags);
 
     /// \brief Destructor.
-    virtual ~Viewport();
+    ~Viewport();
 
     /// \brief Computes the projection matrix and other parameters.
     /// \param time The animation time for which the view is requested.
@@ -258,7 +258,7 @@ protected:
     /// Is called when the value of a property field of this object has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
-    /// Is called when a RefTarget referenced by this object has generated an event.
+    /// Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
     /// Is called when the value of a reference field of this RefMaker changes.

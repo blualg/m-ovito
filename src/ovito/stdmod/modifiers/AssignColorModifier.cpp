@@ -68,7 +68,7 @@ TimeInterval AssignColorModifier::validityInterval(const ModifierEvaluationReque
 }
 
 /******************************************************************************
-* Is called when a RefTarget referenced by this object has generated an event.
+* Is called when a RefTarget referenced by this object generated an event.
 ******************************************************************************/
 bool AssignColorModifier::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {

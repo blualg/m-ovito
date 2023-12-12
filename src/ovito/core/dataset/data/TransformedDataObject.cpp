@@ -25,7 +25,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(TransformedDataObject);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(TransformedDataObject);
 DEFINE_RUNTIME_PROPERTY_FIELD(TransformedDataObject, sourceDataObject);
 DEFINE_RUNTIME_PROPERTY_FIELD(TransformedDataObject, visElementRevision);
 

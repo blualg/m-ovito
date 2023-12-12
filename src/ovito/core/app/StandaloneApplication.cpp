@@ -165,7 +165,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
         }
 
         // Complete the startup process by calling postStartupInitialization() once the main event loop is running.
-        ObjectExecutor(this, true).execute([this, promise=Promise<>(std::move(startupOperation))]() noexcept {
+        QTimer::singleShot(0, this, [this, promise=Promise<>(std::move(startupOperation))]() {
             OVITO_ASSERT(ExecutionContext::current().isValid());
             Task::Scope taskScope(promise.task());
             try {
@@ -203,7 +203,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
             }
         });
 
-        // Make sure the main event loop is not yet running.
+        // Make sure the main event loop is not running yet at this point.
         OVITO_ASSERT(QThread::currentThread()->loopLevel() == 0);
     }
     catch(const Exception& ex) {

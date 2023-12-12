@@ -69,11 +69,14 @@ public:
         return *_ui;
     }
 
+    /// Determines whether the current thread is the main thread of the application.
+    static bool isMainThread();
+
     /// Executes the given function at some later time in this execution context
     /// unless the given object is destroyed in the meantime or the user interface
     /// associated with the execution context is shut down.
     template<typename Function>
-    void runDeferred(const QObject* contextObject, Function&& f) const;
+    void runDeferred(const OvitoObject* contextObject, Function&& f) const;
 
 private:
 
@@ -129,7 +132,7 @@ inline ExecutionContext::ExecutionContext(Type type, std::shared_ptr<UserInterfa
 /// unless the given object is destroyed in the meantime or the user interface
 /// associated with the execution context is shut down.
 template<typename Function>
-inline void ExecutionContext::runDeferred(const QObject* contextObject, Function&& f) const
+inline void ExecutionContext::runDeferred(const OvitoObject* contextObject, Function&& f) const
 {
     ui().submitWork(contextObject, std::forward<Function>(f), type() == Type::Scripting);
 }

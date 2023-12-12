@@ -37,7 +37,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SceneNode);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(SceneNode);
 DEFINE_REFERENCE_FIELD(SceneNode, transformationController);
 DEFINE_REFERENCE_FIELD(SceneNode, lookatTargetNode);
 DEFINE_VECTOR_REFERENCE_FIELD(SceneNode, children);
@@ -283,7 +283,7 @@ void SceneNode::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget
         OVITO_ASSERT(child->parentNode() == this);
         child->_parentNode = nullptr;
 
-        if(!isAboutToBeDeleted()) {
+        if(!isBeingDeleted()) {
             // Invalidate cached world bounding box of this parent node.
             invalidateBoundingBox();
 

@@ -40,7 +40,7 @@ class OVITO_CORE_EXPORT AsynchronousModificationNode : public ModificationNode
 public:
 
     /// \brief Constructs a modifier application.
-    Q_INVOKABLE AsynchronousModificationNode(ObjectInitializationFlags flags) : ModificationNode(flags) {}
+    explicit AsynchronousModificationNode(ObjectInitializationFlags flags) : ModificationNode(flags) {}
 
     /// Returns the sequence of compute engines from a recent successfully completed modifier evaluation which are still valid.
     const std::vector<AsynchronousModifier::EnginePtr>& validStages() const { return _validStages; }
@@ -56,7 +56,7 @@ public:
 
 protected:
 
-    /// \brief Is called when a RefTarget referenced by this object has generated an event.
+    /// \brief Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
     /// Is called when the value of a reference field of this object changes.

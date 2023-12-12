@@ -127,7 +127,7 @@ QStringList ComputePropertyModifier::propertyComponentNames() const
 ******************************************************************************/
 void ComputePropertyModifier::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-    if(field == PROPERTY_FIELD(AsynchronousDelegatingModifier::delegate) && !isAboutToBeDeleted() && !isBeingLoaded() && !isUndoingOrRedoing()) {
+    if(field == PROPERTY_FIELD(AsynchronousDelegatingModifier::delegate) && !isBeingDeleted() && !isBeingLoaded() && !isUndoingOrRedoing()) {
         setOutputProperty(outputProperty().convertToContainerClass(delegate() ? delegate()->inputContainerClass() : nullptr));
         if(delegate()) delegate()->setComponentCount(expressions().size());
     }

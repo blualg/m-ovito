@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(Controller);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(Controller);
 
 /******************************************************************************
 * Creates a new float controller.

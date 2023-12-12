@@ -33,7 +33,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(FileExporter);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(FileExporter);
 DEFINE_PROPERTY_FIELD(FileExporter, outputFilename);
 DEFINE_PROPERTY_FIELD(FileExporter, exportAnimation);
 DEFINE_PROPERTY_FIELD(FileExporter, useWildcardFilename);

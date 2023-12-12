@@ -40,7 +40,7 @@ class OVITO_CORE_EXPORT StaticSource : public PipelineNode
 public:
 
     /// \brief Standard constructor.
-    Q_INVOKABLE StaticSource(ObjectInitializationFlags flags, DataCollection* data = nullptr);
+    explicit StaticSource(ObjectInitializationFlags flags, DataCollection* data = nullptr);
 
     /// Returns the list of data objects that are managed by this data source.
     /// The returned data objects will be displayed as sub-objects of the data source in the pipeline editor.

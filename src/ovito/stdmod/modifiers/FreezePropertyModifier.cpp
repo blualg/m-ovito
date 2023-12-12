@@ -83,7 +83,7 @@ void FreezePropertyModifier::initializeModifier(const ModifierInitializationRequ
 void FreezePropertyModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
     // Whenever the selected property class of this modifier changes, update the property references accordingly.
-    if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isAboutToBeDeleted() && !isUndoingOrRedoing()) {
+    if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isBeingDeleted() && !isUndoingOrRedoing()) {
         setSourceProperty(sourceProperty().convertToContainerClass(subject().dataClass()));
         setDestinationProperty(destinationProperty().convertToContainerClass(subject().dataClass()));
     }
@@ -259,7 +259,7 @@ void FreezePropertyModificationNode::updateStoredData(const Property* property, 
 }
 
 /******************************************************************************
-* Is called when a RefTarget referenced by this object has generated an event.
+* Is called when a RefTarget referenced by this object generated an event.
 ******************************************************************************/
 bool FreezePropertyModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {

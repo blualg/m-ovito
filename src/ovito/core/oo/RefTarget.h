@@ -44,7 +44,7 @@ protected:
 
 #ifdef OVITO_DEBUG
     /// \brief Destructor.
-    virtual ~RefTarget();
+    ~RefTarget();
 #endif
 
     //////////////////////////////// from OvitoObject //////////////////////////////////////
@@ -143,11 +143,6 @@ protected:
     /// \sa CloneHelper::cloneObject()
     virtual OORef<RefTarget> clone(bool deepCopy, CloneHelper& cloneHelper) const;
 
-Q_SIGNALS:
-
-    /// This Qt signal is used to communicate with the dependents of this RefTarget.
-    void objectEvent(RefTarget* sender, const ReferenceEvent& event);
-
 public:
 
     /// \brief Returns true if this object is an instance of a RefTarget derived class.
@@ -211,14 +206,8 @@ public:
     /// Sub-classes can override this method to return a title that depends on the internal state of the object.
     virtual QString objectTitle() const;
 
-    /// \brief Flags this object when it is opened in an editor.
-    void setObjectEditingFlag();
-
-    /// \brief Unflags this object when it is no longer opened in an editor.
-    void unsetObjectEditingFlag();
-
     /// \brief Determines if this object's properties are currently being edited in an editor.
-    bool isObjectBeingEdited() const;
+    bool isBeingEdited() const;
 
     /// \brief Rescales the times of all animation keys from the old animation interval to the new interval.
     /// \param oldAnimationInterval The old animation interval, which should be mapped to the new animation interval.
@@ -234,9 +223,19 @@ public:
 
 private:
 
+    /// Registers a RefMaker as a dependent of this RefTarget, subscribing it to notifications.
+    void registerDependent(const RefMaker* dependent) const noexcept;
+
+    /// Unregisters a RefMaker, which will no longer receive notifications from this RefTarget.
+    void unregisterDependent(const RefMaker* dependent) const noexcept;
+
+    /// The list of RefMakers that currently have at least one reference to this target.
+	QVarLengthArray<const RefMaker*, 2> _dependents;
+
     friend class RefMaker;
     friend class CloneHelper;
+    template<typename T> friend class SingleReferenceFieldBase;
+    template<typename T> friend class VectorReferenceFieldBase;
 };
 
 }   // End of namespace
-

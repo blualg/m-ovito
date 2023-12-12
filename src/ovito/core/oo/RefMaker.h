@@ -40,8 +40,7 @@ namespace Ovito {
 class OVITO_CORE_EXPORT CyclicReferenceError : public Exception
 {
 public:
-
-    /// \brief Default constructor.
+    /// Constructor.
     CyclicReferenceError() : Exception(QStringLiteral("Cyclic reference error")) {}
 };
 
@@ -59,7 +58,7 @@ protected:
 
     /////////////////////////////// Reference field events ///////////////////////////////////
 
-    /// \brief Is called when a RefTarget referenced by this object has generated an event.
+    /// \brief Is called when a RefTarget referenced by this object generated an event.
     /// \param source A direct reference target of this RefMaker specifying the source of the message.
     ///               Note that this may not be the sender or generator of the notification
     ///               event. The sender is returned by ReferenceEvent::sender().
@@ -204,7 +203,10 @@ protected:
     /// and before the object is being deleted.
     virtual void aboutToBeDeleted() override;
 
-public Q_SLOTS:
+public:
+
+    /// \brief Returns true if this object is an instance of a RefTarget derived class.
+    virtual bool isRefTarget() const { return false; }
 
     /// \brief Clears all references held by this RefMarker.
     ///
@@ -213,16 +215,6 @@ public Q_SLOTS:
     ///
     /// \undoable
     void clearAllReferences();
-
-private Q_SLOTS:
-
-    /// This Qt slot receives signals from the target objects referenced by this object.
-    void receiveObjectEvent(RefTarget* sender, const ReferenceEvent& event);
-
-public:
-
-    /// \brief Returns true if this object is an instance of a RefTarget derived class.
-    virtual bool isRefTarget() const { return false; }
 
     /////////////////////////// Property field access ///////////////////////////////
 

@@ -47,7 +47,7 @@ public:
         // to invoke the user function.
         if(!_event) {
             _event = new Event(this, obj);
-            if(!delay_msec) {
+            if constexpr(!delay_msec) {
                 QCoreApplication::postEvent(obj, _event);
             }
             else {
@@ -62,7 +62,6 @@ public:
     ~DeferredMethodInvocation() {
         if(_event) _event->owner = nullptr;
     }
-
 
 private:
 

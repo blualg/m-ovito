@@ -146,7 +146,7 @@ SliceModifier::SliceModifier(ObjectInitializationFlags flags) : MultiDelegatingM
 }
 
 /******************************************************************************
-* Is called when a RefTarget referenced by this object has generated an event.
+* Is called when a RefTarget referenced by this object generated an event.
 ******************************************************************************/
 bool SliceModifier::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
@@ -214,7 +214,7 @@ std::tuple<Plane3, FloatType> SliceModifier::slicingPlane(AnimationTime time, Ti
 ******************************************************************************/
 void SliceModifier::renderModifierVisual(const ModifierEvaluationRequest& request, Pipeline* pipeline, SceneRenderer* renderer, bool renderOverlay)
 {
-    if(!renderOverlay && isObjectBeingEdited() && renderer->isInteractive() && renderer->isImagePass()) {
+    if(!renderOverlay && isBeingEdited() && renderer->isInteractive() && renderer->isImagePass()) {
         const PipelineFlowState& state = request.modificationNode()->evaluateInputSynchronous(request);
         renderVisual(request.time(), pipeline, renderer, state);
     }

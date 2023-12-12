@@ -183,15 +183,15 @@ public:
     /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
     virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const;
 
-    /// Returns the pipeline stage that created this data object (may be null).
-    PipelineNode* createdByNode() const;
-
     /// Sets the pipeline stage that created this data object.
-    void setCreatedByNode(PipelineNode* pipelineNode);
+    template<typename T>
+    void setCreatedByNode(const T* node) {
+        setCreatedByNode(node ? std::static_pointer_cast<const RefTarget>(node->shared_from_this()) : OOWeakRef<const RefTarget>{});
+    }
 
 protected:
 
-    /// Is called when a RefTarget referenced by this object has generated an event.
+    /// Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
     /// Saves the class' contents to the given stream.
@@ -224,7 +224,7 @@ private:
     DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, visElements, setVisElements, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_MEMORIZE);
 
     /// The pipeline stage that created this data object (may be null).
-    DECLARE_RUNTIME_PROPERTY_FIELD(QPointer<RefTarget>, createdByNodeInternal, setCreatedByNodeInternal);
+    DECLARE_RUNTIME_PROPERTY_FIELD(OOWeakRef<const RefTarget>, createdByNode, setCreatedByNode);
 
     /// The attached editable proxy object.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<RefTarget>, editableProxy, setEditableProxy, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);

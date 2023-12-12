@@ -50,7 +50,7 @@ public:
 public:
 
     /// \brief Constructor.
-    OvitoClass(const QString& name, OvitoClassPtr superClass, const char* pluginId, const QMetaObject* qtClassInfo);
+    explicit OvitoClass(const QString& name, OvitoClassPtr superClass, const char* pluginId, OORef<OvitoObject> (*createInstanceFunc)(ObjectInitializationFlags));
 
     /// \brief Destructor.
     virtual ~OvitoClass() = default;
@@ -85,12 +85,8 @@ public:
     /// \brief Returns the plugin that defined the class.
     Plugin* plugin() const { return _plugin; }
 
-    /// Returns the Qt runtime-type information associated with the C++ class.
-    /// This may be a nullptr if this OVITO class is not a native C++ class.
-    const QMetaObject* qtMetaObject() const { return _qtClassInfo; }
-
     /// Indicates whether this class can be instantiated at runtime.
-    bool isInstantiable() const { return _isInstantiable; }
+    bool isInstantiable() const { return _createInstanceFunc != nullptr; }
 
     /// \brief Determines whether the class is directly or indirectly derived from some other class.
     /// \note This method also returns \c true if the class \a other is the class itself.
@@ -148,15 +144,15 @@ public:
     /// Looks up a string value in the class' metadata table.
     QString classMetadata(const char* metadataKey) const;
 
-    /// \brief Creates a new instance of the SerializedClassInfo structure.
+    /// Creates a new instance of the SerializedClassInfo structure.
     virtual std::unique_ptr<SerializedClassInfo> createClassInfoStructure() const {
         return std::make_unique<SerializedClassInfo>();
     }
 
-    /// \brief Is called by OVITO to query the class for any information that should be included in the application's system report.
+    /// Is called by OVITO to ask the class for any information that should be included in the application's system report.
     virtual void querySystemInformation(QTextStream& stream, UserInterface& userInterface) const {}
 
-    /// \brief Changes the human-readable name of this plugin class.
+    /// Changes the human-readable name of this plugin class.
     void setDisplayName(const QString& name) { _displayName = name; }
 
 protected:
@@ -169,10 +165,10 @@ protected:
     /// \throw Exception if the instance could not be created for some reason.
     virtual OORef<OvitoObject> createInstanceImpl(ObjectInitializationFlags flags) const;
 
-    /// \brief Marks this class as instantiatiable.
-    void setIsInstantiable(bool isInstantiable = true) { _isInstantiable = isInstantiable; }
-
 protected:
+
+    /// Pointer to function which creates an instance of the class.
+    OORef<OvitoObject> (*_createInstanceFunc)(ObjectInitializationFlags);
 
     /// The class name.
     QString _name;
@@ -188,12 +184,6 @@ protected:
 
     /// The base class descriptor (or nullptr if this is the descriptor for the root OvitoObject class).
     OvitoClassPtr _superClass;
-
-    /// Indicates whether this class can be instantiated at runtime.
-    bool _isInstantiable = false;
-
-    /// The runtime-type information provided by Qt if this is a native C++ class.
-    const QMetaObject* _qtClassInfo = nullptr;
 
     /// The name of the C++ class if it's a native class.
     const char* _pureClassName = nullptr;
@@ -234,7 +224,7 @@ private: \
     static const OOMetaClass __OOClass_instance;
 
 /// This macro must be included in the class definition of any OvitoObject-derived class.
-#define OVITO_CLASS(classname) Q_OBJECT \
+#define OVITO_CLASS(classname) \
     OVITO_CLASS_INTERNAL(classname, ovito_class)
 
 /// This macro is used instead of the default one above when the class should get its own metaclass type.
@@ -243,13 +233,21 @@ private: \
         using OOMetaClass = metaclassname; \
     OVITO_CLASS(classname)
 
-/// This macro must be included in the .cpp file for any OvitoObject-derived class.
-#define IMPLEMENT_OVITO_CLASS(classname) \
+/// This macro must be included in the .cpp file for any OvitoObject-derived class that can be instantiated at runtime.
+#define IMPLEMENT_OVITO_CLASS2(classname) \
     const classname::OOMetaClass classname::__OOClass_instance( \
         QStringLiteral(#classname), \
         &classname::ovito_parent_class::OOClass(), \
         OVITO_PLUGIN_NAME, \
-        &classname::staticMetaObject);
+        [](ObjectInitializationFlags flags) -> OORef<OvitoObject> { return static_object_cast<OvitoObject>(OORef<classname>::createInstanceInternal(flags)); });
+
+/// This macro must be included in the .cpp file for any abstract OvitoObject-derived class that cannot be instantiated at runtime.
+#define IMPLEMENT_ABSTRACT_OVITO_CLASS(classname) \
+    const classname::OOMetaClass classname::__OOClass_instance( \
+        QStringLiteral(#classname), \
+        &classname::ovito_parent_class::OOClass(), \
+        OVITO_PLUGIN_NAME, \
+        nullptr);
 
 /// This macro must be included in the class definition of a class template that inherits from a OvitoObject class.
 #define OVITO_CLASS_TEMPLATE(classname, baseclassname) \

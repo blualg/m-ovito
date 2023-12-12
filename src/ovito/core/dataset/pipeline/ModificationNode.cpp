@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ModificationNode);
+IMPLEMENT_OVITO_CLASS2(ModificationNode);
 DEFINE_REFERENCE_FIELD(ModificationNode, modifier);
 DEFINE_REFERENCE_FIELD(ModificationNode, input);
 DEFINE_REFERENCE_FIELD(ModificationNode, modifierGroup);
@@ -88,7 +88,7 @@ TimeInterval ModificationNode::validityInterval(const PipelineEvaluationRequest&
 }
 
 /******************************************************************************
-* Is called when a RefTarget referenced by this object has generated an event.
+* Is called when a RefTarget referenced by this object generated an event.
 ******************************************************************************/
 bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
@@ -193,7 +193,7 @@ void ModificationNode::referenceReplaced(const PropertyFieldDescriptor* field, R
         if(!isBeingLoaded())
             notifyDependents(ReferenceEvent::AnimationFramesChanged);
     }
-    else if(field == PROPERTY_FIELD(input) && !isBeingLoaded() && !isAboutToBeDeleted()) {
+    else if(field == PROPERTY_FIELD(input) && !isBeingLoaded() && !isBeingDeleted()) {
         // Reset all caches when the data input is replaced.
         pipelineCache().invalidate(TimeInterval::empty(), true);
         // Update the status of the Modifier when ModificationNode is inserted/removed into pipeline.

@@ -25,7 +25,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(KeyframeController);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(KeyframeController);
 DEFINE_VECTOR_REFERENCE_FIELD(KeyframeController, keys);
 SET_PROPERTY_FIELD_LABEL(KeyframeController, keys, "Keys");
 

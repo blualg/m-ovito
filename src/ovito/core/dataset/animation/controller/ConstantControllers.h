@@ -38,7 +38,7 @@ class OVITO_CORE_EXPORT ConstFloatController : public Controller
 public:
 
     /// Constructor.
-    Q_INVOKABLE ConstFloatController(ObjectInitializationFlags flags) : Controller(flags), _value(0) {}
+    explicit ConstFloatController(ObjectInitializationFlags flags) : Controller(flags), _value(0) {}
 
     /// \brief Returns the value type of the controller.
     virtual ControllerType controllerType() const override { return ControllerTypeFloat; }
@@ -71,7 +71,7 @@ class OVITO_CORE_EXPORT ConstIntegerController : public Controller
 public:
 
     /// Constructor.
-    Q_INVOKABLE ConstIntegerController(ObjectInitializationFlags flags) : Controller(flags), _value(0) {}
+    explicit ConstIntegerController(ObjectInitializationFlags flags) : Controller(flags), _value(0) {}
 
     /// \brief Returns the value type of the controller.
     virtual ControllerType controllerType() const override { return ControllerTypeInt; }
@@ -104,7 +104,7 @@ class OVITO_CORE_EXPORT ConstVectorController : public Controller
 public:
 
     /// Constructor.
-    Q_INVOKABLE ConstVectorController(ObjectInitializationFlags flags) : Controller(flags), _value(Vector3::Zero()) {}
+    explicit ConstVectorController(ObjectInitializationFlags flags) : Controller(flags), _value(Vector3::Zero()) {}
 
     /// \brief Returns the value type of the controller.
     virtual ControllerType controllerType() const override { return ControllerTypeVector3; }
@@ -137,7 +137,7 @@ class OVITO_CORE_EXPORT ConstPositionController : public Controller
 public:
 
     /// Constructor.
-    Q_INVOKABLE ConstPositionController(ObjectInitializationFlags flags) : Controller(flags), _value(Vector3::Zero()) {}
+    explicit ConstPositionController(ObjectInitializationFlags flags) : Controller(flags), _value(Vector3::Zero()) {}
 
     /// \brief Returns the value type of the controller.
     virtual ControllerType controllerType() const override { return ControllerTypePosition; }
@@ -172,7 +172,7 @@ class OVITO_CORE_EXPORT ConstRotationController : public Controller
 public:
 
     /// Constructor.
-    Q_INVOKABLE ConstRotationController(ObjectInitializationFlags flags) : Controller(flags), _value(Rotation::Identity()) {}
+    explicit ConstRotationController(ObjectInitializationFlags flags) : Controller(flags), _value(Rotation::Identity()) {}
 
     /// \brief Returns the value type of the controller.
     virtual ControllerType controllerType() const override { return ControllerTypeRotation; }
@@ -207,7 +207,7 @@ class OVITO_CORE_EXPORT ConstScalingController : public Controller
 public:
 
     /// Constructor.
-    Q_INVOKABLE ConstScalingController(ObjectInitializationFlags flags) : Controller(flags), _value(Scaling::Identity()) {}
+    explicit ConstScalingController(ObjectInitializationFlags flags) : Controller(flags), _value(Scaling::Identity()) {}
 
     /// \brief Returns the value type of the controller.
     virtual ControllerType controllerType() const override { return ControllerTypeScaling; }

@@ -25,12 +25,12 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ConstFloatController);
-IMPLEMENT_OVITO_CLASS(ConstIntegerController);
-IMPLEMENT_OVITO_CLASS(ConstVectorController);
-IMPLEMENT_OVITO_CLASS(ConstPositionController);
-IMPLEMENT_OVITO_CLASS(ConstRotationController);
-IMPLEMENT_OVITO_CLASS(ConstScalingController);
+IMPLEMENT_OVITO_CLASS2(ConstFloatController);
+IMPLEMENT_OVITO_CLASS2(ConstIntegerController);
+IMPLEMENT_OVITO_CLASS2(ConstVectorController);
+IMPLEMENT_OVITO_CLASS2(ConstPositionController);
+IMPLEMENT_OVITO_CLASS2(ConstRotationController);
+IMPLEMENT_OVITO_CLASS2(ConstScalingController);
 DEFINE_PROPERTY_FIELD(ConstFloatController, value);
 DEFINE_PROPERTY_FIELD(ConstIntegerController, value);
 DEFINE_PROPERTY_FIELD(ConstVectorController, value);

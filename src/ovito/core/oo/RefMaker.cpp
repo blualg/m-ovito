@@ -35,7 +35,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(RefMaker);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(RefMaker);
 
 /******************************************************************************
 * This method is called when the reference counter of this OvitoObject
@@ -162,14 +162,6 @@ bool RefMaker::vectorReferenceFieldContains(const PropertyFieldDescriptor* field
 }
 
 /******************************************************************************
-* This Qt slot receives signals from the target objects referenced by this object.
-******************************************************************************/
-void RefMaker::receiveObjectEvent(RefTarget* sender, const ReferenceEvent& event)
-{
-    handleReferenceEvent(sender, event);
-}
-
-/******************************************************************************
 * Handles a notification event from a RefTarget referenced by this object.
 ******************************************************************************/
 bool RefMaker::handleReferenceEvent(RefTarget* source, const ReferenceEvent& event)
@@ -212,7 +204,7 @@ bool RefMaker::handleReferenceEvent(RefTarget* source, const ReferenceEvent& eve
 }
 
 /******************************************************************************
-* Is called when a RefTarget referenced by this object has generated an event.
+* Is called when a RefTarget referenced by this object generated an event.
 ******************************************************************************/
 bool RefMaker::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {

@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(TransformingDataVis);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(TransformingDataVis);
 
 /******************************************************************************
 * Lets the vis element transform a data object in preparation for rendering.

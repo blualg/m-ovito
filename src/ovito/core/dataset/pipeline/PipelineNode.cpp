@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(PipelineNode);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(PipelineNode);
 DEFINE_PROPERTY_FIELD(PipelineNode, pipelineTrajectoryCachingEnabled);
 SET_PROPERTY_FIELD_LABEL(PipelineNode, pipelineTrajectoryCachingEnabled, "Precompute all trajectory frames");
 

@@ -28,16 +28,16 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS_TEMPLATE(SplineAnimationKey<FloatAnimationKey>);
 template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(SplineAnimationKey<FloatAnimationKey>, inTangent);
 template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(SplineAnimationKey<FloatAnimationKey>, outTangent);
-IMPLEMENT_OVITO_CLASS(FloatSplineAnimationKey);
+IMPLEMENT_OVITO_CLASS2(FloatSplineAnimationKey);
 SET_PROPERTY_FIELD_LABEL(FloatSplineAnimationKey, inTangent, "In Tangent");
 SET_PROPERTY_FIELD_LABEL(FloatSplineAnimationKey, outTangent, "Out Tangent");
 
 IMPLEMENT_OVITO_CLASS_TEMPLATE(SplineAnimationKey<PositionAnimationKey>);
 template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(SplineAnimationKey<PositionAnimationKey>, inTangent);
 template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(SplineAnimationKey<PositionAnimationKey>, outTangent);
-IMPLEMENT_OVITO_CLASS(PositionSplineAnimationKey);
+IMPLEMENT_OVITO_CLASS2(PositionSplineAnimationKey);
 SET_PROPERTY_FIELD_LABEL(PositionSplineAnimationKey, inTangent, "In Tangent");
 SET_PROPERTY_FIELD_LABEL(PositionSplineAnimationKey, outTangent, "Out Tangent");
-IMPLEMENT_OVITO_CLASS(SplinePositionController);
+IMPLEMENT_OVITO_CLASS2(SplinePositionController);
 
 }   // End of namespace

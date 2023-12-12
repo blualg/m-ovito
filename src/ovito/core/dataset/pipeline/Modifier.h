@@ -46,7 +46,7 @@ class OVITO_CORE_EXPORT Modifier : public RefTarget
 protected:
 
     /// \brief Constructor.
-    Modifier(ObjectInitializationFlags flags);
+    explicit Modifier(ObjectInitializationFlags flags);
 
 public:
 

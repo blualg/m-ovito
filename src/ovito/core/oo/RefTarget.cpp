@@ -30,13 +30,14 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(RefTarget);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(RefTarget);
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
 RefTarget::RefTarget(ObjectInitializationFlags flags)
 {
+#if 0 // TODO:
     // Ovito objects always live in the main thread.
 #ifdef OVITO_NO_EVENT_LOOP
     if(QCoreApplication* app = QCoreApplication::instance())
@@ -45,6 +46,7 @@ RefTarget::RefTarget(ObjectInitializationFlags flags)
     // A Qt application object must exist.
     OVITO_ASSERT_MSG(QCoreApplication::instance() != nullptr, "RefTarget::RefTarget()", "Creating an instance of a RefTarget-derived class is only allowed while a Qt application object exists.");
     moveToThread(QCoreApplication::instance()->thread());
+#endif
 #endif
 }
 
@@ -55,8 +57,7 @@ RefTarget::RefTarget(ObjectInitializationFlags flags)
 RefTarget::~RefTarget()
 {
     // Make sure there are no more dependents left.
-    static const QMetaMethod objectEventSignal = QMetaMethod::fromSignal(&RefTarget::objectEvent);
-    OVITO_ASSERT_MSG(!isSignalConnected(objectEventSignal), "RefTarget destructor", "RefTarget object has not been correctly deleted. It still has dependents left.");
+    OVITO_ASSERT_MSG(_dependents.empty(), "RefTarget destructor", "RefTarget object has not been correctly deleted. It still has dependents left.");
 }
 #endif
 
@@ -96,29 +97,37 @@ void RefTarget::deleteReferenceObject()
 }
 
 /******************************************************************************
+* Registers a RefMaker as a dependent of this RefTarget, subscribing it to notifications.
+******************************************************************************/
+void RefTarget::registerDependent(const RefMaker* dependent) const noexcept
+{
+    // TODO: Implement me.
+    OVITO_ASSERT(false);
+}
+
+/******************************************************************************
+* Unregisters a RefMaker, which will no longer receive notifications from this RefTarget.
+******************************************************************************/
+void RefTarget::unregisterDependent(const RefMaker* dependent) const noexcept
+{
+    // TODO: Implement me.
+    OVITO_ASSERT(false);
+}
+
+/******************************************************************************
 * Notifies all registered dependents by sending out a message.
 ******************************************************************************/
 void RefTarget::notifyDependentsImpl(const ReferenceEvent& event) noexcept
 {
     OVITO_CHECK_OBJECT_POINTER(this);
 
-    // If reference count is zero, then there cannot be any dependents.
-    if(objectReferenceCount() == 0) {
-#ifdef OVITO_DEBUG
-        // Verify there are no dependents.
-        static const QMetaMethod objectEventSignal = QMetaMethod::fromSignal(&RefTarget::objectEvent);
-        OVITO_ASSERT(!isSignalConnected(objectEventSignal));
-#endif
-        return;
-    }
-
-    // Prevent this object from being deleted while emitting the event signal.
-    OORef<RefTarget> this_(this);
+    // Prevent this object from being deleted while sending the notification event.
+    OORef<RefTarget> self(this);
 
     // Send the signal to the registered dependents.
-    Q_EMIT objectEvent(this, event);
-
-    OVITO_CHECK_OBJECT_POINTER(this);
+    for(const RefMaker* dependent : _dependents) {
+        const_cast<RefMaker*>(dependent)->handleReferenceEvent(this, event);
+    }
 }
 
 /******************************************************************************
@@ -229,35 +238,16 @@ QString RefTarget::objectTitle() const
 }
 
 /******************************************************************************
-* Flags this object when it is opened in an editor.
-******************************************************************************/
-void RefTarget::setObjectEditingFlag()
-{
-    // Increment counter.
-    QVariant oldValue = property("OVITO_OBJECT_EDIT_COUNTER");
-    setProperty("OVITO_OBJECT_EDIT_COUNTER", oldValue.toInt() + 1);
-}
-
-/******************************************************************************
-* Unflags this object when it is no longer opened in an editor.
-******************************************************************************/
-void RefTarget::unsetObjectEditingFlag()
-{
-    // Decrement counter.
-    QVariant oldValue = property("OVITO_OBJECT_EDIT_COUNTER");
-    OVITO_ASSERT(oldValue.toInt() > 0);
-    if(oldValue.toInt() == 1)
-        setProperty("OVITO_OBJECT_EDIT_COUNTER", QVariant());
-    else
-        setProperty("OVITO_OBJECT_EDIT_COUNTER", oldValue.toInt() - 1);
-}
-
-/******************************************************************************
 * Determines if this object's properties are currently being edited in an editor.
 ******************************************************************************/
-bool RefTarget::isObjectBeingEdited() const
+bool RefTarget::isBeingEdited() const
 {
-    return (property("OVITO_OBJECT_EDIT_COUNTER").toInt() != 0);
+    bool result = false;
+    visitDependents([&](const RefMaker* dependent) {
+        if(qstrcmp(dependent->getOOClass().className(), "PropertiesEditor") == 0)
+            result = true;
+    });
+    return result;
 }
 
 }   // End of namespace

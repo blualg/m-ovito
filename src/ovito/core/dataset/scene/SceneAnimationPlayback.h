@@ -35,6 +35,7 @@ namespace Ovito {
 class OVITO_CORE_EXPORT SceneAnimationPlayback : public ScenePreparation
 {
     OVITO_CLASS(SceneAnimationPlayback)
+    Q_OBJECT
 
 public:
 

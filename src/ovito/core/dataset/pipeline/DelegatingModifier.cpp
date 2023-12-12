@@ -29,16 +29,16 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ModifierDelegate);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(ModifierDelegate);
 DEFINE_PROPERTY_FIELD(ModifierDelegate, isEnabled);
 DEFINE_PROPERTY_FIELD(ModifierDelegate, inputDataObject);
 SET_PROPERTY_FIELD_LABEL(ModifierDelegate, isEnabled, "Enabled");
 SET_PROPERTY_FIELD_LABEL(ModifierDelegate, inputDataObject, "Data object");
 
-IMPLEMENT_OVITO_CLASS(DelegatingModifier);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(DelegatingModifier);
 DEFINE_REFERENCE_FIELD(DelegatingModifier, delegate);
 
-IMPLEMENT_OVITO_CLASS(MultiDelegatingModifier);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(MultiDelegatingModifier);
 DEFINE_VECTOR_REFERENCE_FIELD(MultiDelegatingModifier, delegates);
 
 /******************************************************************************

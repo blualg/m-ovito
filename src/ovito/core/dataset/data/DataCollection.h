@@ -43,7 +43,7 @@ class OVITO_CORE_EXPORT DataCollection : public DataObject
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE DataCollection(ObjectInitializationFlags flags) : DataObject(flags) {}
+    explicit DataCollection(ObjectInitializationFlags flags) : DataObject(flags) {}
 
     /// \brief Discards all contents of this data collection.
     void clear() {
@@ -319,7 +319,7 @@ public:
     template<class DataObjectType, typename... Args>
     DataObjectType* createObject(const PipelineNode* createdByNode, Args&&... args) {
         OORef<DataObjectType> obj = OORef<DataObjectType>::create(std::forward<Args>(args)...);
-        obj->setCreatedByNode(const_cast<PipelineNode*>(createdByNode));
+        obj->setCreatedByNode(createdByNode);
         addObject(obj);
         return obj;
     }

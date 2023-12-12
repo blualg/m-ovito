@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(StaticSource);
+IMPLEMENT_OVITO_CLASS2(StaticSource);
 DEFINE_REFERENCE_FIELD(StaticSource, dataCollection);
 SET_PROPERTY_FIELD_LABEL(StaticSource, dataCollection, "Data");
 

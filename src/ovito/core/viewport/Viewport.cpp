@@ -427,14 +427,14 @@ void Viewport::zoomToBox(const Box3& box, FloatType viewportAspectRatio)
 }
 
 /******************************************************************************
-* Is called when a RefTarget referenced by this object has generated an event.
+* Is called when a RefTarget referenced by this object generated an event.
 ******************************************************************************/
 bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(event.type() == ReferenceEvent::TargetChanged) {
         if(source == viewNode()) {
             // Adopt camera information from view node.
-            if(viewType() == VIEW_SCENENODE && !isBeingLoaded() && !isAboutToBeDeleted() && scene()) {
+            if(viewType() == VIEW_SCENENODE && !isBeingLoaded() && !isBeingDeleted() && scene()) {
                 // Get camera transformation and settings (FOV etc.).
                 AnimationTime time = scene()->animationSettings()->currentTime();
                 TimeInterval iv;

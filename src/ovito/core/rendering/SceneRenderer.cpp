@@ -37,8 +37,8 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SceneRenderer);
-IMPLEMENT_OVITO_CLASS(ObjectPickInfo);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(SceneRenderer);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(ObjectPickInfo);
 
 /******************************************************************************
 * Returns the device pixel ratio of the output device we are rendering to.

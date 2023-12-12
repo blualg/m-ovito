@@ -37,7 +37,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(FileSource);
+IMPLEMENT_OVITO_CLASS2(FileSource);
 DEFINE_REFERENCE_FIELD(FileSource, importer);
 DEFINE_PROPERTY_FIELD(FileSource, sourceUrls);
 DEFINE_PROPERTY_FIELD(FileSource, playbackSpeedNumerator);
@@ -422,7 +422,7 @@ Future<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvaluationR
 
                     // Set up the load request to be submitted to the FileSourceImporter.
                     FileSourceImporter::LoadOperationRequest loadRequest;
-                    loadRequest.pipelineNode = this;
+                    loadRequest.pipelineNode = std::static_pointer_cast<PipelineNode>(shared_from_this());
                     loadRequest.fileHandle = fileHandle;
                     loadRequest.frame = frameInfo;
                     loadRequest.isNewlyImportedFile = (dataCollection() == nullptr);

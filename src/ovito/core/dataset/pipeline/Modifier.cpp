@@ -28,7 +28,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(Modifier);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(Modifier);
 DEFINE_PROPERTY_FIELD(Modifier, isEnabled);
 DEFINE_PROPERTY_FIELD(Modifier, title);
 SET_PROPERTY_FIELD_LABEL(Modifier, isEnabled, "Enabled");

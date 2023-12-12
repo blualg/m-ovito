@@ -28,7 +28,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(Scene);
+IMPLEMENT_OVITO_CLASS2(Scene);
 DEFINE_REFERENCE_FIELD(Scene, animationSettings);
 DEFINE_REFERENCE_FIELD(Scene, selection);
 DEFINE_PROPERTY_FIELD(Scene, orbitCenterMode);
@@ -93,7 +93,7 @@ QString Scene::makeNameUnique(QString baseName) const
 }
 
 /******************************************************************************
-* Is called when a RefTarget referenced by this object has generated an event.
+* Is called when a RefTarget referenced by this object generated an event.
 ******************************************************************************/
 bool Scene::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
@@ -104,31 +104,6 @@ bool Scene::referenceEvent(RefTarget* source, const ReferenceEvent& event)
     }
 
     return SceneNode::referenceEvent(source, event);
-}
-
-/******************************************************************************
-* Is called when the value of a reference field of this RefMaker changes.
-******************************************************************************/
-void Scene::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
-{
-    if(field == PROPERTY_FIELD(selection)) {
-        Q_EMIT selectionSetReplaced(selection());
-    }
-    else if(field == PROPERTY_FIELD(animationSettings)) {
-        OVITO_ASSERT(oldTarget == nullptr || newTarget == nullptr); // Note: Replacing the animation settings of a scene is not yet supported.
-    }
-    SceneNode::referenceReplaced(field, oldTarget, newTarget, listIndex);
-}
-
-/******************************************************************************
-* Is called when the value of a property of this object has changed.
-******************************************************************************/
-void Scene::propertyChanged(const PropertyFieldDescriptor* field)
-{
-    if(field == PROPERTY_FIELD(orbitCenterMode) || field == PROPERTY_FIELD(userOrbitCenter)) {
-        Q_EMIT cameraOrbitCenterChanged();
-    }
-    SceneNode::propertyChanged(field);
 }
 
 /******************************************************************************

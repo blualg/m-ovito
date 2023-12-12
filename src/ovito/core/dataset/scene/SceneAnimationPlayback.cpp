@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SceneAnimationPlayback);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(SceneAnimationPlayback);
 
 /******************************************************************************
 * Constructor.

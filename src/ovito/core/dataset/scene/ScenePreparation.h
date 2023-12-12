@@ -25,8 +25,10 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
+#include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/utilities/concurrent/TaskWatcher.h>
 #include <ovito/core/utilities/concurrent/MainThreadOperation.h>
+#include <ovito/core/rendering/RenderSettings.h>
 #include "SceneNode.h"
 
 namespace Ovito {
@@ -34,9 +36,10 @@ namespace Ovito {
 /**
  * \brief This object performs evaluation of all pipelines in a Scene to prepare them for rendering in the interactive viewports.
  */
-class OVITO_CORE_EXPORT ScenePreparation : public RefMaker
+class OVITO_CORE_EXPORT ScenePreparation : public QObject, public RefMaker
 {
     OVITO_CLASS(ScenePreparation)
+    Q_OBJECT
 
 public:
 
@@ -65,7 +68,7 @@ Q_SIGNALS:
 
 protected:
 
-    /// Is called when a RefTarget referenced by this object has generated an event.
+    /// Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
     /// Is called when the value of a reference field of this RefMaker changes.
@@ -91,6 +94,12 @@ private:
 
     /// The scene being prepared.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Scene*, scene, setScene, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+
+    /// The active render settings.
+    DECLARE_REFERENCE_FIELD_FLAGS(RenderSettings*, renderSettings, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+
+    /// The active scene node selection set.
+    DECLARE_REFERENCE_FIELD_FLAGS(SelectionSet*, selectionSet, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
     /// The abstract user interface in which this object operates.
     UserInterface& _userInterface;

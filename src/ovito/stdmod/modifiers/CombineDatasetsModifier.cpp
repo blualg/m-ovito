@@ -153,7 +153,7 @@ void CombineDatasetsModifier::combineDatasets(const ModifierEvaluationRequest& r
 }
 
 /******************************************************************************
-* Is called when a RefTarget referenced by this object has generated an event.
+* Is called when a RefTarget referenced by this object generated an event.
 ******************************************************************************/
 bool CombineDatasetsModifier::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
@@ -169,7 +169,7 @@ bool CombineDatasetsModifier::referenceEvent(RefTarget* source, const ReferenceE
 ******************************************************************************/
 void CombineDatasetsModifier::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-    if(field == PROPERTY_FIELD(secondaryDataSource) && !isBeingLoaded() && !isAboutToBeDeleted()) {
+    if(field == PROPERTY_FIELD(secondaryDataSource) && !isBeingLoaded() && !isBeingDeleted()) {
         // The animation length might have changed when the secondary source has been replaced.
         notifyDependents(ReferenceEvent::AnimationFramesChanged);
     }

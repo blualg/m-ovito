@@ -34,16 +34,17 @@ namespace Ovito {
 /**
  * \brief Manages the DataSet being edited.
  */
-class OVITO_CORE_EXPORT DataSetContainer : public RefMaker
+class OVITO_CORE_EXPORT DataSetContainer : public QObject, public RefMaker
 {
     OVITO_CLASS(DataSetContainer)
+    Q_OBJECT
 
 public:
 
-    /// \brief Constructor.
+    /// Constructor.
     explicit DataSetContainer(TaskManager& taskManager, UserInterface& userInterface);
 
-    /// \brief Destructor.
+    /// Destructor.
     virtual ~DataSetContainer();
 
     /// Returns the manager of asynchronous tasks associated with this container.
@@ -57,18 +58,6 @@ public:
 
     /// Loads the given session state file.
     virtual OORef<DataSet> loadDataset(const QString& filename);
-
-    /// Returns the currently active scene.
-    Scene* activeScene() const { return _activeScene; }
-
-    /// Returns the currently active animation settings.
-    AnimationSettings* activeAnimationSettings() const { return _activeAnimationSettings; }
-
-    /// Returns the currently scene node selection set.
-    SelectionSet* activeSelectionSet() const { return _activeSelectionSet; }
-
-    /// Returns the currently active viewport.
-    Viewport* activeViewport() const { return _activeViewport; }
 
     /// Returns the current time of the active animation settings object.
     AnimationTime currentAnimationTime() const { return activeAnimationSettings() ? activeAnimationSettings()->currentTime() : AnimationTime(0); }
@@ -154,33 +143,37 @@ Q_SIGNALS:
 
 protected:
 
+    /// Is called when a RefTarget referenced by this object generated an event.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+
     /// Is called when the value of a reference field of this RefMaker changes.
     virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+
+    /// Handles timer events for this object.
+    virtual void timerEvent(QTimerEvent* event) override;
 
     /// Create the animation playback helper object on demand.
     SceneAnimationPlayback* createAnimationPlayback();
 
-protected Q_SLOTS:
-
-    /// This handler is called when another viewport configuration becomes the active one.
-    void onViewportConfigReplaced(ViewportConfiguration* viewportConfig);
-
-    /// This handler is called when another viewport becomes the active one.
-    void onActiveViewportChanged(Viewport* activeViewport);
-
-    /// This handler is called when another scene becomes the active one.
-    void onSceneReplaced(Scene* newScene);
-
-    /// This handler is called when another selection set becomes the active one.
-    void onSelectionSetReplaced(SelectionSet* newSelectionSet);
-
-    /// This handler is called when another animation settings object becomes the active one.
-    void onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings);
-
 private:
 
-    /// The current dataset being edited by the user.
+    /// The active dataset.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<DataSet>, currentSet, setCurrentSet, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+
+    /// The active viewport configuration.
+    DECLARE_REFERENCE_FIELD_FLAGS(ViewportConfiguration*, activeViewportConfig, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
+
+    /// The active viewport.
+    DECLARE_REFERENCE_FIELD_FLAGS(Viewport*, activeViewport, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
+
+    /// The active scene.
+    DECLARE_REFERENCE_FIELD_FLAGS(Scene*, activeScene, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
+
+    /// The active scene node selection set.
+    DECLARE_REFERENCE_FIELD_FLAGS(SelectionSet*, activeSelectionSet, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
+
+    /// The active animation settings.
+    DECLARE_REFERENCE_FIELD_FLAGS(AnimationSettings*, activeAnimationSettings, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
 
     /// The manager of asynchronous tasks associated with this container.
     TaskManager& _taskManager;
@@ -188,32 +181,11 @@ private:
     /// The abstract user interface this container is part of.
     UserInterface& _userInterface;
 
-    /// Reference to the currently active scene.
-    OORef<Scene> _activeScene;
-
-    /// Reference to the currently active animation settings.
-    OORef<AnimationSettings> _activeAnimationSettings;
-
-    /// Reference to the currently scene node selection set.
-    OORef<SelectionSet> _activeSelectionSet;
-
-    /// Reference to the currently selected viewport.
-    OORef<Viewport> _activeViewport;
-
     /// Helper object responsible for playing back the frames of the animation in the interactive viewports.
     OORef<SceneAnimationPlayback> _animationPlayback;
 
-    QMetaObject::Connection _selectionSetReplacedConnection;
-    QMetaObject::Connection _selectionSetChangedConnection;
-    QMetaObject::Connection _selectionSetChangeCompleteConnection;
-    QMetaObject::Connection _viewportConfigReplacedConnection;
-    QMetaObject::Connection _activeViewportChangedConnection;
-    QMetaObject::Connection _sceneReplacedConnection;
-    QMetaObject::Connection _renderSettingsReplacedConnection;
-    QMetaObject::Connection _animationCurrentFrameChangedConnection;
-    QMetaObject::Connection _animationIntervalChangedConnection;
-    QMetaObject::Connection _timeFormatChangedConnection;
-    QMetaObject::Connection _filePathChangedConnection;
+    /// Used for deferred emission of selectionChangeComplete() signal.
+    QBasicTimer _selectionChangeCompleteTimer;
 };
 
 }   // End of namespace

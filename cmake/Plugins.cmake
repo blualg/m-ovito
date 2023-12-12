@@ -118,9 +118,6 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
         ENDIF()
     ENDIF()
 
-    # Tell CMake to run Qt's MOC on files containing the OVITO_CLASS macro.
-    SET_PROPERTY(TARGET ${target_name} APPEND PROPERTY AUTOMOC_MACRO_NAMES "OVITO_CLASS" "OVITO_CLASS_META" "OVITO_CLASS_TEMPLATE")
-
     # Link to Qt framework.
     FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core Gui REQUIRED)
     TARGET_LINK_LIBRARIES(${target_name} PUBLIC Qt6::Core Qt6::Gui)

@@ -397,8 +397,9 @@ public:
     /// Returns the index position of the first occurrence of value in the vector,
     /// searching forward from index position from. Returns -1 if no item matched.
     size_type indexOf(const RefTarget* value, size_type from = 0) const noexcept {
-        for(size_type i = from; i < _targets.size(); i++)
-            if(_targets[i] == value) return i;
+        for(size_type i = from, count = _targets.size(); i < count; i++)
+            if(_targets[i] == value)
+                return i;
         return -1;
     }
 
@@ -423,7 +424,7 @@ protected:
     template<class U> static constexpr U* to_address(U* p) noexcept { return p; }
     template<class U> static constexpr auto to_address(const U& p) noexcept { return p.get(); }
 
-    /// The actual list of fancy pointers.
+    /// The actual list of fancy pointers to the RefTargets.
     container _targets;
 };
 

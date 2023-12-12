@@ -43,7 +43,7 @@ public:
     using typename BaseKeyClass::tangent_type;
 
     /// Constructor.
-    SplineAnimationKey(ObjectInitializationFlags flags, AnimationTime time, const value_type& value)
+    explicit SplineAnimationKey(ObjectInitializationFlags flags, AnimationTime time, const value_type& value)
         : BaseKeyClass(flags, time, value), _inTangent(nullvalue_type()), _outTangent(nullvalue_type()) {}
 
     /// \brief Returns the point that defines the incoming tangent.
@@ -71,7 +71,7 @@ class OVITO_CORE_EXPORT FloatSplineAnimationKey : public SplineAnimationKey<Floa
 public:
 
     /// Constructor.
-    Q_INVOKABLE FloatSplineAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), FloatType value = 0) :
+    explicit FloatSplineAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), FloatType value = 0) :
         SplineAnimationKey<FloatAnimationKey>(flags, time, value) {}
 };
 
@@ -85,7 +85,7 @@ class OVITO_CORE_EXPORT PositionSplineAnimationKey : public SplineAnimationKey<P
 public:
 
     /// Constructor.
-    Q_INVOKABLE PositionSplineAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero()) :
+    explicit PositionSplineAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero()) :
         SplineAnimationKey<PositionAnimationKey>(flags, time, value) {}
 };
 
@@ -113,7 +113,7 @@ class SplineControllerBase : public KeyframeControllerTemplate<KeyType, SplineKe
 public:
 
     /// Constructor.
-    SplineControllerBase(ObjectInitializationFlags flags) :
+    explicit SplineControllerBase(ObjectInitializationFlags flags) :
         KeyframeControllerTemplate<KeyType, SplineKeyInterpolator<KeyType>, ctrlType>(flags) {}
 
 protected:
@@ -160,7 +160,7 @@ class OVITO_CORE_EXPORT SplinePositionController
 public:
 
     /// Constructor.
-    Q_INVOKABLE SplinePositionController(ObjectInitializationFlags flags) :
+    explicit SplinePositionController(ObjectInitializationFlags flags) :
         SplineControllerBase<PositionSplineAnimationKey, Controller::ControllerTypePosition>(flags) {}
 
     /// \brief Gets the controller's value at a certain animation time.

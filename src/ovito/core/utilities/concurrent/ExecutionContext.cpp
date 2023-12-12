@@ -25,7 +25,7 @@
 
 namespace Ovito {
 
-/*******************************************************x***********************
+/******************************************************************************
 * Returns the context the current thread performs its actions in.
 ******************************************************************************/
 ExecutionContext& ExecutionContext::current() noexcept
@@ -34,6 +34,15 @@ ExecutionContext& ExecutionContext::current() noexcept
     static thread_local ExecutionContext _current;
 
     return _current;
+}
+
+/******************************************************************************
+* Determines whether the current thread is the main thread of the application.
+******************************************************************************/
+bool ExecutionContext::isMainThread()
+{
+    OVITO_ASSERT(false);
+    return false;
 }
 
 }   // End of namespace

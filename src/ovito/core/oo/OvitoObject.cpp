@@ -28,7 +28,7 @@
 namespace Ovito {
 
 // The class descriptor instance for the OvitoObject class.
-const OvitoClass OvitoObject::__OOClass_instance{QStringLiteral("OvitoObject"), nullptr, OVITO_PLUGIN_NAME, &OvitoObject::staticMetaObject};
+const OvitoClass OvitoObject::__OOClass_instance{QStringLiteral("OvitoObject"), nullptr, OVITO_PLUGIN_NAME, nullptr};
 
 #ifdef OVITO_DEBUG
 /******************************************************************************
@@ -37,11 +37,8 @@ const OvitoClass OvitoObject::__OOClass_instance{QStringLiteral("OvitoObject"), 
 OvitoObject::~OvitoObject()
 {
     OVITO_CHECK_OBJECT_POINTER(this);
-    OVITO_ASSERT_MSG(objectReferenceCount() == 0, "~OvitoObject()", "Destroying an object whose reference counter is non-zero.");
+    OVITO_ASSERT(isBeingDeleted());
     _magicAliveCode = 0xFEDCBA87;
-#ifdef OVITO_DEBUG
-    _isBeingDestructed = true;
-#endif
 }
 #endif
 
@@ -52,37 +49,19 @@ OvitoObject::~OvitoObject()
 void OvitoObject::deleteObjectInternal() noexcept
 {
     OVITO_CHECK_OBJECT_POINTER(this);
-    OVITO_ASSERT_MSG(_referenceCount.load() == 0, "OvitoObject::deleteObjectInternal()", "Object is still referenced while being deleted.");
+    OVITO_ASSERT(!isBeingDeleted());
 
+#if 0 // TODO
     // Delete the object in the main thread only.
     if(QThread::currentThread() != this->thread()) {
         QMetaObject::invokeMethod(this, "deleteObjectInternal", Qt::QueuedConnection);
         return;
     }
-
-    // Set the reference counter to a positive value to prevent the object
-    // from being deleted a second time during the call to aboutToBeDeleted().
-    _referenceCount.store(INVALID_REFERENCE_COUNT);
-    aboutToBeDeleted();
-
-    // After returning from aboutToBeDeleted(), the reference count should be back at the
-    // original value (no new references).
-    OVITO_ASSERT(_referenceCount.load() == INVALID_REFERENCE_COUNT);
-    _referenceCount.store(0);
-#ifdef OVITO_DEBUG
-    _isBeingDestructed = true;
 #endif
 
-    // Delete the object itself.
-    delete this;
-}
-
-/******************************************************************************
-* Returns true if this object is currently being loaded from an ObjectLoadStream.
-******************************************************************************/
-bool OvitoObject::isBeingLoaded() const
-{
-    return (qobject_cast<ObjectLoadStream*>(parent()) != nullptr);
+    // Mark this object as being deleted.
+    _flags.setFlag(BeingDeleted);
+    aboutToBeDeleted();
 }
 
 }   // End of namespace

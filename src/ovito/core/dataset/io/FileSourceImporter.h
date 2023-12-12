@@ -100,7 +100,7 @@ public:
         PipelineFlowState state;
 
         /// The FileSource that initiated the load operation.
-        QPointer<PipelineNode> pipelineNode;
+        OOWeakRef<PipelineNode> pipelineNode;
 
         /// If a loaded data collection consists of sub-collections, this string specifies the
         /// prefix to be prepended to the identifiers of data objects loaded by the file reader.
@@ -135,7 +135,7 @@ public:
         PipelineFlowState& state() { return _loadRequest.state; }
 
         /// Returns the FileSource that owns the file importer.
-        PipelineNode* pipelineNode() const { return _loadRequest.pipelineNode; }
+        const OOWeakRef<PipelineNode>& pipelineNode() const { return _loadRequest.pipelineNode; }
 
         /// Returns a data structure describing the current load operation.
         const LoadOperationRequest& loadRequest() const { return _loadRequest; }
@@ -200,7 +200,7 @@ public:
 public:
 
     /// \brief Constructs a new instance of this class.
-    FileSourceImporter(ObjectInitializationFlags flags) : FileImporter(flags), _isMultiTimestepFile(false) {}
+    explicit FileSourceImporter(ObjectInitializationFlags flags) : FileImporter(flags), _isMultiTimestepFile(false) {}
 
     ///////////////////////////// from FileImporter /////////////////////////////
 

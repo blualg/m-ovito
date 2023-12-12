@@ -123,7 +123,7 @@ void SurfaceMeshVis::propertyChanged(const PropertyFieldDescriptor* field)
     }
 
     // Whenever the pseudo-coloring mode is changed, update the source property reference.
-    if(field == PROPERTY_FIELD(colorMappingMode) && !isBeingLoaded() && !isAboutToBeDeleted() && !isUndoingOrRedoing() && surfaceColorMapping()) {
+    if(field == PROPERTY_FIELD(colorMappingMode) && !isBeingLoaded() && !isBeingDeleted() && !isUndoingOrRedoing() && surfaceColorMapping()) {
         const PropertyContainerClass* newContainerClass = nullptr;
         if(colorMappingMode() == VertexPseudoColoring) newContainerClass = &SurfaceMeshVertices::OOClass();
         else if(colorMappingMode() == FacePseudoColoring) newContainerClass = &SurfaceMeshFaces::OOClass();

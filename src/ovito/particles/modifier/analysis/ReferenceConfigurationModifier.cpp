@@ -126,7 +126,7 @@ void ReferenceConfigurationModifier::restrictInputValidityInterval(TimeInterval&
 }
 
 /******************************************************************************
-* Is called when a RefTarget referenced by this object has generated an event.
+* Is called when a RefTarget referenced by this object generated an event.
 ******************************************************************************/
 bool ReferenceConfigurationModifier::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {

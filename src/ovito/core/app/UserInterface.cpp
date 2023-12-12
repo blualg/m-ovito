@@ -60,7 +60,7 @@ void UserInterface::shutdown()
     // Set up a local execution context (needed for the use of ObjectExecutor below).
     ExecutionContext::Scope execScope(ExecutionContext::Type::Scripting, shared_from_this());
 
-    // Close the dataset container. This should release all data objects.
+    // Close the dataset container. This should release all objects in the current dataset.
     datasetContainer().clearAllReferences();
 
     // Tell other systems we are about to shutdown.
@@ -78,7 +78,7 @@ void UserInterface::shutdown()
     // Release this UI instance as soon as control returns to the event loop.
     if(_selfGuard) {
         if(QThread::currentThread()->loopLevel() != 0)
-            ObjectExecutor(Application::instance(), true).execute([s = std::move(_selfGuard)]() mutable noexcept {});
+            QTimer::singleShot(0, Application::instance(), [s = std::move(_selfGuard)]() {});
         else
             _selfGuard.reset();
     }
@@ -116,12 +116,12 @@ bool UserInterface::processEvents()
 * Executes the given function at some later time unless the given object is
 * destroyed in the meantime or the user interface is shut down.
 ******************************************************************************/
-void UserInterface::submitWork(const QObject* contextObject, fu2::unique_function<void() noexcept> function, bool isScriptingContext)
+void UserInterface::submitWork(const OvitoObject* contextObject, fu2::unique_function<void() noexcept> function, bool isScriptingContext)
 {
     OVITO_ASSERT(contextObject);
     std::lock_guard<std::mutex> lock(_pendingWorkMutex);
     if(isShuttingDown() == false) {
-        _pendingWork.emplace(contextObject, std::move(function), isScriptingContext);
+        _pendingWork.emplace(contextObject->weak_from_this(), std::move(function), isScriptingContext);
         if(_pendingWork.size() == 1)
             pendingWorkArrived();
     }
@@ -144,16 +144,18 @@ void UserInterface::executePendingWork()
 
         // Execute work item only if the context object still exists and the user interface is not shutting down.
         // Otherwise, silently cancel the work (which still runs the destructor of the work object).
-        if(!work.obj.isNull() && !isShuttingDown()) {
-            // Establish the execution context in which the work was submitted.
-            ExecutionContext::Scope execScope(work.isScriptingContext ? ExecutionContext::Type::Scripting : ExecutionContext::Type::Interactive, shared_from_this());
+        if(!isShuttingDown()) {
+            if(OORef<const OvitoObject> contextObject = work.obj.lock()) {
+                // Establish the execution context in which the work was submitted.
+                ExecutionContext::Scope execScope(work.isScriptingContext ? ExecutionContext::Type::Scripting : ExecutionContext::Type::Interactive, shared_from_this());
 
-            // Undo recording may still be active if the GUI is currently performing an extended user operation (e.g. Animation Settings dialog may be open).
-            // While the asynchronous work is being performed, undo recording should be suspended.
-            UndoSuspender noUndo;
+                // Undo recording may still be active if the GUI is currently performing an extended user operation (e.g. Animation Settings dialog may be open).
+                // While the asynchronous work is being performed, undo recording should be suspended.
+                UndoSuspender noUndo;
 
-            // Execute the work function.
-            std::move(work.function)();
+                // Execute the work function.
+                std::move(work.function)();
+            }
         }
 
         // Continue by grabbing the next work item from the queue.

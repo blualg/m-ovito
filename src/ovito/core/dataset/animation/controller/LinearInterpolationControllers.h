@@ -56,7 +56,7 @@ class OVITO_CORE_EXPORT LinearFloatController
 public:
 
     /// Constructor.
-    Q_INVOKABLE LinearFloatController(ObjectInitializationFlags flags)
+    explicit LinearFloatController(ObjectInitializationFlags flags)
         : KeyframeControllerTemplate<FloatAnimationKey, LinearKeyInterpolator<FloatAnimationKey>, Controller::ControllerTypeFloat>(flags) {}
 
     /// \brief Gets the controller's value at a certain animation time.
@@ -85,7 +85,7 @@ class OVITO_CORE_EXPORT LinearIntegerController
 public:
 
     /// Constructor.
-    Q_INVOKABLE LinearIntegerController(ObjectInitializationFlags flags)
+    LinearIntegerController(ObjectInitializationFlags flags)
         : KeyframeControllerTemplate<IntegerAnimationKey, LinearKeyInterpolator<IntegerAnimationKey>, Controller::ControllerTypeInt>(flags) {}
 
     /// \brief Gets the controller's value at a certain animation time.
@@ -114,7 +114,7 @@ class OVITO_CORE_EXPORT LinearVectorController
 public:
 
     /// Constructor.
-    Q_INVOKABLE LinearVectorController(ObjectInitializationFlags flags)
+    explicit LinearVectorController(ObjectInitializationFlags flags)
         : KeyframeControllerTemplate<Vector3AnimationKey, LinearKeyInterpolator<Vector3AnimationKey>, Controller::ControllerTypeVector3>(flags) {}
 
     /// \brief Gets the controller's value at a certain animation time.
@@ -141,7 +141,7 @@ class OVITO_CORE_EXPORT LinearPositionController
 public:
 
     /// Constructor.
-    Q_INVOKABLE LinearPositionController(ObjectInitializationFlags flags)
+    LinearPositionController(ObjectInitializationFlags flags)
         : KeyframeControllerTemplate<PositionAnimationKey, LinearKeyInterpolator<PositionAnimationKey>, Controller::ControllerTypePosition>(flags) {}
 
     /// \brief Gets the controller's value at a certain animation time.
@@ -171,7 +171,7 @@ class OVITO_CORE_EXPORT LinearRotationController
 public:
 
     /// Constructor.
-    Q_INVOKABLE LinearRotationController(ObjectInitializationFlags flags)
+    explicit LinearRotationController(ObjectInitializationFlags flags)
         : KeyframeControllerTemplate<RotationAnimationKey, LinearKeyInterpolator<RotationAnimationKey>, Controller::ControllerTypeRotation>(flags) {}
 
     /// \brief Gets the controller's value at a certain animation time.
@@ -201,7 +201,7 @@ class OVITO_CORE_EXPORT LinearScalingController
 public:
 
     /// Constructor.
-    Q_INVOKABLE LinearScalingController(ObjectInitializationFlags flags)
+    explicit LinearScalingController(ObjectInitializationFlags flags)
         : KeyframeControllerTemplate<ScalingAnimationKey, LinearKeyInterpolator<ScalingAnimationKey>, Controller::ControllerTypeScaling>(flags) {}
 
     /// \brief Gets the controller's value at a certain animation time.

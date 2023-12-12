@@ -41,7 +41,7 @@ class OVITO_CORE_EXPORT TransformedDataObject : public DataObject
 public:
 
     /// Constructor.
-    TransformedDataObject(ObjectInitializationFlags flags, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr) : DataObject(flags),
+    explicit TransformedDataObject(ObjectInitializationFlags flags, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr) : DataObject(flags),
         _sourceDataObject(sourceData), _visElementRevision(creator ? creator->revisionNumber() : 0) {}
 
 private:

@@ -31,13 +31,15 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DataSet);
+IMPLEMENT_OVITO_CLASS2(DataSet);
 DEFINE_REFERENCE_FIELD(DataSet, viewportConfig);
 DEFINE_REFERENCE_FIELD(DataSet, renderSettings);
 DEFINE_VECTOR_REFERENCE_FIELD(DataSet, globalObjects);
+DEFINE_RUNTIME_PROPERTY_FIELD(DataSet, filePath);
 SET_PROPERTY_FIELD_LABEL(DataSet, viewportConfig, "Viewport Configuration");
 SET_PROPERTY_FIELD_LABEL(DataSet, renderSettings, "Render Settings");
 SET_PROPERTY_FIELD_LABEL(DataSet, globalObjects, "Global objects");
+SET_PROPERTY_FIELD_LABEL(DataSet, filePath, "File path");
 
 /******************************************************************************
 * Constructor.
@@ -50,12 +52,14 @@ DataSet::DataSet(ObjectInitializationFlags flags) : RefTarget(flags)
     }
 }
 
+#ifdef OVITO_DEBUG
 /******************************************************************************
 * Destructor.
 ******************************************************************************/
 DataSet::~DataSet()
 {
 }
+#endif
 
 /******************************************************************************
 * Returns a viewport configuration that is used as template for new scenes.
@@ -133,40 +137,17 @@ OORef<ViewportConfiguration> DataSet::createDefaultViewportConfiguration()
 }
 
 /******************************************************************************
-* Is called when a RefTarget referenced by this object has generated an event.
+* Is called when a RefTarget referenced by this object generated an event.
 ******************************************************************************/
 bool DataSet::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "DataSet::referenceEvent", "Reference events may only be processed in the main thread.");
 
     if(event.type() == ReferenceEvent::TargetChanged) {
-        // Propagate change events only from certain sources to the DataSetContainer.
+        // Propagate change events only coming from certain sources to the DataSetContainer.
         return (source == renderSettings());
     }
     return RefTarget::referenceEvent(source, event);
-}
-
-/******************************************************************************
-* Is called when the value of a reference field of this RefMaker changes.
-******************************************************************************/
-void DataSet::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
-{
-    if(field == PROPERTY_FIELD(viewportConfig)) {
-        Q_EMIT viewportConfigReplaced(viewportConfig());
-    }
-    else if(field == PROPERTY_FIELD(renderSettings)) {
-        Q_EMIT renderSettingsReplaced(renderSettings());
-    }
-    RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
-}
-
-/******************************************************************************
-* Returns the container to which this dataset belongs.
-******************************************************************************/
-DataSetContainer* DataSet::container() const
-{
-    OVITO_ASSERT_MSG(!_container.isNull(), "DataSet::container()", "DataSet is not in a DataSetContainer.");
-    return _container.data();
 }
 
 /******************************************************************************
@@ -234,6 +215,7 @@ void DataSet::loadFromFile(const QString& filePath)
 ******************************************************************************/
 RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr DataSet::OOMetaClass::overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const
 {
+#if 0 // TODO
     // The DataSet class used to store an AnimationSettings object and the scene root node in OVITO 3.7 and earlier.
     if(field.definingClass == &DataSet::OOClass() && (field.identifier == "animationSettings" || field.identifier == "sceneRoot" || field.identifier == "selection")) {
         return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
@@ -249,6 +231,7 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
             stream.closeChunk();
         };
     }
+#endif
     return nullptr;
 }
 
@@ -260,6 +243,7 @@ void DataSet::loadFromStreamComplete(ObjectLoadStream& stream)
 {
     RefTarget::loadFromStreamComplete(stream);
 
+#if 0 // TODO
     // For backward compatibility with OVITO 3.7:
     if(stream.formatVersion() <= 30008) {
         // Retrieve legacy AnimationSettings and Scene loaded by the overrideFieldDeserialization() method.
@@ -275,6 +259,7 @@ void DataSet::loadFromStreamComplete(ObjectLoadStream& stream)
         setProperty("_sceneRoot", QVariant());
         setProperty("_selection", QVariant());
     }
+#endif
 }
 
 }   // End of namespace

@@ -66,7 +66,7 @@ public:
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE ModificationNode(ObjectInitializationFlags flags) : PipelineNode(flags) {}
+    explicit ModificationNode(ObjectInitializationFlags flags) : PipelineNode(flags) {}
 
     /// \brief Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const override;
@@ -143,7 +143,7 @@ protected:
     /// Sends an event to all dependents of this RefTarget.
     virtual void notifyDependentsImpl(const ReferenceEvent& event) noexcept override;
 
-    /// \brief Is called when a RefTarget referenced by this object has generated an event.
+    /// \brief Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
     /// Is called when the value of a reference field of this object changes.

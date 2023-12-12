@@ -435,7 +435,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 }
 
 /******************************************************************************
-* Is called when a RefTarget referenced by this object has generated an event.
+* Is called when a RefTarget referenced by this object generated an event.
 ******************************************************************************/
 bool LoadTrajectoryModifier::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
@@ -451,7 +451,7 @@ bool LoadTrajectoryModifier::referenceEvent(RefTarget* source, const ReferenceEv
 ******************************************************************************/
 void LoadTrajectoryModifier::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-    if(field == PROPERTY_FIELD(trajectorySource) && !isBeingLoaded() && !isAboutToBeDeleted()) {
+    if(field == PROPERTY_FIELD(trajectorySource) && !isBeingLoaded() && !isBeingDeleted()) {
         // The animation length might have changed when the trajectory source has been replaced.
         notifyDependents(ReferenceEvent::AnimationFramesChanged);
     }

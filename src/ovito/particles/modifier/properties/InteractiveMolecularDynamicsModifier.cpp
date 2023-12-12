@@ -115,7 +115,7 @@ void InteractiveMolecularDynamicsModifier::disconnectFromServer()
 ******************************************************************************/
 void InteractiveMolecularDynamicsModifier::connectionStateChanged()
 {
-    if(isAboutToBeDeleted())
+    if(isBeingDeleted())
         return;
 
     switch(_socket.state()) {

@@ -28,7 +28,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(AnimationSettings);
+IMPLEMENT_OVITO_CLASS2(AnimationSettings);
 DEFINE_PROPERTY_FIELD(AnimationSettings, currentFrame);
 DEFINE_PROPERTY_FIELD(AnimationSettings, firstFrame);
 DEFINE_PROPERTY_FIELD(AnimationSettings, lastFrame);
@@ -59,13 +59,7 @@ AnimationSettings::AnimationSettings(ObjectInitializationFlags flags) : RefTarge
 ******************************************************************************/
 void AnimationSettings::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(currentFrame))
-        Q_EMIT currentFrameChanged(currentFrame());
-    else if(field == PROPERTY_FIELD(firstFrame) || field == PROPERTY_FIELD(lastFrame))
-        Q_EMIT intervalChanged(firstFrame(), lastFrame());
-    else if(field == PROPERTY_FIELD(framesPerSecond))
-        Q_EMIT speedChanged();
-    else if(field == PROPERTY_FIELD(autoAdjustInterval) && autoAdjustInterval() && !isBeingLoaded())
+    if(field == PROPERTY_FIELD(autoAdjustInterval) && autoAdjustInterval() && !isBeingLoaded())
         adjustAnimationInterval();
 
     RefTarget::propertyChanged(field);

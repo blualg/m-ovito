@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(BasePipelineSource);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(BasePipelineSource);
 DEFINE_REFERENCE_FIELD(BasePipelineSource, dataCollection);
 DEFINE_RUNTIME_PROPERTY_FIELD(BasePipelineSource, dataCollectionFrame);
 DEFINE_PROPERTY_FIELD(BasePipelineSource, userHasChangedDataCollection);
@@ -133,7 +133,7 @@ Future<PipelineFlowState> BasePipelineSource::postprocessCachedState(const Pipel
 }
 
 /******************************************************************************
-* Is called when a RefTarget referenced by this object has generated an event.
+* Is called when a RefTarget referenced by this object generated an event.
 ******************************************************************************/
 bool BasePipelineSource::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {

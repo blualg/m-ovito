@@ -121,13 +121,13 @@ public:
 public:
 
     /// \brief Creates an empty buffer.
-    Q_INVOKABLE explicit DataBuffer(ObjectInitializationFlags flags) : DataObject(flags) {}
+    explicit DataBuffer(ObjectInitializationFlags flags) : DataObject(flags) {}
 
     /// \brief Constructor that creates and initializes a new buffer array.
-    DataBuffer(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList());
+    explicit DataBuffer(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList());
 
     /// \brief Constructor that creates a new buffer array.
-    DataBuffer(ObjectInitializationFlags flags, size_t elementCount, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList()) :
+    explicit DataBuffer(ObjectInitializationFlags flags, size_t elementCount, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList()) :
         DataBuffer(flags, BufferInitialization::Uninitialized, elementCount, dataType, componentCount, std::move(componentNames)) {}
 
     /// \brief Returns the number of elements stored in the buffer array.

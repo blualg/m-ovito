@@ -140,7 +140,7 @@ void UnwrapTrajectoriesModificationNode::invalidateUnwrapData()
 }
 
 /******************************************************************************
-* Is called when a RefTarget referenced by this object has generated an event.
+* Is called when a RefTarget referenced by this object generated an event.
 ******************************************************************************/
 bool UnwrapTrajectoriesModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {

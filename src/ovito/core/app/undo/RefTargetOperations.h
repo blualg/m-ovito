@@ -29,6 +29,7 @@
 
 namespace Ovito {
 
+#if 0 // TODO: Remove this class
 /**
  * \brief This class records a change to a Qt property to a QObject derived class.
  *
@@ -77,6 +78,7 @@ private:
     /// The old value of the property.
     QVariant _oldValue;
 };
+#endif
 
 /**
  * \brief This undo record simply generates a TargetChanged event for a RefTarget whenever an operation is undone.

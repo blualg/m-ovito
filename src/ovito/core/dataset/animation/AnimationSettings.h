@@ -53,7 +53,7 @@ class OVITO_CORE_EXPORT AnimationSettings : public RefTarget
 public:
 
     /// \brief Constructor that initializes the object with default values.
-    Q_INVOKABLE AnimationSettings(ObjectInitializationFlags flags);
+    explicit AnimationSettings(ObjectInitializationFlags flags);
 
     /// \brief Returns the time that corresponds to the current frame at which the time slider is positioned.
     AnimationTime currentTime() const { return AnimationTime::fromFrame(currentFrame()); }
@@ -98,20 +98,6 @@ public Q_SLOTS:
     /// Recalculates the length of the animation interval to accommodate all loaded source animations
     /// in the scene.
     void adjustAnimationInterval();
-
-Q_SIGNALS:
-
-    /// This signal is emitted when the current animation frame has changed.
-    void currentFrameChanged(int frame);
-
-    /// This signal is emitted when the active animation interval has changed.
-    void intervalChanged(int firstFrame, int lastFrame);
-
-    /// This signal is emitted when the animation speed has changed.
-    void speedChanged();
-
-    /// This signal is emitted when the time to string conversion format has changed.
-    void timeFormatChanged();
 
 protected:
 

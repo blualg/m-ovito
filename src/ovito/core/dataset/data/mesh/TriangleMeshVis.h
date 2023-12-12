@@ -42,7 +42,7 @@ class OVITO_CORE_EXPORT TriangleMeshVis : public DataVis
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE TriangleMeshVis(ObjectInitializationFlags flags);
+    explicit TriangleMeshVis(ObjectInitializationFlags flags);
 
     /// \brief Lets the vis element render a data object.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;

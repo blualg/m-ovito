@@ -44,7 +44,7 @@ class OVITO_CORE_EXPORT Pipeline : public SceneNode
 public:
 
     /// \brief Constructs a pipeline scene node.
-    Q_INVOKABLE Pipeline(ObjectInitializationFlags flags);
+    explicit Pipeline(ObjectInitializationFlags flags);
 
     /// \brief Destructor.
     virtual ~Pipeline();

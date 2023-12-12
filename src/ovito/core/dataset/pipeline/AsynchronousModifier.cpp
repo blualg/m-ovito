@@ -34,7 +34,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(AsynchronousModifier);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(AsynchronousModifier);
 
 // Export this class template specialization from the DLL under Windows.
 template class OVITO_CORE_EXPORT Future<AsynchronousModifier::EnginePtr>;
@@ -48,7 +48,7 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
     OVITO_ASSERT(ExecutionContext::current().isValid());
 
     // Get the modifier node, which stores cached computation results.
-    const AsynchronousModificationNode* asyncModNode = dynamic_object_cast<AsynchronousModificationNode>(request.modificationNode());
+    OORef<const AsynchronousModificationNode> asyncModNode = dynamic_object_cast<AsynchronousModificationNode>(request.modificationNode());
     if(!asyncModNode)
         return Future<PipelineFlowState>::createFailed(Exception(tr("Wrong type of modifier application.")));
 
@@ -168,7 +168,8 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
     }
     else {
         // Otherwise, ask the subclass to create a new compute engine to perform the computation from scratch.
-        return createEngine(request, input).then(*this, [this, request = request, input = input, modNode = QPointer<const AsynchronousModificationNode>(asyncModNode)](EnginePtr engine) mutable {
+        return createEngine(request, input).then(*this, [this, request = request, input = input, modNodeWeak = OOWeakRef<const AsynchronousModificationNode>(asyncModNode)](EnginePtr engine) mutable {
+            auto modNode = modNodeWeak.lock();
             if(!modNode || modNode->modifier() != this)
                 throw Exception(tr("Modifier has been deleted from the pipeline."));
             // Create the asynchronous task object and start running the engine.

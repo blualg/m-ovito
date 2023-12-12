@@ -40,7 +40,7 @@ class OVITO_CORE_EXPORT ModifierGroup : public ActiveObject
 public:
 
     /// \brief Constructs a modifier group object.
-    Q_INVOKABLE ModifierGroup(ObjectInitializationFlags flags) : ActiveObject(flags), _isCollapsed(false) {}
+    explicit ModifierGroup(ObjectInitializationFlags flags) : ActiveObject(flags), _isCollapsed(false) {}
 
     /// \brief Returns the list of pipeline nodes that are part of this group.
     QVector<ModificationNode*> nodes() const;

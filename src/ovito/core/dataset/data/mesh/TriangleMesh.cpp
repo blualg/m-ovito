@@ -28,7 +28,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(TriangleMesh);
+IMPLEMENT_OVITO_CLASS2(TriangleMesh);
 
 /******************************************************************************
 * Constructor.

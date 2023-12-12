@@ -595,7 +595,7 @@ void PipelineCache::precomputeNextAnimationFrame()
     _precomputeFrameFuture.finally(*ownerObject(), [this](Task& task) {
         try {
             // If the pipeline evaluation has been canceled for some reason, we interrupt the precomputation process.
-            if(ownerObject()->isAboutToBeDeleted() || !_precomputeFramesOperation.isValid() || _precomputeFramesOperation.isFinished() || task.isCanceled()) {
+            if(ownerObject()->isBeingDeleted() || !_precomputeFramesOperation.isValid() || _precomputeFramesOperation.isFinished() || task.isCanceled()) {
                 _precomputeFramesOperation.reset();
                 OVITO_ASSERT(!_precomputeFrameFuture.isValid());
                 return;

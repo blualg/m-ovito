@@ -77,7 +77,7 @@ public:
 
 protected:
 
-    /// Is called when a RefTarget referenced by this object has generated an event.
+    /// Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
     /// Creates a computation engine that will compute the modifier's results.

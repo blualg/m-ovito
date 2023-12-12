@@ -37,7 +37,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(RenderSettings);
+IMPLEMENT_OVITO_CLASS2(RenderSettings);
 DEFINE_PROPERTY_FIELD(RenderSettings, imageInfo);
 DEFINE_REFERENCE_FIELD(RenderSettings, renderer);
 DEFINE_REFERENCE_FIELD(RenderSettings, backgroundColorController);

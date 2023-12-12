@@ -25,11 +25,11 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(AsynchronousModificationNode);
+IMPLEMENT_OVITO_CLASS2(AsynchronousModificationNode);
 SET_MODIFICATION_NODE_TYPE(AsynchronousModifier, AsynchronousModificationNode);
 
 /******************************************************************************
-* Is called when a RefTarget referenced by this object has generated an event.
+* Is called when a RefTarget referenced by this object generated an event.
 ******************************************************************************/
 bool AsynchronousModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {

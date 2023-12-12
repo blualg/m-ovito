@@ -40,10 +40,10 @@ class OVITO_CORE_EXPORT AttributeDataObject : public DataObject
 public:
 
     /// Constructor.
-    Q_INVOKABLE AttributeDataObject(ObjectInitializationFlags flags) : DataObject(flags) {}
+    explicit AttributeDataObject(ObjectInitializationFlags flags) : DataObject(flags) {}
 
     /// Constructor.
-    AttributeDataObject(ObjectInitializationFlags flags, QVariant value) : DataObject(flags), _value(std::move(value)) {}
+    explicit AttributeDataObject(ObjectInitializationFlags flags, QVariant value) : DataObject(flags), _value(std::move(value)) {}
 
     /// Returns the display title of this object.
     virtual QString objectTitle() const override {

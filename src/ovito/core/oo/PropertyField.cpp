@@ -47,7 +47,7 @@ void PropertyFieldBase::generateTargetChangedEvent(RefMaker* owner, const Proper
     if(descriptor->definingClass()->isDerivedFrom(DataObject::OOClass())) {
         // Change events are only sent by a DataObject if the object
         // is not shared by multiple owners and if we are in the main thread.
-        if(QThread::currentThread() != owner->thread())
+        if(ExecutionContext::isMainThread() == false)
             return;
         if(!static_object_cast<DataObject>(owner)->isSafeToModify())
             return;
@@ -58,7 +58,7 @@ void PropertyFieldBase::generateTargetChangedEvent(RefMaker* owner, const Proper
         OVITO_ASSERT(owner->isRefTarget());
         static_object_cast<RefTarget>(owner)->notifyDependents(eventType);
     }
-    else if(descriptor->shouldGenerateChangeEvent() && !owner->isAboutToBeDeleted()) {
+    else if(descriptor->shouldGenerateChangeEvent() && !owner->isBeingDeleted()) {
         OVITO_ASSERT(owner->isRefTarget());
         static_object_cast<RefTarget>(owner)->notifyTargetChanged(descriptor);
     }
@@ -167,6 +167,7 @@ template<typename T> void SingleReferenceFieldBase<T>::swapReference(RefMaker* o
     OVITO_CHECK_OBJECT_POINTER(owner);
     OVITO_ASSERT(!descriptor->isVector());
     OVITO_ASSERT((descriptor->isWeakReference() == std::is_same<pointer, RefTarget*>::value));
+    OVITO_ASSERT(inactiveTarget != _target);
 
     // Check for cyclic strong references.
     if(inactiveTarget && (!descriptor->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES) || !descriptor->isWeakReference()) && owner->isReferencedBy(inactiveTarget, true))
@@ -176,19 +177,18 @@ template<typename T> void SingleReferenceFieldBase<T>::swapReference(RefMaker* o
     pointer oldTarget = std::exchange(_target, nullptr);
     OVITO_ASSERT(!_target);
 
-    // Disconnect the Qt signal/slot connection, but only if the dependent has no other references to the old target.
+    // Disconnect from the old target, but only if the dependent has no other references to the old target.
     if(oldTarget && !owner->hasReferenceTo(oldTarget)) {
-        bool success = QObject::disconnect(to_address(oldTarget), &RefTarget::objectEvent, owner, &RefMaker::receiveObjectEvent);
-        OVITO_ASSERT(success);
+        oldTarget->unregisterDependent(owner);
     }
 
     // Exchange pointer values.
     _target = std::move(inactiveTarget);
     inactiveTarget = std::move(oldTarget);
 
-    // Create a Qt signal/slot connection to the newly referenced object.
+    // Register the dependent with the newly referenced object (only if it isn't already registered).
     if(_target)
-        QObject::connect(to_address(_target), &RefTarget::objectEvent, owner, &RefMaker::receiveObjectEvent, static_cast<Qt::ConnectionType>(Qt::DirectConnection | Qt::UniqueConnection));
+        _target->registerDependent(owner);
 
     // Inform owner object about the changed reference value.
     owner->referenceReplaced(descriptor,
@@ -441,19 +441,17 @@ template<typename T> void VectorReferenceFieldBase<T>::swapReference(RefMaker* o
     pointer oldTarget = std::exchange(_targets[index], nullptr);
     OVITO_ASSERT(!_targets[index]);
 
-    // Disconnect the Qt signal/slot connection, but only if the dependent has no other references to the old target.
-    if(oldTarget && !owner->hasReferenceTo(oldTarget)) {
-        bool success = QObject::disconnect(to_address(oldTarget), &RefTarget::objectEvent, owner, &RefMaker::receiveObjectEvent);
-        OVITO_ASSERT(success);
-    }
+    // Disconnect from the old target, but only if the dependent has no other references to the old target.
+    if(oldTarget && !owner->hasReferenceTo(oldTarget))
+        oldTarget->unregisterDependent(owner);
 
     // Exchange pointer values.
     _targets[index] = std::move(inactiveTarget);
     inactiveTarget = std::move(oldTarget);
 
-    // Create a Qt signal/slot connection to the newly referenced object.
+    // Register the dependent with the newly referenced object (only if it isn't already registered).
     if(_targets[index])
-        QObject::connect(to_address(_targets[index]), &RefTarget::objectEvent, owner, &RefMaker::receiveObjectEvent, static_cast<Qt::ConnectionType>(Qt::DirectConnection | Qt::UniqueConnection));
+        _targets[index]->registerDependent(owner);
 
     // Inform owner object about the changed reference value.
     owner->referenceReplaced(descriptor,
@@ -481,11 +479,9 @@ template<typename T> void VectorReferenceFieldBase<T>::removeReference(RefMaker*
     inactiveTarget = std::move(_targets[index]);
     _targets.remove(index);
 
-    // Disconnect the Qt signal/slot connection, but only if the dependent has no other references to the old target.
-    if(inactiveTarget && !owner->hasReferenceTo(inactiveTarget)) {
-        bool success = QObject::disconnect(to_address(inactiveTarget), &RefTarget::objectEvent, owner, &RefMaker::receiveObjectEvent);
-        OVITO_ASSERT(success);
-    }
+    // Disconnect from the old target, but only if the dependent has no other references to the old target.
+    if(inactiveTarget && !owner->hasReferenceTo(inactiveTarget))
+        inactiveTarget->unregisterDependent(owner);
 
     // Inform owner object about the removed reference value.
     owner->referenceRemoved(descriptor,
@@ -524,9 +520,9 @@ template<typename T> auto VectorReferenceFieldBase<T>::addReference(RefMaker* ow
     }
     OVITO_ASSERT(!target);
 
-    // Create a Qt signal/slot connection to the newly referenced object.
+    // Register the dependent with the newly referenced object (only if it isn't already registered).
     if(_targets[index])
-        QObject::connect(to_address(_targets[index]), &RefTarget::objectEvent, owner, &RefMaker::receiveObjectEvent, static_cast<Qt::ConnectionType>(Qt::DirectConnection | Qt::UniqueConnection));
+         _targets[index]->registerDependent(owner);
 
     // Inform derived classes.
     owner->referenceInserted(descriptor, const_cast<RefTarget*>(static_cast<const RefTarget*>(to_address(_targets[index]))), index);

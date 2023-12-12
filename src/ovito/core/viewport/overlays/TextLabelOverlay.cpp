@@ -100,7 +100,7 @@ void TextLabelOverlay::sceneNodeAdded(SceneNode* node)
 ******************************************************************************/
 void TextLabelOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isAboutToBeDeleted() && !isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
+    if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isBeingDeleted() && !isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
         // Automatically reset offset to zero when user changes the alignment of the overlay in the viewport.
         setOffsetX(0);
         setOffsetY(0);

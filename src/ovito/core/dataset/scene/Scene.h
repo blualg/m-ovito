@@ -51,7 +51,7 @@ public:
 public:
 
     /// \brief Creates an empty scene.
-    Q_INVOKABLE Scene(ObjectInitializationFlags flags, AnimationSettings* animationSettings = nullptr);
+    explicit Scene(ObjectInitializationFlags flags, AnimationSettings* animationSettings = nullptr);
 
     /// \brief Searches the scene for a node with the given name.
     /// \param nodeName The name to look for.
@@ -77,25 +77,10 @@ public:
             children().back()->deleteSceneNode();
     }
 
-Q_SIGNALS:
-
-    /// This signal is emitted when the camera orbit center has been moved to a different location.
-    void cameraOrbitCenterChanged();
-
-    /// \brief This signal is emitted whenever the current node selection set of this scene has been replaced by another one.
-    /// \note This signal is NOT emitted when nodes are added or removed from the scene.
-    void selectionSetReplaced(SelectionSet* newSelectionSet);
-
 protected:
 
-    /// Is called when a RefTarget referenced by this object has generated an event.
+    /// Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
-
-    /// Is called when the value of a reference field of this RefMaker changes.
-    virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
-
-    /// Is called when the value of a property of this object has changed.
-    virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
     /// Is called whenever one of the child nodes in the tree has generated a AnimationFramesChanged event.
     virtual void onAnimationFramesChanged() override;

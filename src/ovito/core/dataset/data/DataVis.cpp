@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DataVis);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(DataVis);
 
 /******************************************************************************
 * Returns all pipelines that produced this visualization element.

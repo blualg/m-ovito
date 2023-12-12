@@ -58,27 +58,13 @@ class OVITO_CORE_EXPORT DataSet final : public RefTarget
 
 public:
 
-    /// \brief Constructs an empty dataset.
-    Q_INVOKABLE DataSet(ObjectInitializationFlags flags);
+    /// Constructor.
+    explicit DataSet(ObjectInitializationFlags flags);
 
-    /// \brief Destructor.
+#ifdef OVITO_DEBUG
+    /// Destructor.
     virtual ~DataSet();
-
-    /// \brief Returns the path where this dataset is stored on disk.
-    /// \return The location where the dataset is stored or will be stored on disk.
-    const QString& filePath() const { return _filePath; }
-
-    /// \brief Sets the path where this dataset is stored.
-    /// \param path The new path (should be absolute) where the dataset will be stored.
-    void setFilePath(const QString& path) {
-        if(path != _filePath) {
-            _filePath = path;
-            Q_EMIT filePathChanged(_filePath);
-        }
-    }
-
-    /// \brief Returns the container this dataset belongs to.
-    DataSetContainer* container() const;
+#endif
 
     /// \brief Rescales the animation keys of all controllers in the scene.
     /// \param oldAnimationInterval The old animation interval, which will be mapped to the new animation interval.
@@ -106,48 +92,29 @@ public:
     /// Note that this method does NOT invoke setFilePath().
     void loadFromFile(const QString& filePath);
 
-    /// \brief Appends an object to this dataset's list of global objects.
-    void addGlobalObject(const RefTarget* target)
-    {
-        if(!_globalObjects.contains(target)) _globalObjects.push_back(this, PROPERTY_FIELD(globalObjects), target);
+    /// \brief Appends an object to this dataset's list of global objects - unless the object is already in the list.
+    void addGlobalObject(const RefTarget* target) {
+        if(!_globalObjects.contains(target))
+            _globalObjects.push_back(this, PROPERTY_FIELD(globalObjects), target);
     }
 
     /// \brief Removes an object from this dataset's list of global objects.
     void removeGlobalObject(int index) { _globalObjects.remove(this, PROPERTY_FIELD(globalObjects), index); }
 
     /// \brief Looks for a global object of the given type.
-    template <class T>
-    T* findGlobalObject() const
-    {
+    template<class T>
+    T* findGlobalObject() const {
         for(RefTarget* obj : globalObjects()) {
-            T* castObj = dynamic_object_cast<T>(obj);
-            if(castObj) return castObj;
+            if(T* castObj = dynamic_object_cast<T>(obj))
+                return castObj;
         }
         return nullptr;
     }
 
-Q_SIGNALS:
-
-    /// \brief This signal is emitted whenever the current viewport configuration of this dataset
-    ///        has been replaced by a new one.
-    /// \note This signal is NOT emitted when parameters of the current viewport configuration change.
-    void viewportConfigReplaced(ViewportConfiguration* newViewportConfiguration);
-
-    /// \brief This signal is emitted whenever the current render settings of this dataset
-    ///        have been replaced by new ones.
-    /// \note This signal is NOT emitted when parameters of the current render settings object change.
-    void renderSettingsReplaced(RenderSettings* newRenderSettings);
-
-    /// \brief This signal is emitted whenever the dataset has been saved under a new file name.
-    void filePathChanged(const QString& filePath);
-
 protected:
 
-    /// Is called when a RefTarget referenced by this object has generated an event.
+    /// Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
-
-    /// Is called when the value of a reference field of this RefMaker changes.
-    virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
     /// This method is called once for this object after it has been completely loaded from a stream.
     virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
@@ -165,18 +132,11 @@ private:
     /// The settings for rendering an output image of the scene.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<RenderSettings>, renderSettings, setRenderSettings, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_MEMORIZE);
 
-    /// Global data managed by plugins.
-    DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<RefTarget>, globalObjects, setGlobalObjects,
-                                                    PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_ALWAYS_CLONE |
-                                                        PROPERTY_FIELD_ALWAYS_DEEP_COPY);
+    /// Global data items that can be attached to the dataset by plugins.
+    DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<RefTarget>, globalObjects, setGlobalObjects, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_ALWAYS_DEEP_COPY);
 
-    /// The file path this DataSet has been saved to.
-    QString _filePath;
-
-    /// The DataSetContainer which currently hosts this DataSet.
-    QPointer<DataSetContainer> _container;
-
-    friend class DataSetContainer;
+    /// The file path this DataSet has been saved to on disk.
+    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(QString, filePath, setFilePath, PROPERTY_FIELD_NO_UNDO);
 };
 
 }   // End of namespace

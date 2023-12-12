@@ -37,7 +37,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(Pipeline);
+IMPLEMENT_OVITO_CLASS2(Pipeline);
 DEFINE_REFERENCE_FIELD(Pipeline, head);
 DEFINE_VECTOR_REFERENCE_FIELD(Pipeline, visElements);
 DEFINE_VECTOR_REFERENCE_FIELD(Pipeline, replacedVisElements);
@@ -262,7 +262,7 @@ void Pipeline::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget
         invalidatePipelineCache(TimeInterval::empty(), false);
 
         // The animation length and the title of the pipeline might have changed.
-        if(!isBeingLoaded() && !isAboutToBeDeleted())
+        if(!isBeingLoaded() && !isBeingDeleted())
             notifyDependents(ReferenceEvent::AnimationFramesChanged);
 
         // Determine the new source node of the pipeline.
@@ -497,7 +497,7 @@ void Pipeline::referenceInserted(const PropertyFieldDescriptor* field, RefTarget
 ******************************************************************************/
 void Pipeline::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex)
 {
-    if(field == PROPERTY_FIELD(replacedVisElements) && !isAboutToBeDeleted()) {
+    if(field == PROPERTY_FIELD(replacedVisElements) && !isBeingDeleted()) {
         // If an upstream vis element is being removed from the list, because the weakly referenced vis element is being deleted,
         // then also discard our corresponding replacement element managed by the pipeline.
         if(!isUndoingOrRedoing()) {

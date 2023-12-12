@@ -25,6 +25,6 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(AbstractCameraObject);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(AbstractCameraObject);
 
 }   // End of namespace

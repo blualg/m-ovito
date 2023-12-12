@@ -89,8 +89,10 @@ protected:
         registerActiveTask(promise.task());
     }
 
+#if 0 // TODO
     /// Handles timer events for this object.
     virtual void timerEvent(QTimerEvent* event) override;
+#endif
 
 private:
 
@@ -111,11 +113,13 @@ private:
     /// Flag indicating wheter this object is currently displayed as active in the GUI.
     bool _isInActivateState = false;
 
+#if 0 // TODO
     /// Timer used to implement delayed UI updates of the activity state.
     QBasicTimer _activityTimer;
 
     /// Timer used to implement delayed UI updates whenever object status changes.
     QBasicTimer _statusTimer;
+#endif
 };
 
 }   // End of namespace

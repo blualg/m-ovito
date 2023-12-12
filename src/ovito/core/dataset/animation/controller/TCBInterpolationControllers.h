@@ -41,7 +41,7 @@ public:
     using typename BaseKeyClass::value_type;
 
     /// Constructor.
-    TCBAnimationKey(ObjectInitializationFlags flags, AnimationTime time, const value_type& value)
+    explicit TCBAnimationKey(ObjectInitializationFlags flags, AnimationTime time, const value_type& value)
         : BaseKeyClass(flags, time, value), _easeTo(0), _easeFrom(0), _tension(0), _continuity(0), _bias(0) {}
 
 public:
@@ -72,7 +72,7 @@ class OVITO_CORE_EXPORT FloatTCBAnimationKey : public TCBAnimationKey<FloatAnima
 public:
 
     /// Constructor.
-    Q_INVOKABLE FloatTCBAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), FloatType value = 0)
+    explicit FloatTCBAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), FloatType value = 0)
         : TCBAnimationKey<FloatAnimationKey>(flags, time, value) {}
 };
 
@@ -86,7 +86,7 @@ class OVITO_CORE_EXPORT PositionTCBAnimationKey : public TCBAnimationKey<Positio
 public:
 
     /// Constructor.
-    Q_INVOKABLE PositionTCBAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero())
+    explicit PositionTCBAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero())
         : TCBAnimationKey<PositionAnimationKey>(flags, time, value) {}
 };
 
@@ -121,7 +121,7 @@ class TCBControllerBase : public KeyframeControllerTemplate<KeyType, TCBKeyInter
 public:
 
     /// Constructor.
-    TCBControllerBase(ObjectInitializationFlags flags)
+    explicit TCBControllerBase(ObjectInitializationFlags flags)
         : KeyframeControllerTemplate<KeyType, TCBKeyInterpolator<KeyType>, ctrlType>(flags) {}
 };
 
@@ -136,7 +136,7 @@ class OVITO_CORE_EXPORT TCBPositionController
 public:
 
     /// Constructor.
-    Q_INVOKABLE TCBPositionController(ObjectInitializationFlags flags)
+    explicit TCBPositionController(ObjectInitializationFlags flags)
         : TCBControllerBase<PositionTCBAnimationKey, Controller::ControllerTypePosition>(flags) {}
 
     /// \brief Gets the controller's value at a certain animation time.
