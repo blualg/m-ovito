@@ -31,12 +31,12 @@ SET(QT_LIBRARY_DIRS "${_qt_source_dir}/lib")
 
 # Install needed Qt plugins by copying directories from the Qt installation
 SET(_qtplugins_dest_dir "${MACOSX_BUNDLE_NAME}.app/Contents/PlugIns")
-INSTALL(DIRECTORY "${_qtplugins_source_dir}/imageformats" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
-INSTALL(DIRECTORY "${_qtplugins_source_dir}/platforms" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
-INSTALL(DIRECTORY "${_qtplugins_source_dir}/iconengines" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
-INSTALL(DIRECTORY "${_qtplugins_source_dir}/styles" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
-INSTALL(DIRECTORY "${_qtplugins_source_dir}/networkinformation" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
-INSTALL(DIRECTORY "${_qtplugins_source_dir}/tls" DESTINATION ${_qtplugins_dest_dir} PATTERN "*_debug.dylib" EXCLUDE PATTERN "*.dSYM" EXCLUDE)
+INSTALL(DIRECTORY "${_qtplugins_source_dir}/imageformats" DESTINATION ${_qtplugins_dest_dir} PATTERN "*.dSYM" EXCLUDE)
+INSTALL(DIRECTORY "${_qtplugins_source_dir}/platforms" DESTINATION ${_qtplugins_dest_dir} PATTERN "*.dSYM" EXCLUDE)
+INSTALL(DIRECTORY "${_qtplugins_source_dir}/iconengines" DESTINATION ${_qtplugins_dest_dir} PATTERN "*.dSYM" EXCLUDE)
+INSTALL(DIRECTORY "${_qtplugins_source_dir}/styles" DESTINATION ${_qtplugins_dest_dir} PATTERN "*.dSYM" EXCLUDE)
+INSTALL(DIRECTORY "${_qtplugins_source_dir}/networkinformation" DESTINATION ${_qtplugins_dest_dir} PATTERN "*.dSYM" EXCLUDE)
+INSTALL(DIRECTORY "${_qtplugins_source_dir}/tls" DESTINATION ${_qtplugins_dest_dir} PATTERN "*.dSYM" EXCLUDE)
 
 # Install a qt.conf file.
 # This inserts some cmake code into the install script to write the file
