@@ -62,7 +62,7 @@ public:
 public:
 
     /// \brief Constructs a new viewport.
-    Q_INVOKABLE Viewport(ObjectInitializationFlags flags);
+    explicit Viewport(ObjectInitializationFlags flags);
 
     /// \brief Destructor.
     ~Viewport();
@@ -200,16 +200,14 @@ public:
         _underlays.remove(this, PROPERTY_FIELD(underlays), index);
     }
 
-    /// \brief Returns the size of the viewport's screen window (in device pixels).
-    QSize windowSize() const {
-        return window() ? window()->viewportWindowDeviceSize() : QSize(0,0);
-    }
-
     /// \brief Returns the GUI window associated with this viewport (may be none).
     ViewportWindowInterface* window() const { return _window; }
 
     /// \brief Associates this viewport with a GUI window. This is an internal method.
     void setWindow(ViewportWindowInterface* window);
+
+    /// \brief Returns the size of the viewport's screen window (in device pixels).
+    QSize windowSize() const;
 
     /// Returns the nested layout cell this viewport's window is currently in (if any).
     ViewportLayoutCell* layoutCell() const;
@@ -217,8 +215,6 @@ public:
     /// Renders the contents of the interactive viewport in a window.
     /// This is an internal method, which should not be called by user code.
     void renderInteractive(UserInterface& userInterface, DataSet* dataset, SceneRenderer* renderer);
-
-public Q_SLOTS:
 
     /// \brief Puts an update request event for this viewport on the event loop.
     ///
@@ -241,6 +237,7 @@ public Q_SLOTS:
     /// \brief Zooms to the extents of the given bounding box.
     void zoomToBox(const Box3& box, FloatType viewportAspectRatio = 0);
 
+#if 0 // TODO
 Q_SIGNALS:
 
     /// This signal is emitted whenever any of the UI properties of the viewport change.
@@ -252,6 +249,7 @@ Q_SIGNALS:
     /// \brief This signal is emitted whenever this viewport is associated with a different scene.
     /// \note This signal is NOT emitted when the contents of the scene change.
     void sceneReplaced(Scene* newScene);
+#endif
 
 protected:
 
@@ -284,8 +282,6 @@ protected:
 
     /// Determines the aspect ratio of this viewport's area in the rendered output image.
     FloatType renderAspectRatio(DataSet* dataset) const;
-
-private Q_SLOTS:
 
     /// This is called when the global viewport settings have changed.
     void viewportSettingsChanged(ViewportSettings* newSettings);
@@ -334,6 +330,9 @@ private:
 
     /// The GUI window associated with this viewport.
     ViewportWindowInterface* _window = nullptr;
+
+    /// Qt signal/slot connection to get notified when the global viewport settings change.
+    QMetaObject::Connection _viewportSettingsChangedConnection;
 };
 
 }   // End of namespace

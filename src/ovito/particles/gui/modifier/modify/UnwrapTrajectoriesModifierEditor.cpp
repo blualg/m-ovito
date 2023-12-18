@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(UnwrapTrajectoriesModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(UnwrapTrajectoriesModifierEditor);
 SET_OVITO_OBJECT_EDITOR(UnwrapTrajectoriesModifier, UnwrapTrajectoriesModifierEditor);
 
 /******************************************************************************

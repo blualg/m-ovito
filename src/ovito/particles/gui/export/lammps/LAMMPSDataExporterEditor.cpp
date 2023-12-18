@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(LAMMPSDataExporterEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(LAMMPSDataExporterEditor);
 SET_OVITO_OBJECT_EDITOR(LAMMPSDataExporter, LAMMPSDataExporterEditor);
 
 /******************************************************************************

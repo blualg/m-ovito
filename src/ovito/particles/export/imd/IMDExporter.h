@@ -51,8 +51,8 @@ class OVITO_PARTICLES_EXPORT IMDExporter : public FileColumnParticleExporter
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE IMDExporter(ObjectInitializationFlags flags) : FileColumnParticleExporter(flags) {}
+    /// Constructor.
+    using FileColumnParticleExporter::FileColumnParticleExporter;
 
 protected:
 

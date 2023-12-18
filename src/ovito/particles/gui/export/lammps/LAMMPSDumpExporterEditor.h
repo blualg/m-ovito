@@ -34,11 +34,12 @@ namespace Ovito {
 class LAMMPSDumpExporterEditor : public FileColumnParticleExporterEditor
 {
     OVITO_CLASS(LAMMPSDumpExporterEditor)
+    Q_OBJECT
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE LAMMPSDumpExporterEditor() {}
+    using FileColumnParticleExporterEditor::FileColumnParticleExporterEditor;
 
 protected:
 

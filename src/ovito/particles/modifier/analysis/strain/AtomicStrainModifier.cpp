@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(AtomicStrainModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(AtomicStrainModifier);
 DEFINE_PROPERTY_FIELD(AtomicStrainModifier, cutoff);
 DEFINE_PROPERTY_FIELD(AtomicStrainModifier, calculateDeformationGradients);
 DEFINE_PROPERTY_FIELD(AtomicStrainModifier, calculateStrainTensors);

@@ -39,11 +39,12 @@ namespace Ovito {
 class SpatialCorrelationFunctionModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(SpatialCorrelationFunctionModifierEditor)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE SpatialCorrelationFunctionModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

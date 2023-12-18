@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(XYZExporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(XYZExporter);
 DEFINE_PROPERTY_FIELD(XYZExporter, subFormat);
 SET_PROPERTY_FIELD_LABEL(XYZExporter, subFormat, "XYZ format style");
 

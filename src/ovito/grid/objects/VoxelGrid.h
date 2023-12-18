@@ -54,7 +54,7 @@ class OVITO_GRID_EXPORT VoxelGrid : public PropertyContainer
     };
 
     OVITO_CLASS_META(VoxelGrid, VoxelGridClass);
-    Q_CLASSINFO("DisplayName", "Voxel grid");
+    OVITO_CLASSINFO("DisplayName", "Voxel grid");
 
 public:
 
@@ -77,7 +77,7 @@ public:
     };
 
     /// \brief Constructor.
-    Q_INVOKABLE VoxelGrid(ObjectInitializationFlags flags, const QString& title = QString());
+    explicit VoxelGrid(ObjectInitializationFlags flags, const QString& title = QString());
 
     /// Returns the spatial domain this voxel grid is embedded in after making sure it
     /// can safely be modified.

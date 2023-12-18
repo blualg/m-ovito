@@ -38,11 +38,12 @@ namespace Ovito {
 class GrainSegmentationModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(GrainSegmentationModifierEditor)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE GrainSegmentationModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected Q_SLOTS:
 

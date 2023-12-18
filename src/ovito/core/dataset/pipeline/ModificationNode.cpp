@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS2(ModificationNode);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ModificationNode);
 DEFINE_REFERENCE_FIELD(ModificationNode, modifier);
 DEFINE_REFERENCE_FIELD(ModificationNode, input);
 DEFINE_REFERENCE_FIELD(ModificationNode, modifierGroup);
@@ -54,7 +54,7 @@ ModificationNode::Registry& ModificationNode::registry()
 /******************************************************************************
 * Asks this object to delete itself.
 ******************************************************************************/
-void ModificationNode::deleteReferenceObject()
+void ModificationNode::requestObjectDeletion()
 {
     // Detach the node from its input, modifier and group.
     OORef<Modifier> modifier = this->modifier();
@@ -64,9 +64,9 @@ void ModificationNode::deleteReferenceObject()
 
     // Delete modifier too if there are no more pipeline nodes left that reference the same modifier.
     if(!modifier->someNode())
-        modifier->deleteReferenceObject();
+        modifier->requestObjectDeletion();
 
-    PipelineNode::deleteReferenceObject();
+    PipelineNode::requestObjectDeletion();
 }
 
 /******************************************************************************
@@ -229,6 +229,11 @@ void ModificationNode::notifyDependentsImpl(const ReferenceEvent& event) noexcep
     if(event.type() == ReferenceEvent::TargetChanged) {
         // Invalidate cached results when this modification node or the modifier changes.
         pipelineCache().invalidate(static_cast<const TargetChangedEvent&>(event).unchangedInterval());
+    }
+    else if(event.type() == ReferenceEvent::ObjectStatusChanged) {
+        // Notify the modifier group to update its combined status.
+        if(modifierGroup())
+            modifierGroup()->modificationNodeStatusChanged();
     }
     PipelineNode::notifyDependentsImpl(event);
 }

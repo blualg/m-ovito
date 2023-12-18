@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SurfaceMeshRegionsDeleteSelectedModifierDelegate);
+IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshRegionsDeleteSelectedModifierDelegate);
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier
@@ -103,7 +103,8 @@ PipelineStatus SurfaceMeshRegionsDeleteSelectedModifierDelegate::apply(const Mod
     }
 
     // Report some statistics:
-    QString statusMessage = tr("%n of %1 regions deleted (%2%)", 0, numDeleted)
+    QString statusMessage = tr("%1 of %2 regions deleted (%3%)")
+        .arg(numDeleted)
         .arg(numRegions)
         .arg((FloatType)numDeleted * 100 / std::max(numRegions, (size_t)1), 0, 'f', 1);
 

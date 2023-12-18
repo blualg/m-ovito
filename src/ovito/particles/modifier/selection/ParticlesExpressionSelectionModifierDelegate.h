@@ -52,12 +52,12 @@ class ParticlesExpressionSelectionModifierDelegate : public ExpressionSelectionM
     };
 
     OVITO_CLASS_META(ParticlesExpressionSelectionModifierDelegate, OOMetaClass)
-    Q_CLASSINFO("DisplayName", "Particles");
+    OVITO_CLASSINFO("DisplayName", "Particles");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticlesExpressionSelectionModifierDelegate(ObjectInitializationFlags flags) : ExpressionSelectionModifierDelegate(flags) {}
+    using ExpressionSelectionModifierDelegate::ExpressionSelectionModifierDelegate;
 
     /// Creates and initializes the expression evaluator object.
     virtual std::unique_ptr<PropertyExpressionEvaluator> initializeExpressionEvaluator(const QStringList& expressions, const PipelineFlowState& inputState, const ConstDataObjectPath& containerPath, int animationFrame) override;
@@ -87,12 +87,12 @@ class BondsExpressionSelectionModifierDelegate : public ExpressionSelectionModif
     };
 
     OVITO_CLASS_META(BondsExpressionSelectionModifierDelegate, OOMetaClass)
-    Q_CLASSINFO("DisplayName", "Bonds");
+    OVITO_CLASSINFO("DisplayName", "Bonds");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE BondsExpressionSelectionModifierDelegate(ObjectInitializationFlags flags) : ExpressionSelectionModifierDelegate(flags) {}
+    using ExpressionSelectionModifierDelegate::ExpressionSelectionModifierDelegate;
 
     /// Creates and initializes the expression evaluator object.
     virtual std::unique_ptr<PropertyExpressionEvaluator> initializeExpressionEvaluator(const QStringList& expressions, const PipelineFlowState& inputState, const ConstDataObjectPath& containerPath, int animationFrame) override;

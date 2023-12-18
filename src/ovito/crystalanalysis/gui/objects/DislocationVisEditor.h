@@ -38,7 +38,7 @@ class DislocationVisEditor : public PropertiesEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE DislocationVisEditor() {}
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

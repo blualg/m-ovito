@@ -49,13 +49,12 @@ class ParticlesReplicateModifierDelegate : public ReplicateModifierDelegate
     };
 
     OVITO_CLASS_META(ParticlesReplicateModifierDelegate, OOMetaClass)
-
-    Q_CLASSINFO("DisplayName", "Particles & bonds");
+    OVITO_CLASSINFO("DisplayName", "Particles & bonds");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticlesReplicateModifierDelegate(ObjectInitializationFlags flags) : ReplicateModifierDelegate(flags) {}
+    using ReplicateModifierDelegate::ReplicateModifierDelegate;
 
     /// Applies the modifier operation to the data in a pipeline flow state.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

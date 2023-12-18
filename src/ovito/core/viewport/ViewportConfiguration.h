@@ -41,7 +41,7 @@ class OVITO_CORE_EXPORT ViewportConfiguration : public RefTarget
 public:
 
     /// Constructor.
-    Q_INVOKABLE ViewportConfiguration(ObjectInitializationFlags flags);
+    explicit ViewportConfiguration(ObjectInitializationFlags flags);
 
     /// Registers a viewport with the configuration object so that it takes part in the automatic viewport refresh mechanism.
     /// This method is currently used in the implementation of the Viewport.create_qt_widget() Python method.
@@ -59,8 +59,6 @@ public:
         return viewportRects;
     }
 
-public Q_SLOTS:
-
     /// \brief Zooms all viewports to the extents of the currently selected nodes.
     void zoomToSelectionExtents();
 
@@ -70,17 +68,6 @@ public Q_SLOTS:
     /// \brief Zooms all viewports to the extents of the scene
     ///        when all scene pipelines have been fully evaluated and the extents are known.
     void zoomToSceneExtentsWhenReady();
-
-Q_SIGNALS:
-
-    /// This signal is emitted when another viewport became active.
-    void activeViewportChanged(Viewport* activeViewport);
-
-    /// This signal is emitted when one of the viewports has been maximized.
-    void maximizedViewportChanged(Viewport* maximizedViewport);
-
-    /// This signal is sent whenver the layout of the viewports changes.
-    void viewportLayoutChanged();
 
 protected:
 

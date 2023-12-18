@@ -50,12 +50,12 @@ class VoxelGridAffineTransformationModifierDelegate : public AffineTransformatio
 
     OVITO_CLASS_META(VoxelGridAffineTransformationModifierDelegate, OOMetaClass)
 
-    Q_CLASSINFO("DisplayName", "Voxel grids");
+    OVITO_CLASSINFO("DisplayName", "Voxel grids");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE VoxelGridAffineTransformationModifierDelegate(ObjectInitializationFlags flags) : AffineTransformationModifierDelegate(flags) {}
+    explicit VoxelGridAffineTransformationModifierDelegate(ObjectInitializationFlags flags) : AffineTransformationModifierDelegate(flags) {}
 
     /// Applies the modifier operation to the data in a pipeline flow state.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

@@ -37,11 +37,12 @@ namespace Ovito {
 class FileColumnParticleExporterEditor : public PropertiesEditor
 {
     OVITO_CLASS(FileColumnParticleExporterEditor)
+    Q_OBJECT
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE FileColumnParticleExporterEditor() {}
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

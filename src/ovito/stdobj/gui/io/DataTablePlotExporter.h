@@ -52,23 +52,23 @@ class OVITO_STDOBJGUI_EXPORT DataTablePlotExporter : public FileExporter
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE DataTablePlotExporter(ObjectInitializationFlags flags);
+    /// Constructor.
+    explicit DataTablePlotExporter(ObjectInitializationFlags flags);
 
-    /// \brief Returns the type(s) of data objects that this exporter service can export.
+    /// Returns the type(s) of data objects that this exporter service can export.
     virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
         return { &DataTable::OOClass() };
     }
 
 protected:
 
-    /// \brief This is called once for every output file to be written and before exportData() is called.
+    /// Called once for every output file to be written and before exportData() is called.
     virtual void openOutputFile(const QString& filePath, int numberOfFrames) override;
 
-    /// \brief This is called once for every output file written after exportData() has been called.
+    /// Called once for every output file written after exportData() has been called.
     virtual void closeOutputFile(bool exportCompleted) override;
 
-    /// \brief Exports a single animation frame to the current output file.
+    /// Exports a single animation frame to the current output file.
     virtual bool exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation) override;
 
     /// Returns the current file this exporter is writing to.

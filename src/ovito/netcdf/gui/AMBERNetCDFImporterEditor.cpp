@@ -51,7 +51,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(AMBERNetCDFImporterEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(AMBERNetCDFImporterEditor);
 SET_OVITO_OBJECT_EDITOR(AMBERNetCDFImporter, AMBERNetCDFImporterEditor);
 
 /******************************************************************************

@@ -80,14 +80,14 @@ class OVITO_STDMOD_EXPORT ExpressionSelectionModifier : public DelegatingModifie
     };
 
     OVITO_CLASS_META(ExpressionSelectionModifier, ExpressionSelectionModifierClass)
-    Q_CLASSINFO("DisplayName", "Expression selection");
-    Q_CLASSINFO("Description", "Select particles or other elements using a user-defined criterion.");
-    Q_CLASSINFO("ModifierCategory", "Selection");
+    OVITO_CLASSINFO("DisplayName", "Expression selection");
+    OVITO_CLASSINFO("Description", "Select particles or other elements using a user-defined criterion.");
+    OVITO_CLASSINFO("ModifierCategory", "Selection");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ExpressionSelectionModifier(ObjectInitializationFlags flags);
+    explicit ExpressionSelectionModifier(ObjectInitializationFlags flags);
 
     /// \brief Returns the list of available input variables.
     const QStringList& inputVariableNames() const { return _variableNames; }

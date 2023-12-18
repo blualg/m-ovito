@@ -156,12 +156,8 @@ void ObjectLoadStream::close()
 
             // Load class contents.
             try {
-                // Make the object being loaded a child of this stream object.
-                // This is to let the OvitoObject::isBeingLoaded() function detect that
-                // the object is being loaded from this stream.
-                OVITO_ASSERT(_currentObject->object->parent() == nullptr);
-                _currentObject->object->setParent(this);
-                OVITO_ASSERT(_currentObject->object->isBeingLoaded());
+                OVITO_ASSERT(_currentObject->object->isBeingLoaded() == false);
+                _currentObject->object->_flags.setFlag(OvitoObject::BeingLoaded, true);
 
                 // Let the object load its data fields.
                 _currentObject->object->loadFromStream(*this);
@@ -170,7 +166,7 @@ void ObjectLoadStream::close()
                 // Clear the being-loaded status of all objects.
                 for(const ObjectRecord& record : _objects) {
                     if(record.object)
-                        record.object->setParent(nullptr);
+                        _currentObject->object->_flags.setFlag(OvitoObject::BeingLoaded, false);
                 }
                 throw ex.appendDetailMessage(tr("Object of class type %1 failed to load.").arg(_currentObject->object->getOOClass().name()));
             }
@@ -185,8 +181,8 @@ void ObjectLoadStream::close()
         // Clear the being-loaded status of all objects.
         for(const ObjectRecord& record : _objects) {
             if(record.object) {
-                OVITO_ASSERT(record.object->parent() == this);
-                record.object->setParent(nullptr);
+                OVITO_ASSERT(record.object->isBeingLoaded());
+                record.object->_flags.setFlag(OvitoObject::BeingLoaded, false);
             }
         }
     }

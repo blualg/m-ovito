@@ -35,11 +35,12 @@ namespace Ovito {
 class OXDNAImporterEditor : public FileImporterEditor
 {
     OVITO_CLASS(OXDNAImporterEditor)
+    Q_OBJECT
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE OXDNAImporterEditor() {}
+    using FileImporterEditor::FileImporterEditor;
 
 protected:
 

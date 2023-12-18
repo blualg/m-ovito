@@ -36,8 +36,8 @@ namespace Ovito {
 class OVITO_CORE_EXPORT PipelineNode : public ActiveObject
 {
     OVITO_CLASS(PipelineNode)
-    Q_CLASSINFO("ClassNameAlias", "PipelineObject");         // For backward compatibility with OVITO 3.9.2
-    Q_CLASSINFO("ClassNameAlias", "CachingPipelineObject");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("ClassNameAlias", "PipelineObject");         // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("ClassNameAlias", "CachingPipelineObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
 

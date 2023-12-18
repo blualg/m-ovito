@@ -52,16 +52,14 @@ class OVITO_PARTICLES_EXPORT FHIAimsLogFileImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(FHIAimsLogFileImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "FHI-aims");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE FHIAimsLogFileImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
+    /// Constructor.
+    explicit FHIAimsLogFileImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
         setMultiTimestepFile(true);
     }
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("FHI-aims"); }
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {

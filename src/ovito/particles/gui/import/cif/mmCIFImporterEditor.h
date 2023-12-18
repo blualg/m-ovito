@@ -38,7 +38,7 @@ class mmCIFImporterEditor : public FileImporterEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE mmCIFImporterEditor() {}
+    using FileImporterEditor::FileImporterEditor;
 
 protected:
 

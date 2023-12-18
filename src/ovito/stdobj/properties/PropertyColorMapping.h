@@ -36,12 +36,12 @@ namespace Ovito {
 class OVITO_STDOBJ_EXPORT PropertyColorMapping : public RefTarget
 {
     OVITO_CLASS(PropertyColorMapping)
-    Q_CLASSINFO("DisplayName", "Color mapping");
+    OVITO_CLASSINFO("DisplayName", "Color mapping");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE PropertyColorMapping(ObjectInitializationFlags flags);
+    explicit PropertyColorMapping(ObjectInitializationFlags flags);
 
     /// Creates a PseudoColorMapping that can be used for rendering of graphics primitives.
     PseudoColorMapping pseudoColorMapping() const;

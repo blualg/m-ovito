@@ -62,12 +62,12 @@ class OVITO_STDMOD_EXPORT SimulationCellAffineTransformationModifierDelegate : p
     };
 
     OVITO_CLASS_META(SimulationCellAffineTransformationModifierDelegate, OOMetaClass)
-    Q_CLASSINFO("DisplayName", "Simulation cell");
+    OVITO_CLASSINFO("DisplayName", "Simulation cell");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE SimulationCellAffineTransformationModifierDelegate(ObjectInitializationFlags flags) : AffineTransformationModifierDelegate(flags) {}
+    explicit SimulationCellAffineTransformationModifierDelegate(ObjectInitializationFlags flags) : AffineTransformationModifierDelegate(flags) {}
 
     /// Applies the modifier operation to the data in a pipeline flow state.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
@@ -93,11 +93,12 @@ class OVITO_STDMOD_EXPORT LinesAffineTransformationModifierDelegate : public Aff
     };
 
     OVITO_CLASS_META(LinesAffineTransformationModifierDelegate, OOMetaClass)
-    Q_CLASSINFO("DisplayName", "Lines");
+    OVITO_CLASSINFO("DisplayName", "Lines");
 
 public:
+
     /// Constructor.
-    Q_INVOKABLE LinesAffineTransformationModifierDelegate(ObjectInitializationFlags flags) : AffineTransformationModifierDelegate(flags) {}
+    explicit LinesAffineTransformationModifierDelegate(ObjectInitializationFlags flags) : AffineTransformationModifierDelegate(flags) {}
 
     /// Applies the modifier operation to the data in a pipeline flow state.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState,
@@ -127,14 +128,14 @@ public:
     };
 
     OVITO_CLASS_META(AffineTransformationModifier, OOMetaClass)
-    Q_CLASSINFO("DisplayName", "Affine transformation");
-    Q_CLASSINFO("Description", "Apply an affine transformation to the dataset.");
-    Q_CLASSINFO("ModifierCategory", "Modification");
+    OVITO_CLASSINFO("DisplayName", "Affine transformation");
+    OVITO_CLASSINFO("Description", "Apply an affine transformation to the dataset.");
+    OVITO_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 
-    /// \brief Constructor.
-    Q_INVOKABLE AffineTransformationModifier(ObjectInitializationFlags flags);
+    /// Constructor.
+    explicit AffineTransformationModifier(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;

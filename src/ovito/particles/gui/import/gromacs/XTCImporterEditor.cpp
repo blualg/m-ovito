@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(XTCImporterEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(XTCImporterEditor);
 SET_OVITO_OBJECT_EDITOR(XTCImporter, XTCImporterEditor);
 
 /******************************************************************************

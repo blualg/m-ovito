@@ -53,16 +53,14 @@ class OVITO_NETCDFPLUGIN_EXPORT AMBERNetCDFImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(AMBERNetCDFImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "NetCDF");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE AMBERNetCDFImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _useCustomColumnMapping(false) {
+    /// Constructor.
+    explicit AMBERNetCDFImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _useCustomColumnMapping(false) {
         setMultiTimestepFile(true);
     }
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("NetCDF"); }
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {

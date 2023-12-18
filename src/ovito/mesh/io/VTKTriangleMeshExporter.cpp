@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(VTKTriangleMeshExporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(VTKTriangleMeshExporter);
 DEFINE_PROPERTY_FIELD(VTKTriangleMeshExporter, exportCapPolygons);
 
 /******************************************************************************

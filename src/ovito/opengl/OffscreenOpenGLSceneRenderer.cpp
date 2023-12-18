@@ -32,7 +32,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(OffscreenOpenGLSceneRenderer);
+IMPLEMENT_CREATABLE_OVITO_CLASS(OffscreenOpenGLSceneRenderer);
 
 /// The OpenGL context from the last rendering pass, kept around to avoid recreating it over and over again when performing many independent renderings.
 static QThreadStorage<std::unique_ptr<QOpenGLContext>> globalOffscreenContext;
@@ -59,7 +59,7 @@ void OffscreenOpenGLSceneRenderer::createOffscreenSurface()
 {
     // Surface creation can only be performed in the main thread.
     OVITO_ASSERT(QThread::currentThread() == qApp->thread());
-    OVITO_ASSERT(!_offscreenContext && !_offscreenSurface);
+    OVITO_ASSERT(!_offscreenContext && !_offscreenSurface.isValid());
 
     // OpenGL rendering and surface creation requires Qt to run in GUI mode.
     if(Application::instance()->headlessMode()) {
@@ -69,13 +69,11 @@ void OffscreenOpenGLSceneRenderer::createOffscreenSurface()
                 "on how to enable OpenGL rendering in Python scripts."));
     }
 
-    if(!_offscreenSurface)
-        _offscreenSurface = new QOffscreenSurface(nullptr, this);
     if(QOpenGLContext::globalShareContext())
-        _offscreenSurface->setFormat(QOpenGLContext::globalShareContext()->format());
+        _offscreenSurface.setFormat(QOpenGLContext::globalShareContext()->format());
     else
-        _offscreenSurface->setFormat(QSurfaceFormat::defaultFormat());
-    _offscreenSurface->create();
+        _offscreenSurface.setFormat(QSurfaceFormat::defaultFormat());
+    _offscreenSurface.create();
 }
 
 /******************************************************************************
@@ -106,12 +104,11 @@ bool OffscreenOpenGLSceneRenderer::startRender(const RenderSettings* settings, c
     }
 
     // Check offscreen surface (creation must have happened in the main thread).
-    OVITO_ASSERT(_offscreenSurface);
-    if(!_offscreenSurface->isValid())
+    if(!_offscreenSurface.isValid())
         throw RendererException(tr("Failed to create offscreen rendering surface."));
 
     // Make the context current.
-    if(!_offscreenContext->makeCurrent(_offscreenSurface))
+    if(!_offscreenContext->makeCurrent(&_offscreenSurface))
         throw RendererException(tr("Failed to make OpenGL context current."));
 
     QSurfaceFormat format = _offscreenContext->format();
@@ -171,7 +168,7 @@ bool OffscreenOpenGLSceneRenderer::startRender(const RenderSettings* settings, c
 void OffscreenOpenGLSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
     // Make GL context current.
-    if(!_offscreenContext || !_offscreenContext->makeCurrent(_offscreenSurface))
+    if(!_offscreenContext || !_offscreenContext->makeCurrent(&_offscreenSurface))
         throw RendererException(tr("Failed to make OpenGL context current."));
 
     // Tell the resource manager that we are beginning a new frame.
@@ -223,7 +220,7 @@ void OffscreenOpenGLSceneRenderer::endFrame(bool renderingSuccessful, const QRec
         makeContextCurrent();
 
         // Flush the contents to the FBO before extracting image.
-        glcontext()->swapBuffers(_offscreenSurface);
+        glcontext()->swapBuffers(&_offscreenSurface);
 
         // Fetch rendered image from OpenGL framebuffer.
         QImage renderedImage = _framebufferObject->toImage();

@@ -117,7 +117,7 @@ void SceneNode::invalidateWorldTransformation()
     invalidateBoundingBox();
     for(SceneNode* child : children())
         child->invalidateWorldTransformation();
-    notifyDependents(ReferenceEvent::TransformationChanged);
+    notifyDependents(SceneNode::TransformationChanged);
 }
 
 /******************************************************************************
@@ -140,7 +140,7 @@ void SceneNode::deleteSceneNode()
     OVITO_ASSERT(children().empty());
 
     // Delete node itself.
-    deleteReferenceObject();
+    requestObjectDeletion();
 }
 
 /******************************************************************************

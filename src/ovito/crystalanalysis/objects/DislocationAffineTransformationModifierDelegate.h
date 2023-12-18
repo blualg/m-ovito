@@ -49,12 +49,12 @@ class DislocationAffineTransformationModifierDelegate : public AffineTransformat
     };
 
     OVITO_CLASS_META(DislocationAffineTransformationModifierDelegate, OOMetaClass)
-    Q_CLASSINFO("DisplayName", "Dislocations");
+    OVITO_CLASSINFO("DisplayName", "Dislocations");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE DislocationAffineTransformationModifierDelegate(ObjectInitializationFlags flags) : AffineTransformationModifierDelegate(flags) {}
+    using AffineTransformationModifierDelegate::AffineTransformationModifierDelegate;
 
     /// Applies the modifier operation to the data in a pipeline flow state.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

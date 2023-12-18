@@ -25,7 +25,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS2(AsynchronousModificationNode);
+IMPLEMENT_CREATABLE_OVITO_CLASS(AsynchronousModificationNode);
 SET_MODIFICATION_NODE_TYPE(AsynchronousModifier, AsynchronousModificationNode);
 
 /******************************************************************************

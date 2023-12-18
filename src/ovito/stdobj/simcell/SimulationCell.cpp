@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SimulationCell);
+IMPLEMENT_CREATABLE_OVITO_CLASS(SimulationCell);
 DEFINE_PROPERTY_FIELD(SimulationCell, cellMatrix);
 DEFINE_PROPERTY_FIELD(SimulationCell, pbcX);
 DEFINE_PROPERTY_FIELD(SimulationCell, pbcY);

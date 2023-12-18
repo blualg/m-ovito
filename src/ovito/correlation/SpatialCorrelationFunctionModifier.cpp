@@ -36,7 +36,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SpatialCorrelationFunctionModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(SpatialCorrelationFunctionModifier);
 DEFINE_PROPERTY_FIELD(SpatialCorrelationFunctionModifier, sourceProperty1);
 DEFINE_PROPERTY_FIELD(SpatialCorrelationFunctionModifier, sourceProperty2);
 DEFINE_PROPERTY_FIELD(SpatialCorrelationFunctionModifier, averagingDirection);

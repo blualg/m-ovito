@@ -28,7 +28,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(GaussianCubeImporterEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(GaussianCubeImporterEditor);
 SET_OVITO_OBJECT_EDITOR(GaussianCubeImporter, GaussianCubeImporterEditor);
 
 /******************************************************************************

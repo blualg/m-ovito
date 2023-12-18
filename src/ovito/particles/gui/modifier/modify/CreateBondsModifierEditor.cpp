@@ -32,7 +32,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(CreateBondsModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(CreateBondsModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CreateBondsModifier, CreateBondsModifierEditor);
 
 /******************************************************************************
@@ -146,7 +146,7 @@ void CreateBondsModifierEditor::updatePairCutoffList()
         if(const Property* typeProperty = particles->getProperty(Particles::TypeProperty)) {
             for(auto ptype1 = typeProperty->elementTypes().constBegin(); ptype1 != typeProperty->elementTypes().constEnd(); ++ptype1) {
                 for(auto ptype2 = ptype1; ptype2 != typeProperty->elementTypes().constEnd(); ++ptype2) {
-                    pairCutoffs.emplace_back(OORef<ElementType>(*ptype1), OORef<ElementType>(*ptype2));
+                    pairCutoffs.emplace_back(OORef<const ElementType>(*ptype1), OORef<const ElementType>(*ptype2));
                 }
             }
         }

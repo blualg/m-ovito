@@ -36,8 +36,9 @@ SET(OVITO_VERSION_REVISION      "0")
 # Format version 30009 - OVITO ver>=3.8.0: New DataSet structure (per-viewport Scene, per-scene AnimationSettings, new AnimationTime data type)
 # Format version 30010 - OVITO ver>=3.9.0: New property data types (Float32, Float64, Int8)
 # Format version 30011 - OVITO ver>=3.9.3: Renamed and/or merged several classes, added RemoteExportSettings to dataset
+# Format version 30012 - OVITO ver>=3.11.0: Added reference field flag PROPERTY_FIELD_DONT_SAVE_TARGET
 #
-SET(OVITO_FILE_FORMAT_VERSION   "30011")
+SET(OVITO_FILE_FORMAT_VERSION   "30012")
 
 # The application's default version string:
 SET(OVITO_VERSION_STRING "${OVITO_VERSION_MAJOR}.${OVITO_VERSION_MINOR}.${OVITO_VERSION_REVISION}")

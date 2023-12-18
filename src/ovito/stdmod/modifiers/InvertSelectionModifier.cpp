@@ -28,7 +28,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(InvertSelectionModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(InvertSelectionModifier);
 
 /******************************************************************************
 * Constructs the modifier object.

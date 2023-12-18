@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ViewportConfiguration);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ViewportConfiguration);
 DEFINE_VECTOR_REFERENCE_FIELD(ViewportConfiguration, viewports);
 DEFINE_REFERENCE_FIELD(ViewportConfiguration, activeViewport);
 DEFINE_REFERENCE_FIELD(ViewportConfiguration, maximizedViewport);
@@ -49,13 +49,7 @@ ViewportConfiguration::ViewportConfiguration(ObjectInitializationFlags flags) : 
 ******************************************************************************/
 void ViewportConfiguration::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-    if(field == PROPERTY_FIELD(activeViewport)) {
-        Q_EMIT activeViewportChanged(activeViewport());
-    }
-    else if(field == PROPERTY_FIELD(maximizedViewport)) {
-        Q_EMIT maximizedViewportChanged(maximizedViewport());
-    }
-    else if(field == PROPERTY_FIELD(layoutRootCell)) {
+    if(field == PROPERTY_FIELD(layoutRootCell)) {
         if(!isBeingLoaded() && !isBeingDeleted())
             updateListOfViewports();
     }
@@ -70,7 +64,9 @@ bool ViewportConfiguration::referenceEvent(RefTarget* source, const ReferenceEve
     if(event.type() == ReferenceEvent::TargetChanged) {
         if(source == layoutRootCell() && !isBeingLoaded() && !isBeingDeleted()) {
             updateListOfViewports();
+#if 0 // TODO
             Q_EMIT viewportLayoutChanged();
+#endif
         }
     }
     return RefTarget::referenceEvent(source, event);

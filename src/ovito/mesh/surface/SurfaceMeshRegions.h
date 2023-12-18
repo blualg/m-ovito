@@ -54,7 +54,7 @@ class OVITO_MESH_EXPORT SurfaceMeshRegions : public PropertyContainer
     };
 
     OVITO_CLASS_META(SurfaceMeshRegions, OOMetaClass);
-    Q_CLASSINFO("DisplayName", "Mesh Regions");
+    OVITO_CLASSINFO("DisplayName", "Mesh Regions");
 
 public:
 
@@ -72,7 +72,7 @@ public:
     };
 
     /// \brief Constructor.
-    Q_INVOKABLE SurfaceMeshRegions(ObjectInitializationFlags flags) : PropertyContainer(flags) {
+    explicit SurfaceMeshRegions(ObjectInitializationFlags flags) : PropertyContainer(flags) {
         // Assign the default data object identifier.
         setIdentifier(OOClass().pythonName());
     }

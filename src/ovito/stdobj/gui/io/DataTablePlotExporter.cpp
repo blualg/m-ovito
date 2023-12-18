@@ -28,7 +28,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DataTablePlotExporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(DataTablePlotExporter);
 DEFINE_PROPERTY_FIELD(DataTablePlotExporter, plotWidth);
 DEFINE_PROPERTY_FIELD(DataTablePlotExporter, plotHeight);
 DEFINE_PROPERTY_FIELD(DataTablePlotExporter, plotDPI);

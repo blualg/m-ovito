@@ -23,10 +23,11 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/mainwin/OvitoStyle.h>
-#include <ovito/gui/desktop/dataset/GuiDataSetContainer.h>
 #include <ovito/gui/desktop/dialogs/MessageDialog.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/app/undo/UndoStack.h>
+#include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include "GuiApplication.h"
 
 #ifdef Q_OS_LINUX
@@ -258,7 +259,7 @@ MainThreadOperation GuiApplication::startupApplication()
         QGuiApplication::setWindowIcon(mainWindowIcon);
 
         // Create the main window.
-        std::shared_ptr<MainWindow> mainWin = std::make_shared<MainWindow>();
+        OORef<MainWindow> mainWin = OORef<MainWindow>::create();
         mainWin->keepAliveUntilShutdown();
 
         // Make the application shutdown as soon as the last main window has been closed.
@@ -305,9 +306,9 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
         if(startupFilename.endsWith(".ovito", Qt::CaseInsensitive)) {
             try {
                 MainThreadOperation loadOperation(true);
-                if(OORef<DataSet> dataset = datasetContainer.loadDataset(startupFilename)) {
+                OORef<DataSet> dataset = DataSet::createFromFile(startupFilename);
+                if(userInterface.checkLoadedDataset(dataset))
                     datasetContainer.setCurrentSet(std::move(dataset));
-                }
             }
             catch(const Exception& ex) {
                 userInterface.reportError(ex);
@@ -322,7 +323,8 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
         if(!defaultsFilePath.isEmpty()) {
             try {
                 MainThreadOperation loadOperation(true);
-                if(OORef<DataSet> dataset = datasetContainer.loadDataset(defaultsFilePath)) {
+                OORef<DataSet> dataset = DataSet::createFromFile(defaultsFilePath);
+                if(userInterface.checkLoadedDataset(dataset)) {
                     dataset->setFilePath({});
                     datasetContainer.setCurrentSet(std::move(dataset));
                 }
@@ -335,7 +337,7 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
 
     // Create an empty dataset if nothing has been loaded.
     if(datasetContainer.currentSet() == nullptr) {
-        datasetContainer.newDataset();
+        datasetContainer.setCurrentSet(OORef<DataSet>::create());
     }
 
     // Import data file(s) specified on the command line.
@@ -352,9 +354,9 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
             if(!importUrls.empty()) {
                 if(numSessionFiles)
                     throw Exception(tr("Detected incompatible arguments: Cannot open a session state file and a simulation data file at the same time."));
-                if(GuiDataSetContainer* guiContainer = dynamic_object_cast<GuiDataSetContainer>(&datasetContainer)) {
+                if(MainWindow* mainWindow = dynamic_object_cast<MainWindow>(&userInterface)) {
                     MainThreadOperation importOperation(true);
-                    guiContainer->importFiles(std::move(importUrls));
+                    mainWindow->importFiles(std::move(importUrls));
                 }
                 else
                     throw Exception(tr("Cannot import data files from the command line when running in console mode."));
@@ -394,14 +396,14 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
         if(mainWindow) {
             mainWindow->handleExceptions([&] {
                 if(openEvent->file().endsWith(".ovito", Qt::CaseInsensitive)) {
-                    if(!mainWindow->datasetContainer().askForSaveChanges())
+                    if(!mainWindow->askForSaveChanges())
                         return;
-                    if(OORef<DataSet> dataset = mainWindow->datasetContainer().loadDataset(openEvent->file())) {
+                    OORef<DataSet> dataset = DataSet::createFromFile(openEvent->file());
+                    if(mainWindow->checkLoadedDataset(dataset))
                         mainWindow->datasetContainer().setCurrentSet(std::move(dataset));
-                    }
                 }
                 else {
-                    mainWindow->datasetContainer().importFiles({openEvent->url()});
+                    mainWindow->importFiles({openEvent->url()});
                 }
             });
         }

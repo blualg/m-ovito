@@ -55,7 +55,7 @@ static void registerQtResources()
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(OpenGLSceneRenderer);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(OpenGLSceneRenderer);
 
 /// The vendor of the OpenGL implementation in use.
 QByteArray OpenGLSceneRenderer::_openGLVendor;
@@ -242,10 +242,10 @@ void OpenGLSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const Vie
 
     // Initialize debug logger.
     if(_glformat.testOption(QSurfaceFormat::DebugContext)) {
-        QOpenGLDebugLogger* logger = findChild<QOpenGLDebugLogger*>();
+        QOpenGLDebugLogger* logger = _glcontext->findChild<QOpenGLDebugLogger*>();
         if(!logger) {
-            logger = new QOpenGLDebugLogger(this);
-            connect(logger, &QOpenGLDebugLogger::messageLogged, [](const QOpenGLDebugMessage& debugMessage) {
+            logger = new QOpenGLDebugLogger(_glcontext);
+            QObject::connect(logger, &QOpenGLDebugLogger::messageLogged, [](const QOpenGLDebugMessage& debugMessage) {
                 qDebug() << debugMessage;
             });
         }
@@ -326,8 +326,10 @@ void OpenGLSceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewpo
     }
 #ifdef OVITO_DEBUG
     // Stop debug logger.
-    if(QOpenGLDebugLogger* logger = findChild<QOpenGLDebugLogger*>()) {
-        logger->stopLogging();
+    if(_glcontext) {
+        if(QOpenGLDebugLogger* logger = _glcontext->findChild<QOpenGLDebugLogger*>()) {
+            logger->stopLogging();
+        }
     }
 #endif
     _vertexArrayObject.reset();

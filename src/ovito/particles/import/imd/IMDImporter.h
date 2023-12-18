@@ -52,14 +52,12 @@ class OVITO_PARTICLES_EXPORT IMDImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(IMDImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "IMD");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE IMDImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {}
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("IMD"); }
+    /// Constructor.
+    using ParticleImporter::ParticleImporter;
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {

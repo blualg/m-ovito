@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ReplicateModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ReplicateModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ReplicateModifier, ReplicateModifierEditor);
 
 /******************************************************************************

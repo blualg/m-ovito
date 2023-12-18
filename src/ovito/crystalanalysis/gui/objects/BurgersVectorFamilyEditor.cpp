@@ -28,7 +28,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(BurgersVectorFamilyEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(BurgersVectorFamilyEditor);
 SET_OVITO_OBJECT_EDITOR(BurgersVectorFamily, BurgersVectorFamilyEditor);
 
 /******************************************************************************

@@ -56,16 +56,14 @@ class OVITO_MESH_EXPORT ParaViewPVDImporter : public FileSourceImporter
     };
 
     OVITO_CLASS_META(ParaViewPVDImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "PVD");
 
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE ParaViewPVDImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags) {
+    explicit ParaViewPVDImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags) {
         setMultiTimestepFile(true);
     }
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("PVD"); }
 
     /// Loads the data for the given frame from the external file.
     virtual Future<PipelineFlowState> loadFrame(const LoadOperationRequest& request) override;

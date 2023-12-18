@@ -38,12 +38,10 @@ class OVITO_PARTICLES_EXPORT FileColumnParticleExporter : public ParticleExporte
 {
     OVITO_CLASS(FileColumnParticleExporter)
 
-protected:
-
-    /// \brief Constructor.
-    FileColumnParticleExporter(ObjectInitializationFlags flags);
-
 public:
+
+    /// Constructor.
+    explicit FileColumnParticleExporter(ObjectInitializationFlags flags);
 
     /// \brief Returns the mapping of particle properties to output file columns.
     const ParticlesOutputColumnMapping& columnMapping() const { return _columnMapping; }

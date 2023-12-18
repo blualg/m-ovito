@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(Property);
+IMPLEMENT_CREATABLE_OVITO_CLASS(Property);
 DEFINE_VECTOR_REFERENCE_FIELD(Property, elementTypes);
 DEFINE_PROPERTY_FIELD(Property, title);
 SET_PROPERTY_FIELD_LABEL(Property, elementTypes, "Element types");

@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(OffscreenInteractiveOpenGLSceneRenderer);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(OffscreenInteractiveOpenGLSceneRenderer);
 
 /******************************************************************************
 * This method is called just before renderFrame() is called.

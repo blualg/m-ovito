@@ -28,8 +28,8 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParticlesExpressionSelectionModifierDelegate);
-IMPLEMENT_OVITO_CLASS(BondsExpressionSelectionModifierDelegate);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ParticlesExpressionSelectionModifierDelegate);
+IMPLEMENT_CREATABLE_OVITO_CLASS(BondsExpressionSelectionModifierDelegate);
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

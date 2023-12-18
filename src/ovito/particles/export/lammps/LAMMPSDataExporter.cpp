@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(LAMMPSDataExporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(LAMMPSDataExporter);
 DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, atomStyle);
 DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, atomSubStyles);
 DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, omitMassesSection);

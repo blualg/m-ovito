@@ -28,7 +28,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DeleteSelectedModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(DeleteSelectedModifierEditor);
 SET_OVITO_OBJECT_EDITOR(DeleteSelectedModifier, DeleteSelectedModifierEditor);
 
 /******************************************************************************

@@ -35,6 +35,7 @@ namespace Ovito {
 class OVITO_PARTICLESGUI_EXPORT StructureListParameterUI : public RefTargetListParameterUI
 {
     OVITO_CLASS(StructureListParameterUI)
+    Q_OBJECT
 
 public:
 

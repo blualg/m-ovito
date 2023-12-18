@@ -50,11 +50,12 @@ extern const size_t NumberOfChemicalElements;
 class OVITO_PARTICLESGUI_EXPORT CutoffRadiusPresetsUI : public PropertyParameterUI
 {
     OVITO_CLASS(CutoffRadiusPresetsUI)
+    Q_OBJECT
 
 public:
 
     /// Constructor for a PropertyField property.
-    CutoffRadiusPresetsUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    explicit CutoffRadiusPresetsUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
     /// Destructor.
     virtual ~CutoffRadiusPresetsUI();

@@ -24,7 +24,7 @@
 
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/core/dataset/pipeline/PipelineNode.h>
+#include <ovito/core/dataset/data/camera/AbstractCameraSource.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 
@@ -33,44 +33,39 @@ namespace Ovito {
 /**
  * A pipeline source generating a StandardCameraObject.
  */
-class OVITO_STDOBJ_EXPORT StandardCameraSource : public PipelineNode
+class OVITO_STDOBJ_EXPORT StandardCameraSource : public AbstractCameraSource
 {
     OVITO_CLASS(StandardCameraSource)
-    Q_CLASSINFO("DisplayName", "Camera");
-
-    Q_PROPERTY(bool isTargetCamera READ isTargetCamera WRITE setIsTargetCamera);
-    Q_PROPERTY(bool isPerspective READ isPerspective WRITE setIsPerspective);
-    Q_PROPERTY(FloatType zoom READ zoom WRITE setZoom);
-    Q_PROPERTY(FloatType fov READ fov WRITE setFov);
+    OVITO_CLASSINFO("DisplayName", "Camera");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE StandardCameraSource(ObjectInitializationFlags flags);
+    explicit StandardCameraSource(ObjectInitializationFlags flags);
 
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const override;
 
     /// Returns whether this camera is a target camera directed at a target object.
-    bool isTargetCamera() const;
+    virtual bool isTargetCamera() const override;
 
     /// Changes the type of the camera to a target camera or a free camera.
-    void setIsTargetCamera(bool enable);
+    virtual void setIsTargetCamera(bool enable) override;
 
     /// For a target camera, queries the distance between the camera and its target.
-    FloatType targetDistance(AnimationTime time) const;
+    virtual FloatType targetDistance(AnimationTime time) const override;
 
     /// Returns the current orthogonal field of view.
-    FloatType zoom() const;
+    virtual FloatType zoom() const override;
 
     /// Sets the field of view of a parallel projection camera.
-    void setZoom(FloatType newFOV);
+    virtual void setZoom(FloatType newFOV) override;
 
     /// Returns the current perspective field of view angle.
-    FloatType fov() const;
+    virtual FloatType fov() const override;
 
     /// Sets the field of view angle of a perspective projection camera.
-    void setFov(FloatType newFOV);
+    virtual void setFov(FloatType newFOV) override;
 
 protected:
 
@@ -92,6 +87,9 @@ private:
 
     /// This controller stores the field of view of the camera if it uses an orthogonal projection.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, zoomController, setZoomController);
+
+    /// Controls whether this camera is a target camera directed at a target object.
+    DECLARE_VIRTUAL_PROPERTY_FIELD(bool, isTargetCamera);
 };
 
 }   // End of namespace

@@ -39,7 +39,7 @@ class TextLabelOverlayEditor : public PropertiesEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE TextLabelOverlayEditor() {}
+    explicit TextLabelOverlayEditor() {}
 
 protected:
 
@@ -65,7 +65,7 @@ private:
     DeferredMethodInvocation<TextLabelOverlayEditor, &TextLabelOverlayEditor::updateEditorFields> updateEditorFieldsLater;
 
     /// The pipeline providing global attributes that can be reference in the text.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Pipeline*, sourcePipeline, setSourcePipeline, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(Pipeline*, sourcePipeline, setSourcePipeline);
 };
 
 }   // End of namespace

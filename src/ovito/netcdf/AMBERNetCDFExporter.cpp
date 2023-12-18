@@ -48,7 +48,7 @@ const char NC_CELL_ANGLES_STR[]   = "cell_angles";
 const char NC_UNITS_STR[]         = "units";
 const char NC_SCALE_FACTOR_STR[]  = "scale_factor";
 
-IMPLEMENT_OVITO_CLASS(AMBERNetCDFExporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(AMBERNetCDFExporter);
 
 /******************************************************************************
  * This is called once for every output file to be written and before

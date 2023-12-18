@@ -37,11 +37,12 @@ namespace Ovito {
 class HistogramModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(HistogramModifierEditor)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE HistogramModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

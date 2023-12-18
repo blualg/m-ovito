@@ -26,7 +26,10 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SurfaceMeshInspectionApplet);
+IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshInspectionApplet);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(SurfaceMeshVertexInspectionApplet);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(SurfaceMeshFaceInspectionApplet);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(SurfaceMeshRegionInspectionApplet);
 
 /******************************************************************************
 * Lets the applet create the UI widget that is to be placed into the data
@@ -68,16 +71,16 @@ QWidget* SurfaceMeshInspectionApplet::createWidget()
     rightLayout->addSpacing(6);
     rightLayout->addWidget(toolbar, 0);
 
-    _verticesApplet = new SurfaceMeshVertexInspectionApplet(this);
-    _verticesApplet->setParent(this->parent());
+    _verticesApplet = OORef<SurfaceMeshVertexInspectionApplet>::create(this);
+    _verticesApplet->setInspectorPanel(this->inspectorPanel());
     _stackedWidget->addWidget(_verticesApplet->createWidget());
 
-    _facesApplet = new SurfaceMeshFaceInspectionApplet(this);
-    _facesApplet->setParent(this->parent());
+    _facesApplet = OORef<SurfaceMeshFaceInspectionApplet>::create(this);
+    _facesApplet->setInspectorPanel(this->inspectorPanel());
     _stackedWidget->addWidget(_facesApplet->createWidget());
 
-    _regionsApplet = new SurfaceMeshRegionInspectionApplet(this);
-    _regionsApplet->setParent(this->parent());
+    _regionsApplet = OORef<SurfaceMeshRegionInspectionApplet>::create(this);
+    _regionsApplet->setInspectorPanel(this->inspectorPanel());
     _stackedWidget->addWidget(_regionsApplet->createWidget());
 
     connect(_switchToVerticesAction, &QAction::triggered, this, [this]() {
@@ -108,7 +111,7 @@ void SurfaceMeshInspectionApplet::onCurrentDataObjectChanged()
 /******************************************************************************
 * Selects a specific data object in this applet.
 ******************************************************************************/
-bool SurfaceMeshInspectionApplet::selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
+bool SurfaceMeshInspectionApplet::selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
 {
     // Let the base class switch to the right data object.
     bool result = DataInspectionApplet::selectDataObject(createdByNode, objectIdentifierHint, modeHint);

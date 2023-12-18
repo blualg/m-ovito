@@ -37,8 +37,8 @@ class ParticleTypeEditor : public PropertiesEditor
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE ParticleTypeEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

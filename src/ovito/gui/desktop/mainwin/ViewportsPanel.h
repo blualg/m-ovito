@@ -40,13 +40,13 @@ class ViewportsPanel : public QWidget
 public:
 
     /// Constructs the viewport panel.
-    ViewportsPanel(MainWindow& parent);
+    explicit ViewportsPanel(MainWindow& parent);
 
     /// Factory method which creates a new viewport window widget. Depending on the
     /// user's settings this can be either a OpenGL or a Vulkan window.
     static BaseViewportWindow* createViewportWindow(Viewport& vp, MainWindow& mainWindow, QWidget* parent);
 
-    /// Returns the widget that is associated with the given viewport.
+    /// Returns the widget that hosts the given viewport.
     QWidget* viewportWidget(Viewport* vp);
 
     /// Returns the current viewport configuration object.
@@ -89,7 +89,7 @@ protected:
 private Q_SLOTS:
 
     /// Displays the context menu for a viewport window.
-    void onViewportMenuRequested(const QPoint& pos);
+    void onViewportMenuRequested(Viewport* viewport, const QPoint& pos);
 
     /// This is called when a new viewport configuration has been loaded.
     void onViewportConfigurationReplaced(ViewportConfiguration* newViewportConfiguration);
@@ -116,9 +116,6 @@ private:
     /// Displays the context menu associated with a splitter handle.
     void showSplitterContextMenu(const SplitterRectangle& splitter, const QPoint& mousePos);
 
-    QMetaObject::Connection _activeViewportChangedConnection;
-    QMetaObject::Connection _maximizedViewportChangedConnection;
-    QMetaObject::Connection _viewportLayoutChangedConnection;
     QMetaObject::Connection _activeModeCursorChangedConnection;
 
     OORef<ViewportConfiguration> _viewportConfig;

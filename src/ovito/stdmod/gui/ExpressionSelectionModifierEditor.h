@@ -34,11 +34,12 @@ namespace Ovito {
 class ExpressionSelectionModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(ExpressionSelectionModifierEditor)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE ExpressionSelectionModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

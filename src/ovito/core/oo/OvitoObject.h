@@ -63,6 +63,7 @@ private:
 
     /// The meta-class descriptor for the OvitoObject C++ class.
     static const OvitoClass __OOClass_instance;
+    inline static OvitoClass::MetadataItem* __OOClass_metadata_head = nullptr;
 
 public:
 
@@ -70,8 +71,9 @@ public:
     enum ObjectFlag
     {
         NoFlags               = 0,        //< No flags set.
-        BeingDeleted          = (1 << 0), //< Indicates that this object is in the process of being deleted.
-        BeingLoaded           = (1 << 1), //< Indicates that this object is in the process of being restored from an ObjectLoadStream.
+        BeingConstructed      = (1 << 0), //< Indicates that this object's constructor is executing.
+        BeingDeleted          = (1 << 1), //< Indicates that this object is in the process of being deleted.
+        BeingLoaded           = (1 << 2), //< Indicates that this object is in the process of being restored from an ObjectLoadStream.
     };
     Q_DECLARE_FLAGS(ObjectFlags, ObjectFlag);
 
@@ -93,13 +95,17 @@ public:
     ~OvitoObject();
 #endif
 
+    /// Indicates whether this object is currently being constructed,
+    /// which means its constructor is running and the object is not yet in a fully initialized state.
+    inline bool isBeingConstructed() const { return _flags.testFlag(BeingConstructed); }
+
     /// Indicates whether this object is currently being loaded from an ObjectLoadStream,
     /// which means it is not yet in a fully initialized state.
-    bool isBeingLoaded() const { return _flags.testFlag(BeingLoaded); }
+    inline bool isBeingLoaded() const { return _flags.testFlag(BeingLoaded); }
 
-    /// Returns true if this object is about to be deleted, i.e. if the reference count has reached zero
+    /// Returns true if this object is about to be deleted, i.e., if the reference count has reached zero
     /// and aboutToBeDeleted() is being invoked.
-    bool isBeingDeleted() const { return _flags.testFlag(BeingDeleted); }
+    inline bool isBeingDeleted() const { return _flags.testFlag(BeingDeleted); }
 
 #ifdef OVITO_DEBUG
     /// \brief Returns whether this object has not been deleted yet.
@@ -114,37 +120,6 @@ public:
 
     /// Returns the class descriptor for this object.
     const OvitoClass& getOOMetaClass() const { return OOClass(); }
-
-    /// Creates some work that can be submitted for execution later and which will be executed in the context of this object (typically in the main thread).
-    /// If the object gets destroyed before the work is executed, the scheduled work will be discarded.
-    template<typename Function>
-    auto schedule(Function&& f) const {
-        OVITO_CHECK_OBJECT_POINTER(this);
-        OVITO_ASSERT(ExecutionContext::current().isValid());
-        return [weakRef = weak_from_this(), context = ExecutionContext::current(), f = std::forward<Function>(f)]() mutable noexcept {
-            if(auto self = weakRef.lock()) {
-                ExecutionContext::Scope execScope(std::move(context));
-                self->execute(std::move(f));
-            }
-        };
-    }
-
-    /// Executes some work in the context of this object (typically the main thread).
-    template<typename Function>
-    void execute(Function&& f) const {
-        OVITO_CHECK_OBJECT_POINTER(this);
-        OVITO_ASSERT(ExecutionContext::current().isValid());
-        // If we are in the main thread already, we can immediately execute the work.
-        // Otherwise, schedule its execution in the main thread.
-        if(ExecutionContext::isMainThread()) {
-            // Temporarily suspend undo recording, because deferred operations never get recorded by convention.
-            UndoSuspender noUndo;
-            std::invoke(std::forward<Function>(f));
-        }
-        else {
-            ExecutionContext::current().runDeferred(this, std::forward<Function>(f));
-        }
-    }
 
 protected:
 
@@ -197,7 +172,7 @@ private:
 
     /// Internal method that calls this object's aboutToBeDeleted() routine and the deletes the object.
     /// It is automatically called when the object's reference counter reaches zero.
-    Q_INVOKABLE void deleteObjectInternal() noexcept;
+    void deleteObjectInternal() noexcept;
 
     /// Returns the name of the plugin class this object is an instance of.
     /// This method is an implementation detail required by the Q_PROPERTY macro above.
@@ -207,8 +182,11 @@ private:
     /// This method is an implementation detail required by the Q_PROPERTY macro above.
     QString pluginId() const { return QString::fromLatin1(getOOClass().pluginId()); }
 
+    /// Helper method to clear the BeingConstructed flag. It is called by OORef<T>::create() after the object's constructor has finished.
+    inline void ooConstructionComplete() { _flags.setFlag(BeingConstructed, false); }
+
     /// Bit-wise flags.
-    ObjectFlags _flags = NoFlags;
+    ObjectFlags _flags = BeingConstructed;
 
 #ifdef OVITO_DEBUG
     /// This field is initialized with a special value by the class constructor to indicate that
@@ -216,20 +194,20 @@ private:
     /// destructor sets the field to a different value to indicate that the object is no longer alive.
     quint32 _magicAliveCode = 0x87ABCDEF;
 
-    /// Indicates that this object lives on the heap, because it has been created by the OORef<>::create() method.
-    /// Otherwise it was allocated on the stack, which means the object's reference counting mechanism may not be used.
-    bool _isAllocatedOnTheHeap = false;
-
     friend class OvitoClass;
 #endif
 
     // Give OORef smart-pointer class access to the internal reference counter.
     template<class T> friend class OORef;
+    template<typename T> friend struct OOAllocator;
 
     // These classes need to access the protected serialization functions.
     friend class ObjectSaveStream;
     friend class ObjectLoadStream;
 };
+
+/// Prints an object to Qt debug stream.
+OVITO_CORE_EXPORT QDebug operator<<(QDebug dbg, const OvitoObject* o);
 
 /// \brief Dynamic cast operator for subclasses of OvitoObject.
 ///

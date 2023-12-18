@@ -28,7 +28,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS2(Scene);
+IMPLEMENT_CREATABLE_OVITO_CLASS(Scene);
 DEFINE_REFERENCE_FIELD(Scene, animationSettings);
 DEFINE_REFERENCE_FIELD(Scene, selection);
 DEFINE_PROPERTY_FIELD(Scene, orbitCenterMode);

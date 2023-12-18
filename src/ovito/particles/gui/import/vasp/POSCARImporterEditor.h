@@ -38,7 +38,7 @@ class POSCARImporterEditor : public FileImporterEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE POSCARImporterEditor() {}
+    using FileImporterEditor::FileImporterEditor;
 
 protected:
 

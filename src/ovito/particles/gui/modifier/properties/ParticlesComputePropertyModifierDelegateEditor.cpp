@@ -32,7 +32,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParticlesComputePropertyModifierDelegateEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ParticlesComputePropertyModifierDelegateEditor);
 SET_OVITO_OBJECT_EDITOR(ParticlesComputePropertyModifierDelegate, ParticlesComputePropertyModifierDelegateEditor);
 
 /******************************************************************************

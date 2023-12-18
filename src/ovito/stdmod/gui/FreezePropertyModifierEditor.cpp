@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(FreezePropertyModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(FreezePropertyModifierEditor);
 SET_OVITO_OBJECT_EDITOR(FreezePropertyModifier, FreezePropertyModifierEditor);
 
 /******************************************************************************

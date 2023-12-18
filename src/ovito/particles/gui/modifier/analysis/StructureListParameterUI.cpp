@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(StructureListParameterUI);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(StructureListParameterUI);
 
 /******************************************************************************
 * Constructor.

@@ -28,7 +28,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DCDImporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(DCDImporter);
 
 static void swap_endianess(qint32* data, size_t ndata = 1)
 {

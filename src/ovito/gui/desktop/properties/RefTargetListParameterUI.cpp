@@ -25,7 +25,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(RefTargetListParameterUI);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(RefTargetListParameterUI);
 DEFINE_VECTOR_REFERENCE_FIELD(RefTargetListParameterUI, targets);
 
 /******************************************************************************
@@ -49,7 +49,6 @@ RefTargetListParameterUI::RefTargetListParameterUI(PropertiesEditor* parentEdito
 RefTargetListParameterUI::~RefTargetListParameterUI()
 {
     _subEditor = nullptr;
-    clearAllReferences();
 
     // Release GUI controls.
     delete _viewWidget;

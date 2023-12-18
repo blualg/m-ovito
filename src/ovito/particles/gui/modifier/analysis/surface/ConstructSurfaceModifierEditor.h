@@ -37,8 +37,8 @@ class ConstructSurfaceModifierEditor : public PropertiesEditor
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE ConstructSurfaceModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

@@ -41,7 +41,7 @@ namespace Ovito {
 class OVITO_PARTICLES_EXPORT VectorVis : public DataVis
 {
     OVITO_CLASS(VectorVis)
-    Q_CLASSINFO("DisplayName", "Vectors");
+    OVITO_CLASSINFO("DisplayName", "Vectors");
 
 public:
 
@@ -69,13 +69,13 @@ public:
 
 public:
 
-    /// \brief Constructor.
-    Q_INVOKABLE VectorVis(ObjectInitializationFlags flags);
+    /// Constructor.
+    explicit VectorVis(ObjectInitializationFlags flags);
 
-    /// \brief Lets the visualization element render the data object.
+    /// Lets the visualization element render the data object.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;
 
-    /// \brief Computes the bounding box of the object.
+    /// Computes the bounding box of the object.
     virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
 
     /// Returns the transparency parameter.
@@ -146,7 +146,7 @@ class OVITO_PARTICLES_EXPORT VectorPickInfo : public ObjectPickInfo
 public:
 
     /// Constructor.
-    VectorPickInfo(VectorVis* visElement, const ConstDataObjectPath& dataPath) :
+    explicit VectorPickInfo(VectorVis* visElement, const ConstDataObjectPath& dataPath) :
         _visElement(visElement), _dataPath(dataPath.begin(), dataPath.end()) {}
 
     /// Returns the data collection path to the vector property.

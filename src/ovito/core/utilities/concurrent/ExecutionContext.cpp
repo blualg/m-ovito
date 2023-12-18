@@ -22,6 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/concurrent/ExecutionContext.h>
+#include <ovito/core/app/Application.h>
 
 namespace Ovito {
 
@@ -41,8 +42,9 @@ ExecutionContext& ExecutionContext::current() noexcept
 ******************************************************************************/
 bool ExecutionContext::isMainThread()
 {
-    OVITO_ASSERT(false);
-    return false;
+    const static QThread* mainThread = Application::instance()->thread();
+
+    return QThread::currentThread() == mainThread;
 }
 
 }   // End of namespace

@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(AngleInspectionApplet);
+IMPLEMENT_CREATABLE_OVITO_CLASS(AngleInspectionApplet);
 
 /******************************************************************************
 * Lets the applet create the UI widget that is to be placed into the data

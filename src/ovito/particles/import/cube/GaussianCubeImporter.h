@@ -53,14 +53,12 @@ class OVITO_PARTICLES_EXPORT GaussianCubeImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(GaussianCubeImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "Cube");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE GaussianCubeImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _gridType(VoxelGrid::GridType::PointData) {}
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("Cube"); }
+    /// Constructor.
+    explicit GaussianCubeImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _gridType(VoxelGrid::GridType::PointData) {}
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {

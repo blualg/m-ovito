@@ -42,7 +42,7 @@ namespace Ovito {
 class OVITO_CORE_EXPORT ModificationNode : public PipelineNode
 {
     OVITO_CLASS(ModificationNode)
-    Q_CLASSINFO("ClassNameAlias", "ModifierApplication");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("ClassNameAlias", "ModifierApplication");  // For backward compatibility with OVITO 3.9.2
 
 public:
 
@@ -124,7 +124,7 @@ public:
     }
 
     /// Asks this object to delete itself.
-    virtual void deleteReferenceObject() override;
+    virtual void requestObjectDeletion() override;
 
 protected:
 

@@ -25,7 +25,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(MicrostructurePhase);
+IMPLEMENT_CREATABLE_OVITO_CLASS(MicrostructurePhase);
 DEFINE_PROPERTY_FIELD(MicrostructurePhase, shortName);
 DEFINE_PROPERTY_FIELD(MicrostructurePhase, dimensionality);
 DEFINE_PROPERTY_FIELD(MicrostructurePhase, crystalSymmetryClass);

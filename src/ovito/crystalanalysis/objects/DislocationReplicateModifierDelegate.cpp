@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DislocationReplicateModifierDelegate);
+IMPLEMENT_CREATABLE_OVITO_CLASS(DislocationReplicateModifierDelegate);
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

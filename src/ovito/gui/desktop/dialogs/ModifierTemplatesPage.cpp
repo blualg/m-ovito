@@ -32,7 +32,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ModifierTemplatesPage);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ModifierTemplatesPage);
 
 /******************************************************************************
 * Creates the widget that contains the plugin specific setting controls.

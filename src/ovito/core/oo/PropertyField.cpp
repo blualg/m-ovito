@@ -32,17 +32,33 @@
 
 namespace Ovito {
 
+#ifdef OVITO_DEBUG
+/******************************************************************************
+* Verifies that owner is of the right type, i.e., defines the given property field.
+******************************************************************************/
+bool PropertyFieldBase::ownerTypeCheck(RefMaker* owner, const PropertyFieldDescriptor* descriptor)
+{
+    OVITO_CHECK_OBJECT_POINTER(owner);
+    return descriptor->definingClass()->isMember(owner);
+}
+#endif
+
 /******************************************************************************
 * Generates a notification event to inform the dependents of the field's owner
 * that it has changed.
 ******************************************************************************/
-void PropertyFieldBase::generateTargetChangedEvent(RefMaker* owner, const PropertyFieldDescriptor* descriptor, ReferenceEvent::Type eventType)
+void PropertyFieldBase::generateTargetChangedEvent(RefMaker* owner, const PropertyFieldDescriptor* descriptor, int eventType)
 {
     // Make sure we are not trying to generate a change message for objects that are not RefTargets.
     OVITO_ASSERT_MSG(!descriptor->shouldGenerateChangeEvent() || descriptor->definingClass()->isDerivedFrom(RefTarget::OOClass()),
             "PropertyFieldBase::generateTargetChangedEvent()",
             qPrintable(QString("Flag PROPERTY_FIELD_NO_CHANGE_MESSAGE has not been set for property field '%1' of class '%2' even though '%2' is not derived from RefTarget.")
                     .arg(descriptor->identifier()).arg(descriptor->definingClass()->name())));
+
+    // Suppress all change messages while the owner object is being constructed.
+    // It cannot have any dependents yet.
+    if(owner->isBeingConstructed())
+        return;
 
     if(descriptor->definingClass()->isDerivedFrom(DataObject::OOClass())) {
         // Change events are only sent by a DataObject if the object
@@ -55,11 +71,11 @@ void PropertyFieldBase::generateTargetChangedEvent(RefMaker* owner, const Proper
 
     // Send notification message to dependents of owner object.
     if(eventType != ReferenceEvent::TargetChanged) {
-        OVITO_ASSERT(owner->isRefTarget());
+        OVITO_ASSERT(RefTarget::OOClass().isMember(owner));
         static_object_cast<RefTarget>(owner)->notifyDependents(eventType);
     }
     else if(descriptor->shouldGenerateChangeEvent() && !owner->isBeingDeleted()) {
-        OVITO_ASSERT(owner->isRefTarget());
+        OVITO_ASSERT(RefTarget::OOClass().isMember(owner));
         static_object_cast<RefTarget>(owner)->notifyTargetChanged(descriptor);
     }
 }
@@ -106,6 +122,8 @@ template<typename T> SingleReferenceFieldBase<T>::~SingleReferenceFieldBase()
 ******************************************************************************/
 template<typename T> void SingleReferenceFieldBase<T>::set(RefMaker* owner, const PropertyFieldDescriptor* descriptor, pointer newTarget)
 {
+    OVITO_ASSERT(ownerTypeCheck(owner, descriptor));
+
     if(_target == newTarget)
         return; // Nothing to change.
 
@@ -116,7 +134,7 @@ template<typename T> void SingleReferenceFieldBase<T>::set(RefMaker* owner, cons
     }
 
     // Make sure automatic undo is disabled for a reference field of a class that is not derived from RefTarget.
-    OVITO_ASSERT_MSG(descriptor->automaticUndo() == false || owner->isRefTarget(), "SingleReferenceFieldBase::set()",
+    OVITO_ASSERT_MSG(descriptor->automaticUndo() == false || RefTarget::OOClass().isMember(owner), "SingleReferenceFieldBase::set()",
             qPrintable(QString("PROPERTY_FIELD_NO_UNDO flag has not been set for reference field '%1' of non-RefTarget derived class '%2'.")
                 .arg(descriptor->identifier()).arg(descriptor->definingClass()->name())));
 
@@ -148,7 +166,7 @@ template<typename T> void SingleReferenceFieldBase<T>::set(RefMaker* owner, cons
         }
     };
 
-    if(descriptor->automaticUndo() && CompoundOperation::isUndoRecording()) {
+    if(descriptor->automaticUndo() && !owner->isBeingConstructed() && CompoundOperation::isUndoRecording()) {
         auto op = std::make_unique<SetReferenceOperation>(owner, std::move(newTarget), *this, descriptor);
         op->redo();
         CompoundOperation::current()->addOperation(std::move(op));
@@ -163,8 +181,7 @@ template<typename T> void SingleReferenceFieldBase<T>::set(RefMaker* owner, cons
 ******************************************************************************/
 template<typename T> void SingleReferenceFieldBase<T>::swapReference(RefMaker* owner, const PropertyFieldDescriptor* descriptor, pointer& inactiveTarget)
 {
-    OVITO_CHECK_POINTER(this);
-    OVITO_CHECK_OBJECT_POINTER(owner);
+    OVITO_ASSERT(ownerTypeCheck(owner, descriptor));
     OVITO_ASSERT(!descriptor->isVector());
     OVITO_ASSERT((descriptor->isWeakReference() == std::is_same<pointer, RefTarget*>::value));
     OVITO_ASSERT(inactiveTarget != _target);
@@ -201,7 +218,7 @@ template<typename T> void SingleReferenceFieldBase<T>::swapReference(RefMaker* o
 
     // Emit additional signal if SET_PROPERTY_FIELD_CHANGE_EVENT macro was used for this property field.
     if(descriptor->extraChangeEventType() != 0)
-        generateTargetChangedEvent(owner, descriptor, static_cast<ReferenceEvent::Type>(descriptor->extraChangeEventType()));
+        generateTargetChangedEvent(owner, descriptor, descriptor->extraChangeEventType());
 }
 
 // Instantiate base class template for the fancy pointer base types needed.
@@ -226,6 +243,8 @@ template<typename T> VectorReferenceFieldBase<T>::~VectorReferenceFieldBase()
 ******************************************************************************/
 template<typename T> void VectorReferenceFieldBase<T>::set(RefMaker* owner, const PropertyFieldDescriptor* descriptor, size_type i, pointer newTarget)
 {
+    OVITO_ASSERT(ownerTypeCheck(owner, descriptor));
+
     OVITO_ASSERT(i >= 0 && i < size());
     if(_targets[i] == newTarget)
         return; // Nothing to change.
@@ -237,7 +256,7 @@ template<typename T> void VectorReferenceFieldBase<T>::set(RefMaker* owner, cons
     }
 
     // Make sure automatic undo is disabled for a reference field of a class that is not derived from RefTarget.
-    OVITO_ASSERT_MSG(descriptor->automaticUndo() == false || owner->isRefTarget(), "VectorReferenceFieldBase::set()",
+    OVITO_ASSERT_MSG(descriptor->automaticUndo() == false || RefTarget::OOClass().isMember(owner), "VectorReferenceFieldBase::set()",
             qPrintable(QString("PROPERTY_FIELD_NO_UNDO flag has not been set for reference field '%1' of non-RefTarget derived class '%2'.")
                 .arg(descriptor->identifier()).arg(descriptor->definingClass()->name())));
 
@@ -273,7 +292,7 @@ template<typename T> void VectorReferenceFieldBase<T>::set(RefMaker* owner, cons
         }
     };
 
-    if(descriptor->automaticUndo() && CompoundOperation::isUndoRecording()) {
+    if(descriptor->automaticUndo() && !owner->isBeingConstructed() && CompoundOperation::isUndoRecording()) {
         auto op = std::make_unique<SetReferenceOperation>(owner, std::move(newTarget), i, *this, descriptor);
         op->redo();
         CompoundOperation::current()->addOperation(std::move(op));
@@ -288,6 +307,8 @@ template<typename T> void VectorReferenceFieldBase<T>::set(RefMaker* owner, cons
 ******************************************************************************/
 template<typename T> auto VectorReferenceFieldBase<T>::insert(RefMaker* owner, const PropertyFieldDescriptor* descriptor, size_type i, pointer newTarget) -> size_type
 {
+    OVITO_ASSERT(ownerTypeCheck(owner, descriptor));
+
     // Check object type
     if(newTarget && !newTarget->getOOClass().isDerivedFrom(*descriptor->targetClass())) {
         OVITO_ASSERT_MSG(false, "VectorReferenceFieldBase::insert()", "Cannot add incompatible object to this vector reference field.");
@@ -295,7 +316,7 @@ template<typename T> auto VectorReferenceFieldBase<T>::insert(RefMaker* owner, c
     }
 
     // Make sure automatic undo is disabled for a reference field of a class that is not derived from RefTarget.
-    OVITO_ASSERT_MSG(descriptor->automaticUndo() == false || owner->isRefTarget(), "VectorReferenceFieldBase::insert()",
+    OVITO_ASSERT_MSG(descriptor->automaticUndo() == false || RefTarget::OOClass().isMember(owner), "VectorReferenceFieldBase::insert()",
             qPrintable(QString("PROPERTY_FIELD_NO_UNDO flag has not been set for reference field '%1' of non-RefTarget derived class '%2'.")
                     .arg(descriptor->identifier()).arg(descriptor->definingClass()->name())));
 
@@ -337,7 +358,7 @@ template<typename T> auto VectorReferenceFieldBase<T>::insert(RefMaker* owner, c
         }
     };
 
-    if(descriptor->automaticUndo() && CompoundOperation::isUndoRecording()) {
+    if(descriptor->automaticUndo() && !owner->isBeingConstructed() && CompoundOperation::isUndoRecording()) {
         auto op = std::make_unique<InsertReferenceOperation>(owner, std::move(newTarget), i, *this, descriptor);
         op->redo();
         int index = op->insertionIndex();
@@ -355,10 +376,11 @@ template<typename T> auto VectorReferenceFieldBase<T>::insert(RefMaker* owner, c
 ******************************************************************************/
 template<typename T> T VectorReferenceFieldBase<T>::remove(RefMaker* owner, const PropertyFieldDescriptor* descriptor, size_type i)
 {
+    OVITO_ASSERT(ownerTypeCheck(owner, descriptor));
     OVITO_ASSERT(i >= 0 && i < size());
 
     // Make sure automatic undo is disabled for a reference field of a class that is not derived from RefTarget.
-    OVITO_ASSERT_MSG(descriptor->automaticUndo() == false || owner->isRefTarget(), "VectorReferenceFieldBase::remove()",
+    OVITO_ASSERT_MSG(descriptor->automaticUndo() == false || RefTarget::OOClass().isMember(owner), "VectorReferenceFieldBase::remove()",
             qPrintable(QString("PROPERTY_FIELD_NO_UNDO flag has not been set for reference field '%1' of non-RefTarget derived class '%2'.")
                     .arg(descriptor->identifier()).arg(descriptor->definingClass()->name())));
 
@@ -400,7 +422,7 @@ template<typename T> T VectorReferenceFieldBase<T>::remove(RefMaker* owner, cons
         }
     };
 
-    if(descriptor->automaticUndo() && CompoundOperation::isUndoRecording()) {
+    if(descriptor->automaticUndo() && !owner->isBeingConstructed() && CompoundOperation::isUndoRecording()) {
         auto op = std::make_unique<RemoveReferenceOperation>(owner, i, *this, descriptor);
         op->redo();
         pointer removedReference = op->storedTarget();
@@ -464,7 +486,7 @@ template<typename T> void VectorReferenceFieldBase<T>::swapReference(RefMaker* o
 
     // Emit additional signal if SET_PROPERTY_FIELD_CHANGE_EVENT macro was used for this property field.
     if(descriptor->extraChangeEventType() != 0)
-        generateTargetChangedEvent(owner, descriptor, static_cast<ReferenceEvent::Type>(descriptor->extraChangeEventType()));
+        generateTargetChangedEvent(owner, descriptor, descriptor->extraChangeEventType());
 }
 
 /******************************************************************************
@@ -493,7 +515,7 @@ template<typename T> void VectorReferenceFieldBase<T>::removeReference(RefMaker*
 
     // Emit additional signal if SET_PROPERTY_FIELD_CHANGE_EVENT macro was used for this property field.
     if(descriptor->extraChangeEventType() != 0)
-        generateTargetChangedEvent(owner, descriptor, static_cast<ReferenceEvent::Type>(descriptor->extraChangeEventType()));
+        generateTargetChangedEvent(owner, descriptor, descriptor->extraChangeEventType());
 }
 
 /******************************************************************************
@@ -501,8 +523,7 @@ template<typename T> void VectorReferenceFieldBase<T>::removeReference(RefMaker*
 ******************************************************************************/
 template<typename T> auto VectorReferenceFieldBase<T>::addReference(RefMaker* owner, const PropertyFieldDescriptor* descriptor, size_type index, pointer& target) -> size_type
 {
-    OVITO_CHECK_POINTER(this);
-    OVITO_CHECK_OBJECT_POINTER(owner);
+    OVITO_ASSERT(ownerTypeCheck(owner, descriptor));
     OVITO_ASSERT(descriptor->isVector());
 
     // Check for cyclic strong references.
@@ -532,7 +553,7 @@ template<typename T> auto VectorReferenceFieldBase<T>::addReference(RefMaker* ow
 
     // An additional message can be requested by the user using the SET_PROPERTY_FIELD_CHANGE_EVENT macro.
     if(descriptor->extraChangeEventType() != 0)
-        generateTargetChangedEvent(owner, descriptor, static_cast<ReferenceEvent::Type>(descriptor->extraChangeEventType()));
+        generateTargetChangedEvent(owner, descriptor, descriptor->extraChangeEventType());
 
     return index;
 }

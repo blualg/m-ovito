@@ -33,7 +33,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(GenerateTrajectoryLinesModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(GenerateTrajectoryLinesModifier);
 DEFINE_PROPERTY_FIELD(GenerateTrajectoryLinesModifier, onlySelectedParticles);
 DEFINE_PROPERTY_FIELD(GenerateTrajectoryLinesModifier, useCustomInterval);
 DEFINE_PROPERTY_FIELD(GenerateTrajectoryLinesModifier, customIntervalStart);
@@ -53,7 +53,7 @@ SET_PROPERTY_FIELD_LABEL(GenerateTrajectoryLinesModifier, transferParticleProper
 SET_PROPERTY_FIELD_LABEL(GenerateTrajectoryLinesModifier, particleProperty, "Particle property");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(GenerateTrajectoryLinesModifier, everyNthFrame, IntegerParameterUnit, 1);
 
-IMPLEMENT_OVITO_CLASS(GenerateTrajectoryLinesModificationNode);
+IMPLEMENT_CREATABLE_OVITO_CLASS(GenerateTrajectoryLinesModificationNode);
 DEFINE_REFERENCE_FIELD(GenerateTrajectoryLinesModificationNode, trajectoryData);
 SET_MODIFICATION_NODE_TYPE(GenerateTrajectoryLinesModifier, GenerateTrajectoryLinesModificationNode);
 

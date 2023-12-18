@@ -28,7 +28,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(POSCARExporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(POSCARExporter);
 DEFINE_PROPERTY_FIELD(POSCARExporter, writeReducedCoordinates);
 SET_PROPERTY_FIELD_LABEL(POSCARExporter, writeReducedCoordinates, "Output reduced coordinates");
 

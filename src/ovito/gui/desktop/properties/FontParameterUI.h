@@ -82,5 +82,3 @@ protected:
 };
 
 }   // End of namespace
-
-

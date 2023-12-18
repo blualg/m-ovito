@@ -32,7 +32,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ColorLegendOverlay);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ColorLegendOverlay);
 DEFINE_PROPERTY_FIELD(ColorLegendOverlay, alignment);
 DEFINE_PROPERTY_FIELD(ColorLegendOverlay, orientation);
 DEFINE_PROPERTY_FIELD(ColorLegendOverlay, legendSize);
@@ -407,8 +407,8 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
         drawDiscreteColorMap(renderer, colorBarRect, legendSize, typedProperty);
     }
 
-    // Notify the UI panel that the automatic label texts were recalculated during rendering.
-    Q_EMIT autoLabelsUpdated();
+    // Notify the UI that the automatic label texts were recalculated during rendering.
+    notifyDependents(ColorLegendOverlay::AutoLabelsUpdated);
 }
 
 /******************************************************************************

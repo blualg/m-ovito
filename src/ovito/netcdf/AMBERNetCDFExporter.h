@@ -52,8 +52,8 @@ class OVITO_NETCDFPLUGIN_EXPORT AMBERNetCDFExporter : public FileColumnParticleE
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE AMBERNetCDFExporter(ObjectInitializationFlags flags) : FileColumnParticleExporter(flags) {}
+    /// Constructor.
+    using FileColumnParticleExporter::FileColumnParticleExporter;
 
     /// \brief Indicates whether this file exporter can write more than one animation frame into a single output file.
     virtual bool supportsMultiFrameFiles() const override { return true; }

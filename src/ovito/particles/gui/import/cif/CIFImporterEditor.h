@@ -38,7 +38,7 @@ class CIFImporterEditor : public FileImporterEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE CIFImporterEditor() {}
+    using FileImporterEditor::FileImporterEditor;
 
 protected:
 

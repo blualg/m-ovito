@@ -45,7 +45,7 @@ public:
 	Q_ENUM(SplitDirection);
 
 	/// Constructor.
-	Q_INVOKABLE ViewportLayoutCell(ObjectInitializationFlags flags);
+	explicit ViewportLayoutCell(ObjectInitializationFlags flags);
 
 	/// Inserts a sub-cell into this cell's list of children.
 	void addChild(OORef<ViewportLayoutCell> child, FloatType weight = 1.0);

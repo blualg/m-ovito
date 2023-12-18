@@ -55,16 +55,14 @@ class OVITO_PARTICLES_EXPORT GroImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(GroImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "GRO");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE GroImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
+    /// Constructor.
+    explicit GroImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
         setRecenterCell(true);
     }
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("GRO"); }
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {

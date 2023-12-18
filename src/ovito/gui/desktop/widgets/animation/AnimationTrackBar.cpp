@@ -61,8 +61,8 @@ AnimationTrackBar::AnimationTrackBar(MainWindow& mainWindow, AnimationTimeSlider
     connect(&mainWindow.datasetContainer(), &DataSetContainer::currentFrameChanged, this, qOverload<>(&AnimationTrackBar::update));
     connect(&mainWindow.datasetContainer(), &DataSetContainer::timeFormatChanged, this, qOverload<>(&AnimationTrackBar::update));
     connect(&mainWindow.datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &AnimationTrackBar::onRebuildControllerList);
-    connect(&_objects, &VectorRefTargetListener<RefTarget>::notificationEvent, this, &AnimationTrackBar::onObjectNotificationEvent);
-    connect(&_controllers, &VectorRefTargetListener<KeyframeController>::notificationEvent, this, &AnimationTrackBar::onControllerNotificationEvent);
+    _objects.connect(this, &AnimationTrackBar::onObjectNotificationEvent);
+    _controllers.connect(this, &AnimationTrackBar::onControllerNotificationEvent);
 }
 
 /******************************************************************************
@@ -479,9 +479,10 @@ void AnimationTrackBar::showKeyContextMenu(const QPoint& pos, const QVector<Anim
     QAction* jumpToTimeAction = contextMenu.addAction(tr("Jump to key"));
     if(clickedKeys.empty() == false) {
         int frame = clickedKeys.front()->time().frame();
-        connect(jumpToTimeAction, &QAction::triggered, animSettings(), [this, frame]() {
+        connect(jumpToTimeAction, &QAction::triggered, this, [this, frame]() {
             mainWindow().handleExceptions([&] {
-                animSettings()->setCurrentFrame(frame);
+                if(animSettings())
+                    animSettings()->setCurrentFrame(frame);
             });
         });
     }

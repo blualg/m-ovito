@@ -25,6 +25,7 @@
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/oo/CloneHelper.h>
 #include "CopyPipelineItemDialog.h"
 

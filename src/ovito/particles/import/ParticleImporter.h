@@ -40,7 +40,7 @@ class OVITO_PARTICLES_EXPORT ParticleImporter : public FileSourceImporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    ParticleImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags),
+    explicit ParticleImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags),
         _sortParticles(false), _generateBonds(false), _recenterCell(false) {}
 
     /// Indicates whether this file importer type loads particle trajectories.

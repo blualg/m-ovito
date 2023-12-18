@@ -185,7 +185,7 @@ protected:
     ListViewModel* _model;
 
     /// The list of items in the list view.
-    DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(RefTarget*, targets, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    DECLARE_VECTOR_REFERENCE_FIELD(RefTarget*, targets);
 
     /// Maps reference field indices to row indices.
     QVector<int> _targetToRow;

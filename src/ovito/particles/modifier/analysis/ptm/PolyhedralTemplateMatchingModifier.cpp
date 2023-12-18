@@ -33,7 +33,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(PolyhedralTemplateMatchingModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(PolyhedralTemplateMatchingModifier);
 DEFINE_PROPERTY_FIELD(PolyhedralTemplateMatchingModifier, rmsdCutoff);
 DEFINE_PROPERTY_FIELD(PolyhedralTemplateMatchingModifier, outputRmsd);
 DEFINE_PROPERTY_FIELD(PolyhedralTemplateMatchingModifier, outputInteratomicDistance);

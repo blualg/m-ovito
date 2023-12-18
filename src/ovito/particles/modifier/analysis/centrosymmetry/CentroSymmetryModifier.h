@@ -51,9 +51,9 @@ class OVITO_PARTICLES_EXPORT CentroSymmetryModifier : public AsynchronousModifie
 
     OVITO_CLASS_META(CentroSymmetryModifier, CentroSymmetryModifierClass)
 
-    Q_CLASSINFO("DisplayName", "Centrosymmetry parameter");
-    Q_CLASSINFO("Description", "Calculate the lattice centrosymmetry parameter for each particle.");
-    Q_CLASSINFO("ModifierCategory", "Structure identification");
+    OVITO_CLASSINFO("DisplayName", "Centrosymmetry parameter");
+    OVITO_CLASSINFO("Description", "Calculate the lattice centrosymmetry parameter for each particle.");
+    OVITO_CLASSINFO("ModifierCategory", "Structure identification");
 
 public:
 
@@ -69,7 +69,7 @@ public:
 public:
 
     /// Constructor.
-    Q_INVOKABLE CentroSymmetryModifier(ObjectInitializationFlags flags);
+    explicit CentroSymmetryModifier(ObjectInitializationFlags flags);
 
 protected:
 

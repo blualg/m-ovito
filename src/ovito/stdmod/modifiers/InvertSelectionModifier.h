@@ -34,14 +34,14 @@ namespace Ovito {
 class OVITO_STDMOD_EXPORT InvertSelectionModifier : public GenericPropertyModifier
 {
     OVITO_CLASS(InvertSelectionModifier)
-    Q_CLASSINFO("DisplayName", "Invert selection");
-    Q_CLASSINFO("Description", "Invert the current selection state of each element.");
-    Q_CLASSINFO("ModifierCategory", "Selection");
+    OVITO_CLASSINFO("DisplayName", "Invert selection");
+    OVITO_CLASSINFO("Description", "Invert the current selection state of each element.");
+    OVITO_CLASSINFO("ModifierCategory", "Selection");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE InvertSelectionModifier(ObjectInitializationFlags flags);
+    /// Constructor.
+    explicit InvertSelectionModifier(ObjectInitializationFlags flags);
 
     /// Modifies the input data synchronously.
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;

@@ -35,7 +35,7 @@ namespace Ovito {
 class OVITO_CRYSTALANALYSIS_EXPORT RenderableDislocationLines : public TransformedDataObject
 {
     OVITO_CLASS(RenderableDislocationLines)
-    Q_CLASSINFO("DisplayName", "Renderable dislocations");
+    OVITO_CLASSINFO("DisplayName", "Renderable dislocations");
 
 public:
 
@@ -59,7 +59,7 @@ public:
     };
 
     /// Constructor.
-    Q_INVOKABLE RenderableDislocationLines(ObjectInitializationFlags flags, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr) : TransformedDataObject(flags, creator, sourceData) {}
+    explicit RenderableDislocationLines(ObjectInitializationFlags flags, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr) : TransformedDataObject(flags, creator, sourceData) {}
 
 private:
 

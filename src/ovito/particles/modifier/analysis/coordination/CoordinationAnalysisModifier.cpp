@@ -32,7 +32,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(CoordinationAnalysisModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(CoordinationAnalysisModifier);
 DEFINE_PROPERTY_FIELD(CoordinationAnalysisModifier, cutoff);
 DEFINE_PROPERTY_FIELD(CoordinationAnalysisModifier, numberOfBins);
 DEFINE_PROPERTY_FIELD(CoordinationAnalysisModifier, computePartialRDF);

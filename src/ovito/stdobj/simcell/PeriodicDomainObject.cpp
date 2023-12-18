@@ -26,7 +26,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(PeriodicDomainObject);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(PeriodicDomainObject);
 DEFINE_REFERENCE_FIELD(PeriodicDomainObject, domain);
 DEFINE_PROPERTY_FIELD(PeriodicDomainObject, cuttingPlanes);
 DEFINE_PROPERTY_FIELD(PeriodicDomainObject, title);

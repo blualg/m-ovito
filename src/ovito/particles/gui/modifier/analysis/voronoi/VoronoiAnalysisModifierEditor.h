@@ -37,8 +37,8 @@ class VoronoiAnalysisModifierEditor : public PropertiesEditor
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE VoronoiAnalysisModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

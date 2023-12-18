@@ -39,7 +39,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ConstructSurfaceModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ConstructSurfaceModifier);
 DEFINE_REFERENCE_FIELD(ConstructSurfaceModifier, surfaceMeshVis);
 DEFINE_PROPERTY_FIELD(ConstructSurfaceModifier, smoothingLevel);
 DEFINE_PROPERTY_FIELD(ConstructSurfaceModifier, probeSphereRadius);

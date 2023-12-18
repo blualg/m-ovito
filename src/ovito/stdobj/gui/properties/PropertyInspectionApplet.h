@@ -38,8 +38,12 @@ namespace Ovito {
 class OVITO_STDOBJGUI_EXPORT PropertyInspectionApplet : public DataInspectionApplet
 {
     OVITO_CLASS(PropertyInspectionApplet)
+    Q_OBJECT
 
 public:
+
+    /// Constructor.
+    explicit PropertyInspectionApplet(const PropertyContainerClass& containerClass) : DataInspectionApplet(containerClass), _containerClass(containerClass) {}
 
     /// Returns the data display widget.
     QTableView* tableView() const { return _tableView; }
@@ -60,12 +64,9 @@ public:
     const PropertyContainer* selectedContainerObject() const { return static_object_cast<PropertyContainer>(selectedDataObject()); }
 
     /// Selects a specific data object in this applet.
-    virtual bool selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint) override;
+    virtual bool selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint) override;
 
 protected:
-
-    /// Constructor.
-    PropertyInspectionApplet(const PropertyContainerClass& containerClass) : DataInspectionApplet(containerClass), _containerClass(containerClass) {}
 
     /// Lets the applet create the UI widgets that are to be placed into the data inspector panel.
     void createBaseWidgets();

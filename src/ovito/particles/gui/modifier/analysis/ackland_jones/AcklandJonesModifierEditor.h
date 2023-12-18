@@ -37,8 +37,8 @@ class AcklandJonesModifierEditor : public PropertiesEditor
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE AcklandJonesModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

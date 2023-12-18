@@ -28,7 +28,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(XYZExporterEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(XYZExporterEditor);
 SET_OVITO_OBJECT_EDITOR(XYZExporter, XYZExporterEditor);
 
 /******************************************************************************

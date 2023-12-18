@@ -40,7 +40,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(RenderSettingsEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(RenderSettingsEditor);
 DEFINE_REFERENCE_FIELD(RenderSettingsEditor, activeViewport);
 SET_OVITO_OBJECT_EDITOR(RenderSettings, RenderSettingsEditor);
 
@@ -184,7 +184,7 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
         layout2->addWidget(chooseFilenameBtn, 0, 1);
 
         // Output filename parameter.
-        StringParameterUI* imageFilenameUI = new StringParameterUI(this, "imageFilename");
+        StringParameterUI* imageFilenameUI = new StringParameterUI(this, PROPERTY_FIELD(RenderSettings::imageFilename));
         imageFilenameUI->setEnabled(false);
         layout2->addWidget(imageFilenameUI->textBox(), 1, 0, 1, 2);
 

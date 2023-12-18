@@ -41,11 +41,11 @@ class OVITO_GUI_EXPORT DataInspectorPanel : public QWidget
 
 public:
 
-    /// \brief Constructor.
+    /// Constructor.
     DataInspectorPanel(MainWindow& mainWindow);
 
     /// Selects a specific data object in the data inspector.
-    bool selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint);
+    bool selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint);
 
     /// Returns the main window this panel is part of.
     MainWindow& mainWindow() const { return _mainWindow; }
@@ -124,7 +124,7 @@ private:
     bool updatePipelineOutput();
 
     /// Returns the dataset container this panel is associated with.
-    GuiDataSetContainer& datasetContainer() const { return mainWindow().datasetContainer(); }
+    DataSetContainer& datasetContainer() const { return mainWindow().datasetContainer(); }
 
 private:
 

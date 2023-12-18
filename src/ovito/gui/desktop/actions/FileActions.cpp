@@ -131,7 +131,7 @@ void WidgetActionManager::on_FileNewWindow_triggered()
 void WidgetActionManager::on_FileOpen_triggered()
 {
     mainWindow().handleExceptions([&] {
-        if(!mainWindow().datasetContainer().askForSaveChanges())
+        if(!mainWindow().askForSaveChanges())
             return;
 
         QSettings settings;
@@ -159,7 +159,8 @@ void WidgetActionManager::on_FileOpen_triggered()
             settings.setValue("last_directory", QFileInfo(filename).absolutePath());
         }
 
-        if(OORef<DataSet> dataset = mainWindow().datasetContainer().loadDataset(filename))
+        OORef<DataSet> dataset = DataSet::createFromFile(filename);
+        if(mainWindow().checkLoadedDataset(dataset))
             mainWindow().datasetContainer().setCurrentSet(std::move(dataset));
     });
 }
@@ -169,12 +170,15 @@ void WidgetActionManager::on_FileOpen_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_FileSave_triggered()
 {
+    if(!dataset())
+        return;
+
     // Set focus to main window.
     // This will process any pending user inputs in QLineEdit fields.
     mainWindow().setFocus();
 
     mainWindow().handleExceptions([&] {
-        mainWindow().datasetContainer().fileSave();
+        mainWindow().fileSave();
     });
 }
 
@@ -183,12 +187,15 @@ void WidgetActionManager::on_FileSave_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_FileSaveAs_triggered()
 {
+    if(!dataset())
+        return;
+
     // Set focus to main window.
     // This will process any pending user inputs in QLineEdit fields.
     mainWindow().setFocus();
 
     mainWindow().handleExceptions([&] {
-        mainWindow().datasetContainer().fileSaveAs();
+        mainWindow().fileSaveAs();
     });
 }
 
@@ -206,6 +213,9 @@ void WidgetActionManager::on_Settings_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_FileImport_triggered()
 {
+    if(!dataset())
+        return;
+
     mainWindow().handleExceptions([&] {
         // Let the user select one or more files.
         ImportFileDialog dialog(PluginManager::instance().metaclassMembers<FileImporter>(), &mainWindow(), tr("Load File"), true);
@@ -220,8 +230,9 @@ void WidgetActionManager::on_FileImport_triggered()
 
         // If user accidentally tries to import a .ovito session state file, redirect to the corresponding session loading function.
         if(!importerClass && urlsToImport.size() == 1 && urlsToImport.front().fileName().endsWith(QStringLiteral(".ovito"))) {
-            if(mainWindow().datasetContainer().askForSaveChanges()) {
-                if(OORef<DataSet> dataset = mainWindow().datasetContainer().loadDataset(urlsToImport.front().toLocalFile())) {
+            if(mainWindow().askForSaveChanges()) {
+                OORef<DataSet> dataset = DataSet::createFromFile(urlsToImport.front().toLocalFile());
+                if(mainWindow().checkLoadedDataset(dataset)) {
                     mainWindow().datasetContainer().setCurrentSet(std::move(dataset));
                 }
             }
@@ -230,7 +241,7 @@ void WidgetActionManager::on_FileImport_triggered()
 
         mainWindow().performTransaction(tr("Import data"), [&, importerClass=&importerClass, importerFormat=&importerFormat] {
             // Import the selected file(s).
-            mainWindow().datasetContainer().importFiles(
+            mainWindow().importFiles(
                 urlsToImport,
                 *importerClass, *importerFormat);
         });
@@ -242,6 +253,9 @@ void WidgetActionManager::on_FileImport_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_FileRemoteImport_triggered()
 {
+    if(!dataset())
+        return;
+
     mainWindow().performTransaction(tr("Import data"), [&] {
         const auto [importUrls, importerClass, importerFormat] = [&]() -> std::tuple<std::vector<QUrl>, const FileImporterClass*, QString> {
             // Let the user enter the URL of the remote file.
@@ -256,7 +270,7 @@ void WidgetActionManager::on_FileRemoteImport_triggered()
 
         // Import URL.
         if(!importUrls.empty()) {
-            mainWindow().datasetContainer().importFiles(std::move(importUrls), importerClass, importerFormat);
+            mainWindow().importFiles(std::move(importUrls), importerClass, importerFormat);
         }
     });
 }

@@ -54,10 +54,10 @@ class OVITO_PARTICLES_EXPORT GSDExporter : public ParticleExporter
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE GSDExporter(ObjectInitializationFlags flags);
+    /// Constructor (needed because GSDFile is forward-declared).
+    explicit GSDExporter(ObjectInitializationFlags flags);
 
-    /// Destructor.
+    /// Destructor (needed because GSDFile is forward-declared).
     ~GSDExporter();
 
     /// \brief Indicates whether this file exporter can write more than one animation frame into a single output file.

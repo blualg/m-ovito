@@ -38,7 +38,7 @@ class ParticlesVisEditor : public PropertiesEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticlesVisEditor() {}
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

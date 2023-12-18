@@ -38,7 +38,7 @@ class OVITO_GUI_EXPORT DefaultPropertiesEditor : public PropertiesEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE DefaultPropertiesEditor() = default;
+    explicit DefaultPropertiesEditor() = default;
 
 protected:
 

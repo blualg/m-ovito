@@ -54,8 +54,8 @@ class OVITO_PARTICLES_EXPORT Dihedrals : public PropertyContainer
     };
 
     OVITO_CLASS_META(Dihedrals, OOMetaClass);
-    Q_CLASSINFO("DisplayName", "Dihedrals");
-    Q_CLASSINFO("ClassNameAlias", "DihedralsObject");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("DisplayName", "Dihedrals");
+    OVITO_CLASSINFO("ClassNameAlias", "DihedralsObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
 
@@ -66,8 +66,8 @@ public:
         TopologyProperty,
     };
 
-    /// \brief Constructor.
-    Q_INVOKABLE Dihedrals(ObjectInitializationFlags flags);
+    /// Constructor.
+    explicit Dihedrals(ObjectInitializationFlags flags);
 
     /// Convinience method that returns the dihedral topology property.
     const Property* getTopology() const { return getProperty(TopologyProperty); }

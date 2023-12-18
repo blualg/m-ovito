@@ -40,12 +40,7 @@ class RenderSettingsEditor : public PropertiesEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE RenderSettingsEditor() {}
-
-    /// \brief Destructor.
-    virtual ~RenderSettingsEditor() {
-        clearAllReferences();
-    }
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 
@@ -78,7 +73,7 @@ private Q_SLOTS:
 private:
 
     /// Weak reference to the currently active viewport.
-    DECLARE_REFERENCE_FIELD_FLAGS(Viewport*, activeViewport, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
+    DECLARE_REFERENCE_FIELD(Viewport*, activeViewport);
 
     QComboBox* _sizePresetsBox;
     QCheckBox* _viewportPreviewModeBox;

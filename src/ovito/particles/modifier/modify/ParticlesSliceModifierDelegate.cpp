@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParticlesSliceModifierDelegate);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ParticlesSliceModifierDelegate);
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier
@@ -50,7 +50,7 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationReq
 {
     const Particles* inputParticles = state.expectObject<Particles>();
     inputParticles->verifyIntegrity();
-    QString statusMessage = tr("%n input particles", 0, inputParticles->elementCount());
+    QString statusMessage = tr("%1 input particles").arg(inputParticles->elementCount());
 
     SliceModifier* mod = static_object_cast<SliceModifier>(request.modifier());
     PropertyFactory<SelectionIntType> mask(Particles::OOClass(), inputParticles->elementCount(), Particles::SelectionProperty);
@@ -127,14 +127,14 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationReq
     if(mod->createSelection() == false) {
         // Delete the marked particles.
         outputParticles->deleteElements(mask.take(), numMarked);
-        statusMessage += tr("\n%n particles deleted", 0, numMarked);
-        statusMessage += tr("\n%n particles remaining", 0, outputParticles->elementCount());
+        statusMessage += tr("\n%1 particles deleted").arg(numMarked);
+        statusMessage += tr("\n%1 particles remaining").arg(outputParticles->elementCount());
     }
     else {
         // Create or replace the selection particle property.
         outputParticles->createProperty(mask.take());
-        statusMessage += tr("\n%n particles selected", 0, numMarked);
-        statusMessage += tr("\n%n particles unselected", 0, outputParticles->elementCount() - numMarked);
+        statusMessage += tr("\n%1 particles selected").arg(numMarked);
+        statusMessage += tr("\n%1 particles unselected").arg(outputParticles->elementCount() - numMarked);
     }
     outputParticles->verifyIntegrity();
 

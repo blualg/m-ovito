@@ -58,8 +58,8 @@ class OVITO_GRID_EXPORT ParaViewVTSGridImporter : public FileSourceImporter
 
 public:
 
-    /// \brief Constructor.
-    Q_INVOKABLE ParaViewVTSGridImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags) {}
+    /// Constructor.
+    explicit ParaViewVTSGridImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags) {}
 
     /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("VTS"); }
@@ -97,7 +97,7 @@ class OVITO_GRID_EXPORT GridParaViewVTMFileFilter : public ParaViewVTMFileFilter
 public:
 
     /// Constructor.
-    Q_INVOKABLE GridParaViewVTMFileFilter() = default;
+    explicit GridParaViewVTMFileFilter() = default;
 
     /// \brief Is called once before the datasets referenced in a multi-block VTM file will be loaded.
     virtual void preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets, FileSourceImporter::LoadOperationRequest& request, const ParaViewVTMImporter& vtmImporter) override;

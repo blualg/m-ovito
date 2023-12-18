@@ -37,8 +37,8 @@ class ClusterAnalysisModifierEditor : public PropertiesEditor
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE ClusterAnalysisModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

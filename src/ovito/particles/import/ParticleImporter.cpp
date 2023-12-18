@@ -38,7 +38,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParticleImporter);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(ParticleImporter);
 DEFINE_PROPERTY_FIELD(ParticleImporter, sortParticles);
 DEFINE_PROPERTY_FIELD(ParticleImporter, generateBonds);
 DEFINE_PROPERTY_FIELD(ParticleImporter, recenterCell);

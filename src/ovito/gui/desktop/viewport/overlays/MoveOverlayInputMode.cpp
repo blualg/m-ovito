@@ -35,7 +35,6 @@ namespace Ovito {
 * Constructor.
 ******************************************************************************/
 MoveOverlayInputMode::MoveOverlayInputMode(PropertiesEditor* editor) :
-        ViewportInputMode(editor),
         _editor(editor),
         _moveCursor(QCursor(QPixmap(QStringLiteral(":/guibase/cursor/editing/cursor_mode_move.png")))),
         _forbiddenCursor(Qt::ForbiddenCursor)

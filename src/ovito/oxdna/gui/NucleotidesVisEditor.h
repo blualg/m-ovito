@@ -38,7 +38,7 @@ class NucleotidesVisEditor : public PropertiesEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE NucleotidesVisEditor() {}
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

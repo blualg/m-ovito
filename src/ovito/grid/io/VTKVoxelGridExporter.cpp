@@ -26,7 +26,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(VTKVoxelGridExporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(VTKVoxelGridExporter);
 
 /******************************************************************************
  * This is called once for every output file to be written and before

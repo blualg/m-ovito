@@ -65,7 +65,7 @@ private:
     QPointer<StatusWidget> _widget;
 
     /// The object whose status is being displayed.
-    DECLARE_REFERENCE_FIELD_FLAGS(ActiveObject*, activeObject, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    DECLARE_REFERENCE_FIELD(ActiveObject*, activeObject);
 };
 
 }   // End of namespace

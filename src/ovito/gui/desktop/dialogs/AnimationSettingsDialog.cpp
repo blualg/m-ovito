@@ -24,6 +24,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "AnimationSettingsDialog.h"

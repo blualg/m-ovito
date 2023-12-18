@@ -31,8 +31,8 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParameterUI);
-IMPLEMENT_OVITO_CLASS(PropertyParameterUI);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(ParameterUI);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(PropertyParameterUI);
 DEFINE_REFERENCE_FIELD(ParameterUI, editObject);
 DEFINE_REFERENCE_FIELD(PropertyParameterUI, parameterObject);
 
@@ -41,21 +41,19 @@ DEFINE_REFERENCE_FIELD(PropertyParameterUI, parameterObject);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ParameterUI::ParameterUI(PropertiesEditor* parent)
+ParameterUI::ParameterUI(PropertiesEditor* editor) : _editor(editor)
 {
-    OVITO_ASSERT(parent);
-    setParent(parent);
-
-    if(editor()->editObject())
-        setEditObject(editor()->editObject());
+    if(editor->editObject())
+        setEditObject(editor->editObject());
 
     // Connect to the contentsReplaced() signal of the editor to synchronize the
     // parameter UI's edit object with the editor's edit object.
-    connect(editor(), &PropertiesEditor::contentsReplaced, this, &ParameterUI::setEditObject);
+    connect(editor, &PropertiesEditor::contentsReplaced, this, &ParameterUI::setEditObject);
 }
 
 ///////////////////////////////////// PropertyParameterUI /////////////////////////////////////////
 
+#if 0 // TODO
 /******************************************************************************
 * Constructor for a Qt property.
 ******************************************************************************/
@@ -64,6 +62,7 @@ PropertyParameterUI::PropertyParameterUI(PropertiesEditor* parent, const char* p
 {
     OVITO_ASSERT(propertyName);
 }
+#endif
 
 /******************************************************************************
 * Constructor for a PropertyField or ReferenceField property.
@@ -199,6 +198,8 @@ QAction* PropertyParameterUI::createAction(const QString& text, const QIcon& ico
  ******************************************************************************/
 QAction* PropertyParameterUI::createResetAction()
 {
+    OVITO_ASSERT(propertyField());
+
     QAction* resetAction = createMenuToolButton()->createAction(QIcon::fromTheme("particles_settings_restore"), tr("Reset to default"));
     resetAction->setStatusTip(tr("Reset %1 to its default value").arg(propertyField()->displayName()));
     connect(resetAction, &QAction::triggered, this, [this]() {

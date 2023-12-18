@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(StandardCameraSourceEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(StandardCameraSourceEditor);
 SET_OVITO_OBJECT_EDITOR(StandardCameraSource, StandardCameraSourceEditor);
 
 /******************************************************************************
@@ -75,7 +75,7 @@ void StandardCameraSourceEditor::createUI(const RolloutInsertionParameters& roll
 
     // Camera type.
     layout->addSpacing(10);
-    VariantComboBoxParameterUI* typePUI = new VariantComboBoxParameterUI(this, "isTargetCamera");
+    VariantComboBoxParameterUI* typePUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(StandardCameraSource::isTargetCamera));
     typePUI->comboBox()->addItem(tr("Free camera"), QVariant::fromValue(false));
     typePUI->comboBox()->addItem(tr("Target camera"), QVariant::fromValue(true));
     layout->addWidget(new QLabel(tr("Camera type:")));

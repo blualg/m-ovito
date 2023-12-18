@@ -37,8 +37,8 @@ class BurgersVectorFamilyEditor : public PropertiesEditor
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE BurgersVectorFamilyEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

@@ -54,7 +54,7 @@ class OVITO_MESH_EXPORT SurfaceMeshFaces : public PropertyContainer
     };
 
     OVITO_CLASS_META(SurfaceMeshFaces, OOMetaClass);
-    Q_CLASSINFO("DisplayName", "Mesh Faces");
+    OVITO_CLASSINFO("DisplayName", "Mesh Faces");
 
 public:
 
@@ -70,7 +70,7 @@ public:
     };
 
     /// \brief Constructor.
-    Q_INVOKABLE SurfaceMeshFaces(ObjectInitializationFlags flags) : PropertyContainer(flags) {
+    explicit SurfaceMeshFaces(ObjectInitializationFlags flags) : PropertyContainer(flags) {
         // Assign the default data object identifier.
         setIdentifier(OOClass().pythonName());
     }

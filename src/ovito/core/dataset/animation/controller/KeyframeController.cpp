@@ -149,7 +149,7 @@ void KeyframeController::moveKeys(const QVector<AnimationKey*> keysToMove, Anima
 void KeyframeController::deleteKeys(const QVector<AnimationKey*> keysToDelete)
 {
     for(AnimationKey* key : keysToDelete)
-        key->deleteReferenceObject();
+        key->requestObjectDeletion();
     updateKeys();
 }
 

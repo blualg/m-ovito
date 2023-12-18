@@ -44,10 +44,10 @@ SceneNodesListModel::SceneNodesListModel(MainWindow& mainWindow, QWidget* parent
     connect(&mainWindow.datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &SceneNodesListModel::onSceneSelectionChanged);
 
     // Listen for signals from the root scene node.
-    connect(&_sceneListener, &RefTargetListener<Scene>::notificationEvent, this, &SceneNodesListModel::onSceneNotificationEvent);
+    _sceneListener.connect(this, &SceneNodesListModel::onSceneNotificationEvent);
 
     // Listen for events of the other scene nodes.
-    connect(&_nodeListener, &VectorRefTargetListener<SceneNode>::notificationEvent, this, &SceneNodesListModel::onNodeNotificationEvent);
+    _nodeListener.connect(this, &SceneNodesListModel::onNodeNotificationEvent);
 
     // Font for rendering currently selected scene nodes.
     _selectedNodeFont.setBold(true);
@@ -122,7 +122,7 @@ QVariant SceneNodesListModel::data(const QModelIndex& index, int role) const
     else if(role == Qt::UserRole) {
         int pipelineIndex = index.row() - firstSceneNodeIndex();
         if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size())
-            return QVariant::fromValue(static_cast<QObject*>(sceneNodes()[pipelineIndex]));
+            return QVariant::fromValue(static_cast<OvitoObject*>(sceneNodes()[pipelineIndex]));
 
         int actionIndex = index.row() - firstActionIndex();
         if(actionIndex >= 0 && actionIndex < _pipelineActions.size())

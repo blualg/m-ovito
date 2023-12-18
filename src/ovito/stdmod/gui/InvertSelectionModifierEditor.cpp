@@ -26,7 +26,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(InvertSelectionModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(InvertSelectionModifierEditor);
 SET_OVITO_OBJECT_EDITOR(InvertSelectionModifier, InvertSelectionModifierEditor);
 
 /******************************************************************************

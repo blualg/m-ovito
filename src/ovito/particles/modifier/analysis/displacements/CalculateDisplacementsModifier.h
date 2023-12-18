@@ -39,14 +39,14 @@ class OVITO_PARTICLES_EXPORT CalculateDisplacementsModifier : public ReferenceCo
 {
     OVITO_CLASS(CalculateDisplacementsModifier)
 
-    Q_CLASSINFO("DisplayName", "Displacement vectors");
-    Q_CLASSINFO("Description", "Calculate the displacements of particles based on two input configurations.");
-    Q_CLASSINFO("ModifierCategory", "Analysis");
+    OVITO_CLASSINFO("DisplayName", "Displacement vectors");
+    OVITO_CLASSINFO("Description", "Calculate the displacements of particles based on two input configurations.");
+    OVITO_CLASSINFO("ModifierCategory", "Analysis");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE CalculateDisplacementsModifier(ObjectInitializationFlags flags);
+    explicit CalculateDisplacementsModifier(ObjectInitializationFlags flags);
 
 protected:
 

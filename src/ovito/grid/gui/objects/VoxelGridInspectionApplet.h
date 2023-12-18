@@ -35,12 +35,13 @@ namespace Ovito {
 class VoxelGridInspectionApplet : public PropertyInspectionApplet
 {
     OVITO_CLASS(VoxelGridInspectionApplet)
-    Q_CLASSINFO("DisplayName", "Voxel Grids");
+    OVITO_CLASSINFO("DisplayName", "Voxel Grids")
+    Q_OBJECT
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE VoxelGridInspectionApplet() : PropertyInspectionApplet(VoxelGrid::OOClass()) {}
+    explicit VoxelGridInspectionApplet() : PropertyInspectionApplet(VoxelGrid::OOClass()) {}
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 210; }

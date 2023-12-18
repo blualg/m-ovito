@@ -39,7 +39,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ComputePropertyModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ComputePropertyModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ComputePropertyModifier, ComputePropertyModifierEditor);
 
 /******************************************************************************

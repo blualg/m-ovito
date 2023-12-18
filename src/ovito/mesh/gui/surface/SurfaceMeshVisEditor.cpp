@@ -34,7 +34,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SurfaceMeshVisEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshVisEditor);
 SET_OVITO_OBJECT_EDITOR(SurfaceMeshVis, SurfaceMeshVisEditor);
 
 /******************************************************************************

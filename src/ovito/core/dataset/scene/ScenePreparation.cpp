@@ -52,15 +52,6 @@ ScenePreparation::ScenePreparation(UserInterface& userInterface, Scene* scene) :
 }
 
 /******************************************************************************
-* Destructor.
-******************************************************************************/
-ScenePreparation::~ScenePreparation()
-{
-    // This will cancel any pipeline evaluation requests, which might still be in progress.
-    clearAllReferences();
-}
-
-/******************************************************************************
 * Returns a future that gets fulfilled once all data pipelines in the scene
 * have been completely evaluated at the current animation time.
 ******************************************************************************/

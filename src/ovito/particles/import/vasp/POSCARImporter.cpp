@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(POSCARImporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(POSCARImporter);
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

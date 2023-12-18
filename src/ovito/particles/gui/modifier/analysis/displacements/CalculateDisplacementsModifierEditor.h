@@ -34,11 +34,12 @@ namespace Ovito {
 class CalculateDisplacementsModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(CalculateDisplacementsModifierEditor)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE CalculateDisplacementsModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 private Q_SLOTS:
 

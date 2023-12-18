@@ -34,11 +34,14 @@ namespace Ovito {
 class OVITO_GUI_EXPORT VariantComboBoxParameterUI : public PropertyParameterUI
 {
     OVITO_CLASS(VariantComboBoxParameterUI)
+    Q_OBJECT
 
 public:
 
+#if 0 // TODO
     /// Constructor.
     VariantComboBoxParameterUI(PropertiesEditor* parentEditor, const char* propertyName);
+#endif
 
     /// Constructor for a PropertyField property.
     VariantComboBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);

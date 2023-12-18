@@ -27,17 +27,19 @@
 #include <ovito/stdobj/gui/properties/PropertyInspectionApplet.h>
 
 namespace Ovito {
+
 /**
  * \brief Data inspector page for lines.
  */
 class OVITO_STDOBJGUI_EXPORT LinesInspectionApplet : public PropertyInspectionApplet
 {
     OVITO_CLASS(LinesInspectionApplet)
-    Q_CLASSINFO("DisplayName", "Lines");
+    OVITO_CLASSINFO("DisplayName", "Lines");
 
 public:
+
     /// Constructor.
-    Q_INVOKABLE LinesInspectionApplet() : PropertyInspectionApplet(Lines::OOClass()) {}
+    explicit LinesInspectionApplet() : PropertyInspectionApplet(Lines::OOClass()) {}
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 250; }

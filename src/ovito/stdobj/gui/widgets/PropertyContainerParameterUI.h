@@ -34,11 +34,12 @@ namespace Ovito {
 class OVITO_STDOBJGUI_EXPORT PropertyContainerParameterUI : public PropertyParameterUI
 {
     OVITO_CLASS(PropertyContainerParameterUI)
+    Q_OBJECT
 
 public:
 
     /// Constructor.
-    PropertyContainerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    explicit PropertyContainerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
     /// Destructor.
     virtual ~PropertyContainerParameterUI();

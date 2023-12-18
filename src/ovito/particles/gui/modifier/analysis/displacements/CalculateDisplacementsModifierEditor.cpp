@@ -34,7 +34,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(CalculateDisplacementsModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(CalculateDisplacementsModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CalculateDisplacementsModifier, CalculateDisplacementsModifierEditor);
 
 /******************************************************************************

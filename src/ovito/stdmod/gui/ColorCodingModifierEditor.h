@@ -36,11 +36,12 @@ namespace Ovito {
 class ColorCodingModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(ColorCodingModifierEditor)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE ColorCodingModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

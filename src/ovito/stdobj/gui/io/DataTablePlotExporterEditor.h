@@ -38,7 +38,7 @@ class DataTablePlotExporterEditor : public PropertiesEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE DataTablePlotExporterEditor() {}
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

@@ -32,8 +32,8 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParaViewVTPParticleImporter);
-IMPLEMENT_OVITO_CLASS(ParticlesParaViewVTMFileFilter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ParaViewVTPParticleImporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ParticlesParaViewVTMFileFilter);
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

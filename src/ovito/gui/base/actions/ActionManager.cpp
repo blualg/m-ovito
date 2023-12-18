@@ -42,9 +42,9 @@ ActionManager::ActionManager(QObject* parent, UserInterface& userInterface) : QA
 {
     // Actions need to be updated whenever a new dataset is loaded or the current selection changes.
     connect(&userInterface.datasetContainer(), &DataSetContainer::dataSetChanged, this, &ActionManager::onDataSetChanged);
-    connect(&userInterface.datasetContainer(), &DataSetContainer::animationSettingsReplaced, this, &ActionManager::onAnimationSettingsReplaced);
     connect(&userInterface.datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &ActionManager::onSelectionChangeComplete);
-    connect(&userInterface.datasetContainer(), &DataSetContainer::viewportConfigReplaced, this, &ActionManager::onViewportConfigurationReplaced);
+    connect(&userInterface.datasetContainer(), &DataSetContainer::animationIntervalChanged, this, &ActionManager::onAnimationIntervalChanged);
+    connect(&userInterface.datasetContainer(), &DataSetContainer::maximizedViewportChanged, this, &ActionManager::onMaximizedViewportChanged);
 
     createCommandAction(ACTION_QUIT, tr("Quit"), "file_quit", tr("Quit the application."));
     createCommandAction(ACTION_FILE_OPEN, tr("Load Session State..."), "file_open", tr("Load a previously saved session from a file."), QKeySequence::Open);
@@ -163,21 +163,6 @@ void ActionManager::onDataSetChanged(DataSet* newDataSet)
 }
 
 /******************************************************************************
-* This is called when new animation settings have been loaded.
-******************************************************************************/
-void ActionManager::onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings)
-{
-    disconnect(_animationIntervalChangedConnection);
-    if(newAnimationSettings) {
-        _animationIntervalChangedConnection = connect(newAnimationSettings, &AnimationSettings::intervalChanged, this, &ActionManager::onAnimationIntervalChanged);
-        onAnimationIntervalChanged(newAnimationSettings->firstFrame(), newAnimationSettings->lastFrame());
-    }
-    else {
-        onAnimationIntervalChanged(0, 0);
-    }
-}
-
-/******************************************************************************
 * This is called when the active animation interval has changed.
 ******************************************************************************/
 void ActionManager::onAnimationIntervalChanged(int firstFrame, int lastFrame)
@@ -194,21 +179,11 @@ void ActionManager::onAnimationIntervalChanged(int firstFrame, int lastFrame)
 }
 
 /******************************************************************************
-* This is called when new viewport configuration has been loaded.
+* This is called when a different viewport become the maximized one.
 ******************************************************************************/
-void ActionManager::onViewportConfigurationReplaced(ViewportConfiguration* newViewportConfiguration)
+void ActionManager::onMaximizedViewportChanged(Viewport* maximizedViewport)
 {
-    disconnect(_maximizedViewportChangedConnection);
-    QAction* maximizeViewportAction = getAction(ACTION_VIEWPORT_MAXIMIZE);
-    if(newViewportConfiguration) {
-        maximizeViewportAction->setChecked(newViewportConfiguration->maximizedViewport() != nullptr);
-        _maximizedViewportChangedConnection = connect(newViewportConfiguration, &ViewportConfiguration::maximizedViewportChanged, maximizeViewportAction, [maximizeViewportAction](Viewport* maximizedViewport) {
-            maximizeViewportAction->setChecked(maximizedViewport != nullptr);
-        });
-    }
-    else {
-        maximizeViewportAction->setChecked(false);
-    }
+    getAction(ACTION_VIEWPORT_MAXIMIZE)->setChecked(maximizedViewport != nullptr);
 }
 
 /******************************************************************************
@@ -276,9 +251,9 @@ QAction* ActionManager::createCommandAction(const QString& id, const QString& ti
 /******************************************************************************
 * Creates and registers a new viewport mode action with the ActionManager.
 ******************************************************************************/
-QAction* ActionManager::createViewportModeAction(const QString& id, ViewportInputMode* inputHandler, const QString& title, const char* iconPath, const QString& statusTip, const QKeySequence& shortcut)
+QAction* ActionManager::createViewportModeAction(const QString& id, OORef<ViewportInputMode> inputHandler, const QString& title, const char* iconPath, const QString& statusTip, const QKeySequence& shortcut)
 {
-    QAction* action = new ViewportModeAction(userInterface(), title, this, inputHandler);
+    QAction* action = new ViewportModeAction(userInterface(), title, this, std::move(inputHandler));
     action->setObjectName(id);
     if(!shortcut.isEmpty())
         action->setShortcut(shortcut);

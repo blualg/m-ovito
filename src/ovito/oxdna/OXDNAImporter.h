@@ -56,14 +56,12 @@ class OVITO_OXDNA_EXPORT OXDNAImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(OXDNAImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "oxDNA");
 
 public:
 
-    /// \brief Constructor.
-    Q_INVOKABLE OXDNAImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {}
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("oxDNA"); }
+    /// Constructor.
+    using ParticleImporter::ParticleImporter;
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {

@@ -34,11 +34,14 @@ namespace Ovito {
 class OVITO_GUI_EXPORT FilenameParameterUI : public PropertyParameterUI
 {
     OVITO_CLASS(FilenameParameterUI)
+    Q_OBJECT
 
 public:
 
+#if 0 // TODO
     /// Constructor for a Qt property.
     FilenameParameterUI(PropertiesEditor* parentEditor, const char* propertyName);
+#endif
 
     /// Constructor for a PropertyField property.
     FilenameParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);

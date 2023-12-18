@@ -85,7 +85,7 @@ void SceneNodeSelectionBox::renameSceneNode(int index)
 void SceneNodeSelectionItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
     // Paint buttons next to node items when mouse if over the item.
-    if(SceneNode* node = qobject_cast<SceneNode*>(index.data(Qt::UserRole).value<QObject*>())) {
+    if(SceneNode* node = dynamic_object_cast<SceneNode>(index.data(Qt::UserRole).value<OvitoObject*>())) {
 #ifdef Q_OS_WIN
         if(option.state & QStyle::State_MouseOver) {
 #else
@@ -154,7 +154,7 @@ QRect SceneNodeSelectionItemDelegate::renameButtonRect(const QRect& itemRect) co
 bool SceneNodeSelectionItemDelegate::editorEvent(QEvent* event, QAbstractItemModel* model, const QStyleOptionViewItem& option, const QModelIndex& index)
 {
     if(event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseMove) {
-        if(SceneNode* node = qobject_cast<SceneNode*>(index.data(Qt::UserRole).value<QObject*>())) {
+        if(SceneNode* node = dynamic_object_cast<SceneNode>(index.data(Qt::UserRole).value<OvitoObject*>())) {
             QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
             QAbstractItemView* view = static_cast<QComboBox*>(parent())->view();
             QRect itemRect = option.rect;
@@ -191,7 +191,7 @@ bool SceneNodeSelectionItemDelegate::eventFilter(QObject* obj, QEvent* event)
         QAbstractItemView* view = static_cast<QComboBox*>(parent())->view();
         QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
         QModelIndex indexUnderMouse = view->indexAt(mouseEvent->pos());
-        if(SceneNode* node = qobject_cast<SceneNode*>(indexUnderMouse.data(Qt::UserRole).value<QObject*>())) {
+        if(SceneNode* node = dynamic_object_cast<SceneNode>(indexUnderMouse.data(Qt::UserRole).value<OvitoObject*>())) {
             QRect itemRect = view->visualRect(indexUnderMouse);
             int maxWidth = view->viewport()->size().width();
             itemRect.setWidth(qMin(maxWidth, itemRect.width()));

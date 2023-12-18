@@ -38,7 +38,7 @@ class VoxelGridVisEditor : public PropertiesEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE VoxelGridVisEditor() {}
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

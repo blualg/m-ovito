@@ -23,6 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/core/app/PluginManager.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include "DataInspectorPanel.h"
 #include "DataInspectionApplet.h"
 
@@ -39,7 +40,7 @@ DataInspectorPanel::DataInspectorPanel(MainWindow& mainWindow) :
     // Create data inspection applets.
     for(OvitoClassPtr clazz : PluginManager::instance().listClasses(DataInspectionApplet::OOClass())) {
         OORef<DataInspectionApplet> applet = static_object_cast<DataInspectionApplet>(clazz->createInstance());
-        applet->setParent(this);
+        applet->setInspectorPanel(this);
         _applets.push_back(std::move(applet));
     }
     // Give applets a fixed ordering.
@@ -366,7 +367,7 @@ void DataInspectorPanel::onCurrentPageChanged(int index)
 /******************************************************************************
 * Selects a specific data object in the data inspector.
 ******************************************************************************/
-bool DataInspectorPanel::selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
+bool DataInspectorPanel::selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
 {
     // Obtain the output of the currently selected pipeline.
     if(!updatePipelineOutput())

@@ -35,11 +35,12 @@ namespace Ovito {
 class AMBERNetCDFImporterEditor : public FileImporterEditor
 {
     OVITO_CLASS(AMBERNetCDFImporterEditor)
+    Q_OBJECT
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE AMBERNetCDFImporterEditor() {}
+    using FileImporterEditor::FileImporterEditor;
 
 protected:
 

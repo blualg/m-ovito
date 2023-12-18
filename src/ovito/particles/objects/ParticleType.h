@@ -85,10 +85,10 @@ public:
 
 public:
 
-    /// \brief Constructs a new particle type.
-    Q_INVOKABLE ParticleType(ObjectInitializationFlags flags);
+    /// Constructor.
+    explicit ParticleType(ObjectInitializationFlags flags);
 
-    /// \brief Initializes the element type's attributes to standard values.
+    /// Initializes the element type's attributes to standard values.
     virtual void initializeType(const PropertyReference& property, bool loadUserDefaults = ExecutionContext::isInteractive()) override;
 
     using ElementType::initializeType;

@@ -49,14 +49,12 @@ class OVITO_MESH_EXPORT ParaViewVTUSimulationCellImporter : public FileSourceImp
     };
 
     OVITO_CLASS_META(ParaViewVTUSimulationCellImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "VTU");
 
 public:
 
-    /// \brief Constructor.
-    Q_INVOKABLE ParaViewVTUSimulationCellImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags) {}
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("VTU"); }
+    /// Constructor.
+    using FileSourceImporter::FileSourceImporter;
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {

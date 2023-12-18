@@ -62,9 +62,9 @@ bool DataObject::referenceEvent(RefTarget* source, const ReferenceEvent& event)
         // Inform dependents that this data object's visual element was modified.
         // This is a separate notification event, because regular change messages from the visual element are
         // not propagated by the data object.
-        notifyDependents(ReferenceEvent::VisualElementModified);
+        notifyDependents(DataObject::VisualElementModified);
     }
-    else if(event.type() == ReferenceEvent::VisualElementModified) {
+    else if(event.type() == DataObject::VisualElementModified) {
         // Parent data objects propagate "VisualElementModified" events coming from child data objects.
         return true;
     }

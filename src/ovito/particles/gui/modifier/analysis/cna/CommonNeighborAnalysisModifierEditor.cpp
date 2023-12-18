@@ -32,7 +32,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(CommonNeighborAnalysisModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(CommonNeighborAnalysisModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CommonNeighborAnalysisModifier, CommonNeighborAnalysisModifierEditor);
 
 /******************************************************************************

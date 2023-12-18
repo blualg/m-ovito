@@ -25,7 +25,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(Angles);
+IMPLEMENT_CREATABLE_OVITO_CLASS(Angles);
 
 /******************************************************************************
 * Constructor.

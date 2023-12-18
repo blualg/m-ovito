@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SurfaceMeshSliceModifierDelegate);
+IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshSliceModifierDelegate);
 
 /******************************************************************************
 * Performs the slicing of a surface mesh.

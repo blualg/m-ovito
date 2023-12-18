@@ -28,16 +28,16 @@ namespace Ovito {
 IMPLEMENT_OVITO_CLASS_TEMPLATE(SplineAnimationKey<FloatAnimationKey>);
 template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(SplineAnimationKey<FloatAnimationKey>, inTangent);
 template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(SplineAnimationKey<FloatAnimationKey>, outTangent);
-IMPLEMENT_OVITO_CLASS2(FloatSplineAnimationKey);
+IMPLEMENT_CREATABLE_OVITO_CLASS(FloatSplineAnimationKey);
 SET_PROPERTY_FIELD_LABEL(FloatSplineAnimationKey, inTangent, "In Tangent");
 SET_PROPERTY_FIELD_LABEL(FloatSplineAnimationKey, outTangent, "Out Tangent");
 
 IMPLEMENT_OVITO_CLASS_TEMPLATE(SplineAnimationKey<PositionAnimationKey>);
 template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(SplineAnimationKey<PositionAnimationKey>, inTangent);
 template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(SplineAnimationKey<PositionAnimationKey>, outTangent);
-IMPLEMENT_OVITO_CLASS2(PositionSplineAnimationKey);
+IMPLEMENT_CREATABLE_OVITO_CLASS(PositionSplineAnimationKey);
 SET_PROPERTY_FIELD_LABEL(PositionSplineAnimationKey, inTangent, "In Tangent");
 SET_PROPERTY_FIELD_LABEL(PositionSplineAnimationKey, outTangent, "Out Tangent");
-IMPLEMENT_OVITO_CLASS2(SplinePositionController);
+IMPLEMENT_CREATABLE_OVITO_CLASS(SplinePositionController);
 
 }   // End of namespace

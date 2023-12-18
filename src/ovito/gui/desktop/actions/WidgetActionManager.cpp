@@ -44,8 +44,8 @@ namespace Ovito {
 ******************************************************************************/
 WidgetActionManager::WidgetActionManager(QObject* parent, MainWindow& mainWindow) : ActionManager(parent, mainWindow)
 {
-    createViewportModeAction(ACTION_XFORM_MOVE_MODE, new MoveMode(mainWindow.viewportInputManager()), tr("Move"), "edit_mode_move", tr("Move objects."));
-    createViewportModeAction(ACTION_XFORM_ROTATE_MODE, new RotateMode(mainWindow.viewportInputManager()), tr("Rotate"), "edit_mode_rotate", tr("Rotate objects."));
+    createViewportModeAction(ACTION_XFORM_MOVE_MODE, OORef<MoveMode>::create(), tr("Move"), "edit_mode_move", tr("Move objects."));
+    createViewportModeAction(ACTION_XFORM_ROTATE_MODE, OORef<RotateMode>::create(), tr("Rotate"), "edit_mode_rotate", tr("Rotate objects."));
 
     connect(getAction(ACTION_QUIT), &QAction::triggered, this, &WidgetActionManager::on_Quit_triggered);
     connect(getAction(ACTION_HELP_ABOUT), &QAction::triggered, this, &WidgetActionManager::on_HelpAbout_triggered);

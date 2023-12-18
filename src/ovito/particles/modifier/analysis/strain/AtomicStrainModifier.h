@@ -38,14 +38,14 @@ class OVITO_PARTICLES_EXPORT AtomicStrainModifier : public ReferenceConfiguratio
 {
     OVITO_CLASS(AtomicStrainModifier)
 
-    Q_CLASSINFO("DisplayName", "Atomic strain");
-    Q_CLASSINFO("Description", "Calculate local strain and deformation gradient tensors.");
-    Q_CLASSINFO("ModifierCategory", "Analysis");
+    OVITO_CLASSINFO("DisplayName", "Atomic strain");
+    OVITO_CLASSINFO("Description", "Calculate local strain and deformation gradient tensors.");
+    OVITO_CLASSINFO("ModifierCategory", "Analysis");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE AtomicStrainModifier(ObjectInitializationFlags flags);
+    explicit AtomicStrainModifier(ObjectInitializationFlags flags);
 
 protected:
 

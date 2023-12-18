@@ -23,6 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/CloneHelper.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
+#include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/Application.h>
@@ -74,8 +75,13 @@ void RefTarget::aboutToBeDeleted()
     // Make sure undo recording is not active while deleting the object from memory.
     UndoSuspender noUndo;
 
-    // This will remove all references to this target object.
-    notifyDependents(ReferenceEvent::TargetDeleted);
+    // Strong references to this target should not exist at this point.
+    // But this will also remove all remaining weak references to this target object.
+    ReferenceEvent deleteEvent(ReferenceEvent::TargetDeleted, this);
+    _dependents.visit_all([&](RefMaker* dependent) {
+        dependent->handleReferenceEvent(this, deleteEvent);
+    });
+    OVITO_ASSERT(_dependents.empty());
 
     // Delete object from memory.
     RefMaker::aboutToBeDeleted();
@@ -84,34 +90,18 @@ void RefTarget::aboutToBeDeleted()
 /******************************************************************************
 * Asks this object to delete itself.
 ******************************************************************************/
-void RefTarget::deleteReferenceObject()
+void RefTarget::requestObjectDeletion()
 {
     OVITO_CHECK_OBJECT_POINTER(this);
+    OVITO_ASSERT(!isBeingConstructed());
+    OVITO_ASSERT(!isBeingDeleted());
 
-    // This will remove all references to this target object.
+    // This will remove all references other RefMakers have to this target object.
     notifyDependents(ReferenceEvent::TargetDeleted);
 
     // At this point, the object might have been deleted from memory if its
     // reference counter has reached zero. If undo recording was enabled, however,
-    // the undo record still holds a reference to this object and it will still be alive.
-}
-
-/******************************************************************************
-* Registers a RefMaker as a dependent of this RefTarget, subscribing it to notifications.
-******************************************************************************/
-void RefTarget::registerDependent(const RefMaker* dependent) const noexcept
-{
-    // TODO: Implement me.
-    OVITO_ASSERT(false);
-}
-
-/******************************************************************************
-* Unregisters a RefMaker, which will no longer receive notifications from this RefTarget.
-******************************************************************************/
-void RefTarget::unregisterDependent(const RefMaker* dependent) const noexcept
-{
-    // TODO: Implement me.
-    OVITO_ASSERT(false);
+    // the undo record still holds a reference to this object to keep it alive.
 }
 
 /******************************************************************************
@@ -121,13 +111,17 @@ void RefTarget::notifyDependentsImpl(const ReferenceEvent& event) noexcept
 {
     OVITO_CHECK_OBJECT_POINTER(this);
 
+    // Suppress notification events during object construction and destruction.
+    if(isBeingConstructed() || isBeingDeleted())
+        return;
+
     // Prevent this object from being deleted while sending the notification event.
     OORef<RefTarget> self(this);
 
     // Send the signal to the registered dependents.
-    for(const RefMaker* dependent : _dependents) {
-        const_cast<RefMaker*>(dependent)->handleReferenceEvent(this, event);
-    }
+    _dependents.visit_all([&](RefMaker* dependent) {
+        dependent->handleReferenceEvent(this, event);
+    });
 }
 
 /******************************************************************************
@@ -154,6 +148,8 @@ bool RefTarget::isReferencedBy(const RefMaker* obj, bool onlyStrongReferences) c
 {
     if(this == obj)
         return true;
+    if(isBeingConstructed())
+        return false;
     CheckIsReferencedByEvent event(const_cast<RefTarget*>(this), obj, onlyStrongReferences);
     const_cast<RefTarget*>(this)->notifyDependentsImpl(event);
     return event.isReferenced();
@@ -169,6 +165,9 @@ bool RefTarget::isReferencedBy(const RefMaker* obj, bool onlyStrongReferences) c
 ******************************************************************************/
 OORef<RefTarget> RefTarget::clone(bool deepCopy, CloneHelper& cloneHelper) const
 {
+    // Make sure CloneHelper has suspended undo recording.
+    OVITO_ASSERT(CompoundOperation::isUndoRecording() == false);
+
     // Create a new instance of the object's class.
     // Note: Calling low-level method createInstanceImpl() instead of createInstance() here to avoid initialization of
     // object parameters to default values. Parameter initialization is not needed when cloning an object.
@@ -238,13 +237,19 @@ QString RefTarget::objectTitle() const
 }
 
 /******************************************************************************
-* Determines if this object's properties are currently being edited in an editor.
+* Returns whether this object is currently opened in a parameter editor in the UI.
 ******************************************************************************/
 bool RefTarget::isBeingEdited() const
 {
+    // Look up the PropertiesEditor class, which is defined in the GUI plugin module.
+    // That means it is not accessible at compile time here from the Core module.
+    static const OvitoClassPtr propertiesEditorClass = PluginManager::instance().findClass("Gui", "PropertiesEditor");
+    OVITO_ASSERT(propertiesEditorClass != nullptr);
+
+    // Check if this object is referenced by any PropertiesEditor instance.
     bool result = false;
     visitDependents([&](const RefMaker* dependent) {
-        if(qstrcmp(dependent->getOOClass().className(), "PropertiesEditor") == 0)
+        if(propertiesEditorClass->isMember(dependent))
             result = true;
     });
     return result;

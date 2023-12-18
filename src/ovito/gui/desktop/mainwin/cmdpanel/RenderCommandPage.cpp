@@ -22,8 +22,6 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/gui/base/actions/ActionManager.h>
-#include <ovito/core/app/PluginManager.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include "RenderCommandPage.h"
 
@@ -42,22 +40,7 @@ RenderCommandPage::RenderCommandPage(MainWindow& mainWindow, QWidget* parent) : 
     _propertiesPanel->setFrameStyle(QFrame::NoFrame | QFrame::Plain);
     layout->addWidget(_propertiesPanel, 1);
 
-    connect(&mainWindow.datasetContainer(), &DataSetContainer::dataSetChanged, this, &RenderCommandPage::onDataSetChanged);
-}
-
-/******************************************************************************
-* This is called when a new dataset has been loaded.
-******************************************************************************/
-void RenderCommandPage::onDataSetChanged(DataSet* newDataSet)
-{
-    disconnect(_renderSettingsReplacedConnection);
-    if(newDataSet) {
-        _renderSettingsReplacedConnection = connect(newDataSet, &DataSet::renderSettingsReplaced, this, &RenderCommandPage::onRenderSettingsReplaced);
-        onRenderSettingsReplaced(newDataSet->renderSettings());
-    }
-    else {
-        onRenderSettingsReplaced(nullptr);
-    }
+    connect(&mainWindow.datasetContainer(), &DataSetContainer::renderSettingsReplaced, this, &RenderCommandPage::onRenderSettingsReplaced);
 }
 
 /******************************************************************************

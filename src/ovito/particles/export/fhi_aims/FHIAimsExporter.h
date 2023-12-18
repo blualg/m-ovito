@@ -51,8 +51,8 @@ class OVITO_PARTICLES_EXPORT FHIAimsExporter : public ParticleExporter
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE FHIAimsExporter(ObjectInitializationFlags flags) : ParticleExporter(flags) {}
+    /// Constructor.
+    using ParticleExporter::ParticleExporter;
 
 protected:
 

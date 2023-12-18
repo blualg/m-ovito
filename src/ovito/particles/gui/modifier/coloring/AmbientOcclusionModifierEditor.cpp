@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(AmbientOcclusionModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(AmbientOcclusionModifierEditor);
 SET_OVITO_OBJECT_EDITOR(AmbientOcclusionModifier, AmbientOcclusionModifierEditor);
 
 /******************************************************************************

@@ -37,8 +37,8 @@ class SmoothTrajectoryModifierEditor : public PropertiesEditor
 
 public:
 
-    /// Default constructor
-    Q_INVOKABLE SmoothTrajectoryModifierEditor() {}
+    /// Constructor
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

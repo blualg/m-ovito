@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParticleType);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ParticleType);
 DEFINE_PROPERTY_FIELD(ParticleType, radius);
 DEFINE_PROPERTY_FIELD(ParticleType, radiusIsPrescribed);
 DEFINE_PROPERTY_FIELD(ParticleType, vdwRadius);

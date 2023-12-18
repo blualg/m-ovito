@@ -26,7 +26,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(FileColumnParticleExporter);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(FileColumnParticleExporter);
 
 /******************************************************************************
 * Constructor.

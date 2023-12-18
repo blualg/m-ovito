@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ColorByTypeModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ColorByTypeModifier);
 DEFINE_PROPERTY_FIELD(ColorByTypeModifier, sourceProperty);
 DEFINE_PROPERTY_FIELD(ColorByTypeModifier, colorOnlySelected);
 DEFINE_PROPERTY_FIELD(ColorByTypeModifier, clearSelection);

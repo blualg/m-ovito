@@ -44,7 +44,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(Viewport);
+IMPLEMENT_CREATABLE_OVITO_CLASS(Viewport);
 DEFINE_PROPERTY_FIELD(Viewport, viewType);
 DEFINE_PROPERTY_FIELD(Viewport, gridMatrix);
 DEFINE_PROPERTY_FIELD(Viewport, fieldOfView);
@@ -71,10 +71,11 @@ Viewport::Viewport(ObjectInitializationFlags flags) : RefTarget(flags),
         _gridMatrix(AffineTransformation::Identity()),
         _isGridVisible(false)
 {
-    connect(&ViewportSettings::getSettings(), &ViewportSettings::settingsChanged, this, &Viewport::viewportSettingsChanged);
+    // Get notified when the global viewport settings change.
+    _viewportSettingsChangedConnection = QObject::connect(&ViewportSettings::getSettings(), &ViewportSettings::settingsChanged, [this](ViewportSettings* newSettings) { viewportSettingsChanged(newSettings); });
 
     // Automatically associate the new viewport with the global scene (if there is one).
-    // This is mainly done for the Python interface, where each viewport created by the user is automatically
+    // This is needed for the Python interface, where each viewport created by the user must be automatically
     // associated with some scene.
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject) && ExecutionContext::isScripting()) {
         setScene(ExecutionContext::current().ui().datasetContainer().activeScene());
@@ -86,6 +87,8 @@ Viewport::Viewport(ObjectInitializationFlags flags) : RefTarget(flags),
 ******************************************************************************/
 Viewport::~Viewport()
 {
+    QObject::disconnect(_viewportSettingsChangedConnection);
+
     // Also destroy the associated GUI window of this viewport when the viewport is deleted.
     if(_window)
         _window->destroyViewportWindow();
@@ -452,6 +455,13 @@ bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
             // Update viewport when one of the layers has changed.
             updateViewport();
         }
+        else if(source == scene()) {
+            // Repaint viewport if the scene's camera orbit center has changed.
+            const TargetChangedEvent& changeEvent = static_cast<const TargetChangedEvent&>(event);
+            if(changeEvent.field() == PROPERTY_FIELD(Scene::orbitCenterMode) || changeEvent.field() == PROPERTY_FIELD(Scene::userOrbitCenter)) {
+                updateViewport();
+            }
+        }
     }
     else if(source == viewNode() && event.type() == ReferenceEvent::TitleChanged && !isBeingLoaded()) {
         // Update viewport title when camera node has been renamed.
@@ -497,14 +507,10 @@ void Viewport::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget
         if(window())
             window()->scenePreparation().setScene(scene());
 
-        // Repaint viewport whenever the camera orbit center changes.
-        if(oldTarget)
-            disconnect(static_object_cast<Scene>(oldTarget), &Scene::cameraOrbitCenterChanged, this, &Viewport::updateViewport);
-        if(newTarget)
-            connect(static_object_cast<Scene>(newTarget), &Scene::cameraOrbitCenterChanged, this, &Viewport::updateViewport);
-
+#if 0 // TODO
         Q_EMIT sceneReplaced(scene());
         Q_EMIT viewportChanged();
+#endif
     }
     RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
@@ -548,9 +554,11 @@ void Viewport::propertyChanged(const PropertyFieldDescriptor* field)
         // Update view matrix when the up-vector has been changed.
         setCameraDirection(cameraDirection());
     }
+#if 0 // TODO
     else if(field == PROPERTY_FIELD(isGridVisible) || field == PROPERTY_FIELD(renderPreviewMode)) {
         Q_EMIT viewportChanged();
     }
+#endif
     updateViewport();
 }
 
@@ -587,7 +595,9 @@ void Viewport::updateViewportTitle()
         default: OVITO_ASSERT(false); // Unknown viewport type
     }
     _viewportTitle.set(this, PROPERTY_FIELD(viewportTitle), std::move(newTitle));
+#if 0 // TODO
     Q_EMIT viewportChanged();
+#endif
 }
 
 /******************************************************************************
@@ -999,6 +1009,14 @@ ViewportLayoutCell* Viewport::layoutCell() const
 void Viewport::setWindow(ViewportWindowInterface* window)
 {
     _window = window;
+}
+
+/******************************************************************************
+* Returns the size of the viewport's screen window (in device pixels).
+******************************************************************************/
+QSize Viewport::windowSize() const
+{
+    return window() ? window()->viewportWindowDeviceSize() : QSize(0,0);
 }
 
 }   // End of namespace

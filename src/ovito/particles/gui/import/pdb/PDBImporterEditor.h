@@ -38,7 +38,7 @@ class PDBImporterEditor : public FileImporterEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE PDBImporterEditor() {}
+    using FileImporterEditor::FileImporterEditor;
 
 protected:
 

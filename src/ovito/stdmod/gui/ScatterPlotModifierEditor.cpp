@@ -41,7 +41,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ScatterPlotModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ScatterPlotModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ScatterPlotModifier, ScatterPlotModifierEditor);
 
 /******************************************************************************

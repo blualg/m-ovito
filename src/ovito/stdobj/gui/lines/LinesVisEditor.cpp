@@ -34,7 +34,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(LinesVisEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(LinesVisEditor);
 SET_OVITO_OBJECT_EDITOR(LinesVis, LinesVisEditor);
 
 /******************************************************************************

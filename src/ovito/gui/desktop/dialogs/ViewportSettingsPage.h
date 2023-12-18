@@ -35,11 +35,12 @@ namespace Ovito {
 class OVITO_GUI_EXPORT ViewportSettingsPage : public ApplicationSettingsDialogPage
 {
     OVITO_CLASS(ViewportSettingsPage)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE ViewportSettingsPage() = default;
+    /// Constructor.
+    explicit ViewportSettingsPage() = default;
 
     /// \brief Creates the widget.
     virtual void insertSettingsDialogPage(QTabWidget* tabWidget) override;

@@ -25,7 +25,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(Dihedrals);
+IMPLEMENT_CREATABLE_OVITO_CLASS(Dihedrals);
 
 /******************************************************************************
 * Constructor.

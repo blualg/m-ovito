@@ -39,7 +39,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(CreateIsosurfaceModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(CreateIsosurfaceModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CreateIsosurfaceModifier, CreateIsosurfaceModifierEditor);
 
 /******************************************************************************

@@ -38,13 +38,9 @@ class OVITO_CORE_EXPORT ObjectExecutor
 public:
 
     /// Constructor.
-    explicit ObjectExecutor(OOWeakRef<const OvitoObject> contextObject, bool deferredExecution) noexcept :
+    explicit ObjectExecutor(OOWeakRef<const RefTarget> contextObject, bool deferredExecution) noexcept :
             _contextObject(std::move(contextObject)),
             _deferredExecution(deferredExecution) {}
-
-    /// Constructor.
-    template<typename T>
-    explicit ObjectExecutor(const T* contextObject, bool deferredExecution) noexcept : ObjectExecutor(contextObject->weak_from_this(), deferredExecution) {}
 
     /// Creates some work that can be submitted for execution later.
     template<typename Function>
@@ -52,7 +48,7 @@ public:
         OVITO_ASSERT(ExecutionContext::current().isValid());
         // Note: Avoiding the use of C++17 capture this-by-copy here, because it is not fully supported by the MSVC 2017 compiler.
         return [f = std::forward<Function>(f), executor = *this, context = ExecutionContext::current()]() mutable noexcept {
-            if(OORef<const OvitoObject> target = executor.contextObject().lock()) {
+            if(OORef<const RefTarget> target = executor.contextObject().lock()) {
                 // When not in the main thread, or if deferred execution was requested, schedule work for later execution in the main thread.
                 if(executor._deferredExecution || ExecutionContext::isMainThread() == false) {
                     // Schedule the work for execution later.
@@ -77,7 +73,7 @@ public:
     template<typename Function>
     void execute(Function&& f) {
         OVITO_ASSERT(ExecutionContext::current().isValid());
-        if(OORef<const OvitoObject> target = contextObject().lock()) {
+        if(OORef<const RefTarget> target = contextObject().lock()) {
             // If the work was explicitly marked for deferred execution or if we are not running in the
             // main thread, schedule the work for execution later.
             if(_deferredExecution || ExecutionContext::isMainThread() == false) {
@@ -94,14 +90,14 @@ public:
 
     /// Returns the object this executor is associated with.
     /// Work submitted to this executor will be executed in the context of the object.
-    const OOWeakRef<const OvitoObject>& contextObject() const { return _contextObject; }
+    const OOWeakRef<const RefTarget>& contextObject() const { return _contextObject; }
 
 private:
 
     /// The object work will be submitted to. Work will be executed in the context of this object,
     /// which means it will be automatically canceled if the object gets deleted before the work
     /// is done.
-    const OOWeakRef<const OvitoObject> _contextObject;
+    const OOWeakRef<const RefTarget> _contextObject;
 
     /// Controls whether execution of the work will be deferred until after control is returned to
     /// the event loop even if immediate execution would be possible.

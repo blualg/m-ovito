@@ -54,13 +54,12 @@ class ParticlesColorCodingModifierDelegate : public ColorCodingModifierDelegate
     };
 
     OVITO_CLASS_META(ParticlesColorCodingModifierDelegate, OOMetaClass)
-
-    Q_CLASSINFO("DisplayName", "Particles");
+    OVITO_CLASSINFO("DisplayName", "Particles");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticlesColorCodingModifierDelegate(ObjectInitializationFlags flags) : ColorCodingModifierDelegate(flags) {}
+    using ColorCodingModifierDelegate::ColorCodingModifierDelegate;
 };
 
 /**
@@ -87,13 +86,12 @@ class ParticleVectorsColorCodingModifierDelegate : public ColorCodingModifierDel
     };
 
     OVITO_CLASS_META(ParticleVectorsColorCodingModifierDelegate, OOMetaClass)
-
-    Q_CLASSINFO("DisplayName", "Particle vectors");
+    OVITO_CLASSINFO("DisplayName", "Particle vectors");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticleVectorsColorCodingModifierDelegate(ObjectInitializationFlags flags) : ColorCodingModifierDelegate(flags) {}
+    using ColorCodingModifierDelegate::ColorCodingModifierDelegate;
 
 protected:
 
@@ -125,13 +123,12 @@ class BondsColorCodingModifierDelegate : public ColorCodingModifierDelegate
     };
 
     OVITO_CLASS_META(BondsColorCodingModifierDelegate, OOMetaClass)
-
-    Q_CLASSINFO("DisplayName", "Bonds");
+    OVITO_CLASSINFO("DisplayName", "Bonds");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE BondsColorCodingModifierDelegate(ObjectInitializationFlags flags) : ColorCodingModifierDelegate(flags) {}
+    using ColorCodingModifierDelegate::ColorCodingModifierDelegate;
 };
 
 }   // End of namespace

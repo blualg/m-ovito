@@ -38,9 +38,9 @@ class OVITO_PARTICLES_EXPORT CommonNeighborAnalysisModifier : public StructureId
 {
     OVITO_CLASS(CommonNeighborAnalysisModifier)
 
-    Q_CLASSINFO("DisplayName", "Common neighbor analysis");
-    Q_CLASSINFO("Description", "Perform the CNA to identify simple crystal structures.");
-    Q_CLASSINFO("ModifierCategory", "Structure identification");
+    OVITO_CLASSINFO("DisplayName", "Common neighbor analysis");
+    OVITO_CLASSINFO("Description", "Perform the CNA to identify simple crystal structures.");
+    OVITO_CLASSINFO("ModifierCategory", "Structure identification");
 
 public:
 
@@ -113,7 +113,7 @@ public:
 public:
 
     /// Constructor.
-    Q_INVOKABLE CommonNeighborAnalysisModifier(ObjectInitializationFlags flags);
+    explicit CommonNeighborAnalysisModifier(ObjectInitializationFlags flags);
 
     /// Find all atoms that are nearest neighbors of the given pair of atoms.
     static int findCommonNeighbors(const NeighborBondArray& neighborArray, int neighborIndex, unsigned int& commonNeighbors);

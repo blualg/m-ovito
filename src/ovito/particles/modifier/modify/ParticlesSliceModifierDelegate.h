@@ -50,13 +50,12 @@ class ParticlesSliceModifierDelegate : public SliceModifierDelegate
     };
 
     OVITO_CLASS_META(ParticlesSliceModifierDelegate, ParticlesSliceModifierDelegateClass)
-
-    Q_CLASSINFO("DisplayName", "Particles");
+    OVITO_CLASSINFO("DisplayName", "Particles");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticlesSliceModifierDelegate(ObjectInitializationFlags flags) : SliceModifierDelegate(flags) {}
+    using SliceModifierDelegate::SliceModifierDelegate;
 
     /// Applies a slice operation to a data object.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

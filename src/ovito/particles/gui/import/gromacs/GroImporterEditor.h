@@ -38,7 +38,7 @@ class GroImporterEditor : public FileImporterEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE GroImporterEditor() {}
+    using FileImporterEditor::FileImporterEditor;
 
 protected:
 

@@ -25,7 +25,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ViewportOverlay);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(ViewportOverlay);
 
 /******************************************************************************
 * Constructor.

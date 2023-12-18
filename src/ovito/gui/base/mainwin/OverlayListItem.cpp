@@ -26,7 +26,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(OverlayListItem);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(OverlayListItem);
 DEFINE_REFERENCE_FIELD(OverlayListItem, overlay);
 
 /******************************************************************************

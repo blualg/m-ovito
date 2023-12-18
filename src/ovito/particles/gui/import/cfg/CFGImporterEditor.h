@@ -38,7 +38,7 @@ class CFGImporterEditor : public FileImporterEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE CFGImporterEditor() {}
+    using FileImporterEditor::FileImporterEditor;
 
 protected:
 

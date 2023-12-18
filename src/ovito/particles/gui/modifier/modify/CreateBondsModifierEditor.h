@@ -38,8 +38,8 @@ class CreateBondsModifierEditor : public PropertiesEditor
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE CreateBondsModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 
@@ -61,7 +61,7 @@ private:
 
     class PairCutoffTableModel : public QAbstractTableModel {
     public:
-        typedef std::vector<std::pair<OORef<ElementType>,OORef<ElementType>>> ContentType;
+        typedef std::vector<std::pair<OORef<const ElementType>, OORef<const ElementType>>> ContentType;
 
         explicit PairCutoffTableModel(CreateBondsModifierEditor* owner) : QAbstractTableModel(owner) {}
         virtual int rowCount(const QModelIndex& parent) const override { return !_data.empty() ? _data.size() : 1; }

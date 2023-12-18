@@ -38,7 +38,7 @@ class GSDImporterEditor : public FileImporterEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE GSDImporterEditor() {}
+    using FileImporterEditor::FileImporterEditor;
 
 protected:
 

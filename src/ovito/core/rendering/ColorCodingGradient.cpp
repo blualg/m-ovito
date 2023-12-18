@@ -25,16 +25,16 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ColorCodingGradient);
-IMPLEMENT_OVITO_CLASS(ColorCodingHSVGradient);
-IMPLEMENT_OVITO_CLASS(ColorCodingGrayscaleGradient);
-IMPLEMENT_OVITO_CLASS(ColorCodingHotGradient);
-IMPLEMENT_OVITO_CLASS(ColorCodingJetGradient);
-IMPLEMENT_OVITO_CLASS(ColorCodingBlueWhiteRedGradient);
-IMPLEMENT_OVITO_CLASS(ColorCodingViridisGradient);
-IMPLEMENT_OVITO_CLASS(ColorCodingMagmaGradient);
-IMPLEMENT_OVITO_CLASS(ColorCodingTableGradient);
-IMPLEMENT_OVITO_CLASS(ColorCodingImageGradient);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(ColorCodingGradient);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingHSVGradient);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingGrayscaleGradient);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingHotGradient);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingJetGradient);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingBlueWhiteRedGradient);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingViridisGradient);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingMagmaGradient);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingTableGradient);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingImageGradient);
 
 DEFINE_PROPERTY_FIELD(ColorCodingImageGradient, image);
 DEFINE_PROPERTY_FIELD(ColorCodingImageGradient, imagePath);
@@ -73,7 +73,7 @@ void ColorCodingImageGradient::loadImage(const QString& filename)
 Color ColorCodingImageGradient::valueToColor(FloatType t)
 {
     OVITO_ASSERT(t >= 0.0 && t <= 1.0);
-    if(image().isNull()) 
+    if(image().isNull())
         return Color(0,0,0);
     QPoint p;
     if(image().width() > image().height())

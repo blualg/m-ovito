@@ -37,8 +37,9 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS2(RenderSettings);
+IMPLEMENT_CREATABLE_OVITO_CLASS(RenderSettings);
 DEFINE_PROPERTY_FIELD(RenderSettings, imageInfo);
+DEFINE_VIRTUAL_PROPERTY_FIELD(RenderSettings, imageFilename, setImageFilename);
 DEFINE_REFERENCE_FIELD(RenderSettings, renderer);
 DEFINE_REFERENCE_FIELD(RenderSettings, backgroundColorController);
 DEFINE_PROPERTY_FIELD(RenderSettings, outputImageWidth);
@@ -58,6 +59,7 @@ DEFINE_PROPERTY_FIELD(RenderSettings, layoutSeperatorsEnabled);
 DEFINE_PROPERTY_FIELD(RenderSettings, layoutSeperatorWidth);
 DEFINE_PROPERTY_FIELD(RenderSettings, layoutSeperatorColor);
 SET_PROPERTY_FIELD_LABEL(RenderSettings, imageInfo, "Image info");
+SET_PROPERTY_FIELD_LABEL(RenderSettings, imageFilename, "Image output path");
 SET_PROPERTY_FIELD_LABEL(RenderSettings, renderer, "Renderer");
 SET_PROPERTY_FIELD_LABEL(RenderSettings, backgroundColorController, "Background color");
 SET_PROPERTY_FIELD_LABEL(RenderSettings, outputImageWidth, "Width");
@@ -118,9 +120,11 @@ RenderSettings::RenderSettings(ObjectInitializationFlags flags) : RefTarget(flag
 ******************************************************************************/
 void RenderSettings::notifyDependentsImpl(const ReferenceEvent& event) noexcept
 {
+#if 0 // TODO
     if(event.type() == ReferenceEvent::TargetChanged && !isBeingLoaded()) {
         Q_EMIT settingsChanged();
     }
+#endif
     RefTarget::notifyDependentsImpl(event);
 }
 
@@ -129,10 +133,11 @@ void RenderSettings::notifyDependentsImpl(const ReferenceEvent& event) noexcept
 ******************************************************************************/
 void RenderSettings::setImageFilename(const QString& filename)
 {
-    if(filename == imageFilename()) return;
-    ImageInfo newInfo = imageInfo();
-    newInfo.setFilename(filename);
-    setImageInfo(newInfo);
+    if(filename != imageFilename()) {
+        ImageInfo newInfo = imageInfo();
+        newInfo.setFilename(filename);
+        setImageInfo(newInfo);
+    }
 }
 
 /******************************************************************************

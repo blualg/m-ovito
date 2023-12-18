@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(PropertyContainer);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(PropertyContainer);
 DEFINE_VECTOR_REFERENCE_FIELD(PropertyContainer, properties);
 DEFINE_PROPERTY_FIELD(PropertyContainer, elementCount);
 DEFINE_PROPERTY_FIELD(PropertyContainer, title);

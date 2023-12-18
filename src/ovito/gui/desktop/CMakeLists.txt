@@ -63,7 +63,6 @@ OVITO_STANDARD_PLUGIN(Gui
         actions/FileActions.cpp
         actions/RenderActions.cpp
         actions/SearchActions.cpp
-        dataset/GuiDataSetContainer.cpp
         dataset/io/FileSourceEditor.cpp
         dataset/io/FileSourcePlaybackRateEditor.cpp
         dataset/io/FileImporterEditor.cpp

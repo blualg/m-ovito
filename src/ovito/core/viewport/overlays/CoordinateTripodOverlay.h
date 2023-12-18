@@ -35,7 +35,7 @@ namespace Ovito {
 class OVITO_CORE_EXPORT CoordinateTripodOverlay : public ViewportOverlay
 {
     OVITO_CLASS(CoordinateTripodOverlay)
-    Q_CLASSINFO("DisplayName", "Coordinate tripod");
+    OVITO_CLASSINFO("DisplayName", "Coordinate tripod");
 
 public:
 
@@ -49,7 +49,7 @@ public:
 public:
 
     /// Constructor.
-    Q_INVOKABLE CoordinateTripodOverlay(ObjectInitializationFlags flags);
+    explicit CoordinateTripodOverlay(ObjectInitializationFlags flags);
 
     /// Lets the overlay paint its contents into the framebuffer.
     virtual void render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect) override;

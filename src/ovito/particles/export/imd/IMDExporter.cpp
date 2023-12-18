@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(IMDExporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(IMDExporter);
 
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.

@@ -55,13 +55,12 @@ class OVITO_PARTICLES_EXPORT BondsComputePropertyModifierDelegate : public Compu
     };
 
     OVITO_CLASS_META(BondsComputePropertyModifierDelegate, OOMetaClass)
-
-    Q_CLASSINFO("DisplayName", "Bonds");
+    OVITO_CLASSINFO("DisplayName", "Bonds");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE BondsComputePropertyModifierDelegate(ObjectInitializationFlags flags) : ComputePropertyModifierDelegate(flags) {}
+    using ComputePropertyModifierDelegate::ComputePropertyModifierDelegate;
 
     /// Creates a computation engine that will compute the property values.
     virtual std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> createEngine(

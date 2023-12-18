@@ -36,8 +36,8 @@ namespace Ovito {
 class OVITO_CORE_EXPORT TriangleMeshVis : public DataVis
 {
     OVITO_CLASS(TriangleMeshVis)
-    Q_CLASSINFO("DisplayName", "Triangle mesh");
-    Q_CLASSINFO("ClassNameAlias", "TriMeshVis");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("DisplayName", "Triangle mesh");
+    OVITO_CLASSINFO("ClassNameAlias", "TriMeshVis");  // For backward compatibility with OVITO 3.9.2
 
 public:
 

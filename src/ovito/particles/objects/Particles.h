@@ -76,8 +76,8 @@ class OVITO_PARTICLES_EXPORT Particles : public PropertyContainer
     };
 
     OVITO_CLASS_META(Particles, OOMetaClass);
-    Q_CLASSINFO("DisplayName", "Particles");
-    Q_CLASSINFO("ClassNameAlias", "ParticlesObject");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("DisplayName", "Particles");
+    OVITO_CLASSINFO("ClassNameAlias", "ParticlesObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
 
@@ -131,8 +131,8 @@ public:
         SuperquadricRoundnessProperty
     };
 
-    /// \brief Constructor.
-    Q_INVOKABLE Particles(ObjectInitializationFlags flags);
+    /// Constructor.
+    explicit Particles(ObjectInitializationFlags flags);
 
     /// Deletes those data elements having a non-zero value in the given selection array.
     /// Returns the number of deleted elements. The original order of the remaining elements is preserved.

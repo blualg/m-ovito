@@ -52,12 +52,12 @@ class SurfaceMeshRegionsExpressionSelectionModifierDelegate : public ExpressionS
     };
 
     OVITO_CLASS_META(SurfaceMeshRegionsExpressionSelectionModifierDelegate, OOMetaClass)
-    Q_CLASSINFO("DisplayName", "Mesh Regions");
+    OVITO_CLASSINFO("DisplayName", "Mesh Regions");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE SurfaceMeshRegionsExpressionSelectionModifierDelegate(ObjectInitializationFlags flags) : ExpressionSelectionModifierDelegate(flags) {}
+    explicit SurfaceMeshRegionsExpressionSelectionModifierDelegate(ObjectInitializationFlags flags) : ExpressionSelectionModifierDelegate(flags) {}
 };
 
 }   // End of namespace

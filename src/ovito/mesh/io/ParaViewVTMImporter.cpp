@@ -34,8 +34,8 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParaViewVTMFileFilter);
-IMPLEMENT_OVITO_CLASS(ParaViewVTMImporter);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(ParaViewVTMFileFilter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ParaViewVTMImporter);
 DEFINE_PROPERTY_FIELD(ParaViewVTMImporter, uniteMeshes);
 SET_PROPERTY_FIELD_LABEL(ParaViewVTMImporter, uniteMeshes, "Unite all meshes");
 
@@ -210,12 +210,8 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
         modifiedRequest.filters.back()->preprocessDatasets(blockDatasets, modifiedRequest, *this);
     }
 
-    OORef<PipelineNode> fileSource = request.pipelineNode.data();
-    if(!fileSource)
-        throw Exception(QStringLiteral("Object requesting the data import has been deleted."));
-
     // Load each dataset referenced by the VTM file.
-    Future<ExtendedLoadRequest> future = reduce_sequential(std::move(modifiedRequest), std::move(blockDatasets), ObjectExecutor(fileSource, true), [](const ParaViewVTMBlockInfo& blockInfo, ExtendedLoadRequest& request) {
+    Future<ExtendedLoadRequest> future = reduce_sequential(std::move(modifiedRequest), std::move(blockDatasets), ObjectExecutor(request.pipelineNode, true), [](const ParaViewVTMBlockInfo& blockInfo, ExtendedLoadRequest& request) {
 
         // We can skip empty datasets which are not associated with a VTK file.
         if(blockInfo.location.isEmpty())
@@ -226,7 +222,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
         request.blockInfo = blockInfo;
         request.appendData = (blockInfo.pieceIndex > 0); // Append data (instead of replacing it) when loading subsequent partial blocks of a piece-wise (parallel) dataset.
 
-        OORef<PipelineNode> fileSource = request.pipelineNode.data();
+        OORef<const PipelineNode> fileSource = request.pipelineNode.lock();
         if(!fileSource)
             throw Exception(QStringLiteral("Object requesting the data import has been deleted."));
 

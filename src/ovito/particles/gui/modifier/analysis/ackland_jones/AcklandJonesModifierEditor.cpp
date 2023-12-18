@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(AcklandJonesModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(AcklandJonesModifierEditor);
 SET_OVITO_OBJECT_EDITOR(AcklandJonesModifier, AcklandJonesModifierEditor);
 
 /******************************************************************************

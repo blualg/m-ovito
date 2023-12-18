@@ -36,6 +36,7 @@ namespace Ovito {
 class OVITO_STDOBJGUI_EXPORT PropertyReferenceParameterUI : public PropertyParameterUI
 {
     OVITO_CLASS(PropertyReferenceParameterUI)
+    Q_OBJECT
 
     Q_PROPERTY(QComboBox comboBox READ comboBox)
 
@@ -48,11 +49,13 @@ public:
     };
     Q_ENUM(PropertyComponentsMode);
 
+#if 0 // TODO
     /// Constructor.
     PropertyReferenceParameterUI(PropertiesEditor* parentEditor, const char* propertyName, PropertyContainerClassPtr containerClass = nullptr, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
+#endif
 
     /// Constructor.
-    PropertyReferenceParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, PropertyContainerClassPtr containerClass = nullptr, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
+    explicit PropertyReferenceParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, PropertyContainerClassPtr containerClass = nullptr, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
 
     /// Destructor.
     virtual ~PropertyReferenceParameterUI();

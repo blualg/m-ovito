@@ -50,9 +50,9 @@ class OVITO_PARTICLES_EXPORT AmbientOcclusionModifier : public AsynchronousModif
 
     OVITO_CLASS_META(AmbientOcclusionModifier, AmbientOcclusionModifierClass)
 
-    Q_CLASSINFO("DisplayName", "Ambient occlusion");
-    Q_CLASSINFO("Description", "Perform an ambient occlusion calculation to shade particles.");
-    Q_CLASSINFO("ModifierCategory", "Coloring");
+    OVITO_CLASSINFO("DisplayName", "Ambient occlusion");
+    OVITO_CLASSINFO("Description", "Perform an ambient occlusion calculation to shade particles.");
+    OVITO_CLASSINFO("ModifierCategory", "Coloring");
 
 public:
 
@@ -107,7 +107,7 @@ public:
 public:
 
     /// Constructor.
-    Q_INVOKABLE AmbientOcclusionModifier(ObjectInitializationFlags flags);
+    explicit AmbientOcclusionModifier(ObjectInitializationFlags flags);
 
 protected:
 

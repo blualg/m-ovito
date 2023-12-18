@@ -55,14 +55,12 @@ class OVITO_MESH_EXPORT VTKFileImporter : public FileSourceImporter
     };
 
     OVITO_CLASS_META(VTKFileImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "VTK");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE VTKFileImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags) {}
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("VTK"); }
+    /// Constructor.
+    using FileSourceImporter::FileSourceImporter;
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {

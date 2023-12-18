@@ -34,7 +34,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(AmbientOcclusionModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(AmbientOcclusionModifier);
 DEFINE_PROPERTY_FIELD(AmbientOcclusionModifier, intensity);
 DEFINE_PROPERTY_FIELD(AmbientOcclusionModifier, samplingCount);
 DEFINE_PROPERTY_FIELD(AmbientOcclusionModifier, bufferResolution);

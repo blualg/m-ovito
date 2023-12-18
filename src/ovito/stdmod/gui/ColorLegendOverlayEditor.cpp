@@ -44,7 +44,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ColorLegendOverlayEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ColorLegendOverlayEditor);
 SET_OVITO_OBJECT_EDITOR(ColorLegendOverlay, ColorLegendOverlayEditor);
 
 /******************************************************************************
@@ -105,9 +105,9 @@ void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rollou
     FloatParameterUI* offsetYPUI = new FloatParameterUI(this, PROPERTY_FIELD(ColorLegendOverlay::offsetY));
     positionLayout->addLayout(offsetYPUI->createFieldLayout(), subrow++, 2);
 
-    ViewportInputMode* moveOverlayMode = new MoveOverlayInputMode(this);
+    OORef<MoveOverlayInputMode> moveOverlayMode = OORef<MoveOverlayInputMode>::create(this);
     connect(this, &QObject::destroyed, moveOverlayMode, &ViewportInputMode::removeMode);
-    ViewportModeAction* moveOverlayAction = new ViewportModeAction(mainWindow(), tr("Move"), this, moveOverlayMode);
+    ViewportModeAction* moveOverlayAction = new ViewportModeAction(mainWindow(), tr("Move"), this, std::move(moveOverlayMode));
     moveOverlayAction->setIcon(QIcon::fromTheme("edit_mode_move"));
     moveOverlayAction->setToolTip(tr("Reposition the label in the viewport using the mouse"));
     positionLayout->addWidget(new ViewportModeButton(moveOverlayAction), subrow, 1, 1, 2, Qt::AlignRight | Qt::AlignTop);
@@ -213,14 +213,21 @@ void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rollou
     tickSpacingPUI->spinner()->setStandardValue(0.0);
     tickSpacingPUI->textBox()->setPlaceholderText(tr("‹auto›"));
 
-    // Update the placeholder texts of the title and label input fields whenever
-    // the color legend is repainted and the automatically determined texts are recalculated.
-    connect(this, &PropertiesEditor::contentsReplaced, this, [&, con = QMetaObject::Connection()](RefTarget* editObject) mutable {
-        disconnect(con);
-        if(ColorLegendOverlay* overlay = static_object_cast<ColorLegendOverlay>(editObject))
-            con = connect(overlay, &ColorLegendOverlay::autoLabelsUpdated, this, &ColorLegendOverlayEditor::updateLabelPlaceholderTexts);
+    connect(this, &PropertiesEditor::contentsReplaced, this, &ColorLegendOverlayEditor::updateLabelPlaceholderTexts);
+}
+
+/******************************************************************************
+* Is called when a RefTarget referenced by this object generated an event.
+******************************************************************************/
+bool ColorLegendOverlayEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+{
+    if(event.type() == ColorLegendOverlay::AutoLabelsUpdated && source == editObject()) {
+        // Update the placeholder texts of the title and label input fields whenever
+        // the color legend is repainted and the automatically determined texts are recalculated.
         updateLabelPlaceholderTexts();
-    });
+    }
+
+    return PropertiesEditor::referenceEvent(source, event);
 }
 
 /******************************************************************************

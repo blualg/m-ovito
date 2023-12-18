@@ -38,15 +38,15 @@ class ModifierGroupEditor : public PropertiesEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE ModifierGroupEditor() = default;
+    explicit ModifierGroupEditor() = default;
 
 protected:
 
     /// Creates the user interface controls for the editor.
     virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
-    /// Is called when the value of a reference field of this RefMaker changes.
-    virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+    /// This method is called when a reference target changes.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 private Q_SLOTS:
 
@@ -60,9 +60,6 @@ private:
 
     /// Specifies where the sub-editors are opened and whether the sub-editors are opened in a collapsed state.
     RolloutInsertionParameters _rolloutParams;
-
-    QMetaObject::Connection _modifierAddedConnection;
-    QMetaObject::Connection _modifierRemovedConnection;
 };
 
 }   // End of namespace

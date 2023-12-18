@@ -54,14 +54,12 @@ class OVITO_PARTICLES_EXPORT LAMMPSTextDumpImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(LAMMPSTextDumpImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "LAMMPS Dump");
 
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE LAMMPSTextDumpImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _useCustomColumnMapping(false) {}
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("LAMMPS Dump"); }
+    explicit LAMMPSTextDumpImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _useCustomColumnMapping(false) {}
 
     /// Indicates whether this file importer type loads particle trajectories.
     virtual bool isTrajectoryFormat() const override { return true; }

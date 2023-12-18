@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS2(DataSet);
+IMPLEMENT_CREATABLE_OVITO_CLASS(DataSet);
 DEFINE_REFERENCE_FIELD(DataSet, viewportConfig);
 DEFINE_REFERENCE_FIELD(DataSet, renderSettings);
 DEFINE_VECTOR_REFERENCE_FIELD(DataSet, globalObjects);
@@ -197,8 +197,12 @@ void DataSet::loadFromFile(const QString& filePath)
 
     QDataStream dataStream(&fileStream);
     ObjectLoadStream stream(dataStream);
+
+    // Note: DataSet::loadFromFile() is only called by Python scripts.
+    OVITO_ASSERT(ExecutionContext::isScripting());
     if(stream.applicationName() != QStringLiteral("OVITO Pro"))
         throw Exception(tr("This function can only load session states written by OVITO Pro or the OVITO Python package. Files created with OVITO Basic are no longer supported."));
+
     stream.setDatasetToBePopulated(this);
     OORef<DataSet> dataSet = stream.loadObject<DataSet>();
     stream.close();
@@ -206,6 +210,32 @@ void DataSet::loadFromFile(const QString& filePath)
     if(fileStream.error() != QFile::NoError)
         throw Exception(tr("Failed to load state file '%1'.").arg(absolutePath));
     fileStream.close();
+}
+
+/******************************************************************************
+* Loads a DataSet from a session state file.
+******************************************************************************/
+OORef<DataSet> DataSet::createFromFile(const QString& filename)
+{
+    // Make path absolute.
+    QString absoluteFilepath = QFileInfo(filename).absoluteFilePath();
+
+    // Open file for reading.
+    QFile fileStream(absoluteFilepath);
+    if(!fileStream.open(QIODevice::ReadOnly))
+        throw Exception(tr("Failed to open session state file '%1' for reading: %2").arg(absoluteFilepath).arg(fileStream.errorString()));
+
+    QDataStream dataStream(&fileStream);
+    ObjectLoadStream stream(dataStream);
+
+    OORef<DataSet> dataSet = stream.loadObject<DataSet>();
+    stream.close();
+
+    if(!dataSet)
+        throw Exception(tr("Session state file '%1' does not contain a dataset.").arg(absoluteFilepath));
+
+    dataSet->setFilePath(absoluteFilepath);
+    return dataSet;
 }
 
 /******************************************************************************

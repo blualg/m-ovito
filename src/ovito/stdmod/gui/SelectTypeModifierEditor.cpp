@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SelectTypeModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(SelectTypeModifierEditor);
 SET_OVITO_OBJECT_EDITOR(SelectTypeModifier, SelectTypeModifierEditor);
 
 /******************************************************************************

@@ -35,12 +35,12 @@ namespace Ovito {
 class OVITO_MESH_EXPORT RenderableSurfaceMesh : public TransformedDataObject
 {
     OVITO_CLASS(RenderableSurfaceMesh)
-    Q_CLASSINFO("DisplayName", "Renderable surface mesh");
+    OVITO_CLASSINFO("DisplayName", "Renderable surface mesh");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE RenderableSurfaceMesh(ObjectInitializationFlags flags, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr, DataOORef<const TriangleMesh> surfaceMesh = {}, DataOORef<const TriangleMesh> capPolygonsMesh = {}, bool backfaceCulling = false)
+    explicit RenderableSurfaceMesh(ObjectInitializationFlags flags, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr, DataOORef<const TriangleMesh> surfaceMesh = {}, DataOORef<const TriangleMesh> capPolygonsMesh = {}, bool backfaceCulling = false)
         : TransformedDataObject(flags, creator, sourceData),
         _surfaceMesh(std::move(surfaceMesh)),
         _capPolygonsMesh(std::move(capPolygonsMesh)),

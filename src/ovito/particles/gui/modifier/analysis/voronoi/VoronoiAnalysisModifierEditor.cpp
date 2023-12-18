@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(VoronoiAnalysisModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(VoronoiAnalysisModifierEditor);
 SET_OVITO_OBJECT_EDITOR(VoronoiAnalysisModifier, VoronoiAnalysisModifierEditor);
 
 /******************************************************************************

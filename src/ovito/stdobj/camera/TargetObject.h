@@ -36,12 +36,12 @@ namespace Ovito {
 class OVITO_STDOBJ_EXPORT TargetObject : public DataObject
 {
     OVITO_CLASS(TargetObject)
-    Q_CLASSINFO("DisplayName", "Target");
+    OVITO_CLASSINFO("DisplayName", "Target");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE TargetObject(ObjectInitializationFlags flags);
+    explicit TargetObject(ObjectInitializationFlags flags);
 };
 
 /**
@@ -50,17 +50,17 @@ public:
 class OVITO_STDOBJ_EXPORT TargetVis : public DataVis
 {
     OVITO_CLASS(TargetVis)
-    Q_CLASSINFO("DisplayName", "Target icon");
+    OVITO_CLASSINFO("DisplayName", "Target icon");
 
 public:
 
-    /// \brief Constructor.
-    Q_INVOKABLE TargetVis(ObjectInitializationFlags flags) : DataVis(flags) {}
+    /// Constructor.
+    explicit TargetVis(ObjectInitializationFlags flags) : DataVis(flags) {}
 
-    /// \brief Lets the vis element render a data object.
+    /// Lets the vis element render a data object.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;
 
-    /// \brief Computes the bounding box of the object.
+    /// Computes the bounding box of the object.
     virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
 };
 

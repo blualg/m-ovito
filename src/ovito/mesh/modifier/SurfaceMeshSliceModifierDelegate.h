@@ -54,12 +54,12 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshSliceModifierDelegate : public SliceModifi
     };
 
     OVITO_CLASS_META(SurfaceMeshSliceModifierDelegate, SurfaceMeshSliceModifierDelegateClass)
-    Q_CLASSINFO("DisplayName", "Surfaces");
+    OVITO_CLASSINFO("DisplayName", "Surfaces");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE SurfaceMeshSliceModifierDelegate(ObjectInitializationFlags flags) : SliceModifierDelegate(flags) {}
+    explicit SurfaceMeshSliceModifierDelegate(ObjectInitializationFlags flags) : SliceModifierDelegate(flags) {}
 
     /// \brief Applies a slice operation to a data object.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

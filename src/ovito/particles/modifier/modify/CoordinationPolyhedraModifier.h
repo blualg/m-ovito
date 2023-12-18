@@ -50,15 +50,14 @@ class OVITO_PARTICLES_EXPORT CoordinationPolyhedraModifier : public Asynchronous
     };
 
     OVITO_CLASS_META(CoordinationPolyhedraModifier, CoordinationPolyhedraModifierClass)
-
-    Q_CLASSINFO("DisplayName", "Coordination polyhedra");
-    Q_CLASSINFO("Description", "Visualize atomic coordination polyhedra.");
-    Q_CLASSINFO("ModifierCategory", "Visualization");
+    OVITO_CLASSINFO("DisplayName", "Coordination polyhedra");
+    OVITO_CLASSINFO("Description", "Visualize atomic coordination polyhedra.");
+    OVITO_CLASSINFO("ModifierCategory", "Visualization");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE CoordinationPolyhedraModifier(ObjectInitializationFlags flags);
+    explicit CoordinationPolyhedraModifier(ObjectInitializationFlags flags);
 
 protected:
 

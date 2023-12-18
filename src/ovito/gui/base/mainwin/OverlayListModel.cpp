@@ -40,7 +40,7 @@ OverlayListModel::OverlayListModel(QObject* parent, UserInterface& userInterface
 {
     _selectionModel = new QItemSelectionModel(this);
     connect(_selectionModel, &QItemSelectionModel::selectionChanged, this, &OverlayListModel::selectedItemChanged);
-    connect(&_selectedViewport, &RefTargetListener<Viewport>::notificationEvent, this, &OverlayListModel::onViewportEvent);
+    _selectedViewport.connect(this, &OverlayListModel::onViewportEvent);
 
     if(_sectionHeaderFont.pixelSize() < 0)
         _sectionHeaderFont.setPointSize(_sectionHeaderFont.pointSize() * 4 / 5);

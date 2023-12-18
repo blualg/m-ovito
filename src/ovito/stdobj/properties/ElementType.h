@@ -40,7 +40,7 @@ class OVITO_STDOBJ_EXPORT ElementType : public DataObject
 public:
 
     /// \brief Constructs a new type.
-    Q_INVOKABLE ElementType(ObjectInitializationFlags flags);
+    explicit ElementType(ObjectInitializationFlags flags);
 
     /// Initializes the element type to default parameter values.
     virtual void initializeType(const PropertyReference& property, bool loadUserDefaults = ExecutionContext::isInteractive());

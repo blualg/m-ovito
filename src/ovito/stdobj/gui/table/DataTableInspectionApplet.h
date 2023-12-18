@@ -36,12 +36,12 @@ namespace Ovito {
 class OVITO_STDOBJGUI_EXPORT DataTableInspectionApplet : public PropertyInspectionApplet
 {
     OVITO_CLASS(DataTableInspectionApplet)
-    Q_CLASSINFO("DisplayName", "Data Tables");
+    OVITO_CLASSINFO("DisplayName", "Data Tables");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE DataTableInspectionApplet() : PropertyInspectionApplet(DataTable::OOClass()) {}
+    explicit DataTableInspectionApplet() : PropertyInspectionApplet(DataTable::OOClass()) {}
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 200; }
@@ -53,7 +53,7 @@ public:
     DataTablePlotWidget* plotWidget() const { return _plotWidget; }
 
     /// Selects a specific data object in this applet.
-    virtual bool selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint) override;
+    virtual bool selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint) override;
 
     /// Determines whether the given property represents a color.
     virtual bool isColorProperty(const Property* property) const override {

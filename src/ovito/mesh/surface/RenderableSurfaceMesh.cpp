@@ -25,7 +25,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(RenderableSurfaceMesh);
+IMPLEMENT_CREATABLE_OVITO_CLASS(RenderableSurfaceMesh);
 DEFINE_RUNTIME_PROPERTY_FIELD(RenderableSurfaceMesh, surfaceMesh);
 DEFINE_RUNTIME_PROPERTY_FIELD(RenderableSurfaceMesh, capPolygonsMesh);
 DEFINE_RUNTIME_PROPERTY_FIELD(RenderableSurfaceMesh, materialColors);

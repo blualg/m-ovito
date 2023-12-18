@@ -48,11 +48,12 @@ class OVITO_PARTICLES_EXPORT ParaViewVTPBondsImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(ParaViewVTPBondsImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "VTP");
 
 public:
 
-    /// \brief Constructor.
-    Q_INVOKABLE ParaViewVTPBondsImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {}
+    /// Constructor.
+    using ParticleImporter::ParticleImporter;
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
@@ -88,9 +89,6 @@ class OVITO_PARTICLES_EXPORT BondsParaViewVTMFileFilter : public ParaViewVTMFile
     OVITO_CLASS(BondsParaViewVTMFileFilter)
 
 public:
-
-    /// Constructor.
-    Q_INVOKABLE BondsParaViewVTMFileFilter() = default;
 
     /// \brief Is called after all datasets referenced in a multi-block VTM file have been loaded.
     virtual void postprocessDatasets(FileSourceImporter::LoadOperationRequest& request) override;

@@ -36,12 +36,13 @@ namespace Ovito {
 class AngleInspectionApplet : public PropertyInspectionApplet
 {
     OVITO_CLASS(AngleInspectionApplet)
-    Q_CLASSINFO("DisplayName", "Angles");
+    OVITO_CLASSINFO("DisplayName", "Angles")
+    Q_OBJECT
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE AngleInspectionApplet() : PropertyInspectionApplet(Angles::OOClass()) {}
+    explicit AngleInspectionApplet() : PropertyInspectionApplet(Angles::OOClass()) {}
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 15; }

@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/RefMakerClass.h>
 #include <ovito/core/oo/ReferenceEvent.h>
+#include <ovito/core/oo/PropertyFieldFlags.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
 
 namespace Ovito {
@@ -52,6 +53,14 @@ class OVITO_CORE_EXPORT RefMaker : public OvitoObject
     OVITO_CLASS_META(RefMaker, RefMakerClass)
 
 protected:
+
+    // Specifies the default flags for all reference fields of RefMaker-derived classes that are not a RefTarget.
+    static constexpr auto PROPERTY_FIELD_STANDARD_FLAGS =
+                PROPERTY_FIELD_NEVER_CLONE_TARGET |
+                PROPERTY_FIELD_NO_UNDO |
+                PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES |
+                PROPERTY_FIELD_NO_CHANGE_MESSAGE |
+                PROPERTY_FIELD_NO_SUB_ANIM;
 
     /// \brief Constructor.
     RefMaker() = default;
@@ -205,9 +214,6 @@ protected:
 
 public:
 
-    /// \brief Returns true if this object is an instance of a RefTarget derived class.
-    virtual bool isRefTarget() const { return false; }
-
     /// \brief Clears all references held by this RefMarker.
     ///
     /// All single reference fields are set to \c NULL and all vector reference
@@ -317,16 +323,16 @@ public:
     ///////////////////////////// User interface context ///////////////////////////////
 
     /// Indicates whether the current action being performed should be recorded on the undo stack.
-    static bool isUndoRecording() { return CompoundOperation::isUndoRecording(); }
+    inline static bool isUndoRecording() { return CompoundOperation::isUndoRecording(); }
 
     /// Indicates whether a previously recorded action on the undo stack is currently being undone or redone.
-    static bool isUndoingOrRedoing() { return CompoundOperation::isUndoingOrRedoing(); }
+    inline static bool isUndoingOrRedoing() { return CompoundOperation::isUndoingOrRedoing(); }
 
     /// Pushes an operation onto the undo stack if the undo stack is currently recording.
     /// The undo record class specified as a template parameter is instantiated only if the undo stack is recording.
     template<class UndoableOperationClass, class... Args>
     void pushIfUndoRecording(Args&&... args) {
-        if(isUndoRecording())
+        if(!isBeingConstructed() && isUndoRecording())
             CompoundOperation::current()->addOperation(std::make_unique<UndoableOperationClass>(std::forward<Args>(args)...));
     }
 

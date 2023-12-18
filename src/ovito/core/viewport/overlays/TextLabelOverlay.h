@@ -38,14 +38,12 @@ namespace Ovito {
 class OVITO_CORE_EXPORT TextLabelOverlay : public ViewportOverlay
 {
     OVITO_CLASS(TextLabelOverlay)
-    Q_CLASSINFO("DisplayName", "Text label")
-
-    Q_PROPERTY(Ovito::Pipeline* pipeline READ pipeline WRITE setPipeline)
+    OVITO_CLASSINFO("DisplayName", "Text label")
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE TextLabelOverlay(ObjectInitializationFlags flags);
+    explicit TextLabelOverlay(ObjectInitializationFlags flags);
 
     /// Is called when the overlay is being newly attached to a viewport.
     virtual void initializeOverlay(Viewport* viewport) override;
@@ -104,7 +102,7 @@ private:
     /// Controls the outlining of the font.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, outlineEnabled, setOutlineEnabled, PROPERTY_FIELD_MEMORIZE);
 
-    /// The pipeline providing global attributes that can be reference in the text.
+    /// The pipeline providing global attributes that can be referenced in the text.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Pipeline*, pipeline, setPipeline, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
     /// Controls the formatting of floating-point variable values referenced in the text string.

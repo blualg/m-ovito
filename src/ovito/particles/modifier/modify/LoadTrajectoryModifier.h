@@ -47,15 +47,14 @@ class OVITO_PARTICLES_EXPORT LoadTrajectoryModifier : public Modifier
     };
 
     OVITO_CLASS_META(LoadTrajectoryModifier, LoadTrajectoryModifierClass)
-
-    Q_CLASSINFO("DisplayName", "Load trajectory");
-    Q_CLASSINFO("Description", "Load atomic trajectories or dynamic bonds from a trajectory file.");
-    Q_CLASSINFO("ModifierCategory", "Modification");
+    OVITO_CLASSINFO("DisplayName", "Load trajectory");
+    OVITO_CLASSINFO("Description", "Load atomic trajectories or dynamic bonds from a trajectory file.");
+    OVITO_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE LoadTrajectoryModifier(ObjectInitializationFlags flags);
+    explicit LoadTrajectoryModifier(ObjectInitializationFlags flags);
 
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;

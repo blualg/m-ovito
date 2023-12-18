@@ -54,12 +54,12 @@ class OVITO_GRID_EXPORT VoxelGridColorCodingModifierDelegate : public ColorCodin
 
     OVITO_CLASS_META(VoxelGridColorCodingModifierDelegate, OOMetaClass)
 
-    Q_CLASSINFO("DisplayName", "Voxel grids");
+    OVITO_CLASSINFO("DisplayName", "Voxel grids");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE VoxelGridColorCodingModifierDelegate(ObjectInitializationFlags flags) : ColorCodingModifierDelegate(flags) {}
+    explicit VoxelGridColorCodingModifierDelegate(ObjectInitializationFlags flags) : ColorCodingModifierDelegate(flags) {}
 };
 
 }   // End of namespace

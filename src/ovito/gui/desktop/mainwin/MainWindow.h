@@ -24,7 +24,6 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/dataset/GuiDataSetContainer.h>
 #include <ovito/core/app/UserInterface.h>
 
 namespace Ovito {
@@ -37,6 +36,7 @@ namespace Ovito {
  */
 class OVITO_GUI_EXPORT MainWindow : public QMainWindow, public UserInterface
 {
+    OVITO_CLASS(MainWindow)
     Q_OBJECT
 
 public:
@@ -92,9 +92,6 @@ public:
     /// Saves the layout of the docked widgets to the settings store.
     void saveLayout();
 
-    /// Returns the container that keeps a reference to the current dataset.
-    GuiDataSetContainer& datasetContainer() { return _datasetContainer; }
-
     /// Returns the widget that numerically displays the transformation.
     CoordinateDisplayWidget* coordinateDisplay() const { return _coordinateDisplay; }
 
@@ -149,8 +146,43 @@ public:
     /// Displays an error message to the user that is associated with a particular child window or dialog.
     void reportError(const Exception& exception, QWidget* window);
 
+    /// Checks (or even modifies) the contents of a DataSet after it has been loaded from a file.
+    /// Returns false if loading the DataSet was rejected by the application.
+    virtual bool checkLoadedDataset(DataSet* dataset) override;
+
     /// Opens another main window (in addition to the existing windows) and optionally loads a file in the new window.
     static void openNewWindow(const QStringList& arguments = {});
+
+    /// \brief Imports a set of files into the current dataset.
+    /// \param urls The locations of the files to import.
+    /// \param importerType The FileImporter type selected by the user. If null, the file's format will be auto-detected.
+    /// \param importerFormat The sub-format name selected by the user, which is supported by the selected importer class.
+    /// \return true if the file(s) were successfully imported; false if operation has been canceled by the user.
+    /// \throw Exception on error.
+    bool importFiles(const std::vector<QUrl>& urls, const FileImporterClass* importerType = nullptr, const QString& importerFormat = {});
+
+    /// \brief Save the current dataset.
+    /// \return \c true, if the dataset has been saved; \c false if the operation has been canceled by the user.
+    /// \throw Exception on error.
+    ///
+    /// If the current dataset has not been assigned a file path, then this method
+    /// displays a file selector dialog by calling fileSaveAs() to let the user select a file path.
+    bool fileSave();
+
+    /// \brief Lets the user select a new destination filename for the current dataset. Then saves the dataset by calling fileSave().
+    /// \param filename If \a filename is an empty string that this method asks the user for a filename. Otherwise
+    ///                 the provided filename is used.
+    /// \return \c true, if the dataset has been saved; \c false if the operation has been canceled by the user.
+    /// \throw Exception on error.
+    bool fileSaveAs(const QString& filename = QString());
+
+    /// \brief Asks the user if changes made to the dataset should be saved.
+    /// \return \c false if the operation has been canceled by the user; \c true on success.
+    /// \throw Exception on error.
+    ///
+    /// If the current dataset has been changed, this method asks the user if changes should be saved.
+    /// If yes, then the dataset is saved by calling fileSave().
+    bool askForSaveChanges();
 
 Q_SIGNALS:
 
@@ -213,9 +245,6 @@ private:
 
     /// The command panel.
     CommandPanel* _commandPanel;
-
-    /// Container that keeps a reference to the current dataset.
-    GuiDataSetContainer _datasetContainer;
 
     /// The container widget for viewports.
     ViewportsPanel* _viewportsPanel;

@@ -83,14 +83,14 @@ public:
     };
 
     OVITO_CLASS_META(AssignColorModifier, AssignColorModifierClass)
-    Q_CLASSINFO("DisplayName", "Assign color");
-    Q_CLASSINFO("Description", "Assign a color to the currently selected elements.");
-    Q_CLASSINFO("ModifierCategory", "Coloring");
+    OVITO_CLASSINFO("DisplayName", "Assign color");
+    OVITO_CLASSINFO("Description", "Assign a color to the currently selected elements.");
+    OVITO_CLASSINFO("ModifierCategory", "Coloring");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE AssignColorModifier(ObjectInitializationFlags flags);
+    explicit AssignColorModifier(ObjectInitializationFlags flags);
 
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;

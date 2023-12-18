@@ -28,6 +28,7 @@
 #include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/oo/PropertyFieldDescriptor.h>
 #include <ovito/core/oo/ReferenceEvent.h>
+#include <ovito/core/oo/RefMaker.h>
 
 #include <boost/type_traits/has_equal_to.hpp>
 
@@ -41,10 +42,15 @@ class OVITO_CORE_EXPORT PropertyFieldBase
 protected:
 
     /// Generates a notification event to inform the dependents of the field's owner that it has changed.
-    static void generateTargetChangedEvent(RefMaker* owner, const PropertyFieldDescriptor* descriptor, ReferenceEvent::Type eventType = ReferenceEvent::TargetChanged);
+    static void generateTargetChangedEvent(RefMaker* owner, const PropertyFieldDescriptor* descriptor, int eventType = ReferenceEvent::TargetChanged);
 
     /// Generates a notification event to inform the dependents of the field's owner that it has changed.
     static void generatePropertyChangedEvent(RefMaker* owner, const PropertyFieldDescriptor* descriptor);
+
+#ifdef OVITO_DEBUG
+    /// Verifies that owner is of the right type, i.e., defines the given property field.
+    static bool ownerTypeCheck(RefMaker* owner, const PropertyFieldDescriptor* descriptor);
+#endif
 
 protected:
 
@@ -100,15 +106,25 @@ public:
     /// Changes the value of the property. Handles undo and sends a notification message.
     template<typename T>
     void set(RefMaker* owner, const PropertyFieldDescriptor* descriptor, T&& newValue) {
-        OVITO_ASSERT(owner != nullptr);
+        OVITO_ASSERT(ownerTypeCheck(owner, descriptor));
+
+        // The value type supports comparison, do nothing if the new value is equal to the old one.
         if constexpr(boost::has_equal_to<property_type, std::decay_t<T>>::value) {
-            if(get() == newValue) return;
+            if(get() == newValue)
+                return;
         }
+
+        // Handle automatic undo recording of the value change (if enabled for this property field).
         if constexpr(!(flags & PROPERTY_FIELD_NO_UNDO)) {
-            if(descriptor->automaticUndo() && CompoundOperation::isUndoRecording())
+            OVITO_ASSERT(descriptor->automaticUndo());
+            if(!owner->isBeingConstructed() && CompoundOperation::isUndoRecording())
                 CompoundOperation::current()->addOperation(std::make_unique<PropertyChangeOperation>(owner, *this, descriptor));
         }
+
+        // Assign the new value to the storage.
         mutableValue() = std::forward<T>(newValue);
+
+        // Send notification signals.
         valueChangedInternal(owner, descriptor);
     }
 
@@ -139,14 +155,14 @@ public:
     }
 
     /// Returns the internal value stored in this property field.
-    inline const property_type& get() const { return _value; }
+    inline std::add_const_t<property_type>& get() const { return _value; }
 
     /// Returns a reference to the internal value stored in this property field.
     /// Warning: Do not use this function unless you know what you are doing!
     inline property_type& mutableValue() { return _value; }
 
     /// Cast the property field to the property value.
-    inline operator const property_type&() const { return get(); }
+    inline operator std::add_const_t<property_type>&() const { return get(); }
 
 private:
 
@@ -155,7 +171,7 @@ private:
         generatePropertyChangedEvent(owner, descriptor);
         generateTargetChangedEvent(owner, descriptor);
         if(descriptor->extraChangeEventType() != 0)
-            generateTargetChangedEvent(owner, descriptor, static_cast<ReferenceEvent::Type>(descriptor->extraChangeEventType()));
+            generateTargetChangedEvent(owner, descriptor, descriptor->extraChangeEventType());
     }
 
     /// This undo class records a change to the property value.

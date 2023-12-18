@@ -40,8 +40,10 @@ class OVITO_GUI_EXPORT NumericalParameterUI : public PropertyParameterUI
 
 public:
 
+#if 0 // TODO
     /// Constructor for a Qt property.
     NumericalParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QMetaObject* defaultParameterUnitType, const QString& labelText = QString());
+#endif
 
     /// Constructor for a PropertyField or ReferenceField property.
     NumericalParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const QMetaObject* defaultParameterUnitType);

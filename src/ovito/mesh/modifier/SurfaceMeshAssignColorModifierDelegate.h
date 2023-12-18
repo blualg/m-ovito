@@ -54,12 +54,12 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshVerticesAssignColorModifierDelegate : publ
 
     OVITO_CLASS_META(SurfaceMeshVerticesAssignColorModifierDelegate, OOMetaClass)
 
-    Q_CLASSINFO("DisplayName", "Mesh Vertices");
+    OVITO_CLASSINFO("DisplayName", "Mesh Vertices");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE SurfaceMeshVerticesAssignColorModifierDelegate(ObjectInitializationFlags flags) : AssignColorModifierDelegate(flags) {}
+    explicit SurfaceMeshVerticesAssignColorModifierDelegate(ObjectInitializationFlags flags) : AssignColorModifierDelegate(flags) {}
 
 protected:
 
@@ -92,12 +92,12 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshFacesAssignColorModifierDelegate : public 
 
     OVITO_CLASS_META(SurfaceMeshFacesAssignColorModifierDelegate, OOMetaClass)
 
-    Q_CLASSINFO("DisplayName", "Mesh Faces");
+    OVITO_CLASSINFO("DisplayName", "Mesh Faces");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE SurfaceMeshFacesAssignColorModifierDelegate(ObjectInitializationFlags flags) : AssignColorModifierDelegate(flags) {}
+    explicit SurfaceMeshFacesAssignColorModifierDelegate(ObjectInitializationFlags flags) : AssignColorModifierDelegate(flags) {}
 
 protected:
 
@@ -130,12 +130,12 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshRegionsAssignColorModifierDelegate : publi
 
     OVITO_CLASS_META(SurfaceMeshRegionsAssignColorModifierDelegate, OOMetaClass)
 
-    Q_CLASSINFO("DisplayName", "Mesh Regions");
+    OVITO_CLASSINFO("DisplayName", "Mesh Regions");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE SurfaceMeshRegionsAssignColorModifierDelegate(ObjectInitializationFlags flags) : AssignColorModifierDelegate(flags) {}
+    explicit SurfaceMeshRegionsAssignColorModifierDelegate(ObjectInitializationFlags flags) : AssignColorModifierDelegate(flags) {}
 
 protected:
 

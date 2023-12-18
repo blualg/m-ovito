@@ -25,11 +25,11 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS2(LinearFloatController);
-IMPLEMENT_OVITO_CLASS2(LinearIntegerController);
-IMPLEMENT_OVITO_CLASS2(LinearVectorController);
-IMPLEMENT_OVITO_CLASS2(LinearPositionController);
-IMPLEMENT_OVITO_CLASS2(LinearRotationController);
-IMPLEMENT_OVITO_CLASS2(LinearScalingController);
+IMPLEMENT_CREATABLE_OVITO_CLASS(LinearFloatController);
+IMPLEMENT_CREATABLE_OVITO_CLASS(LinearIntegerController);
+IMPLEMENT_CREATABLE_OVITO_CLASS(LinearVectorController);
+IMPLEMENT_CREATABLE_OVITO_CLASS(LinearPositionController);
+IMPLEMENT_CREATABLE_OVITO_CLASS(LinearRotationController);
+IMPLEMENT_CREATABLE_OVITO_CLASS(LinearScalingController);
 
 }   // End of namespace

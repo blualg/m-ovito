@@ -26,7 +26,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(OXDNAImporterEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(OXDNAImporterEditor);
 SET_OVITO_OBJECT_EDITOR(OXDNAImporter, OXDNAImporterEditor);
 
 /******************************************************************************

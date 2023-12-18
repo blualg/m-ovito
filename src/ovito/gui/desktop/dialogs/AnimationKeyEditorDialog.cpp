@@ -101,8 +101,8 @@ public:
         _ctrl.setTarget(ctrl);
         _ctrlType = ctrl->controllerType();
         _keys.setTargets(ctrl->keys());
-        connect(&_ctrl, &RefTargetListener<KeyframeController>::notificationEvent, this, &AnimationKeyModel::onCtrlEvent);
-        connect(&_keys, &VectorRefTargetListener<AnimationKey>::notificationEvent, this, &AnimationKeyModel::onKeyEvent);
+        _ctrl.connect(this, &AnimationKeyModel::onCtrlEvent);
+        _keys.connect(this, &AnimationKeyModel::onKeyEvent);
     }
 
     /// Returns the animation controller being edited.

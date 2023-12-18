@@ -43,12 +43,10 @@ class OVITO_CORE_EXPORT Modifier : public RefTarget
 {
     OVITO_CLASS_META(Modifier, ModifierClass)
 
-protected:
-
-    /// \brief Constructor.
-    explicit Modifier(ObjectInitializationFlags flags);
-
 public:
+
+    /// Constructor.
+    explicit Modifier(ObjectInitializationFlags flags);
 
     /// \brief Modifies the input data synchronously.
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) {}

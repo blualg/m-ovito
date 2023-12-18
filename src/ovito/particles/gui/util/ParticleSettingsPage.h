@@ -34,11 +34,12 @@ namespace Ovito {
 class ParticleSettingsPage : public ApplicationSettingsDialogPage
 {
     OVITO_CLASS(ParticleSettingsPage)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE ParticleSettingsPage() = default;
+    /// Constructor.
+    using ApplicationSettingsDialogPage::ApplicationSettingsDialogPage;
 
     /// \brief Creates the widget.
     virtual void insertSettingsDialogPage(QTabWidget* tabWidget) override;

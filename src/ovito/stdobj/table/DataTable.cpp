@@ -25,7 +25,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DataTable);
+IMPLEMENT_CREATABLE_OVITO_CLASS(DataTable);
 DEFINE_PROPERTY_FIELD(DataTable, intervalStart);
 DEFINE_PROPERTY_FIELD(DataTable, intervalEnd);
 DEFINE_PROPERTY_FIELD(DataTable, axisLabelX);

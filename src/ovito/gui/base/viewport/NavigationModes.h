@@ -36,20 +36,24 @@ namespace Ovito {
  */
 class OVITO_GUIBASE_EXPORT NavigationMode : public ViewportInputMode
 {
+    OVITO_CLASS(NavigationMode)
     Q_OBJECT
 
 public:
 
-    /// \brief Returns the activation behavior of this input mode.
+    /// Constructor.
+    using ViewportInputMode::ViewportInputMode;
+
+    /// Returns the activation behavior of this input mode.
     virtual InputModeType modeType() override { return TemporaryMode; }
 
-    /// \brief Handles the mouse down event for the given viewport.
+    /// Handles the mouse down event for the given viewport.
     virtual void mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
 
-    /// \brief Handles the mouse up event for the given viewport.
+    /// Handles the mouse up event for the given viewport.
     virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
 
-    /// \brief Handles the mouse move event for the given viewport.
+    /// Handles the mouse move event for the given viewport.
     virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
 
     /// Is called when a viewport looses the input focus.
@@ -60,18 +64,13 @@ public:
 
 protected:
 
-    /// Protected constructor.
-    using ViewportInputMode::ViewportInputMode;
-
     /// Computes the new view based on the new mouse position.
     virtual void modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF delta, bool discreteStep) {}
 
-    /// \brief This is called by the system after the input handler has
-    ///        become the active handler.
+    /// This is called by the system after the input handler has become the active handler.
     virtual void activated(bool temporaryActivation) override;
 
-    /// \brief This is called by the system after the input handler is
-    ///        no longer the active handler.
+    /// This is called by the system after the input handler is no longer the active handler.
     virtual void deactivated(bool temporary) override;
 
     /// Returns the camera object associates with the given viewport.
@@ -118,12 +117,13 @@ protected:
 ******************************************************************************/
 class OVITO_GUIBASE_EXPORT OrbitMode : public NavigationMode
 {
+    OVITO_CLASS(OrbitMode)
     Q_OBJECT
 
 public:
 
-    /// \brief Constructor.
-    OrbitMode(QObject* parent) : NavigationMode(parent) {
+    /// Constructor.
+    OrbitMode() {
 #ifndef Q_OS_WASM
         setCursor(QCursor(QPixmap(":/guibase/cursor/viewport/cursor_orbit.png")));
 #else
@@ -143,12 +143,13 @@ protected:
 ******************************************************************************/
 class OVITO_GUIBASE_EXPORT PanMode : public NavigationMode
 {
+    OVITO_CLASS(PanMode)
     Q_OBJECT
 
 public:
 
-    /// \brief Constructor.
-    PanMode(QObject* parent) : NavigationMode(parent) {
+    /// Constructor.
+    PanMode() {
 #ifndef Q_OS_WASM
         setCursor(QCursor(QPixmap(":/guibase/cursor/viewport/cursor_pan.png")));
 #else
@@ -169,12 +170,13 @@ protected:
 ******************************************************************************/
 class OVITO_GUIBASE_EXPORT ZoomMode : public NavigationMode
 {
+    OVITO_CLASS(ZoomMode)
     Q_OBJECT
 
 public:
 
-    /// \brief Constructor.
-    ZoomMode(QObject* parent) : NavigationMode(parent) {
+    /// Constructor.
+    ZoomMode() {
 #ifndef Q_OS_WASM
         setCursor(QCursor(QPixmap(":/guibase/cursor/viewport/cursor_zoom.png")));
 #else
@@ -201,12 +203,13 @@ protected:
 ******************************************************************************/
 class OVITO_GUIBASE_EXPORT FOVMode : public NavigationMode
 {
+    OVITO_CLASS(FOVMode)
     Q_OBJECT
 
 public:
 
-    /// \brief Protected constructor to prevent the creation of second instances.
-    FOVMode(QObject* parent) : NavigationMode(parent) {
+    /// Constructor.
+    FOVMode() {
 #ifndef Q_OS_WASM
         setCursor(QCursor(QPixmap(":/guibase/cursor/viewport/cursor_fov.png")));
 #else
@@ -226,12 +229,13 @@ protected:
 ******************************************************************************/
 class OVITO_GUIBASE_EXPORT PickOrbitCenterMode : public ViewportInputMode, public ViewportGizmo
 {
+    OVITO_CLASS(PickOrbitCenterMode)
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    PickOrbitCenterMode(QObject* parent) : ViewportInputMode(parent) {
+    PickOrbitCenterMode() {
 #ifndef Q_OS_WASM
         _hoverCursor = QCursor(QPixmap(":/guibase/cursor/editing/cursor_mode_select.png"));
 #else
@@ -246,10 +250,10 @@ public:
     /// Is called when the user moves the mouse.
     virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
 
-    /// \brief Sets the orbit rotation center to the space location under given mouse coordinates.
+    /// Sets the orbit rotation center to the space location under given mouse coordinates.
     bool pickOrbitCenter(ViewportWindowInterface* vpwin, const QPointF& pos);
 
-    /// \brief Lets the input mode render its overlay content in a viewport.
+    /// Lets the input mode render its overlay content in a viewport.
     virtual void renderOverlay3D(Viewport* vp, SceneRenderer* renderer) override;
 
 private:

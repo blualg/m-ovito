@@ -43,7 +43,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SpatialCorrelationFunctionModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(SpatialCorrelationFunctionModifierEditor);
 SET_OVITO_OBJECT_EDITOR(SpatialCorrelationFunctionModifier, SpatialCorrelationFunctionModifierEditor);
 
 /******************************************************************************

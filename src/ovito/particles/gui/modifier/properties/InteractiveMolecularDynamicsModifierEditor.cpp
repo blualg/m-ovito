@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(InteractiveMolecularDynamicsModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(InteractiveMolecularDynamicsModifierEditor);
 SET_OVITO_OBJECT_EDITOR(InteractiveMolecularDynamicsModifier, InteractiveMolecularDynamicsModifierEditor);
 
 /******************************************************************************

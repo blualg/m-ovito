@@ -28,8 +28,8 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParaViewVTSGridImporter);
-IMPLEMENT_OVITO_CLASS(GridParaViewVTMFileFilter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ParaViewVTSGridImporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(GridParaViewVTMFileFilter);
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

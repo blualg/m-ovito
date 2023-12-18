@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(CoordinateTripodOverlay);
+IMPLEMENT_CREATABLE_OVITO_CLASS(CoordinateTripodOverlay);
 DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, alignment);
 DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, tripodSize);
 DEFINE_PROPERTY_FIELD(CoordinateTripodOverlay, lineWidth);

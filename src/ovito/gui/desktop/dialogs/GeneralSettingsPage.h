@@ -38,7 +38,7 @@ class OVITO_GUI_EXPORT GeneralSettingsPage : public ApplicationSettingsDialogPag
 public:
 
     /// Default constructor.
-    Q_INVOKABLE GeneralSettingsPage() = default;
+    explicit GeneralSettingsPage() = default;
 
     /// \brief Creates the widget.
     virtual void insertSettingsDialogPage(QTabWidget* tabWidget) override;

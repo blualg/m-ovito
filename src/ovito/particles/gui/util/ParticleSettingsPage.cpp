@@ -26,7 +26,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParticleSettingsPage);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ParticleSettingsPage);
 
 class NameColumnDelegate : public QStyledItemDelegate
 {

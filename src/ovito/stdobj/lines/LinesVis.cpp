@@ -20,7 +20,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/particles/Particles.h>
+#include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/DataSet.h>
@@ -30,8 +30,8 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(LinesVis);
-IMPLEMENT_OVITO_CLASS(LinesPickInfo);
+IMPLEMENT_CREATABLE_OVITO_CLASS(LinesVis);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(LinesPickInfo);
 DEFINE_PROPERTY_FIELD(LinesVis, lineWidth);
 DEFINE_PROPERTY_FIELD(LinesVis, lineColor);
 DEFINE_PROPERTY_FIELD(LinesVis, roundedCaps);

@@ -37,7 +37,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS2(Pipeline);
+IMPLEMENT_CREATABLE_OVITO_CLASS(Pipeline);
 DEFINE_REFERENCE_FIELD(Pipeline, head);
 DEFINE_VECTOR_REFERENCE_FIELD(Pipeline, visElements);
 DEFINE_VECTOR_REFERENCE_FIELD(Pipeline, replacedVisElements);
@@ -470,7 +470,7 @@ void Pipeline::deleteSceneNode()
             next = modNode->input();
         // Delete the pipeline stage if it is not part of any other pipeline in the scene.
         if(oldHead->pipelines(false).isEmpty())
-            oldHead->deleteReferenceObject();
+            oldHead->requestObjectDeletion();
         oldHead = std::move(next);
     }
 

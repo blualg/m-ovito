@@ -34,11 +34,12 @@ namespace Ovito {
 class VectorVisEditor : public PropertiesEditor
 {
     OVITO_CLASS(VectorVisEditor)
+    Q_OBJECT
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE VectorVisEditor() {}
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

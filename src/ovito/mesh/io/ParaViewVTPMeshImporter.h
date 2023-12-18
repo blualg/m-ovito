@@ -55,14 +55,12 @@ class OVITO_MESH_EXPORT ParaViewVTPMeshImporter : public FileSourceImporter
     };
 
     OVITO_CLASS_META(ParaViewVTPMeshImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "VTP");
 
 public:
 
-    /// \brief Constructor.
-    Q_INVOKABLE ParaViewVTPMeshImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags) {}
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("VTP"); }
+    /// Constructor.
+    using FileSourceImporter::FileSourceImporter;
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
@@ -103,7 +101,7 @@ class OVITO_MESH_EXPORT MeshParaViewVTMFileFilter : public ParaViewVTMFileFilter
 public:
 
     /// Constructor.
-    Q_INVOKABLE MeshParaViewVTMFileFilter() = default;
+    explicit MeshParaViewVTMFileFilter() = default;
 
     /// \brief Is called once before the datasets referenced in a multi-block VTM file will be loaded.
     virtual void preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets, FileSourceImporter::LoadOperationRequest& request, const ParaViewVTMImporter& vtmImporter) override;

@@ -42,7 +42,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT DislocationPickInfo : public ObjectPickInfo
 public:
 
     /// Constructor.
-    DislocationPickInfo(DislocationVis* visElement, const DislocationNetworkObject* dislocationObj, std::vector<int>&& subobjToSegmentMap) :
+    explicit DislocationPickInfo(DislocationVis* visElement, const DislocationNetworkObject* dislocationObj, std::vector<int>&& subobjToSegmentMap) :
         _visElement(visElement), _dislocationObj(dislocationObj), _subobjToSegmentMap(std::move(subobjToSegmentMap)) {}
 
     /// The data object containing the dislocations.
@@ -81,8 +81,7 @@ private:
 class OVITO_CRYSTALANALYSIS_EXPORT DislocationVis : public TransformingDataVis
 {
     OVITO_CLASS(DislocationVis)
-
-    Q_CLASSINFO("DisplayName", "Dislocations");
+    OVITO_CLASSINFO("DisplayName", "Dislocations");
 
 public:
 
@@ -95,8 +94,8 @@ public:
 
 public:
 
-    /// \brief Constructor.
-    Q_INVOKABLE DislocationVis(ObjectInitializationFlags flags);
+    /// Constructor.
+    explicit DislocationVis(ObjectInitializationFlags flags);
 
     /// \brief Lets the vis element render a data object.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;

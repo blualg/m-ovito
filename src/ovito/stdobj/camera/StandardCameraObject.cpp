@@ -34,7 +34,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(StandardCameraObject);
+IMPLEMENT_CREATABLE_OVITO_CLASS(StandardCameraObject);
 DEFINE_PROPERTY_FIELD(StandardCameraObject, isPerspective);
 DEFINE_PROPERTY_FIELD(StandardCameraObject, fov);
 DEFINE_PROPERTY_FIELD(StandardCameraObject, zoom);
@@ -44,7 +44,7 @@ SET_PROPERTY_FIELD_LABEL(StandardCameraObject, zoom, "FOV size");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(StandardCameraObject, fov, AngleParameterUnit, FloatType(1e-3), FLOATTYPE_PI - FloatType(1e-2));
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(StandardCameraObject, zoom, WorldParameterUnit, 0);
 
-IMPLEMENT_OVITO_CLASS(CameraVis);
+IMPLEMENT_CREATABLE_OVITO_CLASS(CameraVis);
 
 /******************************************************************************
 * Constructs a camera object.
@@ -73,11 +73,13 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
             stream.expectChunk(0x02);
             OORef<Controller> controller = stream.loadObject<Controller>();
             stream.closeChunk();
+#if 0 // TODO
             // Need to wait until the animation keys of the controller have been completely loaded.
             // Only then it is safe to query the controller for its value.
             QObject::connect(controller.get(), &Controller::controllerLoadingCompleted, &owner, [camera = static_cast<StandardCameraObject*>(&owner), controller]() {
                 camera->setFov(controller->getFloatValue(AnimationTime(0)));
             });
+#endif
         };
     }
     else if(field.identifier == "zoomController" && field.definingClass == &StandardCameraObject::OOClass()) {
@@ -86,11 +88,13 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
             stream.expectChunk(0x02);
             OORef<Controller> controller = stream.loadObject<Controller>();
             stream.closeChunk();
+#if 0 // TODO
             // Need to wait until the animation keys of the controller have been completely loaded.
             // Only then it is safe to query the controller for its value.
             QObject::connect(controller.get(), &Controller::controllerLoadingCompleted, &owner, [camera = static_cast<StandardCameraObject*>(&owner), controller]() {
                 camera->setZoom(controller->getFloatValue(AnimationTime(0)));
             });
+#endif
         };
     }
     return nullptr;

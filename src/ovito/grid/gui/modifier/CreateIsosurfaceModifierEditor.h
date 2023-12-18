@@ -37,11 +37,12 @@ namespace Ovito {
 class CreateIsosurfaceModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(CreateIsosurfaceModifierEditor)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE CreateIsosurfaceModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

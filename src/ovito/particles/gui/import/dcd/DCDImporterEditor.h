@@ -38,7 +38,7 @@ class DCDImporterEditor : public FileImporterEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE DCDImporterEditor() {}
+    using FileImporterEditor::FileImporterEditor;
 
 protected:
 

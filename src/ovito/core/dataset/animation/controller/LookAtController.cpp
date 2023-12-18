@@ -28,7 +28,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS2(LookAtController);
+IMPLEMENT_CREATABLE_OVITO_CLASS(LookAtController);
 DEFINE_REFERENCE_FIELD(LookAtController, rollController);
 DEFINE_REFERENCE_FIELD(LookAtController, targetNode);
 SET_PROPERTY_FIELD_LABEL(LookAtController, rollController, "Roll");

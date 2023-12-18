@@ -38,7 +38,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(HistogramModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(HistogramModifierEditor);
 SET_OVITO_OBJECT_EDITOR(HistogramModifier, HistogramModifierEditor);
 
 /******************************************************************************

@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(GSDImporterEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(GSDImporterEditor);
 SET_OVITO_OBJECT_EDITOR(GSDImporter, GSDImporterEditor);
 
 /******************************************************************************

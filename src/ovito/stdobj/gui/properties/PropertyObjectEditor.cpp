@@ -28,7 +28,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(PropertyObjectEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(PropertyObjectEditor);
 SET_OVITO_OBJECT_EDITOR(Property, PropertyObjectEditor);
 
 /******************************************************************************

@@ -37,14 +37,14 @@ namespace Ovito {
 class OVITO_STDMOD_EXPORT FreezePropertyModifier : public GenericPropertyModifier
 {
     OVITO_CLASS(FreezePropertyModifier)
-    Q_CLASSINFO("DisplayName", "Freeze property");
-    Q_CLASSINFO("Description", "Copy the values of a varying property from one trajectory frame to all others.");
-    Q_CLASSINFO("ModifierCategory", "Modification");
+    OVITO_CLASSINFO("DisplayName", "Freeze property");
+    OVITO_CLASSINFO("Description", "Copy the values of a varying property from one trajectory frame to all others.");
+    OVITO_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE FreezePropertyModifier(ObjectInitializationFlags flags);
+    explicit FreezePropertyModifier(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -84,12 +84,12 @@ private:
 class OVITO_STDMOD_EXPORT FreezePropertyModificationNode : public ModificationNode
 {
     OVITO_CLASS(FreezePropertyModificationNode)
-    Q_CLASSINFO("ClassNameAlias", "FreezePropertyModifierApplication");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("ClassNameAlias", "FreezePropertyModifierApplication");  // For backward compatibility with OVITO 3.9.2
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE FreezePropertyModificationNode(ObjectInitializationFlags flags) : ModificationNode(flags) {}
+    explicit FreezePropertyModificationNode(ObjectInitializationFlags flags) : ModificationNode(flags) {}
 
     /// Makes a copy of the given source property and, optionally, of the provided
     /// element identifier list, which will allow to restore the saved property

@@ -27,7 +27,6 @@
 #include <ovito/core/utilities/Exception.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/MixedKeyCache.h>
-#include <ovito/core/dataset/DataSetContainer.h>
 
 namespace Ovito {
 
@@ -141,9 +140,6 @@ protected:
 
     /// The global file manager instance.
     FileManager& _fileManager;
-
-    /// The global dataset container (only used in non-GUI mode).
-    DataSetContainer _globalDatasetContainer;
 
 #ifndef Q_OS_WASM
     /// The application-wide network manager object.

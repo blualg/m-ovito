@@ -54,8 +54,8 @@ class OVITO_PARTICLES_EXPORT Angles : public PropertyContainer
     };
 
     OVITO_CLASS_META(Angles, OOMetaClass);
-    Q_CLASSINFO("DisplayName", "Angles");
-    Q_CLASSINFO("ClassNameAlias", "AnglesObject");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("DisplayName", "Angles");
+    OVITO_CLASSINFO("ClassNameAlias", "AnglesObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
 
@@ -66,8 +66,8 @@ public:
         TopologyProperty,
     };
 
-    /// \brief Constructor.
-    Q_INVOKABLE Angles(ObjectInitializationFlags flags);
+    /// Constructor.
+    explicit Angles(ObjectInitializationFlags flags);
 
     /// Convinience method that returns the angle topology property.
     const Property* getTopology() const { return getProperty(TopologyProperty); }

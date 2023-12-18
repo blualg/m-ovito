@@ -34,11 +34,11 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ExpressionSelectionModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ExpressionSelectionModifier);
 DEFINE_PROPERTY_FIELD(ExpressionSelectionModifier, expression);
 SET_PROPERTY_FIELD_LABEL(ExpressionSelectionModifier, expression, "Boolean expression");
 
-IMPLEMENT_OVITO_CLASS(ExpressionSelectionModifierDelegate);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(ExpressionSelectionModifierDelegate);
 
 /******************************************************************************
 * Constructs the modifier object.

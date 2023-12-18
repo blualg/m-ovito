@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(GenericPropertyModifier);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(GenericPropertyModifier);
 DEFINE_PROPERTY_FIELD(GenericPropertyModifier, subject);
 
 /******************************************************************************

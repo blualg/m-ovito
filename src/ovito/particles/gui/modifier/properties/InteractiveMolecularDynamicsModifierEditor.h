@@ -34,11 +34,12 @@ namespace Ovito {
 class InteractiveMolecularDynamicsModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(InteractiveMolecularDynamicsModifierEditor)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor
-    Q_INVOKABLE InteractiveMolecularDynamicsModifierEditor() {}
+    /// Constructor
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

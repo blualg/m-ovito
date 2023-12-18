@@ -33,7 +33,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParticleInspectionApplet);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ParticleInspectionApplet);
 
 /******************************************************************************
 * Lets the applet create the UI widget that is to be placed into the data

@@ -46,7 +46,7 @@ int main(int argc, char** argv)
 #endif
 
     // Initialize the application.
-    std::shared_ptr<Ovito::GuiApplication> app = std::make_shared<Ovito::GuiApplication>();
+    Ovito::OORef<Ovito::GuiApplication> app = Ovito::OORef<Ovito::GuiApplication>::create();
 
     int result = 1;
     if(app->initialize(argc, argv)) {

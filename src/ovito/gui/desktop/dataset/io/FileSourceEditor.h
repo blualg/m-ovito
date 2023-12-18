@@ -37,11 +37,12 @@ namespace Ovito {
 class FileSourceEditor : public PropertiesEditor
 {
     OVITO_CLASS(FileSourceEditor)
+    Q_OBJECT
 
 public:
 
     /// Default constructor.
-    Q_INVOKABLE FileSourceEditor() {}
+    explicit FileSourceEditor() {}
 
 protected:
 

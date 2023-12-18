@@ -36,13 +36,13 @@ class OVITO_CRYSTALANALYSIS_EXPORT ElasticStrainModifier : public StructureIdent
 {
     OVITO_CLASS(ElasticStrainModifier)
 
-    Q_CLASSINFO("DisplayName", "Elastic strain calculation");
-    Q_CLASSINFO("ModifierCategory", "Analysis");
+    OVITO_CLASSINFO("DisplayName", "Elastic strain calculation");
+    OVITO_CLASSINFO("ModifierCategory", "Analysis");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ElasticStrainModifier(ObjectInitializationFlags flags);
+    explicit ElasticStrainModifier(ObjectInitializationFlags flags);
 
 protected:
 

@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(CIFImporterEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(CIFImporterEditor);
 SET_OVITO_OBJECT_EDITOR(CIFImporter, CIFImporterEditor);
 
 /******************************************************************************

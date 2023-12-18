@@ -48,9 +48,6 @@ public:
 
 private Q_SLOTS:
 
-    /// This is called when a new dataset has been loaded.
-    void onDataSetChanged(DataSet* newDataSet);
-
     /// This is called when new render settings have been loaded.
     void onRenderSettingsReplaced(RenderSettings* newRenderSettings);
 
@@ -58,8 +55,6 @@ private:
 
     /// This panel shows the properties of the render settings object.
     PropertiesPanel* _propertiesPanel;
-
-    QMetaObject::Connection _renderSettingsReplacedConnection;
 };
 
 }   // End of namespace

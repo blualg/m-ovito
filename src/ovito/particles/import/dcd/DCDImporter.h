@@ -53,17 +53,15 @@ class OVITO_PARTICLES_EXPORT DCDImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(DCDImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "DCD");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE DCDImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
+    /// Constructor.
+    explicit DCDImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
         setMultiTimestepFile(true);
         setRecenterCell(true);
     }
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("DCD"); }
 
     /// Indicates whether this file importer type loads particle trajectories.
     virtual bool isTrajectoryFormat() const override { return true; }

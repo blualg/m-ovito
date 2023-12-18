@@ -62,11 +62,11 @@ class OVITO_STDMOD_EXPORT LinesReplicateModifierDelegate : public ReplicateModif
 
     OVITO_CLASS_META(LinesReplicateModifierDelegate, OOMetaClass)
 
-    Q_CLASSINFO("DisplayName", "Lines");
+    OVITO_CLASSINFO("DisplayName", "Lines");
 
 public:
     /// Constructor.
-    Q_INVOKABLE LinesReplicateModifierDelegate(ObjectInitializationFlags flags) : ReplicateModifierDelegate(flags) {}
+    explicit LinesReplicateModifierDelegate(ObjectInitializationFlags flags) : ReplicateModifierDelegate(flags) {}
 
     /// Applies the modifier operation to the data in a pipeline flow state.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState,
@@ -97,14 +97,14 @@ public:
     };
 
     OVITO_CLASS_META(ReplicateModifier, OOMetaClass)
-    Q_CLASSINFO("DisplayName", "Replicate");
-    Q_CLASSINFO("Description", "Duplicate the dataset to visualize periodic images of the system.");
-    Q_CLASSINFO("ModifierCategory", "Modification");
+    OVITO_CLASSINFO("DisplayName", "Replicate");
+    OVITO_CLASSINFO("Description", "Duplicate the dataset to visualize periodic images of the system.");
+    OVITO_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE ReplicateModifier(ObjectInitializationFlags flags);
+    /// Constructor.
+    explicit ReplicateModifier(ObjectInitializationFlags flags);
 
     /// Modifies the input data synchronously.
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;

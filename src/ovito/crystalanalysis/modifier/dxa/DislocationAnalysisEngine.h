@@ -87,7 +87,7 @@ public:
     const ConstPropertyPtr& crystalClusters() const { return _crystalClusters; }
 
     /// Computes statistical information on the identified dislocation lines and outputs it to the pipeline as data tables and global attributes.
-    static FloatType generateDislocationStatistics(const PipelineNode* pipelineNode, PipelineFlowState& state, DislocationNetworkObject* dislocationsObj, bool replaceDataObjects, const MicrostructurePhase* defaultStructure);
+    static FloatType generateDislocationStatistics(const OOWeakRef<const PipelineNode>& pipelineNode, PipelineFlowState& state, DislocationNetworkObject* dislocationsObj, bool replaceDataObjects, const MicrostructurePhase* defaultStructure);
 
 private:
 

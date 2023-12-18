@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ClearSelectionModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ClearSelectionModifier);
 
 /******************************************************************************
 * Constructs the modifier object.

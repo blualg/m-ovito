@@ -84,7 +84,7 @@ void BaseViewportWindow::mousePressEvent(QMouseEvent* event)
 
     // Intercept mouse clicks on the viewport caption.
     if(contextMenuArea().contains(ViewportInputMode::getMousePosition(event))) {
-        Q_EMIT viewport()->contextMenuRequested(event->pos());
+        inputManager()->requestContextMenu(viewport(), event->pos());
         return;
     }
 

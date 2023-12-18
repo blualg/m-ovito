@@ -50,12 +50,12 @@ class VoxelGridReplicateModifierDelegate : public ReplicateModifierDelegate
 
     OVITO_CLASS_META(VoxelGridReplicateModifierDelegate, OOMetaClass)
 
-    Q_CLASSINFO("DisplayName", "Voxel grids");
+    OVITO_CLASSINFO("DisplayName", "Voxel grids");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE VoxelGridReplicateModifierDelegate(ObjectInitializationFlags flags) : ReplicateModifierDelegate(flags) {}
+    explicit VoxelGridReplicateModifierDelegate(ObjectInitializationFlags flags) : ReplicateModifierDelegate(flags) {}
 
     /// Applies the modifier operation to the data in a pipeline flow state.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

@@ -41,12 +41,13 @@ namespace Ovito {
 class BondInspectionApplet : public PropertyInspectionApplet
 {
     OVITO_CLASS(BondInspectionApplet)
-    Q_CLASSINFO("DisplayName", "Bonds");
+    OVITO_CLASSINFO("DisplayName", "Bonds")
+    Q_OBJECT
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE BondInspectionApplet() : PropertyInspectionApplet(Bonds::OOClass()) {}
+    explicit BondInspectionApplet() : PropertyInspectionApplet(Bonds::OOClass()) {}
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 10; }

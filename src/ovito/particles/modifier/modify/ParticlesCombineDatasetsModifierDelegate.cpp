@@ -32,7 +32,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParticlesCombineDatasetsModifierDelegate);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ParticlesCombineDatasetsModifierDelegate);
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

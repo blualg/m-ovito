@@ -39,7 +39,7 @@ namespace Ovito {
 class OVITO_CORE_EXPORT FileSource : public BasePipelineSource
 {
 	OVITO_CLASS(FileSource)
-	Q_CLASSINFO("DisplayName", "External file source");
+	OVITO_CLASSINFO("DisplayName", "External file source");
 
 public:
 
@@ -91,20 +91,12 @@ public:
 	SharedFuture<QVector<FileSourceImporter::Frame>> requestFrameList(bool forceRescan);
 
 	/// Returns the name of the file loaded by the file source for the current animation frame.
-	/// The filename is displayed in the UI panel of the FileSource. The currentFileChanged() signal is emitted whenever the value changes.
+	/// The filename is displayed in the UI panel of the FileSource.
 	QString currentFileName() const;
 
 	/// Returns the directory path from which the current animation frame was loaded.
-	/// The path is displayed in the UI panel of the FileSource. The currentFileChanged() signal is emitted whenever the value changes.
+	/// The path is displayed in the UI panel of the FileSource.
 	QString currentDirectoryPath() const;
-
-Q_SIGNALS:
-
-	/// This signal is emitted by the FileSource whenever its list of trajectory frames changes.
-	void framesListChanged();
-
-	/// This signal is emitted by the FileSource whenever a different file gets loaded for the current animation frame.
-	void currentFileChanged();
 
 protected:
 

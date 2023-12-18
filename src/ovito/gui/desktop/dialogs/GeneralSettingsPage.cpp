@@ -32,7 +32,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(GeneralSettingsPage);
+IMPLEMENT_CREATABLE_OVITO_CLASS(GeneralSettingsPage);
 
 /******************************************************************************
 * Creates the widget that contains the plugin specific setting controls.
@@ -83,7 +83,7 @@ void GeneralSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
     layout2->setColumnStretch(1, 1);
 
     layout2->addWidget(new QLabel(tr("Import multiple files of the same type:")), 0, 0);
-    _importMultipleFilesBehavior = new QButtonGroup(this);
+    _importMultipleFilesBehavior = new QButtonGroup(page);
     QRadioButton* asTrajectoryBtn = new QRadioButton(tr("As trajectory (default)"));
     QRadioButton* asSeparateObjectsBtn = new QRadioButton(tr("As separate objects"));
     _importMultipleFilesBehavior->addButton(asTrajectoryBtn, FileImporter::ImportAsTrajectory);

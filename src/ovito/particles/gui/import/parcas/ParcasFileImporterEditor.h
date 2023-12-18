@@ -38,7 +38,7 @@ class ParcasFileImporterEditor : public FileImporterEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParcasFileImporterEditor() {}
+    using FileImporterEditor::FileImporterEditor;
 
 protected:
 

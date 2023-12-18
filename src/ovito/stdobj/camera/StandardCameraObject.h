@@ -50,13 +50,13 @@ class OVITO_STDOBJ_EXPORT StandardCameraObject : public AbstractCameraObject
     };
 
     OVITO_CLASS_META(StandardCameraObject, StandardCameraObjectClass)
-    Q_CLASSINFO("DisplayName", "Camera");
-    Q_CLASSINFO("ClassNameAlias", "CameraObject");  // For backward compatibility with OVITO 3.3.
+    OVITO_CLASSINFO("DisplayName", "Camera");
+    OVITO_CLASSINFO("ClassNameAlias", "CameraObject");  // For backward compatibility with OVITO 3.3.
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE StandardCameraObject(ObjectInitializationFlags flags);
+    explicit StandardCameraObject(ObjectInitializationFlags flags);
 
     /// With a target camera, indicates the distance between the camera and its target.
     static FloatType getTargetDistance(AnimationTime time, const Pipeline* pipeline);
@@ -70,10 +70,10 @@ public:
     ///   - ViewProjectionParameters::boundingBox (The bounding box of the scene in world space coordinates)
     virtual void projectionParameters(AnimationTime time, ViewProjectionParameters& projParams) const override;
 
-    /// \brief Returns whether this camera uses a perspective projection.
+    /// Returns whether this camera uses a perspective projection.
     virtual bool isPerspectiveCamera() const override { return isPerspective(); }
 
-    /// \brief Returns the field of view of the camera.
+    /// Returns the field of view of the camera.
     virtual FloatType fieldOfView(AnimationTime time, TimeInterval& validityInterval) const override {
         return isPerspective() ? fov() : zoom();
     }
@@ -96,17 +96,17 @@ private:
 class OVITO_STDOBJ_EXPORT CameraVis : public DataVis
 {
     OVITO_CLASS(CameraVis)
-    Q_CLASSINFO("DisplayName", "Camera icon");
+    OVITO_CLASSINFO("DisplayName", "Camera icon");
 
 public:
 
-    /// \brief Constructor.
-    Q_INVOKABLE CameraVis(ObjectInitializationFlags flags) : DataVis(flags) {}
+    /// Constructor.
+    explicit CameraVis(ObjectInitializationFlags flags) : DataVis(flags) {}
 
-    /// \brief Lets the vis element render a camera object.
+    /// Lets the vis element render a camera object.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;
 
-    /// \brief Computes the bounding box of the object.
+    /// Computes the bounding box of the object.
     virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
 
 private:

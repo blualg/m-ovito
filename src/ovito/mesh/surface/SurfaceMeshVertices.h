@@ -54,7 +54,7 @@ class OVITO_MESH_EXPORT SurfaceMeshVertices : public PropertyContainer
     };
 
     OVITO_CLASS_META(SurfaceMeshVertices, OOMetaClass);
-    Q_CLASSINFO("DisplayName", "Mesh Vertices");
+    OVITO_CLASSINFO("DisplayName", "Mesh Vertices");
 
 public:
 
@@ -67,7 +67,7 @@ public:
     };
 
     /// \brief Constructor.
-    Q_INVOKABLE SurfaceMeshVertices(ObjectInitializationFlags flags);
+    explicit SurfaceMeshVertices(ObjectInitializationFlags flags);
 
     /// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
     virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, MixedKeyCache& visCache) const override;

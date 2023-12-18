@@ -211,7 +211,7 @@ void OverlayCommandPage::onDeleteLayer()
 {
     if(ViewportOverlay* layer = selectedLayer()) {
         _mainWindow.performTransaction(tr("Delete layer"), [layer]() {
-            layer->deleteReferenceObject();
+            layer->requestObjectDeletion();
         });
     }
 }

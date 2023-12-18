@@ -39,7 +39,7 @@ namespace Ovito {
 class OVITO_MESH_EXPORT SurfaceMesh : public PeriodicDomainObject
 {
     OVITO_CLASS(SurfaceMesh)
-    Q_CLASSINFO("DisplayName", "Surface mesh");
+    OVITO_CLASSINFO("DisplayName", "Surface mesh");
 
 public:
 
@@ -53,7 +53,7 @@ public:
     constexpr static size_type InvalidIndex = SurfaceMeshTopology::InvalidIndex;
 
     /// Constructor creating an empty SurfaceMesh object.
-    Q_INVOKABLE SurfaceMesh(ObjectInitializationFlags flags, const QString& title = QString());
+    explicit SurfaceMesh(ObjectInitializationFlags flags, const QString& title = QString());
 
     /// Makes sure that the data structures of the surface mesh are valid and all vertex and face properties
     /// are consistent with the topology of the mesh. If this is not the case, the method throws an exception.

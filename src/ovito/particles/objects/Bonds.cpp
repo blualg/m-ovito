@@ -34,7 +34,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(Bonds);
+IMPLEMENT_CREATABLE_OVITO_CLASS(Bonds);
 
 /******************************************************************************
 * Constructor.

@@ -43,7 +43,7 @@ namespace Ovito {
 class OVITO_MESH_EXPORT SurfaceMeshVis : public TransformingDataVis
 {
     OVITO_CLASS(SurfaceMeshVis)
-    Q_CLASSINFO("DisplayName", "Surface mesh");
+    OVITO_CLASSINFO("DisplayName", "Surface mesh");
 
 public:
 
@@ -56,7 +56,7 @@ public:
     Q_ENUM(ColorMappingMode);
 
     /// \brief Constructor.
-    Q_INVOKABLE SurfaceMeshVis(ObjectInitializationFlags flags);
+    explicit SurfaceMeshVis(ObjectInitializationFlags flags);
 
     /// Lets the visualization element render the data object.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;
@@ -256,7 +256,7 @@ class OVITO_MESH_EXPORT SurfaceMeshPickInfo : public ObjectPickInfo
 public:
 
     /// Constructor.
-    SurfaceMeshPickInfo(const SurfaceMeshVis* visElement, const SurfaceMesh* surfaceMesh, const RenderableSurfaceMesh* renderableMesh) :
+    explicit SurfaceMeshPickInfo(const SurfaceMeshVis* visElement, const SurfaceMesh* surfaceMesh, const RenderableSurfaceMesh* renderableMesh) :
         _visElement(visElement), _surfaceMesh(surfaceMesh), _renderableMesh(renderableMesh) {}
 
     /// The data object containing the surface mesh.

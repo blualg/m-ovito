@@ -22,10 +22,9 @@
 
 #pragma once
 
-#include <ovito/core/utilities/linalg/LinAlg.h>
-// #include <ovito/particles/Particles.h>
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
+#include <ovito/core/utilities/linalg/LinAlg.h>
 
 namespace Ovito {
 
@@ -52,9 +51,9 @@ public:
     };
 
     OVITO_CLASS_META(Lines, OOMetaClass);
-    Q_CLASSINFO("DisplayName", "Lines");
-    Q_CLASSINFO("ClassNameAlias", "TrajectoryLines");   // For backward compatibility with OVITO 3.9.2
-    Q_CLASSINFO("ClassNameAlias", "TrajectoryObject");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("DisplayName", "Lines");
+    OVITO_CLASSINFO("ClassNameAlias", "TrajectoryLines");   // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("ClassNameAlias", "TrajectoryObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
     /// \brief The list of standard properties.
@@ -67,7 +66,7 @@ public:
     };
 
     /// \brief Constructor.
-    Q_INVOKABLE Lines(ObjectInitializationFlags flags);
+    explicit Lines(ObjectInitializationFlags flags);
 
     std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
                                                                         MixedKeyCache& visCache) const override;

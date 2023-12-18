@@ -33,11 +33,11 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(CombineDatasetsModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(CombineDatasetsModifier);
 DEFINE_REFERENCE_FIELD(CombineDatasetsModifier, secondaryDataSource);
 SET_PROPERTY_FIELD_LABEL(CombineDatasetsModifier, secondaryDataSource, "Secondary source");
 
-IMPLEMENT_OVITO_CLASS(CombineDatasetsModifierDelegate);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(CombineDatasetsModifierDelegate);
 
 /******************************************************************************
 * Constructs the modifier object.

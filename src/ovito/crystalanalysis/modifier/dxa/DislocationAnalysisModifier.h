@@ -39,13 +39,13 @@ namespace Ovito {
 class OVITO_CRYSTALANALYSIS_EXPORT DislocationAnalysisModifier : public StructureIdentificationModifier
 {
     OVITO_CLASS(DislocationAnalysisModifier)
-    Q_CLASSINFO("DisplayName", "Dislocation analysis (DXA)");
-    Q_CLASSINFO("ModifierCategory", "Analysis");
+    OVITO_CLASSINFO("DisplayName", "Dislocation analysis (DXA)");
+    OVITO_CLASSINFO("ModifierCategory", "Analysis");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE DislocationAnalysisModifier(ObjectInitializationFlags flags);
+    explicit DislocationAnalysisModifier(ObjectInitializationFlags flags);
 
     /// Returns the crystal structure with the given ID, or null if no such structure exists.
     MicrostructurePhase* structureTypeById(int id) const {

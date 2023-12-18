@@ -317,9 +317,9 @@ public:
     /// Instantiates a new data object, passes the given parameters to its class constructor,
     /// assigns the given data source object, and finally inserts the data object into this pipeline flow state.
     template<class DataObjectType, typename... Args>
-    DataObjectType* createObject(const PipelineNode* createdByNode, Args&&... args) {
+    DataObjectType* createObject(OOWeakRef<const PipelineNode> createdByNode, Args&&... args) {
         OORef<DataObjectType> obj = OORef<DataObjectType>::create(std::forward<Args>(args)...);
-        obj->setCreatedByNode(createdByNode);
+        obj->setCreatedByNode(std::move(createdByNode));
         addObject(obj);
         return obj;
     }
@@ -328,8 +328,8 @@ public:
     /// assign a unique identifier to the object, assigns the given data source object, and
     /// finally inserts the data object into this pipeline flow state.
     template<class DataObjectType, typename... Args>
-    DataObjectType* createObject(const QString& baseName, const PipelineNode* createdByNode, Args&&... args) {
-        DataObjectType* obj = createObject<DataObjectType, Args...>(createdByNode, std::forward<Args>(args)...);
+    DataObjectType* createObject(const QString& baseName, OOWeakRef<const PipelineNode> createdByNode, Args&&... args) {
+        DataObjectType* obj = createObject<DataObjectType, Args...>(std::move(createdByNode), std::forward<Args>(args)...);
         OVITO_ASSERT(!baseName.isEmpty());
         obj->setIdentifier(generateUniqueIdentifier<DataObjectType>(baseName));
         return obj;
@@ -339,8 +339,8 @@ public:
     /// assign a unique identifier to the object, assigns the given data source object and visual element, and
     /// finally inserts the data object into this pipeline flow state.
     template<class DataObjectType, typename... Args>
-    DataObjectType* createObjectWithVis(const QString& baseName, const PipelineNode* createdByNode, DataVis* visElement, Args&&... args) {
-        DataObjectType* obj = createObject<DataObjectType>(baseName, createdByNode, ObjectInitializationFlag::DontCreateVisElement, std::forward<Args>(args)...);
+    DataObjectType* createObjectWithVis(const QString& baseName, OOWeakRef<const PipelineNode> createdByNode, DataVis* visElement, Args&&... args) {
+        DataObjectType* obj = createObject<DataObjectType>(baseName, std::move(createdByNode), ObjectInitializationFlag::DontCreateVisElement, std::forward<Args>(args)...);
         obj->setVisElement(visElement);
         return obj;
     }
@@ -349,8 +349,8 @@ public:
     /// assigns the pipeline creator node and visual element, and
     /// finally inserts the data object into this data collection.
     template<class DataObjectType, typename... Args>
-    DataObjectType* createObjectWithVis(const PipelineNode* createdByNode, DataVis* visElement, Args&&... args) {
-        DataObjectType* obj = createObject<DataObjectType>(createdByNode, ObjectInitializationFlag::DontCreateVisElement, std::forward<Args>(args)...);
+    DataObjectType* createObjectWithVis(OOWeakRef<const PipelineNode> createdByNode, DataVis* visElement, Args&&... args) {
+        DataObjectType* obj = createObject<DataObjectType>(std::move(createdByNode), ObjectInitializationFlag::DontCreateVisElement, std::forward<Args>(args)...);
         obj->setVisElement(visElement);
         return obj;
     }
@@ -382,10 +382,10 @@ public:
     QVariant getAttributeValue(const PipelineNode* createdByNode, const QString& attrBaseName, const QVariant& defaultValue = QVariant()) const;
 
     /// Inserts a new global attribute into the pipeline state.
-    AttributeDataObject* addAttribute(const QString& key, QVariant value, const PipelineNode* createdByNode);
+    AttributeDataObject* addAttribute(const QString& key, QVariant value, OOWeakRef<const PipelineNode> createdByNode);
 
     /// Inserts a new global attribute into the pipeline state overwritting any existing attribute with the same name.
-    AttributeDataObject* setAttribute(const QString& key, QVariant value, const PipelineNode* createdByNode);
+    AttributeDataObject* setAttribute(const QString& key, QVariant value, OOWeakRef<const PipelineNode> createdByNode);
 
     /// Returns a new unique data object identifier that does not collide with the
     /// identifiers of any existing data object of the given type in the same data

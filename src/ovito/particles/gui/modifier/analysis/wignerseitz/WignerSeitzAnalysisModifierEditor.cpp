@@ -33,7 +33,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(WignerSeitzAnalysisModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(WignerSeitzAnalysisModifierEditor);
 SET_OVITO_OBJECT_EDITOR(WignerSeitzAnalysisModifier, WignerSeitzAnalysisModifierEditor);
 
 /******************************************************************************

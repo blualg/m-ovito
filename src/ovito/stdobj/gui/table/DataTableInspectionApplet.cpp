@@ -28,11 +28,12 @@
 #include <ovito/gui/desktop/dialogs/HistoryFileDialog.h>
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include "DataTableInspectionApplet.h"
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DataTableInspectionApplet);
+IMPLEMENT_CREATABLE_OVITO_CLASS(DataTableInspectionApplet);
 
 /******************************************************************************
 * Lets the applet create the UI widget that is to be placed into the data
@@ -121,7 +122,7 @@ void DataTableInspectionApplet::onCurrentContainerChanged(const DataObject* data
 /******************************************************************************
 * Selects a specific data object in this applet.
 ******************************************************************************/
-bool DataTableInspectionApplet::selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
+bool DataTableInspectionApplet::selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
 {
     // Let the base class switch to the right data table object.
     bool result = PropertyInspectionApplet::selectDataObject(createdByNode, objectIdentifierHint, modeHint);

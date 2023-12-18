@@ -46,7 +46,7 @@ namespace Ovito {
 class OVITO_MESH_EXPORT SurfaceMeshTopology : public DataObject
 {
     OVITO_CLASS(SurfaceMeshTopology)
-    Q_CLASSINFO("DisplayName", "Surface mesh topology");
+    OVITO_CLASSINFO("DisplayName", "Surface mesh topology");
 
 public:
 
@@ -68,7 +68,7 @@ public:
 public:
 
     /// Constructor creating an empty SurfaceMeshTopology object.
-    Q_INVOKABLE SurfaceMeshTopology(ObjectInitializationFlags flags) : DataObject(flags) {}
+    explicit SurfaceMeshTopology(ObjectInitializationFlags flags) : DataObject(flags) {}
 
     /// Removes all faces, edges and vertices from this mesh.
     void clear();

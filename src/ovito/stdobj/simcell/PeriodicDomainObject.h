@@ -35,7 +35,7 @@ namespace Ovito {
 class OVITO_STDOBJ_EXPORT PeriodicDomainObject : public DataObject
 {
     OVITO_CLASS(PeriodicDomainObject)
-    Q_CLASSINFO("ClassNameAlias", "PeriodicDomainDataObject");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("ClassNameAlias", "PeriodicDomainDataObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
 
@@ -60,7 +60,7 @@ public:
 protected:
 
     /// \brief Constructor.
-    PeriodicDomainObject(ObjectInitializationFlags flags, const QString& title = {});
+    explicit PeriodicDomainObject(ObjectInitializationFlags flags, const QString& title = {});
 
 private:
 

@@ -54,12 +54,12 @@ class OVITO_GRID_EXPORT VoxelGridSliceModifierDelegate : public SliceModifierDel
     };
 
     OVITO_CLASS_META(VoxelGridSliceModifierDelegate, VoxelGridSliceModifierDelegateClass)
-    Q_CLASSINFO("DisplayName", "Voxel grids");
+    OVITO_CLASSINFO("DisplayName", "Voxel grids");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE VoxelGridSliceModifierDelegate(ObjectInitializationFlags flags);
+    explicit VoxelGridSliceModifierDelegate(ObjectInitializationFlags flags);
 
     /// \brief Applies a slice operation to a data object.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

@@ -53,14 +53,12 @@ class OVITO_PARTICLES_EXPORT ReaxFFBondImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(ReaxFFBondImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "ReaxFF Bonds");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE ReaxFFBondImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {}
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("ReaxFF Bonds"); }
+    /// Constructor.
+    using ParticleImporter::ParticleImporter;
 
     /// Indicates whether this file importer type loads particle trajectories.
     virtual bool isTrajectoryFormat() const override { return true; }

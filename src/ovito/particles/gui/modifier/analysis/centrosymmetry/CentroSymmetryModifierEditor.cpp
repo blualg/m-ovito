@@ -32,7 +32,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(CentroSymmetryModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(CentroSymmetryModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CentroSymmetryModifier, CentroSymmetryModifierEditor);
 
 /******************************************************************************

@@ -32,7 +32,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(HistogramModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(HistogramModifier);
 DEFINE_PROPERTY_FIELD(HistogramModifier, numberOfBins);
 DEFINE_PROPERTY_FIELD(HistogramModifier, selectInRange);
 DEFINE_PROPERTY_FIELD(HistogramModifier, selectionRangeStart);

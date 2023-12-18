@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(VoxelGridVisEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(VoxelGridVisEditor);
 SET_OVITO_OBJECT_EDITOR(VoxelGridVis, VoxelGridVisEditor);
 
 /******************************************************************************

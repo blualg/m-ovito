@@ -27,6 +27,7 @@
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 
 namespace Ovito {
 
@@ -35,6 +36,9 @@ namespace Ovito {
 ******************************************************************************/
 void WidgetActionManager::on_RenderActiveViewport_triggered()
 {
+    if(!dataset())
+        return;
+
     mainWindow().handleExceptions([&] {
 
         // Set input focus to main window.

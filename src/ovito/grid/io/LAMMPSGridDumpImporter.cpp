@@ -28,7 +28,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(LAMMPSGridDumpImporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(LAMMPSGridDumpImporter);
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

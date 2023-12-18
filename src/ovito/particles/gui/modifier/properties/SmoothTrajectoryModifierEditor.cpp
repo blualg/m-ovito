@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SmoothTrajectoryModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(SmoothTrajectoryModifierEditor);
 SET_OVITO_OBJECT_EDITOR(SmoothTrajectoryModifier, SmoothTrajectoryModifierEditor);
 
 /******************************************************************************

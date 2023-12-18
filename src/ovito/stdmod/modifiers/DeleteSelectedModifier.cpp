@@ -25,7 +25,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DeleteSelectedModifierDelegate);
-IMPLEMENT_OVITO_CLASS(DeleteSelectedModifier);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(DeleteSelectedModifierDelegate);
+IMPLEMENT_CREATABLE_OVITO_CLASS(DeleteSelectedModifier);
 
 }   // End of namespace

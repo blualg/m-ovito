@@ -37,7 +37,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ManualSelectionModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ManualSelectionModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ManualSelectionModifier, ManualSelectionModifierEditor);
 
 /**

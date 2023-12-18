@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParticleExporter);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(ParticleExporter);
 
 /******************************************************************************
 * Evaluates the pipeline of an PipelineSceneNode and makes sure that the data to be

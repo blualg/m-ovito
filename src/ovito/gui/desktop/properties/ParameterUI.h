@@ -35,27 +35,20 @@ namespace Ovito {
  * \brief Base class for UI components that allow the user to edit a parameter
  *        of a RefTarget derived object in the PropertiesEditor.
  */
-class OVITO_GUI_EXPORT ParameterUI : public RefMaker
+class OVITO_GUI_EXPORT ParameterUI : public QObject, public RefMaker
 {
     OVITO_CLASS(ParameterUI)
+    Q_OBJECT
 
 public:
 
     /// \brief Constructor.
-    /// \param parentEditor The editor in which this parameter UI is used. This becomes the parent of this object.
-    ///
-    /// The parameter UI is automatically deleted when the editor is deleted.
-    ParameterUI(PropertiesEditor* parent);
-
-    /// \brief Destructor.
-    virtual ~ParameterUI() { clearAllReferences(); }
+    /// \param editor The editor in which this parameter UI is used.
+    explicit ParameterUI(PropertiesEditor* editor);
 
     /// \brief Returns a pointer to the properties editor this parameter UI belongs to.
-    /// \return The editor in which this parameter UI is used or NULL if the parameter UI is used outside of a PropertiesEditor.
-    PropertiesEditor* editor() const {
-        OVITO_ASSERT(!this->parent() || qobject_cast<PropertiesEditor*>(this->parent()));
-        return static_cast<PropertiesEditor*>(this->parent());
-    }
+    /// \return The editor in which this parameter UI is used or nullptr if the parameter UI is used outside of a PropertiesEditor.
+    PropertiesEditor* editor() const { return _editor; }
 
     /// \brief Returns the main window that is hosting this parameter UI.
     MainWindow& mainWindow() const { return editor()->mainWindow(); }
@@ -148,9 +141,12 @@ public Q_SLOTS:
 private:
 
     /// The object whose parameter is being edited.
-    DECLARE_REFERENCE_FIELD_FLAGS(RefTarget*, editObject, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    DECLARE_REFERENCE_FIELD(RefTarget*, editObject);
 
-    /// Stores whether this UI is enabled.
+    /// The editor in which this parameter UI is used.
+    PropertiesEditor* _editor;
+
+    /// Indicates whether this UI parameter widget is currently enabled.
     bool _enabled = true;
 };
 
@@ -161,27 +157,29 @@ private:
 class OVITO_GUI_EXPORT PropertyParameterUI : public ParameterUI
 {
     OVITO_CLASS(PropertyParameterUI)
+    Q_OBJECT
 
 public:
 
+#if 0 // TODO
     /// \brief Constructor for a Qt property.
     /// \param parent The editor in which this parameter UI is used. This becomes the parent of this object.
     /// \param propertyName The name of the property that has been defined using the \c Q_PROPERTY macro.
     PropertyParameterUI(PropertiesEditor* parent, const char* propertyName);
+#endif
 
     /// \brief Constructor for a PropertyField or ReferenceField.
     /// \param parent The editor in which this parameter UI is used. This becomes the parent of this object.
     /// \param propField The property or reference field.
     PropertyParameterUI(PropertiesEditor* parent, const PropertyFieldDescriptor* propField);
 
-    /// \brief Destructor.
-    virtual ~PropertyParameterUI() { clearAllReferences(); }
-
+#if 0 // TODO
     /// \brief Returns the property being edited in this parameter UI.
     /// \return The name of the QObject property this UI is bound to or \c
     ///         NULL if this PropertyUI is bound to a PropertyField.
     /// \sa propertyField()
     const char* propertyName() const { return _propertyName; }
+#endif
 
     /// \brief Returns the property or reference field being edited.
     /// \return A pointer to the descriptor of the PropertyField or ReferenceField being edited or
@@ -195,8 +193,10 @@ public:
     /// \brief Indicates whether this parameter UI is representing a PropertyField based property.
     bool isPropertyFieldUI() const { return (_propField && !_propField->isReferenceField()); }
 
+#if 0 // TODO
     /// \brief Indicates whether this parameter UI is representing a Qt property.
     bool isQtPropertyUI() const { return _propField == nullptr; }
+#endif
 
     /// \brief This method is called when parameter object has been assigned to the reference field of the editable object
     /// this parameter UI is bound to.
@@ -229,7 +229,9 @@ public:
 
 public:
 
+#if 0 // TODO
     Q_PROPERTY(const char* propertyName READ propertyName)
+#endif
     Q_PROPERTY(Ovito::RefTarget* parameterObject READ parameterObject)
 
 protected Q_SLOTS:
@@ -252,15 +254,17 @@ private:
     /// The controller or sub-object whose value is being edited.
     /// This may be \c NULL either when there is no editable object selected in the parent editor
     /// or if the editable object's reference field is currently empty.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(RefTarget*, parameterObject, setParameterObject, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(RefTarget*, parameterObject, setParameterObject);
 
     /// The property or reference field being edited or NULL if bound to a Qt property.
     const PropertyFieldDescriptor* _propField = nullptr;
 
+#if 0 // TODO
     /// The name of the Qt property being edited or NULL.
     const char* _propertyName = nullptr;
+#endif
 
-    /// The MenuToolButton associated to this PropertyParameterUI
+    /// The MenuToolButton associated to this PropertyParameterUI.
     QPointer<MenuToolButton> _menuToolButton = nullptr;
 };
 

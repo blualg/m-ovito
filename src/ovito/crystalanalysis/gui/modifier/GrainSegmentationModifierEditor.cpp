@@ -37,7 +37,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(GrainSegmentationModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(GrainSegmentationModifierEditor);
 SET_OVITO_OBJECT_EDITOR(GrainSegmentationModifier, GrainSegmentationModifierEditor);
 
 /******************************************************************************

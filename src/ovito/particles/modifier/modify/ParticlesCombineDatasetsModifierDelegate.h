@@ -49,13 +49,12 @@ class OVITO_PARTICLES_EXPORT ParticlesCombineDatasetsModifierDelegate : public C
     };
 
     OVITO_CLASS_META(ParticlesCombineDatasetsModifierDelegate, OOMetaClass)
-
-    Q_CLASSINFO("DisplayName", "Particles");
+    OVITO_CLASSINFO("DisplayName", "Particles");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticlesCombineDatasetsModifierDelegate(ObjectInitializationFlags flags) : CombineDatasetsModifierDelegate(flags) {}
+    using CombineDatasetsModifierDelegate::CombineDatasetsModifierDelegate;
 
     /// Applies the modifier operation to the data in a pipeline flow state.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

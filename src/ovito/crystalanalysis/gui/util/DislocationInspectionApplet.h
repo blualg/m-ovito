@@ -39,12 +39,13 @@ namespace Ovito {
 class DislocationInspectionApplet : public DataInspectionApplet
 {
     OVITO_CLASS(DislocationInspectionApplet)
-    Q_CLASSINFO("DisplayName", "Dislocations");
+    OVITO_CLASSINFO("DisplayName", "Dislocations")
+    Q_OBJECT
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE DislocationInspectionApplet() : DataInspectionApplet(DislocationNetworkObject::OOClass()) {}
+    explicit DislocationInspectionApplet() : DataInspectionApplet(DislocationNetworkObject::OOClass()) {}
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 50; }

@@ -33,7 +33,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(CoordinationAnalysisModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(CoordinationAnalysisModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CoordinationAnalysisModifier, CoordinationAnalysisModifierEditor);
 
 /******************************************************************************

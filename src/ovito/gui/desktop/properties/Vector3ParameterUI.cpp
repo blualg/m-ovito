@@ -27,8 +27,9 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(Vector3ParameterUI);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(Vector3ParameterUI);
 
+#if 0 // TODO
 /******************************************************************************
 * Constructor for a Qt property.
 ******************************************************************************/
@@ -37,6 +38,7 @@ Vector3ParameterUI::Vector3ParameterUI(PropertiesEditor* parentEditor, const cha
 {
     OVITO_ASSERT_MSG(vectorComponent >= 0 && vectorComponent < 3, "Vector3ParameterUI constructor", "The vector component must be in the range 0-2.");
 }
+#endif
 
 /******************************************************************************
 * Constructor for a PropertyField property.
@@ -68,6 +70,7 @@ void Vector3ParameterUI::updatePropertyValue()
                     ctrl->setVector3Value(currentAnimationTime().value_or(AnimationTime(0)), val);
                 }
             }
+#if 0 // TODO
             else if(isQtPropertyUI()) {
                 QVariant currentValue = editObject()->property(propertyName());
                 if(currentValue.canConvert<Vector3>()) {
@@ -84,6 +87,7 @@ void Vector3ParameterUI::updatePropertyValue()
                     OVITO_ASSERT_MSG(false, "Vector3ParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
                 }
             }
+#endif
             else if(isPropertyFieldUI()) {
                 QVariant currentValue = editObject()->getPropertyFieldValue(propertyField());
                 if(currentValue.canConvert<Vector3>()) {
@@ -117,6 +121,7 @@ void Vector3ParameterUI::updateUI()
         }
         else {
             QVariant val;
+#if 0 // TODO
             if(isQtPropertyUI()) {
                 val = editObject()->property(propertyName());
                 OVITO_ASSERT_MSG(val.isValid() && (val.canConvert<Vector3>() || val.canConvert<Point3>()), "Vector3ParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to Vector3/Point3 type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
@@ -124,7 +129,9 @@ void Vector3ParameterUI::updateUI()
                     throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to Vector3/Point3 type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
                 }
             }
-            else if(isPropertyFieldUI()) {
+            else
+#endif
+            if(isPropertyFieldUI()) {
                 val = editObject()->getPropertyFieldValue(propertyField());
                 OVITO_ASSERT(val.isValid() && (val.canConvert<Vector3>() || val.canConvert<Point3>()));
             }

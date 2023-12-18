@@ -34,11 +34,12 @@ namespace Ovito {
 class GenerateTrajectoryLinesModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(GenerateTrajectoryLinesModifierEditor)
+    Q_OBJECT
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE GenerateTrajectoryLinesModifierEditor() {}
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

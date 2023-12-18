@@ -26,7 +26,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS2(ModifierGroup);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ModifierGroup);
 DEFINE_PROPERTY_FIELD(ModifierGroup, isCollapsed);
 SET_PROPERTY_FIELD_LABEL(ModifierGroup, isCollapsed, "Collapsed");
 
@@ -35,9 +35,8 @@ SET_PROPERTY_FIELD_LABEL(ModifierGroup, isCollapsed, "Collapsed");
 ******************************************************************************/
 void ModifierGroup::registerNode(ModificationNode* node)
 {
-    connect(node, &ModificationNode::objectEvent, this, &ModifierGroup::modificationNodeEvent, Qt::UniqueConnection);
     updateCombinedStatus();
-    Q_EMIT modifierAdded(node);
+    notifyDependents(ModifierGroup::ModifierAddedOrRemoved);
 }
 
 /******************************************************************************
@@ -45,20 +44,17 @@ void ModifierGroup::registerNode(ModificationNode* node)
 ******************************************************************************/
 void ModifierGroup::unregisterNode(ModificationNode* node)
 {
-    disconnect(node, &ModificationNode::objectEvent, this, &ModifierGroup::modificationNodeEvent);
     updateCombinedStatus();
-    Q_EMIT modifierRemoved(node);
+    notifyDependents(ModifierGroup::ModifierAddedOrRemoved);
 }
 
 /******************************************************************************
 * Is called when one of the group's nodes has generated an event.
 ******************************************************************************/
-void ModifierGroup::modificationNodeEvent(RefTarget* sender, const ReferenceEvent& event)
+void ModifierGroup::modificationNodeStatusChanged()
 {
-    if(event.type() == ReferenceEvent::ObjectStatusChanged) {
-        // Update the group's status whenever the status of one of its members changes.
-        updateCombinedStatus();
-    }
+    // Update the group's status whenever the status of one of its members changes.
+    updateCombinedStatus();
 }
 
 /******************************************************************************

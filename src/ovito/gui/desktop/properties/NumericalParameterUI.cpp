@@ -30,8 +30,9 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(NumericalParameterUI);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(NumericalParameterUI);
 
+#if 0 // TODO
 /******************************************************************************
 * Constructor for a Qt property.
 ******************************************************************************/
@@ -40,6 +41,7 @@ NumericalParameterUI::NumericalParameterUI(PropertiesEditor* parentEditor, const
 {
     initUIControls(labelText);
 }
+#endif
 
 /******************************************************************************
 * Constructor for a PropertyField or ReferenceField property.

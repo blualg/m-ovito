@@ -30,16 +30,15 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the action object.
 ******************************************************************************/
-ViewportModeAction::ViewportModeAction(UserInterface& userInterface, const QString& text, QObject* parent, ViewportInputMode* inputMode, const QColor& highlightColor)
-    : QAction(text, parent), _inputMode(inputMode), _highlightColor(highlightColor), _viewportInputManager(*userInterface.viewportInputManager())
+ViewportModeAction::ViewportModeAction(UserInterface& userInterface, const QString& text, QObject* parent, OORef<ViewportInputMode> inputMode, const QColor& highlightColor)
+    : QAction(text, parent), _inputMode(std::move(inputMode)), _highlightColor(highlightColor), _viewportInputManager(*userInterface.viewportInputManager())
 {
-    OVITO_CHECK_POINTER(inputMode);
     OVITO_CHECK_POINTER(userInterface.viewportInputManager());
 
     setCheckable(true);
-    setChecked(inputMode->isActive());
+    setChecked(_inputMode->isActive());
 
-    connect(inputMode, &ViewportInputMode::statusChanged, this, &ViewportModeAction::setChecked);
+    connect(_inputMode.get(), &ViewportInputMode::statusChanged, this, &ViewportModeAction::setChecked);
     connect(this, &ViewportModeAction::toggled, this, &ViewportModeAction::onActionToggled);
     connect(this, &ViewportModeAction::triggered, this, &ViewportModeAction::onActionTriggered);
 }

@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS2(DataBuffer);
+IMPLEMENT_CREATABLE_OVITO_CLASS(DataBuffer);
 
 #ifdef OVITO_USE_SYCL
 

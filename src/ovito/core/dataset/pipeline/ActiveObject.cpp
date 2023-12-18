@@ -56,12 +56,14 @@ void ActiveObject::propertyChanged(const PropertyFieldDescriptor* field)
         setStatus(PipelineStatus::Success);
     }
 
+#if 0 // TODO
     // Whenever the object's status changes, update UI with some delay.
     if(field == PROPERTY_FIELD(status)) {
         if(!_statusTimer.isActive()) {
             _statusTimer.start(50, Qt::CoarseTimer, this);
         }
     }
+#endif
 
     RefTarget::propertyChanged(field);
 }
@@ -72,11 +74,12 @@ void ActiveObject::propertyChanged(const PropertyFieldDescriptor* field)
 ******************************************************************************/
 void ActiveObject::incrementNumberOfActiveTasks()
 {
-    OVITO_ASSERT(QThread::currentThread() == this->thread());
     if(_numberOfActiveTasks++ == 0) {
-        OVITO_ASSERT(_isInActivateState == false);
+        OVITO_ASSERT(_isInActiveState == false);
+#if 0 // TODO
         // Indicate activity status in the UI with a 100 ms delay to prevent excessive updates in case of short-running tasks.
         _activityTimer.start(100, Qt::CoarseTimer, this);
+#endif
     }
 }
 
@@ -86,14 +89,15 @@ void ActiveObject::incrementNumberOfActiveTasks()
 ******************************************************************************/
 void ActiveObject::decrementNumberOfActiveTasks()
 {
-    OVITO_ASSERT(QThread::currentThread() == this->thread());
     OVITO_ASSERT(_numberOfActiveTasks > 0);
     if(--_numberOfActiveTasks == 0) {
+#if 0 // TODO
         _activityTimer.stop();
-        if(_isInActivateState) {
-            _isInActivateState = false;
+        if(_isInActiveState) {
+            _isInActiveState = false;
             notifyDependents(ReferenceEvent::ObjectStatusChanged);
         }
+#endif
     }
 }
 
@@ -102,7 +106,6 @@ void ActiveObject::decrementNumberOfActiveTasks()
 ******************************************************************************/
 void ActiveObject::registerActiveTask(const TaskPtr& task)
 {
-    OVITO_ASSERT(QThread::currentThread() == this->thread());
     if(!task->isFinished() && Application::instance()->guiMode()) {
         incrementNumberOfActiveTasks();
         // Reset the pending status after the Future is fulfilled.
@@ -110,6 +113,7 @@ void ActiveObject::registerActiveTask(const TaskPtr& task)
     }
 }
 
+#if 0 // TODO
 /******************************************************************************
 * Handles timer events for this object.
 ******************************************************************************/
@@ -118,9 +122,9 @@ void ActiveObject::timerEvent(QTimerEvent* event)
     if(event->timerId() == _activityTimer.timerId()) {
         OVITO_ASSERT(_activityTimer.isActive());
         OVITO_ASSERT(_numberOfActiveTasks > 0);
-        OVITO_ASSERT(_isInActivateState == false);
+        OVITO_ASSERT(_isInActiveState == false);
         _activityTimer.stop();
-        _isInActivateState = true;
+        _isInActiveState = true;
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
     else if(event->timerId() == _statusTimer.timerId()) {
@@ -130,6 +134,7 @@ void ActiveObject::timerEvent(QTimerEvent* event)
     }
     RefTarget::timerEvent(event);
 }
+#endif
 
 /******************************************************************************
 * Returns a short piece information (typically a string or color) to be

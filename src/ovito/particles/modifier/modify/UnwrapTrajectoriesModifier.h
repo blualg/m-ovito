@@ -49,15 +49,14 @@ class OVITO_PARTICLES_EXPORT UnwrapTrajectoriesModifier : public Modifier
     };
 
     OVITO_CLASS_META(UnwrapTrajectoriesModifier, UnwrapTrajectoriesModifierClass)
-
-    Q_CLASSINFO("DisplayName", "Unwrap trajectories");
-    Q_CLASSINFO("Description", "Unwrap particle coordinates at periodic cell boundaries and generate continuous trajectories.");
-    Q_CLASSINFO("ModifierCategory", "Modification");
+    OVITO_CLASSINFO("DisplayName", "Unwrap trajectories");
+    OVITO_CLASSINFO("Description", "Unwrap particle coordinates at periodic cell boundaries and generate continuous trajectories.");
+    OVITO_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 
-    /// Constructs a new instance of this class.
-    Q_INVOKABLE UnwrapTrajectoriesModifier(ObjectInitializationFlags flags) : Modifier(flags) {}
+    /// Constructor.
+    using Modifier::Modifier;
 
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
@@ -72,7 +71,7 @@ public:
 class OVITO_PARTICLES_EXPORT UnwrapTrajectoriesModificationNode : public ModificationNode
 {
     OVITO_CLASS(UnwrapTrajectoriesModificationNode)
-    Q_CLASSINFO("ClassNameAlias", "UnwrapTrajectoriesModifierApplication");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("ClassNameAlias", "UnwrapTrajectoriesModifierApplication");  // For backward compatibility with OVITO 3.9.2
 
 public:
 
@@ -85,7 +84,7 @@ public:
     using UnflipData = std::vector<std::pair<AnimationTime, std::array<int,3>>>;
 
     /// Constructor.
-    Q_INVOKABLE UnwrapTrajectoriesModificationNode(ObjectInitializationFlags flags) : ModificationNode(flags) {}
+    using ModificationNode::ModificationNode;
 
     /// Indicates the animation time up to which trajectories have already been unwrapped.
     AnimationTime unwrappedUpToTime() const { return _unwrappedUpToTime; }

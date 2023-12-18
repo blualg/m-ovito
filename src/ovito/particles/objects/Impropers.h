@@ -54,8 +54,8 @@ class OVITO_PARTICLES_EXPORT Impropers : public PropertyContainer
     };
 
     OVITO_CLASS_META(Impropers, OOMetaClass);
-    Q_CLASSINFO("DisplayName", "Impropers");
-    Q_CLASSINFO("ClassNameAlias", "ImpropersObject");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("DisplayName", "Impropers");
+    OVITO_CLASSINFO("ClassNameAlias", "ImpropersObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
 
@@ -66,8 +66,8 @@ public:
         TopologyProperty,
     };
 
-    /// \brief Constructor.
-    Q_INVOKABLE Impropers(ObjectInitializationFlags flags);
+    /// Constructor.
+    explicit Impropers(ObjectInitializationFlags flags);
 
     /// Convinience method that returns the improper topology property.
     const Property* getTopology() const { return getProperty(TopologyProperty); }

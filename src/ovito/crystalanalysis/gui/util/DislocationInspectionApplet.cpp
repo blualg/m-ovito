@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DislocationInspectionApplet);
+IMPLEMENT_CREATABLE_OVITO_CLASS(DislocationInspectionApplet);
 
 /******************************************************************************
 * Determines whether the given pipeline dataset contains data that can be

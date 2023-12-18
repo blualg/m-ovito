@@ -27,6 +27,7 @@
 #include <ovito/core/oo/NativePropertyFieldDescriptor.h>
 #include <ovito/core/oo/PropertyField.h>
 #include "RefMaker.h"
+#include "DependentsList.h"
 
 namespace Ovito {
 
@@ -39,13 +40,14 @@ class OVITO_CORE_EXPORT RefTarget : public RefMaker
 
 protected:
 
-    /// \brief Constructor.
-    RefTarget(ObjectInitializationFlags flags);
+    // Specifies the default flags for all reference fields of RefTarget-derived classes.
+    // Note: This overrides (shadows) the value of RefMaker::PROPERTY_FIELD_STANDARD_FLAGS.
+    static constexpr auto PROPERTY_FIELD_STANDARD_FLAGS = PROPERTY_FIELD_NO_FLAGS;
 
-#ifdef OVITO_DEBUG
-    /// \brief Destructor.
-    ~RefTarget();
-#endif
+    enum {
+        /// End-of-list value indicating the next available event type that can be used by sub-classes for custom notifications.
+        NEXT_AVAILABLE_EVENT_ID = ReferenceEvent::Type::NEXT_AVAILABLE_EVENT_ID
+    };
 
     //////////////////////////////// from OvitoObject //////////////////////////////////////
 
@@ -145,14 +147,19 @@ protected:
 
 public:
 
-    /// \brief Returns true if this object is an instance of a RefTarget derived class.
-    virtual bool isRefTarget() const override { return true; }
+    /// Constructor.
+    explicit RefTarget(ObjectInitializationFlags flags);
+
+#ifdef OVITO_DEBUG
+    /// Destructor.
+    ~RefTarget();
+#endif
 
     //////////////////////////////// Notification events ////////////////////////////////////
 
     /// \brief Sends an event to all dependents of this RefTarget.
     /// \param eventType The event type passed to the ReferenceEvent constructor.
-    inline void notifyDependents(ReferenceEvent::Type eventType) const noexcept {
+    inline void notifyDependents(int eventType) const noexcept {
         OVITO_ASSERT(eventType != ReferenceEvent::TargetChanged);
         OVITO_ASSERT(eventType != ReferenceEvent::ReferenceChanged);
         OVITO_ASSERT(eventType != ReferenceEvent::ReferenceAdded);
@@ -184,20 +191,16 @@ public:
 
     /// \brief Visits all immediate dependents that reference this target object
     ///        and invokes the given function for every dependent encountered.
-    ///
-    /// \note The visitor function may be called multiple times for a dependent if that dependent
-    ///       has multiple references to this target.
     template<class Callable>
-    void visitDependents(Callable&& fn) const {
-        VisitDependentsEvent event(const_cast<RefTarget*>(this), std::move(fn));
-        const_cast<RefTarget*>(this)->notifyDependentsImpl(event);
+    inline void visitDependents(Callable&& fn) const {
+        const_cast<DependentsList&>(_dependents).visit_all(std::forward<Callable>(fn));
     }
 
-    /// \brief Asks this object to delete itself.
+    /// \brief Asks this object to delete itself. This happens by requesting all dependents of the object to delete their reference to it.
     ///
     /// If undo recording is active, the object instance is kept alive such that
     /// the deletion can be undone.
-    virtual void deleteReferenceObject();
+    virtual void requestObjectDeletion();
 
     /// \brief Returns the title of this object.
     /// \return A string that is used as label or title for this object in the user interface.
@@ -206,7 +209,7 @@ public:
     /// Sub-classes can override this method to return a title that depends on the internal state of the object.
     virtual QString objectTitle() const;
 
-    /// \brief Determines if this object's properties are currently being edited in an editor.
+    /// \brief Returns whether this object is currently opened in a parameter editor in the UI.
     bool isBeingEdited() const;
 
     /// \brief Rescales the times of all animation keys from the old animation interval to the new interval.
@@ -221,16 +224,49 @@ public:
     /// The default implementation does nothing.
     virtual void rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval) {}
 
+    ///////////////////////////////// Executor interface //////////////////////////////////////
+
+    /// Creates some work that can be submitted for execution later and which will be executed in the context of this object (typically in the main thread).
+    /// If the object gets destroyed before the work is executed, the scheduled work will be discarded.
+    template<typename Function>
+    auto schedule(Function&& f) const {
+        OVITO_CHECK_OBJECT_POINTER(this);
+        OVITO_ASSERT(ExecutionContext::current().isValid());
+        return [weakRef = weak_from_this(), context = ExecutionContext::current(), f = std::forward<Function>(f)]() mutable noexcept {
+            if(auto self = weakRef.lock()) {
+                ExecutionContext::Scope execScope(std::move(context));
+                static_cast<const RefTarget*>(self.get())->execute(std::move(f));
+            }
+        };
+    }
+
+    /// Executes some work in the context of this object (typically the main thread).
+    template<typename Function>
+    void execute(Function&& f) const {
+        OVITO_CHECK_OBJECT_POINTER(this);
+        OVITO_ASSERT(ExecutionContext::current().isValid());
+        // If we are in the main thread already, we can immediately execute the work.
+        // Otherwise, schedule its execution in the main thread.
+        if(ExecutionContext::isMainThread()) {
+            // Temporarily suspend undo recording, because deferred operations never get recorded by convention.
+            UndoSuspender noUndo;
+            std::invoke(std::forward<Function>(f));
+        }
+        else {
+            ExecutionContext::current().runDeferred(this, std::forward<Function>(f));
+        }
+    }
+
 private:
 
     /// Registers a RefMaker as a dependent of this RefTarget, subscribing it to notifications.
-    void registerDependent(const RefMaker* dependent) const noexcept;
+    inline void registerDependent(const RefMaker* dependent) const noexcept { const_cast<RefTarget*>(this)->_dependents.insert(const_cast<RefMaker*>(dependent)); }
 
     /// Unregisters a RefMaker, which will no longer receive notifications from this RefTarget.
-    void unregisterDependent(const RefMaker* dependent) const noexcept;
+    inline void unregisterDependent(const RefMaker* dependent) const noexcept { const_cast<RefTarget*>(this)->_dependents.remove(const_cast<RefMaker*>(dependent)); }
 
-    /// The list of RefMakers that currently have at least one reference to this target.
-	QVarLengthArray<const RefMaker*, 2> _dependents;
+    /// The list of RefMakers that currently hold a reference to this target.
+	DependentsList _dependents;
 
     friend class RefMaker;
     friend class CloneHelper;

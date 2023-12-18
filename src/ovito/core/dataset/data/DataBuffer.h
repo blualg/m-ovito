@@ -50,7 +50,7 @@ namespace detail {
 class OVITO_CORE_EXPORT DataBuffer : public DataObject
 {
     OVITO_CLASS(DataBuffer);
-    Q_CLASSINFO("DisplayName", "Data buffer");
+    OVITO_CLASSINFO("DisplayName", "Data buffer");
 
 public:
 

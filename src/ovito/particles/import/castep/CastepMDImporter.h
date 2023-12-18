@@ -51,16 +51,14 @@ class OVITO_PARTICLES_EXPORT CastepMDImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(CastepMDImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "CASTEP");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE CastepMDImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
+    /// Constructor.
+    explicit CastepMDImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
         setMultiTimestepFile(true);
     }
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("CASTEP"); }
 
     /// Indicates whether this file importer type loads particle trajectories.
     virtual bool isTrajectoryFormat() const override { return true; }

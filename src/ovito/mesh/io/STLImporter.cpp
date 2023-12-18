@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(STLImporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(STLImporter);
 
 /******************************************************************************
 * Returns whether this importer class supports importing data of the given type.

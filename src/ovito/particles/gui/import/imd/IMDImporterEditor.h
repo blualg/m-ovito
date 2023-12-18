@@ -38,7 +38,7 @@ class IMDImporterEditor : public FileImporterEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE IMDImporterEditor() {}
+    using FileImporterEditor::FileImporterEditor;
 
 protected:
 

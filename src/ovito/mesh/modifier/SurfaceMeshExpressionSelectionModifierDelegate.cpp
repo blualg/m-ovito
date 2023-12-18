@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SurfaceMeshRegionsExpressionSelectionModifierDelegate);
+IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshRegionsExpressionSelectionModifierDelegate);
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

@@ -47,15 +47,14 @@ class OVITO_PARTICLES_EXPORT WrapPeriodicImagesModifier : public Modifier
     };
 
     OVITO_CLASS_META(WrapPeriodicImagesModifier, WrapPeriodicImagesModifierClass)
-
-    Q_CLASSINFO("DisplayName", "Wrap at periodic boundaries");
-    Q_CLASSINFO("Description", "Fold particle coordinates back into the periodic simulation box.");
-    Q_CLASSINFO("ModifierCategory", "Modification");
+    OVITO_CLASSINFO("DisplayName", "Wrap at periodic boundaries");
+    OVITO_CLASSINFO("Description", "Fold particle coordinates back into the periodic simulation box.");
+    OVITO_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE WrapPeriodicImagesModifier(ObjectInitializationFlags flags) : Modifier(flags) {}
+    /// Constructor.
+    using Modifier::Modifier;
 
     /// Modifies the input data synchronously.
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;

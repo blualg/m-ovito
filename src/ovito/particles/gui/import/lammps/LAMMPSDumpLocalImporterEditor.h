@@ -35,11 +35,12 @@ namespace Ovito {
 class LAMMPSDumpLocalImporterEditor : public FileImporterEditor
 {
     OVITO_CLASS(LAMMPSDumpLocalImporterEditor)
+    Q_OBJECT
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE LAMMPSDumpLocalImporterEditor() {}
+    using FileImporterEditor::FileImporterEditor;
 
     /// This is called by the system when the user has selected a new file to import.
     virtual bool inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow) override;
@@ -52,10 +53,17 @@ protected:
     /// Creates the user interface controls for the editor.
     virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
+    /// This method is called when a reference target changes.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+
 protected Q_SLOTS:
 
     /// Is called when the user pressed the "Edit column mapping" button.
     void onEditColumnMapping();
+
+private:
+
+    BooleanParameterUI* _multitimestepUI;
 };
 
 }   // End of namespace

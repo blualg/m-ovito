@@ -37,8 +37,8 @@ class AtomicStrainModifierEditor : public PropertiesEditor
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE AtomicStrainModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 private Q_SLOTS:
 

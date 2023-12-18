@@ -40,7 +40,7 @@ class OVITO_CORE_EXPORT ActiveObject : public RefTarget
 protected:
 
     /// \brief Constructor.
-    ActiveObject(ObjectInitializationFlags flags);
+    explicit ActiveObject(ObjectInitializationFlags flags);
 
 public:
 
@@ -59,7 +59,7 @@ public:
     }
 
     /// \brief Returns true if at least one computation task associated with this object is currently active.
-    bool isObjectActive() const { return _isInActivateState; }
+    bool isObjectActive() const { return _isInActiveState; }
 
     /// \brief Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene) const;
@@ -111,7 +111,7 @@ private:
     int _numberOfActiveTasks = 0;
 
     /// Flag indicating wheter this object is currently displayed as active in the GUI.
-    bool _isInActivateState = false;
+    bool _isInActiveState = false;
 
 #if 0 // TODO
     /// Timer used to implement delayed UI updates of the activity state.

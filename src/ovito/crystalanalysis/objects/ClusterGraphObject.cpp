@@ -25,14 +25,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ClusterGraphObject);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ClusterGraphObject);
 DEFINE_RUNTIME_PROPERTY_FIELD(ClusterGraphObject, storage);
-
-/******************************************************************************
-* Constructs a cluster graph object.
-******************************************************************************/
-ClusterGraphObject::ClusterGraphObject(ObjectInitializationFlags flags) : DataObject(flags)
-{
-}
 
 }   // End of namespace

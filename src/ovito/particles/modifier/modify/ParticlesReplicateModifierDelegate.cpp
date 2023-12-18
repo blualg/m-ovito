@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParticlesReplicateModifierDelegate);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ParticlesReplicateModifierDelegate);
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

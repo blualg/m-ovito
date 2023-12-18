@@ -33,9 +33,10 @@ namespace Ovito {
 /**
  * An item managed by the PipelineListModel representing a data source, data object, modifier application or vis element.
  */
-class OVITO_GUIBASE_EXPORT PipelineListItem : public RefMaker
+class OVITO_GUIBASE_EXPORT PipelineListItem : public QObject, public RefMaker
 {
     OVITO_CLASS(PipelineListItem)
+    Q_OBJECT
 
 public:
 
@@ -57,7 +58,7 @@ public:
 public:
 
     /// Constructor.
-    PipelineListItem(RefTarget* object, PipelineItemType itemType, PipelineListItem* parent = nullptr);
+    explicit PipelineListItem(RefTarget* object, PipelineItemType itemType, PipelineListItem* parent = nullptr);
 
     /// Returns true if this is a sub-object entry.
     bool isSubObject() const { return _parent != nullptr; }
@@ -102,7 +103,7 @@ protected:
 private:
 
     /// The object represented by this item in the list box.
-    DECLARE_REFERENCE_FIELD_FLAGS(RefTarget*, object, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    DECLARE_REFERENCE_FIELD(RefTarget*, object);
 
     /// The type of this list item.
     PipelineItemType _itemType;

@@ -221,7 +221,7 @@ public:
 
     /// \brief Creates and registers a new action with the ActionManager.
     QAction* createViewportModeAction(const QString& id,
-                        ViewportInputMode* inputHandler,
+                        OORef<ViewportInputMode> inputHandler,
                         const QString& title,
                         const char* iconPath = nullptr,
                         const QString& statusTip = QString(),
@@ -255,14 +255,11 @@ private Q_SLOTS:
     /// This is called when a new dataset has been loaded.
     void onDataSetChanged(DataSet* newDataSet);
 
-    /// This is called when new animation settings have been loaded.
-    void onAnimationSettingsReplaced(AnimationSettings* newAnimationSettings);
-
     /// This is called when the active animation interval has changed.
     void onAnimationIntervalChanged(int firstFrame, int lastFrame);
 
-    /// This is called when new viewport configuration has been loaded.
-    void onViewportConfigurationReplaced(ViewportConfiguration* newViewportConfiguration);
+    /// This is called when a different viewport become the maximized one.
+    void onMaximizedViewportChanged(Viewport* maximizedViewport);
 
     /// This is called whenever the scene node selection changed.
     void onSelectionChangeComplete(SelectionSet* selection);
@@ -291,9 +288,6 @@ private:
 
     /// The list of registered actions.
     QVector<QAction*> _actions;
-
-    QMetaObject::Connection _animationIntervalChangedConnection;
-    QMetaObject::Connection _maximizedViewportChangedConnection;
 };
 
 }   // End of namespace

@@ -28,7 +28,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ModifierDelegateVariableListParameterUI);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(ModifierDelegateVariableListParameterUI);
 DEFINE_VECTOR_REFERENCE_FIELD(ModifierDelegateVariableListParameterUI, delegates);
 
 /******************************************************************************
@@ -55,8 +55,6 @@ ModifierDelegateVariableListParameterUI::ModifierDelegateVariableListParameterUI
 ******************************************************************************/
 ModifierDelegateVariableListParameterUI::~ModifierDelegateVariableListParameterUI()
 {
-    clearAllReferences();
-
     // Release widget.
     delete containerWidget();
 }

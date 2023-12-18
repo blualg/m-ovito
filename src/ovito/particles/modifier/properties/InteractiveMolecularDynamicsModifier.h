@@ -37,7 +37,7 @@ namespace Ovito {
  * \brief A modifier that updates the particle positions using real-time MD trajectory data it receives from a
  *        remote network server process using the Interactive Molecular Dynamics (IMD) protocol.
  */
-class OVITO_PARTICLES_EXPORT InteractiveMolecularDynamicsModifier : public Modifier
+class OVITO_PARTICLES_EXPORT InteractiveMolecularDynamicsModifier : public QObject, public Modifier
 {
     /// Give this modifier class its own metaclass.
     class OOMetaClass : public ModifierClass
@@ -52,14 +52,16 @@ class OVITO_PARTICLES_EXPORT InteractiveMolecularDynamicsModifier : public Modif
     };
 
     OVITO_CLASS_META(InteractiveMolecularDynamicsModifier, OOMetaClass)
-    Q_CLASSINFO("DisplayName", "Interactive molecular dynamics");
-    Q_CLASSINFO("Description", "Visualize live atomic trajectories from a running MD simulation as they are being calculated.");
-    Q_CLASSINFO("ModifierCategory", "Visualization");
+    OVITO_CLASSINFO("DisplayName", "Interactive molecular dynamics");
+    OVITO_CLASSINFO("Description", "Visualize live atomic trajectories from a running MD simulation as they are being calculated.");
+    OVITO_CLASSINFO("ModifierCategory", "Visualization");
+
+    Q_OBJECT
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE InteractiveMolecularDynamicsModifier(ObjectInitializationFlags flags);
+    explicit InteractiveMolecularDynamicsModifier(ObjectInitializationFlags flags);
 
     /// Destructor.
     virtual ~InteractiveMolecularDynamicsModifier();
@@ -74,7 +76,7 @@ public:
     void disconnectFromServer();
 
     /// Asks this object to delete itself.
-    virtual void deleteReferenceObject() override;
+    virtual void requestObjectDeletion() override;
 
     /// Modifies the input data synchronously.
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;

@@ -34,7 +34,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(AtomicStrainModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(AtomicStrainModifierEditor);
 SET_OVITO_OBJECT_EDITOR(AtomicStrainModifier, AtomicStrainModifierEditor);
 
 /******************************************************************************

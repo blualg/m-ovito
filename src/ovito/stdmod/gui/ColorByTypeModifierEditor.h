@@ -38,8 +38,8 @@ class ColorByTypeModifierEditor : public PropertiesEditor
 
 public:
 
-    /// Default constructor
-    Q_INVOKABLE ColorByTypeModifierEditor() {}
+    /// Constructor
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

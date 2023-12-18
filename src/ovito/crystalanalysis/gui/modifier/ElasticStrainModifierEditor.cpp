@@ -33,7 +33,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ElasticStrainModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ElasticStrainModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ElasticStrainModifier, ElasticStrainModifierEditor);
 
 /******************************************************************************

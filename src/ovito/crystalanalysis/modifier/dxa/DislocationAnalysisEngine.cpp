@@ -337,7 +337,7 @@ void DislocationAnalysisEngine::applyResults(const ModifierEvaluationRequest& re
 * Computes statistical information on the identified dislocation lines and
 * outputs it to the pipeline as data tables and global attributes.
 ******************************************************************************/
-FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const PipelineNode* pipelineNode, PipelineFlowState& state, DislocationNetworkObject* dislocationsObj, bool replaceDataObjects, const MicrostructurePhase* defaultStructure)
+FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const OOWeakRef<const PipelineNode>& pipelineNode, PipelineFlowState& state, DislocationNetworkObject* dislocationsObj, bool replaceDataObjects, const MicrostructurePhase* defaultStructure)
 {
     std::map<const BurgersVectorFamily*,FloatType> dislocationLengths;
     std::map<const BurgersVectorFamily*,int> segmentCounts;

@@ -33,14 +33,15 @@ class ApplicationSettingsDialog;        // defined below.
 /**
  * \brief Abstract base class for tab providers for the application's settings dialog.
  */
-class OVITO_GUI_EXPORT ApplicationSettingsDialogPage : public OvitoObject
+class OVITO_GUI_EXPORT ApplicationSettingsDialogPage : public QObject, public OvitoObject
 {
     OVITO_CLASS(ApplicationSettingsDialogPage)
+    Q_OBJECT
 
 protected:
 
     /// Base class constructor.
-    ApplicationSettingsDialogPage() = default;
+    explicit ApplicationSettingsDialogPage() = default;
 
 public:
 

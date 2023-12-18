@@ -46,7 +46,7 @@ void RefMaker::aboutToBeDeleted()
     OVITO_CHECK_OBJECT_POINTER(this);
 
     // Make sure undo recording is not active while deleting a RefTarget.
-    OVITO_ASSERT_MSG(!isRefTarget() || isUndoRecording() == false, "RefMaker::aboutToBeDeleted()", "Cannot delete object from memory while undo recording is active.");
+    OVITO_ASSERT_MSG(!RefTarget::OOClass().isMember(this) || isUndoRecording() == false, "RefMaker::aboutToBeDeleted()", "Cannot delete object from memory while undo recording is active.");
 
     // Clear all references this object has to other objects.
     clearAllReferences();
@@ -190,13 +190,6 @@ bool RefMaker::handleReferenceEvent(RefTarget* source, const ReferenceEvent& eve
             return false;
         }
         return true;
-    }
-
-    // Handle VisitDependents signals.
-    if(event.type() == ReferenceEvent::VisitDependents) {
-        const VisitDependentsEvent& visitEvent = static_cast<const VisitDependentsEvent&>(event);
-        visitEvent.visitDependent(this);
-        return false;
     }
 
     // Let the RefMaker-derived class process the message.
@@ -423,24 +416,29 @@ void RefMaker::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableDa
 
         if(field->isReferenceField()) {
             // Write the object pointed to by the reference field to the stream.
-
-            // Write reference target object to stream.
-            stream.beginChunk(0x02);
-            try {
-                if(!field->isVector()) {
-                    stream.saveObject(field->_singleReferenceReadFunc(this), excludeRecomputableData || field->dontSaveRecomputableData());
+            if(!field->dontSaveTarget()) {
+                stream.beginChunk(0x02);
+                try {
+                    if(!field->isVector()) {
+                        stream.saveObject(field->_singleReferenceReadFunc(this), excludeRecomputableData || field->dontSaveRecomputableData());
+                    }
+                    else {
+                        qint32 count = getVectorReferenceFieldSize(field);
+                        stream << count;
+                        for(int i = 0; i < count; i++)
+                            stream.saveObject(getVectorReferenceFieldTarget(field, i), excludeRecomputableData || field->dontSaveRecomputableData());
+                    }
                 }
-                else {
-                    qint32 count = getVectorReferenceFieldSize(field);
-                    stream << count;
-                    for(int i = 0; i < count; i++)
-                        stream.saveObject(getVectorReferenceFieldTarget(field, i), excludeRecomputableData || field->dontSaveRecomputableData());
+                catch(Exception& ex) {
+                    throw ex.prependGeneralMessage(tr("Failed to serialize contents of reference field %1 of class %2.").arg(field->identifier()).arg(field->definingClass()->name()));
                 }
+                stream.endChunk();
             }
-            catch(Exception& ex) {
-                throw ex.prependGeneralMessage(tr("Failed to serialize contents of reference field %1 of class %2.").arg(field->identifier()).arg(field->definingClass()->name()));
+            else {
+                // Indicate that this target is not serizalized.
+                stream.beginChunk(0x05);
+                stream.endChunk();
             }
-            stream.endChunk();
         }
         else {
             // Write the primitive value stored in the property field to the stream.
@@ -545,6 +543,9 @@ void RefMaker::loadFromStream(ObjectLoadStream& stream)
                         stream.loadObject<RefTarget>();
                     }
                 }
+            }
+            else if(chunkId == 0x05) {
+                // The target object has not been serialized (typically due to flag PROPERTY_FIELD_DONT_SAVE_TARGET).
             }
             else {
                 throw Exception(tr("Expected reference field '%1' in object %2").arg(QString(fieldEntry.identifier)).arg(fieldEntry.definingClass->name()));

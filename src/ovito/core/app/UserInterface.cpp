@@ -32,6 +32,15 @@
 
 namespace Ovito {
 
+IMPLEMENT_ABSTRACT_OVITO_CLASS(UserInterface);
+
+/******************************************************************************
+* Constructor
+******************************************************************************/
+UserInterface::UserInterface() : _datasetContainer(OORef<DataSetContainer>::create(_taskManager, *this))
+{
+}
+
 /******************************************************************************
 * Closes the user interface and shuts down the entire application after
 * displaying an error message.
@@ -116,12 +125,12 @@ bool UserInterface::processEvents()
 * Executes the given function at some later time unless the given object is
 * destroyed in the meantime or the user interface is shut down.
 ******************************************************************************/
-void UserInterface::submitWork(const OvitoObject* contextObject, fu2::unique_function<void() noexcept> function, bool isScriptingContext)
+void UserInterface::submitWork(const RefTarget* contextObject, fu2::unique_function<void() noexcept> function, bool isScriptingContext)
 {
     OVITO_ASSERT(contextObject);
     std::lock_guard<std::mutex> lock(_pendingWorkMutex);
     if(isShuttingDown() == false) {
-        _pendingWork.emplace(contextObject->weak_from_this(), std::move(function), isScriptingContext);
+        _pendingWork.emplace(contextObject, std::move(function), isScriptingContext);
         if(_pendingWork.size() == 1)
             pendingWorkArrived();
     }
@@ -145,7 +154,7 @@ void UserInterface::executePendingWork()
         // Execute work item only if the context object still exists and the user interface is not shutting down.
         // Otherwise, silently cancel the work (which still runs the destructor of the work object).
         if(!isShuttingDown()) {
-            if(OORef<const OvitoObject> contextObject = work.obj.lock()) {
+            if(auto contextObject = work.obj.lock()) {
                 // Establish the execution context in which the work was submitted.
                 ExecutionContext::Scope execScope(work.isScriptingContext ? ExecutionContext::Type::Scripting : ExecutionContext::Type::Interactive, shared_from_this());
 

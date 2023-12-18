@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ElasticStrainModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ElasticStrainModifier);
 DEFINE_PROPERTY_FIELD(ElasticStrainModifier, inputCrystalStructure);
 DEFINE_PROPERTY_FIELD(ElasticStrainModifier, calculateDeformationGradients);
 DEFINE_PROPERTY_FIELD(ElasticStrainModifier, calculateStrainTensors);

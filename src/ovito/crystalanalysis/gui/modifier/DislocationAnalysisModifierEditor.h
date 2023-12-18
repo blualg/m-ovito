@@ -37,11 +37,12 @@ namespace Ovito {
 class DislocationTypeListParameterUI : public RefTargetListParameterUI
 {
     OVITO_CLASS(DislocationTypeListParameterUI)
+    Q_OBJECT
 
 public:
 
     /// Constructor.
-    DislocationTypeListParameterUI(PropertiesEditor* parent);
+    explicit DislocationTypeListParameterUI(PropertiesEditor* parent);
 
     /// This method is called when a new editable object has been activated.
     virtual void resetUI() override {
@@ -105,8 +106,8 @@ class DislocationAnalysisModifierEditor : public PropertiesEditor
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE DislocationAnalysisModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

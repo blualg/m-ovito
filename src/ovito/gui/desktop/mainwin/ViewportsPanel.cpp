@@ -47,8 +47,20 @@ ViewportsPanel::ViewportsPanel(MainWindow& mainWindow) : _mainWindow(mainWindow)
     // Track viewport input mode changes.
     connect(mainWindow.viewportInputManager(), &ViewportInputManager::inputModeChanged, this, &ViewportsPanel::onInputModeChanged);
 
+    // Show a context menu when the user clicks a viewport's caption.
+    connect(mainWindow.viewportInputManager(), &ViewportInputManager::contextMenuRequested, this, &ViewportsPanel::onViewportMenuRequested);
+
     // Repaint when auto-key animation mode is toggled.
     connect(mainWindow.actionManager()->getAction(ACTION_AUTO_KEY_MODE_TOGGLE), &QAction::toggled, this, qOverload<>(&ViewportsPanel::update));
+
+    // Repaint the viewport borders when another viewport has been activated.
+    connect(&mainWindow.datasetContainer(), &DataSetContainer::activeViewportChanged, this, qOverload<>(&ViewportsPanel::update));
+
+    // Update layout when a viewport has been maximized or restored.
+    connect(&mainWindow.datasetContainer(), &DataSetContainer::maximizedViewportChanged, this, &ViewportsPanel::invalidateWindowLayout);
+
+    // Update the viewport window positions when the viewport layout is modified.
+    connect(&mainWindow.datasetContainer(), &DataSetContainer::viewportLayoutChanged, this, &ViewportsPanel::invalidateWindowLayout);
 
     // Prevent the viewports from collpasing and disappearing completely.
     setMinimumSize(40, 40);
@@ -126,7 +138,7 @@ BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport& vp, MainWindo
 }
 
 /******************************************************************************
-* Returns the widget that is associated with the given viewport.
+* Returns the widget that hosts the given viewport.
 ******************************************************************************/
 QWidget* ViewportsPanel::viewportWidget(Viewport* vp)
 {
@@ -140,8 +152,6 @@ QWidget* ViewportsPanel::viewportWidget(Viewport* vp)
                 throw Exception(tr("Failed to create viewport window or there is no realtime graphics implementation available. Please check your OVITO installation and the graphics capabilities of your system."));
             if(_viewportConfig->activeViewport() == vp)
                 viewportWindow->widget()->setFocus();
-            // Show a context menu when the user clicks the viewport caption.
-            connect(vp, &Viewport::contextMenuRequested, this, &ViewportsPanel::onViewportMenuRequested);
         }
         catch(const Exception& ex) {
             _graphicsInitializationErrorOccurred = true;
@@ -159,12 +169,8 @@ QWidget* ViewportsPanel::viewportWidget(Viewport* vp)
 /******************************************************************************
 * Displays the context menu for a viewport window.
 ******************************************************************************/
-void ViewportsPanel::onViewportMenuRequested(const QPoint& pos)
+void ViewportsPanel::onViewportMenuRequested(Viewport* viewport, const QPoint& pos)
 {
-    // Get the viewport that emitted the signal.
-    Viewport* viewport = qobject_cast<Viewport*>(sender());
-    OVITO_ASSERT(viewport);
-
     // Get the viewport's window.
     BaseViewportWindow* vpwin = dynamic_cast<BaseViewportWindow*>(viewport->window());
     OVITO_ASSERT(vpwin && vpwin->widget() && vpwin->widget()->parentWidget() == this);
@@ -181,22 +187,10 @@ void ViewportsPanel::onViewportMenuRequested(const QPoint& pos)
 ******************************************************************************/
 void ViewportsPanel::onViewportConfigurationReplaced(ViewportConfiguration* newViewportConfiguration)
 {
-    disconnect(_activeViewportChangedConnection);
-    disconnect(_maximizedViewportChangedConnection);
-    disconnect(_viewportLayoutChangedConnection);
     _viewportConfig = newViewportConfiguration;
 
     // Create the interactive viewport windows.
     recreateViewportWindows();
-
-    if(_viewportConfig) {
-        // Repaint the viewport borders when another viewport has been activated.
-        _activeViewportChangedConnection = connect(_viewportConfig, &ViewportConfiguration::activeViewportChanged, this, qOverload<>(&ViewportsPanel::update));
-        // Update layout when a viewport has been maximized.
-        _maximizedViewportChangedConnection = connect(_viewportConfig, &ViewportConfiguration::maximizedViewportChanged, this, &ViewportsPanel::invalidateWindowLayout);
-        // Update the viewport window positions when the viewport layout is modified.
-        _viewportLayoutChangedConnection = connect(_viewportConfig, &ViewportConfiguration::viewportLayoutChanged, this, &ViewportsPanel::invalidateWindowLayout);
-    }
 }
 
 /******************************************************************************
@@ -473,9 +467,9 @@ void ViewportsPanel::mousePressEvent(QMouseEvent* event)
 void ViewportsPanel::mouseMoveEvent(QMouseEvent* event)
 {
     if(_draggedSplitter != -1) {
-        // Temporarily block the viewportLayoutChanged() signal from the ViewportConfiguration to avoid
+        // Temporarily block the viewportLayoutChanged() signal from the DataSetContainer to avoid
         // an unnecessary relayout of the viewport windows while resetting the undo operation.
-        QSignalBlocker signalBlocker(_viewportConfig);
+        QSignalBlocker signalBlocker(&_mainWindow.datasetContainer());
         _undoTransaction.revert();
         signalBlocker.unblock();
 

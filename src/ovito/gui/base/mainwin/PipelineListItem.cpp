@@ -28,7 +28,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(PipelineListItem);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(PipelineListItem);
 DEFINE_REFERENCE_FIELD(PipelineListItem, object);
 
 /******************************************************************************

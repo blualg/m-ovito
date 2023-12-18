@@ -31,9 +31,9 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ComputePropertyModifierDelegate);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(ComputePropertyModifierDelegate);
 
-IMPLEMENT_OVITO_CLASS(ComputePropertyModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ComputePropertyModifier);
 DEFINE_PROPERTY_FIELD(ComputePropertyModifier, expressions);
 DEFINE_PROPERTY_FIELD(ComputePropertyModifier, outputProperty);
 DEFINE_PROPERTY_FIELD(ComputePropertyModifier, onlySelectedElements);
@@ -43,7 +43,7 @@ SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, outputProperty, "Output proper
 SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, onlySelectedElements, "Compute only for selected elements");
 SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, useMultilineFields, "Expand field(s)");
 
-IMPLEMENT_OVITO_CLASS(ComputePropertyModificationNode);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ComputePropertyModificationNode);
 DEFINE_VECTOR_REFERENCE_FIELD(ComputePropertyModificationNode, cachedVisElements);
 DEFINE_RUNTIME_PROPERTY_FIELD(ComputePropertyModificationNode, inputVariableNames);
 DEFINE_RUNTIME_PROPERTY_FIELD(ComputePropertyModificationNode, delegateInputVariableNames);

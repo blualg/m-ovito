@@ -49,13 +49,12 @@ class ParticlesDeleteSelectedModifierDelegate : public DeleteSelectedModifierDel
     };
 
     OVITO_CLASS_META(ParticlesDeleteSelectedModifierDelegate, OOMetaClass)
-
-    Q_CLASSINFO("DisplayName", "Particles");
+    OVITO_CLASSINFO("DisplayName", "Particles");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticlesDeleteSelectedModifierDelegate(ObjectInitializationFlags flags) : DeleteSelectedModifierDelegate(flags) {}
+    using DeleteSelectedModifierDelegate::DeleteSelectedModifierDelegate;
 
     /// Applies the modifier operation to the data in a pipeline flow state.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
@@ -82,13 +81,12 @@ class BondsDeleteSelectedModifierDelegate : public DeleteSelectedModifierDelegat
     };
 
     OVITO_CLASS_META(BondsDeleteSelectedModifierDelegate, OOMetaClass)
-
-    Q_CLASSINFO("DisplayName", "Bonds");
+    OVITO_CLASSINFO("DisplayName", "Bonds");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE BondsDeleteSelectedModifierDelegate(ObjectInitializationFlags flags) : DeleteSelectedModifierDelegate(flags) {}
+    using DeleteSelectedModifierDelegate::DeleteSelectedModifierDelegate;
 
     /// Applies the modifier operation to the data in a pipeline flow state.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

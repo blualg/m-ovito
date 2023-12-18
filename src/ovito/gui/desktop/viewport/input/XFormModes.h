@@ -26,7 +26,6 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
-#include <ovito/core/oo/RefTargetListener.h>
 
 namespace Ovito {
 
@@ -35,9 +34,13 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUI_EXPORT XFormMode : public ViewportInputMode
 {
+    OVITO_CLASS(XFormMode)
     Q_OBJECT
 
 public:
+
+    /// Constructor.
+    explicit XFormMode(const QString& cursorImagePath) : _xformCursor(QPixmap(cursorImagePath)) {}
 
     /// \brief Handles the mouse down event for the given viewport.
     virtual void mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
@@ -58,11 +61,6 @@ public:
     AffineTransformation transformationSystem();
 
 protected:
-
-    /// Protected constructor.
-    XFormMode(QObject* parent, const QString& cursorImagePath) : ViewportInputMode(parent), _xformCursor(QPixmap(cursorImagePath)) {
-        connect(&_selectedNode, &RefTargetListener<SceneNode>::notificationEvent, this, &XFormMode::onSceneNodeEvent);
-    }
 
     /// \brief This is called by the system after the input handler has
     ///        become the active handler.
@@ -90,13 +88,13 @@ protected:
     /// Updates the values displayed in the coordinate display widget.
     virtual void updateCoordinateDisplay(CoordinateDisplayWidget* coordDisplay) {}
 
+    /// Is called when a RefTarget referenced by this object generated an event.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+
 protected Q_SLOT:
 
     /// Is called when the user has selected a different scene node.
     void onSelectionChangeComplete(SelectionSet* selection);
-
-    /// Is called when the selected scene node generates a notification event.
-    void onSceneNodeEvent(RefTarget* source, const ReferenceEvent& event);
 
     /// Is called when the current animation frame has changed.
     void onCurrentFrameChanged(int frame);
@@ -108,6 +106,11 @@ protected Q_SLOT:
     /// This signal handler is called by the coordinate display widget when the user
     /// has pressed the "Animate" button.
     virtual void onAnimateTransformationButton() {}
+
+private:
+
+    /// The selected scene node.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(SceneNode*, selectedNode, setSelectedNode);
 
 protected:
 
@@ -123,9 +126,6 @@ protected:
     /// The cursor shown while the mouse cursor is over an object.
     QCursor _xformCursor;
 
-    /// This monitors the selected node to update the coordinate display.
-    RefTargetListener<SceneNode> _selectedNode;
-
     /// To undo changes while dragging the mouse.
     UndoableTransaction _undoTransaction;
 
@@ -138,12 +138,13 @@ protected:
 ******************************************************************************/
 class OVITO_GUI_EXPORT MoveMode : public XFormMode
 {
+    OVITO_CLASS(MoveMode)
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    MoveMode(QObject* parent) : XFormMode(parent, QStringLiteral(":/guibase/cursor/editing/cursor_mode_move.png")) {}
+    MoveMode() : XFormMode(QStringLiteral(":/guibase/cursor/editing/cursor_mode_move.png")) {}
 
 protected:
 
@@ -187,12 +188,13 @@ private:
 ******************************************************************************/
 class OVITO_GUI_EXPORT RotateMode : public XFormMode
 {
+    OVITO_CLASS(RotateMode)
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    RotateMode(QObject* parent) : XFormMode(parent, QStringLiteral(":/guibase/cursor/editing/cursor_mode_rotate.png")) {}
+    RotateMode() : XFormMode(QStringLiteral(":/guibase/cursor/editing/cursor_mode_rotate.png")) {}
 
 protected:
 

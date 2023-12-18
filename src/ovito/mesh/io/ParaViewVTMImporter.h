@@ -96,14 +96,12 @@ class OVITO_MESH_EXPORT ParaViewVTMImporter : public FileSourceImporter
     };
 
     OVITO_CLASS_META(ParaViewVTMImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "VTM");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParaViewVTMImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags), _uniteMeshes(false) {}
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("VTM"); }
+    using FileSourceImporter::FileSourceImporter;
 
     /// Loads the data for the given frame from the external file.
     virtual Future<PipelineFlowState> loadFrame(const LoadOperationRequest& request) override;

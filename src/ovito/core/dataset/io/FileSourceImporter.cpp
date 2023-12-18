@@ -53,7 +53,7 @@ void FileSourceImporter::propertyChanged(const PropertyFieldDescriptor* field)
         requestFramesUpdate();
 
         // Also notify the UI explicitly, because target-changed messages are supressed for this property field.
-        Q_EMIT isMultiTimestepFileChanged();
+        notifyDependents(FileSourceImporter::MultiTimestepFileChanged);
     }
 }
 

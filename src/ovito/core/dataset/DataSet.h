@@ -86,11 +86,15 @@ public:
     /// Note that this method does NOT invoke setFilePath().
     void saveToFile(const QString& filePath) const;
 
-    /// \brief Loads the dataset contents from a session state file.
+    /// \brief Loads the dataset contents from a session state file, replacing any existing contents.
     /// \throw Exception on error.
     ///
     /// Note that this method does NOT invoke setFilePath().
     void loadFromFile(const QString& filePath);
+
+    /// \brief Loads a dataset from a session state file.
+    /// \throw Exception on error.
+    static OORef<DataSet> createFromFile(const QString& filePath);
 
     /// \brief Appends an object to this dataset's list of global objects - unless the object is already in the list.
     void addGlobalObject(const RefTarget* target) {

@@ -36,12 +36,13 @@ namespace Ovito {
 ******************************************************************************/
 class OVITO_GUIBASE_EXPORT SelectionMode : public ViewportInputMode
 {
+    OVITO_CLASS(SelectionMode)
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    SelectionMode(QObject* parent) : ViewportInputMode(parent) {}
+    using ViewportInputMode::ViewportInputMode;
 
     /// \brief Returns the activation behavior of this input mode.
     virtual InputModeType modeType() override { return ExclusiveMode; }

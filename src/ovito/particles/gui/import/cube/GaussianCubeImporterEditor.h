@@ -38,7 +38,7 @@ class GaussianCubeImporterEditor : public FileImporterEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE GaussianCubeImporterEditor() {}
+    using FileImporterEditor::FileImporterEditor;
 
 protected:
 

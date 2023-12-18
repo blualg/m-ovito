@@ -34,11 +34,12 @@ namespace Ovito {
 class SimulationCellEditor : public PropertiesEditor
 {
     OVITO_CLASS(SimulationCellEditor)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE SimulationCellEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

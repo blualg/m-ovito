@@ -25,8 +25,9 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(FilenameParameterUI);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(FilenameParameterUI);
 
+#if 0 // TODO
 /******************************************************************************
 * Constructor for a Qt property.
 ******************************************************************************/
@@ -37,6 +38,7 @@ FilenameParameterUI::FilenameParameterUI(PropertiesEditor* parentEditor, const c
     _selectorButton = new QPushButton(QStringLiteral(" "));
     connect(_selectorButton.data(), &QPushButton::clicked, this, &FilenameParameterUI::showSelectionDialog);
 }
+#endif
 
 /******************************************************************************
 * Constructor for a PropertyField property.
@@ -80,6 +82,7 @@ void FilenameParameterUI::updateUI()
 
     if(selectorWidget() && editObject()) {
         QVariant val;
+#if 0 // TODO
         if(propertyName()) {
             val = editObject()->property(propertyName());
             OVITO_ASSERT_MSG(val.isValid() && val.canConvert<QString>(), "FilenameParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
@@ -87,7 +90,9 @@ void FilenameParameterUI::updateUI()
                 throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
             }
         }
-        else if(propertyField()) {
+        else
+#endif
+        if(propertyField()) {
             val = editObject()->getPropertyFieldValue(propertyField());
             OVITO_ASSERT(val.isValid());
         }

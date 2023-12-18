@@ -37,12 +37,13 @@ OvitoClass* OvitoClass::_firstNativeMetaClass{};
 /******************************************************************************
 * Constructor used for non-templated classes.
 ******************************************************************************/
-OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const char* pluginId, OORef<OvitoObject>(*createInstanceFunc)(ObjectInitializationFlags)) :
+OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const char* pluginId, OORef<OvitoObject>(*createInstanceFunc)(ObjectInitializationFlags), MetadataItem** metadataHead) :
     _createInstanceFunc(createInstanceFunc),
     _name(name),
     _displayName(name),
     _superClass(superClass),
-    _pluginId(pluginId)
+    _pluginId(pluginId),
+    _metadataHead(metadataHead)
 {
     OVITO_ASSERT(superClass != nullptr || name == QStringLiteral("OvitoObject"));
     OVITO_ASSERT(pluginId != nullptr);
@@ -60,24 +61,12 @@ void OvitoClass::initialize()
     // Class must have been initialized with a plugin id.
     OVITO_ASSERT(_pluginId != nullptr);
 
-#if 0 // TODO
     // Initialize native C++ classes.
-    if(qtMetaObject()) {
+    _pureClassName = name().toStdString();
 
-        // Remove namespace qualifier from Qt's class name.
-        _pureClassName = qtMetaObject()->className();
-        for(const char* p = _pureClassName; *p != '\0'; p++) {
-            if(p[0] == ':' && p[1] == ':') {
-                p++;
-                _pureClassName = p+1;
-            }
-        }
-
-    }
-#endif
-
-    // Fetch display name assigned to the Qt object class.
-    setDisplayName(classMetadata("DisplayName"));
+    // Fetch UI name assigned to the class.
+    if(displayName().isEmpty())
+        setDisplayName(classMetadata("DisplayName"));
 }
 
 /******************************************************************************
@@ -88,20 +77,15 @@ bool OvitoClass::isKnownUnderName(const QString& name) const
     if(name == this->name())
         return true;
 
-#if 0 // TODO
     // Consider name aliases assigned to the Qt object class.
-    if(qtMetaObject()) {
-        int infoCount = qtMetaObject()->classInfoCount();
-        for(int i = qtMetaObject()->classInfoOffset(); i < infoCount; i++) {
-            const QMetaClassInfo& classInfo = qtMetaObject()->classInfo(i);
-            if(qstrcmp(classInfo.name(), "ClassNameAlias") == 0) {
-                OVITO_ASSERT(qtMetaObject()->indexOfClassInfo("ClassNameAlias") >= 0);
-                if(name == classInfo.value())
+    if(_metadataHead) {
+        for(const MetadataItem* item = *_metadataHead; item != nullptr; item = item->next) {
+            if(qstrcmp(item->key, "ClassNameAlias") == 0) {
+                if(name == QString::fromUtf8(item->value))
                     return true;
             }
         }
     }
-#endif
 
     return false;
 }
@@ -119,13 +103,12 @@ bool OvitoClass::isMember(const OvitoObject* obj) const
 ******************************************************************************/
 QString OvitoClass::classMetadata(const char* metadataKey) const
 {
-#if 0 // TODO
-    if(qtMetaObject()) {
-        int index = qtMetaObject()->indexOfClassInfo(metadataKey);
-        if(index >= 0)
-            return QString::fromUtf8(qtMetaObject()->classInfo(index).value());
+    if(_metadataHead) {
+        for(const MetadataItem* item = *_metadataHead; item != nullptr; item = item->next) {
+            if(qstrcmp(item->key, metadataKey) == 0)
+                return QString::fromUtf8(item->value);
+        }
     }
-#endif
     return QString();
 }
 
@@ -135,7 +118,7 @@ QString OvitoClass::classMetadata(const char* metadataKey) const
 ******************************************************************************/
 OORef<OvitoObject> OvitoClass::createInstance(ObjectInitializationFlags flags) const
 {
-#if 0 // Dynamic loading of plugins is currently not used.
+#if 0 // Note: Dynamic loading of plugins is not yet used in OVITO.
     if(plugin() && !plugin()->isLoaded()) {
         OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
         // Load plugin first.
@@ -151,20 +134,11 @@ OORef<OvitoObject> OvitoClass::createInstance(ObjectInitializationFlags flags) c
     if(!isInstantiable())
         throw Exception(OvitoObject::tr("Cannot instantiate abstract class '%1'.").arg(name()));
 
-    // Don't record object initialization on the undo stack.
-    UndoSuspender noUndo;
-
     // Instantiate the class.
     OORef<OvitoObject> obj = createInstanceImpl(flags);
 
-#ifdef OVITO_DEBUG
-    // Mark the object as having been allocated on the heap.
-    obj->_isAllocatedOnTheHeap = true;
-#endif
-
-    // Initialize the parameters of the new object to default values.
-    if(isDerivedFrom(RefTarget::OOClass()) && ExecutionContext::isInteractive())
-        static_object_cast<RefTarget>(obj.get())->initializeParametersToUserDefaults();
+    // Object should have been allocated on the heap and its BeingConstructed flag cleared.
+    OVITO_ASSERT(obj->isBeingConstructed() == false);
 
     return obj;
 }

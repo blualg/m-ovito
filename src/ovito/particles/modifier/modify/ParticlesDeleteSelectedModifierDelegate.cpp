@@ -29,8 +29,8 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParticlesDeleteSelectedModifierDelegate);
-IMPLEMENT_OVITO_CLASS(BondsDeleteSelectedModifierDelegate);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ParticlesDeleteSelectedModifierDelegate);
+IMPLEMENT_CREATABLE_OVITO_CLASS(BondsDeleteSelectedModifierDelegate);
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier
@@ -84,17 +84,18 @@ PipelineStatus ParticlesDeleteSelectedModifierDelegate::apply(const ModifierEval
     }
 
     // Report some statistics:
-    QString statusMessage = tr("%n of %1 particles deleted (%2%)", 0, numSelected)
+    QString statusMessage = tr("%1 of %2 particles deleted (%3%)")
+        .arg(numSelected)
         .arg(numParticles)
         .arg((FloatType)numSelected * 100 / std::max(numParticles, (size_t)1), 0, 'f', 1);
     if(numDeletedBonds)
-        statusMessage += tr("\n%n dangling bonds deleted", 0, numDeletedBonds);
+        statusMessage += tr("\n%1 dangling bonds deleted").arg(numDeletedBonds);
     if(numDeletedAngles)
-        statusMessage += tr("\n%n dangling angles deleted", 0, numDeletedAngles);
+        statusMessage += tr("\n%1 dangling angles deleted").arg(numDeletedAngles);
     if(numDeletedDihedrals)
-        statusMessage += tr("\n%n dangling dihedrals deleted", 0, numDeletedDihedrals);
+        statusMessage += tr("\n%1 dangling dihedrals deleted").arg(numDeletedDihedrals);
     if(numDeletedImpropers)
-        statusMessage += tr("\n%n dangling impropers deleted", 0, numDeletedImpropers);
+        statusMessage += tr("\n%1 dangling impropers deleted").arg(numDeletedImpropers);
 
     return PipelineStatus(PipelineStatus::Success, std::move(statusMessage));
 }
@@ -140,7 +141,8 @@ PipelineStatus BondsDeleteSelectedModifierDelegate::apply(const ModifierEvaluati
     }
 
     // Report some statistics:
-    QString statusMessage = tr("%n of %1 bonds deleted (%2%)", 0, numSelected)
+    QString statusMessage = tr("%1 of %2 bonds deleted (%3%)")
+        .arg(numSelected)
         .arg(numBonds)
         .arg((FloatType)numSelected * 100 / std::max(numBonds, (size_t)1), 0, 'f', 1);
 

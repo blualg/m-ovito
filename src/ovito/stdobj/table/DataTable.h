@@ -52,7 +52,7 @@ class OVITO_STDOBJ_EXPORT DataTable : public PropertyContainer
     };
 
     OVITO_CLASS_META(DataTable, OOMetaClass);
-    Q_CLASSINFO("DisplayName", "Data table");
+    OVITO_CLASSINFO("DisplayName", "Data table");
 
 public:
 
@@ -66,7 +66,7 @@ public:
     Q_ENUM(PlotMode);
 
     /// Constructor.
-    Q_INVOKABLE DataTable(ObjectInitializationFlags flags, PlotMode plotMode = Line, const QString& title = QString(), ConstPropertyPtr y = {}, ConstPropertyPtr x = {});
+    explicit DataTable(ObjectInitializationFlags flags, PlotMode plotMode = Line, const QString& title = QString(), ConstPropertyPtr y = {}, ConstPropertyPtr x = {});
 
     /// Assigns a property array as x-coordinates of the data points (for the purpose of plotting).
     void setX(const Property* property);

@@ -51,7 +51,7 @@ public:
 
 protected:
 
-    /// \brief Constructor.
+    /// Constructor.
     using FileExporter::FileExporter;
 
     /// \brief This is called once for every output file to be written and before exportFrame() is called.

@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(MicrostructurePhaseEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(MicrostructurePhaseEditor);
 SET_OVITO_OBJECT_EDITOR(MicrostructurePhase, MicrostructurePhaseEditor);
 
 /******************************************************************************

@@ -54,14 +54,12 @@ class OVITO_PARTICLES_EXPORT XYZImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(XYZImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "XYZ");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE XYZImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _autoRescaleCoordinates(false) {}
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("XYZ"); }
+    /// Constructor a new instance of this class.
+    explicit XYZImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _autoRescaleCoordinates(false) {}
 
     /// Indicates whether this file importer type loads particle trajectories.
     virtual bool isTrajectoryFormat() const override { return true; }

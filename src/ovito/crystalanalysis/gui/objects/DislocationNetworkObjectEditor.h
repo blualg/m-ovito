@@ -34,11 +34,12 @@ namespace Ovito {
 class DislocationNetworkObjectEditor : public PropertiesEditor
 {
     OVITO_CLASS(DislocationNetworkObjectEditor)
+    Q_OBJECT
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE DislocationNetworkObjectEditor() {}
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

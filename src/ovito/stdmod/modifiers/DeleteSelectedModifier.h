@@ -59,14 +59,14 @@ class OVITO_STDMOD_EXPORT DeleteSelectedModifier : public MultiDelegatingModifie
     };
 
     OVITO_CLASS_META(DeleteSelectedModifier, DeleteSelectedModifierClass)
-    Q_CLASSINFO("DisplayName", "Delete selected");
-    Q_CLASSINFO("Description", "Remove all currently selected elements.");
-    Q_CLASSINFO("ModifierCategory", "Modification");
+    OVITO_CLASSINFO("DisplayName", "Delete selected");
+    OVITO_CLASSINFO("Description", "Remove all currently selected elements.");
+    OVITO_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE DeleteSelectedModifier(ObjectInitializationFlags flags) : MultiDelegatingModifier(flags) {
+    explicit DeleteSelectedModifier(ObjectInitializationFlags flags) : MultiDelegatingModifier(flags) {
         if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
             // Generate the list of delegate objects.
             createModifierDelegates(DeleteSelectedModifierDelegate::OOClass());

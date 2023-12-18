@@ -48,16 +48,15 @@ class OVITO_PARTICLES_EXPORT SmoothTrajectoryModifier : public Modifier
     };
 
     OVITO_CLASS_META(SmoothTrajectoryModifier, OOMetaClass)
-
-    Q_CLASSINFO("DisplayName", "Smooth trajectory");
-    Q_CLASSINFO("ClassNameAlias", "InterpolateTrajectoryModifier");
-    Q_CLASSINFO("Description", "Time-averaged particle positions using a sliding time window.");
-    Q_CLASSINFO("ModifierCategory", "Modification");
+    OVITO_CLASSINFO("DisplayName", "Smooth trajectory");
+    OVITO_CLASSINFO("ClassNameAlias", "InterpolateTrajectoryModifier");
+    OVITO_CLASSINFO("Description", "Time-averaged particle positions using a sliding time window.");
+    OVITO_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE SmoothTrajectoryModifier(ObjectInitializationFlags flags);
+    explicit SmoothTrajectoryModifier(ObjectInitializationFlags flags);
 
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
@@ -101,7 +100,7 @@ class OVITO_PARTICLES_EXPORT InterpolateTrajectoryModifierApplication : public M
 public:
 
     /// Constructor.
-    Q_INVOKABLE InterpolateTrajectoryModifierApplication(ObjectInitializationFlags flags) : ModificationNode(flags) {}
+    using ModificationNode::ModificationNode;
 };
 
 }   // End of namespace

@@ -35,14 +35,12 @@ namespace Ovito {
 class OVITO_CRYSTALANALYSIS_EXPORT ClusterGraphObject : public DataObject
 {
     OVITO_CLASS(ClusterGraphObject)
+    OVITO_CLASSINFO("DisplayName", "Clusters");
 
 public:
 
-    /// \brief Constructor.
-    Q_INVOKABLE ClusterGraphObject(ObjectInitializationFlags flags);
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("Clusters"); }
+    /// Constructor.
+    using DataObject::DataObject;
 
     /// Returns the list of nodes in the cluster graph.
     const std::vector<Cluster*>& clusters() const { return storage()->clusters(); }

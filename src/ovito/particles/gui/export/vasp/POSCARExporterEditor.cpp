@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(POSCARExporterEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(POSCARExporterEditor);
 SET_OVITO_OBJECT_EDITOR(POSCARExporter, POSCARExporterEditor);
 
 /******************************************************************************

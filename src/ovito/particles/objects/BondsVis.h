@@ -40,7 +40,7 @@ namespace Ovito {
 class OVITO_PARTICLES_EXPORT BondsVis : public DataVis
 {
     OVITO_CLASS(BondsVis)
-    Q_CLASSINFO("DisplayName", "Bonds");
+    OVITO_CLASSINFO("DisplayName", "Bonds");
 
     Q_PROPERTY(Ovito::BondsVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
 
@@ -62,7 +62,7 @@ public:
     Q_ENUM(ColoringMode);
 
     /// Constructor.
-    Q_INVOKABLE BondsVis(ObjectInitializationFlags flags);
+    explicit BondsVis(ObjectInitializationFlags flags);
 
     /// Renders the visual element.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;
@@ -111,7 +111,7 @@ class OVITO_PARTICLES_EXPORT BondPickInfo : public ObjectPickInfo
 public:
 
     /// Constructor.
-    BondPickInfo(DataOORef<const Particles> particles, DataOORef<const SimulationCell> simulationCell) : _particles(std::move(particles)), _simulationCell(std::move(simulationCell)) {}
+    explicit BondPickInfo(DataOORef<const Particles> particles, DataOORef<const SimulationCell> simulationCell) : _particles(std::move(particles)), _simulationCell(std::move(simulationCell)) {}
 
     /// Returns the particles object.
     const DataOORef<const Particles>& particles() const { OVITO_ASSERT(_particles); return _particles; }

@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(PDBImporterEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(PDBImporterEditor);
 SET_OVITO_OBJECT_EDITOR(PDBImporter, PDBImporterEditor);
 
 /******************************************************************************

@@ -28,6 +28,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/utilities/DeferredMethodInvocation.h>
 #include <ovito/core/oo/RefTarget.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include "PropertiesPanel.h"
 
 namespace Ovito {
@@ -37,9 +38,10 @@ namespace Ovito {
  *
  * A properties editor for a RefTarget derived object can be created using the PropertiesEditor::create() function.
  */
-class OVITO_GUI_EXPORT PropertiesEditor : public RefMaker
+class OVITO_GUI_EXPORT PropertiesEditor : public QObject, public RefMaker
 {
     OVITO_CLASS(PropertiesEditor)
+    Q_OBJECT
 
 public:
 
@@ -62,7 +64,7 @@ public:
 
 protected:
 
-    /// \brief The constructor.
+    /// Constructor.
     PropertiesEditor() = default;
 
 public:
@@ -75,9 +77,6 @@ public:
     ///
     /// The returned editor object is not initialized yet. Call initialize() once to do so.
     static OORef<PropertiesEditor> create(MainWindow& mainWindow, RefTarget* obj);
-
-    /// \brief The virtual destructor.
-    virtual ~PropertiesEditor();
 
     /// \brief This will bind the editor to the given container.
     /// \param container The properties panel that's the host of the editor.
@@ -249,7 +248,7 @@ private:
     PropertiesEditor* _parentEditor = nullptr;
 
     /// The object being edited in this editor.
-    DECLARE_REFERENCE_FIELD_FLAGS(RefTarget*, editObject, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
+    DECLARE_REFERENCE_FIELD(RefTarget*, editObject);
 
     /// The list of rollout widgets that have been created by editor.
     /// The cleanup handler is used to delete them when the editor is being deleted.

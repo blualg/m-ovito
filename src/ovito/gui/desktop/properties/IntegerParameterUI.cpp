@@ -28,8 +28,9 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(IntegerParameterUI);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(IntegerParameterUI);
 
+#if 0 // TODO
 /******************************************************************************
 * Constructor for a Qt property.
 ******************************************************************************/
@@ -37,6 +38,7 @@ IntegerParameterUI::IntegerParameterUI(PropertiesEditor* parentEditor, const cha
     NumericalParameterUI(parentEditor, propertyName, parameterUnitType ? parameterUnitType : &IntegerParameterUnit::staticMetaObject, labelText)
 {
 }
+#endif
 
 /******************************************************************************
 * Constructor for a PropertyField property.
@@ -57,11 +59,13 @@ void IntegerParameterUI::updatePropertyValue()
             if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject()))
                 ctrl->setIntValue(currentAnimationTime().value_or(AnimationTime(0)), spinner()->intValue());
         }
+#if 0 // TODO
         else if(isQtPropertyUI()) {
             if(!editObject()->setProperty(propertyName(), spinner()->intValue())) {
                 OVITO_ASSERT_MSG(false, "IntegerParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
             }
         }
+#endif
         else if(isPropertyFieldUI()) {
             editor()->changePropertyFieldValue(propertyField(), spinner()->intValue());
         }
@@ -83,6 +87,7 @@ void IntegerParameterUI::updateUI()
             }
             else {
                 QVariant val(0);
+#if 0 // TODO
                 if(isQtPropertyUI()) {
                     val = editObject()->property(propertyName());
                     OVITO_ASSERT_MSG(val.isValid() && val.canConvert<int>(), "IntegerParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to integer type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
@@ -90,7 +95,9 @@ void IntegerParameterUI::updateUI()
                         throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to integer type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
                     }
                 }
-                else if(isPropertyFieldUI()) {
+                else
+#endif
+                if(isPropertyFieldUI()) {
                     val = editObject()->getPropertyFieldValue(propertyField());
                     OVITO_ASSERT(val.isValid());
                 }

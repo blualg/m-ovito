@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ScatterPlotModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ScatterPlotModifier);
 DEFINE_PROPERTY_FIELD(ScatterPlotModifier, selectXAxisInRange);
 DEFINE_PROPERTY_FIELD(ScatterPlotModifier, selectionXAxisRangeStart);
 DEFINE_PROPERTY_FIELD(ScatterPlotModifier, selectionXAxisRangeEnd);

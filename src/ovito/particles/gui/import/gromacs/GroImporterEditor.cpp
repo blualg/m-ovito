@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(GroImporterEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(GroImporterEditor);
 SET_OVITO_OBJECT_EDITOR(GroImporter, GroImporterEditor);
 
 /******************************************************************************

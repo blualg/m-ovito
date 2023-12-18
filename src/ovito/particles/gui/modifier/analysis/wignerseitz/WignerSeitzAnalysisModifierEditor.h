@@ -34,11 +34,12 @@ namespace Ovito {
 class WignerSeitzAnalysisModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(WignerSeitzAnalysisModifierEditor)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE WignerSeitzAnalysisModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 private Q_SLOTS:
 

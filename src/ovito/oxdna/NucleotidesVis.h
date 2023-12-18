@@ -34,12 +34,12 @@ namespace Ovito {
 class OVITO_OXDNA_EXPORT NucleotidesVis : public ParticlesVis
 {
     OVITO_CLASS(NucleotidesVis)
-    Q_CLASSINFO("DisplayName", "Nucleotides");
+    OVITO_CLASSINFO("DisplayName", "Nucleotides");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE NucleotidesVis(ObjectInitializationFlags flags);
+    explicit NucleotidesVis(ObjectInitializationFlags flags);
 
     /// Renders the visual element.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;

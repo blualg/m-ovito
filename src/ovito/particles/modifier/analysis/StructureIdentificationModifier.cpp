@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(StructureIdentificationModifier);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(StructureIdentificationModifier);
 DEFINE_VECTOR_REFERENCE_FIELD(StructureIdentificationModifier, structureTypes);
 DEFINE_PROPERTY_FIELD(StructureIdentificationModifier, onlySelectedParticles);
 DEFINE_PROPERTY_FIELD(StructureIdentificationModifier, colorByType);

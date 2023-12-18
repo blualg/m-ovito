@@ -36,7 +36,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(VectorVisEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(VectorVisEditor);
 SET_OVITO_OBJECT_EDITOR(VectorVis, VectorVisEditor);
 
 /******************************************************************************

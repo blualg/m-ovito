@@ -96,11 +96,6 @@ class OVITO_CORE_EXPORT FileImporter : public RefTarget
 {
     OVITO_CLASS_META(FileImporter, FileImporterClass)
 
-protected:
-
-    /// \brief The constructor.
-    using RefTarget::RefTarget;
-
 public:
 
     /// Import modes that control the behavior of the importFileSet() method.
@@ -119,6 +114,9 @@ public:
         ImportAsSeparateObjects
     };
     Q_ENUM(MultiFileImportMode);
+
+    /// Constructor.
+    using RefTarget::RefTarget;
 
     /// \brief Asks the importer if the option to replace the currently selected object
     ///        with the new file(s) is available.

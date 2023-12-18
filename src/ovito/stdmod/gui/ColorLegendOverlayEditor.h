@@ -34,16 +34,20 @@ namespace Ovito {
 class ColorLegendOverlayEditor : public PropertiesEditor
 {
     OVITO_CLASS(ColorLegendOverlayEditor)
+    Q_OBJECT
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorLegendOverlayEditor() {}
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 
     /// Creates the user interface controls for the editor.
     virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+
+    /// Is called when a RefTarget referenced by this object generated an event.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 private Q_SLOTS:
 

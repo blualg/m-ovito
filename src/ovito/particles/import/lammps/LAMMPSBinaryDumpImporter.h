@@ -54,14 +54,12 @@ class OVITO_PARTICLES_EXPORT LAMMPSBinaryDumpImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(LAMMPSBinaryDumpImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "LAMMPS Binary Dump");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE LAMMPSBinaryDumpImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {}
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("LAMMPS Binary Dump File"); }
+    /// Constructor.
+    using ParticleImporter::ParticleImporter;
 
     /// Indicates whether this file importer type loads particle trajectories.
     virtual bool isTrajectoryFormat() const override { return true; }

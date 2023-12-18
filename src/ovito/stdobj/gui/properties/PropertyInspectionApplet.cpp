@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(PropertyInspectionApplet);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(PropertyInspectionApplet);
 
 /******************************************************************************
 * Lets the applet create the UI widgets that are to be placed into the data
@@ -88,7 +88,7 @@ void PropertyInspectionApplet::onCurrentContainerChanged()
 /******************************************************************************
 * Selects a specific data object in this applet.
 ******************************************************************************/
-bool PropertyInspectionApplet::selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
+bool PropertyInspectionApplet::selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
 {
     // Check the property container list in case the requested data object is a PropertyContainer.
     if(DataInspectionApplet::selectDataObject(createdByNode, objectIdentifierHint, modeHint))
@@ -97,7 +97,7 @@ bool PropertyInspectionApplet::selectDataObject(PipelineNode* createdByNode, con
     // Check the property columns in case the requested data object is a property object.
     const auto& properties = _tableModel->properties();
     auto iter = boost::find_if(properties, [&](const Property* property) {
-        return property->createdByNode() == createdByNode &&
+        return property->createdByNode().lock().get() == createdByNode &&
             (objectIdentifierHint.isEmpty() || property->identifier().startsWith(objectIdentifierHint));
     });
     if(iter != properties.end()) {

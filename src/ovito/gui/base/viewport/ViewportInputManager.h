@@ -78,22 +78,27 @@ public:
     void removeViewportGizmo(ViewportGizmo* gizmo);
 
     /// \brief Returns the zoom input mode.
-    ZoomMode* zoomMode() const { return _zoomMode; }
+    const OORef<ZoomMode>& zoomMode() const { return _zoomMode; }
 
     /// \brief Returns the pan input mode.
-    PanMode* panMode() const { return _panMode; }
+    const OORef<PanMode>& panMode() const { return _panMode; }
 
     /// \brief Returns the orbit input mode.
-    OrbitMode* orbitMode() const { return _orbitMode; }
+    const OORef<OrbitMode>& orbitMode() const { return _orbitMode; }
 
     /// \brief Returns the FOV input mode.
-    FOVMode* fovMode() const { return _fovMode; }
+    const OORef<FOVMode>& fovMode() const { return _fovMode; }
 
     /// \brief Returns the pick orbit center input mode.
-    PickOrbitCenterMode* pickOrbitCenterMode() const { return _pickOrbitCenterMode; }
+    const OORef<PickOrbitCenterMode>& pickOrbitCenterMode() const { return _pickOrbitCenterMode; }
 
     /// \brief Returns the scene node selection mode.
-    SelectionMode* selectionMode() const { return _selectionMode; }
+    const OORef<SelectionMode>& selectionMode() const { return _selectionMode; }
+
+    /// \brief Signals to the UI to display a viewport context menu.
+    void requestContextMenu(Viewport* viewport, const QPoint& pos) {
+        Q_EMIT contextMenuRequested(viewport, pos);
+    }
 
 public Q_SLOTS:
 
@@ -110,6 +115,9 @@ Q_SIGNALS:
     /// \param newMode The new input handler that is now active (can be \c NULL).
     void inputModeChanged(ViewportInputMode* oldMode, ViewportInputMode* newMode);
 
+    /// \brief This signal is emiited when the viewport context menu should be displayed by the UI.
+    void contextMenuRequested(Viewport* viewport, const QPoint& pos);
+
 private:
 
     /// The dataset container this input manager is associated with,
@@ -125,25 +133,25 @@ private:
     std::vector<ViewportGizmo*> _viewportGizmos;
 
     /// The default viewport input mode.
-    ViewportInputMode* _defaultMode;
+    OORef<ViewportInputMode> _defaultMode;
 
     /// The zoom input mode.
-    ZoomMode* _zoomMode;
+    OORef<ZoomMode> _zoomMode;
 
     /// The pan input mode.
-    PanMode* _panMode;
+    OORef<PanMode> _panMode;
 
     /// The orbit input mode.
-    OrbitMode* _orbitMode;
+    OORef<OrbitMode> _orbitMode;
 
     /// The FOV input mode.
-    FOVMode* _fovMode;
+    OORef<FOVMode> _fovMode;
 
     /// The input mode for picking a new orbit center.
-    PickOrbitCenterMode* _pickOrbitCenterMode;
+    OORef<PickOrbitCenterMode> _pickOrbitCenterMode;
 
     /// The standard object selection mode.
-    SelectionMode* _selectionMode;
+    OORef<SelectionMode> _selectionMode;
 };
 
 }   // End of namespace

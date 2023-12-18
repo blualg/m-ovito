@@ -34,11 +34,12 @@ namespace Ovito {
 class FreezePropertyModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(FreezePropertyModifierEditor)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor
-    Q_INVOKABLE FreezePropertyModifierEditor() = default;
+    /// Constructor
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

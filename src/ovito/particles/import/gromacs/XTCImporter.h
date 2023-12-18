@@ -53,17 +53,15 @@ class OVITO_PARTICLES_EXPORT XTCImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(XTCImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "XTC");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE XTCImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
+    /// Constructor.
+    explicit XTCImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
         setMultiTimestepFile(true);
         setRecenterCell(true);
     }
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("XTC"); }
 
     /// Indicates whether this file importer type loads particle trajectories.
     virtual bool isTrajectoryFormat() const override { return true; }

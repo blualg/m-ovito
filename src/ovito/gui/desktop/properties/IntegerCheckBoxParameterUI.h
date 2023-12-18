@@ -38,8 +38,10 @@ class OVITO_GUI_EXPORT IntegerCheckBoxParameterUI : public PropertyParameterUI
 
 public:
 
+#if 0 // TODO
     /// Constructor.
     IntegerCheckBoxParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& checkBoxLabel, int uncheckedValue, int checkedValue);
+#endif
 
     /// Constructor for a PropertyField property.
     IntegerCheckBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, int uncheckedValue, int checkedValue);

@@ -27,8 +27,9 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(PropertyReferenceParameterUI);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(PropertyReferenceParameterUI);
 
+#if 0 // TODO
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
@@ -46,6 +47,7 @@ PropertyReferenceParameterUI::PropertyReferenceParameterUI(PropertiesEditor* par
     // Specify the type of property container to look for in the pipeline input.
     setContainerRef(containerClass);
 }
+#endif
 
 /******************************************************************************
 * Constructor.
@@ -127,6 +129,7 @@ void PropertyReferenceParameterUI::resetUI()
 PropertyReference PropertyReferenceParameterUI::getPropertyReference()
 {
     if(editObject()) {
+#if 0 // TODO
         if(isQtPropertyUI()) {
             QVariant val = editObject()->property(propertyName());
             OVITO_ASSERT_MSG(val.isValid() && val.canConvert<PropertyReference>(), "PropertyReferenceParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 of type PropertyReference.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
@@ -135,9 +138,11 @@ PropertyReference PropertyReferenceParameterUI::getPropertyReference()
             }
             return val.value<PropertyReference>();
         }
-        else if(isPropertyFieldUI()) {
+        else
+#endif
+        if(isPropertyFieldUI()) {
             QVariant val = editObject()->getPropertyFieldValue(propertyField());
-            OVITO_ASSERT_MSG(val.isValid() && val.canConvert<PropertyReference>(), "PropertyReferenceParameterUI::updateUI()", qPrintable(QString("The property field of object class %1 is not of type PropertyReference.").arg(editObject()->metaObject()->className())));
+            OVITO_ASSERT(val.isValid() && val.canConvert<PropertyReference>());
             return val.value<PropertyReference>();
         }
     }
@@ -269,6 +274,7 @@ void PropertyReferenceParameterUI::updatePropertyValue()
     if(comboBox() && editObject() && comboBox()->currentText().isEmpty() == false) {
         performTransaction(tr("Change parameter"), [this]() {
             PropertyReference pref = _comboBox->currentProperty();
+#if 0 // TODO
             if(isQtPropertyUI()) {
 
                 // Check if new value differs from old value.
@@ -280,7 +286,9 @@ void PropertyReferenceParameterUI::updatePropertyValue()
                     OVITO_ASSERT_MSG(false, "PropertyReferenceParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
                 }
             }
-            else if(isPropertyFieldUI()) {
+            else
+#endif
+            if(isPropertyFieldUI()) {
 
                 // Check if new value differs from old value.
                 QVariant oldval = editObject()->getPropertyFieldValue(propertyField());

@@ -34,7 +34,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ConstructSurfaceModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ConstructSurfaceModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ConstructSurfaceModifier, ConstructSurfaceModifierEditor);
 
 /******************************************************************************

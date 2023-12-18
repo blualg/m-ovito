@@ -38,7 +38,7 @@ class UnwrapTrajectoriesModifierEditor : public PropertiesEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE UnwrapTrajectoriesModifierEditor() {}
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

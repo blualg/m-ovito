@@ -35,7 +35,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(CommonNeighborAnalysisModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(CommonNeighborAnalysisModifier);
 DEFINE_PROPERTY_FIELD(CommonNeighborAnalysisModifier, cutoff);
 DEFINE_PROPERTY_FIELD(CommonNeighborAnalysisModifier, mode);
 SET_PROPERTY_FIELD_LABEL(CommonNeighborAnalysisModifier, cutoff, "Cutoff radius");

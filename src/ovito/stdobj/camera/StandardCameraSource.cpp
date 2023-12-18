@@ -37,10 +37,11 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(StandardCameraSource);
+IMPLEMENT_CREATABLE_OVITO_CLASS(StandardCameraSource);
 DEFINE_PROPERTY_FIELD(StandardCameraSource, isPerspective);
 DEFINE_REFERENCE_FIELD(StandardCameraSource, fovController);
 DEFINE_REFERENCE_FIELD(StandardCameraSource, zoomController);
+DEFINE_VIRTUAL_PROPERTY_FIELD(StandardCameraSource, isTargetCamera, setIsTargetCamera);
 SET_PROPERTY_FIELD_LABEL(StandardCameraSource, isPerspective, "Perspective projection");
 SET_PROPERTY_FIELD_LABEL(StandardCameraSource, fovController, "FOV angle");
 SET_PROPERTY_FIELD_LABEL(StandardCameraSource, zoomController, "FOV size");
@@ -50,7 +51,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(StandardCameraSource, zoomController, World
 /******************************************************************************
 * Constructs a camera object.
 ******************************************************************************/
-StandardCameraSource::StandardCameraSource(ObjectInitializationFlags flags) : PipelineNode(flags),
+StandardCameraSource::StandardCameraSource(ObjectInitializationFlags flags) : AbstractCameraSource(flags),
     _isPerspective(true)
 {
     pipelineCache().setEnabled(false);
@@ -80,7 +81,7 @@ StandardCameraSource::StandardCameraSource(ObjectInitializationFlags flags) : Pi
 ******************************************************************************/
 TimeInterval StandardCameraSource::validityInterval(const PipelineEvaluationRequest& request) const
 {
-    TimeInterval interval = PipelineNode::validityInterval(request);
+    TimeInterval interval = AbstractCameraSource::validityInterval(request);
     if(isPerspective() && fovController())
         interval.intersect(fovController()->validityInterval(request.time()));
     if(!isPerspective() && zoomController())

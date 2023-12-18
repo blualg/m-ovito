@@ -46,9 +46,6 @@ public:
     /// Constructor.
     explicit ScenePreparation(UserInterface& userInterface, Scene* scene = nullptr);
 
-    /// Destructor.
-    virtual ~ScenePreparation();
-
     /// Returns the abstract user interface in which this object operates.
     UserInterface& userInterface() const { return _userInterface; }
 
@@ -93,13 +90,13 @@ private:
 private:
 
     /// The scene being prepared.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Scene*, scene, setScene, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(Scene*, scene, setScene);
 
     /// The active render settings.
-    DECLARE_REFERENCE_FIELD_FLAGS(RenderSettings*, renderSettings, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    DECLARE_REFERENCE_FIELD(RenderSettings*, renderSettings);
 
     /// The active scene node selection set.
-    DECLARE_REFERENCE_FIELD_FLAGS(SelectionSet*, selectionSet, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    DECLARE_REFERENCE_FIELD(SelectionSet*, selectionSet);
 
     /// The abstract user interface in which this object operates.
     UserInterface& _userInterface;

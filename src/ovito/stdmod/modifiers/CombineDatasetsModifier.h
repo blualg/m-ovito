@@ -64,14 +64,14 @@ class OVITO_STDMOD_EXPORT CombineDatasetsModifier : public MultiDelegatingModifi
 
     OVITO_CLASS_META(CombineDatasetsModifier, CombineDatasetsModifierClass)
 
-    Q_CLASSINFO("DisplayName", "Combine datasets");
-    Q_CLASSINFO("Description", "Merge particles and bonds from two separate input files into one dataset.");
-    Q_CLASSINFO("ModifierCategory", "Modification");
+    OVITO_CLASSINFO("DisplayName", "Combine datasets");
+    OVITO_CLASSINFO("Description", "Merge particles and bonds from two separate input files into one dataset.");
+    OVITO_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE CombineDatasetsModifier(ObjectInitializationFlags flags);
+    explicit CombineDatasetsModifier(ObjectInitializationFlags flags);
 
     /// Modifies the input data synchronously.
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;

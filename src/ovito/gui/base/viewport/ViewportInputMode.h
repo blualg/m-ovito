@@ -24,6 +24,7 @@
 
 
 #include <ovito/gui/base/GUIBase.h>
+#include <ovito/core/oo/RefMaker.h>
 
 namespace Ovito {
 
@@ -34,8 +35,9 @@ namespace Ovito {
  * The ViewportInputManager keeps a stack of ViewportInputMode objects.
  * The topmost handler is the active one and handles all mouse events for the viewports.
  */
-class OVITO_GUIBASE_EXPORT ViewportInputMode : public QObject
+class OVITO_GUIBASE_EXPORT ViewportInputMode : public QObject, public RefMaker
 {
+    OVITO_CLASS(ViewportInputMode)
     Q_OBJECT
 
 public:
@@ -48,12 +50,12 @@ public:
     };
 
     /// \brief Constructor.
-    ViewportInputMode(QObject* parent = nullptr) : QObject(parent) {}
+    ViewportInputMode() = default;
 
     /// \brief Destructor.
-    virtual ~ViewportInputMode();
+    ~ViewportInputMode();
 
-    /// \brief Returns a pointer to the viewport input manager that has a reference to this mode.
+    /// \brief Returns a pointer to the viewport input manager that currently uses this mode.
     ViewportInputManager* inputManager() const {
         OVITO_ASSERT_MSG(_manager != nullptr, "ViewportInputMode::inputManager()", "Cannot access input manager while mode is not on the input stack.");
         return _manager;

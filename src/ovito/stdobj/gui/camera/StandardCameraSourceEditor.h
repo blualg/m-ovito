@@ -38,7 +38,7 @@ class StandardCameraSourceEditor : public PropertiesEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE StandardCameraSourceEditor() {}
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

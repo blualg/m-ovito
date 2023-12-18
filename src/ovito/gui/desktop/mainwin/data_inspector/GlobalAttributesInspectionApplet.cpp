@@ -24,6 +24,7 @@
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include <ovito/core/dataset/data/AttributeDataObject.h>
 #include <ovito/core/dataset/io/AttributeFileExporter.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/gui/desktop/dialogs/FileExporterSettingsDialog.h>
 #include <ovito/gui/desktop/dialogs/HistoryFileDialog.h>
 #include <ovito/gui/desktop/widgets/general/CopyableTableView.h>
@@ -33,7 +34,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(GlobalAttributesInspectionApplet);
+IMPLEMENT_CREATABLE_OVITO_CLASS(GlobalAttributesInspectionApplet);
 
 /******************************************************************************
 * Determines whether the given pipeline dataset contains data that can be
@@ -89,11 +90,11 @@ void GlobalAttributesInspectionApplet::updateDisplay()
 /******************************************************************************
 * Selects a specific data object in this applet.
 ******************************************************************************/
-bool GlobalAttributesInspectionApplet::selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
+bool GlobalAttributesInspectionApplet::selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
 {
     for(size_t i = 0; i < _tableModel->attributes().size(); i++) {
         const auto& attr = _tableModel->attributes()[i];
-        if(attr->createdByNode() == createdByNode) {
+        if(attr->createdByNode().lock().get() == createdByNode) {
             if(objectIdentifierHint.isEmpty() || attr->identifier().startsWith(objectIdentifierHint)) {
                 // Note: Defer selecting the table row to a somewhat later time, because QTableView only accepts
                 // selection calls when it's visible and after the parent widget has been enabled.

@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(IdentifyDiamondModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(IdentifyDiamondModifier);
 
 /******************************************************************************
  * Constructs the modifier object.

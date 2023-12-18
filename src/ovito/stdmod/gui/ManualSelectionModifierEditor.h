@@ -36,11 +36,12 @@ namespace Ovito {
 class ManualSelectionModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(ManualSelectionModifierEditor)
+    Q_OBJECT
 
 public:
 
     /// Default constructor
-    Q_INVOKABLE ManualSelectionModifierEditor() {}
+    using PropertiesEditor::PropertiesEditor;
 
     /// This is called when the user has selected an element in the viewports.
     void onElementPicked(const ViewportPickResult& pickResult, size_t elementIndex, const ConstDataObjectPath& pickedObjectPath);

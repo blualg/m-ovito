@@ -42,7 +42,7 @@ class OVITO_OPENGLRENDERER_EXPORT OffscreenOpenGLSceneRenderer : public OpenGLSc
 public:
 
     /// Constructor.
-    Q_INVOKABLE OffscreenOpenGLSceneRenderer(ObjectInitializationFlags flags);
+    explicit OffscreenOpenGLSceneRenderer(ObjectInitializationFlags flags);
 
     /// Prepares the renderer for rendering one or more frames.
     virtual bool startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache) override;
@@ -70,7 +70,7 @@ private:
 private:
 
     /// The offscreen surface used to render into an image buffer using OpenGL.
-    QOffscreenSurface* _offscreenSurface = nullptr;
+    QOffscreenSurface _offscreenSurface;
 
     /// The temporary OpenGL rendering context.
     std::unique_ptr<QOpenGLContext> _offscreenContext;

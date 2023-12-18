@@ -63,7 +63,7 @@ public:
 public:
 
     /// Constructor.
-    ReferenceConfigurationModifier(ObjectInitializationFlags flags);
+    explicit ReferenceConfigurationModifier(ObjectInitializationFlags flags);
 
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
@@ -196,7 +196,7 @@ class OVITO_PARTICLES_EXPORT ReferenceConfigurationModifierApplication : public 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ReferenceConfigurationModifierApplication(ObjectInitializationFlags flags) : AsynchronousModificationNode(flags) {}
+    using AsynchronousModificationNode::AsynchronousModificationNode;
 };
 
 }   // End of namespace

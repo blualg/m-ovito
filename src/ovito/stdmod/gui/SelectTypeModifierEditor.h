@@ -38,8 +38,8 @@ class SelectTypeModifierEditor : public PropertiesEditor
 
 public:
 
-    /// Default constructor
-    Q_INVOKABLE SelectTypeModifierEditor() {}
+    /// Constructor
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

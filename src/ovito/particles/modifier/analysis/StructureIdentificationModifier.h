@@ -130,7 +130,7 @@ public:
 public:
 
     /// Constructor.
-    StructureIdentificationModifier(ObjectInitializationFlags flags);
+    explicit StructureIdentificationModifier(ObjectInitializationFlags flags);
 
     /// Returns an existing structure type managed by the modifier.
     ElementType* structureTypeById(int id) const {

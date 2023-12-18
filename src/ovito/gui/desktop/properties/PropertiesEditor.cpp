@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(PropertiesEditor);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(PropertiesEditor);
 DEFINE_REFERENCE_FIELD(PropertiesEditor, editObject);
 
 /******************************************************************************
@@ -84,14 +84,6 @@ void PropertiesEditor::initialize(PropertiesPanel* container, const RolloutInser
     }
     createUI(rolloutParams);
     Q_EMIT contentsReplaced(nullptr);
-}
-
-/******************************************************************************
-* The virtual destructor.
-******************************************************************************/
-PropertiesEditor::~PropertiesEditor()
-{
-    clearAllReferences();
 }
 
 /******************************************************************************

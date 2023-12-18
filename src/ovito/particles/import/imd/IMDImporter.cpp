@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(IMDImporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(IMDImporter);
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

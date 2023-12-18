@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParaViewVTMImporterEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ParaViewVTMImporterEditor);
 SET_OVITO_OBJECT_EDITOR(ParaViewVTMImporter, ParaViewVTMImporterEditor);
 
 /******************************************************************************

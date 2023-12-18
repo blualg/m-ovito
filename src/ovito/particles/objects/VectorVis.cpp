@@ -32,8 +32,8 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(VectorVis);
-IMPLEMENT_OVITO_CLASS(VectorPickInfo);
+IMPLEMENT_CREATABLE_OVITO_CLASS(VectorVis);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(VectorPickInfo);
 DEFINE_PROPERTY_FIELD(VectorVis, reverseArrowDirection);
 DEFINE_PROPERTY_FIELD(VectorVis, arrowPosition);
 DEFINE_PROPERTY_FIELD(VectorVis, arrowColor);

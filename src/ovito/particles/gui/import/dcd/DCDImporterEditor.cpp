@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DCDImporterEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(DCDImporterEditor);
 SET_OVITO_OBJECT_EDITOR(DCDImporter, DCDImporterEditor);
 
 /******************************************************************************

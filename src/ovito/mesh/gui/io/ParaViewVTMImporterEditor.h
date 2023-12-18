@@ -38,7 +38,7 @@ class ParaViewVTMImporterEditor : public FileImporterEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParaViewVTMImporterEditor() {}
+    using FileImporterEditor::FileImporterEditor;
 
 protected:
 

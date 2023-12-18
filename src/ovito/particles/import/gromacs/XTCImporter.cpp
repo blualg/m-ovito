@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(XTCImporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(XTCImporter);
 
 class XTCFile
 {

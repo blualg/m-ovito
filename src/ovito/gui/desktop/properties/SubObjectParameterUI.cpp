@@ -26,7 +26,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SubObjectParameterUI);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(SubObjectParameterUI);
 
 /******************************************************************************
 * The constructor.

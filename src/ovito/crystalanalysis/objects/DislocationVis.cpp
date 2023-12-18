@@ -32,7 +32,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DislocationVis);
+IMPLEMENT_CREATABLE_OVITO_CLASS(DislocationVis);
 DEFINE_PROPERTY_FIELD(DislocationVis, lineWidth);
 DEFINE_PROPERTY_FIELD(DislocationVis, shadingMode);
 DEFINE_PROPERTY_FIELD(DislocationVis, burgersVectorWidth);
@@ -52,7 +52,7 @@ SET_PROPERTY_FIELD_LABEL(DislocationVis, lineColoringMode, "Line coloring");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(DislocationVis, lineWidth, WorldParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(DislocationVis, burgersVectorWidth, WorldParameterUnit, 0);
 
-IMPLEMENT_OVITO_CLASS(DislocationPickInfo);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(DislocationPickInfo);
 
 /******************************************************************************
 * Constructor.

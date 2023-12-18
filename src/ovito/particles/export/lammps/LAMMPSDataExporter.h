@@ -52,8 +52,8 @@ class OVITO_PARTICLES_EXPORT LAMMPSDataExporter : public ParticleExporter
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE LAMMPSDataExporter(ObjectInitializationFlags flags) : ParticleExporter(flags),
+    /// Constructor.
+    explicit LAMMPSDataExporter(ObjectInitializationFlags flags) : ParticleExporter(flags),
         _atomStyle(LAMMPSDataImporter::AtomStyle_Atomic),
         _omitMassesSection(false),
         _ignoreParticleIdentifiers(false),
@@ -62,7 +62,7 @@ public:
 
 protected:
 
-    /// \brief Writes the particles of one animation frame to the current output file.
+    /// Writes the particles of one animation frame to the current output file.
     virtual bool exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation) override;
 
 private:

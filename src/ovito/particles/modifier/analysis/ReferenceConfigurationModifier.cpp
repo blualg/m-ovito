@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ReferenceConfigurationModifier);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(ReferenceConfigurationModifier);
 DEFINE_REFERENCE_FIELD(ReferenceConfigurationModifier, referenceConfiguration);
 DEFINE_PROPERTY_FIELD(ReferenceConfigurationModifier, affineMapping);
 DEFINE_PROPERTY_FIELD(ReferenceConfigurationModifier, useMinimumImageConvention);
@@ -46,7 +46,7 @@ SET_PROPERTY_FIELD_LABEL(ReferenceConfigurationModifier, referenceFrameOffset, "
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ReferenceConfigurationModifier, referenceFrameNumber, IntegerParameterUnit, 0);
 
 // This class can be removed in a future version of OVITO:
-IMPLEMENT_OVITO_CLASS(ReferenceConfigurationModifierApplication);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ReferenceConfigurationModifierApplication);
 
 /******************************************************************************
 * Constructs the modifier object.

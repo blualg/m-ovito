@@ -56,7 +56,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(AMBERNetCDFImporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(AMBERNetCDFImporter);
 DEFINE_PROPERTY_FIELD(AMBERNetCDFImporter, useCustomColumnMapping);
 DEFINE_PROPERTY_FIELD(AMBERNetCDFImporter, customColumnMapping);
 SET_PROPERTY_FIELD_LABEL(AMBERNetCDFImporter, useCustomColumnMapping, "Custom file column mapping");

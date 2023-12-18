@@ -36,9 +36,9 @@ namespace Ovito {
 class OVITO_PARTICLES_EXPORT AcklandJonesModifier : public StructureIdentificationModifier
 {
     OVITO_CLASS(AcklandJonesModifier)
-    Q_CLASSINFO("DisplayName", "Ackland-Jones analysis");
-    Q_CLASSINFO("Description", "Identify common crystalline structures based on local bond angles.");
-    Q_CLASSINFO("ModifierCategory", "Structure identification");
+    OVITO_CLASSINFO("DisplayName", "Ackland-Jones analysis");
+    OVITO_CLASSINFO("Description", "Identify common crystalline structures based on local bond angles.");
+    OVITO_CLASSINFO("ModifierCategory", "Structure identification");
 
 public:
 
@@ -57,7 +57,7 @@ public:
 public:
 
     /// Constructor.
-    Q_INVOKABLE AcklandJonesModifier(ObjectInitializationFlags flags);
+    explicit AcklandJonesModifier(ObjectInitializationFlags flags);
 
 protected:
 

@@ -25,7 +25,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ObjectStatusDisplay);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(ObjectStatusDisplay);
 DEFINE_REFERENCE_FIELD(ObjectStatusDisplay, activeObject);
 
 /******************************************************************************
@@ -43,9 +43,6 @@ ObjectStatusDisplay::~ObjectStatusDisplay()
 {
     // Release GUI widget.
     delete statusWidget();
-
-    // Reset reference fields.
-    clearAllReferences();
 }
 
 /******************************************************************************

@@ -35,11 +35,12 @@ namespace Ovito::VoroTop {
 class VoroTopModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(VoroTopModifierEditor)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE VoroTopModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

@@ -170,7 +170,7 @@ bool BasePipelineSource::referenceEvent(RefTarget* source, const ReferenceEvent&
             notifyTargetChanged();
         }
     }
-    else if(event.type() == ReferenceEvent::VisualElementModified && source == dataCollection()) {
+    else if(event.type() == DataObject::VisualElementModified && source == dataCollection()) {
         // Set dirty flag when user modifies on of the visual elements associated with the current data collection.
         _userHasChangedDataCollection.set(this, PROPERTY_FIELD(userHasChangedDataCollection), true);
     }

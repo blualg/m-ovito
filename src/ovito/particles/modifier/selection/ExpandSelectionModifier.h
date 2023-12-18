@@ -51,10 +51,9 @@ class OVITO_PARTICLES_EXPORT ExpandSelectionModifier : public AsynchronousModifi
     };
 
     OVITO_CLASS_META(ExpandSelectionModifier, OOMetaClass)
-
-    Q_CLASSINFO("DisplayName", "Expand selection");
-    Q_CLASSINFO("Description", "Select particles that are neighbors of already selected particles.");
-    Q_CLASSINFO("ModifierCategory", "Selection");
+    OVITO_CLASSINFO("DisplayName", "Expand selection");
+    OVITO_CLASSINFO("Description", "Select particles that are neighbors of already selected particles.");
+    OVITO_CLASSINFO("ModifierCategory", "Selection");
 
 public:
 
@@ -70,8 +69,8 @@ public:
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE ExpandSelectionModifier(ObjectInitializationFlags flags);
+    /// Constructor.
+    explicit ExpandSelectionModifier(ObjectInitializationFlags flags);
 
 protected:
 

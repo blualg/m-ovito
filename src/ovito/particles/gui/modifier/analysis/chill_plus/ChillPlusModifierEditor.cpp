@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ChillPlusModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ChillPlusModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ChillPlusModifier, ChillPlusModifierEditor);
 
 /******************************************************************************

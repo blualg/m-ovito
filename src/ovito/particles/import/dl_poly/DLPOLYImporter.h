@@ -52,16 +52,14 @@ class OVITO_PARTICLES_EXPORT DLPOLYImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(DLPOLYImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "DL_POLY");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE DLPOLYImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
+    /// Constructor.
+    explicit DLPOLYImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
         setMultiTimestepFile(true);
     }
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("DL_POLY"); }
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {

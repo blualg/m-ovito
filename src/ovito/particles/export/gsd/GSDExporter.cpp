@@ -31,17 +31,17 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(GSDExporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(GSDExporter);
 
 /******************************************************************************
- * Constructor.
+ * Constructor (needed because GSDFile is forward-declared in the .h file).
  *****************************************************************************/
 GSDExporter::GSDExporter(ObjectInitializationFlags flags) : ParticleExporter(flags)
 {
 }
 
 /******************************************************************************
- * Destructor.
+ * Destructor (needed because GSDFile is forward-declared in the .h file).
  *****************************************************************************/
 GSDExporter::~GSDExporter()
 {

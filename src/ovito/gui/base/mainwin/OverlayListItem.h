@@ -33,9 +33,10 @@ namespace Ovito {
 /**
  * An item of the OverlayListModel representing a ViewportOverlay attached to a Viewport.
  */
-class OVITO_GUIBASE_EXPORT OverlayListItem : public RefMaker
+class OVITO_GUIBASE_EXPORT OverlayListItem : public QObject, public RefMaker
 {
     OVITO_CLASS(OverlayListItem)
+    Q_OBJECT
 
 public:
 
@@ -48,7 +49,7 @@ public:
 public:
 
     /// Constructor.
-    OverlayListItem(ViewportOverlay* overlay, OverlayItemType itemType);
+    explicit OverlayListItem(ViewportOverlay* overlay, OverlayItemType itemType);
 
     /// Returns the status of the object represented by the list item.
     const PipelineStatus& status() const;
@@ -75,7 +76,7 @@ protected:
 private:
 
     /// The overlay represented by this item in the list box.
-    DECLARE_REFERENCE_FIELD_FLAGS(ViewportOverlay*, overlay, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    DECLARE_REFERENCE_FIELD(ViewportOverlay*, overlay);
 
     /// The type of this list item.
     OverlayItemType _itemType;

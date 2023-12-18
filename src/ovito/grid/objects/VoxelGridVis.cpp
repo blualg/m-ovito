@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(VoxelGridVis);
+IMPLEMENT_CREATABLE_OVITO_CLASS(VoxelGridVis);
 DEFINE_REFERENCE_FIELD(VoxelGridVis, transparencyController);
 DEFINE_PROPERTY_FIELD(VoxelGridVis, highlightGridLines);
 DEFINE_PROPERTY_FIELD(VoxelGridVis, interpolateColors);
@@ -41,7 +41,7 @@ SET_PROPERTY_FIELD_LABEL(VoxelGridVis, interpolateColors, "Color interpolation")
 SET_PROPERTY_FIELD_LABEL(VoxelGridVis, colorMapping, "Color mapping");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(VoxelGridVis, transparencyController, PercentParameterUnit, 0, 1);
 
-IMPLEMENT_OVITO_CLASS(VoxelGridPickInfo);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(VoxelGridPickInfo);
 
 /******************************************************************************
 * Constructor.

@@ -35,7 +35,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(CreateBondsModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(CreateBondsModifier);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, cutoffMode);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, uniformCutoff);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, pairwiseCutoffs);

@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ColorByTypeModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ColorByTypeModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ColorByTypeModifier, ColorByTypeModifierEditor);
 
 /******************************************************************************

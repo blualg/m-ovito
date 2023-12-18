@@ -31,9 +31,9 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(UnwrapTrajectoriesModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(UnwrapTrajectoriesModifier);
 
-IMPLEMENT_OVITO_CLASS(UnwrapTrajectoriesModificationNode);
+IMPLEMENT_CREATABLE_OVITO_CLASS(UnwrapTrajectoriesModificationNode);
 SET_MODIFICATION_NODE_TYPE(UnwrapTrajectoriesModifier, UnwrapTrajectoriesModificationNode);
 
 /******************************************************************************

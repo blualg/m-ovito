@@ -168,14 +168,14 @@ class OVITO_STDMOD_EXPORT ComputePropertyModifier : public AsynchronousDelegatin
 
     OVITO_CLASS_META(ComputePropertyModifier, ComputePropertyModifierClass)
 
-    Q_CLASSINFO("DisplayName", "Compute property");
-    Q_CLASSINFO("Description", "Enter a user-defined formula to set properties of particles, bonds and other elements.");
-    Q_CLASSINFO("ModifierCategory", "Modification");
+    OVITO_CLASSINFO("DisplayName", "Compute property");
+    OVITO_CLASSINFO("Description", "Enter a user-defined formula to set properties of particles, bonds and other elements.");
+    OVITO_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE ComputePropertyModifier(ObjectInitializationFlags flags);
+    explicit ComputePropertyModifier(ObjectInitializationFlags flags);
 
     /// \brief Returns the current delegate of this ComputePropertyModifier.
     ComputePropertyModifierDelegate* delegate() const { return static_object_cast<ComputePropertyModifierDelegate>(AsynchronousDelegatingModifier::delegate()); }
@@ -213,7 +213,7 @@ public:
     void setPropertyComponentCount(int newComponentCount);
 
     /// Sets the number of expressions based on the selected output property.
-    Q_INVOKABLE void adjustPropertyComponentCount();
+    void adjustPropertyComponentCount();
 
     /// Returns the vector component names of the selected output property.
     QStringList propertyComponentNames() const;
@@ -253,12 +253,12 @@ private:
 class OVITO_STDMOD_EXPORT ComputePropertyModificationNode : public AsynchronousModificationNode
 {
     OVITO_CLASS(ComputePropertyModificationNode)
-    Q_CLASSINFO("ClassNameAlias", "ComputePropertyModifierApplication");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("ClassNameAlias", "ComputePropertyModifierApplication");  // For backward compatibility with OVITO 3.9.2
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ComputePropertyModificationNode(ObjectInitializationFlags flags) : AsynchronousModificationNode(flags) {}
+    explicit ComputePropertyModificationNode(ObjectInitializationFlags flags) : AsynchronousModificationNode(flags) {}
 
 private:
 

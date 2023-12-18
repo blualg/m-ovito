@@ -38,8 +38,8 @@ class StandardSceneRendererEditor : public PropertiesEditor
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE StandardSceneRendererEditor() {}
+    /// Constructor.
+    explicit StandardSceneRendererEditor() {}
 
 protected:
 

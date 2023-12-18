@@ -89,7 +89,7 @@ class PositionTCBAnimationKeyEditor : public TCBAnimationKeyEditor<PositionTCBAn
 public:
 
     /// Constructor.
-    Q_INVOKABLE PositionTCBAnimationKeyEditor() {}
+    explicit PositionTCBAnimationKeyEditor() {}
 };
 
 }   // End of namespace

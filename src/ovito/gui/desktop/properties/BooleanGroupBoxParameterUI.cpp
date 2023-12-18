@@ -28,8 +28,9 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(BooleanGroupBoxParameterUI);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(BooleanGroupBoxParameterUI);
 
+#if 0 // TODO
 /******************************************************************************
 * Constructor for a Qt property.
 ******************************************************************************/
@@ -46,6 +47,7 @@ BooleanGroupBoxParameterUI::BooleanGroupBoxParameterUI(PropertiesEditor* parentE
     layout->addWidget(_childContainer, 1);
     connect(_groupBox.data(), &QGroupBox::clicked, this, &BooleanGroupBoxParameterUI::updatePropertyValue);
 }
+#endif
 
 /******************************************************************************
 * Constructor for a PropertyField property.
@@ -100,6 +102,7 @@ void BooleanGroupBoxParameterUI::updateUI()
     if(groupBox() && editObject()) {
         if(!isReferenceFieldUI()) {
             QVariant val(false);
+#if 0 // TODO
             if(isQtPropertyUI()) {
                 val = editObject()->property(propertyName());
                 OVITO_ASSERT_MSG(val.isValid(), "BooleanGroupBoxParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to bool type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
@@ -107,7 +110,9 @@ void BooleanGroupBoxParameterUI::updateUI()
                     throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to bool type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
                 }
             }
-            else if(isPropertyFieldUI()) {
+            else
+#endif
+            if(isPropertyFieldUI()) {
                 val = editObject()->getPropertyFieldValue(propertyField());
                 OVITO_ASSERT(val.isValid());
             }
@@ -139,12 +144,15 @@ void BooleanGroupBoxParameterUI::updatePropertyValue()
 {
     if(groupBox() && editObject()) {
         performTransaction(tr("Change parameter value"), [&]() {
+#if 0 // TODO
             if(isQtPropertyUI()) {
                 if(!editObject()->setProperty(propertyName(), groupBox()->isChecked())) {
                     OVITO_ASSERT_MSG(false, "BooleanGroupBoxParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
                 }
             }
-            else if(isPropertyFieldUI()) {
+            else
+#endif
+            if(isPropertyFieldUI()) {
                 editor()->changePropertyFieldValue(propertyField(), groupBox()->isChecked());
             }
             Q_EMIT valueEntered();

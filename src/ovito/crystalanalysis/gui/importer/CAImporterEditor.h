@@ -38,12 +38,19 @@ class CAImporterEditor : public PropertiesEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE CAImporterEditor() {}
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 
     /// Creates the user interface controls for the editor.
     virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+
+    /// This method is called when a reference target changes.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+
+private:
+
+    BooleanParameterUI* _multitimestepUI;
 };
 
 }   // End of namespace

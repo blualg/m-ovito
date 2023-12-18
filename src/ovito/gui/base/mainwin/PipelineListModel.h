@@ -262,7 +262,7 @@ private:
     std::vector<int> _itemsRefreshPending;
 
     /// The pipeline that was selected last time the list model was refreshed.
-    QPointer<Pipeline> _previouslySelectedPipeline;
+    OOWeakRef<Pipeline> _previouslySelectedPipeline;
 
     // Status icons:
     QPixmap _statusInfoIcon;

@@ -33,7 +33,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ExpandSelectionModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ExpandSelectionModifier);
 DEFINE_PROPERTY_FIELD(ExpandSelectionModifier, mode);
 DEFINE_PROPERTY_FIELD(ExpandSelectionModifier, cutoffRange);
 DEFINE_PROPERTY_FIELD(ExpandSelectionModifier, numNearestNeighbors);

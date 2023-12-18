@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(AffineTransformationModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(AffineTransformationModifierEditor);
 SET_OVITO_OBJECT_EDITOR(AffineTransformationModifier, AffineTransformationModifierEditor);
 
 /******************************************************************************

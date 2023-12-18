@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS2(DataCollection);
+IMPLEMENT_CREATABLE_OVITO_CLASS(DataCollection);
 DEFINE_VECTOR_REFERENCE_FIELD(DataCollection, objects);
 SET_PROPERTY_FIELD_LABEL(DataCollection, objects, "Data objects");
 
@@ -542,16 +542,16 @@ QVariant DataCollection::getAttributeValue(const PipelineNode* createdByNode, co
 /******************************************************************************
 * Inserts a new global attribute into the pipeline state.
 ******************************************************************************/
-AttributeDataObject* DataCollection::addAttribute(const QString& key, QVariant value, const PipelineNode* createdByNode)
+AttributeDataObject* DataCollection::addAttribute(const QString& key, QVariant value, OOWeakRef<const PipelineNode> createdByNode)
 {
-    return createObject<AttributeDataObject>(key, createdByNode, std::move(value));
+    return createObject<AttributeDataObject>(key, std::move(createdByNode), std::move(value));
 }
 
 /******************************************************************************
 * Inserts a new global attribute into the pipeline state overwritting any
 * existing attribute with the same name.
 ******************************************************************************/
-AttributeDataObject* DataCollection::setAttribute(const QString& key, QVariant value, const PipelineNode* createdByNode)
+AttributeDataObject* DataCollection::setAttribute(const QString& key, QVariant value, OOWeakRef<const PipelineNode> createdByNode)
 {
     for(const DataObject* obj : objects()) {
         if(const AttributeDataObject* attribute = dynamic_object_cast<AttributeDataObject>(obj)) {
@@ -563,7 +563,7 @@ AttributeDataObject* DataCollection::setAttribute(const QString& key, QVariant v
             }
         }
     }
-    return createObject<AttributeDataObject>(key, createdByNode, std::move(value));
+    return createObject<AttributeDataObject>(key, std::move(createdByNode), std::move(value));
 }
 
 /******************************************************************************

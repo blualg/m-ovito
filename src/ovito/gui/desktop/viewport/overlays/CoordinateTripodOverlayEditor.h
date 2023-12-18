@@ -38,7 +38,7 @@ class CoordinateTripodOverlayEditor : public PropertiesEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE CoordinateTripodOverlayEditor() {}
+    explicit CoordinateTripodOverlayEditor() {}
 
 protected:
 
@@ -49,7 +49,7 @@ protected:
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
     /// The current viewport.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Viewport*, viewport, setViewport, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(Viewport*, viewport, setViewport);
 
     BooleanParameterUI* _perspectiveDistortionUI;
 };

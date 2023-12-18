@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(AcklandJonesModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(AcklandJonesModifier);
 
 /******************************************************************************
 * Constructs the modifier object.

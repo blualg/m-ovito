@@ -30,9 +30,9 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ManualSelectionModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ManualSelectionModifier);
 
-IMPLEMENT_OVITO_CLASS(ManualSelectionModificationNode);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ManualSelectionModificationNode);
 SET_MODIFICATION_NODE_TYPE(ManualSelectionModifier, ManualSelectionModificationNode);
 DEFINE_REFERENCE_FIELD(ManualSelectionModificationNode, selectionSet);
 SET_PROPERTY_FIELD_LABEL(ManualSelectionModificationNode, selectionSet, "Element selection set");

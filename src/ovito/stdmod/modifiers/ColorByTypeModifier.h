@@ -38,17 +38,17 @@ class OVITO_STDMOD_EXPORT ColorByTypeModifier : public GenericPropertyModifier
     OVITO_CLASS(ColorByTypeModifier)
 
 #ifndef OVITO_BUILD_BASIC
-    Q_CLASSINFO("DisplayName", "Color by type");
+    OVITO_CLASSINFO("DisplayName", "Color by type");
 #else
-    Q_CLASSINFO("DisplayName", "Color by type (Pro)");
+    OVITO_CLASSINFO("DisplayName", "Color by type (Pro)");
 #endif
-    Q_CLASSINFO("Description", "Color data elements according to a typed property.");
-    Q_CLASSINFO("ModifierCategory", "Coloring");
+    OVITO_CLASSINFO("Description", "Color data elements according to a typed property.");
+    OVITO_CLASSINFO("ModifierCategory", "Coloring");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorByTypeModifier(ObjectInitializationFlags flags);
+    explicit ColorByTypeModifier(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;

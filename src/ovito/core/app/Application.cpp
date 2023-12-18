@@ -93,10 +93,7 @@ static void qtMessageLogFile(QtMsgType type, const QMessageLogContext& context, 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-Application::Application(FileManager& fileManager) :
-    UserInterface(_globalDatasetContainer),
-    _fileManager(fileManager),
-    _globalDatasetContainer(UserInterface::taskManager(), *this)
+Application::Application(FileManager& fileManager) : _fileManager(fileManager)
 {
     // Set global application pointer.
     OVITO_ASSERT(_instance == nullptr); // Only allowed to create one Application class instance.
@@ -121,11 +118,7 @@ Application::Application(FileManager& fileManager) :
 Application::~Application()
 {
     OVITO_ASSERT(isShuttingDown()); // Make sure this UserInterface was properly shutdown before being deleted.
-
     _instance = nullptr;
-#ifdef OVITO_DEBUG
-    UserInterface::_isBeingDestructed = true;
-#endif
 }
 
 /******************************************************************************

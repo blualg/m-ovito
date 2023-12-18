@@ -32,6 +32,8 @@
 
 namespace Ovito {
 
+IMPLEMENT_ABSTRACT_OVITO_CLASS(SelectionMode);
+
 /******************************************************************************
 * Handles the mouse down event for the given viewport.
 ******************************************************************************/

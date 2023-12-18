@@ -37,7 +37,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SurfaceMeshVis);
+IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshVis);
 DEFINE_PROPERTY_FIELD(SurfaceMeshVis, surfaceColor);
 DEFINE_PROPERTY_FIELD(SurfaceMeshVis, capColor);
 DEFINE_PROPERTY_FIELD(SurfaceMeshVis, showCap);
@@ -72,7 +72,7 @@ SET_PROPERTY_FIELD_LABEL(SurfaceMeshVis, clipAtDomainBoundaries, "Clip at cell b
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(SurfaceMeshVis, surfaceTransparencyController, PercentParameterUnit, 0, 1);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(SurfaceMeshVis, capTransparencyController, PercentParameterUnit, 0, 1);
 
-IMPLEMENT_OVITO_CLASS(SurfaceMeshPickInfo);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(SurfaceMeshPickInfo);
 
 /******************************************************************************
 * Constructor.

@@ -49,13 +49,12 @@ class ParticlesAffineTransformationModifierDelegate : public AffineTransformatio
     };
 
     OVITO_CLASS_META(ParticlesAffineTransformationModifierDelegate, OOMetaClass)
-
-    Q_CLASSINFO("DisplayName", "Particles");
+    OVITO_CLASSINFO("DisplayName", "Particles");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticlesAffineTransformationModifierDelegate(ObjectInitializationFlags flags) : AffineTransformationModifierDelegate(flags) {}
+    using AffineTransformationModifierDelegate::AffineTransformationModifierDelegate;
 
     /// Applies the modifier operation to the data in a pipeline flow state.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
@@ -82,13 +81,12 @@ class VectorParticlePropertiesAffineTransformationModifierDelegate : public Affi
     };
 
     OVITO_CLASS_META(VectorParticlePropertiesAffineTransformationModifierDelegate, OOMetaClass)
-
-    Q_CLASSINFO("DisplayName", "Vector properties");
+    OVITO_CLASSINFO("DisplayName", "Vector properties");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE VectorParticlePropertiesAffineTransformationModifierDelegate(ObjectInitializationFlags flags) : AffineTransformationModifierDelegate(flags) {}
+    using AffineTransformationModifierDelegate::AffineTransformationModifierDelegate;
 
     /// Applies the modifier operation to the data in a pipeline flow state.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

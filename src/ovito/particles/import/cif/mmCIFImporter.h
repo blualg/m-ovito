@@ -52,16 +52,14 @@ class OVITO_PARTICLES_EXPORT mmCIFImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(mmCIFImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "PDBx/mmCIF");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE mmCIFImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
+    /// Constructor.
+    explicit mmCIFImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
         setGenerateBonds(true);
     }
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("PDBx/mmCIF"); }
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {

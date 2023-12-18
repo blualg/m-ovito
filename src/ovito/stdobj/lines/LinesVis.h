@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <ovito/particles/Particles.h>
+#include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/properties/PropertyColorMapping.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
@@ -46,7 +46,7 @@ public:
     // }
 
     /// Constructor.
-    LinesPickInfo(const Lines* linesObj, std::vector<int>&& subobjToSegmentMap)
+    explicit LinesPickInfo(const Lines* linesObj, std::vector<int>&& subobjToSegmentMap)
         : _linesObj(linesObj), _subobjToSegmentMap(std::move(subobjToSegmentMap))
     {
     }
@@ -87,8 +87,8 @@ private:
 class OVITO_STDOBJ_EXPORT LinesVis : public DataVis
 {
     OVITO_CLASS(LinesVis)
-    Q_CLASSINFO("DisplayName", "Lines");
-    Q_CLASSINFO("ClassNameAlias", "TrajectoryVis");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("DisplayName", "Lines");
+    OVITO_CLASSINFO("ClassNameAlias", "TrajectoryVis");  // For backward compatibility with OVITO 3.9.2
 
 public:
     /// The shading modes supported by the lines vis element.
@@ -108,7 +108,7 @@ public:
     Q_ENUM(ColoringMode);
 
     /// \brief Constructor.
-    Q_INVOKABLE LinesVis(ObjectInitializationFlags flags);
+    explicit LinesVis(ObjectInitializationFlags flags);
 
     /// \brief Renders the associated data object.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState,

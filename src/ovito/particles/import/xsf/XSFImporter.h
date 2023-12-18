@@ -52,16 +52,14 @@ class OVITO_PARTICLES_EXPORT XSFImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(XSFImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "XSF");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE XSFImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
+    /// Constructor.
+    explicit XSFImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
         setMultiTimestepFile(true);
     }
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("XSF"); }
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {

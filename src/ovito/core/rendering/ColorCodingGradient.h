@@ -48,12 +48,12 @@ public:
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    Q_INVOKABLE virtual ColorT<double> valueToColor(double t) = 0;
+    virtual ColorT<double> valueToColor(double t) = 0;
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    Q_INVOKABLE virtual ColorT<float> valueToColor(float t) = 0;
+    virtual ColorT<float> valueToColor(float t) = 0;
 };
 
 /**
@@ -62,12 +62,12 @@ public:
 class OVITO_CORE_EXPORT ColorCodingHSVGradient : public ColorCodingGradient
 {
     OVITO_CLASS(ColorCodingHSVGradient)
-    Q_CLASSINFO("DisplayName", "Rainbow");
+    OVITO_CLASSINFO("DisplayName", "Rainbow");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingHSVGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
+    explicit ColorCodingHSVGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
@@ -92,12 +92,12 @@ public:
 class OVITO_CORE_EXPORT ColorCodingGrayscaleGradient : public ColorCodingGradient
 {
     OVITO_CLASS(ColorCodingGrayscaleGradient)
-    Q_CLASSINFO("DisplayName", "Grayscale");
+    OVITO_CLASSINFO("DisplayName", "Grayscale");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingGrayscaleGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
+    explicit ColorCodingGrayscaleGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
@@ -122,12 +122,12 @@ public:
 class OVITO_CORE_EXPORT ColorCodingHotGradient : public ColorCodingGradient
 {
     OVITO_CLASS(ColorCodingHotGradient)
-    Q_CLASSINFO("DisplayName", "Hot");
+    OVITO_CLASSINFO("DisplayName", "Hot");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingHotGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
+    explicit ColorCodingHotGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
@@ -154,12 +154,12 @@ public:
 class OVITO_CORE_EXPORT ColorCodingJetGradient : public ColorCodingGradient
 {
     OVITO_CLASS(ColorCodingJetGradient)
-    Q_CLASSINFO("DisplayName", "Jet");
+    OVITO_CLASSINFO("DisplayName", "Jet");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingJetGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
+    explicit ColorCodingJetGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
@@ -192,12 +192,12 @@ public:
 class OVITO_CORE_EXPORT ColorCodingBlueWhiteRedGradient : public ColorCodingGradient
 {
     OVITO_CLASS(ColorCodingBlueWhiteRedGradient)
-    Q_CLASSINFO("DisplayName", "Blue-White-Red");
+    OVITO_CLASSINFO("DisplayName", "Blue-White-Red");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingBlueWhiteRedGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
+    explicit ColorCodingBlueWhiteRedGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
@@ -228,12 +228,12 @@ public:
 class OVITO_CORE_EXPORT ColorCodingViridisGradient : public ColorCodingGradient
 {
     OVITO_CLASS(ColorCodingViridisGradient)
-    Q_CLASSINFO("DisplayName", "Viridis");
+    OVITO_CLASSINFO("DisplayName", "Viridis");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingViridisGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
+    explicit ColorCodingViridisGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
@@ -259,12 +259,12 @@ public:
 class OVITO_CORE_EXPORT ColorCodingMagmaGradient : public ColorCodingGradient
 {
     OVITO_CLASS(ColorCodingMagmaGradient)
-    Q_CLASSINFO("DisplayName", "Magma");
+    OVITO_CLASSINFO("DisplayName", "Magma");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingMagmaGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
+    explicit ColorCodingMagmaGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
@@ -290,12 +290,12 @@ public:
 class OVITO_CORE_EXPORT ColorCodingTableGradient : public ColorCodingGradient
 {
     OVITO_CLASS(ColorCodingTableGradient)
-    Q_CLASSINFO("DisplayName", "User table");
+    OVITO_CLASSINFO("DisplayName", "User table");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingTableGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
+    explicit ColorCodingTableGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
@@ -321,12 +321,12 @@ private:
 class OVITO_CORE_EXPORT ColorCodingImageGradient : public ColorCodingGradient
 {
     OVITO_CLASS(ColorCodingImageGradient)
-    Q_CLASSINFO("DisplayName", "User image");
+    OVITO_CLASSINFO("DisplayName", "User image");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingImageGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
+    explicit ColorCodingImageGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.

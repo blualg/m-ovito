@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ModifierGroupEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ModifierGroupEditor);
 SET_OVITO_OBJECT_EDITOR(ModifierGroup, ModifierGroupEditor);
 
 /******************************************************************************
@@ -36,23 +36,18 @@ SET_OVITO_OBJECT_EDITOR(ModifierGroup, ModifierGroupEditor);
 void ModifierGroupEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
     _rolloutParams = rolloutParams;
+    connect(this, &PropertiesEditor::contentsReplaced, this, &ModifierGroupEditor::updateSubEditors);
 }
 
 /******************************************************************************
-* Is called when the value of a reference field of this RefMaker changes.
+* This method is called when a reference target changes.
 ******************************************************************************/
-void ModifierGroupEditor::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
+bool ModifierGroupEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-    PropertiesEditor::referenceReplaced(field, oldTarget, newTarget, listIndex);
-    if(field == PROPERTY_FIELD(editObject)) {
+    if(source == editObject() && event.type() == ModifierGroup::ModifierAddedOrRemoved) {
         updateSubEditors();
-        disconnect(_modifierAddedConnection);
-        disconnect(_modifierRemovedConnection);
-        if(ModifierGroup* group = static_object_cast<ModifierGroup>(editObject())) {
-            _modifierAddedConnection = connect(group, &ModifierGroup::modifierAdded, this, &ModifierGroupEditor::updateSubEditors, Qt::UniqueConnection);
-            _modifierRemovedConnection = connect(group, &ModifierGroup::modifierRemoved, this, &ModifierGroupEditor::updateSubEditors, Qt::UniqueConnection);
-        }
     }
+    return PropertiesEditor::referenceEvent(source, event);
 }
 
 /******************************************************************************

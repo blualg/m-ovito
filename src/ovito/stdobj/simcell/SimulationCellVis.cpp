@@ -34,7 +34,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SimulationCellVis);
+IMPLEMENT_CREATABLE_OVITO_CLASS(SimulationCellVis);
 DEFINE_PROPERTY_FIELD(SimulationCellVis, cellLineWidth);
 DEFINE_SHADOW_PROPERTY_FIELD(SimulationCellVis, cellLineWidth);
 DEFINE_PROPERTY_FIELD(SimulationCellVis, renderCellEnabled);

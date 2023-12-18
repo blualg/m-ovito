@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(FHIAimsLogFileImporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(FHIAimsLogFileImporter);
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

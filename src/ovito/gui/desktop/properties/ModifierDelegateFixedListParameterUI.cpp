@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ModifierDelegateFixedListParameterUI);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(ModifierDelegateFixedListParameterUI);
 
 /******************************************************************************
 * The constructor.

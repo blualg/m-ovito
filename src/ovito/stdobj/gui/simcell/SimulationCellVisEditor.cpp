@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SimulationCellVisEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(SimulationCellVisEditor);
 SET_OVITO_OBJECT_EDITOR(SimulationCellVis, SimulationCellVisEditor);
 
 /******************************************************************************

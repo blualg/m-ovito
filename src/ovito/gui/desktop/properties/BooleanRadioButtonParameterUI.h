@@ -38,8 +38,10 @@ class OVITO_GUI_EXPORT BooleanRadioButtonParameterUI : public PropertyParameterU
 
 public:
 
+#if 0 // TODO
     /// Constructor for a Qt property.
     BooleanRadioButtonParameterUI(PropertiesEditor* parentEditor, const char* propertyName);
+#endif
 
     /// Constructor for a PropertyField property.
     BooleanRadioButtonParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);

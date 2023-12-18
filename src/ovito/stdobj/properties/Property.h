@@ -50,8 +50,8 @@ public:
     };
 
     OVITO_CLASS_META(Property, OOMetaClass);
-    Q_CLASSINFO("DisplayName", "Property");
-    Q_CLASSINFO("ClassNameAlias", "PropertyObject");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("DisplayName", "Property");
+    OVITO_CLASSINFO("ClassNameAlias", "PropertyObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
 
@@ -70,7 +70,7 @@ public:
 public:
 
     /// \brief Creates an empty property array.
-    Q_INVOKABLE Property(ObjectInitializationFlags flags);
+    explicit Property(ObjectInitializationFlags flags);
 
     /// \brief Constructor creating a new property array.
     Property(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QString& name, int type = 0, QStringList componentNames = QStringList());

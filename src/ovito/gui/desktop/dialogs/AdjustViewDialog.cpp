@@ -51,8 +51,7 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     _oldFOV = viewport->fieldOfView();
 
     _viewportListener.setTarget(viewport);
-
-    connect(&_viewportListener, &RefTargetListenerBase::notificationEvent, this, [this](RefTarget* source, const ReferenceEvent& event) {
+    _viewportListener.connect(this, [this](RefTarget* source, const ReferenceEvent& event) {
         // Update the values displayed in the dialog when the viewport camera is moved by the user.
         if(event.type() == ReferenceEvent::TargetChanged)
             updateGUI();

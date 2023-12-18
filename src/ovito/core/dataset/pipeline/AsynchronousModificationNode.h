@@ -35,7 +35,7 @@ namespace Ovito {
 class OVITO_CORE_EXPORT AsynchronousModificationNode : public ModificationNode
 {
     OVITO_CLASS(AsynchronousModificationNode)
-    Q_CLASSINFO("ClassNameAlias", "AsynchronousModifierApplication");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("ClassNameAlias", "AsynchronousModifierApplication");  // For backward compatibility with OVITO 3.9.2
 
 public:
 

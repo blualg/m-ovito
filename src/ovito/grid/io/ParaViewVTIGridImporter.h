@@ -57,8 +57,8 @@ class OVITO_GRID_EXPORT ParaViewVTIGridImporter : public FileSourceImporter
 
 public:
 
-    /// \brief Constructor.
-    Q_INVOKABLE ParaViewVTIGridImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags) {}
+    /// Constructor.
+    explicit ParaViewVTIGridImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags) {}
 
     /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("VTI"); }

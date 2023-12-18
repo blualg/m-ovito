@@ -38,7 +38,7 @@ class TriMeshVisEditor : public PropertiesEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE TriMeshVisEditor() {}
+    explicit TriMeshVisEditor() {}
 
 protected:
 

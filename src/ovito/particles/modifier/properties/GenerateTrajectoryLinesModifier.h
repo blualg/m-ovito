@@ -50,14 +50,14 @@ class OVITO_PARTICLES_EXPORT GenerateTrajectoryLinesModifier : public Modifier
     };
 
     OVITO_CLASS_META(GenerateTrajectoryLinesModifier, GenerateTrajectoryLinesModifierClass)
-    Q_CLASSINFO("DisplayName", "Generate trajectory lines");
-    Q_CLASSINFO("Description", "Visualize trajectory lines of moving particles.");
-    Q_CLASSINFO("ModifierCategory", "Visualization");
+    OVITO_CLASSINFO("DisplayName", "Generate trajectory lines");
+    OVITO_CLASSINFO("Description", "Visualize trajectory lines of moving particles.");
+    OVITO_CLASSINFO("ModifierCategory", "Visualization");
 
 public:
 
-    /// \brief Constructor.
-    Q_INVOKABLE GenerateTrajectoryLinesModifier(ObjectInitializationFlags flags);
+    /// Constructor.
+    explicit GenerateTrajectoryLinesModifier(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -109,12 +109,12 @@ private:
 class OVITO_PARTICLES_EXPORT GenerateTrajectoryLinesModificationNode : public ModificationNode
 {
     OVITO_CLASS(GenerateTrajectoryLinesModificationNode)
-    Q_CLASSINFO("ClassNameAlias", "GenerateTrajectoryLinesModifierApplication");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("ClassNameAlias", "GenerateTrajectoryLinesModifierApplication");  // For backward compatibility with OVITO 3.9.2
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE GenerateTrajectoryLinesModificationNode(ObjectInitializationFlags flags) : ModificationNode(flags) {}
+    using ModificationNode::ModificationNode;
 
 private:
 

@@ -53,7 +53,7 @@ public:
     /// Opens a new transaction.
     void begin(UserInterface& userInterface, const QString& undoOperationName) {
         OVITO_ASSERT(!operation());
-        _userInterface = userInterface.shared_from_this();
+        _userInterface = &userInterface;
         _operation = std::make_unique<CompoundOperation>(undoOperationName);
     }
 
@@ -80,7 +80,7 @@ public:
 
 private:
 
-    std::shared_ptr<UserInterface> _userInterface;
+    OORef<UserInterface> _userInterface;
     std::unique_ptr<CompoundOperation> _operation;
 };
 

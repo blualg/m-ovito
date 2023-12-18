@@ -55,7 +55,7 @@ PipelineListModel::PipelineListModel(UserInterface& userInterface, QObject* pare
     _selectionModel = new QItemSelectionModel(this);
 
     // Connect signals and slots.
-    connect(&_selectedPipeline, &RefTargetListener<Pipeline>::notificationEvent, this, &PipelineListModel::onPipelineEvent);
+    _selectedPipeline.connect(this, &PipelineListModel::onPipelineEvent);
     connect(&userInterface.datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &PipelineListModel::onSceneSelectionChangeComplete);
     connect(_selectionModel, &QItemSelectionModel::selectionChanged, this, &PipelineListModel::onSelectionModelChanged);
     connect(this, &PipelineListModel::selectedItemChanged, this, &PipelineListModel::updateActions);
@@ -230,7 +230,7 @@ void PipelineListModel::refreshList()
 
     // Determine the currently selected objects and select them again after the list has been rebuilt.
     // _nextObjectToSelect may have been set to replace the selection.
-    if(!_nextObjectToSelect && _previouslySelectedPipeline.data() == selectedPipeline()) {
+    if(!_nextObjectToSelect && _previouslySelectedPipeline.lock().get() == selectedPipeline()) {
         for(const QModelIndex& idx : _selectionModel->selectedRows()) {
             OVITO_ASSERT(idx.isValid() && idx.row() < items().size());
             _previouslySelectedItems.push_back(items()[idx.row()]);
@@ -549,7 +549,7 @@ void PipelineListModel::deleteModificationNode(ModificationNode* node)
                 }
             }
         });
-        node->deleteReferenceObject();
+        node->requestObjectDeletion();
     });
 
     // Invalidate the items list of the model.
@@ -1534,7 +1534,7 @@ void PipelineListModel::toggleModifierGroup()
                 if(modNode->modifierGroup() == existingGroup)
                     modNode->setModifierGroup(nullptr);
             }
-            existingGroup->deleteReferenceObject();
+            existingGroup->requestObjectDeletion();
         });
     }
     refreshList();

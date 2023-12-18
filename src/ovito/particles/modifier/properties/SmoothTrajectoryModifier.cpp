@@ -32,7 +32,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SmoothTrajectoryModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(SmoothTrajectoryModifier);
 DEFINE_PROPERTY_FIELD(SmoothTrajectoryModifier, useMinimumImageConvention);
 DEFINE_PROPERTY_FIELD(SmoothTrajectoryModifier, smoothingWindowSize);
 SET_PROPERTY_FIELD_LABEL(SmoothTrajectoryModifier, useMinimumImageConvention, "Use minimum image convention");
@@ -40,7 +40,7 @@ SET_PROPERTY_FIELD_LABEL(SmoothTrajectoryModifier, smoothingWindowSize, "Smoothi
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(SmoothTrajectoryModifier, smoothingWindowSize, IntegerParameterUnit, 1, 200);
 
 // This class can be removed in a future version of OVITO:
-IMPLEMENT_OVITO_CLASS(InterpolateTrajectoryModifierApplication);
+IMPLEMENT_CREATABLE_OVITO_CLASS(InterpolateTrajectoryModifierApplication);
 
 /******************************************************************************
 * Constructs the modifier object.

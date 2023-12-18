@@ -40,8 +40,6 @@ class OVITO_CORE_EXPORT RenderSettings : public RefTarget
 {
     OVITO_CLASS(RenderSettings)
 
-    Q_PROPERTY(QString imageFilename READ imageFilename WRITE setImageFilename)
-
 public:
 
     /// This enumeration specifies the animation range that should be rendered.
@@ -96,10 +94,12 @@ public:
     /// \throw Exception on error.
     bool renderScene(const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, AnimationSettings* animationSettings, FrameBuffer& frameBuffer, MainThreadOperation& operation);
 
+#if 0 // TODO
 Q_SIGNALS:
 
     /// This signal is emitted whenever a parameter of this object changes.
     void settingsChanged();
+#endif
 
 protected:
 
@@ -115,6 +115,9 @@ private:
 
     /// Contains the output filename and format of the image to be rendered.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(ImageInfo, imageInfo, setImageInfo);
+
+    /// The filename of the output image.
+    DECLARE_VIRTUAL_PROPERTY_FIELD(QString, imageFilename);
 
     /// The instance of the plugin renderer class.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SceneRenderer>, renderer, setRenderer, PROPERTY_FIELD_MEMORIZE);

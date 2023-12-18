@@ -38,7 +38,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(PropertyColorMappingEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(PropertyColorMappingEditor);
 SET_OVITO_OBJECT_EDITOR(PropertyColorMapping, PropertyColorMappingEditor);
 
 /******************************************************************************

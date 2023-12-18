@@ -39,12 +39,12 @@ namespace Ovito {
 class OVITO_GRID_EXPORT VoxelGridVis : public DataVis
 {
     OVITO_CLASS(VoxelGridVis)
-    Q_CLASSINFO("DisplayName", "Voxel grid");
+    OVITO_CLASSINFO("DisplayName", "Voxel grid");
 
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE VoxelGridVis(ObjectInitializationFlags flags);
+    explicit VoxelGridVis(ObjectInitializationFlags flags);
 
     /// Lets the visualization element render the data object.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;

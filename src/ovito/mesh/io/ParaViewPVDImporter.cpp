@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParaViewPVDImporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ParaViewPVDImporter);
 DEFINE_REFERENCE_FIELD(ParaViewPVDImporter, childImporter);
 
 /******************************************************************************
@@ -116,7 +116,7 @@ void ParaViewPVDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceIm
 Future<PipelineFlowState> ParaViewPVDImporter::loadFrame(const LoadOperationRequest& request)
 {
     // Note: FileSourceImporter::loadFrame() may only be called from the main thread.
-    OVITO_ASSERT(QThread::currentThread() == this->thread());
+    OVITO_ASSERT(ExecutionContext::isMainThread());
 
     // Detect format of the referenced file and create an importer for it.
     OORef<FileImporter> importer = FileImporter::autodetectFileFormat(request.fileHandle, childImporter());

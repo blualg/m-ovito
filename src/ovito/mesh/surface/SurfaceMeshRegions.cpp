@@ -26,7 +26,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SurfaceMeshRegions);
+IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshRegions);
 
 /******************************************************************************
 * Creates a storage object for standard region properties.

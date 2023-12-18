@@ -54,10 +54,9 @@ class OVITO_CORRELATIONFUNCTIONPLUGIN_EXPORT SpatialCorrelationFunctionModifier 
     };
 
     OVITO_CLASS_META(SpatialCorrelationFunctionModifier, OOMetaClass)
-
-    Q_CLASSINFO("ClassNameAlias", "CorrelationFunctionModifier");
-    Q_CLASSINFO("DisplayName", "Spatial correlation function");
-    Q_CLASSINFO("ModifierCategory", "Analysis");
+    OVITO_CLASSINFO("ClassNameAlias", "CorrelationFunctionModifier");
+    OVITO_CLASSINFO("DisplayName", "Spatial correlation function");
+    OVITO_CLASSINFO("ModifierCategory", "Analysis");
 
 public:
 
@@ -76,7 +75,7 @@ public:
     Q_ENUM(NormalizationType);
 
     /// Constructor.
-    Q_INVOKABLE SpatialCorrelationFunctionModifier(ObjectInitializationFlags flags);
+    explicit SpatialCorrelationFunctionModifier(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;

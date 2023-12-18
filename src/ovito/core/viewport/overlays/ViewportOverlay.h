@@ -39,7 +39,7 @@ class OVITO_CORE_EXPORT ViewportOverlay : public ActiveObject
 protected:
 
     /// \brief Constructor.
-    ViewportOverlay(ObjectInitializationFlags flags);
+    explicit ViewportOverlay(ObjectInitializationFlags flags);
 
 public:
 

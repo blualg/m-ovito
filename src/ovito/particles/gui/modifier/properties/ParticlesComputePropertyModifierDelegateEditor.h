@@ -35,11 +35,12 @@ namespace Ovito {
 class ParticlesComputePropertyModifierDelegateEditor : public PropertiesEditor
 {
     OVITO_CLASS(ParticlesComputePropertyModifierDelegateEditor)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE ParticlesComputePropertyModifierDelegateEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

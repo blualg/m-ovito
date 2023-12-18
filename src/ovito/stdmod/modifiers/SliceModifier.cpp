@@ -39,8 +39,8 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(SliceModifierDelegate);
-IMPLEMENT_OVITO_CLASS(SliceModifier);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(SliceModifierDelegate);
+IMPLEMENT_CREATABLE_OVITO_CLASS(SliceModifier);
 DEFINE_REFERENCE_FIELD(SliceModifier, normalController);
 DEFINE_REFERENCE_FIELD(SliceModifier, distanceController);
 DEFINE_REFERENCE_FIELD(SliceModifier, widthController);
@@ -63,7 +63,7 @@ SET_PROPERTY_FIELD_UNITS(SliceModifier, normalController, WorldParameterUnit);
 SET_PROPERTY_FIELD_UNITS(SliceModifier, distanceController, WorldParameterUnit);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SliceModifier, widthController, WorldParameterUnit, 0);
 
-IMPLEMENT_OVITO_CLASS(LinesSliceModifierDelegate);
+IMPLEMENT_CREATABLE_OVITO_CLASS(LinesSliceModifierDelegate);
 
 /******************************************************************************
  * Asks the metaclass which data objects in the given input data collection the

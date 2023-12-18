@@ -37,7 +37,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS2(FileSource);
+IMPLEMENT_CREATABLE_OVITO_CLASS(FileSource);
 DEFINE_REFERENCE_FIELD(FileSource, importer);
 DEFINE_PROPERTY_FIELD(FileSource, sourceUrls);
 DEFINE_PROPERTY_FIELD(FileSource, playbackSpeedNumerator);
@@ -289,9 +289,6 @@ void FileSource::setListOfFrames(QVector<FileSourceImporter::Frame> frames)
             }
         }
     }
-
-    // Notify UI that the list of source frames has changed.
-    Q_EMIT framesListChanged();
 }
 
 /******************************************************************************
@@ -631,14 +628,10 @@ void FileSource::propertyChanged(const PropertyFieldDescriptor* field)
         // Inform animation system that global time line length probably changed.
         notifyDependents(ReferenceEvent::AnimationFramesChanged);
     }
-    else if(field == PROPERTY_FIELD(sourceUrls)) {
-        Q_EMIT currentFileChanged();
-    }
     else if(field == PROPERTY_FIELD(BasePipelineSource::dataCollectionFrame)) {
         // The active frame is part of the source's UI title.
         if(numberOfFiles() > 1)
             notifyDependents(ReferenceEvent::TitleChanged);
-        Q_EMIT currentFileChanged();
     }
     BasePipelineSource::propertyChanged(field);
 }

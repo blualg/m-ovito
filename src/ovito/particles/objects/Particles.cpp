@@ -42,7 +42,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(Particles);
+IMPLEMENT_CREATABLE_OVITO_CLASS(Particles);
 DEFINE_REFERENCE_FIELD(Particles, bonds);
 DEFINE_REFERENCE_FIELD(Particles, angles);
 DEFINE_REFERENCE_FIELD(Particles, dihedrals);

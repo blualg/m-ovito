@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ViewportSettingsPage);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ViewportSettingsPage);
 
 /******************************************************************************
 * Creates the widget that contains the plugin specific setting controls.

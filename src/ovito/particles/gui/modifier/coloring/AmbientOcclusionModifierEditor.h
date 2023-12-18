@@ -38,7 +38,7 @@ class AmbientOcclusionModifierEditor : public PropertiesEditor
 public:
 
     /// Default constructor.
-    Q_INVOKABLE AmbientOcclusionModifierEditor() {}
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

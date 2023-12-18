@@ -34,11 +34,12 @@ namespace Ovito {
 class MicrostructurePhaseEditor : public PropertiesEditor
 {
     OVITO_CLASS(MicrostructurePhaseEditor)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE MicrostructurePhaseEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

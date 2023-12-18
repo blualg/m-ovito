@@ -57,16 +57,14 @@ class OVITO_PARTICLES_EXPORT GSDImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(GSDImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "GSD");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE GSDImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _roundingResolution(4) {
+    /// Constructor.
+    explicit GSDImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _roundingResolution(4) {
         setMultiTimestepFile(true);
     }
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("GSD"); }
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {

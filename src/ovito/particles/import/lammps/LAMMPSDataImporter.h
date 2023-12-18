@@ -53,6 +53,7 @@ class OVITO_PARTICLES_EXPORT LAMMPSDataImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(LAMMPSDataImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "LAMMPS Data");
 
 public:
 
@@ -89,10 +90,7 @@ public:
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE LAMMPSDataImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _atomStyle(AtomStyle_Unknown) {}
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("LAMMPS Data"); }
+    explicit LAMMPSDataImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _atomStyle(AtomStyle_Unknown) {}
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {

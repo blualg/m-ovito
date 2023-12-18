@@ -38,7 +38,7 @@ class XYZExporterEditor : public FileColumnParticleExporterEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE XYZExporterEditor() {}
+    using FileColumnParticleExporterEditor::FileColumnParticleExporterEditor;
 
 protected:
 

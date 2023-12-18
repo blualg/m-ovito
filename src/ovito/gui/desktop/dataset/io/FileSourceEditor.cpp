@@ -41,7 +41,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(FileSourceEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(FileSourceEditor);
 SET_OVITO_OBJECT_EDITOR(FileSource, FileSourceEditor);
 
 /******************************************************************************
@@ -177,15 +177,10 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     new SubObjectParameterUI(this, PROPERTY_FIELD(FileSource::importer), rolloutParams.after(rollout));
 
     // Whenever a new FileSource gets loaded into the editor:
-    connect(this, &PropertiesEditor::contentsReplaced, this, [this, con = QMetaObject::Connection()](RefTarget* editObject) mutable {
-        disconnect(con);
-
+    connect(this, &PropertiesEditor::contentsReplaced, this, [this](RefTarget* editObject) mutable {
         // Update displayed information.
         updateFramesList();
         updateDisplayedInformation();
-
-        // Update the frames list displayed in the UI whenever it changes.
-        con = editObject ? connect(static_object_cast<FileSource>(editObject), &FileSource::framesListChanged, this, &FileSourceEditor::updateFramesList) : QMetaObject::Connection();
     });
 }
 
@@ -538,6 +533,9 @@ bool FileSourceEditor::referenceEvent(RefTarget* source, const ReferenceEvent& e
                 _deferredDisplayUpdatePending = true;
                 QTimer::singleShot(200, this, &FileSourceEditor::updateDisplayedInformation);
             }
+        }
+        else if(event.type() == ReferenceEvent::AnimationFramesChanged) {
+            updateFramesList();
         }
     }
     return PropertiesEditor::referenceEvent(source, event);

@@ -37,12 +37,12 @@ namespace Ovito {
 class OVITO_CRYSTALANALYSIS_EXPORT DislocationNetworkObject : public PeriodicDomainObject
 {
     OVITO_CLASS(DislocationNetworkObject)
-    Q_CLASSINFO("DisplayName", "Dislocations");
+    OVITO_CLASSINFO("DisplayName", "Dislocations");
 
 public:
 
-    /// \brief Constructor.
-    Q_INVOKABLE DislocationNetworkObject(ObjectInitializationFlags flags);
+    /// Constructor.
+    explicit DislocationNetworkObject(ObjectInitializationFlags flags);
 
     /// Returns the data encapsulated by this object after making sure it is not shared with other owners.
     const std::shared_ptr<DislocationNetwork>& modifiableStorage();

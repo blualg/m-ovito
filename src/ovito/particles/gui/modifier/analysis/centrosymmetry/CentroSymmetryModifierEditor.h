@@ -35,11 +35,12 @@ namespace Ovito {
 class CentroSymmetryModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(CentroSymmetryModifierEditor)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE CentroSymmetryModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected Q_SLOTS:
 

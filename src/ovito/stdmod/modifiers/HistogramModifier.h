@@ -36,14 +36,14 @@ namespace Ovito {
 class OVITO_STDMOD_EXPORT HistogramModifier : public GenericPropertyModifier
 {
     OVITO_CLASS(HistogramModifier)
-    Q_CLASSINFO("DisplayName", "Histogram");
-    Q_CLASSINFO("Description", "Compute the histogram or distribution of some quantity.");
-    Q_CLASSINFO("ModifierCategory", "Analysis");
+    OVITO_CLASSINFO("DisplayName", "Histogram");
+    OVITO_CLASSINFO("Description", "Compute the histogram or distribution of some quantity.");
+    OVITO_CLASSINFO("ModifierCategory", "Analysis");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE HistogramModifier(ObjectInitializationFlags flags);
+    explicit HistogramModifier(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;

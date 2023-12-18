@@ -38,7 +38,7 @@ class SimulationCellVisEditor : public PropertiesEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE SimulationCellVisEditor() {}
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

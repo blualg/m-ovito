@@ -27,6 +27,7 @@
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/data/camera/AbstractCameraObject.h>
+#include <ovito/core/dataset/data/camera/AbstractCameraSource.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
@@ -35,6 +36,13 @@
 #include "NavigationModes.h"
 
 namespace Ovito {
+
+IMPLEMENT_ABSTRACT_OVITO_CLASS(NavigationMode);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(OrbitMode);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(PanMode);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(ZoomMode);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(FOVMode);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(PickOrbitCenterMode);
 
 /******************************************************************************
 * This is called by the system after the input handler has
@@ -223,13 +231,12 @@ void ZoomMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF 
         }
     }
     else {
-        if(PipelineNode* cameraSource = getViewportCamera(vp)) {
-            FloatType oldFOV = cameraSource->property("zoom").value<FloatType>();
-            FloatType newFOV = oldFOV * (FloatType)exp(0.003 * delta.y());
-            cameraSource->setProperty("zoom", QVariant::fromValue(newFOV));
+        if(AbstractCameraSource* cameraSource = dynamic_object_cast<AbstractCameraSource>(getViewportCamera(vp))) {
+            FloatType newFOV = cameraSource->zoom() * (FloatType)std::exp(0.003 * delta.y());
+            cameraSource->setZoom(newFOV);
         }
         else {
-            FloatType newFOV = _oldFieldOfView * (FloatType)exp(0.003 * delta.y());
+            FloatType newFOV = _oldFieldOfView * (FloatType)std::exp(0.003 * delta.y());
             vp->setFieldOfView(newFOV);
         }
     }
@@ -260,7 +267,7 @@ void ZoomMode::zoom(Viewport* vp, FloatType steps, UserInterface& ui)
             vp->setCameraPosition(vp->cameraPosition() + vp->cameraDirection().resized(sceneSizeFactor(vp) * steps));
         }
         else {
-            vp->setFieldOfView(vp->fieldOfView() * exp(-steps * FloatType(1e-3)));
+            vp->setFieldOfView(vp->fieldOfView() * std::exp(-steps * FloatType(1e-3)));
         }
     }
     else {
@@ -272,9 +279,9 @@ void ZoomMode::zoom(Viewport* vp, FloatType steps, UserInterface& ui)
                 vp->viewNode()->transformationController()->translate(vp->scene()->animationSettings()->currentTime(), Vector3(0,0,-amount), sys);
             }
             else {
-                if(PipelineNode* cameraSource = getViewportCamera(vp)) {
-                    FloatType oldFOV = cameraSource->property("zoom").value<FloatType>();
-                    cameraSource->setProperty("zoom", QVariant::fromValue(oldFOV * exp(-steps * FloatType(1e-3))));
+                if(AbstractCameraSource* cameraSource = dynamic_object_cast<AbstractCameraSource>(getViewportCamera(vp))) {
+                    FloatType oldFOV = cameraSource->zoom();
+                    cameraSource->setZoom(oldFOV * std::exp(-steps * FloatType(1e-3)));
                 }
             }
         });
@@ -290,8 +297,8 @@ void ZoomMode::zoom(Viewport* vp, FloatType steps, UserInterface& ui)
 void FOVMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF delta, bool discreteStep)
 {
     FloatType oldFOV = _oldFieldOfView;
-    if(PipelineNode* cameraSource = getViewportCamera(vp)) {
-        oldFOV = cameraSource->property(vp->isPerspectiveProjection() ? "fov" : "zoom").value<FloatType>();
+    if(AbstractCameraSource* cameraSource = dynamic_object_cast<AbstractCameraSource>(getViewportCamera(vp))) {
+        oldFOV = vp->isPerspectiveProjection() ? cameraSource->fov() : cameraSource->zoom();
     }
 
     FloatType newFOV;
@@ -304,8 +311,11 @@ void FOVMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF d
         newFOV = oldFOV * (FloatType)exp(FloatType(6e-3) * delta.y());
     }
 
-    if(PipelineNode* cameraSource = getViewportCamera(vp)) {
-        cameraSource->setProperty(vp->isPerspectiveProjection() ? "fov" : "zoom", QVariant::fromValue(newFOV));
+    if(AbstractCameraSource* cameraSource = dynamic_object_cast<AbstractCameraSource>(getViewportCamera(vp))) {
+        if(vp->isPerspectiveProjection())
+            cameraSource->setFov(newFOV);
+        else
+            cameraSource->setZoom(newFOV);
     }
     else {
         vp->setFieldOfView(newFOV);

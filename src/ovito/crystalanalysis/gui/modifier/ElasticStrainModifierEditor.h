@@ -34,11 +34,12 @@ namespace Ovito {
 class ElasticStrainModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(ElasticStrainModifierEditor)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE ElasticStrainModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

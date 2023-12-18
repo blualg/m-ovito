@@ -36,14 +36,14 @@ class OVITO_STDMOD_EXPORT SelectTypeModifier : public GenericPropertyModifier
 {
     OVITO_CLASS(SelectTypeModifier)
 
-    Q_CLASSINFO("DisplayName", "Select type");
-    Q_CLASSINFO("Description", "Select particles based on chemical species, or bonds based on bond type.");
-    Q_CLASSINFO("ModifierCategory", "Selection");
+    OVITO_CLASSINFO("DisplayName", "Select type");
+    OVITO_CLASSINFO("Description", "Select particles based on chemical species, or bonds based on bond type.");
+    OVITO_CLASSINFO("ModifierCategory", "Selection");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE SelectTypeModifier(ObjectInitializationFlags flags);
+    explicit SelectTypeModifier(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;

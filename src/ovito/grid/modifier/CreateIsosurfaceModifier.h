@@ -50,14 +50,14 @@ class OVITO_GRID_EXPORT CreateIsosurfaceModifier : public AsynchronousModifier
 
     OVITO_CLASS_META(CreateIsosurfaceModifier, CreateIsosurfaceModifierClass)
 
-    Q_CLASSINFO("DisplayName", "Create isosurface");
-    Q_CLASSINFO("Description", "Compute the isosurface of a scalar value field.");
-    Q_CLASSINFO("ModifierCategory", "Visualization");
+    OVITO_CLASSINFO("DisplayName", "Create isosurface");
+    OVITO_CLASSINFO("Description", "Compute the isosurface of a scalar value field.");
+    OVITO_CLASSINFO("ModifierCategory", "Visualization");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE CreateIsosurfaceModifier(ObjectInitializationFlags flags);
+    explicit CreateIsosurfaceModifier(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;

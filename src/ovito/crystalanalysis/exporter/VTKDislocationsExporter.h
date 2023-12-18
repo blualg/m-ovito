@@ -53,8 +53,8 @@ class OVITO_CRYSTALANALYSIS_EXPORT VTKDislocationsExporter : public FileExporter
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE VTKDislocationsExporter(ObjectInitializationFlags flags) : FileExporter(flags) {}
+    /// Constructor.
+    using FileExporter::FileExporter;
 
     /// \brief Returns the type(s) of data objects that this exporter service can export.
     virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {

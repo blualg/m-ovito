@@ -30,16 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DataInspectionApplet);
-
-/******************************************************************************
-* Returns the panel hosting this applet.
-******************************************************************************/
-DataInspectorPanel* DataInspectionApplet::inspectorPanel() const
-{
-    OVITO_ASSERT(qobject_cast<DataInspectorPanel*>(parent()));
-    return static_cast<DataInspectorPanel*>(parent());
-}
+IMPLEMENT_ABSTRACT_OVITO_CLASS(DataInspectionApplet);
 
 /******************************************************************************
 * Returns the main window this applet is embedded in.
@@ -205,7 +196,8 @@ void DataInspectionApplet::updateDataObjectList()
                 item->setText(itemTitle);
             }
             item->setToolTip(tr("Python identifier: \"%1\"").arg(dataObj->identifier()));
-            item->setStatusTip(dataObj->createdByNode() ? dataObj->createdByNode()->objectTitle() : QString());
+            auto createdByNode = dataObj->createdByNode().lock();
+            item->setStatusTip(createdByNode ? createdByNode->objectTitle() : QString{});
             item->setData(Qt::UserRole, QVariant::fromValue(path));
 
             // Select again the previously selected data object.
@@ -250,7 +242,7 @@ void DataInspectionApplet::updateDataObjectList()
 /******************************************************************************
 * Selects a specific data object in this applet.
 ******************************************************************************/
-bool DataInspectionApplet::selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
+bool DataInspectionApplet::selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
 {
     if(!_objectSelectionWidget)
         return false;
@@ -260,7 +252,7 @@ bool DataInspectionApplet::selectDataObject(PipelineNode* createdByNode, const Q
         QListWidgetItem* item = _objectSelectionWidget->item(i);
         const ConstDataObjectPath& objectPath = item->data(Qt::UserRole).value<ConstDataObjectPath>();
         if(!objectPath.empty()) {
-            if(objectPath.back()->createdByNode() == createdByNode) {
+            if(objectPath.back()->createdByNode().lock().get() == createdByNode) {
                 if(objectIdentifierHint.isEmpty() || objectPath.back()->identifier() == objectIdentifierHint || objectPath.back()->identifier().startsWith(objectIdentifierHint + QChar('.'))) {
                     _objectSelectionWidget->setCurrentRow(i);
                     return true;

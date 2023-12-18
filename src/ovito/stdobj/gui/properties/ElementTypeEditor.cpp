@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ElementTypeEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ElementTypeEditor);
 SET_OVITO_OBJECT_EDITOR(ElementType, ElementTypeEditor);
 
 /******************************************************************************

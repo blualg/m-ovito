@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS2(AttributeFileExporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(AttributeFileExporter);
 DEFINE_PROPERTY_FIELD(AttributeFileExporter, attributesToExport);
 
 /******************************************************************************

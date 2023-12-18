@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ExpressionSelectionModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ExpressionSelectionModifierEditor);
 SET_OVITO_OBJECT_EDITOR(ExpressionSelectionModifier, ExpressionSelectionModifierEditor);
 
 /******************************************************************************

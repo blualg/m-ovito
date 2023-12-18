@@ -61,7 +61,7 @@ class OVITO_CORE_EXPORT PreliminaryViewportUpdatesSuspender
 public:
 
     /// Calls UserInterface::suspendPreliminaryViewportUpdates().
-    PreliminaryViewportUpdatesSuspender(UserInterface& userInterface) : _userInterface(userInterface.weak_from_this()) {
+    PreliminaryViewportUpdatesSuspender(UserInterface& userInterface) : _userInterface(&userInterface) {
         userInterface.suspendPreliminaryViewportUpdates();
     }
 
@@ -73,7 +73,7 @@ public:
 
 private:
 
-    std::weak_ptr<UserInterface> _userInterface;
+    OOWeakRef<UserInterface> _userInterface;
 };
 
 }   // End of namespace

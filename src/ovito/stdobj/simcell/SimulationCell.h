@@ -38,12 +38,12 @@ namespace Ovito {
 class OVITO_STDOBJ_EXPORT SimulationCell : public DataObject
 {
     OVITO_CLASS(SimulationCell)
-    Q_CLASSINFO("ClassNameAlias", "SimulationCellObject");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("ClassNameAlias", "SimulationCellObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
 
     /// \brief Constructor. Creates an empty simulation cell.
-    Q_INVOKABLE SimulationCell(ObjectInitializationFlags flags) : DataObject(flags),
+    explicit SimulationCell(ObjectInitializationFlags flags) : DataObject(flags),
         _cellMatrix(AffineTransformation::Zero()),
         _reciprocalSimulationCell(AffineTransformation::Zero()),
         _pbcX(false), _pbcY(false), _pbcZ(false), _is2D(false)

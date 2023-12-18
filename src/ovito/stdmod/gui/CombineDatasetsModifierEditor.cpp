@@ -28,7 +28,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(CombineDatasetsModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(CombineDatasetsModifierEditor);
 SET_OVITO_OBJECT_EDITOR(CombineDatasetsModifier, CombineDatasetsModifierEditor);
 
 /******************************************************************************

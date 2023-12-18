@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParcasFileImporterEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ParcasFileImporterEditor);
 SET_OVITO_OBJECT_EDITOR(ParcasFileImporter, ParcasFileImporterEditor);
 
 /******************************************************************************

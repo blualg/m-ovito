@@ -36,14 +36,14 @@ namespace Ovito {
 class OVITO_STDMOD_EXPORT ScatterPlotModifier : public GenericPropertyModifier
 {
     OVITO_CLASS(ScatterPlotModifier)
-    Q_CLASSINFO("DisplayName", "Scatter plot");
-    Q_CLASSINFO("Description", "Generate a scatter plot from the values of two properties.");
-    Q_CLASSINFO("ModifierCategory", "Analysis");
+    OVITO_CLASSINFO("DisplayName", "Scatter plot");
+    OVITO_CLASSINFO("Description", "Generate a scatter plot from the values of two properties.");
+    OVITO_CLASSINFO("ModifierCategory", "Analysis");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ScatterPlotModifier(ObjectInitializationFlags flags);
+    explicit ScatterPlotModifier(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;

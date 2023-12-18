@@ -52,14 +52,12 @@ class OVITO_PARTICLES_EXPORT POSCARImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(POSCARImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "POSCAR");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE POSCARImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {}
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("POSCAR"); }
+    /// Constructor.
+    using ParticleImporter::ParticleImporter;
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {

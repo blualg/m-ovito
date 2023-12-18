@@ -58,8 +58,8 @@ public:
 
 public:
 
-    /// Standard constructor.
-    Q_INVOKABLE MicrostructurePhase(ObjectInitializationFlags flags);
+    /// Constructor.
+    explicit MicrostructurePhase(ObjectInitializationFlags flags);
 
     /// Returns the lotitleng name of this phase.
     const QString& longName() const { return name(); }

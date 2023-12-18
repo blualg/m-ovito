@@ -33,9 +33,10 @@ namespace Ovito {
 /**
  * \brief Abstract base class for applets shown in the data inspector.
  */
-class OVITO_GUI_EXPORT DataInspectionApplet : public OvitoObject
+class OVITO_GUI_EXPORT DataInspectionApplet : public QObject, public OvitoObject
 {
     OVITO_CLASS(DataInspectionApplet)
+    Q_OBJECT
 
 public:
 
@@ -66,7 +67,7 @@ public:
     virtual void deactivate() {}
 
     /// Selects a specific data object in this applet.
-    virtual bool selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint);
+    virtual bool selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint);
 
     /// Returns the currently selected data pipeline in the scene.
     Pipeline* currentPipeline() const;
@@ -81,12 +82,15 @@ public:
     const ConstDataObjectPath& selectedDataObjectPath() const { return _selectedDataObjectPath; }
 
     /// Returns the panel hosting this applet.
-    DataInspectorPanel* inspectorPanel() const;
+    DataInspectorPanel* inspectorPanel() const { OVITO_ASSERT(_inspectorPanel); return _inspectorPanel; }
+
+    /// Sets the panel hosting this applet.
+    void setInspectorPanel(DataInspectorPanel* inspectorPanel) { _inspectorPanel = inspectorPanel; }
 
 protected:
 
     /// Constructor.
-    DataInspectionApplet(const DataObject::OOMetaClass& dataObjectClass) : _dataObjectClass(dataObjectClass) {}
+    explicit DataInspectionApplet(const DataObject::OOMetaClass& dataObjectClass) : _dataObjectClass(dataObjectClass) {}
 
     /// Updates the list of data objects displayed in the inspector.
     void updateDataObjectList();
@@ -103,6 +107,9 @@ private:
 
     /// The type of data objects displayed by this applet.
     const DataObject::OOMetaClass& _dataObjectClass;
+
+    /// The panel hosting this applet.
+    DataInspectorPanel* _inspectorPanel = nullptr;
 
     /// The widget for selecting the current data object.
     QListWidget* _objectSelectionWidget = nullptr;

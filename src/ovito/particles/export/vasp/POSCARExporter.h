@@ -51,8 +51,8 @@ class OVITO_PARTICLES_EXPORT POSCARExporter : public ParticleExporter
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE POSCARExporter(ObjectInitializationFlags flags) : ParticleExporter(flags) {}
+    /// Constructor.
+    explicit POSCARExporter(ObjectInitializationFlags flags) : ParticleExporter(flags), _writeReducedCoordinates(false) {}
 
 protected:
 

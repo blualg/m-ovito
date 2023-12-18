@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(WrapPeriodicImagesModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(WrapPeriodicImagesModifier);
 
 /******************************************************************************
 * Asks the modifier whether it can be applied to the given input data.

@@ -31,14 +31,20 @@
 #include <ovito/gui/desktop/widgets/general/StatusBar.h>
 #include <ovito/gui/desktop/widgets/selection/SceneNodeSelectionBox.h>
 #include <ovito/gui/desktop/dialogs/MessageDialog.h>
+#include <ovito/gui/desktop/dialogs/ImportFileDialog.h>
+#include <ovito/gui/desktop/dialogs/HistoryFileDialog.h>
 #include <ovito/gui/desktop/actions/WidgetActionManager.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
+#include <ovito/gui/desktop/dataset/io/FileImporterEditor.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/core/dataset/io/FileImporter.h>
+#include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/app/undo/UndoStack.h>
+#include <ovito/core/app/StandaloneApplication.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/viewport/ViewportWindowInterface.h>
-#include <ovito/core/app/StandaloneApplication.h>
 #include "MainWindow.h"
 #include "ViewportsPanel.h"
 #include "TaskDisplayWidget.h"
@@ -47,10 +53,12 @@
 
 namespace Ovito {
 
+IMPLEMENT_ABSTRACT_OVITO_CLASS(MainWindow);
+
 /******************************************************************************
 * The constructor of the main window class.
 ******************************************************************************/
-MainWindow::MainWindow() : UserInterface(_datasetContainer), _datasetContainer(UserInterface::taskManager(), *this)
+MainWindow::MainWindow()
 {
     _baseWindowTitle = tr("%1 (Open Visualization Tool)").arg(Application::applicationName());
 #if defined(OVITO_DEVELOPMENT_BUILD_DATE)
@@ -237,7 +245,7 @@ MainWindow::MainWindow() : UserInterface(_datasetContainer), _datasetContainer(U
     createDockPanel(tr("Command Panel"), "CommandPanel", Qt::RightDockWidgetArea, Qt::DockWidgetAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea), _commandPanel);
 
     // Update window title when document path changes.
-    connect(&_datasetContainer, &DataSetContainer::filePathChanged, this, [this](const QString& filePath) { setWindowFilePath(filePath); });
+    connect(&datasetContainer(), &DataSetContainer::filePathChanged, this, [this](const QString& filePath) { setWindowFilePath(filePath); });
     connect(undoStack(), &UndoStack::cleanChanged, this, [this](bool isClean) { setWindowModified(!isClean); });
 
     // Accept files via drag & drop.
@@ -250,10 +258,7 @@ MainWindow::MainWindow() : UserInterface(_datasetContainer), _datasetContainer(U
 MainWindow::~MainWindow()
 {
     OVITO_ASSERT(isShuttingDown()); // Make sure this UserInterface was properly shutdown before being deleted.
-    OVITO_ASSERT(_datasetContainer.currentSet() == nullptr);
-#ifdef OVITO_DEBUG
-    UserInterface::_isBeingDestructed = true;
-#endif
+    OVITO_ASSERT(datasetContainer().currentSet() == nullptr);
 }
 
 /******************************************************************************
@@ -477,7 +482,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
 
     if(!handleExceptions([&] {
         // Let the user save changes made to the current dataset.
-        if(isVisible() && !datasetContainer().askForSaveChanges()) {
+        if(isVisible() && !askForSaveChanges()) {
             event->ignore();
             return;
         }
@@ -581,10 +586,10 @@ void MainWindow::dropEvent(QDropEvent* event)
         for(const QUrl& url : event->mimeData()->urls()) {
             if(url.fileName().endsWith(".ovito", Qt::CaseInsensitive)) {
                 if(url.isLocalFile()) {
-                    if(datasetContainer().askForSaveChanges()) {
-                        if(OORef<DataSet> dataset = datasetContainer().loadDataset(url.toLocalFile())) {
+                    if(askForSaveChanges()) {
+                        OORef<DataSet> dataset = DataSet::createFromFile(url.toLocalFile());
+                        if(checkLoadedDataset(dataset))
                             datasetContainer().setCurrentSet(std::move(dataset));
-                        }
                     }
                     importUrls.clear();
                     return;
@@ -597,7 +602,7 @@ void MainWindow::dropEvent(QDropEvent* event)
     });
     if(!importUrls.empty()) {
         performTransaction(tr("Import data"), [&] {
-            datasetContainer().importFiles(std::move(importUrls));
+            importFiles(std::move(importUrls));
         });
     }
 }
@@ -787,6 +792,346 @@ void MainWindow::openNewWindow(const QStringList& arguments)
         mainWin->shutdown();
     }
 #endif
+}
+
+/******************************************************************************
+* Checks (or even modifies) the contents of a DataSet after it has been loaded from a file.
+* Returns false if loading the DataSet was rejected by the application.
+******************************************************************************/
+bool MainWindow::checkLoadedDataset(DataSet* dataset)
+{
+    if(!UserInterface::checkLoadedDataset(dataset))
+        return false;
+
+#ifndef OVITO_BUILD_PROFESSIONAL
+    // Since version 3.8.0, OVITO Basic no longer supports multiple pipelines in the same scene.
+    // Check if the state file contains more than one pipeline and inform user by displaying a dialog window.
+    // Let the user pick one of the pipelines to be loaded and remove all others from the scene.
+    if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
+        if(Viewport* vp = viewportConfig->activeViewport()) {
+            if(Scene* scene = vp->scene()) {
+                std::vector<OORef<Pipeline>> fileSourcePipelines;
+                QStringList itemsList;
+                scene->visitPipelines([&](Pipeline* pipeline) {
+                    if(dynamic_object_cast<FileSource>(pipeline->source())) {
+                        fileSourcePipelines.emplace_back(pipeline);
+                        itemsList.push_back(pipeline->objectTitle());
+                    }
+                    return true;
+                });
+                if(fileSourcePipelines.size() >= 2) {
+                    QDialog dlg(this);
+                    dlg.setWindowTitle(tr("Multiple pipelines found"));
+                    QVBoxLayout* mainLayout = new QVBoxLayout(&dlg);
+                    mainLayout->setSpacing(2);
+                    QLabel* label = new QLabel(tr(
+                        "<html><p>The OVITO session file contains %1 pipelines.</p>"
+                        "<p><i>OVITO Pro</i> is required since version 3.8.0 to work with "
+                        "multiple pipelines in the same scene. Please pick one of the pipelines "
+                        "below to load only that pipeline in <i>OVITO Basic</i> now - or open the session "
+                        "file in <i>OVITO Pro</i> to load all pipelines together.</p></html>"
+                    ).arg(fileSourcePipelines.size()));
+                    label->setWordWrap(true);
+                    label->setMinimumWidth(440);
+                    mainLayout->addWidget(label);
+                    mainLayout->addSpacing(6);
+                    mainLayout->addWidget(new QLabel(tr("Available pipelines:")));
+                    QListWidget* listWidget = new QListWidget();
+                    mainLayout->addWidget(listWidget);
+                    listWidget->addItems(itemsList);
+                    listWidget->setCurrentRow(0);
+                    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dlg);
+                    connect(buttonBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+                    connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+                    connect(listWidget, &QListWidget::itemSelectionChanged, &dlg, [&]() { buttonBox->button(QDialogButtonBox::Ok)->setEnabled(!listWidget->selectedItems().empty()); });
+                    mainLayout->addWidget(buttonBox);
+                    if(dlg.exec() == QDialog::Accepted) {
+                        QList<QListWidgetItem*> selectedItems = listWidget->selectedItems();
+                        if(selectedItems.empty())
+                            return false; // Abort loading of the DataSet.
+                        int keepIndex = listWidget->row(selectedItems.front());
+                        scene->selection()->setNode(fileSourcePipelines[keepIndex]);
+                        for(const auto& pipeline : fileSourcePipelines) {
+                            if(pipeline != fileSourcePipelines[keepIndex]) {
+                                pipeline->deleteSceneNode();
+                            }
+                        }
+                    }
+                    else {
+                        return false; // Abort loading of the DataSet.
+                    }
+                }
+            }
+        }
+    }
+#endif
+
+    return true;
+}
+
+/******************************************************************************
+* Save the current dataset.
+******************************************************************************/
+bool MainWindow::fileSave()
+{
+    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OORef<DataSet> dataset = datasetContainer().currentSet();
+
+    if(!dataset)
+        return false;
+
+    // Ask the user for a filename if there is no one set.
+    if(dataset->filePath().isEmpty())
+        return fileSaveAs();
+
+    // Save dataset to file.
+    return handleExceptions([&] {
+        dataset->saveToFile(dataset->filePath());
+        undoStack()->setClean();
+    });
+}
+
+/******************************************************************************
+* This is the implementation of the "Save As" action.
+* Returns true, if the scene has been saved.
+******************************************************************************/
+bool MainWindow::fileSaveAs(const QString& filename)
+{
+    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OORef<DataSet> dataset = datasetContainer().currentSet();
+
+    if(!dataset)
+        return false;
+
+    if(filename.isEmpty()) {
+
+        QFileDialog dialog(this, tr("Save Session State"));
+        dialog.setNameFilter(tr("OVITO State Files (*.ovito);;All Files (*)"));
+        dialog.setAcceptMode(QFileDialog::AcceptSave);
+        dialog.setFileMode(QFileDialog::AnyFile);
+        dialog.setDefaultSuffix("ovito");
+
+        QSettings settings;
+        settings.beginGroup("file/scene");
+
+        if(dataset->filePath().isEmpty()) {
+            if(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled()) {
+                QString defaultPath = settings.value("last_directory").toString();
+                if(!defaultPath.isEmpty())
+                    dialog.setDirectory(defaultPath);
+            }
+        }
+        else {
+#ifndef Q_OS_LINUX
+            dialog.selectFile(dataset->filePath());
+#else
+            // Workaround for bug in QFileDialog on Linux (Qt 6.2.4) crashing in exec() when selectFile() is called before (OVITO issue #216).
+            dialog.setDirectory(QFileInfo(dataset->filePath()).dir());
+#endif
+        }
+
+        if(!dialog.exec())
+            return false;
+
+        QStringList files = dialog.selectedFiles();
+        if(files.isEmpty())
+            return false;
+        QString newFilename = files.front();
+
+        if(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled()) {
+            // Remember directory for the next time...
+            settings.setValue("last_directory", dialog.directory().absolutePath());
+        }
+
+        dataset->setFilePath(newFilename);
+    }
+    else {
+        dataset->setFilePath(filename);
+    }
+    return fileSave();
+}
+
+/******************************************************************************
+* If the scene has been changed this will ask the user if he wants
+* to save the changes.
+* Returns false if the operation has been canceled by the user.
+******************************************************************************/
+bool MainWindow::askForSaveChanges()
+{
+    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OORef<DataSet> dataset = datasetContainer().currentSet();
+
+    if(!dataset || dataset->filePath().isEmpty() || undoStack()->isClean())
+        return true;
+
+    QString message;
+    if(dataset->filePath().isEmpty() == false) {
+        message = tr("The current session state has been modified. Do you want to save the changes?");
+        message += QString("\n\nFile: %1").arg(dataset->filePath());
+    }
+    else {
+        message = tr("The current program session has not been saved. Do you want to save it?");
+    }
+
+    QMessageBox::StandardButton result = MessageDialog::question(this, tr("Save changes"),
+        message,
+        QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel, QMessageBox::Cancel);
+    if(result == QMessageBox::Cancel)
+        return false; // Operation canceled by user
+    else if(result == QMessageBox::No)
+        return true; // Continue without saving scene first.
+    else {
+        // Save scene first.
+        return fileSave();
+    }
+}
+
+/******************************************************************************
+* Imports a given file into the scene.
+******************************************************************************/
+bool MainWindow::importFiles(const std::vector<QUrl>& urls, const FileImporterClass* importerType, const QString& importerFormat)
+{
+    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(!urls.empty());
+
+    // Create a reference to the active scene to keep it alive during this long-running operation.
+    OORef<DataSet> dataset = datasetContainer().currentSet();
+    OORef<Scene> scene = datasetContainer().activeScene();
+    if(!dataset || !scene)
+        throw Exception(tr("Cannot import because there is no active scene."));
+
+    std::vector<std::pair<QUrl, OORef<FileImporter>>> urlImporters;
+    for(const QUrl& url : urls) {
+        if(!url.isValid())
+            throw Exception(tr("Failed to import file. URL is not valid: %1").arg(url.toString()));
+
+        OORef<FileImporter> importer;
+        if(!importerType) {
+
+            // Detect file format.
+            Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(url);
+            if(!importerFuture.waitForFinished())
+                return false;
+
+            importer = importerFuture.result();
+            if(!importer)
+                throw Exception(tr("Could not auto-detect the format of the file %1. The file format might not be supported.").arg(url.fileName()));
+        }
+        else {
+            importer = static_object_cast<FileImporter>(importerType->createInstance());
+            if(!importer)
+                throw Exception(tr("Failed to import file. Could not initialize import service."));
+            importer->setSelectedFileFormat(importerFormat);
+        }
+
+        urlImporters.push_back(std::make_pair(url, std::move(importer)));
+    }
+
+    // Order URLs and their corresponding importers.
+    std::stable_sort(urlImporters.begin(), urlImporters.end(), [](const auto& a, const auto& b) {
+        int pa = a.second->importerPriority();
+        int pb = b.second->importerPriority();
+        if(pa > pb) return true;
+        if(pa < pb) return false;
+        return a.second->getOOClass().name() < b.second->getOOClass().name();
+    });
+
+    // Display the optional UI (which is provided by the corresponding FileImporterEditor class) for each importer.
+    for(const auto& item : urlImporters) {
+        const QUrl& url = item.first;
+        const OORef<FileImporter>& importer = item.second;
+        for(OvitoClassPtr clazz = &importer->getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {
+            OvitoClassPtr editorClass = PropertiesEditor::registry().getEditorClass(clazz);
+            if(editorClass && editorClass->isDerivedFrom(FileImporterEditor::OOClass())) {
+                OORef<FileImporterEditor> editor = dynamic_object_cast<FileImporterEditor>(editorClass->createInstance());
+                if(editor) {
+                    if(!editor->inspectNewFile(importer, url, *this))
+                        return false;
+                }
+            }
+        }
+    }
+
+    // Determine how the file's data should be inserted into the current scene.
+    FileImporter::ImportMode importMode = FileImporter::ResetScene;
+
+    const QUrl& url = urlImporters.front().first;
+    OORef<FileImporter> importer = urlImporters.front().second;
+    if(importer->isReplaceExistingPossible(scene, urls)) {
+        // Ask user if the existing pipeline should be preserved or reset.
+        MessageDialog msgBox(QMessageBox::Question, tr("Import file"),
+                tr("Do you want to reset the existing pipeline?"),
+                QMessageBox::Yes | QMessageBox::Cancel, this);
+#ifdef OVITO_BUILD_PROFESSIONAL
+        msgBox.setInformativeText(tr(
+            "<p>Select <b>Yes</b> to start over and discard the existing pipeline before importing the new file.</p>"
+            "<p>Select <b>No</b> to keep modifiers in the current pipeline and replace the input data with the selected file.</p>"
+            "<p>Select <b>Add to scene</b> to create an additional pipeline and visualize multiple datasets.</p>"));
+#else
+        msgBox.setInformativeText(tr(
+            "<p>Select <b>Yes</b> to start over and discard the existing pipeline before importing the new file.</p>"
+            "<p>Select <b>No</b> to keep modifiers in the current pipeline and replace the input data with the selected file.</p>"
+            "<p>Select <b>Add to scene</b> to create an additional pipeline and visualize multiple datasets (requires <a href=\"https://www.ovito.org/about/ovito-pro/\">OVITO Pro</a>).</p>"));
+#endif
+        QPushButton* noButton = msgBox.addButton(tr("No"), QMessageBox::NoRole);
+        QPushButton* addToSceneButton = msgBox.addButton(tr("Add to scene"), QMessageBox::NoRole);
+#ifndef OVITO_BUILD_PROFESSIONAL
+        addToSceneButton->setEnabled(false);
+#endif
+        msgBox.setDefaultButton(QMessageBox::Yes);
+        msgBox.setEscapeButton(QMessageBox::Cancel);
+        msgBox.exec();
+
+        if(msgBox.clickedButton() == msgBox.button(QMessageBox::Cancel)) {
+            return false; // Operation canceled by user.
+        }
+        else if(msgBox.clickedButton() == msgBox.button(QMessageBox::Yes)) {
+            importMode = FileImporter::ResetScene;
+            // Ask user if current scene should be saved before it is replaced by the imported data.
+            if(!askForSaveChanges())
+                return false;
+        }
+        else if(msgBox.clickedButton() == addToSceneButton) {
+            importMode = FileImporter::AddToScene;
+        }
+        else {
+            // No button
+            importMode = FileImporter::ReplaceSelected;
+        }
+    }
+    else if(scene->children().empty() == false) {
+        // Ask user if the current scene should be completely replaced by the imported data.
+        QMessageBox::StandardButton result = MessageDialog::question(this, tr("Import file"),
+            tr("Do you want to keep the existing objects in the current scene?"),
+            QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel, QMessageBox::Cancel);
+
+        if(result == QMessageBox::Cancel) {
+            return false; // Operation canceled by user.
+        }
+        else if(result == QMessageBox::No) {
+            importMode = FileImporter::ResetScene;
+
+            // Ask user if current scene should be saved before it is replaced by the imported data.
+            if(!askForSaveChanges())
+                return false;
+        }
+        else {
+            importMode = FileImporter::AddToScene;
+        }
+    }
+
+    // Do not create any animation keys during import.
+    AnimationSuspender animSuspender(*this);
+
+    if(OORef<Pipeline> pipeline = importer->importFileSet(scene, std::move(urlImporters), importMode, true, ImportFileDialog::multiFileImportMode())) {
+        if(importMode == FileImporter::ResetScene) {
+            undoStack()->clear();
+            dataset->setFilePath({});
+        }
+        return true;
+    }
+
+    return false;
 }
 
 }   // End of namespace

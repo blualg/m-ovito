@@ -100,8 +100,8 @@ SET(OVITO_PLUGINS_LIST "")
 # Enable software testing framework.
 ENABLE_TESTING()
 
-# Activate C++17 language standard.
-SET(CMAKE_CXX_STANDARD 17)
+# Activate C++20 language standard.
+SET(CMAKE_CXX_STANDARD 20)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Set visibility of symbols in libraries to hidden by default, except those exported in the source code.

@@ -37,11 +37,12 @@ namespace Ovito {
 class ScatterPlotModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(ScatterPlotModifierEditor)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE ScatterPlotModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

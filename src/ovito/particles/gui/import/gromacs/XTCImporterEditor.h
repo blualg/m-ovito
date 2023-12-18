@@ -38,7 +38,7 @@ class XTCImporterEditor : public FileImporterEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE XTCImporterEditor() {}
+    using FileImporterEditor::FileImporterEditor;
 
 protected:
 

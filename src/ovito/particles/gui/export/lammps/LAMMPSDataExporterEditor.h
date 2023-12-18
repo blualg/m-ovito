@@ -34,11 +34,12 @@ namespace Ovito {
 class LAMMPSDataExporterEditor : public PropertiesEditor
 {
     OVITO_CLASS(LAMMPSDataExporterEditor)
+    Q_OBJECT
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE LAMMPSDataExporterEditor() {}
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

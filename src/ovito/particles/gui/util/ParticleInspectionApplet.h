@@ -40,12 +40,13 @@ namespace Ovito {
 class ParticleInspectionApplet : public PropertyInspectionApplet
 {
     OVITO_CLASS(ParticleInspectionApplet)
-    Q_CLASSINFO("DisplayName", "Particles");
+    OVITO_CLASSINFO("DisplayName", "Particles")
+    Q_OBJECT
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticleInspectionApplet() : PropertyInspectionApplet(Particles::OOClass()) {}
+    explicit ParticleInspectionApplet() : PropertyInspectionApplet(Particles::OOClass()) {}
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 0; }

@@ -67,10 +67,9 @@ class OVITO_PARTICLES_EXPORT CreateBondsModifier : public AsynchronousModifier
     };
 
     OVITO_CLASS_META(CreateBondsModifier, CreateBondsModifierClass)
-
-    Q_CLASSINFO("DisplayName", "Create bonds");
-    Q_CLASSINFO("Description", "Creates bonds between particles.");
-    Q_CLASSINFO("ModifierCategory", "Visualization");
+    OVITO_CLASSINFO("DisplayName", "Create bonds");
+    OVITO_CLASSINFO("Description", "Creates bonds between particles.");
+    OVITO_CLASSINFO("ModifierCategory", "Visualization");
 
 public:
 
@@ -156,7 +155,7 @@ private:
 public:
 
     /// Constructor.
-    Q_INVOKABLE CreateBondsModifier(ObjectInitializationFlags flags);
+    explicit CreateBondsModifier(ObjectInitializationFlags flags);
 
     /// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;

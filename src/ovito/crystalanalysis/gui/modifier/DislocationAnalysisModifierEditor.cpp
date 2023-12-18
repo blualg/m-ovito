@@ -35,10 +35,10 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DislocationAnalysisModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(DislocationAnalysisModifierEditor);
 SET_OVITO_OBJECT_EDITOR(DislocationAnalysisModifier, DislocationAnalysisModifierEditor);
 
-IMPLEMENT_OVITO_CLASS(DislocationTypeListParameterUI);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(DislocationTypeListParameterUI);
 
 /******************************************************************************
 * Sets up the UI widgets of the editor.

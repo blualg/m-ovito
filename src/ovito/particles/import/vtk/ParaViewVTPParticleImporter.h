@@ -54,14 +54,12 @@ class OVITO_PARTICLES_EXPORT ParaViewVTPParticleImporter : public ParticleImport
     };
 
     OVITO_CLASS_META(ParaViewVTPParticleImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "VTP");
 
 public:
 
-    /// \brief Constructor.
-    Q_INVOKABLE ParaViewVTPParticleImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {}
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("VTP"); }
+    /// Constructor.
+    using ParticleImporter::ParticleImporter;
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
@@ -114,9 +112,6 @@ class OVITO_PARTICLES_EXPORT ParticlesParaViewVTMFileFilter : public ParaViewVTM
     OVITO_CLASS(ParticlesParaViewVTMFileFilter)
 
 public:
-
-    /// Constructor.
-    Q_INVOKABLE ParticlesParaViewVTMFileFilter() = default;
 
     /// \brief Is called once before the datasets referenced in a multi-block VTM file will be loaded.
     virtual void preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets, FileSourceImporter::LoadOperationRequest& request, const ParaViewVTMImporter& vtmImporter) override;

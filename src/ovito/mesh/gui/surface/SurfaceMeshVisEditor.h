@@ -38,7 +38,7 @@ class SurfaceMeshVisEditor : public PropertiesEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE SurfaceMeshVisEditor() {}
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 
@@ -60,5 +60,3 @@ private:
 };
 
 }   // End of namespace
-
-

@@ -38,7 +38,7 @@ class POSCARExporterEditor : public PropertiesEditor
 public:
 
     /// Constructor.
-    Q_INVOKABLE POSCARExporterEditor() {}
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

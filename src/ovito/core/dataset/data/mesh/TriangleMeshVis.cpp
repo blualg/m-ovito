@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS2(TriangleMeshVis);
+IMPLEMENT_CREATABLE_OVITO_CLASS(TriangleMeshVis);
 DEFINE_PROPERTY_FIELD(TriangleMeshVis, color);
 DEFINE_REFERENCE_FIELD(TriangleMeshVis, transparencyController);
 DEFINE_PROPERTY_FIELD(TriangleMeshVis, highlightEdges);

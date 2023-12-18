@@ -38,14 +38,14 @@ class OVITO_PARTICLES_EXPORT WignerSeitzAnalysisModifier : public ReferenceConfi
 {
     OVITO_CLASS(WignerSeitzAnalysisModifier)
 
-    Q_CLASSINFO("DisplayName", "Wigner-Seitz defect analysis");
-    Q_CLASSINFO("Description", "Identify point defects (vacancies and interstitials) in crystals.");
-    Q_CLASSINFO("ModifierCategory", "Analysis");
+    OVITO_CLASSINFO("DisplayName", "Wigner-Seitz defect analysis");
+    OVITO_CLASSINFO("Description", "Identify point defects (vacancies and interstitials) in crystals.");
+    OVITO_CLASSINFO("ModifierCategory", "Analysis");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE WignerSeitzAnalysisModifier(ObjectInitializationFlags flags);
+    explicit WignerSeitzAnalysisModifier(ObjectInitializationFlags flags);
 
 protected:
 

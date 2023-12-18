@@ -50,9 +50,8 @@ class OVITO_CRYSTALANALYSIS_EXPORT GrainSegmentationModifier : public Asynchrono
     };
 
     OVITO_CLASS_META(GrainSegmentationModifier, GrainSegmentationModifierClass)
-
-    Q_CLASSINFO("DisplayName", "Grain segmentation");
-    Q_CLASSINFO("ModifierCategory", "Analysis");
+    OVITO_CLASSINFO("DisplayName", "Grain segmentation");
+    OVITO_CLASSINFO("ModifierCategory", "Analysis");
 
 public:
 
@@ -64,7 +63,7 @@ public:
     Q_ENUM(MergeAlgorithm);
 
     /// Constructor.
-    Q_INVOKABLE GrainSegmentationModifier(ObjectInitializationFlags flags);
+    explicit GrainSegmentationModifier(ObjectInitializationFlags flags);
 
 protected:
 

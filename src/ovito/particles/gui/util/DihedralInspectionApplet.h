@@ -36,12 +36,13 @@ namespace Ovito {
 class DihedralInspectionApplet : public PropertyInspectionApplet
 {
     OVITO_CLASS(DihedralInspectionApplet)
-    Q_CLASSINFO("DisplayName", "Dihedrals");
+    OVITO_CLASSINFO("DisplayName", "Dihedrals")
+    Q_OBJECT
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE DihedralInspectionApplet() : PropertyInspectionApplet(Dihedrals::OOClass()) {}
+    explicit DihedralInspectionApplet() : PropertyInspectionApplet(Dihedrals::OOClass()) {}
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 16; }

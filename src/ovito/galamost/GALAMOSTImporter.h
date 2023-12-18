@@ -53,14 +53,12 @@ class OVITO_GALAMOST_EXPORT GALAMOSTImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(GALAMOSTImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "GALAMOST");
 
 public:
 
-    /// \brief Constructor.
-    Q_INVOKABLE GALAMOSTImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {}
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("GALAMOST"); }
+    /// Constructor.
+    using ParticleImporter::ParticleImporter;
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {

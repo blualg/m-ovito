@@ -34,11 +34,12 @@ namespace Ovito {
 class AffineTransformationModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(AffineTransformationModifierEditor)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE AffineTransformationModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

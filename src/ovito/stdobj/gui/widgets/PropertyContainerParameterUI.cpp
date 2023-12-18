@@ -28,7 +28,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(PropertyContainerParameterUI);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(PropertyContainerParameterUI);
 
 /******************************************************************************
 * Constructor.
@@ -75,7 +75,7 @@ void PropertyContainerParameterUI::updateUI()
 
         // Get the current property class.
         QVariant val = editObject()->getPropertyFieldValue(propertyField());
-        OVITO_ASSERT_MSG(val.isValid() && val.canConvert<PropertyContainerReference>(), "PropertyContainerParameterUI::updateUI()", qPrintable(QString("The property field of object class %1 is not of type <PropertyContainerClassPtr> or <PropertyContainerReference>.").arg(editObject()->metaObject()->className())));
+        OVITO_ASSERT(val.isValid() && val.canConvert<PropertyContainerReference>());
         PropertyContainerReference selectedPropertyContainer = val.value<PropertyContainerReference>();
 
         // Update list of property containers available in the pipeline.

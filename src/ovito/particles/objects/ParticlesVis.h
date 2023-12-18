@@ -38,7 +38,7 @@ namespace Ovito {
 class OVITO_PARTICLES_EXPORT ParticlesVis : public DataVis
 {
     OVITO_CLASS(ParticlesVis)
-    Q_CLASSINFO("DisplayName", "Particles");
+    OVITO_CLASSINFO("DisplayName", "Particles");
 
 public:
 
@@ -58,7 +58,7 @@ public:
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticlesVis(ObjectInitializationFlags flags);
+    explicit ParticlesVis(ObjectInitializationFlags flags);
 
     /// Renders the visual element.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;
@@ -144,7 +144,7 @@ class OVITO_PARTICLES_EXPORT ParticlePickInfo : public ObjectPickInfo
 public:
 
     /// Constructor.
-    ParticlePickInfo(ParticlesVis* visElement, DataOORef<const Particles> particles, ConstDataBufferPtr subobjectToParticleMapping = {}) :
+    explicit ParticlePickInfo(ParticlesVis* visElement, DataOORef<const Particles> particles, ConstDataBufferPtr subobjectToParticleMapping = {}) :
         _visElement(visElement), _particles(std::move(particles)), _subobjectToParticleMapping(std::move(subobjectToParticleMapping)) {}
 
     /// Returns the particles object.

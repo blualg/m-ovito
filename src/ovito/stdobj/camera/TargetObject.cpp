@@ -29,8 +29,8 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(TargetObject);
-IMPLEMENT_OVITO_CLASS(TargetVis);
+IMPLEMENT_CREATABLE_OVITO_CLASS(TargetObject);
+IMPLEMENT_CREATABLE_OVITO_CLASS(TargetVis);
 
 /******************************************************************************
 * Constructs a target object.

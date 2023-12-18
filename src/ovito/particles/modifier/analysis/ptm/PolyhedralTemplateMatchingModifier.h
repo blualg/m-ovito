@@ -39,14 +39,14 @@ class OVITO_PARTICLES_EXPORT PolyhedralTemplateMatchingModifier : public Structu
 {
     OVITO_CLASS(PolyhedralTemplateMatchingModifier)
 
-    Q_CLASSINFO("DisplayName", "Polyhedral template matching");
-    Q_CLASSINFO("Description", "Identify structures using the PTM method and local crystal orientations.");
-    Q_CLASSINFO("ModifierCategory", "Structure identification");
+    OVITO_CLASSINFO("DisplayName", "Polyhedral template matching");
+    OVITO_CLASSINFO("Description", "Identify structures using the PTM method and local crystal orientations.");
+    OVITO_CLASSINFO("ModifierCategory", "Structure identification");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE PolyhedralTemplateMatchingModifier(ObjectInitializationFlags flags);
+    explicit PolyhedralTemplateMatchingModifier(ObjectInitializationFlags flags);
 
 protected:
 

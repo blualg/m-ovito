@@ -37,14 +37,14 @@ class OVITO_STDMOD_EXPORT ManualSelectionModifier : public GenericPropertyModifi
 {
     OVITO_CLASS(ManualSelectionModifier)
 
-    Q_CLASSINFO("DisplayName", "Manual selection");
-    Q_CLASSINFO("Description", "Select individual particles or bonds using the mouse.");
-    Q_CLASSINFO("ModifierCategory", "Selection");
+    OVITO_CLASSINFO("DisplayName", "Manual selection");
+    OVITO_CLASSINFO("Description", "Select individual particles or bonds using the mouse.");
+    OVITO_CLASSINFO("ModifierCategory", "Selection");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ManualSelectionModifier(ObjectInitializationFlags flags);
+    explicit ManualSelectionModifier(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -86,12 +86,12 @@ protected:
 class OVITO_STDMOD_EXPORT ManualSelectionModificationNode : public ModificationNode
 {
     OVITO_CLASS(ManualSelectionModificationNode)
-    Q_CLASSINFO("ClassNameAlias", "ManualSelectionModifierApplication");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("ClassNameAlias", "ManualSelectionModifierApplication");  // For backward compatibility with OVITO 3.9.2
 
 public:
 
-    /// \brief Constructs a modifier application.
-    Q_INVOKABLE ManualSelectionModificationNode(ObjectInitializationFlags flags) : ModificationNode(flags) {}
+    /// Constructor.
+    explicit ManualSelectionModificationNode(ObjectInitializationFlags flags) : ModificationNode(flags) {}
 
 private:
 

@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ReplicateModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ReplicateModifier);
 DEFINE_PROPERTY_FIELD(ReplicateModifier, numImagesX);
 DEFINE_PROPERTY_FIELD(ReplicateModifier, numImagesY);
 DEFINE_PROPERTY_FIELD(ReplicateModifier, numImagesZ);
@@ -45,9 +45,9 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ReplicateModifier, numImagesX, IntegerParam
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ReplicateModifier, numImagesY, IntegerParameterUnit, 1);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ReplicateModifier, numImagesZ, IntegerParameterUnit, 1);
 
-IMPLEMENT_OVITO_CLASS(ReplicateModifierDelegate);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(ReplicateModifierDelegate);
 
-IMPLEMENT_OVITO_CLASS(LinesReplicateModifierDelegate);
+IMPLEMENT_CREATABLE_OVITO_CLASS(LinesReplicateModifierDelegate);
 
 /******************************************************************************
  * Indicates which data objects in the given input data collection the modifier

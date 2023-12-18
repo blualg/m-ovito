@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(PickingOpenGLSceneRenderer);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(PickingOpenGLSceneRenderer);
 
 /******************************************************************************
 * Constructor.

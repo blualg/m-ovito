@@ -93,6 +93,7 @@ SET(SourceFiles
     dataset/data/TransformingDataVis.cpp
     dataset/data/TransformedDataObject.cpp
     dataset/data/camera/AbstractCameraObject.cpp
+    dataset/data/camera/AbstractCameraSource.cpp
     dataset/data/AttributeDataObject.cpp
     dataset/data/mesh/TriangleMesh.cpp
     dataset/data/mesh/TriangleMeshVis.cpp

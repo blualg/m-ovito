@@ -42,7 +42,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(TextLabelOverlayEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(TextLabelOverlayEditor);
 DEFINE_REFERENCE_FIELD(TextLabelOverlayEditor, sourcePipeline);
 SET_OVITO_OBJECT_EDITOR(TextLabelOverlay, TextLabelOverlayEditor);
 
@@ -93,9 +93,9 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
     FloatParameterUI* offsetYPUI = new FloatParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::offsetY));
     positionLayout->addLayout(offsetYPUI->createFieldLayout(), 1, 2);
 
-    ViewportInputMode* moveOverlayMode = new MoveOverlayInputMode(this);
+    OORef<MoveOverlayInputMode> moveOverlayMode = OORef<MoveOverlayInputMode>::create(this);
     connect(this, &QObject::destroyed, moveOverlayMode, &ViewportInputMode::removeMode);
-    ViewportModeAction* moveOverlayAction = new ViewportModeAction(mainWindow(), tr("Move"), this, moveOverlayMode);
+    ViewportModeAction* moveOverlayAction = new ViewportModeAction(mainWindow(), tr("Move"), this, std::move(moveOverlayMode));
     moveOverlayAction->setIcon(QIcon::fromTheme("edit_mode_move"));
     moveOverlayAction->setToolTip(tr("Reposition the label in the viewport using the mouse"));
     positionLayout->addWidget(new ViewportModeButton(moveOverlayAction), 2, 1, 1, 2, Qt::AlignRight | Qt::AlignTop);
@@ -138,7 +138,8 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
     _pipelineComboBox = new PopupUpdateComboBox();
     connect(_pipelineComboBox, &PopupUpdateComboBox::dropDownActivated, this, &TextLabelOverlayEditor::updateSourcesList);
 
-    CustomParameterUI* sourcePUI = new CustomParameterUI(this, "pipeline", _pipelineComboBox,
+    // TODO: Implement support for reference fields in CustomParameterUI.
+    CustomParameterUI* sourcePUI = new CustomParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::pipeline), _pipelineComboBox,
             // updateWidgetFunction:
             [this](const QVariant& value) {
                 _pipelineComboBox->clear();

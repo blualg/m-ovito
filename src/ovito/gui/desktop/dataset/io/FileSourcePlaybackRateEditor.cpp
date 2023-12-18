@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(FileSourcePlaybackRateEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(FileSourcePlaybackRateEditor);
 
 /******************************************************************************
 * Sets up the UI of the editor.
@@ -138,21 +138,29 @@ void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& ro
     });
 
     // Whenever a new FileSource gets loaded into the editor:
-    connect(this, &PropertiesEditor::contentsReplaced, this, [this, con1 = QMetaObject::Connection()](RefTarget* editObject) mutable {
-        disconnect(con1);
-
+    connect(this, &PropertiesEditor::contentsReplaced, this, [this](RefTarget* editObject) mutable {
         // Update displayed information.
         updateFramesList();
         updateInformation();
-
-        // Update the frames list displayed in the UI whenever it changes.
-        con1 = editObject ? connect(static_object_cast<FileSource>(editObject), &FileSource::framesListChanged, this, &FileSourcePlaybackRateEditor::updateFramesList) : QMetaObject::Connection();
     });
 
     // Update the information display when animation interval changes.
     connect(&mainWindow().datasetContainer(), &DataSetContainer::animationIntervalChanged, this, &FileSourcePlaybackRateEditor::updateInformation);
 
     connect(this, &PropertiesEditor::contentsChanged, this, &FileSourcePlaybackRateEditor::updateInformation);
+}
+
+/******************************************************************************
+* This method is called when a reference target changes.
+******************************************************************************/
+bool FileSourcePlaybackRateEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+{
+    if(source == editObject()) {
+        if(event.type() == ReferenceEvent::AnimationFramesChanged) {
+            updateFramesList();
+        }
+    }
+    return PropertiesEditor::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -187,7 +195,8 @@ void FileSourcePlaybackRateEditor::updateInformation()
 void FileSourcePlaybackRateEditor::updateFramesList()
 {
     FileSource* fileSource = static_object_cast<FileSource>(editObject());
-    if(!fileSource) return;
+    if(!fileSource)
+        return;
 
     QStringList stringList;
     stringList.reserve(fileSource->frames().size());

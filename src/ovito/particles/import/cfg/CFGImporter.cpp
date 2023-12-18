@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(CFGImporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(CFGImporter);
 
 struct CFGHeader {
 

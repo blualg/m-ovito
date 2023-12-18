@@ -20,14 +20,14 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/particles/Particles.h>
+#include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/lines/LinesVis.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include "Lines.h"
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(Lines);
+IMPLEMENT_CREATABLE_OVITO_CLASS(Lines);
 DEFINE_PROPERTY_FIELD(Lines, cuttingPlanes);
 SET_PROPERTY_FIELD_LABEL(Lines, cuttingPlanes, "Cutting planes");
 

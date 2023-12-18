@@ -25,7 +25,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataObject.h>
-#include <ovito/core/dataset/pipeline/PipelineNode.h>
 
 namespace Ovito {
 

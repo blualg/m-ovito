@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParticlesComputePropertyModifierDelegate);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ParticlesComputePropertyModifierDelegate);
 DEFINE_PROPERTY_FIELD(ParticlesComputePropertyModifierDelegate, neighborExpressions);
 DEFINE_PROPERTY_FIELD(ParticlesComputePropertyModifierDelegate, cutoff);
 DEFINE_PROPERTY_FIELD(ParticlesComputePropertyModifierDelegate, useMultilineFields);

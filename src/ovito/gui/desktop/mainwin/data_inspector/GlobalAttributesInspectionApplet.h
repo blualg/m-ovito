@@ -35,12 +35,14 @@ namespace Ovito {
 class GlobalAttributesInspectionApplet : public DataInspectionApplet
 {
     OVITO_CLASS(GlobalAttributesInspectionApplet)
-    Q_CLASSINFO("DisplayName", "Global Attributes");
+    Q_OBJECT
+
+    OVITO_CLASSINFO("DisplayName", "Global Attributes");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE GlobalAttributesInspectionApplet() : DataInspectionApplet(AttributeDataObject::OOClass()) {}
+    explicit GlobalAttributesInspectionApplet() : DataInspectionApplet(AttributeDataObject::OOClass()) {}
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 100; }
@@ -55,7 +57,7 @@ public:
     virtual void updateDisplay() override;
 
     /// Selects a specific data object in this applet.
-    virtual bool selectDataObject(PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint) override;
+    virtual bool selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint) override;
 
 private Q_SLOTS:
 

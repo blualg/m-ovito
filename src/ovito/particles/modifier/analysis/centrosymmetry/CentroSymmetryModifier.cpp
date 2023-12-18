@@ -34,7 +34,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(CentroSymmetryModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(CentroSymmetryModifier);
 DEFINE_PROPERTY_FIELD(CentroSymmetryModifier, numNeighbors);
 DEFINE_PROPERTY_FIELD(CentroSymmetryModifier, mode);
 DEFINE_PROPERTY_FIELD(CentroSymmetryModifier, onlySelectedParticles);

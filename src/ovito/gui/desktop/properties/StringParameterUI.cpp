@@ -27,8 +27,9 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(StringParameterUI);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(StringParameterUI);
 
+#if 0 // TODO
 /******************************************************************************
 * Constructor for a Qt property.
 ******************************************************************************/
@@ -39,6 +40,7 @@ StringParameterUI::StringParameterUI(PropertiesEditor* parentEditor, const char*
     _textBox = new QLineEdit();
     connect(static_cast<QLineEdit*>(_textBox.data()), &QLineEdit::editingFinished, this, &StringParameterUI::updatePropertyValue);
 }
+#endif
 
 /******************************************************************************
 * Constructor for a PropertyField property.
@@ -110,6 +112,7 @@ void StringParameterUI::updateUI()
 
     if(textBox() && editObject()) {
         QVariant val;
+#if 0 // TODO
         if(isQtPropertyUI()) {
             val = editObject()->property(propertyName());
             OVITO_ASSERT_MSG(val.isValid() && val.canConvert<QString>(), "StringParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
@@ -117,7 +120,9 @@ void StringParameterUI::updateUI()
                 throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to string type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
             }
         }
-        else if(isPropertyFieldUI()) {
+        else
+#endif
+        if(isPropertyFieldUI()) {
             val = editObject()->getPropertyFieldValue(propertyField());
             OVITO_ASSERT(val.isValid());
         }
@@ -164,12 +169,15 @@ void StringParameterUI::updatePropertyValue()
         return;
     if(editObject()) {
         performTransaction(tr("Change parameter"), [this,text]() {
+#if 0 // TODO
             if(isQtPropertyUI()) {
                 if(!editObject()->setProperty(propertyName(), text)) {
                     OVITO_ASSERT_MSG(false, "StringParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
                 }
             }
-            else if(isPropertyFieldUI()) {
+            else
+#endif
+            if(isPropertyFieldUI()) {
                 editor()->changePropertyFieldValue(propertyField(), text);
             }
             Q_EMIT valueEntered();

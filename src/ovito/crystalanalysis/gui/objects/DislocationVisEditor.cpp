@@ -32,7 +32,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DislocationVisEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(DislocationVisEditor);
 SET_OVITO_OBJECT_EDITOR(DislocationVis, DislocationVisEditor);
 
 /******************************************************************************

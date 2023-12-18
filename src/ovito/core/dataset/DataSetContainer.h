@@ -34,7 +34,7 @@ namespace Ovito {
 /**
  * \brief Manages the DataSet being edited.
  */
-class OVITO_CORE_EXPORT DataSetContainer : public QObject, public RefMaker
+class OVITO_CORE_EXPORT DataSetContainer final : public QObject, public RefMaker
 {
     OVITO_CLASS(DataSetContainer)
     Q_OBJECT
@@ -45,19 +45,13 @@ public:
     explicit DataSetContainer(TaskManager& taskManager, UserInterface& userInterface);
 
     /// Destructor.
-    virtual ~DataSetContainer();
+    ~DataSetContainer();
 
     /// Returns the manager of asynchronous tasks associated with this container.
     TaskManager& taskManager() { return _taskManager; }
 
     /// Returns the abstract user interface this container is part of.
     UserInterface& userInterface() { return _userInterface; }
-
-    /// Creates an empty dataset and makes it the current dataset.
-    DataSet* newDataset();
-
-    /// Loads the given session state file.
-    virtual OORef<DataSet> loadDataset(const QString& filename);
 
     /// Returns the current time of the active animation settings object.
     AnimationTime currentAnimationTime() const { return activeAnimationSettings() ? activeAnimationSettings()->currentTime() : AnimationTime(0); }
@@ -113,6 +107,12 @@ Q_SIGNALS:
     /// \brief This signal is emitted when another viewport became active.
     void activeViewportChanged(Viewport* activeViewport);
 
+    /// \brief This signal is emitted when a viewport became the maximized one.
+    void maximizedViewportChanged(Viewport* maximizedViewport);
+
+    /// \brief This signal is sent whenver the layout of the viewports changes in some way.
+    void viewportLayoutChanged();
+
     /// \brief This signal is emitted whenever the active scene of current dataset has been replaced by a new one.
     /// \note This signal is NOT emitted when the contents of the current scene change.
     void sceneReplaced(Scene* newScene);
@@ -158,22 +158,22 @@ protected:
 private:
 
     /// The active dataset.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<DataSet>, currentSet, setCurrentSet, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<DataSet>, currentSet, setCurrentSet);
 
     /// The active viewport configuration.
-    DECLARE_REFERENCE_FIELD_FLAGS(ViewportConfiguration*, activeViewportConfig, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
+    DECLARE_REFERENCE_FIELD(ViewportConfiguration*, activeViewportConfig);
 
     /// The active viewport.
-    DECLARE_REFERENCE_FIELD_FLAGS(Viewport*, activeViewport, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
+    DECLARE_REFERENCE_FIELD(Viewport*, activeViewport);
 
     /// The active scene.
-    DECLARE_REFERENCE_FIELD_FLAGS(Scene*, activeScene, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
+    DECLARE_REFERENCE_FIELD(Scene*, activeScene);
 
     /// The active scene node selection set.
-    DECLARE_REFERENCE_FIELD_FLAGS(SelectionSet*, activeSelectionSet, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
+    DECLARE_REFERENCE_FIELD(SelectionSet*, activeSelectionSet);
 
     /// The active animation settings.
-    DECLARE_REFERENCE_FIELD_FLAGS(AnimationSettings*, activeAnimationSettings, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF);
+    DECLARE_REFERENCE_FIELD(AnimationSettings*, activeAnimationSettings);
 
     /// The manager of asynchronous tasks associated with this container.
     TaskManager& _taskManager;

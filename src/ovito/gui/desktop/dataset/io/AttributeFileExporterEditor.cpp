@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(AttributeFileExporterEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(AttributeFileExporterEditor);
 SET_OVITO_OBJECT_EDITOR(AttributeFileExporter, AttributeFileExporterEditor);
 
 /******************************************************************************

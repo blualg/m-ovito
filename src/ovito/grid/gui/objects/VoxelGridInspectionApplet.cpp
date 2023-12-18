@@ -26,7 +26,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(VoxelGridInspectionApplet);
+IMPLEMENT_CREATABLE_OVITO_CLASS(VoxelGridInspectionApplet);
 
 /******************************************************************************
 * Lets the applet create the UI widget that is to be placed into the data

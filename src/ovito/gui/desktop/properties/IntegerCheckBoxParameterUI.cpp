@@ -29,8 +29,9 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(IntegerCheckBoxParameterUI);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(IntegerCheckBoxParameterUI);
 
+#if 0 // TODO
 /******************************************************************************
 * The constructor.
 ******************************************************************************/
@@ -44,6 +45,7 @@ IntegerCheckBoxParameterUI::IntegerCheckBoxParameterUI(PropertiesEditor* parentE
     _checkBox = new QCheckBox(checkBoxLabel);
     connect(_checkBox.data(), &QCheckBox::clicked, this, &IntegerCheckBoxParameterUI::updatePropertyValue);
 }
+#endif
 
 /******************************************************************************
 * Constructor for a PropertyField property.
@@ -105,6 +107,7 @@ void IntegerCheckBoxParameterUI::updateUI()
             }
         }
         else {
+#if 0 // TODO
             if(isQtPropertyUI()) {
                 QVariant val = editObject()->property(propertyName());
                 OVITO_ASSERT_MSG(val.isValid() && val.canConvert<int>(), "IntegerCheckBoxParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to integer type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
@@ -113,7 +116,9 @@ void IntegerCheckBoxParameterUI::updateUI()
                 }
                 value = val.toInt();
             }
-            else if(isPropertyFieldUI()) {
+            else
+#endif
+            if(isPropertyFieldUI()) {
                 QVariant val = editObject()->getPropertyFieldValue(propertyField());
                 OVITO_ASSERT(val.isValid());
                 value = val.toInt();
@@ -153,11 +158,13 @@ void IntegerCheckBoxParameterUI::updatePropertyValue()
                     updateUI();
                 }
             }
+#if 0 // TODO
             else if(isQtPropertyUI()) {
                 if(!editObject()->setProperty(propertyName(), value)) {
                     OVITO_ASSERT_MSG(false, "IntegerRadioButtonPropertyUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
                 }
             }
+#endif
             else if(isPropertyFieldUI()) {
                 editor()->changePropertyFieldValue(propertyField(), value);
             }

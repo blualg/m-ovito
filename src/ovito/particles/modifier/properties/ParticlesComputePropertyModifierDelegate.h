@@ -55,13 +55,12 @@ class OVITO_PARTICLES_EXPORT ParticlesComputePropertyModifierDelegate : public C
     };
 
     OVITO_CLASS_META(ParticlesComputePropertyModifierDelegate, OOMetaClass)
-
-    Q_CLASSINFO("DisplayName", "Particles");
+    OVITO_CLASSINFO("DisplayName", "Particles");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticlesComputePropertyModifierDelegate(ObjectInitializationFlags flags);
+    explicit ParticlesComputePropertyModifierDelegate(ObjectInitializationFlags flags);
 
     /// \brief Sets the math expression that is used to compute the neighbor-terms of the property function.
     /// \param index The property component for which the expression should be set.

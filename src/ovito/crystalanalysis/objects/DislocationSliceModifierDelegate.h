@@ -49,13 +49,12 @@ class OVITO_CRYSTALANALYSIS_EXPORT DislocationSliceModifierDelegate : public Sli
     };
 
     OVITO_CLASS_META(DislocationSliceModifierDelegate, OOMetaClass)
-
-    Q_CLASSINFO("DisplayName", "Dislocation lines");
+    OVITO_CLASSINFO("DisplayName", "Dislocation lines");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE DislocationSliceModifierDelegate(ObjectInitializationFlags flags) : SliceModifierDelegate(flags) {}
+    using SliceModifierDelegate::SliceModifierDelegate;
 
     /// \brief Applies a slice operation to a data object.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

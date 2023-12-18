@@ -33,7 +33,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(DislocationAnalysisModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(DislocationAnalysisModifier);
 DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, inputCrystalStructure);
 DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, maxTrialCircuitSize);
 DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, circuitStretchability);

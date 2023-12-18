@@ -57,8 +57,7 @@ DataSetContainer::DataSetContainer(TaskManager& taskManager, UserInterface& user
 ******************************************************************************/
 DataSetContainer::~DataSetContainer()
 {
-    setCurrentSet(nullptr);
-
+    OVITO_ASSERT(currentSet() == nullptr);
     OVITO_ASSERT(activeViewportConfig() == nullptr);
     OVITO_ASSERT(activeViewport() == nullptr);
     OVITO_ASSERT(activeScene() == nullptr);
@@ -93,6 +92,14 @@ bool DataSetContainer::referenceEvent(RefTarget* source, const ReferenceEvent& e
             const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
             if(refEvent.field() == PROPERTY_FIELD(ViewportConfiguration::activeViewport)) {
                 _activeViewport.set(this, PROPERTY_FIELD(activeViewport), activeViewportConfig()->activeViewport());
+            }
+            else if(refEvent.field() == PROPERTY_FIELD(ViewportConfiguration::maximizedViewport)) {
+                Q_EMIT maximizedViewportChanged(activeViewportConfig()->maximizedViewport());
+            }
+        }
+        else if(event.type() == ReferenceEvent::TargetChanged) {
+            if(dynamic_object_cast<ViewportLayoutCell>(event.sender()) && !source->isBeingLoaded() && !source->isBeingDeleted()) {
+                Q_EMIT viewportLayoutChanged();
             }
         }
     }
@@ -155,6 +162,7 @@ void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor* field, R
     else if(field == PROPERTY_FIELD(activeViewportConfig)) {
         Q_EMIT viewportConfigReplaced(activeViewportConfig());
         _activeViewport.set(this, PROPERTY_FIELD(activeViewport), activeViewportConfig() ? activeViewportConfig()->activeViewport() : nullptr);
+        Q_EMIT maximizedViewportChanged(activeViewportConfig() ? activeViewportConfig()->maximizedViewport() : nullptr);
     }
     else if(field == PROPERTY_FIELD(activeViewport)) {
         Q_EMIT activeViewportChanged(activeViewport());
@@ -181,6 +189,10 @@ void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor* field, R
             Q_EMIT currentFrameChanged(activeAnimationSettings()->currentFrame());
             Q_EMIT timeFormatChanged();
         }
+        else {
+            Q_EMIT animationIntervalChanged(0, 0);
+            Q_EMIT currentFrameChanged(0);
+        }
     }
     RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
@@ -195,43 +207,6 @@ void DataSetContainer::timerEvent(QTimerEvent* event)
         _selectionChangeCompleteTimer.stop();
         Q_EMIT selectionChangeComplete(activeSelectionSet());
     }
-}
-
-/******************************************************************************
-* Creates an empty dataset and makes it the current dataset.
-******************************************************************************/
-DataSet* DataSetContainer::newDataset()
-{
-    setCurrentSet(OORef<DataSet>::create());
-    return currentSet();
-}
-
-/******************************************************************************
-* Loads the given session state file.
-******************************************************************************/
-OORef<DataSet> DataSetContainer::loadDataset(const QString& filename)
-{
-    // Make path absolute.
-    QString absoluteFilepath = QFileInfo(filename).absoluteFilePath();
-
-    // Load dataset from file.
-    OORef<DataSet> dataSet;
-
-    QFile fileStream(absoluteFilepath);
-    if(!fileStream.open(QIODevice::ReadOnly))
-        throw Exception(tr("Failed to open session state file '%1' for reading: %2").arg(absoluteFilepath).arg(fileStream.errorString()));
-
-    QDataStream dataStream(&fileStream);
-    ObjectLoadStream stream(dataStream);
-
-    dataSet = stream.loadObject<DataSet>();
-    stream.close();
-
-    if(!dataSet)
-        throw Exception(tr("Session state file '%1' does not contain a dataset.").arg(absoluteFilepath));
-
-    dataSet->setFilePath(absoluteFilepath);
-    return dataSet;
 }
 
 /******************************************************************************

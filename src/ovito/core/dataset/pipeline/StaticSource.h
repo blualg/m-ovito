@@ -35,7 +35,7 @@ namespace Ovito {
 class OVITO_CORE_EXPORT StaticSource : public PipelineNode
 {
     OVITO_CLASS(StaticSource)
-    Q_CLASSINFO("DisplayName", "Pipeline source");
+    OVITO_CLASSINFO("DisplayName", "Pipeline source");
 
 public:
 

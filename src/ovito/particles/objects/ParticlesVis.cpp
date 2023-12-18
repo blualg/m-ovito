@@ -32,8 +32,8 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ParticlesVis);
-IMPLEMENT_OVITO_CLASS(ParticlePickInfo);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ParticlesVis);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(ParticlePickInfo);
 DEFINE_PROPERTY_FIELD(ParticlesVis, defaultParticleRadius);
 DEFINE_PROPERTY_FIELD(ParticlesVis, radiusScaleFactor);
 DEFINE_PROPERTY_FIELD(ParticlesVis, renderingQuality);

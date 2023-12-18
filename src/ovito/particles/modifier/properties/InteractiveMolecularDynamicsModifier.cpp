@@ -34,7 +34,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(InteractiveMolecularDynamicsModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(InteractiveMolecularDynamicsModifier);
 DEFINE_PROPERTY_FIELD(InteractiveMolecularDynamicsModifier, hostName);
 DEFINE_PROPERTY_FIELD(InteractiveMolecularDynamicsModifier, port);
 DEFINE_PROPERTY_FIELD(InteractiveMolecularDynamicsModifier, transmissionInterval);
@@ -294,12 +294,12 @@ void InteractiveMolecularDynamicsModifier::dataReceived()
 /******************************************************************************
 * Asks this object to delete itself.
 ******************************************************************************/
-void InteractiveMolecularDynamicsModifier::deleteReferenceObject()
+void InteractiveMolecularDynamicsModifier::requestObjectDeletion()
 {
     // Automatically disconnect from server when modifier is being deleted.
     disconnectFromServer();
 
-    Modifier::deleteReferenceObject();
+    Modifier::requestObjectDeletion();
 }
 
 /******************************************************************************

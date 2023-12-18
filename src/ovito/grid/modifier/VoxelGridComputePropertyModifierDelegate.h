@@ -54,12 +54,12 @@ class OVITO_GRID_EXPORT VoxelGridComputePropertyModifierDelegate : public Comput
 
     OVITO_CLASS_META(VoxelGridComputePropertyModifierDelegate, OOMetaClass)
 
-    Q_CLASSINFO("DisplayName", "Voxel grids");
+    OVITO_CLASSINFO("DisplayName", "Voxel grids");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE VoxelGridComputePropertyModifierDelegate(ObjectInitializationFlags flags) : ComputePropertyModifierDelegate(flags) {}
+    explicit VoxelGridComputePropertyModifierDelegate(ObjectInitializationFlags flags) : ComputePropertyModifierDelegate(flags) {}
 };
 
 }   // End of namespace

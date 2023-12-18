@@ -43,6 +43,9 @@ class OVITO_STDMOD_EXPORT ColorCodingModifierDelegate : public ModifierDelegate
 
 public:
 
+    /// Abstract class constructor.
+    using ModifierDelegate::ModifierDelegate;
+
     /// Applies the modifier operation to the data in a pipeline flow state.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 
@@ -57,9 +60,6 @@ public:
     }
 
 protected:
-
-    /// Abstract class constructor.
-    using ModifierDelegate::ModifierDelegate;
 
     /// Returns the ID of the standard property that will receive the computed colors.
     virtual int outputColorPropertyId() const { return Property::GenericColorProperty; }
@@ -89,12 +89,12 @@ class LinesColorCodingModifierDelegate : public ColorCodingModifierDelegate
 
     OVITO_CLASS_META(LinesColorCodingModifierDelegate, OOMetaClass)
 
-    Q_CLASSINFO("DisplayName", "Lines");
-    Q_CLASSINFO("ClassNameAlias", "TrajectoryColorCodingModifierDelegate");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("DisplayName", "Lines");
+    OVITO_CLASSINFO("ClassNameAlias", "TrajectoryColorCodingModifierDelegate");  // For backward compatibility with OVITO 3.9.2
 
 public:
     /// Constructor.
-    Q_INVOKABLE LinesColorCodingModifierDelegate(ObjectInitializationFlags flags) : ColorCodingModifierDelegate(flags) {}
+    explicit LinesColorCodingModifierDelegate(ObjectInitializationFlags flags) : ColorCodingModifierDelegate(flags) {}
 };
 
 /**
@@ -117,14 +117,14 @@ public:
     };
 
     OVITO_CLASS_META(ColorCodingModifier, ColorCodingModifierClass)
-    Q_CLASSINFO("DisplayName", "Color coding");
-    Q_CLASSINFO("Description", "Colors elements based on property values.");
-    Q_CLASSINFO("ModifierCategory", "Coloring");
+    OVITO_CLASSINFO("DisplayName", "Color coding");
+    OVITO_CLASSINFO("Description", "Colors elements based on property values.");
+    OVITO_CLASSINFO("ModifierCategory", "Coloring");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ColorCodingModifier(ObjectInitializationFlags flags);
+    explicit ColorCodingModifier(ObjectInitializationFlags flags);
 
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;

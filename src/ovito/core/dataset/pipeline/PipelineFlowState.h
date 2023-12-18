@@ -408,13 +408,13 @@ public:
     }
 
     /// Inserts a new global attribute into the pipeline state.
-    AttributeDataObject* addAttribute(const QString& key, QVariant value, const PipelineNode* createdByNode) {
-        return mutableData()->addAttribute(key, std::move(value), createdByNode);
+    AttributeDataObject* addAttribute(const QString& key, QVariant value, OOWeakRef<const PipelineNode> createdByNode) {
+        return mutableData()->addAttribute(key, std::move(value), std::move(createdByNode));
     }
 
     /// Inserts a new global attribute into the pipeline state overwritting any existing attribute with the same name.
-    AttributeDataObject* setAttribute(const QString& key, QVariant value, const PipelineNode* createdByNode) {
-        return mutableData()->setAttribute(key, std::move(value), createdByNode);
+    AttributeDataObject* setAttribute(const QString& key, QVariant value, OOWeakRef<const PipelineNode> createdByNode) {
+        return mutableData()->setAttribute(key, std::move(value), std::move(createdByNode));
     }
 
     /// Returns a new unique data object identifier that does not collide with the

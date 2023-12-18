@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(IdentifyDiamondModifierEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(IdentifyDiamondModifierEditor);
 SET_OVITO_OBJECT_EDITOR(IdentifyDiamondModifier, IdentifyDiamondModifierEditor);
 
 /******************************************************************************

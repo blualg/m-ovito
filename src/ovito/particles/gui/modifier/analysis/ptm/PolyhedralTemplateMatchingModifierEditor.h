@@ -37,11 +37,12 @@ namespace Ovito {
 class PolyhedralTemplateMatchingModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(PolyhedralTemplateMatchingModifierEditor)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE PolyhedralTemplateMatchingModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected Q_SLOTS:
 

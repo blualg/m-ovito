@@ -122,6 +122,7 @@ namespace Ovito
     class AsynchronousModifier;
     class AsynchronousDelegatingModifier;
     class AbstractCameraObject;
+    class AbstractCameraSource;
     class SceneRenderer;
     class ObjectPickInfo;
     class ViewportPickResult;

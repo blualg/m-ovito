@@ -54,13 +54,12 @@ class ParticlesAssignColorModifierDelegate : public AssignColorModifierDelegate
     };
 
     OVITO_CLASS_META(ParticlesAssignColorModifierDelegate, ParticlesAssignColorModifierDelegateClass)
-
-    Q_CLASSINFO("DisplayName", "Particles");
+    OVITO_CLASSINFO("DisplayName", "Particles");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticlesAssignColorModifierDelegate(ObjectInitializationFlags flags) : AssignColorModifierDelegate(flags) {}
+    using AssignColorModifierDelegate::AssignColorModifierDelegate;
 
 protected:
 
@@ -92,13 +91,12 @@ class ParticleVectorsAssignColorModifierDelegate : public AssignColorModifierDel
     };
 
     OVITO_CLASS_META(ParticleVectorsAssignColorModifierDelegate, OOMetaClass)
-
-    Q_CLASSINFO("DisplayName", "Particle vectors");
+    OVITO_CLASSINFO("DisplayName", "Particle vectors");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE ParticleVectorsAssignColorModifierDelegate(ObjectInitializationFlags flags) : AssignColorModifierDelegate(flags) {}
+    using AssignColorModifierDelegate::AssignColorModifierDelegate;
 
 protected:
 
@@ -130,13 +128,12 @@ class BondsAssignColorModifierDelegate : public AssignColorModifierDelegate
     };
 
     OVITO_CLASS_META(BondsAssignColorModifierDelegate, BondsAssignColorModifierDelegateClass)
-
-    Q_CLASSINFO("DisplayName", "Bonds");
+    OVITO_CLASSINFO("DisplayName", "Bonds");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE BondsAssignColorModifierDelegate(ObjectInitializationFlags flags) : AssignColorModifierDelegate(flags) {}
+    using AssignColorModifierDelegate::AssignColorModifierDelegate;
 
 protected:
 

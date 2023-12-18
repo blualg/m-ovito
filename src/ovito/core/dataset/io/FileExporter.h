@@ -65,6 +65,9 @@ class OVITO_CORE_EXPORT FileExporter : public RefTarget
 
 public:
 
+    /// Initializes the object.
+    explicit FileExporter(ObjectInitializationFlags flags);
+
     /// \brief Selects the default scene node to be exported by this exporter.
     virtual void selectDefaultExportableData(DataSet* dataset, Scene* scene);
 
@@ -107,9 +110,6 @@ public:
     QString getAvailableDataObjectList(const PipelineFlowState& state, const DataObject::OOMetaClass& objectType) const;
 
 protected:
-
-    /// Initializes the object.
-    explicit FileExporter(ObjectInitializationFlags flags);
 
     /// \brief This is called once for every output file to be written and before exportFrame() is called.
     virtual void openOutputFile(const QString& filePath, int numberOfFrames) = 0;

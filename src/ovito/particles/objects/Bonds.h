@@ -112,8 +112,8 @@ class OVITO_PARTICLES_EXPORT Bonds : public PropertyContainer
     };
 
     OVITO_CLASS_META(Bonds, OOMetaClass);
-    Q_CLASSINFO("DisplayName", "Bonds");
-    Q_CLASSINFO("ClassNameAlias", "BondsObject");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("DisplayName", "Bonds");
+    OVITO_CLASSINFO("ClassNameAlias", "BondsObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
 
@@ -131,8 +131,8 @@ public:
         WidthProperty,
     };
 
-    /// \brief Constructor.
-    Q_INVOKABLE Bonds(ObjectInitializationFlags flags);
+    /// Constructor.
+    explicit Bonds(ObjectInitializationFlags flags);
 
     /// Convinience method that returns the bond topology property.
     const Property* getTopology() const { return getProperty(TopologyProperty); }

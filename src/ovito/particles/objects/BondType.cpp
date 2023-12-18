@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(BondType);
+IMPLEMENT_CREATABLE_OVITO_CLASS(BondType);
 DEFINE_PROPERTY_FIELD(BondType, radius);
 SET_PROPERTY_FIELD_LABEL(BondType, radius, "Radius");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondType, radius, WorldParameterUnit, 0);

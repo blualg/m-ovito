@@ -55,7 +55,7 @@ class OVITO_MESH_EXPORT VTKTriangleMeshExporter : public FileExporter
 public:
 
     /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE VTKTriangleMeshExporter(ObjectInitializationFlags flags) : FileExporter(flags), _exportCapPolygons(true) {}
+    explicit VTKTriangleMeshExporter(ObjectInitializationFlags flags) : FileExporter(flags), _exportCapPolygons(true) {}
 
     /// \brief Returns the type(s) of data objects that this exporter service can export.
     virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {

@@ -22,19 +22,19 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/RefTargetListener.h>
-#include <ovito/core/dataset/DataSet.h>
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS2(RefTargetListenerBase);
-IMPLEMENT_OVITO_CLASS2(VectorRefTargetListenerBase);
-DEFINE_REFERENCE_FIELD(RefTargetListenerBase, target);
-DEFINE_VECTOR_REFERENCE_FIELD(VectorRefTargetListenerBase, targets);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(RefTargetListenerImpl);
+DEFINE_REFERENCE_FIELD(RefTargetListenerImpl, target);
+
+IMPLEMENT_ABSTRACT_OVITO_CLASS(VectorRefTargetListenerImpl);
+DEFINE_VECTOR_REFERENCE_FIELD(VectorRefTargetListenerImpl, targets);
 
 /******************************************************************************
 * Is called when the RefTarget referenced by this listener has sent a message.
 ******************************************************************************/
-bool RefTargetListenerBase::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+bool RefTargetListenerImpl::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     // Emit Qt signal.
     Q_EMIT notificationEvent(source, event);
@@ -45,7 +45,7 @@ bool RefTargetListenerBase::referenceEvent(RefTarget* source, const ReferenceEve
 /******************************************************************************
 * Is called when the RefTarget referenced by this listener has sent a message.
 ******************************************************************************/
-bool VectorRefTargetListenerBase::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+bool VectorRefTargetListenerImpl::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     // Emit Qt signal.
     Q_EMIT notificationEvent(source, event);

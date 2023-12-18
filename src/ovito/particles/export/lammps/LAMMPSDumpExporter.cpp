@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(LAMMPSDumpExporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(LAMMPSDumpExporter);
 
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.

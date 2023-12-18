@@ -27,26 +27,30 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/oo/OORef.h>
+#include <ovito/core/oo/OvitoObject.h>
 
 namespace Ovito {
 
 /**
  * \brief Abstract interface to the graphical user interface of the application.
  *
- * Note that is is possible to open multiple GUI windows per process.
+ * In OVITO, it is possible to open multiple GUI windows. Each window is a separate UserInterface object.
+ * Furthermore, the global Application object is also a UserInterface implementation, which
+ * is used while running in console mode or during application startup, when no main window exists yet.
+ *
+ * Typically, you can access the current UserInterface object via the ExecutionContext::current().ui() method.
  */
-class OVITO_CORE_EXPORT UserInterface : public std::enable_shared_from_this<UserInterface>
+class OVITO_CORE_EXPORT UserInterface : public OvitoObject
 {
+    OVITO_CLASS(UserInterface)
+
 public:
 
     /// Constructor.
-    explicit UserInterface(DataSetContainer& datasetContainer) : _datasetContainer(datasetContainer) {}
-
-    /// Destructor.
-    virtual ~UserInterface() = default;
+    UserInterface();
 
     /// Returns the container managing the current dataset.
-    DataSetContainer& datasetContainer() const { return _datasetContainer; }
+    DataSetContainer& datasetContainer() const { return *_datasetContainer; }
 
     /// Sets the viewport input manager of the user interface.
     void setViewportInputManager(ViewportInputManager* manager) { _viewportInputManager = manager; }
@@ -89,7 +93,12 @@ public:
     bool isShuttingDown() const { return _taskManager.isShuttingDown(); }
 
     /// Call this to keep the UI object alive until shutdown() is called on it.
-    void keepAliveUntilShutdown() { _selfGuard = shared_from_this(); }
+    void keepAliveUntilShutdown() { _selfGuard = this; }
+
+    /// Returns a shared_ptr to this UserInterface object.
+    std::shared_ptr<UserInterface> shared_from_this() {
+        return std::static_pointer_cast<UserInterface>(OvitoObject::shared_from_this());
+    }
 
     /// Tells the UI to process any pending events in the event queue and return immediately.
     /// The function can return true to indicate that the running operation should be canceled.
@@ -155,6 +164,10 @@ public:
     /// Zooms all visible viewports to the extents of the scene when all scene pipelines have been fully evaluated and the extents are known.
     void zoomToSceneExtentsWhenReady();
 
+    /// Checks (or even modifies) the contents of a DataSet after it has been loaded from a file.
+    /// Returns false if loading the DataSet was rejected by the application.
+    virtual bool checkLoadedDataset(DataSet* dataset) { return true; }
+
     /// Executes a functor that performs some actions in an interactive context and catches any exceptions thrown during its execution.
     /// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
     template<typename Function>
@@ -173,7 +186,7 @@ public:
     bool performTransaction(const QString& undoOperationName, Function&& func);
 
     /// Executes the given function at some later time unless the given object is destroyed in the meantime or the user interface is shut down.
-    void submitWork(const OvitoObject* contextObject, fu2::unique_function<void() noexcept> function, bool isScriptingContext);
+    void submitWork(const RefTarget* contextObject, fu2::unique_function<void() noexcept> function, bool isScriptingContext);
 
 protected:
 
@@ -195,7 +208,7 @@ protected:
 private:
 
     /// Hosts the dataset that is currently being edited in this user interface.
-    DataSetContainer& _datasetContainer;
+    OORef<DataSetContainer> _datasetContainer;
 
     /// Viewport input manager of the user interface.
     ViewportInputManager* _viewportInputManager = nullptr;
@@ -225,19 +238,19 @@ private:
     Viewport* _viewportBeingRendered = nullptr;
 
     /// This keeps the UI object itself alive until shutdown() is called.
-    std::shared_ptr<UserInterface> _selfGuard;
+    OORef<UserInterface> _selfGuard;
 
     /// A piece of work that has been submitted for deferred execution in the main thread.
     struct Work
     {
         /// Constructor.
         template<typename Function>
-        Work(OOWeakRef<const OvitoObject> obj_, Function&& function_, bool isScriptingContext_) :
+        Work(OOWeakRef<const RefTarget> obj_, Function&& function_, bool isScriptingContext_) :
             obj(std::move(obj_)), function(std::forward<Function>(function_)), isScriptingContext(isScriptingContext_) {}
 
         /// The context object this work is associated with.
         /// If the object is destroyed before the work is executed, the work is canceled.
-        OOWeakRef<const OvitoObject> obj;
+        OOWeakRef<const RefTarget> obj;
 
         /// The function to be executed.
         fu2::unique_function<void() noexcept> function;
@@ -251,11 +264,6 @@ private:
 
     /// Manages thread-safe concurrent access to the work queue.
     std::mutex _pendingWorkMutex;
-
-#ifdef OVITO_DEBUG
-protected:
-    bool _isBeingDestructed = false;
-#endif
 
     friend class Viewport;
 };
@@ -274,7 +282,7 @@ namespace Ovito {
 template<typename Function>
 bool UserInterface::handleExceptions(Function&& func, bool visibleInUserInterface)
 {
-    OVITO_ASSERT(!_isBeingDestructed);
+    OVITO_ASSERT(!isBeingDeleted());
     MainThreadOperation operation(ExecutionContext::Type::Interactive, *this, visibleInUserInterface); // Note: This creates a temporary std::shared_ptr<UserInterface> to keep the UI alive until function exit.
     try {
         if constexpr(detail::is_invocable_v<Function, MainThreadOperation&>) {
@@ -297,7 +305,7 @@ bool UserInterface::handleExceptions(Function&& func, bool visibleInUserInterfac
 template<typename Function>
 bool UserInterface::performActions(UndoableTransaction& transaction, Function&& func)
 {
-    OVITO_ASSERT(!_isBeingDestructed);
+    OVITO_ASSERT(!isBeingDeleted());
     OVITO_ASSERT(transaction.operation());
     OVITO_ASSERT(&transaction.userInterface() == this);
     UndoSuspender activateUndo(transaction.operation());
@@ -310,7 +318,7 @@ bool UserInterface::performActions(UndoableTransaction& transaction, Function&& 
 template<typename Function>
 bool UserInterface::performTransaction(const QString& undoOperationName, Function&& func)
 {
-    OVITO_ASSERT(!_isBeingDestructed);
+    OVITO_ASSERT(!isBeingDeleted());
     UndoableTransaction transaction(*this, undoOperationName);
     if(performActions(transaction, std::forward<Function>(func))) {
         transaction.commit();

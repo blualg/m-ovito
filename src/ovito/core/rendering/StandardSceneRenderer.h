@@ -34,14 +34,14 @@ namespace Ovito {
 class OVITO_CORE_EXPORT StandardSceneRenderer : public SceneRenderer
 {
     OVITO_CLASS(StandardSceneRenderer)
-    Q_CLASSINFO("DisplayName", "OpenGL");
-    Q_CLASSINFO("Description", "Hardware-accelerated rendering engine, also used by OVITO's interactive viewports. "
+    OVITO_CLASSINFO("DisplayName", "OpenGL");
+    OVITO_CLASSINFO("Description", "Hardware-accelerated rendering engine, also used by OVITO's interactive viewports. "
                                "The OpenGL renderer is fast and has the smallest memory footprint.");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE StandardSceneRenderer(ObjectInitializationFlags flags);
+    explicit StandardSceneRenderer(ObjectInitializationFlags flags);
 
     /// Prepares the renderer for rendering one or more frames.
     virtual bool startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache) override;

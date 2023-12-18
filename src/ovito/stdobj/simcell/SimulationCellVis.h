@@ -34,12 +34,12 @@ namespace Ovito {
 class OVITO_STDOBJ_EXPORT SimulationCellVis : public DataVis
 {
     OVITO_CLASS(SimulationCellVis)
-    Q_CLASSINFO("DisplayName", "Simulation cell");
+    OVITO_CLASSINFO("DisplayName", "Simulation cell");
 
 public:
 
     /// \brief Constructor.
-    Q_INVOKABLE SimulationCellVis(ObjectInitializationFlags flags);
+    explicit SimulationCellVis(ObjectInitializationFlags flags);
 
     /// \brief Lets the visualization element render the data object.
     virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;

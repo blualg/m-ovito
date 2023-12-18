@@ -35,11 +35,12 @@ namespace Ovito {
 class CoordinationAnalysisModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(CoordinationAnalysisModifierEditor)
+    Q_OBJECT
 
 public:
 
-    /// Default constructor.
-    Q_INVOKABLE CoordinationAnalysisModifierEditor() {}
+    /// Constructor.
+    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

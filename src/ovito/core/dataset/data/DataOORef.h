@@ -186,7 +186,7 @@ public:
             return {};
         }
         else if(this->_ref->isSafeToModify()) {
-            // Transfer the internal OORef from the const input into a non-const output (without incrementing/descrementing the data object's ref count).
+            // Transfer the internal OORef from the const input into a non-const output (without incrementing/decrementing the data object's ref count).
             DataOORef<std::remove_const_t<T>> result;
             result._ref = const_pointer_cast<std::remove_const_t<T>>(std::move(this->_ref));
             OVITO_ASSERT(!this->_ref);
@@ -219,6 +219,7 @@ public:
     }
 
     template<class T2, class U> friend DataOORef<T2> static_pointer_cast(DataOORef<U>&& p) noexcept;
+    template<class T2, class U> friend DataOORef<T2> const_pointer_cast(DataOORef<U>&& p) noexcept;
     template<class T2, class U> friend DataOORef<T2> dynamic_pointer_cast(DataOORef<U>&& p) noexcept;
 };
 
@@ -234,7 +235,7 @@ template<class T> void swap(DataOORef<T>& lhs, DataOORef<T>& rhs) noexcept
 
 template<class T, class U> DataOORef<T> static_pointer_cast(const DataOORef<U>& p) noexcept
 {
-    return static_cast<T*>(p.get());
+    return static_pointer_cast<T>(p._ref);
 }
 
 template<class T, class U> DataOORef<T> static_pointer_cast(DataOORef<U>&& p) noexcept
@@ -247,18 +248,27 @@ template<class T, class U> DataOORef<T> static_pointer_cast(DataOORef<U>&& p) no
 
 template<class T, class U> DataOORef<T> const_pointer_cast(const DataOORef<U>& p) noexcept
 {
-    return const_cast<T*>(p.get());
+    return const_pointer_cast<T>(p._ref);
+}
+
+template<class T, class U> DataOORef<T> const_pointer_cast(DataOORef<U>&& p) noexcept
+{
+    DataOORef<T> result;
+    result._ref = const_pointer_cast<T>(std::move(p._ref));
+    OVITO_ASSERT(!p._ref);
+    return result;
 }
 
 template<class T, class U> DataOORef<T> dynamic_pointer_cast(const DataOORef<U>& p) noexcept
 {
-    return qobject_cast<T*>(p.get());
+    return dynamic_pointer_cast<T>(p._ref);
 }
 
 template<class T, class U> DataOORef<T> dynamic_pointer_cast(DataOORef<U>&& p) noexcept
 {
     DataOORef<T> result;
     result._ref = dynamic_pointer_cast<T>(std::move(p._ref));
+    OVITO_ASSERT(!p._ref || result._ref);
     return result;
 }
 

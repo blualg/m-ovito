@@ -37,7 +37,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ClusterAnalysisModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ClusterAnalysisModifier);
 DEFINE_PROPERTY_FIELD(ClusterAnalysisModifier, neighborMode);
 DEFINE_PROPERTY_FIELD(ClusterAnalysisModifier, cutoff);
 DEFINE_PROPERTY_FIELD(ClusterAnalysisModifier, onlySelectedParticles);
@@ -585,8 +585,8 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(const Modifier
         table->createProperty(_gyrationTensors);
 
     PipelineStatus status(
-        tr("Found %n cluster(s).", "", numClusters()),
-        numClusters() == 1 ? tr("1 cluster") : tr("%n clusters", "", numClusters()));
+        tr("Found %1 cluster(s).").arg(numClusters()),
+        numClusters() == 1 ? tr("1 cluster") : tr("%1 clusters").arg(numClusters()));
 
     if(_hasZeroWeightCluster) {
         status.setType(PipelineStatus::Warning);

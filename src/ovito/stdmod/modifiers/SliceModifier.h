@@ -63,11 +63,12 @@ class OVITO_STDMOD_EXPORT LinesSliceModifierDelegate : public SliceModifierDeleg
     };
 
     OVITO_CLASS_META(LinesSliceModifierDelegate, LinesSliceModifierDelegateClass)
-    Q_CLASSINFO("DisplayName", "Lines");
+    OVITO_CLASSINFO("DisplayName", "Lines");
 
 public:
+
     /// Constructor.
-    Q_INVOKABLE LinesSliceModifierDelegate(ObjectInitializationFlags flags) : SliceModifierDelegate(flags) {}
+    explicit LinesSliceModifierDelegate(ObjectInitializationFlags flags) : SliceModifierDelegate(flags) {}
 
     /// \brief Applies a slice operation to a data object.
     virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState,
@@ -93,14 +94,14 @@ class OVITO_STDMOD_EXPORT SliceModifier : public MultiDelegatingModifier
 
     OVITO_CLASS_META(SliceModifier, SliceModifierClass)
 
-    Q_CLASSINFO("DisplayName", "Slice");
-    Q_CLASSINFO("Description", "Cut away some part of the dataset using a 3d plane.");
-    Q_CLASSINFO("ModifierCategory", "Modification");
+    OVITO_CLASSINFO("DisplayName", "Slice");
+    OVITO_CLASSINFO("Description", "Cut away some part of the dataset using a 3d plane.");
+    OVITO_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE SliceModifier(ObjectInitializationFlags flags);
+    explicit SliceModifier(ObjectInitializationFlags flags);
 
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;

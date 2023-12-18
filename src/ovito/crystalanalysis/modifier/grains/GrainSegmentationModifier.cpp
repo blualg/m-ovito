@@ -38,7 +38,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(GrainSegmentationModifier);
+IMPLEMENT_CREATABLE_OVITO_CLASS(GrainSegmentationModifier);
 DEFINE_PROPERTY_FIELD(GrainSegmentationModifier, mergeAlgorithm);
 DEFINE_PROPERTY_FIELD(GrainSegmentationModifier, handleCoherentInterfaces);
 DEFINE_PROPERTY_FIELD(GrainSegmentationModifier, mergingThreshold);

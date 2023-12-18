@@ -31,7 +31,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(NucleotidesVis);
+IMPLEMENT_CREATABLE_OVITO_CLASS(NucleotidesVis);
 DEFINE_PROPERTY_FIELD(NucleotidesVis, cylinderRadius);
 SET_PROPERTY_FIELD_LABEL(NucleotidesVis, cylinderRadius, "Cylinder radius");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(NucleotidesVis, cylinderRadius, WorldParameterUnit, 0);
@@ -210,7 +210,7 @@ PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectP
 
     // The type of lookup key used for caching the rendering primitives:
     using NucleotidesCacheKey = RendererResourceKey<struct NucleotidesVisCache,
-        QPointer<Pipeline>,         // Pipeline scene node
+        OOWeakRef<Pipeline>,        // Pipeline scene node
         ConstDataObjectRef,         // Position property
         ConstDataObjectRef,         // Color property
         ConstDataObjectRef,         // Strand property

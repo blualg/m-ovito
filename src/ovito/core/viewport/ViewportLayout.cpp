@@ -27,7 +27,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(ViewportLayoutCell);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ViewportLayoutCell);
 DEFINE_REFERENCE_FIELD(ViewportLayoutCell, viewport);
 DEFINE_VECTOR_REFERENCE_FIELD(ViewportLayoutCell, children);
 DEFINE_PROPERTY_FIELD(ViewportLayoutCell, splitDirection);

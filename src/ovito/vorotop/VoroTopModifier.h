@@ -40,15 +40,14 @@ namespace Ovito::VoroTop {
 class OVITO_VOROTOP_EXPORT VoroTopModifier : public StructureIdentificationModifier
 {
     OVITO_CLASS(VoroTopModifier)
-
-    Q_CLASSINFO("DisplayName", "VoroTop analysis");
-    Q_CLASSINFO("Description", "Identify local structures based on Voronoi polyhedron topology.");
-    Q_CLASSINFO("ModifierCategory", "Structure identification");
+    OVITO_CLASSINFO("DisplayName", "VoroTop analysis");
+    OVITO_CLASSINFO("Description", "Identify local structures based on Voronoi polyhedron topology.");
+    OVITO_CLASSINFO("ModifierCategory", "Structure identification");
 
 public:
 
     /// Constructor.
-    Q_INVOKABLE VoroTopModifier(ObjectInitializationFlags flags);
+    explicit VoroTopModifier(ObjectInitializationFlags flags);
 
     /// Loads a new filter definition into the modifier.
     bool loadFilterDefinition(const QString& filepath);
