@@ -42,7 +42,7 @@ class OVITO_MESH_EXPORT VTKFileImporter : public FileSourceImporter
         using FileSourceImporter::OOMetaClass::OOMetaClass;
 
         /// Returns the list of file formats that can be read by this importer class.
-        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+        virtual std::span<const SupportedFormat> supportedFormats() const override {
             static const SupportedFormat formats[] = {{ QStringLiteral("*.vtk"), tr("VTK Legacy Files") }};
             return formats;
         }

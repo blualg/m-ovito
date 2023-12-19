@@ -28,23 +28,6 @@ namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(BooleanRadioButtonParameterUI);
 
-#if 0 // TODO
-/******************************************************************************
-* Constructor for a Qt property.
-******************************************************************************/
-BooleanRadioButtonParameterUI::BooleanRadioButtonParameterUI(PropertiesEditor* parentEditor, const char* propertyName) :
-    PropertyParameterUI(parentEditor, propertyName)
-{
-    _buttonGroup = new QButtonGroup(this);
-    connect(_buttonGroup.data(), &QButtonGroup::idClicked, this, &BooleanRadioButtonParameterUI::updatePropertyValue);
-
-    QRadioButton* buttonNo = new QRadioButton();
-    QRadioButton* buttonYes = new QRadioButton();
-    _buttonGroup->addButton(buttonNo, 0);
-    _buttonGroup->addButton(buttonYes, 1);
-}
-#endif
-
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
@@ -94,16 +77,6 @@ void BooleanRadioButtonParameterUI::updateUI()
 
     if(buttonGroup() && editObject()) {
         QVariant val;
-#if 0 // TODO
-        if(propertyName()) {
-            val = editObject()->property(propertyName());
-            OVITO_ASSERT_MSG(val.isValid(), "BooleanRadioButtonParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to boolean type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
-            if(!val.isValid()) {
-                throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to boolean type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
-            }
-        }
-        else
-#endif
         if(propertyField()) {
             val = editObject()->getPropertyFieldValue(propertyField());
             OVITO_ASSERT(val.isValid());
@@ -140,24 +113,10 @@ void BooleanRadioButtonParameterUI::updatePropertyValue()
             int id = buttonGroup()->checkedId();
             if(id != -1) {
                 QVariant oldval;
-#if 0 // TODO
-                if(propertyName()) {
-                    oldval = editObject()->property(propertyName());
-                }
-                else
-#endif
                 if(propertyField()) {
                     oldval = editObject()->getPropertyFieldValue(propertyField());
                 }
                 if((bool)id != oldval.toBool()) {
-#if 0 // TODO
-                    if(propertyName()) {
-                        if(!editObject()->setProperty(propertyName(), (bool)id)) {
-                            OVITO_ASSERT_MSG(false, "BooleanRadioButtonParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
-                        }
-                    }
-                    else
-#endif
                     if(propertyField()) {
                         editor()->changePropertyFieldValue(propertyField(), (bool)id);
                     }

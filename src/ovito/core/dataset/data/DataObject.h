@@ -119,6 +119,9 @@ public:
         return nullptr;
     }
 
+    /// Returns the current number of strong references to this DataObject.
+    int dataReferenceCount() const { return _dataReferenceCount.load(); }
+
     /// Determines whether it is safe to modify this data object without unwanted side effects.
     /// This method takes into account transitive ownerships and goes up the complete
     /// parent hierarchy of objects if necessary.

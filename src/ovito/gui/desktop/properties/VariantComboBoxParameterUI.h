@@ -38,12 +38,7 @@ class OVITO_GUI_EXPORT VariantComboBoxParameterUI : public PropertyParameterUI
 
 public:
 
-#if 0 // TODO
     /// Constructor.
-    VariantComboBoxParameterUI(PropertiesEditor* parentEditor, const char* propertyName);
-#endif
-
-    /// Constructor for a PropertyField property.
     VariantComboBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
     /// Destructor.

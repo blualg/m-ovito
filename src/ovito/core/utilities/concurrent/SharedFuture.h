@@ -162,7 +162,7 @@ SharedFuture<R...>::then(Executor&& executor, Function&& f)
 
         // Don't execute continuation function in case an error occurred in the preceding task.
         // In such a case, copy the exception state to the continuation promise.
-        if constexpr(!detail::is_invocable_v<Function, SharedFuture<R...>>) {
+        if constexpr(!std::is_invocable_v<Function, SharedFuture<R...>>) {
             if(finishedTask->exceptionStore()) {
                 continuationTask->exceptionLocked(finishedTask->copyExceptionStore());
                 continuationTask->finishLocked(locker);

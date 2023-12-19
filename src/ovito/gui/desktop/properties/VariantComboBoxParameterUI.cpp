@@ -28,17 +28,6 @@ namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(VariantComboBoxParameterUI);
 
-#if 0 // TODO
-/******************************************************************************
-* Constructor for a Qt property.
-******************************************************************************/
-VariantComboBoxParameterUI::VariantComboBoxParameterUI(PropertiesEditor* parentEditor, const char* propertyName) :
-    PropertyParameterUI(parentEditor, propertyName), _comboBox(new QComboBox())
-{
-    connect(comboBox(), qOverload<int>(&QComboBox::activated), this, &VariantComboBoxParameterUI::updatePropertyValue);
-}
-#endif
-
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
@@ -79,16 +68,6 @@ void VariantComboBoxParameterUI::updateUI()
 
     if(comboBox() && editObject()) {
         QVariant val;
-#if 0 // TODO
-        if(isQtPropertyUI()) {
-            val = editObject()->property(propertyName());
-            if(!val.isValid()) {
-                qWarning() << "The object class" << editObject()->metaObject()->className() << "does not define a property with the name" << propertyName();
-                return;
-            }
-        }
-        else
-#endif
         if(isPropertyFieldUI()) {
             val = editObject()->getPropertyFieldValue(propertyField());
             OVITO_ASSERT(val.isValid());
@@ -124,14 +103,6 @@ void VariantComboBoxParameterUI::updatePropertyValue()
             else
                 newValue = comboBox()->itemData(comboBox()->currentIndex());
 
-#if 0 // TODO
-            if(isQtPropertyUI()) {
-                if(!editObject()->setProperty(propertyName(), newValue)) {
-                    OVITO_ASSERT_MSG(false, "VariantComboBoxParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
-                }
-            }
-            else
-#endif
             if(isPropertyFieldUI()) {
                 editor()->changePropertyFieldValue(propertyField(), newValue);
             }

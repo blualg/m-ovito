@@ -69,16 +69,16 @@ inline constexpr bool is_shared_future_v = is_shared_future<std::decay_t<T>>::va
 */
 
 template<typename F, typename... Args>
-struct invoke_result_with_tuple : invoke_result<F, Args...> {};
+struct invoke_result_with_tuple : std::invoke_result<F, Args...> {};
 
 template<typename F, typename... Args>
-struct invoke_result_with_tuple<F, std::tuple<Args...>> : invoke_result<F, Args...> {};
+struct invoke_result_with_tuple<F, std::tuple<Args...>> : std::invoke_result<F, Args...> {};
 
 template<typename F, typename FutureType, class = void>
 struct callable_result : invoke_result_with_tuple<F, typename FutureType::tuple_type> {};
 
 template<typename F, typename FutureType>
-struct callable_result<F, FutureType, std::enable_if_t<detail::is_invocable_v<F, FutureType>>> : invoke_result<F, FutureType> {};
+struct callable_result<F, FutureType, std::enable_if_t<std::is_invocable_v<F, FutureType>>> : std::invoke_result<F, FutureType> {};
 
 template<typename F, typename FutureType>
 using callable_result_t = typename callable_result<F, FutureType>::type;

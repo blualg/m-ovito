@@ -42,7 +42,8 @@ ExecutionContext& ExecutionContext::current() noexcept
 ******************************************************************************/
 bool ExecutionContext::isMainThread()
 {
-    const static QThread* mainThread = Application::instance()->thread();
+    const static QThread* mainThread = Application::instance() ? Application::instance()->thread() : nullptr;
+    OVITO_ASSERT(mainThread != nullptr);
 
     return QThread::currentThread() == mainThread;
 }

@@ -38,17 +38,6 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(RefTarget);
 ******************************************************************************/
 RefTarget::RefTarget(ObjectInitializationFlags flags)
 {
-#if 0 // TODO:
-    // Ovito objects always live in the main thread.
-#ifdef OVITO_NO_EVENT_LOOP
-    if(QCoreApplication* app = QCoreApplication::instance())
-        moveToThread(app->thread());
-#else
-    // A Qt application object must exist.
-    OVITO_ASSERT_MSG(QCoreApplication::instance() != nullptr, "RefTarget::RefTarget()", "Creating an instance of a RefTarget-derived class is only allowed while a Qt application object exists.");
-    moveToThread(QCoreApplication::instance()->thread());
-#endif
-#endif
 }
 
 #ifdef OVITO_DEBUG
@@ -70,17 +59,21 @@ void RefTarget::aboutToBeDeleted()
 {
     OVITO_CHECK_OBJECT_POINTER(this);
     OVITO_ASSERT(this->__isObjectAlive());
-    OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "RefTarget::aboutToBeDeleted()", "This function may only be called from the main thread.");
 
     // Make sure undo recording is not active while deleting the object from memory.
     UndoSuspender noUndo;
 
-    // Strong references to this target should not exist at this point.
-    // But this will also remove all remaining weak references to this target object.
-    ReferenceEvent deleteEvent(ReferenceEvent::TargetDeleted, this);
-    _dependents.visit_all([&](RefMaker* dependent) {
-        dependent->handleReferenceEvent(this, deleteEvent);
-    });
+    if(ExecutionContext::isMainThread()) {
+        // Strong references to this target should not exist at this point.
+        // But this will also remove all remaining weak references to this target object.
+        ReferenceEvent deleteEvent(ReferenceEvent::TargetDeleted, this);
+        _dependents.visit_all([&](RefMaker* dependent) {
+            dependent->handleReferenceEvent(this, deleteEvent);
+        });
+    }
+
+    // No dependents should be left at this point.
+    // Note: Objects being deleted from a non-main thread should not be targets of RefMaker weak references.
     OVITO_ASSERT(_dependents.empty());
 
     // Delete object from memory.
@@ -93,6 +86,7 @@ void RefTarget::aboutToBeDeleted()
 void RefTarget::requestObjectDeletion()
 {
     OVITO_CHECK_OBJECT_POINTER(this);
+    OVITO_ASSERT_MSG(ExecutionContext::isMainThread(), "RefTarget::requestObjectDeletion()", "This function may only be called from the main thread.");
     OVITO_ASSERT(!isBeingConstructed());
     OVITO_ASSERT(!isBeingDeleted());
 

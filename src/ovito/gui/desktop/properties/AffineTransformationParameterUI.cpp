@@ -27,18 +27,6 @@ namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(AffineTransformationParameterUI);
 
-#if 0 // TODO
-/******************************************************************************
-* Constructor for a Qt property.
-******************************************************************************/
-AffineTransformationParameterUI::AffineTransformationParameterUI(PropertiesEditor* parentEditor, const char* propertyName, size_t _row, size_t _column, const QString& labelText, const QMetaObject* parameterUnitType)
-    : FloatParameterUI(parentEditor, propertyName, labelText, parameterUnitType), row(_row), column(_column)
-{
-    OVITO_ASSERT_MSG(row >= 0 && row < 3, "AffineTransformationParameterUI constructor", "The row must be in the range 0-2.");
-    OVITO_ASSERT_MSG(column >= 0 && column < 4, "AffineTransformationParameterUI constructor", "The column must be in the range 0-3.");
-}
-#endif
-
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
@@ -57,20 +45,6 @@ void AffineTransformationParameterUI::updatePropertyValue()
 {
     if(editObject() && spinner()) {
         performTransaction(tr("Change parameter value"), [&]() {
-#if 0 // TODO
-            if(isQtPropertyUI()) {
-                QVariant currentValue = editObject()->property(propertyName());
-                if(currentValue.canConvert<AffineTransformation>()) {
-                    AffineTransformation val = currentValue.value<AffineTransformation>();
-                    val(row, column) = spinner()->floatValue();
-                    currentValue.setValue(val);
-                }
-                if(!editObject()->setProperty(propertyName(), currentValue)) {
-                    OVITO_ASSERT_MSG(false, "AffineTransformationParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
-                }
-            }
-            else
-#endif
             if(isPropertyFieldUI()) {
                 QVariant currentValue = editObject()->getPropertyFieldValue(propertyField());
                 if(currentValue.canConvert<AffineTransformation>()) {
@@ -92,16 +66,6 @@ void AffineTransformationParameterUI::updateUI()
 {
     if(editObject() && spinner() && !spinner()->isDragging()) {
         QVariant val;
-#if 0 // TODO
-        if(isQtPropertyUI()) {
-            val = editObject()->property(propertyName());
-            OVITO_ASSERT_MSG(val.isValid() && (val.canConvert<AffineTransformation>()), "AffineTransformationParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to an AffineTransformation type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
-            if(!val.isValid() || !(val.canConvert<AffineTransformation>())) {
-                throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to an AffineTransformation type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
-            }
-        }
-        else
-#endif
         if(isPropertyFieldUI()) {
             val = editObject()->getPropertyFieldValue(propertyField());
             OVITO_ASSERT(val.isValid() && (val.canConvert<AffineTransformation>()));

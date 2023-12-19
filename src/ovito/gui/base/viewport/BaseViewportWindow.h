@@ -42,7 +42,7 @@ public:
     ViewportInputManager* inputManager() const;
 
     /// Returns the list of gizmos to render in the viewport.
-    virtual span<ViewportGizmo*> viewportGizmos() override;
+    virtual std::span<ViewportGizmo*> viewportGizmos() override;
 
     /// Renders custom GUI elements in the viewport on top of the scene.
     virtual void renderGui(SceneRenderer* renderer) override;

@@ -73,7 +73,7 @@ private:
     public:
 
         /// Constructor.
-        PickingMode(BondInspectionApplet* applet) : ViewportInputMode(applet), _applet(applet) {}
+        PickingMode(BondInspectionApplet* applet) : _applet(applet) {}
 
         /// Handles the mouse up events for a viewport.
         virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
@@ -109,7 +109,7 @@ private:
 private:
 
     /// The viewport input for picking bonds.
-    PickingMode* _pickingMode;
+    OORef<PickingMode> _pickingMode;
 };
 
 }   // End of namespace

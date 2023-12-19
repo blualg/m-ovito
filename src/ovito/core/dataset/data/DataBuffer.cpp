@@ -139,7 +139,7 @@ OORef<RefTarget> DataBuffer::clone(bool deepCopy, CloneHelper& cloneHelper) cons
     }
 #else
     clone->_capacity = _numElements;
-    clone->_data.reset(new std::byte[_numElements * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
+    clone->_data = std::make_unique_for_overwrite<std::byte[]>(_numElements * _stride);
     std::memcpy(clone->_data.get(), _data.get(), _numElements * _stride);
 #endif
 
@@ -174,7 +174,7 @@ void DataBuffer::resize(size_t newSize, bool preserveData)
     }
 #else
     if(newSize > _capacity) {
-        std::unique_ptr<std::byte[]> newBuffer(new std::byte[newSize * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
+        auto newBuffer = std::make_unique_for_overwrite<std::byte[]>(newSize * _stride);
         if(preserveData)
             std::memcpy(newBuffer.get(), _data.get(), _stride * std::min(_numElements, newSize));
         _data.swap(newBuffer);
@@ -220,7 +220,7 @@ void DataBuffer::resizeCopyFrom(size_t newSize, const DataBuffer& original)
     }
 #else
     if(newSize > _capacity) {
-        std::unique_ptr<std::byte[]> newBuffer(new std::byte[newSize * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
+        auto newBuffer = std::make_unique_for_overwrite<std::byte[]>(newSize * _stride);
         std::memcpy(newBuffer.get(), original._data.get(), _stride * std::min(original._numElements, newSize));
         _data.swap(newBuffer);
         _capacity = newSize;
@@ -274,7 +274,7 @@ bool DataBuffer::grow(size_t numAdditionalElements, bool callerAlreadyHasWriteAc
         }
         else _data = {};
 #else
-        std::unique_ptr<std::byte[]> newBuffer(new std::byte[newCapacity * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
+        auto newBuffer = std::make_unique_for_overwrite<std::byte[]>(newCapacity * _stride);
         std::memcpy(newBuffer.get(), _data.get(), _stride * _numElements);
         _data.swap(newBuffer);
         _capacity = newCapacity;
@@ -366,7 +366,7 @@ void DataBuffer::loadFromStream(ObjectLoadStream& stream)
     }
 #else
     _capacity = _numElements;
-    _data.reset(new std::byte[_numElements * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
+    _data = std::make_unique_for_overwrite<std::byte[]>(_numElements * _stride);
     stream.read(_data.get(), _stride * _numElements);
 #endif
     stream.closeChunk();
@@ -442,7 +442,7 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const DataBuffer& selectio
 #ifdef OVITO_USE_SYCL
     auto newBuffer = allocateSyclBuffer(newSize, _stride);
 #else
-    std::unique_ptr<std::byte[]> newBuffer(new std::byte[newSize * _stride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
+    auto newBuffer = std::make_unique_for_overwrite<std::byte[]>(newSize * _stride);
 #endif
     const size_t s = selection.size();
     BufferReadAccess<SelectionIntType> selectionAccess(&selection);
@@ -861,7 +861,7 @@ void DataBuffer::convertToDataType(int newDataType)
     if(_numElements != 0)
         newData = allocateSyclBuffer(_numElements, newStride);
 #else
-    std::unique_ptr<std::byte[]> newData(new std::byte[_numElements * newStride]); // TODO: Replace with std::make_unique_for_overwrite() in C++20.
+    auto newData = std::make_unique_for_overwrite<std::byte[]>(_numElements * newStride);
 #endif
 
     // Copy values from old buffer to new buffer and perform data type convertion.

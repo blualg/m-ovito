@@ -237,20 +237,6 @@ public:
     /// \brief Zooms to the extents of the given bounding box.
     void zoomToBox(const Box3& box, FloatType viewportAspectRatio = 0);
 
-#if 0 // TODO
-Q_SIGNALS:
-
-    /// This signal is emitted whenever any of the UI properties of the viewport change.
-    void viewportChanged();
-
-    /// This signal is emitted when the user has requested a context menu on the viewport widget.
-    void contextMenuRequested(const QPoint& pos);
-
-    /// \brief This signal is emitted whenever this viewport is associated with a different scene.
-    /// \note This signal is NOT emitted when the contents of the scene change.
-    void sceneReplaced(Scene* newScene);
-#endif
-
 protected:
 
     /// Is called when the value of a property field of this object has changed.

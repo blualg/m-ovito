@@ -31,19 +31,6 @@ namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(BooleanParameterUI);
 
-#if 0 // TODO
-/******************************************************************************
-* Constructor for a Qt property.
-******************************************************************************/
-BooleanParameterUI::BooleanParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& checkBoxLabel) :
-    PropertyParameterUI(parentEditor, propertyName)
-{
-    // Create UI widget.
-    _checkBox = new QCheckBox(checkBoxLabel);
-    connect(_checkBox.data(), &QCheckBox::clicked, this, &BooleanParameterUI::updatePropertyValue);
-}
-#endif
-
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
@@ -96,16 +83,6 @@ void BooleanParameterUI::updateUI()
     if(checkBox() && editObject()) {
         if(!isReferenceFieldUI()) {
             QVariant val(false);
-#if 0 // TODO
-            if(propertyName()) {
-                val = editObject()->property(propertyName());
-                OVITO_ASSERT_MSG(val.isValid(), "BooleanParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to bool type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
-                if(!val.isValid()) {
-                    throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to bool type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
-                }
-            }
-            else
-#endif
             if(propertyField()) {
                 val = editObject()->getPropertyFieldValue(propertyField());
                 OVITO_ASSERT(val.isValid());
@@ -138,14 +115,6 @@ void BooleanParameterUI::updatePropertyValue()
 {
     if(checkBox() && editObject()) {
         performTransaction(tr("Change parameter value"), [&]() {
-#if 0 // TODO
-            if(isQtPropertyUI()) {
-                if(!editObject()->setProperty(propertyName(), checkBox()->isChecked())) {
-                    OVITO_ASSERT_MSG(false, "BooleanParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
-                }
-            }
-            else
-#endif
             if(isPropertyFieldUI()) {
                 editor()->changePropertyFieldValue(propertyField(), checkBox()->isChecked());
             }

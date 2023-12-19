@@ -73,7 +73,6 @@ protected Q_SLOTS:
 
 private:
 
-    PickPlanePointsInputMode* _pickPlanePointsInputMode;
     ViewportModeAction* _pickPlanePointsInputModeAction;
     BooleanRadioButtonParameterUI* _reducedCoordinatesPUI;
     Vector3ParameterUI* _normalPUI[3];
@@ -89,7 +88,7 @@ class PickPlanePointsInputMode : public ViewportInputMode, public ViewportGizmo
 public:
 
     /// Constructor.
-    explicit PickPlanePointsInputMode(SliceModifierEditor* editor) : ViewportInputMode(editor), _editor(editor) {}
+    explicit PickPlanePointsInputMode(SliceModifierEditor* editor) : _editor(editor) {}
 
     /// Handles the mouse events for a Viewport.
     virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;

@@ -39,9 +39,6 @@ class OVITO_GUI_EXPORT IntegerRadioButtonParameterUI : public PropertyParameterU
 public:
 
     /// Constructor.
-    IntegerRadioButtonParameterUI(PropertiesEditor* parentEditor, const char* propertyName);
-
-    /// Constructor for a PropertyField property.
     IntegerRadioButtonParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
     /// This returns the radio button group managed by this ParameterUI.

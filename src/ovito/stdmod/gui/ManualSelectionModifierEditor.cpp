@@ -49,7 +49,7 @@ class PickElementMode : public ViewportInputMode
 public:
 
     /// Constructor.
-    PickElementMode(ManualSelectionModifierEditor* editor) : ViewportInputMode(editor), _editor(editor) {}
+    PickElementMode(ManualSelectionModifierEditor* editor) : _editor(editor) {}
 
     /// Handles the mouse up events for a Viewport.
     virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override {
@@ -109,7 +109,7 @@ class FenceSelectionMode : public ViewportInputMode, public ViewportGizmo
 public:
 
     /// Constructor.
-    FenceSelectionMode(ManualSelectionModifierEditor* editor) : ViewportInputMode(editor), _editor(editor) {}
+    FenceSelectionMode(ManualSelectionModifierEditor* editor) : _editor(editor) {}
 
     /// Destructor.
     virtual ~FenceSelectionMode() {
@@ -232,14 +232,14 @@ void ManualSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
     sublayout->setSpacing(6);
     layout->addWidget(mouseSelectionGroup);
 
-    PickElementMode* pickElementMode = new PickElementMode(this);
+    OORef<PickElementMode> pickElementMode = OORef<PickElementMode>::create(this);
     connect(this, &QObject::destroyed, pickElementMode, &ViewportInputMode::removeMode);
-    ViewportModeAction* pickModeAction = new ViewportModeAction(mainWindow(), tr("Pick"), this, pickElementMode);
+    ViewportModeAction* pickModeAction = new ViewportModeAction(mainWindow(), tr("Pick"), this, std::move(pickElementMode));
     sublayout->addWidget(new ViewportModeButton(pickModeAction));
 
-    FenceSelectionMode* fenceMode = new FenceSelectionMode(this);
+    OORef<FenceSelectionMode> fenceMode = OORef<FenceSelectionMode>::create(this);
     connect(this, &QObject::destroyed, fenceMode, &ViewportInputMode::removeMode);
-    ViewportModeAction* fenceModeAction = new ViewportModeAction(mainWindow(), tr("Fence selection"), this, fenceMode);
+    ViewportModeAction* fenceModeAction = new ViewportModeAction(mainWindow(), tr("Fence selection"), this, std::move(fenceMode));
     sublayout->addWidget(new ViewportModeButton(fenceModeAction));
 
     // Deactivate input modes when editor is reset.

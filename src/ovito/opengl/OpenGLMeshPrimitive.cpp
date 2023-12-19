@@ -277,21 +277,21 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         RendererResourceKey<struct OrderingCache, ConstDataBufferPtr, Vector3> orderingCacheKey{ primitive.perInstanceTMs(), direction };
 
         // Render the primitives.
-        shader.drawReordered(GL_TRIANGLES, std::move(orderingCacheKey), [&](span<GLuint> sortedIndices) {
+        shader.drawReordered(GL_TRIANGLES, std::move(orderingCacheKey), [&](std::span<GLuint> sortedIndices) {
             OVITO_ASSERT(sortedIndices.size() == shader.instanceCount());
 
             // First, compute distance of each instance from the camera along the viewing direction (=camera z-axis).
             std::vector<GraphicsFloatType> distances(sortedIndices.size());
             if(primitive.perInstanceTMs()->dataType() == DataBuffer::Float32) {
                 const Vector_3<float> directionFloat = direction.toDataType<float>();
-                boost::transform(sortedIndices, distances.begin(), [directionFloat, tmArray = BufferReadAccess<AffineTransformationT<float>>(primitive.perInstanceTMs())](size_t i) {
+                std::transform(sortedIndices.begin(), sortedIndices.end(), distances.begin(), [directionFloat, tmArray = BufferReadAccess<AffineTransformationT<float>>(primitive.perInstanceTMs())](size_t i) {
                     return directionFloat.dot(tmArray[i].translation());
                 });
             }
             else {
                 // Viewing direction in object space:
                 const Vector_3<double> directionDouble = direction.toDataType<double>();
-                boost::transform(sortedIndices, distances.begin(), [directionDouble, tmArray = BufferReadAccess<AffineTransformationT<double>>(primitive.perInstanceTMs())](size_t i) {
+                std::transform(sortedIndices.begin(), sortedIndices.end(), distances.begin(), [directionDouble, tmArray = BufferReadAccess<AffineTransformationT<double>>(primitive.perInstanceTMs())](size_t i) {
                     return directionDouble.dot(tmArray[i].translation());
                 });
             }

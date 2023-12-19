@@ -101,7 +101,7 @@ public:
             try {
                 if constexpr(!detail::returns_void_v<Function, FutureType>) {
                     // Function returns non-void results.
-                    if constexpr(!detail::is_invocable_v<Function, FutureType>)
+                    if constexpr(!std::is_invocable_v<Function, FutureType>)
                         if constexpr(is_shared_future_v<FutureType>)
                             this->template setResults<tuple_type>(std::apply(std::forward<Function>(f), future.task()->template getResults<typename FutureType::tuple_type>()));
                         else
@@ -111,7 +111,7 @@ public:
                 }
                 else {
                     // Function returns void.
-                    if constexpr(!detail::is_invocable_v<Function, FutureType>)
+                    if constexpr(!std::is_invocable_v<Function, FutureType>)
                         std::invoke(std::forward<Function>(f));
                     else
                         std::invoke(std::forward<Function>(f), std::forward<FutureType>(future));
@@ -128,7 +128,7 @@ public:
             std::decay_t<callable_result_t<Function, FutureType>> nextFuture;
             try {
                 // Call the continuation function with the results of the finished task or the finished future itself.
-                if constexpr(!detail::is_invocable_v<Function, FutureType>)
+                if constexpr(!std::is_invocable_v<Function, FutureType>)
                     nextFuture = std::apply(std::forward<Function>(f), std::forward<FutureType>(future).results());
                 else
                     nextFuture = std::invoke(std::forward<Function>(f), std::forward<FutureType>(future));

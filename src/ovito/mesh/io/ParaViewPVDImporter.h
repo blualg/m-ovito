@@ -46,7 +46,7 @@ class OVITO_MESH_EXPORT ParaViewPVDImporter : public FileSourceImporter
         using FileSourceImporter::OOMetaClass::OOMetaClass;
 
         /// Returns the list of file formats that can be read by this importer class.
-        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+        virtual std::span<const SupportedFormat> supportedFormats() const override {
             static const SupportedFormat formats[] = {{ QStringLiteral("*.pvd"), tr("ParaView PVD Files") }};
             return formats;
         }

@@ -56,6 +56,7 @@
 #include <functional>
 #include <optional>
 #include <queue>
+#include <span>
 
 /******************************************************************************
 * Qt framework classes.
@@ -155,9 +156,7 @@
 * Our own basic headers
 ******************************************************************************/
 #include <ovito/core/utilities/Debugging.h>
-#include <ovito/core/utilities/Invoke.h>
 #define TCB_SPAN_NAMESPACE_NAME Ovito
-#include <ovito/core/utilities/Span.h>
 #include <ovito/core/utilities/DataTypes.h>
 #include <ovito/core/utilities/Exception.h>
 #include <ovito/core/utilities/linalg/LinAlg.h>

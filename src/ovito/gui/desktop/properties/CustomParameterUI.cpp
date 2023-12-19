@@ -28,19 +28,6 @@ namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(CustomParameterUI);
 
-#if 0 // TODO
-/******************************************************************************
-* Constructor for a Qt property.
-******************************************************************************/
-CustomParameterUI::CustomParameterUI(PropertiesEditor* parentEditor, const char* propertyName, QWidget* widget,
-        const std::function<void(const QVariant&)>& updateWidgetFunction,
-        const std::function<QVariant()>& updatePropertyFunction,
-        const std::function<void(RefTarget*)>& resetUIFunction) :
-    PropertyParameterUI(parentEditor, propertyName), _widget(widget), _updateWidgetFunction(updateWidgetFunction), _updatePropertyFunction(updatePropertyFunction), _resetUIFunction(resetUIFunction)
-{
-}
-#endif
-
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
@@ -86,14 +73,6 @@ void CustomParameterUI::updateUI()
 
     if(widget() && editObject()) {
         QVariant val;
-#if 0 // TODO
-        if(isQtPropertyUI()) {
-            val = editObject()->property(propertyName());
-            if(!val.isValid())
-                throw Exception(tr("The object class %1 does not define a property with the name %2.").arg(editObject()->metaObject()->className(), QString(propertyName())));
-        }
-        else
-#endif
         if(isPropertyFieldUI()) {
             val = editObject()->getPropertyFieldValue(propertyField());
             OVITO_ASSERT(val.isValid());
@@ -124,14 +103,6 @@ void CustomParameterUI::updatePropertyValue()
     if(widget() && editObject()) {
         performTransaction(tr("Change parameter"), [this]() {
             QVariant newValue = _updatePropertyFunction();
-#if 0 // TODO
-            if(isQtPropertyUI()) {
-                if(!editObject()->setProperty(propertyName(), newValue)) {
-                    OVITO_ASSERT_MSG(false, "CustomParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
-                }
-            }
-            else
-#endif
             if(isPropertyFieldUI()) {
                 editor()->changePropertyFieldValue(propertyField(), newValue);
             }

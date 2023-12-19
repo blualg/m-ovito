@@ -128,7 +128,7 @@ private:
     public:
 
         /// Constructor.
-        PickingMode(DislocationInspectionApplet* applet) : ViewportInputMode(applet), _applet(applet) {}
+        PickingMode(DislocationInspectionApplet* applet) : _applet(applet) {}
 
         /// This is called by the system after the input handler has become the active handler.
         virtual void activated(bool temporaryActivation) override {
@@ -169,7 +169,7 @@ private:
     DislocationTableModel* _tableModel = nullptr;
 
     /// The viewport input mode for picking dislocations.
-    PickingMode* _pickingMode;
+    OORef<PickingMode> _pickingMode;
 };
 
 }   // End of namespace

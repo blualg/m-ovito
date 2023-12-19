@@ -37,12 +37,7 @@ class OVITO_GUI_EXPORT BooleanActionParameterUI : public PropertyParameterUI
 
 public:
 
-#if 0 // TODO
-    /// Constructor for a Qt property.
-    BooleanActionParameterUI(PropertiesEditor* parentEditor, const char* propertyName, QAction* action);
-#endif
-
-    /// Constructor for a PropertyField property.
+    /// Constructor.
     BooleanActionParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, QAction* action);
 
     /// This returns the action associated with this parameter UI.

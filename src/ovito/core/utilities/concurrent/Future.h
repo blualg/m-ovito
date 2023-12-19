@@ -218,7 +218,7 @@ public:
                 promise.setStarted();
                 try {
                     Task::Scope taskScope(promise.task());
-                    if constexpr(!std::is_void_v<detail::invoke_result_t<Function>>) {
+                    if constexpr(!std::is_void_v<std::invoke_result_t<Function>>) {
                         promise.setResults(std::invoke(std::forward<Function>(f)));
                     }
                     else {
@@ -337,7 +337,7 @@ Future<R...>::then(Executor&& executor, Function&& f)
 
         // Don't execute continuation function in case an error occurred in the preceding task and unless the continuation function takes a Future.
         // Forward any preceding exception state directly to the continuation task.
-        if constexpr(!detail::is_invocable_v<Function, Future<R...>>) {
+        if constexpr(!std::is_invocable_v<Function, Future<R...>>) {
             if(finishedTask->exceptionStore()) {
                 continuationTask->exceptionLocked(finishedTask->copyExceptionStore());
                 continuationTask->finishLocked(locker);

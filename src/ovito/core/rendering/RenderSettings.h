@@ -94,18 +94,6 @@ public:
     /// \throw Exception on error.
     bool renderScene(const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, AnimationSettings* animationSettings, FrameBuffer& frameBuffer, MainThreadOperation& operation);
 
-#if 0 // TODO
-Q_SIGNALS:
-
-    /// This signal is emitted whenever a parameter of this object changes.
-    void settingsChanged();
-#endif
-
-protected:
-
-    /// Sends an event to all dependents of this RefTarget.
-    virtual void notifyDependentsImpl(const ReferenceEvent& event) noexcept override;
-
 private:
 
     /// Renders a single frame and saves the output file. This is part of the implementation of the renderScene() method.

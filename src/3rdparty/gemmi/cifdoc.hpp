@@ -403,8 +403,8 @@ struct Block {
   std::string name;
   std::vector<Item> items;
 
-  explicit Block(const std::string& name_) : name(name_) {}
-  Block() {}
+  explicit Block(const std::string& name_);
+  Block();
 
   void swap(Block& o) { name.swap(o.name); items.swap(o.items); }
   // access functions
@@ -559,6 +559,9 @@ private:
       new (&frame) Block(std::move(o.frame));
   }
 };
+
+inline Block::Block(const std::string& name_) : name(name_) {}
+inline Block::Block() {}
 
 inline void Loop::set_all_values(std::vector<std::vector<std::string>> columns){
   size_t w = columns.size();

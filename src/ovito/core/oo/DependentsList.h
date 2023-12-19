@@ -36,15 +36,14 @@ class OVITO_CORE_EXPORT DependentsList
 {
 private:
 
+    using size_type = QVarLengthArray<RefMaker*, 2>::size_type;
+
     /// The list of RefMakers that currently hold a reference to this target.
     /// If a RefMaker has multiple references to this target, it will appear only once in this list.
 	QVarLengthArray<RefMaker*, 2> _entries;
 
-    using size_type = QVarLengthArray<RefMaker*, 2>::size_type;
-
-#ifdef OVITO_DEBUG
-    bool _reentranceFlag = false;
-#endif
+    /// Keeps track of the number of nested calls to visit_all().
+    int _reentranceCounter = 0;
 
 public:
 
@@ -52,27 +51,31 @@ public:
     /// It's allowed to modify the list while visiting it.
     template<class Callable>
     void visit_all(Callable&& fn) {
+        _reentranceCounter++;
 #ifdef OVITO_DEBUG
-        OVITO_ASSERT(_reentranceFlag == false);
-        _reentranceFlag = true;
+        try {
 #endif
-
-        size_type new_size = 0;
+        // Visit all entries in the list. Skip nullptr entries. The length of the list
+        // may grow (but not shrink) during the iteration process.
+        bool containsEmptySlots = false;
         for(size_type i = 0; i < _entries.size(); i++) {
-            if(RefMaker* d = _entries[i]) {
-                if(i != new_size) {
-                    _entries[new_size] = d;
-                    _entries[i] = nullptr;
-                }
-                new_size++;
+            if(RefMaker* d = _entries[i])
                 fn(d);
-            }
+            else
+                containsEmptySlots = true;
         }
-        if(new_size != _entries.size())
-            _entries.resize(new_size);
+
+        // Compact the list if necessary.
+        // But only do it if we are not currently visiting the list recursively.
+        if(--_reentranceCounter == 0 && containsEmptySlots) {
+            _entries.removeAll(nullptr);
+        }
 
 #ifdef OVITO_DEBUG
-        _reentranceFlag = false;
+        }
+        catch(...) {
+            OVITO_ASSERT_MSG(false, "RefTarget::visitDependents()", "Exception thrown by visitor function.");
+        }
 #endif
     }
 

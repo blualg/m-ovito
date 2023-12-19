@@ -37,12 +37,7 @@ class OVITO_GUI_EXPORT StringParameterUI : public PropertyParameterUI
 
 public:
 
-#if 0 // TODO
-    /// Constructor for a Qt property.
-    StringParameterUI(PropertiesEditor* parentEditor, const char* propertyName);
-#endif
-
-    /// Constructor for a PropertyField property.
+    /// Constructor.
     StringParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
     /// Destructor.

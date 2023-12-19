@@ -30,16 +30,6 @@ namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(FloatParameterUI);
 
-#if 0 // TODO
-/******************************************************************************
-* Constructor for a Qt property.
-******************************************************************************/
-FloatParameterUI::FloatParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QString& labelText, const QMetaObject* parameterUnitType) :
-    NumericalParameterUI(parentEditor, propertyName, parameterUnitType ? parameterUnitType : &FloatParameterUnit::staticMetaObject, labelText)
-{
-}
-#endif
-
 /******************************************************************************
 * Constructor for a PropertyField or ReferenceField property.
 ******************************************************************************/
@@ -60,15 +50,7 @@ void FloatParameterUI::updatePropertyValue()
                 ctrl->setFloatValue(currentAnimationTime().value_or(AnimationTime(0)), spinner()->floatValue());
             }
         }
-#if 0 // TODO
-        else if(isQtPropertyUI()) {
-            if(!editObject()->setProperty(propertyName(), spinner()->floatValue())) {
-                OVITO_ASSERT_MSG(false, "FloatParameterUI::updatePropertyValue()", qPrintable(QString("The value of property %1 of object class %2 could not be set.").arg(QString(propertyName()), editObject()->metaObject()->className())));
-            }
-        }
-        else
-#endif
-        if(isPropertyFieldUI()) {
+        else if(isPropertyFieldUI()) {
             editor()->changePropertyFieldValue(propertyField(), spinner()->floatValue());
         }
         Q_EMIT valueEntered();

@@ -24,7 +24,6 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/utilities/BindFront.h>
 #include <function2/function2.hpp>
 #include "detail/FutureDetail.h"
 
@@ -155,7 +154,7 @@ public:
     /// Note that the continuation function will always be executed, even if this task was canceled or set to an error state.
     template<typename Function, typename Executor = InlineExecutor>
     void finally(Function&& f) {
-        addContinuation(Executor{}, detail::bind_front(std::forward<Function>(f), std::ref(*this)));
+        addContinuation(Executor{}, std::bind_front(std::forward<Function>(f), std::ref(*this)));
     }
 
     /// Accessor function for the internal results storage.

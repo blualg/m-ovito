@@ -56,7 +56,7 @@ public:
     using RefTarget::OOMetaClass::OOMetaClass;
 
     /// Returns the list of file formats that can be read by this importer class.
-    virtual Ovito::span<const SupportedFormat> supportedFormats() const {
+    virtual std::span<const SupportedFormat> supportedFormats() const {
         return {}; // Returning no format descriptors indicates that this importer is non-public.
     }
 

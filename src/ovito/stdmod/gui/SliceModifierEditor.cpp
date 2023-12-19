@@ -137,9 +137,9 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
     connect(alignPlaneToViewBtn, &QPushButton::clicked, this, &SliceModifierEditor::onAlignPlaneToView);
     layout->addWidget(alignPlaneToViewBtn);
 
-    _pickPlanePointsInputMode = new PickPlanePointsInputMode(this);
-    connect(this, &QObject::destroyed, _pickPlanePointsInputMode, &ViewportInputMode::removeMode);
-    _pickPlanePointsInputModeAction = new ViewportModeAction(mainWindow(), tr("Pick three points"), this, _pickPlanePointsInputMode);
+    OORef<PickPlanePointsInputMode> pickPlanePointsInputMode = OORef<PickPlanePointsInputMode>::create(this);
+    connect(this, &QObject::destroyed, pickPlanePointsInputMode, &ViewportInputMode::removeMode);
+    _pickPlanePointsInputModeAction = new ViewportModeAction(mainWindow(), tr("Pick three points"), this, std::move(pickPlanePointsInputMode));
     layout->addWidget(new ViewportModeButton(_pickPlanePointsInputModeAction));
 
     // Deactivate input mode when editor is reset.

@@ -89,7 +89,7 @@ public:
     virtual void makeOpenGLContextCurrent() {}
 
     /// Returns the list of gizmos to render in the viewport.
-    virtual span<ViewportGizmo*> viewportGizmos() = 0;
+    virtual std::span<ViewportGizmo*> viewportGizmos() = 0;
 
     /// Returns whether the viewport window is currently visible on screen.
     virtual bool isVisible() const = 0;

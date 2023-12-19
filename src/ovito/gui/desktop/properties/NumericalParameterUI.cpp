@@ -32,17 +32,6 @@ namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(NumericalParameterUI);
 
-#if 0 // TODO
-/******************************************************************************
-* Constructor for a Qt property.
-******************************************************************************/
-NumericalParameterUI::NumericalParameterUI(PropertiesEditor* parentEditor, const char* propertyName, const QMetaObject* defaultParameterUnitType, const QString& labelText) :
-    PropertyParameterUI(parentEditor, propertyName), _parameterUnitType(defaultParameterUnitType)
-{
-    initUIControls(labelText);
-}
-#endif
-
 /******************************************************************************
 * Constructor for a PropertyField or ReferenceField property.
 ******************************************************************************/

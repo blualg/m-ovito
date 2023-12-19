@@ -121,12 +121,6 @@ private:
 
     /// Indicates that a restart of the preparation has already been scheduled.
     bool _isRestartScheduled = false;
-
-    /// Qt signal/slot connection to the SelectionSet::selectionChanged() signal.
-    QMetaObject::Connection _selectionChangedConnection;
-
-    // Qt signal/slot connection to the RenderSettings::settingsChanged() signal.
-    QMetaObject::Connection _renderSettingsChangedConnection;
 };
 
 }   // End of namespace

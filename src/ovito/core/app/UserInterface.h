@@ -285,7 +285,7 @@ bool UserInterface::handleExceptions(Function&& func, bool visibleInUserInterfac
     OVITO_ASSERT(!isBeingDeleted());
     MainThreadOperation operation(ExecutionContext::Type::Interactive, *this, visibleInUserInterface); // Note: This creates a temporary std::shared_ptr<UserInterface> to keep the UI alive until function exit.
     try {
-        if constexpr(detail::is_invocable_v<Function, MainThreadOperation&>) {
+        if constexpr(std::is_invocable_v<Function, MainThreadOperation&>) {
             std::forward<Function>(func)(operation);
         }
         else {

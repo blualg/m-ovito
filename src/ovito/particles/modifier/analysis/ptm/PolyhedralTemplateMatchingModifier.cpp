@@ -165,8 +165,8 @@ PolyhedralTemplateMatchingModifier::PTMEngine::PTMEngine(const ModifierEvaluatio
 ******************************************************************************/
 void PolyhedralTemplateMatchingModifier::PTMEngine::perform()
 {
-//TODO: separate pre-calculation of neighbor ordering, so that we don't have to call it again unless the pipeline has changed.
-//  i.e.: if user adds the option "Output RMSD", the old neighbor ordering is still valid.
+    // TODO: separate pre-calculation of neighbor ordering, so that we don't have to call it again unless the pipeline has changed.
+    // i.e.: if user adds the option "Output RMSD", the old neighbor ordering is still valid.
 
     if(cell() && cell()->is2D())
         throw Exception(tr("The PTM modifier does not support 2D simulation cells."));

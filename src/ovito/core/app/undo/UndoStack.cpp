@@ -41,7 +41,7 @@ UndoStack::UndoStack(UserInterface& userInterface, QObject* parent) : QObject(pa
 void UndoStack::push(std::unique_ptr<CompoundOperation> operation)
 {
     OVITO_ASSERT(operation);
-    OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "UndoStack::push()", "This function may only be called from the main thread.");
+    OVITO_ASSERT_MSG(ExecutionContext::isMainThread(), "UndoStack::push()", "This function may only be called from the main thread.");
     OVITO_ASSERT_MSG(CompoundOperation::isUndoingOrRedoing() == false, "UndoStack::push()", "Cannot record an operation while undoing or redoing another operation.");
     OVITO_ASSERT(CompoundOperation::isUndoRecording() == false);
     OVITO_ASSERT(!CompoundOperation::current());

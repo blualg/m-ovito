@@ -89,7 +89,7 @@ private:
     public:
 
         /// Constructor.
-        PickingMode(ParticleInspectionApplet* applet) : ViewportInputMode(applet), _applet(applet) {}
+        PickingMode(ParticleInspectionApplet* applet) : _applet(applet) {}
 
         /// Handles the mouse up events for a viewport.
         virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
@@ -137,7 +137,7 @@ private:
 private:
 
     /// The viewport input for picking particles.
-    PickingMode* _pickingMode;
+    OORef<PickingMode> _pickingMode;
 
     /// UI action that controls the display of inter-particle distances.
     QAction* _measuringModeAction;

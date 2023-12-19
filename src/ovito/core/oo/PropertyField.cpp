@@ -61,11 +61,13 @@ void PropertyFieldBase::generateTargetChangedEvent(RefMaker* owner, const Proper
         return;
 
     if(descriptor->definingClass()->isDerivedFrom(DataObject::OOClass())) {
-        // Change events are only sent by a DataObject if the object
+        // Change events only need to be sent by a DataObject if the object
         // is not shared by multiple owners and if we are in the main thread.
+        // This is a performance optimization to avoid sending change events unnecessarily
+        // in situations where they certainly don't matter.
         if(ExecutionContext::isMainThread() == false)
             return;
-        if(!static_object_cast<DataObject>(owner)->isSafeToModify())
+        if(static_object_cast<DataObject>(owner)->dataReferenceCount() > 1) // Note: Using dataReferenceCount() instead of isSafeToModify() here is a performance optimization.
             return;
     }
 

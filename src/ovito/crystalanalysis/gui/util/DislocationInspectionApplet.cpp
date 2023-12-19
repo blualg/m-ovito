@@ -53,7 +53,7 @@ QWidget* DislocationInspectionApplet::createWidget()
     layout->setContentsMargins(0,0,0,0);
     layout->setSpacing(0);
 
-    _pickingMode = new PickingMode(this);
+    _pickingMode = OORef<PickingMode>::create(this);
     connect(this, &QObject::destroyed, _pickingMode, &ViewportInputMode::removeMode);
     ViewportModeAction* pickModeAction = new ViewportModeAction(mainWindow(), tr("Select in viewports"), this, _pickingMode);
     pickModeAction->setIcon(QIcon::fromTheme("particles_select_mode"));

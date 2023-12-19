@@ -43,7 +43,7 @@ class OVITO_GALAMOST_EXPORT GALAMOSTImporter : public ParticleImporter
         using ParticleImporter::OOMetaClass::OOMetaClass;
 
         /// Returns the list of file formats that can be read by this importer class.
-        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+        virtual std::span<const SupportedFormat> supportedFormats() const override {
             static const SupportedFormat formats[] = {{ QStringLiteral("*.xml"), tr("GALAMOST Files") }};
             return formats;
         }

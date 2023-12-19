@@ -100,7 +100,7 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
                     : _engine->runAsync(true);
 
                 // Schedule next iteration upon completion of the future returned by the user function.
-                this->whenTaskFinishes(std::move(future), *_modNode, detail::bind_front(&EngineExecutionTask::executionFinished, static_pointer_cast<EngineExecutionTask>(this->shared_from_this())));
+                this->whenTaskFinishes(std::move(future), *_modNode, std::bind_front(&EngineExecutionTask::executionFinished, static_pointer_cast<EngineExecutionTask>(this->shared_from_this())));
             }
             else if(EnginePtr continuationEngine = _engine->createContinuationEngine(_request, resultsStorage())) {
 

@@ -29,57 +29,6 @@
 
 namespace Ovito {
 
-#if 0 // TODO: Remove this class
-/**
- * \brief This class records a change to a Qt property to a QObject derived class.
- *
- * This UndoableOperation can be used to record
- * a change to a Qt property of an object. The property must defined through the
- * standard Qt mechanism using the \c Q_PROPERTY macro.
- */
-class OVITO_CORE_EXPORT SimplePropertyChangeOperation : public UndoableOperation
-{
-public:
-
-    /// \brief Constructor.
-    /// \param obj The object whose property is being changed.
-    /// \param propName The identifier of the property that is changed. This is the identifier
-    ///                 name given to the property in the \c Q_PROPERTY macro.
-    /// \note This class does not make a copy of the property name parameter.
-    ///       So the caller should only pass constant string literals to this constructor.
-    SimplePropertyChangeOperation(OvitoObject* obj, const char* propName) :
-        _object(obj), _propertyName(propName)
-    {
-        // Make a copy of the current property value.
-        _oldValue = _object->property(_propertyName);
-        OVITO_ASSERT_MSG(_oldValue.isValid(), "SimplePropertyChangeOperation", "The object does not have a property with the given name.");
-    }
-
-    /// \brief Restores the old property value.
-    virtual void undo() override {
-        // Swap old value and current property value.
-        QVariant temp = _object->property(_propertyName);
-        _object->setProperty(_propertyName, _oldValue);
-        _oldValue = temp;
-    }
-
-    virtual QString displayName() const override {
-        return QStringLiteral("Set property %1 of %2").arg(_propertyName).arg(_object->getOOClass().name());
-    }
-
-private:
-
-    /// The object whose property has been changed.
-    OORef<OvitoObject> _object;
-
-    /// The name of the property that has been changed.
-    const char* _propertyName;
-
-    /// The old value of the property.
-    QVariant _oldValue;
-};
-#endif
-
 /**
  * \brief This undo record simply generates a TargetChanged event for a RefTarget whenever an operation is undone.
  */

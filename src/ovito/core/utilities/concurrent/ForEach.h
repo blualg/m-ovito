@@ -24,7 +24,6 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/utilities/BindFront.h>
 #include "detail/ContinuationTask.h"
 #include "LaunchTask.h"
 
@@ -39,7 +38,7 @@ auto for_each_sequential(
     ResultType&&... initialResult)
 {
     // The type of future returned by the user function.
-    using output_future_type = detail::invoke_result_t<StartIterFunc, decltype(*std::begin(inputRange)), std::decay_t<ResultType>&...>; // C++20: Use std::indirect_result_t instead.
+    using output_future_type = std::invoke_result_t<StartIterFunc, decltype(*std::begin(inputRange)), std::decay_t<ResultType>&...>; // C++20: Use std::indirect_result_t instead.
 
     // The output tuple produced by the task.
     using task_tuple_type = std::tuple<std::decay_t<ResultType>...>;
@@ -80,7 +79,7 @@ auto for_each_sequential(
             OVITO_ASSERT(_iterator == std::begin(_range));
             // Begin execution of first iteration.
             if(_iterator != std::end(_range)) {
-                _executor.execute(detail::bind_front(&ForEachTask::iteration_begin, static_pointer_cast<ForEachTask>(this->shared_from_this())));
+                _executor.execute(std::bind_front(&ForEachTask::iteration_begin, static_pointer_cast<ForEachTask>(this->shared_from_this())));
                 OVITO_ASSERT_MSG(_iterator == std::begin(_range), "for_each_sequential()", "An executor that performs deferred execution is required.");
             }
             else {
@@ -103,7 +102,7 @@ auto for_each_sequential(
                 try {
                     Task::Scope taskScope(this);
                     // Call the user-provided function with the current loop value and, optionally, the task's result storage
-                    if constexpr(detail::is_invocable_v<std::decay_t<StartIterFunc>, decltype(*_iterator), std::decay_t<ResultType>&...> && std::tuple_size_v<task_tuple_type> == 1)
+                    if constexpr(std::is_invocable_v<std::decay_t<StartIterFunc>, decltype(*_iterator), std::decay_t<ResultType>&...> && std::tuple_size_v<task_tuple_type> == 1)
                         future = std::invoke(_startFunc, *_iterator, this->resultsStorage());
                     else
                         future = std::invoke(_startFunc, *_iterator);
@@ -114,7 +113,7 @@ auto for_each_sequential(
                 }
                 OVITO_ASSERT(future.isValid());
                 // Schedule next iteration upon completion of the future returned by the user function.
-                this->whenTaskFinishes(future.takeTaskReference(), _executor, detail::bind_front(&ForEachTask::iteration_complete, static_pointer_cast<ForEachTask>(this->shared_from_this())));
+                this->whenTaskFinishes(future.takeTaskReference(), _executor, std::bind_front(&ForEachTask::iteration_complete, static_pointer_cast<ForEachTask>(this->shared_from_this())));
             }
             else {
                 // Inform caller that the task has finished and the result is available.
@@ -149,9 +148,9 @@ auto for_each_sequential(
                 Task::Scope taskScope(this);
                 // Invoke the user function that completes this iteration by processing the results returned by the future.
                 if constexpr(std::tuple_size_v<typename output_future_type::tuple_type> == 1) {
-                    if constexpr(detail::is_invocable_v<CompleteIterFunc, decltype(*_iterator), decltype(std::move(future).result()), std::decay_t<ResultType>&...> && std::tuple_size_v<task_tuple_type> == 1)
+                    if constexpr(std::is_invocable_v<CompleteIterFunc, decltype(*_iterator), decltype(std::move(future).result()), std::decay_t<ResultType>&...> && std::tuple_size_v<task_tuple_type> == 1)
                         std::invoke(_completeFunc, *_iterator, std::move(future).result(), resultsStorage());
-                    else if constexpr(detail::is_invocable_v<CompleteIterFunc, decltype(*_iterator), decltype(std::move(future).result())>)
+                    else if constexpr(std::is_invocable_v<CompleteIterFunc, decltype(*_iterator), decltype(std::move(future).result())>)
                         std::invoke(_completeFunc, *_iterator, std::move(future).result());
                     else
                         std::invoke(_completeFunc, *_iterator);

@@ -506,11 +506,6 @@ void Viewport::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget
         // Keep scene reference of viewport window in sync.
         if(window())
             window()->scenePreparation().setScene(scene());
-
-#if 0 // TODO
-        Q_EMIT sceneReplaced(scene());
-        Q_EMIT viewportChanged();
-#endif
     }
     RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
@@ -554,11 +549,6 @@ void Viewport::propertyChanged(const PropertyFieldDescriptor* field)
         // Update view matrix when the up-vector has been changed.
         setCameraDirection(cameraDirection());
     }
-#if 0 // TODO
-    else if(field == PROPERTY_FIELD(isGridVisible) || field == PROPERTY_FIELD(renderPreviewMode)) {
-        Q_EMIT viewportChanged();
-    }
-#endif
     updateViewport();
 }
 
@@ -595,9 +585,6 @@ void Viewport::updateViewportTitle()
         default: OVITO_ASSERT(false); // Unknown viewport type
     }
     _viewportTitle.set(this, PROPERTY_FIELD(viewportTitle), std::move(newTitle));
-#if 0 // TODO
-    Q_EMIT viewportChanged();
-#endif
 }
 
 /******************************************************************************

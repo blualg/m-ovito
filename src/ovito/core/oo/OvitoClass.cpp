@@ -40,7 +40,6 @@ OvitoClass* OvitoClass::_firstNativeMetaClass{};
 OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const char* pluginId, OORef<OvitoObject>(*createInstanceFunc)(ObjectInitializationFlags), MetadataItem** metadataHead) :
     _createInstanceFunc(createInstanceFunc),
     _name(name),
-    _displayName(name),
     _superClass(superClass),
     _pluginId(pluginId),
     _metadataHead(metadataHead)
@@ -67,6 +66,10 @@ void OvitoClass::initialize()
     // Fetch UI name assigned to the class.
     if(displayName().isEmpty())
         setDisplayName(classMetadata("DisplayName"));
+
+    // Fall back to using C++ class name as display name.
+    if(displayName().isEmpty())
+        setDisplayName(name());
 }
 
 /******************************************************************************

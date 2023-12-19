@@ -41,7 +41,7 @@ class OVITO_PARTICLES_EXPORT CastepCellImporter : public ParticleImporter
         using ParticleImporter::OOMetaClass::OOMetaClass;
 
         /// Returns the list of file formats that can be read by this importer class.
-        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+        virtual std::span<const SupportedFormat> supportedFormats() const override {
             static const SupportedFormat formats[] = {{ QStringLiteral("*.cell"), tr("CASTEP Cell Files") }};
             return formats;
         }

@@ -49,11 +49,6 @@ public:
     };
     Q_ENUM(PropertyComponentsMode);
 
-#if 0 // TODO
-    /// Constructor.
-    PropertyReferenceParameterUI(PropertiesEditor* parentEditor, const char* propertyName, PropertyContainerClassPtr containerClass = nullptr, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
-#endif
-
     /// Constructor.
     explicit PropertyReferenceParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, PropertyContainerClassPtr containerClass = nullptr, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
 

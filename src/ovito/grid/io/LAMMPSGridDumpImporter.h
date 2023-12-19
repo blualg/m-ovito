@@ -43,7 +43,7 @@ class OVITO_GRID_EXPORT LAMMPSGridDumpImporter : public FileSourceImporter
         using FileSourceImporter::OOMetaClass::OOMetaClass;
 
         /// Returns the list of file formats that can be read by this importer class.
-        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+        virtual std::span<const SupportedFormat> supportedFormats() const override {
             static const SupportedFormat formats[] = {{ QStringLiteral("*"), tr("LAMMPS Grid Dump Files") }};
             return formats;
         }

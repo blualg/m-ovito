@@ -538,7 +538,7 @@ void OpenGLShaderHelper::draw(GLenum mode)
 /******************************************************************************
 * Renders the primtives using a geometry shader in a specified order.
 ******************************************************************************/
-void OpenGLShaderHelper::drawReorderedGeometryShader(QOpenGLBuffer& indexBuffer, std::function<void(span<GLuint>)>&& computeOrderingFunc)
+void OpenGLShaderHelper::drawReorderedGeometryShader(QOpenGLBuffer& indexBuffer, std::function<void(std::span<GLuint>)>&& computeOrderingFunc)
 {
     // The number of instances to be rendered.
     GLsizei renderInstanceCount = _instancesSubset ? _instancesSubset->size() : instanceCount();
@@ -547,7 +547,7 @@ void OpenGLShaderHelper::drawReorderedGeometryShader(QOpenGLBuffer& indexBuffer,
     if(!indexBuffer.isCreated()) {
         indexBuffer = createCachedBufferImpl(sizeof(GLsizei), QOpenGLBuffer::IndexBuffer, PerInstance, [&](void* buffer, BufferReadAccess<int32_t> subset) {
             OVITO_ASSERT(!subset);
-            auto sortedIndices = span(static_cast<GLuint*>(buffer), renderInstanceCount);
+            auto sortedIndices = std::span(static_cast<GLuint*>(buffer), renderInstanceCount);
             if(!_instancesSubset)
                 std::iota(sortedIndices.begin(), sortedIndices.end(), (GLuint)0);
             else
@@ -571,7 +571,7 @@ void OpenGLShaderHelper::drawReorderedGeometryShader(QOpenGLBuffer& indexBuffer,
 /******************************************************************************
 * Issues a drawing command with an ordering of the instances.
 ******************************************************************************/
-void OpenGLShaderHelper::drawReorderedOpenGL4(GLenum mode, QOpenGLBuffer& indirectBuffer, std::function<void(span<GLuint>)>&& computeOrderingFunc)
+void OpenGLShaderHelper::drawReorderedOpenGL4(GLenum mode, QOpenGLBuffer& indirectBuffer, std::function<void(std::span<GLuint>)>&& computeOrderingFunc)
 {
     // On OpenGL 4.3+ contexts, use glMultiDrawArraysIndirect() to render the instances in a prescribed order.
     OVITO_ASSERT(_renderer->glversion() >= QT_VERSION_CHECK(4, 3, 0));
@@ -592,7 +592,7 @@ void OpenGLShaderHelper::drawReorderedOpenGL4(GLenum mode, QOpenGLBuffer& indire
     if(!indirectBuffer.isCreated()) {
         indirectBuffer = createCachedBufferImpl(sizeof(DrawArraysIndirectCommand), static_cast<QOpenGLBuffer::Type>(GL_DRAW_INDIRECT_BUFFER), PerInstance, [&](void* buffer, BufferReadAccess<int32_t> subset) {
             OVITO_ASSERT(!subset);
-            auto sortedIndices = span(static_cast<GLuint*>(buffer), renderInstanceCount);
+            auto sortedIndices = std::span(static_cast<GLuint*>(buffer), renderInstanceCount);
             if(!_instancesSubset)
                 std::iota(sortedIndices.begin(), sortedIndices.end(), (GLuint)0);
             else
@@ -713,7 +713,7 @@ void OpenGLShaderHelper::drawOpenGL2(GLenum mode, GLsizei renderInstanceCount)
 /******************************************************************************
 * Issues a drawing command with an ordering of the instances.
 ******************************************************************************/
-void OpenGLShaderHelper::drawReorderedOpenGL2or3(GLenum mode, std::pair<std::vector<GLint>, std::vector<GLsizei>>& indirectBuffers, std::function<void(span<GLuint>)>&& computeOrderingFunc)
+void OpenGLShaderHelper::drawReorderedOpenGL2or3(GLenum mode, std::pair<std::vector<GLint>, std::vector<GLsizei>>& indirectBuffers, std::function<void(std::span<GLuint>)>&& computeOrderingFunc)
 {
     // This method is called for OpenGL versions before 3.3, when glMultiDrawArraysIndirect() and instanced arrays are not available.
 

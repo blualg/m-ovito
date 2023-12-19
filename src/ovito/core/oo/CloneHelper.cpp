@@ -83,7 +83,7 @@ OORef<RefTarget> CloneHelper::cloneSingleObjectImpl(const RefTarget* obj, bool d
     CloneHelper tempHelper;
     OORef<RefTarget> copy = obj->clone(deepCopy, tempHelper);
     if(!copy)
-        throw Exception(QString("Object of class %1 cannot be cloned. It does not implement the clone() method.").arg(obj->getOOClass().name()));
+        throw Exception(QStringLiteral("Object of class %1 cannot be cloned. It does not implement the clone() method.").arg(obj->getOOClass().name()));
 
     OVITO_ASSERT_MSG(copy->getOOClass().isDerivedFrom(obj->getOOClass()), "CloneHelper::cloneSingleObject", qPrintable(QString("The clone method of class %1 did not return a compatible class instance.").arg(obj->getOOClass().name())));
 

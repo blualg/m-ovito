@@ -237,7 +237,7 @@ public:
 
     /// Paints the instances in a prescribed order other than the storage order.
     template<typename KeyType>
-    void drawReordered(GLenum mode, KeyType&& cacheKey, std::function<void(span<GLuint>)>&& computeOrderingFunc) {
+    void drawReordered(GLenum mode, KeyType&& cacheKey, std::function<void(std::span<GLuint>)>&& computeOrderingFunc) {
 
         // Ordered drawing is not support by picking shaders, which access the gl_InstanceID special variable.
         // That's because the 'baseInstance' parameter does not affect the shader-visible value of gl_InstanceID according to the OpenGL specification.
@@ -292,17 +292,17 @@ private:
 
 #ifndef Q_OS_WASM
     /// Issues a drawing command with an ordering of the instances.
-    void drawReorderedOpenGL4(GLenum mode, QOpenGLBuffer& indirectBuffer, std::function<void(span<GLuint>)>&& computeOrderingFunc);
+    void drawReorderedOpenGL4(GLenum mode, QOpenGLBuffer& indirectBuffer, std::function<void(std::span<GLuint>)>&& computeOrderingFunc);
 #endif
 
     /// Implemention of the draw() method for OpenGL 2.x.
     void drawOpenGL2(GLenum mode, GLsizei renderInstanceCount);
 
     /// Issues a drawing command with an ordering of the instances.
-    void drawReorderedOpenGL2or3(GLenum mode, std::pair<std::vector<GLint>, std::vector<GLsizei>>& indirectBuffers, std::function<void(span<GLuint>)>&& computeOrderingFunc);
+    void drawReorderedOpenGL2or3(GLenum mode, std::pair<std::vector<GLint>, std::vector<GLsizei>>& indirectBuffers, std::function<void(std::span<GLuint>)>&& computeOrderingFunc);
 
     /// Renders the primtives using a geometry shader in a specified order.
-    void drawReorderedGeometryShader(QOpenGLBuffer& indexBuffer, std::function<void(span<GLuint>)>&& computeOrderingFunc);
+    void drawReorderedGeometryShader(QOpenGLBuffer& indexBuffer, std::function<void(std::span<GLuint>)>&& computeOrderingFunc);
 
     /// Makes the gl_VertexID and gl_InstanceID special variables available in older OpenGL implementations.
     void setupVertexAndInstanceIDOpenGL2();

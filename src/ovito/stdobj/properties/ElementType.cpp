@@ -30,7 +30,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_ABSTRACT_OVITO_CLASS(ElementType);
+IMPLEMENT_CREATABLE_OVITO_CLASS(ElementType);
 DEFINE_PROPERTY_FIELD(ElementType, numericId);
 DEFINE_PROPERTY_FIELD(ElementType, name);
 DEFINE_PROPERTY_FIELD(ElementType, color);

@@ -42,7 +42,7 @@ class OVITO_PARTICLES_EXPORT PDBImporter : public ParticleImporter
         using ParticleImporter::OOMetaClass::OOMetaClass;
 
         /// Returns the list of file formats that can be read by this importer class.
-        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+        virtual std::span<const SupportedFormat> supportedFormats() const override {
             static const SupportedFormat formats[] = {{ QStringLiteral("*.pdb *.pdb.gz"), tr("PDB Files") }};
             return formats;
         }
