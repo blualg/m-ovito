@@ -172,11 +172,16 @@ void ObjectLoadStream::close()
             }
         }
 
-        // Now that all references are in place call, post-processing function on each loaded object.
+        // Now that all references are in place, call post-processing function on each loaded object.
         for(const ObjectRecord& record : _objects) {
             if(record.object)
                 record.object->loadFromStreamComplete(*this);
         }
+
+        // Call post-load callbacks.
+        for(auto& callback : _postLoadCallbacks)
+            std::move(callback)();
+        _postLoadCallbacks.clear();
 
         // Clear the being-loaded status of all objects.
         for(const ObjectRecord& record : _objects) {

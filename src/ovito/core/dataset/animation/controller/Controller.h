@@ -64,16 +64,6 @@ protected:
     /// Constructor.
     using RefTarget::RefTarget;
 
-#if 0 // TODO
-    /// This method is called once for this object after it has been completely loaded from a stream.
-    virtual void loadFromStreamComplete(ObjectLoadStream& stream) override {
-        RefTarget::loadFromStreamComplete(stream);
-
-        // Inform dependents that it is now safe to query the controller for its value.
-        Q_EMIT controllerLoadingCompleted();
-    }
-#endif
-
 public:
 
     /// \brief Returns the value type of the controller.
@@ -282,14 +272,6 @@ public:
     /// \param time The animation at which the scaling should be applied to the transformation.
     /// \param scaling The scaling to add to the transformation.
     virtual void scale(AnimationTime time, const Scaling& scaling) { OVITO_ASSERT_MSG(false, "Controller::scale()", "This method should be overridden."); }
-
-#if 0 // TODO
-Q_SIGNALS:
-
-    /// This signal is emitted by the Controller after its data has been completely loaded from an ObjectLoadStream.
-    /// After this signal was sent, it is safe to query the controller for its value.
-    void controllerLoadingCompleted();
-#endif
 };
 
 

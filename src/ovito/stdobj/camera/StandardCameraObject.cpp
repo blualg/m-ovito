@@ -73,13 +73,11 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
             stream.expectChunk(0x02);
             OORef<Controller> controller = stream.loadObject<Controller>();
             stream.closeChunk();
-#if 0 // TODO
             // Need to wait until the animation keys of the controller have been completely loaded.
             // Only then it is safe to query the controller for its value.
-            QObject::connect(controller.get(), &Controller::controllerLoadingCompleted, &owner, [camera = static_cast<StandardCameraObject*>(&owner), controller]() {
+            stream.registerPostLoadCallback([camera = static_cast<StandardCameraObject*>(&owner), controller = std::move(controller)]() {
                 camera->setFov(controller->getFloatValue(AnimationTime(0)));
             });
-#endif
         };
     }
     else if(field.identifier == "zoomController" && field.definingClass == &StandardCameraObject::OOClass()) {
@@ -88,13 +86,11 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
             stream.expectChunk(0x02);
             OORef<Controller> controller = stream.loadObject<Controller>();
             stream.closeChunk();
-#if 0 // TODO
             // Need to wait until the animation keys of the controller have been completely loaded.
             // Only then it is safe to query the controller for its value.
-            QObject::connect(controller.get(), &Controller::controllerLoadingCompleted, &owner, [camera = static_cast<StandardCameraObject*>(&owner), controller]() {
+            stream.registerPostLoadCallback([camera = static_cast<StandardCameraObject*>(&owner), controller = std::move(controller)]() {
                 camera->setZoom(controller->getFloatValue(AnimationTime(0)));
             });
-#endif
         };
     }
     return nullptr;

@@ -245,23 +245,32 @@ OORef<DataSet> DataSet::createFromFile(const QString& filename)
 ******************************************************************************/
 RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr DataSet::OOMetaClass::overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const
 {
-#if 0 // TODO
     // The DataSet class used to store an AnimationSettings object and the scene root node in OVITO 3.7 and earlier.
-    if(field.definingClass == &DataSet::OOClass() && (field.identifier == "animationSettings" || field.identifier == "sceneRoot" || field.identifier == "selection")) {
-        return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
-            // Load the legacy objects from the stream and temporarily store them in a QObject property.
-            // Once the entire DataSet has been loaded, loadFromStreamComplete() will store them in the right place.
-            stream.expectChunk(0x02);
-            if(field.identifier == "animationSettings")
-                owner.setProperty("_animationSettings", QVariant::fromValue(stream.loadObject<AnimationSettings>()));
-            else if(field.identifier == "sceneRoot")
-                owner.setProperty("_sceneRoot", QVariant::fromValue(stream.loadObject<Scene>()));
-            else if(field.identifier == "selection")
-                owner.setProperty("_selection", QVariant::fromValue(stream.loadObject<SelectionSet>()));
-            stream.closeChunk();
-        };
+    if(field.definingClass == &DataSet::OOClass()) {
+        // Load the legacy objects from the stream and temporarily store them in the DataSet::globalObjects list.
+        // Once the entire DataSet has been loaded, loadFromStreamComplete() will move them rto the right places.
+        if(field.identifier == "animationSettings") {
+            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+                stream.expectChunk(0x02);
+                static_object_cast<DataSet>(&owner)->addGlobalObject(stream.loadObject<AnimationSettings>());
+                stream.closeChunk();
+            };
+        }
+        else if(field.identifier == "sceneRoot") {
+            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+                stream.expectChunk(0x02);
+                static_object_cast<DataSet>(&owner)->addGlobalObject(stream.loadObject<Scene>());
+                stream.closeChunk();
+            };
+        }
+        else if(field.identifier == "selection") {
+            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+                stream.expectChunk(0x02);
+                static_object_cast<DataSet>(&owner)->addGlobalObject(stream.loadObject<SelectionSet>());
+                stream.closeChunk();
+            };
+        }
     }
-#endif
     return nullptr;
 }
 
@@ -273,23 +282,21 @@ void DataSet::loadFromStreamComplete(ObjectLoadStream& stream)
 {
     RefTarget::loadFromStreamComplete(stream);
 
-#if 0 // TODO
     // For backward compatibility with OVITO 3.7:
     if(stream.formatVersion() <= 30008) {
-        // Retrieve legacy AnimationSettings and Scene loaded by the overrideFieldDeserialization() method.
-        OORef<AnimationSettings> animSettings = property("_animationSettings").value<OORef<AnimationSettings>>();
-        OORef<Scene> scene = property("_sceneRoot").value<OORef<Scene>>();
-        OORef<SelectionSet> selection = property("_selection").value<OORef<SelectionSet>>();
+        // Retrieve legacy AnimationSettings, Scene, and SelectionSet loaded by the overrideFieldDeserialization() method above.
+        OORef<AnimationSettings> animSettings = findGlobalObject<AnimationSettings>();
+        OORef<Scene> scene = findGlobalObject<Scene>();
+        OORef<SelectionSet> selection = findGlobalObject<SelectionSet>();
         OVITO_ASSERT(animSettings && scene && selection);
-        scene->setAnimationSettings(std::move(animSettings));
-        scene->setSelection(std::move(selection));
+        scene->setAnimationSettings(animSettings);
+        scene->setSelection(selection);
         for(Viewport* vp : viewportConfig()->viewports())
             vp->setScene(scene);
-        setProperty("_animationSettings", QVariant());
-        setProperty("_sceneRoot", QVariant());
-        setProperty("_selection", QVariant());
+        removeGlobalObject(animSettings);
+        removeGlobalObject(scene);
+        removeGlobalObject(selection);
     }
-#endif
 }
 
 }   // End of namespace

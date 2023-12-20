@@ -105,6 +105,9 @@ public:
     /// \brief Removes an object from this dataset's list of global objects.
     void removeGlobalObject(int index) { _globalObjects.remove(this, PROPERTY_FIELD(globalObjects), index); }
 
+    /// \brief Removes an object from this dataset's list of global objects.
+    void removeGlobalObject(const RefTarget* object) { removeGlobalObject(globalObjects().indexOf(object)); }
+
     /// \brief Looks for a global object of the given type.
     template<class T>
     T* findGlobalObject() const {

@@ -62,10 +62,31 @@ bool PipelineListItem::referenceEvent(RefTarget* source, const ReferenceEvent& e
         }
         Q_EMIT subitemsChanged(this);
     }
-    // Update item if it has been enabled/disabled, its status has changed, or its title has changed.
-    else if(event.type() == ReferenceEvent::TargetEnabledOrDisabled || event.type() == ReferenceEvent::ObjectStatusChanged || event.type() == ReferenceEvent::TitleChanged) {
+    // Update item if it has been enabled/disabled or its title has changed.
+    else if(event.type() == ReferenceEvent::TargetEnabledOrDisabled || event.type() == ReferenceEvent::TitleChanged) {
         updateTitle();
         Q_EMIT itemChanged(this);
+    }
+    // Update item with some delay after its status has changed.
+    else if(event.type() == ReferenceEvent::ObjectStatusChanged) {
+        if(!_statusTimer.isActive()) {
+            _statusTimer.start(50, Qt::CoarseTimer, this);
+        }
+    }
+    // Update item with some delay after its activity status has changed.
+    else if(ActiveObject::OOClass().isMember(object()) && event.type() == ActiveObject::ActivityChanged) {
+        // Indicate activity status in the UI with a 100 ms delay to prevent excessive updates in case of short-running tasks.
+        ActiveObject* activeObject = static_object_cast<ActiveObject>(object());
+        if(activeObject->isObjectActive()) {
+            if(!_statusTimer.isActive()) {
+                _activityTimer.start(100, Qt::CoarseTimer, this);
+            }
+        }
+        else {
+            _activityTimer.stop();
+            updateTitle();
+            Q_EMIT itemChanged(this);
+        }
     }
     // Update item (and the entire list) if a group is being collapsed or uncollapsed.
     else if(event.type() == ReferenceEvent::TargetChanged && static_cast<const PropertyFieldEvent&>(event).field() == PROPERTY_FIELD(ModifierGroup::isCollapsed)) {
@@ -80,6 +101,26 @@ bool PipelineListItem::referenceEvent(RefTarget* source, const ReferenceEvent& e
     }
 
     return RefMaker::referenceEvent(source, event);
+}
+
+/******************************************************************************
+* Handles timer events for this object.
+******************************************************************************/
+void PipelineListItem::timerEvent(QTimerEvent* event)
+{
+    if(event->timerId() == _activityTimer.timerId()) {
+        OVITO_ASSERT(_activityTimer.isActive());
+        _activityTimer.stop();
+        updateTitle();
+        Q_EMIT itemChanged(this);
+    }
+    else if(event->timerId() == _statusTimer.timerId()) {
+        OVITO_ASSERT(_statusTimer.isActive());
+        _statusTimer.stop();
+        updateTitle();
+        Q_EMIT itemChanged(this);
+    }
+    QObject::timerEvent(event);
 }
 
 /******************************************************************************

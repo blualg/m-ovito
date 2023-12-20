@@ -100,6 +100,9 @@ protected:
     /// Updates the stored title string of the item.
     void updateTitle();
 
+    /// Handles timer events for this object.
+    virtual void timerEvent(QTimerEvent* event) override;
+
 private:
 
     /// The object represented by this item in the list box.
@@ -113,6 +116,12 @@ private:
 
     /// The display title of the list item.
     QString _title;
+
+    /// Timer used to implement delayed UI updates of the activity state.
+    QBasicTimer _activityTimer;
+
+    /// Timer used to implement delayed UI updates whenever object status changes.
+    QBasicTimer _statusTimer;
 };
 
 }   // End of namespace

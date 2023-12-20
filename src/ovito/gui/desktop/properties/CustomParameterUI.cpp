@@ -77,6 +77,10 @@ void CustomParameterUI::updateUI()
             val = editObject()->getPropertyFieldValue(propertyField());
             OVITO_ASSERT(val.isValid());
         }
+        else if(isReferenceFieldUI() && !propertyField()->isVector()) {
+            val = QVariant::fromValue(editObject()->getReferenceFieldTarget(propertyField()));
+            OVITO_ASSERT(val.isValid());
+        }
         else return;
 
         _updateWidgetFunction(val);
@@ -105,6 +109,10 @@ void CustomParameterUI::updatePropertyValue()
             QVariant newValue = _updatePropertyFunction();
             if(isPropertyFieldUI()) {
                 editor()->changePropertyFieldValue(propertyField(), newValue);
+            }
+            else if(isReferenceFieldUI() && !propertyField()->isVector()) {
+                OORef<RefTarget> target = newValue.value<RefTarget*>();
+                editObject()->setReferenceFieldTarget(propertyField(), target);
             }
 
             Q_EMIT valueEntered();

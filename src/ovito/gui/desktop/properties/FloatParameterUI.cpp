@@ -71,16 +71,6 @@ void FloatParameterUI::updateUI()
             }
             else {
                 QVariant val(0.0);
-#if 0 // TODO
-                if(isQtPropertyUI()) {
-                    val = editObject()->property(propertyName());
-                    OVITO_ASSERT_MSG(val.isValid() && val.canConvert<FloatType>(), "FloatParameterUI::updateUI()", qPrintable(QString("The object class %1 does not define a property with the name %2 that can be cast to float type.").arg(editObject()->metaObject()->className(), QString(propertyName()))));
-                    if(!val.isValid() || !val.canConvert<FloatType>()) {
-                        throw Exception(tr("The object class %1 does not define a property with the name %2 that can be cast to float type.").arg(editObject()->metaObject()->className(), QString(propertyName())));
-                    }
-                }
-                else
-#endif
                 if(isPropertyFieldUI()) {
                     val = editObject()->getPropertyFieldValue(propertyField());
                     OVITO_ASSERT(val.isValid());

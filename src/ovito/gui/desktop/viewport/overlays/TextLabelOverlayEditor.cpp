@@ -138,7 +138,6 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
     _pipelineComboBox = new PopupUpdateComboBox();
     connect(_pipelineComboBox, &PopupUpdateComboBox::dropDownActivated, this, &TextLabelOverlayEditor::updateSourcesList);
 
-    // TODO: Implement support for reference fields in CustomParameterUI.
     CustomParameterUI* sourcePUI = new CustomParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::pipeline), _pipelineComboBox,
             // updateWidgetFunction:
             [this](const QVariant& value) {

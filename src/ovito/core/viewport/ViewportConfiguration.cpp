@@ -64,9 +64,6 @@ bool ViewportConfiguration::referenceEvent(RefTarget* source, const ReferenceEve
     if(event.type() == ReferenceEvent::TargetChanged) {
         if(source == layoutRootCell() && !isBeingLoaded() && !isBeingDeleted()) {
             updateListOfViewports();
-#if 0 // TODO
-            Q_EMIT viewportLayoutChanged();
-#endif
         }
     }
     return RefTarget::referenceEvent(source, event);

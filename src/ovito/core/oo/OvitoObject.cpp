@@ -53,14 +53,6 @@ void OvitoObject::deleteObjectInternal() noexcept
     OVITO_ASSERT(!isBeingDeleted());
     OVITO_ASSERT(!isBeingConstructed());
 
-#if 0 // TODO
-    // Delete the object in the main thread only.
-    if(QThread::currentThread() != this->thread()) {
-        QMetaObject::invokeMethod(this, "deleteObjectInternal", Qt::QueuedConnection);
-        return;
-    }
-#endif
-
     // Mark this object as being deleted.
     _flags.setFlag(BeingDeleted);
     aboutToBeDeleted();

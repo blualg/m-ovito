@@ -79,6 +79,13 @@ public:
         return _currentObject->classInfo;
     }
 
+    /// Registers a callback function that will be executed after the object graph has been completely loaded.
+    /// This is useful for post-processing or manipulating of the loaded data if access to the entire object graph is required.
+    void registerPostLoadCallback(fu2::unique_function<void()> callback) {
+        OVITO_ASSERT(callback);
+        _postLoadCallbacks.push_back(std::move(callback));
+    }
+
 private:
 
     /// Loads an object with runtime type information from the stream.
@@ -111,6 +118,9 @@ private:
 
     /// The current dataset being loaded.
     DataSet* _dataset = nullptr;
+
+    /// List of callbacks that are executed after the object graph has been completely loaded.
+    std::vector<fu2::unique_function<void()>> _postLoadCallbacks;
 };
 
 }   // End of namespace

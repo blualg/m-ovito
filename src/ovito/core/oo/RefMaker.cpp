@@ -102,6 +102,18 @@ RefTarget* RefMaker::getReferenceFieldTarget(const PropertyFieldDescriptor* fiel
 }
 
 /******************************************************************************
+* Sets a reference field of this RefMaker to reference a different target.
+******************************************************************************/
+void RefMaker::setReferenceFieldTarget(const PropertyFieldDescriptor* field, const RefTarget* target)
+{
+    OVITO_ASSERT_MSG(field->isReferenceField(), "RefMaker::setReferenceFieldTarget()", "This function may not be used to set property fields.");
+    OVITO_ASSERT_MSG(field->isVector() == false, "RefMaker::setReferenceFieldTarget()", "This function may not be used to set vector reference fields.");
+    OVITO_ASSERT_MSG(getOOClass().isDerivedFrom(*field->definingClass()), "RefMaker::setReferenceFieldTarget()", "The reference field has not been defined in this class or its base classes.");
+    OVITO_ASSERT(field->_singleReferenceWriteFunc != nullptr);
+    field->_singleReferenceWriteFunc(this, target);
+}
+
+/******************************************************************************
 * Returns the i-th target object from a vector reference field of this RefMaker.
 ******************************************************************************/
 int RefMaker::getVectorReferenceFieldSize(const PropertyFieldDescriptor* field) const
@@ -312,10 +324,7 @@ void RefMaker::replaceReferencesTo(const RefTarget* oldTarget, const RefTarget* 
         if(!oldTargetClass.isDerivedFrom(*field->targetClass())) continue;
         if(!field->isVector()) {
             if(field->_singleReferenceReadFunc(this) == oldTarget) {
-                // Check for cyclic strong references.
-                if(newTarget && (!field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES) || !field->isWeakReference()) && isReferencedBy(newTarget, true))
-                    throw CyclicReferenceError();
-                field->_singleReferenceWriteFunc(this, newTarget);
+                setReferenceFieldTarget(field, newTarget);
 #ifdef OVITO_DEBUG
                 hasBeenReplaced = true;
 #endif
@@ -325,9 +334,6 @@ void RefMaker::replaceReferencesTo(const RefTarget* oldTarget, const RefTarget* 
             int count = getVectorReferenceFieldSize(field);
             for(int i = count; i--;) {
                 if(getVectorReferenceFieldTarget(field, i) == oldTarget) {
-                    // Check for cyclic references.
-                    if(newTarget && (!field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES) || !field->isWeakReference()) && isReferencedBy(newTarget, true))
-                        throw CyclicReferenceError();
                     setVectorReferenceFieldTarget(field, i, newTarget);
 #ifdef OVITO_DEBUG
                     hasBeenReplaced = true;
@@ -355,7 +361,7 @@ void RefMaker::clearReferencesTo(const RefTarget* target)
         if(!field->isReferenceField()) continue;
         if(!field->isVector()) {
             if(field->_singleReferenceReadFunc(this) == target)
-                field->_singleReferenceWriteFunc(this, nullptr);
+                setReferenceFieldTarget(field, nullptr);
         }
         else {
             for(int i = getVectorReferenceFieldSize(field); i--; ) {
@@ -392,7 +398,7 @@ void RefMaker::clearReferenceField(const PropertyFieldDescriptor* field)
     OVITO_ASSERT_MSG(getOOClass().isDerivedFrom(*field->definingClass()), "RefMaker::clearReferenceField()", "The reference field has not been defined in this class or its base classes.");
 
     if(!field->isVector()) {
-        field->_singleReferenceWriteFunc(this, nullptr);
+        setReferenceFieldTarget(field, nullptr);
     }
     else {
         while(int count = getVectorReferenceFieldSize(field))

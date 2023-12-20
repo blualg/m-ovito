@@ -248,6 +248,11 @@ public:
     /// \return The current value of the reference field.
     RefTarget* getReferenceFieldTarget(const PropertyFieldDescriptor* field) const;
 
+    /// \brief Sets a reference field of this RefMaker to reference a different target.
+    /// \param field The descriptor of a reference field defined in this RefMaker derived class.
+    /// \param target The new target to replace the old one with.
+    void setReferenceFieldTarget(const PropertyFieldDescriptor* field, const RefTarget* target);
+
     /// \brief Returns the number of target objects in a vector reference field of this RefMaker.
     /// \param field The descriptor of a vector reference field defined in this RefMaker derived class.
     /// \return The length of the vector.

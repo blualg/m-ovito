@@ -53,17 +53,6 @@ ParameterUI::ParameterUI(PropertiesEditor* editor) : _editor(editor)
 
 ///////////////////////////////////// PropertyParameterUI /////////////////////////////////////////
 
-#if 0 // TODO
-/******************************************************************************
-* Constructor for a Qt property.
-******************************************************************************/
-PropertyParameterUI::PropertyParameterUI(PropertiesEditor* parent, const char* propertyName) :
-    ParameterUI(parent), _propertyName(propertyName)
-{
-    OVITO_ASSERT(propertyName);
-}
-#endif
-
 /******************************************************************************
 * Constructor for a PropertyField or ReferenceField property.
 ******************************************************************************/

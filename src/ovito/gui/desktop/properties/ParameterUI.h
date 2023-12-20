@@ -173,10 +173,10 @@ public:
     const PropertyFieldDescriptor* propertyField() const { return _propField; }
 
     /// \brief Indicates whether this parameter UI is representing a sub-object property (e.g. an animation controller).
-    bool isReferenceFieldUI() const { return (_propField && _propField->isReferenceField()); }
+    bool isReferenceFieldUI() const { return _propField && _propField->isReferenceField(); }
 
     /// \brief Indicates whether this parameter UI is representing a PropertyField based property.
-    bool isPropertyFieldUI() const { return (_propField && !_propField->isReferenceField()); }
+    bool isPropertyFieldUI() const { return _propField && !_propField->isReferenceField(); }
 
     /// \brief This method is called when parameter object has been assigned to the reference field of the editable object
     /// this parameter UI is bound to.
