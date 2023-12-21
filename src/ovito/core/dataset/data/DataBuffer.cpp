@@ -139,7 +139,11 @@ OORef<RefTarget> DataBuffer::clone(bool deepCopy, CloneHelper& cloneHelper) cons
     }
 #else
     clone->_capacity = _numElements;
+#if __cpp_lib_smart_ptr_for_overwrite || _LIBCPP_STD_VER >= 20
     clone->_data = std::make_unique_for_overwrite<std::byte[]>(_numElements * _stride);
+#else
+    clone->_data = std::unique_ptr<std::byte[]>(new std::byte[_numElements * _stride]); // Note: for backward compatibility with GCC 10
+#endif
     std::memcpy(clone->_data.get(), _data.get(), _numElements * _stride);
 #endif
 
@@ -174,7 +178,11 @@ void DataBuffer::resize(size_t newSize, bool preserveData)
     }
 #else
     if(newSize > _capacity) {
+#if __cpp_lib_smart_ptr_for_overwrite || _LIBCPP_STD_VER >= 20
         auto newBuffer = std::make_unique_for_overwrite<std::byte[]>(newSize * _stride);
+#else
+        auto newBuffer = std::unique_ptr<std::byte[]>(new std::byte[newSize * _stride]); // Note: for backward compatibility with GCC 10
+#endif
         if(preserveData)
             std::memcpy(newBuffer.get(), _data.get(), _stride * std::min(_numElements, newSize));
         _data.swap(newBuffer);
@@ -220,7 +228,11 @@ void DataBuffer::resizeCopyFrom(size_t newSize, const DataBuffer& original)
     }
 #else
     if(newSize > _capacity) {
+#if __cpp_lib_smart_ptr_for_overwrite || _LIBCPP_STD_VER >= 20
         auto newBuffer = std::make_unique_for_overwrite<std::byte[]>(newSize * _stride);
+#else
+        auto newBuffer = std::unique_ptr<std::byte[]>(new std::byte[newSize * _stride]); // Note: for backward compatibility with GCC 10
+#endif
         std::memcpy(newBuffer.get(), original._data.get(), _stride * std::min(original._numElements, newSize));
         _data.swap(newBuffer);
         _capacity = newSize;
@@ -274,7 +286,11 @@ bool DataBuffer::grow(size_t numAdditionalElements, bool callerAlreadyHasWriteAc
         }
         else _data = {};
 #else
+#if __cpp_lib_smart_ptr_for_overwrite || _LIBCPP_STD_VER >= 20
         auto newBuffer = std::make_unique_for_overwrite<std::byte[]>(newCapacity * _stride);
+#else
+        auto newBuffer = std::unique_ptr<std::byte[]>(new std::byte[newCapacity * _stride]); // Note: for backward compatibility with GCC 10
+#endif
         std::memcpy(newBuffer.get(), _data.get(), _stride * _numElements);
         _data.swap(newBuffer);
         _capacity = newCapacity;
@@ -366,7 +382,11 @@ void DataBuffer::loadFromStream(ObjectLoadStream& stream)
     }
 #else
     _capacity = _numElements;
+#if __cpp_lib_smart_ptr_for_overwrite || _LIBCPP_STD_VER >= 20
     _data = std::make_unique_for_overwrite<std::byte[]>(_numElements * _stride);
+#else
+    _data = std::unique_ptr<std::byte[]>(new std::byte[_numElements * _stride]); // Note: for backward compatibility with GCC 10
+#endif
     stream.read(_data.get(), _stride * _numElements);
 #endif
     stream.closeChunk();
@@ -442,7 +462,11 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const DataBuffer& selectio
 #ifdef OVITO_USE_SYCL
     auto newBuffer = allocateSyclBuffer(newSize, _stride);
 #else
+#if __cpp_lib_smart_ptr_for_overwrite || _LIBCPP_STD_VER >= 20
     auto newBuffer = std::make_unique_for_overwrite<std::byte[]>(newSize * _stride);
+#else
+    auto newBuffer = std::unique_ptr<std::byte[]>(new std::byte[newSize * _stride]); // Note: for backward compatibility with GCC 10
+#endif
 #endif
     const size_t s = selection.size();
     BufferReadAccess<SelectionIntType> selectionAccess(&selection);
@@ -861,7 +885,11 @@ void DataBuffer::convertToDataType(int newDataType)
     if(_numElements != 0)
         newData = allocateSyclBuffer(_numElements, newStride);
 #else
+#if __cpp_lib_smart_ptr_for_overwrite || _LIBCPP_STD_VER >= 20
     auto newData = std::make_unique_for_overwrite<std::byte[]>(_numElements * newStride);
+#else
+    auto newData = std::unique_ptr<std::byte[]>(new std::byte[_numElements * newStride]); // Note: for backward compatibility with GCC 10
+#endif
 #endif
 
     // Copy values from old buffer to new buffer and perform data type convertion.
