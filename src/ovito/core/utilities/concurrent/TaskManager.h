@@ -88,11 +88,12 @@ public:
 #ifdef OVITO_USE_SYCL
     /// Returns the main SYCL out-of-order queue to which work can be submitted.
     SYCL_NS::queue& syclQueue() { return _syclQueue; }
+
+    /// Shuts down the SYCL queue.
+    void shutdownSyclQueue();
 #endif
 
-public Q_SLOTS:
-
-    /// \brief Cancels all running tasks and waits for them to finish.
+    /// Cancels all running tasks and waits for them to finish.
     void shutdown();
 
 Q_SIGNALS:

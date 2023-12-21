@@ -349,26 +349,26 @@ void TriangleMesh::saveToOBJ(CompressedTextWriter& stream) const
 ******************************************************************************/
 void TriangleMesh::clipAtPlane(const Plane3& plane)
 {
-    TriangleMesh clippedMesh(ObjectInitializationFlag::DontCreateVisElement);
-    clippedMesh.setHasVertexColors(hasVertexColors());
-    clippedMesh.setHasVertexPseudoColors(hasVertexPseudoColors());
-    clippedMesh.setHasFaceColors(hasFaceColors());
-    clippedMesh.setHasFacePseudoColors(hasFacePseudoColors());
+    OORef<TriangleMesh> clippedMesh = OORef<TriangleMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
+    clippedMesh->setHasVertexColors(hasVertexColors());
+    clippedMesh->setHasVertexPseudoColors(hasVertexPseudoColors());
+    clippedMesh->setHasFaceColors(hasFaceColors());
+    clippedMesh->setHasFacePseudoColors(hasFacePseudoColors());
 
     // Clip vertices.
     std::vector<int> existingVertexMapping(vertexCount(), -1);
     for(int vindex = 0; vindex < vertexCount(); vindex++) {
         if(plane.classifyPoint(vertex(vindex)) != 1) {
-            existingVertexMapping[vindex] = clippedMesh.addVertex(vertex(vindex));
+            existingVertexMapping[vindex] = clippedMesh->addVertex(vertex(vindex));
             if(hasVertexColors())
-                clippedMesh.vertexColors().back() = vertexColor(vindex);
+                clippedMesh->vertexColors().back() = vertexColor(vindex);
             if(hasVertexPseudoColors())
-                clippedMesh.vertexPseudoColors().back() = vertexPseudoColor(vindex);
+                clippedMesh->vertexPseudoColors().back() = vertexPseudoColor(vindex);
         }
     }
 
     // Clip edges.
-    clippedMesh.setHasNormals(hasNormals());
+    clippedMesh->setHasNormals(hasNormals());
     std::map<std::pair<int,int>, std::pair<int,FloatType>> newVertexMapping;
     for(const TriMeshFace& face : faces()) {
         for(int v = 0; v < 3; v++) {
@@ -383,11 +383,11 @@ void TriangleMesh::clipAtPlane(const Plane3& plane)
                 if(newVertexMapping.find(vindices) == newVertexMapping.end()) {
                     FloatType t = z1 / (z1 - z2);
                     Point3 intersection = v1 + (v2 - v1) * t;
-                    newVertexMapping.emplace(vindices, std::make_pair(clippedMesh.addVertex(intersection), t));
+                    newVertexMapping.emplace(vindices, std::make_pair(clippedMesh->addVertex(intersection), t));
                     if(hasVertexColors()) {
                         const auto& color1 = vertexColor(vindices.first);
                         const auto& color2 = vertexColor(vindices.second);
-                        auto& newColor = clippedMesh.vertexColors().back();
+                        auto& newColor = clippedMesh->vertexColors().back();
                         newColor.r() = color1.r() + (color2.r() - color1.r()) * static_cast<GraphicsFloatType>(t);
                         newColor.g() = color1.g() + (color2.g() - color1.g()) * static_cast<GraphicsFloatType>(t);
                         newColor.b() = color1.b() + (color2.b() - color1.b()) * static_cast<GraphicsFloatType>(t);
@@ -396,7 +396,7 @@ void TriangleMesh::clipAtPlane(const Plane3& plane)
                     if(hasVertexPseudoColors()) {
                         FloatType pseudoColor1 = vertexPseudoColor(vindices.first);
                         FloatType pseudoColor2 = vertexPseudoColor(vindices.second);
-                        clippedMesh.vertexPseudoColors().back() = pseudoColor1 + (pseudoColor2 - pseudoColor1) * t;
+                        clippedMesh->vertexPseudoColors().back() = pseudoColor1 + (pseudoColor2 - pseudoColor1) * t;
                     }
                 }
             }
@@ -450,45 +450,45 @@ void TriangleMesh::clipAtPlane(const Plane3& plane)
                     }
                 }
                 if(vout >= 3) {
-                    OVITO_ASSERT(newface[0] >= 0 && newface[0] < clippedMesh.vertexCount());
-                    OVITO_ASSERT(newface[1] >= 0 && newface[1] < clippedMesh.vertexCount());
-                    OVITO_ASSERT(newface[2] >= 0 && newface[2] < clippedMesh.vertexCount());
-                    TriMeshFace& face1 = clippedMesh.addFace();
+                    OVITO_ASSERT(newface[0] >= 0 && newface[0] < clippedMesh->vertexCount());
+                    OVITO_ASSERT(newface[1] >= 0 && newface[1] < clippedMesh->vertexCount());
+                    OVITO_ASSERT(newface[2] >= 0 && newface[2] < clippedMesh->vertexCount());
+                    TriMeshFace& face1 = clippedMesh->addFace();
                     face1.setVertices(newface[0], newface[1], newface[2]);
                     face1.setSmoothingGroups(face.smoothingGroups());
                     face1.setMaterialIndex(face.materialIndex());
                     if(hasNormals()) {
-                        auto n = clippedMesh.normals().end() - 3;
+                        auto n = clippedMesh->normals().end() - 3;
                         *n++ = newface_normals[0];
                         *n++ = newface_normals[1];
                         *n = newface_normals[2];
                     }
                     if(hasFaceColors()) {
-                        clippedMesh.faceColors().back() = faceColor(faceIndex);
+                        clippedMesh->faceColors().back() = faceColor(faceIndex);
                     }
                     if(hasFacePseudoColors()) {
-                        clippedMesh.facePseudoColors().back() = facePseudoColor(faceIndex);
+                        clippedMesh->facePseudoColors().back() = facePseudoColor(faceIndex);
                     }
                     if(vout == 4) {
-                        OVITO_ASSERT(newface[3] >= 0 && newface[3] < clippedMesh.vertexCount());
+                        OVITO_ASSERT(newface[3] >= 0 && newface[3] < clippedMesh->vertexCount());
                         OVITO_ASSERT(newface[3] != newface[0]);
                         face1.setEdgeVisibility(newface_edge_visibility[0], newface_edge_visibility[1], false);
-                        TriMeshFace& face2 = clippedMesh.addFace();
+                        TriMeshFace& face2 = clippedMesh->addFace();
                         face2.setVertices(newface[0], newface[2], newface[3]);
                         face2.setSmoothingGroups(face.smoothingGroups());
                         face2.setMaterialIndex(face.materialIndex());
                         face2.setEdgeVisibility(false, newface_edge_visibility[2], newface_edge_visibility[3]);
                         if(hasNormals()) {
-                            auto n = clippedMesh.normals().end() - 3;
+                            auto n = clippedMesh->normals().end() - 3;
                             *n++ = newface_normals[0];
                             *n++ = newface_normals[2];
                             *n = newface_normals[3];
                         }
                         if(hasFaceColors()) {
-                            clippedMesh.faceColors().back() = faceColor(faceIndex);
+                            clippedMesh->faceColors().back() = faceColor(faceIndex);
                         }
                         if(hasFacePseudoColors()) {
-                            clippedMesh.facePseudoColors().back() = facePseudoColor(faceIndex);
+                            clippedMesh->facePseudoColors().back() = facePseudoColor(faceIndex);
                         }
                     }
                     else {
@@ -501,7 +501,7 @@ void TriangleMesh::clipAtPlane(const Plane3& plane)
         faceIndex++;
     }
 
-    this->swap(clippedMesh);
+    this->swap(*clippedMesh);
 }
 
 /******************************************************************************

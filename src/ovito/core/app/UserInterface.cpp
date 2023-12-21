@@ -76,13 +76,21 @@ void UserInterface::shutdown()
     signalAboutToQuit();
 
     {
-        // To prevent queing more work while we are shutting down.
+        // To prevent queuing up more work while we are shutting down.
         std::lock_guard<std::mutex> lock(_pendingWorkMutex);
 
         // Terminate all running tasks.
         taskManager().shutdown();
+        OVITO_ASSERT(isShuttingDown());
+
+        // Discard all remaining work items.
+        _pendingWork = decltype(_pendingWork)();
     }
-    OVITO_ASSERT(isShuttingDown());
+
+#ifdef OVITO_USE_SYCL
+    // Shuts down the SYCL queue.
+    taskManager().shutdownSyclQueue();
+#endif
 
     // Release this UI instance as soon as control returns to the event loop.
     if(_selfGuard) {
@@ -142,7 +150,7 @@ void UserInterface::submitWork(const RefTarget* contextObject, fu2::unique_funct
 void UserInterface::executePendingWork()
 {
     // Check that we are really in the main thread here.
-    OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
+    OVITO_ASSERT(ExecutionContext::isMainThread());
 
     std::unique_lock<std::mutex> lock(_pendingWorkMutex);
     while(!_pendingWork.empty()) {

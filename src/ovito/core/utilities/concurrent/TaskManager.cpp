@@ -204,13 +204,14 @@ void TaskManager::shutdown()
 
     _isShuttingDown = true;
 
+    // Cancel all (known) tasks.
     for(TaskWatcher* watcher : registeredTasks()) {
         if(watcher->task()) {
             watcher->task()->cancel();
         }
     }
 
-    // Block with a local event until all running tasks have completed.
+    // Block with a local event loop until all running tasks have completed.
     if(!runningTasks().empty()) {
         QEventLoop eventLoop;
         connect(this, &TaskManager::allTasksFinished, &eventLoop, &QEventLoop::quit);
@@ -229,13 +230,14 @@ void TaskManager::shutdown()
     // may still be running in threads until they notice they have been canceled.
     bool result = QThreadPool::globalInstance()->waitForDone();
     OVITO_ASSERT(result);
-
-#ifndef OVITO_NO_EVENT_LOOP
-    // Execute all remaining deferred tasks which have not been registered with this task manager.
-    QCoreApplication::sendPostedEvents(nullptr, ObjectExecutor::workEventType());
-#endif
+}
 
 #ifdef OVITO_USE_SYCL
+/******************************************************************************
+* Shuts down the SYCL queue.
+******************************************************************************/
+void TaskManager::shutdownSyclQueue()
+{
     // Close all active SYCL host memory accessors which are associated with NumPy views of properties.
     for(RegisteredBufferAccess* accessor = _registeredBufferAccessors; accessor != nullptr; accessor = accessor->_next) {
         accessor->_syclAccessor = {};
@@ -243,7 +245,7 @@ void TaskManager::shutdown()
 
     // Wait for completion of all enqueued tasks in the SYCL queue.
     _syclQueue.wait();
-#endif
 }
+#endif
 
 }   // End of namespace
