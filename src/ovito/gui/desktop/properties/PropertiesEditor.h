@@ -254,11 +254,11 @@ private:
     /// The cleanup handler is used to delete them when the editor is being deleted.
     QObjectCleanupHandler _rollouts;
 
-    /// For emitting the pipelineOutputChanged() signal with a short delay.
-    DeferredMethodInvocation<PropertiesEditor, &PropertiesEditor::pipelineOutputChanged> emitPipelineOutputChangedSignal;
-
     /// For emitting the pipelineInputChanged() signal with a short delay.
     DeferredMethodInvocation<PropertiesEditor, &PropertiesEditor::pipelineInputChanged> emitPipelineInputChangedSignal;
+
+    /// For emitting the pipelineOutputChanged() signal with a short delay.
+    DeferredMethodInvocation<PropertiesEditor, &PropertiesEditor::pipelineOutputChanged> emitPipelineOutputChangedSignal;
 };
 
 /// This macro is used to assign a PropertiesEditor-derived class to a RefTarget-derived class.
