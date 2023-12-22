@@ -203,7 +203,19 @@ protected:
     virtual void pendingWorkArrived() = 0;
 
     /// Executes pending work items waiting in the deferred execution queue.
-    void executePendingWork();
+    void executePendingWork(std::unique_lock<std::mutex>& lock);
+
+    /// Executes pending work items waiting in the deferred execution queue.
+    void executePendingWork() {
+        std::unique_lock<std::mutex> lock{_pendingWorkMutex};
+        executePendingWork(lock);
+    }
+
+    /// Keeps executing pending work items until quitWorkProcessingLoop() is called.
+    void enterWorkProcessingLoop(Task* waitingTask, detail::TaskReference& awaitedTask);
+
+    /// Stops executing pending work items and makes enterWorkProcessingLoop() return.
+    void quitWorkProcessingLoop();
 
 private:
 
@@ -265,7 +277,14 @@ private:
     /// Manages thread-safe concurrent access to the work queue.
     std::mutex _pendingWorkMutex;
 
+    /// Used to signal the arrival of new work items in the queue.
+    std::condition_variable _pendingWorkCondition;
+
+    /// Counts the nesting level of calls to enterWorkProcessingLoop()
+    int _pendingWorkLoopCount = 0;
+
     friend class Viewport;
+    friend class Task; // To access executePendingWork() from Task::waitFor().
 };
 
 }   // End of namespace

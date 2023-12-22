@@ -461,6 +461,8 @@ bool MainWindow::event(QEvent* event)
 ******************************************************************************/
 void MainWindow::pendingWorkArrived()
 {
+    OVITO_ASSERT(QCoreApplication::instance() != nullptr);
+
     QMetaObject::invokeMethod(this, "executePendingWork", Qt::QueuedConnection);
 }
 

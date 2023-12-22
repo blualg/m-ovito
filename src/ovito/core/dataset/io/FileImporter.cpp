@@ -144,7 +144,7 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(const FileHandle& file, F
 void FileImporter::activateCLocale()
 {
     // The setlocale() function is not thread-safe and should only be called from the main thread.
-    if(QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread())
+    if(ExecutionContext::isMainThread())
         std::setlocale(LC_ALL, "C");
 }
 

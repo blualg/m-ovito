@@ -276,7 +276,9 @@ void Application::signalAboutToQuit()
 ******************************************************************************/
 void Application::pendingWorkArrived()
 {
-    QMetaObject::invokeMethod(this, "executePendingWork", Qt::QueuedConnection);
+    // Execute pending work in the main thread.
+    if(QCoreApplication::instance() != nullptr)
+        QMetaObject::invokeMethod(this, "executePendingWork", Qt::QueuedConnection);
 }
 
 #ifndef Q_OS_WASM

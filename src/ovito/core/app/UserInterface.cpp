@@ -119,6 +119,8 @@ void UserInterface::reportError(const Exception& ex, bool blocking)
 ******************************************************************************/
 bool UserInterface::processEvents()
 {
+    OVITO_ASSERT(QCoreApplication::instance() != nullptr);
+
     // While control is in the event loop, no context should be active.
     // Temporarily switch back to null contexts here.
     ExecutionContext::Scope execScope(ExecutionContext{});
@@ -139,20 +141,21 @@ void UserInterface::submitWork(const RefTarget* contextObject, fu2::unique_funct
     std::lock_guard<std::mutex> lock(_pendingWorkMutex);
     if(isShuttingDown() == false) {
         _pendingWork.emplace(contextObject, std::move(function), isScriptingContext);
-        if(_pendingWork.size() == 1)
+        if(_pendingWork.size() == 1) {
+            _pendingWorkCondition.notify_one();
             pendingWorkArrived();
+        }
     }
 }
 
 /******************************************************************************
 * Executes pending work items waiting in the queue.
 ******************************************************************************/
-void UserInterface::executePendingWork()
+void UserInterface::executePendingWork(std::unique_lock<std::mutex>& lock)
 {
     // Check that we are really in the main thread here.
     OVITO_ASSERT(ExecutionContext::isMainThread());
 
-    std::unique_lock<std::mutex> lock(_pendingWorkMutex);
     while(!_pendingWork.empty()) {
         // Grab the next work item from the queue.
         Work work = std::move(_pendingWork.front());
@@ -178,6 +181,61 @@ void UserInterface::executePendingWork()
         // Continue by grabbing the next work item from the queue.
         lock.lock();
     }
+}
+
+/******************************************************************************
+* Keeps executing pending work items until quitWorkProcessingLoop() is called.
+******************************************************************************/
+void UserInterface::enterWorkProcessingLoop(Task* waitingTask, detail::TaskReference& awaitedTask)
+{
+    std::unique_lock<std::mutex> lock(_pendingWorkMutex);
+    _pendingWorkLoopCount++;
+
+    // Register a callback function with the awaited task, which terminates the processing loop when the task gets canceled or finishes.
+    detail::FunctionTaskCallback awaitedTaskCallback(awaitedTask.get().get(), [&](int state) {
+        if(state & Task::Finished) {
+            quitWorkProcessingLoop();
+        }
+        return true;
+    });
+
+    // Register a callback function with the waiting task, which terminates the processing loop in case the waiting task gets canceled.
+    detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&](int state) {
+        if(state & (Task::Canceled | Task::Finished)) {
+            // When the parent task gets canceled, discard the reference which keeps the awaited task running.
+            awaitedTask.reset();
+            quitWorkProcessingLoop();
+        }
+        return true;
+    });
+
+    for(;;) {
+        // Block until new work arrives in the queue or quitWorkProcessingLoop() is called.
+        _pendingWorkCondition.wait(lock, [this]{
+            return !_pendingWork.empty() || _pendingWorkLoopCount == 0 || isShuttingDown();
+        });
+
+        // Time to quit the loop?
+        if(_pendingWorkLoopCount == 0 || isShuttingDown())
+            break;
+
+        // Process newly arrived items in the work queue until the queue is drained.
+        executePendingWork(lock);
+    }
+
+    // Detach callbacks from the two task objects.
+    waitingTaskCallback.unregisterCallback();
+    awaitedTaskCallback.unregisterCallback();
+}
+
+/******************************************************************************
+* Stops executing pending work items and makes enterWorkProcessingLoop() return.
+******************************************************************************/
+void UserInterface::quitWorkProcessingLoop()
+{
+    std::lock_guard<std::mutex> lock(_pendingWorkMutex);
+    _pendingWorkLoopCount--;
+    _pendingWorkCondition.notify_all();
 }
 
 /******************************************************************************

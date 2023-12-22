@@ -316,7 +316,7 @@ bool Task::waitFor(detail::TaskReference awaitedTask, bool throwOnError)
     // Is the waiting task running in a thread pool?
     if(waitingTask->isAsynchronousTask() && static_cast<AsynchronousTaskBase*>(waitingTask)->threadPool() != nullptr) {
         // Are we really in a worker thread?
-        OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() != QCoreApplication::instance()->thread());
+        OVITO_ASSERT(!ExecutionContext::isMainThread());
 
         QWaitCondition wc;
         QMutex waitMutex;
@@ -361,7 +361,7 @@ bool Task::waitFor(detail::TaskReference awaitedTask, bool throwOnError)
     }
     else if(QCoreApplication::instance()) {
         // Use a local Qt event loop to keep processing application events while waiting.
-        OVITO_ASSERT(QThread::currentThread() == QCoreApplication::instance()->thread());
+        OVITO_ASSERT(ExecutionContext::isMainThread());
 
         // Register the waiting task with the task manager such that it gets canceled in
         // case the UI is shutting down while we are waiting.
@@ -433,8 +433,16 @@ bool Task::waitFor(detail::TaskReference awaitedTask, bool throwOnError)
 #endif
     }
     else {
+        qDebug() << "Task::waitFor() called from main thread on task" << awaitedTaskPtr.get();
+        // If no event loop is running, process all pending work immediately.
+        OVITO_ASSERT(ExecutionContext::isMainThread());
 
+        // Process all pending work items while waiting for the task to finish.
+        ExecutionContext::current().ui().enterWorkProcessingLoop(waitingTask, awaitedTask);
+
+        waitingTaskLocker.relock();
     }
+    qDebug() << "Task::waitFor() continuing on task" << awaitedTaskPtr.get();
 
     // Check if the waiting task has been canceled.
     if(waitingTask->isCanceled())

@@ -184,10 +184,10 @@ Future<std::vector<PipelineFlowState>> PipelineNode::evaluateMultiple(const Pipe
     return map_sequential(
         std::move(times),
         ObjectExecutor(this, true), // require deferred execution
-    [request = PipelineEvaluationRequest(request), this](AnimationTime time) mutable {
-        request.setTime(time);
-        return this->evaluate(request);
-    });
+        [request = PipelineEvaluationRequest(request), this](AnimationTime time) mutable {
+            request.setTime(time);
+            return this->evaluate(request);
+        });
 }
 
 }   // End of namespace
