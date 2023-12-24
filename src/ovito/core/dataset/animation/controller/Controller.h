@@ -155,17 +155,47 @@ public:
     /// \param[in,out] validityInterval This interval is reduced to the period during which the controller's value doesn't change.
     virtual void getPositionValue(AnimationTime time, Vector3& result, TimeInterval& validityInterval) { result = Vector3::Zero(); OVITO_ASSERT_MSG(false, "Controller::getPositionValue()", "This method should be overridden."); }
 
+    /// \brief Queries a position controller's value at a certain animation time.
+    /// \param[in] time The animation time at which the controller's value should be computed.
+    Vector3 getPositionValue(AnimationTime time)
+    {
+        TimeInterval iv;
+        Vector3 v;
+        getPositionValue(time, v, iv);
+        return v;
+    }
+
     /// \brief Queries a rotation controller's value at a certain animation time.
     /// \param[in] time The animation time at which the controller's value should be computed.
     /// \param[out] result This output variable takes the controller's values.
     /// \param[in,out] validityInterval This interval is reduced to the period during which the controller's value doesn't change.
     virtual void getRotationValue(AnimationTime time, Rotation& result, TimeInterval& validityInterval) { result = Rotation::Identity(); OVITO_ASSERT_MSG(false, "Controller::getRotationValue()", "This method should be overridden."); }
 
+    /// \brief Queries a rotation controller's value at a certain animation time.
+    /// \param[in] time The animation time at which the controller's value should be computed.
+    Vector3 getRotationValue(AnimationTime time)
+    {
+        TimeInterval iv;
+        Rotation r;
+        getRotationValue(time, r, iv);
+        return r.toRodriguesVector();
+    }
+
     /// \brief Queries a scaling controller's value at a certain animation time.
     /// \param[in] time The animation time at which the controller's value should be computed.
     /// \param[out] result This output variable takes the controller's values.
     /// \param[in,out] validityInterval This interval is reduced to the period during which the controller's value doesn't change.
     virtual void getScalingValue(AnimationTime time, Scaling& result, TimeInterval& validityInterval) { result = Scaling::Identity(); OVITO_ASSERT_MSG(false, "Controller::getScalingValue()", "This method should be overridden."); }
+
+    /// \brief Queries a scaling controller's value at a certain animation time.
+    /// \param[in] time The animation time at which the controller's value should be computed.
+    Scaling getScalingValue(AnimationTime time)
+    {
+        TimeInterval iv;
+        Scaling s;
+        getScalingValue(time, s, iv);
+        return s;
+    }
 
     /// \brief Lets a position controller apply its value to an existing transformation matrix.
     /// \param[in] time The animation time.
@@ -241,6 +271,14 @@ public:
     /// \param newValue The new value to be assigned to the controller.
     /// \param isAbsolute Specifies whether the value is absolute or should be applied to the existing transformation.
     virtual void setRotationValue(AnimationTime time, const Rotation& newValue, bool isAbsolute) { OVITO_ASSERT_MSG(false, "Controller::setRotationValue()", "This method should be overridden."); }
+
+    /// \brief Sets a rotation controller's value at the given animation time.
+    /// \param time The animation time at which to set the controller's value.
+    /// \param newValue The new value to be assigned to the controller.
+    void setRotationValue(AnimationTime time, const Vector3& newValue, bool isAbsolute)
+    {
+        setRotationValue(time, Rotation::fromRodriguesVector(newValue), isAbsolute);
+    }
 
     /// \brief Sets a scaling controller's value at the given animation time.
     /// \param time The animation time at which to set the controller's value.
