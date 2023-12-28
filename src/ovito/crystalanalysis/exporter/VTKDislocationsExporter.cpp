@@ -62,14 +62,14 @@ void VTKDislocationsExporter::closeOutputFile(bool exportCompleted)
 /******************************************************************************
  * Exports a single animation frame to the current output file.
  *****************************************************************************/
-bool VTKDislocationsExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
+void VTKDislocationsExporter::exportFrame(int frameNumber, const QString& filePath)
 {
     // Evaluate data pipeline.
     // Note: We are requesting the renderable flow state from the pipeline,
     // because we are interested in clipped (post-processed) dislocation lines.
     const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber, true);
-    if(operation.isCanceled())
-        return false;
+    if(this_task::isCanceled())
+        return;
 
     // Look up the RenderableDislocationLines object in the pipeline state.
     const RenderableDislocationLines* renderableLines = state.getObject<RenderableDislocationLines>();
@@ -158,8 +158,6 @@ bool VTKDislocationsExporter::exportFrame(int frameNumber, const QString& filePa
         segment += c - 1;
     }
     OVITO_ASSERT(segment == renderableLines->lineSegments().end());
-
-    return !operation.isCanceled();
 }
 
 }   // End of namespace

@@ -40,8 +40,9 @@ public:
         if(parentTask) {
             // When this sub-task gets canceled, we cancel the parent task too.
             this->registerContinuation([this]() noexcept {
-                if(isCanceled() && callbackTask() && !callbackTask()->isCanceled())
+                if(isCanceled() && callbackTask() && !callbackTask()->isCanceled()) {
                     callbackTask()->cancel();
+                }
             });
 
             // Register a callback function to get notified when the parent task gets canceled.
@@ -66,48 +67,27 @@ public:
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-MainThreadOperation::MainThreadOperation(ExecutionContext::Type contextType, UserInterface& userInterface, bool visibleInUserInterface) :
-    Promise<>(std::make_shared<MainThreadTask>(Task::current())),
+MainThreadOperation::MainThreadOperation(ExecutionContext::Type contextType, UserInterface& userInterface) :
+    Promise<>(std::make_shared<MainThreadTask>(this_task::get())),
     ExecutionContext::Scope(contextType, userInterface.shared_from_this()),
     Task::Scope(task())
 {
     // Usage of MainThreadOperation is only permitted in the main thread.
-    OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "MainThreadOperation", "MainThreadOperation may only be created in the main thread.");
+    OVITO_ASSERT_MSG(ExecutionContext::isMainThread(), "MainThreadOperation", "MainThreadOperation may only be created in the main thread.");
 
     // Register the container MainThreadOperation with the TaskManager to display its progress in the UI.
-    if(visibleInUserInterface)
-        ExecutionContext::current().ui().taskManager().registerTask(task());
+    userInterface.taskManager().registerTask(*task());
 }
 
 /******************************************************************************
-* Constructor creating a sub-task.
-******************************************************************************/
-MainThreadOperation::MainThreadOperation(bool visibleInUserInterface) : MainThreadOperation(ExecutionContext::current().type(), ExecutionContext::current().ui(), visibleInUserInterface)
-{
-}
-
-/******************************************************************************
-* Destructor puts the promise into the 'finished' state.
+* Destructor.
 ******************************************************************************/
 MainThreadOperation::~MainThreadOperation()
 {
     if(TaskPtr task = std::move(_task)) {
-        OVITO_ASSERT(Task::current() == task.get());
+        OVITO_ASSERT(this_task::get() == task.get());
         OVITO_ASSERT(task->isStarted());
         task->setFinished();
-    }
-}
-
-/******************************************************************************
-* Temporarily yield control back to the event loop to process UI events.
-******************************************************************************/
-void MainThreadOperation::processUIEvents() const
-{
-    OVITO_ASSERT(isValid());
-    OVITO_ASSERT(Task::current() == task().get());
-
-    if(ExecutionContext::current().ui().processEvents()) {
-        cancel();
     }
 }
 

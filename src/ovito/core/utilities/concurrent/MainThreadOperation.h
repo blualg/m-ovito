@@ -39,52 +39,10 @@ class OVITO_CORE_EXPORT MainThreadOperation : public Promise<>, ExecutionContext
 public:
 
     /// Constructor.
-    explicit MainThreadOperation(ExecutionContext::Type contextType, UserInterface& userInterface, bool visibleInUserInterface);
+    explicit MainThreadOperation(ExecutionContext::Type contextType = ExecutionContext::current().type(), UserInterface& userInterface = ExecutionContext::current().ui());
 
-    /// Constructor creating a sub-task.
-    explicit MainThreadOperation(bool visibleInUserInterface);
-
-    /// Destructor, which puts the promise into the 'finished' state.
+    /// Destructor.
     ~MainThreadOperation();
-
-    /// Returns the shared task, casting it to the ProgressingTask subclass.
-    ProgressingTask& progressingTask() const {
-        OVITO_ASSERT(isValid());
-        OVITO_ASSERT(task()->isProgressingTask());
-        return static_cast<ProgressingTask&>(*task());
-    }
-
-    /// Override this method from the Promise class to keep the UI responsive during long-running tasks.
-    bool setProgressValue(qlonglong progressValue) const {
-        // Temporarily yield control back to the event loop to process UI events and keep the UI responsive during long-running tasks.
-        processUIEvents();
-        return Promise<>::setProgressValue(progressValue);
-    }
-
-    /// Override this method from the Promise class to keep the UI responsive during long-running tasks.
-    bool incrementProgressValue(qlonglong increment = 1) const {
-        // Temporarily yield control back to the event loop to process UI events and keep the UI responsive during long-running tasks.
-        processUIEvents();
-        return Promise<>::incrementProgressValue(increment);
-    }
-
-    /// Override this method from the Promise class to keep the UI responsive during long-running tasks.
-    void setProgressText(const QString& progressText) const {
-        // Temporarily yield control back to the event loop to process UI events and keep the UI responsive during long-running tasks.
-        processUIEvents();
-        Promise<>::setProgressText(progressText);
-    }
-
-protected:
-
-    /// Temporarily yield control back to the event loop to process UI events.
-    void processUIEvents() const;
-
-#if 0
-    /// This object keeps the Qt event loop running while the operation is in progress.
-    /// All main-thread operations must be completed before the application can quit.
-    QEventLoopLocker _eventLoopLocker;
-#endif
 };
 
 }   // End of namespace

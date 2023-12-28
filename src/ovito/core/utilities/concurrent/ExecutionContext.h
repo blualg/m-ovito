@@ -76,7 +76,7 @@ public:
     /// unless the given object is destroyed in the meantime or the user interface
     /// associated with the execution context is shut down.
     template<typename Function>
-    void runDeferred(const RefTarget* contextObject, Function&& f) const;
+    void runDeferred(const OvitoObject* contextObject, Function&& f) const;
 
 private:
 
@@ -132,9 +132,9 @@ inline ExecutionContext::ExecutionContext(Type type, std::shared_ptr<UserInterfa
 /// unless the given object is destroyed in the meantime or the user interface
 /// associated with the execution context is shut down.
 template<typename Function>
-inline void ExecutionContext::runDeferred(const RefTarget* contextObject, Function&& f) const
+inline void ExecutionContext::runDeferred(const OvitoObject* contextObject, Function&& f) const
 {
-    ui().submitWork(contextObject, std::forward<Function>(f), type() == Type::Scripting);
+    ui().taskManager().submitWork(contextObject, std::forward<Function>(f), type() == Type::Scripting);
 }
 
 }   // End of namespace

@@ -34,7 +34,7 @@ SET_PROPERTY_FIELD_LABEL(XYZExporter, subFormat, "XYZ format style");
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.
 ******************************************************************************/
-bool XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
+void XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath)
 {
     // Get particle positions.
     const Particles* particles = state.expectObject<Particles>();
@@ -165,15 +165,13 @@ bool XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
     textStream() << '\n';
 
-    operation.setProgressMaximum(atomsCount);
+    this_task::setProgressMaximum(atomsCount);
     for(size_t i = 0; i < atomsCount; i++) {
         columnWriter.writeElement(i, textStream());
 
-        if(!operation.setProgressValueIntermittent(i))
-            return false;
+        if(!this_task::setProgressValueIntermittent(i))
+            return;
     }
-
-    return !operation.isCanceled();
 }
 
 }   // End of namespace

@@ -112,39 +112,41 @@ void FileColumnParticleExporterEditor::updateParticlePropertiesList()
     _columnMappingWidget->clear();
 
     FileColumnParticleExporter* exporter = dynamic_object_cast<FileColumnParticleExporter>(editObject());
-    if(!exporter) return;
+    if(!exporter)
+        return;
 
-    try {
-        // Determine the data that is available for export.
-        MainThreadOperation operation(false);
-        ProgressDialog progressDialog(container());
-        PipelineFlowState state = exporter->getParticleData(currentAnimationTime().frame());
-        if(!state)
-            throw Exception(tr("Operation has been canceled by the user."));
+    handleExceptions([&]() {
+        try {
+            // Determine the data that is available for export.
+            ProgressDialog progressDialog(container());
+            PipelineFlowState state = exporter->getParticleData(currentAnimationTime().frame());
+            if(!state)
+                throw Exception(tr("Operation has been canceled by the user."));
 
-        bool hasParticleIdentifiers = false;
-        const Particles* particles = state.expectObject<Particles>();
-        for(const Property* property : particles->properties()) {
-            if(property->componentCount() == 1) {
-                insertPropertyItem(ParticlePropertyReference(property), property->name(), exporter->columnMapping());
-                if(property->type() == Particles::IdentifierProperty)
-                    hasParticleIdentifiers = true;
-            }
-            else {
-                for(int vectorComponent = 0; vectorComponent < (int)property->componentCount(); vectorComponent++) {
-                    QString propertyName = property->nameWithComponent(vectorComponent);
-                    ParticlePropertyReference propRef(property, vectorComponent);
-                    insertPropertyItem(propRef, propertyName, exporter->columnMapping());
+            bool hasParticleIdentifiers = false;
+            const Particles* particles = state.expectObject<Particles>();
+            for(const Property* property : particles->properties()) {
+                if(property->componentCount() == 1) {
+                    insertPropertyItem(ParticlePropertyReference(property), property->name(), exporter->columnMapping());
+                    if(property->type() == Particles::IdentifierProperty)
+                        hasParticleIdentifiers = true;
+                }
+                else {
+                    for(int vectorComponent = 0; vectorComponent < (int)property->componentCount(); vectorComponent++) {
+                        QString propertyName = property->nameWithComponent(vectorComponent);
+                        ParticlePropertyReference propRef(property, vectorComponent);
+                        insertPropertyItem(propRef, propertyName, exporter->columnMapping());
+                    }
                 }
             }
+            if(!hasParticleIdentifiers)
+                insertPropertyItem(Particles::IdentifierProperty, tr("Particle index"), exporter->columnMapping());
         }
-        if(!hasParticleIdentifiers)
-            insertPropertyItem(Particles::IdentifierProperty, tr("Particle index"), exporter->columnMapping());
-    }
-    catch(const Exception& ex) {
-        // Ignore errors, but display a message in the UI widget to inform user.
-        _columnMappingWidget->addItems(ex.messages());
-    }
+        catch(const Exception& ex) {
+            // Ignore errors, but display a message in the UI widget to inform user.
+            _columnMappingWidget->addItems(ex.messages());
+        }
+    });
 
     // Update the settings stored in the exporter to match the current settings in the UI.
     saveChanges(exporter);

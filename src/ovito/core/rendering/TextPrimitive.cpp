@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/app/Application.h>
 #include "TextPrimitive.h"
 #include "SceneRenderer.h"
 
@@ -33,10 +34,12 @@ namespace Ovito {
 
 static void ensureFontRenderingCapability()
 {
-    if(!qobject_cast<QGuiApplication*>(qApp)) {
-        throw SceneRenderer::RendererException(QStringLiteral(
-                "Font rendering capability is not available because OVITO is running in headless mode. Enable graphics mode by setting environment variable OVITO_GUI_MODE=1. "
-                "See also https://docs.ovito.org/python/modules/ovito_vis.html#ovito.vis.OpenGLRenderer."));
+    try {
+        Application::instance()->createQtApplication(false);
+    }
+    catch(const Exception& ex) {
+        SceneRenderer::RendererException rendererEx(ex.messages());
+        throw rendererEx.prependGeneralMessage(QStringLiteral("Font rendering capability is not available, because OVITO is currently running in headless mode."));
     }
 }
 

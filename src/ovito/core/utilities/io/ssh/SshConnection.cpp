@@ -67,7 +67,7 @@ SshConnection::SshConnection(const SshConnectionParameters& serverInfo, QObject*
 {
     _connectionParams = serverInfo;
 
-    // Ensure that connections are always properly closed before the application shuts down.
+    // Ensure that connections are always properly closed before the Qt application shuts down.
     OVITO_ASSERT(QCoreApplication::instance() != nullptr);
     connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this, &SshConnection::disconnectFromHost);
 }

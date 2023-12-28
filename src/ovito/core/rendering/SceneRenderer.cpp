@@ -292,7 +292,7 @@ void SceneRenderer::renderDataObject(const DataObject* dataObj, const Pipeline* 
 /******************************************************************************
 * Renders the overlays/underlays of the viewport into the framebuffer.
 ******************************************************************************/
-bool SceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
+bool SceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect)
 {
     OVITO_ASSERT(isImagePass());
     OVITO_ASSERT(viewport());
@@ -300,11 +300,11 @@ bool SceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportR
     for(ViewportOverlay* layer : (underlays ? viewport()->underlays() : viewport()->overlays())) {
         if(layer->isEnabled()) {
             layer->render(this, logicalViewportRect, physicalViewportRect);
-            if(operation.isCanceled())
+            if(this_task::isCanceled())
                 return false;
         }
     }
-    return !operation.isCanceled();
+    return !this_task::isCanceled();
 }
 
 /******************************************************************************

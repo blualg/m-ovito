@@ -35,7 +35,7 @@ QLibrary LibsshWrapper::libssh;
 void LibsshWrapper::initialize()
 {
 #ifdef OVITO_LIBSSH_RUNTIME_LINKING
-    libssh.setFileName(QDir::cleanPath(QCoreApplication::applicationDirPath() + QChar('/') + QStringLiteral(OVITO_LIBSSH_RELATIVE_PATH) + QStringLiteral("/libssh")));
+    libssh.setFileName(QDir::cleanPath(Application::instance()->applicationDirPath() + QChar('/') + QStringLiteral(OVITO_LIBSSH_RELATIVE_PATH) + QStringLiteral("/libssh")));
     if(!libssh.load())
         throw Exception(QStringLiteral("Failed to load dynamic link library %1: %2.\nThis error may be due to missing dependencies. Libssh requires OpenSSL 1.1 to be installed on the system.")
             .arg(libssh.fileName()).arg(libssh.errorString()));

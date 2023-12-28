@@ -58,6 +58,8 @@ void AMBERNetCDFExporter::openOutputFile(const QString& filePath, int numberOfFr
 {
     // Only serial access to NetCDF functions is allowed, because they are not thread-safe.
     NetCDFExclusiveAccess locker;
+    if(!locker.isLocked())
+        return;
 
     OVITO_ASSERT(!outputFile().isOpen());
     outputFile().setFileName(filePath);
@@ -131,6 +133,8 @@ void AMBERNetCDFExporter::closeOutputFile(bool exportCompleted)
 {
     // Only serial access to NetCDF functions is allowed, because they are not thread-safe.
     NetCDFExclusiveAccess locker;
+    if(!locker.isLocked())
+        return;
 
     OVITO_ASSERT(!outputFile().isOpen());
 
@@ -147,7 +151,7 @@ void AMBERNetCDFExporter::closeOutputFile(bool exportCompleted)
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.
 ******************************************************************************/
-bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
+void AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath)
 {
     // Get particles and their positions.
     const Particles* particles = state.expectObject<Particles>();
@@ -160,8 +164,9 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
     size_t atomsCount = particles->elementCount();
 
     // Only serial access to NetCDF functions is allowed, because they are not thread-safe.
-    NetCDFExclusiveAccess locker(operation.task().get());
-    if(!locker.isLocked()) return false;
+    NetCDFExclusiveAccess locker;
+    if(!locker.isLocked())
+        return;
 
     // Define the "atom" dimension when writing first frame and the number of atoms is known.
     if(_atom_dim == -1) {
@@ -329,7 +334,7 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
     }
 
     // Write out other particle properties.
-    operation.setProgressMaximum(_columns.size());
+    this_task::setProgressMaximum(_columns.size());
     for(const NCOutputColumn& outColumn : _columns) {
 
         // Look up the property to be exported.
@@ -362,12 +367,11 @@ bool AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
             NCERR(nc_put_vara_double(_ncid, outColumn.ncvar, start, count, BufferReadAccess<double*>(prop).cbegin()));
         }
 
-        if(!operation.incrementProgressValue())
-            return false;
+        if(!this_task::incrementProgressValue())
+            return;
     }
 
     _frameCounter++;
-    return !operation.isCanceled();
 }
 
 }   // End of namespace

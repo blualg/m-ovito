@@ -293,7 +293,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
 
             return true;
         });
-        if(Task::current()->isCanceled())
+        if(this_task::get()->isCanceled())
             return;
 
         // Verify that the typed property, which has been selected as the source of the color legend, is available.

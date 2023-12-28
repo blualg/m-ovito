@@ -141,9 +141,9 @@ void ParticleType::updateEditableProxies(PipelineFlowState& state, ConstDataObje
 /******************************************************************************
  * Loads a user-defined display shape from a geometry file and assigns it to this particle type.
  ******************************************************************************/
-bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, MainThreadOperation operation, const FileImporterClass* importerClass, const QString& importerFormat)
+bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, const FileImporterClass* importerClass, const QString& importerFormat)
 {
-    operation.setProgressText(tr("Loading mesh geometry file %1").arg(sourceUrl.fileName()));
+    this_task::setProgressText(tr("Loading mesh geometry file %1").arg(sourceUrl.fileName()));
 
     // Temporarily disable undo recording while loading the geometry data.
     DataOORef<TriangleMesh> meshObj;
@@ -177,10 +177,8 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, MainThreadOperation oper
 
         // Check if the FileSource has provided some useful data.
         PipelineFlowState state = stateFuture.result();
-        if(state.status().type() == PipelineStatus::Error) {
-            operation.cancel();
+        if(state.status().type() == PipelineStatus::Error)
             return false;
-        }
         if(!state)
             throw Exception(tr("The loaded geometry file does not provide any valid mesh data."));
         meshObj = DataOORef<TriangleMesh>::makeCopy(state.expectObject<TriangleMesh>());
@@ -203,7 +201,7 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, MainThreadOperation oper
     if(shapeMesh() && !shapeMesh()->isClosed())
         setShapeBackfaceCullingEnabled(false);
 
-    return !operation.isCanceled();
+    return !this_task::isCanceled();
 }
 
 /******************************************************************************

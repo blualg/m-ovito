@@ -44,11 +44,14 @@ private Q_SLOTS:
     /// \brief Updates the displayed information in the indicator widget.
     void updateIndicator();
 
+    /// \brief Is called when a new task has been registered with the TaskManager.
+    void taskRegistered(const TaskPtr& task);
+
     /// \brief Is called when a task has started to run.
-    void taskStarted(TaskWatcher* taskWatcher);
+    void taskStarted();
 
     /// \brief Is called when a task has finished.
-    void taskFinished(TaskWatcher* taskWatcher);
+    void taskFinished();
 
     /// \brief Is called when the progress or status of a task has changed.
     void taskProgressChanged();
@@ -64,9 +67,6 @@ private:
     TaskWatcher* pickVisibleTask() const;
 
 private:
-
-    /// Returns whether there are any running tasks.
-    bool anyRunningTasks() const;
 
     /// The window this display widget is associated with.
     MainWindow* _mainWindow;

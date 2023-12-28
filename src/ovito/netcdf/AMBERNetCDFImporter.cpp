@@ -86,6 +86,8 @@ bool AMBERNetCDFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) c
 
     // Only serial access to NetCDF functions is allowed, because they are not thread-safe.
     NetCDFExclusiveAccess locker;
+    if(!locker.isLocked())
+        return false;
 
     // Check if we can open the input file for reading.
     int tmp_ncid;
@@ -127,8 +129,9 @@ void AMBERNetCDFImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceIm
         throw Exception(tr("The NetCDF file reader supports reading only from physical files. Cannot read data from an in-memory buffer."));
 
     // Only serial access to NetCDF functions is allowed, because they are not thread-safe.
-    NetCDFExclusiveAccess locker(this);
-    if(!locker.isLocked()) return;
+    NetCDFExclusiveAccess locker;
+    if(!locker.isLocked())
+        return;
 
     // Open the input NetCDF file.
     int ncid;
@@ -358,8 +361,9 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
     size_t movieFrame = frame().lineNumber;
 
     // Only serial access to NetCDF functions is allowed, because they are not thread-safe.
-    NetCDFExclusiveAccess locker(this);
-    if(!locker.isLocked()) return;
+    NetCDFExclusiveAccess locker;
+    if(!locker.isLocked())
+        return;
 
     // Open the NetCDF file for reading.
     NetCDFFile ncFile;
@@ -715,6 +719,8 @@ Future<ParticleInputColumnMapping> AMBERNetCDFImporter::inspectFileHeader(const 
 
             // Only serial access to NetCDF functions is allowed, because they are not thread-safe.
             NetCDFExclusiveAccess locker;
+            if(!locker.isLocked())
+                return ParticleInputColumnMapping();
 
             // Open the NetCDF file for reading.
             NetCDFFile ncFile;

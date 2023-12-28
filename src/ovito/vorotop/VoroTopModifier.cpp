@@ -55,8 +55,7 @@ VoroTopModifier::VoroTopModifier(ObjectInitializationFlags flags) : StructureIde
  ******************************************************************************/
 bool VoroTopModifier::loadFilterDefinition(const QString& filepath)
 {
-    MainThreadOperation operation(true);
-    operation.setProgressText(tr("Loading VoroTop filter %1").arg(filepath));
+    this_task::setProgressText(tr("Loading VoroTop filter %1").arg(filepath));
 
     // Open filter file for reading.
     FileHandle fileHandle(QUrl::fromLocalFile(filepath), filepath);
@@ -64,7 +63,7 @@ bool VoroTopModifier::loadFilterDefinition(const QString& filepath)
 
     // Load filter file header (i.e. list of structure types).
     std::shared_ptr<Filter> filter = std::make_shared<Filter>();
-    if(!filter->load(stream, true, operation.progressingTask()))
+    if(!filter->load(stream, true))
         return false;
 
     // Rebuild structure types list.
@@ -80,7 +79,7 @@ bool VoroTopModifier::loadFilterDefinition(const QString& filepath)
     // Filter file was successfully loaded. Accept it as the new filter.
     setFilterFile(filepath);
 
-    return !operation.isCanceled();
+    return !this_task::isCanceled();
 }
 
 /******************************************************************************
@@ -376,7 +375,7 @@ void VoroTopModifier::VoroTopAnalysisEngine::perform()
 
         // Parse filter definition.
         _filter = std::make_shared<Filter>();
-        if(!_filter->load(stream, false, *this))
+        if(!_filter->load(stream, false))
             return;
     }
 

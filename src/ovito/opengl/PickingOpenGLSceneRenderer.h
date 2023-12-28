@@ -41,7 +41,7 @@ public:
     explicit PickingOpenGLSceneRenderer(ObjectInitializationFlags flags);
 
     /// Renders the current animation frame.
-    virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;
+    virtual bool renderFrame(const QRect& viewportRect) override;
 
     /// Returns the object record and the sub-object ID for the object at the given pixel coordinates.
     std::tuple<const ObjectPickingRecord*, quint32> objectAtLocation(const QPoint& pos) const;

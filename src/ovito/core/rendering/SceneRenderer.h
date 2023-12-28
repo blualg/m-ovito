@@ -141,11 +141,11 @@ public:
 
 	/// Renders the current animation frame.
 	/// Returns false if the operation has been canceled by the user.
-	virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) = 0;
+	virtual bool renderFrame(const QRect& viewportRect) = 0;
 
 	/// Renders the overlays/underlays of the viewport into the framebuffer.
 	/// Returns false if the operation has been canceled by the user.
-	virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation);
+	virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect);
 
 	/// This method is called after renderFrame() has been called.
 	virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect);

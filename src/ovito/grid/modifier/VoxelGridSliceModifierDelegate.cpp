@@ -140,7 +140,7 @@ PipelineStatus VoxelGridSliceModifierDelegate::apply(const ModifierEvaluationReq
 
                 // Run the marching cubes algorithm to generate the mesh for the cross-section.
                 MarchingCubes mc(mesh, gridShape[0]*resolution, gridShape[1]*resolution, gridShape[2]*resolution, false, std::move(getFieldValue), true, true);
-                mc.generateIsosurface(0.0, MainThreadOperation(false).progressingTask());
+                mc.generateIsosurface(0.0);
 
                 // Take output data.
                 if(meshFaceVoxelCoordinates.empty())

@@ -58,12 +58,12 @@ void VTKVoxelGridExporter::closeOutputFile(bool exportCompleted)
 /******************************************************************************
  * Exports a single animation frame to the current output file.
  *****************************************************************************/
-bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
+void VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath)
 {
     // Evaluate pipeline.
     const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber);
-    if(operation.isCanceled())
-        return false;
+    if(this_task::isCanceled())
+        return;
 
     // Look up the VoxelGrid to be exported in the pipeline state.
     DataObjectReference objectRef(&VoxelGrid::OOClass(), dataObjectToExport().dataPath());
@@ -122,8 +122,8 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
             if(prop->dataType() == Property::Float32) {
                 BufferReadAccess<float*> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
-                    if(operation.isCanceled())
-                        return false;
+                    if(this_task::isCanceled())
+                        return;
                     for(size_t col = 0; col < dims[0]; col++, index++) {
                         for(size_t c = 0; c < cmpnts; c++)
                             textStream() << data.get(index, c) << " ";
@@ -134,8 +134,8 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
             else if(prop->dataType() == Property::Float64) {
                 BufferReadAccess<double*> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
-                    if(operation.isCanceled())
-                        return false;
+                    if(this_task::isCanceled())
+                        return;
                     for(size_t col = 0; col < dims[0]; col++, index++) {
                         for(size_t c = 0; c < cmpnts; c++)
                             textStream() << data.get(index, c) << " ";
@@ -146,8 +146,8 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
             else if(prop->dataType() == Property::Int8) {
                 BufferReadAccess<int8_t*> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
-                    if(operation.isCanceled())
-                        return false;
+                    if(this_task::isCanceled())
+                        return;
                     for(size_t col = 0; col < dims[0]; col++, index++) {
                         for(size_t c = 0; c < cmpnts; c++)
                             textStream() << static_cast<qint32>(data.get(index, c)) << " ";
@@ -158,8 +158,8 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
             else if(prop->dataType() == Property::Int32) {
                 BufferReadAccess<int32_t*> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
-                    if(operation.isCanceled())
-                        return false;
+                    if(this_task::isCanceled())
+                        return;
                     for(size_t col = 0; col < dims[0]; col++, index++) {
                         for(size_t c = 0; c < cmpnts; c++)
                             textStream() << static_cast<qint32>(data.get(index, c)) << " ";
@@ -170,8 +170,8 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
             else if(prop->dataType() == Property::Int64) {
                 BufferReadAccess<int64_t*> data(prop);
                 for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
-                    if(operation.isCanceled())
-                        return false;
+                    if(this_task::isCanceled())
+                        return;
                     for(size_t col = 0; col < dims[0]; col++, index++) {
                         for(size_t c = 0; c < cmpnts; c++)
                             textStream() << static_cast<qlonglong>(data.get(index, c)) << " ";
@@ -184,8 +184,6 @@ bool VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath,
             }
         }
     }
-
-    return !operation.isCanceled();
 }
 
 }   // End of namespace

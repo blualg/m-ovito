@@ -35,7 +35,7 @@ SET_PROPERTY_FIELD_LABEL(POSCARExporter, writeReducedCoordinates, "Output reduce
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.
 ******************************************************************************/
-bool POSCARExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
+void POSCARExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath)
 {
     // Get particle positions and velocities.
     const Particles* particles = state.expectObject<Particles>();
@@ -93,7 +93,7 @@ bool POSCARExporter::exportData(const PipelineFlowState& state, int frameNumber,
     qlonglong totalProgressCount = particleCount;
     if(velocityProperty) totalProgressCount += particleCount;
     qlonglong currentProgress = 0;
-    operation.setProgressMaximum(totalProgressCount);
+    this_task::setProgressMaximum(totalProgressCount);
 
     // Write atomic positions.
     textStream() << (writeReducedCoordinates() ? "Direct\n" : "Cartesian\n");
@@ -111,8 +111,8 @@ bool POSCARExporter::exportData(const PipelineFlowState& state, int frameNumber,
                 textStream() << (p->x() - origin.x()) << ' ' << (p->y() - origin.y()) << ' ' << (p->z() - origin.z()) << '\n';
             }
 
-            if(!operation.setProgressValueIntermittent(currentProgress++))
-                return false;
+            if(!this_task::setProgressValueIntermittent(currentProgress++))
+                return;
         }
     }
 
@@ -134,13 +134,11 @@ bool POSCARExporter::exportData(const PipelineFlowState& state, int frameNumber,
                     textStream() << v->x() << ' ' << v->y() << ' ' << v->z() << '\n';
                 }
 
-                if(!operation.setProgressValueIntermittent(currentProgress++))
-                    return false;
+                if(!this_task::setProgressValueIntermittent(currentProgress++))
+                    return;
             }
         }
     }
-
-    return !operation.isCanceled();
 }
 
 }   // End of namespace

@@ -65,16 +65,18 @@ ProgressDialog::ProgressDialog(QWidget* parent, TaskPtr task, const QString& dia
     connect(buttonBox, &QDialogButtonBox::rejected, this, &ProgressDialog::reject);
 
     // Helper function that sets up the UI widgets in the dialog for a newly started task.
-    auto createUIForTask = [this, layout](TaskWatcher* taskWatcher) {
-        QLabel* statusLabel = new QLabel(taskWatcher->progressText());
+    auto createUIForTask = [this, layout](const TaskPtr& task) {
+        // Don't display the task if it is already finished.
+        if(task->isFinished())
+            return;
+        // Create a TaskWatcher object that tracks the progress of the task.
+        TaskWatcher* taskWatcher = new TaskWatcher(this);
+        // Self-destruction after task has finished.
+        connect(taskWatcher, &TaskWatcher::finished, taskWatcher, &QObject::deleteLater);
+
+        QLabel* statusLabel = new QLabel();
         statusLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
         QProgressBar* progressBar = new QProgressBar();
-        progressBar->setMaximum(taskWatcher->progressMaximum());
-        progressBar->setValue(taskWatcher->progressValue());
-        if(statusLabel->text().isEmpty()) {
-            statusLabel->hide();
-            progressBar->hide();
-        }
         layout->insertWidget(layout->count() - 2, statusLabel);
         layout->insertWidget(layout->count() - 2, progressBar);
         connect(taskWatcher, &TaskWatcher::progressChanged, progressBar, [progressBar](qlonglong progress, qlonglong maximum) {
@@ -82,7 +84,7 @@ ProgressDialog::ProgressDialog(QWidget* parent, TaskPtr task, const QString& dia
             progressBar->setValue(progress);
         });
         connect(taskWatcher, &TaskWatcher::progressTextChanged, statusLabel, &QLabel::setText);
-        connect(taskWatcher, &TaskWatcher::progressTextChanged, statusLabel, [statusLabel, progressBar, taskWatcher](const QString& text) {
+        connect(taskWatcher, &TaskWatcher::progressTextChanged, statusLabel, [statusLabel, progressBar](const QString& text) {
             statusLabel->setVisible(!text.isEmpty());
             progressBar->setVisible(!text.isEmpty());
         });
@@ -90,13 +92,25 @@ ProgressDialog::ProgressDialog(QWidget* parent, TaskPtr task, const QString& dia
         // Remove progress display when this task finished.
         connect(taskWatcher, &TaskWatcher::finished, progressBar, &QObject::deleteLater);
         connect(taskWatcher, &TaskWatcher::finished, statusLabel, &QObject::deleteLater);
+
+        // Begin watching the task.
+        taskWatcher->watch(task);
+
+        // Initial update of the progress display.
+        statusLabel->setText(taskWatcher->progressText());
+        progressBar->setMaximum(taskWatcher->progressMaximum());
+        progressBar->setValue(taskWatcher->progressValue());
+        if(statusLabel->text().isEmpty()) {
+            statusLabel->hide();
+            progressBar->hide();
+        }
     };
 
     // Create UI for every already running task.
     TaskManager& taskManager = ExecutionContext::current().ui().taskManager();
-    for(TaskWatcher* watcher : taskManager.runningTasks()) {
-        createUIForTask(watcher);
-    }
+    taskManager.visitRegisteredTasks([&](const TaskPtr& task) {
+        createUIForTask(task);
+    });
 
     // Expand dialog window to minimum width.
     QRect g = geometry();
@@ -116,7 +130,7 @@ ProgressDialog::ProgressDialog(QWidget* parent, TaskPtr task, const QString& dia
     }
 
     // Create a separate progress bar for every new active task.
-    connect(&taskManager, &TaskManager::taskStarted, this, std::move(createUIForTask));
+    connect(&taskManager, &TaskManager::taskRegistered, this, std::move(createUIForTask), Qt::QueuedConnection);
 
     // Show the dialog with a short delay.
     // This prevents the dialog from showing up for short tasks that terminate very quickly.

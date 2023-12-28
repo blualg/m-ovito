@@ -89,15 +89,15 @@ void ParticleExporter::closeOutputFile(bool exportCompleted)
 /******************************************************************************
  * Exports a single animation frame to the current output file.
  *****************************************************************************/
-bool ParticleExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
+void ParticleExporter::exportFrame(int frameNumber, const QString& filePath)
 {
     // Retreive the particle data to be exported.
     const PipelineFlowState& state = getParticleData(frameNumber);
-    if(operation.isCanceled() || !state)
-        return false;
+    if(this_task::isCanceled() || !state)
+        return;
 
     // Let the subclass do the work.
-    return exportData(state, frameNumber, filePath, operation);
+    exportData(state, frameNumber, filePath);
 }
 
 }   // End of namespace

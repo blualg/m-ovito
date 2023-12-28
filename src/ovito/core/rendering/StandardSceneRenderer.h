@@ -50,10 +50,10 @@ public:
     virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
 
     /// Renders the current animation frame.
-    virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;
+    virtual bool renderFrame(const QRect& viewportRect) override;
 
     /// Renders the overlays/underlays of the viewport into the framebuffer.
-    virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation) override;
+    virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect) override;
 
     /// This method is called after renderFrame() has been called.
     virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;

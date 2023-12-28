@@ -44,7 +44,7 @@ public:
 public:
 
     /// Loads the filter definition from the given input stream.
-    bool load(CompressedTextReader& stream, bool readHeaderOnly, ProgressingTask& operation);
+    bool load(CompressedTextReader& stream, bool readHeaderOnly);
 
     /// Returns the comment text loaded from the filter definition file.
     const QString& filterDescription() const { return _filterDescription; }

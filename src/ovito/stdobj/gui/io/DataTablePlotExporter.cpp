@@ -70,12 +70,12 @@ void DataTablePlotExporter::closeOutputFile(bool exportCompleted)
 /******************************************************************************
  * Exports a single animation frame to the current output file.
  *****************************************************************************/
-bool DataTablePlotExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
+void DataTablePlotExporter::exportFrame(int frameNumber, const QString& filePath)
 {
     // Evaluate pipeline.
     const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber);
     if(!state)
-        return false;
+        return;
 
     // Look up the DataTable to be exported in the pipeline state.
     DataObjectReference objectRef(&DataTable::OOClass(), dataObjectToExport().dataPath());
@@ -95,8 +95,6 @@ bool DataTablePlotExporter::exportFrame(int frameNumber, const QString& filePath
     plotRenderer.setDiscardFlag(QwtPlotRenderer::DiscardFlag::DiscardCanvasBackground);
     plotRenderer.setDiscardFlag(QwtPlotRenderer::DiscardFlag::DiscardCanvasFrame);
     plotRenderer.renderDocument(&plotWidget, outputFile().fileName(), QSizeF(plotWidth(), plotHeight()), plotDPI());
-
-    return !operation.isCanceled();
 }
 
 }   // End of namespace

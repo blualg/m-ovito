@@ -37,7 +37,7 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(UserInterface);
 /******************************************************************************
 * Constructor
 ******************************************************************************/
-UserInterface::UserInterface() : _datasetContainer(OORef<DataSetContainer>::create(_taskManager, *this))
+UserInterface::UserInterface() : _taskManager(this), _datasetContainer(OORef<DataSetContainer>::create(_taskManager, *this))
 {
 }
 
@@ -47,15 +47,21 @@ UserInterface::UserInterface() : _datasetContainer(OORef<DataSetContainer>::crea
 ******************************************************************************/
 void UserInterface::exitWithFatalError(const Exception& ex)
 {
+    OVITO_ASSERT(ExecutionContext::isMainThread());
+
     // Display fatal error message to the user.
     reportError(ex, true);
 
-    // Make sure the main event loop is running.
-    OVITO_ASSERT(QCoreApplication::instance());
-    OVITO_ASSERT(QThread::currentThread()->loopLevel() != 0);
-
-    // This will eventually trigger the QCoreApplication::aboutToQuit signal, which invokes UserInterface::shutdown().
-    QCoreApplication::exit(1);
+    // Quit the Qt event loop if it is running.
+    if(QCoreApplication::instance() != nullptr) {
+        OVITO_ASSERT(QThread::currentThread()->loopLevel() != 0);
+        // This will eventually trigger the QCoreApplication::aboutToQuit() signal, which invokes UserInterface::shutdown().
+        QCoreApplication::exit(1);
+    }
+    else {
+        // No Qt event loop running. Just shut down the application immediately.
+        shutdown();
+    }
 }
 
 /******************************************************************************
@@ -72,25 +78,8 @@ void UserInterface::shutdown()
     // Close the dataset container. This should release all objects in the current dataset.
     datasetContainer().clearAllReferences();
 
-    // Tell other systems we are about to shutdown.
-    signalAboutToQuit();
-
-    {
-        // To prevent queuing up more work while we are shutting down.
-        std::lock_guard<std::mutex> lock(_pendingWorkMutex);
-
-        // Terminate all running tasks.
-        taskManager().shutdown();
-        OVITO_ASSERT(isShuttingDown());
-
-        // Discard all remaining work items.
-        _pendingWork = decltype(_pendingWork)();
-    }
-
-#ifdef OVITO_USE_SYCL
-    // Shuts down the SYCL queue.
-    taskManager().shutdownSyclQueue();
-#endif
+    // Terminate all running tasks and empty the deferred work queue.
+    taskManager().shutdown();
 
     // Release this UI instance as soon as control returns to the event loop.
     if(_selfGuard) {
@@ -117,131 +106,28 @@ void UserInterface::reportError(const Exception& ex, bool blocking)
 * Tells the UI to process any pending events in the event queue and return immediately.
 * The function can return true to indicate that the running operation should be canceled.
 ******************************************************************************/
-bool UserInterface::processEvents()
+bool UserInterface::processUIEvents()
 {
-    OVITO_ASSERT(QCoreApplication::instance() != nullptr);
-
     // While control is in the event loop, no context should be active.
     // Temporarily switch back to null contexts here.
     ExecutionContext::Scope execScope(ExecutionContext{});
     Task::Scope taskScope(nullptr);
     UndoSuspender noUndo;
 
-    QCoreApplication::processEvents();
-    return false;
-}
+    // Process Qt events.
+    if(QCoreApplication::instance() != nullptr)
+        QCoreApplication::processEvents();
 
-/******************************************************************************
-* Executes the given function at some later time unless the given object is
-* destroyed in the meantime or the user interface is shut down.
-******************************************************************************/
-void UserInterface::submitWork(const RefTarget* contextObject, fu2::unique_function<void() noexcept> function, bool isScriptingContext)
-{
-    OVITO_ASSERT(contextObject);
-    std::lock_guard<std::mutex> lock(_pendingWorkMutex);
-    if(isShuttingDown() == false) {
-        _pendingWork.emplace(contextObject, std::move(function), isScriptingContext);
-        if(_pendingWork.size() == 1) {
-            _pendingWorkCondition.notify_one();
-            pendingWorkArrived();
-        }
-    }
-}
+    // Process work items in the queue.
+    taskManager().executePendingWork();
 
-/******************************************************************************
-* Executes pending work items waiting in the queue.
-******************************************************************************/
-void UserInterface::executePendingWork(std::unique_lock<std::mutex>& lock)
-{
-    // Check that we are really in the main thread here.
-    OVITO_ASSERT(ExecutionContext::isMainThread());
-
-    while(!_pendingWork.empty()) {
-        // Grab the next work item from the queue.
-        Work work = std::move(_pendingWork.front());
-        _pendingWork.pop();
-        lock.unlock();
-
-        // Execute work item only if the context object still exists and the user interface is not shutting down.
-        // Otherwise, silently cancel the work (which still runs the destructor of the work object).
-        if(!isShuttingDown()) {
-            if(auto contextObject = work.obj.lock()) {
-                // Establish the execution context in which the work was submitted.
-                ExecutionContext::Scope execScope(work.isScriptingContext ? ExecutionContext::Type::Scripting : ExecutionContext::Type::Interactive, shared_from_this());
-
-                // Undo recording may still be active if the GUI is currently performing an extended user operation (e.g. Animation Settings dialog may be open).
-                // While the asynchronous work is being performed, undo recording should be suspended.
-                UndoSuspender noUndo;
-
-                // Execute the work function.
-                std::move(work.function)();
-            }
-        }
-
-        // Continue by grabbing the next work item from the queue.
-        lock.lock();
-    }
-}
-
-/******************************************************************************
-* Keeps executing pending work items until quitWorkProcessingLoop() is called.
-******************************************************************************/
-void UserInterface::enterWorkProcessingLoop(Task* waitingTask, detail::TaskReference& awaitedTask)
-{
-    std::unique_lock<std::mutex> lock(_pendingWorkMutex);
-    _pendingWorkLoopCount++;
-
-    // Register a callback function with the awaited task, which terminates the processing loop when the task gets canceled or finishes.
-    detail::FunctionTaskCallback awaitedTaskCallback(awaitedTask.get().get(), [&](int state) {
-        if(state & Task::Finished) {
-            quitWorkProcessingLoop();
-        }
-        return true;
-    });
-
-    // Register a callback function with the waiting task, which terminates the processing loop in case the waiting task gets canceled.
-    detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&](int state) {
-        if(state & (Task::Canceled | Task::Finished)) {
-            // When the parent task gets canceled, discard the reference which keeps the awaited task running.
-            awaitedTask.reset();
-            quitWorkProcessingLoop();
-        }
-        return true;
-    });
-
-    for(;;) {
-        // Block until new work arrives in the queue or quitWorkProcessingLoop() is called.
-        _pendingWorkCondition.wait(lock, [this]{
-            return !_pendingWork.empty() || _pendingWorkLoopCount == 0 || isShuttingDown();
-        });
-
-        // Time to quit the loop?
-        if(_pendingWorkLoopCount == 0 || isShuttingDown())
-            break;
-
-        // Process newly arrived items in the work queue until the queue is drained.
-        executePendingWork(lock);
-    }
-
-    // Detach callbacks from the two task objects.
-    waitingTaskCallback.unregisterCallback();
-    awaitedTaskCallback.unregisterCallback();
-}
-
-/******************************************************************************
-* Stops executing pending work items and makes enterWorkProcessingLoop() return.
-******************************************************************************/
-void UserInterface::quitWorkProcessingLoop()
-{
-    std::lock_guard<std::mutex> lock(_pendingWorkMutex);
-    _pendingWorkLoopCount--;
-    _pendingWorkCondition.notify_all();
+    return isShuttingDown();
 }
 
 /******************************************************************************
 * Creates a frame buffer of the requested size and displays it as a window in the user interface.
 ******************************************************************************/
-std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, int height, bool showRenderingOperationProgress)
+std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, int height)
 {
     return std::make_shared<FrameBuffer>(width, height);
 }

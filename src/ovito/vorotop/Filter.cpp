@@ -23,7 +23,6 @@
 #include <ovito/vorotop/VoroTopPlugin.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/core/utilities/io/NumberParsing.h>
-#include <ovito/core/utilities/concurrent/Promise.h>
 #include "Filter.h"
 
 namespace Ovito::VoroTop {
@@ -31,7 +30,7 @@ namespace Ovito::VoroTop {
 /******************************************************************************
 * Loads the filter definition from the given input stream.
 ******************************************************************************/
-bool Filter::load(CompressedTextReader& stream, bool readHeaderOnly, ProgressingTask& operation)
+bool Filter::load(CompressedTextReader& stream, bool readHeaderOnly)
 {
     // Parse comment lines starting with '#':
     _filterDescription.clear();
@@ -40,7 +39,8 @@ bool Filter::load(CompressedTextReader& stream, bool readHeaderOnly, Progressing
         line = stream.readLineTrimLeft();
         if(line[0] != '#') break;
         _filterDescription += QString::fromUtf8(line + 1).trimmed() + QChar('\n');
-        if(operation.isCanceled()) return false;
+        if(this_task::isCanceled())
+            return false;
     }
 
     // Create the default "Other" structure type.
@@ -65,15 +65,16 @@ bool Filter::load(CompressedTextReader& stream, bool readHeaderOnly, Progressing
         _structureTypeDescriptions.push_back(columns.size() >= 2 ? columns[1] : QString());
 
         line = stream.readLineTrimLeft();
-        if(operation.isCanceled()) return false;
+        if(this_task::isCanceled())
+            return false;
     }
     if(_structureTypeLabels.size() <= 1)
         throw Exception(QString("Invalid filter definition file"));
 
     if(readHeaderOnly)
-        return !operation.isCanceled();
+        return !this_task::isCanceled();
 
-    operation.setProgressMaximum(stream.underlyingSize());
+    this_task::setProgressMaximum(stream.underlyingSize());
 
     // Parse Weinberg vector list.
     for(;;) {
@@ -109,11 +110,11 @@ bool Filter::load(CompressedTextReader& stream, bool readHeaderOnly, Progressing
         line = stream.readNonEmptyLine();
 
         // Update progress indicator.
-        if(!operation.setProgressValueIntermittent(stream.underlyingByteOffset()))
+        if(!this_task::setProgressValueIntermittent(stream.underlyingByteOffset()))
             return false;
     }
 
-    return !operation.isCanceled();
+    return !this_task::isCanceled();
 }
 
 }   // End of namespace

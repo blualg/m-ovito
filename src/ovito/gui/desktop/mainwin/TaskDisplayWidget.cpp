@@ -53,25 +53,40 @@ TaskDisplayWidget::TaskDisplayWidget(MainWindow* mainWindow) : _mainWindow(mainW
     progressWidgetLayout->addStrut(_progressTextDisplay->sizeHint().height());
     setMinimumHeight(_progressTextDisplay->minimumSizeHint().height());
 
-    connect(&mainWindow->taskManager(), &TaskManager::taskStarted, this, &TaskDisplayWidget::taskStarted);
-    connect(&mainWindow->taskManager(), &TaskManager::taskFinished, this, &TaskDisplayWidget::taskFinished);
-    connect(&Application::instance()->taskManager(), &TaskManager::taskStarted, this, &TaskDisplayWidget::taskStarted);
-    connect(&Application::instance()->taskManager(), &TaskManager::taskFinished, this, &TaskDisplayWidget::taskFinished);
+    connect(&mainWindow->taskManager(), &TaskManager::taskRegistered, this, &TaskDisplayWidget::taskRegistered, Qt::QueuedConnection);
+    connect(&Application::instance()->taskManager(), &TaskManager::taskRegistered, this, &TaskDisplayWidget::taskRegistered, Qt::QueuedConnection);
     connect(this, &QObject::destroyed, _progressTextDisplay, &QObject::deleteLater);
 }
 
 /******************************************************************************
-* Returns whether there are any running tasks.
+* Is called when a new task has been registered with the TaskManager.
 ******************************************************************************/
-bool TaskDisplayWidget::anyRunningTasks() const
+void TaskDisplayWidget::taskRegistered(const TaskPtr& task)
 {
-    return !_mainWindow->taskManager().runningTasks().empty() || !Application::instance()->taskManager().runningTasks().empty();
+    // Don't display the task if it is already finished.
+    if(task->isFinished())
+        return;
+
+    // Create a task watcher object that will monitor the task's progress.
+    TaskWatcher* taskWatcher = new TaskWatcher(this);
+
+    // Self-destruction after task has finished.
+    connect(taskWatcher, &TaskWatcher::finished, taskWatcher, &QObject::deleteLater);
+
+    // Listen to task events.
+    connect(taskWatcher, &TaskWatcher::started, this, &TaskDisplayWidget::taskStarted);
+    connect(taskWatcher, &TaskWatcher::finished, this, &TaskDisplayWidget::taskFinished);
+    connect(taskWatcher, &TaskWatcher::progressChanged, this, &TaskDisplayWidget::taskProgressChanged);
+    connect(taskWatcher, &TaskWatcher::progressTextChanged, this, &TaskDisplayWidget::taskProgressChanged);
+
+    // Start watching the task.
+    taskWatcher->watch(task);
 }
 
 /******************************************************************************
 * Is called when a task has started to run.
 ******************************************************************************/
-void TaskDisplayWidget::taskStarted(TaskWatcher* taskWatcher)
+void TaskDisplayWidget::taskStarted()
 {
     // Show progress indicator only if the task doesn't finish within 200 milliseconds.
     if(isHidden()) {
@@ -81,15 +96,12 @@ void TaskDisplayWidget::taskStarted(TaskWatcher* taskWatcher)
     else {
         updateIndicator();
     }
-
-    connect(taskWatcher, &TaskWatcher::progressChanged, this, &TaskDisplayWidget::taskProgressChanged);
-    connect(taskWatcher, &TaskWatcher::progressTextChanged, this, &TaskDisplayWidget::taskProgressChanged);
 }
 
 /******************************************************************************
 * Is called when a task has finished.
 ******************************************************************************/
-void TaskDisplayWidget::taskFinished(TaskWatcher* taskWatcher)
+void TaskDisplayWidget::taskFinished()
 {
     updateIndicator();
 }
@@ -146,16 +158,14 @@ void TaskDisplayWidget::updateIndicator()
 ******************************************************************************/
 TaskWatcher* TaskDisplayWidget::pickVisibleTask() const
 {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
+    auto taskWatchers = findChildren<TaskWatcher*>(Qt::FindDirectChildrenOnly);
+#else
+    auto taskWatchers = findChildren<TaskWatcher*>(QString{}, Qt::FindDirectChildrenOnly);
+#endif
+
     TaskWatcher* selectedTask = nullptr;
-    for(TaskWatcher* watcher : _mainWindow->taskManager().runningTasks()) {
-        if(!watcher->task()->isFinished()) {
-            if(watcher->progressMaximum() != 0)
-                return watcher;
-            else if(watcher->progressText().isEmpty() == false)
-                selectedTask = watcher;
-        }
-    }
-    for(TaskWatcher* watcher : Application::instance()->taskManager().runningTasks()) {
+    for(TaskWatcher* watcher : taskWatchers) {
         if(!watcher->task()->isFinished()) {
             if(watcher->progressMaximum() != 0)
                 return watcher;

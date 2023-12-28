@@ -44,7 +44,7 @@ public:
     virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
 
     /// Renders the current animation frame.
-    virtual bool renderFrame(const QRect& viewportRect, MainThreadOperation& operation) override;
+    virtual bool renderFrame(const QRect& viewportRect) override;
 
     /// This method is called after renderFrame() has been called.
     virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;

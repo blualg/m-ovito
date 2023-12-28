@@ -72,7 +72,7 @@ public:
     virtual void exitWithFatalError(const Exception& ex) override;
 
     /// Creates a frame buffer of the requested size for rendering and displays it in a window in the user interface.
-    virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height, bool showRenderingOperationProgress) override;
+    virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height) override;
 
     /// Returns the frame buffer window for displaying the rendered image (may be null).
     FrameBufferWindow* frameBufferWindow() const { return _frameBufferWindow; }
@@ -184,11 +184,6 @@ public:
     /// If yes, then the dataset is saved by calling fileSave().
     bool askForSaveChanges();
 
-Q_SIGNALS:
-
-    /// This signal is emitted when UserInterface::shutdown() is called.
-    void aboutToQuit();
-
 protected:
 
     /// Is called when the user closes the window.
@@ -206,20 +201,10 @@ protected:
     /// Called by the system when the drag is dropped on this window.
     virtual void dropEvent(QDropEvent* event) override;
 
-    /// This virtual method is called from UserInterface::shutdown().
-    virtual void signalAboutToQuit() override { Q_EMIT aboutToQuit(); }
-
-    /// TThis method is called from UserInterface::submitWork() whenever pending work
-    /// needs to be performed in the main thread.
-    virtual void pendingWorkArrived() override;
-
 private Q_SLOTS:
 
     /// Displays an error message box. This slot is called by reportError().
     void showErrorMessages();
-
-    /// Executes pending work items waiting in the deferred execution queue.
-    void executePendingWork() { UserInterface::executePendingWork(); }
 
 private:
 

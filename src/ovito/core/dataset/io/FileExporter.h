@@ -94,7 +94,7 @@ public:
     /// \brief Exports the scene data to the output file(s).
     /// \return \c true if the output file has been successfully written;
     ///         \c false if the export operation has been canceled by the user.
-    virtual bool doExport(MainThreadOperation operation);
+    virtual bool doExport();
 
     /// Helper function that is called by sub-classes prior to file output in order to
     /// activate the default "C" locale.
@@ -118,7 +118,7 @@ protected:
     virtual void closeOutputFile(bool exportCompleted) = 0;
 
     /// \brief Exports a single animation frame to the current output file.
-    virtual bool exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation);
+    virtual void exportFrame(int frameNumber, const QString& filePath) {}
 
 private:
 

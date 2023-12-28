@@ -763,8 +763,8 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
 ******************************************************************************/
 bool StructureAnalysis::buildClusters()
 {
-    OVITO_ASSERT(Task::current() && Task::current()->isProgressingTask());
-    ProgressingTask& operation = static_cast<ProgressingTask&>(*Task::current());
+    OVITO_ASSERT(this_task::get() && this_task::get()->isProgressingTask());
+    ProgressingTask& operation = static_cast<ProgressingTask&>(*this_task::get());
     operation.setProgressMaximum(positions()->size());
     int progressCounter = 0;
     BufferReadAccess<Point3> positionsArray(positions());
@@ -936,8 +936,8 @@ bool StructureAnalysis::buildClusters()
 ******************************************************************************/
 bool StructureAnalysis::connectClusters()
 {
-    OVITO_ASSERT(Task::current() && Task::current()->isProgressingTask());
-    ProgressingTask& operation = static_cast<ProgressingTask&>(*Task::current());
+    OVITO_ASSERT(this_task::get() && this_task::get()->isProgressingTask());
+    ProgressingTask& operation = static_cast<ProgressingTask&>(*this_task::get());
     operation.setProgressMaximum(positions()->size());
 
     for(size_t atomIndex = 0; atomIndex < positions()->size(); atomIndex++) {
@@ -1042,8 +1042,8 @@ bool StructureAnalysis::connectClusters()
 ******************************************************************************/
 bool StructureAnalysis::formSuperClusters()
 {
-    OVITO_ASSERT(Task::current());
-    Task& operation = *Task::current();
+    OVITO_ASSERT(this_task::get());
+    Task& operation = *this_task::get();
     size_t oldTransitionCount = clusterGraph()->clusterTransitions().size();
 
     for(size_t clusterIndex = 0; clusterIndex < clusterGraph()->clusters().size(); clusterIndex++) {

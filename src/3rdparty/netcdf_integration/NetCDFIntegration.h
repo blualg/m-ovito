@@ -37,12 +37,9 @@ class OVITO_NETCDF_INTEGRATION_EXPORT NetCDFExclusiveAccess
 {
 public:
 
-    /// Constructor, which blocks until exclusive access to the NetCDF functions is available.
-    NetCDFExclusiveAccess();
-
     /// Constructor, which blocks until exclusive access to the NetCDF functions is available
-    /// or the given operation has been canceled, whichever happens first.
-    NetCDFExclusiveAccess(Task* task);
+    /// or the current task has been canceled - whichever happens first.
+    NetCDFExclusiveAccess();
 
     /// Destructor, which releases exclusive access to the NetCDF functions.
     ~NetCDFExclusiveAccess();

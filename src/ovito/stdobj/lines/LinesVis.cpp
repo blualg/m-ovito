@@ -309,7 +309,7 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                 int subobjIndex = 0;
 
                 // segment callback used by the "clipLines" function
-                // TODO: this can be a templated lambda with (colorIndex) in cpp 20
+                // TODO: this can be a templated lambda with (colorIndex) in c++20
                 const auto clipPointCallback = [&](const Point3& p1, int colorIndex) {
                     cornerPoints.push_back(p1.toDataType<GraphicsFloatType>());
                     if(color) {

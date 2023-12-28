@@ -102,7 +102,7 @@ public:
 
     /// Tells the UI to process any pending events in the event queue and return immediately.
     /// The function can return true to indicate that the running operation should be canceled.
-    virtual bool processEvents();
+    virtual bool processUIEvents();
 
     /// Immediately repaints all viewports that have been flagged for an update.
     virtual void processViewportUpdateRequests();
@@ -114,7 +114,7 @@ public:
     QString generateSystemReport();
 
     /// Creates a frame buffer of the requested size for rendering into and displays it in the user interface.
-    virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height, bool showRenderingOperationProgress);
+    virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height);
 
     /// Returns the undo stack, which keeps track of changes made by the user to the current dataset.
     /// It may be none if not running as a desktop application.
@@ -171,7 +171,7 @@ public:
     /// Executes a functor that performs some actions in an interactive context and catches any exceptions thrown during its execution.
     /// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
     template<typename Function>
-    bool handleExceptions(Function&& func, bool visibleInUserInterface = false);
+    bool handleExceptions(Function&& func);
 
     /// Executes a functor provided by the caller that performs undoable actions in an interactive context.
     /// If an exception is thrown by the functor, the error message is displayed
@@ -185,9 +185,6 @@ public:
     template<typename Function>
     bool performTransaction(const QString& undoOperationName, Function&& func);
 
-    /// Executes the given function at some later time unless the given object is destroyed in the meantime or the user interface is shut down.
-    void submitWork(const RefTarget* contextObject, fu2::unique_function<void() noexcept> function, bool isScriptingContext);
-
 protected:
 
     /// Assigns an ActionManager.
@@ -195,27 +192,6 @@ protected:
 
     /// Assigns an UndoStack.
     void setUndoStack(UndoStack* undoStack) { _undoStack = undoStack; }
-
-    /// This pure virtual method is called from UserInterface::shutdown().
-    virtual void signalAboutToQuit() = 0;
-
-    /// This pure virtual method is called from UserInterface::submitWork().
-    virtual void pendingWorkArrived() = 0;
-
-    /// Executes pending work items waiting in the deferred execution queue.
-    void executePendingWork(std::unique_lock<std::mutex>& lock);
-
-    /// Executes pending work items waiting in the deferred execution queue.
-    void executePendingWork() {
-        std::unique_lock<std::mutex> lock{_pendingWorkMutex};
-        executePendingWork(lock);
-    }
-
-    /// Keeps executing pending work items until quitWorkProcessingLoop() is called.
-    void enterWorkProcessingLoop(Task* waitingTask, detail::TaskReference& awaitedTask);
-
-    /// Stops executing pending work items and makes enterWorkProcessingLoop() return.
-    void quitWorkProcessingLoop();
 
 private:
 
@@ -252,39 +228,7 @@ private:
     /// This keeps the UI object itself alive until shutdown() is called.
     OORef<UserInterface> _selfGuard;
 
-    /// A piece of work that has been submitted for deferred execution in the main thread.
-    struct Work
-    {
-        /// Constructor.
-        template<typename Function>
-        Work(OOWeakRef<const RefTarget> obj_, Function&& function_, bool isScriptingContext_) :
-            obj(std::move(obj_)), function(std::forward<Function>(function_)), isScriptingContext(isScriptingContext_) {}
-
-        /// The context object this work is associated with.
-        /// If the object is destroyed before the work is executed, the work is canceled.
-        OOWeakRef<const RefTarget> obj;
-
-        /// The function to be executed.
-        fu2::unique_function<void() noexcept> function;
-
-        /// Indicates whether the work is being performed in a scripting context or an interactive context.
-        bool isScriptingContext;
-    };
-
-    /// The queue of all pending work items that have been submitted for deferred execution in the main thread.
-    std::queue<Work> _pendingWork;
-
-    /// Manages thread-safe concurrent access to the work queue.
-    std::mutex _pendingWorkMutex;
-
-    /// Used to signal the arrival of new work items in the queue.
-    std::condition_variable _pendingWorkCondition;
-
-    /// Counts the nesting level of calls to enterWorkProcessingLoop()
-    int _pendingWorkLoopCount = 0;
-
     friend class Viewport;
-    friend class Task; // To access executePendingWork() from Task::waitFor().
 };
 
 }   // End of namespace
@@ -299,17 +243,13 @@ namespace Ovito {
 /// Executes a functor that performs some actions in an interactive context and catches any exceptions thrown during its execution.
 /// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
 template<typename Function>
-bool UserInterface::handleExceptions(Function&& func, bool visibleInUserInterface)
+bool UserInterface::handleExceptions(Function&& func)
 {
     OVITO_ASSERT(!isBeingDeleted());
-    MainThreadOperation operation(ExecutionContext::Type::Interactive, *this, visibleInUserInterface); // Note: This creates a temporary std::shared_ptr<UserInterface> to keep the UI alive until function exit.
+    // Note: The MainThreadOperation creates a temporary std::shared_ptr<UserInterface>, which keeps the UI alive until function exit.
+    MainThreadOperation operation(ExecutionContext::Type::Interactive, *this);
     try {
-        if constexpr(std::is_invocable_v<Function, MainThreadOperation&>) {
-            std::forward<Function>(func)(operation);
-        }
-        else {
-            std::forward<Function>(func)();
-        }
+        std::forward<Function>(func)();
         return !operation.isCanceled();
     }
     catch(const Exception& ex) {
@@ -324,7 +264,6 @@ bool UserInterface::handleExceptions(Function&& func, bool visibleInUserInterfac
 template<typename Function>
 bool UserInterface::performActions(UndoableTransaction& transaction, Function&& func)
 {
-    OVITO_ASSERT(!isBeingDeleted());
     OVITO_ASSERT(transaction.operation());
     OVITO_ASSERT(&transaction.userInterface() == this);
     UndoSuspender activateUndo(transaction.operation());
@@ -337,7 +276,6 @@ bool UserInterface::performActions(UndoableTransaction& transaction, Function&& 
 template<typename Function>
 bool UserInterface::performTransaction(const QString& undoOperationName, Function&& func)
 {
-    OVITO_ASSERT(!isBeingDeleted());
     UndoableTransaction transaction(*this, undoOperationName);
     if(performActions(transaction, std::forward<Function>(func))) {
         transaction.commit();

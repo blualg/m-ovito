@@ -616,7 +616,8 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 
     {  // limit lifetime of mc to free up resources
         MarchingCubes mc(meshBuilder, gridDims[0], gridDims[1], gridDims[2], false, std::move(getFieldValue));
-        if(!mc.generateIsosurface(_isoLevel, *this)) return;
+        if(!mc.generateIsosurface(_isoLevel))
+            return;
     }
 
     nextProgressSubStep();

@@ -35,7 +35,7 @@ bool NearestNeighborFinder::prepare(BufferReadAccess<Point3> posProperty, const 
 {
     OVITO_ASSERT(posProperty);
     OVITO_ASSERT(cellData);
-    Task* currentTask = Task::current();
+    Task* currentTask = this_task::get();
     OVITO_ASSERT(currentTask != nullptr);
 
     simCell = cellData;

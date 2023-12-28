@@ -69,7 +69,7 @@ public:
 
     /// Tells the UI to process any pending events in the event queue and return immediately.
     /// The function can return true to indicate that the running operation should be canceled.
-    virtual bool processEvents() override;
+    virtual bool processUIEvents() override;
 
 protected Q_SLOTS:
 
@@ -79,7 +79,7 @@ protected Q_SLOTS:
 protected:
 
     /// Create the global instance of the right QCoreApplication derived class.
-    virtual void createQtApplication(int& argc, char** argv);
+    virtual QCoreApplication* createQtApplicationImpl(bool supportGui, int& argc, char** argv) override;
 
     /// Defines the program's command line parameters.
     virtual void registerCommandLineParameters(QCommandLineParser& parser);

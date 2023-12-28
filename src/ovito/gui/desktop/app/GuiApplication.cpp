@@ -84,23 +84,13 @@ bool GuiApplication::processCommandLineParameters()
     if(!_cmdLineParser.isSet("nogui")) {
         // Enable GUI mode by default.
         setGuiMode(true);
-        _headlessMode = false;
     }
     else {
         // Activate console mode.
         setGuiMode(false);
-#if defined(Q_OS_LINUX)
-        // On Linux, run in headless mode by default - unless explicitly requested otherwise (in which case an X server is required).
-        if(qEnvironmentVariableIsSet("OVITO_GUI_MODE") && qgetenv("OVITO_GUI_MODE") != "0") {
-            _headlessMode = false;
-        }
-#elif defined(Q_OS_MACOS)
+#if defined(Q_OS_MACOS)
         // Don't let Qt move the app to the foreground when running in console mode.
         ::setenv("QT_MAC_DISABLE_FOREGROUND_APPLICATION_TRANSFORM", "1", 1);
-        _headlessMode = false;
-#elif defined(Q_OS_WIN)
-        // On Windows, there is always an OpenGL implementation available for offscreen rendering.
-        _headlessMode = false;
 #endif
     }
 
@@ -110,13 +100,14 @@ bool GuiApplication::processCommandLineParameters()
 /******************************************************************************
 * Create the global instance of the right QCoreApplication derived class.
 ******************************************************************************/
-void GuiApplication::createQtApplication(int& argc, char** argv)
+QCoreApplication* GuiApplication::createQtApplicationImpl(bool supportGui, int& argc, char** argv)
 {
     // Verify that the OpenGLSceneRenderer class has registered the right default surface format.
     OVITO_ASSERT(QSurfaceFormat::defaultFormat().depthBufferSize() == 24 && QSurfaceFormat::defaultFormat().stencilBufferSize() == 1);
 
-    if(headlessMode()) {
-        StandaloneApplication::createQtApplication(argc, argv);
+    QCoreApplication* qtApp = nullptr;
+    if(!guiMode()) {
+        qtApp = StandaloneApplication::createQtApplicationImpl(supportGui, argc, argv);
     }
     else {
         // OVITO prefers the "C" locale over the system's default locale.
@@ -140,7 +131,7 @@ void GuiApplication::createQtApplication(int& argc, char** argv)
 #endif
 
         // Create the global application object.
-        new QApplication(argc, argv);
+        qtApp = new QApplication(argc, argv);
 
 #if !defined(Q_OS_WIN) || QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
         // Install our customized UI style.
@@ -152,7 +143,9 @@ void GuiApplication::createQtApplication(int& argc, char** argv)
     }
 
     // Process events sent to the Qt application by the OS.
-    QCoreApplication::instance()->installEventFilter(this);
+    qtApp->installEventFilter(this);
+
+    return qtApp;
 }
 
 #if defined(Q_OS_LINUX) && QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
@@ -196,7 +189,8 @@ static void activateThemeColors(bool dark)
 MainThreadOperation GuiApplication::startupApplication()
 {
     if(guiMode()) {
-        // Set up graphical user interface.
+        // Setup graphical user interface.
+        createQtApplication(true);
 
         // Activate icon theme that matches the current UI theme.
         bool darkTheme = usingDarkTheme();
@@ -271,11 +265,11 @@ MainThreadOperation GuiApplication::startupApplication()
         mainWin->restoreLayout();
         mainWin->setUpdatesEnabled(true);
 
-        return MainThreadOperation(ExecutionContext::Type::Interactive, *mainWin, false);
+        return MainThreadOperation(ExecutionContext::Type::Interactive, *mainWin);
     }
     else {
         // Use this application's command line user interface.
-        return MainThreadOperation(ExecutionContext::Type::Interactive, *this, false);
+        return MainThreadOperation(ExecutionContext::Type::Interactive, *this);
     }
 }
 
@@ -284,12 +278,7 @@ MainThreadOperation GuiApplication::startupApplication()
 ******************************************************************************/
 void GuiApplication::postStartupInitialization()
 {
-    // This is to quit the application's event loop right after we are done executing the startup actions
-    // (only when running in console mode). In GUI mode, the main window will keep the event loop going.
-    QEventLoopLocker eventLoopLocker;
-
     GuiApplication::initializeUserInterface(ExecutionContext::current().ui(), cmdLineParser().positionalArguments());
-
     StandaloneApplication::postStartupInitialization();
 }
 
@@ -298,6 +287,8 @@ void GuiApplication::postStartupInitialization()
 ******************************************************************************/
 void GuiApplication::initializeUserInterface(UserInterface& userInterface, const QStringList& arguments)
 {
+    OVITO_ASSERT(ExecutionContext::isInteractive());
+
     DataSetContainer& datasetContainer = userInterface.datasetContainer();
 
     // Load session state file specified on the command line.
@@ -305,7 +296,6 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
         QString startupFilename = arguments.front();
         if(startupFilename.endsWith(".ovito", Qt::CaseInsensitive)) {
             try {
-                MainThreadOperation loadOperation(true);
                 OORef<DataSet> dataset = DataSet::createFromFile(startupFilename);
                 if(userInterface.checkLoadedDataset(dataset))
                     datasetContainer.setCurrentSet(std::move(dataset));
@@ -322,7 +312,6 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
         QString defaultsFilePath = QStandardPaths::locate(QStandardPaths::AppDataLocation, QStringLiteral("defaults.ovito"));
         if(!defaultsFilePath.isEmpty()) {
             try {
-                MainThreadOperation loadOperation(true);
                 OORef<DataSet> dataset = DataSet::createFromFile(defaultsFilePath);
                 if(userInterface.checkLoadedDataset(dataset)) {
                     dataset->setFilePath({});
@@ -354,10 +343,8 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
             if(!importUrls.empty()) {
                 if(numSessionFiles)
                     throw Exception(tr("Detected incompatible arguments: Cannot open a session state file and a simulation data file at the same time."));
-                if(MainWindow* mainWindow = dynamic_object_cast<MainWindow>(&userInterface)) {
-                    MainThreadOperation importOperation(true);
+                if(MainWindow* mainWindow = dynamic_object_cast<MainWindow>(&userInterface))
                     mainWindow->importFiles(std::move(importUrls));
-                }
                 else
                     throw Exception(tr("Cannot import data files from the command line when running in console mode."));
             }

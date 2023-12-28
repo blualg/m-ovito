@@ -53,8 +53,9 @@ public:
     /// Shows and activates the frame buffer window.
     void showAndActivateWindow();
 
-    /// Makes the framebuffer modal while a rendering operation is in progress and displays the progress in the window.
-    void showRenderingOperation();
+    /// Makes the framebuffer modal while a rendering operation is in progress
+    /// and displays the progress in the window.
+    void showRenderingProgress();
 
 public Q_SLOTS:
 
@@ -78,7 +79,15 @@ public Q_SLOTS:
     void cancelRendering();
 
     /// Creates the UI widgets for displaying the progress of one asynchronous task.
-    void createTaskProgressWidgets(TaskWatcher* taskWatcher);
+    void createTaskProgressWidgets(const TaskPtr& task);
+
+protected Q_SLOTS:
+
+    /// Is called when the rendering process begins.
+    void onRenderingStarted();
+
+    /// Is called when the rendering process ended.
+    void onRenderingFinished();
 
 protected:
 
@@ -107,6 +116,9 @@ private:
 
     /// Layout component for displaying the progress of rendering operations.
     QVBoxLayout* _progressLayout;
+
+    /// Connection to the task manager's taskRegistered() signal.
+    QMetaObject::Connection _taskRegisteredConnection;
 };
 
 }   // End of namespace

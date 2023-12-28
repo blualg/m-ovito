@@ -56,13 +56,14 @@ constexpr int MaximumNumberOfSimultaneousJobs = 2;
 RemoteFileJob::RemoteFileJob(QUrl url, PromiseBase& promise) :
         _url(std::move(url)), _promise(promise)
 {
-    OVITO_ASSERT(QCoreApplication::instance() != nullptr);
-
     // Run all event handlers of this class in the main thread.
-    moveToThread(QCoreApplication::instance()->thread());
+    moveToThread(Application::instance()->thread());
 
     // Start download process in the main thread.
-    QMetaObject::invokeMethod(this, "start", Qt::QueuedConnection);
+    if(QCoreApplication::instance())
+        QMetaObject::invokeMethod(this, "start", Qt::QueuedConnection);
+    else
+        ExecutionContext::current().runDeferred(Application::instance(), [this]() noexcept { start(); });
 }
 
 /******************************************************************************
@@ -70,6 +71,16 @@ RemoteFileJob::RemoteFileJob(QUrl url, PromiseBase& promise) :
 ******************************************************************************/
 void RemoteFileJob::start()
 {
+    // We need a Qt application object to access the network.
+    try {
+        Application::instance()->createQtApplication(false);
+    }
+    catch(const Exception& ex) {
+        _promise.captureException();
+        shutdown(false);
+        return;
+    }
+
     if(!_isActive) {
         // Keep a counter of active jobs.
         // If there are too many jobs active simultaneously, queue them to be executed later.

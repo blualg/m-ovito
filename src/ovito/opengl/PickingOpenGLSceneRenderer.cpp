@@ -43,13 +43,13 @@ PickingOpenGLSceneRenderer::PickingOpenGLSceneRenderer(ObjectInitializationFlags
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool PickingOpenGLSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOperation& operation)
+bool PickingOpenGLSceneRenderer::renderFrame(const QRect& viewportRect)
 {
     // Clear previous object records.
     resetPickingBuffer();
 
     // Let the base class do the main rendering work.
-    if(!OffscreenInteractiveOpenGLSceneRenderer::renderFrame(viewportRect, operation))
+    if(!OffscreenInteractiveOpenGLSceneRenderer::renderFrame(viewportRect))
         return false;
 
     if(framebufferObject()) {

@@ -67,15 +67,14 @@ protected:
     CompressedTextWriter& textStream() { return *_outputStream; }
 
     /// \brief Exports a single animation frame to the current output file.
-    virtual bool exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation) override;
+    virtual void exportFrame(int frameNumber, const QString& filePath) override;
 
     /// \brief Writes the particle data of one animation frame to the current output file.
     /// \param state The data to be exported.
     /// \param frameNumber The animation frame to be written to the output file.
     /// \param filePath The path of the output file.
     /// \throws Exception on error.
-    /// \return \a false when the operation has been canceled by the user; \a true on success.
-    virtual bool exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation) = 0;
+    virtual void exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath) = 0;
 
 private:
 

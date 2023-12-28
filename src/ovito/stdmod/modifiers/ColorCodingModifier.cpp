@@ -266,17 +266,17 @@ bool ColorCodingModifier::adjustRange(AnimationTime time)
 * Sets the start and end value to the minimum and maximum value of the selected
 * particle or bond property determined over the entire animation sequence.
 ******************************************************************************/
-bool ColorCodingModifier::adjustRangeGlobal(MainThreadOperation& operation, int startFrame, int endFrame)
+bool ColorCodingModifier::adjustRangeGlobal(int startFrame, int endFrame)
 {
-    operation.setProgressMaximum(endFrame - startFrame + 1);
+    this_task::setProgressMaximum(endFrame - startFrame + 1);
 
     FloatType minValue = std::numeric_limits<FloatType>::max();
     FloatType maxValue = std::numeric_limits<FloatType>::lowest();
 
     // Loop over all animation frames, evaluate data pipeline, and determine
     // minimum and maximum values.
-    for(int frame = startFrame; frame <= endFrame && !operation.isCanceled(); frame++) {
-        operation.setProgressText(tr("Analyzing frame %1").arg(frame));
+    for(int frame = startFrame; frame <= endFrame && !this_task::isCanceled(); frame++) {
+        this_task::setProgressText(tr("Analyzing frame %1").arg(frame));
 
         for(ModificationNode* node : nodes()) {
 
@@ -288,10 +288,10 @@ bool ColorCodingModifier::adjustRangeGlobal(MainThreadOperation& operation, int 
             // Determine min/max value of the selected property.
             determinePropertyValueRange(stateFuture.result(), minValue, maxValue);
         }
-        operation.incrementProgressValue(1);
+        this_task::incrementProgressValue(1);
     }
 
-    if(!operation.isCanceled()) {
+    if(!this_task::isCanceled()) {
         // Adjust range of color coding to the min/max values.
         if(minValue != std::numeric_limits<FloatType>::max())
             setStartValue(minValue);

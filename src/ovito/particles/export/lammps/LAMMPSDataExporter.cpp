@@ -48,7 +48,7 @@ SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, generateConsecutiveTypeIds, "Genera
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.
 ******************************************************************************/
-bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
+void LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath)
 {
     // Get the particle data to be exported.
     const Particles* originalParticles = state.expectObject<Particles>();
@@ -419,7 +419,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     }
     textStream() << "\n\n";
 
-    operation.setProgressMaximum(totalProgressCount);
+    this_task::setProgressMaximum(totalProgressCount);
     qlonglong currentProgress = 0;
 
     // Write atoms list.
@@ -427,8 +427,8 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     PropertyOutputWriter columnWriter(atomsOutputColumnMapping, particles, PropertyOutputWriter::WriteNumericIds);
     for(size_t i = 0; i < atomsCount; i++) {
         columnWriter.writeElement(i, textStream());
-        if(!operation.setProgressValueIntermittent(currentProgress++))
-            return false;
+        if(!this_task::setProgressValueIntermittent(currentProgress++))
+            return;
     }
 
     // Write velocities.
@@ -455,8 +455,8 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
         PropertyOutputWriter columnWriter(velocitiesOutputColumnMapping, particles, PropertyOutputWriter::WriteNumericIds);
         for(size_t i = 0; i < atomsCount; i++) {
             columnWriter.writeElement(i, textStream());
-            if(!operation.setProgressValueIntermittent(currentProgress++))
-                return false;
+            if(!this_task::setProgressValueIntermittent(currentProgress++))
+                return;
         }
     }
 
@@ -480,8 +480,8 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
             textStream() << static_cast<qlonglong>(identifierProperty ? identifierProperty[atomIndex2] : (atomIndex2+1));
             textStream() << '\n';
 
-            if(!operation.setProgressValueIntermittent(currentProgress++))
-                return false;
+            if(!this_task::setProgressValueIntermittent(currentProgress++))
+                return;
         }
         OVITO_ASSERT(bondIndex == bondTopologyProperty.size() + 1);
     }
@@ -509,8 +509,8 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
             textStream() << static_cast<qlonglong>(identifierProperty ? identifierProperty[atomIndex3] : (atomIndex3+1));
             textStream() << '\n';
 
-            if(!operation.setProgressValueIntermittent(currentProgress++))
-                return false;
+            if(!this_task::setProgressValueIntermittent(currentProgress++))
+                return;
         }
         OVITO_ASSERT(angleIndex == angleTopologyProperty.size() + 1);
     }
@@ -541,8 +541,8 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
             textStream() << static_cast<qlonglong>(identifierProperty ? identifierProperty[atomIndex4] : (atomIndex4+1));
             textStream() << '\n';
 
-            if(!operation.setProgressValueIntermittent(currentProgress++))
-                return false;
+            if(!this_task::setProgressValueIntermittent(currentProgress++))
+                return;
         }
         OVITO_ASSERT(dihedralIndex == dihedralTopologyProperty.size() + 1);
     }
@@ -573,8 +573,8 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
             textStream() << static_cast<qlonglong>(identifierProperty ? identifierProperty[atomIndex4] : (atomIndex4+1));
             textStream() << '\n';
 
-            if(!operation.setProgressValueIntermittent(currentProgress++))
-                return false;
+            if(!this_task::setProgressValueIntermittent(currentProgress++))
+                return;
         }
         OVITO_ASSERT(improperIndex == improperTopologyProperty.size() + 1);
     }
@@ -609,12 +609,10 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
             }
             textStream() << '\n';
 
-            if(!operation.setProgressValueIntermittent(currentProgress++))
-                return false;
+            if(!this_task::setProgressValueIntermittent(currentProgress++))
+                return;
         }
     }
-
-    return !operation.isCanceled();
 }
 
 }   // End of namespace

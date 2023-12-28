@@ -84,7 +84,7 @@ public:
     ///        sequence, the buffer will contain only the last rendered frame when the function returns.
     /// \return true on success; false if operation has been canceled by the user.
     /// \throw Exception on error.
-    bool renderScene(const ViewportConfiguration& viewportConfiguration, FrameBuffer& frameBuffer, MainThreadOperation& operation);
+    void render(const ViewportConfiguration& viewportConfiguration, FrameBuffer& frameBuffer);
 
     /// \brief This is the high-level rendering function, which invokes the renderer to generate one or more
     ///        output images of the scene.
@@ -92,12 +92,12 @@ public:
     /// \param frameBuffer The frame buffer that will receive the rendered image.
     /// \return true on success; false if operation has been canceled by the user.
     /// \throw Exception on error.
-    bool renderScene(const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, AnimationSettings* animationSettings, FrameBuffer& frameBuffer, MainThreadOperation& operation);
+    void render(const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, AnimationSettings* animationSettings, FrameBuffer& frameBuffer);
 
 private:
 
-    /// Renders a single frame and saves the output file. This is part of the implementation of the renderScene() method.
-    bool renderFrame(int frameNumber, SceneRenderer& renderer, FrameBuffer& frameBuffer, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, VideoEncoder* videoEncoder, MainThreadOperation& operation);
+    /// Renders a single frame and saves the output file. This is part of the implementation of the render() method.
+    void renderFrame(int frameNumber, SceneRenderer& renderer, FrameBuffer& frameBuffer, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, VideoEncoder* videoEncoder);
 
 private:
 

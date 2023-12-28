@@ -48,7 +48,7 @@ auto launchTask(std::shared_ptr<TaskType> task, Args&&... args)
 
     // Register task if requested to show it in the UI.
     if constexpr(RegisterWithTaskManager)
-        ExecutionContext::current().ui().taskManager().registerTask(task);
+        ExecutionContext::current().ui().taskManager().registerTask(*task);
 
     // Launch the task.
     (*task)(std::forward<Args>(args)...);

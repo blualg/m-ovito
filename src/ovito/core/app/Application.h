@@ -25,7 +25,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/Exception.h>
-#include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/MixedKeyCache.h>
 
 namespace Ovito {
@@ -70,9 +69,6 @@ public:
     ///         \c false if the application should use a graphical user interface.
     bool consoleMode() const { return _consoleMode; }
 
-    /// \brief Returns whether the application runs in headless mode (without an X server on Linux and no OpenGL support).
-    bool headlessMode() const { return _headlessMode; }
-
     /// \brief Switches between graphical and console mode.
     void setGuiMode(bool enableGui) { _consoleMode = !enableGui; }
 
@@ -87,6 +83,12 @@ public:
 
     /// Sets the number of parallel threads to be used by the application when doing computations.
     void setIdealThreadCount(int count) { _idealThreadCount = std::max(1, count); }
+
+    /// Similar to QCoreApplication::applicationDirPath() but doesn't require a Qt application.
+    QString applicationDirPath() const;
+
+    /// Similar to QCoreApplication::applicationFilePath() but doesn't require a Qt application.
+    QString applicationFilePath() const;
 
     /// Returns the major version number of the application.
     static int applicationVersionMajor();
@@ -108,32 +110,27 @@ public:
     QNetworkAccessManager* networkAccessManager();
 #endif
 
-Q_SIGNALS:
+    /// Create the global Qt application object.
+    void createQtApplication(bool supportGui);
 
-    /// This signal is emitted when UserInterface::shutdown() is called.
-    void aboutToQuit();
+public Q_SLOTS:
 
-protected:
-
-    /// Is called by UserInterface::shutdown() when application is shutting down.
-    virtual void signalAboutToQuit() override;
-
-    /// TThis method is called from UserInterface::submitWork() whenever pending work
-    /// needs to be performed in the main thread.
-    virtual void pendingWorkArrived() override;
-
-private Q_SLOTS:
-
-    /// Executes pending work items waiting in the deferred execution queue.
-    void executePendingWork() { UserInterface::executePendingWork(); }
+    /// Closes the application immediately (without asking user to save changes).
+    void shutdown() { UserInterface::shutdown(); }
 
 protected:
+
+    /// Creates the global instance of the right QCoreApplication derived class.
+    virtual QCoreApplication* createQtApplicationImpl(bool supportGui, int& argc, char** argv) = 0;
+
+    /// The number of original command line arguments.
+    int* _argc;
+
+    /// The original command line arguments.
+    char** _argv;
 
     /// Indicates that the application is running in console mode.
     bool _consoleMode = true;
-
-    /// Indicates that the application is running in headless mode (without OpenGL support).
-    bool _headlessMode = true;
 
     /// The number of parallel threads to be used by the application when doing computations.
     int _idealThreadCount = 1;

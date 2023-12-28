@@ -220,7 +220,7 @@ PipelineFlowState FileExporter::getPipelineDataToBeExported(int frame, bool requ
 /******************************************************************************
  * Exports the scene data to the output file(s).
  *****************************************************************************/
-bool FileExporter::doExport(MainThreadOperation operation)
+bool FileExporter::doExport()
 {
     if(outputFilename().isEmpty())
         throw Exception(tr("The output filename not been set for the file exporter."));
@@ -273,10 +273,10 @@ bool FileExporter::doExport(MainThreadOperation operation)
 
     try {
         // Export animation frames.
-        operation.beginProgressSubSteps(numberOfFrames);
+        this_task::beginProgressSubSteps(numberOfFrames);
         for(int frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
             if(frameIndex != 0)
-                operation.nextProgressSubStep();
+                this_task::nextProgressSubStep();
 
             int frameNumber = firstFrameNumber + frameIndex * everyNthFrame();
 
@@ -288,18 +288,18 @@ bool FileExporter::doExport(MainThreadOperation operation)
                 openOutputFile(filename, 1);
             }
 
-            operation.setProgressText(tr("Exporting frame %1 to file '%2'").arg(frameNumber).arg(filename));
+            this_task::setProgressText(tr("Exporting frame %1 to file '%2'").arg(frameNumber).arg(filename));
 
-            bool notCanceled = exportFrame(frameNumber, filename, operation);
+            exportFrame(frameNumber, filename);
 
             // Close per-frame output file.
             if(exportAnimation() && useWildcardFilename())
-                closeOutputFile(!operation.isCanceled() && notCanceled);
+                closeOutputFile(!this_task::isCanceled());
 
-            if(operation.isCanceled() || !notCanceled)
+            if(this_task::isCanceled())
                 break;
         }
-        operation.endProgressSubSteps();
+        this_task::endProgressSubSteps();
     }
     catch(...) {
         closeOutputFile(false);
@@ -308,18 +308,10 @@ bool FileExporter::doExport(MainThreadOperation operation)
 
     // Close output file.
     if(!exportAnimation() || !useWildcardFilename()) {
-        closeOutputFile(!operation.isCanceled());
+        closeOutputFile(!this_task::isCanceled());
     }
 
-    return !operation.isCanceled();
-}
-
-/******************************************************************************
- * Exports a single animation frame to the current output file.
- *****************************************************************************/
-bool FileExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
-{
-    return !operation.isCanceled();
+    return !this_task::isCanceled();
 }
 
 /******************************************************************************
@@ -329,7 +321,7 @@ bool FileExporter::exportFrame(int frameNumber, const QString& filePath, MainThr
 void FileExporter::activateCLocale()
 {
     // The setlocale() function is not thread-safe and should only be called from the main thread.
-    if(QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread())
+    if(ExecutionContext::isMainThread())
         std::setlocale(LC_ALL, "C");
 }
 

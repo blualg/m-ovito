@@ -69,13 +69,6 @@ bool AmbientOcclusionModifier::OOMetaClass::isApplicableTo(const DataCollection&
 ******************************************************************************/
 Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
-    if(Application::instance()->headlessMode()) {
-        throw Exception(tr(
-                "OVITO's ambient occlusion modifier requires OpenGL support and cannot be used in headless mode, that is if the application is running without access to a graphics environment. "
-                "Please see https://docs.ovito.org/python/modules/ovito_vis.html#ovito.vis.OpenGLRenderer for instructions "
-                "on how to enable OpenGL support in Python script environments."));
-    }
-
     // Get modifier input.
     const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
@@ -244,7 +237,8 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
         // The vis cache should remain unused when rendering just a bunch of spherical particles.
         OVITO_ASSERT(visCache.size() == 0);
 
-        if(isCanceled()) return;
+        if(isCanceled())
+            return;
         setProgressValue(_samplingCount);
 
         // Normalize brightness values by particle area.

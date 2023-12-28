@@ -33,7 +33,7 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(FHIAimsExporter);
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.
 ******************************************************************************/
-bool FHIAimsExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
+void FHIAimsExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath)
 {
     // Get particle positions and types.
     const Particles* particles = state.expectObject<Particles>();
@@ -57,7 +57,7 @@ bool FHIAimsExporter::exportData(const PipelineFlowState& state, int frameNumber
     }
 
     // Output atoms.
-    operation.setProgressMaximum(posProperty.size());
+    this_task::setProgressMaximum(posProperty.size());
     for(size_t i = 0; i < posProperty.size(); i++) {
         const Point3& p = posProperty[i];
         const ElementType* type = particleTypeArray ? particleTypeProperty->elementType(particleTypeArray[i]) : nullptr;
@@ -74,11 +74,9 @@ bool FHIAimsExporter::exportData(const PipelineFlowState& state, int frameNumber
             textStream() << " 1\n";
         }
 
-        if(!operation.setProgressValueIntermittent(i))
-            return false;
+        if(!this_task::setProgressValueIntermittent(i))
+            return;
     }
-
-    return !operation.isCanceled();
 }
 
 }   // End of namespace

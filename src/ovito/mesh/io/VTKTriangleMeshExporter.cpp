@@ -60,14 +60,14 @@ void VTKTriangleMeshExporter::closeOutputFile(bool exportCompleted)
 /******************************************************************************
  * Exports a single animation frame to the current output file.
  *****************************************************************************/
-bool VTKTriangleMeshExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
+void VTKTriangleMeshExporter::exportFrame(int frameNumber, const QString& filePath)
 {
     // Evaluate pipeline.
     // Note: We are requesting the rendering state from the pipeline,
     // because we are interested in renderable triangle meshes.
     const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber, true);
-    if(operation.isCanceled())
-        return false;
+    if(this_task::isCanceled())
+        return;
 
     // Look up the RenderableSurfaceMesh to be exported in the pipeline state.
     DataObjectReference objectRef(&RenderableSurfaceMesh::OOClass(), dataObjectToExport().dataPath());
@@ -170,8 +170,6 @@ bool VTKTriangleMeshExporter::exportFrame(int frameNumber, const QString& filePa
                 textStream() << "1 1 1\n";
         }
     }
-
-    return !operation.isCanceled();
 }
 
 }   // End of namespace

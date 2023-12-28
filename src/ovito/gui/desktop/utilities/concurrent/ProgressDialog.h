@@ -37,7 +37,7 @@ public:
 
     /// Constructor.
     explicit ProgressDialog(QWidget* parent, const QString& dialogTitle = QString()) :
-        ProgressDialog(parent, Task::current()->shared_from_this(), dialogTitle) {}
+        ProgressDialog(parent, this_task::get()->shared_from_this(), dialogTitle) {}
 
     /// Constructor.
     explicit ProgressDialog(QWidget* parent, const FutureBase& future, const QString& dialogTitle = QString()) :

@@ -197,7 +197,7 @@ void VulkanSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const Vie
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool VulkanSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOperation& operation)
+bool VulkanSceneRenderer::renderFrame(const QRect& viewportRect)
 {
     // Render the 3D scene objects.
     if(renderScene()) {
@@ -225,19 +225,19 @@ bool VulkanSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOpera
         _translucentMeshes.clear();
     }
 
-    return !operation.isCanceled();
+    return !this_task::isCanceled();
 }
 
 /******************************************************************************
 * Renders the overlays/underlays of the viewport into the framebuffer.
 ******************************************************************************/
-bool VulkanSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
+bool VulkanSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect)
 {
     // Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
     QRect vulkanViewportRect(physicalViewportRect.x() * antialiasingLevel(), physicalViewportRect.y() * antialiasingLevel(), physicalViewportRect.width() * antialiasingLevel(), physicalViewportRect.height() * antialiasingLevel());
 
     // Delegate rendering work to base class.
-    return SceneRenderer::renderOverlays(underlays, logicalViewportRect, vulkanViewportRect, operation);
+    return SceneRenderer::renderOverlays(underlays, logicalViewportRect, vulkanViewportRect);
 }
 
 /******************************************************************************

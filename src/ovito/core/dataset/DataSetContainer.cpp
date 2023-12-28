@@ -127,7 +127,7 @@ bool DataSetContainer::referenceEvent(RefTarget* source, const ReferenceEvent& e
             const ReferenceFieldEvent& refEvent = static_cast<const ReferenceFieldEvent&>(event);
             if(refEvent.field() == PROPERTY_FIELD(SelectionSet::nodes)) {
                 Q_EMIT selectionChanged(activeSelectionSet());
-                if(!_selectionChangeCompleteTimer.isActive())
+                if(!_selectionChangeCompleteTimer.isActive() && QCoreApplication::instance())
                     _selectionChangeCompleteTimer.start(0, Qt::CoarseTimer, this);
             }
         }

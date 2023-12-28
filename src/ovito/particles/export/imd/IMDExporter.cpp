@@ -34,7 +34,7 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(IMDExporter);
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.
 ******************************************************************************/
-bool IMDExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
+void IMDExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath)
 {
     const Particles* particles = state.expectObject<Particles>();
     particles->verifyIntegrity();
@@ -151,15 +151,13 @@ bool IMDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     textStream() << "## IMD file written by " << Application::applicationName() << "\n";
     textStream() << "#E\n";
 
-    operation.setProgressMaximum(atomsCount);
+    this_task::setProgressMaximum(atomsCount);
     for(size_t i = 0; i < atomsCount; i++) {
         columnWriter.writeElement(i, textStream());
 
-        if(!operation.setProgressValueIntermittent(i))
-            return false;
+        if(!this_task::setProgressValueIntermittent(i))
+            return;
     }
-
-    return !operation.isCanceled();
 }
 
 }   // End of namespace

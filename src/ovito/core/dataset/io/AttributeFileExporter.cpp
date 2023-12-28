@@ -113,11 +113,11 @@ bool AttributeFileExporter::getAttributesMap(int frame, QVariantMap& attributes)
 /******************************************************************************
  * Exports a single animation frame to the current output file.
  *****************************************************************************/
-bool AttributeFileExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
+void AttributeFileExporter::exportFrame(int frameNumber, const QString& filePath)
 {
     QVariantMap attrMap;
     if(!getAttributesMap(frameNumber, attrMap))
-        return false;
+        return;
 
     // Write the values of all attributes marked for export to the output file.
     for(const QString& attrName : attributesToExport()) {
@@ -132,8 +132,6 @@ bool AttributeFileExporter::exportFrame(int frameNumber, const QString& filePath
             textStream() << "\"" << str << "\" ";
     }
     textStream() << "\n";
-
-    return !operation.isCanceled();
 }
 
 }   // End of namespace

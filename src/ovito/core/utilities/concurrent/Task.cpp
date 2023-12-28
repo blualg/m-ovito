@@ -28,26 +28,11 @@
 #include "AsynchronousTask.h"
 #include "detail/TaskCallback.h"
 
-#ifdef Q_OS_UNIX
-#include <csignal>
-#endif
-
 namespace Ovito {
 
 #ifdef OVITO_DEBUG
 std::atomic_size_t Task::_globalTaskCounter{0};
 #endif
-
-/*******************************************************x***********************
-* Returns the task object that is the active one in the current thread.
-******************************************************************************/
-Task*& Task::current() noexcept
-{
-    // The active task in the current thread.
-    static thread_local Task* _current = nullptr;
-
-    return _current;
-}
 
 #ifdef OVITO_DEBUG
 /*******************************************************x***********************
@@ -192,23 +177,6 @@ void Task::exceptionLocked(std::exception_ptr&& ex) noexcept
 }
 
 /******************************************************************************
-* Puts a finished task back into the started state. This method should be used with care.
-******************************************************************************/
-void Task::restart()
-{
-    const MutexLocker locker(&taskMutex());
-
-    OVITO_ASSERT(isFinished());
-    OVITO_ASSERT(_continuations.isEmpty());
-
-    _exceptionStore = {};
-    _state.fetch_and(~(Started | Finished | Canceled));
-    OVITO_ASSERT(!isFinished() && !isCanceled());
-
-    startLocked();
-}
-
-/******************************************************************************
 * Adds a callback to this task's list, which will get notified during state changes.
 ******************************************************************************/
 void Task::addCallback(detail::TaskCallbackBase* cb, bool replayStateChanges) noexcept
@@ -276,7 +244,7 @@ bool Task::waitFor(detail::TaskReference awaitedTask, bool throwOnError)
     OVITO_ASSERT(ExecutionContext::current().isValid());
 
     // The task this function was called from.
-    Task* waitingTask = Task::current();
+    Task* waitingTask = this_task::get();
     OVITO_ASSERT_MSG(waitingTask != nullptr, "Task::waitFor()", "No active task. This function may only be called from a task worker function or some other context with an active task.");
 
     // Lock access to the waiting task (this function was called from).
@@ -359,90 +327,12 @@ bool Task::waitFor(detail::TaskReference awaitedTask, bool throwOnError)
 
         waitingTaskLocker.relock();
     }
-    else if(QCoreApplication::instance()) {
-        // Use a local Qt event loop to keep processing application events while waiting.
-        OVITO_ASSERT(ExecutionContext::isMainThread());
-
-        // Register the waiting task with the task manager such that it gets canceled in
-        // case the UI is shutting down while we are waiting.
-        ExecutionContext::current().ui().taskManager().addTaskInternal(waitingTaskPtr);
-
-        // The local event loop we are going to start.
-        QEventLoop eventLoop;
-
-        // Register a callback function with the waiting task, which makes the event loop quit in case the waiting task gets canceled.
-        detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&](int state) {
-            if(state & (Task::Canceled | Task::Finished)) {
-                // When the parent task gets canceled, discard the reference which keeps the awaited task running.
-                awaitedTask.reset();
-                QMetaObject::invokeMethod(&eventLoop, &QEventLoop::quit, Qt::QueuedConnection);
-            }
-            return true;
-        });
-
-        // Register a callback function with the awaited task, which makes the event loop quit when the task gets canceled or finishes.
-        detail::FunctionTaskCallback awaitedTaskCallback(awaitedTaskPtr.get(), [&eventLoop](int state) {
-            if(state & Task::Finished) {
-                QMetaObject::invokeMethod(&eventLoop, &QEventLoop::quit, Qt::QueuedConnection);
-            }
-            return true;
-        });
-
-#ifdef Q_OS_UNIX
-        // Boolean flag which is set by the POSIX signal handler when user
-        // presses Ctrl+C to interrupt the program.
-        static QAtomicInt userInterrupt;
-        userInterrupt.storeRelease(0);
-
-        // Install POSIX signal handler to catch Ctrl+C key signal.
-        static std::atomic<QEventLoop*> activeEventLoop;
-        QEventLoop* previousEventLoop = activeEventLoop.exchange(&eventLoop, std::memory_order_release);
-        auto oldSignalHandler = ::signal(SIGINT, [](int) {
-            userInterrupt.storeRelease(1);
-            if(QEventLoop* eventLoop = activeEventLoop.load(std::memory_order_acquire)) {
-                QMetaObject::invokeMethod(eventLoop, &QEventLoop::quit, Qt::QueuedConnection);
-            }
-        });
-#endif
-
-        {
-            // Temporarily switch back to a null context while in the event loop.
-            ExecutionContext::Scope execScope(ExecutionContext{});
-            // Also switch back to the null task.
-            Task::Scope taskScope(nullptr);
-            // Also suspend undo recording while in the event loop.
-            UndoSuspender noUndo;
-
-            // Enter the local event loop.
-            eventLoop.exec();
-        }
-
-        waitingTaskCallback.unregisterCallback();
-        awaitedTaskCallback.unregisterCallback();
-
-        waitingTaskLocker.relock();
-
-#ifdef Q_OS_UNIX
-        // Cancel the task if user pressed Ctrl+C.
-        ::signal(SIGINT, oldSignalHandler);
-        activeEventLoop.store(previousEventLoop, std::memory_order_relaxed);
-        if(userInterrupt.loadAcquire()) {
-            waitingTask->cancelAndFinishLocked(waitingTaskLocker);
-            return false;
-        }
-#endif
-    }
     else {
-        qDebug() << "Task::waitFor() called from main thread on task" << awaitedTaskPtr.get();
-        // If no event loop is running, process all pending work immediately.
-        OVITO_ASSERT(ExecutionContext::isMainThread());
-
         // Process all pending work items while waiting for the task to finish.
-        ExecutionContext::current().ui().enterWorkProcessingLoop(waitingTask, awaitedTask);
+        ExecutionContext::current().ui().taskManager().processWorkWhileWaiting(waitingTask, awaitedTask);
 
         waitingTaskLocker.relock();
     }
-    qDebug() << "Task::waitFor() continuing on task" << awaitedTaskPtr.get();
 
     // Check if the waiting task has been canceled.
     if(waitingTask->isCanceled())
@@ -451,7 +341,7 @@ bool Task::waitFor(detail::TaskReference awaitedTask, bool throwOnError)
     // Now check if the awaited task has been canceled.
     awaitedTaskLocker.relock();
 
-    // When the event loop was exited because the application is shutting down, cancel
+    // When the waiting loop was interrupted because the application is shutting down, cancel
     // all tasks immediately.
     if(ExecutionContext::current().ui().isShuttingDown())
        awaitedTaskPtr->cancelAndFinishLocked(awaitedTaskLocker);
@@ -470,4 +360,125 @@ bool Task::waitFor(detail::TaskReference awaitedTask, bool throwOnError)
     return true;
 }
 
-}   // End of namespace
+namespace this_task {
+
+/*******************************************************x***********************
+* Returns the task object that is the active one in the current thread.
+******************************************************************************/
+Task*& get() noexcept
+{
+    // The active task in the current thread.
+    static thread_local Task* _current = nullptr;
+
+    return _current;
+}
+
+/*******************************************************x***********************
+* Changes the description string of the active task.
+******************************************************************************/
+void setProgressText(const QString& progressText) noexcept
+{
+    Task* task = get();
+    OVITO_ASSERT(task != nullptr);
+    if(task->isProgressingTask()) {
+        static_cast<ProgressingTask*>(task)->setProgressText(progressText);
+    }
+}
+
+/*******************************************************x***********************
+* Sets the current maximum value for progress reporting.
+******************************************************************************/
+void setProgressMaximum(qlonglong maximum, bool autoReset) noexcept
+{
+    Task* task = get();
+    OVITO_ASSERT(task != nullptr);
+    if(task->isProgressingTask()) {
+        static_cast<ProgressingTask*>(task)->setProgressMaximum(maximum, autoReset);
+    }
+}
+
+/*******************************************************x***********************
+* Sets the current progress value of the task.
+******************************************************************************/
+bool setProgressValue(qlonglong progressValue) noexcept
+{
+    Task* task = get();
+    OVITO_ASSERT(task != nullptr);
+    if(task->isProgressingTask()) {
+        return static_cast<ProgressingTask*>(task)->setProgressValue(progressValue);
+    }
+    else {
+        return !task->isCanceled();
+    }
+}
+
+/*******************************************************x***********************
+* Increments the progress value of the task.
+******************************************************************************/
+bool incrementProgressValue(qlonglong increment) noexcept
+{
+    Task* task = get();
+    OVITO_ASSERT(task != nullptr);
+    if(task->isProgressingTask()) {
+        return static_cast<ProgressingTask*>(task)->incrementProgressValue(increment);
+    }
+    else {
+        return !task->isCanceled();
+    }
+}
+
+/*******************************************************x***********************
+* Sets the current progress value of the task, generating update events only occasionally.
+******************************************************************************/
+bool setProgressValueIntermittent(qlonglong progressValue, int updateEvery) noexcept
+{
+    Task* task = get();
+    OVITO_ASSERT(task != nullptr);
+    if(task->isProgressingTask()) {
+        return static_cast<ProgressingTask*>(task)->setProgressValueIntermittent(progressValue, updateEvery);
+    }
+    else {
+        return !task->isCanceled();
+    }
+}
+
+/*******************************************************x***********************
+* Starts a sequence of sub-steps in the progress range of this task.
+******************************************************************************/
+void beginProgressSubStepsWithWeights(std::vector<int> weights) noexcept
+{
+    Task* task = get();
+    OVITO_ASSERT(task != nullptr);
+    if(task->isProgressingTask()) {
+        static_cast<ProgressingTask*>(task)->beginProgressSubStepsWithWeights(std::move(weights));
+    }
+}
+
+/*******************************************************x***********************
+* Completes the current sub-step in the sequence started with beginProgressSubSteps() or
+* beginProgressSubStepsWithWeights() and moves to the next one.
+******************************************************************************/
+void nextProgressSubStep() noexcept
+{
+    Task* task = get();
+    OVITO_ASSERT(task != nullptr);
+    if(task->isProgressingTask()) {
+        static_cast<ProgressingTask*>(task)->nextProgressSubStep();
+    }
+}
+
+/*******************************************************x***********************
+* Completes a sub-step sequence started with beginProgressSubSteps() or beginProgressSubStepsWithWeights().
+******************************************************************************/
+void endProgressSubSteps() noexcept
+{
+    Task* task = get();
+    OVITO_ASSERT(task != nullptr);
+    if(task->isProgressingTask()) {
+        static_cast<ProgressingTask*>(task)->endProgressSubSteps();
+    }
+}
+
+} // End of namespace
+
+} // End of namespace

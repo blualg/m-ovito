@@ -144,30 +144,62 @@ void FrameBufferWindow::showAndActivateWindow()
 }
 
 /******************************************************************************
-* Makes the framebuffer modal while a rendering operation is in progress and displays the progress in the window.
+* Makes the framebuffer modal while a rendering operation is in progress and
+* displays the progress in the window.
 ******************************************************************************/
-void FrameBufferWindow::showRenderingOperation()
+void FrameBufferWindow::showRenderingProgress()
 {
-    OVITO_ASSERT(Task::current());
+    OVITO_ASSERT(this_task::get());
     OVITO_ASSERT(ExecutionContext::current().isValid());
-    OVITO_ASSERT(!_renderingWatcher);
+
+    // If there is still a left-over task watcher from a previous rendering operation,
+    // first clean up.
+    if(_renderingWatcher)
+        onRenderingFinished();
 
     _renderingWatcher = new TaskWatcher(this);
+    connect(_renderingWatcher, &TaskWatcher::started, this, &FrameBufferWindow::onRenderingStarted);
+    connect(_renderingWatcher, &TaskWatcher::finished, this, &FrameBufferWindow::onRenderingFinished);
 
-    connect(_renderingWatcher, &TaskWatcher::started, this, [this]() {
-        // Disable main window while rendering is in progress.
-        parentWidget()->setEnabled(false);
-        // Re-enable this floating child window.
-        this->setEnabled(true);
-        _saveToFileAction->setEnabled(false);
-        _copyToClipboardAction->setEnabled(false);
-        _autoCropAction->setEnabled(false);
-        _cancelRenderingAction->setEnabled(true);
-        _cancelRenderingAction->setVisible(true);
-        _centralLayout->widget(1)->setVisible(true);
+    // Create UI for every already running task.
+    ExecutionContext::current().ui().taskManager().visitRegisteredTasks([&](const TaskPtr& task) {
+        createTaskProgressWidgets(task);
     });
 
-    connect(_renderingWatcher, &TaskWatcher::finished, this, [this]() {
+    // Create a separate progress bar for every newly created task.
+    _taskRegisteredConnection = connect(&ExecutionContext::current().ui().taskManager(), &TaskManager::taskRegistered, this, &FrameBufferWindow::createTaskProgressWidgets, Qt::QueuedConnection);
+
+    // Start watching the main rendering task.
+    _renderingWatcher->watch(this_task::get()->shared_from_this());
+}
+
+/******************************************************************************
+* Is called when the rendering process begins.
+******************************************************************************/
+void FrameBufferWindow::onRenderingStarted()
+{
+    // Disable main window while rendering is in progress.
+    parentWidget()->setEnabled(false);
+    // Re-enable this floating child window.
+    this->setEnabled(true);
+    _saveToFileAction->setEnabled(false);
+    _copyToClipboardAction->setEnabled(false);
+    _autoCropAction->setEnabled(false);
+    _cancelRenderingAction->setEnabled(true);
+    _cancelRenderingAction->setVisible(true);
+    _centralLayout->widget(1)->setVisible(true);
+}
+
+/******************************************************************************
+* Is called when the rendering process ended.
+******************************************************************************/
+void FrameBufferWindow::onRenderingFinished()
+{
+    TaskWatcher* watcher = qobject_cast<TaskWatcher*>(sender());
+    if(!watcher)
+        watcher = _renderingWatcher;
+
+    if(watcher == _renderingWatcher) {
         parentWidget()->setEnabled(true);
         _saveToFileAction->setEnabled(true);
         _copyToClipboardAction->setEnabled(true);
@@ -175,18 +207,9 @@ void FrameBufferWindow::showRenderingOperation()
         _cancelRenderingAction->setEnabled(false);
         _cancelRenderingAction->setVisible(false);
         _centralLayout->widget(1)->setVisible(false);
-        _renderingWatcher->deleteLater();
-    });
-
-    _renderingWatcher->watch(Task::current()->shared_from_this());
-
-    // Create UI for every running task.
-    for(TaskWatcher* watcher : ExecutionContext::current().ui().taskManager().runningTasks()) {
-        createTaskProgressWidgets(watcher);
+        disconnect(_taskRegisteredConnection);
     }
-
-    // Create a separate progress bar for every new active task.
-    connect(&ExecutionContext::current().ui().taskManager(), &TaskManager::taskStarted, this, &FrameBufferWindow::createTaskProgressWidgets, Qt::UniqueConnection);
+    watcher->deleteLater();
 }
 
 /******************************************************************************
@@ -270,19 +293,21 @@ void FrameBufferWindow::closeEvent(QCloseEvent* event)
 /******************************************************************************
 * Creates the UI widgets for displaying the progress of one asynchronous task.
 ******************************************************************************/
-void FrameBufferWindow::createTaskProgressWidgets(TaskWatcher* taskWatcher)
+void FrameBufferWindow::createTaskProgressWidgets(const TaskPtr& task)
 {
+    // Don't display the task if it is already finished.
+    if(task->isFinished())
+        return;
+
+    TaskWatcher* taskWatcher = new TaskWatcher(this);
+
+    // Self-destruction after task has finished.
+    connect(taskWatcher, &TaskWatcher::finished, taskWatcher, &QObject::deleteLater);
+
     // Helper function that sets up the UI widgets in the dialog for a newly started task.
-    QLabel* statusLabel = new QLabel(taskWatcher->progressText());
+    QLabel* statusLabel = new QLabel();
     statusLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
     QProgressBar* progressBar = new QProgressBar();
-//  progressBar->setAttribute(Qt::WA_OpaquePaintEvent);
-    progressBar->setMaximum(taskWatcher->progressMaximum());
-    progressBar->setValue(taskWatcher->progressValue());
-    if(statusLabel->text().isEmpty()) {
-        statusLabel->hide();
-        progressBar->hide();
-    }
     _progressLayout->insertWidget(_progressLayout->count() - 1, statusLabel);
     _progressLayout->insertWidget(_progressLayout->count() - 1, progressBar);
     connect(taskWatcher, &TaskWatcher::progressChanged, progressBar, [progressBar](qlonglong progress, qlonglong maximum) {
@@ -298,6 +323,18 @@ void FrameBufferWindow::createTaskProgressWidgets(TaskWatcher* taskWatcher)
     // Remove progress display when this task finished.
     connect(taskWatcher, &TaskWatcher::finished, progressBar, &QObject::deleteLater);
     connect(taskWatcher, &TaskWatcher::finished, statusLabel, &QObject::deleteLater);
+
+    // Begin watching the task.
+    taskWatcher->watch(task);
+
+    // Initial update of the progress display.
+    statusLabel->setText(taskWatcher->progressText());
+    progressBar->setMaximum(taskWatcher->progressMaximum());
+    progressBar->setValue(taskWatcher->progressValue());
+    if(statusLabel->text().isEmpty()) {
+        statusLabel->hide();
+        progressBar->hide();
+    }
 }
 
 }   // End of namespace

@@ -57,7 +57,7 @@ void PickingVulkanSceneRenderer::beginFrame(AnimationTime time, Scene* scene, co
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool PickingVulkanSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOperation& operation)
+bool PickingVulkanSceneRenderer::renderFrame(const QRect& viewportRect)
 {
     // Caller should never provide an external frame buffer.
     OVITO_ASSERT(frameBuffer() == &_frameBuffer);

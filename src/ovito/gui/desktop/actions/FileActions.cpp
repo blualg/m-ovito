@@ -379,7 +379,7 @@ void WidgetActionManager::on_FileExport_triggered()
         ProgressDialog progressDialog(&mainWindow(), tr("Exporting to file"));
 
         // Let the exporter do its work.
-        exporter->doExport(MainThreadOperation(true));
+        exporter->doExport();
     });
 }
 

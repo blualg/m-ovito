@@ -114,7 +114,7 @@ void GenerateTrajectoryLinesModifier::evaluateSynchronous(const ModifierEvaluati
 /******************************************************************************
 * Updates the stored trajectories from the source particle object.
 ******************************************************************************/
-bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime currentTime, MainThreadOperation operation)
+bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime currentTime)
 {
     for(ModificationNode* modNode : nodes()) {
         GenerateTrajectoryLinesModificationNode* myModNode = dynamic_object_cast<GenerateTrajectoryLinesModificationNode>(modNode);
@@ -171,7 +171,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
         for(int frame = startFrame; frame <= endFrame; frame += everyNthFrame()) {
             sampleFrames.push_back(frame);
         }
-        operation.setProgressMaximum(sampleFrames.size());
+        this_task::setProgressMaximum(sampleFrames.size());
 
         // Collect particle positions to generate trajectory line vertices.
         std::vector<Point3> pointData;
@@ -181,7 +181,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
         std::vector<DataOORef<const SimulationCell>> cells;
         int timeIndex = 0;
         for(int frame : sampleFrames) {
-            operation.setProgressText(tr("Generating trajectory lines (frame %1 of %2)").arg(operation.progressValue()+1).arg(operation.progressMaximum()));
+            this_task::setProgressText(tr("Generating trajectory lines (frame %1 of %2)").arg(timeIndex+1).arg(sampleFrames.size()));
 
             SharedFuture<PipelineFlowState> stateFuture = myModNode->evaluateInput(PipelineEvaluationRequest(myModNode->sourceFrameToAnimationTime(frame)));
             if(!stateFuture.waitForFinished())
@@ -272,15 +272,14 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
                 }
             }
 
-            operation.incrementProgressValue(1);
-            if(operation.isCanceled())
+            if(!this_task::incrementProgressValue(1))
                 return false;
             timeIndex++;
         }
 
         // Sort vertex data to obtain continuous trajectory lines.
-        operation.setProgressMaximum(0);
-        operation.setProgressText(tr("Sorting trajectory data"));
+        this_task::setProgressMaximum(0);
+        this_task::setProgressText(tr("Sorting trajectory data"));
         std::vector<size_t> permutation(pointData.size());
         std::iota(permutation.begin(), permutation.end(), (size_t)0);
         std::sort(permutation.begin(), permutation.end(), [&idData, &timeData](size_t a, size_t b) {
@@ -288,7 +287,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
             if(idData[a] > idData[b]) return false;
             return timeData[a] < timeData[b];
         });
-        if(operation.isCanceled())
+        if(this_task::isCanceled())
             return false;
 
         // Do not create undo records while computing the trajectories.
@@ -363,18 +362,18 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
                 }
             }
 
-            if(operation.isCanceled())
+            if(this_task::isCanceled())
                 return false;
 
             // Unwrap trajectory vertices at periodic boundaries of the simulation cell.
             if(unwrapTrajectories() && pointData.size() >= 2 && !cells.empty() && cells.front() && cells.front()->hasPbcCorrected()) {
-                operation.setProgressText(tr("Unwrapping trajectory lines"));
-                operation.setProgressMaximum(trajPosProperty.size() - 1);
+                this_task::setProgressText(tr("Unwrapping trajectory lines"));
+                this_task::setProgressMaximum(trajPosProperty.size() - 1);
                 Point3* pos = trajPosProperty.begin();
                 piter = permutation.cbegin();
                 const int64_t* id = trajIdProperty.cbegin();
                 for(auto pos_end = pos + trajPosProperty.size() - 1; pos != pos_end; ++pos, ++piter, ++id) {
-                    if(!operation.incrementProgressValue())
+                    if(!this_task::incrementProgressValue())
                         return false;
                     if(id[0] == id[1]) {
                         const SimulationCell* cell1 = cells[timeData[piter[0]]];
@@ -406,6 +405,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
         // Store generated trajectory lines in the ModificationNode.
         myModNode->setTrajectoryData(std::move(trajectoryLines));
     }
+
     return true;
 }
 

@@ -41,9 +41,9 @@ bool parallelForWithProgress(
         Function&& kernel,
         T progressChunkSize = 1024)
 {
-    OVITO_ASSERT(Task::current());
-    OVITO_ASSERT(Task::current()->isProgressingTask());
-    ProgressingTask* task = static_cast<ProgressingTask*>(Task::current());
+    OVITO_ASSERT(this_task::get());
+    OVITO_ASSERT(this_task::get()->isProgressingTask());
+    ProgressingTask* task = static_cast<ProgressingTask*>(this_task::get());
     task->setProgressMaximum(loopCount / progressChunkSize);
 
 #ifndef OVITO_DISABLE_THREADING
@@ -124,7 +124,7 @@ void parallelFor(T loopCount, Function&& kernel)
         }
         else {
             OVITO_ASSERT(endIndex <= loopCount);
-            workers.push_back(std::async(std::launch::async, [&kernel, startIndex, endIndex, context=ExecutionContext::current(), task=Task::current()]() mutable {
+            workers.push_back(std::async(std::launch::async, [&kernel, startIndex, endIndex, context=ExecutionContext::current(), task=this_task::get()]() mutable {
                 Task::Scope taskScope(std::move(task));
                 ExecutionContext::Scope execScope(std::move(context));
                 for(T i = startIndex; i < endIndex; ++i) {
@@ -211,9 +211,9 @@ Future<> parallelForAsync(T loopCount, Kernel&& kernel, const QString& taskDescr
 template<class Function>
 bool parallelForChunksWithProgress(size_t loopCount, Function kernel)
 {
-    OVITO_ASSERT(Task::current());
-    OVITO_ASSERT(Task::current()->isProgressingTask());
-    ProgressingTask* task = static_cast<ProgressingTask*>(Task::current());
+    OVITO_ASSERT(this_task::get());
+    OVITO_ASSERT(this_task::get()->isProgressingTask());
+    ProgressingTask* task = static_cast<ProgressingTask*>(this_task::get());
 
 #ifndef OVITO_DISABLE_THREADING
     std::vector<std::future<void>> workers;
@@ -269,7 +269,7 @@ void parallelForChunks(size_t loopCount, Function kernel)
             kernel(startIndex, chunkSize);
         }
         else {
-            workers.push_back(std::async(std::launch::async, [&kernel, startIndex, chunkSize, context=ExecutionContext::current(), task=Task::current()]() {
+            workers.push_back(std::async(std::launch::async, [&kernel, startIndex, chunkSize, context=ExecutionContext::current(), task=this_task::get()]() {
                 Task::Scope taskScope(std::move(task));
                 ExecutionContext::Scope execScope(std::move(context));
                 kernel(startIndex, chunkSize);
@@ -289,9 +289,9 @@ void parallelForChunks(size_t loopCount, Function kernel)
 template<typename ResultObject, class Function>
 std::vector<ResultObject> parallelForCollect(size_t loopCount, Function&& kernel, size_t progressChunkSize = 1024)
 {
-    OVITO_ASSERT(Task::current());
-    OVITO_ASSERT(Task::current()->isProgressingTask());
-    ProgressingTask* task = static_cast<ProgressingTask*>(Task::current());
+    OVITO_ASSERT(this_task::get());
+    OVITO_ASSERT(this_task::get()->isProgressingTask());
+    ProgressingTask* task = static_cast<ProgressingTask*>(this_task::get());
     task->setProgressMaximum(loopCount / progressChunkSize);
 
 #ifndef OVITO_DISABLE_THREADING

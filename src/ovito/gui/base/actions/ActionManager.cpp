@@ -29,6 +29,7 @@
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/app/UserInterface.h>
+#include <ovito/core/app/Application.h>
 #include <ovito/core/app/undo/UndoStack.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include "ActionManager.h"
@@ -345,7 +346,7 @@ void ActionManager::openHelpTopic(const QString& helpTopicId)
 {
     // Determine the filesystem path where OVITO's documentation files are installed.
 #ifndef Q_OS_WASM
-    QDir prefixDir(QCoreApplication::applicationDirPath());
+    QDir prefixDir(Application::instance()->applicationDirPath());
     QDir helpDir = QDir(prefixDir.absolutePath() + QChar('/') + QStringLiteral(OVITO_DOCUMENTATION_PATH));
     QUrl url;
 #else

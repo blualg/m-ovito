@@ -148,7 +148,8 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
         if(!tempContext.create())
             throw RendererException(tr("Failed to create an OpenGL context. Please check your graphics driver installation to make sure your system supports OpenGL applications. "
                                 "Sometimes this may only be a temporary error after an automatic operating system update was installed in the background. In this case, simply rebooting your computer can help."));
-        if(Application::instance()->headlessMode() == false) {
+
+        if(qobject_cast<QGuiApplication*>(QCoreApplication::instance())) {
             // Create a hidden, temporary window to make the GL context current.
             window.reset(new QWindow());
             window->setSurfaceType(QSurface::OpenGLSurface);
@@ -190,7 +191,8 @@ void OpenGLSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const Vie
     SceneRenderer::beginFrame(time, scene, params, vp, openGLViewportRect, frameBuffer);
     OVITO_ASSERT(isPickingPass() != isImagePass());
 
-    if(Application::instance()->headlessMode()) {
+    // OpenGL rendering requires a Qt GUI application.
+    if(!qobject_cast<QGuiApplication*>(QCoreApplication::instance())) {
         throw RendererException(tr(
                 "OVITO's OpenGLRenderer cannot be used in headless mode, that is if the application is running without access to a graphics environment. "
                 "Please use a different rendering backend or see https://docs.ovito.org/python/modules/ovito_vis.html#ovito.vis.OpenGLRenderer for instructions "
@@ -344,7 +346,7 @@ void OpenGLSceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewpo
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool OpenGLSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOperation& operation)
+bool OpenGLSceneRenderer::renderFrame(const QRect& viewportRect)
 {
     makeContextCurrent();
     OVITO_REPORT_OPENGL_ERRORS(this);
@@ -363,19 +365,19 @@ bool OpenGLSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOpera
         renderTransparentGeometry();
     }
 
-    return !operation.isCanceled();
+    return !this_task::isCanceled();
 }
 
 /******************************************************************************
 * Renders the overlays/underlays of the viewport into the framebuffer.
 ******************************************************************************/
-bool OpenGLSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
+bool OpenGLSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect)
 {
     // Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
     QRect openGLViewportRect(physicalViewportRect.x() * antialiasingLevel(), physicalViewportRect.y() * antialiasingLevel(), physicalViewportRect.width() * antialiasingLevel(), physicalViewportRect.height() * antialiasingLevel());
 
     // Delegate rendering work to base class.
-    return SceneRenderer::renderOverlays(underlays, logicalViewportRect, openGLViewportRect, operation);
+    return SceneRenderer::renderOverlays(underlays, logicalViewportRect, openGLViewportRect);
 }
 
 /******************************************************************************

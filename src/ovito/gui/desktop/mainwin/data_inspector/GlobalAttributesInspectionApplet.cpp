@@ -162,7 +162,7 @@ void GlobalAttributesInspectionApplet::exportToFile()
         ProgressDialog progressDialog(&mainWindow(), tr("File export"));
 
         // Let the exporter do its job.
-        exporter->doExport(MainThreadOperation(true));
+        exporter->doExport();
     });
 }
 

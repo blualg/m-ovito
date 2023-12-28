@@ -92,7 +92,7 @@ QList<QDir> PluginManager::pluginDirs()
 {
     // Resolve path to Ovito's plugin directory, which is specified at compile time relative to the executable path.
     // See ovito/core/CMakeLists.txt for details.
-    QDir prefixDir(QCoreApplication::applicationDirPath());
+    QDir prefixDir(Application::instance()->applicationDirPath());
     QString pluginsPath = prefixDir.absolutePath() + QChar('/') + QStringLiteral(OVITO_PLUGINS_RELATIVE_PATH);
     return { QDir(pluginsPath) };
 }
@@ -105,7 +105,7 @@ QString PluginManager::pythonDir()
 #ifndef OVITO_BUILD_CONDA
     // Resolve path to Ovito's Python layer files, which is specified at compile time relative to the executable path.
     // See ovito/core/CMakeLists.txt for details.
-    QDir prefixDir(QCoreApplication::applicationDirPath());
+    QDir prefixDir(Application::instance()->applicationDirPath());
     return QDir(prefixDir.filePath(QStringLiteral(OVITO_PYTHON_LAYER_PATH))).absolutePath();
 #else
     // Resolve path to Ovito's Python layer files, which is specified at compile time relative to the Conda prefix path.

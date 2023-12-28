@@ -32,7 +32,7 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(LAMMPSDumpExporter);
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.
 ******************************************************************************/
-bool LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
+void LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath)
 {
     // Get particles.
     const Particles* particles = state.expectObject<Particles>();
@@ -157,15 +157,13 @@ bool LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNum
     }
     textStream() << '\n';
 
-    operation.setProgressMaximum(atomsCount);
+    this_task::setProgressMaximum(atomsCount);
     for(size_t i = 0; i < atomsCount; i++) {
         columnWriter.writeElement(i, textStream());
 
-        if(!operation.setProgressValueIntermittent(i))
-            return false;
+        if(!this_task::setProgressValueIntermittent(i))
+            return;
     }
-
-    return !operation.isCanceled();
 }
 
 }   // End of namespace

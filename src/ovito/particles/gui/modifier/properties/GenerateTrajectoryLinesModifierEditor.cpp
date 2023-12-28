@@ -162,7 +162,7 @@ void GenerateTrajectoryLinesModifierEditor::onRegenerateTrajectory()
 
     performTransaction(tr("Generate trajectory"), [&]() {
         ProgressDialog progressDialog(container(), tr("Generating trajectory lines"));
-        modifier->generateTrajectories(currentAnimationTime(), MainThreadOperation(true));
+        modifier->generateTrajectories(currentAnimationTime());
     });
 }
 

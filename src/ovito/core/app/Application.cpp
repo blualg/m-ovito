@@ -29,6 +29,10 @@
 #ifndef Q_OS_WASM
     #include <QNetworkProxyFactory>
 #endif
+#ifdef Q_OS_MACOS
+    #include <CoreFoundation/CFBundle.h>
+#endif
+
 
 // Called from Application::initialize() to register the embedded Qt resource files
 // when running a statically linked executable. The Qt documentation says this
@@ -41,6 +45,56 @@ static void registerQtResources()
 }
 
 namespace Ovito {
+
+/// Determines the path of the OVITO main executable.
+static QString ovitoAppFileName()
+{
+#if defined(Q_OS_WIN)
+    QVarLengthArray<wchar_t, MAX_PATH + 1> space;
+    DWORD v;
+    size_t size = 1;
+    do {
+        size += MAX_PATH;
+        space.resize(int(size));
+        v = GetModuleFileName(NULL, space.data(), DWORD(space.size()));
+    }
+    while(v >= size);
+    return QString::fromWCharArray(space.data(), v);
+#elif defined(Q_OS_MACOS)
+    static QString appFileName;
+    if (appFileName.isEmpty()) {
+        CFBundleRef mainBundle = CFBundleGetMainBundle();
+        CFURLRef executableURL = CFBundleCopyExecutableURL(mainBundle);
+        if(executableURL) {
+            CFStringRef cfStr = CFURLCopyFileSystemPath(executableURL, kCFURLPOSIXPathStyle);
+            appFileName = QString::fromCFString(cfStr);
+            CFRelease(cfStr);
+            CFRelease(executableURL);
+        }
+    }
+    return appFileName;
+#elif defined(Q_OS_LINUX)
+    const char *path = "/proc/self/exe";
+    QByteArray buf(256, Qt::Uninitialized);
+    ssize_t len = ::readlink(path, buf.data(), buf.size());
+    while(len == buf.size()) {
+        // readlink(2) will fill our buffer and not necessarily terminate with NUL;
+        if(buf.size() >= 4096)
+            return {};
+
+        // double the size and try again
+        buf.resize(buf.size() * 2);
+        len = ::readlink(path, buf.data(), buf.size());
+    }
+    if(len == -1)
+        return {};
+
+    buf.resize(len);
+    return QFile::decodeName(buf);
+#else
+    return {};
+#endif
+}
 
 /// The one and only instance of this class.
 Application* Application::_instance = nullptr;
@@ -171,6 +225,10 @@ QString Application::applicationName()
 ******************************************************************************/
 bool Application::initialize(int& argc, char** argv)
 {
+    // Store command line arguments for later use.
+    _argc = &argc;
+    _argv = argv;
+
     // Install custom Qt error message handler to catch fatal errors in debug mode
     // or redirect log output to file instead of the console if requested by the user.
     if(qEnvironmentVariableIsSet("OVITO_LOG_FILE")) {
@@ -263,22 +321,43 @@ bool Application::initialize(int& argc, char** argv)
 }
 
 /******************************************************************************
-* Is called by UserInterface::shutdown() when application is shutting down.
+* Create the global Qt application object.
 ******************************************************************************/
-void Application::signalAboutToQuit()
+void Application::createQtApplication(bool supportGui)
 {
-    Q_EMIT aboutToQuit();
-}
+    // This must only be used in the main thread.
+    OVITO_ASSERT(ExecutionContext::isMainThread());
 
-/******************************************************************************
-* This method is called from UserInterface::submitWork() whenever pending work
-* needs to be performed in the main thread.
-******************************************************************************/
-void Application::pendingWorkArrived()
-{
-    // Execute pending work in the main thread.
-    if(QCoreApplication::instance() != nullptr)
-        QMetaObject::invokeMethod(this, "executePendingWork", Qt::QueuedConnection);
+    // Do nothing if a global Qt application object already exists. Just check that it is of the right type.
+    if(QCoreApplication::instance()) {
+        if(supportGui) {
+            QGuiApplication* guiApp = qobject_cast<QGuiApplication*>(QCoreApplication::instance());
+            if(!guiApp || guiApp->platformName() == QStringLiteral("minimal")) {
+                throw Exception(tr("Cannot initialize a Qt GUI application: A non-GUI Qt application object already exists. To solve this issue, "
+                    "please create a QApplication or QGuiApplication object before importing the ovito module, or invoke the function requiring a GUI environment "
+                    "ealier in the script."));
+            }
+        }
+        return;
+    }
+
+    // Let the user override the application type with the OVITO_GUI_MODE environment variable.
+    if(qEnvironmentVariableIsSet("OVITO_GUI_MODE")) {
+        supportGui = (qgetenv("OVITO_GUI_MODE") != "0");
+    }
+
+    // Let the derived class create the right QCoreApplication object.
+    QCoreApplication* qtApp = createQtApplicationImpl(supportGui, *_argc, _argv);
+
+    // Make the Qt application a child of OVITO's Application object to destroy it on shutdown.
+    if(qtApp->parent())
+        qtApp->setParent(this);
+
+    // When QCoreApplication begins to shutdown, also shutdown the OVITO application object.
+    QObject::connect(qtApp, &QCoreApplication::aboutToQuit, this, &Application::shutdown);
+
+    // Restore default "C" locale, which, in the meantime, may have been changed by QCoreApplication.
+    std::setlocale(LC_NUMERIC, "C");
 }
 
 #ifndef Q_OS_WASM
@@ -296,5 +375,22 @@ QNetworkAccessManager* Application::networkAccessManager()
     return _networkAccessManager;
 }
 #endif
+
+/******************************************************************************
+* Similar to QCoreApplication::applicationDirPath() but doesn't require a Qt application.
+******************************************************************************/
+QString Application::applicationDirPath() const
+{
+    return qApp ? QCoreApplication::applicationDirPath() : QFileInfo(ovitoAppFileName()).path();
+}
+
+/******************************************************************************
+* Similar to QCoreApplication::applicationFilePath() but doesn't require a Qt application.
+******************************************************************************/
+QString Application::applicationFilePath() const
+{
+    return qApp ? QCoreApplication::applicationFilePath() : ovitoAppFileName();
+}
+
 
 }   // End of namespace

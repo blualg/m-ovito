@@ -54,7 +54,8 @@ int main(int argc, char** argv)
             // Application::initialize() may return successfully but without creating a Qt application object.
             // This happens, for example, when the --version command line parameter has been specified by the user.
             // In this case we quit immediately without entering the event loop.
-            result = 0;
+            app->processUIEvents();
+            result = app->isShuttingDown() ? 1 : 0;
         }
         else {
             // Enter event loop.

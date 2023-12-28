@@ -627,7 +627,7 @@ void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset,
         UndoSuspender noUndo;
 
         // This is the async operation object used when calling rendering functions in the following.
-        MainThreadOperation renderOperation(ExecutionContext::Type::Interactive, userInterface, false);
+        MainThreadOperation renderOperation(ExecutionContext::Type::Interactive, userInterface);
 
         AnimationTime time = scene()->animationSettings()->currentTime();
 
@@ -668,7 +668,7 @@ void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset,
                                 renderFrameBox.width() * vpRect.width() / 2,
                                 renderFrameBox.height() * vpRect.height() / 2);
                         renderer->setProjParams(computeProjectionParameters(time, (FloatType)renderViewportRect.height() / renderViewportRect.width(), renderer->waitForLongOperationsEnabled(), boundingBox));
-                        renderer->renderOverlays(true, renderViewportRect, renderFrameRect, renderOperation);
+                        renderer->renderOverlays(true, renderViewportRect, renderFrameRect);
                     }
                 }
             }
@@ -678,7 +678,7 @@ void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset,
         renderer->setProjParams(_projParams);
 
         // Call the viewport renderer to render the scene objects.
-        renderer->renderFrame(vpRect, renderOperation);
+        renderer->renderFrame(vpRect);
 
         // Render viewport "overlays".
         if(renderPreviewMode() && renderer->isImagePass()) {
@@ -693,7 +693,7 @@ void Viewport::renderInteractive(UserInterface& userInterface, DataSet* dataset,
                                 renderFrameBox.width() * vpRect.width() / 2,
                                 renderFrameBox.height() * vpRect.height() / 2);
                         renderer->setProjParams(computeProjectionParameters(time, (FloatType)renderViewportRect.height() / renderViewportRect.width(), renderer->waitForLongOperationsEnabled(), boundingBox));
-                        renderer->renderOverlays(false, renderViewportRect, renderFrameRect, renderOperation);
+                        renderer->renderOverlays(false, renderViewportRect, renderFrameRect);
                     }
                 }
             }

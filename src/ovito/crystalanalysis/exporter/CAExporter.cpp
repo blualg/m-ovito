@@ -64,12 +64,12 @@ void CAExporter::closeOutputFile(bool exportCompleted)
 /******************************************************************************
  * Exports a single animation frame to the current output file.
  *****************************************************************************/
-bool CAExporter::exportFrame(int frameNumber, const QString& filePath, MainThreadOperation& operation)
+void CAExporter::exportFrame(int frameNumber, const QString& filePath)
 {
     // Evaluate data pipeline.
     const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber);
-    if(operation.isCanceled())
-        return false;
+    if(this_task::isCanceled())
+        return;
 
     // Get simulation cell info.
     const SimulationCell* simulationCell = state.expectObject<SimulationCell>();
@@ -249,8 +249,6 @@ bool CAExporter::exportFrame(int frameNumber, const QString& filePath, MainThrea
             textStream() << "\n";
         }
     }
-
-    return true;
 }
 
 }   // End of namespace

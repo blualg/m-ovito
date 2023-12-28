@@ -56,7 +56,7 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
 {
     OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
     OVITO_ASSERT(ExecutionContext::current().isValid());
-    OVITO_ASSERT(Task::current());
+    OVITO_ASSERT(this_task::get());
 
     PipelineNode* pipelineNode = dynamic_object_cast<PipelineNode>(ownerObject());
 

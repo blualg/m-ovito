@@ -53,6 +53,15 @@ void ProgressingTask::setProgressMaximum(qlonglong maximum, bool autoReset)
 ******************************************************************************/
 bool ProgressingTask::setProgressValue(qlonglong value)
 {
+    // When in the main thread, temporarily yield control back to the event loop to process UI events and
+    // keep the UI responsive during long-running tasks.
+    if(ExecutionContext::isMainThread()) {
+        const ExecutionContext& context = ExecutionContext::current();
+        if(context.isValid() && context.ui().processUIEvents()) {
+            cancel();
+        }
+    }
+
     const QMutexLocker locker(&taskMutex());
 
     auto state = _state.load(std::memory_order_relaxed);
@@ -77,6 +86,15 @@ bool ProgressingTask::setProgressValue(qlonglong value)
 ******************************************************************************/
 bool ProgressingTask::incrementProgressValue(qlonglong increment)
 {
+    // When in the main thread, temporarily yield control back to the event loop to process UI events and
+    // keep the UI responsive during long-running tasks.
+    if(ExecutionContext::isMainThread()) {
+        const ExecutionContext& context = ExecutionContext::current();
+        if(context.isValid() && context.ui().processUIEvents()) {
+            cancel();
+        }
+    }
+
     const QMutexLocker locker(&taskMutex());
 
     auto state = _state.load(std::memory_order_relaxed);
@@ -116,12 +134,25 @@ bool ProgressingTask::setProgressValueIntermittent(qlonglong progressValue, int 
 ******************************************************************************/
 void ProgressingTask::setProgressText(const QString& progressText)
 {
+    // When in the main thread, temporarily yield control back to the event loop to process UI events and
+    // keep the UI responsive during long-running tasks.
+    if(ExecutionContext::isMainThread()) {
+        const ExecutionContext& context = ExecutionContext::current();
+        if(context.isValid() && context.ui().processUIEvents()) {
+            cancel();
+        }
+    }
+
     const QMutexLocker locker(&taskMutex());
 
-    if(auto state = _state.load(std::memory_order_relaxed); state & (Canceled | Finished))
+    auto state = _state.load(std::memory_order_relaxed);
+    if(state & (Canceled | Finished))
         return;
 
     _progressText = progressText;
+
+    if((state & LoggingEnabled) && !progressText.isEmpty())
+        qInfo().noquote() << "OVITO:" << progressText;
 
     for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
         cb->callTextChanged();

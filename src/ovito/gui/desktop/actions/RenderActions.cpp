@@ -58,14 +58,11 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
         if(!viewportConfig)
             throw Exception(tr("Cannot render without an active ViewportConfiguration object."));
 
-        // Create a task object that represents the rendering operation.
-        MainThreadOperation renderingOperation(true);
-
         // Allocate and resize frame buffer and display the frame buffer window.
-        std::shared_ptr<FrameBuffer> frameBuffer = mainWindow().createAndShowFrameBuffer(renderSettings->outputImageWidth(), renderSettings->outputImageHeight(), true);
+        std::shared_ptr<FrameBuffer> frameBuffer = mainWindow().createAndShowFrameBuffer(renderSettings->outputImageWidth(), renderSettings->outputImageHeight());
 
         // Call high-level rendering function, which will take care of the rest.
-        renderSettings->renderScene(*viewportConfig, *frameBuffer, renderingOperation);
+        renderSettings->render(*viewportConfig, *frameBuffer);
     });
 }
 

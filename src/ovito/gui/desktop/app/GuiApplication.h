@@ -45,9 +45,6 @@ public:
     /// Constructor.
     GuiApplication();
 
-    /// Create the global instance of the right QCoreApplication derived class.
-    virtual void createQtApplication(int& argc, char** argv) override;
-
     /// Handler function for exceptions.
     virtual void reportError(const Exception& exception, bool blocking = false) override;
 
@@ -57,10 +54,13 @@ public:
     /// Initializes an abstract user interface (e.g. a MainWindow).
     static void initializeUserInterface(UserInterface& userInterface, const QStringList& arguments);
 
-    /// Returns whether app's UI should automatically follow the system color scheme. 
+    /// Returns whether app's UI should automatically follow the system color scheme.
     static bool automaticallyEnableDarkMode();
 
 protected:
+
+    /// Create the global instance of the right QCoreApplication derived class.
+    virtual QCoreApplication* createQtApplicationImpl(bool supportGui, int& argc, char** argv) override;
 
     /// Defines the program's command line parameters.
     virtual void registerCommandLineParameters(QCommandLineParser& parser) override;

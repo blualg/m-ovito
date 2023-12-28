@@ -131,7 +131,7 @@ void RenderSettings::setImageFilename(const QString& filename)
 * This is the high-level rendering function, which invokes the renderer to
 * generate one or more output images of the scene.
 ******************************************************************************/
-bool RenderSettings::renderScene(const ViewportConfiguration& viewportConfiguration, FrameBuffer& frameBuffer, MainThreadOperation& operation)
+void RenderSettings::render(const ViewportConfiguration& viewportConfiguration, FrameBuffer& frameBuffer)
 {
     std::vector<std::pair<Viewport*, QRectF>> viewportLayout;
     if(renderAllViewports()) {
@@ -156,14 +156,14 @@ bool RenderSettings::renderScene(const ViewportConfiguration& viewportConfigurat
             animationSettings = vp->scene()->animationSettings();
     }
 
-    return renderScene(viewportLayout, animationSettings, frameBuffer, operation);
+    render(viewportLayout, animationSettings, frameBuffer);
 }
 
 /******************************************************************************
 * This is the high-level rendering function, which invokes the renderer to
 * generate one or more output images of the scene.
 ******************************************************************************/
-bool RenderSettings::renderScene(const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, AnimationSettings* animationSettings, FrameBuffer& frameBuffer, MainThreadOperation& operation)
+void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, AnimationSettings* animationSettings, FrameBuffer& frameBuffer)
 {
     // Get the selected scene renderer.
     // Note: Using ref-counted pointer here, because the renderer may potentially be deleted before the current function returns.
@@ -175,9 +175,7 @@ bool RenderSettings::renderScene(const std::vector<std::pair<Viewport*, QRectF>>
     // is shutting down while we are still in this function.
     OORef<RenderSettings> self(this);
 
-    bool notCanceled = true;
     try {
-
         // Resize output frame buffer.
         if(frameBuffer.size() != QSize(outputImageWidth(), outputImageHeight())) {
             frameBuffer.setSize(QSize(outputImageWidth(), outputImageHeight()));
@@ -198,7 +196,7 @@ bool RenderSettings::renderScene(const std::vector<std::pair<Viewport*, QRectF>>
             throw Exception(tr("There is no valid viewport to be rendered."));
 
         // Initialize the renderer.
-        operation.setProgressText(tr("Initializing renderer"));
+        this_task::setProgressText(tr("Initializing renderer"));
         if(renderer->startRender(this, largestViewportRectSize, Application::instance()->visCache())) {
 
             VideoEncoder* videoEncoder = nullptr;
@@ -222,14 +220,14 @@ bool RenderSettings::renderScene(const std::vector<std::pair<Viewport*, QRectF>>
             if(renderingRangeType() == RenderSettings::CURRENT_FRAME) {
                 // Render a single frame.
                 int frameNumber = animationSettings ? animationSettings->currentFrame() : 0;
-                operation.setProgressText(tr("Rendering frame %1").arg(frameNumber));
-                notCanceled = renderFrame(frameNumber, *renderer, frameBuffer, viewportLayout, videoEncoder, operation);
+                this_task::setProgressText(tr("Rendering frame %1").arg(frameNumber));
+                renderFrame(frameNumber, *renderer, frameBuffer, viewportLayout, videoEncoder);
             }
             else if(renderingRangeType() == RenderSettings::CUSTOM_FRAME) {
                 // Render a specific frame.
                 int frameNumber = customFrame();
-                operation.setProgressText(tr("Rendering frame %1").arg(frameNumber));
-                notCanceled = renderFrame(frameNumber, *renderer, frameBuffer, viewportLayout, videoEncoder, operation);
+                this_task::setProgressText(tr("Rendering frame %1").arg(frameNumber));
+                renderFrame(frameNumber, *renderer, frameBuffer, viewportLayout, videoEncoder);
             }
             else if(renderingRangeType() == RenderSettings::ANIMATION_INTERVAL || renderingRangeType() == RenderSettings::CUSTOM_INTERVAL) {
                 // Render an animation interval.
@@ -245,18 +243,20 @@ bool RenderSettings::renderScene(const std::vector<std::pair<Viewport*, QRectF>>
                 numberOfFrames = (numberOfFrames + everyNthFrame() - 1) / everyNthFrame();
                 if(numberOfFrames < 1)
                     throw Exception(tr("Invalid rendering range: frame %1 to %2").arg(customRangeStart()).arg(customRangeEnd()));
-                operation.setProgressMaximum(numberOfFrames);
+                this_task::setProgressMaximum(numberOfFrames);
 
-                // Render frames, one by one.
-                for(int frameIndex = 0; frameIndex < numberOfFrames && notCanceled && !operation.isCanceled(); frameIndex++) {
+                // Render frames one by one.
+                for(int frameIndex = 0; frameIndex < numberOfFrames && !this_task::isCanceled(); frameIndex++) {
                     int frameNumber = firstFrameNumber + frameIndex * everyNthFrame() + fileNumberBase();
 
-                    operation.setProgressValue(frameIndex);
-                    operation.setProgressText(tr("Rendering animation (frame %1 of %2)").arg(frameIndex+1).arg(numberOfFrames));
+                    this_task::setProgressValue(frameIndex);
+                    this_task::setProgressText(tr("Rendering animation (frame %1 of %2)").arg(frameIndex+1).arg(numberOfFrames));
 
-                    MainThreadOperation frameOperation(true);
-                    notCanceled = renderFrame(frameNumber, *renderer, frameBuffer, viewportLayout, videoEncoder, frameOperation);
-                    if(!notCanceled) break;
+                    // Create a sub-task to display a second progress bar.
+                    MainThreadOperation frameTask;
+
+                    // Render the animation frame.
+                    renderFrame(frameNumber, *renderer, frameBuffer, viewportLayout, videoEncoder);
 
                     // Periodically free visual element resources during animation rendering to avoid clogging the memory.
                     Application::instance()->visCache().discardUnusedObjects();
@@ -277,20 +277,18 @@ bool RenderSettings::renderScene(const std::vector<std::pair<Viewport*, QRectF>>
         if(!ExecutionContext::isInteractive())
             Application::instance()->visCache().discardUnusedObjects();
     }
-    catch(Exception&) {
+    catch(...) {
         // Shutdown renderer.
         renderer->endRender();
         throw;
     }
-
-    return notCanceled;
 }
 
 /******************************************************************************
 * Renders a single frame and saves the output file.
 ******************************************************************************/
-bool RenderSettings::renderFrame(int frameNumber, SceneRenderer& renderer,
-        FrameBuffer& frameBuffer, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, VideoEncoder* videoEncoder, MainThreadOperation& operation)
+void RenderSettings::renderFrame(int frameNumber, SceneRenderer& renderer,
+        FrameBuffer& frameBuffer, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, VideoEncoder* videoEncoder)
 {
     // Determine output filename for this frame.
     QString outputFilename;
@@ -306,7 +304,7 @@ bool RenderSettings::renderFrame(int frameNumber, SceneRenderer& renderer,
 
             // Check for existing image file and skip.
             if(skipExistingImages() && QFileInfo(outputFilename).isFile())
-                return true;
+                return;
         }
     }
 
@@ -315,7 +313,7 @@ bool RenderSettings::renderFrame(int frameNumber, SceneRenderer& renderer,
     std::transform(viewportLayout.cbegin(), viewportLayout.cend(), progressWeights.begin(), [&](const auto& r) {
         return r.second.width() * r.second.height() * frameBuffer.width() * frameBuffer.height();
     });
-    operation.beginProgressSubStepsWithWeights(std::move(progressWeights));
+    this_task::beginProgressSubStepsWithWeights(std::move(progressWeights));
 
     AnimationTime renderTime = AnimationTime::fromFrame(frameNumber);
 
@@ -335,8 +333,8 @@ bool RenderSettings::renderFrame(int frameNumber, SceneRenderer& renderer,
 
             // Request scene bounding box.
             Box3 boundingBox = renderer.computeSceneBoundingBox(renderTime, viewport->scene(), projParams, nullptr);
-            if(operation.isCanceled())
-                return false;
+            if(this_task::isCanceled())
+                return;
 
             // Determine final view projection.
             projParams = viewport->computeProjectionParameters(renderTime, viewportAspectRatio, renderer.waitForLongOperationsEnabled(), boundingBox);
@@ -350,21 +348,21 @@ bool RenderSettings::renderFrame(int frameNumber, SceneRenderer& renderer,
                 frameBuffer.clear(clearColor, destinationRect, true);
 
                 // Render viewport "underlays".
-                if(!renderer.renderOverlays(true, destinationRect, destinationRect, operation)) {
+                if(!renderer.renderOverlays(true, destinationRect, destinationRect)) {
                     renderer.endFrame(false, destinationRect);
-                    return false;
+                    return;
                 }
 
                 // Let the scene renderer do its work.
-                if(!renderer.renderFrame(destinationRect, operation)) {
+                if(!renderer.renderFrame(destinationRect)) {
                     renderer.endFrame(false, destinationRect);
-                    return false;
+                    return;
                 }
 
                 // Render viewport "overlays" on top.
-                if(!renderer.renderOverlays(false, destinationRect, destinationRect, operation)) {
+                if(!renderer.renderOverlays(false, destinationRect, destinationRect)) {
                     renderer.endFrame(false, destinationRect);
-                    return false;
+                    return;
                 }
 
                 renderer.endFrame(true, destinationRect);
@@ -375,9 +373,9 @@ bool RenderSettings::renderFrame(int frameNumber, SceneRenderer& renderer,
             }
         }
 
-        operation.nextProgressSubStep();
+        this_task::nextProgressSubStep();
     }
-    operation.endProgressSubSteps();
+    this_task::endProgressSubSteps();
 
     // Save rendered image to disk.
     if(saveToFile()) {
@@ -392,8 +390,6 @@ bool RenderSettings::renderFrame(int frameNumber, SceneRenderer& renderer,
 #endif
         }
     }
-
-    return !operation.isCanceled();
 }
 
 }   // End of namespace

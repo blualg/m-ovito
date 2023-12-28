@@ -32,22 +32,11 @@ QRecursiveMutex NetCDFExclusiveAccess::_netcdfMutex;
 
 /******************************************************************************
 * Constructor, which blocks until exclusive access to the NetCDF functions is
-* available.
+* available or the current task has been canceled.
 ******************************************************************************/
 NetCDFExclusiveAccess::NetCDFExclusiveAccess()
 {
-    _netcdfMutex.lock();
-    _isLocked = true;
-}
-
-/******************************************************************************
-* Constructor, which blocks until exclusive access to the NetCDF functions is
-* available or the given operation has been canceled.
-******************************************************************************/
-NetCDFExclusiveAccess::NetCDFExclusiveAccess(Task* task)
-{
-    OVITO_ASSERT(task);
-    while(!task->isCanceled()) {
+    while(!this_task::isCanceled()) {
         if(_netcdfMutex.tryLock(10)) {
             _isLocked = true;
             break;

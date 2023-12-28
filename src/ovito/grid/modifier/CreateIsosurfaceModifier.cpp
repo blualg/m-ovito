@@ -251,7 +251,7 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
 
     // Invoke marching cubes algorithm.
     MarchingCubes mc(mesh, _gridShape[0], _gridShape[1], _gridShape[2], false, std::move(getFieldValue));
-    if(!mc.generateIsosurface(_isolevel, *this))
+    if(!mc.generateIsosurface(_isolevel))
         return;
 
     // Copy field values from voxel grid to surface mesh vertices.
@@ -332,7 +332,7 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::applyResults(const Modif
 ******************************************************************************/
 bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshBuilder& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, const SimulationCell& gridDomain, VoxelGrid::GridDimensions gridShape, VoxelGrid::GridType gridType)
 {
-    OVITO_ASSERT(Task::current() && Task::current()->isProgressingTask());
+    OVITO_ASSERT(this_task::get() && this_task::get()->isProgressingTask());
 
     // Create destination properties for transferring voxel values to the surface vertices.
     std::vector<std::pair<RawBufferReadAccess, RawBufferAccess<access_mode::discard_write>>> propertyMapping;
@@ -415,7 +415,7 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshBuild
             }
         });
     }
-    return !Task::current()->isCanceled();
+    return !this_task::get()->isCanceled();
 }
 
 }   // End of namespace

@@ -52,7 +52,8 @@ public:
         Finished       = (1<<1),
         Canceled       = (1<<2),
         IsProgressing  = (1<<3), // Indicates that the task is derived from ProgressingTask and can report its progress
-        IsAsynchronous = (1<<4)  // Indicates that the task is derived from AsynchronousTaskBase and will run in a worker thread.
+        IsAsynchronous = (1<<4), // Indicates that the task is derived from AsynchronousTaskBase and will run in a worker thread.
+        LoggingEnabled = (1<<5)  // Indicates that the task writes status messages to the terminal.
     };
 
     /// Constructor.
@@ -68,9 +69,6 @@ public:
     /// Destructor.
     ~Task();
 #endif
-
-    /// Returns the task object that is the active one in the current thread.
-    static Task*& current() noexcept;
 
     /// RAII helper class that can be used to temporarily set the active task.
     class Scope;
@@ -90,6 +88,9 @@ public:
     /// Indicates whether this task's class is derived from the AsynchronousTaskBase class.
     bool isAsynchronousTask() const { return (_state.load(std::memory_order_relaxed) & IsAsynchronous); }
 
+    /// Enables logging of status messages for this task.
+    void setLoggingEnabled() { _state.fetch_or(LoggingEnabled, std::memory_order_relaxed); }
+
     /// \brief Requests cancellation of the task.
     void cancel() noexcept;
 
@@ -99,9 +100,6 @@ public:
 
     /// \brief Switches the task into the 'finished' state.
     void setFinished() noexcept;
-
-    /// \brief Puts a finished task back into the started state. This method must be used with extreme care!
-    void restart();
 
     /// \brief Switches the task into the 'exception' state to signal that an exception has occurred.
     ///
@@ -203,13 +201,6 @@ public:
     /// \brief Returns a copy of the internal exception store, which contains an exception object in case the task has failed.
     std::exception_ptr copyExceptionStore() const { return std::exception_ptr{exceptionStore()}; }
 
-    /// \brief Suspends execution until the given task has reached the 'finished' state.
-    ///        If the awaited task gets canceled while waiting, the task waiting for it gets canceled too.
-    /// \param task The task to wait for.
-    /// \param throwOnError If the awaited task finished with an error state, throw it as an exception.
-    /// \return false if either \a task or this operation have been canceled.
-    [[nodiscard]] static bool waitFor(detail::TaskReference awaitedTask, bool throwOnError = true);
-
 protected:
 
     /// Assigns a tuple of values to the internal results storage of the task.
@@ -305,6 +296,13 @@ protected:
     /// Returns the mutex that is used to manage concurrent access to this task.
     QMutex& taskMutex() const { return _mutex; }
 
+    /// \brief Suspends execution until the given task has reached the 'finished' state.
+    ///        If the awaited task gets canceled while waiting, the task waiting for it gets canceled too.
+    /// \param task The task to wait for.
+    /// \param throwOnError If the awaited task finished with an error state, throw it as an exception.
+    /// \return false if either \a task or this operation have been canceled.
+    [[nodiscard]] static bool waitFor(detail::TaskReference awaitedTask, bool throwOnError);
+
     /// The current state this task is in.
     std::atomic_int _state;
 
@@ -347,6 +345,51 @@ protected:
     template<typename... R2> friend class Promise;
 };
 
+
+namespace this_task
+{
+
+/// Returns the task object that is currently active in the current thread.
+OVITO_CORE_EXPORT Task*& get() noexcept;
+
+/// Changes the description string of the active task.
+OVITO_CORE_EXPORT void setProgressText(const QString& progressText) noexcept;
+
+/// Sets the maximum value of the current task.
+OVITO_CORE_EXPORT void setProgressMaximum(qlonglong maximum, bool autoReset = true) noexcept;
+
+/// Sets the progress value of the current task.
+OVITO_CORE_EXPORT bool setProgressValue(qlonglong progressValue) noexcept;
+
+/// Increments the progress value of the task.
+OVITO_CORE_EXPORT bool incrementProgressValue(qlonglong increment = 1) noexcept;
+
+/// Sets the current progress value of the task, generating update events only occasionally.
+OVITO_CORE_EXPORT bool setProgressValueIntermittent(qlonglong progressValue, int updateEvery = 2000) noexcept;
+
+/// Returns whether the current task has been canceled.
+OVITO_CORE_EXPORT inline bool isCanceled() noexcept {
+    OVITO_ASSERT(get() != nullptr);
+    return get()->isCanceled();
+}
+
+/// Starts a sequence of sub-steps in the progress range of this task.
+OVITO_CORE_EXPORT void beginProgressSubStepsWithWeights(std::vector<int> weights) noexcept;
+
+/// Convenience version of the function above, which creates *N* substeps, all with the same weight.
+OVITO_CORE_EXPORT inline void beginProgressSubSteps(int nsteps) noexcept {
+    beginProgressSubStepsWithWeights(std::vector<int>(nsteps, 1));
+}
+
+/// Completes the current sub-step in the sequence started with beginProgressSubSteps() or
+/// beginProgressSubStepsWithWeights() and moves to the next one.
+OVITO_CORE_EXPORT void nextProgressSubStep() noexcept;
+
+/// Completes a sub-step sequence started with beginProgressSubSteps() or beginProgressSubStepsWithWeights().
+OVITO_CORE_EXPORT void endProgressSubSteps() noexcept;
+
+}   // End of namespace this_task
+
 /**
  * RAII helper class that allows setting a task to be the active task temporarily.
  */
@@ -355,14 +398,14 @@ class Task::Scope
 public:
 
     /// Constructor taking a raw pointer to a task.
-    explicit Scope(Task* task) noexcept : _previous(std::exchange(current(), std::move(task))) {}
+    explicit Scope(Task* task) noexcept : _previous(std::exchange(this_task::get(), std::move(task))) {}
 
     /// Constructor taking a smart pointer to a task.
     template<class TaskType>
     explicit Scope(const std::shared_ptr<TaskType>& task) noexcept : Scope(task.get()) {}
 
     /// Destructor.
-    ~Scope() noexcept { current() = std::move(_previous); }
+    ~Scope() noexcept { this_task::get() = std::move(_previous); }
 
     /// Not a movable type.
     Scope(Scope&& other) = delete;

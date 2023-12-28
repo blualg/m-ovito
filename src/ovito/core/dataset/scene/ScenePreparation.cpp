@@ -26,6 +26,7 @@
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/app/UserInterface.h>
+#include <ovito/core/app/Application.h>
 #include "ScenePreparation.h"
 
 namespace Ovito {
@@ -40,6 +41,9 @@ DEFINE_REFERENCE_FIELD(ScenePreparation, selectionSet);
 ******************************************************************************/
 ScenePreparation::ScenePreparation(UserInterface& userInterface, Scene* scene) : _userInterface(userInterface)
 {
+    // This facility requires a Qt event loop.
+    Application::instance()->createQtApplication(false);
+
     // Get notified when an ongoing pipeline evaluation task finishes.
     connect(&_pipelineEvaluationWatcher, &TaskWatcher::finished, this, &ScenePreparation::pipelineEvaluationFinished);
 
@@ -130,7 +134,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
     PipelineEvaluationRequest request(scene()->animationSettings());
 
     // Pipeline evaluation must be done in a valid execution context and with an active task object.
-    MainThreadOperation operation(ExecutionContext::Type::Interactive, userInterface(), false);
+    MainThreadOperation operation(ExecutionContext::Type::Interactive, userInterface());
 
     // Go through all pipelines of the scene until we find one
     // that is not completely evaluated yet.

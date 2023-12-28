@@ -33,7 +33,7 @@ namespace Ovito {
 bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, BufferReadAccess<Point3> positions, const SimulationCell* cell, BufferReadAccess<SelectionIntType> selectionProperty)
 {
     OVITO_ASSERT(positions);
-    Task* currentTask = Task::current();
+    Task* currentTask = this_task::get();
     OVITO_ASSERT(currentTask);
 
     _cutoffRadius = cutoffRadius;

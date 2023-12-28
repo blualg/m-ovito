@@ -62,11 +62,7 @@ bool StandardSceneRenderer::startRender(const RenderSettings* settings, const QS
         rendererClass = PluginManager::instance().findClass("VulkanRenderer", "OffscreenVulkanSceneRenderer");
 #endif
 
-    // In headless mode, OpenGL is not available (it requires a windowing system). Try Vulkan instead, which supports headless operation.
-    if(Application::instance()->headlessMode() && !rendererClass)
-        rendererClass = PluginManager::instance().findClass("VulkanRenderer", "OffscreenVulkanSceneRenderer");
-
-    // Fall back to OpenGL renderer as the default implementation.
+    // Use OpenGL renderer as the default implementation.
     if(!rendererClass)
         rendererClass = PluginManager::instance().findClass("OpenGLRenderer", "OffscreenOpenGLSceneRenderer");
 
@@ -98,19 +94,19 @@ void StandardSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const V
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool StandardSceneRenderer::renderFrame(const QRect& viewportRect, MainThreadOperation& operation)
+bool StandardSceneRenderer::renderFrame(const QRect& viewportRect)
 {
     // Delegate rendering work to implementation class.
-    return _internalRenderer->renderFrame(viewportRect, operation);
+    return _internalRenderer->renderFrame(viewportRect);
 }
 
 /******************************************************************************
 * Renders the overlays/underlays of the viewport into the framebuffer.
 ******************************************************************************/
-bool StandardSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, MainThreadOperation& operation)
+bool StandardSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect)
 {
     // Delegate rendering work to implementation class.
-    return _internalRenderer->renderOverlays(underlays, logicalViewportRect, physicalViewportRect, operation);
+    return _internalRenderer->renderOverlays(underlays, logicalViewportRect, physicalViewportRect);
 }
 
 /******************************************************************************

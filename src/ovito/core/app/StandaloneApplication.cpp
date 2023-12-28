@@ -44,6 +44,9 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
     QCoreApplication::setOrganizationDomain("ovito.org");
     QCoreApplication::setApplicationVersion(QStringLiteral(OVITO_VERSION_STRING));
 
+    // OVITO prefers the "C" locale over the system's default locale.
+    QLocale::setDefault(QLocale::c());
+
     // Register command line arguments.
     _cmdLineParser.setApplicationDescription(tr("OVITO - Open Visualization Tool"));
     registerCommandLineParameters(_cmdLineParser);
@@ -96,16 +99,6 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
         return false;
     }
 
-    // Create Qt application object.
-    createQtApplication(argc, argv);
-    OVITO_ASSERT(QCoreApplication::instance());
-
-    // When QCoreApplication begins to shutdown, also shutdown our own systems.
-    QObject::connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this, [this]() { shutdown(); });
-
-    // Reactivate default "C" locale, which, in the meantime, may have been changed by QCoreApplication.
-    std::setlocale(LC_NUMERIC, "C");
-
     try {
         // Load plugins.
         PluginManager::initialize();
@@ -143,15 +136,15 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
         }
 
         // Prepares the application to start running. Creates the global Qt application object.
-        MainThreadOperation startupOperation = startupApplication();
-        if(!startupOperation.isValid()) {
+        MainThreadOperation operation = startupApplication();
+        if(!operation.isValid())
             return false;
-        }
+
         // We now should have a valid execution context and a UserInterface object.
         OVITO_ASSERT(ExecutionContext::current().isValid());
 
         // If the startup process gets canceled halfway through, shutdown the initial UI (typically the main window).
-        startupOperation.finally([ui=ExecutionContext::current().ui().shared_from_this()](Task& task) {
+        operation.finally([ui=ExecutionContext::current().ui().shared_from_this()](Task& task) {
             if(task.isCanceled())
                 ui->shutdown();
         });
@@ -165,8 +158,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
         }
 
         // Complete the startup process by calling postStartupInitialization() once the main event loop is running.
-        QTimer::singleShot(0, this, [this, promise=Promise<>(std::move(startupOperation)), ui=ExecutionContext::current().ui().shared_from_this()]() {
-            ExecutionContext::Scope execScope(ExecutionContext::Type::Scripting, std::move(ui));
+        ExecutionContext::current().runDeferred(this, [this, promise=Promise<>(std::move(operation))]() noexcept {
             Task::Scope taskScope(promise.task());
             try {
                 try {
@@ -242,12 +234,12 @@ void StandaloneApplication::postStartupInitialization()
 /******************************************************************************
 * Create the global instance of the right QCoreApplication derived class.
 ******************************************************************************/
-void StandaloneApplication::createQtApplication(int& argc, char** argv)
+QCoreApplication* StandaloneApplication::createQtApplicationImpl(bool supportGui, int& argc, char** argv)
 {
-    // OVITO prefers the "C" locale over the system's default locale.
-    QLocale::setDefault(QLocale::c());
-
-    if(headlessMode()) {
+    if(supportGui) {
+        return new QGuiApplication(argc, argv);
+    }
+    else {
 #if defined(Q_OS_LINUX)
         // Determine font directory path.
         std::string applicationPath = argv[0];
@@ -270,15 +262,12 @@ void StandaloneApplication::createQtApplication(int& argc, char** argv)
         // "This plugin does not support createPlatformOpenGLContext!".
         QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts, false);
 
-        new QGuiApplication(argc, argv);
+        return new QGuiApplication(argc, argv);
 #elif defined(Q_OS_MACOS)
-        new QGuiApplication(argc, argv);
+        return new QGuiApplication(argc, argv);
 #else
-        new QCoreApplication(argc, argv);
+        return new QCoreApplication(argc, argv);
 #endif
-    }
-    else {
-        new QGuiApplication(argc, argv);
     }
 }
 
@@ -319,9 +308,9 @@ bool StandaloneApplication::processCommandLineParameters()
 * Tells the UI to process any pending events in the event queue and return immediately.
 * The function can return true to indicate that the running operation should be canceled.
 ******************************************************************************/
-bool StandaloneApplication::processEvents()
+bool StandaloneApplication::processUIEvents()
 {
-    if(Application::processEvents())
+    if(Application::processUIEvents())
         return true;
 
     // Let the application services interrupt the currently running main-thread operation.

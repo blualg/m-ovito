@@ -82,7 +82,7 @@ void GSDExporter::closeOutputFile(bool exportCompleted)
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.
 ******************************************************************************/
-bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath, MainThreadOperation& operation)
+void GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath)
 {
     // Get particles.
     const Particles* particles = state.expectObject<Particles>();
@@ -127,7 +127,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
         throw Exception(tr("Number of particles exceeds maximum number supported by the GSD/HOOMD format."));
     uint32_t particleCount = particles->elementCount();
     _gsdFile->writeChunk<uint32_t>("particles/N", 1, 1, &particleCount);
-    if(operation.isCanceled()) return false;
+    if(this_task::isCanceled())
+        return;
 
     // Determine particle ordering.
     std::vector<size_t> ordering(particles->elementCount());
@@ -135,7 +136,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     if(BufferReadAccess<int64_t> idProperty = particles->getProperty(Particles::IdentifierProperty)) {
         boost::sort(ordering, [&](size_t a, size_t b) { return idProperty[a] < idProperty[b]; });
     }
-    if(operation.isCanceled()) return false;
+    if(this_task::isCanceled())
+        return;
 
     // Output particle coordinates.
     BufferReadAccess<Point3> posProperty = particles->expectProperty(Particles::PositionProperty);
@@ -151,9 +153,11 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
         }
     }
     _gsdFile->writeChunk<float>("particles/position", posBuffer.size(), 3, posBuffer.data());
-    if(operation.isCanceled()) return false;
+    if(this_task::isCanceled())
+        return;
     _gsdFile->writeChunk<int32_t>("particles/image", imageBuffer.size(), 3, imageBuffer.data());
-    if(operation.isCanceled()) return false;
+    if(this_task::isCanceled())
+        return;
 
     // Output particle types.
     if(const Property* typeProperty = particles->getProperty(Particles::TypeProperty)) {
@@ -187,7 +191,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
         boost::transform(ordering, typeIdBuffer.begin(),
             [&](size_t i) { return typeIdsArray[i]; });
         _gsdFile->writeChunk<uint32_t>("particles/typeid", typeIdBuffer.size(), 1, typeIdBuffer.data());
-        if(operation.isCanceled()) return false;
+        if(this_task::isCanceled())
+            return;
     }
 
     // Output particle masses.
@@ -197,7 +202,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
         boost::transform(ordering, massBuffer.begin(),
             [&](size_t i) { return massProperty[i]; });
         _gsdFile->writeChunk<float>("particles/mass", massBuffer.size(), 1, massBuffer.data());
-        if(operation.isCanceled()) return false;
+        if(this_task::isCanceled())
+            return;
     }
 
     // Output particle charges.
@@ -207,7 +213,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
         boost::transform(ordering, chargeBuffer.begin(),
             [&](size_t i) { return chargeProperty[i]; });
         _gsdFile->writeChunk<float>("particles/charge", chargeBuffer.size(), 1, chargeBuffer.data());
-        if(operation.isCanceled()) return false;
+        if(this_task::isCanceled())
+            return;
     }
 
     // Output particle diameters.
@@ -218,7 +225,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
         boost::transform(ordering, diameterBuffer.begin(),
             [&](size_t i) { return 2 * radiusProperty[i]; });
         _gsdFile->writeChunk<float>("particles/diameter", diameterBuffer.size(), 1, diameterBuffer.data());
-        if(operation.isCanceled()) return false;
+        if(this_task::isCanceled())
+            return;
     }
 
     // Output particle orientations.
@@ -231,7 +239,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
             [&](size_t i) { const QuaternionG& q = orientationProperty[i];
                 return std::array<float,4>{{ (float)q.w(), (float)q.x(), (float)q.y(), (float)q.z() }}; });
         _gsdFile->writeChunk<float>("particles/orientation", orientationBuffer.size(), 4, orientationBuffer.data());
-        if(operation.isCanceled()) return false;
+        if(this_task::isCanceled())
+            return;
     }
 
     // Output particle velocities.
@@ -242,7 +251,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
         boost::transform(ordering, velocityBuffer.begin(),
             [&](size_t i) { return (transformation * velocityProperty[i]).toDataType<float>(); });
         _gsdFile->writeChunk<float>("particles/velocity", velocityBuffer.size(), 3, velocityBuffer.data());
-        if(operation.isCanceled()) return false;
+        if(this_task::isCanceled())
+            return;
     }
 
     // Output particle angular momenta. Note: The GSDImporter currently stores these values in the user-defined particle property "angmom".
@@ -254,7 +264,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
             boost::transform(ordering, angMomBuffer.begin(),
                 [&](size_t i) { return angularMomentumPropertyAccess[i].toDataType<float>(); });
             _gsdFile->writeChunk<float>("particles/angmom", angMomBuffer.size(), 4, angMomBuffer.data());
-            if(operation.isCanceled()) return false;
+            if(this_task::isCanceled())
+                return;
         }
     }
 
@@ -267,7 +278,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
             boost::transform(ordering, bodyBuffer.begin(),
                 [&](size_t i) { return bodyPropertyAccess[i]; });
             _gsdFile->writeChunk<int>("particles/body", bodyBuffer.size(), 1, bodyBuffer.data());
-            if(operation.isCanceled()) return false;
+            if(this_task::isCanceled())
+                return;
         }
     }
 
@@ -283,7 +295,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
             throw Exception(tr("Number of bonds exceeds maximum number supported by the GSD/HOOMD format."));
         uint32_t bondsCount = bonds->elementCount();
         _gsdFile->writeChunk<uint32_t>("bonds/N", 1, 1, &bondsCount);
-        if(operation.isCanceled()) return false;
+        if(this_task::isCanceled())
+            return;
 
         // Build reverse mapping of particle indices.
         if(reverseOrdering.empty()) {
@@ -303,7 +316,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
             bondsBuffer[i][1] = reverseOrdering[b];
         }
         _gsdFile->writeChunk<uint32_t>("bonds/group", bondsBuffer.size(), 2, bondsBuffer.data());
-        if(operation.isCanceled()) return false;
+        if(this_task::isCanceled())
+            return;
 
         // Output bond types.
         if(const Property* typeProperty = bonds->getProperty(Bonds::TypeProperty)) {
@@ -333,7 +347,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
 
             // Output typeid array.
             _gsdFile->writeChunk<uint32_t>("bonds/typeid", typeIds->size(), 1, BufferReadAccess<int32_t>(typeIds).cbegin());
-            if(operation.isCanceled()) return false;
+            if(this_task::isCanceled())
+                return;
         }
     }
 
@@ -347,7 +362,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
             throw Exception(tr("Number of angles exceeds maximum number supported by the GSD/HOOMD format."));
         uint32_t anglesCount = angles->elementCount();
         _gsdFile->writeChunk<uint32_t>("angles/N", 1, 1, &anglesCount);
-        if(operation.isCanceled()) return false;
+        if(this_task::isCanceled())
+            return;
 
         // Build reverse mapping of particle indices.
         if(reverseOrdering.empty()) {
@@ -369,7 +385,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
             anglesBuffer[i][2] = reverseOrdering[c];
         }
         _gsdFile->writeChunk<uint32_t>("angles/group", anglesBuffer.size(), 3, anglesBuffer.data());
-        if(operation.isCanceled()) return false;
+        if(this_task::isCanceled())
+            return;
 
         // Output angle types.
         if(const Property* typeProperty = angles->getProperty(Angles::TypeProperty)) {
@@ -399,7 +416,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
 
             // Output typeid array.
             _gsdFile->writeChunk<uint32_t>("angles/typeid", typeIds->size(), 1, BufferReadAccess<int32_t>(typeIds).cbegin());
-            if(operation.isCanceled()) return false;
+            if(this_task::isCanceled())
+                return;
         }
     }
 
@@ -413,7 +431,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
             throw Exception(tr("Number of dihedrals exceeds maximum number supported by the GSD/HOOMD format."));
         uint32_t dihedralsCount = dihedrals->elementCount();
         _gsdFile->writeChunk<uint32_t>("dihedrals/N", 1, 1, &dihedralsCount);
-        if(operation.isCanceled()) return false;
+        if(this_task::isCanceled())
+            return;
 
         // Build reverse mapping of particle indices.
         if(reverseOrdering.empty()) {
@@ -437,7 +456,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
             dihedralsBuffer[i][3] = reverseOrdering[d];
         }
         _gsdFile->writeChunk<uint32_t>("dihedrals/group", dihedralsBuffer.size(), 4, dihedralsBuffer.data());
-        if(operation.isCanceled()) return false;
+        if(this_task::isCanceled())
+            return;
 
         // Output dihedral types.
         if(const Property* typeProperty = dihedrals->getProperty(Dihedrals::TypeProperty)) {
@@ -467,7 +487,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
 
             // Output typeid array.
             _gsdFile->writeChunk<uint32_t>("dihedrals/typeid", typeIds->size(), 1, BufferReadAccess<int32_t>(typeIds).cbegin());
-            if(operation.isCanceled()) return false;
+            if(this_task::isCanceled())
+                return;
         }
     }
 
@@ -481,7 +502,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
             throw Exception(tr("Number of impropers exceeds maximum number supported by the GSD/HOOMD format."));
         uint32_t impropersCount = impropers->elementCount();
         _gsdFile->writeChunk<uint32_t>("impropers/N", 1, 1, &impropersCount);
-        if(operation.isCanceled()) return false;
+        if(this_task::isCanceled())
+            return;
 
         // Build reverse mapping of particle indices.
         if(reverseOrdering.empty()) {
@@ -505,7 +527,8 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
             impropersBuffer[i][3] = reverseOrdering[d];
         }
         _gsdFile->writeChunk<uint32_t>("impropers/group", impropersBuffer.size(), 4, impropersBuffer.data());
-        if(operation.isCanceled()) return false;
+        if(this_task::isCanceled())
+            return;
 
         // Output improper types.
         if(const Property* typeProperty = impropers->getProperty(Impropers::TypeProperty)) {
@@ -535,14 +558,13 @@ bool GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
 
             // Output typeid array.
             _gsdFile->writeChunk<uint32_t>("impropers/typeid", typeIds->size(), 1, BufferReadAccess<int32_t>(typeIds).cbegin());
-            if(operation.isCanceled()) return false;
+            if(this_task::isCanceled())
+                return;
         }
     }
 
     // Close the current frame that has been written to the GSD file.
     _gsdFile->endFrame();
-
-    return !operation.isCanceled();
 }
 
 }   // End of namespace

@@ -127,7 +127,7 @@ void OpensshConnection::connectToHost()
         if(Application::instance()->guiMode()) {
             // Set SSH_ASKPASS and DISPLAY environment variables to make OpenSSH call the askpass utility.
             QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-            QString askpassPath = QDir(QCoreApplication::applicationDirPath()).absolutePath() + QStringLiteral("/ssh_askpass");
+            QString askpassPath = QDir(Application::instance()->applicationDirPath()).absolutePath() + QStringLiteral("/ssh_askpass");
             env.insert("SSH_ASKPASS", QDir::toNativeSeparators(askpassPath));
             env.insert("SSH_ASKPASS_REQUIRE", "force");
             if(!env.contains("DISPLAY"))

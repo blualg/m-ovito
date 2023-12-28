@@ -456,17 +456,6 @@ bool MainWindow::event(QEvent* event)
 }
 
 /******************************************************************************
-* This method is called from UserInterface::submitWork() whenever pending work
-* needs to be performed in the main thread.
-******************************************************************************/
-void MainWindow::pendingWorkArrived()
-{
-    OVITO_ASSERT(QCoreApplication::instance() != nullptr);
-
-    QMetaObject::invokeMethod(this, "executePendingWork", Qt::QueuedConnection);
-}
-
-/******************************************************************************
 * Handles global key input.
 ******************************************************************************/
 void MainWindow::keyPressEvent(QKeyEvent* event)
@@ -482,10 +471,9 @@ void MainWindow::closeEvent(QCloseEvent* event)
 {
     OVITO_ASSERT(!isShuttingDown());
 
-    if(!handleExceptions([&] {
+    handleExceptions([&] {
         // Let the user save changes made to the current dataset.
         if(isVisible() && !askForSaveChanges()) {
-            event->ignore();
             return;
         }
 
@@ -503,8 +491,10 @@ void MainWindow::closeEvent(QCloseEvent* event)
 
         // Closes the GUI window (but does not destroy this UserInterface C++ object yet, which is kept alive by a shared_ptr).
         event->accept();
-    })) {
-        OVITO_ASSERT(!isShuttingDown());
+    });
+
+    // Swallow close event if the user chose to cancel the shutdown.
+    if(!isShuttingDown()) {
         event->ignore();
     }
 }
@@ -514,6 +504,8 @@ void MainWindow::closeEvent(QCloseEvent* event)
 ******************************************************************************/
 void MainWindow::exitWithFatalError(const Exception& ex)
 {
+    OVITO_ASSERT(ExecutionContext::isMainThread());
+
     // Disable all further viewport updates, because they may have beeen the reason for this fatal error.
     suspendViewportUpdates();
 
@@ -522,8 +514,8 @@ void MainWindow::exitWithFatalError(const Exception& ex)
 
     // The event loop may not be running yet. Use a timer to execute the following
     // once we enter the event loop - similar to a queued signal/slot connection.
-    QTimer::singleShot(0, [self = QPointer<MainWindow>(this)]() {
-        if(!self.isNull()) {
+    QTimer::singleShot(0, [weakPtr = OOWeakRef<MainWindow>(this)]() {
+        if(auto self = weakPtr.lock()) {
             if(!self->close()) // Ask user if closing the window is ok. If not...
                 self->shutdown(); // ... forcibly close the window anyway.
         }
@@ -643,17 +635,22 @@ void MainWindow::clearStatusBarMessage()
 /******************************************************************************
 * Creates a frame buffer of the requested size and displays it as a window in the user interface.
 ******************************************************************************/
-std::shared_ptr<FrameBuffer> MainWindow::createAndShowFrameBuffer(int width, int height, bool showRenderingOperationProgress)
+std::shared_ptr<FrameBuffer> MainWindow::createAndShowFrameBuffer(int width, int height)
 {
+    // This function must be called with an active task scope, because the frame buffer window
+    // will display the progress of the rendering process.
+    OVITO_ASSERT(this_task::get());
+
     // Create the frame buffer window.
     if(!_frameBufferWindow) {
         _frameBufferWindow = new FrameBufferWindow(*this, this);
         _frameBufferWindow->setWindowTitle(tr("Render output"));
     }
+
     std::shared_ptr<FrameBuffer> fb = _frameBufferWindow->createFrameBuffer(width, height);
     _frameBufferWindow->showAndActivateWindow();
-    if(showRenderingOperationProgress)
-        _frameBufferWindow->showRenderingOperation();
+    _frameBufferWindow->showRenderingProgress();
+
     return fb;
 }
 
@@ -774,7 +771,7 @@ void MainWindow::openNewWindow(const QStringList& arguments)
     // the main window that is currently active. That's why we simply start up another independent instance of the application.
 #if defined(Q_OS_MACOS) && QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
     // Get the path to the ovito executable.
-    QString execPath = QCoreApplication::applicationFilePath();
+    QString execPath = Application::instance()->applicationFilePath();
 
     // If we are currently running ovitos in graphical mode, start ovito instead.
     if(execPath.endsWith("ovitos"))

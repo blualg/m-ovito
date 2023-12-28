@@ -57,24 +57,24 @@ MarchingCubes::MarchingCubes(SurfaceMeshBuilder& outputMesh, int size_x, int siz
 /******************************************************************************
  * Main method that constructs the isosurface mesh.
  ******************************************************************************/
-bool MarchingCubes::generateIsosurface(FloatType isolevel, ProgressingTask& operation)
+bool MarchingCubes::generateIsosurface(FloatType isolevel)
 {
     _isolevel = isolevel;
     int size_x = _infiniteDomain ? (_size_x - 1) : _size_x;
     int size_y = _infiniteDomain ? (_size_y - 1) : _size_y;
     int size_z = _infiniteDomain ? (_size_z - 1) : _size_z;
 
-    operation.setProgressMaximum(size_z * 2);
-    computeIntersectionPoints(operation);
+    this_task::setProgressMaximum(size_z * 2);
+    computeIntersectionPoints();
 
-    if(operation.isCanceled())
+    if(this_task::isCanceled())
         return false;
 
     if(_outputMesh.spaceFillingRegion() != SurfaceMesh::InvalidIndex) {
         handleSpaceFillingRegion();
         _vertexGrower.reset();
         _faceGrower.reset();
-        return !operation.isCanceled();
+        return !this_task::isCanceled();
     }
 
     // Setup region calculation
@@ -83,7 +83,7 @@ bool MarchingCubes::generateIsosurface(FloatType isolevel, ProgressingTask& oper
         _maxRegionIndex = 0;
     }
 
-    for(int k = 0; k < size_z; k++, operation.incrementProgressValue()) {
+    for(int k = 0; k < size_z; k++, this_task::incrementProgressValue()) {
         for(int j = 0; j < size_y; j++) {
             for(int i = 0; i < size_x; i++) {
                 _lut_entry = 0;
@@ -97,7 +97,7 @@ bool MarchingCubes::generateIsosurface(FloatType isolevel, ProgressingTask& oper
                 processCube(i, j, k);
             }
         }
-        if(operation.isCanceled())
+        if(this_task::isCanceled())
             return false;
     }
 
@@ -116,18 +116,18 @@ bool MarchingCubes::generateIsosurface(FloatType isolevel, ProgressingTask& oper
     _vertexGrower.reset();
     _faceGrower.reset();
 
-    return !operation.isCanceled();
+    return !this_task::isCanceled();
 }
 
 /******************************************************************************
  * Compute the intersection points with the isosurface along the cube edges.
  ******************************************************************************/
-void MarchingCubes::computeIntersectionPoints(ProgressingTask& operation)
+void MarchingCubes::computeIntersectionPoints()
 {
     if(_pbcFlags[0] && _pbcFlags[1] && _pbcFlags[2])
         _outputMesh.setSpaceFillingRegion(0);
 
-    for(int k = 0; k < _size_z && !operation.isCanceled(); k++, operation.incrementProgressValue()) {
+    for(int k = 0; k < _size_z && !this_task::isCanceled(); k++, this_task::incrementProgressValue()) {
         for(int j = 0; j < _size_y; j++) {
             for(int i = 0; i < _size_x; i++) {
                 FloatType cube[8];
