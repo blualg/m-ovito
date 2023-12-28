@@ -240,34 +240,36 @@ QCoreApplication* StandaloneApplication::createQtApplicationImpl(bool supportGui
         return new QGuiApplication(argc, argv);
     }
     else {
-#if defined(Q_OS_LINUX)
-        // Determine font directory path.
-        std::string applicationPath = argv[0];
-        auto sepIndex = applicationPath.rfind('/');
-        if(sepIndex != std::string::npos)
-            applicationPath.resize(sepIndex + 1);
-        std::string fontPath = applicationPath + "../share/ovito/fonts";
-        if(!QDir(QString::fromStdString(fontPath)).exists())
-            fontPath = "/usr/share/fonts";
-
+#ifdef Q_OS_LINUX
         // On Linux, use the 'minimal' QPA platform plugin instead of the standard XCB plugin when no X server is available.
         // Still create a Qt GUI application object, because otherwise we cannot use (offscreen) font rendering functions.
-        if(!qEnvironmentVariableIsSet("QT_QPA_PLATFORM")) qputenv("QT_QPA_PLATFORM", "minimal");
-        // Enable rudimentary font rendering support, which is implemented by the 'minimal' platform plugin:
-        if(!qEnvironmentVariableIsSet("QT_DEBUG_BACKINGSTORE")) qputenv("QT_DEBUG_BACKINGSTORE", "1");
-        if(!qEnvironmentVariableIsSet("QT_QPA_FONTDIR")) qputenv("QT_QPA_FONTDIR", fontPath.c_str());
+        if(!qEnvironmentVariableIsSet("QT_QPA_PLATFORM")) {
+            qputenv("QT_QPA_PLATFORM", "minimal");
+            // Enable rudimentary font rendering support, which is implemented by the 'minimal' platform plugin:
+            if(!qEnvironmentVariableIsSet("QT_DEBUG_BACKINGSTORE")) qputenv("QT_DEBUG_BACKINGSTORE", "1");
+        }
+
+        // Set the font directory path.
+        if(!qEnvironmentVariableIsSet("QT_QPA_FONTDIR")) {
+            // Determine font directory path.
+            std::string applicationPath = argv[0];
+            auto sepIndex = applicationPath.rfind('/');
+            if(sepIndex != std::string::npos)
+                applicationPath.resize(sepIndex + 1);
+            std::string fontPath = applicationPath + "../share/ovito/fonts";
+            if(!QDir(QString::fromStdString(fontPath)).exists())
+                fontPath = "/usr/share/fonts";
+            qputenv("QT_QPA_FONTDIR", fontPath.c_str());
+        }
 
         // Disable OpenGL context sharing, because we cannot create GL contexts when using the 'minimal' QPA plugin.
         // If AA_ShareOpenGLContexts is set, the QGuiApplication constructor tries to create an OpenGL context, which fails with a warning message:
         // "This plugin does not support createPlatformOpenGLContext!".
         QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts, false);
-
-        return new QGuiApplication(argc, argv);
-#elif defined(Q_OS_MACOS)
-        return new QGuiApplication(argc, argv);
-#else
-        return new QCoreApplication(argc, argv);
 #endif
+
+        // Create a QGuiApplication because we need at least the font rendering capability of Qt.
+        return new QGuiApplication(argc, argv);
     }
 }
 

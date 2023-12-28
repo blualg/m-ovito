@@ -39,7 +39,7 @@ static void ensureFontRenderingCapability()
     }
     catch(const Exception& ex) {
         SceneRenderer::RendererException rendererEx(ex.messages());
-        throw rendererEx.prependGeneralMessage(QStringLiteral("Font rendering capability is not available, because OVITO is currently running in headless mode."));
+        throw rendererEx.prependGeneralMessage(QStringLiteral("Qt font rendering function is not available in this environment."));
     }
 }
 

@@ -447,7 +447,7 @@ void GuiApplication::reportError(const Exception& ex, bool blocking)
 ******************************************************************************/
 bool GuiApplication::automaticallyEnableDarkMode()
 {
-#if defined(Q_OS_LINUX) || defined(Q_OS_MAC)
+#if defined(Q_OS_LINUX) || defined(Q_OS_MACOS)
     return true;
 #else
     #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)

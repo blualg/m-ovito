@@ -413,7 +413,7 @@ void ActionManager::openHelpTopic(const QString& helpTopicId)
     // Solution is to generate a temporary HTML file which redirects to the actual help page including the # fragment.
     // See also https://forums.madcapsoftware.com/viewtopic.php?f=9&t=28376#p130613
     // and https://stackoverflow.com/questions/26305322/shellexecute-fails-for-local-html-or-file-urls
-#if defined(Q_OS_WIN) || defined(Q_OS_MAC)
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
     if(url.isLocalFile() && url.hasFragment()) {
         static QTemporaryFile* temporaryHtmlFile = nullptr;
         if(temporaryHtmlFile)

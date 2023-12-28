@@ -40,7 +40,7 @@ ProgressDialog::ProgressDialog(QWidget* parent, TaskPtr task, const QString& dia
     QVBoxLayout* layout = new QVBoxLayout(this);
 
 #if 0
-#ifdef Q_OS_MAC
+#ifdef Q_OS_MACOS
     // On macOS, the progress dialog has no title bar (it's a Qt::Sheet).
     // Insert our own header text label into the dialog.
     if(parent && !dialogTitle.isEmpty()) {

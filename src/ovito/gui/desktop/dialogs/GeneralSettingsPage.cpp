@@ -55,7 +55,7 @@ void GeneralSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
             "<p>Automatically switch between light and dark UI depending on current system color scheme.</p>"));
     layout2->addWidget(_enableAutomaticDarkMode, 0, 0);
     _enableAutomaticDarkMode->setChecked(GuiApplication::automaticallyEnableDarkMode());
-#if defined(Q_OS_LINUX) || defined(Q_OS_MAC)
+#if defined(Q_OS_LINUX) || defined(Q_OS_MACOS)
     _enableAutomaticDarkMode->setEnabled(false);
 #else
     #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
@@ -123,7 +123,7 @@ void GeneralSettingsPage::saveValues(QTabWidget* tabWidget)
     QSettings settings;
     HistoryFileDialog::setKeepWorkingDirectoryHistoryEnabled(_keepDirHistory->isChecked());
     ModifierListModel::setUseCategoriesGlobal(_sortModifiersByCategory->isChecked());
-#if !(defined(Q_OS_LINUX) || defined(Q_OS_MAC)) && QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+#if !(defined(Q_OS_LINUX) || defined(Q_OS_MACOS)) && QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     if(_enableAutomaticDarkMode->isChecked())
         settings.setValue("ui/automatic_dark_mode", true);
     else
