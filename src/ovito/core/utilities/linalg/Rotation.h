@@ -369,6 +369,22 @@ public:
         return bestDecomposition;
     }
 
+    /// \brief Constructs a rotation object from a Rodrigues vector.
+    /// \param v The input vector.
+    ///
+    /// The rotation axis is aligned with to the v's direction
+    /// The rotation angle is equal to the length of v.
+    Q_DECL_CONSTEXPR static RotationT fromRodriguesVector(const Vector_3<T>& v)
+    {
+        if(v.squaredLength() < FloatTypeEpsilon<T>() * FloatTypeEpsilon<T>()) {
+            return RotationT::Identity();
+        }
+        return RotationT(v.normalized(), v.length());
+    }
+
+    /// \brief Converts the rotation to a Rodrigues vector.
+    Q_DECL_CONSTEXPR Vector_3<T> toRodriguesVector() const { return _axis * _angle; }
+
     ////////////////////////////////// Utilities /////////////////////////////////
 
     /// \brief Returns the number of revolutions.
