@@ -5,7 +5,7 @@ Changelog
 =========
 
 ----------------------------
-Version 3.10.0 (xx-Dec-2023)
+Version 3.10.0 (28-Dec-2023)
 ----------------------------
 
 .. rubric:: Perspective distortion for axis indicators
@@ -52,18 +52,31 @@ information.
 
 .. rubric:: |ovito-pro| New renderer: NVIDIA VisRTX
 
-We've added the :ref:`rendering.visrtx_renderer` and corresponding Python class :py:class:`ovito.vis.AnariRenderer`.
-VisRTX offers hardware-accelerated ray-tracing on NVIDIA GPUs and can generate high-fidelity scene renderings
-in a fraction of a second -- even for complex datasets.
+.. image:: /images/new_features/Anari_logo.svg
+  :width: 30%
+  :align: right
 
-TODO: ADD IMAGE
+We've added the :ref:`rendering.visrtx_renderer` and a corresponding Python class :py:class:`ovito.vis.AnariRenderer`,
+which make use of the cross-vendor `Khronos ANARI <https://www.khronos.org/anari/>`__ API.
+The VisRTX rendering backend offers hardware-accelerated ray-tracing on NVIDIA GPUs and can generate high-fidelity scene renderings
+in a fraction of a second -- even for complex datasets containing millions of objects.
+
+.. |visrtx-video| raw:: html
+
+  <video width="301" height="220" controls autoplay muted loop playsinline>
+    <source src="https://www.ovito.org/download/data/visrtx_render_demo.mp4" type="video/mp4">
+  </video>
+
+|visrtx-video|
 
 .. rubric:: Remote trajectory rendering function |ovito-pro|
 
-Added :ref:`usage.remote_rendering` - prepare OVITO scenes on your local computer
-and easly render them on a remote HCP cluster.
+Added a function for :ref:`usage.remote_rendering`. It lets you prepare trajectory visualizations on your local computer
+and easily render them on a parallel HPC cluster. OVITO Pro takes care of packaging all required data files
+and generating the necessary job scripts for you.
 
-TODO: ADD IMAGE
+.. image:: /images/new_features/remote_rendering_function.png
+  :width: 40%
 
 .. rubric:: Further changes in this program release:
 
@@ -77,6 +90,7 @@ TODO: ADD IMAGE
 * |ovito-python| Renamed existing parameter traits types :py:class:`ovito.traits.OvitoObject` and :py:class:`ovito.traits.Color`
 * |ovito-python| Restricted :py:meth:`ovito.Scene.load` to session state files written by *OVITO Pro* or the Python module
 * |ovito-python| Added function parameter ``pipeline_node`` to :py:meth:`ModifierInterface.modify() <ovito.pipeline.ModifierInterface.modify>`
+* |ovito-python| :py:class:`~ovito.data.SurfaceMeshTopology` class now performs out-of-range checks on function parameters.
 * |ovito-pro| OpenGL, OSPRay, and Tachyon renderers: Added buttons to reset numeric parameters to their default values
 * |ovito-pro| :ref:`User-defined parameters <writing_custom_modifiers.advanced_interface.user_params>` can now be grouped in the UI by means of the new ``ovito_group`` metadata attribute
 

@@ -98,6 +98,17 @@ Relative face area threshold
   For example, you can use this threshold to exclude those faces from the analysis with an area less than 1% of the total area of the polyhedron surface,
   like it was done in `this paper <http://dx.doi.org/10.1038/nature04421>`__.
 
+  .. caution::
+
+    .. image:: /images/modifiers/face_between_adjacent_voro_cells.png
+      :width: 35%
+      :align: right
+
+    Using the relative threshold option may lead to an asymmetric counting of shared faces: Consider two adjacent Voronoi cells sharing the same face.
+    The relative area of this face, as seen from the first cell, is different from the relative area of the same face, as seen from the
+    second cell, if that second cell has a different total surface area. Thus, the shared face may be counted toward the coordination number of the first cell,
+    but not toward the coordination number of the second cell.
+
 Compute Voronoi indices
   Activates the calculation of Voronoi indices. The modifier stores the computed indices in a vector particle property
   named ``Voronoi Index``. The *i*-th component of this vector will contain the number of faces of the
