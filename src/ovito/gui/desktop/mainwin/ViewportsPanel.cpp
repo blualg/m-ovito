@@ -77,8 +77,7 @@ ViewportsPanel::ViewportsPanel(MainWindow& mainWindow) : _mainWindow(mainWindow)
 }
 
 /******************************************************************************
-* Factory method which creates a new viewport window widget. Depending on the
-* user's settings this can be either a OpenGL or a Vulkan window.
+* Factory method which creates a new viewport window widget.
 ******************************************************************************/
 BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport& vp, MainWindow& mainWindow, QWidget* parent)
 {
@@ -103,13 +102,6 @@ BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport& vp, MainWindo
 #if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
             viewportWindowConstructor = constructor;
 #endif
-        }
-        else if(qstrcmp(metaType->className(), "Ovito::VulkanViewportWindow") == 0 && selectedGraphicsApi.compare("vulkan", Qt::CaseInsensitive) == 0) {
-            viewportImplementation = metaType;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
-            viewportWindowConstructor = constructor;
-#endif
-            break;
         }
 #ifdef OVITO_BUILD_PROFESSIONAL
         else if(qstrcmp(metaType->className(), "Ovito::AnariViewportWindow") == 0 && selectedGraphicsApi.compare("anari", Qt::CaseInsensitive) == 0) {

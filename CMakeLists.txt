@@ -70,9 +70,6 @@ SET_PROPERTY(CACHE OVITO_USE_SYCL PROPERTY STRINGS OFF OpenSYCL DPC++)
 SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 6.2)
 FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
 
-# Look for optional Vulkan SDK (requires version 1.1 or above).
-#FIND_PACKAGE(Vulkan)
-
 # Look for DPC++ SYCL implementation.
 IF(OVITO_USE_SYCL STREQUAL DPC++)
     CMAKE_MINIMUM_REQUIRED(VERSION 3.23)
@@ -91,7 +88,6 @@ OPTION(OVITO_BUILD_PLUGIN_CORRELATION "Build the spatial correlation function mo
 OPTION(OVITO_BUILD_PLUGIN_VOROTOP "Build the VoroTop modifier plugin." "ON")
 OPTION(OVITO_BUILD_PLUGIN_GALAMOST "Build the GALAMOST I/O plugin." "ON")
 OPTION(OVITO_BUILD_PLUGIN_OXDNA "Build the oxDNA I/O plugin." "ON")
-OPTION(OVITO_BUILD_PLUGIN_VULKAN "Build the Vulkan renderer plugin." "OFF") # Changed to OFF from ${Vulkan_FOUND}, because Vulkan code is currently in a non-working state
 
 # This is a global list of plugin targets that will be built.
 # It will get populated by the OVITO_PLUGIN function.

@@ -75,7 +75,7 @@ void RemoteFileJob::start()
     try {
         Application::instance()->createQtApplication(false);
     }
-    catch(const Exception& ex) {
+    catch(const Exception&) {
         _promise.captureException();
         shutdown(false);
         return;

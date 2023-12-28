@@ -69,7 +69,7 @@ private:
     /// Controls the number of sub-pixels to render.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, antialiasingLevel, setAntialiasingLevel, PROPERTY_FIELD_RESETTABLE);
 
-    /// The active renderer implementation (OpenGL or Vulkan).
+    /// The active renderer implementation.
     OORef<SceneRenderer> _internalRenderer;
 };
 

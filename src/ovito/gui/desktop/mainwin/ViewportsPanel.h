@@ -42,8 +42,7 @@ public:
     /// Constructs the viewport panel.
     explicit ViewportsPanel(MainWindow& parent);
 
-    /// Factory method which creates a new viewport window widget. Depending on the
-    /// user's settings this can be either a OpenGL or a Vulkan window.
+    /// Factory method which creates a new viewport window widget.
     static BaseViewportWindow* createViewportWindow(Viewport& vp, MainWindow& mainWindow, QWidget* parent);
 
     /// Returns the widget that hosts the given viewport.

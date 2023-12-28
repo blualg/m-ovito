@@ -23,7 +23,7 @@ Ubuntu / Debian:
           sudo apt-get install build-essential git cmake-curses-gui qt6-base-dev libqt6svg6-dev \
                 libboost-dev libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev \
                 libavutil-dev libswscale-dev libnetcdf-dev libhdf5-dev libhdf5-serial-dev \
-                libglu1-mesa-dev libvulkan-dev ninja-build \
+                libglu1-mesa-dev ninja-build \
                 libssh-dev python3-sphinx python3-sphinx-rtd-theme
 
 openSUSE:

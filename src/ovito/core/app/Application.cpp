@@ -247,11 +247,6 @@ bool Application::initialize(int& argc, char** argv)
         defaultQtMessageHandler = qInstallMessageHandler(qtMessageOutput);
     }
 
-#ifdef OVITO_DEBUG
-    // Activate Qt logging messages related to Vulkan.
-    QLoggingCategory::setFilterRules(QStringLiteral("qt.vulkan=true"));
-#endif
-
     // Activate default "C" locale, which will be used to parse numbers in strings.
     std::setlocale(LC_ALL, "C");
 

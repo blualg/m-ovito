@@ -52,7 +52,7 @@ bool StandardSceneRenderer::startRender(const RenderSettings* settings, const QS
     if(!SceneRenderer::startRender(settings, frameBufferSize, visCache))
         return false;
 
-    // Create the internal renderer implementation. Choose between OpenGL and Vulkan option.
+    // Create the internal renderer implementation.
     OvitoClassPtr rendererClass = {};
 
 #ifndef OVITO_DISABLE_QSETTINGS
