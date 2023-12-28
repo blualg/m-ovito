@@ -32,7 +32,9 @@
 #ifdef Q_OS_MACOS
     #include <CoreFoundation/CFBundle.h>
 #endif
-
+#ifdef Q_OS_WIN
+    #include <Windows.h>
+#endif
 
 // Called from Application::initialize() to register the embedded Qt resource files
 // when running a statically linked executable. The Qt documentation says this
