@@ -348,7 +348,12 @@ void Application::createQtApplication(bool supportGui)
 
     // Let the user override the application type with the OVITO_GUI_MODE environment variable.
     if(qEnvironmentVariableIsSet("OVITO_GUI_MODE")) {
-        supportGui = (qgetenv("OVITO_GUI_MODE") != "0");
+        if(qgetenv("OVITO_GUI_MODE") != "0") {
+            supportGui = true;
+        }
+        else if(supportGui) {
+            throw Exception(tr("Cannot use a program function that requires a Qt GUI application: The OVITO_GUI_MODE environment variable is set to 0."));
+        }
     }
 
     // Let the derived class create the right QCoreApplication object.

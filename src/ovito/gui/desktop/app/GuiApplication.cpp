@@ -106,7 +106,7 @@ QCoreApplication* GuiApplication::createQtApplicationImpl(bool supportGui, int& 
     OVITO_ASSERT(QSurfaceFormat::defaultFormat().depthBufferSize() == 24 && QSurfaceFormat::defaultFormat().stencilBufferSize() == 1);
 
     QCoreApplication* qtApp = nullptr;
-    if(!guiMode()) {
+    if(!supportGui) {
         qtApp = StandaloneApplication::createQtApplicationImpl(supportGui, argc, argv);
     }
     else {
