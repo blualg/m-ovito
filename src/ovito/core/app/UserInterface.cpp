@@ -83,10 +83,14 @@ void UserInterface::shutdown()
 
     // Release this UI instance as soon as control returns to the event loop.
     if(_selfGuard) {
-        if(QThread::currentThread()->loopLevel() != 0)
-            QTimer::singleShot(0, Application::instance(), [s = std::move(_selfGuard)]() {});
-        else
+        if(QThread::currentThread()->loopLevel() != 0) {
+            // Move the self-guard into a lambda function, which gets processed by the work queue later.
+            Application::instance()->taskManager().submitWork(Application::instance(), [s = std::move(_selfGuard)]() noexcept {}, true);
+        }
+        else {
+            // Release object immediately.
             _selfGuard.reset();
+        }
     }
 }
 

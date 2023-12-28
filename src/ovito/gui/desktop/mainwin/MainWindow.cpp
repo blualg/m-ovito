@@ -781,7 +781,7 @@ void MainWindow::openNewWindow(const QStringList& arguments)
     if(!QProcess::startDetached(execPath, arguments))
         throw Exception(tr("Failed to start another instance of the program. Executable path: %1").arg(execPath));
 #else
-    std::shared_ptr<MainWindow> mainWin = std::make_shared<MainWindow>();
+    OORef<MainWindow> mainWin = OORef<MainWindow>::create();
     mainWin->keepAliveUntilShutdown();
     mainWin->show();
     mainWin->restoreLayout();
