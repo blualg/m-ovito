@@ -48,6 +48,11 @@ public:
     PipelineFlowState(DataOORef<const DataCollection> dataCollection, const PipelineStatus& status, const TimeInterval& validityInterval = TimeInterval::infinite()) :
         _data(std::move(dataCollection)), _stateValidity(validityInterval), _status(status) {}
 
+#ifdef OVITO_DEBUG
+    /// Destructor.
+    ~PipelineFlowState();
+#endif
+
     /// \brief Discards all contents of this state object and resets it to an empty state.
     void reset() {
         _data.reset();

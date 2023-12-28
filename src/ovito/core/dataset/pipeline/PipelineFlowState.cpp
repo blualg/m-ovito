@@ -27,6 +27,15 @@
 
 namespace Ovito {
 
+#ifdef OVITO_DEBUG
+/******************************************************************************
+* Destructor.
+******************************************************************************/
+PipelineFlowState::~PipelineFlowState()
+{
+}
+#endif
+
 /******************************************************************************
 * Returns the data collection of this pipeline state after making sure it is
 * safe to modify it.
@@ -37,6 +46,7 @@ DataCollection* PipelineFlowState::mutableData()
     if(_data && !_data->isSafeToModify()) {
         _data = CloneHelper::cloneSingleObject(_data.get(), false);
         OVITO_ASSERT(_data->isSafeToModify());
+        OVITO_ASSERT(_data->dataReferenceCount() == 1);
     }
     return const_cast<DataCollection*>(_data.get());
 }
