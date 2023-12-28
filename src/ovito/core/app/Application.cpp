@@ -328,27 +328,28 @@ void Application::createQtApplication(bool supportGui)
     // This must only be used in the main thread.
     OVITO_ASSERT(ExecutionContext::isMainThread());
 
-    // Do nothing if a global Qt application object already exists. Just check that it is of the right type.
-    if(QCoreApplication::instance()) {
-        if(supportGui) {
-            QGuiApplication* guiApp = qobject_cast<QGuiApplication*>(QCoreApplication::instance());
-            if(!guiApp || guiApp->platformName() == QStringLiteral("minimal")) {
-                throw Exception(tr("Cannot initialize a Qt GUI application: A non-GUI Qt application object already exists. To solve this issue, "
-                    "please create a QApplication or QGuiApplication object before importing the ovito module, or invoke the function requiring a GUI environment "
-                    "ealier in the script."));
-            }
-        }
-        return;
-    }
-
     // Let the user override the application type with the OVITO_GUI_MODE environment variable.
     if(qEnvironmentVariableIsSet("OVITO_GUI_MODE")) {
         if(qgetenv("OVITO_GUI_MODE") != "0") {
             supportGui = true;
         }
         else if(supportGui) {
-            throw Exception(tr("Cannot use a program function that requires a Qt GUI application: The OVITO_GUI_MODE environment variable is set to 0."));
+            throw Exception(tr("Cannot use this program function, which requires a GUI-enabled Qt application (a connection to the platform's windowing system): "
+                    "The OVITO_GUI_MODE environment variable is set to 0, which forces OVITO to run in non-GUI mode."));
         }
+    }
+
+    // Do nothing if a global Qt application object already exists. Just check that it is of the right type.
+    if(QCoreApplication::instance()) {
+        if(supportGui) {
+            QGuiApplication* guiApp = qobject_cast<QGuiApplication*>(QCoreApplication::instance());
+            if(!guiApp || guiApp->platformName() == QStringLiteral("minimal")) {
+                throw Exception(tr("This function requires a GUI-enabled Qt application object, i.e. a connection to a windowing system, but it cannot be initialized at this point: A process-wide, non-GUI Qt application object already exists. "
+                        "To solve this issue, you can explicitly create a PySide6 QApplication object before importing the ovito Python module, invoke this function sooner in the Python script to initialize a "
+                        "connection to the windowing system (e.g. X Windows or Wayland), or set the environment variable OVITO_GUI_MODE=1."));
+            }
+        }
+        return;
     }
 
     // Let the derived class create the right QCoreApplication object.
