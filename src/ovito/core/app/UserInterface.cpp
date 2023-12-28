@@ -114,11 +114,13 @@ bool UserInterface::processUIEvents()
     Task::Scope taskScope(nullptr);
     UndoSuspender noUndo;
 
-    // Process Qt events.
-    if(QCoreApplication::instance() != nullptr)
-        QCoreApplication::processEvents();
+    // Process Qt events (only if the main Qt event loop is running).
+    if(QCoreApplication::instance() != nullptr && QThread::currentThread()->loopLevel() != 0) {
+        QCoreApplication::sendPostedEvents(); // Process events sent by the application
+        QCoreApplication::processEvents();    // Process events sent by the OS
+    }
 
-    // Process work items in the queue.
+    // Process pending work items in our own queue.
     taskManager().executePendingWork();
 
     return isShuttingDown();
