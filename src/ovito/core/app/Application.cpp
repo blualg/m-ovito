@@ -30,10 +30,13 @@
     #include <QNetworkProxyFactory>
 #endif
 #ifdef Q_OS_MACOS
-    #include <CoreFoundation/CFBundle.h>
+    #include <CoreFoundation/CFBundle.h> // Needed for implementation of ovitoAppFileName()
 #endif
 #ifdef Q_OS_WIN
-    #include <Windows.h>
+    #ifndef NOMINMAX
+        #define NOMINMAX // Prevent <Windows.h> from defining min() and max() macros
+    #endif
+    #include <Windows.h> // Needed for implementation of ovitoAppFileName()
 #endif
 
 // Called from Application::initialize() to register the embedded Qt resource files
@@ -58,7 +61,7 @@ static QString ovitoAppFileName()
     do {
         size += MAX_PATH;
         space.resize(int(size));
-        v = GetModuleFileName(NULL, space.data(), DWORD(space.size()));
+        v = ::GetModuleFileName(NULL, space.data(), DWORD(space.size()));
     }
     while(v >= size);
     return QString::fromWCharArray(space.data(), v);
