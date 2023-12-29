@@ -377,10 +377,15 @@ void RenderSettings::renderFrame(int frameNumber, SceneRenderer& renderer,
     }
     this_task::endProgressSubSteps();
 
-    // Save rendered image to disk.
+    // Write rendered image or video frame to disk.
     if(saveToFile()) {
         if(!videoEncoder) {
             OVITO_ASSERT(!outputFilename.isEmpty());
+
+            // The QImage.save() function requires a Qt application object (to load file format plugins).
+            Application::instance()->createQtApplication(false);
+
+            // Use the QImage.save() function to save the rendered image to disk.
             if(!frameBuffer.image().save(outputFilename, imageInfo().format()))
                 throw Exception(tr("Failed to save rendered image to output file '%1'.").arg(outputFilename));
         }
