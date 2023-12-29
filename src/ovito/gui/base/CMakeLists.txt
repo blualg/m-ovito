@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2023 OVITO GmbH, Germany
+#  Copyright 2024 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -44,7 +44,7 @@ OVITO_STANDARD_PLUGIN(GuiBase
 )
 
 IF(NOT EMSCRIPTEN)
-    # Compute the relative path where the documentation files get installed relative to the executable. 
+    # Compute the relative path where the documentation files get installed relative to the executable.
     FILE(RELATIVE_PATH OVITO_DOCUMENTATION_PATH "${OVITO_BINARY_DIRECTORY}" "${OVITO_SHARE_DIRECTORY}/doc/manual/html/")
     TARGET_COMPILE_DEFINITIONS(GuiBase PRIVATE "OVITO_DOCUMENTATION_PATH=\"${OVITO_DOCUMENTATION_PATH}\"")
 ELSE()

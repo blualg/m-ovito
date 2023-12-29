@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2023 OVITO GmbH, Germany
+#  Copyright 2024 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -130,18 +130,18 @@ ADD_LIBRARY(Qwt ${QWT_SOURCE_FILES})
 SET_TARGET_PROPERTIES(Qwt PROPERTIES OUTPUT_NAME "ovito_qwt")
 
 # Link to Qt.
-TARGET_LINK_LIBRARIES(Qwt PUBLIC 
-    Qt6::Core 
-    Qt6::Gui 
-    Qt6::Widgets 
-    Qt6::PrintSupport 
+TARGET_LINK_LIBRARIES(Qwt PUBLIC
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Widgets
+    Qt6::PrintSupport
     Qt6::Concurrent)
 
 # Tell CMake to run Qt moc on source files added to the target.
 SET_TARGET_PROPERTIES(Qwt PROPERTIES AUTOMOC ON)
 # Tell CMake to run the Qt resource compiler on all .qrc files added to a target.
 SET_TARGET_PROPERTIES(Qwt PROPERTIES AUTORCC ON)
-    
+
 # Some compile time flags for Qwt.
 TARGET_COMPILE_DEFINITIONS(Qwt PRIVATE QWT_NO_SVG QWT_NO_OPENGL)
 IF(BUILD_SHARED_LIBS)

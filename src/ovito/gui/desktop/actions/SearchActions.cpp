@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2023 OVITO GmbH, Germany
+//  Copyright 2024 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,10 +26,10 @@
 namespace Ovito {
 
 /// A Qt list model managing the list of actions shown in the quick command search box.
-class ActionListModel : public QSortFilterProxyModel 
+class ActionListModel : public QSortFilterProxyModel
 {
 public:
-    
+
     ActionListModel(QObject* parent, QAbstractItemModel* sourceModel) : QSortFilterProxyModel(parent) {
         setDynamicSortFilter(false);
         loadUseCounts();
@@ -59,8 +59,8 @@ protected:
         auto useCountLeft = _useCounts.find(actionLeft->objectName());
         auto useCountRight = _useCounts.find(actionRight->objectName());
         if(useCountLeft != _useCounts.end() && useCountRight != _useCounts.end()) {
-            if(useCountLeft->second > useCountRight->second) return true; 
-            if(useCountLeft->second < useCountRight->second) return false; 
+            if(useCountLeft->second > useCountRight->second) return true;
+            if(useCountLeft->second < useCountRight->second) return false;
         }
         else if(useCountLeft != _useCounts.end() && useCountLeft->second > 0) {
             return true;
@@ -79,7 +79,7 @@ protected:
         for(const auto& entry : _useCounts) {
             settings.setArrayIndex(index++);
             settings.setValue("id", entry.first);
-            settings.setValue("count", entry.second); 
+            settings.setValue("count", entry.second);
         }
         settings.endArray();
         settings.endGroup();
@@ -125,7 +125,7 @@ void WidgetActionManager::setupCommandSearch()
             _completer->setWidget(this);
             _completer->setWrapAround(false);
 
-            class ItemDelegate : public QStyledItemDelegate 
+            class ItemDelegate : public QStyledItemDelegate
             {
             public:
                 ItemDelegate() {
@@ -239,7 +239,7 @@ void WidgetActionManager::setupCommandSearch()
             if(event->key() != Qt::Key_Control && event->key() != Qt::Key_Shift && event->key() != Qt::Key_Meta && event->key() != Qt::Key_Alt) {
                 showPopup();
             }
-        }       
+        }
         virtual void focusInEvent(QFocusEvent* event) override {
             QLineEdit::focusInEvent(event);
             if(event->reason() == Qt::MouseFocusReason || event->reason() == Qt::ShortcutFocusReason || event->reason() == Qt::OtherFocusReason) {
@@ -258,7 +258,7 @@ void WidgetActionManager::setupCommandSearch()
     commandQuickSearchInputField->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     commandQuickSearchAction->setDefaultWidget(commandQuickSearchInputField);
 
-    // Set input focus to search field when action shortcut is triggered.  
+    // Set input focus to search field when action shortcut is triggered.
     connect(commandQuickSearchAction, &QAction::triggered, commandQuickSearchInputField, [commandQuickSearchInputField]() {
         commandQuickSearchInputField->setFocus(Qt::ShortcutFocusReason);
         commandQuickSearchInputField->showPopup();
