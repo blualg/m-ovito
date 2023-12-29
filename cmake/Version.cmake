@@ -24,7 +24,7 @@
 
 # This is the canonical program version number:
 SET(OVITO_VERSION_MAJOR         "3")
-SET(OVITO_VERSION_MINOR         "10")
+SET(OVITO_VERSION_MINOR         "11")
 SET(OVITO_VERSION_REVISION      "0")
 
 # Increment the following version counter every time the .ovito file format
