@@ -22,8 +22,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
-#include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/oo/CloneHelper.h>
 
 namespace Ovito {
 
@@ -35,21 +33,6 @@ PipelineFlowState::~PipelineFlowState()
 {
 }
 #endif
-
-/******************************************************************************
-* Returns the data collection of this pipeline state after making sure it is
-* safe to modify it.
-******************************************************************************/
-DataCollection* PipelineFlowState::mutableData()
-{
-    OVITO_ASSERT(_data);
-    if(_data && !_data->isSafeToModify()) {
-        _data = CloneHelper::cloneSingleObject(_data.get(), false);
-        OVITO_ASSERT(_data->isSafeToModify());
-        OVITO_ASSERT(_data->dataReferenceCount() == 1);
-    }
-    return const_cast<DataCollection*>(_data.get());
-}
 
 /******************************************************************************
 * Makes the last object in the data path mutable and returns a pointer to the mutable copy.

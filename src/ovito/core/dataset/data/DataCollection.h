@@ -50,7 +50,7 @@ public:
         _objects.clear(this, PROPERTY_FIELD(objects));
     }
 
-    /// \brief Returns true if the given object is part of this pipeline flow state.
+    /// \brief Returns true if the given object is part of this collection.
     /// \note The method ignores the revision number of the object.
     bool contains(const DataObject* obj) const;
 
@@ -69,16 +69,16 @@ public:
     /// \brief Removes a data object from this state.
     void removeObjectByIndex(qsizetype index);
 
-    /// \brief Finds an object of the given type in the list of data objects stored in this flow state.
+    /// \brief Finds an object of the given type in the list of data objects stored in this collection.
     const DataObject* getObject(const DataObject::OOMetaClass& objectClass) const;
 
-    /// \brief Finds an object of the given type in the list of data objects stored in this flow state.
+    /// \brief Finds an object of the given type in the list of data objects stored in this collection.
     template<class DataObjectClass>
     const DataObjectClass* getObject() const {
         return static_object_cast<DataObjectClass>(getObject(DataObjectClass::OOClass()));
     }
 
-    /// Finds an object of the given type in the list of data objects stored in this flow state.
+    /// Finds an object of the given type in the list of data objects stored in this collection.
     /// If it exists, makes the data object mutable.
     template<class DataObjectClass>
     DataObjectClass* getMutableObject() {
@@ -87,10 +87,10 @@ public:
         return nullptr;
     }
 
-    /// \brief Finds all objects of the given type in the list of data objects stored in this flow state.
+    /// \brief Finds all objects of the given type in the list of data objects stored in this collection.
     std::vector<const DataObject*> getObjects(const DataObject::OOMetaClass& objectClass) const;
 
-    /// \brief Determines if an object of the given type is in this flow state.
+    /// \brief Determines if an object of the given type is in this collection.
     template<class DataObjectClass>
     bool containsObject() const {
         return getObject(DataObjectClass::OOClass()) != nullptr;
@@ -116,7 +116,7 @@ public:
         return static_object_cast<DataObjectClass>(expectMutableObject(DataObjectClass::OOClass()));
     }
 
-    /// Finds an object of the given type in the list of data objects stored in this flow state
+    /// Finds an object of the given type in the list of data objects stored in this collection
     /// or among any of their sub-objects.
     bool containsObjectRecursive(const DataObject::OOMetaClass& objectClass) const {
         for(const DataObject* obj : objects()) {
@@ -126,7 +126,7 @@ public:
         return false;
     }
 
-    /// Finds all objects of the given type in this flow state (also searching among sub-objects).
+    /// Finds all objects of the given type in this collection (also searching among sub-objects).
     /// Returns them as a list of object paths.
     std::vector<ConstDataObjectPath> getObjectsRecursive(const DataObject::OOMetaClass& objectClass) const {
         std::vector<ConstDataObjectPath> result;
@@ -139,20 +139,20 @@ public:
         return result;
     }
 
-    /// Finds an object of the given type and under the hierarchy path in this flow state.
+    /// Finds an object of the given type and under the hierarchy path in this collection.
     ConstDataObjectPath getObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) const;
 
-    /// Finds an object of the given type and under the hierarchy path in this flow state.
+    /// Finds an object of the given type and under the hierarchy path in this collection.
     ConstDataObjectPath getObject(const DataObjectReference& dataRef) const {
         OVITO_ASSERT(dataRef);
         return getObject(*dataRef.dataClass(), dataRef.dataPath());
     }
 
-    /// Finds an object of the given type and under the hierarchy path in this flow state.
+    /// Finds an object of the given type and under the hierarchy path in this collection.
     template<class DataObjectClass>
     ConstDataObjectPath getObject(const QString& pathString) const { return getObject(DataObjectClass::OOClass(), pathString); }
 
-    /// Finds an object of the given type and under the hierarchy path in this flow state.
+    /// Finds an object of the given type and under the hierarchy path in this collection.
     template<class DataObjectClass>
     ConstDataObjectPath getObject(const TypedDataObjectReference<DataObjectClass>& dataRef) const {
         OVITO_ASSERT(dataRef);
@@ -173,7 +173,7 @@ public:
     template<class DataObjectClass>
     ConstDataObjectPath expectObject(const QString& pathString) const { return expectObject(DataObjectClass::OOClass(), pathString); }
 
-    /// Finds an object of the given type and under the hierarchy path in this flow state.
+    /// Finds an object of the given type and under the hierarchy path in this collection.
     template<class DataObjectClass>
     ConstDataObjectPath expectObject(const TypedDataObjectReference<DataObjectClass>& dataRef) const {
         OVITO_ASSERT(dataRef);
@@ -181,16 +181,16 @@ public:
         return expectObject(*dataRef.dataClass(), dataRef.dataPath());
     }
 
-    /// Finds an object of the given type and under the hierarchy path in this flow state.
+    /// Finds an object of the given type and under the hierarchy path in this collection.
     const DataObject* getLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) const;
 
-    /// Finds an object of the given type and under the hierarchy path in this flow state.
+    /// Finds an object of the given type and under the hierarchy path in this collection.
     const DataObject* getLeafObject(const DataObjectReference& dataRef) const {
         OVITO_ASSERT(dataRef);
         return getLeafObject(*dataRef.dataClass(), dataRef.dataPath());
     }
 
-    /// Finds an object of the given type and under the hierarchy path in this flow state.
+    /// Finds an object of the given type and under the hierarchy path in this collection.
     template<class DataObjectClass>
     const DataObjectClass* getLeafObject(const TypedDataObjectReference<DataObjectClass>& dataRef) const {
         OVITO_ASSERT(dataRef);
@@ -215,20 +215,20 @@ public:
         return static_object_cast<DataObjectClass>(expectLeafObject(*dataRef.dataClass(), dataRef.dataPath()));
     }
 
-    /// Finds an object of the given type and with the given identifier in the list of data objects stored in this flow state.
+    /// Finds an object of the given type and with the given identifier in the list of data objects stored in this collection.
     const DataObject* getObjectBy(const DataObject::OOMetaClass& objectClass, const PipelineNode* dataSource, const QString& identifier) const;
 
-    /// Finds an object of the given type and with the given identifier in the list of data objects stored in this flow state.
+    /// Finds an object of the given type and with the given identifier in the list of data objects stored in this collection.
     template<class DataObjectClass>
     const DataObjectClass* getObjectBy(const PipelineNode* dataSource, const QString& identifier) const {
         return static_object_cast<DataObjectClass>(getObjectBy(DataObjectClass::OOClass(), dataSource, identifier));
     }
 
-    /// Finds an object of the given type and under the hierarchy path in this flow state.
+    /// Finds an object of the given type and under the hierarchy path in this collection.
     /// Duplicates it, and all its parent objects, if needed so that it can be safely modified without unwanted side effects.
     DataObjectPath getMutableObject(const DataObject::OOMetaClass& objectClass, const QString& pathString);
 
-    /// Finds an object of the given type and under the hierarchy path in this flow state.
+    /// Finds an object of the given type and under the hierarchy path in this collection.
     /// Duplicates it, and all its parent objects, if needed so that it can be safely modified without unwanted side effects.
     template<class DataObjectClass>
     DataObjectPath getMutableObject(const TypedDataObjectReference<DataObjectClass>& dataRef) {
@@ -237,23 +237,23 @@ public:
         return getMutableObject(*dataRef.dataClass(), dataRef.dataPath());
     }
 
-    /// Finds an object of the given type and under the hierarchy path in this flow state.
+    /// Finds an object of the given type and under the hierarchy path in this collection.
     DataObject* getMutableLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString);
 
-    /// Finds an object of the given type and under the hierarchy path in this flow state.
+    /// Finds an object of the given type and under the hierarchy path in this collection.
     DataObject* getMutableLeafObject(const DataObjectReference& dataRef) {
         OVITO_ASSERT(dataRef);
         return getMutableLeafObject(*dataRef.dataClass(), dataRef.dataPath());
     }
 
-    /// Finds an object of the given type and under the hierarchy path in this flow state.
+    /// Finds an object of the given type and under the hierarchy path in this collection.
     template<class DataObjectClass>
     DataObjectClass* getMutableLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) {
         OVITO_ASSERT(objectClass.isDerivedFrom(DataObjectClass::OOClass()));
         return static_object_cast<DataObjectClass>(getMutableLeafObject(objectClass, pathString));
     }
 
-    /// Finds an object of the given type and under the hierarchy path in this flow state.
+    /// Finds an object of the given type and under the hierarchy path in this collection.
     template<class DataObjectClass>
     DataObjectClass* getMutableLeafObject(const TypedDataObjectReference<DataObjectClass>& dataRef) {
         OVITO_ASSERT(dataRef);
@@ -292,19 +292,19 @@ public:
         return expectMutableLeafObject<DataObjectClass>(*dataRef.dataClass(), dataRef.dataPath());
     }
 
-    /// Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
+    /// Ensures that a DataObject from this collection is not shared with others and is safe to modify.
     DataObject* makeMutable(const DataObject* obj);
 
-    /// Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
+    /// Ensures that a DataObject from this collection is not shared with others and is safe to modify.
     template<class DataObjectClass>
     DataObjectClass* makeMutable(const DataObjectClass* obj) {
         return static_object_cast<DataObjectClass>(makeMutable(static_cast<const DataObject*>(obj)));
     }
 
-    /// Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
+    /// Ensures that a DataObject from this collection is not shared with others and is safe to modify.
     DataObjectPath makeMutable(const ConstDataObjectPath& path);
 
-    /// Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
+    /// Ensures that a DataObject from this collection is not shared with others and is safe to modify.
     DataObjectPath makeMutable(const ConstDataObjectPath& path, CloneHelper& cloneHelper);
 
     /// \brief Returns true if this state object has no valid contents.
@@ -315,7 +315,7 @@ public:
     int sourceFrame() const;
 
     /// Instantiates a new data object, passes the given parameters to its class constructor,
-    /// assigns the given data source object, and finally inserts the data object into this pipeline flow state.
+    /// assigns the given data source object, and finally inserts the data object into this collection.
     template<class DataObjectType, typename... Args>
     DataObjectType* createObject(OOWeakRef<const PipelineNode> createdByNode, Args&&... args) {
         OORef<DataObjectType> obj = OORef<DataObjectType>::create(std::forward<Args>(args)...);
@@ -326,7 +326,7 @@ public:
 
     /// Instantiates a new data object, passes the given parameters to its class constructor,
     /// assign a unique identifier to the object, assigns the given data source object, and
-    /// finally inserts the data object into this pipeline flow state.
+    /// finally inserts the data object into this collection.
     template<class DataObjectType, typename... Args>
     DataObjectType* createObject(const QString& baseName, OOWeakRef<const PipelineNode> createdByNode, Args&&... args) {
         DataObjectType* obj = createObject<DataObjectType, Args...>(std::move(createdByNode), std::forward<Args>(args)...);
@@ -337,7 +337,7 @@ public:
 
     /// Instantiates a new data object, passes the given parameters to its class constructor,
     /// assign a unique identifier to the object, assigns the given data source object and visual element, and
-    /// finally inserts the data object into this pipeline flow state.
+    /// finally inserts the data object into this collection.
     template<class DataObjectType, typename... Args>
     DataObjectType* createObjectWithVis(const QString& baseName, OOWeakRef<const PipelineNode> createdByNode, DataVis* visElement, Args&&... args) {
         DataObjectType* obj = createObject<DataObjectType>(baseName, std::move(createdByNode), ObjectInitializationFlag::DontCreateVisElement, std::forward<Args>(args)...);

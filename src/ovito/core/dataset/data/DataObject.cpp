@@ -106,13 +106,14 @@ bool DataObject::isSafeToModify() const
 
     if(_dataReferenceCount.load() <= 1) {
         bool isExclusivelyOwned = true;
-        visitDependents([&](RefMaker* dependent) {
+        visitDependents([&](const RefMaker* dependent) noexcept {
             // Recursively determine if the container of this data object is safe to modify as well.
             // Only if the entire hierarchy of objects is safe to modify, we can safely modify
             // the leaf object.
             if(const DataObject* owner = dynamic_object_cast<DataObject>(dependent)) {
-                if(owner->editableProxy() != this && !owner->isSafeToModify())
-                    isExclusivelyOwned = false;
+                if(owner->editableProxy() != this) // Note: Proxy objects are always considered safe to modify.
+                    if(!owner->isSafeToModify())
+                        isExclusivelyOwned = false;
             }
         });
         return isExclusivelyOwned;

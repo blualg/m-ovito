@@ -57,7 +57,7 @@ public:
     void reset() {
         _data.reset();
         _stateValidity.setEmpty();
-        _status = PipelineStatus();
+        _status = {};
     }
 
     /// \brief Returns whether this flow state has a data collection or not.
@@ -112,10 +112,14 @@ public:
     /// Sets the stored status.
     void setStatus(PipelineStatus&& status) { _status = std::move(status); }
 
-    /// Returns the data collection of this pipeline state after making sure it is safe to modify it.
-    DataCollection* mutableData();
-
+    /// Returns the (read-only) data collection of this pipeline state.
     const DataCollection* data() const { return _data.get(); }
+
+    /// Returns the data collection of this pipeline state after making sure it is safe to modify it.
+    DataCollection* mutableData() {
+        OVITO_ASSERT(_data);
+        return _data.makeMutableInplace();
+    }
 
     void setData(const DataCollection* data) { _data = data; }
     void setData(DataOORef<const DataCollection> data) { _data = std::move(data); }

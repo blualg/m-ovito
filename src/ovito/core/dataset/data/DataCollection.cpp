@@ -35,7 +35,7 @@ DEFINE_VECTOR_REFERENCE_FIELD(DataCollection, objects);
 SET_PROPERTY_FIELD_LABEL(DataCollection, objects, "Data objects");
 
 /******************************************************************************
-* Returns true if the given object is part of this pipeline flow state.
+* Returns true if the given object is part of this collection.
 * The method ignores the revision number of the object.
 ******************************************************************************/
 bool DataCollection::contains(const DataObject* obj) const
@@ -96,7 +96,7 @@ bool DataCollection::replaceObject(const DataObject* oldObj, const DataObject* n
 
 /******************************************************************************
 * Finds an object of the given type in the list of data objects stored in this
-* flow state.
+* collection.
 ******************************************************************************/
 const DataObject* DataCollection::getObject(const DataObject::OOMetaClass& objectClass) const
 {
@@ -109,7 +109,7 @@ const DataObject* DataCollection::getObject(const DataObject::OOMetaClass& objec
 
 /******************************************************************************
 * Finds all objects of the given type in the list of data objects stored in this
-* flow state.
+* collection.
 ******************************************************************************/
 std::vector<const DataObject*> DataCollection::getObjects(const DataObject::OOMetaClass& objectClass) const
 {
@@ -163,7 +163,7 @@ const DataObject* DataCollection::expectLeafObject(const DataObject::OOMetaClass
 }
 
 /******************************************************************************
-* Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
+* Ensures that a DataObject from this collection is not shared with others and is safe to modify.
 ******************************************************************************/
 DataObject* DataCollection::makeMutable(const DataObject* obj)
 {
@@ -180,7 +180,7 @@ DataObject* DataCollection::makeMutable(const DataObject* obj)
 }
 
 /******************************************************************************
-* Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
+* Ensures that a DataObject from this collection is not shared with others and is safe to modify.
 ******************************************************************************/
 DataObjectPath DataCollection::makeMutable(const ConstDataObjectPath& path)
 {
@@ -200,7 +200,7 @@ DataObjectPath DataCollection::makeMutable(const ConstDataObjectPath& path)
 }
 
 /******************************************************************************
-* Ensures that a DataObject from this flow state is not shared with others and is safe to modify.
+* Ensures that a DataObject from this collection is not shared with others and is safe to modify.
 ******************************************************************************/
 DataObjectPath DataCollection::makeMutable(const ConstDataObjectPath& path, CloneHelper& cloneHelper)
 {
@@ -221,7 +221,7 @@ DataObjectPath DataCollection::makeMutable(const ConstDataObjectPath& path, Clon
 
 /******************************************************************************
 * Finds an object of the given type and with the given identifier in the list
-* of data objects stored in this flow state.
+* of data objects stored in this collection.
 ******************************************************************************/
 const DataObject* DataCollection::getObjectBy(const DataObject::OOMetaClass& objectClass, const PipelineNode* createdByNode, const QString& identifier) const
 {
@@ -272,7 +272,7 @@ void DataCollection::getObjectsRecursiveImpl(ConstDataObjectPath& path, const Da
 }
 
 /******************************************************************************
-* Finds an object of the given type and under the hierarchy path in this flow state.
+* Finds an object of the given type and under the hierarchy path in this collection.
 ******************************************************************************/
 ConstDataObjectPath DataCollection::getObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) const
 {
@@ -399,7 +399,7 @@ bool DataCollection::getObjectImpl(const DataObject::OOMetaClass& objectClass, Q
 }
 
 /******************************************************************************
-* Finds an object of the given type and under the hierarchy path in this flow state.
+* Finds an object of the given type and under the hierarchy path in this collection.
 ******************************************************************************/
 const DataObject* DataCollection::getLeafObject(const DataObject::OOMetaClass& objectClass, const QString& pathString) const
 {
@@ -455,7 +455,7 @@ const DataObject* DataCollection::getLeafObjectImpl(const DataObject::OOMetaClas
 }
 
 /******************************************************************************
-* Finds an object of the given type and under the hierarchy path in this flow state.
+* Finds an object of the given type and under the hierarchy path in this collection.
 * Duplicates it, and all its parent objects, if needed so that it can be safely
 * modified without unwanted side effects.
 ******************************************************************************/
