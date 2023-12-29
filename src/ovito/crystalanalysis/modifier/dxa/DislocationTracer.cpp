@@ -109,9 +109,6 @@ bool DislocationTracer::traceDislocationSegments(ProgressingTask& operation)
             operation.nextProgressSubStep();
     }
 
-    //qDebug() << "Number of dislocation segments:" << network()->segments().size();
-    //qDebug() << "Number of dislocation junctions:" << numJunctions;
-
     operation.endProgressSubSteps();
     return !operation.isCanceled();
 }

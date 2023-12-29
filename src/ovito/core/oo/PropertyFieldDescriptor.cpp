@@ -56,8 +56,6 @@ PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, c
     // Insert into linked list of reference fields stored in the defining class' descriptor.
     this->_next = definingClass->_firstPropertyField;
     definingClass->_firstPropertyField = this;
-//  if(qstrcmp(identifier, "identifier") == 0)
-//      qDebug() << "PropertyFieldDescriptor:" << identifier << (void*)definingClass;
 }
 
 /// Constructor for a property field that stores a single reference to a RefTarget.
@@ -140,7 +138,6 @@ bool PropertyFieldDescriptor::loadDefaultValue(RefMaker* object) const
     settings.beginGroup(object->getOOClass().name());
     QVariant v = settings.value(identifier());
     if(!v.isNull()) {
-        //qDebug() << "Loading default value for parameter" << identifier() << "of class" << definingClass()->name() << ":" << v;
         object->setPropertyFieldValue(this, v);
         return true;
     }

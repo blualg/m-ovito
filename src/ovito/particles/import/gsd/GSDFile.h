@@ -471,7 +471,7 @@ public:
                 std::copy(tempBuffer.begin(), tempBuffer.end(), buffer);
             }
             else {
-                qDebug() << "Unexpected chunk data type:" << chunk->type;
+                qWarning() << "Unexpected GSD chunk data type:" << chunk->type;
                 OVITO_ASSERT(false);
                 errCode = -1;
             }

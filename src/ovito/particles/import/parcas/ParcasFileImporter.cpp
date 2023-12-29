@@ -168,29 +168,6 @@ void ParcasFileImporter::FrameLoader::loadFile()
     if(realsize != 4 && realsize != 8)
         throw Exception(tr("PARCAS file parsing error: Bad real size: %1. Should be either 4 or 8.").arg(realsize));
 
-#if 0
-    //qDebug() << "PARCAS file byte order:" << (((machine_order == BO_BIG_ENDIAN && stream.swap() == 0) || (machine_order == BO_LITTLE_ENDIAN && stream.swap() == 1)) ? "big endian" : "little endian");
-    qDebug() << "Prototype real:" << prot_real << "(should be" << 0x3f302010 << ")";
-    qDebug() << "Prototype integer:" << prot_int << "(should be" << 0x11223344 << ")";
-    qDebug() << "File version:" << (int)fileversion;
-    qDebug() << "Real size:" << (int)realsize;
-    qDebug() << "Description offset:" << desc_off;
-    qDebug() << "Atom data offset:" << atom_off;
-    qDebug() << "Frame num:" << (int)frame_num;
-    qDebug() << "Part num:" << (int)part_num;
-    qDebug() << "Total parts:" << (int)total_parts;
-    qDebug() << "Number of per-atom fields:" << (int)fields;
-    qDebug() << "Number of atoms:" << natoms;
-    qDebug() << "itypelow:" << (int)mintype;
-    qDebug() << "itypehigh:" << (int)maxtype;
-    qDebug() << "Cpus:" << (int)cpus;
-    qDebug() << "Simu time:" << simu_time;
-    qDebug() << "Timescale:" << timescale;
-    qDebug() << "Box-x:" << box_x;
-    qDebug() << "Box-y:" << box_y;
-    qDebug() << "Box-z:" << box_z;
-#endif
-
     if(natoms > std::numeric_limits<int>::max())
         throw Exception(tr("PARCAS file parsing error: File contains %1 atoms. OVITO can handle only %2 atoms.").arg(natoms).arg(std::numeric_limits<int>::max()));
     size_t numAtoms = (size_t)natoms;
