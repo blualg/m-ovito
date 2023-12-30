@@ -55,7 +55,6 @@ void UserInterface::exitWithFatalError(const Exception& ex)
     // Quit the Qt event loop if it is running.
     if(QCoreApplication::instance() != nullptr) {
         OVITO_ASSERT(QThread::currentThread()->loopLevel() != 0);
-        // This will eventually trigger the QCoreApplication::aboutToQuit() signal, which invokes UserInterface::shutdown().
         QCoreApplication::exit(1);
     }
     else {

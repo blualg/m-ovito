@@ -307,10 +307,8 @@ bool Application::initialize(int& argc, char** argv)
     format.setMinorVersion(0);
 #endif
 
-    // Enable this code to display debug log messages from the OpenGL driver.
-//#ifdef OVITO_DEBUG
-//  format.setOption(QSurfaceFormat::DebugContext);
-//#endif
+    // Enable this line to display debug log messages from the OpenGL driver.
+    // format.setOption(QSurfaceFormat::DebugContext);
 
     QSurfaceFormat::setDefaultFormat(format);
 
@@ -356,11 +354,8 @@ void Application::createQtApplication(bool supportGui)
     QCoreApplication* qtApp = createQtApplicationImpl(supportGui, *_argc, _argv);
 
     // Make the Qt application a child of OVITO's Application object to destroy it on shutdown.
-    if(qtApp->parent())
+    if(!qtApp->parent())
         qtApp->setParent(this);
-
-    // When QCoreApplication begins to shutdown, also shutdown the OVITO application object.
-    QObject::connect(qtApp, &QCoreApplication::aboutToQuit, this, &Application::shutdown);
 
     // Restore default "C" locale, which, in the meantime, may have been changed by QCoreApplication.
     std::setlocale(LC_NUMERIC, "C");
@@ -397,6 +392,5 @@ QString Application::applicationFilePath() const
 {
     return qApp ? QCoreApplication::applicationFilePath() : ovitoAppFileName();
 }
-
 
 }   // End of namespace

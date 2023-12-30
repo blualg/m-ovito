@@ -166,12 +166,12 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
                     postStartupInitialization();
 
                     if(promise.isCanceled()) {
-                        // If someone has canceled the startup process, close the window and quit the application.
+                        // If something has canceled the startup process, close the window and quit the app.
                         ExecutionContext::current().ui().shutdown();
                         QCoreApplication::exit(1);
                     }
                     else {
-                        // Startup phase is completed.
+                        // Startup phase is complete.
                         promise.setFinished();
                     }
                 }
@@ -227,8 +227,11 @@ StandaloneApplication::~StandaloneApplication()
 void StandaloneApplication::postStartupInitialization()
 {
     // Notify registered application services that the application is fully running now.
-    for(const auto& service : applicationServices())
+    for(const auto& service : applicationServices()) {
         service->applicationStarted();
+        if(this_task::isCanceled())
+            break;
+    }
 }
 
 /******************************************************************************

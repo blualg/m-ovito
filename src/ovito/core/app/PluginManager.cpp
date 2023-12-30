@@ -200,26 +200,8 @@ void PluginManager::addExtensionClass(std::unique_ptr<OvitoClass> clazz)
     OVITO_ASSERT(clazz->pluginId() != nullptr);
     OVITO_ASSERT(clazz->plugin() == nullptr);
 
-#if 1
     registerLoadedPluginClasses();
     OVITO_ASSERT(clazz->plugin() != nullptr);
-#else
-    clazz->initialize();
-
-    Plugin* classPlugin = nullptr;
-    for(Plugin* plugin : plugins()) {
-        if(plugin->pluginId() == clazz->pluginId()) {
-            classPlugin = plugin;
-            break;
-        }
-    }
-    if(!classPlugin) {
-        classPlugin = new Plugin(clazz->pluginId());
-        registerPlugin(classPlugin);
-    }
-    clazz->_plugin = classPlugin;
-    classPlugin->registerClass(clazz.get());
-#endif
 
     _extensionClasses.push_back(std::move(clazz));
 }
