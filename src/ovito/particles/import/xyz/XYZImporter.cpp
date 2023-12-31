@@ -95,8 +95,11 @@ void XYZImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
     Frame frame(fileHandle());
 
     while(!stream.eof() && !isCanceled()) {
-        frame.byteOffset = stream.byteOffset();
-        frame.lineNumber = stream.lineNumber();
+        // Note: For first frame, always use byte offset/line number 0, because otherwise a reload of frame 0 is triggered by the FileSource.
+        if(!frames.empty()) {
+            frame.byteOffset = stream.byteOffset();
+            frame.lineNumber = stream.lineNumber();
+        }
         stream.recordSeekPoint();
 
         // Parse number of atoms.

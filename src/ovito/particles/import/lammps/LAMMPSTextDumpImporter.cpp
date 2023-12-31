@@ -86,8 +86,11 @@ void LAMMPSTextDumpImporter::FrameFinder::discoverFramesInFile(QVector<FileSourc
             if(stream.lineStartsWith("ITEM: TIMESTEP")) {
                 if(sscanf(stream.readLine(), "%llu", &timestep) != 1)
                     throw Exception(tr("LAMMPS dump file parsing error. Invalid timestep number (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
-                frame.byteOffset = byteOffset;
-                frame.lineNumber = lineNumber;
+                // Note: For first frame, always use byte offset/line number 0, because otherwise a reload of frame 0 is triggered by the FileSource.
+                if(!frames.empty()) {
+                    frame.byteOffset = byteOffset;
+                    frame.lineNumber = lineNumber;
+                }
                 frame.label = QStringLiteral("Timestep %1").arg(timestep);
                 frames.push_back(frame);
                 stream.recordSeekPoint();
@@ -119,6 +122,7 @@ void LAMMPSTextDumpImporter::FrameFinder::discoverFramesInFile(QVector<FileSourc
                 // Skip lines up to next ITEM:
                 while(!stream.eof()) {
                     byteOffset = stream.byteOffset();
+                    lineNumber = stream.lineNumber();
                     stream.readLine();
                     if(stream.lineStartsWith("ITEM:"))
                         break;

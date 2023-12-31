@@ -127,8 +127,6 @@ void PDBImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
     setProgressMaximum(stream.underlyingSize());
 
     Frame frame(fileHandle());
-    frame.byteOffset = stream.byteOffset();
-    frame.lineNumber = stream.lineNumber();
     bool endOnPreviousLine = false;
     while(!stream.eof()) {
 
