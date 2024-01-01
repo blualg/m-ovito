@@ -61,7 +61,7 @@ Getting the source code
 
 Download the source repository of OVITO into a new subdirectory named :file:`ovito/`::
 
-  git clone https://gitlab.com/stuko/ovito.git
+  git clone --recursive https://gitlab.com/stuko/ovito.git
 
 Compiling OVITO
 ---------------

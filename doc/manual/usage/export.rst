@@ -21,12 +21,12 @@ Global attribute values
 Some of OVITO's analysis functions compute scalar output values, e.g. the total number of atoms of a
 particular type or the computed surface area of a solid. You can find a table of these *global attributes*
 associated with the current dataset on the :ref:`Attributes page <data_inspector.attributes>` of the data inspector panel.
-Attributes may have time-dependent values (i.e. their value is dynamically recomputed by the pipeline system for every animation frame).
+Attributes may have time-dependent values, i.e., they are dynamically recomputed by the pipeline system for every animation frame.
+Plotting the values of one or more global attributes as functions of time can be done in *OVITO Pro* using the :ref:`particles.modifiers.time_series` modifier.
 
-You can export the time series formed by one or more such global attributes to a text file using OVITO's file export function described above.
+You can also export global attribute values to a text file using OVITO's file export function described above.
 Make sure to select the "*Table of Values*" export format in the file selection dialog.
 This output format produces a tabular text file with the values of the selected attributes as functions of time.
-You can plot the exported data with any external charting tool.
 
 .. seealso:: :ref:`adding_global_attributes`
 
