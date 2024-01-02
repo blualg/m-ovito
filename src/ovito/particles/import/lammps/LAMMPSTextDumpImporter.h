@@ -36,6 +36,8 @@ namespace Ovito {
  */
 class OVITO_PARTICLES_EXPORT LAMMPSTextDumpImporter : public ParticleImporter
 {
+protected:
+
     /// Defines a metaclass specialization for this importer type.
     class OOMetaClass : public ParticleImporter::OOMetaClass
     {
