@@ -102,52 +102,77 @@ void LAMMPSDumpYAMLImporter::FrameFinder::discoverFramesInFile(QVector<FileSourc
 }
 
 /******************************************************************************
-* Helper method parsing a YAML document.
+* Helper class for parsing a YAML document.
 ******************************************************************************/
-static ryml::Tree parseYAML(const FileHandle& fileHandle, const FileSourceImporter::Frame& frame, QByteArray& buffer, bool& hasAdditionalFrames, Task& this_task)
+class YAMLParser
 {
-    // Open file for reading.
-    CompressedTextReader stream(fileHandle, frame.byteOffset, frame.lineNumber);
+public:
 
-    // Load file contents into memory buffer.
-    // Parse first line, which must contain "---".
-    stream.readLine();
-    if(!stream.lineStartsWithToken("---"))
-        throw Exception(LAMMPSDumpYAMLImporter::tr("LAMMPS dump yaml file parsing error in line %1: Expected string '---' on first document line but found: %2").arg(stream.lineNumber()).arg(stream.lineString()));
-    buffer.append(stream.line());
-    // Read lines until terminator "..." is found.
-    while(!stream.eof() && !this_task.isCanceled()) {
-        stream.readLine();
-        buffer.append(stream.line());
-        if(stream.lineStartsWithToken("..."))
-            break;
+    bool parseDocument(const FileHandle& fileHandle, const FileSourceImporter::Frame& frame, Task& this_task) {
+        // Open YAML file for reading.
+        _stream.emplace(fileHandle, frame.byteOffset, frame.lineNumber);
+
+        // Load file contents into memory buffer.
+        // Parse first line, which must contain "---".
+        _stream->readLine();
+        if(!_stream->lineStartsWithToken("---"))
+            throw Exception(LAMMPSDumpYAMLImporter::tr("LAMMPS dump yaml file parsing error in line %1: Expected string '---' on first document line but found: %2").arg(_stream->lineNumber()).arg(_stream->lineString()));
+
+        _memoryBuffer.append(_stream->line());
+        // Read lines until terminator "..." is found.
+        while(!_stream->eof() && !this_task.isCanceled()) {
+            _stream->readLine();
+            _memoryBuffer.append(_stream->line());
+            if(_stream->lineStartsWithToken("..."))
+                break;
+        }
+        if(this_task.isCanceled())
+            return false;
+
+        // Set up YAML parser and error handling.
+        auto on_error = [](const char* msg, size_t len, ryml::Location loc, void* user_data) {
+            loc.line += *static_cast<int*>(user_data) - 1;
+            Exception ex(LAMMPSDumpYAMLImporter::tr("LAMMPS dump yaml file - %1").arg(QString::fromUtf8(msg, len)));
+            ex.appendDetailMessage(LAMMPSDumpYAMLImporter::tr("Location: line %1, column %2").arg(loc.line).arg(loc.col));
+            throw ex;
+        };
+        const int* user_data = &frame.lineNumber;
+        ryml::Parser parser(ryml::Callbacks(const_cast<int*>(user_data), nullptr, nullptr, on_error));
+
+        // Parse from a mutable view of the memory buffer.
+        _tree = parser.parse_in_place({}, ryml::substr(_memoryBuffer.data(), _memoryBuffer.size()));
+
+        // Detect if another frame follows in the file.
+        if(frame.byteOffset == 0 && !_stream->eof()) {
+            _stream->readLine();
+            if(_stream->lineStartsWithToken("---"))
+                _hasAdditionalFrames = true;
+        }
+
+        _root = _tree.crootref();
+
+        // Typically, the root node represents a stream of yaml documents.
+        // We are more interested in a document's body, which is the first child of the root node.
+        if(_root.is_stream() && !_root.empty())
+            _root = _root.first_child();
+
+        return true;
     }
-    if(this_task.isCanceled())
-        return {};
 
-    // Set up YAML parser and error handling.
-    auto on_error = [](const char* msg, size_t len, ryml::Location loc, void* user_data) {
-        loc.line += *static_cast<int*>(user_data) - 1;
-        Exception ex(LAMMPSDumpYAMLImporter::tr("LAMMPS dump yaml file - %1").arg(QString::fromUtf8(msg, len)));
-        ex.appendDetailMessage(LAMMPSDumpYAMLImporter::tr("Location: line %1, column %2").arg(loc.line).arg(loc.col));
-        throw ex;
-    };
-    const int* user_data = &frame.lineNumber;
-    ryml::Parser parser(ryml::Callbacks(const_cast<int*>(user_data), nullptr, nullptr, on_error));
+    /// Access to the root node of the parsed YAML document.
+    const ryml::ConstNodeRef& root() const { return _root; }
 
-    ryml::substr srcview(buffer.data(), buffer.size()); // a mutable view to the source buffer
-    ryml::Tree tree = parser.parse_in_place({}, srcview);
+    /// Indicates whether the parsed YAML document contains additional trajectory frames.
+    bool hasAdditionalFrames() const { return _hasAdditionalFrames; }
 
-    // Detect if another frame follows in the file.
-    hasAdditionalFrames = false;
-    if(frame.byteOffset == 0 && !stream.eof()) {
-        stream.readLine();
-        if(stream.lineStartsWithToken("---"))
-            hasAdditionalFrames = true;
-    }
+private:
 
-    return tree;
-}
+    ryml::Tree _tree;
+    ryml::ConstNodeRef _root;
+    std::optional<CompressedTextReader> _stream;
+    QByteArray _memoryBuffer;
+    bool _hasAdditionalFrames = false;
+};
 
 /******************************************************************************
 * Parses the given input file.
@@ -156,43 +181,38 @@ void LAMMPSDumpYAMLImporter::FrameLoader::loadFile()
 {
     setProgressText(tr("Reading LAMMPS dump yaml file %1").arg(fileHandle().toString()));
 
-    bool hasAdditionalFrames;
-    QByteArray buffer;
-    ryml::Tree tree = parseYAML(fileHandle(), frame(), buffer, hasAdditionalFrames, *this);
-    ryml::ConstNodeRef root = tree.crootref();
-
-    // Typically, the root node represents a stream of yaml documents.
-    // We are more interested in a document's body, which is the first child of the root node.
-    if(root.is_stream() && !root.empty())
-        root = root.first_child();
+    // Parse YAML structure.
+    YAMLParser parser;
+    if(!parser.parseDocument(fileHandle(), frame(), *this))
+        return;
 
     // Detect if another frame follows in the file.
-    if(hasAdditionalFrames)
+    if(parser.hasAdditionalFrames())
         signalAdditionalFrames();
 
     // Parse the timestep number.
     unsigned long long timestep;
-    if(root.get_if("timestep", &timestep))
+    if(parser.root().get_if("timestep", &timestep))
         state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timestep), pipelineNode());
 
     // Parse simulation time.
     double simulationTime;
-    if(root.get_if("time", &simulationTime))
+    if(parser.root().get_if("time", &simulationTime))
         state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(simulationTime), pipelineNode());
 
     // Parse simulation unit style.
     ryml::csubstr simulationUnits;
-    if(root.get_if("units", &simulationUnits))
+    if(parser.root().get_if("units", &simulationUnits))
         state().setAttribute(QStringLiteral("Units"), QVariant::fromValue(QString::fromUtf8(simulationUnits.str, simulationUnits.len)), pipelineNode());
 
     // Parse number of atoms.
     unsigned long long natoms;
-    if(!root.get_if("natoms", &natoms))
+    if(!parser.root().get_if("natoms", &natoms))
         throw Exception(tr("LAMMPS dump file parsing error. Invalid or missing number of atoms."));
     setParticleCount(natoms);
 
     // Parse box dimensions.
-    if(auto boxNode = root.find_child("box"); boxNode.valid()) {
+    if(auto boxNode = parser.root().find_child("box"); boxNode.valid()) {
         Box3 simBox;
         int n = boxNode.num_children();
         if(n >= 3) {
@@ -227,7 +247,7 @@ void LAMMPSDumpYAMLImporter::FrameLoader::loadFile()
     }
 
     // Parse boundary conditions.
-    if(auto pbcNode = root.find_child("boundary"); pbcNode.valid() && pbcNode.is_seq() && pbcNode.num_children() == 6) {
+    if(auto pbcNode = parser.root().find_child("boundary"); pbcNode.valid() && pbcNode.is_seq() && pbcNode.num_children() == 6) {
         bool pbc[3];
         for(size_t k = 0; k < 3; k++)
             pbc[k] = (pbcNode[k*2+0].val() == "p") && (pbcNode[k*2+1].val() == "p");
@@ -236,7 +256,7 @@ void LAMMPSDumpYAMLImporter::FrameLoader::loadFile()
 
     // Parse the column names.
     QStringList fileColumnNames;
-    if(auto keywordsNode = root.find_child("keywords"); keywordsNode.valid() && keywordsNode.is_seq()) {
+    if(auto keywordsNode = parser.root().find_child("keywords"); keywordsNode.valid() && keywordsNode.is_seq()) {
         for(const auto& childNode : keywordsNode.children()) {
             fileColumnNames.push_back(QString::fromUtf8(childNode.val().str, childNode.val().len));
         }
@@ -262,31 +282,33 @@ void LAMMPSDumpYAMLImporter::FrameLoader::loadFile()
     }
 
     // Look up the data section in the yaml file.
-    auto dataNode = root.find_child("data");
+    auto dataNode = parser.root().find_child("data");
     if(!dataNode.valid() || !dataNode.is_seq())
         throw Exception(tr("LAMMPS dump yaml file parsing error. Missing 'data' section."));
-    if(dataNode.num_children() != natoms)
-        throw Exception(tr("LAMMPS dump yaml file parsing error. Number of lines in 'data' section does not match 'natoms' value."));
 
     // Read the particle data.
     if(natoms != 0) {
-        auto line_node = dataNode.first_child();
-        for(size_t i = 0; i < (size_t)natoms; i++, line_node = line_node.next_sibling()) {
+        auto line_node = dataNode.begin();
+        for(size_t i = 0; i < (size_t)natoms; i++) {
             if(!setProgressValueIntermittent(i))
                 return;
+            if(line_node == dataNode.end())
+                throw Exception(tr("LAMMPS dump yaml file parsing error. Too few lines in 'data' section."));
             size_t col = 0;
-            for(const auto& col_node : line_node) {
-                if(col >= columnMapping.size())
-                    throw Exception(tr("LAMMPS dump yaml file parsing error. Too many columns in 'data' section on line %1 of 'data' section.").arg(i+1));
+            for(const auto& col_node : *line_node) {
+                if(col == columnMapping.size())
+                    break;
                 const auto& token = col_node.val();
                 columnParser.parseField(i, col, token.str, token.str + token.len);
                 col++;
             }
             if(col < columnMapping.size())
-                throw Exception(tr("LAMMPS dump yaml file parsing error. Not enough columns in 'data' section on line %1 of 'data' section.").arg(i+1));
+                throw Exception(tr("LAMMPS dump yaml file parsing error. Not enough columns in 'data' section on line #%1 of 'data' section. Expected %2 columns.").arg(i+1).arg(columnMapping.size()));
 
             if(columnParser.readingTypeNamesFromSeparateColumns())
                 columnParser.assignTypeNamesFromSeparateColumns();
+
+            ++line_node;
         }
     }
 
@@ -300,7 +322,7 @@ void LAMMPSDumpYAMLImporter::FrameLoader::loadFile()
     state().setStatus(tr("%1 particles at timestep %2").arg(natoms).arg(timestep));
 
     // Parse optional thermo record.
-    if(auto thermoNode = root.find_child("thermo"); thermoNode.valid()) {
+    if(auto thermoNode = parser.root().find_child("thermo"); thermoNode.valid()) {
         ryml::ConstNodeRef thermoKeywordsNode;
         ryml::ConstNodeRef thermoDataNode;
         for(const auto& childNode : thermoNode.children()) {
@@ -341,19 +363,14 @@ Future<ParticleInputColumnMapping> LAMMPSDumpYAMLImporter::inspectFileHeader(con
     return Application::instance()->fileManager().fetchUrl(frame.sourceFile)
         .then([](const FileHandle& fileHandle) {
 
-            bool hasAdditionalFrames;
-            QByteArray buffer;
-            ryml::Tree tree = parseYAML(fileHandle, FileSourceImporter::Frame(), buffer, hasAdditionalFrames, *Task::current());
-            ryml::ConstNodeRef root = tree.crootref();
-
-            // Typically, the root node represents a stream of yaml documents.
-            // We are more interested in a document's body, which is the first child of the root node.
-            if(root.is_stream() && !root.empty())
-                root = root.first_child();
+            // Parse YAML structure.
+            YAMLParser parser;
+            if(!parser.parseDocument(fileHandle, FileSourceImporter::Frame(), *Task::current()))
+                return ParticleInputColumnMapping();
 
             // Parse the column names.
             QStringList fileColumnNames;
-            if(auto keywordsNode = root.find_child("keywords"); keywordsNode.valid() && keywordsNode.is_seq()) {
+            if(auto keywordsNode = parser.root().find_child("keywords"); keywordsNode.valid() && keywordsNode.is_seq()) {
                 for(const auto& childNode : keywordsNode.children()) {
                     fileColumnNames.push_back(QString::fromUtf8(childNode.val().str, childNode.val().len));
                 }
