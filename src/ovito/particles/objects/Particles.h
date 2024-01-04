@@ -188,6 +188,12 @@ public:
         return { getProperty(PositionProperty), path.lastAs<DataBuffer>() };
     }
 
+    /// Wraps the coordinates of particles at the periodic boundaries of the simulation cell.
+    void wrapCoordinates(const SimulationCell& cell);
+
+    /// Unwraps the coordinates of particles based on the information stored in the "Periodic Image" property.
+    void unwrapCoordinates(const SimulationCell& cell);
+
 private:
 
     /// The bonds list sub-object.

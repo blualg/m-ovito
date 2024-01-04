@@ -18,7 +18,7 @@ from the terminal to install the required dependencies of OVITO.
 Next, download and install `Qt 6 for Mac <https://www.qt.io/download/>`_.
 
 Next, download the source code and build the shared version of the `ffmpeg <https://ffmpeg.org/>`_ video encoding library (optional)::
-  
+
   curl -O https://ffmpeg.org/releases/ffmpeg-4.2.8.tar.gz
   tar xzfv ffmpeg-4.2.8.tar.gz
   cd ffmpeg-4.2.1
@@ -37,7 +37,7 @@ Downloading the source code
 
 To download OVITO's source code into a new directory named :file:`ovito/` run::
 
-  git clone https://gitlab.com/stuko/ovito.git
+  git clone --recursive https://gitlab.com/stuko/ovito.git
 
 Compiling OVITO
 ---------------

@@ -20,6 +20,7 @@ The reader handles files written by the following LAMMPS dump styles:
 
   - ``custom``, ``custom/gz``, ``custom/mpiio``
   - ``atom``, ``atom/gz``, ``atom/mpiio``
+  - ``yaml``
 
 .. note::
 
@@ -59,6 +60,9 @@ OVITO provides support for the following dump_modify keywords:
   - The `colname` keyword lets you override the column names in the dump file, which are otherwise automatically
     chosen by LAMMPS. This gives you full control over how the information in the dump file will be mapped to particle properties in
     OVITO, see the next section.
+
+  - The `thermo` keyword tells LAMMPS to include the current thermo data in *yaml* style dump files. OVITO imports
+    the thermo values as :ref:`global attributes <usage.global_attributes>`.
 
 .. _file_formats.input.lammps_dump.property_mapping:
 

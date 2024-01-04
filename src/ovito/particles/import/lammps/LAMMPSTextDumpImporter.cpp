@@ -86,8 +86,11 @@ void LAMMPSTextDumpImporter::FrameFinder::discoverFramesInFile(QVector<FileSourc
             if(stream.lineStartsWith("ITEM: TIMESTEP")) {
                 if(sscanf(stream.readLine(), "%llu", &timestep) != 1)
                     throw Exception(tr("LAMMPS dump file parsing error. Invalid timestep number (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
-                frame.byteOffset = byteOffset;
-                frame.lineNumber = lineNumber;
+                // Note: For first frame, always use byte offset/line number 0, because otherwise a reload of frame 0 is triggered by the FileSource.
+                if(!frames.empty()) {
+                    frame.byteOffset = byteOffset;
+                    frame.lineNumber = lineNumber;
+                }
                 frame.label = QStringLiteral("Timestep %1").arg(timestep);
                 frames.push_back(frame);
                 stream.recordSeekPoint();
@@ -119,6 +122,7 @@ void LAMMPSTextDumpImporter::FrameFinder::discoverFramesInFile(QVector<FileSourc
                 // Skip lines up to next ITEM:
                 while(!stream.eof()) {
                     byteOffset = stream.byteOffset();
+                    lineNumber = stream.lineNumber();
                     stream.readLine();
                     if(stream.lineStartsWith("ITEM:"))
                         break;
@@ -278,86 +282,8 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
                 columnParser.sortElementTypes();
                 columnParser.reset();
 
-                // Determine if particle coordinates are given in reduced form and need to be rescaled to absolute form.
-                bool reducedCoordinates = false;
-                if(!fileColumnNames.empty()) {
-                    // If the dump file contains column names, then we can use them to detect
-                    // the type of particle coordinates. Reduced coordinates are found in columns
-                    // "xs, ys, zs" or "xsu, ysu, zsu".
-                    for(int i = 0; i < (int)columnMapping.size() && i < fileColumnNames.size(); i++) {
-                        if(columnMapping[i].property.type() == Particles::PositionProperty) {
-                            reducedCoordinates = (
-                                    fileColumnNames[i] == "xs" || fileColumnNames[i] == "xsu" ||
-                                    fileColumnNames[i] == "ys" || fileColumnNames[i] == "ysu" ||
-                                    fileColumnNames[i] == "zs" || fileColumnNames[i] == "zsu");
-                            // break; Note: Do not stop the loop here, because the 'Position' particle
-                            // property may be associated with several file columns, and it's the last column that
-                            // ends up getting imported into OVITO.
-                        }
-                    }
-                }
-                else {
-                    // If no column names are available, use the following heuristic:
-                    // Assume reduced coordinates if all particle coordinates are within the [-0.02,1.02] interval.
-                    // We allow coordinates to be slightly outside the [0,1] interval, because LAMMPS
-                    // wraps around particles at the periodic boundaries only occasionally.
-                    if(BufferReadAccess<Point3> posProperty = particles()->getProperty(Particles::PositionProperty)) {
-                        // Compute bounding box of particle positions.
-                        Box3 boundingBox;
-                        boundingBox.addPoints(posProperty);
-                        // Check if bounding box is inside the (slightly extended) unit cube.
-                        if(Box3(Point3(FloatType(-0.02)), Point3(FloatType(1.02))).containsBox(boundingBox))
-                            reducedCoordinates = true;
-                    }
-                }
-
-                if(reducedCoordinates) {
-                    // Convert all atom coordinates from reduced to absolute (Cartesian) format.
-                    if(BufferWriteAccess<Point3, access_mode::read_write> posProperty = particles()->getMutableProperty(Particles::PositionProperty)) {
-                        const AffineTransformation simCell = simulationCell()->cellMatrix();
-                        for(Point3& p : posProperty)
-                            p = simCell * p;
-                    }
-                }
-
-                if(!fileColumnNames.empty()) {
-                    // If a "diameter" column was loaded and stored in the "Radius" particle property,
-                    // we need to divide values by two.
-                    for(int i = 0; i < (int)columnMapping.size() && i < fileColumnNames.size(); i++) {
-                        if(columnMapping[i].property.type() == Particles::RadiusProperty && fileColumnNames[i] == "diameter") {
-                            if(BufferWriteAccess<GraphicsFloatType, access_mode::read_write> radiusProperty = particles()->getMutableProperty(Particles::RadiusProperty)) {
-                                for(auto& r : radiusProperty)
-                                    r *= GraphicsFloatType(0.5);
-                            }
-                            break;
-                        }
-                    }
-
-                    // Same for the "c_diameter[1..3]" columns or "shapex/shapey/shapez" columns being mapped to the "Aspherical Shape" property.
-                    for(int i = 0; i < (int)columnMapping.size() && i < fileColumnNames.size(); i++) {
-                        if(columnMapping[i].property.type() == Particles::AsphericalShapeProperty &&
-                            (fileColumnNames[i] == "c_diameter[1]" || fileColumnNames[i] == "c_diameter[2]" || fileColumnNames[i] == "c_diameter[3]" ||
-                             fileColumnNames[i] == "shapex" || fileColumnNames[i] == "shapey" || fileColumnNames[i] == "shapez")) {
-                            if(BufferWriteAccess<Vector3G, access_mode::read_write> shapeProperty = particles()->getMutableProperty(Particles::AsphericalShapeProperty)) {
-                                for(auto& s : shapeProperty) {
-                                    s.x() *= GraphicsFloatType(0.5);
-                                    s.y() *= GraphicsFloatType(0.5);
-                                    s.z() *= GraphicsFloatType(0.5);
-                                }
-                            }
-                            break;
-                        }
-                    }
-                }
-
-                // Detect dimensionality of system. It's a 2D system if no file column has been mapped to the Position.Z particle property (but Position.X/Y are present).
-                if(std::none_of(columnMapping.begin(), columnMapping.end(), [](const InputColumnInfo& column) {
-                    return column.property.type() == Particles::PositionProperty && column.property.vectorComponent() == 2;
-                }) && std::any_of(columnMapping.begin(), columnMapping.end(), [](const InputColumnInfo& column) {
-                    return column.property.type() == Particles::PositionProperty && column.property.vectorComponent() != 2;
-                })) {
-                    simulationCell()->setIs2D(true);
-                }
+                // After parsing the particle data, post-processes the particle properties.
+                postprocessParticleProperties(fileColumnNames, columnMapping);
 
                 // Detect if there are more simulation frames following in the file (only when reading the first frame).
                 if(frame().byteOffset == 0 && !stream.eof()) {
@@ -365,10 +291,6 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
                     if(stream.lineStartsWith("ITEM: TIMESTEP") || stream.lineStartsWith("ITEM: TIME"))
                         signalAdditionalFrames();
                 }
-
-                // Sort particles by ID.
-                if(_sortParticles)
-                    particles()->sortById();
 
                 state().setStatus(tr("%1 particles at timestep %2").arg(numParticles).arg(timestep));
 
@@ -394,6 +316,98 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
     }
 
     throw Exception(tr("LAMMPS dump file parsing error. Unexpected end of file at line %1 or \"ITEM: ATOMS\" section is not present in dump file.").arg(stream.lineNumber()));
+}
+
+/******************************************************************************
+ * After parsing the particle data, this method post-processes the particle properties.
+ *****************************************************************************/
+void LAMMPSTextDumpImporter::FrameLoader::postprocessParticleProperties(const QStringList& fileColumnNames, const ParticleInputColumnMapping& columnMapping)
+{
+    // Determine if particle coordinates are given in reduced form and need to be rescaled to absolute form.
+    bool reducedCoordinates = false;
+    if(!fileColumnNames.empty()) {
+        // If the dump file contains column names, then we can use them to detect
+        // the type of particle coordinates. Reduced coordinates are found in columns
+        // "xs, ys, zs" or "xsu, ysu, zsu".
+        for(int i = 0; i < (int)columnMapping.size() && i < fileColumnNames.size(); i++) {
+            if(columnMapping[i].property.type() == Particles::PositionProperty) {
+                reducedCoordinates = (
+                        fileColumnNames[i] == "xs" || fileColumnNames[i] == "xsu" ||
+                        fileColumnNames[i] == "ys" || fileColumnNames[i] == "ysu" ||
+                        fileColumnNames[i] == "zs" || fileColumnNames[i] == "zsu");
+                // break; Note: Do not stop the loop here, because the 'Position' particle
+                // property may be associated with several file columns, and it's the last column that
+                // ends up getting imported into OVITO.
+            }
+        }
+    }
+    else {
+        // If no column names are available, use the following heuristic:
+        // Assume reduced coordinates if all particle coordinates are within the [-0.02,1.02] interval.
+        // We allow coordinates to be slightly outside the [0,1] interval, because LAMMPS
+        // wraps around particles at the periodic boundaries only occasionally.
+        if(BufferReadAccess<Point3> posProperty = particles()->getProperty(Particles::PositionProperty)) {
+            // Compute bounding box of particle positions.
+            Box3 boundingBox;
+            boundingBox.addPoints(posProperty);
+            // Check if bounding box is inside the (slightly extended) unit cube.
+            if(Box3(Point3(FloatType(-0.02)), Point3(FloatType(1.02))).containsBox(boundingBox))
+                reducedCoordinates = true;
+        }
+    }
+
+    if(reducedCoordinates) {
+        // Convert all atom coordinates from reduced to absolute (Cartesian) format.
+        if(BufferWriteAccess<Point3, access_mode::read_write> posProperty = particles()->getMutableProperty(Particles::PositionProperty)) {
+            const AffineTransformation simCell = simulationCell()->cellMatrix();
+            for(Point3& p : posProperty)
+                p = simCell * p;
+        }
+    }
+
+    if(!fileColumnNames.empty()) {
+        // If a "diameter" column was loaded and stored in the "Radius" particle property,
+        // we need to divide values by two.
+        for(int i = 0; i < (int)columnMapping.size() && i < fileColumnNames.size(); i++) {
+            if(columnMapping[i].property.type() == Particles::RadiusProperty && fileColumnNames[i] == "diameter") {
+                if(BufferWriteAccess<GraphicsFloatType, access_mode::read_write> radiusProperty = particles()->getMutableProperty(Particles::RadiusProperty)) {
+                    for(auto& r : radiusProperty)
+                        r *= GraphicsFloatType(0.5);
+                }
+                break;
+            }
+        }
+
+        // Same for the "c_diameter[1..3]" columns or "shapex/shapey/shapez" columns being mapped to the "Aspherical Shape" property.
+        for(int i = 0; i < (int)columnMapping.size() && i < fileColumnNames.size(); i++) {
+            if(columnMapping[i].property.type() == Particles::AsphericalShapeProperty &&
+                (fileColumnNames[i] == "c_diameter[1]" || fileColumnNames[i] == "c_diameter[2]" || fileColumnNames[i] == "c_diameter[3]" ||
+                    fileColumnNames[i] == "shapex" || fileColumnNames[i] == "shapey" || fileColumnNames[i] == "shapez")) {
+                if(BufferWriteAccess<Vector3G, access_mode::read_write> shapeProperty = particles()->getMutableProperty(Particles::AsphericalShapeProperty)) {
+                    for(auto& s : shapeProperty) {
+                        s.x() *= GraphicsFloatType(0.5);
+                        s.y() *= GraphicsFloatType(0.5);
+                        s.z() *= GraphicsFloatType(0.5);
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    // Detect dimensionality of system. It's a 2D system if no file column has been mapped to the Position.Z particle property (but Position.X/Y are present).
+    if(std::none_of(columnMapping.begin(), columnMapping.end(), [](const InputColumnInfo& column) {
+        return column.property.type() == Particles::PositionProperty && column.property.vectorComponent() == 2;
+    }) && std::any_of(columnMapping.begin(), columnMapping.end(), [](const InputColumnInfo& column) {
+        return column.property.type() == Particles::PositionProperty && column.property.vectorComponent() != 2;
+    })) {
+        simulationCell()->setIs2D(true);
+    }
+
+    // Sort particles by ID.
+    if(_sortParticles)
+        particles()->sortById();
+
 }
 
 /******************************************************************************

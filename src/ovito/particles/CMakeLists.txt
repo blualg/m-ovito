@@ -65,6 +65,7 @@ SET(SourceFiles
     import/lammps/LAMMPSBinaryDumpImporter.cpp
     import/lammps/LAMMPSDataImporter.cpp
     import/lammps/LAMMPSDumpLocalImporter.cpp
+    import/lammps/LAMMPSDumpYAMLImporter.cpp
     import/lammps/ReaxFFBondImporter.cpp
     import/vasp/POSCARImporter.cpp
     import/xyz/XYZImporter.cpp

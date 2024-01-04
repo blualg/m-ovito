@@ -65,14 +65,26 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
     size_t oldParticleCount = inputParticles->elementCount();
     size_t newParticleCount = oldParticleCount * numCopies;
 
+    // Get the (input) simulation cell.
     const SimulationCell* cell = state.expectObject<SimulationCell>();
     const AffineTransformation cellMatrix = cell->matrix();
 
     // Ensure that the particles can be modified.
     Particles* outputParticles = state.makeMutable(inputParticles);
+
+    // If the periodic image flags are present, use them to unwrap particle coordinates first.
+    // After replicating the particles, we'll wrap the coordinates again back into the (extended) simulation cell.
+    bool unwrapWrap = false;
+    if(mod->adjustBoxSize() && !cell->isDegenerate() && outputParticles->getProperty(Particles::PeriodicImageProperty)) {
+        // Perform the coordinate unwrapping (using the original cell).
+        outputParticles->unwrapCoordinates(*cell);
+        unwrapWrap = true;
+    }
+
+    // Replicate all property arrays.
     outputParticles->replicate(numCopies);
 
-    // Replicate particle property values.
+    // Adjust replicated values of certain particle properties, e.g., the particle coordinates.
     Box3I newImages = mod->replicaRange();
     for(Property* property : outputParticles->makePropertiesMutable()) {
         OVITO_ASSERT(property->size() == newParticleCount);
@@ -97,16 +109,14 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
             }
         }
 
-        // Assign unique IDs to duplicated particles.
+        // Assign unique particle and molecule IDs to the duplicated particles.
         if(mod->uniqueIdentifiers() && (property->type() == Particles::IdentifierProperty || property->type() == Particles::MoleculeProperty)) {
             BufferWriteAccess<IdentifierIntType, access_mode::read_write> propertyData(property);
-            auto minmax = std::minmax_element(propertyData.cbegin(), propertyData.cbegin() + oldParticleCount);
-            auto minID = *minmax.first;
-            auto maxID = *minmax.second;
+            auto [min_id, max_id] = std::minmax_element(propertyData.cbegin(), propertyData.cbegin() + oldParticleCount);
             for(size_t c = 1; c < numCopies; c++) {
-                auto offset = (maxID - minID + 1) * c;
+                auto offset_id = (*max_id - *min_id + 1) * c;
                 for(auto id = propertyData.begin() + c * oldParticleCount, id_end = id + oldParticleCount; id != id_end; ++id)
-                    *id += offset;
+                    *id += offset_id;
             }
         }
     }
@@ -320,6 +330,25 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
                 }
             }
         }
+    }
+
+    // Wrap the coordinates of the replicated particles back into the extended simulation cell
+    // if they have been unwrapped before.
+    if(unwrapWrap && cell->hasPbcCorrected()) {
+
+        // Build the extended simulation cell - needed just for the wrapping operation.
+        DataOORef<SimulationCell> extendedCell = DataOORef<SimulationCell>::makeCopy(cell);
+        AffineTransformation extendedCellMatrix = cellMatrix;
+        extendedCellMatrix.translation() += (FloatType)newImages.minc.x() * cellMatrix.column(0);
+        extendedCellMatrix.translation() += (FloatType)newImages.minc.y() * cellMatrix.column(1);
+        extendedCellMatrix.translation() += (FloatType)newImages.minc.z() * cellMatrix.column(2);
+        extendedCellMatrix.column(0) *= (newImages.sizeX() + 1);
+        extendedCellMatrix.column(1) *= (newImages.sizeY() + 1);
+        extendedCellMatrix.column(2) *= (newImages.sizeZ() + 1);
+        extendedCell->setCellMatrix(extendedCellMatrix);
+
+        // Perform the actual coordinate
+        outputParticles->wrapCoordinates(*extendedCell);
     }
 
     return PipelineStatus::Success;

@@ -168,6 +168,10 @@ The table lists the licenses of the included components and, if they are used un
     - :ref:`license <appendix.license.libsodium>`
     -
 
+  * - `rapidyaml <https://github.com/biojppm/rapidyaml>`__
+    - :ref:`license <appendix.license.rapidyaml>`
+    -
+
   * - `The Khronos Group ANARI SDK <https://github.com/KhronosGroup/ANARI-SDK>`__
     - Apache 2.0
     -
@@ -216,3 +220,4 @@ The table lists the licenses of the included components and, if they are used un
   visrtx
   glm
   ispc
+  rapidyaml

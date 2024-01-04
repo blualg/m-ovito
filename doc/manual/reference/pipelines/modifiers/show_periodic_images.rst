@@ -12,8 +12,8 @@ This modifier copies all particles, bonds and other data elements multiple times
 The :guilabel:`Operate on` list in the lower panel lets you select the types of data elements that
 should be replicated by the modifier. By default, the modifier extends the simulation cell appropriately to
 encompass all generated images of the system. If not desired, you can turn off the option :guilabel:`Adjust simulation box size`
-to keep the original simulation cell geometry. You should be aware, however, that this produces an inconsistent state, where the 
-periodicity length no longer fits to the explicitly replicated contents of the simulation cell. 
+to keep the original simulation cell geometry. You should be aware, however, that this produces an inconsistent state, where the
+periodicity length no longer fits to the explicitly replicated contents of the simulation cell.
 
 Parameters
 """"""""""
@@ -31,6 +31,14 @@ Assign unique IDs
   rely on the uniqueness of identifiers.
 
   For replicated particles, this option also adjusts their ``Molecule Identifier`` property if it exists.
+
+.. versionadded:: 3.10.1
+
+  If the ``Periodic Image`` particle property is present and :guilabel:`Adjust simulation box size` is not turned off, the modifier will implicitly
+  un-wrap the particles coordinate before replicating the system and then re-wrap the
+  coordinates of the particles again. This ensures that molecule identifiers assigned to
+  particles remain correct if the molecules wrap around at periodic cell boundaries.
+  For further information, see also the notes on *image flags* in the `docs of the LAMMPS replicate command <https://docs.lammps.org/replicate.html>`__.
 
 .. seealso::
 

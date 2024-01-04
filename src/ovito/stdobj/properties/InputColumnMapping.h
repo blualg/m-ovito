@@ -241,6 +241,9 @@ public:
     /// \brief Processes the values from one line of the input file and stores them in the target properties.
     void readElement(size_t elementIndex, const double* values, int nvalues);
 
+    /// Parse a single field from a text line.
+    void parseField(size_t elementIndex, int columnIndex, const char* token, const char* token_end);
+
     /// \brief Sorts the created element types either by numeric ID or by name, depending on how they were stored in the input file.
     void sortElementTypes();
 
@@ -250,13 +253,14 @@ public:
     /// \brief Explicitly release the target properties written to by this class.
     void reset() { _properties.clear(); }
 
-private:
-
-    /// Parse a single field from a text line.
-    void parseField(size_t elementIndex, int columnIndex, const char* token, const char* token_end);
-
     /// Assigns textual names, read from separate file columns, to numeric element types.
     void assignTypeNamesFromSeparateColumns();
+
+    /// Indicates that the element names of at least one typed property are read from
+    /// a separate file column.
+    bool readingTypeNamesFromSeparateColumns() const { return _readingTypeNamesFromSeparateColumns; }
+
+private:
 
     /// Specifies the mapping of file columns to target properties.
     InputColumnMapping _mapping;
