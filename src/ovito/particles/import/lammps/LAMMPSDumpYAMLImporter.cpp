@@ -35,7 +35,7 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS(LAMMPSDumpYAMLImporter);
+IMPLEMENT_CREATABLE_OVITO_CLASS(LAMMPSDumpYAMLImporter);
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.
@@ -108,7 +108,7 @@ class YAMLParser
 {
 public:
 
-    bool parseDocument(const FileHandle& fileHandle, const FileSourceImporter::Frame& frame, Task& this_task) {
+    bool parseDocument(const FileHandle& fileHandle, const FileSourceImporter::Frame& frame) {
         // Open YAML file for reading.
         _stream.emplace(fileHandle, frame.byteOffset, frame.lineNumber);
 
@@ -120,14 +120,14 @@ public:
 
         _memoryBuffer.append(_stream->line());
         // Read lines until terminator "..." is found.
-        while(!_stream->eof() && !this_task.isCanceled()) {
+        while(!_stream->eof()) {
             _stream->readLine();
             _memoryBuffer.append(_stream->line());
             if(_stream->lineStartsWithToken("..."))
                 break;
+            if(this_task::isCanceled())
+                return false;
         }
-        if(this_task.isCanceled())
-            return false;
 
         // Set up YAML parser and error handling.
         auto on_error = [](const char* msg, size_t len, ryml::Location loc, void* user_data) {
@@ -183,7 +183,7 @@ void LAMMPSDumpYAMLImporter::FrameLoader::loadFile()
 
     // Parse YAML structure.
     YAMLParser parser;
-    if(!parser.parseDocument(fileHandle(), frame(), *this))
+    if(!parser.parseDocument(fileHandle(), frame()))
         return;
 
     // Detect if another frame follows in the file.
@@ -365,7 +365,7 @@ Future<ParticleInputColumnMapping> LAMMPSDumpYAMLImporter::inspectFileHeader(con
 
             // Parse YAML structure.
             YAMLParser parser;
-            if(!parser.parseDocument(fileHandle, FileSourceImporter::Frame(), *Task::current()))
+            if(!parser.parseDocument(fileHandle, FileSourceImporter::Frame()))
                 return ParticleInputColumnMapping();
 
             // Parse the column names.

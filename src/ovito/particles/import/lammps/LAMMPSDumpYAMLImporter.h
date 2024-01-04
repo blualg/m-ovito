@@ -41,7 +41,7 @@ class OVITO_PARTICLES_EXPORT LAMMPSDumpYAMLImporter : public LAMMPSTextDumpImpor
         using LAMMPSTextDumpImporter::OOMetaClass::OOMetaClass;
 
         /// Returns the list of file formats that can be read by this importer class.
-        virtual Ovito::span<const SupportedFormat> supportedFormats() const override {
+        virtual std::span<const SupportedFormat> supportedFormats() const override {
             static const SupportedFormat formats[] = {{ QStringLiteral("*"), tr("LAMMPS Dump YAML Files") }};
             return formats;
         }
@@ -51,14 +51,12 @@ class OVITO_PARTICLES_EXPORT LAMMPSDumpYAMLImporter : public LAMMPSTextDumpImpor
     };
 
     OVITO_CLASS_META(LAMMPSDumpYAMLImporter, OOMetaClass)
+    OVITO_CLASSINFO("DisplayName", "LAMMPS Dump YAML");
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    Q_INVOKABLE LAMMPSDumpYAMLImporter(ObjectInitializationFlags flags) : LAMMPSTextDumpImporter(flags) {}
-
-    /// Returns the title of this object.
-    virtual QString objectTitle() const override { return tr("LAMMPS Dump YAML"); }
+    /// Constructor.
+    using LAMMPSTextDumpImporter::LAMMPSTextDumpImporter;
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
