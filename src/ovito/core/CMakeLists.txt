@@ -412,10 +412,7 @@ IF(OVITO_BUILD_SSH_CLIENT AND NOT EMSCRIPTEN AND NOT OVITO_BUILD_CONDA)
 
         # Install OpenSSL (libcrypto.so and libssl.so) needed by libssh.
         FOREACH(lib libcrypto.so libssl.so)
-            FIND_LIBRARY(openssl_lib_location NAMES ${lib} PATHS /usr/lib /usr/lib64 /usr/local/lib /usr/lib/x86_64-linux-gnu NO_DEFAULT_PATH NO_CACHE)
-            IF(NOT openssl_lib_location)
-                MESSAGE(FATAL_ERROR "Could not find shared library ${lib} in system path, which is required by libssh.")
-            ENDIF()
+            FIND_LIBRARY(openssl_lib_location NAMES ${lib} PATHS /usr/lib /usr/lib64 /usr/local/lib /usr/lib/x86_64-linux-gnu NO_DEFAULT_PATH REQUIRED)
             OVITO_INSTALL_SHARED_LIB("${openssl_lib_location}")
             UNSET(openssl_lib_location)
         ENDFOREACH()

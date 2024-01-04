@@ -253,10 +253,7 @@ FUNCTION(deploy_qt_framework_files)
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/libQt6XcbQpa.so" DESTINATION "./lib")
 
         # Distribute libxkbcommon.so with Ovito, which is a dependency of the Qt XCB plugin that might not be present on all systems.
-        FIND_LIBRARY(OVITO_XKBCOMMON_DEP NAMES libxkbcommon.so.0 PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64 NO_DEFAULT_PATH)
-        IF(NOT OVITO_XKBCOMMON_DEP)
-            MESSAGE(FATAL_ERROR "Could not find shared library libxkbcommon.so.0 in system path.")
-        ENDIF()
+        FIND_LIBRARY(OVITO_XKBCOMMON_DEP NAMES libxkbcommon.so.0 PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64 NO_DEFAULT_PATH REQUIRED)
         OVITO_INSTALL_SHARED_LIB("${OVITO_XKBCOMMON_DEP}" DESTINATION "./lib")
         UNSET(OVITO_XKBCOMMON_DEP CACHE)
         # Additionally, place a symlink into the parent lib/ovito/ directory.
@@ -264,27 +261,18 @@ FUNCTION(deploy_qt_framework_files)
         INSTALL(FILES "${OVITO_LIBRARY_DIRECTORY}/libxkbcommon.so.0" DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/")
 
         # Distribute libxkbcommon-x11.so with Ovito, which is a dependency of the Qt XCB plugin that might not be present on all systems.
-        FIND_LIBRARY(OVITO_XKBCOMMONX11_DEP NAMES libxkbcommon-x11.so.0 PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64 NO_DEFAULT_PATH)
-        IF(NOT OVITO_XKBCOMMONX11_DEP)
-            MESSAGE(FATAL_ERROR "Could not find shared library libxkbcommon-x11.so.0 in system path.")
-        ENDIF()
+        FIND_LIBRARY(OVITO_XKBCOMMONX11_DEP NAMES libxkbcommon-x11.so.0 PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64 NO_DEFAULT_PATH REQUIRED)
         OVITO_INSTALL_SHARED_LIB("${OVITO_XKBCOMMONX11_DEP}" DESTINATION "./lib")
         UNSET(OVITO_XKBCOMMONX11_DEP CACHE)
 
         # Distribute libxcb-xinerama.so with Ovito, which is a dependency of the Qt XCB plugin that might not be present on all systems.
-        FIND_LIBRARY(OVITO_XINERAMA_DEP NAMES libxcb-xinerama.so.0 PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64 NO_DEFAULT_PATH)
-        IF(NOT OVITO_XINERAMA_DEP)
-            MESSAGE(FATAL_ERROR "Could not find shared library libxcb-xinerama.so.0 in system path.")
-        ENDIF()
+        FIND_LIBRARY(OVITO_XINERAMA_DEP NAMES libxcb-xinerama.so.0 PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64 NO_DEFAULT_PATH REQUIRED)
         OVITO_INSTALL_SHARED_LIB("${OVITO_XINERAMA_DEP}" DESTINATION "./lib")
         UNSET(OVITO_XINERAMA_DEP CACHE)
 
         # Distribute ICU libraries.
         FOREACH(iculib libicui18n.so libicuuc.so libicudata.so)
-            FIND_LIBRARY(OVITO_ICU_DEP NAMES ${iculib} ${iculib}.50 PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64 NO_DEFAULT_PATH)
-            IF(NOT OVITO_ICU_DEP)
-                MESSAGE(FATAL_ERROR "Could not find shared library libxcb-xinerama.so.0 in system path.")
-            ENDIF()
+            FIND_LIBRARY(OVITO_ICU_DEP NAMES ${iculib} ${iculib}.50 PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64 NO_DEFAULT_PATH REQUIRED)
             OVITO_INSTALL_SHARED_LIB("${OVITO_ICU_DEP}" DESTINATION ".")
             UNSET(OVITO_ICU_DEP CACHE)
         ENDFOREACH()
