@@ -45,56 +45,19 @@ bool WrapPeriodicImagesModifier::OOMetaClass::isApplicableTo(const DataCollectio
 ******************************************************************************/
 void WrapPeriodicImagesModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-    const SimulationCell* simCellObj = state.expectObject<SimulationCell>();
-    std::array<bool, 3> pbc = simCellObj->pbcFlagsCorrected();
-    if(!pbc[0] && !pbc[1] && !pbc[2]) {
+    // Get the periodic simulation cell.
+    const SimulationCell* simCell = state.expectObject<SimulationCell>();
+    if(!simCell->hasPbcCorrected()) {
         state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("No periodic boundary conditions are enabled for the simulation cell.")));
         return;
     }
-
-    const AffineTransformation& simCell = simCellObj->cellMatrix();
-    if((simCellObj->is2D() ? simCellObj->volume2D() : simCellObj->volume3D()) < FLOATTYPE_EPSILON)
-         throw Exception(tr("The simulation cell is degenerate."));
-    AffineTransformation inverseSimCell = simCellObj->reciprocalCellMatrix();
 
     // Make a modifiable copy of the particles object.
     Particles* outputParticles = state.expectMutableObject<Particles>();
     outputParticles->verifyIntegrity();
 
-    // Make a modifiable copy of the particle position property.
-    BufferWriteAccess<Point3, access_mode::read_write> posProperty = outputParticles->expectMutableProperty(Particles::PositionProperty);
-
-    // Wrap bonds by adjusting their PBC shift vectors.
-    if(outputParticles->bonds()) {
-        if(BufferReadAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(Bonds::TopologyProperty)) {
-            BufferWriteAccess<Vector3I, access_mode::read_write> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, Bonds::PeriodicImageProperty);
-            for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
-                size_t particleIndex1 = topologyProperty[bondIndex][0];
-                size_t particleIndex2 = topologyProperty[bondIndex][1];
-                if(particleIndex1 >= posProperty.size() || particleIndex2 >= posProperty.size())
-                    continue;
-                const Point3& p1 = posProperty[particleIndex1];
-                const Point3& p2 = posProperty[particleIndex2];
-                for(size_t dim = 0; dim < 3; dim++) {
-                    if(pbc[dim]) {
-                        periodicImageProperty[bondIndex][dim] +=
-                              (int)std::floor(inverseSimCell.prodrow(p2, dim))
-                            - (int)std::floor(inverseSimCell.prodrow(p1, dim));
-                    }
-                }
-            }
-        }
-    }
-
-    // Wrap particles coordinates.
-    for(size_t dim = 0; dim < 3; dim++) {
-        if(pbc[dim]) {
-            for(Point3& p : posProperty) {
-                if(FloatType n = std::floor(inverseSimCell.prodrow(p, dim)))
-                    p -= simCell.column(dim) * n;
-            }
-        }
-    }
+    // Perform the actual coordinate wrapping.
+    outputParticles->wrapCoordinates(*simCell);
 }
 
 }   // End of namespace

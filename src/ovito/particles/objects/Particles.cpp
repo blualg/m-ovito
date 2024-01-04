@@ -417,6 +417,104 @@ ConstPropertyPtr Particles::inputParticleMasses() const
 }
 
 /******************************************************************************
+* Wraps the coordinates of particles at the periodic boundaries of the simulation cell.
+******************************************************************************/
+void Particles::wrapCoordinates(const SimulationCell& cell)
+{
+    OVITO_ASSERT(isSafeToModify());
+    OVITO_ASSERT(cell.hasPbcCorrected()); // Simulation cell must have at least one periodic direction.
+
+    // Check if simulation cell has periodic boundaries and is not degenerate.
+    if(cell.isDegenerate())
+         throw Exception(tr("The simulation cell is degenerate."));
+    const AffineTransformation cellMatrix = cell.cellMatrix();
+    const AffineTransformation inverseCellMatrix = cell.reciprocalCellMatrix();
+    auto pbcFlags = cell.pbcFlagsCorrected();
+
+    // Make a modifiable copy of the particle position property.
+    BufferWriteAccess<Point3, access_mode::read_write> posProperty = expectMutableProperty(Particles::PositionProperty);
+
+    // Wrap bonds by adjusting their PBC shift vectors.
+    if(bonds()) {
+        if(BufferReadAccess<ParticleIndexPair> topologyProperty = bonds()->getProperty(Bonds::TopologyProperty)) {
+            BufferWriteAccess<Vector3I, access_mode::read_write> periodicImageProperty = makeBondsMutable()->createProperty(DataBuffer::Initialized, Bonds::PeriodicImageProperty);
+            for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
+                size_t particleIndex1 = topologyProperty[bondIndex][0];
+                size_t particleIndex2 = topologyProperty[bondIndex][1];
+                if(particleIndex1 >= posProperty.size() || particleIndex2 >= posProperty.size())
+                    continue;
+                const Point3& p1 = posProperty[particleIndex1];
+                const Point3& p2 = posProperty[particleIndex2];
+                for(size_t dim = 0; dim < 3; dim++) {
+                    if(pbcFlags[dim]) {
+                        periodicImageProperty[bondIndex][dim] +=
+                              (int)std::floor(inverseCellMatrix.prodrow(p2, dim))
+                            - (int)std::floor(inverseCellMatrix.prodrow(p1, dim));
+                    }
+                }
+            }
+        }
+    }
+
+    // Generate or adjust the Periodic Image property while wrapping particle coordinates.
+    BufferWriteAccess<Vector3I, access_mode::read_write> pbcImageProperty = createProperty(DataBuffer::Initialized, Particles::PeriodicImageProperty);
+
+    // Wrap particles coordinates.
+    for(size_t dim = 0; dim < 3; dim++) {
+        if(pbcFlags[dim]) {
+            size_t idx = 0;
+            for(Point3& p : posProperty) {
+                if(FloatType n = std::floor(inverseCellMatrix.prodrow(p, dim))) {
+                    pbcImageProperty[idx][dim] += static_cast<int>(n);
+                    p -= cellMatrix.column(dim) * n;
+                }
+                idx++;
+            }
+        }
+    }
+}
+
+/******************************************************************************
+* Unwraps the coordinates of particles based on the information stored in the "Periodic Image" property.
+******************************************************************************/
+void Particles::unwrapCoordinates(const SimulationCell& cell)
+{
+    OVITO_ASSERT(isSafeToModify());
+    const AffineTransformation cellMatrix = cell.cellMatrix();
+
+    // This operation relies on the periodic image flags, which must be present to unwrap the particle positions.
+    BufferReadAccess<Vector3I> particlePeriodicImageProperty = getProperty(Particles::PeriodicImageProperty);
+    if(!particlePeriodicImageProperty)
+        throw Exception(tr("Unwrapping of particle coordinates requires the \"Periodic Image\" property to be present."));
+
+    // Make a modifiable copy of the particle position property.
+    BufferWriteAccess<Point3, access_mode::read_write> posProperty = expectMutableProperty(Particles::PositionProperty);
+    const Vector3I* pbcShift = particlePeriodicImageProperty.cbegin();
+    for(Point3& p : posProperty) {
+        p += cellMatrix * (*pbcShift++).toDataType<FloatType>();
+    }
+
+    // Unwrap bonds by adjusting their PBC shift vectors.
+    if(bonds()) {
+        if(BufferReadAccess<ParticleIndexPair> topologyProperty = bonds()->getProperty(Bonds::TopologyProperty)) {
+            BufferWriteAccess<Vector3I, access_mode::read_write> periodicImageProperty = makeBondsMutable()->createProperty(DataBuffer::Initialized, Bonds::PeriodicImageProperty);
+            for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
+                size_t particleIndex1 = topologyProperty[bondIndex][0];
+                size_t particleIndex2 = topologyProperty[bondIndex][1];
+                if(particleIndex1 >= particlePeriodicImageProperty.size() || particleIndex2 >= particlePeriodicImageProperty.size())
+                    continue;
+                const Vector3I& particleShift1 = particlePeriodicImageProperty[particleIndex1];
+                const Vector3I& particleShift2 = particlePeriodicImageProperty[particleIndex2];
+                periodicImageProperty[bondIndex] += particleShift1 - particleShift2;
+            }
+        }
+    }
+
+    // After unwrapping the particles, the PBC image flags are obsolete. So remove the particle property.
+    removeProperty(static_object_cast<Property>(particlePeriodicImageProperty.reset()));
+}
+
+/******************************************************************************
 * Creates a storage object for standard particle properties.
 ******************************************************************************/
 PropertyPtr Particles::OOMetaClass::createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const

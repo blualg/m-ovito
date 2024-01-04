@@ -179,41 +179,17 @@ void UnwrapTrajectoriesModificationNode::unwrapParticleCoordinates(const Modifie
     inputParticles->verifyIntegrity();
 
     // If the periodic image flags particle property is present, use it to unwrap particle positions.
-    if(BufferReadAccess<Vector3I> particlePeriodicImageProperty = inputParticles->getProperty(Particles::PeriodicImageProperty)) {
+    if(inputParticles->getProperty(Particles::PeriodicImageProperty)) {
         // Get current simulation cell.
         const SimulationCell* cell = state.expectObject<SimulationCell>();
 
         // Make a modifiable copy of the particles object.
         Particles* outputParticles = state.expectMutableObject<Particles>();
 
-        // Make a modifiable copy of the particle position property.
-        BufferWriteAccess<Point3, access_mode::read_write> posProperty = outputParticles->expectMutableProperty(Particles::PositionProperty);
-        const Vector3I* pbcShift = particlePeriodicImageProperty.cbegin();
-        for(Point3& p : posProperty) {
-            p += cell->cellMatrix() * (*pbcShift++).toDataType<FloatType>();
-        }
+        // Perform the coordinate unwrapping.
+        outputParticles->unwrapCoordinates(*cell);
 
-        // Unwrap bonds by adjusting their PBC shift vectors.
-        if(outputParticles->bonds()) {
-            if(BufferReadAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(Bonds::TopologyProperty)) {
-                BufferWriteAccess<Vector3I, access_mode::read_write> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, Bonds::PeriodicImageProperty);
-                for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
-                    size_t particleIndex1 = topologyProperty[bondIndex][0];
-                    size_t particleIndex2 = topologyProperty[bondIndex][1];
-                    if(particleIndex1 >= particlePeriodicImageProperty.size() || particleIndex2 >= particlePeriodicImageProperty.size())
-                        continue;
-                    const Vector3I& particleShift1 = particlePeriodicImageProperty[particleIndex1];
-                    const Vector3I& particleShift2 = particlePeriodicImageProperty[particleIndex2];
-                    periodicImageProperty[bondIndex] += particleShift1 - particleShift2;
-                }
-            }
-        }
-
-        // After unwrapping the particles, the PBC image flags are obsolete.
-        // It's time to remove the particle property.
-        outputParticles->removeProperty(outputParticles->getProperty(Particles::PeriodicImageProperty));
-
-        state.setStatus(tr("Unwrapping particle positions using stored PBC image information."));
+        state.setStatus(tr("Unwrapping particle coordinates using stored PBC image flags."));
 
         return;
     }
@@ -247,6 +223,7 @@ void UnwrapTrajectoriesModificationNode::unwrapParticleCoordinates(const Modifie
 
     // Get current simulation cell.
     const SimulationCell* simCell = state.expectObject<SimulationCell>();
+    const AffineTransformation cellMatrix = simCell->cellMatrix();
 
     // Make a modifiable copy of the particles object.
     Particles* outputParticles = state.expectMutableObject<Particles>();
@@ -272,7 +249,7 @@ void UnwrapTrajectoriesModificationNode::unwrapParticleCoordinates(const Modifie
             }
         }
         if(shifted) {
-            p += simCell->matrix() * pbcShift;
+            p += cellMatrix * pbcShift;
         }
         index++;
     }
