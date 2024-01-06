@@ -31,6 +31,7 @@
 #endif
 
 #define RYML_SINGLE_HDR_DEFINE_NOW
+#include <charconv>
 #include <rapidyaml/rapidyaml-0.5.0.hpp>
 
 namespace Ovito {
