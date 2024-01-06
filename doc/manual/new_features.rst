@@ -5,6 +5,16 @@ Changelog
 =========
 
 ----------------------------
+Version 3.10.1 (08-Jan-2024)
+----------------------------
+
+- Added support for the LAMMPS *dump yaml* file format to the :ref:`file_formats.input.lammps_dump`.
+- :ref:`particles.modifiers.show_periodic_images` modifier: Implicitly unwrap & wrap particle coordinates when particle property ``Periodic Image`` is present to yield correct molecule identifiers if a molecule's atoms have varying image flags.
+- Fix: Trajectory frame 0 gets loaded twice unnecessarily.
+- |ovito-python| New Python properties :py:attr:`Pipeline.translation <ovito.pipeline.Pipeline.translation>` and :py:attr:`Pipeline.rotation <ovito.pipeline.Pipeline.rotation>`, which control the placement of the pipeline's visual output in the 3d scene.
+- |ovito-python| Fixed offscreen font rendering in standalone Python module on (headless) Linux platform.
+
+----------------------------
 Version 3.10.0 (28-Dec-2023)
 ----------------------------
 
