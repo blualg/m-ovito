@@ -164,7 +164,7 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
     // Check if there are any partially completed computation results that can serve as starting point for a new computation.
     if(!asyncModNode->validStages().empty() && asyncModNode->validStages().back()->validityInterval().contains(request.time())) {
         // Create the asynchronous task object and continue the execution of engines.
-        return launchTask<false>(std::make_shared<EngineExecutionTask>(request, asyncModNode->validStages().back(), input, asyncModNode->validStages()));
+        return launchTask(std::make_shared<EngineExecutionTask>(request, asyncModNode->validStages().back(), input, asyncModNode->validStages()));
     }
     else {
         // Otherwise, ask the subclass to create a new compute engine to perform the computation from scratch.
@@ -173,7 +173,7 @@ Future<PipelineFlowState> AsynchronousModifier::evaluate(const ModifierEvaluatio
             if(!modNode || modNode->modifier() != this)
                 throw Exception(tr("Modifier has been deleted from the pipeline."));
             // Create the asynchronous task object and start running the engine.
-            return launchTask<false>(std::make_shared<EngineExecutionTask>(std::move(request), std::move(engine), std::move(input)));
+            return launchTask(std::make_shared<EngineExecutionTask>(std::move(request), std::move(engine), std::move(input)));
         });
     }
 }

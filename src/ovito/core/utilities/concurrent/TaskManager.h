@@ -63,7 +63,7 @@ public:
     bool consoleLoggingEnabled() const { return _consoleLoggingEnabled; }
 
     /// Enables or disables printing of task status messages to the console for this task manager.
-    void setConsoleLoggingEnabled(bool enabled);
+    void setConsoleLoggingEnabled(bool enabled) { _consoleLoggingEnabled = enabled; }
 
     /// Indicates whether the session is in the processing of shutting down.
     bool isShuttingDown() const { return _isShuttingDown; }

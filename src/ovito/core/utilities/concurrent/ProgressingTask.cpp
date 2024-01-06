@@ -151,6 +151,7 @@ void ProgressingTask::setProgressText(const QString& progressText)
 
     _progressText = progressText;
 
+    // Print task messages to the console if logging is enabled.
     if((state & LoggingEnabled) && !progressText.isEmpty())
         qInfo().noquote() << "OVITO:" << progressText;
 

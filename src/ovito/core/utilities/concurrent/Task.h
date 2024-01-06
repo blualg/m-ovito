@@ -51,9 +51,9 @@ public:
         Started        = (1<<0),
         Finished       = (1<<1),
         Canceled       = (1<<2),
-        IsProgressing  = (1<<3), // Indicates that the task is derived from ProgressingTask and can report its progress
-        IsAsynchronous = (1<<4), // Indicates that the task is derived from AsynchronousTaskBase and will run in a worker thread.
-        LoggingEnabled = (1<<5)  // Indicates that the task writes status messages to the terminal.
+        IsProgressing  = (1<<3), // The task is derived from ProgressingTask and can report its progress
+        IsAsynchronous = (1<<4), // The task is derived from AsynchronousTaskBase and runs in a worker thread.
+        LoggingEnabled = (1<<5)  // The task's progress messages are printed to the console.
     };
 
     /// Constructor.
@@ -344,7 +344,6 @@ protected:
     template<typename... R2> friend class SharedFuture;
     template<typename... R2> friend class Promise;
 };
-
 
 namespace this_task
 {

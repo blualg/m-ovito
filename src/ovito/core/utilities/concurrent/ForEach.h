@@ -187,7 +187,7 @@ auto for_each_sequential(
     };
 
     // Launch the task.
-    return launchTask<false>(std::make_shared<ForEachTask>(
+    return launchTask(std::make_shared<ForEachTask>(
         std::forward<InputRange>(inputRange),
         std::forward<Executor>(executor),
         std::forward<StartIterFunc>(startFunc),

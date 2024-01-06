@@ -22,7 +22,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/app/UserInterface.h>
-#include <ovito/core/app/Application.h>
 #include "Task.h"
 #include "Future.h"
 #include "AsynchronousTask.h"
@@ -282,7 +281,7 @@ bool Task::waitFor(detail::TaskReference awaitedTask, bool throwOnError)
     awaitedTaskLocker.unlock();
 
     // Is the waiting task running in a thread pool?
-    if(waitingTask->isAsynchronousTask() && static_cast<AsynchronousTaskBase*>(waitingTask)->threadPool() != nullptr) {
+    if(waitingTask->isAsynchronousTask() && static_cast<AsynchronousTaskBase*>(waitingTask)->threadPool()) {
         // Are we really in a worker thread?
         OVITO_ASSERT(!ExecutionContext::isMainThread());
 
@@ -324,17 +323,14 @@ bool Task::waitFor(detail::TaskReference awaitedTask, bool throwOnError)
 
         waitingTaskCallback.unregisterCallback();
         awaitedTaskCallback.unregisterCallback();
-
-        waitingTaskLocker.relock();
     }
     else {
         // Process all pending work items while waiting for the task to finish.
         ExecutionContext::current().ui().taskManager().processWorkWhileWaiting(waitingTask, awaitedTask);
-
-        waitingTaskLocker.relock();
     }
 
     // Check if the waiting task has been canceled.
+    waitingTaskLocker.relock();
     if(waitingTask->isCanceled())
         return false;
 

@@ -25,7 +25,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/app/Application.h>
-#include <ovito/core/app/UserInterface.h>
 #include "ProgressingTask.h"
 #include "LaunchTask.h"
 
@@ -148,11 +147,12 @@ void parallelFor(T loopCount, Function&& kernel)
 }
 
 template<typename T, class Kernel>
-Future<> parallelForAsync(T loopCount, Kernel&& kernel, const QString& taskDescription, T progressChunkSize = 1024)
+bool parallelForInterruptableWithProgress(T loopCount, Kernel&& kernel, const QString& taskDescription, T progressChunkSize = 1024)
 {
     class AsyncTask : public ProgressingTask
     {
     public:
+
         /// The type of future associated with this task type. This is used by the launchTask() function.
         using future_type = Future<>;
 
@@ -202,10 +202,16 @@ Future<> parallelForAsync(T loopCount, Kernel&& kernel, const QString& taskDescr
         std::atomic<size_t> _remainingThreads;
     };
 
-    // Launch the task and return a future to the caller.
-    return launchTask<true>(
+    // Launch the task.
+    Future<> future = launchTask(
         std::make_shared<AsyncTask>(std::forward<Kernel>(kernel), taskDescription),
         loopCount, progressChunkSize);
+
+    // Show progress in the UI.
+    ExecutionContext::current().ui().taskManager().registerFuture(future);
+
+    // Block until the task has finished.
+    return future.waitForFinished();
 }
 
 template<class Function>

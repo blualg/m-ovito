@@ -24,9 +24,7 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/utilities/concurrent/ExecutionContext.h>
-#include <ovito/core/utilities/concurrent/TaskManager.h>
-#include <ovito/core/app/UserInterface.h>
+#include <ovito/core/utilities/concurrent/Task.h>
 
 namespace Ovito {
 
@@ -34,21 +32,18 @@ namespace Ovito {
  * Helper function which launches a task by invoking the task's call operator.
  * It returns a future to the task's results.
  *
- * The task class must define a type named future_type,
+ * The task class must define a type named 'future_type',
  * which specifies the type of Future to be returned
  * by the function.
 */
-template<bool RegisterWithTaskManager, class TaskType, typename... Args>
+template<class TaskType, typename... Args>
 auto launchTask(std::shared_ptr<TaskType> task, Args&&... args)
 {
+    // The task class must define a type named 'future_type', which specifies what kind of return value the task produces.
     using future_type = typename TaskType::future_type;
 
     // Make the task the active one.
     Task::Scope taskScope(task);
-
-    // Register task if requested to show it in the UI.
-    if constexpr(RegisterWithTaskManager)
-        ExecutionContext::current().ui().taskManager().registerTask(*task);
 
     // Launch the task.
     (*task)(std::forward<Args>(args)...);

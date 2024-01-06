@@ -92,7 +92,7 @@ void TaskManager::registerTask(Task& task)
     }
 #endif
 
-    // Abort all tasks while application is shutting down.
+    // Abort and reject any new tasks when application is shutting down.
     if(isShuttingDown()) {
         task.cancel();
         return;
@@ -107,15 +107,6 @@ void TaskManager::registerTask(Task& task)
 
     // Inform listeners about the new task.
     Q_EMIT taskRegistered(task.shared_from_this());
-}
-
-/******************************************************************************
-* Enables or disables printing of task status messages to the console for
-* this task manager.
-******************************************************************************/
-void TaskManager::setConsoleLoggingEnabled(bool enabled)
-{
-    _consoleLoggingEnabled = enabled;
 }
 
 /******************************************************************************
@@ -170,13 +161,19 @@ void TaskManager::submitWork(const OvitoObject* contextObject, fu2::unique_funct
 {
     OVITO_ASSERT(contextObject);
     std::lock_guard<std::mutex> lock(_mutex);
-    if(isShuttingDown() == false) {
-        _pendingWork.emplace(contextObject, std::move(function), isScriptingContext);
-        if(_pendingWork.size() == 1) {
-            _pendingWorkCondition.notify_one();
-            if(QCoreApplication::instance())
-                Q_EMIT pendingWorkArrived();
-        }
+
+    if(isShuttingDown())
+        return;
+
+    // Place work item into the queue.
+    _pendingWork.emplace(contextObject, std::move(function), isScriptingContext);
+
+    // If the queue became non-empty, notify listeners that work is waiting.
+    if(_pendingWork.size() == 1) {
+        _pendingWorkCondition.notify_one();
+
+        if(QCoreApplication::instance())
+            Q_EMIT pendingWorkArrived();
     }
 }
 
