@@ -59,7 +59,7 @@ class OVITO_CORE_EXPORT RegisteredBufferAccess
 public:
 
     /// The internal SYCL buffer accessor.
-    using accessor_type = SYCL_NS::host_accessor<std::byte, 1, SYCL_NS::access_mode::read_write>;
+    using accessor_type = sycl::host_accessor<DataBuffer::Byte, 1, sycl::access_mode::read_write>;
 
     /// Constructor.
     RegisteredBufferAccess(DataBuffer& buffer, TaskManager& taskManager) : _buffer(&buffer), _syclAccessor(buffer.size() != 0 ? accessor_type{buffer.syclBuffer()} : accessor_type{}), _next(taskManager._registeredBufferAccessors), _listHead(&taskManager._registeredBufferAccessors) {

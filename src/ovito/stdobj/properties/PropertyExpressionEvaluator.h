@@ -153,7 +153,7 @@ protected:
         /// The variable's value for the current data element.
         double value;
         /// Pointer into the property storage.
-        const std::byte* dataPointer;
+        const DataBuffer::Byte* dataPointer;
         /// Data array stride in the property storage.
         size_t stride;
         /// The type of variable.

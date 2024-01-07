@@ -32,55 +32,47 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(DataBuffer);
 #ifdef OVITO_USE_SYCL
 
 /// Helper function allocating a new SYCL buffer object of the given size.
-static SYCL_NS::buffer<std::byte> allocateSyclBuffer(size_t nelements, size_t stride)
+static sycl::buffer<DataBuffer::Byte> allocateSyclBuffer(size_t nelements, size_t stride)
 {
-#if 1
+#ifdef __ADAPTIVECPP__
     // Using OpenSYCL's make_async_buffer() to create a buffer with a destructor that won't block.
-    return SYCL_NS::make_async_buffer<std::byte, 1>(nelements * stride);
+    return sycl::make_async_buffer<DataBuffer::Byte, 1>(nelements * stride);
 #else
-    return SYCL_NS::buffer<std::byte, 1>(nelements * stride);
+    return sycl::buffer<DataBuffer::Byte, 1>(nelements * stride);
 #endif
 }
 
 /// Helper function that copies a range of bytes from one device buffer to another.
-static void copySyclBufferContents(SYCL_NS::buffer<std::byte>& src, SYCL_NS::buffer<std::byte>& dst, size_t nbytes, size_t srcOffset = 0, size_t dstOffset = 0, bool no_init = true)
+static void copySyclBufferContents(sycl::buffer<DataBuffer::Byte>& src, sycl::buffer<DataBuffer::Byte>& dst, size_t nbytes, size_t srcOffset = 0, size_t dstOffset = 0, bool no_init = true)
 {
     OVITO_ASSERT(nbytes != 0);
     OVITO_ASSERT(&src != &dst);
 
-    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
+    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
         if(srcOffset == 0 && dstOffset == 0 && no_init) {
             cgh.copy(
-                src.get_access(cgh, SYCL_NS::range(nbytes), SYCL_NS::read_only),
-                dst.get_access(cgh, SYCL_NS::write_only, SYCL_NS::no_init)
+                src.get_access(cgh, sycl::range(nbytes), sycl::read_only),
+                dst.get_access(cgh, sycl::write_only, sycl::no_init)
             );
         }
         else {
             cgh.copy(
-                src.get_access(cgh, SYCL_NS::range(nbytes), SYCL_NS::id(srcOffset), SYCL_NS::read_only),
-                dst.get_access(cgh, SYCL_NS::range(nbytes), SYCL_NS::id(dstOffset), SYCL_NS::write_only, no_init ? SYCL_NS::property_list{SYCL_NS::no_init} : SYCL_NS::property_list{})
+                src.get_access(cgh, sycl::range(nbytes), sycl::id(srcOffset), sycl::read_only),
+                dst.get_access(cgh, sycl::range(nbytes), sycl::id(dstOffset), sycl::write_only, no_init ? sycl::property_list{sycl::no_init} : sycl::property_list{})
             );
         }
     });
 }
 
 /// Helper function that fills a range of bytes in a device buffer with zero.
-static void fillSyclBufferZero(SYCL_NS::buffer<std::byte>& dst, size_t nbytes, size_t dstOffset = 0, bool no_init = true)
+static void fillSyclBufferZero(sycl::buffer<DataBuffer::Byte>& dst, size_t nbytes, size_t dstOffset = 0, bool no_init = true)
 {
-    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
-#if 0
+    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
         cgh.fill(dst.get_access(cgh,
-            SYCL_NS::range(nbytes),
-            SYCL_NS::id(dstOffset),
-            SYCL_NS::write_only,
-            no_init ? SYCL_NS::property_list{SYCL_NS::no_init} : SYCL_NS::property_list{}), std::byte{0});
-#else
-        // Workaround for OpenSYCL bug (https://github.com/OpenSYCL/OpenSYCL/issues/1110)
-        auto outputAccessor = dst.get_access(cgh, SYCL_NS::range(nbytes), SYCL_NS::id(dstOffset), SYCL_NS::write_only, no_init ? SYCL_NS::property_list{SYCL_NS::no_init} : SYCL_NS::property_list{});
-        cgh.parallel_for<class databuffer_fillSyclBufferZero>(SYCL_NS::range(nbytes), [=](size_t i) {
-            outputAccessor[i] = std::byte{0};
-        });
-#endif
+            sycl::range(nbytes),
+            sycl::id(dstOffset),
+            sycl::write_only,
+            no_init ? sycl::property_list{sycl::no_init} : sycl::property_list{}), DataBuffer::Byte{0});
     });
 }
 
@@ -140,9 +132,9 @@ OORef<RefTarget> DataBuffer::clone(bool deepCopy, CloneHelper& cloneHelper) cons
 #else
     clone->_capacity = _numElements;
 #if __cpp_lib_smart_ptr_for_overwrite || _LIBCPP_STD_VER >= 20
-    clone->_data = std::make_unique_for_overwrite<std::byte[]>(_numElements * _stride);
+    clone->_data = std::make_unique_for_overwrite<DataBuffer::Byte[]>(_numElements * _stride);
 #else
-    clone->_data = std::unique_ptr<std::byte[]>(new std::byte[_numElements * _stride]); // Note: for backward compatibility with GCC 10
+    clone->_data = std::unique_ptr<DataBuffer::Byte[]>(new DataBuffer::Byte[_numElements * _stride]); // Note: for backward compatibility with GCC 10
 #endif
     std::memcpy(clone->_data.get(), _data.get(), _numElements * _stride);
 #endif
@@ -164,7 +156,7 @@ void DataBuffer::resize(size_t newSize, bool preserveData)
     // Note: We do not reallocate the storage for performance reasons when the number of elements becomes smaller.
 #ifdef OVITO_USE_SYCL
     if(newSize != 0 && (!_data || newSize * _stride > _data->get_range()[0])) {
-        SYCL_NS::buffer<std::byte> newBuffer = allocateSyclBuffer(newSize, _stride);
+        sycl::buffer<DataBuffer::Byte> newBuffer = allocateSyclBuffer(newSize, _stride);
         if(preserveData && _numElements != 0) {
             _hasScheduledSyclReadOperations = true;
             copySyclBufferContents(*_data, newBuffer, _numElements * _stride);
@@ -179,9 +171,9 @@ void DataBuffer::resize(size_t newSize, bool preserveData)
 #else
     if(newSize > _capacity) {
 #if __cpp_lib_smart_ptr_for_overwrite || _LIBCPP_STD_VER >= 20
-        auto newBuffer = std::make_unique_for_overwrite<std::byte[]>(newSize * _stride);
+        auto newBuffer = std::make_unique_for_overwrite<DataBuffer::Byte[]>(newSize * _stride);
 #else
-        auto newBuffer = std::unique_ptr<std::byte[]>(new std::byte[newSize * _stride]); // Note: for backward compatibility with GCC 10
+        auto newBuffer = std::unique_ptr<DataBuffer::Byte[]>(new DataBuffer::Byte[newSize * _stride]); // Note: for backward compatibility with GCC 10
 #endif
         if(preserveData)
             std::memcpy(newBuffer.get(), _data.get(), _stride * std::min(_numElements, newSize));
@@ -212,7 +204,7 @@ void DataBuffer::resizeCopyFrom(size_t newSize, const DataBuffer& original)
 
 #ifdef OVITO_USE_SYCL
     if(newSize != 0 && (this != &original || !this->_data || newSize * _stride > this->_data->get_range()[0])) {
-        SYCL_NS::buffer<std::byte> newBuffer = allocateSyclBuffer(newSize, _stride);
+        sycl::buffer<DataBuffer::Byte> newBuffer = allocateSyclBuffer(newSize, _stride);
         if(original._numElements != 0) {
             original._hasScheduledSyclReadOperations = true;
             size_t nbytes = std::min(newSize, original._numElements) * original._stride;
@@ -229,9 +221,9 @@ void DataBuffer::resizeCopyFrom(size_t newSize, const DataBuffer& original)
 #else
     if(newSize > _capacity) {
 #if __cpp_lib_smart_ptr_for_overwrite || _LIBCPP_STD_VER >= 20
-        auto newBuffer = std::make_unique_for_overwrite<std::byte[]>(newSize * _stride);
+        auto newBuffer = std::make_unique_for_overwrite<DataBuffer::Byte[]>(newSize * _stride);
 #else
-        auto newBuffer = std::unique_ptr<std::byte[]>(new std::byte[newSize * _stride]); // Note: for backward compatibility with GCC 10
+        auto newBuffer = std::unique_ptr<DataBuffer::Byte[]>(new DataBuffer::Byte[newSize * _stride]); // Note: for backward compatibility with GCC 10
 #endif
         std::memcpy(newBuffer.get(), original._data.get(), _stride * std::min(original._numElements, newSize));
         _data.swap(newBuffer);
@@ -276,10 +268,10 @@ bool DataBuffer::grow(size_t numAdditionalElements, bool callerAlreadyHasWriteAc
             : (newSize * 3 / 2);
 #ifdef OVITO_USE_SYCL
         if(newCapacity != 0) {
-            SYCL_NS::buffer<std::byte> newBuffer = allocateSyclBuffer(newCapacity, _stride);
+            sycl::buffer<DataBuffer::Byte> newBuffer = allocateSyclBuffer(newCapacity, _stride);
             if(_numElements != 0) {
-                SYCL_NS::host_accessor writeAccessor(newBuffer, SYCL_NS::write_only, SYCL_NS::no_init);
-                SYCL_NS::host_accessor readAccessor(*_data, SYCL_NS::read_only);
+                sycl::host_accessor writeAccessor(newBuffer, sycl::write_only, sycl::no_init);
+                sycl::host_accessor readAccessor(*_data, sycl::read_only);
                 std::memcpy(writeAccessor.get_pointer(), readAccessor.get_pointer(), _stride * _numElements);
             }
             _data = std::move(newBuffer);
@@ -287,9 +279,9 @@ bool DataBuffer::grow(size_t numAdditionalElements, bool callerAlreadyHasWriteAc
         else _data = {};
 #else
 #if __cpp_lib_smart_ptr_for_overwrite || _LIBCPP_STD_VER >= 20
-        auto newBuffer = std::make_unique_for_overwrite<std::byte[]>(newCapacity * _stride);
+        auto newBuffer = std::make_unique_for_overwrite<DataBuffer::Byte[]>(newCapacity * _stride);
 #else
-        auto newBuffer = std::unique_ptr<std::byte[]>(new std::byte[newCapacity * _stride]); // Note: for backward compatibility with GCC 10
+        auto newBuffer = std::unique_ptr<DataBuffer::Byte[]>(new DataBuffer::Byte[newCapacity * _stride]); // Note: for backward compatibility with GCC 10
 #endif
         std::memcpy(newBuffer.get(), _data.get(), _stride * _numElements);
         _data.swap(newBuffer);
@@ -339,7 +331,7 @@ void DataBuffer::saveToStream(ObjectSaveStream& stream, bool excludeRecomputable
         OVITO_ASSERT(_isDataInitialized);
 #ifdef OVITO_USE_SYCL
         if(_numElements != 0) {
-            SYCL_NS::host_accessor readAccessor(*_data, SYCL_NS::read_only);
+            sycl::host_accessor readAccessor(*_data, sycl::read_only);
             stream.write(readAccessor.get_pointer(), _stride * _numElements);
         }
 #else
@@ -377,15 +369,15 @@ void DataBuffer::loadFromStream(ObjectLoadStream& stream)
 #ifdef OVITO_USE_SYCL
     if(_numElements != 0) {
         _data = allocateSyclBuffer(_numElements, _stride);
-        SYCL_NS::host_accessor writeAccessor(*_data, SYCL_NS::write_only, SYCL_NS::no_init);
+        sycl::host_accessor writeAccessor(*_data, sycl::write_only, sycl::no_init);
         stream.read(writeAccessor.get_pointer(), _stride * _numElements);
     }
 #else
     _capacity = _numElements;
 #if __cpp_lib_smart_ptr_for_overwrite || _LIBCPP_STD_VER >= 20
-    _data = std::make_unique_for_overwrite<std::byte[]>(_numElements * _stride);
+    _data = std::make_unique_for_overwrite<DataBuffer::Byte[]>(_numElements * _stride);
 #else
-    _data = std::unique_ptr<std::byte[]>(new std::byte[_numElements * _stride]); // Note: for backward compatibility with GCC 10
+    _data = std::unique_ptr<DataBuffer::Byte[]>(new DataBuffer::Byte[_numElements * _stride]); // Note: for backward compatibility with GCC 10
 #endif
     stream.read(_data.get(), _stride * _numElements);
 #endif
@@ -419,8 +411,8 @@ void DataBuffer::replicateFrom(size_t n, const DataBuffer& original)
         copySyclBufferContents(*original._data, *_data, nbytes, 0, nbytes * i, i == 0);
     }
 #else
-    std::byte* dest = _data.get();
-    const std::byte* src = original._data.get();
+    DataBuffer::Byte* dest = _data.get();
+    const DataBuffer::Byte* src = original._data.get();
     // Replicate data values N times.
     for(size_t i = 0; i < n; i++, dest += original.size() * stride()) {
         std::memcpy(dest, src, original.size() * stride());
@@ -463,9 +455,9 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const DataBuffer& selectio
     auto newBuffer = allocateSyclBuffer(newSize, _stride);
 #else
 #if __cpp_lib_smart_ptr_for_overwrite || _LIBCPP_STD_VER >= 20
-    auto newBuffer = std::make_unique_for_overwrite<std::byte[]>(newSize * _stride);
+    auto newBuffer = std::make_unique_for_overwrite<DataBuffer::Byte[]>(newSize * _stride);
 #else
-    auto newBuffer = std::unique_ptr<std::byte[]>(new std::byte[newSize * _stride]); // Note: for backward compatibility with GCC 10
+    auto newBuffer = std::unique_ptr<DataBuffer::Byte[]>(new DataBuffer::Byte[newSize * _stride]); // Note: for backward compatibility with GCC 10
 #endif
 #endif
     const size_t s = selection.size();
@@ -476,10 +468,10 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const DataBuffer& selectio
         OVITO_ASSERT(this->stride() == sizeof(T));
         WriteAccess writeAccess(*this);
 #ifdef OVITO_USE_SYCL
-        SYCL_NS::buffer<T> oldBufferTyped = original._data->reinterpret<T, 1>();
-        SYCL_NS::host_accessor readAccessor(oldBufferTyped, SYCL_NS::range(original.size()), SYCL_NS::read_only);
-        SYCL_NS::buffer<T> newBufferTyped = newBuffer.reinterpret<T, 1>();
-        SYCL_NS::host_accessor writeAccessor(newBufferTyped, SYCL_NS::write_only, SYCL_NS::no_init);
+        auto oldBufferTyped = original._data->reinterpret<T, 1>();
+        sycl::host_accessor readAccessor(oldBufferTyped, sycl::range(original.size()), sycl::read_only);
+        auto newBufferTyped = newBuffer.reinterpret<T, 1>();
+        sycl::host_accessor writeAccessor(newBufferTyped, sycl::write_only, sycl::no_init);
         const T* __restrict src = readAccessor.get_pointer();
         T* __restrict dst = writeAccessor.get_pointer();
         for(size_t i = 0; i < s; ++i, ++src) {
@@ -545,10 +537,10 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const DataBuffer& selectio
     // Generic case:
     WriteAccess writeAccess(*this);
 #ifdef OVITO_USE_SYCL
-    SYCL_NS::host_accessor readAccessor(*original._data, SYCL_NS::range(original.size() * original.stride()), SYCL_NS::read_only);
-    SYCL_NS::host_accessor writeAccessor(newBuffer, SYCL_NS::write_only, SYCL_NS::no_init);
-    const std::byte* __restrict src = readAccessor.get_pointer();
-    std::byte* __restrict dst = writeAccessor.get_pointer();
+    sycl::host_accessor readAccessor(*original._data, sycl::range(original.size() * original.stride()), sycl::read_only);
+    sycl::host_accessor writeAccessor(newBuffer, sycl::write_only, sycl::no_init);
+    const DataBuffer::Byte* __restrict src = readAccessor.get_pointer();
+    DataBuffer::Byte* __restrict dst = writeAccessor.get_pointer();
     const auto stride = this->stride();
     for(size_t i = 0; i < s; i++, src += stride) {
         if(!selectionAccess[i]) {
@@ -559,8 +551,8 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const DataBuffer& selectio
     OVITO_ASSERT(dst == writeAccessor.get_pointer() + newSize * stride);
     _data = std::move(newBuffer);
 #else
-    const std::byte* __restrict src = original.cdata();
-    std::byte* __restrict dst = newBuffer.get();
+    const DataBuffer::Byte* __restrict src = original.cdata();
+    DataBuffer::Byte* __restrict dst = newBuffer.get();
     const auto stride = this->stride();
     for(size_t i = 0; i < s; i++, src += stride) {
         if(!selectionAccess[i]) {
@@ -600,10 +592,10 @@ void DataBuffer::mappedCopyFrom(const DataBuffer& source, const std::vector<size
     auto specializedCopy = [&](auto _) {
         using T = decltype(_);
 #ifdef OVITO_USE_SYCL
-        SYCL_NS::buffer<T> typedSource = source._data->reinterpret<T, 1>();
-        SYCL_NS::buffer<T> typedDest = _data->reinterpret<T, 1>();
-        SYCL_NS::host_accessor readAccessor(typedSource, SYCL_NS::read_only);
-        SYCL_NS::host_accessor writeAccessor(typedDest, SYCL_NS::write_only);
+        auto typedSource = source._data->reinterpret<T, 1>();
+        auto typedDest = _data->reinterpret<T, 1>();
+        sycl::host_accessor readAccessor(typedSource, sycl::read_only);
+        sycl::host_accessor writeAccessor(typedDest, sycl::write_only);
         const T* __restrict src = readAccessor.get_pointer();
         T* __restrict dst = writeAccessor.get_pointer();
 #else
@@ -652,13 +644,13 @@ void DataBuffer::mappedCopyFrom(const DataBuffer& source, const std::vector<size
 
     // General case:
 #ifdef OVITO_USE_SYCL
-    SYCL_NS::host_accessor readAccessor(*source._data, SYCL_NS::read_only);
-    SYCL_NS::host_accessor writeAccessor(*_data, SYCL_NS::write_only, discardOldContents ? SYCL_NS::property_list{SYCL_NS::no_init} : SYCL_NS::property_list{});
-    const std::byte* __restrict src = readAccessor.get_pointer();
-    std::byte* __restrict dst = writeAccessor.get_pointer();
+    sycl::host_accessor readAccessor(*source._data, sycl::read_only);
+    sycl::host_accessor writeAccessor(*_data, sycl::write_only, discardOldContents ? sycl::property_list{sycl::no_init} : sycl::property_list{});
+    const DataBuffer::Byte* __restrict src = readAccessor.get_pointer();
+    DataBuffer::Byte* __restrict dst = writeAccessor.get_pointer();
 #else
-    const std::byte* __restrict src = source.cdata();
-    std::byte* __restrict dst = data();
+    const DataBuffer::Byte* __restrict src = source.cdata();
+    DataBuffer::Byte* __restrict dst = data();
 #endif
     const auto stride = this->stride();
     for(size_t i = 0; i < source.size(); i++, src += stride) {
@@ -754,13 +746,13 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
     }
     else {
         // General case:
-        const std::byte* __restrict src = cdata();
-        std::byte* __restrict dst = destination.data();
+        const DataBuffer::Byte* __restrict src = cdata();
+        DataBuffer::Byte* __restrict dst = destination.data();
 #else
-        SYCL_NS::host_accessor readAccessor(*_data, SYCL_NS::read_only);
-        SYCL_NS::host_accessor writeAccessor(*destination._data, SYCL_NS::write_only, SYCL_NS::no_init);
-        const std::byte* __restrict src = readAccessor.get_pointer();
-        std::byte* __restrict dst = writeAccessor.get_pointer();
+        sycl::host_accessor readAccessor(*_data, sycl::read_only);
+        sycl::host_accessor writeAccessor(*destination._data, sycl::write_only, sycl::no_init);
+        const DataBuffer::Byte* __restrict src = readAccessor.get_pointer();
+        DataBuffer::Byte* __restrict dst = writeAccessor.get_pointer();
 #endif
         size_t stride = this->stride();
         for(size_t idx : mapping) {
@@ -860,8 +852,8 @@ bool DataBuffer::equals(const DataBuffer& other) const
     OVITO_ASSERT(this->stride() == other.stride());
     if(this->size() == 0) return true;
 #ifdef OVITO_USE_SYCL
-    SYCL_NS::host_accessor readAccessor1(*other._data, SYCL_NS::read_only);
-    SYCL_NS::host_accessor readAccessor2(*this->_data, SYCL_NS::read_only);
+    sycl::host_accessor readAccessor1(*other._data, sycl::read_only);
+    sycl::host_accessor readAccessor2(*this->_data, sycl::read_only);
     return std::equal(readAccessor1.get_pointer(), readAccessor1.get_pointer() + this->size() * this->stride(), readAccessor2.get_pointer());
 #else
     return std::equal(this->cdata(), this->cdata() + this->size() * this->stride(), other.cdata());
@@ -881,14 +873,14 @@ void DataBuffer::convertToDataType(int newDataType)
     size_t newDataTypeSize = QMetaType(newDataType).sizeOf();
     size_t newStride = _componentCount * newDataTypeSize;
 #ifdef OVITO_USE_SYCL
-    std::optional<SYCL_NS::buffer<std::byte>> newData;
+    std::optional<sycl::buffer<DataBuffer::Byte>> newData;
     if(_numElements != 0)
         newData = allocateSyclBuffer(_numElements, newStride);
 #else
 #if __cpp_lib_smart_ptr_for_overwrite || _LIBCPP_STD_VER >= 20
-    auto newData = std::make_unique_for_overwrite<std::byte[]>(_numElements * newStride);
+    auto newData = std::make_unique_for_overwrite<DataBuffer::Byte[]>(_numElements * newStride);
 #else
-    auto newData = std::unique_ptr<std::byte[]>(new std::byte[_numElements * newStride]); // Note: for backward compatibility with GCC 10
+    auto newData = std::unique_ptr<DataBuffer::Byte[]>(new DataBuffer::Byte[_numElements * newStride]); // Note: for backward compatibility with GCC 10
 #endif
 #endif
 
@@ -899,7 +891,7 @@ void DataBuffer::convertToDataType(int newDataType)
             {
 #ifdef OVITO_USE_SYCL
                 auto typedDest = newData->reinterpret<int8_t, 1>();
-                SYCL_NS::host_accessor writeAccessor(typedDest, SYCL_NS::write_only, SYCL_NS::no_init);
+                sycl::host_accessor writeAccessor(typedDest, sycl::write_only, sycl::no_init);
                 int8_t* __restrict dest = writeAccessor.get_pointer();
 #else
                 int8_t* __restrict dest = reinterpret_cast<int8_t*>(newData.get());
@@ -911,7 +903,7 @@ void DataBuffer::convertToDataType(int newDataType)
             {
 #ifdef OVITO_USE_SYCL
                 auto typedDest = newData->reinterpret<int32_t, 1>();
-                SYCL_NS::host_accessor writeAccessor(typedDest, SYCL_NS::write_only, SYCL_NS::no_init);
+                sycl::host_accessor writeAccessor(typedDest, sycl::write_only, sycl::no_init);
                 int32_t* __restrict dest = writeAccessor.get_pointer();
 #else
                 int32_t* __restrict dest = reinterpret_cast<int32_t*>(newData.get());
@@ -923,7 +915,7 @@ void DataBuffer::convertToDataType(int newDataType)
             {
 #ifdef OVITO_USE_SYCL
                 auto typedDest = newData->reinterpret<int64_t, 1>();
-                SYCL_NS::host_accessor writeAccessor(typedDest, SYCL_NS::write_only, SYCL_NS::no_init);
+                sycl::host_accessor writeAccessor(typedDest, sycl::write_only, sycl::no_init);
                 int64_t* __restrict dest = writeAccessor.get_pointer();
 #else
                 int64_t* __restrict dest = reinterpret_cast<int64_t*>(newData.get());
@@ -935,7 +927,7 @@ void DataBuffer::convertToDataType(int newDataType)
             {
 #ifdef OVITO_USE_SYCL
                 auto typedDest = newData->reinterpret<float, 1>();
-                SYCL_NS::host_accessor writeAccessor(typedDest, SYCL_NS::write_only, SYCL_NS::no_init);
+                sycl::host_accessor writeAccessor(typedDest, sycl::write_only, sycl::no_init);
                 float* __restrict dest = writeAccessor.get_pointer();
 #else
                 float* __restrict dest = reinterpret_cast<float*>(newData.get());
@@ -947,7 +939,7 @@ void DataBuffer::convertToDataType(int newDataType)
             {
 #ifdef OVITO_USE_SYCL
                 auto typedDest = newData->reinterpret<double, 1>();
-                SYCL_NS::host_accessor writeAccessor(typedDest, SYCL_NS::write_only, SYCL_NS::no_init);
+                sycl::host_accessor writeAccessor(typedDest, sycl::write_only, sycl::no_init);
                 double* __restrict dest = writeAccessor.get_pointer();
 #else
                 double* __restrict dest = reinterpret_cast<double*>(newData.get());

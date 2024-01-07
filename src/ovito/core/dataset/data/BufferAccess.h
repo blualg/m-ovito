@@ -48,25 +48,25 @@ protected:
 
 #ifdef OVITO_USE_SYCL
     /// The type of SYCL buffer used by the DataBuffer class.
-    using sycl_buffer_type = SYCL_NS::buffer<std::byte>;
+    using sycl_buffer_type = sycl::buffer<DataBuffer::Byte>;
 
     /// The type of SYCL accessor used to access the buffer's contents on the host.
-    using sycl_accessor_type = SYCL_NS::host_accessor<std::byte, 1,
-        (accessmode == access_mode::read) ? SYCL_NS::access_mode::read : (
-            (accessmode == access_mode::write || accessmode == access_mode::discard_write) ? SYCL_NS::access_mode::write : SYCL_NS::access_mode::read_write)>;
+    using sycl_accessor_type = sycl::host_accessor<DataBuffer::Byte, 1,
+        (accessmode == access_mode::read) ? sycl::access_mode::read : (
+            (accessmode == access_mode::write || accessmode == access_mode::discard_write) ? sycl::access_mode::write : sycl::access_mode::read_write)>;
 
     /// SYCL accessor providing direct memory access to the underlying SYCL buffer.
     sycl_accessor_type _syclAccessor;
 #endif
 
     /// Raw pointer to the buffer's underlying memory. Needs to be updated whenever a reallocation occurs.
-    std::conditional_t<accessmode == access_mode::read, const std::byte*, std::byte*> _data = nullptr;
+    std::conditional_t<accessmode == access_mode::read, const DataBuffer::Byte*, DataBuffer::Byte*> _data = nullptr;
 
     /// Helper function that obtains the buffer's internal storage address for data elements.
     auto dataStorageAddress() const {
 #ifdef OVITO_USE_SYCL
         if constexpr(accessmode == access_mode::read)
-            return !_syclAccessor.empty() ? static_cast<const std::byte*>(_syclAccessor.get_pointer()) : nullptr;
+            return !_syclAccessor.empty() ? static_cast<const DataBuffer::Byte*>(_syclAccessor.get_pointer()) : nullptr;
         else
             return !_syclAccessor.empty() ? _syclAccessor.get_pointer() : nullptr;
 #else
@@ -82,8 +82,8 @@ protected:
         return (buffer && buffer->_data)
             ? sycl_accessor_type{const_cast<sycl_buffer_type&>(*buffer->_data),
                 no_init
-                    ? SYCL_NS::property_list{SYCL_NS::no_init}
-                    : SYCL_NS::property_list{}}
+                    ? sycl::property_list{sycl::no_init}
+                    : sycl::property_list{}}
             : sycl_accessor_type{};
     }
 #endif
@@ -514,7 +514,7 @@ public:
 
     /// Returns a pointer to the raw data of the data array.
     template<bool CanRead = (accessmode != access_mode::write && accessmode != access_mode::discard_write)>
-    inline std::enable_if_t<CanRead, const std::byte*> cdata(size_type component = 0) const {
+    inline std::enable_if_t<CanRead, const DataBuffer::Byte*> cdata(size_type component = 0) const {
         OVITO_ASSERT(this->_buffer);
         OVITO_ASSERT(this->dataStorageAddress() == this->_data);
         OVITO_ASSERT(component < this->componentCount());
@@ -523,7 +523,7 @@ public:
 
     /// Returns a pointer to the raw data of the data array.
     template<bool CanRead = (accessmode != access_mode::write && accessmode != access_mode::discard_write)>
-    inline std::enable_if_t<CanRead, const std::byte*> cdata(size_type index, size_type component) const {
+    inline std::enable_if_t<CanRead, const DataBuffer::Byte*> cdata(size_type index, size_type component) const {
         OVITO_ASSERT(this->_buffer);
         OVITO_ASSERT(this->dataStorageAddress() == this->_data);
         OVITO_ASSERT(index < this->size());
@@ -560,7 +560,7 @@ public:
 
     /// Returns a pointer to the raw data of the data array.
     template<bool CanWrite = (accessmode != access_mode::read)>
-    inline std::enable_if_t<CanWrite, std::byte*> data(size_type component = 0) const {
+    inline std::enable_if_t<CanWrite, DataBuffer::Byte*> data(size_type component = 0) const {
         OVITO_ASSERT(this->_buffer);
         OVITO_ASSERT(this->dataStorageAddress() == this->_data);
         OVITO_ASSERT(component < this->componentCount());
@@ -569,7 +569,7 @@ public:
 
     /// Returns a pointer to the raw data of the data array.
     template<bool CanWrite = (accessmode != access_mode::read)>
-    inline std::enable_if_t<CanWrite, std::byte*> data(size_type index, size_type component) const {
+    inline std::enable_if_t<CanWrite, DataBuffer::Byte*> data(size_type index, size_type component) const {
         OVITO_ASSERT(this->_buffer);
         OVITO_ASSERT(this->dataStorageAddress() == this->_data);
         OVITO_ASSERT(index < this->size());

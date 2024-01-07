@@ -140,7 +140,7 @@
 /******************************************************************************
 * SYCL
 ******************************************************************************/
-#ifdef OVITO_USE_SYCL
+#if defined(OVITO_USE_SYCL) && !defined(Q_MOC_RUN)
     #ifdef OVITO_USE_OPENSYCL
         #include <CL/sycl.hpp>
     #else

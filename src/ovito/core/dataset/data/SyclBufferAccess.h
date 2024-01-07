@@ -33,18 +33,18 @@ namespace Ovito {
 namespace detail {
 
 template<typename T, Ovito::access_mode AccessMode>
-class SyclBufferAccessTyped : public SYCL_NS::accessor<
+class SyclBufferAccessTyped : public sycl::accessor<
     std::conditional_t<AccessMode != access_mode::read, std::remove_pointer_t<T>, std::add_const_t<std::remove_pointer_t<T>>>,
     std::is_pointer_v<T> ? 2 : 1,
-    (AccessMode == access_mode::read) ? SYCL_NS::access_mode::read : (AccessMode == access_mode::write || AccessMode == access_mode::discard_write ? SYCL_NS::access_mode::write : SYCL_NS::access_mode::read_write)
+    (AccessMode == access_mode::read) ? sycl::access_mode::read : (AccessMode == access_mode::write || AccessMode == access_mode::discard_write ? sycl::access_mode::write : sycl::access_mode::read_write)
     >
 {
 public:
 
-    using accessor_type = SYCL_NS::accessor<
+    using accessor_type = sycl::accessor<
         std::conditional_t<AccessMode != access_mode::read, std::remove_pointer_t<T>, std::add_const_t<std::remove_pointer_t<T>>>,
         std::is_pointer_v<T> ? 2 : 1,
-        (AccessMode == access_mode::read) ? SYCL_NS::access_mode::read : (AccessMode == access_mode::write || AccessMode == access_mode::discard_write ? SYCL_NS::access_mode::write : SYCL_NS::access_mode::read_write)>;
+        (AccessMode == access_mode::read) ? sycl::access_mode::read : (AccessMode == access_mode::write || AccessMode == access_mode::discard_write ? sycl::access_mode::write : sycl::access_mode::read_write)>;
     using element_type = typename accessor_type::value_type;
     using iterator = std::add_pointer_t<element_type>;
     using const_iterator = std::add_pointer_t<element_type>;
@@ -61,16 +61,16 @@ public:
     /// Constructor that associates the access object with a buffer object (reference may be null).
     SyclBufferAccessTyped(
         BufferPointer buffer,
-        SYCL_NS::handler& commandGroupHandlerRef,
-        const SYCL_NS::property_list& propList =
-            (AccessMode == access_mode::discard_write || AccessMode == access_mode::discard_read_write) ? SYCL_NS::property_list{SYCL_NS::no_init} : SYCL_NS::property_list{}) : accessor_type() {
+        sycl::handler& commandGroupHandlerRef,
+        const sycl::property_list& propList =
+            (AccessMode == access_mode::discard_write || AccessMode == access_mode::discard_read_write) ? sycl::property_list{sycl::no_init} : sycl::property_list{}) : accessor_type() {
         OVITO_ASSERT(!buffer || buffer->size() == 0 || buffer->_data->get_range()[0] / buffer->stride() >= buffer->size());
         OVITO_ASSERT(!buffer || buffer->stride() == sizeof(element_type) * (ComponentWise ? buffer->componentCount() : 1));
         OVITO_ASSERT(!buffer || buffer->dataType() == DataBufferPrimitiveType<std::remove_cv_t<element_type>>::value);
         OVITO_ASSERT(!buffer || buffer->dataTypeSize() == sizeof(element_type) / (ComponentWise ? 1 : buffer->componentCount()));
         if(buffer && buffer->_data) {
 #ifdef OVITO_DEBUG
-            OVITO_ASSERT(buffer->_isDataInitialized || propList.has_property<SYCL_NS::property::no_init>());
+            OVITO_ASSERT(buffer->_isDataInitialized || propList.has_property<sycl::property::no_init>());
             if constexpr(AccessMode != access_mode::read) {
                 buffer->_isDataInitialized = true;
             }
@@ -78,12 +78,12 @@ public:
 
             if constexpr(!ComponentWise) {
                 auto typedBuffer = buffer->_data->template reinterpret<element_type, 1>();
-                *this = accessor_type{typedBuffer, commandGroupHandlerRef, SYCL_NS::range(buffer->size()), propList};
+                *this = accessor_type{typedBuffer, commandGroupHandlerRef, sycl::range(buffer->size()), propList};
             }
             else {
                 size_t capacity = buffer->_data->get_range()[0] / buffer->stride();
-                auto typedBuffer = buffer->_data->template reinterpret<element_type, 2>(SYCL_NS::range(capacity, buffer->componentCount()));
-                *this = accessor_type{typedBuffer, commandGroupHandlerRef, SYCL_NS::range(buffer->size(), buffer->componentCount()), propList};
+                auto typedBuffer = buffer->_data->template reinterpret<element_type, 2>(sycl::range(capacity, buffer->componentCount()));
+                *this = accessor_type{typedBuffer, commandGroupHandlerRef, sycl::range(buffer->size(), buffer->componentCount()), propList};
             }
 
             if constexpr(AccessMode == access_mode::read || AccessMode == access_mode::read_write) {

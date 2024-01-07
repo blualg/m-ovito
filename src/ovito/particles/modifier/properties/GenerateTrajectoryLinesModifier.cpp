@@ -177,7 +177,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
         std::vector<Point3> pointData;
         std::vector<int32_t> timeData;
         std::vector<int64_t> idData;
-        std::vector<std::byte> samplingPropertyData;
+        std::vector<DataBuffer::Byte> samplingPropertyData;
         std::vector<DataOORef<const SimulationCell>> cells;
         int timeIndex = 0;
         for(int frame : sampleFrames) {
@@ -223,7 +223,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
                             timeData.push_back(timeIndex);
                             idData.push_back(id);
                             if(particleSamplingProperty) {
-                                const std::byte* dataBegin = particleSamplingProperty.cdata(entry->second, 0);
+                                const auto* dataBegin = particleSamplingProperty.cdata(entry->second, 0);
                                 samplingPropertyData.insert(samplingPropertyData.end(), dataBegin, dataBegin + particleSamplingProperty.stride());
                             }
                         }
@@ -237,7 +237,7 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
                             timeData.push_back(timeIndex);
                             idData.push_back(index);
                             if(particleSamplingProperty) {
-                                const std::byte* dataBegin = particleSamplingProperty.cdata(index, 0);
+                                const auto* dataBegin = particleSamplingProperty.cdata(index, 0);
                                 samplingPropertyData.insert(samplingPropertyData.end(), dataBegin, dataBegin + particleSamplingProperty.stride());
                             }
                         }
@@ -350,8 +350,8 @@ bool GenerateTrajectoryLinesModifier::generateTrajectories(AnimationTime current
                     }
 
                     // Copy property values from temporary sampling buffer to destination trajectory line property.
-                    const std::byte* src = samplingPropertyData.data();
-                    std::byte* dst = samplingProperty.data();
+                    const auto* src = samplingPropertyData.data();
+                    auto* dst = samplingProperty.data();
                     size_t stride = samplingProperty.stride();
                     piter = permutation.cbegin();
                     for(size_t mapping : permutation) {

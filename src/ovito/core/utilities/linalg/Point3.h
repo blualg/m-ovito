@@ -89,7 +89,7 @@ class Point_3 : public
 #ifndef OVITO_USE_SYCL
     std::array<T, 3>
 #else
-    SYCL_NS::marray<T, 3>
+    sycl::marray<T, 3>
 #endif
 {
 private:
@@ -98,7 +98,7 @@ private:
 #ifndef OVITO_USE_SYCL
         std::array<T, 3>;
 #else
-        SYCL_NS::marray<T, 3>;
+        sycl::marray<T, 3>;
 #endif
 
 public:

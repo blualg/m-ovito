@@ -70,7 +70,7 @@ public:
 
 #ifdef OVITO_USE_SYCL
     /// Returns the main SYCL out-of-order queue to which work can be submitted.
-    SYCL_NS::queue& syclQueue() { return _syclQueue; }
+    sycl::queue& syclQueue() { return _syclQueue; }
 #endif
 
     /// Cancels all running tasks and waits for them to finish.
@@ -132,7 +132,7 @@ private:
 
 #ifdef OVITO_USE_SYCL
     /// The main SYCL out-of-order queue for work on the compute device.
-    SYCL_NS::queue _syclQueue;
+    sycl::queue _syclQueue;
 
     /// The head of the linked list of RegisteredBufferAccess objects associated with this task manager's SYCL queue.
     RegisteredBufferAccess* _registeredBufferAccessors = nullptr;

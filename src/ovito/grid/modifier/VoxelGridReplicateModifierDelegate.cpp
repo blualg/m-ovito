@@ -96,8 +96,8 @@ PipelineStatus VoxelGridReplicateModifierDelegate::apply(const ModifierEvaluatio
                 RawBufferReadAccess oldData(oldProperty);
                 RawBufferAccess<access_mode::discard_write> newData(newProperty);
                 size_t stride = newData.stride();
-                std::byte* dst = newData.data();
-                const std::byte* src = oldData.cdata();
+                auto* dst = newData.data();
+                const auto* src = oldData.cdata();
                 for(size_t z = 0; z < shape[2]; z++) {
                     size_t zs = z % oldShape[2];
                     for(size_t y = 0; y < shape[1]; y++) {

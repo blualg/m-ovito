@@ -563,7 +563,7 @@ Property* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, const cha
         OVITO_ASSERT(prop->stride() == defaultValueSize);
         if(prop->stride() == defaultValueSize) {
             RawBufferAccess<access_mode::discard_write> access(prop);
-            std::byte* dest = access.data();
+            auto* dest = access.data();
             for(size_t i = 0; i < prop->size(); i++, dest += defaultValueSize) {
                 std::memcpy(dest, defaultValue, defaultValueSize);
             }

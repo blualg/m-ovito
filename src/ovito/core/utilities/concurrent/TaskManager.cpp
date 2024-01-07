@@ -33,7 +33,7 @@ namespace Ovito {
 ******************************************************************************/
 TaskManager::TaskManager(UserInterface* ui) : _ui(ui)
 #ifdef OVITO_USE_SYCL
-    : _syclQueue(SYCL_NS::default_selector())
+    , _syclQueue{sycl::default_selector_v}
 #endif
 {
     qRegisterMetaType<TaskPtr>("TaskPtr");

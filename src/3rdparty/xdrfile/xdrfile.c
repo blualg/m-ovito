@@ -1104,9 +1104,9 @@ xdrfile_compress_coord_float(float   *ptr,
 	xdrfile_write_int(minint,3,xfp);
 	xdrfile_write_int(maxint,3,xfp);
 
-	if ((float)maxint[0] - (float)minint[0] >= INT_MAX-2 ||
-		(float)maxint[1] - (float)minint[1] >= INT_MAX-2 ||
-		(float)maxint[2] - (float)minint[2] >= INT_MAX-2) {
+	if ((float)maxint[0] - (float)minint[0] >= (float)(INT_MAX-2) ||
+		(float)maxint[1] - (float)minint[1] >= (float)(INT_MAX-2) ||
+		(float)maxint[2] - (float)minint[2] >= (float)(INT_MAX-2)) {
 		/* turning value in unsigned by subtracting minint
 		 * would cause overflow
 		 */
@@ -1591,9 +1591,9 @@ xdrfile_compress_coord_double(double   *ptr,
 	xdrfile_write_int(minint,3,xfp);
 	xdrfile_write_int(maxint,3,xfp);
 
-	if ((float)maxint[0] - (float)minint[0] >= INT_MAX-2 ||
-		(float)maxint[1] - (float)minint[1] >= INT_MAX-2 ||
-		(float)maxint[2] - (float)minint[2] >= INT_MAX-2) {
+	if ((float)maxint[0] - (float)minint[0] >= (float)(INT_MAX-2) ||
+		(float)maxint[1] - (float)minint[1] >= (float)(INT_MAX-2) ||
+		(float)maxint[2] - (float)minint[2] >= (float)(INT_MAX-2)) {
 		/* turning value in unsigned by subtracting minint
 		 * would cause overflow
 		 */

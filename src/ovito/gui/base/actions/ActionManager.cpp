@@ -51,9 +51,9 @@ ActionManager::ActionManager(QObject* parent, UserInterface& userInterface) : QA
     createCommandAction(ACTION_FILE_OPEN, tr("Load Session State..."), "file_open", tr("Load a previously saved session from a file."), QKeySequence::Open);
     createCommandAction(ACTION_FILE_SAVE, tr("Save Session State"), "file_save", tr("Save the current program session to a file."), QKeySequence::Save);
     createCommandAction(ACTION_FILE_SAVEAS, tr("Save Session State As..."), "file_save_as", tr("Save the current program session to a new file."), QKeySequence::SaveAs);
-    createCommandAction(ACTION_FILE_IMPORT, tr("Load File..."), "file_import", tr("Import data from a file on this computer."), Qt::Key_I | Qt::CTRL);
-    createCommandAction(ACTION_FILE_REMOTE_IMPORT, tr("Load Remote File"), "file_import_remote", tr("Import a file from a remote location."), Qt::Key_I | Qt::CTRL | Qt::SHIFT);
-    createCommandAction(ACTION_FILE_EXPORT, tr("Export File..."), "file_export", tr("Export data to a file."), Qt::Key_E | Qt::CTRL);
+    createCommandAction(ACTION_FILE_IMPORT, tr("Load File..."), "file_import", tr("Import data from a file on this computer."), QKeyCombination(Qt::CTRL, Qt::Key_I));
+    createCommandAction(ACTION_FILE_REMOTE_IMPORT, tr("Load Remote File"), "file_import_remote", tr("Import a file from a remote location."), QKeyCombination(Qt::CTRL | Qt::SHIFT, Qt::Key_I));
+    createCommandAction(ACTION_FILE_EXPORT, tr("Export File..."), "file_export", tr("Export data to a file."), QKeyCombination(Qt::CTRL, Qt::Key_E));
     createCommandAction(ACTION_FILE_NEW_WINDOW, tr("New Program Window"), "file_new_window", tr("Open another OVITO program window."), QKeySequence::New);
     createCommandAction(ACTION_HELP_ABOUT, tr("About OVITO"), "application_about", tr("Show information about this software."));
     createCommandAction(ACTION_HELP_SHOW_ONLINE_HELP, tr("User Manual"), "help_user_manual", tr("Open the OVITO user manual."), QKeySequence::HelpContents);
@@ -122,8 +122,8 @@ ActionManager::ActionManager(QObject* parent, UserInterface& userInterface) : QA
 
     createCommandAction(ACTION_GOTO_START_OF_ANIMATION, tr("Go to Start of Animation"), "animation_goto_start", tr("Jump to first frame of the animation."), Qt::Key_Home);
     createCommandAction(ACTION_GOTO_END_OF_ANIMATION, tr("Go to End of Animation"), "animation_goto_end", tr("Jump to the last frame of the animation."), Qt::Key_End);
-    createCommandAction(ACTION_GOTO_PREVIOUS_FRAME, tr("Go to Previous Frame"), "animation_goto_previous_frame", tr("Move time slider one animation frame backward."), Qt::Key_Left | Qt::ALT);
-    createCommandAction(ACTION_GOTO_NEXT_FRAME, tr("Go to Next Frame"), "animation_goto_next_frame", tr("Move time slider one animation frame forward."), Qt::Key_Right | Qt::ALT);
+    createCommandAction(ACTION_GOTO_PREVIOUS_FRAME, tr("Go to Previous Frame"), "animation_goto_previous_frame", tr("Move time slider one animation frame backward."), QKeyCombination(Qt::ALT, Qt::Key_Left));
+    createCommandAction(ACTION_GOTO_NEXT_FRAME, tr("Go to Next Frame"), "animation_goto_next_frame", tr("Move time slider one animation frame forward."), QKeyCombination(Qt::ALT, Qt::Key_Right));
     createCommandAction(ACTION_START_ANIMATION_PLAYBACK, tr("Start Animation Playback"), "animation_play", tr("Start playing the animation in the viewports."));
     createCommandAction(ACTION_STOP_ANIMATION_PLAYBACK, tr("Stop Animation Playback"), "animation_stop", tr("Stop playing the animation in the viewports."));
     createCommandAction(ACTION_ANIMATION_SETTINGS, tr("Animation Settings"), "animation_settings", tr("Open the animation settings dialog."));

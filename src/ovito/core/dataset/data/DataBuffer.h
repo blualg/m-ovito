@@ -44,6 +44,16 @@ namespace detail {
     template<typename T, Ovito::access_mode AccessMode> class SyclBufferAccessTyped;
 }
 
+#ifdef OVITO_USE_SYCL
+    // The OVITO_SYCL_PARALLEL_FOR macro is used to make definitions of SYCL kernels compatible with different SYCL implements.
+    // For AdaptiveCpp, the kernels must be named. DPC++, on the other hand, doesn't accept named kernels.
+    #ifdef __ADAPTIVECPP__
+        #define OVITO_SYCL_PARALLEL_FOR(cgh, kernel_name) (cgh).parallel_for<class kernel_name>
+    #else
+        #define OVITO_SYCL_PARALLEL_FOR(cgh, kernel_name) (cgh).parallel_for
+    #endif
+#endif
+
 /**
  * \brief A one- or two-dimensional array of data elements.
  */
@@ -97,6 +107,13 @@ public:
         Uninitialized = 0,
         Initialized = 1
     };
+
+    /// Raw data type used for internal memory buffer.
+#ifndef OVITO_USE_SYCL
+    using Byte = std::byte;
+#else
+    using Byte = unsigned char;
+#endif
 
     /// RAII utility class that guards read access to a DataBuffer.
     class ReadAccess
@@ -314,7 +331,7 @@ public:
 
 #ifdef OVITO_USE_SYCL
     /// Provides direct access to the internal SYCL buffer managed by this class.
-    SYCL_NS::buffer<std::byte>& syclBuffer() {
+    sycl::buffer<Byte>& syclBuffer() {
         OVITO_ASSERT(_data);
         return *_data;
     }
@@ -340,12 +357,12 @@ private:
 
 #ifndef OVITO_USE_SYCL
     /// \brief Returns a read-only pointer to the raw element data stored in this buffer.
-    const std::byte* cdata() const {
+    const Byte* cdata() const {
         return _data.get();
     }
 
     /// \brief Returns a read-write pointer to the raw element data stored in this buffer.
-    std::byte* data() {
+    Byte* data() {
         return _data.get();
     }
 #endif
@@ -378,10 +395,10 @@ private:
 #ifdef OVITO_USE_SYCL
     /// The internal memory buffer holding the data elements.
     /// Note: We are using std::optional<> here, because SYCL won't allow us to allocate 0-size buffers.
-    mutable std::optional<SYCL_NS::buffer<std::byte>> _data;
+    mutable std::optional<sycl::buffer<Byte>> _data;
 #else
     /// The internal memory buffer holding the data elements.
-    std::unique_ptr<std::byte[]> _data;
+    std::unique_ptr<Byte[]> _data;
 #endif
 
 #ifdef OVITO_USE_SYCL
@@ -415,7 +432,7 @@ template<> struct DataBufferPrimitiveType<float> { static constexpr DataBuffer::
 template<> struct DataBufferPrimitiveType<double> { static constexpr DataBuffer::DataTypes value = DataBuffer::DataTypes::Float64; };
 template<typename T, std::size_t N> struct DataBufferPrimitiveType<std::array<T,N>> : public DataBufferPrimitiveType<T> {};
 #ifdef OVITO_USE_SYCL
-template<typename T, std::size_t N> struct DataBufferPrimitiveType<SYCL_NS::marray<T,N>> : public DataBufferPrimitiveType<T> {};
+template<typename T, std::size_t N> struct DataBufferPrimitiveType<sycl::marray<T,N>> : public DataBufferPrimitiveType<T> {};
 #endif
 template<typename T> struct DataBufferPrimitiveType<Point_2<T>> : public DataBufferPrimitiveType<T> {};
 template<typename T> struct DataBufferPrimitiveType<Point_3<T>> : public DataBufferPrimitiveType<T> {};
@@ -438,7 +455,7 @@ OVITO_STATIC_ASSERT(DataBufferPrimitiveType<GraphicsFloatType>::value == DataBuf
 template<typename T, typename = void> struct DataBufferPrimitiveComponentCount { static constexpr size_t value = 1; };
 template<typename T, std::size_t N> struct DataBufferPrimitiveComponentCount<std::array<T,N>> { static constexpr size_t value = N; };
 #ifdef OVITO_USE_SYCL
-template<typename T, std::size_t N> struct DataBufferPrimitiveComponentCount<SYCL_NS::marray<T,N>> { static constexpr size_t value = N; };
+template<typename T, std::size_t N> struct DataBufferPrimitiveComponentCount<sycl::marray<T,N>> { static constexpr size_t value = N; };
 #endif
 template<typename T> struct DataBufferPrimitiveComponentCount<Point_2<T>> { static constexpr size_t value = 2; };
 template<typename T> struct DataBufferPrimitiveComponentCount<Point_3<T>> { static constexpr size_t value = 3; };
@@ -471,10 +488,10 @@ inline void DataBuffer::fill(const T value)
     _isDataInitialized = true;
 #endif
 #ifdef OVITO_USE_SYCL
-    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
+    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
         SyclBufferAccess<T, access_mode::discard_write> accessor(this, cgh);
         // Note: Tried handler.fill() method, but it led to segfaults. Using a custom fill kernel instead:
-        cgh.parallel_for<class databuffer_fill>(SYCL_NS::range(size()), [=](size_t i) {
+        OVITO_SYCL_PARALLEL_FOR(cgh, databuffer_fill)(sycl::range(size()), [=](size_t i) {
             accessor[i] = value;
         });
     });
@@ -501,10 +518,10 @@ inline void DataBuffer::fillSelected(const T value, const DataBuffer& selectionP
     WriteAccess writeAccess(*this);
     ReadAccess readAccess(selectionProperty);
 #ifdef OVITO_USE_SYCL
-    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
+    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
         SyclBufferAccess<T, access_mode::write> outputAccessor(this, cgh);
         SyclBufferAccess<SelectionIntType, access_mode::read> selectionAccessor(&selectionProperty, cgh);
-        cgh.parallel_for<class databuffer_fillSelected>(SYCL_NS::range(size()), [=](size_t i) {
+        OVITO_SYCL_PARALLEL_FOR(cgh, databuffer_fillSelected)(sycl::range(size()), [=](size_t i) {
             if(selectionAccessor[i])
                 outputAccessor[i] = value;
         });
@@ -533,8 +550,8 @@ inline void DataBuffer::copyTo(Iter iter) const
     forAnyType([&](auto _) {
         using T = decltype(_);
         OVITO_ASSERT(sizeof(T) == dataTypeSize());
-        SYCL_NS::buffer<T> valueBuffer = _data->reinterpret<T, 1>();
-        SYCL_NS::host_accessor valueAccess(valueBuffer, SYCL_NS::read_only);
+        auto valueBuffer = _data->reinterpret<T, 1>();
+        sycl::host_accessor valueAccess(valueBuffer, sycl::read_only);
         for(const auto* __restrict v = valueAccess.get_pointer(), *v_end = v + size() * cmpntCount; v != v_end;)
             *iter++ = *v++;
     });
@@ -566,8 +583,8 @@ inline void DataBuffer::copyComponentTo(Iter iter, size_t component) const
     forAnyType([&](auto _) {
         using T = decltype(_);
         OVITO_ASSERT(sizeof(T) == dataTypeSize());
-        SYCL_NS::buffer<T> valueBuffer = _data->reinterpret<T, 1>();
-        SYCL_NS::host_accessor valueAccess(valueBuffer, SYCL_NS::read_only);
+        auto valueBuffer = _data->reinterpret<T, 1>();
+        sycl::host_accessor valueAccess(valueBuffer, sycl::read_only);
         for(const auto* __restrict v = valueAccess.get_pointer() + component, *v_end = v + size() * cmpntCount; v != v_end; v += cmpntCount)
             *iter++ = *v;
     });
@@ -598,8 +615,8 @@ inline bool DataBuffer::forEach(size_t component, F&& func) const
     forAnyType([&](auto _) {
         using T = decltype(_);
         OVITO_ASSERT(sizeof(T) == dataTypeSize());
-        SYCL_NS::buffer<T> valueBuffer = _data->reinterpret<T, 1>();
-        SYCL_NS::host_accessor valueAccess(valueBuffer, SYCL_NS::read_only);
+        auto valueBuffer = _data->reinterpret<T, 1>();
+        sycl::host_accessor valueAccess(valueBuffer, sycl::read_only);
         auto v = valueAccess.get_pointer() + component;
         for(size_t i = 0; i < s; i++, v += cmpntCount)
             std::invoke(std::forward<F>(func), i, *v);
@@ -628,7 +645,7 @@ inline void DataBuffer::moveElement(size_t fromIndex, size_t toIndex, bool calle
 #endif
 #ifdef OVITO_USE_SYCL
     OVITO_ASSERT(_data);
-    SYCL_NS::host_accessor valueAccess(*_data, SYCL_NS::read_write);
+    sycl::host_accessor valueAccess(*_data, sycl::read_write);
     std::memmove(valueAccess.get_pointer() + toIndex * stride(), valueAccess.get_pointer() + fromIndex * stride(), stride());
 #else
     std::memmove(data() + toIndex * stride(), cdata() + fromIndex * stride(), stride());

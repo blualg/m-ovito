@@ -249,21 +249,21 @@ private: \
 
 /// This macro must be included in the .cpp file for any OvitoObject-derived class that can be instantiated at runtime.
 #define IMPLEMENT_CREATABLE_OVITO_CLASS(classname) \
-    const classname::OOMetaClass classname::__OOClass_instance( \
+    const classname::OOMetaClass classname::__OOClass_instance{ \
         QStringLiteral(#classname), \
         &classname::ovito_parent_class::OOClass(), \
         OVITO_PLUGIN_NAME, \
         [](ObjectInitializationFlags flags) -> OORef<OvitoObject> { return static_object_cast<OvitoObject>(OORef<classname>::createInstanceInternal(flags)); }, \
-        &classname::__OOClass_metadata_head);
+        &classname::__OOClass_metadata_head};
 
 /// This macro must be included in the .cpp file for any abstract OvitoObject-derived class that cannot be instantiated at runtime.
 #define IMPLEMENT_ABSTRACT_OVITO_CLASS(classname) \
-    const classname::OOMetaClass classname::__OOClass_instance( \
+    const classname::OOMetaClass classname::__OOClass_instance{ \
         QStringLiteral(#classname), \
         &classname::ovito_parent_class::OOClass(), \
         OVITO_PLUGIN_NAME, \
         nullptr, \
-        &classname::__OOClass_metadata_head);
+        &classname::__OOClass_metadata_head};
 
 /// This macro must be included in the class definition of a class template that inherits from a OvitoObject class.
 #define OVITO_CLASS_TEMPLATE(classname, baseclassname) \
@@ -280,12 +280,12 @@ private: \
 
 /// This macro must be included in the .cpp file for any OvitoObject-derived class template.
 #define IMPLEMENT_OVITO_CLASS_TEMPLATE(classname) \
-    template<> const classname::OOMetaClass classname::__OOClass_instance(\
+    template<> const classname::OOMetaClass classname::__OOClass_instance{ \
         QStringLiteral(#classname), \
         &classname::ovito_parent_class::OOClass(), \
         OVITO_PLUGIN_NAME, \
         nullptr, \
-        &classname::__OOClass_metadata_head);
+        &classname::__OOClass_metadata_head};
 
 #define OVITO_CLASSINFO_JOIN_IMPL(A, B) A ## B
 #define OVITO_CLASSINFO_JOIN(A, B) OVITO_CLASSINFO_JOIN_IMPL(A, B)

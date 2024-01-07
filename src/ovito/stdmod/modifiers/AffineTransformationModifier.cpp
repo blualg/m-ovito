@@ -124,11 +124,11 @@ void AffineTransformationModifier::transformCoordinates(const PipelineFlowState&
     if(selectionOnly()) {
         if(selection) {
 #ifdef OVITO_USE_SYCL
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
+            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                 SyclBufferAccess<const Point3, access_mode::read> posIn(input, cgh);
                 SyclBufferAccess<Point3, access_mode::discard_write> posOut(output, cgh);
                 SyclBufferAccess<const SelectionIntType, access_mode::read> selectionIn(selection, cgh);
-                cgh.parallel_for<class affine_coord_transformation_selection>(SYCL_NS::range(input->size()), [=](size_t i) {
+                OVITO_SYCL_PARALLEL_FOR(cgh, affine_coord_transformation_selection)(sycl::range(input->size()), [=](size_t i) {
                     posOut[i] = selectionIn[i] ? (tm * posIn[i]) : posIn[i];
                 });
             });
@@ -154,10 +154,10 @@ void AffineTransformationModifier::transformCoordinates(const PipelineFlowState&
         if(tm.isTranslationMatrix()) {
             const Vector3 translation = tm.translation();
 #ifdef OVITO_USE_SYCL
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
+            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                 SyclBufferAccess<const Point3, access_mode::read> posIn(input, cgh);
                 SyclBufferAccess<Point3, access_mode::discard_write> posOut(output, cgh);
-                cgh.parallel_for<class affine_coord_transformation_simple_translation>(SYCL_NS::range(input->size()), [=](size_t i) {
+                OVITO_SYCL_PARALLEL_FOR(cgh, affine_coord_transformation_simple_translation)(sycl::range(input->size()), [=](size_t i) {
                     posOut[i] = posIn[i] + translation;
                 });
             });
@@ -170,10 +170,10 @@ void AffineTransformationModifier::transformCoordinates(const PipelineFlowState&
         }
         else {
 #ifdef OVITO_USE_SYCL
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
+            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                 SyclBufferAccess<const Point3, access_mode::read> posIn(input, cgh);
                 SyclBufferAccess<Point3, access_mode::discard_write> posOut(output, cgh);
-                cgh.parallel_for<class affine_coord_transformation_full_xform>(SYCL_NS::range(input->size()), [=](size_t i) {
+                OVITO_SYCL_PARALLEL_FOR(cgh, affine_coord_transformation_full_xform)(sycl::range(input->size()), [=](size_t i) {
                     posOut[i] = tm * posIn[i];
                 });
             });
@@ -209,11 +209,11 @@ void AffineTransformationModifier::transformVectors(const PipelineFlowState& inp
         if(selectionOnly()) {
             if(selection) {
 #ifdef OVITO_USE_SYCL
-                ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
+                ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                     SyclBufferAccess<const Vec3, access_mode::read> vecIn(input, cgh);
                     SyclBufferAccess<Vec3, access_mode::discard_write> vecOut(output, cgh);
                     SyclBufferAccess<const SelectionIntType, access_mode::read> selectionIn(selection, cgh);
-                    cgh.parallel_for<class affine_vec_transformation_selection>(SYCL_NS::range(input->size()), [=](size_t i) {
+                    OVITO_SYCL_PARALLEL_FOR(cgh, affine_vec_transformation_selection)(sycl::range(input->size()), [=](size_t i) {
                         vecOut[i] = selectionIn[i] ? (tm * vecIn[i]) : vecIn[i];
                     });
                 });
@@ -240,10 +240,10 @@ void AffineTransformationModifier::transformVectors(const PipelineFlowState& inp
             }
             else {
 #ifdef OVITO_USE_SYCL
-                ExecutionContext::current().ui().taskManager().syclQueue().submit([&](SYCL_NS::handler& cgh) {
+                ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                     SyclBufferAccess<const Vec3, access_mode::read> vecIn(input, cgh);
                     SyclBufferAccess<Vec3, access_mode::discard_write> vecOut(output, cgh);
-                    cgh.parallel_for<class affine_vec_transformation_full_xform>(SYCL_NS::range(input->size()), [=](size_t i) {
+                    OVITO_SYCL_PARALLEL_FOR(cgh, affine_vec_transformation_full_xform)(sycl::range(input->size()), [=](size_t i) {
                         vecOut[i] = tm * vecIn[i];
                     });
                 });

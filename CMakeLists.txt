@@ -71,7 +71,15 @@ FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
 
 # Look for DPC++ SYCL implementation.
 IF(OVITO_USE_SYCL STREQUAL DPC++)
-    CMAKE_MINIMUM_REQUIRED(VERSION 3.23)
+    if(CMAKE_HOST_WIN32)
+        # need CMake 3.25.0+ for IntelLLVM support of target link properties on Windows
+        CMAKE_MINIMUM_REQUIRED(VERSION 3.25)
+    ELSE()
+        # CMake 3.23.5 is the minimum recommended for IntelLLVM on Linux
+        CMAKE_MINIMUM_REQUIRED(VERSION 3.23.5)
+    ENDIF()
+    # This imports the heterogeneous compilation configuration package (IntelSYCLConfig.cmake), which is shipped with the compiler.
+    # The package directory is found in the parent directory of the icx bin directory.
     FIND_PACKAGE(IntelSYCL REQUIRED)
 ENDIF()
 
@@ -120,6 +128,14 @@ ENDIF()
 IF(CYGWIN AND CMAKE_COMPILER_IS_GNUCXX)
     # Linking fails without -O3
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+ENDIF()
+
+IF(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+    # Silence Intel DPC++ compiler warning: "explicit comparison with NaN in fast floating point mode" on every use of std::isnan()
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-tautological-constant-compare")
+    # Silence Intel DPC++ compiler remark: "Note that use of '-g' without any optimization-level option will turn off most compiler optimizations similar to use of '-O0'"
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Rno-debug-disables-optimization")
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Rno-debug-disables-optimization")
 ENDIF()
 
 # Enable build with AddressSanitizer support if requested.
