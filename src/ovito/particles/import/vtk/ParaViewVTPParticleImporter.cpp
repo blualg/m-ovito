@@ -214,7 +214,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
         if(tensorProperty->dataType() == Property::FloatDefault && tensorProperty->componentCount() == 9) {
             BufferWriteAccess<QuaternionG, access_mode::write> orientations(
                 particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Particles::OrientationProperty),
-                !preserveExistingData);
+                preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized);
             auto* q = orientations.begin() + baseParticleIndex;
             for(const Matrix3& tensor : BufferReadAccess<Matrix3>(tensorProperty).subrange(baseParticleIndex)) {
                 if(!tensor.isZero())

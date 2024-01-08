@@ -279,7 +279,7 @@ ComputePropertyModifierDelegate::PropertyComputeEngine::PropertyComputeEngine(
     _frameNumber(frameNumber),
     _outputProperty(std::move(outputProperty)),
     _evaluator(std::move(evaluator)),
-    _outputArray(_outputProperty, !selectionProperty)
+    _outputArray(_outputProperty, selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized)
 {
     OVITO_ASSERT(_expressions.size() == this->outputProperty()->componentCount());
 

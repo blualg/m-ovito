@@ -347,12 +347,11 @@ PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationReques
     vecComponent = std::max(0, sourceProperty.vectorComponent());
 
     // Get the selection property if enabled by the user.
-    ConstPropertyPtr selectionProperty;
-    if(mod->colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
-        selectionProperty = container->getProperty(Property::GenericSelectionProperty);
-    }
+    ConstPropertyPtr selection;
+    if(mod->colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty))
+        selection = container->getProperty(Property::GenericSelectionProperty);
 
-    // Get modifier's parameter values.
+    // Get modifier's parameter.
     FloatType startValue = 0, endValue = 0;
 
     if(mod->autoAdjustRange()) {
@@ -373,42 +372,100 @@ PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationReques
     // Clamp to finite range.
     if(!std::isfinite(startValue)) startValue = std::numeric_limits<FloatType>::lowest();
     if(!std::isfinite(endValue)) endValue = std::numeric_limits<FloatType>::max();
+    const FloatType intervalRange = endValue - startValue;
 
     // Clear selection if requested. This must happen after calling determinePropertyValueRange(), which needs the input selection.
-    if(!mod->keepSelection() && selectionProperty) {
-        container->removeProperty(selectionProperty);
+    if(!mod->keepSelection() && selection) {
+        container->removeProperty(selection);
     }
 
+#ifdef OVITO_USE_SYCL
     // Create the color output property.
-    BufferWriteAccess<ColorG, access_mode::write> colorProperty(
-        container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, outputColorPropertyId(), objectPath),
-        !selectionProperty);
+    Property* colorProperty = container->createProperty(selection ? DataBuffer::Initialized : DataBuffer::Uninitialized, outputColorPropertyId(), objectPath);
 
-    BufferReadAccess<SelectionIntType> selection(selectionProperty.get());
-    bool result = property->forEach(vecComponent, [&](size_t i, auto v) {
-        if(selection && !selection[i])
+    if(colorProperty->size() != 0) {
+        // Create color lookup table.
+        ConstDataBufferPtr colorMap = mod->colorGradient()->getColorMap();
+
+        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+
+            // Access selection flags array (optional).
+            SyclBufferAccess<const SelectionIntType, access_mode::read> selectionAcc(selection, cgh);
+            // Access color lookup table.
+            SyclBufferAccess<const ColorG, access_mode::read> colorMapAcc(colorMap, cgh);
+            // Access output array.
+            SyclBufferAccess<ColorG, access_mode::write> outputAcc(colorProperty, cgh, selection ? DataBuffer::Initialized : DataBuffer::Uninitialized);
+
+            // Duplicate templated code for different input data types.
+            property->forAnyType([&](auto _) {
+                using T = decltype(_);
+                SyclBufferAccess<const T*, access_mode::read> inputAcc(property, cgh);
+
+                OVITO_SYCL_PARALLEL_FOR(cgh, ColorCodingModifierDelegate_apply)(sycl::range(property->size()), [=](size_t i) {
+                    if(selectionAcc.empty() || selectionAcc[i]) {
+                        // Get input value.
+                        const GraphicsFloatType value = static_cast<FloatType>(inputAcc[sycl::id<2>(i, vecComponent)]);
+
+                        // Map input value to [0,1] range.
+                        GraphicsFloatType t;
+                        if(intervalRange != 0) {
+                            t = (value - startValue) / intervalRange;
+                        }
+                        else {
+                            if(value == startValue) t = GraphicsFloatType(0.5);
+                            else if(value > startValue) t = 1;
+                            else t = 0;
+                        }
+
+                        // Clamp value.
+                        if(std::isnan(t)) t = 0;
+                        else if(t ==  std::numeric_limits<GraphicsFloatType>::infinity()) t = 1;
+                        else if(t == -std::numeric_limits<GraphicsFloatType>::infinity()) t = 0;
+                        else if(t < 0) t = 0;
+                        else if(t > 1) t = 1;
+
+                        // Map scalar to RGB color.
+                        outputAcc[i] = colorMapAcc[static_cast<size_t>(t * (colorMapAcc.size() - 1))];
+                    }
+                });
+            });
+        });
+    }
+#else
+    // Create the color output property.
+    BufferWriteAccess<ColorG, access_mode::write> colorAcc(
+        container->createProperty(selection ? DataBuffer::Initialized : DataBuffer::Uninitialized, outputColorPropertyId(), objectPath),
+        !selection);
+
+    BufferReadAccess<SelectionIntType> selectionAcc(selection.get());
+    bool result = property->forEach(vecComponent, [&](size_t i, auto value) {
+        if(selectionAcc && !selectionAcc[i])
             return;
 
-        // Compute linear interpolation.
+        // Map input value to [0,1] range.
         GraphicsFloatType t;
-        if(startValue == endValue) {
-            if(v == startValue) t = GraphicsFloatType(0.5);
-            else if(v > startValue) t = GraphicsFloatType(1.0);
-            else t = GraphicsFloatType(0.0);
+        if(intervalRange != 0) {
+            t = static_cast<GraphicsFloatType>((value - startValue) / intervalRange);
         }
-        else t = static_cast<GraphicsFloatType>((v - startValue) / (endValue - startValue));
+        else {
+            if(value == startValue) t = GraphicsFloatType(0.5);
+            else if(value > startValue) t = 1;
+            else t = 0;
+        }
 
-        // Clamp values.
+        // Clamp value.
         if(std::isnan(t)) t = 0;
-        else if(t == std::numeric_limits<GraphicsFloatType>::infinity()) t = 1;
+        else if(t ==  std::numeric_limits<GraphicsFloatType>::infinity()) t = 1;
         else if(t == -std::numeric_limits<GraphicsFloatType>::infinity()) t = 0;
         else if(t < 0) t = 0;
         else if(t > 1) t = 1;
 
-        colorProperty[i] = mod->colorGradient()->valueToColor(t);
+        // Map scalar to RGB color.
+        colorAcc[i] = mod->colorGradient()->valueToColor(t);
     });
     if(!result)
         throw Exception(tr("The property '%1' has an invalid or non-numeric data type.").arg(property->name()));
+#endif
 
     return PipelineStatus::Success;
 }

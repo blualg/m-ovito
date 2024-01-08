@@ -62,15 +62,18 @@ public:
     SyclBufferAccessTyped(
         BufferPointer buffer,
         sycl::handler& commandGroupHandlerRef,
-        const sycl::property_list& propList =
-            (AccessMode == access_mode::discard_write || AccessMode == access_mode::discard_read_write) ? sycl::property_list{sycl::no_init} : sycl::property_list{}) : accessor_type() {
+        DataBuffer::BufferInitialization initMode =
+            (AccessMode == access_mode::discard_write || AccessMode == access_mode::discard_read_write)
+                ? DataBuffer::BufferInitialization::Uninitialized
+                : DataBuffer::BufferInitialization::Initialized)
+            : accessor_type() {
         OVITO_ASSERT(!buffer || buffer->size() == 0 || buffer->_data->get_range()[0] / buffer->stride() >= buffer->size());
         OVITO_ASSERT(!buffer || buffer->stride() == sizeof(element_type) * (ComponentWise ? buffer->componentCount() : 1));
         OVITO_ASSERT(!buffer || buffer->dataType() == DataBufferPrimitiveType<std::remove_cv_t<element_type>>::value);
         OVITO_ASSERT(!buffer || buffer->dataTypeSize() == sizeof(element_type) / (ComponentWise ? 1 : buffer->componentCount()));
         if(buffer && buffer->_data) {
 #ifdef OVITO_DEBUG
-            OVITO_ASSERT(buffer->_isDataInitialized || propList.has_property<sycl::property::no_init>());
+            OVITO_ASSERT(buffer->_isDataInitialized || initMode == DataBuffer::BufferInitialization::Uninitialized);
             if constexpr(AccessMode != access_mode::read) {
                 buffer->_isDataInitialized = true;
             }
@@ -78,12 +81,12 @@ public:
 
             if constexpr(!ComponentWise) {
                 auto typedBuffer = buffer->_data->template reinterpret<element_type, 1>();
-                *this = accessor_type{typedBuffer, commandGroupHandlerRef, sycl::range(buffer->size()), propList};
+                *this = accessor_type{typedBuffer, commandGroupHandlerRef, sycl::range(buffer->size()), (initMode == DataBuffer::BufferInitialization::Uninitialized) ? sycl::property_list{sycl::no_init} : sycl::property_list{}};
             }
             else {
                 size_t capacity = buffer->_data->get_range()[0] / buffer->stride();
                 auto typedBuffer = buffer->_data->template reinterpret<element_type, 2>(sycl::range(capacity, buffer->componentCount()));
-                *this = accessor_type{typedBuffer, commandGroupHandlerRef, sycl::range(buffer->size(), buffer->componentCount()), propList};
+                *this = accessor_type{typedBuffer, commandGroupHandlerRef, sycl::range(buffer->size(), buffer->componentCount()), (initMode == DataBuffer::BufferInitialization::Uninitialized) ? sycl::property_list{sycl::no_init} : sycl::property_list{}};
             }
 
             if constexpr(AccessMode == access_mode::read || AccessMode == access_mode::read_write) {

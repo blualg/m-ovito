@@ -94,7 +94,7 @@ protected:
     BufferAccessBase(decltype(BufferAccessBase::_buffer) buffer, bool no_init, PrivateConstructorTag) :
         _buffer(std::move(buffer)),
 #ifdef OVITO_USE_SYCL
-        _syclAccessor(create_accessor(_buffer, no_init || accessmode == access_mode::discard_write || accessmode == access_mode::discard_read_write)),
+        _syclAccessor(create_accessor(_buffer, accessmode == access_mode::discard_write || accessmode == access_mode::discard_read_write || no_init)),
 #endif
         _data(_buffer ? dataStorageAddress() : nullptr) {
 #ifdef OVITO_DEBUG
@@ -122,13 +122,14 @@ public:
     /// Constructor that initializes the accessor in a null state, i.e. not associated with any underlying buffer.
     BufferAccessBase(std::nullptr_t) noexcept {}
 
-    /// Constructor that associates the access object with a buffer object (reference may be null).
+    /// Constructor that associates the access object with a read-only buffer object (reference may be null).
     template<typename V = BufferType>
     BufferAccessBase(std::enable_if_t<std::is_const_v<V>, const BufferType*> buffer) : BufferAccessBase(buffer, false, PrivateConstructorTag{}) {}
 
     /// Constructor that associates the access object with a buffer object (reference may be null).
     template<bool U = StrongReference>
-    BufferAccessBase(std::enable_if_t<!U, std::remove_const_t<BufferType>*> buffer, bool no_init = false) : BufferAccessBase(buffer, no_init, PrivateConstructorTag{}) {}
+    BufferAccessBase(std::enable_if_t<!U, std::remove_const_t<BufferType>*> buffer, DataBuffer::BufferInitialization initMode = DataBuffer::BufferInitialization::Initialized)
+        : BufferAccessBase(buffer, (initMode == DataBuffer::BufferInitialization::Uninitialized) ? true : false, PrivateConstructorTag{}) {}
 
     /// Constructor that associates the access object with a buffer object (reference may be null).
     template<typename Derived, typename U = std::enable_if_t<!StrongReference && std::is_base_of_v<BufferType, Derived>>>
@@ -140,7 +141,8 @@ public:
 
     /// Constructor that associates the access object with a buffer object (reference may be null).
     template<typename Derived, typename U = std::enable_if_t<StrongReference && std::is_base_of_v<BufferType, Derived>>>
-    BufferAccessBase(DataOORef<Derived> buffer, bool no_init = false) : BufferAccessBase(std::move(buffer), no_init, PrivateConstructorTag{}) {}
+    BufferAccessBase(DataOORef<Derived> buffer, DataBuffer::BufferInitialization initMode = DataBuffer::BufferInitialization::Initialized)
+        : BufferAccessBase(std::move(buffer), (initMode == DataBuffer::BufferInitialization::Uninitialized) ? true : false, PrivateConstructorTag{}) {}
 
 #ifdef OVITO_DEBUG
     /// Copy construction (only enabled for read-only accessors).
@@ -273,7 +275,7 @@ public:
     inline std::enable_if_t<CanUpdateStorage, void> updateDataStorageAddress(bool discardMode) {
         OVITO_ASSERT(_buffer);
 #ifdef OVITO_USE_SYCL
-        _syclAccessor = create_accessor(this->_buffer, discardMode || accessmode == access_mode::discard_write || accessmode == access_mode::discard_read_write);
+        _syclAccessor = create_accessor(this->_buffer, accessmode == access_mode::discard_write || accessmode == access_mode::discard_read_write || discardMode);
 #endif
         _data = dataStorageAddress();
 #ifdef OVITO_DEBUG

@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/RefTarget.h>
+#include <ovito/core/dataset/data/DataBuffer.h>
 #include "ColormapsData.h"
 
 namespace Ovito {
@@ -54,6 +55,14 @@ public:
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
     virtual ColorT<float> valueToColor(float t) = 0;
+
+    /// Returns a buffer with the RGB color values of this color gradient.
+    ConstDataBufferPtr getColorMap();
+
+private:
+
+    /// Precomputed lookup table with RGB color values.
+    ConstDataBufferPtr _colorGradientMap;
 };
 
 /**

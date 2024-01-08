@@ -354,9 +354,10 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
                     if(_polyhedraMesh) {
                         QMutexLocker locker(bondMutex);
                         meshFace = faceGrower->createFace(meshRegionIndex);
-                        BufferWriteAccess<int32_t, access_mode::write>{adjacentCellProperty, meshFace == 0}[meshFace] = neighbor_id;
+                        DataBuffer::BufferInitialization firstAccessMode = (meshFace == 0) ? DataBuffer::Uninitialized : DataBuffer::Initialized;
+                        BufferWriteAccess<int32_t, access_mode::write>{adjacentCellProperty, firstAccessMode}[meshFace] = neighbor_id;
                         if(_computeBonds)
-                            BufferWriteAccess<int64_t, access_mode::write>{faceBondIndexProperty, meshFace == 0}[meshFace] = -1;
+                            BufferWriteAccess<int64_t, access_mode::write>{faceBondIndexProperty, firstAccessMode}[meshFace] = -1;
                         polyhedraMesh.mutableTopology()->createEdge(meshVertexBaseIndex + i, meshVertexBaseIndex + k, meshFace);
                     }
 
@@ -397,8 +398,9 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
                     if(_polyhedraMesh) {
                         QMutexLocker locker(bondMutex);
-                        BufferWriteAccess<FloatType, access_mode::write>{faceAreaProperty, meshFace == 0}[meshFace] = area;
-                        BufferWriteAccess<int32_t, access_mode::write>{faceOrderProperty, meshFace == 0}[meshFace] = faceOrder;
+                        DataBuffer::BufferInitialization firstAccessMode = (meshFace == 0) ? DataBuffer::Uninitialized : DataBuffer::Initialized;
+                        BufferWriteAccess<FloatType, access_mode::write>{faceAreaProperty, firstAccessMode}[meshFace] = area;
+                        BufferWriteAccess<int32_t, access_mode::write>{faceOrderProperty, firstAccessMode}[meshFace] = faceOrder;
                     }
 
                     if((faceAreaThreshold == 0 || area > faceAreaThreshold) && faceOrder >= 3) {

@@ -983,8 +983,7 @@ void DataBuffer::fillZero()
 /******************************************************************************
 * Determines the value range (minimum & maximum value) of a particular vector component in the buffer.
 * The results are returned as a pair of floating-point values - even if the buffer stores a different data type.
-* Optinally, a buffer with selection flags can be specified, which restricts the considered data elements to those
-* for which the corresponding selection flag is non-zero.
+* Optionally, a selection flags array can be specified, which restricts the considered data elements to a subset.
 ******************************************************************************/
 std::pair<FloatType, FloatType> DataBuffer::minMax(size_t component, const DataBuffer* selection) const
 {
@@ -999,21 +998,26 @@ std::pair<FloatType, FloatType> DataBuffer::minMax(size_t component, const DataB
         sycl::buffer<FloatType> minBuf{&minValue, 1};
         sycl::buffer<FloatType> maxBuf{&maxValue, 1};
         ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+
+            // Access selection flags array (optional).
+            SyclBufferAccess<const SelectionIntType, access_mode::read> selectionAcc(selection, cgh);
+
+            // Create temporary objects describing variables with reduction semantics.
+#ifdef OVITO_USE_SYCL_ACPP
+            sycl::accessor minAcc{minBuf, cgh};
+            sycl::accessor maxAcc{maxBuf, cgh};
+            auto minReduction = sycl::reduction(minAcc, std::numeric_limits<FloatType>::max(), sycl::minimum<FloatType>());
+            auto maxReduction = sycl::reduction(maxAcc, std::numeric_limits<FloatType>::lowest(), sycl::maximum<FloatType>());
+#else
+            auto minReduction = sycl::reduction(minBuf, cgh, std::numeric_limits<FloatType>::max(), sycl::minimum<FloatType>());
+            auto maxReduction = sycl::reduction(maxBuf, cgh, std::numeric_limits<FloatType>::lowest(), sycl::maximum<FloatType>());
+#endif
+
+            // Duplicate templated code for different input data types.
             forAnyType([&](auto _) {
                 using T = decltype(_);
                 SyclBufferAccess<const T*, access_mode::read> inputAcc(this, cgh);
-                SyclBufferAccess<const SelectionIntType, access_mode::read> selectionAcc(selection, cgh);
 
-                // Create temporary objects describing variables with reduction semantics.
-#ifdef OVITO_USE_SYCL_ACPP
-                sycl::accessor minAcc{minBuf, cgh};
-                sycl::accessor maxAcc{maxBuf, cgh};
-                auto minReduction = sycl::reduction(minAcc, std::numeric_limits<FloatType>::max(), sycl::minimum<FloatType>());
-                auto maxReduction = sycl::reduction(maxAcc, std::numeric_limits<FloatType>::lowest(), sycl::maximum<FloatType>());
-#else
-                auto minReduction = sycl::reduction(minBuf, cgh, std::numeric_limits<FloatType>::max(), sycl::minimum<FloatType>());
-                auto maxReduction = sycl::reduction(maxBuf, cgh, std::numeric_limits<FloatType>::lowest(), sycl::maximum<FloatType>());
-#endif
                 // parallel_for() performs two reduction operations.
                 // For each reduction variable, the implementation:
                 //   - Creates a corresponding reducer

@@ -273,8 +273,7 @@ public:
 
     /// Determines the value range (minimum & maximum value) of a particular vector component in the buffer.
     /// The results are returned as a pair of floating-point values - even if the buffer stores a different data type.
-    /// Optinally, a buffer with selection flags can be specified, which restricts the considered data elements to those
-    /// for which the corresponding selection flag is non-zero.
+    /// Optionally, a selection flags array can be specified, which restricts the considered data elements to a subset.
     std::pair<FloatType, FloatType> minMax(size_t component = 0, const DataBuffer* selection = nullptr) const;
 
     /// Invokes a generic lampda function with the current data type of the buffer.

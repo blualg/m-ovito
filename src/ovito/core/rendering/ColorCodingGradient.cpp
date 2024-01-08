@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/dataset/data/DataBuffer.h>
 #include "ColorCodingGradient.h"
 
 namespace Ovito {
@@ -39,6 +40,21 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingImageGradient);
 DEFINE_PROPERTY_FIELD(ColorCodingImageGradient, image);
 DEFINE_PROPERTY_FIELD(ColorCodingImageGradient, imagePath);
 DEFINE_PROPERTY_FIELD(ColorCodingTableGradient, table);
+
+/******************************************************************************
+* Returns a buffer with the RGB color values of this color gradient.
+******************************************************************************/
+ConstDataBufferPtr ColorCodingGradient::getColorMap()
+{
+    if(!_colorGradientMap) {
+        size_t tableSize = 256;
+        BufferFactory<ColorG> colorsArray(tableSize);
+        for(size_t i = 0; i < tableSize; i++)
+            colorsArray[i] = const_cast<ColorCodingGradient*>(this)->valueToColor((GraphicsFloatType)i / (tableSize - 1));
+        _colorGradientMap = colorsArray.take();
+    }
+    return _colorGradientMap;
+}
 
 /******************************************************************************
 * Converts a scalar value to a color value.

@@ -582,14 +582,14 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamRe
     auto copyValuesToBuffer = [&](auto srcData) {
         const auto begin = srcData;
         const auto end = begin + elementCount * numComponents;
-        bool discardExistingData = (destBaseIndex == 0);
+        DataBuffer::BufferInitialization existingDataAccessMode = (destBaseIndex == 0) ? DataBuffer::Uninitialized : DataBuffer::Initialized;
 
         buffer->forAnyType([&](auto _) {
             using T = decltype(_);
             if(vectorComponent == -1)
-                std::copy(begin, end, std::next(BufferWriteAccess<T*, access_mode::write>(buffer, discardExistingData).begin(), destBaseIndex * buffer->componentCount()));
+                std::copy(begin, end, std::next(BufferWriteAccess<T*, access_mode::write>(buffer, existingDataAccessMode).begin(), destBaseIndex * buffer->componentCount()));
             else
-                std::copy(begin, end, std::next(std::begin(BufferWriteAccess<T*, access_mode::write>(buffer, discardExistingData).componentRange(vectorComponent)), destBaseIndex));
+                std::copy(begin, end, std::next(std::begin(BufferWriteAccess<T*, access_mode::write>(buffer, existingDataAccessMode).componentRange(vectorComponent)), destBaseIndex));
         });
     };
 

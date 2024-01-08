@@ -269,8 +269,8 @@ public:
     vertex_index createVerticesRange(CoordinatesRange coordRange) {
         auto nverts = std::distance(std::begin(coordRange), std::end(coordRange));
         vertex_index startIndex = createVertices(nverts);
-        bool no_init = (startIndex == 0);
-        BufferWriteAccess<Point3, access_mode::write> vertexPositions(mutableVertexProperty(SurfaceMeshVertices::PositionProperty, no_init ? DataBuffer::Uninitialized : DataBuffer::Initialized), no_init);
+        DataBuffer::BufferInitialization initMode = (startIndex == 0) ? DataBuffer::Uninitialized : DataBuffer::Initialized;
+        BufferWriteAccess<Point3, access_mode::write> vertexPositions(mutableVertexProperty(SurfaceMeshVertices::PositionProperty, initMode), initMode);
         boost::copy(std::forward<CoordinatesRange>(coordRange), std::next(vertexPositions.begin(), startIndex));
         return startIndex;
     }

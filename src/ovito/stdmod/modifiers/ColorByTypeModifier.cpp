@@ -137,7 +137,7 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     // Create the color output property.
     BufferWriteAccess<ColorG, access_mode::write> colorProperty(
         container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, Property::GenericColorProperty, objectPath),
-        !selectionProperty);
+        selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized);
 
     // Access selection array.
     BufferReadAccess<SelectionIntType> selection(selectionProperty.get());
