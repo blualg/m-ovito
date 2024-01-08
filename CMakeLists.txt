@@ -46,6 +46,7 @@ SET(OVITO_SOURCE_BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 LIST(APPEND CMAKE_MODULE_PATH "${OVITO_SOURCE_BASE_DIR}/cmake")
 INCLUDE(cmake/Version.cmake)
 INCLUDE(cmake/Plugins.cmake)
+INCLUDE(cmake/SYCL.cmake)
 
 # Define build options.
 OPTION(OVITO_DOUBLE_PRECISION_FP "Use double-precision floating-point numbers." "ON")
@@ -62,8 +63,8 @@ OPTION(OVITO_USE_GIT_REVISION_NUMBER "Include Git revision information in OVITO 
 OPTION(OVITO_BUILD_SSH_CLIENT "Build the integrated SSH client for remote file access (requires libssh)." "OFF")
 OPTION(OVITO_LIBSSH_RUNTIME_LINKING "Load libssh at runtime" "OFF")
 OPTION(OVITO_USE_SYCL "Build with SYCL support" "OFF")
-SET(OVITO_USE_SYCL OFF CACHE STRING "SYCL implementation to use")
-SET_PROPERTY(CACHE OVITO_USE_SYCL PROPERTY STRINGS OFF OpenSYCL DPC++)
+SET(OVITO_USE_SYCL None CACHE STRING "SYCL implementation to use")
+SET_PROPERTY(CACHE OVITO_USE_SYCL PROPERTY STRINGS None AdaptiveCpp DPC++)
 
 # Ovito needs Qt>=6.2.
 SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 6.2)
@@ -108,7 +109,7 @@ SET(CMAKE_CXX_STANDARD 20)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Set visibility of symbols in libraries to hidden by default, except those exported in the source code.
-IF(NOT OVITO_USE_SYCL STREQUAL OpenSYCL)
+IF(NOT OVITO_USE_SYCL STREQUAL AdaptiveCpp)
     SET(CMAKE_CXX_VISIBILITY_PRESET "hidden")
     SET(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 ENDIF()
@@ -306,11 +307,11 @@ ELSE()
     ENDIF()
 ENDIF()
 
-IF(OVITO_USE_SYCL STREQUAL OpenSYCL AND NOT OPENSYCL_DEBUG_LEVEL)
+IF(OVITO_USE_SYCL STREQUAL AdaptiveCpp AND NOT ADAPTIVECPP_DEBUG_LEVEL)
     IF(CMAKE_BUILD_TYPE MATCHES "Debug")
-        SET(OPENSYCL_DEBUG_LEVEL 3 CACHE INTEGER "Choose the debug level, options are: 0 (no debug), 1 (print errors), 2 (also print warnings), 3 (also print general information)" FORCE)
+        SET(ADAPTIVECPP_DEBUG_LEVEL 3 CACHE INTEGER "Choose the debug level, options are: 0 (no debug), 1 (print errors), 2 (also print warnings), 3 (also print general information)" FORCE)
     ELSE()
-        SET(OPENSYCL_DEBUG_LEVEL 2 CACHE INTEGER "Choose the debug level, options are: 0 (no debug), 1 (print errors), 2 (also print warnings), 3 (also print general information)" FORCE)
+        SET(ADAPTIVECPP_DEBUG_LEVEL 2 CACHE INTEGER "Choose the debug level, options are: 0 (no debug), 1 (print errors), 2 (also print warnings), 3 (also print general information)" FORCE)
     ENDIF()
 ENDIF()
 

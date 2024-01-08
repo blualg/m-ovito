@@ -141,8 +141,9 @@
 * SYCL
 ******************************************************************************/
 #if defined(OVITO_USE_SYCL) && !defined(Q_MOC_RUN)
-    #ifdef OVITO_USE_OPENSYCL
+    #ifdef OVITO_USE_SYCL_ACPP
         #include <CL/sycl.hpp>
+        using namespace cl;
     #else
         #include <sycl/sycl.hpp>
     #endif

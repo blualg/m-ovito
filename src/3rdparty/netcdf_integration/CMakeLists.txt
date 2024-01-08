@@ -54,11 +54,8 @@ IF(TARGET netcdf OR TARGET netCDF::netcdf)
     # Inform source code that the NetCDF library is available.
     TARGET_COMPILE_DEFINITIONS(NetCDFIntegration PUBLIC OVITO_NETCDF_SUPPORT)
 
-    # Enable SYCL.
-    IF(OVITO_USE_SYCL STREQUAL OpenSYCL)
-        FIND_PACKAGE(OpenSYCL CONFIG REQUIRED)
-        ADD_SYCL_TO_TARGET(TARGET NetCDFIntegration)
-    ENDIF()
+    # Support SYCL.
+    OVITO_ADD_SYCL_TO_TARGET(NetCDFIntegration)
 
     # Define macro for symbol export from the shared library.
     IF(BUILD_SHARED_LIBS)

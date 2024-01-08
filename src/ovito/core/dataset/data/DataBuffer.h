@@ -47,7 +47,7 @@ namespace detail {
 #ifdef OVITO_USE_SYCL
     // The OVITO_SYCL_PARALLEL_FOR macro is used to make definitions of SYCL kernels compatible with different SYCL implements.
     // For AdaptiveCpp, the kernels must be named. DPC++, on the other hand, doesn't accept named kernels.
-    #ifdef __ADAPTIVECPP__
+    #ifdef OVITO_USE_SYCL_ACPP
         #define OVITO_SYCL_PARALLEL_FOR(cgh, kernel_name) (cgh).parallel_for<class kernel_name>
     #else
         #define OVITO_SYCL_PARALLEL_FOR(cgh, kernel_name) (cgh).parallel_for
@@ -270,6 +270,12 @@ public:
 
     /// Checks if this buffer|s metadata and the contents exactly match those of another buffer.
     bool equals(const DataBuffer& other) const;
+
+    /// Determines the value range (minimum & maximum value) of a particular vector component in the buffer.
+    /// The results are returned as a pair of floating-point values - even if the buffer stores a different data type.
+    /// Optinally, a buffer with selection flags can be specified, which restricts the considered data elements to those
+    /// for which the corresponding selection flag is non-zero.
+    std::pair<FloatType, FloatType> minMax(size_t component = 0, const DataBuffer* selection = nullptr) const;
 
     /// Invokes a generic lampda function with the current data type of the buffer.
     /// The lambda function must accept exactly one generic parameter ("auto _"), whose type

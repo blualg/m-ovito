@@ -129,19 +129,7 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
     TARGET_LINK_LIBRARIES(${target_name} PRIVATE ${private_lib_dependencies})
 
     # Enable SYCL.
-    IF(OVITO_USE_SYCL STREQUAL OpenSYCL)
-        FIND_PACKAGE(OpenSYCL CONFIG REQUIRED)
-        ADD_SYCL_TO_TARGET(TARGET ${target_name})
-        TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC HIPSYCL_DEBUG_LEVEL=${OPENSYCL_DEBUG_LEVEL})
-    ELSEIF(OVITO_USE_SYCL STREQUAL DPC++)
-        #ADD_SYCL_TO_TARGET(TARGET ${target_name})
-        TARGET_LINK_LIBRARIES(${target_name} PUBLIC IntelSYCL::SYCL_CXX)
-        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-fsycl-targets=nvptx64-nvidia-cuda")
-        TARGET_LINK_OPTIONS(${target_name} PUBLIC "-fsycl-targets=nvptx64-nvidia-cuda")
-        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-undefined-var-template")
-    ELSEIF(OVITO_USE_SYCL)
-        MESSAGE(FATAL_ERROR "Invalid OVITO_USE_SYCL setting. Must be one of [OFF, OpenSYCL, DPC++].")
-    ENDIF()
+    OVITO_ADD_SYCL_TO_TARGET(${target_name})
 
     # Link to other plugin modules that are dependencies of this plugin.
     FOREACH(plugin_name ${plugin_dependencies})

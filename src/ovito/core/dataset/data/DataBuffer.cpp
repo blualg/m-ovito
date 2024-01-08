@@ -34,8 +34,8 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(DataBuffer);
 /// Helper function allocating a new SYCL buffer object of the given size.
 static sycl::buffer<DataBuffer::Byte> allocateSyclBuffer(size_t nelements, size_t stride)
 {
-#ifdef __ADAPTIVECPP__
-    // Using OpenSYCL's make_async_buffer() to create a buffer with a destructor that won't block.
+#ifdef OVITO_USE_SYCL_ACPP
+    // Using AdaptiveCpp's make_async_buffer() to create a buffer with a destructor that won't block.
     return sycl::make_async_buffer<DataBuffer::Byte, 1>(nelements * stride);
 #else
     return sycl::buffer<DataBuffer::Byte, 1>(nelements * stride);
@@ -978,6 +978,75 @@ void DataBuffer::fillZero()
     RawBufferAccess<access_mode::discard_write> writeAccess(this);
     std::memset(writeAccess.data(), 0, this->size() * this->stride());
 #endif
+}
+
+/******************************************************************************
+* Determines the value range (minimum & maximum value) of a particular vector component in the buffer.
+* The results are returned as a pair of floating-point values - even if the buffer stores a different data type.
+* Optinally, a buffer with selection flags can be specified, which restricts the considered data elements to those
+* for which the corresponding selection flag is non-zero.
+******************************************************************************/
+std::pair<FloatType, FloatType> DataBuffer::minMax(size_t component, const DataBuffer* selection) const
+{
+    OVITO_ASSERT(component >= 0 && component < componentCount());
+
+    FloatType minValue = std::numeric_limits<FloatType>::max();
+    FloatType maxValue = std::numeric_limits<FloatType>::lowest();
+
+#ifdef OVITO_USE_SYCL
+    if(size() != 0) {
+        // Buffers with just 1 element to get the reduction results.
+        sycl::buffer<FloatType> minBuf{&minValue, 1};
+        sycl::buffer<FloatType> maxBuf{&maxValue, 1};
+        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            forAnyType([&](auto _) {
+                using T = decltype(_);
+                SyclBufferAccess<const T*, access_mode::read> inputAcc(this, cgh);
+                SyclBufferAccess<const SelectionIntType, access_mode::read> selectionAcc(selection, cgh);
+
+                // Create temporary objects describing variables with reduction semantics.
+#ifdef OVITO_USE_SYCL_ACPP
+                sycl::accessor minAcc{minBuf, cgh};
+                sycl::accessor maxAcc{maxBuf, cgh};
+                auto minReduction = sycl::reduction(minAcc, std::numeric_limits<FloatType>::max(), sycl::minimum<FloatType>());
+                auto maxReduction = sycl::reduction(maxAcc, std::numeric_limits<FloatType>::lowest(), sycl::maximum<FloatType>());
+#else
+                auto minReduction = sycl::reduction(minBuf, cgh, std::numeric_limits<FloatType>::max(), sycl::minimum<FloatType>());
+                auto maxReduction = sycl::reduction(maxBuf, cgh, std::numeric_limits<FloatType>::lowest(), sycl::maximum<FloatType>());
+#endif
+                // parallel_for() performs two reduction operations.
+                // For each reduction variable, the implementation:
+                //   - Creates a corresponding reducer
+                //   - Passes a reference to the reducer to the lambda as a parameter
+                OVITO_SYCL_PARALLEL_FOR(cgh, colorCoding_determinePropertyValueRange)(sycl::range(size()), minReduction, maxReduction, [=](size_t i, auto& min, auto& max) {
+                    if(selectionAcc.empty() || selectionAcc[i]) {
+                        const FloatType value = static_cast<FloatType>(inputAcc[sycl::id<2>(i, component)]);
+                        min.combine(value);
+                        max.combine(value);
+                    }
+                });
+            });
+        });
+    }
+#else
+    if(!selection) {
+        forEach(component, [&](size_t i, auto v) {
+            if(v > maxValue) maxValue = v;
+            if(v < minValue) minValue = v;
+        });
+    }
+    else {
+        BufferReadAccess<SelectionIntType> selectionAcc = selection;
+        forEach(component, [&](size_t i, auto v) {
+            if(selectionAcc[i]) {
+                if(v > maxValue) maxValue = v;
+                if(v < minValue) minValue = v;
+            }
+        });
+    }
+#endif
+
+    return std::make_pair(minValue, maxValue);
 }
 
 #ifdef OVITO_USE_SYCL

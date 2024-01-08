@@ -205,19 +205,14 @@ bool ColorCodingModifier::determinePropertyValueRange(const PipelineFlowState& s
         return false;
     int vecComponent = std::max(0, sourceProperty().vectorComponent());
 
-    // Access the input selection if coloring is restricted to the currently selected elements.
-    BufferReadAccess<SelectionIntType> selection = (colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty))
+    // Get the input selection property if coloring is restricted to the currently selected elements.
+    ConstPropertyPtr selection = (colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty))
         ? container->getProperty(Property::GenericSelectionProperty) : nullptr;
 
     // Iterate over the property array to find the lowest/highest value.
-    FloatType maxValue = std::numeric_limits<FloatType>::lowest();
-    FloatType minValue = std::numeric_limits<FloatType>::max();
-    property->forEach(vecComponent, [&](size_t i, auto v) {
-            if(!selection || selection[i]) {
-                if(v > maxValue) maxValue = v;
-                if(v < minValue) minValue = v;
-            }
-        });
+    auto [minValue, maxValue] = property->minMax(vecComponent, selection);
+
+    // If the range is valid. It may be not if the property is empty or no elements are selected.
     if(minValue == std::numeric_limits<FloatType>::max())
         return false;
 

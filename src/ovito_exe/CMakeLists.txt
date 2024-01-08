@@ -52,11 +52,8 @@ TARGET_LINK_LIBRARIES(Ovito PRIVATE
     Qt6::Core
     Qt6::Gui)
 
-# Enable SYCL.
-IF(OVITO_USE_SYCL STREQUAL OpenSYCL)
-    FIND_PACKAGE(OpenSYCL CONFIG REQUIRED)
-    ADD_SYCL_TO_TARGET(TARGET Ovito)
-ENDIF()
+# Support SYCL.
+OVITO_ADD_SYCL_TO_TARGET(Ovito)
 
 # Put the executable into the right directory.
 IF(APPLE AND NOT OVITO_BUILD_CONDA)
