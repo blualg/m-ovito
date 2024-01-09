@@ -101,9 +101,21 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
 
             // Assign unique particle and molecule IDs.
             if(prop->type() == Particles::IdentifierProperty && primaryParticleCount != 0) {
+#ifdef OVITO_USE_SYCL
+                qDebug() << "--------------- COMPUTING MAX:";
+                {
+                sycl::buffer maxId = SyclBufferAccess<IdentifierIntType, access_mode::read>(prop, 0, primaryParticleCount).max();
+                qDebug() << "--------------- RELEASING BUFFER:";
+                }
+                qDebug() << "--------------- RELEASED BUFFER:";
+                //qDebug() << "--------------- ACCESING BUFFER:";
+                //sycl::host_accessor acc(maxId, sycl::read_only);
+                //qDebug() << "--------------- MAXIMUM:" << acc[0];
+#else
                 BufferWriteAccess<IdentifierIntType, access_mode::read_write> identifiers(prop);
                 auto maxId = *std::max_element(identifiers.cbegin(), identifiers.cbegin() + primaryParticleCount);
                 std::iota(identifiers.begin() + primaryParticleCount, identifiers.end(), maxId + 1);
+#endif
             }
             else if(prop->type() == Particles::MoleculeProperty && primaryParticleCount != 0) {
                 BufferWriteAccess<IdentifierIntType, access_mode::read_write> identifiers(prop);

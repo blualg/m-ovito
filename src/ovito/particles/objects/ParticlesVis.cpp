@@ -230,19 +230,19 @@ ConstPropertyPtr ParticlesVis::particleColors(const Particles* particles, bool h
             OVITO_ASSERT(typeProperty->size() == output->size());
             // Assign colors based on particle types.
             // Generate a lookup map for particle type colors.
-            const std::map<int,Color> colorMap = typeProperty->typeColorMap();
-            std::array<ColorG,16> colorArray;
+            const std::map<int, ColorG> colorMap = typeProperty->typeColorMap();
+            std::array<ColorG, 16> colorArray;
             // Check if all type IDs are within a small, non-negative range.
             // If yes, we can use an array lookup strategy. Otherwise we have to use a dictionary lookup strategy, which is slower.
-            if(boost::algorithm::all_of(colorMap, [&colorArray](const std::map<int,Color>::value_type& i) { return i.first >= 0 && i.first < (int)colorArray.size(); })) {
+            if(boost::algorithm::all_of(colorMap, [&colorArray](const auto& i) { return i.first >= 0 && i.first < (int)colorArray.size(); })) {
                 colorArray.fill(defaultColor);
                 for(const auto& entry : colorMap)
-                    colorArray[entry.first] = entry.second.toDataType<GraphicsFloatType>();
+                    colorArray[entry.first] = entry.second;
                 // Fill color array.
                 BufferReadAccess<int32_t> typeData(typeProperty);
                 const auto* t = typeData.cbegin();
                 for(auto& c : BufferWriteAccess<ColorG, access_mode::discard_write>(output.makeMutableInplace())) {
-                    if(*t >= 0 && *t < (int32_t)colorArray.size())
+                    if(*t >= 0 && (size_t)*t < colorArray.size())
                         c = colorArray[*t];
                     else
                         c = defaultColor;
@@ -255,7 +255,7 @@ ConstPropertyPtr ParticlesVis::particleColors(const Particles* particles, bool h
                 const auto* t = typeData.cbegin();
                 for(auto& c : BufferWriteAccess<ColorG, access_mode::discard_write>(output.makeMutableInplace())) {
                     if(auto it = colorMap.find(*t); it != colorMap.end())
-                        c = it->second.toDataType<GraphicsFloatType>();
+                        c = it->second;
                     else
                         c = defaultColor;
                     ++t;

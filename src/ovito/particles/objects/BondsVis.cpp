@@ -443,20 +443,19 @@ std::vector<ColorG> BondsVis::halfBondColors(const Particles* particles, bool hi
         if(bondTypeProperty && bondTypeProperty->size() * 2 == output.size()) {
             // Assign colors based on bond types.
             // Generate a lookup map for bond type colors.
-            const std::map<int, Color>& colorMap = bondTypeProperty->typeColorMap();
+            const std::map<int, ColorG>& colorMap = bondTypeProperty->typeColorMap();
             std::array<ColorG,16> colorArray;
             // Check if all type IDs are within a small, non-negative range.
             // If yes, we can use an array lookup strategy. Otherwise we have to use a dictionary lookup strategy, which is slower.
-            if(boost::algorithm::all_of(colorMap,
-                    [&colorArray](const std::map<int, Color>::value_type& i) { return i.first >= 0 && i.first < (int)colorArray.size(); })) {
+            if(boost::algorithm::all_of(colorMap, [&colorArray](const auto& i) { return i.first >= 0 && i.first < (int)colorArray.size(); })) {
                 colorArray.fill(defaultColor);
                 for(const auto& entry : colorMap)
-                    colorArray[entry.first] = entry.second.toDataType<GraphicsFloatType>();
+                    colorArray[entry.first] = entry.second;
                 // Fill color array.
                 BufferReadAccess<int32_t> bondTypeData(bondTypeProperty);
                 const int32_t* t = bondTypeData.cbegin();
                 for(auto c = output.begin(); c != output.end(); ++t) {
-                    if(*t >= 0 && *t < (int)colorArray.size()) {
+                    if(*t >= 0 && (size_t)*t < colorArray.size()) {
                         *c++ = colorArray[*t];
                         *c++ = colorArray[*t];
                     }
@@ -472,8 +471,8 @@ std::vector<ColorG> BondsVis::halfBondColors(const Particles* particles, bool hi
                 const int32_t* t = bondTypeData.cbegin();
                 for(auto c = output.begin(); c != output.end(); ++t) {
                     if(auto it = colorMap.find(*t); it != colorMap.end()) {
-                        *c++ = it->second.toDataType<GraphicsFloatType>();
-                        *c++ = it->second.toDataType<GraphicsFloatType>();
+                        *c++ = it->second;
+                        *c++ = it->second;
                     }
                     else {
                         *c++ = defaultColor;

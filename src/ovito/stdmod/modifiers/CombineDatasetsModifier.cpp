@@ -25,9 +25,10 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/core/dataset/data/mesh/TriangleMesh.h>
-#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/data/AttributeDataObject.h>
+#include <ovito/core/dataset/data/SyclFlatMap.h>
 #include <ovito/core/dataset/io/FileSource.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include "CombineDatasetsModifier.h"
 
@@ -218,15 +219,34 @@ void CombineDatasetsModifierDelegate::mergeElementTypes(Property* property1, con
             }
         }
     }
-    // Remap particle property values.
+
+    // Remap the values stored in the type property.
     if(typeMap.empty() == false) {
-        BufferWriteAccess<int32_t, access_mode::read_write> selectionArray1(property1);
-        auto p = selectionArray1.begin() + (property1->size() - property2->size());
-        auto p_end = selectionArray1.end();
+#ifdef OVITO_USE_SYCL
+        // Convert the mapping table into a SYCL-compatible data structure.
+        const SyclFlatMap typeMapSycl = typeMap;
+
+        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            // Access the type property array (just the sub-section of newly added entries).
+            SyclBufferAccess<int32_t, access_mode::read_write> typeAcc(property1, property1->size() - property2->size(), property2->size(), cgh);
+            // Access mapping table.
+            SyclFlatMapAccessor typeMapAcc(typeMapSycl, cgh);
+
+            OVITO_SYCL_PARALLEL_FOR(cgh, CombineDatasetsModifierDelegate_mergeElementTypes)(sycl::range(typeAcc.size()), [=](size_t i) {
+                // Use the mapping table to update type IDs in the property array.
+                if(auto iter = typeMapAcc.find(typeAcc[i]); iter != typeMapAcc.end())
+                    typeAcc[i] = (*iter).second;
+            });
+        });
+#else
+        BufferWriteAccess<int32_t, access_mode::read_write> typeArray1(property1);
+        auto p = typeArray1.begin() + (property1->size() - property2->size());
+        auto p_end = typeArray1.end();
         for(; p != p_end; ++p) {
             if(auto item = typeMap.find(*p); item != typeMap.end())
                 *p = item->second;
         }
+#endif
     }
 }
 

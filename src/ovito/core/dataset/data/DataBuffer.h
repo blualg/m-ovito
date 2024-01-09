@@ -48,7 +48,7 @@ namespace detail {
     // The OVITO_SYCL_PARALLEL_FOR macro is used to make definitions of SYCL kernels compatible with different SYCL implements.
     // For AdaptiveCpp, the kernels must be named. DPC++, on the other hand, doesn't accept named kernels.
     #ifdef OVITO_USE_SYCL_ACPP
-        #define OVITO_SYCL_PARALLEL_FOR(cgh, kernel_name) (cgh).parallel_for<class kernel_name>
+        #define OVITO_SYCL_PARALLEL_FOR(cgh, kernel_name) (cgh).parallel_for<struct kernel_name>
     #else
         #define OVITO_SYCL_PARALLEL_FOR(cgh, kernel_name) (cgh).parallel_for
     #endif

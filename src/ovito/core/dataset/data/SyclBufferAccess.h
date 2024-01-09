@@ -58,15 +58,15 @@ public:
     /// Constructor that initializes the accessor in a null state, i.e. not associated with any underlying buffer.
     SyclBufferAccessTyped() noexcept = default;
 
-    /// Constructor that associates the access object with a buffer object (reference may be null).
+    /// Constructor that creates an accessor for a buffer object (which may be null).
     SyclBufferAccessTyped(
         BufferPointer buffer,
-        sycl::handler& commandGroupHandlerRef,
+        sycl::handler& commandGroupHandler,
         DataBuffer::BufferInitialization initMode =
             (AccessMode == access_mode::discard_write || AccessMode == access_mode::discard_read_write)
                 ? DataBuffer::BufferInitialization::Uninitialized
                 : DataBuffer::BufferInitialization::Initialized)
-            : accessor_type() {
+    {
         OVITO_ASSERT(!buffer || buffer->size() == 0 || buffer->_data->get_range()[0] / buffer->stride() >= buffer->size());
         OVITO_ASSERT(!buffer || buffer->stride() == sizeof(element_type) * (ComponentWise ? buffer->componentCount() : 1));
         OVITO_ASSERT(!buffer || buffer->dataType() == DataBufferPrimitiveType<std::remove_cv_t<element_type>>::value);
@@ -81,12 +81,111 @@ public:
 
             if constexpr(!ComponentWise) {
                 auto typedBuffer = buffer->_data->template reinterpret<element_type, 1>();
-                *this = accessor_type{typedBuffer, commandGroupHandlerRef, sycl::range(buffer->size()), (initMode == DataBuffer::BufferInitialization::Uninitialized) ? sycl::property_list{sycl::no_init} : sycl::property_list{}};
+                *this = accessor_type{typedBuffer, commandGroupHandler, sycl::range(buffer->size()), (initMode == DataBuffer::BufferInitialization::Uninitialized) ? sycl::property_list{sycl::no_init} : sycl::property_list{}};
             }
             else {
                 size_t capacity = buffer->_data->get_range()[0] / buffer->stride();
                 auto typedBuffer = buffer->_data->template reinterpret<element_type, 2>(sycl::range(capacity, buffer->componentCount()));
-                *this = accessor_type{typedBuffer, commandGroupHandlerRef, sycl::range(buffer->size(), buffer->componentCount()), (initMode == DataBuffer::BufferInitialization::Uninitialized) ? sycl::property_list{sycl::no_init} : sycl::property_list{}};
+                *this = accessor_type{typedBuffer, commandGroupHandler, sycl::range(buffer->size(), buffer->componentCount()), (initMode == DataBuffer::BufferInitialization::Uninitialized) ? sycl::property_list{sycl::no_init} : sycl::property_list{}};
+            }
+
+            if constexpr(AccessMode == access_mode::read || AccessMode == access_mode::read_write) {
+                buffer->_hasScheduledSyclReadOperations = true;
+            }
+        }
+    }
+
+    /// Constructor that creates a placeholder accessor for a buffer object (which may be null).
+    SyclBufferAccessTyped(
+        BufferPointer buffer,
+        DataBuffer::BufferInitialization initMode =
+            (AccessMode == access_mode::discard_write || AccessMode == access_mode::discard_read_write)
+                ? DataBuffer::BufferInitialization::Uninitialized
+                : DataBuffer::BufferInitialization::Initialized)
+    {
+        OVITO_ASSERT(!buffer || buffer->size() == 0 || buffer->_data->get_range()[0] / buffer->stride() >= buffer->size());
+        OVITO_ASSERT(!buffer || buffer->stride() == sizeof(element_type) * (ComponentWise ? buffer->componentCount() : 1));
+        OVITO_ASSERT(!buffer || buffer->dataType() == DataBufferPrimitiveType<std::remove_cv_t<element_type>>::value);
+        OVITO_ASSERT(!buffer || buffer->dataTypeSize() == sizeof(element_type) / (ComponentWise ? 1 : buffer->componentCount()));
+        if(buffer && buffer->_data) {
+#ifdef OVITO_DEBUG
+            OVITO_ASSERT(buffer->_isDataInitialized || initMode == DataBuffer::BufferInitialization::Uninitialized);
+            if constexpr(AccessMode != access_mode::read) {
+                buffer->_isDataInitialized = true;
+            }
+#endif
+
+            if constexpr(!ComponentWise) {
+                auto typedBuffer = buffer->_data->template reinterpret<element_type, 1>();
+                *this = accessor_type{typedBuffer, sycl::range(buffer->size()), (initMode == DataBuffer::BufferInitialization::Uninitialized) ? sycl::property_list{sycl::no_init} : sycl::property_list{}};
+            }
+            else {
+                size_t capacity = buffer->_data->get_range()[0] / buffer->stride();
+                auto typedBuffer = buffer->_data->template reinterpret<element_type, 2>(sycl::range(capacity, buffer->componentCount()));
+                *this = accessor_type{typedBuffer, sycl::range(buffer->size(), buffer->componentCount()), (initMode == DataBuffer::BufferInitialization::Uninitialized) ? sycl::property_list{sycl::no_init} : sycl::property_list{}};
+            }
+
+            if constexpr(AccessMode == access_mode::read || AccessMode == access_mode::read_write) {
+                buffer->_hasScheduledSyclReadOperations = true;
+            }
+        }
+    }
+
+    /// Constructor that accesses a sub-range of a buffer.
+    SyclBufferAccessTyped(
+        BufferPointer buffer,
+        size_type offset,
+        size_type count,
+        sycl::handler& commandGroupHandler)
+    {
+        OVITO_ASSERT(!buffer || buffer->size() == 0 || buffer->_data->get_range()[0] / buffer->stride() >= buffer->size());
+        OVITO_ASSERT(!buffer || buffer->stride() == sizeof(element_type) * (ComponentWise ? buffer->componentCount() : 1));
+        OVITO_ASSERT(!buffer || buffer->dataType() == DataBufferPrimitiveType<std::remove_cv_t<element_type>>::value);
+        OVITO_ASSERT(!buffer || buffer->dataTypeSize() == sizeof(element_type) / (ComponentWise ? 1 : buffer->componentCount()));
+        OVITO_ASSERT(buffer || (offset == 0 && count == 0));
+        OVITO_ASSERT(!buffer || offset + count <= buffer->size());
+        if(buffer && buffer->_data) {
+            OVITO_ASSERT(buffer->_isDataInitialized);
+
+            if constexpr(!ComponentWise) {
+                auto typedBuffer = buffer->_data->template reinterpret<element_type, 1>();
+                *this = accessor_type{typedBuffer, commandGroupHandler, sycl::range(count), sycl::id(offset)};
+            }
+            else {
+                size_t capacity = buffer->_data->get_range()[0] / buffer->stride();
+                auto typedBuffer = buffer->_data->template reinterpret<element_type, 2>(sycl::range(capacity, buffer->componentCount()));
+                *this = accessor_type{typedBuffer, commandGroupHandler, sycl::range(count, buffer->componentCount()), sycl::id(offset, 0)};
+            }
+
+            if constexpr(AccessMode == access_mode::read || AccessMode == access_mode::read_write) {
+                buffer->_hasScheduledSyclReadOperations = true;
+            }
+        }
+    }
+
+    /// Constructor for a placeholder accessor that accesses a sub-range of a buffer.
+    SyclBufferAccessTyped(
+        BufferPointer buffer,
+        size_type offset,
+        size_type count)
+    {
+        OVITO_ASSERT(!buffer || buffer->size() == 0 || buffer->_data->get_range()[0] / buffer->stride() >= buffer->size());
+        OVITO_ASSERT(!buffer || buffer->stride() == sizeof(element_type) * (ComponentWise ? buffer->componentCount() : 1));
+        OVITO_ASSERT(!buffer || buffer->dataType() == DataBufferPrimitiveType<std::remove_cv_t<element_type>>::value);
+        OVITO_ASSERT(!buffer || buffer->dataTypeSize() == sizeof(element_type) / (ComponentWise ? 1 : buffer->componentCount()));
+        OVITO_ASSERT(buffer || (offset == 0 && count == 0));
+        OVITO_ASSERT(!buffer || offset + count <= buffer->size());
+        if(buffer && buffer->_data) {
+            OVITO_ASSERT(buffer->_isDataInitialized);
+
+            if constexpr(!ComponentWise) {
+                auto typedBuffer = buffer->_data->template reinterpret<element_type, 1>();
+                *this = accessor_type{typedBuffer, sycl::range(count), sycl::id(offset)};
+            }
+            else {
+                size_t capacity = buffer->_data->get_range()[0] / buffer->stride();
+                auto typedBuffer = buffer->_data->template reinterpret<element_type, 2>(sycl::range(capacity, buffer->componentCount()));
+                *this = accessor_type{typedBuffer, sycl::range(count, buffer->componentCount()), sycl::id(offset, 0)};
             }
 
             if constexpr(AccessMode == access_mode::read || AccessMode == access_mode::read_write) {
@@ -123,6 +222,41 @@ public:
     // Note: Workaround for conflict with SYCL's marray::operator!
     inline operator bool() const noexcept { return valid(); }
     inline bool operator!() const noexcept { return !valid(); }
+
+    /// Determines the maximum value in the accessed buffer.
+    /// This method must only be called on a placeholder accessor.
+    /// The result is computed asynchronously and returned in a single-element SYCL buffer.
+    auto max(size_t component = 0) const {
+        OVITO_STATIC_ASSERT(AccessMode == access_mode::read || AccessMode == access_mode::read_write || AccessMode == access_mode::discard_read_write);
+        OVITO_ASSERT(ComponentWise || component == 0);
+        OVITO_ASSERT(!ComponentWise || component < accessor_type::get_range()[1]);
+
+        // The buffer the results will be stored in.
+        sycl::buffer<std::remove_const_t<element_type>, 1> result{1};
+
+        if(!accessor_type::empty()) {
+            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+                cgh.require(*this);
+#ifdef OVITO_USE_SYCL_ACPP
+                auto reduction = sycl::reduction(sycl::accessor{result, cgh, sycl::no_init}, std::numeric_limits<T>::lowest(), sycl::maximum<T>());
+#else
+                auto reduction = sycl::reduction(result, cgh, std::numeric_limits<T>::lowest(), sycl::maximum<T>());
+#endif
+                OVITO_SYCL_PARALLEL_FOR(cgh, SyclBufferAccess_max)(sycl::range(size()), reduction, [=, *this](size_t i, auto& red) {
+                    if constexpr(!ComponentWise)
+                        red.combine((*this)[i]);
+                    else
+                        red.combine((*this)[sycl::id<2>(i, component)]);
+                });
+            });
+        }
+        else {
+            // If the range is empty, we should still initialize the result buffer to a valid value.
+            sycl::host_accessor(result, sycl::write_only, sycl::no_init)[0] = std::numeric_limits<element_type>::lowest();
+        }
+
+        return result;
+    }
 };
 
 } // End of namespace detail.

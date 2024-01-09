@@ -24,6 +24,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/core/dataset/data/SyclFlatMap.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
@@ -120,13 +121,12 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
         throw Exception(tr("The input property '%1' has the wrong number of components. Must be a scalar property.").arg(typePropertyObject->name()));
     if(typePropertyObject->dataType() != Property::Int32)
         throw Exception(tr("The input property '%1' has the wrong data type. Must be a 32-bit integer property.").arg(typePropertyObject->name()));
-    BufferReadAccess<int32_t> typeProperty = typePropertyObject;
 
     // Get the selection property if enabled by the user.
-    ConstPropertyPtr selectionProperty;
+    ConstPropertyPtr selection;
     if(colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
         if(const Property* selPropertyObj = container->getProperty(Property::GenericSelectionProperty)) {
-            selectionProperty = selPropertyObj;
+            selection = selPropertyObj;
 
             // Clear selection if requested.
             if(clearSelection())
@@ -134,29 +134,63 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
         }
     }
 
+#ifdef OVITO_USE_SYCL
+    // Create the color output property.
+    Property* colorProperty = container->createProperty(selection ? DataBuffer::Initialized : DataBuffer::Uninitialized, Property::GenericColorProperty, objectPath);
+
+    if(colorProperty->size() != 0) {
+        // Create type-color lookup table and convert it into a SYCL-compatible data structure.
+        const SyclFlatMap colorMap = typePropertyObject->typeColorMap();
+
+        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+
+            // Access the input types.
+            SyclBufferAccess<const int32_t, access_mode::read> inputAcc(typePropertyObject, cgh);
+            // Access selection flags array (optional).
+            SyclBufferAccess<const SelectionIntType, access_mode::read> selectionAcc(selection, cgh);
+            // Access output color array.
+            SyclBufferAccess<ColorG, access_mode::write> outputAcc(colorProperty, cgh, selection ? DataBuffer::Initialized : DataBuffer::Uninitialized);
+            // Access color lookup table.
+            SyclFlatMapAccessor colorMapAcc(colorMap, cgh);
+
+            OVITO_SYCL_PARALLEL_FOR(cgh, ColorByTypeModifier_kernel)(sycl::range(typePropertyObject->size()), [=](size_t i) {
+                if(selectionAcc.empty() || selectionAcc[i]) {
+                    if(auto iter = colorMapAcc.find(inputAcc[i]); iter != colorMapAcc.end())
+                        outputAcc[i] = (*iter).second;
+                    else
+                        outputAcc[i] = ColorG(1,1,1);
+                }
+            });
+        });
+    }
+#else
+    // Access the type array.
+    BufferReadAccess<int32_t> typeProperty = typePropertyObject;
+
     // Create the color output property.
     BufferWriteAccess<ColorG, access_mode::write> colorProperty(
-        container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, Property::GenericColorProperty, objectPath),
-        selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized);
+        container->createProperty(selection ? DataBuffer::Initialized : DataBuffer::Uninitialized, Property::GenericColorProperty, objectPath),
+        selection ? DataBuffer::Initialized : DataBuffer::Uninitialized);
 
     // Access selection array.
-    BufferReadAccess<SelectionIntType> selection(selectionProperty.get());
+    BufferReadAccess<SelectionIntType> selectionAcc(selection.get());
 
-    // Create color lookup table.
-    const std::map<int,Color> colorMap = typePropertyObject->typeColorMap();
+    // Create type-color lookup table.
+    const std::map<int, ColorG> colorMap = typePropertyObject->typeColorMap();
 
     // Fill color property.
     size_t count = colorProperty.size();
     for(size_t i = 0; i < count; i++) {
-        if(selection && !selection[i])
+        if(selectionAcc && !selectionAcc[i])
             continue;
 
         auto c = colorMap.find(typeProperty[i]);
         if(c == colorMap.end())
             colorProperty[i] = ColorG(1,1,1);
         else
-            colorProperty[i] = c->second.toDataType<GraphicsFloatType>();
+            colorProperty[i] = c->second;
     }
+#endif
 #endif
 }
 

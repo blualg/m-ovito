@@ -133,19 +133,19 @@ ConstPropertyPtr NucleotidesVis::nucleobaseColors(const Particles* particles, bo
     if(const Property* baseProperty = particles->getProperty(Particles::NucleobaseTypeProperty)) {
         // Assign colors based on base type.
         // Generate a lookup map for base type colors.
-        const std::map<int,Color> colorMap = baseProperty->typeColorMap();
-        std::array<ColorG,16> colorArray;
+        const std::map<int, ColorG> colorMap = baseProperty->typeColorMap();
+        std::array<ColorG, 16> colorArray;
         // Check if all type IDs are within a small, non-negative range.
         // If yes, we can use an array lookup strategy. Otherwise we have to use a dictionary lookup strategy, which is slower.
         if(std::all_of(colorMap.begin(), colorMap.end(), [&colorArray](const auto& i) { return i.first >= 0 && i.first < (int)colorArray.size(); })) {
             colorArray.fill(defaultColor);
             for(const auto& entry : colorMap)
-                colorArray[entry.first] = entry.second.toDataType<GraphicsFloatType>();
+                colorArray[entry.first] = entry.second;
             // Fill color array.
             BufferReadAccess<int32_t> typeArray(baseProperty);
             const auto* t = typeArray.cbegin();
             for(auto& c : BufferWriteAccess<ColorG, access_mode::discard_write>(output)) {
-                if(*t >= 0 && *t < (int)colorArray.size())
+                if(*t >= 0 && (size_t)*t < colorArray.size())
                     c = colorArray[*t];
                 else
                     c = defaultColor;
@@ -159,7 +159,7 @@ ConstPropertyPtr NucleotidesVis::nucleobaseColors(const Particles* particles, bo
             for(auto& c : BufferWriteAccess<ColorG, access_mode::discard_write>(output)) {
                 auto it = colorMap.find(*t);
                 if(it != colorMap.end())
-                    c = it->second.toDataType<GraphicsFloatType>();
+                    c = it->second;
                 else
                     c = defaultColor;
                 ++t;

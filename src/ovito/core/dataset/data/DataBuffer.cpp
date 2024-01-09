@@ -1004,10 +1004,8 @@ std::pair<FloatType, FloatType> DataBuffer::minMax(size_t component, const DataB
 
             // Create temporary objects describing variables with reduction semantics.
 #ifdef OVITO_USE_SYCL_ACPP
-            sycl::accessor minAcc{minBuf, cgh};
-            sycl::accessor maxAcc{maxBuf, cgh};
-            auto minReduction = sycl::reduction(minAcc, std::numeric_limits<FloatType>::max(), sycl::minimum<FloatType>());
-            auto maxReduction = sycl::reduction(maxAcc, std::numeric_limits<FloatType>::lowest(), sycl::maximum<FloatType>());
+            auto minReduction = sycl::reduction(sycl::accessor{minBuf, cgh, sycl::no_init}, std::numeric_limits<FloatType>::max(), sycl::minimum<FloatType>());
+            auto maxReduction = sycl::reduction(sycl::accessor{maxBuf, cgh, sycl::no_init}, std::numeric_limits<FloatType>::lowest(), sycl::maximum<FloatType>());
 #else
             auto minReduction = sycl::reduction(minBuf, cgh, std::numeric_limits<FloatType>::max(), sycl::minimum<FloatType>());
             auto maxReduction = sycl::reduction(maxBuf, cgh, std::numeric_limits<FloatType>::lowest(), sycl::maximum<FloatType>());
