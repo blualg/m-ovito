@@ -104,7 +104,11 @@ public:
         setProperty(nullptr);
         setIdentifiers(nullptr);
         _validityInterval.setEmpty();
+        _idmap.clear();
     }
+
+    /// Provides access to the cached ID-to-index map.
+    std::unordered_map<IdentifierIntType, size_t>& idmap() { return _idmap; }
 
 protected:
 
@@ -124,6 +128,9 @@ private:
 
     /// The validity interval of the frozen property.
     TimeInterval _validityInterval;
+
+    /// Cached mapping of unique IDs to indices.
+    std::unordered_map<IdentifierIntType, size_t> _idmap;
 };
 
 }   // End of namespace

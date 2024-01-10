@@ -119,14 +119,14 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluate(const ModifierEvaluat
         .then(*this, [this, request, node = OORef<ModificationNode>(request.modificationNode()), state = input](const PipelineFlowState& frozenState) mutable {
 
             // Extract the input property.
-            if(FreezePropertyModificationNode* myModNode = dynamic_object_cast<FreezePropertyModificationNode>(request.modificationNode())) {
-                if(myModNode->modifier() == this && !sourceProperty().isNull() && subject()) {
+            if(FreezePropertyModificationNode* modNode = dynamic_object_cast<FreezePropertyModificationNode>(request.modificationNode())) {
+                if(modNode->modifier() == this && !sourceProperty().isNull() && subject()) {
 
                     const PropertyContainer* container = frozenState.expectLeafObject(subject());
                     if(const Property* property = sourceProperty().findInContainer(container)) {
 
                         // Cache the property to be frozen in the ModificationNode.
-                        myModNode->updateStoredData(property,
+                        modNode->updateStoredData(property,
                             container->getOOMetaClass().isValidStandardPropertyId(Property::GenericIdentifierProperty)
                                 ? container->getProperty(Property::GenericIdentifierProperty)
                                 : nullptr,
@@ -140,7 +140,7 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluate(const ModifierEvaluat
                         throw Exception(tr("The property '%1' is not present in the input state.").arg(sourceProperty().name()));
                     }
                 }
-                myModNode->invalidateFrozenState();
+                modNode->invalidateFrozenState();
             }
 
             return std::move(state);
@@ -163,8 +163,8 @@ void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest
         throw Exception(tr("No output property selected."));
 
     // Retrieve the property values stored in the ModificationNode.
-    FreezePropertyModificationNode* myModApp = dynamic_object_cast<FreezePropertyModificationNode>(request.modificationNode());
-    if(!myModApp || !myModApp->property())
+    FreezePropertyModificationNode* modNode = dynamic_object_cast<FreezePropertyModificationNode>(request.modificationNode());
+    if(!modNode || !modNode->property())
         throw Exception(tr("No stored property values available."));
 
     // Look up the property container object.
@@ -175,37 +175,43 @@ void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest
     Property* outputProperty;
     if(destinationProperty().type() != Property::GenericUserProperty) {
         outputProperty = container->createProperty(DataBuffer::Initialized, destinationProperty().type());
-        if(outputProperty->dataType() != myModApp->property()->dataType()
-            || outputProperty->componentCount() != myModApp->property()->componentCount()
-            || outputProperty->stride() != myModApp->property()->stride())
+        if(outputProperty->dataType() != modNode->property()->dataType()
+            || outputProperty->componentCount() != modNode->property()->componentCount()
+            || outputProperty->stride() != modNode->property()->stride())
             throw Exception(tr("Types of source property and output property are not compatible. Cannot restore saved property values."));
     }
     else {
         outputProperty = container->createProperty(DataBuffer::Initialized, destinationProperty().name(),
-            myModApp->property()->dataType(), myModApp->property()->componentCount());
-        outputProperty->setComponentNames(myModApp->property()->componentNames());
+            modNode->property()->dataType(), modNode->property()->componentCount());
+        outputProperty->setComponentNames(modNode->property()->componentNames());
     }
-    OVITO_ASSERT(outputProperty->stride() == myModApp->property()->stride());
+    OVITO_ASSERT(outputProperty->stride() == modNode->property()->stride());
 
     // Check if particle IDs are present and if the order of particles has changed
     // since we took the snapshot of the property values.
     BufferReadAccess<IdentifierIntType> idProperty = container->getOOMetaClass().isValidStandardPropertyId(Property::GenericIdentifierProperty)
         ? container->getProperty(Property::GenericIdentifierProperty)
         : nullptr;
-    BufferReadAccess<IdentifierIntType> storedIds = myModApp->identifiers();
+    BufferReadAccess<IdentifierIntType> storedIds = modNode->identifiers();
     if(storedIds && idProperty && (idProperty.size() != storedIds.size() || !boost::equal(idProperty, storedIds))) {
 
-        // Build ID-to-index map.
-        std::unordered_map<IdentifierIntType,size_t> idmap;
-        size_t index = 0;
-        for(auto id : storedIds) {
-            if(!idmap.insert(std::make_pair(id, index)).second)
-                throw Exception(tr("Detected duplicate element ID %1 in saved snapshot. Cannot apply saved property values.").arg(id));
-            index++;
+        // Obtain ID-to-index map for frozen state.
+        // The map needs to be built only once and can be cached in the modification node.
+        if(modNode->idmap().empty()) {
+            std::unordered_map<IdentifierIntType, size_t> idmap;
+            size_t index = 0;
+            for(auto id : storedIds) {
+                if(!idmap.insert(std::make_pair(id, index)).second)
+                    throw Exception(tr("Detected non-unique element ID %1 in frozen snapshot. Cannot map property values from frozen state to current state.").arg(id));
+                index++;
+            }
+            // Store the ID-to-index map in the modification node.
+            modNode->idmap().swap(idmap);
         }
         storedIds.reset();
 
-        // Build index-to-index map.
+        // Build index-to-index map for the current state.
+        const std::unordered_map<IdentifierIntType, size_t>& idmap = modNode->idmap();
         std::vector<size_t> mapping(outputProperty->size());
         auto id = idProperty.cbegin();
         for(size_t& mappedIndex : mapping) {
@@ -217,18 +223,18 @@ void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest
         idProperty.reset();
 
         // Copy and reorder property data.
-        myModApp->property()->mappedCopyTo(*outputProperty, mapping);
+        modNode->property()->mappedCopyTo(*outputProperty, mapping);
     }
     else {
         storedIds.reset();
         idProperty.reset();
 
         // Make sure the number of elements didn't change when no IDs are defined.
-        if(myModApp->property()->size() != outputProperty->size())
-            throw Exception(tr("Number of input elements has changed. Cannot restore saved property values. There were %1 elements when the snapshot was created. Now there are %2.").arg(myModApp->property()->size()).arg(outputProperty->size()));
+        if(modNode->property()->size() != outputProperty->size())
+            throw Exception(tr("Number of input elements has changed. Cannot restore saved property values. There were %1 elements when the snapshot was created. Now there are %2.").arg(modNode->property()->size()).arg(outputProperty->size()));
 
-        if(outputProperty->dataType() == myModApp->property()->dataType() && outputProperty->stride() == myModApp->property()->stride())
-            outputProperty->copyFrom(*myModApp->property());
+        if(outputProperty->dataType() == modNode->property()->dataType() && outputProperty->stride() == modNode->property()->stride())
+            outputProperty->copyFrom(*modNode->property());
     }
 
     // Replace vis elements of output property with cached ones and cache any new elements.
@@ -236,13 +242,13 @@ void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest
     // each time the modifier is re-evaluated or when serializing the modifier application.
     OORefVector<DataVis> currentVisElements = outputProperty->visElements();
     // Replace with cached vis elements if they are of the same class type.
-    for(int i = 0; i < currentVisElements.size() && i < myModApp->cachedVisElements().size(); i++) {
-        if(currentVisElements[i]->getOOClass() == myModApp->cachedVisElements()[i]->getOOClass()) {
-            currentVisElements[i] = myModApp->cachedVisElements()[i];
+    for(int i = 0; i < currentVisElements.size() && i < modNode->cachedVisElements().size(); i++) {
+        if(currentVisElements[i]->getOOClass() == modNode->cachedVisElements()[i]->getOOClass()) {
+            currentVisElements[i] = modNode->cachedVisElements()[i];
         }
     }
     outputProperty->setVisElements(currentVisElements);
-    myModApp->setCachedVisElements(std::move(currentVisElements));
+    modNode->setCachedVisElements(std::move(currentVisElements));
 }
 
 /******************************************************************************
@@ -256,6 +262,7 @@ void FreezePropertyModificationNode::updateStoredData(const Property* property, 
     setProperty(cloneHelper.cloneObject(property, false));
     setIdentifiers(cloneHelper.cloneObject(identifiers, false));
     _validityInterval = validityInterval;
+    _idmap.clear();
 }
 
 /******************************************************************************
