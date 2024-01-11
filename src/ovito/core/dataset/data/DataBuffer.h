@@ -42,6 +42,18 @@ namespace detail {
     // Forward declarations
     template<typename BufferType, bool StrongReference, Ovito::access_mode accessmode> class BufferAccessBase;
     template<typename T, Ovito::access_mode AccessMode> class SyclBufferAccessTyped;
+
+    /// Allocates a new SYCL buffer object of the given type and dimensions.
+    /// If possible, creates a buffer that won't block upon destruction.
+    template<typename T, int Dimensions = 1>
+    inline sycl::buffer<T, Dimensions> allocateSyclBuffer(const sycl::range<Dimensions>& r) {
+#ifdef OVITO_USE_SYCL_ACPP
+        // Using AdaptiveCpp's make_async_buffer() to create a buffer with a destructor that won't block.
+        return sycl::make_async_buffer<T, Dimensions>(r);
+#else
+        return sycl::buffer<T, Dimensions>(r);
+#endif
+    }
 }
 
 #ifdef OVITO_USE_SYCL

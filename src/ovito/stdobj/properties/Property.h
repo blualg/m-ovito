@@ -106,6 +106,9 @@ public:
     /// Checks if this property storage and its contents exactly match those of another property storage.
     bool equals(const Property& other) const;
 
+    /// Creates an empty copy of this property object - without copying the stored array data but cloning the metadata and list of element types.
+    PropertyPtr cloneWithoutData(size_t newSize = 0) const;
+
     //////////////////////////////// Element types //////////////////////////////
 
     /// Returns true if this property has some element types attached and the data type is 'int'.

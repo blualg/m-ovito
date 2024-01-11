@@ -32,14 +32,9 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(DataBuffer);
 #ifdef OVITO_USE_SYCL
 
 /// Helper function allocating a new SYCL buffer object of the given size.
-static sycl::buffer<DataBuffer::Byte> allocateSyclBuffer(size_t nelements, size_t stride)
+static sycl::buffer<DataBuffer::Byte> allocateBufferStorage(size_t nelements, size_t stride)
 {
-#ifdef OVITO_USE_SYCL_ACPP
-    // Using AdaptiveCpp's make_async_buffer() to create a buffer with a destructor that won't block.
-    return sycl::make_async_buffer<DataBuffer::Byte, 1>(nelements * stride);
-#else
-    return sycl::buffer<DataBuffer::Byte, 1>(nelements * stride);
-#endif
+    return detail::allocateSyclBuffer<DataBuffer::Byte>(sycl::range<1>{nelements * stride});
 }
 
 /// Helper function that copies a range of bytes from one device buffer to another.
@@ -124,7 +119,7 @@ OORef<RefTarget> DataBuffer::clone(bool deepCopy, CloneHelper& cloneHelper) cons
 #ifdef OVITO_USE_SYCL
     if(clone->_numElements != 0) {
         // Allocate new buffer.
-        clone->_data = allocateSyclBuffer(_numElements, _stride);
+        clone->_data = allocateBufferStorage(_numElements, _stride);
         // Copy data on the SYCL device.
         _hasScheduledSyclReadOperations = true;
         copySyclBufferContents(*_data, *clone->_data, _numElements * _stride);
@@ -156,7 +151,7 @@ void DataBuffer::resize(size_t newSize, bool preserveData)
     // Note: We do not reallocate the storage for performance reasons when the number of elements becomes smaller.
 #ifdef OVITO_USE_SYCL
     if(newSize != 0 && (!_data || newSize * _stride > _data->get_range()[0])) {
-        sycl::buffer<DataBuffer::Byte> newBuffer = allocateSyclBuffer(newSize, _stride);
+        sycl::buffer<DataBuffer::Byte> newBuffer = allocateBufferStorage(newSize, _stride);
         if(preserveData && _numElements != 0) {
             _hasScheduledSyclReadOperations = true;
             copySyclBufferContents(*_data, newBuffer, _numElements * _stride);
@@ -204,7 +199,7 @@ void DataBuffer::resizeCopyFrom(size_t newSize, const DataBuffer& original)
 
 #ifdef OVITO_USE_SYCL
     if(newSize != 0 && (this != &original || !this->_data || newSize * _stride > this->_data->get_range()[0])) {
-        sycl::buffer<DataBuffer::Byte> newBuffer = allocateSyclBuffer(newSize, _stride);
+        sycl::buffer<DataBuffer::Byte> newBuffer = allocateBufferStorage(newSize, _stride);
         if(original._numElements != 0) {
             original._hasScheduledSyclReadOperations = true;
             size_t nbytes = std::min(newSize, original._numElements) * original._stride;
@@ -268,7 +263,7 @@ bool DataBuffer::grow(size_t numAdditionalElements, bool callerAlreadyHasWriteAc
             : (newSize * 3 / 2);
 #ifdef OVITO_USE_SYCL
         if(newCapacity != 0) {
-            sycl::buffer<DataBuffer::Byte> newBuffer = allocateSyclBuffer(newCapacity, _stride);
+            sycl::buffer<DataBuffer::Byte> newBuffer = allocateBufferStorage(newCapacity, _stride);
             if(_numElements != 0) {
                 sycl::host_accessor writeAccessor(newBuffer, sycl::write_only, sycl::no_init);
                 sycl::host_accessor readAccessor(*_data, sycl::read_only);
@@ -368,7 +363,7 @@ void DataBuffer::loadFromStream(ObjectLoadStream& stream)
 #endif
 #ifdef OVITO_USE_SYCL
     if(_numElements != 0) {
-        _data = allocateSyclBuffer(_numElements, _stride);
+        _data = allocateBufferStorage(_numElements, _stride);
         sycl::host_accessor writeAccessor(*_data, sycl::write_only, sycl::no_init);
         stream.read(writeAccessor.get_pointer(), _stride * _numElements);
     }
@@ -452,7 +447,7 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const DataBuffer& selectio
 #endif
 
 #ifdef OVITO_USE_SYCL
-    auto newBuffer = allocateSyclBuffer(newSize, _stride);
+    auto newBuffer = allocateBufferStorage(newSize, _stride);
 #else
 #if __cpp_lib_smart_ptr_for_overwrite || _LIBCPP_STD_VER >= 20
     auto newBuffer = std::make_unique_for_overwrite<DataBuffer::Byte[]>(newSize * _stride);
@@ -875,7 +870,7 @@ void DataBuffer::convertToDataType(int newDataType)
 #ifdef OVITO_USE_SYCL
     std::optional<sycl::buffer<DataBuffer::Byte>> newData;
     if(_numElements != 0)
-        newData = allocateSyclBuffer(_numElements, newStride);
+        newData = allocateBufferStorage(_numElements, newStride);
 #else
 #if __cpp_lib_smart_ptr_for_overwrite || _LIBCPP_STD_VER >= 20
     auto newData = std::make_unique_for_overwrite<DataBuffer::Byte[]>(_numElements * newStride);

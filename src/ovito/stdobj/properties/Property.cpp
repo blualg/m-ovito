@@ -205,6 +205,25 @@ bool Property::equals(const Property& other) const
 }
 
 /******************************************************************************
+* Creates an empty copy of this property object - without copying the stored
+* array data but cloning the metadata and list of element types.
+******************************************************************************/
+PropertyPtr Property::cloneWithoutData(size_t newSize) const
+{
+    PropertyPtr clone = PropertyPtr::create(
+            ObjectInitializationFlag::DontInitializeObject, DataBuffer::Uninitialized, newSize, this->dataType(),
+            this->componentCount(), this->name(), this->type(), this->componentNames());
+
+    UndoSuspender noUndo;
+    clone->setVisElements(this->visElements());
+    clone->setElementTypes(this->elementTypes());
+    clone->setTitle(this->title());
+    clone->setCreatedByNode(this->createdByNode());
+
+    return clone;
+}
+
+/******************************************************************************
 * Helper method that remaps the existing type IDs to a contiguous range starting at the given
 * base ID. This method is mainly used for file output, because some file formats
 * work with numeric particle types only, which must form a contiguous range.

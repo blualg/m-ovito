@@ -110,22 +110,13 @@ Property* PropertyContainer::makePropertyMutable(const Property* property, DataB
     // Always clone property if its memory is currently being accessed from Python code.
     // That's required, because Python value holders are not strong DataOORefs protecting the property object from changes.
     if(property && ((property->isBeingAccessedFromPython() && !ignorePythonAccess) || !isSafeToModifySubObject(property))) {
-        DataOORef<Property> clone;
+        PropertyPtr clone;
         if(cloneMode == DataBuffer::Initialized) {
             clone = CloneHelper::cloneSingleObject(property, false);
         }
         else {
             // Custom clone implementation, which copies only the metadata but not the contents of the original property.
-            clone = DataOORef<Property>::create(
-                ObjectInitializationFlag::DontInitializeObject, DataBuffer::Uninitialized, property->size(), property->dataType(),
-                property->componentCount(), property->name(), property->type(), property->componentNames());
-            {
-                UndoSuspender noUndo;
-                clone->setVisElements(property->visElements());
-                clone->setElementTypes(property->elementTypes());
-                clone->setTitle(property->title());
-                clone->setCreatedByNode(property->createdByNode());
-            }
+            clone = property->cloneWithoutData(property->size());
         }
         replaceReferencesTo(property, clone);
         OVITO_ASSERT(hasReferenceTo(clone));
@@ -152,16 +143,7 @@ Property* PropertyContainer::makePropertyMutableUnallocated(const Property* prop
     // That's required, because Python code never holds a strong DataOORef to the property object.
     if(property->isBeingAccessedFromPython() || !isSafeToModifySubObject(property)) {
         // Custom clone implementation, which copies only the metadata but not the contents of the original property.
-        DataOORef<Property> clone = DataOORef<Property>::create(
-                ObjectInitializationFlag::DontInitializeObject, DataBuffer::Uninitialized, 0, property->dataType(),
-                property->componentCount(), property->name(), property->type(), property->componentNames());
-        {
-            UndoSuspender noUndo;
-            clone->setVisElements(property->visElements());
-            clone->setElementTypes(property->elementTypes());
-            clone->setTitle(property->title());
-            clone->setCreatedByNode(property->createdByNode());
-        }
+        PropertyPtr clone = property->cloneWithoutData(0);
         replaceReferencesTo(property, clone);
         OVITO_ASSERT(hasReferenceTo(clone));
         OVITO_ASSERT(!hasReferenceTo(property));
