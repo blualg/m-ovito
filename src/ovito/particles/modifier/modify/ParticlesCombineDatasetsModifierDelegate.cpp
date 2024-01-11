@@ -101,16 +101,11 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
 
             // Assign unique particle and molecule IDs.
             if(prop->type() == Particles::IdentifierProperty && primaryParticleCount != 0) {
+                // First, compute maximum range of existing particle IDs.
+                // Then, generate unique consecutive IDs for the new particles (offset by 1).
 #ifdef OVITO_USE_SYCL
-                qDebug() << "--------------- COMPUTING MAX:";
-                {
                 sycl::buffer maxId = SyclBufferAccess<IdentifierIntType, access_mode::read>(prop, 0, primaryParticleCount).max();
-                qDebug() << "--------------- RELEASING BUFFER:";
-                }
-                qDebug() << "--------------- RELEASED BUFFER:";
-                //qDebug() << "--------------- ACCESING BUFFER:";
-                //sycl::host_accessor acc(maxId, sycl::read_only);
-                //qDebug() << "--------------- MAXIMUM:" << acc[0];
+                SyclBufferAccess<IdentifierIntType, access_mode::discard_write>(prop, primaryParticleCount, prop->size() - primaryParticleCount).iota(maxId, 1);
 #else
                 BufferWriteAccess<IdentifierIntType, access_mode::read_write> identifiers(prop);
                 auto maxId = *std::max_element(identifiers.cbegin(), identifiers.cbegin() + primaryParticleCount);
@@ -118,10 +113,17 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
 #endif
             }
             else if(prop->type() == Particles::MoleculeProperty && primaryParticleCount != 0) {
+                // First, compute maximum range of existing molecule IDs in first dataset.
+                // Then, shift molecule IDs of second dataset to avoid collisions.
+#ifdef OVITO_USE_SYCL
+                sycl::buffer maxId = SyclBufferAccess<IdentifierIntType, access_mode::read>(prop, 0, primaryParticleCount).max();
+                SyclBufferAccess<IdentifierIntType, access_mode::read_write>(prop, primaryParticleCount, prop->size() - primaryParticleCount).add(maxId);
+#else
                 BufferWriteAccess<IdentifierIntType, access_mode::read_write> identifiers(prop);
                 auto maxId = *std::max_element(identifiers.cbegin(), identifiers.cbegin() + primaryParticleCount);
                 for(auto* mol_id = identifiers.begin() + primaryParticleCount; mol_id != identifiers.end(); ++mol_id)
                     *mol_id += maxId;
+#endif
             }
         }
     }
@@ -130,7 +132,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
     for(const Property* prop : secondaryParticles->properties()) {
         if(prop->size() != secondaryParticleCount) continue;
 
-        // Check if the property already exists in the output.
+        // Check if the property already exists in the output container.
         if(prop->type() != Particles::UserProperty) {
             if(particles->getProperty(prop->type()))
                 continue;
@@ -140,16 +142,16 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
                 continue;
         }
 
-        // Put the property into the output.
-        PropertyPtr clonedProperty = cloneHelper.cloneObject(prop, false);
-        clonedProperty->resize(totalParticleCount, true);
-        particles->addProperty(clonedProperty);
-
-        // Shift values of second dataset and reset values of first dataset to zero:
-        if(primaryParticleCount != 0) {
-            RawBufferAccess<access_mode::read_write> access(clonedProperty);
-            std::memmove(access.data() + primaryParticleCount * clonedProperty->stride(), access.cdata(), clonedProperty->stride() * secondaryParticleCount);
-            std::memset(access.data(), 0, clonedProperty->stride() * primaryParticleCount);
+        // Copy the property into the output container.
+        if(primaryParticleCount == 0) {
+            particles->addProperty(prop);
+        }
+        else {
+            // Shift values of second dataset to the end of the buffer and initialize values of first dataset to zero:
+            PropertyPtr clonedProperty = prop->cloneWithoutData(totalParticleCount);
+            clonedProperty->fillZero();
+            clonedProperty->copyRangeFrom(*prop, 0, primaryParticleCount, secondaryParticleCount);
+            particles->addProperty(std::move(clonedProperty));
         }
     }
 
@@ -206,26 +208,29 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
                         continue;
                 }
 
-                // Put the property into the output.
-                OORef<Property> clonedProperty = cloneHelper.cloneObject(prop, false);
-                clonedProperty->resize(totalElementCount, true);
-                primaryMutableElements->addProperty(clonedProperty);
-
-                // Shift values of second dataset and reset values of first dataset to zero:
-                if(primaryElementCount != 0) {
-                    RawBufferAccess<access_mode::read_write> access(clonedProperty);
-                    std::memmove(access.data() + primaryElementCount * clonedProperty->stride(), access.cdata(), clonedProperty->stride() * secondaryElementCount);
-                    std::memset(access.data(), 0, clonedProperty->stride() * primaryElementCount);
+                if(primaryElementCount == 0) {
+                    primaryMutableElements->addProperty(prop);
+                }
+                else {
+                    // Shift values of second dataset to the end of the buffer and initialize values of first dataset to zero:
+                    PropertyPtr clonedProperty = prop->cloneWithoutData(totalElementCount);
+                    clonedProperty->fillZero();
+                    clonedProperty->copyRangeFrom(*prop, 0, primaryElementCount, secondaryElementCount);
+                    primaryMutableElements->addProperty(std::move(clonedProperty));
                 }
             }
 
             // Shift particle indices stored in the topology array of the second container.
             const Property* topologyProperty = primaryMutableElements->getProperty(topologyPropertyId);
             if(topologyProperty && primaryParticleCount != 0) {
-                BufferWriteAccess<int64_t*, access_mode::read_write> mutableTopologyProperty = primaryMutableElements->makeMutable(topologyProperty);
-                for(auto idx = mutableTopologyProperty.begin() + (primaryElementCount * mutableTopologyProperty.componentCount()); idx != mutableTopologyProperty.end(); ++idx) {
+                Property* mutableTopologyProperty = primaryMutableElements->makeMutable(topologyProperty);
+#ifdef OVITO_USE_SYCL
+                SyclBufferAccess<int64_t*, access_mode::read_write>(mutableTopologyProperty, primaryElementCount, secondaryElementCount).add(primaryParticleCount);
+#else
+                BufferWriteAccess<int64_t*, access_mode::read_write> accessor = mutableTopologyProperty;
+                for(auto idx = accessor.begin() + (primaryElementCount * accessor.componentCount()); idx != accessor.end(); ++idx)
                     *idx += primaryParticleCount;
-                }
+#endif
             }
         }
     };
