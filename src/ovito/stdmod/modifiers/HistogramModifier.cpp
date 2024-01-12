@@ -170,34 +170,117 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
         std::swap(selectionRangeStart, selectionRangeEnd);
     size_t numSelected = 0;
 
-    FloatType intervalStart = xAxisRangeStart();
-    FloatType intervalEnd = xAxisRangeEnd();
+    // Allocate output array for histogram.
+    PropertyPtr histogram = DataTable::OOClass().createUserProperty((property->size() != 0) ? DataBuffer::Uninitialized : DataBuffer::Initialized, std::max(1, numberOfBins()), Property::Int64, 1, tr("Count"));
+    size_t histogramSizeMin1 = histogram->size() - 1;
 
-    // Allocate output data array.
-    PropertyPtr histogram = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, std::max(1, numberOfBins()), Property::Int64, 1, tr("Count"));
-    int histogramSizeMin1 = histogram->size() - 1;
-
+    FloatType intervalStart;
+    FloatType intervalEnd;
     if(property->size() > 0) {
+#ifdef OVITO_USE_SYCL
+        // Initialize histogram bins to zero.
+        histogram->fillZero();
+
+        property->forAnyType([&](auto _) {
+            using T = decltype(_);
+
+            // Access input value array (placeholder accessor).
+            SyclBufferAccess<T*, access_mode::read> inputAcc(property);
+
+            // Value range calculation.
+            std::pair<sycl::buffer<T>, sycl::buffer<T>> intervalBuf =
+                fixXAxisRange()
+                    ?
+                    std::make_pair(
+                        detail::allocateSyclBuffer<T>(sycl::range<1>{1}),
+                        detail::allocateSyclBuffer<T>(sycl::range<1>{1}))
+                    :
+                    inputAcc.minMax(vecComponent, inputSelection);
+
+            if(fixXAxisRange()) {
+                intervalStart = xAxisRangeStart();
+                intervalEnd = xAxisRangeEnd();
+                intervalBuf.first.get_host_access(sycl::write_only, sycl::no_init)[0] = static_cast<T>(intervalStart);
+                intervalBuf.second.get_host_access(sycl::write_only, sycl::no_init)[0] = static_cast<T>(intervalEnd);
+            }
+
+            // Histogram calculation.
+            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+                cgh.require(inputAcc);
+                sycl::accessor intervalStartAcc{intervalBuf.first, cgh, sycl::read_only};
+                sycl::accessor intervalEndAcc{intervalBuf.second, cgh, sycl::read_only};
+                SyclBufferAccess<int64_t, access_mode::read_write> histogramAcc(histogram, cgh);
+                SyclBufferAccess<SelectionIntType, access_mode::read> selectionAcc(inputSelection, cgh);
+                OVITO_SYCL_PARALLEL_FOR(cgh, HistogramModifier_kernel)(sycl::range(inputAcc.size()), [=](size_t i) {
+                    if(!selectionAcc || selectionAcc[i]) {
+                        const T intervalStart = intervalStartAcc[0];
+                        const T intervalEnd = intervalEndAcc[0];
+                        const T v = inputAcc[sycl::id<2>(i, vecComponent)];
+                        if(v >= intervalStart && v <= intervalEnd) {
+                            size_t binIndex = static_cast<size_t>(histogramAcc.size() * (static_cast<FloatType>(v - intervalStart) / (intervalEnd - intervalStart)));
+                            sycl::atomic_ref<int64_t, sycl::memory_order::relaxed, sycl::memory_scope::device>(
+                                histogramAcc[std::max((size_t)0, std::min(binIndex, histogramSizeMin1))]).fetch_add((int64_t)1);
+                        }
+                    }
+                });
+            });
+
+            // Read out the computed interval range.
+            if(!fixXAxisRange()) {
+                intervalStart = static_cast<FloatType>(intervalBuf.first.get_host_access(sycl::read_only)[0]);
+                intervalEnd = static_cast<FloatType>(intervalBuf.second.get_host_access(sycl::read_only)[0]);
+            }
+
+            // Element selection.
+            if(outputSelection) {
+                sycl::buffer<size_t> numSelectedBuf(&numSelected, 1);
+                std::array<FloatType, 2> selectionRange = { selectionRangeStart, selectionRangeEnd };
+                sycl::buffer<FloatType> selectionRangeBuf(selectionRange);
+                ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+                    cgh.require(inputAcc);
+                    sycl::accessor selectionRangeAcc{selectionRangeBuf, cgh, sycl::read_only};
+                    SyclBufferAccess<SelectionIntType, access_mode::discard_write> selectionOutAcc(outputSelection, cgh);
+                    SyclBufferAccess<SelectionIntType, access_mode::read> selectionAcc(inputSelection, cgh);
+#ifdef OVITO_USE_SYCL_ACPP
+                    auto reduction = sycl::reduction(sycl::accessor{numSelectedBuf, cgh, sycl::no_init}, 0, sycl::plus<size_t>());
+#else
+                    auto reduction = sycl::reduction(numSelectedBuf, cgh, 0, sycl::plus<size_t>(), sycl::reduction::initialize_to_identity);
+#endif
+                    OVITO_SYCL_PARALLEL_FOR(cgh, HistogramModifier_kernel_selection)(sycl::range(inputAcc.size()), reduction, [=](size_t i, auto& red) {
+                        if(!selectionAcc || selectionAcc[i]) {
+                            const T v = inputAcc[sycl::id<2>(i, vecComponent)];
+                            if(v >= selectionRangeAcc[0] && v <= selectionRangeAcc[1]) {
+                                selectionOutAcc[i] = 1;
+                                red += (size_t)1;
+                            }
+                            else {
+                                selectionOutAcc[i] = 0;
+                            }
+                        }
+                        else selectionOutAcc[i] = 0;
+                    });
+                });
+            }
+        });
+#else
         BufferReadAccess<SelectionIntType> inputSelectionAcc = inputSelection;
         BufferWriteAccess<SelectionIntType, access_mode::discard_write> outputSelectionAcc = outputSelection;
         BufferWriteAccess<int64_t, access_mode::discard_read_write> histogramAcc(histogram);
         std::fill(histogramAcc.begin(), histogramAcc.end(), 0);
 
+        // Determine value range.
+        if(!fixXAxisRange()) {
+            std::tie(intervalStart, intervalEnd) = property->minMax(vecComponent, inputSelection);
+        }
+        else {
+            intervalStart = xAxisRangeStart();
+            intervalEnd = xAxisRangeEnd();
+        }
+
         property->forAnyType([&](auto _) {
             using T = decltype(_);
 
             BufferReadAccess<T*> accessor(property);
-            // Determine value range.
-            if(!fixXAxisRange()) {
-                intervalStart = std::numeric_limits<FloatType>::max();
-                intervalEnd = std::numeric_limits<FloatType>::lowest();
-                const SelectionIntType* sel = inputSelectionAcc ? inputSelectionAcc.cbegin() : nullptr;
-                for(auto v : accessor.componentRange(vecComponent)) {
-                    if(sel && !*sel++) continue;
-                    if(v < intervalStart) intervalStart = v;
-                    if(v > intervalEnd) intervalEnd = v;
-                }
-            }
             // Perform binning.
             if(intervalEnd > intervalStart) {
                 FloatType binSize = (intervalEnd - intervalStart) / histogram->size();
@@ -216,7 +299,6 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
                     histogramAcc[0] = property->size() - boost::count(inputSelectionAcc, 0);
             }
             if(outputSelectionAcc) {
-                OVITO_ASSERT(outputSelectionAcc.size() == property->size());
                 SelectionIntType* s = outputSelectionAcc.begin();
                 const SelectionIntType* sel = inputSelectionAcc ? inputSelectionAcc.cbegin() : nullptr;
                 for(auto v : accessor.componentRange(vecComponent)) {
@@ -228,6 +310,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
                 }
             }
         });
+#endif
     }
     else {
         intervalStart = intervalEnd = 0;
@@ -247,6 +330,7 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
                 .arg(numSelected)
                 .arg(container->getOOMetaClass().elementDescriptionName())
                 .arg((FloatType)numSelected * 100 / std::max((size_t)1,outputSelection->size()), 0, 'f', 1);
+        state.addAttribute(QStringLiteral("Histogram.num_selected"), QVariant::fromValue(numSelected), request.modificationNode());
     }
     state.setStatus(PipelineStatus(std::move(statusMessage)));
 }

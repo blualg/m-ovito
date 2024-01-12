@@ -47,7 +47,7 @@ DEFINE_PROPERTY_FIELD(ColorCodingTableGradient, table);
 ConstDataBufferPtr ColorCodingGradient::getColorMap()
 {
     if(!_colorGradientMap) {
-        size_t tableSize = 256;
+        size_t tableSize = 1024;
         BufferFactory<ColorG> colorsArray(tableSize);
         for(size_t i = 0; i < tableSize; i++)
             colorsArray[i] = const_cast<ColorCodingGradient*>(this)->valueToColor((GraphicsFloatType)i / (tableSize - 1));

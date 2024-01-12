@@ -988,43 +988,16 @@ std::pair<FloatType, FloatType> DataBuffer::minMax(size_t component, const DataB
     FloatType maxValue = std::numeric_limits<FloatType>::lowest();
 
 #ifdef OVITO_USE_SYCL
-    if(size() != 0) {
-        // Buffers with just 1 element to get the reduction results.
-        sycl::buffer<FloatType> minBuf{&minValue, 1};
-        sycl::buffer<FloatType> maxBuf{&maxValue, 1};
-        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
-
-            // Access selection flags array (optional).
-            SyclBufferAccess<const SelectionIntType, access_mode::read> selectionAcc(selection, cgh);
-
-            // Create temporary objects describing variables with reduction semantics.
-#ifdef OVITO_USE_SYCL_ACPP
-            auto minReduction = sycl::reduction(sycl::accessor{minBuf, cgh, sycl::no_init}, std::numeric_limits<FloatType>::max(), sycl::minimum<FloatType>());
-            auto maxReduction = sycl::reduction(sycl::accessor{maxBuf, cgh, sycl::no_init}, std::numeric_limits<FloatType>::lowest(), sycl::maximum<FloatType>());
-#else
-            auto minReduction = sycl::reduction(minBuf, cgh, std::numeric_limits<FloatType>::max(), sycl::minimum<FloatType>());
-            auto maxReduction = sycl::reduction(maxBuf, cgh, std::numeric_limits<FloatType>::lowest(), sycl::maximum<FloatType>());
-#endif
-
-            // Duplicate templated code for different input data types.
-            forAnyType([&](auto _) {
-                using T = decltype(_);
-                SyclBufferAccess<const T*, access_mode::read> inputAcc(this, cgh);
-
-                // parallel_for() performs two reduction operations.
-                // For each reduction variable, the implementation:
-                //   - Creates a corresponding reducer
-                //   - Passes a reference to the reducer to the lambda as a parameter
-                OVITO_SYCL_PARALLEL_FOR(cgh, colorCoding_determinePropertyValueRange)(sycl::range(size()), minReduction, maxReduction, [=](size_t i, auto& min, auto& max) {
-                    if(selectionAcc.empty() || selectionAcc[i]) {
-                        const FloatType value = static_cast<FloatType>(inputAcc[sycl::id<2>(i, component)]);
-                        min.combine(value);
-                        max.combine(value);
-                    }
-                });
-            });
-        });
-    }
+    forAnyType([&](auto _) {
+        using T = decltype(_);
+        auto [minBuf, maxBuf] = SyclBufferAccess<const T*, access_mode::read>(this).minMax(component, selection);
+        auto minT = sycl::host_accessor(minBuf, sycl::read_only)[0];
+        auto maxT = sycl::host_accessor(maxBuf, sycl::read_only)[0];
+        if(minT != std::numeric_limits<T>::max())
+            minValue = static_cast<FloatType>(minT);
+        if(maxT != std::numeric_limits<T>::lowest())
+            maxValue = static_cast<FloatType>(maxT);
+    });
 #else
     if(!selection) {
         forEach(component, [&](size_t i, auto v) {

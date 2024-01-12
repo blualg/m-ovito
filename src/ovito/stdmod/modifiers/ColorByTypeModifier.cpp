@@ -145,9 +145,9 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
         ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
 
             // Access the input types.
-            SyclBufferAccess<const int32_t, access_mode::read> inputAcc(typePropertyObject, cgh);
+            SyclBufferAccess<int32_t, access_mode::read> inputAcc(typePropertyObject, cgh);
             // Access selection flags array (optional).
-            SyclBufferAccess<const SelectionIntType, access_mode::read> selectionAcc(selection, cgh);
+            SyclBufferAccess<SelectionIntType, access_mode::read> selectionAcc(selection, cgh);
             // Access output color array.
             SyclBufferAccess<ColorG, access_mode::write> outputAcc(colorProperty, cgh, selection ? DataBuffer::Initialized : DataBuffer::Uninitialized);
             // Access color lookup table.

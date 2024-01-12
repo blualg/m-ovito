@@ -242,7 +242,7 @@ public:
 #ifdef OVITO_USE_SYCL_ACPP
                 auto reduction = sycl::reduction(sycl::accessor{result, cgh, sycl::no_init}, identity, std::move(combiner));
 #else
-                auto reduction = sycl::reduction(result, cgh, identity, std::move(combiner));
+                auto reduction = sycl::reduction(result, cgh, identity, std::move(combiner), sycl::reduction::initialize_to_identity);
 #endif
                 OVITO_SYCL_PARALLEL_FOR(cgh, SyclBufferAccess_reduction)(sycl::range(size()), reduction, [=, *this](size_t i, auto& red) {
                     if constexpr(!ComponentWise)
@@ -256,7 +256,62 @@ public:
             // If the range is empty, we should still initialize the result buffer to a valid value.
             sycl::host_accessor(result, sycl::write_only, sycl::no_init)[0] = identity;
         }
+        return result;
+    }
 
+    /// Performs two types of reduction simultaneously.
+    /// This method must only be called on a placeholder accessor.
+    /// The results are computed asynchronously and returned in a two-element SYCL buffer.
+    /// Optionally, a selection flags array can be specified, which restricts the reduction to a subset of the array elements.
+    template<typename BinaryOperation1, typename BinaryOperation2>
+    auto reduction2(BinaryOperation1 combiner1, BinaryOperation2 combiner2, element_type identity1, element_type identity2, size_t component = 0, const DataBuffer* selection = nullptr) const {
+        OVITO_STATIC_ASSERT(AccessMode == access_mode::read || AccessMode == access_mode::read_write || AccessMode == access_mode::discard_read_write);
+        OVITO_ASSERT(accessor_type::empty() || accessor_type::is_placeholder());
+        OVITO_ASSERT(ComponentWise || component == 0);
+        OVITO_ASSERT(!ComponentWise || component < accessor_type::get_range()[1]);
+        OVITO_ASSERT(!selection || selection->size() == this->size());
+        OVITO_ASSERT(!selection || (selection->dataType() == DataBuffer::IntSelection && selection->componentCount() == 1));
+
+        // The buffers the results will be stored in.
+        auto result = std::make_pair(
+            detail::allocateSyclBuffer<std::remove_const_t<element_type>>(sycl::range<1>{1}),
+            detail::allocateSyclBuffer<std::remove_const_t<element_type>>(sycl::range<1>{1}));
+
+        if(!accessor_type::empty()) {
+            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+
+                // Access selection flags array (optional).
+                SyclBufferAccessTyped<const SelectionIntType, access_mode::read> selectionAcc(selection, cgh);
+
+                cgh.require(*this);
+#ifdef OVITO_USE_SYCL_ACPP
+                auto reduction1 = sycl::reduction(sycl::accessor{result.first,  cgh, sycl::no_init}, identity1, std::move(combiner1));
+                auto reduction2 = sycl::reduction(sycl::accessor{result.second, cgh, sycl::no_init}, identity2, std::move(combiner2));
+#else
+                auto reduction1 = sycl::reduction(result.first,  cgh, identity1, std::move(combiner1), sycl::reduction::initialize_to_identity);
+                auto reduction2 = sycl::reduction(result.second, cgh, identity2, std::move(combiner2), sycl::reduction::initialize_to_identity);
+#endif
+                OVITO_SYCL_PARALLEL_FOR(cgh, SyclBufferAccess_reduction2)(sycl::range(size()), reduction1, reduction2, [=, *this](size_t i, auto& red1, auto& red2) {
+                    if(selectionAcc.empty() || selectionAcc[i]) {
+                        if constexpr(!ComponentWise) {
+                            auto v = (*this)[i];
+                            red1.combine(v);
+                            red2.combine(v);
+                        }
+                        else {
+                            auto v = (*this)[sycl::id<2>(i, component)];
+                            red1.combine(v);
+                            red2.combine(v);
+                        }
+                    }
+                });
+            });
+        }
+        else {
+            // If the range is empty, we should still initialize the result buffers to a valid value.
+            sycl::host_accessor(result.first,  sycl::write_only, sycl::no_init)[0] = identity1;
+            sycl::host_accessor(result.second, sycl::write_only, sycl::no_init)[0] = identity2;
+        }
         return result;
     }
 
@@ -264,21 +319,29 @@ public:
     /// This method must only be called on a placeholder accessor.
     /// The result is computed asynchronously and returned in a single-element SYCL buffer.
     auto max(size_t component = 0) const {
-        return reduction(sycl::maximum<T>(), std::numeric_limits<element_type>::lowest(), component);
+        return reduction(sycl::maximum<element_type>(), std::numeric_limits<element_type>::lowest(), component);
     }
 
     /// Determines the minimum value in the accessed buffer.
     /// This method must only be called on a placeholder accessor.
     /// The result is computed asynchronously and returned in a single-element SYCL buffer.
     auto min(size_t component = 0) const {
-        return reduction(sycl::minimum<T>(), std::numeric_limits<element_type>::max(), component);
+        return reduction(sycl::minimum<element_type>(), std::numeric_limits<element_type>::max(), component);
+    }
+
+    /// Determines the minimum and maximum value in the accessed buffer.
+    /// This method must only be called on a placeholder accessor.
+    /// The results are computed asynchronously and returned in two single-element SYCL buffers.
+    /// Optionally, a selection flags array can be specified, which restricts the reduction to a subset of the array elements.
+    auto minMax(size_t component = 0, const DataBuffer* selection = nullptr) const {
+        return reduction2(sycl::minimum<element_type>(), sycl::maximum<element_type>(), std::numeric_limits<element_type>::max(), std::numeric_limits<element_type>::lowest(), component, selection);
     }
 
     /// Calculates the sum of all values in the accessed buffer.
     /// This method must only be called on a placeholder accessor.
     /// The result is computed asynchronously and returned in a single-element SYCL buffer.
     auto sum(size_t component = 0) const {
-        return reduction(sycl::plus<T>(), element_type{}, component);
+        return reduction(sycl::plus<element_type>(), element_type{}, component);
     }
 
     /// Fills the accessed range of the buffer with a consecutive sequence of numbers.
@@ -326,7 +389,7 @@ public:
 
     /// Adds a uniform value to all array values.
     /// The method can only be used with placeholder accessors.
-    void add(const element_type value) {
+    void add(const element_type increment) {
         OVITO_STATIC_ASSERT(AccessMode != access_mode::read && AccessMode != access_mode::discard_write);
         OVITO_ASSERT(accessor_type::empty() || accessor_type::is_placeholder());
 
@@ -334,27 +397,28 @@ public:
             ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                 cgh.require(*this);
                 OVITO_SYCL_PARALLEL_FOR(cgh, SyclBufferAccess_add)(accessor_type::get_range(), [=, *this](auto id) {
-                    (*this)[id] += value;
+                    (*this)[id] += increment;
                 });
             });
         }
     }
 
-    /// Adds a uniform value to all array values.
+    /// Increments all array entries by a given uniform value.
+    /// This overload of the method reads the increment value from a single-element SYCL buffer.
     /// The method can only be used with placeholder accessors.
     template<typename BaseT>
-    void add(sycl::buffer<BaseT,1>& valueBuffer) {
+    void add(sycl::buffer<BaseT>& incrementBuffer) {
         OVITO_STATIC_ASSERT(AccessMode != access_mode::read && AccessMode != access_mode::discard_write);
         OVITO_STATIC_ASSERT(!ComponentWise);
         OVITO_ASSERT(accessor_type::empty() || accessor_type::is_placeholder());
-        OVITO_ASSERT(valueBuffer.get_range()[0] == 1);
+        OVITO_ASSERT(incrementBuffer.get_range()[0] == 1);
 
         if(!accessor_type::empty()) {
             ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                 cgh.require(*this);
-                sycl::accessor<BaseT> valueBufferAcc{valueBuffer, cgh, sycl::read_only};
+                sycl::accessor<BaseT> incrementAcc{incrementBuffer, cgh, sycl::read_only};
                 OVITO_SYCL_PARALLEL_FOR(cgh, SyclBufferAccess_add_buf)(sycl::range(size()), [=, *this](size_t i) {
-                    (*this)[i] += valueBufferAcc[0];
+                    (*this)[i] += incrementAcc[0];
                 });
             });
         }
