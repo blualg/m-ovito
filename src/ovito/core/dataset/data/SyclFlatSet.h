@@ -33,36 +33,35 @@ namespace Ovito {
  * An associative container that can be accessed in host code and in SYCL kernels.
  * It uses a SYCL buffer as underlying storage.
 */
-template<typename Key, typename T, typename Compare = std::less<Key>>
-class SyclFlatMap
+template<typename Key, typename Compare = std::less<Key>>
+class SyclFlatSet
 {
 public:
 
     using key_type = Key;
-    using mapped_type = T;
-    using value_type = std::pair<Key, T>;
+    using value_type = Key;
     using size_type = std::size_t;
     using difference_type = std::ptrdiff_t;
     using key_compare = Compare;
 
-    /// Constructor that initializes the map from an existing associative container, e.g. a std::map.
+    /// Constructor that initializes the set from an existing associative container, e.g. a std::set.
     template<typename Container>
-    SyclFlatMap(const Container& container) : _storage(detail::allocateSyclBuffer<value_type, 1>(container.size())) {
+    SyclFlatSet(const Container& container) : _storage(detail::allocateSyclBuffer<value_type, 1>(container.size())) {
         // Copy the contents of the provided container into our internal flat storage.
         sycl::host_accessor acc(_storage, sycl::write_only, sycl::no_init);
         std::copy(container.begin(), container.end(), acc.begin());
     }
 
     /// Copying is not supported yet.
-    SyclFlatMap(const SyclFlatMap& other) = delete;
+    SyclFlatSet(const SyclFlatSet& other) = delete;
 
     /// Copy assignment is not supported yet.
-    SyclFlatMap& operator=(const SyclFlatMap& other) = delete;
+    SyclFlatSet& operator=(const SyclFlatSet& other) = delete;
 
-    /// Checks if the map is empty.
+    /// Checks if the set is empty.
     bool empty() const { return _storage.empty(); }
 
-    /// Returns the number of key-value pairs in the map.
+    /// Returns the number of keys in the set.
     size_type size() const { return _storage.size(); }
 
     /// Returns the internal data storage of the container.
@@ -79,47 +78,49 @@ private:
 
 // Class template deduction guide (CTAD):
 template<class Container>
-SyclFlatMap(const Container& container) -> SyclFlatMap<typename Container::key_type, typename Container::mapped_type, typename Container::key_compare>;
-template<typename Key, typename T>
-SyclFlatMap(const QMap<Key, T>& container) -> SyclFlatMap<Key, T>;
+SyclFlatSet(const Container& container) -> SyclFlatSet<typename Container::key_type, typename Container::key_compare>;
+template<typename Key>
+SyclFlatSet(const QSet<Key>& container) -> SyclFlatSet<Key>;
 
 /**
- * An accessor to the SyclFlatMap container that that allows to perform map look-ups inside SYCL kernels.
+ * An accessor to the SyclFlatSet container that that allows to perform look-ups inside SYCL kernels.
 */
-template<typename Key, typename T, typename Compare = std::less<Key>>
-class SyclFlatMapAccessor
+template<typename Key, typename Compare = std::less<Key>>
+class SyclFlatSetAccessor
 {
 public:
 
-    using container_type = SyclFlatMap<Key, T, Compare>;
+    using container_type = SyclFlatSet<Key, Compare>;
     using key_type = Key;
-    using mapped_type = T;
-    using value_type = std::pair<Key, T>;
+    using value_type = Key;
     using size_type = std::size_t;
     using difference_type = std::ptrdiff_t;
     using key_compare = Compare;
 
     // Constructor.
-    SyclFlatMapAccessor(const container_type& map, sycl::handler& commandGroupHandler) : _accessor(const_cast<container_type&>(map).storage(), commandGroupHandler) {}
+    SyclFlatSetAccessor(const container_type& set, sycl::handler& commandGroupHandler) : _accessor(const_cast<container_type&>(set).storage(), commandGroupHandler) {}
 
 public:
 
-    /// Returns an iterator to the beginning of the map.
+    /// Returns an iterator to the beginning of the set.
     auto begin() const { return _accessor.cbegin(); }
 
-    /// Returns an iterator to the end of the map.
+    /// Returns an iterator to the end of the set.
     auto end() const { return _accessor.cend(); }
 
-    /// Finds an element with a specific key in the map.
+    /// Finds a specific key in the set.
     auto find(const key_type& key) const {
         auto first = begin();
         auto last = end();
-        auto comp = key_compare{};
-        auto key_comp = [&](const value_type& value, const key_type& key) { return comp(value.first, key); };
-        first = std::lower_bound(first, last, key, key_comp);
-        if(first != last && comp(key, (*first).first))
+        first = std::lower_bound(first, last, key, key_compare{});
+        if(first != last && key_compare{}(key, *first))
             first = last;
         return first;
+    }
+
+    /// Checks if the given key is in the set.
+    bool contains(const key_type& key) const {
+        return find(key) != end();
     }
 
 private:
@@ -130,7 +131,7 @@ private:
 
 // Class template deduction guide (CTAD):
 template<class Container>
-SyclFlatMapAccessor(const Container& map, sycl::handler& commandGroupHandler) -> SyclFlatMapAccessor<typename Container::key_type, typename Container::mapped_type, typename Container::key_compare>;
+SyclFlatSetAccessor(const Container& set, sycl::handler& commandGroupHandler) -> SyclFlatSetAccessor<typename Container::key_type, typename Container::key_compare>;
 
 }   // End of namespace
 

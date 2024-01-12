@@ -23,10 +23,11 @@
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
+#include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/core/dataset/data/SyclFlatSet.h>
 #include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
-#include <ovito/core/app/Application.h>
 #include "SelectTypeModifier.h"
 
 namespace Ovito {
@@ -119,10 +120,6 @@ void SelectTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& re
         throw Exception(tr("The input property '%1' has the wrong number of components. Must be a scalar property.").arg(typePropertyObject->name()));
     if(typePropertyObject->dataType() != Property::Int32)
         throw Exception(tr("The input property '%1' has the wrong data type. Must be a 32-bit integer property.").arg(typePropertyObject->name()));
-    BufferReadAccess<int32_t> typeProperty = typePropertyObject;
-
-    // Create the selection property.
-    BufferWriteAccess<SelectionIntType, access_mode::discard_write> selProperty = container->createProperty(Property::GenericSelectionProperty);
 
     // Counts the number of selected elements.
     size_t nSelected = 0;
@@ -147,21 +144,60 @@ void SelectTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& re
         }
     }
 
-    boost::transform(typeProperty, selProperty.begin(), [&](int32_t type) {
+    // Create the selection property.
+    Property* selProperty = container->createProperty(DataBuffer::Uninitialized, Property::GenericSelectionProperty);
+
+#ifdef OVITO_USE_SYCL
+    if(typePropertyObject->size() != 0) {
+        // Convert set of type IDs into a SYCL-compatible data structure.
+        SyclFlatSet idsToSelectSycl{idsToSelect};
+        sycl::buffer<size_t> numSelectedBuf(&nSelected, 1);
+
+        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+
+            // Access the input types.
+            SyclBufferAccess<int32_t, access_mode::read> typeAcc(typePropertyObject, cgh);
+            // Access output selection array.
+            SyclBufferAccess<SelectionIntType, access_mode::write> selectionAcc(selProperty, cgh, DataBuffer::Uninitialized);
+            // Access type ID set.
+            SyclFlatSetAccessor idsToSelectAcc(idsToSelectSycl, cgh);
+#ifdef OVITO_USE_SYCL_ACPP
+            auto reduction = sycl::reduction(sycl::accessor{numSelectedBuf, cgh, sycl::no_init}, 0, sycl::plus<size_t>());
+#else
+            auto reduction = sycl::reduction(numSelectedBuf, cgh, 0, sycl::plus<size_t>(), sycl::reduction::initialize_to_identity);
+#endif
+
+            OVITO_SYCL_PARALLEL_FOR(cgh, SelectTypeModifier_kernel)(sycl::range(typePropertyObject->size()), reduction, [=](size_t i, auto& red) {
+                if(idsToSelectAcc.contains(typeAcc[i])) {
+                    selectionAcc[i] = 1;
+                    red += (size_t)1;
+                }
+                else {
+                    selectionAcc[i] = 0;
+                }
+            });
+        });
+    }
+#else
+    BufferWriteAccess<SelectionIntType, access_mode::discard_write> selectionAcc{selProperty};
+    BufferReadAccess<int32_t> typeAcc{typePropertyObject};
+
+    boost::transform(typeAcc, selectionAcc.begin(), [&](int32_t type) {
         if(idsToSelect.contains(type)) {
             nSelected++;
             return 1;
         }
         return 0;
     });
+#endif
 
     state.addAttribute(QStringLiteral("SelectType.num_selected"), QVariant::fromValue(nSelected), request.modificationNode());
 
     QString statusMessage = tr("%1 out of %2 %3 selected (%4%)")
         .arg(nSelected)
-        .arg(typeProperty.size())
+        .arg(typePropertyObject->size())
         .arg(container->getOOMetaClass().elementDescriptionName())
-        .arg((FloatType)nSelected * 100 / std::max((size_t)1,typeProperty.size()), 0, 'f', 1);
+        .arg((FloatType)nSelected * 100 / std::max((size_t)1,typePropertyObject->size()), 0, 'f', 1);
 
     state.setStatus(PipelineStatus(std::move(statusMessage)));
 }
