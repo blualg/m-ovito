@@ -25,9 +25,11 @@
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/data/SyclFlatSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
+#include <ovito/core/utilities/concurrent/SyclParallelFor.h>
 #include "CoordinationAnalysisModifier.h"
 
 namespace Ovito {
@@ -89,7 +91,7 @@ Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngi
 
     // Get particle types if partial RDF calculation has been requested.
     const Property* typeProperty = nullptr;
-    boost::container::flat_map<int,QString> uniqueTypeIds;
+    boost::container::flat_map<int,QString> uniqueTypes;
     if(computePartialRDF()) {
         typeProperty = particles->getProperty(Particles::TypeProperty);
         if(!typeProperty)
@@ -98,21 +100,21 @@ Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngi
         // Build the set of unique particle type IDs.
         for(const ElementType* pt : typeProperty->elementTypes()) {
 #if BOOST_VERSION >= 106200
-            uniqueTypeIds.insert_or_assign(pt->numericId(), pt->name().isEmpty() ? QString::number(pt->numericId()) : pt->name());
+            uniqueTypes.insert_or_assign(pt->numericId(), pt->name().isEmpty() ? QString::number(pt->numericId()) : pt->name());
 #else
             // For backward compatibility with older Boost versions, which do not know insert_or_assign():
-            uniqueTypeIds[pt->numericId()] = pt->name().isEmpty() ? QString::number(pt->numericId()) : pt->name();
+            uniqueTypes[pt->numericId()] = pt->name().isEmpty() ? QString::number(pt->numericId()) : pt->name();
 #endif
         }
-        if(uniqueTypeIds.empty())
+        if(uniqueTypes.empty())
             throw Exception(tr("No particle types have been defined."));
-        if(uniqueTypeIds.size() > 20)
-            throw Exception(tr("Calculation of partial RDFs is only supported for up to 20 particle types for performance reasons. Your system contains %1 types.").arg(uniqueTypeIds.size()));
+        if(uniqueTypes.size() > 20)
+            throw Exception(tr("Calculation of partial RDFs is currently limited to 20 particle types for performance reasons. Your system contains %1 types.").arg(uniqueTypes.size()));
     }
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     return std::make_shared<CoordinationAnalysisEngine>(request, particles, posProperty, selectionProperty, inputCell,
-        cutoff(), rdfSampleCount, typeProperty, std::move(uniqueTypeIds));
+        cutoff(), rdfSampleCount, typeProperty, std::move(uniqueTypes));
 }
 
 /******************************************************************************
@@ -128,22 +130,99 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
         return;
 
     size_t particleCount = positions()->size();
-    BufferWriteAccess<int32_t, access_mode::read_write> coordinationData(coordinationNumbers());
+    const bool computePartialRdfs = _computePartialRdfs;
+    const size_t typeCount = computePartialRdfs ? this->uniqueTypeIds().size() : 1;
+    const size_t binCount = rdfY()->size();
+    const size_t rdfCount = rdfY()->componentCount();
+    const FloatType rdfBinSize = cutoff() / binCount;
+
+//    QElapsedTimer timer;
+//    timer.start();
+#ifdef OVITO_USE_SYCL
+
+    // Convert set of type IDs into a SYCL-compatible data structure.
+    SyclFlatSet uniqueTypeIds{this->uniqueTypeIds()};
+
+    // Temporary buffer for computing the non-normalized RDF histogram, i.e., counting the number of pairs at each distance.
+    DataBufferPtr rdfHistogram = DataBufferPtr::create(DataBuffer::Initialized, binCount, DataBuffer::Int64, rdfCount);
+
+    // Calculate coordination numbers and RDF histogram.
+    syclParallelForWithProgress(particleCount, [&](sycl::handler& cgh, auto&& parallel_kernel) {
+        SyclBufferAccess<int32_t, access_mode::discard_write> coordinationAcc(coordinationNumbers(), cgh);
+        SyclBufferAccess<int32_t, access_mode::read> particleTypeAcc(particleTypes(), cgh);
+        SyclBufferAccess<SelectionIntType, access_mode::read> selectionAcc(selection(), cgh);
+        SyclBufferAccess<int64_t*, access_mode::read_write> rdfAcc(rdfHistogram, cgh);
+        SyclFlatSetAccessor uniqueTypeIdsAcc(uniqueTypeIds, cgh);
+        sycl::local_accessor<int, 2> localHistogram{sycl::range<2>{binCount, rdfCount}, cgh};
+        parallel_kernel([=, &neighborListBuilder](sycl::nd_item<1> idx, size_t local_problem_size, size_t global_index_offset, auto&& was_canceled) {
+
+            // Phase I: Work-group items cooperate to zero local histogram memory.
+            auto grp = idx.get_group();
+            for(size_t b = idx.get_local_id(0); b < binCount; b += idx.get_local_range(0)) {
+                for(size_t c = 0; c < rdfCount; c++)
+                    localHistogram[b][c] = 0;
+            }
+            sycl::group_barrier(grp);
+
+            // Phase II: Work-group items each add to the histogram in local memory.
+            for(size_t i_local = idx.get_global_id(0); i_local < local_problem_size; i_local += idx.get_global_range(0)) {
+                size_t i = i_local + global_index_offset;
+
+                if(was_canceled())
+                    break;
+
+                int coordination = 0;
+
+                // Skip calculation for unselected particles.
+                if(!selectionAcc || selectionAcc[i]) {
+                    size_t typeIndex1 = uniqueTypeIdsAcc ? uniqueTypeIdsAcc.index_of(particleTypeAcc[i]) : 0;
+                    if(typeIndex1 < typeCount) {
+                        for(CutoffNeighborFinder::Query neighQuery(neighborListBuilder, i); !neighQuery.atEnd(); neighQuery.next()) {
+                            coordination++;
+                            size_t rdfBin = std::min(static_cast<size_t>(std::sqrt(neighQuery.distanceSquared()) / rdfBinSize), binCount - 1);
+
+                            // Calculating complete or partial RDF?
+                            if(!uniqueTypeIdsAcc) {
+                                sycl::atomic_ref<int, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::local_space>(
+                                    localHistogram[rdfBin][0]).fetch_add(1);
+                            }
+                            else {
+                                size_t typeIndex2 = uniqueTypeIdsAcc.index_of(particleTypeAcc[neighQuery.current()]);
+                                if(typeIndex2 < typeCount) {
+                                    auto [lowerIndex, upperIndex] = std::minmax(typeIndex1, typeIndex2);
+                                    size_t rdfIndex = (typeCount * lowerIndex) - ((lowerIndex - 1) * lowerIndex) / 2 + upperIndex - lowerIndex;
+                                    sycl::atomic_ref<int, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::local_space>(
+                                        localHistogram[rdfBin][rdfIndex]).fetch_add(1);
+                                }
+                            }
+                        }
+                    }
+                }
+                coordinationAcc[i] = coordination;
+            }
+            sycl::group_barrier(grp);
+
+            // Phase III: Work-group items cooperate to update histogram in global memory.
+            for(size_t b = idx.get_local_id(0); b < binCount; b += idx.get_local_range(0)) {
+                for(size_t c = 0; c < rdfCount; c++) {
+                    sycl::atomic_ref<int64_t, sycl::memory_order::relaxed, sycl::memory_scope::device>(
+                        rdfAcc[b][c]).fetch_add(static_cast<int64_t>(localHistogram[b][c]));
+                }
+            }
+        });
+    });
+#else
+    BufferWriteAccess<int32_t, access_mode::discard_write> coordinationData(coordinationNumbers());
     BufferReadAccess<int32_t> particleTypeData(particleTypes());
     BufferReadAccess<SelectionIntType> selectionData(selection());
-    setProgressMaximum(particleCount);
 
     // Parallel calculation loop:
     std::mutex mutex;
+    setProgressMaximum(particleCount);
     parallelForChunksWithProgress(particleCount, [&](size_t startIndex, size_t chunkSize, ProgressingTask& operation) {
-        size_t typeCount = _computePartialRdfs ? uniqueTypeIds().size() : 1;
-        size_t binCount = rdfY()->size();
-        size_t rdfCount = rdfY()->componentCount();
-        FloatType rdfBinSize = cutoff() / binCount;
         std::vector<size_t> threadLocalRDF(binCount * rdfCount, 0);
         for(size_t i = startIndex, endIndex = startIndex + chunkSize; i < endIndex; ) {
-            int& coordination = coordinationData[i];
-            OVITO_ASSERT(coordination == 0);
+            int coordination = 0;
             if(!selectionData || selectionData[i]) {
 
                 size_t typeIndex1 = _computePartialRdfs ? uniqueTypeIds().index_of(uniqueTypeIds().find(particleTypeData[i])) : 0;
@@ -153,21 +232,21 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
                         if(_computePartialRdfs) {
                             size_t typeIndex2 = uniqueTypeIds().index_of(uniqueTypeIds().find(particleTypeData[neighQuery.current()]));
                             if(typeIndex2 < typeCount) {
-                                size_t lowerIndex = std::min(typeIndex1, typeIndex2);
-                                size_t upperIndex = std::max(typeIndex1, typeIndex2);
+                                auto [lowerIndex, upperIndex] = std::minmax(typeIndex1, typeIndex2);
                                 size_t rdfIndex = (typeCount * lowerIndex) - ((lowerIndex - 1) * lowerIndex) / 2 + upperIndex - lowerIndex;
                                 OVITO_ASSERT(rdfIndex < rdfCount);
-                                size_t rdfBin = (size_t)(sqrt(neighQuery.distanceSquared()) / rdfBinSize);
+                                size_t rdfBin = static_cast<size_t>(sqrt(neighQuery.distanceSquared()) / rdfBinSize);
                                 threadLocalRDF[rdfIndex + std::min(rdfBin, binCount - 1) * rdfCount]++;
                             }
                         }
                         else {
-                            size_t rdfBin = (size_t)(sqrt(neighQuery.distanceSquared()) / rdfBinSize);
+                            size_t rdfBin = static_cast<size_t>(sqrt(neighQuery.distanceSquared()) / rdfBinSize);
                             threadLocalRDF[std::min(rdfBin, binCount - 1)]++;
                         }
                     }
                 }
             }
+            coordinationData[i] = coordination;
             i++;
 
             // Update progress indicator.
@@ -184,47 +263,67 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
         for(auto iter = threadLocalRDF.cbegin(); iter != threadLocalRDF.cend(); ++iter)
             *bin++ += *iter;
     });
+
+    particleTypeData.reset();
+    selectionData.reset();
+    coordinationData.reset();
+#endif
+//    qInfo() << "---------- TIME:" << timer.elapsed();
+
     if(isCanceled())
         return;
 
-    // Compute x values of histogram function.
-    FloatType stepSize = cutoff() / rdfY()->size();
-
     // Helper function that normalizes a RDF histogram.
-    auto normalizeRDF = [this,stepSize](size_t type1Count, size_t type2Count, size_t component = 0, FloatType prefactor = 1) {
-        if(!cell()->is2D()) {
+    auto normalizeRDF = [&](size_t type1Count, size_t type2Count, size_t component = 0, FloatType prefactor = 1) {
+        bool is2D = cell()->is2D();
+        if(!is2D) {
             prefactor *= FloatType(4.0/3.0) * FLOATTYPE_PI * type1Count / cell()->volume3D() * type2Count;
         }
         else {
             prefactor *= FLOATTYPE_PI * type1Count / cell()->volume2D() * type2Count;
         }
-        if(prefactor == 0.0) return;
+        if(prefactor == 0.0)
+            return;
+        OVITO_ASSERT(component < rdfY()->componentCount());
+#ifdef OVITO_USE_SYCL
+        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            SyclBufferAccess<int64_t*, access_mode::read> histogramAcc(rdfHistogram, cgh);
+            SyclBufferAccess<FloatType*, access_mode::discard_write> rdfAcc(rdfY(), cgh);
+            OVITO_SYCL_PARALLEL_FOR(cgh, normalizeRDF_kernel)(sycl::range(rdfAcc.size()), [=](size_t i) {
+                FloatType r1 = i * rdfBinSize;
+                FloatType r2 = r1 + rdfBinSize;
+                FloatType vol = is2D ? (r2*r2 - r1*r1) : (r2*r2*r2 - r1*r1*r1);
+                rdfAcc[i][component] = histogramAcc[i][component] / (prefactor * vol);
+            });
+        });
+#else
         FloatType r1 = 0;
-        size_t cmpntCount = rdfY()->componentCount();
-        OVITO_ASSERT(component < cmpntCount);
         BufferWriteAccess<FloatType*, access_mode::read_write> rdfData(rdfY());
         for(FloatType& y : rdfData.componentRange(component)) {
-            double r2 = r1 + stepSize;
-            FloatType vol = cell()->is2D() ? (r2*r2 - r1*r1) : (r2*r2*r2 - r1*r1*r1);
+            FloatType r2 = r1 + rdfBinSize;
+            FloatType vol = is2D ? (r2*r2 - r1*r1) : (r2*r2*r2 - r1*r1*r1);
             y /= prefactor * vol;
             r1 = r2;
         }
+#endif
     };
 
     if(!_computePartialRdfs) {
-        if(selectionData)
-            particleCount -= std::count(selectionData.begin(), selectionData.end(), 0);
+        if(selection())
+            particleCount = selection()->nonzeroCount();
         normalizeRDF(particleCount, particleCount);
     }
     else {
-        // Count particle type occurrences.
-        std::vector<size_t> particleCounts(uniqueTypeIds().size(), 0);
-        const SelectionIntType* sel = selectionData ? selectionData.begin() : nullptr;
-        for(int32_t t : particleTypeData) {
+        // Count number of particles of each type.
+        BufferReadAccess<SelectionIntType> selectionAcc(selection());
+
+        std::vector<size_t> particleCounts(typeCount, 0);
+        const SelectionIntType* sel = selectionAcc ? selectionAcc.begin() : nullptr;
+        for(auto t : BufferReadAccess<int32_t>(particleTypes())) {
             if(sel && !(*sel++))
                 continue;
-            size_t typeIndex = uniqueTypeIds().index_of(uniqueTypeIds().find(t));
-            if(typeIndex < particleCounts.size())
+            size_t typeIndex = this->uniqueTypeIds().index_of(this->uniqueTypeIds().find(t));
+            if(typeIndex < typeCount)
                 particleCounts[typeIndex]++;
         }
         if(isCanceled()) return;
@@ -239,8 +338,6 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
     }
 
     // Release data that is no longer needed.
-    particleTypeData.reset();
-    selectionData.reset();
     _positions.reset();
     _particleTypes.reset();
     _selection.reset();

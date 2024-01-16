@@ -141,27 +141,28 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     if(colorProperty->size() != 0) {
         // Create type-color lookup table and convert it into a SYCL-compatible data structure.
         const SyclFlatMap colorMap = typePropertyObject->typeColorMap();
+        if(!colorMap.empty()) {
+            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
 
-        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+                // Access the input types.
+                SyclBufferAccess<int32_t, access_mode::read> inputAcc(typePropertyObject, cgh);
+                // Access selection flags array (optional).
+                SyclBufferAccess<SelectionIntType, access_mode::read> selectionAcc(selection, cgh);
+                // Access output color array.
+                SyclBufferAccess<ColorG, access_mode::write> outputAcc(colorProperty, cgh, selection ? DataBuffer::Initialized : DataBuffer::Uninitialized);
+                // Access color lookup table.
+                SyclFlatMapAccessor colorMapAcc(colorMap, cgh);
 
-            // Access the input types.
-            SyclBufferAccess<int32_t, access_mode::read> inputAcc(typePropertyObject, cgh);
-            // Access selection flags array (optional).
-            SyclBufferAccess<SelectionIntType, access_mode::read> selectionAcc(selection, cgh);
-            // Access output color array.
-            SyclBufferAccess<ColorG, access_mode::write> outputAcc(colorProperty, cgh, selection ? DataBuffer::Initialized : DataBuffer::Uninitialized);
-            // Access color lookup table.
-            SyclFlatMapAccessor colorMapAcc(colorMap, cgh);
-
-            OVITO_SYCL_PARALLEL_FOR(cgh, ColorByTypeModifier_kernel)(sycl::range(typePropertyObject->size()), [=](size_t i) {
-                if(selectionAcc.empty() || selectionAcc[i]) {
-                    if(auto iter = colorMapAcc.find(inputAcc[i]); iter != colorMapAcc.end())
-                        outputAcc[i] = (*iter).second;
-                    else
-                        outputAcc[i] = ColorG(1,1,1);
-                }
+                OVITO_SYCL_PARALLEL_FOR(cgh, ColorByTypeModifier_kernel)(sycl::range(typePropertyObject->size()), [=](size_t i) {
+                    if(selectionAcc.empty() || selectionAcc[i]) {
+                        outputAcc[i] = colorMapAcc.get(inputAcc[i], ColorG(1,1,1));
+                    }
+                });
             });
-        });
+        }
+        else {
+            colorProperty->fillSelected<ColorG>(ColorG(1,1,1), selection);
+        }
     }
 #else
     // Access the type array.

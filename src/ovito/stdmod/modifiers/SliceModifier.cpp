@@ -286,9 +286,8 @@ void SliceModifier::renderPlane(SceneRenderer* renderer, const Plane3& plane, co
 
     // Render plane-box intersection lines.
     if(renderer->isBoundingBoxPass()) {
-        Box3 vertexBoundingBox;
-        vertexBoundingBox.addPoints(vertices);
-        renderer->addToLocalBoundingBox(vertexBoundingBox);
+        for(const Point3& p : vertices)
+            renderer->addToLocalBoundingBox(p);
     }
     else {
         BufferFactory<Point3> positions(vertices.size());

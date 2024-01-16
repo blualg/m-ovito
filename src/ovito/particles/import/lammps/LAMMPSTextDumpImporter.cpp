@@ -357,11 +357,17 @@ void LAMMPSTextDumpImporter::FrameLoader::postprocessParticleProperties(const QS
     }
 
     if(reducedCoordinates) {
-        // Convert all atom coordinates from reduced to absolute (Cartesian) format.
-        if(BufferWriteAccess<Point3, access_mode::read_write> posProperty = particles()->getMutableProperty(Particles::PositionProperty)) {
+        if(Property* positions = particles()->getMutableProperty(Particles::PositionProperty)) {
             const AffineTransformation simCell = simulationCell()->cellMatrix();
-            for(Point3& p : posProperty)
+#ifdef OVITO_USE_SYCL
+            SyclBufferAccess<Point3, access_mode::read_write>{positions}.for_each([simCell](Point3& p) {
                 p = simCell * p;
+            });
+#else
+            // Convert all atom coordinates from reduced to absolute (Cartesian) format.
+            for(Point3& p : BufferWriteAccess<Point3, access_mode::read_write>{positions})
+                p = simCell * p;
+#endif
         }
     }
 
@@ -370,9 +376,15 @@ void LAMMPSTextDumpImporter::FrameLoader::postprocessParticleProperties(const QS
         // we need to divide values by two.
         for(int i = 0; i < (int)columnMapping.size() && i < fileColumnNames.size(); i++) {
             if(columnMapping[i].property.type() == Particles::RadiusProperty && fileColumnNames[i] == "diameter") {
-                if(BufferWriteAccess<GraphicsFloatType, access_mode::read_write> radiusProperty = particles()->getMutableProperty(Particles::RadiusProperty)) {
-                    for(auto& r : radiusProperty)
+                if(Property* radii = particles()->getMutableProperty(Particles::RadiusProperty)) {
+#ifdef OVITO_USE_SYCL
+                    SyclBufferAccess<GraphicsFloatType, access_mode::read_write>{radii}.for_each([](GraphicsFloatType& r) {
                         r *= GraphicsFloatType(0.5);
+                    });
+#else
+                    for(auto& r : BufferWriteAccess<GraphicsFloatType, access_mode::read_write>{radii})
+                        r *= GraphicsFloatType(0.5);
+#endif
                 }
                 break;
             }
@@ -383,12 +395,16 @@ void LAMMPSTextDumpImporter::FrameLoader::postprocessParticleProperties(const QS
             if(columnMapping[i].property.type() == Particles::AsphericalShapeProperty &&
                 (fileColumnNames[i] == "c_diameter[1]" || fileColumnNames[i] == "c_diameter[2]" || fileColumnNames[i] == "c_diameter[3]" ||
                     fileColumnNames[i] == "shapex" || fileColumnNames[i] == "shapey" || fileColumnNames[i] == "shapez")) {
-                if(BufferWriteAccess<Vector3G, access_mode::read_write> shapeProperty = particles()->getMutableProperty(Particles::AsphericalShapeProperty)) {
-                    for(auto& s : shapeProperty) {
-                        s.x() *= GraphicsFloatType(0.5);
-                        s.y() *= GraphicsFloatType(0.5);
-                        s.z() *= GraphicsFloatType(0.5);
+                if(Property* shapeProperty = particles()->getMutableProperty(Particles::AsphericalShapeProperty)) {
+#ifdef OVITO_USE_SYCL
+                    SyclBufferAccess<Vector3G, access_mode::read_write>{shapeProperty}.for_each([](Vector3G& s) {
+                        s *= GraphicsFloatType(0.5);
+                    });
+#else
+                    for(auto& s : BufferWriteAccess<Vector3G, access_mode::read_write>{shapeProperty}) {
+                        s *= GraphicsFloatType(0.5);
                     }
+#endif
                 }
                 break;
             }

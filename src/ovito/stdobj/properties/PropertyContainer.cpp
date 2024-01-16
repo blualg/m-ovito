@@ -233,14 +233,12 @@ size_t PropertyContainer::deleteElements(ConstDataBufferPtr selection, size_t se
     OVITO_CHECK_OBJECT_POINTER(this);
     OVITO_ASSERT(isSafeToModify());
 
+    if(elementCount() == 0)
+        return 0;
+
     // Determine number of selected elements in the selection array if it wasn't provided by the caller.
-    if(selectionCount == std::numeric_limits<size_t>::max()) {
-        selectionCount = 0;
-        for(auto s : BufferReadAccess<SelectionIntType>(selection)) {
-            if(s)
-                selectionCount++;
-        }
-    }
+    if(selectionCount == std::numeric_limits<size_t>::max())
+        selectionCount = selection->nonzeroCount();
     if(selectionCount == 0)
         return 0;   // Nothing to delete.
 
@@ -435,7 +433,8 @@ std::vector<size_t> PropertyContainer::sortById()
     bool isAlreadySorted = true;
     for(size_t i = 0; i < permutation.size(); i++) {
         invertedPermutation[permutation[i]] = i;
-        if(permutation[i] != i) isAlreadySorted = false;
+        if(permutation[i] != i)
+            isAlreadySorted = false;
     }
     ids.reset();
     if(isAlreadySorted)

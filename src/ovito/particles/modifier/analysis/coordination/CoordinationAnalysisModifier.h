@@ -76,7 +76,7 @@ private:
 
         /// Constructor.
         CoordinationAnalysisEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCell* simCell,
-                FloatType cutoff, int rdfSampleCount, ConstPropertyPtr particleTypes, boost::container::flat_map<int,QString> uniqueTypeIds) :
+                FloatType cutoff, int rdfSampleCount, ConstPropertyPtr particleTypes, boost::container::flat_map<int,QString> uniqueTypes) :
             Engine(request),
             _positions(std::move(positions)),
             _selection(std::move(selection)),
@@ -84,17 +84,20 @@ private:
             _cutoff(cutoff),
             _computePartialRdfs(particleTypes),
             _particleTypes(std::move(particleTypes)),
-            _uniqueTypeIds(std::move(uniqueTypeIds)),
-            _coordinationNumbers(Particles::OOClass().createStandardProperty(DataBuffer::Initialized, fingerprint.particleCount(), Particles::CoordinationProperty)),
+            _uniqueTypes(std::move(uniqueTypes)),
+            _coordinationNumbers(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), Particles::CoordinationProperty)),
             _inputFingerprint(std::move(fingerprint))
         {
+            _uniqueTypeIds.reserve(_uniqueTypes.size());
+            for(const auto& t : _uniqueTypes)
+                _uniqueTypeIds.insert(t.first);
+
             size_t componentCount = _computePartialRdfs ? (this->uniqueTypeIds().size() * (this->uniqueTypeIds().size()+1) / 2) : 1;
             QStringList componentNames;
             if(_computePartialRdfs) {
-                for(const auto& t1 : this->uniqueTypeIds()) {
-                    for(const auto& t2 : this->uniqueTypeIds()) {
-                        if(t1.first <= t2.first)
-                            componentNames.push_back(QStringLiteral("%1-%2").arg(t1.second, t2.second));
+                for(auto t1 = _uniqueTypes.cbegin(); t1 != _uniqueTypes.cend(); ++t1) {
+                    for(auto t2 = t1; t2 != _uniqueTypes.cend(); ++t2) {
+                        componentNames.push_back(QStringLiteral("%1-%2").arg(t1->second, t2->second));
                     }
                 }
             }
@@ -129,14 +132,18 @@ private:
         FloatType cutoff() const { return _cutoff; }
 
         /// Returns the set of particle type identifiers in the system.
-        const boost::container::flat_map<int,QString>& uniqueTypeIds() const { return _uniqueTypeIds; }
+        const boost::container::flat_set<int>& uniqueTypeIds() const { return _uniqueTypeIds; }
+
+        /// Returns the mapping of particle type identifiers to particle type names.
+        const boost::container::flat_map<int,QString>& uniqueTypes() const { return _uniqueTypes; }
 
     private:
 
         const FloatType _cutoff;
         DataOORef<const SimulationCell> _simCell;
         bool _computePartialRdfs;
-        boost::container::flat_map<int,QString> _uniqueTypeIds;
+        boost::container::flat_set<int> _uniqueTypeIds;
+        boost::container::flat_map<int,QString> _uniqueTypes;
         ConstPropertyPtr _positions;
         ConstPropertyPtr _particleTypes;
         ConstPropertyPtr _selection;

@@ -53,28 +53,79 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationReq
     QString statusMessage = tr("%1 input particles").arg(inputParticles->elementCount());
 
     SliceModifier* mod = static_object_cast<SliceModifier>(request.modifier());
-    PropertyFactory<SelectionIntType> mask(Particles::OOClass(), inputParticles->elementCount(), Particles::SelectionProperty);
 
     // Get the required input properties.
-    BufferReadAccess<Point3> posProperty = inputParticles->expectProperty(Particles::PositionProperty);
-    BufferReadAccess<SelectionIntType> selProperty = mod->applyToSelection() ? inputParticles->expectProperty(Particles::SelectionProperty) : nullptr;
-    OVITO_ASSERT(posProperty.size() == mask.size());
-    OVITO_ASSERT(!selProperty || selProperty.size() == mask.size());
+    const Property* posProperty = inputParticles->expectProperty(Particles::PositionProperty);
+    const Property* selProperty = mod->applyToSelection() ? inputParticles->expectProperty(Particles::SelectionProperty) : nullptr;
 
     // Obtain modifier parameter values.
     Plane3 plane;
     FloatType sliceWidth;
     std::tie(plane, sliceWidth) = mod->slicingPlane(request.time(), state.mutableStateValidity(), state);
     sliceWidth /= 2;
+    bool invert = mod->inverse();
 
     // Number of marked/selected particles.
     size_t numMarked = 0;
 
-    auto m = mask.begin();
+    // Create mask array to be computed.
+    PropertyPtr mask = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, inputParticles->elementCount(), Particles::SelectionProperty);
+    OVITO_ASSERT(posProperty->size() == mask->size());
+    OVITO_ASSERT(!selProperty || selProperty->size() == mask->size());
+
+#ifdef OVITO_USE_SYCL
+    if(mask->size() != 0) {
+        // This is a single-element counter variable that will be incremented by the kernel for each marked element.
+        sycl::buffer<size_t> numMarkedBuf(&numMarked, 1);
+
+        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            // Access the input coordinates.
+            SyclBufferAccess<Point3, access_mode::read> posAcc(posProperty, cgh);
+            // Access the input selection flags.
+            SyclBufferAccess<SelectionIntType, access_mode::read> selAcc(selProperty, cgh);
+            // Access output flags array.
+            SyclBufferAccess<SelectionIntType, access_mode::write> maskAcc(mask, cgh, DataBuffer::Uninitialized);
+#ifdef OVITO_USE_SYCL_ACPP
+            auto reduction = sycl::reduction(sycl::accessor{numMarkedBuf, cgh, sycl::no_init}, 0, sycl::plus<size_t>());
+#else
+            auto reduction = sycl::reduction(numMarkedBuf, cgh, 0, sycl::plus<size_t>(), sycl::reduction::initialize_to_identity);
+#endif
+            if(sliceWidth <= 0) {
+                OVITO_SYCL_PARALLEL_FOR(cgh, SliceModifier_particles_kernel1)(sycl::range(mask->size()), reduction, [=](size_t i, auto& red) {
+                    if(!selAcc || selAcc[i]) {
+                        if(plane.pointDistance(posAcc[i]) > 0) {
+                            maskAcc[i] = 1;
+                            red += (size_t)1;
+                        }
+                        else maskAcc[i] = 0;
+                    }
+                    else maskAcc[i] = 0;
+                });
+            }
+            else {
+                OVITO_SYCL_PARALLEL_FOR(cgh, SliceModifier_particles_kernel2)(sycl::range(mask->size()), reduction, [=](size_t i, auto& red) {
+                    if(!selAcc || selAcc[i]) {
+                        if(invert == (plane.classifyPoint(posAcc[i], sliceWidth) == 0)) {
+                            maskAcc[i] = 1;
+                            red += (size_t)1;
+                        }
+                        else maskAcc[i] = 0;
+                    }
+                    else maskAcc[i] = 0;
+                });
+            }
+        });
+    }
+#else
+    BufferWriteAccess<SelectionIntType, access_mode::discard_write> maskAcc(mask);
+    BufferReadAccess<Point3> posAcc = posProperty;
+    BufferReadAccess<SelectionIntType> selAcc = selProperty;
+
+    auto m = maskAcc.begin();
     if(sliceWidth <= 0) {
-        if(selProperty) {
-            const auto* s = selProperty.cbegin();
-            for(const Point3& p : posProperty) {
+        if(selAcc) {
+            const auto* s = selAcc.cbegin();
+            for(const Point3& p : posAcc) {
                 if(*s++ && plane.pointDistance(p) > 0) {
                     *m = 1;
                     numMarked++;
@@ -84,7 +135,7 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationReq
             }
         }
         else {
-            for(const Point3& p : posProperty) {
+            for(const Point3& p : posAcc) {
                 if(plane.pointDistance(p) > 0) {
                     *m = 1;
                     numMarked++;
@@ -95,10 +146,9 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationReq
         }
     }
     else {
-        bool invert = mod->inverse();
-        if(selProperty) {
-            const auto* s = selProperty.cbegin();
-            for(const Point3& p : posProperty) {
+        if(selAcc) {
+            const auto* s = selAcc.cbegin();
+            for(const Point3& p : posAcc) {
                 if(*s++ && invert == (plane.classifyPoint(p, sliceWidth) == 0)) {
                     *m = 1;
                     numMarked++;
@@ -108,7 +158,7 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationReq
             }
         }
         else {
-            for(const Point3& p : posProperty) {
+            for(const Point3& p : posAcc) {
                 if(invert == (plane.classifyPoint(p, sliceWidth) == 0)) {
                     *m = 1;
                     numMarked++;
@@ -118,21 +168,23 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationReq
             }
         }
     }
-    OVITO_ASSERT(m == mask.end());
-    posProperty.reset();
-    selProperty.reset();
+    OVITO_ASSERT(m == maskAcc.end());
+    posAcc.reset();
+    selAcc.reset();
+    maskAcc.reset();
+#endif
 
     // Make sure we can safely modify the particles object.
     Particles* outputParticles = state.makeMutable(inputParticles);
     if(mod->createSelection() == false) {
         // Delete the marked particles.
-        outputParticles->deleteElements(mask.take(), numMarked);
+        outputParticles->deleteElements(std::move(mask), numMarked);
         statusMessage += tr("\n%1 particles deleted").arg(numMarked);
         statusMessage += tr("\n%1 particles remaining").arg(outputParticles->elementCount());
     }
     else {
         // Create or replace the selection particle property.
-        outputParticles->createProperty(mask.take());
+        outputParticles->createProperty(std::move(mask));
         statusMessage += tr("\n%1 particles selected").arg(numMarked);
         statusMessage += tr("\n%1 particles unselected").arg(outputParticles->elementCount() - numMarked);
     }

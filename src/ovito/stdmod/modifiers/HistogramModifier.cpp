@@ -293,10 +293,10 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
                 }
             }
             else {
-                if(!inputSelectionAcc)
+                if(!inputSelection)
                     histogramAcc[0] = property->size();
                 else
-                    histogramAcc[0] = property->size() - boost::count(inputSelectionAcc, 0);
+                    histogramAcc[0] = inputSelection->nonzeroCount();
             }
             if(outputSelectionAcc) {
                 SelectionIntType* s = outputSelectionAcc.begin();

@@ -69,7 +69,7 @@ PipelineStatus SurfaceMeshRegionsDeleteSelectedModifierDelegate::apply(const Mod
                 continue; // Nothing to do if there is no face region information.
 
             // Check if at least one mesh region is currently selected.
-            size_t selectionCount = regionMask.size() - boost::count(regionMask, 0);
+            size_t selectionCount = regionMask.buffer()->nonzeroCount();
             if(selectionCount == 0)
                 continue;
 

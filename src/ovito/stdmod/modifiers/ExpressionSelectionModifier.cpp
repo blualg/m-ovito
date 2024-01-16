@@ -101,7 +101,7 @@ PipelineStatus ExpressionSelectionModifierDelegate::apply(const ModifierEvaluati
     std::atomic_size_t nselected(0);
 
     // Generate the output selection property.
-    BufferWriteAccess<SelectionIntType, access_mode::discard_write> selProperty = container->createProperty(Property::GenericSelectionProperty);
+    BufferWriteAccess<SelectionIntType, access_mode::discard_write> selProperty = container->createProperty(DataBuffer::Uninitialized, Property::GenericSelectionProperty);
 
     // Evaluate Boolean expression for every input data element.
     evaluator->evaluate([&selProperty, &nselected](size_t elementIndex, size_t componentIndex, double value) {
@@ -118,6 +118,9 @@ PipelineStatus ExpressionSelectionModifierDelegate::apply(const ModifierEvaluati
     // of the generated selection to the current animation time.
     if(evaluator->isTimeDependent())
         state.intersectStateValidity(request.time());
+
+    // To speed up future queries, store the selection count in the selection property object.
+    selProperty.buffer()->setNonzeroCount(nselected.load());
 
     // Report the total number of selected elements as a pipeline attribute.
     state.addAttribute(QStringLiteral("ExpressionSelection.count"), QVariant::fromValue(nselected.load()), request.modificationNode());

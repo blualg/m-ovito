@@ -71,6 +71,12 @@ public:
     /// You need to call prepare() first before the neighbor finder can be used.
     CutoffNeighborFinder() = default;
 
+    /// No copying allowed.
+    CutoffNeighborFinder(const CutoffNeighborFinder&) = delete;
+
+    /// No copying allowed.
+    CutoffNeighborFinder& operator=(const CutoffNeighborFinder&) = delete;
+
     /// \brief Prepares the neighbor finder by sorting particles into a grid of bin cells.
     /// \param cutoffRadius The cutoff radius for neighbor lists.
     /// \param positions The property containing the particle coordinates.

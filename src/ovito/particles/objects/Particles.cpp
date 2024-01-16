@@ -25,20 +25,13 @@
 #include <ovito/particles/objects/BondType.h>
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
+#include <ovito/core/dataset/data/SyclFlatMap.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "Particles.h"
 #include "ParticlesVis.h"
 #include "BondsVis.h"
 #include "VectorVis.h"
 #include "ParticleBondMap.h"
-
-#if QT_FEATURE_static > 0
-    // This no-op helper function is called by the QML/Gui module
-    // to make sure the Particles plugin and its dependencies
-    // get linked into the static WASM executable and are not eliminated
-    // by the linker.
-    void ovito_static_plugin_Particles() {}
-#endif
 
 namespace Ovito {
 
@@ -429,22 +422,95 @@ void Particles::wrapCoordinates(const SimulationCell& cell)
          throw Exception(tr("The simulation cell is degenerate."));
     const AffineTransformation cellMatrix = cell.cellMatrix();
     const AffineTransformation inverseCellMatrix = cell.reciprocalCellMatrix();
-    auto pbcFlags = cell.pbcFlagsCorrected();
+    const auto pbcFlags = cell.pbcFlagsCorrected();
 
-    // Make a modifiable copy of the particle position property.
-    BufferWriteAccess<Point3, access_mode::read_write> posProperty = expectMutableProperty(Particles::PositionProperty);
+    // Get the input particle coordinates and create a new buffer to store the computed output coordinates.
+    ConstPropertyPtr inputPositions = expectProperty(Particles::PositionProperty);
+    Property* outputPositions = createProperty(DataBuffer::Uninitialized, Particles::PositionProperty);
+    OVITO_ASSERT(outputPositions != inputPositions.get());
+
+    // Create or modify the "Periodic Image" property while wrapping particle coordinates.
+    ConstPropertyPtr inputPbcImages = getProperty(Particles::PeriodicImageProperty);
+    Property* outputPbcImages = createProperty(DataBuffer::Uninitialized, Particles::PeriodicImageProperty);
+    OVITO_ASSERT(outputPbcImages != inputPbcImages.get());
+
+#ifdef OVITO_USE_SYCL
+    // Wrap bonds by adjusting their PBC shift vectors.
+    if(const Property* topologyProperty = bonds() ? bonds()->getProperty(Bonds::TopologyProperty) : nullptr) {
+
+        // Access the existing bond image flags and create an output array for storing the updated image flags.
+        ConstPropertyPtr bondsImagesIn = bonds()->getProperty(Bonds::PeriodicImageProperty);
+        Property* bondsImagesOut = makeBondsMutable()->createProperty(DataBuffer::Uninitialized, Bonds::PeriodicImageProperty);
+        OVITO_ASSERT(bondsImagesOut != bondsImagesIn.get());
+
+        if(bondsImagesOut->size() != 0) {
+            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+                SyclBufferAccess<ParticleIndexPair, access_mode::read> topologyAcc{topologyProperty, cgh};
+                SyclBufferAccess<Point3, access_mode::read> posInAcc{inputPositions, cgh};
+                SyclBufferAccess<Vector3I, access_mode::read> imageInAcc{bondsImagesIn, cgh};
+                SyclBufferAccess<Vector3I, access_mode::discard_write> imageOutAcc{bondsImagesOut, cgh};
+                const size_t numParticles = posInAcc.size();
+                OVITO_SYCL_PARALLEL_FOR(cgh, Particles_wrapCoordinates_bonds)(sycl::range(topologyAcc.size()), [=](size_t bondIndex) {
+                    const auto [particleIndex1, particleIndex2] = topologyAcc[bondIndex];
+                    if(particleIndex1 < numParticles && particleIndex2 < numParticles) {
+                        const Point3 rp1 = inverseCellMatrix * posInAcc[particleIndex1];
+                        const Point3 rp2 = inverseCellMatrix * posInAcc[particleIndex2];
+                        const Vector3I iflags(
+                            pbcFlags[0] * (static_cast<Vector3I::value_type>(std::floor(rp2.x())) - static_cast<Vector3I::value_type>(std::floor(rp1.x()))),
+                            pbcFlags[1] * (static_cast<Vector3I::value_type>(std::floor(rp2.y())) - static_cast<Vector3I::value_type>(std::floor(rp1.y()))),
+                            pbcFlags[2] * (static_cast<Vector3I::value_type>(std::floor(rp2.z())) - static_cast<Vector3I::value_type>(std::floor(rp1.z())))
+                        );
+                        if(imageInAcc)
+                            imageOutAcc[bondIndex] = imageInAcc[bondIndex] + iflags;
+                        else
+                            imageOutAcc[bondIndex] = iflags;
+                    }
+                    else {
+                        imageOutAcc[bondIndex].setZero();
+                    }
+                });
+            });
+        }
+    }
+
+    // Wrap particles coordinates and adjust PBC image flags.
+    if(inputPositions->size() != 0) {
+        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            SyclBufferAccess<Vector3I, access_mode::read> imageInAcc{inputPbcImages, cgh};
+            SyclBufferAccess<Vector3I, access_mode::discard_write> imageOutAcc{outputPbcImages, cgh};
+            SyclBufferAccess<Point3, access_mode::read> posInAcc{inputPositions, cgh};
+            SyclBufferAccess<Point3, access_mode::discard_write> posOutAcc{outputPositions, cgh};
+            OVITO_SYCL_PARALLEL_FOR(cgh, Particles_wrapCoordinates)(sycl::range(posInAcc.size()), [=](size_t i) {
+                const Point3 p = posInAcc[i];
+                const Point3 rp = inverseCellMatrix * p;
+                const Vector3 rv(
+                    pbcFlags[0] * std::floor(rp.x()),
+                    pbcFlags[1] * std::floor(rp.y()),
+                    pbcFlags[2] * std::floor(rp.z())
+                );
+                posOutAcc[i] = p - cellMatrix * rv;
+                if(imageInAcc)
+                    imageOutAcc[i] = imageInAcc[i] + rv.toDataType<Vector3I::value_type>();
+                else
+                    imageOutAcc[i] = rv.toDataType<Vector3I::value_type>();
+            });
+        });
+    }
+#else
+    BufferReadAccess<Point3> inputPosAcc{inputPositions};
 
     // Wrap bonds by adjusting their PBC shift vectors.
     if(bonds()) {
         if(BufferReadAccess<ParticleIndexPair> topologyProperty = bonds()->getProperty(Bonds::TopologyProperty)) {
             BufferWriteAccess<Vector3I, access_mode::read_write> periodicImageProperty = makeBondsMutable()->createProperty(DataBuffer::Initialized, Bonds::PeriodicImageProperty);
+            const size_t numParticles = inputPosAcc.size();
             for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
                 size_t particleIndex1 = topologyProperty[bondIndex][0];
                 size_t particleIndex2 = topologyProperty[bondIndex][1];
-                if(particleIndex1 >= posProperty.size() || particleIndex2 >= posProperty.size())
+                if(particleIndex1 >= numParticles || particleIndex2 >= numParticles)
                     continue;
-                const Point3& p1 = posProperty[particleIndex1];
-                const Point3& p2 = posProperty[particleIndex2];
+                const Point3& p1 = inputPosAcc[particleIndex1];
+                const Point3& p2 = inputPosAcc[particleIndex2];
                 for(size_t dim = 0; dim < 3; dim++) {
                     if(pbcFlags[dim]) {
                         periodicImageProperty[bondIndex][dim] +=
@@ -456,22 +522,31 @@ void Particles::wrapCoordinates(const SimulationCell& cell)
         }
     }
 
-    // Generate or adjust the Periodic Image property while wrapping particle coordinates.
-    BufferWriteAccess<Vector3I, access_mode::read_write> pbcImageProperty = createProperty(DataBuffer::Initialized, Particles::PeriodicImageProperty);
+    BufferReadAccess<Vector3I> inputPbcFlagsAcc{inputPbcImages};
+    BufferWriteAccess<Vector3I, access_mode::discard_write> outputPbcFlagsAcc{outputPbcImages};
+    BufferWriteAccess<Point3, access_mode::discard_write> outputPosAcc{outputPositions};
 
-    // Wrap particles coordinates.
-    for(size_t dim = 0; dim < 3; dim++) {
-        if(pbcFlags[dim]) {
-            size_t idx = 0;
-            for(Point3& p : posProperty) {
-                if(FloatType n = std::floor(inverseCellMatrix.prodrow(p, dim))) {
-                    pbcImageProperty[idx][dim] += static_cast<int>(n);
-                    p -= cellMatrix.column(dim) * n;
-                }
-                idx++;
-            }
+    // Wrap particles coordinates and adjust PBC image flags.
+    auto imageIn = inputPbcFlagsAcc ? inputPbcFlagsAcc.cbegin() : nullptr;
+    auto imageOut = outputPbcFlagsAcc.begin();
+    boost::transform(inputPosAcc, outputPosAcc.begin(), [&](const Point3& p) {
+        Point3 o = p;
+        for(size_t dim = 0; dim < 3; dim++) {
+            FloatType n = pbcFlags[dim] * std::floor(inverseCellMatrix.prodrow(p, dim));
+            o -= cellMatrix.column(dim) * n;
+            (*imageOut)[dim] = (imageIn ? (*imageIn)[dim] : 0) + static_cast<Vector3I::value_type>(n);
         }
-    }
+        ++imageOut;
+        if(imageIn)
+            ++imageIn;
+        return o;
+    });
+
+    inputPosAcc.reset();
+    outputPosAcc.reset();
+    inputPbcFlagsAcc.reset();
+    outputPbcFlagsAcc.reset();
+#endif
 }
 
 /******************************************************************************
@@ -483,35 +558,94 @@ void Particles::unwrapCoordinates(const SimulationCell& cell)
     const AffineTransformation cellMatrix = cell.cellMatrix();
 
     // This operation relies on the periodic image flags, which must be present to unwrap the particle positions.
-    BufferReadAccess<Vector3I> particlePeriodicImageProperty = getProperty(Particles::PeriodicImageProperty);
+    const Property* particlePeriodicImageProperty = getProperty(Particles::PeriodicImageProperty);
     if(!particlePeriodicImageProperty)
         throw Exception(tr("Unwrapping of particle coordinates requires the \"Periodic Image\" property to be present."));
 
-    // Make a modifiable copy of the particle position property.
-    BufferWriteAccess<Point3, access_mode::read_write> posProperty = expectMutableProperty(Particles::PositionProperty);
-    const Vector3I* pbcShift = particlePeriodicImageProperty.cbegin();
-    for(Point3& p : posProperty) {
-        p += cellMatrix * (*pbcShift++).toDataType<FloatType>();
+    // Get the input particle coordinates and create a new buffer to store the computed output coordinates.
+    ConstPropertyPtr inputPositions = expectProperty(Particles::PositionProperty);
+    Property* outputPositions = createProperty(DataBuffer::Uninitialized, Particles::PositionProperty);
+    OVITO_ASSERT(outputPositions != inputPositions.get());
+
+#ifdef OVITO_USE_SYCL
+    // Shift the particle coordinates by the PBC image flags.
+    if(inputPositions->size() != 0) {
+        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            SyclBufferAccess<Point3, access_mode::read> posInAcc{inputPositions, cgh};
+            SyclBufferAccess<Point3, access_mode::discard_write> posOutAcc{outputPositions, cgh};
+            SyclBufferAccess<Vector3I, access_mode::read> imageAcc{particlePeriodicImageProperty, cgh};
+            OVITO_SYCL_PARALLEL_FOR(cgh, Particles_unwrapCoordinates)(sycl::range(posInAcc.size()), [=](size_t i) {
+                posOutAcc[i] = posInAcc[i] + cellMatrix * imageAcc[i].toDataType<FloatType>();
+            });
+        });
     }
+
+    // Unwrap bonds by adjusting their PBC shift vectors.
+    if(const Property* topologyProperty = bonds() ? bonds()->getProperty(Bonds::TopologyProperty) : nullptr) {
+
+        // Access the existing bond image flags and create an output array for storing the updated image flags.
+        ConstPropertyPtr bondsImagesIn = bonds()->getProperty(Bonds::PeriodicImageProperty);
+        Property* bondsImagesOut = makeBondsMutable()->createProperty(DataBuffer::Uninitialized, Bonds::PeriodicImageProperty);
+        OVITO_ASSERT(bondsImagesOut != bondsImagesIn.get());
+
+        if(bondsImagesOut->size() != 0) {
+            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+                SyclBufferAccess<ParticleIndexPair, access_mode::read> topologyAcc{topologyProperty, cgh};
+                SyclBufferAccess<Vector3I, access_mode::read> imageInAcc{bondsImagesIn, cgh};
+                SyclBufferAccess<Vector3I, access_mode::discard_write> imageOutAcc{bondsImagesOut, cgh};
+                SyclBufferAccess<Vector3I, access_mode::read> particleImageAcc{particlePeriodicImageProperty, cgh};
+                const size_t numParticles = particleImageAcc.size();
+                OVITO_SYCL_PARALLEL_FOR(cgh, Particles_wrapCoordinates_bonds)(sycl::range(topologyAcc.size()), [=](size_t bondIndex) {
+                    const auto [particleIndex1, particleIndex2] = topologyAcc[bondIndex];
+                    if(particleIndex1 < numParticles && particleIndex2 < numParticles) {
+                        const Vector3I& particleShift1 = particleImageAcc[particleIndex1];
+                        const Vector3I& particleShift2 = particleImageAcc[particleIndex2];
+                        if(imageInAcc)
+                            imageOutAcc[bondIndex] = imageInAcc[bondIndex] + (particleShift1 - particleShift2);
+                        else
+                            imageOutAcc[bondIndex] = (particleShift1 - particleShift2);
+                    }
+                    else {
+                        imageOutAcc[bondIndex].setZero();
+                    }
+                });
+            });
+        }
+    }
+#else
+    // Shift the particle coordinates by the PBC image flags.
+    BufferReadAccess<Point3> posInAcc{inputPositions};
+    BufferWriteAccess<Point3, access_mode::discard_write> posOutAcc{outputPositions};
+    BufferReadAccess<Vector3I> particleImageAcc{particlePeriodicImageProperty};
+    const Vector3I* pbcShift = particleImageAcc.cbegin();
+    boost::transform(posInAcc, posOutAcc.begin(), [&](const Point3& p) {
+        return p + cellMatrix * (*pbcShift++).toDataType<FloatType>();
+    });
 
     // Unwrap bonds by adjusting their PBC shift vectors.
     if(bonds()) {
         if(BufferReadAccess<ParticleIndexPair> topologyProperty = bonds()->getProperty(Bonds::TopologyProperty)) {
             BufferWriteAccess<Vector3I, access_mode::read_write> periodicImageProperty = makeBondsMutable()->createProperty(DataBuffer::Initialized, Bonds::PeriodicImageProperty);
+            const size_t numParticles = posInAcc.size();
             for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
                 size_t particleIndex1 = topologyProperty[bondIndex][0];
                 size_t particleIndex2 = topologyProperty[bondIndex][1];
-                if(particleIndex1 >= particlePeriodicImageProperty.size() || particleIndex2 >= particlePeriodicImageProperty.size())
+                if(particleIndex1 >= numParticles || particleIndex2 >= numParticles)
                     continue;
-                const Vector3I& particleShift1 = particlePeriodicImageProperty[particleIndex1];
-                const Vector3I& particleShift2 = particlePeriodicImageProperty[particleIndex2];
+                const Vector3I& particleShift1 = particleImageAcc[particleIndex1];
+                const Vector3I& particleShift2 = particleImageAcc[particleIndex2];
                 periodicImageProperty[bondIndex] += particleShift1 - particleShift2;
             }
         }
     }
 
+    posInAcc.reset();
+    posOutAcc.reset();
+    particleImageAcc.reset();
+#endif
+
     // After unwrapping the particles, the PBC image flags are obsolete. So remove the particle property.
-    removeProperty(static_object_cast<Property>(particlePeriodicImageProperty.reset()));
+    removeProperty(particlePeriodicImageProperty);
 }
 
 /******************************************************************************
@@ -650,12 +784,26 @@ PropertyPtr Particles::OOMetaClass::createStandardPropertyInternal(DataBuffer::B
     PropertyPtr property = PropertyPtr::create(DataBuffer::Uninitialized, elementCount, dataType, componentCount, propertyName, type, componentNames);
 
     // Initialize memory if requested.
-    if(init == DataBuffer::Initialized && !containerPath.empty()) {
+    if(init == DataBuffer::Initialized && !containerPath.empty() && elementCount != 0) {
         // Certain standard properties need to be initialized with default values determined by the attached visual elements.
         if(type == MassProperty) {
             if(const Particles* particles = dynamic_object_cast<Particles>(containerPath.back())) {
                 if(const Property* typeProperty = particles->getProperty(Particles::TypeProperty)) {
                     // Use per-type mass information and initialize the per-particle mass array from it.
+#ifdef OVITO_USE_SYCL
+                    const SyclFlatMap massMap = ParticleType::typeMassMap(typeProperty);
+                    if(!massMap.empty()) {
+                        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+                            SyclBufferAccess<int32_t, access_mode::read> typesAcc(typeProperty, cgh);
+                            SyclBufferAccess<FloatType, access_mode::discard_write> massAcc(property, cgh);
+                            SyclFlatMapAccessor massMapAcc(massMap, cgh);
+                            OVITO_SYCL_PARALLEL_FOR(cgh, Particles_initMassProperty)(sycl::range(typeProperty->size()), [=](size_t i) {
+                                massAcc[i] = massMapAcc.get(typesAcc[i], 0.0);
+                            });
+                        });
+                        init = DataBuffer::Uninitialized;
+                    }
+#else
                     std::map<int,FloatType> massMap = ParticleType::typeMassMap(typeProperty);
                     if(!massMap.empty()) {
                         boost::transform(BufferReadAccess<int32_t>(typeProperty), BufferWriteAccess<FloatType, access_mode::discard_write>(property).begin(), [&](int t) {
@@ -664,6 +812,7 @@ PropertyPtr Particles::OOMetaClass::createStandardPropertyInternal(DataBuffer::B
                         });
                         init = DataBuffer::Uninitialized;
                     }
+#endif
                 }
             }
         }

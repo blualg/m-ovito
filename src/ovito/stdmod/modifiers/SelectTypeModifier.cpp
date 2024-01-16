@@ -149,34 +149,37 @@ void SelectTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& re
 
 #ifdef OVITO_USE_SYCL
     if(typePropertyObject->size() != 0) {
-        // Convert set of type IDs into a SYCL-compatible data structure.
-        SyclFlatSet idsToSelectSycl{idsToSelect};
-        sycl::buffer<size_t> numSelectedBuf(&nSelected, 1);
-
-        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
-
-            // Access the input types.
-            SyclBufferAccess<int32_t, access_mode::read> typeAcc(typePropertyObject, cgh);
-            // Access output selection array.
-            SyclBufferAccess<SelectionIntType, access_mode::write> selectionAcc(selProperty, cgh, DataBuffer::Uninitialized);
-            // Access type ID set.
-            SyclFlatSetAccessor idsToSelectAcc(idsToSelectSycl, cgh);
-#ifdef OVITO_USE_SYCL_ACPP
-            auto reduction = sycl::reduction(sycl::accessor{numSelectedBuf, cgh, sycl::no_init}, 0, sycl::plus<size_t>());
-#else
-            auto reduction = sycl::reduction(numSelectedBuf, cgh, 0, sycl::plus<size_t>(), sycl::reduction::initialize_to_identity);
-#endif
-
-            OVITO_SYCL_PARALLEL_FOR(cgh, SelectTypeModifier_kernel)(sycl::range(typePropertyObject->size()), reduction, [=](size_t i, auto& red) {
-                if(idsToSelectAcc.contains(typeAcc[i])) {
-                    selectionAcc[i] = 1;
-                    red += (size_t)1;
-                }
-                else {
-                    selectionAcc[i] = 0;
-                }
+        if(!idsToSelect.empty()) {
+            // Convert set of type IDs into a SYCL-compatible data structure.
+            SyclFlatSet idsToSelectSycl{idsToSelect};
+            // This is a single-element counter variable that will be incremented by the kernel for each selected element.
+            sycl::buffer<size_t> numSelectedBuf(&nSelected, 1);
+            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+                // Access the input type values.
+                SyclBufferAccess<int32_t, access_mode::read> typeAcc(typePropertyObject, cgh);
+                // Access output selection array.
+                SyclBufferAccess<SelectionIntType, access_mode::write> selectionAcc(selProperty, cgh, DataBuffer::Uninitialized);
+                // Access type ID set.
+                SyclFlatSetAccessor idsToSelectAcc(idsToSelectSycl, cgh);
+    #ifdef OVITO_USE_SYCL_ACPP
+                auto reduction = sycl::reduction(sycl::accessor{numSelectedBuf, cgh, sycl::no_init}, 0, sycl::plus<size_t>());
+    #else
+                auto reduction = sycl::reduction(numSelectedBuf, cgh, 0, sycl::plus<size_t>(), sycl::reduction::initialize_to_identity);
+    #endif
+                OVITO_SYCL_PARALLEL_FOR(cgh, SelectTypeModifier_kernel)(sycl::range(typePropertyObject->size()), reduction, [=](size_t i, auto& red) {
+                    if(idsToSelectAcc.contains(typeAcc[i])) {
+                        selectionAcc[i] = 1;
+                        red += (size_t)1;
+                    }
+                    else {
+                        selectionAcc[i] = 0;
+                    }
+                });
             });
-        });
+        }
+        else {
+            selProperty->fill<SelectionIntType>(0);
+        }
     }
 #else
     BufferWriteAccess<SelectionIntType, access_mode::discard_write> selectionAcc{selProperty};
@@ -190,6 +193,9 @@ void SelectTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& re
         return 0;
     });
 #endif
+
+    // To speed up future queries, store the selection count in the selection property object.
+    selProperty->setNonzeroCount(nSelected);
 
     state.addAttribute(QStringLiteral("SelectType.num_selected"), QVariant::fromValue(nSelected), request.modificationNode());
 

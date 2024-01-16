@@ -97,6 +97,13 @@ protected:
         _syclAccessor(create_accessor(_buffer, accessmode == access_mode::discard_write || accessmode == access_mode::discard_read_write || no_init)),
 #endif
         _data(_buffer ? dataStorageAddress() : nullptr) {
+
+        // When modifying the contents of the buffer, invalidate the cached number of non-zero elements.
+        if constexpr(accessmode != access_mode::read) {
+            if(this->_buffer)
+                this->_buffer->invalidateNonzeroCount();
+        }
+
 #ifdef OVITO_DEBUG
         if(this->_buffer) {
             if constexpr(accessmode != access_mode::read)

@@ -110,6 +110,12 @@ public:
         bucketSize = std::max(_numNeighbors / 2, 8);
     }
 
+    /// No copying allowed.
+    NearestNeighborFinder(const NearestNeighborFinder&) = delete;
+
+    /// No copying allowed.
+    NearestNeighborFinder& operator=(const NearestNeighborFinder&) = delete;
+
     /// \brief Prepares the tree data structure.
     /// \param posProperty The positions of the particles.
     /// \param cellData The simulation cell data.

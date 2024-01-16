@@ -113,6 +113,7 @@ OORef<RefTarget> DataBuffer::clone(bool deepCopy, CloneHelper& cloneHelper) cons
     clone->_stride = _stride;
     clone->_componentCount = _componentCount;
     clone->_componentNames = _componentNames;
+    clone->_nonzeroCount = _nonzeroCount;
 #ifdef OVITO_DEBUG
     clone->_isDataInitialized = _isDataInitialized;
 #endif
@@ -182,6 +183,7 @@ void DataBuffer::resize(size_t newSize, bool preserveData)
     }
 #endif
     _numElements = newSize;
+    invalidateNonzeroCount();
 }
 
 /******************************************************************************
@@ -231,6 +233,7 @@ void DataBuffer::resizeCopyFrom(size_t newSize, const DataBuffer& original)
     }
 #endif
     _numElements = newSize;
+    invalidateNonzeroCount();
 }
 
 /******************************************************************************
@@ -284,6 +287,7 @@ bool DataBuffer::grow(size_t numAdditionalElements, bool callerAlreadyHasWriteAc
 #endif
     }
     _numElements = newSize;
+    invalidateNonzeroCount();
     return needToGrow;
 }
 
@@ -302,6 +306,7 @@ void DataBuffer::truncate(size_t numElementsToRemove, bool callerAlreadyHasWrite
         writeAccess.emplace(*this);
 #endif
     _numElements -= numElementsToRemove;
+    invalidateNonzeroCount();
 }
 
 /******************************************************************************
@@ -439,6 +444,7 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const DataBuffer& selectio
         _data.reset();
 #endif
         _numElements = 0;
+        invalidateNonzeroCount();
         return;
     }
     OVITO_ASSERT(original.size() != 0);
@@ -446,6 +452,7 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const DataBuffer& selectio
     _isDataInitialized = true;
 #endif
 
+    // Allocate new storage.
 #ifdef OVITO_USE_SYCL
     auto newBuffer = allocateBufferStorage(newSize, _stride);
 #else
@@ -455,6 +462,7 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const DataBuffer& selectio
     auto newBuffer = std::unique_ptr<DataBuffer::Byte[]>(new DataBuffer::Byte[newSize * _stride]); // Note: for backward compatibility with GCC 10
 #endif
 #endif
+
     const size_t s = selection.size();
     BufferReadAccess<SelectionIntType> selectionAccess(&selection);
 
@@ -486,7 +494,8 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const DataBuffer& selectio
         _data.swap(newBuffer);
         _capacity = newSize;
 #endif
-         _numElements = newSize;
+        _numElements = newSize;
+        invalidateNonzeroCount();
     };
 
     // Optimize filter operation for the most common data types.
@@ -560,6 +569,7 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const DataBuffer& selectio
     _capacity = newSize;
 #endif
     _numElements = newSize;
+    invalidateNonzeroCount();
 }
 
 /******************************************************************************
@@ -973,6 +983,7 @@ void DataBuffer::fillZero()
     RawBufferAccess<access_mode::discard_write> writeAccess(this);
     std::memset(writeAccess.data(), 0, this->size() * this->stride());
 #endif
+    setNonzeroCount(size());
 }
 
 /******************************************************************************
@@ -1017,6 +1028,25 @@ std::pair<FloatType, FloatType> DataBuffer::minMax(size_t component, const DataB
 #endif
 
     return std::make_pair(minValue, maxValue);
+}
+
+/******************************************************************************
+* Returns the number of non-zero entries in the array.
+******************************************************************************/
+size_t DataBuffer::nonzeroCount() const
+{
+    OVITO_ASSERT(this);
+    OVITO_ASSERT(componentCount() == 1);
+
+    if(_nonzeroCount == std::numeric_limits<size_t>::max()) {
+        forAnyType([&](auto _) {
+            using T = decltype(_);
+            const_cast<DataBuffer*>(this)->setNonzeroCount(this->size() - this->count<T>(0));
+        });
+    }
+
+    OVITO_ASSERT(_nonzeroCount <= size());
+    return _nonzeroCount;
 }
 
 #ifdef OVITO_USE_SYCL

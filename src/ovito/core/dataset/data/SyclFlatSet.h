@@ -46,10 +46,13 @@ public:
 
     /// Constructor that initializes the set from an existing associative container, e.g. a std::set.
     template<typename Container>
-    SyclFlatSet(const Container& container) : _storage(detail::allocateSyclBuffer<value_type, 1>(container.size())) {
-        // Copy the contents of the provided container into our internal flat storage.
-        sycl::host_accessor acc(_storage, sycl::write_only, sycl::no_init);
-        std::copy(container.begin(), container.end(), acc.begin());
+    SyclFlatSet(const Container& container) {
+        if(!container.empty()) {
+            _storage.emplace(detail::allocateSyclBuffer<value_type, 1>(container.size()));
+            // Copy the contents of the provided container into our internal flat storage.
+            sycl::host_accessor acc(*_storage, sycl::write_only, sycl::no_init);
+            std::copy(container.begin(), container.end(), acc.begin());
+        }
     }
 
     /// Copying is not supported yet.
@@ -58,22 +61,28 @@ public:
     /// Copy assignment is not supported yet.
     SyclFlatSet& operator=(const SyclFlatSet& other) = delete;
 
-    /// Checks if the set is empty.
-    bool empty() const { return _storage.empty(); }
+    /// Checks if the map is empty.
+    bool empty() const { return !_storage.has_value(); }
 
-    /// Returns the number of keys in the set.
-    size_type size() const { return _storage.size(); }
-
-    /// Returns the internal data storage of the container.
-    const sycl::buffer<value_type>& storage() const { return _storage; }
+    /// Returns the number of key-value pairs in the map.
+    size_type size() const { return _storage ? _storage->size() : 0; }
 
     /// Returns the internal data storage of the container.
-    sycl::buffer<value_type>& storage() { return _storage; }
+    const sycl::buffer<value_type>& storage() const {
+        OVITO_ASSERT(_storage.has_value());
+        return *_storage;
+    }
+
+    /// Returns the internal data storage of the container.
+    sycl::buffer<value_type>& storage() {
+        OVITO_ASSERT(_storage.has_value());
+        return *_storage;
+    }
 
 private:
 
     /// The data storage.
-    sycl::buffer<value_type> _storage;
+    std::optional<sycl::buffer<value_type>> _storage;
 };
 
 // Class template deduction guide (CTAD):
@@ -96,11 +105,16 @@ public:
     using size_type = std::size_t;
     using difference_type = std::ptrdiff_t;
     using key_compare = Compare;
+    using accessor_type = sycl::accessor<value_type, 1, sycl::access_mode::read>;
 
     // Constructor.
-    SyclFlatSetAccessor(const container_type& set, sycl::handler& commandGroupHandler) : _accessor(const_cast<container_type&>(set).storage(), commandGroupHandler) {}
+    SyclFlatSetAccessor(const container_type& set, sycl::handler& commandGroupHandler) :
+        _accessor(!set.empty() ? accessor_type{const_cast<container_type&>(set).storage(), commandGroupHandler} : accessor_type{}) {}
 
 public:
+
+    /// Returns whether this accessor is valid.
+    inline explicit operator bool() const noexcept { return _accessor.get_range()[0] != 0; }
 
     /// Returns an iterator to the beginning of the set.
     auto begin() const { return _accessor.cbegin(); }
@@ -123,10 +137,18 @@ public:
         return find(key) != end();
     }
 
+    /// Finds the index of a specific key in the set.
+    auto index_of(const key_type& key) const {
+        return find(key) - begin();
+    }
+
+    /// Returns the number of keys in the set.
+    size_type size() const { return _accessor.get_range()[0]; }
+
 private:
 
     /// The internal SYCL buffer accessor.
-    sycl::accessor<value_type, 1, sycl::access_mode::read> _accessor;
+    accessor_type _accessor;
 };
 
 // Class template deduction guide (CTAD):

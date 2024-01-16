@@ -151,7 +151,8 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
         if(topoIdentifierProperty && trajIdentifierProperty) {
 
             // Build map of particle identifiers in trajectory dataset.
-            std::map<IdentifierIntType, size_t> refMap;
+            std::unordered_map<IdentifierIntType, size_t> refMap;
+            refMap.reserve(trajIdentifierProperty.size());
             size_t index = 0;
             for(auto id : trajIdentifierProperty) {
                 if(refMap.insert(std::make_pair(id, index++)).second == false)
@@ -272,7 +273,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             }
         }
 
-        // Transfer box geometry.
+        // Transfer simulation cell geometry.
         const SimulationCell* topologyCell = state.getObject<SimulationCell>();
         const SimulationCell* trajectoryCell = trajState.getObject<SimulationCell>();
         if(topologyCell && trajectoryCell) {
@@ -282,33 +283,61 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 
             // Trajectories of atoms may cross periodic boundaries and if atomic positions are
             // stored in wrapped coordinates, then it becomes necessary to fix bonds using the minimum image convention.
-            const std::array<bool, 3> pbc = topologyCell->pbcFlags();
-            if((pbc[0] || pbc[1] || pbc[2]) && particles->bonds() && std::abs(simCell.determinant()) > FLOATTYPE_EPSILON) {
-                BufferReadAccess<Point3> outputPosProperty = particles->expectProperty(Particles::PositionProperty);
+            const std::array<bool, 3> pbcFlags = topologyCell->pbcFlagsCorrected();
+            if((pbcFlags[0] || pbcFlags[1] || pbcFlags[2]) && particles->bonds() && !topologyCell->isDegenerate()) {
                 const AffineTransformation inverseCellMatrix = simCell.inverse();
-                const size_t particleCount = outputPosProperty.size();
+                const size_t numParticles = particles->elementCount();
 
                 Bonds* bonds = particles->makeBondsMutable();
+#ifdef OVITO_USE_SYCL
+                if(const Property* topologyProperty = bonds->getProperty(Bonds::TopologyProperty)) {
+                    Property* periodicImageProperty = bonds->createProperty(DataBuffer::Uninitialized, Bonds::PeriodicImageProperty);
+                    if(periodicImageProperty->size() != 0) {
+                        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+                            SyclBufferAccess<ParticleIndexPair, access_mode::read> topologyAcc{topologyProperty, cgh};
+                            SyclBufferAccess<Point3, access_mode::read> posInAcc{particles->expectProperty(Particles::PositionProperty), cgh};
+                            SyclBufferAccess<Vector3I, access_mode::discard_write> imageAcc{periodicImageProperty, cgh};
+                            OVITO_SYCL_PARALLEL_FOR(cgh, LoadTrajectoryModifier_bond_imageflags)(sycl::range(topologyAcc.size()), [=](size_t bondIndex) {
+                                const auto [particleIndex1, particleIndex2] = topologyAcc[bondIndex];
+                                if(particleIndex1 < numParticles && particleIndex2 < numParticles) {
+                                    const Vector3 rv = inverseCellMatrix * (posInAcc[particleIndex1] - posInAcc[particleIndex2]);
+                                    const Vector3I iflags(
+                                        pbcFlags[0] * static_cast<Vector3I::value_type>(std::lround(rv.x())),
+                                        pbcFlags[1] * static_cast<Vector3I::value_type>(std::lround(rv.y())),
+                                        pbcFlags[2] * static_cast<Vector3I::value_type>(std::lround(rv.z()))
+                                    );
+                                    imageAcc[bondIndex] = iflags;
+                                }
+                                else {
+                                    imageAcc[bondIndex].setZero();
+                                }
+                            });
+                        });
+                    }
+                }
+#else
                 if(BufferReadAccess<ParticleIndexPair> topologyProperty = bonds->getProperty(Bonds::TopologyProperty)) {
                     BufferWriteAccess<Vector3I, access_mode::discard_write> periodicImageProperty = bonds->createProperty(DataBuffer::Uninitialized, Bonds::PeriodicImageProperty);
+                    BufferReadAccess<Point3> positions = particles->expectProperty(Particles::PositionProperty);
 
                     // Wrap bonds crossing a periodic boundary by resetting their PBC shift vectors.
                     for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
                         Vector3I& pbcShift = periodicImageProperty[bondIndex];
                         size_t particleIndex1 = topologyProperty[bondIndex][0];
                         size_t particleIndex2 = topologyProperty[bondIndex][1];
-                        if(particleIndex1 >= particleCount || particleIndex2 >= particleCount) {
+                        if(particleIndex1 >= numParticles || particleIndex2 >= numParticles) {
                             pbcShift.setZero();
                             continue;
                         }
-                        const Point3& p1 = outputPosProperty[particleIndex1];
-                        const Point3& p2 = outputPosProperty[particleIndex2];
+                        const Point3& p1 = positions[particleIndex1];
+                        const Point3& p2 = positions[particleIndex2];
                         const Vector3 delta = p1 - p2;
                         for(int dim = 0; dim < 3; dim++) {
-                            pbcShift[dim] = pbc[dim] ? std::lround(inverseCellMatrix.prodrow(delta, dim)) : 0;
+                            pbcShift[dim] = pbcFlags[dim] ? std::lround(inverseCellMatrix.prodrow(delta, dim)) : 0;
                         }
                     }
                 }
+#endif
             }
         }
     }

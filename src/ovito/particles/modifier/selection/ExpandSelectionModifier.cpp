@@ -107,7 +107,7 @@ void ExpandSelectionModifier::ExpandSelectionEngine::perform()
 {
     setProgressText(tr("Expanding particle selection"));
 
-    setNumSelectedParticlesInput(_inputSelection->size() - boost::count(BufferReadAccess<SelectionIntType>(_inputSelection), 0));
+    setNumSelectedParticlesInput(_inputSelection->nonzeroCount());
 
     beginProgressSubSteps(_numIterations);
     for(int i = 0; i < _numIterations; i++) {
@@ -121,7 +121,7 @@ void ExpandSelectionModifier::ExpandSelectionEngine::perform()
     }
     endProgressSubSteps();
 
-    setNumSelectedParticlesOutput(outputSelection()->size() - boost::count(BufferReadAccess<SelectionIntType>(outputSelection()), 0));
+    setNumSelectedParticlesOutput(outputSelection()->nonzeroCount());
 
     // Release data that is no longer needed.
     _positions.reset();

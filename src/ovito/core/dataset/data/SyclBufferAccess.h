@@ -79,6 +79,11 @@ public:
             }
 #endif
 
+            // When modifying the contents of the buffer, invalidate the cached number of non-zero elements.
+            if constexpr(AccessMode != access_mode::read) {
+                buffer->invalidateNonzeroCount();
+            }
+
             if constexpr(!ComponentWise) {
                 auto typedBuffer = buffer->_data->template reinterpret<element_type, 1>();
                 *this = accessor_type{typedBuffer, commandGroupHandler, sycl::range(buffer->size()), (initMode == DataBuffer::BufferInitialization::Uninitialized) ? sycl::property_list{sycl::no_init} : sycl::property_list{}};
@@ -115,6 +120,11 @@ public:
             }
 #endif
 
+            // When modifying the contents of the buffer, invalidate the cached number of non-zero elements.
+            if constexpr(AccessMode != access_mode::read) {
+                buffer->invalidateNonzeroCount();
+            }
+
             if constexpr(!ComponentWise) {
                 auto typedBuffer = buffer->_data->template reinterpret<element_type, 1>();
                 *this = accessor_type{typedBuffer, sycl::range(buffer->size()), (initMode == DataBuffer::BufferInitialization::Uninitialized) ? sycl::property_list{sycl::no_init} : sycl::property_list{}};
@@ -147,6 +157,11 @@ public:
         if(buffer && buffer->_data) {
             OVITO_ASSERT(buffer->_isDataInitialized);
 
+            // When modifying the contents of the buffer, invalidate the cached number of non-zero elements.
+            if constexpr(AccessMode != access_mode::read) {
+                buffer->invalidateNonzeroCount();
+            }
+
             if constexpr(!ComponentWise) {
                 auto typedBuffer = buffer->_data->template reinterpret<element_type, 1>();
                 *this = accessor_type{typedBuffer, commandGroupHandler, sycl::range(count), sycl::id(offset)};
@@ -177,6 +192,11 @@ public:
         OVITO_ASSERT(!buffer || offset + count <= buffer->size());
         if(buffer && buffer->_data) {
             OVITO_ASSERT(buffer->_isDataInitialized);
+
+            // When modifying the contents of the buffer, invalidate the cached number of non-zero elements.
+            if constexpr(AccessMode != access_mode::read) {
+                buffer->invalidateNonzeroCount();
+            }
 
             if constexpr(!ComponentWise) {
                 auto typedBuffer = buffer->_data->template reinterpret<element_type, 1>();
@@ -419,6 +439,23 @@ public:
                 sycl::accessor<BaseT> incrementAcc{incrementBuffer, cgh, sycl::read_only};
                 OVITO_SYCL_PARALLEL_FOR(cgh, SyclBufferAccess_add_buf)(sycl::range(size()), [=, *this](size_t i) {
                     (*this)[i] += incrementAcc[0];
+                });
+            });
+        }
+    }
+
+    /// Executes a function for every element in the accessed buffer.
+    /// The function can manipulate the stored values in the buffer.
+    template<typename F>
+    void for_each(F&& func) {
+        OVITO_STATIC_ASSERT(AccessMode == access_mode::read_write);
+        OVITO_ASSERT(accessor_type::empty() || accessor_type::is_placeholder());
+
+        if(!accessor_type::empty()) {
+            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+                cgh.require(*this);
+                OVITO_SYCL_PARALLEL_FOR(cgh, SyclBufferAccess_for_each)(accessor_type::get_range(), [=, *this](auto id) {
+                    func((*this)[id]);
                 });
             });
         }

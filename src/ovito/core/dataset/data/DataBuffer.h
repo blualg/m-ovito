@@ -288,6 +288,27 @@ public:
     /// Optionally, a selection flags array can be specified, which restricts the considered data elements to a subset.
     std::pair<FloatType, FloatType> minMax(size_t component = 0, const DataBuffer* selection = nullptr) const;
 
+    /// Counts how often the given value occurs in the buffer.
+    /// The data type T must be compatible with the buffer's data type.
+    template<typename T>
+    size_t count(const T value) const;
+
+    /// Returns the number of non-zero entries in the array.
+    size_t nonzeroCount() const;
+
+    /// Caches the number of non-zero entries in the array (without actually counting them).
+    /// This method can be called by user code if the number of non-zero elements is known
+    /// from a previous computation.
+    void setNonzeroCount(size_t count) {
+        OVITO_ASSERT(count <= size());
+        _nonzeroCount = count;
+    }
+
+    /// Invalidates the cached count of non-zero array elements.
+    /// Normally, there is no need for user code to call this function.
+    /// Any write access to the buffer implicitly invalidates the cached count.
+    void invalidateNonzeroCount() { _nonzeroCount = std::numeric_limits<size_t>::max(); }
+
     /// Invokes a generic lampda function with the current data type of the buffer.
     /// The lambda function must accept exactly one generic parameter ("auto _"), whose type
     /// will be the type of the DataBuffer. The value of the parameter is not used.
@@ -330,12 +351,13 @@ public:
     }
 
     /// Informs the buffer object that a read/write accessor is becoming active.
-    inline void prepareWriteAccess() const {
+    inline void prepareWriteAccess() {
 #ifdef OVITO_DEBUG
         if(_activeAccessors.fetchAndStoreAcquire(-1) != 0) {
             OVITO_ASSERT_MSG(false, "DataBuffer::prepareWriteAccess()", "Property cannot be locked for write acccess while it is already locked.");
         }
 #endif
+        invalidateNonzeroCount();
     }
 
     /// Informs the buffer object that a write accessor is done.
@@ -417,6 +439,11 @@ private:
     /// The internal memory buffer holding the data elements.
     std::unique_ptr<Byte[]> _data;
 #endif
+
+    /// The number of non-zero entries in the array (if known).
+    /// This field can provide a performance optimization if, for example, the number of
+    /// selected elements is queried.
+    size_t _nonzeroCount = std::numeric_limits<size_t>::max();
 
 #ifdef OVITO_USE_SYCL
     /// Flag indicating that new kernels have been scheduled for execution that read from the buffer.
@@ -517,6 +544,9 @@ inline void DataBuffer::fill(const T value)
     T* end = begin + this->size();
     std::fill(begin, end, value);
 #endif
+    if constexpr(std::is_same_v<T, SelectionIntType>) {
+        setNonzeroCount(!value ? 0 : size());
+    }
 }
 
 /// \brief Sets all array elements for which the corresponding entries in the
@@ -667,6 +697,39 @@ inline void DataBuffer::moveElement(size_t fromIndex, size_t toIndex, bool calle
 #else
     std::memmove(data() + toIndex * stride(), cdata() + fromIndex * stride(), stride());
 #endif
+    invalidateNonzeroCount();
+}
+
+/// Counts how often the given value occurs in the buffer.
+/// The data type T must be compatible with the buffer's data type.
+template<typename T>
+inline size_t DataBuffer::count(const T value) const
+{
+    size_t count = 0;
+
+#ifdef OVITO_USE_SYCL
+    if(size() != 0) {
+        sycl::buffer<size_t> countBuf(&count, 1);
+        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            SyclBufferAccess<T, access_mode::read> acc(this, cgh);
+#ifdef OVITO_USE_SYCL_ACPP
+            auto reduction = sycl::reduction(sycl::accessor{countBuf, cgh, sycl::no_init}, 0, sycl::plus<size_t>());
+#else
+            auto reduction = sycl::reduction(countBuf, cgh, 0, sycl::plus<size_t>(), sycl::reduction::initialize_to_identity);
+#endif
+            OVITO_SYCL_PARALLEL_FOR(cgh, DataBuffer_count)(sycl::range(acc.size()), reduction, [=](size_t i, auto& red) {
+                if(acc[i] == value)
+                    red += (size_t)1;
+            });
+        });
+    }
+#else
+    for(const auto& s : BufferReadAccess<T>(this)) {
+        if(s == value)
+            count++;
+    }
+#endif
+    return count;
 }
 
 }   // End of namespace
