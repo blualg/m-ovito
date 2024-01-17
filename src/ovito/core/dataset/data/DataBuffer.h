@@ -244,10 +244,6 @@ public:
     /// Reduces the size of the storage array, deleting elements for are marked in the selection array.
     void filterResizeCopyFrom(size_t newSize, const DataBuffer& selection, const DataBuffer& original);
 
-    /// Creates a copy of the array, not containing those elements for which
-    /// the corresponding bits in the given bit array were set.
-    OORef<DataBuffer> filterCopy(const boost::dynamic_bitset<>& mask) const;
-
     /// Copies the contents from the given source into this storage using a element mapping.
     void mappedCopyFrom(const DataBuffer& source, const std::vector<size_t>& mapping, bool discardOldContents);
 
@@ -287,6 +283,9 @@ public:
     /// The results are returned as a pair of floating-point values - even if the buffer stores a different data type.
     /// Optionally, a selection flags array can be specified, which restricts the considered data elements to a subset.
     std::pair<FloatType, FloatType> minMax(size_t component = 0, const DataBuffer* selection = nullptr) const;
+
+    /// Based on a selection flag array as input, computes the mapping of original indices to a packed array.
+    ConstDataBufferPtr computePackedMapping() const;
 
     /// Counts how often the given value occurs in the buffer.
     /// The data type T must be compatible with the buffer's data type.

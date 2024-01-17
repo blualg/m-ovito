@@ -28,7 +28,7 @@ namespace Ovito {
 // Viridis colormap by Nathaniel J. Smith, Stefan van der Walt and Eric Firing
 // Colormap data released under the CC0 license / public domain dedication.
 // See https://bids.github.io/colormap/ for details
-const float colormap_viridis_data[][3] = {
+constexpr float colormap_viridis_data[][3] = {
     {0.267004f, 0.004874f, 0.329415f},
     {0.268510f, 0.009605f, 0.335427f},
     {0.269944f, 0.014625f, 0.341379f},
@@ -290,7 +290,7 @@ const float colormap_viridis_data[][3] = {
 // Magma colormap by Nathaniel J. Smith and Stefan van der Walt
 // Colormap data released under the CC0 license / public domain dedication.
 // See https://bids.github.io/colormap/ for details
-const float colormap_magma_data[][3] = {
+constexpr float colormap_magma_data[][3] = {
     {0.001462f, 0.000466f, 0.013866f},
     {0.002258f, 0.001295f, 0.018331f},
     {0.003279f, 0.002305f, 0.023708f},

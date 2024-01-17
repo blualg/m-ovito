@@ -424,8 +424,15 @@ PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationReques
                         else if(t < 0) t = 0;
                         else if(t > 1) t = 1;
 
-                        // Map scalar to RGB color.
-                        outputAcc[i] = colorMapAcc[static_cast<size_t>(t * (colorMapAcc.size() - 1))];
+                        // Map scalar to RGB color. Perform linear interpolation of two adjacent colors.
+                        GraphicsFloatType x = t * (GraphicsFloatType)(colorMapAcc.size() - 1);
+                        int x0 = static_cast<int>(x);
+                        int x1 = x0 + 1;
+                        const ColorG& c0 = colorMapAcc[x0];
+                        const ColorG& c1 = (x1 != colorMapAcc.size()) ? colorMapAcc[x1] : c0;
+                        GraphicsFloatType w0 = (GraphicsFloatType)x1 - x;
+                        GraphicsFloatType w1 = x - (GraphicsFloatType)x0;
+                        outputAcc[i] = w0 * c0 + w1 * c1;
                     }
                 });
             });

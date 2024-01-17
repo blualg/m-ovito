@@ -62,7 +62,7 @@ private:
         /// The offset applied to the particle when wrapping it at periodic boundaries.
         Vector3I pbcShift;
         /// Pointer to next particle in linked list.
-        const NeighborListParticle* nextInBin;
+        std::atomic<const NeighborListParticle*> nextInBin;
     };
 
 public:
@@ -97,10 +97,10 @@ public:
     FloatType simulationCellVolume() const { return (simCell->is2D()) ? simCell->volume2D() : simCell->volume3D(); }
 
     /// Returns the simulation 2D-ness of the cell.
-    bool simulationCelliIs2D() const { return simCell->is2D();};
+    bool simulationCellIs2D() const { return simCell->is2D();};
 
     /// Returns the number of input particles.
-    size_t particleCount() const { return particles.size(); }
+    size_t particleCount() const { return _particleCount; }
 
     /// \brief An iterator class that returns all neighbors of a central particle.
     class OVITO_PARTICLES_EXPORT Query
@@ -183,11 +183,14 @@ private:
     /// Used to determine the bin from a particle position.
     AffineTransformation reciprocalBinCell;
 
+    /// The number of particles stored in the class.
+    size_t _particleCount;
+
     /// The internal list of particles.
-    std::vector<NeighborListParticle> particles;
+    std::unique_ptr<NeighborListParticle[]> particles;
 
     /// An 3d array of cubic bins. Each bin is a linked list of particles.
-    std::vector<const NeighborListParticle*> bins;
+    std::unique_ptr<std::atomic<const NeighborListParticle*>[]> bins;
 
     /// The list of adjacent cells to visit while finding the neighbors of a
     /// central particle.

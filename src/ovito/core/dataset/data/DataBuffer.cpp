@@ -407,8 +407,23 @@ void DataBuffer::replicateFrom(size_t n, const DataBuffer& original)
     const size_t nbytes = original.size() * original.stride();
     // Replicate data values N times.
     original._hasScheduledSyclReadOperations = true;
-    for(size_t i = 0; i < n; i++) {
-        copySyclBufferContents(*original._data, *_data, nbytes, 0, nbytes * i, i == 0);
+    if(ExecutionContext::current().ui().taskManager().syclQueue().get_device().is_cpu()) {
+        // When using a CPU device, perform the data copying on the host.
+        auto readAccessor = original._data->get_host_access(sycl::read_only);
+        auto writeAccessor = _data->get_host_access(sycl::write_only, sycl::no_init);
+        const Byte* src = readAccessor.get_pointer();
+        Byte* dst = writeAccessor.get_pointer();
+        // Replicate data values N times.
+        size_t nbytes = original.size() * stride();
+        for(size_t i = 0; i < n; i++, dst += nbytes) {
+            std::memcpy(dst, src, nbytes);
+        }
+    }
+    else {
+        // When using a GPU device, perform the data copying on the device.
+        for(size_t i = 0; i < n; i++) {
+            copySyclBufferContents(*original._data, *_data, nbytes, 0, nbytes * i, i == 0);
+        }
     }
 #else
     DataBuffer::Byte* dest = _data.get();
@@ -1063,5 +1078,33 @@ void DataBuffer::blockUntilSyclKernelsFinished()
     }
 }
 #endif
+
+/******************************************************************************
+* Based on a selection flag array as input, computes the mapping of original indices to a packed array.
+******************************************************************************/
+ConstDataBufferPtr DataBuffer::computePackedMapping() const
+{
+    OVITO_ASSERT(dataType() == IntSelection);
+    OVITO_ASSERT(componentCount() == 1);
+
+    DataBufferPtr mapping = DataBufferPtr::create(DataBuffer::Uninitialized, size(), DataBuffer::Int64);
+    size_t packedSize = 0;
+
+    BufferReadAccess<SelectionIntType> selectionAcc{this};
+    auto sel = selectionAcc.cbegin();
+    for(auto& idx : BufferWriteAccess<int64_t, access_mode::discard_write>{mapping}) {
+        if(*sel++) {
+            idx = packedSize++;
+        }
+        else {
+            idx = -1;
+        }
+    }
+
+    // Store number of non-zero selection flags for future use.
+    const_cast<DataBuffer*>(this)->setNonzeroCount(packedSize);
+
+    return mapping;
+}
 
 }   // End of namespace

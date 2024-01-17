@@ -151,7 +151,7 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
                 // Access output color array.
                 SyclBufferAccess<ColorG, access_mode::write> outputAcc(colorProperty, cgh, selection ? DataBuffer::Initialized : DataBuffer::Uninitialized);
                 // Access color lookup table.
-                SyclFlatMapAccessor colorMapAcc(colorMap, cgh);
+                auto colorMapAcc = colorMap.get_access(cgh);
 
                 OVITO_SYCL_PARALLEL_FOR(cgh, ColorByTypeModifier_kernel)(sycl::range(typePropertyObject->size()), [=](size_t i) {
                     if(selectionAcc.empty() || selectionAcc[i]) {

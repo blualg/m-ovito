@@ -29,7 +29,10 @@
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
-#include <ovito/core/utilities/concurrent/SyclParallelFor.h>
+#ifdef OVITO_USE_SYCL
+    #include <ovito/core/utilities/concurrent/SyclParallelFor.h>
+    #include <ovito/particles/util/SyclCutoffNeighborFinder.h>
+#endif
 #include "CoordinationAnalysisModifier.h"
 
 namespace Ovito {
@@ -124,11 +127,6 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
 {
     setProgressText(tr("Coordination analysis"));
 
-    // Prepare the neighbor list.
-    CutoffNeighborFinder neighborListBuilder;
-    if(!neighborListBuilder.prepare(cutoff(), positions(), cell(), selection()))
-        return;
-
     size_t particleCount = positions()->size();
     const bool computePartialRdfs = _computePartialRdfs;
     const size_t typeCount = computePartialRdfs ? this->uniqueTypeIds().size() : 1;
@@ -139,6 +137,11 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
 //    QElapsedTimer timer;
 //    timer.start();
 #ifdef OVITO_USE_SYCL
+
+    // Prepare the neighbor finder.
+    SyclCutoffNeighborFinder neighborListFinder;
+    if(!neighborListFinder.prepare(cutoff(), positions(), cell(), selection()))
+        return;
 
     // Convert set of type IDs into a SYCL-compatible data structure.
     SyclFlatSet uniqueTypeIds{this->uniqueTypeIds()};
@@ -152,10 +155,12 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
         SyclBufferAccess<int32_t, access_mode::read> particleTypeAcc(particleTypes(), cgh);
         SyclBufferAccess<SelectionIntType, access_mode::read> selectionAcc(selection(), cgh);
         SyclBufferAccess<int64_t*, access_mode::read_write> rdfAcc(rdfHistogram, cgh);
-        SyclFlatSetAccessor uniqueTypeIdsAcc(uniqueTypeIds, cgh);
+        SyclCutoffNeighborFinder::Accessor neighborAcc(neighborListFinder, cgh);
+        auto uniqueTypeIdsAcc = uniqueTypeIds.get_access(cgh);
         sycl::local_accessor<int, 2> localHistogram{sycl::range<2>{binCount, rdfCount}, cgh};
-        parallel_kernel([=, &neighborListBuilder](sycl::nd_item<1> idx, size_t local_problem_size, size_t global_index_offset, auto&& was_canceled) {
+        parallel_kernel([=](sycl::nd_item<1> idx, size_t local_problem_size, size_t global_index_offset, auto&& was_canceled) {
 
+            // Parallelized histogram calculation.
             // Phase I: Work-group items cooperate to zero local histogram memory.
             auto grp = idx.get_group();
             for(size_t b = idx.get_local_id(0); b < binCount; b += idx.get_local_range(0)) {
@@ -173,13 +178,13 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
 
                 int coordination = 0;
 
-                // Skip calculation for unselected particles.
+                // Process only subset of selected particles if a selection has been specified.
                 if(!selectionAcc || selectionAcc[i]) {
                     size_t typeIndex1 = uniqueTypeIdsAcc ? uniqueTypeIdsAcc.index_of(particleTypeAcc[i]) : 0;
                     if(typeIndex1 < typeCount) {
-                        for(CutoffNeighborFinder::Query neighQuery(neighborListBuilder, i); !neighQuery.atEnd(); neighQuery.next()) {
+                        neighborAcc.visitNeighbors(i, [&](const SyclCutoffNeighborFinder::Neighbor& neighbor) {
                             coordination++;
-                            size_t rdfBin = std::min(static_cast<size_t>(std::sqrt(neighQuery.distanceSquared()) / rdfBinSize), binCount - 1);
+                            size_t rdfBin = std::min(static_cast<size_t>(neighbor.distance() / rdfBinSize), binCount - 1);
 
                             // Calculating complete or partial RDF?
                             if(!uniqueTypeIdsAcc) {
@@ -187,7 +192,7 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
                                     localHistogram[rdfBin][0]).fetch_add(1);
                             }
                             else {
-                                size_t typeIndex2 = uniqueTypeIdsAcc.index_of(particleTypeAcc[neighQuery.current()]);
+                                size_t typeIndex2 = uniqueTypeIdsAcc.index_of(particleTypeAcc[neighbor.neighborIndex()]);
                                 if(typeIndex2 < typeCount) {
                                     auto [lowerIndex, upperIndex] = std::minmax(typeIndex1, typeIndex2);
                                     size_t rdfIndex = (typeCount * lowerIndex) - ((lowerIndex - 1) * lowerIndex) / 2 + upperIndex - lowerIndex;
@@ -195,9 +200,11 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
                                         localHistogram[rdfBin][rdfIndex]).fetch_add(1);
                                 }
                             }
-                        }
+                        });
                     }
                 }
+
+                // Output coordination number.
                 coordinationAcc[i] = coordination;
             }
             sycl::group_barrier(grp);
@@ -212,6 +219,11 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
         });
     });
 #else
+    // Prepare the neighbor list.
+    CutoffNeighborFinder neighborListBuilder;
+    if(!neighborListBuilder.prepare(cutoff(), positions(), cell(), selection()))
+        return;
+
     BufferWriteAccess<int32_t, access_mode::discard_write> coordinationData(coordinationNumbers());
     BufferReadAccess<int32_t> particleTypeData(particleTypes());
     BufferReadAccess<SelectionIntType> selectionData(selection());

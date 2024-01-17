@@ -230,7 +230,7 @@ void CombineDatasetsModifierDelegate::mergeElementTypes(Property* property1, con
             // Access the type property array (just the sub-section of newly added entries).
             SyclBufferAccess<int32_t, access_mode::read_write> typeAcc(property1, property1->size() - property2->size(), property2->size(), cgh);
             // Access mapping table.
-            SyclFlatMapAccessor typeMapAcc(typeMapSycl, cgh);
+            auto typeMapAcc = typeMapSycl.get_access(cgh);
 
             OVITO_SYCL_PARALLEL_FOR(cgh, CombineDatasetsModifierDelegate_mergeElementTypes)(sycl::range(typeAcc.size()), [=](size_t i) {
                 // Use the mapping table to update type IDs in the property array.

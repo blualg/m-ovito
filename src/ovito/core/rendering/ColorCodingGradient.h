@@ -256,9 +256,11 @@ public:
     /// \return The color that visualizes the given scalar value.
     virtual ColorT<float> valueToColor(float t) override {
         OVITO_ASSERT(t >= 0.0f && t <= 1.0f);
-        int index = t * (sizeof(colormap_viridis_data) / sizeof(colormap_viridis_data[0]) - 1);
-        OVITO_ASSERT(index >= 0 && index < sizeof(colormap_viridis_data) / sizeof(colormap_viridis_data[0]));
-        return ColorT<float>(colormap_viridis_data[index][0], colormap_viridis_data[index][1], colormap_viridis_data[index][2]);
+        t *= (sizeof(colormap_viridis_data) / sizeof(colormap_viridis_data[0]) - 1);
+        auto t0 = std::floor(t);
+        auto c1 = colormap_viridis_data[(size_t)t0];
+        auto c2 = colormap_viridis_data[(size_t)std::ceil(t)];
+        return ColorT<float>(c1[0], c1[1], c1[2]) * (1.0f - (t - t0)) + ColorT<float>(c2[0], c2[1], c2[2]) * (t - t0);
     }
 };
 
@@ -287,9 +289,11 @@ public:
     /// \return The color that visualizes the given scalar value.
     virtual ColorT<float> valueToColor(float t) override {
         OVITO_ASSERT(t >= 0.0f && t <= 1.0f);
-        int index = t * (sizeof(colormap_magma_data) / sizeof(colormap_magma_data[0]) - 1);
-        OVITO_ASSERT(index >= 0 && index < sizeof(colormap_magma_data) / sizeof(colormap_magma_data[0]));
-        return ColorT<float>(colormap_magma_data[index][0], colormap_magma_data[index][1], colormap_magma_data[index][2]);
+        t *= (sizeof(colormap_magma_data) / sizeof(colormap_magma_data[0]) - 1);
+        auto t0 = std::floor(t);
+        auto c1 = colormap_magma_data[(size_t)t0];
+        auto c2 = colormap_magma_data[(size_t)std::ceil(t)];
+        return ColorT<float>(c1[0], c1[1], c1[2]) * (1.0f - (t - t0)) + ColorT<float>(c2[0], c2[1], c2[2]) * (t - t0);
     }
 };
 

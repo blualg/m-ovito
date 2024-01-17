@@ -143,12 +143,6 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
         // We now should have a valid execution context and a UserInterface object.
         OVITO_ASSERT(ExecutionContext::current().isValid());
 
-        // If the startup process gets canceled halfway through, shutdown the initial UI (typically the main window).
-        operation.finally([ui=ExecutionContext::current().ui().shared_from_this()](Task& task) {
-            if(task.isCanceled())
-                ui->shutdown();
-        });
-
         // Notify registered application services that application is starting up.
         for(const auto& service : applicationServices()) {
             // If any of the service callbacks returns false, abort the application startup process and quit.

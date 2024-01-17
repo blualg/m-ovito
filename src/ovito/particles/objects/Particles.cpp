@@ -796,7 +796,7 @@ PropertyPtr Particles::OOMetaClass::createStandardPropertyInternal(DataBuffer::B
                         ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                             SyclBufferAccess<int32_t, access_mode::read> typesAcc(typeProperty, cgh);
                             SyclBufferAccess<FloatType, access_mode::discard_write> massAcc(property, cgh);
-                            SyclFlatMapAccessor massMapAcc(massMap, cgh);
+                            auto massMapAcc = massMap.get_access(cgh);
                             OVITO_SYCL_PARALLEL_FOR(cgh, Particles_initMassProperty)(sycl::range(typeProperty->size()), [=](size_t i) {
                                 massAcc[i] = massMapAcc.get(typesAcc[i], 0.0);
                             });

@@ -460,6 +460,67 @@ public:
             });
         }
     }
+
+    /// Calculates the axis-aligned bounding box of a set of 1d, 2d, or 3d coordinates.
+    /// This method must only be called on a placeholder accessor.
+    auto boundingBox(const DataBuffer* selection = nullptr) const {
+        OVITO_STATIC_ASSERT(AccessMode == access_mode::read || AccessMode == access_mode::read_write || AccessMode == access_mode::discard_read_write);
+        OVITO_STATIC_ASSERT(!ComponentWise);
+        OVITO_ASSERT(accessor_type::empty() || accessor_type::is_placeholder());
+        OVITO_ASSERT(!selection || selection->size() == this->size());
+        OVITO_ASSERT(!selection || (selection->dataType() == DataBuffer::IntSelection && selection->componentCount() == 1));
+
+        using vec_type = std::remove_const_t<element_type>;
+        using component_type = std::conditional_t<std::is_integral_v<vec_type>, vec_type, typename vec_type::value_type>;
+        static constexpr size_t component_count = sizeof(vec_type) / sizeof(component_type);
+        using bbox_type = std::enable_if_t<component_count == 3, Box_3<component_type>>;
+
+        // Will receive the computed output.
+        bbox_type bb;
+
+        // If the range is empty, return an empty bounding box.
+        if(!accessor_type::empty()) {
+
+            // Helper function that creates multiple SYCL buffers, one per vector component.
+            auto make_buffer_array = []<std::size_t... Ns>(vec_type& v, std::index_sequence<Ns...>) {
+                return std::array<sycl::buffer<component_type>, component_count>{{(void(Ns), sycl::buffer<component_type>{&v[Ns],  1})... }};
+            };
+
+            // The SYCL buffers the results will be stored in.
+            auto mincBufs = make_buffer_array(bb.minc, std::make_index_sequence<component_count>());
+            auto maxcBufs = make_buffer_array(bb.maxc, std::make_index_sequence<component_count>());
+
+            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+                cgh.require(*this);
+                SyclBufferAccessTyped<SelectionIntType, access_mode::read> selectionAcc{selection, cgh};
+                if constexpr(component_count == 3) {
+#ifdef OVITO_USE_SYCL_ACPP
+                    auto minr0 = sycl::reduction(sycl::accessor{mincBufs[0], cgh, sycl::no_init}, std::numeric_limits<component_type>::max(), sycl::minimum<component_type>());
+                    auto minr1 = sycl::reduction(sycl::accessor{mincBufs[1], cgh, sycl::no_init}, std::numeric_limits<component_type>::max(), sycl::minimum<component_type>());
+                    auto minr2 = sycl::reduction(sycl::accessor{mincBufs[2], cgh, sycl::no_init}, std::numeric_limits<component_type>::max(), sycl::minimum<component_type>());
+                    auto maxr0 = sycl::reduction(sycl::accessor{maxcBufs[0], cgh, sycl::no_init}, std::numeric_limits<component_type>::lowest(), sycl::maximum<component_type>());
+                    auto maxr1 = sycl::reduction(sycl::accessor{maxcBufs[1], cgh, sycl::no_init}, std::numeric_limits<component_type>::lowest(), sycl::maximum<component_type>());
+                    auto maxr2 = sycl::reduction(sycl::accessor{maxcBufs[2], cgh, sycl::no_init}, std::numeric_limits<component_type>::lowest(), sycl::maximum<component_type>());
+#endif
+                    OVITO_SYCL_PARALLEL_FOR(cgh, SyclBufferAccess_boundingBox3)(sycl::range(size()), minr0, minr1, minr2, maxr0, maxr1, maxr2, [=, *this](size_t i, auto& minr0, auto& minr1, auto& minr2, auto& maxr0, auto& maxr1, auto& maxr2) {
+                        if(!selectionAcc || selectionAcc[i]) {
+                            const vec_type v = (*this)[i];
+                            minr0.combine(v[0]);
+                            minr1.combine(v[1]);
+                            minr2.combine(v[2]);
+                            maxr0.combine(v[0]);
+                            maxr1.combine(v[1]);
+                            maxr2.combine(v[2]);
+                        }
+                    });
+                }
+                else {
+                    OVITO_ASSERT(false); // Unsupported dimensionality.
+                }
+            });
+        }
+        return bb;
+    }
 };
 
 } // End of namespace detail.

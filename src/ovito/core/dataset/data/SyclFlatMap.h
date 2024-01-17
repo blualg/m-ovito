@@ -53,6 +53,7 @@ public:
             // Copy the contents of the provided container into our internal flat storage.
             sycl::host_accessor acc(*_storage, sycl::write_only, sycl::no_init);
             std::copy(container.begin(), container.end(), acc.begin());
+            OVITO_ASSERT(std::is_sorted(acc.begin(), acc.end(), [](const value_type& a, const value_type& b) { return key_compare{}(a.first, b.first); }));
         }
     }
 
@@ -80,6 +81,71 @@ public:
         return *_storage;
     }
 
+public:
+
+    /**
+     * An accessor to the SyclFlatMap container that that allows to perform map look-ups inside SYCL kernels.
+    */
+    class Accessor
+    {
+    public:
+
+        using container_type = SyclFlatMap;
+        using key_type = Key;
+        using mapped_type = T;
+        using value_type = std::pair<Key, T>;
+        using size_type = std::size_t;
+        using difference_type = std::ptrdiff_t;
+        using key_compare = Compare;
+        using accessor_type = sycl::accessor<value_type, 1, sycl::access_mode::read>;
+
+        // Constructor.
+        Accessor(const container_type& map, sycl::handler& commandGroupHandler)
+            : _accessor(!map.empty() ? accessor_type{const_cast<container_type&>(map).storage(), commandGroupHandler} : accessor_type{}) {}
+
+    public:
+
+        /// Returns whether this accessor is valid.
+        inline explicit operator bool() const noexcept { return _accessor.get_range()[0] != 0; }
+
+        /// Returns an iterator to the beginning of the map.
+        auto begin() const noexcept { return _accessor.cbegin(); }
+
+        /// Returns an iterator to the end of the map.
+        auto end() const noexcept { return _accessor.cend(); }
+
+        /// Finds an element with a specific key in the map.
+        auto find(const key_type& key) const noexcept {
+            auto first = begin();
+            auto last = end();
+            auto comp = key_compare{};
+            auto key_comp = [&](const value_type& value, const key_type& key) { return comp(value.first, key); };
+            first = std::lower_bound(first, last, key, key_comp);
+            if(first != last && comp(key, (*first).first))
+                first = last;
+            return first;
+        }
+
+        /// Looks up the value associated with the given key. If the key is not found, a default value is returned.
+        auto get(const key_type& key, const mapped_type defaultValue = mapped_type{}) const noexcept {
+            auto iter = find(key);
+            if(iter != end())
+                return (*iter).second;
+            else
+                return defaultValue;
+        }
+
+    private:
+
+        /// The internal SYCL buffer accessor.
+        accessor_type _accessor;
+    };
+
+    /// Creates an accessor that can be used inside a SYCL kernel to access the contents of the map.
+    Accessor get_access(sycl::handler& commandGroupHandler) const {
+        return Accessor(*this, commandGroupHandler);
+    }
+
 private:
 
     /// The data storage.
@@ -91,69 +157,6 @@ template<class Container>
 SyclFlatMap(const Container& container) -> SyclFlatMap<typename Container::key_type, typename Container::mapped_type, typename Container::key_compare>;
 template<typename Key, typename T>
 SyclFlatMap(const QMap<Key, T>& container) -> SyclFlatMap<Key, T>;
-
-/**
- * An accessor to the SyclFlatMap container that that allows to perform map look-ups inside SYCL kernels.
-*/
-template<typename Key, typename T, typename Compare = std::less<Key>>
-class SyclFlatMapAccessor
-{
-public:
-
-    using container_type = SyclFlatMap<Key, T, Compare>;
-    using key_type = Key;
-    using mapped_type = T;
-    using value_type = std::pair<Key, T>;
-    using size_type = std::size_t;
-    using difference_type = std::ptrdiff_t;
-    using key_compare = Compare;
-    using accessor_type = sycl::accessor<value_type, 1, sycl::access_mode::read>;
-
-    // Constructor.
-    SyclFlatMapAccessor(const container_type& map, sycl::handler& commandGroupHandler)
-        : _accessor(!map.empty() ? accessor_type{const_cast<container_type&>(map).storage(), commandGroupHandler} : accessor_type{}) {}
-
-public:
-
-    /// Returns whether this accessor is valid.
-    inline explicit operator bool() const noexcept { return _accessor.get_range()[0] != 0; }
-
-    /// Returns an iterator to the beginning of the map.
-    auto begin() const noexcept { return _accessor.cbegin(); }
-
-    /// Returns an iterator to the end of the map.
-    auto end() const noexcept { return _accessor.cend(); }
-
-    /// Finds an element with a specific key in the map.
-    auto find(const key_type& key) const noexcept {
-        auto first = begin();
-        auto last = end();
-        auto comp = key_compare{};
-        auto key_comp = [&](const value_type& value, const key_type& key) { return comp(value.first, key); };
-        first = std::lower_bound(first, last, key, key_comp);
-        if(first != last && comp(key, (*first).first))
-            first = last;
-        return first;
-    }
-
-    /// Looks up the value associated with the given key. If the key is not found, a default value is returned.
-    auto get(const key_type& key, const mapped_type defaultValue = mapped_type{}) const noexcept {
-        auto iter = find(key);
-        if(iter != end())
-            return (*iter).second;
-        else
-            return defaultValue;
-    }
-
-private:
-
-    /// The internal SYCL buffer accessor.
-    accessor_type _accessor;
-};
-
-// Class template deduction guide (CTAD):
-template<class Container>
-SyclFlatMapAccessor(const Container& map, sycl::handler& commandGroupHandler) -> SyclFlatMapAccessor<typename Container::key_type, typename Container::mapped_type, typename Container::key_compare>;
 
 }   // End of namespace
 

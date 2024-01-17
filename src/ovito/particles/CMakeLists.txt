@@ -119,6 +119,10 @@ IF(OVITO_BUILD_PLUGIN_STDMOD)
     )
 ENDIF()
 
+IF(OVITO_USE_SYCL)
+    LIST(APPEND SourceFiles util/SyclCutoffNeighborFinder.cpp)
+ENDIF()
+
 IF(NOT EMSCRIPTEN)
     LIST(APPEND SourceFiles
         modifier/properties/InteractiveMolecularDynamicsModifier.cpp
