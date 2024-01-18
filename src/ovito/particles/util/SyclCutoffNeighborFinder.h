@@ -188,6 +188,7 @@ public:
                     if(neighbor.distanceSquared <= _cutoffRadiusSquared && (neighbor.localNeighborIndex != localCenterParticleIndex || pbcShift != Vector3I::Zero())) {
                         visitor(std::as_const(neighbor));
                     }
+                    OVITO_ASSERT(_nextCellParticle[localNeighborIndex] == -1 || _nextCellParticle[localNeighborIndex] < localNeighborIndex);
                     localNeighborIndex = _nextCellParticle[localNeighborIndex];
                 }
             }

@@ -229,7 +229,50 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, BufferReadAccess<Poin
 
         // Put particle into its bin.
         size_t binIndex = binLocation[0] + binLocation[1]*binDim[0] + binLocation[2]*binDim[0]*binDim[1];
-        a.nextInBin = bins[binIndex].exchange(&a, std::memory_order_relaxed);
+
+        // Insert new particle into linked-list such that the list stays ordered. This is needed for a deterministic neighbor finder.
+        // Note: The particles in each cell are sorted in descending order to be compatible with previous OVITO versions, which used a serial algorithm to build the cell lists.
+        const NeighborListParticle* newParticle = &a;
+        for(;;) {
+            // Find linked-list position where to insert the new particle.
+            const NeighborListParticle* insertBefore;
+            const NeighborListParticle* insertAfter;
+            auto entry = bins[binIndex].load(std::memory_order_relaxed);
+            if(!entry) {
+                insertBefore = insertAfter = nullptr;
+            }
+            else if(newParticle > entry) {
+                insertBefore = entry;
+                insertAfter = nullptr;
+            }
+            else {
+                for(;;) {
+                    const NeighborListParticle* next = entry->nextInBin.load(std::memory_order_relaxed);
+                    OVITO_ASSERT(next < entry || next == nullptr);
+                    if(newParticle > next || next == nullptr) {
+                        insertBefore = next;
+                        insertAfter = entry;
+                        break;
+                    }
+                    entry = next;
+                }
+            }
+            a.nextInBin = insertBefore;
+            OVITO_ASSERT(newParticle > insertBefore || insertBefore == nullptr);
+            OVITO_ASSERT(newParticle < insertAfter || insertAfter == nullptr);
+
+            // Try to insert the new particle into the list using a CAS operation.
+            if(insertAfter == nullptr) {
+                if(bins[binIndex].compare_exchange_weak(insertBefore, newParticle, std::memory_order_release, std::memory_order_relaxed))
+                    break;
+            }
+            else {
+                if(const_cast<NeighborListParticle*>(insertAfter)->nextInBin.compare_exchange_weak(insertBefore, newParticle, std::memory_order_release, std::memory_order_relaxed))
+                    break;
+            }
+
+            // If the CAS operation did not succeed, start over and determine the new insertion location again.
+        }
     });
 }
 

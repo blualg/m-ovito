@@ -267,7 +267,55 @@ bool SyclCutoffNeighborFinder::prepare(FloatType cutoffRadius, const Property* p
 
                 // Insert the particle into the linked-list of its bin.
                 size_t binIndex = binLocation[0] + binLocation[1]*binDim[0] + binLocation[2]*binDim[0]*binDim[1];
-                nextCellParticleAcc[iout] = sycl::atomic_ref<int64_t, sycl::memory_order_relaxed, sycl::memory_scope::device>(firstCellParticleAcc[binIndex]).exchange((int64_t)iout);
+                int64_t newParticle = (int64_t)iout;
+#if 0
+                // Note: Insertion at the beginning of the linked-list leads to non-deterministic behavior of the neighbor finder.
+                nextCellParticleAcc[iout] = sycl::atomic_ref<int64_t, sycl::memory_order_relaxed, sycl::memory_scope::device>(firstCellParticleAcc[binIndex]).exchange(newParticle);
+#else
+                // Insert new particle into linked-list such that we get an ordered list. This is needed for a deterministic behavior of the neighbor finder.
+                // Note: The particles in each cell are sorted in descending order to be compatible with previous OVITO versions, which used a serial algorithm to build the cell lists.
+                for(;;) {
+                    // Find linked-list position where to insert the new particle.
+                    int64_t insertBefore, insertAfter;
+                    int64_t entry = sycl::atomic_ref<int64_t, sycl::memory_order_relaxed, sycl::memory_scope::device>(firstCellParticleAcc[binIndex]).load();
+                    if(entry == -1) {
+                        insertBefore = insertAfter = -1;
+                    }
+                    else if(newParticle > entry) {
+                        insertBefore = entry;
+                        insertAfter = -1;
+                    }
+                    else {
+                        for(;;) {
+                            int64_t next = sycl::atomic_ref<int64_t, sycl::memory_order_relaxed, sycl::memory_scope::device>(nextCellParticleAcc[entry]).load();
+                            OVITO_ASSERT(next < entry || next == -1);
+                            if(newParticle > next || next == -1) {
+                                insertBefore = next;
+                                insertAfter = entry;
+                                break;
+                            }
+                            entry = next;
+                        }
+                    }
+                    nextCellParticleAcc[iout] = insertBefore;
+                    OVITO_ASSERT(newParticle > insertBefore || insertBefore == -1);
+                    OVITO_ASSERT(newParticle < insertAfter || insertAfter == -1);
+
+                    // Try to insert the new particle into the list using a CAS operation.
+                    if(insertAfter == -1) {
+                        if(sycl::atomic_ref<int64_t, sycl::memory_order_relaxed, sycl::memory_scope::device>(firstCellParticleAcc[binIndex]).compare_exchange_weak(
+                                insertBefore, newParticle, sycl::memory_order_release, sycl::memory_order_relaxed))
+                            break;
+                    }
+                    else {
+                        if(sycl::atomic_ref<int64_t, sycl::memory_order_relaxed, sycl::memory_scope::device>(nextCellParticleAcc[insertAfter]).compare_exchange_weak(
+                                insertBefore, newParticle, sycl::memory_order_release, sycl::memory_order_relaxed))
+                            break;
+                    }
+
+                    // If the CAS operation did not succeed, start over and determine the new insertion location again.
+                }
+#endif
             });
         });
     }
