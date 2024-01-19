@@ -139,8 +139,8 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
 #ifdef OVITO_USE_SYCL
 
     // Prepare the neighbor finder.
-    SyclCutoffNeighborFinder neighborListFinder;
-    if(!neighborListFinder.prepare(cutoff(), positions(), cell(), selection()))
+    SyclCutoffNeighborFinder neighborFinder;
+    if(!neighborFinder.prepare(cutoff(), positions(), cell(), selection()))
         return;
 
     // Convert set of type IDs into a SYCL-compatible data structure.
@@ -155,7 +155,7 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
         SyclBufferAccess<int32_t, access_mode::read> particleTypeAcc(particleTypes(), cgh);
         SyclBufferAccess<SelectionIntType, access_mode::read> selectionAcc(selection(), cgh);
         SyclBufferAccess<int64_t*, access_mode::read_write> rdfAcc(rdfHistogram, cgh);
-        SyclCutoffNeighborFinder::Accessor neighborAcc(neighborListFinder, cgh);
+        SyclCutoffNeighborFinder::Accessor neighborAcc(neighborFinder, cgh);
         auto uniqueTypeIdsAcc = uniqueTypeIds.get_access(cgh);
         sycl::local_accessor<int, 2> localHistogram{sycl::range<2>{binCount, rdfCount}, cgh};
         parallel_kernel([=](sycl::nd_item<1> idx, size_t local_problem_size, size_t global_index_offset, auto&& was_canceled) {

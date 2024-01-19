@@ -184,10 +184,12 @@ public:
     }
 
     /// Builds a mapping from numeric IDs to type colors.
-    std::map<int, ColorG> typeColorMap() const {
+    std::map<int, ColorG> typeColorMap(bool onlyEnabledTypes = true) const {
         std::map<int, ColorG> m;
-        for(const ElementType* type : elementTypes())
-            m.insert({type->numericId(), type->color().toDataType<GraphicsFloatType>()});
+        for(const ElementType* type : elementTypes()) {
+            if(type->enabled() || !onlyEnabledTypes)
+                m.insert({type->numericId(), type->color().toDataType<GraphicsFloatType>()});
+        }
         return m;
     }
 

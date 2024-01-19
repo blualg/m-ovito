@@ -193,7 +193,8 @@ bool SyclCutoffNeighborFinder::prepare(FloatType cutoffRadius, const Property* p
     _stencil = stencilAcc.take();
 
     // If using only a subset of the input particles, compute mapping of global particle indices to local indices.
-    _packMapping = selection ? selection->computePackedMapping() : ConstDataBufferPtr{};
+    if(selection)
+        _packMapping = selection->computePackedMapping();
 
     // Determine the effective number of particles used by the neighbor finder.
     size_t numParticlesLocal = selection ? selection->nonzeroCount() : positions->size();
@@ -203,7 +204,9 @@ bool SyclCutoffNeighborFinder::prepare(FloatType cutoffRadius, const Property* p
         BufferFactory<int64_t> unpackMapping(numParticlesLocal);
         size_t globalIndex = 0;
         for(auto localIndex : BufferReadAccess<int64_t>{_packMapping}) {
-            unpackMapping[localIndex] = globalIndex++;
+            if(localIndex != -1)
+                unpackMapping[localIndex] = globalIndex;
+            globalIndex++;
         }
         _unpackMapping = unpackMapping.take();
     }

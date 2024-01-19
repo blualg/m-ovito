@@ -89,7 +89,8 @@ public:
         /// Returns whether a given structural type is enabled for identification.
         bool typeIdentificationEnabled(int typeId) const {
             OVITO_ASSERT(typeId >= 0);
-            if(typeId >= structures()->elementTypes().size()) return false;
+            if(typeId >= structures()->elementTypes().size())
+                return false;
             OVITO_ASSERT(structures()->elementTypes()[typeId]->numericId() == typeId);
             return structures()->elementTypes()[typeId]->enabled();
         }
@@ -100,6 +101,17 @@ public:
                 return _typeCounts[typeIndex];
             else
                 return 0;
+        }
+
+        /// Returns an array of boolean flags indicating for which structure types identification is enabled.
+        template<size_t N>
+        std::array<bool, N> typesToIdentify() const {
+            std::array<bool, N> arr;
+            arr.fill(false);
+            for(const ElementType* t : structures()->elementTypes())
+                if(t->enabled() && t->numericId() >= 0 && t->numericId() < N)
+                    arr[t->numericId()] = true;
+            return arr;
         }
 
     protected:

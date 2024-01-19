@@ -24,6 +24,7 @@
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/table/DataTable.h>
+#include <ovito/stdmod/modifiers/ColorByTypeModifier.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/app/Application.h>
@@ -128,32 +129,13 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
 
     // Finalize output property.
     PropertyPtr structureProperty = postProcessStructureTypes(request, structures());
-    BufferReadAccess<int32_t> structureData(structureProperty);
 
     // Add output property to the particles.
     particles->createProperty(structureProperty);
 
-    if(modifier->colorByType()) {
-
-        // Build structure type-to-color map.
-        std::vector<ColorG> structureTypeColors(modifier->structureTypes().size());
-        for(ElementType* stype : modifier->structureTypes()) {
-            OVITO_ASSERT(stype->numericId() >= 0);
-            if(stype->numericId() >= (int)structureTypeColors.size()) {
-                structureTypeColors.resize(stype->numericId() + 1);
-            }
-            structureTypeColors[stype->numericId()] = stype->color().toDataType<GraphicsFloatType>();
-        }
-
-        // Assign colors to particles based on their structure type.
-        BufferWriteAccess<ColorG, access_mode::discard_write> colorProperty = particles->createProperty(Particles::ColorProperty);
-        boost::transform(structureData, colorProperty.begin(), [&](int s) {
-            if(s >= 0 && s < structureTypeColors.size())
-                return structureTypeColors[s];
-            else
-                return ColorG(1,1,1);
-        });
-    }
+    // Color particles based on their structural type (if requested).
+    if(modifier->colorByType())
+        ColorByTypeModifier::colorByType(structureProperty, particles);
 
     // Count the number of particles of each identified type.
     int maxTypeId = 0;
@@ -162,11 +144,27 @@ void StructureIdentificationModifier::StructureIdentificationEngine::applyResult
         maxTypeId = std::max(maxTypeId, stype->numericId());
     }
     _typeCounts.resize(maxTypeId + 1);
+
+#ifdef OVITO_USE_SYCL
+    if(!_typeCounts.empty() && structureProperty->size() != 0) {
+        sycl::buffer<int64_t> typeCountsBuf(_typeCounts.data(), _typeCounts.size());
+        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            auto typeCountsAcc = typeCountsBuf.get_access(cgh, sycl::write_only);
+            SyclBufferAccess<int32_t, access_mode::read> typeAcc(structureProperty, cgh);
+            OVITO_SYCL_PARALLEL_FOR(cgh, StructureIdentificationModifier_countTypes)(sycl::range(typeAcc.size()), [=](size_t i) {
+                auto t = typeAcc[i];
+                if(t >= 0 && t < typeCountsAcc.size())
+                    sycl::atomic_ref<int64_t, sycl::memory_order::relaxed, sycl::memory_scope::device>(typeCountsAcc[t]).fetch_add((int64_t)1);
+            });
+        });
+    }
+#else
     boost::fill(_typeCounts, 0);
-    for(int t : structureData) {
+    for(auto t : BufferReadAccess<int32_t>(structureProperty)) {
         if(t >= 0 && t <= maxTypeId)
             _typeCounts[t]++;
     }
+#endif
 
     // Create the property arrays for the bar chart.
     PropertyPtr typeCounts = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxTypeId + 1, Property::Int64, 1, tr("Count"));

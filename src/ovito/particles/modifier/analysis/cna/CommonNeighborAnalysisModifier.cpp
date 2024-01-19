@@ -31,6 +31,10 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
+#ifdef OVITO_USE_SYCL
+    #include <ovito/core/utilities/concurrent/SyclParallelFor.h>
+    #include <ovito/particles/util/SyclCutoffNeighborFinder.h>
+#endif
 #include "CommonNeighborAnalysisModifier.h"
 
 namespace Ovito {
@@ -169,8 +173,33 @@ void CommonNeighborAnalysisModifier::IntervalCNAEngine::perform()
 void CommonNeighborAnalysisModifier::FixedCNAEngine::perform()
 {
     setProgressText(tr("Performing common neighbor analysis"));
+    const auto typesToIdentify = this->typesToIdentify<NUM_STRUCTURE_TYPES>();
 
-    // Prepare the neighbor list.
+#ifdef OVITO_USE_SYCL
+
+    // Prepare the neighbor finder.
+    SyclCutoffNeighborFinder neighborFinder;
+    if(!neighborFinder.prepare(_cutoff, positions(), cell(), selection()))
+        return;
+
+    // Fill in default output for unselected particles.
+    if(selection())
+        structures()->fill<int32_t>(OTHER);
+
+    // Analyze each particle.
+    syclParallelForWithProgress(neighborFinder.localParticleCount(), [&](sycl::handler& cgh, auto&& parallel_kernel) {
+        SyclBufferAccess<int32_t, access_mode::write> structuresAcc(structures(), cgh, selection() ? DataBuffer::Initialized : DataBuffer::Uninitialized);
+        SyclCutoffNeighborFinder::Accessor neighborAcc(neighborFinder, cgh);
+        parallel_kernel([=](sycl::nd_item<1> idx, size_t local_problem_size, size_t global_index_offset, auto&& was_canceled) {
+            for(size_t i_local = idx.get_global_id(0); i_local < local_problem_size && !was_canceled(); i_local += idx.get_global_range(0)) {
+                size_t i = i_local + global_index_offset;
+                structuresAcc[neighborAcc.mapToGlobalParticleIndex(i)] = determineStructureFixed(i, neighborAcc, typesToIdentify);
+            }
+        });
+    });
+
+#else
+    // Prepare the neighbor finder.
     CutoffNeighborFinder neighborListBuilder;
     if(!neighborListBuilder.prepare(_cutoff, positions(), cell(), selection()))
         return;
@@ -181,7 +210,7 @@ void CommonNeighborAnalysisModifier::FixedCNAEngine::perform()
     // Perform analysis on each particle.
     if(!selection()) {
         parallelForWithProgress(positions()->size(), [&](size_t index) {
-            output[index] = determineStructureFixed(neighborListBuilder, index);
+            output[index] = determineStructureFixed(index, neighborListBuilder, typesToIdentify);
         });
     }
     else {
@@ -189,11 +218,12 @@ void CommonNeighborAnalysisModifier::FixedCNAEngine::perform()
         parallelForWithProgress(positions()->size(), [&](size_t index) {
             // Skip particles that are not included in the analysis.
             if(selectionData[index])
-                output[index] = determineStructureFixed(neighborListBuilder, index);
+                output[index] = determineStructureFixed(index, neighborListBuilder, typesToIdentify);
             else
                 output[index] = OTHER;
         });
     }
+#endif
 
     // Release data that is no longer needed.
     releaseWorkingData();
@@ -451,9 +481,9 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::CN
         else if(numCommonNeighbors == 5 && numNeighborBonds == 5 && maxChainLength == 5) n555++;
         else break;
     }
-    if(n421 == 12 && typeIdentificationEnabled(FCC)) return FCC;
-    else if(n421 == 6 && n422 == 6 && typeIdentificationEnabled(HCP)) return HCP;
-    else if(n555 == 12 && typeIdentificationEnabled(ICO)) return ICO;
+    if(n421 == 12) return FCC;
+    else if(n421 == 6 && n422 == 6) return HCP;
+    else if(n555 == 12) return ICO;
     return OTHER;
 }
 
@@ -802,15 +832,29 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::CN
 * Determines the coordination structure of a single particle using the
 * conventional common neighbor analysis method.
 ******************************************************************************/
-CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::CNAEngine::determineStructureFixed(CutoffNeighborFinder& neighList, size_t particleIndex)
+template<class NeighborFinderType>
+CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::CNAEngine::determineStructureFixed(size_t particleIndex, const NeighborFinderType& neighFinder, const std::array<bool, NUM_STRUCTURE_TYPES>& typesToIdentify)
 {
     // Store neighbor vectors in a local array.
     int numNeighbors = 0;
     Vector3 neighborVectors[MAX_NEIGHBORS];
-    for(CutoffNeighborFinder::Query neighborQuery(neighList, particleIndex); !neighborQuery.atEnd(); neighborQuery.next()) {
-        if(numNeighbors == MAX_NEIGHBORS) return OTHER;
-        neighborVectors[numNeighbors] = neighborQuery.delta();
-        numNeighbors++;
+
+    if constexpr(std::is_same_v<NeighborFinderType, CutoffNeighborFinder>) {
+        for(CutoffNeighborFinder::Query neighborQuery(neighFinder, particleIndex); !neighborQuery.atEnd(); neighborQuery.next()) {
+            if(numNeighbors == MAX_NEIGHBORS) return OTHER;
+            neighborVectors[numNeighbors] = neighborQuery.delta();
+            numNeighbors++;
+        }
+    }
+    else if constexpr(std::is_same_v<NeighborFinderType, SyclCutoffNeighborFinder::Accessor>) {
+        neighFinder.visitNeighborsLocal(particleIndex, [&](const SyclCutoffNeighborFinder::Neighbor& neighbor) {
+            if(numNeighbors < MAX_NEIGHBORS)
+                neighborVectors[numNeighbors] = neighbor.delta;
+            numNeighbors++;
+        });
+    }
+    else {
+        OVITO_ASSERT(false);
     }
 
     if(numNeighbors != 12 && numNeighbors != 14)
@@ -820,22 +864,22 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::CN
     NeighborBondArray neighborArray;
     for(int ni1 = 0; ni1 < numNeighbors; ni1++) {
         neighborArray.setNeighborBond(ni1, ni1, false);
-        for(int ni2 = ni1+1; ni2 < numNeighbors; ni2++)
-            neighborArray.setNeighborBond(ni1, ni2, (neighborVectors[ni1] - neighborVectors[ni2]).squaredLength() <= neighList.cutoffRadiusSquared());
+        for(int ni2 = ni1 + 1; ni2 < numNeighbors; ni2++)
+            neighborArray.setNeighborBond(ni1, ni2, (neighborVectors[ni1] - neighborVectors[ni2]).squaredLength() <= neighFinder.cutoffRadiusSquared());
     }
 
+    StructureType type = OTHER;
     if(numNeighbors == 12) { // Detect FCC and HCP atoms each having 12 NN.
-        auto type = analyzeSmallSignature(neighborArray);
-        if (type != OTHER)
-            return type;
+        type = analyzeSmallSignature(neighborArray);
     }
-    else if(numNeighbors == 14 && typeIdentificationEnabled(BCC)) { // Detect BCC atoms having 14 NN (in 1st and 2nd shell).
-        auto type = analyzeLargeSignature(neighborArray);
-        if (type != OTHER)
-            return type;
+    else if(numNeighbors == 14) { // Detect BCC atoms having 14 NN (in 1st and 2nd shell).
+        type = analyzeLargeSignature(neighborArray);
     }
 
-    return OTHER;
+    if(typesToIdentify[type])
+        return type;
+    else
+        return OTHER;
 }
 
 /******************************************************************************

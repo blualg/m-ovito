@@ -152,13 +152,14 @@ private:
         StructureType determineStructureInterval(NearestNeighborFinder& neighList, size_t particleIndex);
 
         /// Determines the coordination structure of a single particle using the common neighbor analysis method.
-        StructureType determineStructureFixed(CutoffNeighborFinder& neighList, size_t particleIndex);
+        template<class NeighborFinderType>
+        static StructureType determineStructureFixed(size_t particleIndex, const NeighborFinderType& neighFinder, const std::array<bool, NUM_STRUCTURE_TYPES>& typesToIdentify);
 
         /// Determines the coordination signature for structures with 12 neighbors.
-        StructureType analyzeSmallSignature(NeighborBondArray& neighborArray);
+        static StructureType analyzeSmallSignature(NeighborBondArray& neighborArray);
 
         /// Determines the coordination signature for structures with 14 neighbors.
-        StructureType analyzeLargeSignature(NeighborBondArray& neighborArray);
+        static StructureType analyzeLargeSignature(NeighborBondArray& neighborArray);
     };
 
     /// Analysis engine that performs the conventional common neighbor analysis.

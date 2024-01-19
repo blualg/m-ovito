@@ -218,7 +218,7 @@ Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const 
     FloatType maxCutoff = uniformCutoff();
     // The list of per-type VdW radii.
     std::vector<FloatType> typeVdWRadiusMap;
-    // Flags indicating which type(s) are hydrogens.
+    // Flags indicating which particle type(s) are hydrogens.
     std::vector<bool> isHydrogenType;
 
     // Build table of pair-wise cutoff radii.
@@ -338,7 +338,7 @@ void CreateBondsModifier::BondsEngine::perform()
                 isHydrogenType1 = _isHydrogenType[type1];
         }
 
-        // Kernel called for each particle: Iterate over the particle's neighbors withing the cutoff range.
+        // Kernel called for each particle: Iterate over the particle's neighbors within the cutoff range.
         for(CutoffNeighborFinder::Query neighborQuery(neighborFinder, particleIndex); !neighborQuery.atEnd(); neighborQuery.next()) {
             if(neighborQuery.distanceSquared() < minCutoffSquared)
                 continue;
@@ -349,7 +349,7 @@ void CreateBondsModifier::BondsEngine::perform()
                 int type2 = particleTypesArray[neighborQuery.current()];
                 if(type2 < 0) continue;
                 if(type1 < (int)_typeVdWRadiusMap.size() && type2 < (int)_typeVdWRadiusMap.size()) {
-                    // Avoid generating H-H bonds.
+                    // Do not generate H-H bonds (if requested).
                     if(isHydrogenType1 && type2 < _isHydrogenType.size()) {
                         if(_isHydrogenType[type2])
                             continue;
@@ -383,7 +383,7 @@ void CreateBondsModifier::BondsEngine::perform()
     if(isCanceled())
         return;
 
-    // Insert bonds into Bonds.
+    // Insert bonds into Bonds container.
     _numGeneratedBonds = bonds()->addBonds(bondsList, nullptr, _particles.get(), {}, std::move(_bondType));
 
     // Release data that is no longer needed.

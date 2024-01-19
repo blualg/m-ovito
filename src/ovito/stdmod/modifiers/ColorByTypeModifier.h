@@ -56,6 +56,9 @@ public:
     /// Modifies the input data synchronously.
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
+    /// Implementation of the color-by-type algorithm.
+    static void colorByType(const Property* typeProperty, PropertyContainer* container, const ConstDataObjectPath& containerPath = {}, const Property* selection = nullptr);
+
 protected:
 
     /// Is called when the value of a property of this object has changed.

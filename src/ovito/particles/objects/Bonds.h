@@ -54,8 +54,8 @@ struct Bond
     /// and the PBC shift vector is reversed.
     Bond flipped() const { return Bond{ index2, index1, -pbcShift }; }
 
-    /// For a pair of bonds, A<->B and B<->A, determines whether this bond
-    /// counts as the 'odd' or the 'even' bond of the pair.
+    /// For a pair of directed bonds, A-->B and B-->A, determines whether this bond
+    /// counts as the 'odd' or the 'even' one.
     bool isOdd() const {
         // Is this bond connecting two different particles?
         // If yes, it's easy to determine whether it's an even or an odd bond.

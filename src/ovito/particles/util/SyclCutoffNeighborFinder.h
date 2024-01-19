@@ -39,9 +39,9 @@ public:
     class Accessor;
 
     struct Neighbor {
-        size_t localNeighborIndex;
         Vector3 delta;
         FloatType distanceSquared;
+        size_t localNeighborIndex;
         Vector3I pbcShift;
         const Accessor* _accessor;
 
@@ -112,7 +112,12 @@ public:
         template<typename Visitor>
         void visitNeighbors(size_t globalParticleIndex, Visitor&& visitor) const {
             // Map global particle index to local index and obtain position of central particle.
-            size_t localParticleIndex = mapToLocalParticleIndex(globalParticleIndex);
+            visitNeighborsLocal(mapToLocalParticleIndex(globalParticleIndex), std::forward<Visitor>(visitor));
+        }
+
+        /// Visits all neighbors of the given particle.
+        template<typename Visitor>
+        void visitNeighborsLocal(size_t localParticleIndex, Visitor&& visitor) const {
             const Point3& centerPosition = _positions[localParticleIndex];
             // Delegate to implementation method.
             visitNeighborsImpl(localParticleIndex, centerPosition, std::forward<Visitor>(visitor));
@@ -132,14 +137,18 @@ public:
 
         /// Maps an index from the global particles list to the local list used by the neighbor finder.
         size_t mapToLocalParticleIndex(size_t globalParticleIndex) const {
-            OVITO_ASSERT(!_packMapping || _packMapping[globalParticleIndex] >= 0);
+            OVITO_ASSERT(!_packMapping || (globalParticleIndex < _packMapping.size() && _packMapping[globalParticleIndex] >= 0));
             return _packMapping ? static_cast<size_t>(_packMapping[globalParticleIndex]) : globalParticleIndex;
         }
 
         /// Maps an index from the local particles list to the global list.
         size_t mapToGlobalParticleIndex(size_t localParticleIndex) const {
+            OVITO_ASSERT(!_unpackMapping || localParticleIndex < _unpackMapping.size());
             return _unpackMapping ? static_cast<size_t>(_unpackMapping[localParticleIndex]) : localParticleIndex;
         }
+
+        /// Returns the square of the cutoff radius set via prepare().
+        FloatType cutoffRadiusSquared() const { return _cutoffRadiusSquared; }
 
     private:
 
@@ -150,7 +159,7 @@ public:
             // Determine which bin cell the center is located in.
             Point3I centerBin;
             for(size_t k = 0; k < 3; k++) {
-                centerBin[k] = qBound(0, (int)std::floor(_reciprocalBinCell.prodrow(center, k)), _binDim[k] - 1);
+                centerBin[k] = std::clamp((int)std::floor(_reciprocalBinCell.prodrow(center, k)), 0, _binDim[k] - 1);
             }
 
             // Visit all adjacent cell as given by the precomputed stencil.

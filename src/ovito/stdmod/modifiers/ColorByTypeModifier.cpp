@@ -114,13 +114,13 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     container->verifyIntegrity();
 
     // Get the input property.
-    const Property* typePropertyObject = sourceProperty().findInContainer(container);
-    if(!typePropertyObject)
+    const Property* typeProperty = sourceProperty().findInContainer(container);
+    if(!typeProperty)
         throw Exception(tr("The selected input property '%1' is not present.").arg(sourceProperty().name()));
-    if(typePropertyObject->componentCount() != 1)
-        throw Exception(tr("The input property '%1' has the wrong number of components. Must be a scalar property.").arg(typePropertyObject->name()));
-    if(typePropertyObject->dataType() != Property::Int32)
-        throw Exception(tr("The input property '%1' has the wrong data type. Must be a 32-bit integer property.").arg(typePropertyObject->name()));
+    if(typeProperty->componentCount() != 1)
+        throw Exception(tr("The input property '%1' has the wrong number of components. Must be a scalar property.").arg(typeProperty->name()));
+    if(typeProperty->dataType() != Property::Int32)
+        throw Exception(tr("The input property '%1' has the wrong data type. Must be a 32-bit integer property.").arg(typeProperty->name()));
 
     // Get the selection property if enabled by the user.
     ConstPropertyPtr selection;
@@ -134,18 +134,27 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
         }
     }
 
+    // Call implementation.
+    colorByType(typeProperty, container, objectPath, selection);
+}
+
+/******************************************************************************
+* Implementation of the color-by-type algorithm.
+******************************************************************************/
+void ColorByTypeModifier::colorByType(const Property* typeProperty, PropertyContainer* container, const ConstDataObjectPath& containerPath, const Property* selection)
+{
 #ifdef OVITO_USE_SYCL
     // Create the color output property.
-    Property* colorProperty = container->createProperty(selection ? DataBuffer::Initialized : DataBuffer::Uninitialized, Property::GenericColorProperty, objectPath);
+    Property* colorProperty = container->createProperty(selection ? DataBuffer::Initialized : DataBuffer::Uninitialized, Property::GenericColorProperty, containerPath);
 
     if(colorProperty->size() != 0) {
         // Create type-color lookup table and convert it into a SYCL-compatible data structure.
-        const SyclFlatMap colorMap = typePropertyObject->typeColorMap();
+        const SyclFlatMap colorMap = typeProperty->typeColorMap();
         if(!colorMap.empty()) {
             ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
 
                 // Access the input types.
-                SyclBufferAccess<int32_t, access_mode::read> inputAcc(typePropertyObject, cgh);
+                SyclBufferAccess<int32_t, access_mode::read> inputAcc(typeProperty, cgh);
                 // Access selection flags array (optional).
                 SyclBufferAccess<SelectionIntType, access_mode::read> selectionAcc(selection, cgh);
                 // Access output color array.
@@ -153,11 +162,18 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
                 // Access color lookup table.
                 auto colorMapAcc = colorMap.get_access(cgh);
 
-                OVITO_SYCL_PARALLEL_FOR(cgh, ColorByTypeModifier_kernel)(sycl::range(typePropertyObject->size()), [=](size_t i) {
-                    if(selectionAcc.empty() || selectionAcc[i]) {
+                if(selectionAcc) {
+                    OVITO_SYCL_PARALLEL_FOR(cgh, ColorByTypeModifier_kernel_sel)(sycl::range(typeProperty->size()), [=](size_t i) {
+                        if(selectionAcc[i]) {
+                            outputAcc[i] = colorMapAcc.get(inputAcc[i], ColorG(1,1,1));
+                        }
+                    });
+                }
+                else {
+                    OVITO_SYCL_PARALLEL_FOR(cgh, ColorByTypeModifier_kernel)(sycl::range(typeProperty->size()), [=](size_t i) {
                         outputAcc[i] = colorMapAcc.get(inputAcc[i], ColorG(1,1,1));
-                    }
-                });
+                    });
+                }
             });
         }
         else {
@@ -166,7 +182,7 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     }
 #else
     // Access the type array.
-    BufferReadAccess<int32_t> typeProperty = typePropertyObject;
+    BufferReadAccess<int32_t> typeAcc = typeProperty;
 
     // Create the color output property.
     BufferWriteAccess<ColorG, access_mode::write> colorProperty(
@@ -177,7 +193,7 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
     BufferReadAccess<SelectionIntType> selectionAcc(selection.get());
 
     // Create type-color lookup table.
-    const std::map<int, ColorG> colorMap = typePropertyObject->typeColorMap();
+    const std::map<int, ColorG> colorMap = typeProperty->typeColorMap();
 
     // Fill color property.
     size_t count = colorProperty.size();
@@ -185,7 +201,7 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
         if(selectionAcc && !selectionAcc[i])
             continue;
 
-        auto c = colorMap.find(typeProperty[i]);
+        auto c = colorMap.find(typeAcc[i]);
         if(c == colorMap.end())
             colorProperty[i] = ColorG(1,1,1);
         else
