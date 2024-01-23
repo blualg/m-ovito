@@ -324,7 +324,8 @@ void VideoEncoder::openFile(const QString& filename, int width, int height, floa
         inputs->pad_idx = 0;
         inputs->next = nullptr;
 
-        static constexpr char filter_desc[] = "format=pix_fmts=rgb24,split [a][b];[a]palettegen[p];[b][p]paletteuse";
+        // bgra preserves alpha channel during palette generation.
+        static constexpr char filter_desc[] = "format=pix_fmts=bgra,split [a][b];[a]palettegen[p];[b][p]paletteuse";
 
         // GIF has possible output of PAL8.
         if((errCode = ::avfilter_graph_parse_ptr(_filterGraph.get(), filter_desc, &inputs, &outputs, nullptr)) < 0)
@@ -475,7 +476,10 @@ void VideoEncoder::writeFrame(const QImage& image)
     int videoHeight = _codecContext->height;
 
     // Make sure bit format of image is correct.
-    QImage finalImage = image.convertToFormat(QImage::Format_RGB32);
+    // ARGB (0xAARRGGBB) is used for gifs to allow for a transparent background. Based on testing ffmpeg seems ot expect non-premultiplied
+    // alpha. Other video formats get a default black background (RGB32 -> 0xffRRGGBB)
+    QImage finalImage = (_codecContext->codec_id == AV_CODEC_ID_GIF) ? image.convertToFormat(QImage::Format_ARGB32)
+                                                                     : image.convertToFormat(QImage::Format_RGB32);
 
     for(int frameCopy = 0; frameCopy < _frameDuplication; frameCopy++) {
 
