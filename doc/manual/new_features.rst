@@ -95,7 +95,7 @@ and generating the necessary job scripts for you.
 * :ref:`file_formats.input.lammps_data`: Tolerate more than one empty line after file section titles
 * :ref:`file_formats.input.xyz`: Automatic detection of reduced coordinates turned off by default, because extended XYZ files with reduced coordinates are very rare
 * |ovito-python| Some Python functions now return true NumPy arrays instead of Python tuples
-* |ovito-python| New Python function :py:meth:`DislocationLine.point_along_line() <ovito.data.DislocationLine.point_along_line>`
+* |ovito-python| New Python function :py:meth:`DislocatioNetwork.Line.point_along_line() <ovito.data.DislocationNetwork.Line.point_along_line>`
 * |ovito-python| New parameter trait types :py:class:`ovito.traits.FilePath`, :py:class:`~ovito.traits.Vector2`, and :py:class:`~ovito.traits.Vector3`
 * |ovito-python| Renamed existing parameter traits types :py:class:`ovito.traits.OvitoObject` and :py:class:`ovito.traits.Color`
 * |ovito-python| Restricted :py:meth:`ovito.Scene.load` to session state files written by *OVITO Pro* or the Python module
