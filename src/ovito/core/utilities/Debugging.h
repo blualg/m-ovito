@@ -29,18 +29,26 @@ namespace Ovito {
 * This macro performs a runtime-time assertion check.
 ******************************************************************************/
 #ifdef OVITO_DEBUG
-#define OVITO_ASSERT(condition) Q_ASSERT(condition)
+    #ifndef __SYCL_DEVICE_ONLY__
+        #define OVITO_ASSERT(condition) Q_ASSERT(condition)
+    #else
+        #define OVITO_ASSERT(condition) assert(condition)
+    #endif
 #else
-#define OVITO_ASSERT(condition)
+    #define OVITO_ASSERT(condition)
 #endif
 
 /******************************************************************************
 * This macro performs a runtime-time assertion check.
 ******************************************************************************/
 #ifdef OVITO_DEBUG
-#define OVITO_ASSERT_MSG(condition, where, what) Q_ASSERT_X(condition, where, what)
+    #ifndef __SYCL_DEVICE_ONLY__
+        #define OVITO_ASSERT_MSG(condition, where, what) Q_ASSERT_X(condition, where, what)
+    #else
+        #define OVITO_ASSERT_MSG(condition, where, what) OVITO_ASSERT(condition)
+    #endif
 #else
-#define OVITO_ASSERT_MSG(condition, where, what)
+    #define OVITO_ASSERT_MSG(condition, where, what)
 #endif
 
 /******************************************************************************

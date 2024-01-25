@@ -242,9 +242,9 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
                     SyclBufferAccess<SelectionIntType, access_mode::discard_write> selectionOutAcc(outputSelection, cgh);
                     SyclBufferAccess<SelectionIntType, access_mode::read> selectionAcc(inputSelection, cgh);
 #ifdef OVITO_USE_SYCL_ACPP
-                    auto reduction = sycl::reduction(sycl::accessor{numSelectedBuf, cgh, sycl::no_init}, 0, sycl::plus<size_t>());
+                    auto reduction = sycl::reduction(sycl::accessor{numSelectedBuf, cgh, sycl::no_init}, size_t{0}, sycl::plus<size_t>());
 #else
-                    auto reduction = sycl::reduction(numSelectedBuf, cgh, 0, sycl::plus<size_t>(), sycl::reduction::initialize_to_identity);
+                    auto reduction = sycl::reduction(numSelectedBuf, cgh, size_t{0}, sycl::plus<size_t>(), sycl::property::reduction::initialize_to_identity{});
 #endif
                     OVITO_SYCL_PARALLEL_FOR(cgh, HistogramModifier_kernel_selection)(sycl::range(inputAcc.size()), reduction, [=](size_t i, auto& red) {
                         if(!selectionAcc || selectionAcc[i]) {

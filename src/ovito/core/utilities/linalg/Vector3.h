@@ -385,6 +385,13 @@ Q_DECL_CONSTEXPR Vector_3<T> operator*(const Vector_3<T>& a, int s) {
     return Vector_3<T>( a.x() * s, a.y() * s, a.z() * s );
 }
 
+/// \brief Computes the product of a vector and a boolean value.
+/// \relates Vector_3
+template<typename T>
+Q_DECL_CONSTEXPR Vector_3<T> operator*(const Vector_3<T>& a, bool s) {
+    return Vector_3<T>( a.x() * s, a.y() * s, a.z() * s );
+}
+
 /// \brief Computes the product of a scalar value and a vector.
 /// \relates Vector_3
 template<typename T>
@@ -404,6 +411,13 @@ Q_DECL_CONSTEXPR Vector_3<T> operator*(double s, const Vector_3<T>& a) {
 template<typename T>
 Q_DECL_CONSTEXPR Vector_3<T> operator*(int s, const Vector_3<T>& a) {
     return Vector_3<T>( a.x() * s, a.y() * s, a.z() * s );
+}
+
+/// \brief Computes the product of a boolean value and a vector.
+/// \relates Vector_3
+template<typename T>
+Q_DECL_CONSTEXPR Vector_3<T> operator*(bool s, const Vector_3<T>& a) {
+    return Vector_3<T>( a.x() * s, a.y() * s, a.z() * s);
 }
 
 /// \brief Computes the division of a vector by a scalar value.

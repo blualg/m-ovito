@@ -246,7 +246,9 @@ CutoffNeighborFinder::Query::Query(const CutoffNeighborFinder& finder, size_t pa
 
     // Determine the bin the central particle is located in.
     for(size_t k = 0; k < 3; k++) {
-        _centerBin[k] = qBound(0, (int)std::floor(_builder.reciprocalBinCell.prodrow(_center, k)), _builder.binDim[k] - 1);
+        FloatType rc = _builder.reciprocalBinCell.prodrow(_center, k);
+        OVITO_ASSERT(!_pbcFlags[k] || (rc >= -FLOATTYPE_EPSILON && rc <= _builder.binDim[k]+FLOATTYPE_EPSILON));
+        _centerBin[k] = qBound(0, (int)std::floor(rc), _builder.binDim[k] - 1);
     }
 
     next();
