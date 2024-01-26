@@ -168,12 +168,12 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
         a.x() = simCell.column(0).length();
         a.y() = a.z() = 0;
         b.x() = simCell.column(1).dot(simCell.column(0)) / a.x();
-        b.y() = sqrt(simCell.column(1).squaredLength() - b.x()*b.x());
+        b.y() = std::sqrt(simCell.column(1).squaredLength() - b.x()*b.x());
         b.z() = 0;
         c.x() = simCell.column(2).dot(simCell.column(0)) / a.x();
         c.y() = (simCell.column(1).dot(simCell.column(2)) - b.x()*c.x()) / b.y();
-        c.z() = sqrt(simCell.column(2).squaredLength() - c.x()*c.x() - c.y()*c.y());
-        AffineTransformation transformation = AffineTransformation(a,b,c,simCell.translation()) * simCell.inverse();
+        c.z() = std::sqrt(simCell.column(2).squaredLength() - c.x()*c.x() - c.y()*c.y());
+        const AffineTransformation transformation = AffineTransformation(a,b,c,simCell.translation()) * simCell.inverse();
 
         // Apply the transformation to the particle coordinates.
         for(Point3& p : BufferWriteAccess<Point3, access_mode::read_write>(particles->expectMutableProperty(Particles::PositionProperty))) {
@@ -221,7 +221,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
         textStream() << impropers->elementCount() << " impropers\n";
 
     // Given an OVITO typed property, determines which and how many LAMMPS types are being output.
-    auto generateTypeMapping = [&](const Property* typeProperty) {
+    auto generateTypeMapping = [&](size_t nelements, const Property* typeProperty) {
         std::vector<const ElementType*> typeList;
         std::map<int, int> typeMapping;
         if(typeProperty) {
@@ -241,33 +241,35 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
                 }
             }
         }
-        if(typeList.empty()) {
-            typeList.push_back(nullptr);
-        }
-        if(typeProperty && typeProperty->size() > 0) {
-            BufferReadAccess<int32_t> typeValuesArray(typeProperty);;
-            if(generateConsecutiveTypeIds()) {
-                boost::for_each(typeValuesArray, [&](auto id) {
-                    if(typeMapping.find(id) == typeMapping.end()) {
-                        typeMapping.insert(std::make_pair(id, typeMapping.size() + 1));
-                        typeList.push_back(nullptr);
-                    }
-                });
+        if(nelements != 0) {
+            if(typeList.empty()) {
+                typeList.push_back(nullptr);
             }
-            else {
-                auto [minel, maxel] = std::minmax_element(typeValuesArray.cbegin(), typeValuesArray.cend());
-                if(*minel <= 0) {
-                    throw Exception(tr("Property '%1' contains non-positive element %2. LAMMPS supports only positive IDs. Activate the 'Generate consecutive type IDs' option during export to avoid this error.")
-                        .arg(typeProperty->name()).arg(*minel));
+            if(typeProperty) {
+                BufferReadAccess<int32_t> typeValuesArray(typeProperty);;
+                if(generateConsecutiveTypeIds()) {
+                    boost::for_each(typeValuesArray, [&](auto id) {
+                        if(typeMapping.find(id) == typeMapping.end()) {
+                            typeMapping.insert(std::make_pair(id, typeMapping.size() + 1));
+                            typeList.push_back(nullptr);
+                        }
+                    });
                 }
-                if(*maxel > typeList.size())
-                    typeList.resize(*maxel);
+                else {
+                    auto [minel, maxel] = std::minmax_element(typeValuesArray.cbegin(), typeValuesArray.cend());
+                    if(*minel <= 0) {
+                        throw Exception(tr("Property '%1' contains non-positive element %2. LAMMPS supports only positive IDs. Activate the 'Generate consecutive type IDs' option during export to avoid this error.")
+                            .arg(typeProperty->name()).arg(*minel));
+                    }
+                    if(*maxel > typeList.size())
+                        typeList.resize(*maxel);
+                }
             }
         }
         return std::make_tuple(std::move(typeList), std::move(typeMapping));
     };
 
-    auto [atomTypeList, atomTypeMapping] = generateTypeMapping(particleTypeProperty);
+    auto [atomTypeList, atomTypeMapping] = generateTypeMapping(particles->elementCount(), particleTypeProperty);
     textStream() << atomTypeList.size() << " atom types\n";
 
     // Substitude the original IDs stored in the 'Particle Type' property array.
@@ -280,19 +282,19 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
         particleTypeProperty = static_object_cast<Property>(typeArray.buffer());
     }
 
-    auto [bondTypeList, bondTypeMapping] = generateTypeMapping(bondTypeProperty);
+    auto [bondTypeList, bondTypeMapping] = generateTypeMapping(bonds->elementCount(), bondTypeProperty);
     if(writeBonds)
         textStream() << bondTypeList.size() << " bond types\n";
 
-    auto [angleTypeList, angleTypeMapping] = generateTypeMapping(angleTypeProperty);
+    auto [angleTypeList, angleTypeMapping] = generateTypeMapping(angles->elementCount(), angleTypeProperty);
     if(writeAngles)
         textStream() << angleTypeList.size() << " angle types\n";
 
-    auto [dihedralTypeList, dihedralTypeMapping] = generateTypeMapping(dihedralTypeProperty);
+    auto [dihedralTypeList, dihedralTypeMapping] = generateTypeMapping(dihedrals->elementCount(), dihedralTypeProperty);
     if(writeDihedrals)
         textStream() << dihedralTypeList.size() << " dihedral types\n";
 
-    auto [improperTypeList, improperTypeMapping] = generateTypeMapping(improperTypeProperty);
+    auto [improperTypeList, improperTypeMapping] = generateTypeMapping(impropers->elementCount(), improperTypeProperty);
     if(writeImpropers)
         textStream() << improperTypeList.size() << " improper types\n";
 
@@ -464,7 +466,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     if(writeBonds) {
         textStream() << "\nBonds\n\n";
 
-        BufferReadAccess<int32_t> bondTypeArray(bondTypeProperty);;
+        BufferReadAccess<int32_t> bondTypeArray(bondTypeProperty);
         size_t bondIndex = 1;
         for(size_t i = 0; i < bondTopologyProperty.size(); i++) {
             size_t atomIndex1 = bondTopologyProperty[i][0];
@@ -490,7 +492,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     if(writeAngles) {
         textStream() << "\nAngles\n\n";
 
-        BufferReadAccess<int32_t> angleTypeArray(angleTypeProperty);;
+        BufferReadAccess<int32_t> angleTypeArray(angleTypeProperty);
         size_t angleIndex = 1;
         for(size_t i = 0; i < angleTopologyProperty.size(); i++) {
             size_t atomIndex1 = angleTopologyProperty[i][0];
@@ -519,7 +521,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     if(writeDihedrals) {
         textStream() << "\nDihedrals\n\n";
 
-        BufferReadAccess<int32_t> dihedralTypeArray(dihedralTypeProperty);;
+        BufferReadAccess<int32_t> dihedralTypeArray(dihedralTypeProperty);
         size_t dihedralIndex = 1;
         for(size_t i = 0; i < dihedralTopologyProperty.size(); i++) {
             size_t atomIndex1 = dihedralTopologyProperty[i][0];
@@ -551,7 +553,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     if(writeImpropers) {
         textStream() << "\nImpropers\n\n";
 
-        BufferReadAccess<int32_t> improperTypeArray(improperTypeProperty);;
+        BufferReadAccess<int32_t> improperTypeArray(improperTypeProperty);
         size_t improperIndex = 1;
         for(size_t i = 0; i < improperTopologyProperty.size(); i++) {
             size_t atomIndex1 = improperTopologyProperty[i][0];

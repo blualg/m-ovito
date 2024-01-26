@@ -14,7 +14,9 @@ workflows. While you interactively adjust the parameters of modifiers, the code 
 produces corresponding script statements for OVITO's Python programming interface.
 The generated source code may be saved to disk, further customized if desired,
 and then run using the :ref:`embedded Python script interpreter <ovitos_interpreter>` :command:`ovitos` or any regular Python interpreter after installing the
-``ovito`` Python module (see `downloads <https://www.ovito.org/python-downloads/>`__).
+``ovito`` Python module (see :ref:`here <installation>`).
+
+  **Video showing the Python code generator of OVITO Pro:** https://youtu.be/sAGpCIBlWyk
 
 The Python code generator is invoked by selecting :menuselection:`File --> Generate Python Script` from the
 menu. The code generator window displays the dynamically generated
