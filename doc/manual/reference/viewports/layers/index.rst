@@ -40,6 +40,11 @@ Layer type                                                       Description
 :ref:`Text label <viewport_layers.text_label>`                   Renders some text, which may be used to display dynamically computed quantities
 ================================================================ ==================================
 
+More viewport layer types have been contributed by the community and can be installed as extensions in OVITO Pro:
+
+  * https://github.com/ovito-org/DataTablePlotOverlay.git
+  * https://github.com/ovito-org/DistancesAndAnglesOverlay
+
 .. seealso::
 
    * :py:class:`ovito.vis.ViewportOverlay` (Python API)

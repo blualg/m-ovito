@@ -443,22 +443,22 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             }
         }
         else if(keyword.startsWith("Pair Coeffs")) {
-            for(int i = 0; i < natomtypes; i++) stream.readLine();
+            for(int i = 0; i < natomtypes; i++) stream.readNonEmptyLine();
         }
         else if(keyword.startsWith("PairIJ Coeffs")) {
-            for(int i = 0; i < natomtypes*(natomtypes+1)/2; i++) stream.readLine();
+            for(int i = 0; i < natomtypes*(natomtypes+1)/2; i++) stream.readNonEmptyLine();
         }
         else if(keyword.startsWith("Bond Coeffs")) {
-            for(int i = 0; i < nbondtypes; i++) stream.readLine();
+            for(int i = 0; i < nbondtypes; i++) stream.readNonEmptyLine();
         }
         else if(keyword.startsWith("Angle Coeffs") || keyword.startsWith("BondAngle Coeffs") || keyword.startsWith("BondBond Coeffs")) {
-            for(int i = 0; i < nangletypes; i++) stream.readLine();
+            for(int i = 0; i < nangletypes; i++) stream.readNonEmptyLine();
         }
         else if(keyword.startsWith("Dihedral Coeffs") || keyword.startsWith("EndBondTorsion Coeffs") || keyword.startsWith("BondBond13 Coeffs") || keyword.startsWith("MiddleBondTorsion Coeffs") || keyword.startsWith("AngleAngleTorsion Coeffs") || keyword.startsWith("AngleTorsion Coeffs")) {
-            for(int i = 0; i < ndihedraltypes; i++) stream.readLine();
+            for(int i = 0; i < ndihedraltypes; i++) stream.readNonEmptyLine();
         }
         else if(keyword.startsWith("Improper Coeffs") || keyword.startsWith("AngleAngle Coeffs")) {
-            for(int i = 0; i < nimpropertypes; i++) stream.readLine();
+            for(int i = 0; i < nimpropertypes; i++) stream.readNonEmptyLine();
         }
         else if(keyword.startsWith("Bonds")) {
 

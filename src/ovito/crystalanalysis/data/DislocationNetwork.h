@@ -149,7 +149,7 @@ struct DislocationSegment
     ClusterVector burgersVector;
 
     /// The two nodes that delimit the segment.
-    DislocationNode* nodes[2];
+    std::array<DislocationNode*, 2> nodes;
 
     /// The segment that replaces this discarded segment if the two have been merged into one segment.
     DislocationSegment* replacedWith = nullptr;

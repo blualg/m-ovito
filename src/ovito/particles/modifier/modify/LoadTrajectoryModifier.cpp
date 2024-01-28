@@ -142,6 +142,14 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
     Particles* particles = state.expectMutableObject<Particles>();
     particles->verifyIntegrity();
 
+    // If the static topology dataset has PBC image flags but the trajectory does not,
+    // remove the image flags property to make the Unwrap Trajectories modifier work correctly.
+    // See https://matsci.org/t/load-trajectory-does-not-update-image-flags/
+    if(!trajectoryParticles->getProperty(Particles::PeriodicImageProperty)) {
+        if(const Property* pbcImageProperty = particles->getProperty(Particles::PeriodicImageProperty))
+            particles->removeProperty(pbcImageProperty);
+    }
+
     if(trajectoryParticles->elementCount() != 0) {
 
         // Build particle-to-particle index map.

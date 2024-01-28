@@ -18,3 +18,4 @@ Advanced topics
   code_generation
   remote_rendering
   scale_bar
+  data_plot

@@ -5,13 +5,13 @@ Changelog
 =========
 
 ----------------------------
-Version 3.10.1 (08-Jan-2024)
+Version 3.10.1 (09-Jan-2024)
 ----------------------------
 
 - Added support for the LAMMPS *dump yaml* file format to the :ref:`file_formats.input.lammps_dump`.
-- :ref:`particles.modifiers.show_periodic_images` modifier: Implicitly unwrap & wrap particle coordinates when particle property ``Periodic Image`` is present to yield correct molecule identifiers if a molecule's atoms have varying image flags.
-- Fix: Trajectory frame 0 gets loaded twice unnecessarily.
-- |ovito-python| New Python properties :py:attr:`Pipeline.translation <ovito.pipeline.Pipeline.translation>` and :py:attr:`Pipeline.rotation <ovito.pipeline.Pipeline.rotation>`, which control the placement of the pipeline's visual output in the 3d scene.
+- :ref:`particles.modifiers.show_periodic_images` modifier: Use particle property ``Periodic Image`` if present to yield correct replicated molecule identifiers.
+- Fix: Frame 0 of LAMMPS dump, xyz and pdb trajectory files gets loaded a second time unnecessarily.
+- |ovito-python| New Python properties :py:attr:`Pipeline.translation <ovito.pipeline.Pipeline.translation>` and :py:attr:`Pipeline.rotation <ovito.pipeline.Pipeline.rotation>`, which control the placement of a pipeline's visual output in the 3d scene.
 - |ovito-python| Fixed offscreen font rendering in standalone Python module on (headless) Linux platform.
 
 ----------------------------
@@ -95,7 +95,7 @@ and generating the necessary job scripts for you.
 * :ref:`file_formats.input.lammps_data`: Tolerate more than one empty line after file section titles
 * :ref:`file_formats.input.xyz`: Automatic detection of reduced coordinates turned off by default, because extended XYZ files with reduced coordinates are very rare
 * |ovito-python| Some Python functions now return true NumPy arrays instead of Python tuples
-* |ovito-python| New Python function :py:meth:`DislocationSegment.point_along_line() <ovito.data.DislocationSegment.point_along_line>`
+* |ovito-python| New Python function :py:meth:`DislocatioNetwork.Line.point_along_line() <ovito.data.DislocationNetwork.Line.point_along_line>`
 * |ovito-python| New parameter trait types :py:class:`ovito.traits.FilePath`, :py:class:`~ovito.traits.Vector2`, and :py:class:`~ovito.traits.Vector3`
 * |ovito-python| Renamed existing parameter traits types :py:class:`ovito.traits.OvitoObject` and :py:class:`ovito.traits.Color`
 * |ovito-python| Restricted :py:meth:`ovito.Scene.load` to session state files written by *OVITO Pro* or the Python module

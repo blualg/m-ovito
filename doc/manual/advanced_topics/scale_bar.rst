@@ -1,12 +1,12 @@
 .. _howto.scale_bar:
 
-Adding a scale bar to a viewport |ovito-pro|
+Scale bar |ovito-pro|
 ============================================
 
 .. image:: /images/viewport_layers/python_script_scale_bar_example.*
   :width: 35%
-  :align: right  
-       
+  :align: right
+
 OVITO currently has no built-in function to add a length scale to an image, but it is possible to
 use an OVITO Python script to paint a custom scale bar on top of a viewport or the rendered images.
 

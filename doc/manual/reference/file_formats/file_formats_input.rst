@@ -10,12 +10,14 @@ Input file formats
   input/ase_trajectory
   input/cfg_atomeye
   input/gaussian_cube
+  input/gromacs
   input/gsd
   input/lammps_data
   input/lammps_dump
   input/lammps_dump_grid
   input/lammps_dump_local
   input/reaxff
+  input/xtc
   input/xyz
 
 OVITO can directly read the following file formats:
@@ -75,12 +77,12 @@ OVITO can directly read the following file formats:
   * - Gromacs GRO
     - Coordinate file format used by the `GROMACS <http://www.gromacs.org/>`__ simulation code.
     - :ref:`particles <scene_objects.particles>`
-    -
+    - :ref:`Details <file_formats.input.gromacs>`
 
   * - Gromacs XTC
     - Trajectory file format used by the `GROMACS <http://www.gromacs.org/>`__ simulation code.
     - :ref:`particles <scene_objects.particles>`
-    -
+    - :ref:`Details <file_formats.input.xtc>`
 
   * - DCD
     - Trajectory file format written by the CHARMM, NAMD, and LAMMPS simulation codes.
