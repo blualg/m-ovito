@@ -712,9 +712,9 @@ inline size_t DataBuffer::count(const T value) const
         ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
             SyclBufferAccess<T, access_mode::read> acc(this, cgh);
 #ifdef OVITO_USE_SYCL_ACPP
-            auto reduction = sycl::reduction(sycl::accessor{countBuf, cgh, sycl::no_init}, 0, sycl::plus<size_t>());
+            auto reduction = sycl::reduction(sycl::accessor{countBuf, cgh, sycl::no_init}, size_t{0}, sycl::plus<size_t>());
 #else
-            auto reduction = sycl::reduction(countBuf, cgh, 0, sycl::plus<size_t>(), sycl::reduction::initialize_to_identity);
+            auto reduction = sycl::reduction(countBuf, cgh, size_t{0}, sycl::plus<size_t>(), sycl::property::reduction::initialize_to_identity{});
 #endif
             OVITO_SYCL_PARALLEL_FOR(cgh, DataBuffer_count)(sycl::range(acc.size()), reduction, [=](size_t i, auto& red) {
                 if(acc[i] == value)

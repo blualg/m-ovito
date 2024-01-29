@@ -86,9 +86,9 @@ PipelineStatus ParticlesSliceModifierDelegate::apply(const ModifierEvaluationReq
             // Access output flags array.
             SyclBufferAccess<SelectionIntType, access_mode::write> maskAcc(mask, cgh, DataBuffer::Uninitialized);
 #ifdef OVITO_USE_SYCL_ACPP
-            auto reduction = sycl::reduction(sycl::accessor{numMarkedBuf, cgh, sycl::no_init}, 0, sycl::plus<size_t>());
+            auto reduction = sycl::reduction(sycl::accessor{numMarkedBuf, cgh, sycl::no_init}, size_t{0}, sycl::plus<size_t>());
 #else
-            auto reduction = sycl::reduction(numMarkedBuf, cgh, 0, sycl::plus<size_t>(), sycl::reduction::initialize_to_identity);
+            auto reduction = sycl::reduction(numMarkedBuf, cgh, size_t{0}, sycl::plus<size_t>(), sycl::property::reduction::initialize_to_identity{});
 #endif
             if(sliceWidth <= 0) {
                 OVITO_SYCL_PARALLEL_FOR(cgh, SliceModifier_particles_kernel1)(sycl::range(mask->size()), reduction, [=](size_t i, auto& red) {

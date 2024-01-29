@@ -310,9 +310,9 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
                                 if(particleIndex1 < numParticles && particleIndex2 < numParticles) {
                                     const Vector3 rv = inverseCellMatrix * (posInAcc[particleIndex1] - posInAcc[particleIndex2]);
                                     const Vector3I iflags(
-                                        pbcFlags[0] * static_cast<Vector3I::value_type>(std::lround(rv.x())),
-                                        pbcFlags[1] * static_cast<Vector3I::value_type>(std::lround(rv.y())),
-                                        pbcFlags[2] * static_cast<Vector3I::value_type>(std::lround(rv.z()))
+                                        pbcFlags[0] * static_cast<Vector3I::value_type>(sycl::round(rv.x())),
+                                        pbcFlags[1] * static_cast<Vector3I::value_type>(sycl::round(rv.y())),
+                                        pbcFlags[2] * static_cast<Vector3I::value_type>(sycl::round(rv.z()))
                                     );
                                     imageAcc[bondIndex] = iflags;
                                 }

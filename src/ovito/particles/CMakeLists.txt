@@ -120,7 +120,11 @@ IF(OVITO_BUILD_PLUGIN_STDMOD)
 ENDIF()
 
 IF(OVITO_USE_SYCL)
-    LIST(APPEND SourceFiles util/SyclCutoffNeighborFinder.cpp)
+    LIST(APPEND SourceFiles
+        util/SyclNeighborFinderBase.cpp
+        util/SyclCutoffNeighborFinder.cpp
+#        util/SyclNearestNeighborFinder.cpp
+    )
 ENDIF()
 
 IF(NOT EMSCRIPTEN)

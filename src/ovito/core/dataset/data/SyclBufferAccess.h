@@ -262,7 +262,7 @@ public:
 #ifdef OVITO_USE_SYCL_ACPP
                 auto reduction = sycl::reduction(sycl::accessor{result, cgh, sycl::no_init}, identity, std::move(combiner));
 #else
-                auto reduction = sycl::reduction(result, cgh, identity, std::move(combiner), sycl::reduction::initialize_to_identity);
+                auto reduction = sycl::reduction(result, cgh, identity, std::move(combiner), sycl::property::reduction::initialize_to_identity{});
 #endif
                 OVITO_SYCL_PARALLEL_FOR(cgh, SyclBufferAccess_reduction)(sycl::range(size()), reduction, [=, *this](size_t i, auto& red) {
                     if constexpr(!ComponentWise)
@@ -308,8 +308,8 @@ public:
                 auto reduction1 = sycl::reduction(sycl::accessor{result.first,  cgh, sycl::no_init}, identity1, std::move(combiner1));
                 auto reduction2 = sycl::reduction(sycl::accessor{result.second, cgh, sycl::no_init}, identity2, std::move(combiner2));
 #else
-                auto reduction1 = sycl::reduction(result.first,  cgh, identity1, std::move(combiner1), sycl::reduction::initialize_to_identity);
-                auto reduction2 = sycl::reduction(result.second, cgh, identity2, std::move(combiner2), sycl::reduction::initialize_to_identity);
+                auto reduction1 = sycl::reduction(result.first,  cgh, identity1, std::move(combiner1), sycl::property::reduction::initialize_to_identity{});
+                auto reduction2 = sycl::reduction(result.second, cgh, identity2, std::move(combiner2), sycl::property::reduction::initialize_to_identity{});
 #endif
                 OVITO_SYCL_PARALLEL_FOR(cgh, SyclBufferAccess_reduction2)(sycl::range(size()), reduction1, reduction2, [=, *this](size_t i, auto& red1, auto& red2) {
                     if(selectionAcc.empty() || selectionAcc[i]) {
@@ -396,7 +396,7 @@ public:
         if(!accessor_type::empty()) {
             ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                 cgh.require(*this);
-                sycl::accessor<BaseT> baseValueAcc{baseValue, cgh, sycl::read_only};
+                auto baseValueAcc = baseValue.get_access(cgh, sycl::read_only);
                 OVITO_SYCL_PARALLEL_FOR(cgh, SyclBufferAccess_iota_buf)(sycl::range(size()), [=, *this](size_t i) {
                     if constexpr(!ComponentWise)
                         (*this)[i] = baseValueAcc[0] + offset + i;
@@ -436,7 +436,7 @@ public:
         if(!accessor_type::empty()) {
             ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                 cgh.require(*this);
-                sycl::accessor<BaseT> incrementAcc{incrementBuffer, cgh, sycl::read_only};
+                auto incrementAcc = incrementBuffer.get_access(cgh, sycl::read_only);
                 OVITO_SYCL_PARALLEL_FOR(cgh, SyclBufferAccess_add_buf)(sycl::range(size()), [=, *this](size_t i) {
                     (*this)[i] += incrementAcc[0];
                 });
@@ -501,6 +501,13 @@ public:
                     auto maxr0 = sycl::reduction(sycl::accessor{maxcBufs[0], cgh, sycl::no_init}, std::numeric_limits<component_type>::lowest(), sycl::maximum<component_type>());
                     auto maxr1 = sycl::reduction(sycl::accessor{maxcBufs[1], cgh, sycl::no_init}, std::numeric_limits<component_type>::lowest(), sycl::maximum<component_type>());
                     auto maxr2 = sycl::reduction(sycl::accessor{maxcBufs[2], cgh, sycl::no_init}, std::numeric_limits<component_type>::lowest(), sycl::maximum<component_type>());
+#else
+                    auto minr0 = sycl::reduction(mincBufs[0], cgh, std::numeric_limits<component_type>::max(), sycl::minimum<component_type>(), sycl::property::reduction::initialize_to_identity{});
+                    auto minr1 = sycl::reduction(mincBufs[1], cgh, std::numeric_limits<component_type>::max(), sycl::minimum<component_type>(), sycl::property::reduction::initialize_to_identity{});
+                    auto minr2 = sycl::reduction(mincBufs[2], cgh, std::numeric_limits<component_type>::max(), sycl::minimum<component_type>(), sycl::property::reduction::initialize_to_identity{});
+                    auto maxr0 = sycl::reduction(maxcBufs[0], cgh, std::numeric_limits<component_type>::lowest(), sycl::maximum<component_type>(), sycl::property::reduction::initialize_to_identity{});
+                    auto maxr1 = sycl::reduction(maxcBufs[1], cgh, std::numeric_limits<component_type>::lowest(), sycl::maximum<component_type>(), sycl::property::reduction::initialize_to_identity{});
+                    auto maxr2 = sycl::reduction(maxcBufs[2], cgh, std::numeric_limits<component_type>::lowest(), sycl::maximum<component_type>(), sycl::property::reduction::initialize_to_identity{});
 #endif
                     OVITO_SYCL_PARALLEL_FOR(cgh, SyclBufferAccess_boundingBox3)(sycl::range(size()), minr0, minr1, minr2, maxr0, maxr1, maxr2, [=, *this](size_t i, auto& minr0, auto& minr1, auto& minr2, auto& maxr0, auto& maxr1, auto& maxr2) {
                         if(!selectionAcc || selectionAcc[i]) {

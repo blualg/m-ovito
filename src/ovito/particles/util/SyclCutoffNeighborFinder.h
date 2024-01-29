@@ -24,21 +24,22 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
-#include <ovito/stdobj/properties/Property.h>
+#include "SyclNeighborFinderBase.h"
 
 namespace Ovito {
 
 /**
  * \brief This utility class finds all neighbor particles within a cutoff radius of a central particle.
  */
-class OVITO_PARTICLES_EXPORT SyclCutoffNeighborFinder
+class OVITO_PARTICLES_EXPORT SyclCutoffNeighborFinder : public SyclNeighborFinderBase
 {
 public:
 
     class Accessor;
 
-    struct Neighbor {
+    /// \brief Represents a single neighbor particle found by the neighbor finder.
+    struct Neighbor
+    {
         Vector3 delta;
         FloatType distanceSquared;
         size_t localNeighborIndex;
@@ -50,16 +51,6 @@ public:
     };
 
 public:
-
-    /// Default constructor.
-    /// You need to call prepare() first before the neighbor finder can be used.
-    SyclCutoffNeighborFinder() = default;
-
-    /// Copying is not supported by this class.
-    SyclCutoffNeighborFinder(const SyclCutoffNeighborFinder&) = delete;
-
-    /// Copying is not supported by this class.
-    SyclCutoffNeighborFinder& operator=(const SyclCutoffNeighborFinder&) = delete;
 
     /// \brief Prepares the neighbor finder by sorting particles into a grid of bin cells.
     /// \param cutoffRadius The cutoff radius for neighbor lists.
@@ -76,12 +67,6 @@ public:
 
     /// Returns the square of the cutoff radius set via prepare().
     FloatType cutoffRadiusSquared() const { return _cutoffRadiusSquared; }
-
-    /// Returns the simulation cell used by the neighbor finder. This may be an ad-hoc cell constructed from the bounding box of particle coordinates.
-    const SimulationCell* simulationCell() const { return _simCell; }
-
-    /// Returns the number of particles stored by the neighbor finder.
-    size_t localParticleCount() const { return _positions->size(); }
 
 public:
 
@@ -159,7 +144,9 @@ public:
             // Determine which bin cell the center is located in.
             Point3I centerBin;
             for(size_t k = 0; k < 3; k++) {
-                centerBin[k] = std::clamp((int)std::floor(_reciprocalBinCell.prodrow(center, k)), 0, _binDim[k] - 1);
+                FloatType rc = _reciprocalBinCell.prodrow(center, k);
+                OVITO_ASSERT(!_pbcFlags[k] || (rc >= -FLOATTYPE_EPSILON && rc <= _binDim[k]+FLOATTYPE_EPSILON));
+                centerBin[k] = std::clamp((int)std::floor(rc), 0, _binDim[k] - 1);
             }
 
             // Visit all adjacent cell as given by the precomputed stencil.
@@ -227,20 +214,11 @@ private:
     /// The squared cutoff distance.
     FloatType _cutoffRadiusSquared = 0;
 
-    /// The simulation cell and boundary conditions.
-    DataOORef<const SimulationCell> _simCell;
-
     /// Number of bins in each cell direction.
     std::array<int,3> _binDim;
 
     /// Used to determine the bin from a particle position.
     AffineTransformation _reciprocalBinCell;
-
-    /// Mapping of global particle indices to local indices.
-    ConstDataBufferPtr _packMapping;
-
-    /// Mapping of local particle indices to global indices.
-    ConstDataBufferPtr _unpackMapping;
 
     /// The list of adjacent cells to visit while finding the neighbors of a particle located in a central cell.
     ConstDataBufferPtr _stencil;

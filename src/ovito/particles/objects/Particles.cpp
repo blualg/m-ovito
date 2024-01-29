@@ -456,9 +456,9 @@ void Particles::wrapCoordinates(const SimulationCell& cell)
                         const Point3 rp1 = inverseCellMatrix * posInAcc[particleIndex1];
                         const Point3 rp2 = inverseCellMatrix * posInAcc[particleIndex2];
                         const Vector3I iflags(
-                            pbcFlags[0] * (static_cast<Vector3I::value_type>(std::floor(rp2.x())) - static_cast<Vector3I::value_type>(std::floor(rp1.x()))),
-                            pbcFlags[1] * (static_cast<Vector3I::value_type>(std::floor(rp2.y())) - static_cast<Vector3I::value_type>(std::floor(rp1.y()))),
-                            pbcFlags[2] * (static_cast<Vector3I::value_type>(std::floor(rp2.z())) - static_cast<Vector3I::value_type>(std::floor(rp1.z())))
+                            pbcFlags[0] * (static_cast<Vector3I::value_type>(sycl::floor(rp2.x())) - static_cast<Vector3I::value_type>(sycl::floor(rp1.x()))),
+                            pbcFlags[1] * (static_cast<Vector3I::value_type>(sycl::floor(rp2.y())) - static_cast<Vector3I::value_type>(sycl::floor(rp1.y()))),
+                            pbcFlags[2] * (static_cast<Vector3I::value_type>(sycl::floor(rp2.z())) - static_cast<Vector3I::value_type>(sycl::floor(rp1.z())))
                         );
                         if(imageInAcc)
                             imageOutAcc[bondIndex] = imageInAcc[bondIndex] + iflags;
@@ -484,9 +484,9 @@ void Particles::wrapCoordinates(const SimulationCell& cell)
                 const Point3 p = posInAcc[i];
                 const Point3 rp = inverseCellMatrix * p;
                 const Vector3 rv(
-                    pbcFlags[0] * std::floor(rp.x()),
-                    pbcFlags[1] * std::floor(rp.y()),
-                    pbcFlags[2] * std::floor(rp.z())
+                    pbcFlags[0] * sycl::floor(rp.x()),
+                    pbcFlags[1] * sycl::floor(rp.y()),
+                    pbcFlags[2] * sycl::floor(rp.z())
                 );
                 posOutAcc[i] = p - cellMatrix * rv;
                 if(imageInAcc)

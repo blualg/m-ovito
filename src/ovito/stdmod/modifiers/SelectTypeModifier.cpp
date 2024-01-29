@@ -162,9 +162,9 @@ void SelectTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& re
                 // Access type ID set.
                 auto idsToSelectAcc = idsToSelectSycl.get_access(cgh);
 #ifdef OVITO_USE_SYCL_ACPP
-                auto reduction = sycl::reduction(sycl::accessor{numSelectedBuf, cgh, sycl::no_init}, 0, sycl::plus<size_t>());
+                auto reduction = sycl::reduction(sycl::accessor{numSelectedBuf, cgh, sycl::no_init}, size_t{0}, sycl::plus<size_t>());
 #else
-                auto reduction = sycl::reduction(numSelectedBuf, cgh, 0, sycl::plus<size_t>(), sycl::reduction::initialize_to_identity);
+                auto reduction = sycl::reduction(numSelectedBuf, cgh, size_t{0}, sycl::plus<size_t>(), sycl::property::reduction::initialize_to_identity{});
 #endif
                 OVITO_SYCL_PARALLEL_FOR(cgh, SelectTypeModifier_kernel)(sycl::range(typePropertyObject->size()), reduction, [=](size_t i, auto& red) {
                     if(idsToSelectAcc.contains(typeAcc[i])) {
