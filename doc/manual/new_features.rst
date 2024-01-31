@@ -5,14 +5,25 @@ Changelog
 =========
 
 ----------------------------
+Version 3.10.2 (02-Feb-2024)
+----------------------------
+
+- Rendering of animated GIFs with transparent background color
+- LAMMPS data file exporter: Emit 0 atom/bond types if no types are defined and there are no particles/bonds
+- :ref:`particles.modifiers.load_trajectory`: Drop 'Periodic Image' particle property from topology dataset if trajectory file does not contain dynamic image flags
+- |ovito-python| Added :ref:`support for the Python multiprocessing module <multiprocess_module_usage>`
+- |ovito-python| Added Python API for accessing the line connectivity information in a :py:class:`~ovito.data.DislocationNetwork`
+- |ovito-pro| macOS: Fixed crash in OSPRay renderer due to missing dylib
+
+----------------------------
 Version 3.10.1 (09-Jan-2024)
 ----------------------------
 
-- Added support for the LAMMPS *dump yaml* file format to the :ref:`file_formats.input.lammps_dump`.
-- :ref:`particles.modifiers.show_periodic_images` modifier: Use particle property ``Periodic Image`` if present to yield correct replicated molecule identifiers.
-- Fix: Frame 0 of LAMMPS dump, xyz and pdb trajectory files gets loaded a second time unnecessarily.
-- |ovito-python| New Python properties :py:attr:`Pipeline.translation <ovito.pipeline.Pipeline.translation>` and :py:attr:`Pipeline.rotation <ovito.pipeline.Pipeline.rotation>`, which control the placement of a pipeline's visual output in the 3d scene.
-- |ovito-python| Fixed offscreen font rendering in standalone Python module on (headless) Linux platform.
+- Added support for the LAMMPS *dump yaml* file format to the :ref:`file_formats.input.lammps_dump`
+- :ref:`particles.modifiers.show_periodic_images` modifier: Use particle property ``Periodic Image`` if present to yield correct replicated molecule identifiers
+- Fix: Frame 0 of LAMMPS dump, xyz and pdb trajectory files gets loaded a second time unnecessarily
+- |ovito-python| New Python properties :py:attr:`Pipeline.translation <ovito.pipeline.Pipeline.translation>` and :py:attr:`Pipeline.rotation <ovito.pipeline.Pipeline.rotation>`, which control the placement of a pipeline's visual output in the 3d scene
+- |ovito-python| Fixed offscreen font rendering in standalone Python module on (headless) Linux platform
 
 ----------------------------
 Version 3.10.0 (28-Dec-2023)
