@@ -13,7 +13,8 @@ Version 3.10.2 (02-Feb-2024)
 - :ref:`particles.modifiers.load_trajectory`: Drop 'Periodic Image' particle property from topology dataset if trajectory file does not contain dynamic image flags
 - |ovito-python| Added :ref:`support for the Python multiprocessing module <multiprocess_module_usage>`
 - |ovito-python| Added Python API for accessing the line connectivity information in a :py:class:`~ovito.data.DislocationNetwork`
-- |ovito-pro| macOS: Fixed crash in OSPRay renderer due to missing dylib
+- |ovito-pro| Fixed OSPRay image rendering on transparent background (v3.10.0 regression)
+- |ovito-pro| macOS: Fixed crash in OSPRay renderer due to missing dylib (v3.10.0 regression)
 
 ----------------------------
 Version 3.10.1 (09-Jan-2024)
