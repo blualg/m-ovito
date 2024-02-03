@@ -282,19 +282,19 @@ void LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
         particleTypeProperty = static_object_cast<Property>(typeArray.buffer());
     }
 
-    auto [bondTypeList, bondTypeMapping] = generateTypeMapping(bonds->elementCount(), bondTypeProperty);
+    auto [bondTypeList, bondTypeMapping] = generateTypeMapping(bonds ? bonds->elementCount() : 0, bondTypeProperty);
     if(writeBonds)
         textStream() << bondTypeList.size() << " bond types\n";
 
-    auto [angleTypeList, angleTypeMapping] = generateTypeMapping(angles->elementCount(), angleTypeProperty);
+    auto [angleTypeList, angleTypeMapping] = generateTypeMapping(angles ? angles->elementCount() : 0, angleTypeProperty);
     if(writeAngles)
         textStream() << angleTypeList.size() << " angle types\n";
 
-    auto [dihedralTypeList, dihedralTypeMapping] = generateTypeMapping(dihedrals->elementCount(), dihedralTypeProperty);
+    auto [dihedralTypeList, dihedralTypeMapping] = generateTypeMapping(dihedrals ? dihedrals->elementCount() : 0, dihedralTypeProperty);
     if(writeDihedrals)
         textStream() << dihedralTypeList.size() << " dihedral types\n";
 
-    auto [improperTypeList, improperTypeMapping] = generateTypeMapping(impropers->elementCount(), improperTypeProperty);
+    auto [improperTypeList, improperTypeMapping] = generateTypeMapping(impropers ? impropers->elementCount() : 0, improperTypeProperty);
     if(writeImpropers)
         textStream() << improperTypeList.size() << " improper types\n";
 

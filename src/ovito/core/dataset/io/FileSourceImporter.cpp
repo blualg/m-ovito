@@ -173,7 +173,7 @@ OORef<Pipeline> FileSourceImporter::importFileSet(Scene* scene, std::vector<std:
             importMode = ResetScene;
         else {
 #ifndef OVITO_BUILD_PROFESSIONAL
-            throw Exception(tr("Sorry, this operation cannot be performed in OVITO Basic. Importing multiple datasets into the same scene is supported by <a href=\"https://www.ovito.org/about/ovito-pro/\">OVITO Pro</a>."));
+            throw Exception(tr("Sorry, this operation cannot be performed in OVITO Basic. Importing multiple datasets into the same scene is supported by <a href=\"https://www.ovito.org/#proFeatures\">OVITO Pro</a>."));
 #endif
         }
     }
