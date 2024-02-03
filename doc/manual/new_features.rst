@@ -4,6 +4,10 @@
 Changelog
 =========
 
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.10.2>`__
+
 ----------------------------
 Version 3.10.2 (02-Feb-2024)
 ----------------------------
@@ -16,6 +20,10 @@ Version 3.10.2 (02-Feb-2024)
 - |ovito-pro| Fixed OSPRay image rendering on transparent background (v3.10.0 regression)
 - |ovito-pro| macOS: Fixed crash in OSPRay renderer due to missing dylib (v3.10.0 regression)
 
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.10.1>`__
+
 ----------------------------
 Version 3.10.1 (09-Jan-2024)
 ----------------------------
@@ -25,6 +33,10 @@ Version 3.10.1 (09-Jan-2024)
 - Fix: Frame 0 of LAMMPS dump, xyz and pdb trajectory files gets loaded a second time unnecessarily
 - |ovito-python| New Python properties :py:attr:`Pipeline.translation <ovito.pipeline.Pipeline.translation>` and :py:attr:`Pipeline.rotation <ovito.pipeline.Pipeline.rotation>`, which control the placement of a pipeline's visual output in the 3d scene
 - |ovito-python| Fixed offscreen font rendering in standalone Python module on (headless) Linux platform
+
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.10.0>`__
 
 ----------------------------
 Version 3.10.0 (28-Dec-2023)
@@ -116,11 +128,19 @@ and generating the necessary job scripts for you.
 * |ovito-pro| OpenGL, OSPRay, and Tachyon renderers: Added buttons to reset numeric parameters to their default values
 * |ovito-pro| :ref:`User-defined parameters <writing_custom_modifiers.advanced_interface.user_params>` can now be grouped in the UI by means of the new ``ovito_group`` metadata attribute
 
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.9.4>`__
+
 ---------------------------
 Version 3.9.4 (04-Nov-2023)
 ---------------------------
 
 * Fix: OpenGL rendering of ellipsoidal/superquadric/box particles with wrong orientations (regression since v3.9.0)
+
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.9.3>`__
 
 ---------------------------
 Version 3.9.3 (01-Nov-2023)
@@ -135,6 +155,10 @@ Version 3.9.3 (01-Nov-2023)
 * Updated third-party components: OpenSSL 1.1.1w, Qt/PySide6 6.5.3, Python 3.11.6
 * |ovito-python| PyPI packages for Python 3.12
 
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.9.2>`__
+
 ---------------------------
 Version 3.9.2 (31-Aug-2023)
 ---------------------------
@@ -148,6 +172,10 @@ Version 3.9.2 (31-Aug-2023)
 * |ovito-pro| Build Conda package as monolithic binaries for improved performance of the Python interface
 * |ovito-pro| Updated third-party components: OpenSSL 1.1.1v, PySide6 6.5.2, Python 3.11.5
 
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.9.1>`__
+
 ---------------------------
 Version 3.9.1 (06-Aug-2023)
 ---------------------------
@@ -157,6 +185,10 @@ Version 3.9.1 (06-Aug-2023)
 * |ovito-python| New Python method :py:meth:`ModifierInterface.compute_trajectory_length() <ovito.pipeline.ModifierInterface.compute_trajectory_length>`, which gives user-defined modifiers control over the timeline length
 * |ovito-python| New Python field :py:attr:`Modifier.title <ovito.pipeline.Modifier.title>`
 * |ovito-pro| Fixed :command:`ovitos -m pip install` failure for packages that require a build step
+
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.9.0>`__
 
 ---------------------------
 Version 3.9.0 (02-Aug-2023)
@@ -229,6 +261,10 @@ OVITO Pro and the OVITO Python module can additionally read :ref:`ASE trajectory
 * |ovito-python| New Python method :py:meth:`VoxelGrid.view <ovito.data.VoxelGrid.view>`
 * |ovito-python| Performance optimizations for property data access from Python code
 
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.8.5>`__
+
 ---------------------------
 Version 3.8.5 (19-Jun-2023)
 ---------------------------
@@ -241,6 +277,10 @@ Version 3.8.5 (19-Jun-2023)
 * Workaround for macOS (Apple Silicon) OpenGL stencil buffer issue: Highlighted particles not rendered correctly
 * Update third-party libraries: ffmpeg 6.0, OpenSSL 1.1.1u, libssh 0.10.5, Qt 6.5.1, PySide6 6.5.1.1, HDF5 1.14.1-2, NetCDF 4.9.2
 
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.8.4>`__
+
 ---------------------------
 Version 3.8.4 (03-May-2023)
 ---------------------------
@@ -249,6 +289,10 @@ Version 3.8.4 (03-May-2023)
 * Silence console message "Numeric mode unsupported in the posix collation implementation" on Linux by enabling ICU support in Qt build
 * |ovito-pro| Fix: Segfault in PySide6 package initialization on Linux when adding a Python layer to a viewport
 * |ovito-python| Fix: Interchanged xz/yz simulation box shear components in :py:func:`~ovito.io.lammps.lammps_to_ovito` Python function
+
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.8.3>`__
 
 ---------------------------
 Version 3.8.3 (16-Apr-2023)
@@ -259,6 +303,10 @@ Version 3.8.3 (16-Apr-2023)
 * |ovito-python| Python exceptions raised in user-defined modifier functions are now propagated up the call chain to where the pipeline evaluation was triggered
 * |ovito-pro| Included ``bz2`` and `sqlite3` standard modules, which were missing in embedded Python interpreter on Linux
 
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.8.2>`__
+
 ---------------------------
 Version 3.8.2 (04-Apr-2023)
 ---------------------------
@@ -267,6 +315,10 @@ Version 3.8.2 (04-Apr-2023)
 * Fix: Segfault when using zoom function in viewport with an attached camera object
 * Fix: Segfault in :ref:`particles.modifiers.coordination_polyhedra` modifier on Linux
 * Fix: Function 'load/save session state' does not follow global working directory
+
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.8.1>`__
 
 ---------------------------
 Version 3.8.1 (27-Mar-2023)
@@ -295,6 +347,10 @@ for vectorized computation of neighbor lists for many or all particles at once.
 .. rubric:: Further changes:
 
 * :ref:`file_formats.input.lammps_data`: Accept '#' in type names, which are referenced in data sections of the file
+
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.8.0>`__
 
 ---------------------------
 Version 3.8.0 (03-Mar-2023)
@@ -421,6 +477,10 @@ when particles get removed from the simulation over time.
 * |ovito-python| Accept ``os.PathLike`` objects in Python functions :py:func:`~ovito.io.import_file` and :py:func:`~ovito.io.export_file`.
 * |ovito-python| :py:meth:`PropertyContainer.create_property <ovito.data.PropertyContainer.create_property>`: Accept ``data`` values that are broadcastable to shape of property array.
 
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.7.12>`__
+
 ----------------------------
 Version 3.7.12 (16-Dec-2022)
 ----------------------------
@@ -432,6 +492,10 @@ Version 3.7.12 (16-Dec-2022)
 * Fix: Function "Make Independent" does not work correctly for surface mesh visual elements in cloned pipelines.
 * |ovito-pro| Fix: Python method  :py:meth:`ovito.data.SurfaceMesh.locate_point() <ovito.data.SurfaceMesh.locate_point>` can yield wrong results for coarse, one-sided meshes.
 
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.7.11>`__
+
 ----------------------------
 Version 3.7.11 (29-Oct-2022)
 ----------------------------
@@ -441,6 +505,10 @@ Version 3.7.11 (29-Oct-2022)
 * |ovito-pro| Vectorized all query methods of ``SurfaceMeshTopology`` class.
 * |ovito-pro| Provide PyPI package for Python 3.11.
 * |ovito-pro| Added flat array option to method ``SurfaceMesh.get_face_vertices()``.
+
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.7.10>`__
 
 ----------------------------
 Version 3.7.10 (09-Oct-2022)
@@ -455,6 +523,10 @@ Version 3.7.10 (09-Oct-2022)
 * |ovito-pro| Generalized the :ref:`visual_elements.vectors` element to support visualization of vector quantities in more types of ``PropertyContainers``.
 * |ovito-pro| New Python function :py:meth:`ovito.modifiers.PolyhedralTemplateMatchingModifier.calculate_misorientation() <ovito.modifiers.PolyhedralTemplateMatchingModifier.calculate_misorientation>`.
 * |ovito-pro| Automatic conversion of NumPy array scalars to Python numbers when storing them as OVITO global :py:class:`ovito.data.DataCollection` attributes.
+
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.7.9>`__
 
 ---------------------------
 Version 3.7.9 (12-Sep-2022)
@@ -474,6 +546,10 @@ Version 3.7.9 (12-Sep-2022)
 * |ovito-pro| Added Python API :py:class:`ovito.vis.ColorLegendOverlay` color_mapping_source.
 * |ovito-pro| Fix: Segfault during Python statement ``del ovito.scene.pipelines[:]``.
 
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.7.8>`__
+
 ---------------------------
 Version 3.7.8 (29-Jul-2022)
 ---------------------------
@@ -484,11 +560,19 @@ Version 3.7.8 (29-Jul-2022)
 * |ovito-pro| Added conda packages for macOS arm64/M1 platform.
 * |ovito-pro| Work around a memory leak in some OpenGL graphics driver implementations when the :py:meth:`ovito.vis.Viewport.render_image() <ovito.vis.Viewport.render_image>` Python function is called repeatedly.
 
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.7.7>`__
+
 ---------------------------
 Version 3.7.7 (06-Jul-2022)
 ---------------------------
 
 * Ubuntu 22.04 compatibility - Linux package of OVITO now includes a private copy of OpenSSL 1.1 libraries.
+
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.7.6>`__
 
 ---------------------------
 Version 3.7.6 (23-Jun-2022)
@@ -502,6 +586,10 @@ Version 3.7.6 (23-Jun-2022)
 * PyPI package for Linux: disabled built-in SSH client to improve compatibility with Ubuntu 22.04, which doesn't provide OpenSSL 1.1 libraries anymore.
 * |ovito-pro| New Python class :py:class:`ovito.data.SurfaceMeshTopology`, which provides script access to the face connectivity information of surface meshes.
 * |ovito-pro| Conda channel now provides additional variants of the ```ovito`` <https://conda.ovito.org>`_ package (built against ``tbb`` v2020 and v2021), which avoids dependency conflicts with certain third-party packages when installing them in the same environment.
+
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.7.5>`__
 
 ---------------------------
 Version 3.7.5 (28-May-2022)
@@ -518,6 +606,10 @@ Version 3.7.5 (28-May-2022)
 * |ovito-pro| Bumped maximum neighbor limit of :py:class:`ovito.data.NearestNeighborFinder` to 64.
 * |ovito-pro| Dropped support for Python 3.6, which has reached its end-of-life date.
 
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.7.4>`__
+
 ---------------------------
 Version 3.7.4 (18-Apr-2022)
 ---------------------------
@@ -528,6 +620,10 @@ Version 3.7.4 (18-Apr-2022)
 * Fix: Error "The file source path is empty or has not been set" when picking a new simulation file of different format.
 * |ovito-pro| :ref:`particles.modifiers.construct_surface_mesh` modifer: New option 'Map particles to regions'.
 * |ovito-pro| New Python methods :py:meth:`ovito.data.DataCollection.create_cell() <ovito.data.DataCollection.create_cell>`, :py:meth:`ovito.data.DataCollection.create_particles() <ovito.data.DataCollection.create_particles>`, :py:meth:`ovito.data.Particles.create_bonds() <ovito.data.Particles.create_bonds>`.
+
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.7.3>`__
 
 -----------------------------
 Version 3.7.3 (29-Mar-2022)
@@ -545,6 +641,10 @@ Version 3.7.3 (29-Mar-2022)
 * |ovito-pro| :py:class:`ovito.data.CutoffNeighborFinder` now accepts non-periodic simulation cells that are degenerate.
 * |ovito-pro| Fix: :py:meth:`ovito.data.DataTable.xy() <ovito.data.DataTable.xy>` method generates wrong x-coords array if data table interval doesn't start at 0.
 
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.7.2>`__
+
 ---------------------------
 Version 3.7.2 (03-Mar-2022)
 ---------------------------
@@ -554,6 +654,10 @@ Version 3.7.2 (03-Mar-2022)
 * |ovito-pro| macOS: Fixed PySide6 loading error due to wrong rpath information when importing PyPI ovito package.
 * |ovito-pro| Linux: Fixed sqlite3 Python package included in the embedded Python interpreter of OVITO Pro.
 
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.7.1>`__
+
 ---------------------------
 Version 3.7.1 (26-Feb-2022)
 ---------------------------
@@ -562,6 +666,10 @@ Version 3.7.1 (26-Feb-2022)
 * |ovito-pro| New Python function :py:meth:`ovito.data.NearestNeighborFinder.find_all() <ovito.data.NearestNeighborFinder.find_all>`.
 * |ovito-pro| :py:class:`ovito.data.PropertyContainer` classes support removing properties with the ``del`` statement.
 * |ovito-pro| Inform user if insufficient file access permissions let license activation fail.
+
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.7.0>`__
 
 ---------------------------
 Version 3.7.0 (15-Feb-2022)
@@ -585,6 +693,10 @@ Version 3.7.0 (15-Feb-2022)
 * Detect if the triangle mesh is not closed when loading a custom particle shape. Automatically disable back-face culling for the particle type in this case.
 * CA file reader: Compute dislocation line statistics for re-imported datasets the same way the DXA modifier does.
 * Fix: Particles visual element does not use uniform scaling factor when rendering some non-spherical particle shapes.
+
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.6.0>`__
 
 ---------------------------
 Version 3.6.0 (19-Nov-2021)
@@ -614,6 +726,10 @@ Version 3.6.0 (19-Nov-2021)
 * |ovito-pro| Fix: Bounding box clipping artifact when rendering rotated superquadrics particles with OSPRay or Tachyon renderers.
 * |ovito-pro| Fix: Warning "This plugin does not support createPlatformOpenGLContext!" when running in headless mode on Linux machines.
 
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.5.4>`__
+
 ---------------------------
 Version 3.5.4 (31-Jul-2021)
 ---------------------------
@@ -621,6 +737,10 @@ Version 3.5.4 (31-Jul-2021)
 * LAMMPS data file reader and writer now support all LAMMPS atom styles, including the ``hybrid`` style.
 * Fix: Construct surface mesh with region identification fails or never completes for some inputs.
 * |ovito-pro| Fix: Tachyon renderer crashes when triangle mesh contains a degenerate vertex normal.
+
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.5.3>`__
 
 ---------------------------
 Version 3.5.3 (30-Jun-2021)
@@ -633,6 +753,10 @@ Version 3.5.3 (30-Jun-2021)
 * Fix: *Configure Trajectory Playback* dialog shows no contents.
 * Fix: Neighbor finder facilities do not ignore PBC flag along third dimension in 2D mode.
 
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.5.2>`__
+
 ---------------------------
 Version 3.5.2 (26-May-2021)
 ---------------------------
@@ -641,6 +765,10 @@ Version 3.5.2 (26-May-2021)
 * :ref:`particles.modifiers.load_trajectory` modifier can now import ReaxFF bond information files written by the LAMMPS `fix reax/c/bonds <https://lammps.sandia.gov/doc/fix_reaxc_bonds.html>`_ command.
 * GSD file reader: Fill particle property array with default values if a chunk is not present in current frame (`issue #206 <https://gitlab.com/stuko/ovito/-/issues/206>`_)
 * |ovito-pro| Fix: Invisible simulation cell edges when rendering image with orthographic projection with OSPRay
+
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.5.1>`__
 
 ---------------------------
 Version 3.5.1 (18-May-2021)
@@ -652,6 +780,10 @@ Version 3.5.1 (18-May-2021)
 * |ovito-pro| The :ref:`particles.modifiers.slice` modifier now accepts (*hkl)* Miller indices as input for defining the plane orientation. The plane position can be specified in terms of the interplanar spacing.
 * |ovito-pro| OVITO Pro for Linux now ships with a current Python 3.9.5 interpreter.
 * |ovito-pro| Fix: :py:meth:`ovito.data.PropertyContainer.create_property() <ovito.data.PropertyContainer.create_property>` method cannot create user-defined property of data type ``int64``.
+
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.5.0>`__
 
 ---------------------------
 Version 3.5.0 (02-May-2021)
@@ -692,6 +824,10 @@ Version 3.5.0 (02-May-2021)
 * |ovito-pro| Fix: Made auto-crop function work for pictures rendered with OSPRay and denoising filter enabled.
 * |ovito-pro| Fix: Python viewport layer does not get called with current values of user-defined parameters.
 
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.4.4>`__
+
 ---------------------------
 Version 3.4.4 (12-Mar-2021)
 ---------------------------
@@ -701,6 +837,10 @@ Version 3.4.4 (12-Mar-2021)
 * Fix: Simulation cell not visible in interactive viewports on some computer systems (`issue #203) <https://gitlab.com/stuko/ovito/-/issues/203>`_.
 * Fix: CIF file reader not automatically recognizing files written by Open Babel (`issue #204) <https://gitlab.com/stuko/ovito/-/issues/204>`_.
 * |ovito-pro| Fix: OSPRay not rendering arrow glyphs correctly.
+
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.4.3>`__
 
 ---------------------------
 Version 3.4.3 (25-Feb-2021)
@@ -712,6 +852,10 @@ Version 3.4.3 (25-Feb-2021)
 * Improved automatic detection of PDB file format.
 * |ovito-pro| It's now okay to assign a simple string to the :py:class:`ovito.modifiers.ExpressionSelectionModifier` expression field.
 
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.4.2>`__
+
 ---------------------------
 Version 3.4.2 (15-Feb-2021)
 ---------------------------
@@ -720,12 +864,20 @@ Version 3.4.2 (15-Feb-2021)
 * Bug fix: Status bar doesn't display latest set of particle properties while positioning the mouse cursor over a particle. This fix corrects a regression introduced with OVITO 3.4.0.
 * Fixed a limitation of the PTM modifier not identifying diamond and graphene structures in small periodic simulation cells.
 
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.4.1>`__
+
 ---------------------------
 Version 3.4.1 (03-Feb-2021)
 ---------------------------
 
 * Fixed runtime linker error when importing ``ovito`` Python module installed via pip on Linux.
 * |ovito-pro| Spatial binning modifier can now operate on vectorial particle properties.
+
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.4.0>`__
 
 ---------------------------
 Version 3.4.0 (28-Jan-2021)
