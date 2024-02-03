@@ -46,7 +46,7 @@ A (nearly complete) list of the program features available only in *OVITO Pro* a
 - :ref:`file_formats.output.gltf`
 - Use of Miller indices in the :ref:`particles.modifiers.slice` modifier
 
-Please visit `www.ovito.org <https://www.ovito.org/about/ovito-pro/>`__ for further details on OVITO Pro, our support services, and pricing.
+Please visit `www.ovito.org <https://www.ovito.org/#proFeatures>`__ for further details on OVITO Pro, our support services, and pricing.
 By licensing OVITO Pro you support the development and maintenance of both editions our desktop software and the :ref:`OVITO Python module <scripting_manual>`.
 
 .. _license-management:

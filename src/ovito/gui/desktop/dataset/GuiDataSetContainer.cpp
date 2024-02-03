@@ -317,7 +317,7 @@ bool GuiDataSetContainer::importFiles(const std::vector<QUrl>& urls, const FileI
         msgBox.setInformativeText(tr(
             "<p>Select <b>Yes</b> to start over and discard the existing pipeline before importing the new file.</p>"
             "<p>Select <b>No</b> to keep modifiers in the current pipeline and replace the input data with the selected file.</p>"
-            "<p>Select <b>Add to scene</b> to create an additional pipeline and visualize multiple datasets (requires <a href=\"https://www.ovito.org/about/ovito-pro/\">OVITO Pro</a>).</p>"));
+            "<p>Select <b>Add to scene</b> to create an additional pipeline and visualize multiple datasets (requires <a href=\"https://www.ovito.org/#proFeatures\">OVITO Pro</a>).</p>"));
 #endif
         QPushButton* noButton = msgBox.addButton(tr("No"), QMessageBox::NoRole);
         QPushButton* addToSceneButton = msgBox.addButton(tr("Add to scene"), QMessageBox::NoRole);
