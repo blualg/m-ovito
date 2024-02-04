@@ -104,6 +104,9 @@ public:
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return QVariant::fromValue(static_cast<QColor>(color())); }
 
+    /// Indicates that this modifier wants preliminary viewport updates whenever its parameters change.
+    virtual bool performPreliminaryUpdateAfterChange() override { return true; }
+
 protected:
 
     /// Is called when a RefTarget referenced by this object generated an event.

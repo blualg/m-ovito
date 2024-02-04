@@ -59,7 +59,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ClusterAnalysisModifier, cutoff, WorldParam
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ClusterAnalysisModifier::ClusterAnalysisModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
+ClusterAnalysisModifier::ClusterAnalysisModifier(ObjectInitializationFlags flags) : Modifier(flags),
     _cutoff(3.2),
     _onlySelectedParticles(false),
     _sortBySize(false),
@@ -82,7 +82,7 @@ bool ClusterAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ClusterAnalysisModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<ModifierEnginePtr> ClusterAnalysisModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get the current particle positions.
     const Particles* particles = input.expectObject<Particles>();

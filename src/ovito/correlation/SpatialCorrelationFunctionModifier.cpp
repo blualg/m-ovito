@@ -94,7 +94,7 @@ SET_PROPERTY_FIELD_LABEL(SpatialCorrelationFunctionModifier, reciprocalSpaceYAxi
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-SpatialCorrelationFunctionModifier::SpatialCorrelationFunctionModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
+SpatialCorrelationFunctionModifier::SpatialCorrelationFunctionModifier(ObjectInitializationFlags flags) : Modifier(flags),
     _averagingDirection(RADIAL),
     _fftGridSpacing(3.0),
     _applyWindow(true),
@@ -136,7 +136,7 @@ bool SpatialCorrelationFunctionModifier::OOMetaClass::isApplicableTo(const DataC
 ******************************************************************************/
 void SpatialCorrelationFunctionModifier::initializeModifier(const ModifierInitializationRequest& request)
 {
-    AsynchronousModifier::initializeModifier(request);
+    Modifier::initializeModifier(request);
 
     // Use the first available particle property from the input state as data source when the modifier is newly created.
     if((sourceProperty1().isNull() || sourceProperty2().isNull()) && ExecutionContext::isInteractive()) {
@@ -159,7 +159,7 @@ void SpatialCorrelationFunctionModifier::initializeModifier(const ModifierInitia
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> SpatialCorrelationFunctionModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<ModifierEnginePtr> SpatialCorrelationFunctionModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get the source data.
     if(sourceProperty1().isNull())

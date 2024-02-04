@@ -73,7 +73,7 @@ SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, sourceProperty, "Source property")
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ColorCodingModifier::ColorCodingModifier(ObjectInitializationFlags flags) : AsynchronousDelegatingModifier(flags),
+ColorCodingModifier::ColorCodingModifier(ObjectInitializationFlags flags) : DelegatingModifier(flags),
     _colorOnlySelected(false),
     _keepSelection(true),
     _autoAdjustRange(false)
@@ -121,7 +121,7 @@ ColorCodingModifier::ColorCodingModifier(ObjectInitializationFlags flags) : Asyn
 ******************************************************************************/
 TimeInterval ColorCodingModifier::validityInterval(const ModifierEvaluationRequest& request) const
 {
-    TimeInterval iv = AsynchronousDelegatingModifier::validityInterval(request);
+    TimeInterval iv = DelegatingModifier::validityInterval(request);
     if(!autoAdjustRange()) {
         if(startValueController()) iv.intersect(startValueController()->validityInterval(request.time()));
         if(endValueController()) iv.intersect(endValueController()->validityInterval(request.time()));
@@ -139,7 +139,7 @@ void ColorCodingModifier::propertyChanged(const PropertyFieldDescriptor* field)
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 
-    AsynchronousDelegatingModifier::propertyChanged(field);
+    DelegatingModifier::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -148,7 +148,7 @@ void ColorCodingModifier::propertyChanged(const PropertyFieldDescriptor* field)
 ******************************************************************************/
 void ColorCodingModifier::initializeModifier(const ModifierInitializationRequest& request)
 {
-    AsynchronousDelegatingModifier::initializeModifier(request);
+    DelegatingModifier::initializeModifier(request);
 
     // When the modifier is inserted, automatically select the most recently added property from the input.
     if(sourceProperty().isNull() && delegate() && ExecutionContext::isInteractive()) {
@@ -173,17 +173,17 @@ void ColorCodingModifier::initializeModifier(const ModifierInitializationRequest
 void ColorCodingModifier::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
     // Whenever the delegate of this modifier is being replaced, update the source property reference.
-    if(field == PROPERTY_FIELD(AsynchronousDelegatingModifier::delegate) && !isBeingLoaded() && !isBeingDeleted() && !isUndoingOrRedoing()) {
+    if(field == PROPERTY_FIELD(DelegatingModifier::delegate) && !isBeingLoaded() && !isBeingDeleted() && !isUndoingOrRedoing()) {
         setSourceProperty(sourceProperty().convertToContainerClass(delegate() ? delegate()->inputContainerClass() : nullptr));
     }
-    AsynchronousDelegatingModifier::referenceReplaced(field, oldTarget, newTarget, listIndex);
+    DelegatingModifier::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ColorCodingModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<ModifierEnginePtr> ColorCodingModifier::createEngineInternal(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     if(!colorGradient())
         throw Exception(tr("No color gradient has been selected."));
@@ -366,6 +366,12 @@ void ColorCodingModifierDelegate::ColorCodingEngine::perform()
     if(!result)
         throw Exception(tr("The property '%1' has an invalid or non-numeric data type.").arg(_input->name()));
 #endif
+
+    // Release data that is no longer needed.
+    _gradient.reset();
+    _containerPath.clear();
+    _input.reset();
+    _selection.reset();
 }
 
 /******************************************************************************
@@ -391,7 +397,7 @@ void ColorCodingModifierDelegate::ColorCodingEngine::applyResults(const Modifier
     container->createProperty(_colors);
 
     // Clear selection if requested.
-    if(_selection && !modifier->keepSelection()) {
+    if(modifier->colorOnlySelected() && !modifier->keepSelection()) {
         if(const Property* selection = container->getProperty(Property::GenericSelectionProperty))
             container->removeProperty(selection);
     }
@@ -525,6 +531,19 @@ void ColorCodingModifier::reverseRange()
     OORef<Controller> oldStartValue = startValueController();
     setStartValueController(endValueController());
     setEndValueController(std::move(oldStartValue));
+}
+
+/******************************************************************************
+* Modifies the input data synchronously.
+******************************************************************************/
+void ColorCodingModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+{
+    Future<ModifierEnginePtr> engineFuture = createEngineInternal(request, state);
+    OVITO_ASSERT(engineFuture.isFinished());
+
+    ModifierEnginePtr engine = engineFuture.result();
+    engine->perform();
+    engine->applyResults(request, state);
 }
 
 }   // End of namespace

@@ -51,7 +51,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CreateIsosurfaceModifier, smoothingLevel, I
 * Constructs the modifier object.
 ******************************************************************************/
 CreateIsosurfaceModifier::CreateIsosurfaceModifier(ObjectInitializationFlags flags)
-    : AsynchronousModifier(flags), _smoothingLevel(0), _transferFieldValues(false)
+    : Modifier(flags), _smoothingLevel(0), _transferFieldValues(false)
 {
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setIsolevelController(ControllerManager::createFloatController());
@@ -69,7 +69,7 @@ CreateIsosurfaceModifier::CreateIsosurfaceModifier(ObjectInitializationFlags fla
 ******************************************************************************/
 TimeInterval CreateIsosurfaceModifier::validityInterval(const ModifierEvaluationRequest& request) const
 {
-    TimeInterval iv = AsynchronousModifier::validityInterval(request);
+    TimeInterval iv = Modifier::validityInterval(request);
     if(isolevelController())
         iv.intersect(isolevelController()->validityInterval(request.time()));
     return iv;
@@ -85,7 +85,7 @@ void CreateIsosurfaceModifier::propertyChanged(const PropertyFieldDescriptor* fi
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 
-    AsynchronousModifier::propertyChanged(field);
+    Modifier::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -98,7 +98,7 @@ bool CreateIsosurfaceModifier::referenceEvent(RefTarget* source, const Reference
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 
-    return AsynchronousModifier::referenceEvent(source, event);
+    return Modifier::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -115,7 +115,7 @@ bool CreateIsosurfaceModifier::OOMetaClass::isApplicableTo(const DataCollection&
 ******************************************************************************/
 void CreateIsosurfaceModifier::initializeModifier(const ModifierInitializationRequest& request)
 {
-    AsynchronousModifier::initializeModifier(request);
+    Modifier::initializeModifier(request);
 
     // Use the first available voxel grid from the input state as data source when the modifier is newly created.
     if(sourceProperty().isNull() && subject().dataPath().isEmpty() && ExecutionContext::isInteractive()) {
@@ -141,7 +141,7 @@ void CreateIsosurfaceModifier::initializeModifier(const ModifierInitializationRe
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<ModifierEnginePtr> CreateIsosurfaceModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     if(!subject())
         throw Exception(tr("No input voxel grid set."));

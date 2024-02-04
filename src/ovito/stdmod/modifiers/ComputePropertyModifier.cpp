@@ -55,7 +55,7 @@ SET_MODIFICATION_NODE_TYPE(ComputePropertyModifier, ComputePropertyModificationN
 /******************************************************************************
 * Constructs a new instance of this class.
 ******************************************************************************/
-ComputePropertyModifier::ComputePropertyModifier(ObjectInitializationFlags flags) : AsynchronousDelegatingModifier(flags),
+ComputePropertyModifier::ComputePropertyModifier(ObjectInitializationFlags flags) : DelegatingModifier(flags),
     _expressions(QStringList("0")),
     _onlySelectedElements(false),
     _useMultilineFields(false)
@@ -79,7 +79,7 @@ void ComputePropertyModifier::propertyChanged(const PropertyFieldDescriptor* fie
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 
-    AsynchronousDelegatingModifier::propertyChanged(field);
+    DelegatingModifier::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -127,18 +127,18 @@ QStringList ComputePropertyModifier::propertyComponentNames() const
 ******************************************************************************/
 void ComputePropertyModifier::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
-    if(field == PROPERTY_FIELD(AsynchronousDelegatingModifier::delegate) && !isBeingDeleted() && !isBeingLoaded() && !isUndoingOrRedoing()) {
+    if(field == PROPERTY_FIELD(DelegatingModifier::delegate) && !isBeingDeleted() && !isBeingLoaded() && !isUndoingOrRedoing()) {
         setOutputProperty(outputProperty().convertToContainerClass(delegate() ? delegate()->inputContainerClass() : nullptr));
         if(delegate()) delegate()->setComponentCount(expressions().size());
     }
-    AsynchronousDelegatingModifier::referenceReplaced(field, oldTarget, newTarget, listIndex);
+    DelegatingModifier::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<ModifierEnginePtr> ComputePropertyModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     ComputePropertyModificationNode* modNode = dynamic_object_cast<ComputePropertyModificationNode>(request.modificationNode());
 
@@ -273,7 +273,7 @@ ComputePropertyModifierDelegate::PropertyComputeEngine::PropertyComputeEngine(
         QStringList expressions,
         int frameNumber,
         std::unique_ptr<PropertyExpressionEvaluator> evaluator) :
-    AsynchronousModifier::Engine(request, validityInterval),
+    ModifierEngine(request, validityInterval),
     _selection(selectionProperty),
     _expressions(std::move(expressions)),
     _frameNumber(frameNumber),
@@ -356,7 +356,7 @@ bool ComputePropertyModifierDelegate::PropertyComputeEngine::modifierChanged(con
     if(event.field() == PROPERTY_FIELD(ComputePropertyModifier::useMultilineFields))
         return true; // This return value tells the system to hold on to the cached engine object.
 
-    return AsynchronousModifier::Engine::modifierChanged(event);
+    return ModifierEngine::modifierChanged(event);
 }
 
 /******************************************************************************

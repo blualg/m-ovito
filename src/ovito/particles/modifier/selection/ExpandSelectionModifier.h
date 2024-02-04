@@ -28,7 +28,7 @@
 #include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/properties/Property.h>
-#include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
+#include <ovito/core/dataset/pipeline/Modifier.h>
 
 namespace Ovito {
 
@@ -36,15 +36,15 @@ namespace Ovito {
  * \brief Extends the current particle selection by adding particles to the selection
  *        that are neighbors of an already selected particle.
  */
-class OVITO_PARTICLES_EXPORT ExpandSelectionModifier : public AsynchronousModifier
+class OVITO_PARTICLES_EXPORT ExpandSelectionModifier : public Modifier
 {
     /// Give this modifier class its own metaclass.
-    class OOMetaClass : public AsynchronousModifier::OOMetaClass
+    class OOMetaClass : public Modifier::OOMetaClass
     {
     public:
 
         /// Inherit constructor from base metaclass.
-        using AsynchronousModifier::OOMetaClass::OOMetaClass;
+        using Modifier::OOMetaClass::OOMetaClass;
 
         /// Asks the metaclass whether the modifier can be applied to the given input data.
         virtual bool isApplicableTo(const DataCollection& input) const override;
@@ -75,18 +75,18 @@ public:
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
     /// The modifier's compute engine.
-    class ExpandSelectionEngine : public Engine
+    class ExpandSelectionEngine : public ModifierEngine
     {
     public:
 
         /// Constructor.
         ExpandSelectionEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations) :
-            Engine(request),
+            ModifierEngine(request),
             _numIterations(numIterations),
             _positions(std::move(positions)),
             _simCell(simCell),

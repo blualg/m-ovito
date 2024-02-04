@@ -29,22 +29,22 @@
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/properties/Property.h>
-#include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
+#include <ovito/core/dataset/pipeline/Modifier.h>
 
 namespace Ovito {
 
 /*
  * Constructs a surface mesh enclosing the particle model.
  */
-class OVITO_PARTICLES_EXPORT ConstructSurfaceModifier : public AsynchronousModifier
+class OVITO_PARTICLES_EXPORT ConstructSurfaceModifier : public Modifier
 {
     /// Give this modifier class its own metaclass.
-    class OOMetaClass : public AsynchronousModifier::OOMetaClass
+    class OOMetaClass : public Modifier::OOMetaClass
     {
     public:
 
         /// Inherit constructor from base metaclass.
-        using AsynchronousModifier::OOMetaClass::OOMetaClass;
+        using Modifier::OOMetaClass::OOMetaClass;
 
         /// Asks the metaclass whether the modifier can be applied to the given input data.
         virtual bool isApplicableTo(const DataCollection& input) const override;
@@ -70,21 +70,21 @@ public:
     /// Constructor.
     explicit ConstructSurfaceModifier(ObjectInitializationFlags flags);
 
-    /// Decides whether a preliminary viewport update is performed after the modifier has been
+    /// Indicates whether a preliminary viewport update should be performed after the modifier has been
     /// evaluated but before the entire pipeline evaluation is complete.
     /// We suppress such preliminary updates for this modifier, because it produces a surface mesh,
-    /// which requires further asynchronous processing before a viewport update makes sense.
+    /// which always requires further asynchronous processing before a viewport update makes sense.
     virtual bool performPreliminaryUpdateAfterEvaluation() override { return false; }
 
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
     /// Abstract base class for computation engines that build the surface mesh.
-    class ConstructSurfaceEngineBase : public Engine
+    class ConstructSurfaceEngineBase : public ModifierEngine
     {
     public:
 
@@ -93,7 +93,7 @@ private:
                                    ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh, bool identifyRegions,
                                    bool mapParticlesToRegions, bool computeSurfaceDistance,
                                    std::vector<ConstPropertyPtr> particleProperties)
-            : Engine(request),
+            : ModifierEngine(request),
               _positions(positions),
               _selection(std::move(selection)),
               _mesh(std::move(mesh)),

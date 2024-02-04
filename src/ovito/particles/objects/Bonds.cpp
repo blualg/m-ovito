@@ -125,7 +125,8 @@ size_t Bonds::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, co
         // Insert bond type.
         if(bondTypeProperty) {
             bondTypeProperty->fill<int32_t>(bondType->numericId());
-            bondTypeProperty->addElementType(std::move(bondType));
+            if(!bondTypeProperty->elementType(bondType->numericId()))
+                bondTypeProperty->addElementType(std::move(bondType));
         }
 
         // Insert other bond properties.

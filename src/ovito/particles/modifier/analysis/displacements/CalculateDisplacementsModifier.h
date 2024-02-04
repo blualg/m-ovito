@@ -51,7 +51,7 @@ public:
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<EnginePtr> createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval) override;
+    virtual Future<ModifierEnginePtr> createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval) override;
 
 private:
 

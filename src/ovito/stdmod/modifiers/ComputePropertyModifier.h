@@ -28,8 +28,8 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/PropertyExpressionEvaluator.h>
-#include <ovito/core/dataset/pipeline/AsynchronousDelegatingModifier.h>
-#include <ovito/core/dataset/pipeline/AsynchronousModificationNode.h>
+#include <ovito/core/dataset/pipeline/DelegatingModifier.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 
 namespace Ovito {
 
@@ -46,7 +46,7 @@ protected:
     using ModifierDelegate::ModifierDelegate;
 
     /// Asynchronous compute engine that does the actual work in a separate thread.
-    class OVITO_STDMOD_EXPORT PropertyComputeEngine : public AsynchronousModifier::Engine
+    class OVITO_STDMOD_EXPORT PropertyComputeEngine : public ModifierEngine
     {
     public:
 
@@ -152,15 +152,15 @@ public:
 /**
  * \brief Computes the values of a property from a user-defined math expression.
  */
-class OVITO_STDMOD_EXPORT ComputePropertyModifier : public AsynchronousDelegatingModifier
+class OVITO_STDMOD_EXPORT ComputePropertyModifier : public DelegatingModifier
 {
     /// Give this modifier class its own metaclass.
-    class ComputePropertyModifierClass : public AsynchronousDelegatingModifier::OOMetaClass
+    class ComputePropertyModifierClass : public DelegatingModifier::OOMetaClass
     {
     public:
 
         /// Inherit constructor from base class.
-        using AsynchronousDelegatingModifier::OOMetaClass::OOMetaClass;
+        using DelegatingModifier::OOMetaClass::OOMetaClass;
 
         /// Return the metaclass of delegates for this modifier type.
         virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const override { return ComputePropertyModifierDelegate::OOClass(); }
@@ -178,7 +178,7 @@ public:
     explicit ComputePropertyModifier(ObjectInitializationFlags flags);
 
     /// \brief Returns the current delegate of this ComputePropertyModifier.
-    ComputePropertyModifierDelegate* delegate() const { return static_object_cast<ComputePropertyModifierDelegate>(AsynchronousDelegatingModifier::delegate()); }
+    ComputePropertyModifierDelegate* delegate() const { return static_object_cast<ComputePropertyModifierDelegate>(DelegatingModifier::delegate()); }
 
     /// \brief Sets the math expression that is used to calculate the values of one of the new property's components.
     /// \param index The property component for which the expression should be set.
@@ -230,7 +230,7 @@ protected:
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
@@ -250,7 +250,7 @@ private:
 /**
  * Used by the ComputePropertyModifier to store working data.
  */
-class OVITO_STDMOD_EXPORT ComputePropertyModificationNode : public AsynchronousModificationNode
+class OVITO_STDMOD_EXPORT ComputePropertyModificationNode : public ModificationNode
 {
     OVITO_CLASS(ComputePropertyModificationNode)
     OVITO_CLASSINFO("ClassNameAlias", "ComputePropertyModifierApplication");  // For backward compatibility with OVITO 3.9.2
@@ -258,7 +258,7 @@ class OVITO_STDMOD_EXPORT ComputePropertyModificationNode : public AsynchronousM
 public:
 
     /// Constructor.
-    explicit ComputePropertyModificationNode(ObjectInitializationFlags flags) : AsynchronousModificationNode(flags) {}
+    using ModificationNode::ModificationNode;
 
 private:
 

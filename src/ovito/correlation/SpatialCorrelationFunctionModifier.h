@@ -30,7 +30,7 @@
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/particles/util/CutoffNeighborFinder.h>
 #include <ovito/particles/objects/Particles.h>
-#include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
+#include <ovito/core/dataset/pipeline/Modifier.h>
 
 #include <complex>
 
@@ -39,15 +39,15 @@ namespace Ovito {
 /**
  * \brief This modifier computes the spatial correlation function between two particle properties.
  */
-class OVITO_CORRELATIONFUNCTIONPLUGIN_EXPORT SpatialCorrelationFunctionModifier : public AsynchronousModifier
+class OVITO_CORRELATIONFUNCTIONPLUGIN_EXPORT SpatialCorrelationFunctionModifier : public Modifier
 {
     /// Give this modifier class its own metaclass.
-    class OOMetaClass : public AsynchronousModifier::OOMetaClass
+    class OOMetaClass : public Modifier::OOMetaClass
     {
     public:
 
         /// Inherit constructor from base metaclass.
-        using AsynchronousModifier::OOMetaClass::OOMetaClass;
+        using Modifier::OOMetaClass::OOMetaClass;
 
         /// Asks the metaclass whether the modifier can be applied to the given input data.
         virtual bool isApplicableTo(const DataCollection& input) const override;
@@ -83,12 +83,12 @@ public:
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
     /// Computes the modifier's results.
-    class CorrelationAnalysisEngine : public Engine
+    class CorrelationAnalysisEngine : public ModifierEngine
     {
     public:
 
@@ -106,7 +106,7 @@ private:
                                   FloatType neighCutoff,
                                   int numberOfNeighBins,
                                   AveragingDirectionType averagingDirection) :
-            Engine(request),
+            ModifierEngine(request),
             _positions(std::move(positions)),
             _sourceProperty1(std::move(sourceProperty1)), _vecComponent1(vecComponent1),
             _sourceProperty2(std::move(sourceProperty2)), _vecComponent2(vecComponent2),
@@ -147,7 +147,7 @@ private:
                     event.field() == PROPERTY_FIELD(typeOfReciprocalSpacePlot))
                 return true;
 
-            return Engine::modifierChanged(event);
+            return ModifierEngine::modifierChanged(event);
         }
 
         /// Compute real and reciprocal space correlation function via FFT.

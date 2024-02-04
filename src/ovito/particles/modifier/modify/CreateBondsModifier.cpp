@@ -63,7 +63,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CreateBondsModifier, vdwPrefactor, PercentP
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-CreateBondsModifier::CreateBondsModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
+CreateBondsModifier::CreateBondsModifier(ObjectInitializationFlags flags) : Modifier(flags),
     _cutoffMode(UniformCutoff),
     _uniformCutoff(3.2),
     _onlyIntraMoleculeBonds(false),
@@ -92,7 +92,7 @@ bool CreateBondsModifier::referenceEvent(RefTarget* source, const ReferenceEvent
         // again in the future.
         setAutoDisableBondDisplay(false);
     }
-    return AsynchronousModifier::referenceEvent(source, event);
+    return Modifier::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -138,7 +138,7 @@ FloatType CreateBondsModifier::getPairwiseCutoff(const QVariant& typeA, const QV
 ******************************************************************************/
 void CreateBondsModifier::initializeModifier(const ModifierInitializationRequest& request)
 {
-    AsynchronousModifier::initializeModifier(request);
+    Modifier::initializeModifier(request);
 
     int bondTypeId = 1;
     const PipelineFlowState& input = request.modificationNode()->evaluateInputSynchronous(request);
@@ -206,7 +206,7 @@ const ElementType* CreateBondsModifier::lookupParticleType(const Property* typeP
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CreateBondsModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<ModifierEnginePtr> CreateBondsModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get modifier input.
     const Particles* particles = input.expectObject<Particles>();
@@ -430,22 +430,17 @@ void CreateBondsModifier::BondsEngine::applyResults(const ModifierEvaluationRequ
 }
 
 /******************************************************************************
-* This function is called from AsynchronousModifier::evaluateSynchronous() to
-* apply the results from the last asycnhronous compute engine during a
-* synchronous pipeline evaluation.
+* Modifies the input data synchronously.
 ******************************************************************************/
-bool CreateBondsModifier::applyCachedResultsSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void CreateBondsModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     // If results are still available from the last pipeline evaluation, apply them to the input data.
-    if(AsynchronousModifier::applyCachedResultsSynchronous(request, state))
-        return true;
+    Modifier::evaluateSynchronous(request, state);
 
     // Bonds have not been computed yet, but still add the empty Bonds to the pipeline output
-    // so that subsequent modifiers in the pipeline see it.
+    // so that subsequent modifiers in the pipeline see it in any case.
     state.expectMutableObject<Particles>()->addBonds({}, bondsVis(), {}, bondType());
     OVITO_ASSERT(state.expectObject<Particles>()->bonds());
-
-    return false;
 }
 
 }   // End of namespace

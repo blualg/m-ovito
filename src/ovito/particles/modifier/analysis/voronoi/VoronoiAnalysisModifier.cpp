@@ -95,7 +95,7 @@ private:
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-VoronoiAnalysisModifier::VoronoiAnalysisModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
+VoronoiAnalysisModifier::VoronoiAnalysisModifier(ObjectInitializationFlags flags) : Modifier(flags),
     _onlySelected(false),
     _useRadii(false),
     _edgeThreshold(0),
@@ -130,7 +130,7 @@ bool VoronoiAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> VoronoiAnalysisModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<ModifierEnginePtr> VoronoiAnalysisModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get the input particles.
     const Particles* particles = input.expectObject<Particles>();

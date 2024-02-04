@@ -30,22 +30,22 @@
 #include <ovito/particles/objects/Bonds.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/table/DataTable.h>
-#include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
+#include <ovito/core/dataset/pipeline/Modifier.h>
 
 namespace Ovito {
 
 /**
  * \brief This modifier builds clusters of particles.
  */
-class OVITO_PARTICLES_EXPORT ClusterAnalysisModifier : public AsynchronousModifier
+class OVITO_PARTICLES_EXPORT ClusterAnalysisModifier : public Modifier
 {
     /// Give this modifier class its own metaclass.
-    class ClusterAnalysisModifierClass : public AsynchronousModifier::OOMetaClass
+    class ClusterAnalysisModifierClass : public Modifier::OOMetaClass
     {
     public:
 
         /// Inherit constructor from base metaclass.
-        using AsynchronousModifier::OOMetaClass::OOMetaClass;
+        using Modifier::OOMetaClass::OOMetaClass;
 
         /// Asks the metaclass whether the modifier can be applied to the given input data.
         virtual bool isApplicableTo(const DataCollection& input) const override;
@@ -71,18 +71,18 @@ public:
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
     /// Computes the modifier's results.
-    class ClusterAnalysisEngine : public Engine
+    class ClusterAnalysisEngine : public ModifierEngine
     {
     public:
 
         /// Constructor.
         ClusterAnalysisEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr masses, const SimulationCell* simCell, bool sortBySize, bool unwrapParticleCoordinates, bool computeCentersOfMass, bool computeRadiusOfGyration, ConstPropertyPtr selection, PropertyPtr periodicImageBondProperty, ConstPropertyPtr bondTopology) :
-            Engine(request),
+            ModifierEngine(request),
             _positions(positions),
             _masses(std::move(masses)),
             _simCell(simCell),

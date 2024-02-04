@@ -87,6 +87,9 @@ public:
         return std::move(inputLabels);
     }
 
+    /// Indicates that this modifier wants preliminary viewport updates whenever its parameters change.
+    virtual bool performPreliminaryUpdateAfterChange() override { return true; }
+
 protected:
 
     /// \brief Is called when a RefTarget referenced by this object generated an event.

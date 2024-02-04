@@ -49,7 +49,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ExpandSelectionModifier, numberOfIterations
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ExpandSelectionModifier::ExpandSelectionModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
+ExpandSelectionModifier::ExpandSelectionModifier(ObjectInitializationFlags flags) : Modifier(flags),
     _mode(CutoffRange),
     _cutoffRange(3.2),
     _numNearestNeighbors(1),
@@ -69,7 +69,7 @@ bool ExpandSelectionModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ExpandSelectionModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<ModifierEnginePtr> ExpandSelectionModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get the input particles.
     const Particles* particles = input.expectObject<Particles>();

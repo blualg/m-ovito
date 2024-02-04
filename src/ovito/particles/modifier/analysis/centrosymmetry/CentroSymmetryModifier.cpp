@@ -46,7 +46,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(CentroSymmetryModifier, numNeighbors, Integer
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-CentroSymmetryModifier::CentroSymmetryModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
+CentroSymmetryModifier::CentroSymmetryModifier(ObjectInitializationFlags flags) : Modifier(flags),
     _numNeighbors(12),
     _mode(ConventionalMode),
     _onlySelectedParticles(false)
@@ -64,7 +64,7 @@ bool CentroSymmetryModifier::OOMetaClass::isApplicableTo(const DataCollection& i
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CentroSymmetryModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<ModifierEnginePtr> CentroSymmetryModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get modifier input.
     const Particles* particles = input.expectObject<Particles>();

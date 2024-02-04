@@ -51,7 +51,7 @@ AcklandJonesModifier::AcklandJonesModifier(ObjectInitializationFlags flags) : St
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> AcklandJonesModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<ModifierEnginePtr> AcklandJonesModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get modifier input.
     const Particles* particles = input.expectObject<Particles>();

@@ -27,7 +27,7 @@
 #include <ovito/particles/objects/Bonds.h>
 #include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
-#include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
+#include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 
 namespace Ovito {
@@ -35,15 +35,15 @@ namespace Ovito {
 /**
  * \brief A modifier that creates coordination polyhedra around atoms.
  */
-class OVITO_PARTICLES_EXPORT CoordinationPolyhedraModifier : public AsynchronousModifier
+class OVITO_PARTICLES_EXPORT CoordinationPolyhedraModifier : public Modifier
 {
     /// Give this modifier class its own metaclass.
-    class CoordinationPolyhedraModifierClass : public AsynchronousModifier::OOMetaClass
+    class CoordinationPolyhedraModifierClass : public Modifier::OOMetaClass
     {
     public:
 
         /// Inherit constructor from base metaclass.
-        using AsynchronousModifier::OOMetaClass::OOMetaClass;
+        using Modifier::OOMetaClass::OOMetaClass;
 
         /// Asks the metaclass whether the modifier can be applied to the given input data.
         virtual bool isApplicableTo(const DataCollection& input) const override;
@@ -62,12 +62,12 @@ public:
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
     /// Computation engine that builds the polyhedra.
-    class ComputePolyhedraEngine : public Engine
+    class ComputePolyhedraEngine : public ModifierEngine
     {
     public:
 
@@ -79,7 +79,7 @@ private:
                 ConstPropertyPtr bondPeriodicImages,
                 DataOORef<SurfaceMesh> mesh,
                 std::vector<ConstPropertyPtr> particleProperties) :
-            Engine(request),
+            ModifierEngine(request),
             _positions(std::move(positions)),
             _selection(std::move(selection)),
             _bondTopology(std::move(bondTopology)),

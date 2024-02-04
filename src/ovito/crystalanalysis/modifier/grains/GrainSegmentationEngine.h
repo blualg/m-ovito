@@ -29,7 +29,7 @@
 #include <ovito/particles/objects/Bonds.h>
 #include <ovito/particles/modifier/analysis/ptm/PTMAlgorithm.h>
 #include <ovito/stdobj/util/ElementOrderingFingerprint.h>
-#include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
+#include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/utilities/DisjointSet.h>
 #include "GrainSegmentationModifier.h"
 
@@ -96,9 +96,10 @@ static void insert_halfedge(HalfEdge* header, HalfEdge* edge) {
 /*
  * Computation engine of the GrainSegmentationModifier, which decomposes a polycrystalline microstructure into individual grains.
  */
-class GrainSegmentationEngine1 : public AsynchronousModifier::Engine
+class GrainSegmentationEngine1 : public ModifierEngine
 {
 public:
+
     class Graph
     {
     public:
@@ -367,11 +368,11 @@ public:
                 || event.field() == PROPERTY_FIELD(GrainSegmentationModifier::orphanAdoption))
             return true;
 
-        return AsynchronousModifier::Engine::modifierChanged(event);
+        return ModifierEngine::modifierChanged(event);
     }
 
     /// Creates another engine that performs the next stage of the computation.
-    virtual std::shared_ptr<Engine> createContinuationEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    virtual ModifierEnginePtr createContinuationEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
     /// Returns the property storage that contains the input particle positions.
     const ConstPropertyPtr& positions() const { return _positions; }
@@ -540,7 +541,7 @@ private:
 /*
  * Computation engine of the GrainSegmentationModifier, which decomposes a polycrystalline microstructure into individual grains.
  */
-class GrainSegmentationEngine2 : public AsynchronousModifier::Engine
+class GrainSegmentationEngine2 : public ModifierEngine
 {
 public:
 
@@ -551,7 +552,7 @@ public:
             FloatType mergingThreshold,
             bool adoptOrphanAtoms,
             size_t minGrainAtomCount) :
-        Engine(request),
+        ModifierEngine(request),
         _engine1(std::move(engine1)),
         _numParticles(_engine1->_numParticles),
         _mergingThreshold(mergingThreshold),
@@ -574,7 +575,7 @@ public:
         if(event.field() == PROPERTY_FIELD(GrainSegmentationModifier::colorParticlesByGrain))
             return true; // Indicate that the stored results are not affected by the parameter change.
 
-        return Engine::modifierChanged(event);
+        return ModifierEngine::modifierChanged(event);
     }
 
     /// Returns the array storing the cluster ID of each particle.

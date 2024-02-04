@@ -43,7 +43,7 @@ SET_PROPERTY_FIELD_LABEL(StructureIdentificationModifier, colorByType, "Color pa
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-StructureIdentificationModifier::StructureIdentificationModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
+StructureIdentificationModifier::StructureIdentificationModifier(ObjectInitializationFlags flags) : Modifier(flags),
     _onlySelectedParticles(false),
     _colorByType(true)
 {
@@ -75,7 +75,7 @@ ElementType* StructureIdentificationModifier::createStructureType(int id, Partic
 ******************************************************************************/
 void StructureIdentificationModifier::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
-    AsynchronousModifier::saveToStream(stream, excludeRecomputableData);
+    Modifier::saveToStream(stream, excludeRecomputableData);
     stream.beginChunk(0x02);
     // For future use.
     stream.endChunk();
@@ -86,7 +86,7 @@ void StructureIdentificationModifier::saveToStream(ObjectSaveStream& stream, boo
 ******************************************************************************/
 void StructureIdentificationModifier::loadFromStream(ObjectLoadStream& stream)
 {
-    AsynchronousModifier::loadFromStream(stream);
+    Modifier::loadFromStream(stream);
     stream.expectChunkRange(0, 2);
     // For future use.
     stream.closeChunk();
@@ -96,7 +96,7 @@ void StructureIdentificationModifier::loadFromStream(ObjectLoadStream& stream)
 * Compute engine constructor.
 ******************************************************************************/
 StructureIdentificationModifier::StructureIdentificationEngine::StructureIdentificationEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection) :
-    Engine(request),
+    ModifierEngine(request),
     _positions(std::move(positions)),
     _simCell(simCell),
     _selection(std::move(selection)),

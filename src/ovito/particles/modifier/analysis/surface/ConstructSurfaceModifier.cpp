@@ -74,7 +74,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ConstructSurfaceModifier, isoValue, FloatPa
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ConstructSurfaceModifier::ConstructSurfaceModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
+ConstructSurfaceModifier::ConstructSurfaceModifier(ObjectInitializationFlags flags) : Modifier(flags),
     _smoothingLevel(8),
     _probeSphereRadius(4),
     _onlySelectedParticles(false),
@@ -106,7 +106,7 @@ bool ConstructSurfaceModifier::OOMetaClass::isApplicableTo(const DataCollection&
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ConstructSurfaceModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<ModifierEnginePtr> ConstructSurfaceModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get input particle positions.
     const Particles* particles = input.expectObject<Particles>();

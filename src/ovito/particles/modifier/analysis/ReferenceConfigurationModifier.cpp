@@ -51,7 +51,7 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(ReferenceConfigurationModifierApplication);
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ReferenceConfigurationModifier::ReferenceConfigurationModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
+ReferenceConfigurationModifier::ReferenceConfigurationModifier(ObjectInitializationFlags flags) : Modifier(flags),
     _affineMapping(NO_MAPPING),
     _useReferenceFrameOffset(false),
     _referenceFrameNumber(0),
@@ -73,7 +73,7 @@ bool ReferenceConfigurationModifier::OOMetaClass::isApplicableTo(const DataColle
 ******************************************************************************/
 TimeInterval ReferenceConfigurationModifier::validityInterval(const ModifierEvaluationRequest& request) const
 {
-    TimeInterval iv = AsynchronousModifier::validityInterval(request);
+    TimeInterval iv = Modifier::validityInterval(request);
 
     if(useReferenceFrameOffset()) {
         // Results will only be valid for the duration of the current frame when using a relative offset.
@@ -88,7 +88,7 @@ TimeInterval ReferenceConfigurationModifier::validityInterval(const ModifierEval
 ******************************************************************************/
 void ReferenceConfigurationModifier::inputCachingHints(TimeIntervalUnion& cachingIntervals, ModificationNode* node)
 {
-    AsynchronousModifier::inputCachingHints(cachingIntervals, node);
+    Modifier::inputCachingHints(cachingIntervals, node);
 
     // Only need to communicate caching hints when reference configuration is provided by the upstream pipeline.
     if(!referenceConfiguration()) {
@@ -117,7 +117,7 @@ void ReferenceConfigurationModifier::inputCachingHints(TimeIntervalUnion& cachin
 ******************************************************************************/
 void ReferenceConfigurationModifier::restrictInputValidityInterval(TimeInterval& iv) const
 {
-    AsynchronousModifier::restrictInputValidityInterval(iv);
+    Modifier::restrictInputValidityInterval(iv);
 
     if(!referenceConfiguration()) {
         // If the upstream pipeline changes, all computed output frames of the modifier become invalid.
@@ -136,14 +136,14 @@ bool ReferenceConfigurationModifier::referenceEvent(RefTarget* source, const Ref
         notifyTargetChanged();
         return false;
     }
-    return AsynchronousModifier::referenceEvent(source, event);
+    return Modifier::referenceEvent(source, event);
 }
 
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ReferenceConfigurationModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<ModifierEnginePtr> ReferenceConfigurationModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // What is the reference frame number to use?
     TimeInterval validityInterval = input.stateValidity();
@@ -238,7 +238,7 @@ ReferenceConfigurationModifier::RefConfigEngineBase::RefConfigEngineBase(
     ConstPropertyPtr refPositions, const SimulationCell* simCellRef,
     ConstPropertyPtr identifiers, ConstPropertyPtr refIdentifiers,
     AffineMappingType affineMapping, bool useMinimumImageConvention) :
-    Engine(request, validityInterval),
+    ModifierEngine(request, validityInterval),
     _positions(std::move(positions)),
     _refPositions(std::move(refPositions)),
     _identifiers(std::move(identifiers)),

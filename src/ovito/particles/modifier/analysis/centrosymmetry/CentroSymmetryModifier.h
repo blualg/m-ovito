@@ -28,22 +28,22 @@
 #include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/table/DataTable.h>
-#include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
+#include <ovito/core/dataset/pipeline/Modifier.h>
 
 namespace Ovito {
 
 /**
  * \brief Calculates the centrosymmetry parameter (CSP) for particles.
  */
-class OVITO_PARTICLES_EXPORT CentroSymmetryModifier : public AsynchronousModifier
+class OVITO_PARTICLES_EXPORT CentroSymmetryModifier : public Modifier
 {
     /// Give this modifier class its own metaclass.
-    class CentroSymmetryModifierClass : public AsynchronousModifier::OOMetaClass
+    class CentroSymmetryModifierClass : public Modifier::OOMetaClass
     {
     public:
 
         /// Inherit constructor from base metaclass.
-        using AsynchronousModifier::OOMetaClass::OOMetaClass;
+        using Modifier::OOMetaClass::OOMetaClass;
 
         /// Asks the metaclass whether the modifier can be applied to the given input data.
         virtual bool isApplicableTo(const DataCollection& input) const override;
@@ -74,7 +74,7 @@ public:
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
     /// Computes the centrosymmetry parameter of a single particle.
     static FloatType computeCSP(NearestNeighborFinder& neighList, size_t particleIndex, CSPMode mode);
@@ -82,13 +82,13 @@ protected:
 private:
 
     /// Computes the modifier's results.
-    class CentroSymmetryEngine : public Engine
+    class CentroSymmetryEngine : public ModifierEngine
     {
     public:
 
         /// Constructor.
         CentroSymmetryEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCell* simCell, int nneighbors, CSPMode mode, DataOORef<DataTable> histogram) :
-            Engine(request),
+            ModifierEngine(request),
             _nneighbors(nneighbors),
             _mode(mode),
             _positions(std::move(positions)),

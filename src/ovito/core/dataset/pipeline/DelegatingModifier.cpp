@@ -25,7 +25,6 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "DelegatingModifier.h"
-#include "AsynchronousDelegatingModifier.h"
 
 namespace Ovito {
 
@@ -53,9 +52,6 @@ Modifier* ModifierDelegate::modifier() const
         }
         else if(MultiDelegatingModifier* modifier = dynamic_object_cast<MultiDelegatingModifier>(dependent)) {
             if(modifier->delegates().contains(const_cast<ModifierDelegate*>(this))) result = modifier;
-        }
-        else if(AsynchronousDelegatingModifier* modifier = dynamic_object_cast<AsynchronousDelegatingModifier>(dependent)) {
-            if(modifier->delegate() == this) result = modifier;
         }
     });
     return result;

@@ -60,7 +60,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(GrainSegmentationModifier, minGrainAtomCoun
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-GrainSegmentationModifier::GrainSegmentationModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
+GrainSegmentationModifier::GrainSegmentationModifier(ObjectInitializationFlags flags) : Modifier(flags),
         _mergeAlgorithm(GraphClusteringAutomatic),
         _minGrainAtomCount(100),
         _mergingThreshold(0.0),
@@ -92,13 +92,13 @@ void GrainSegmentationModifier::propertyChanged(const PropertyFieldDescriptor* f
         // Immediately update viewports if parameters are changed by the user that don't require a full recalculation.
         notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
     }
-    AsynchronousModifier::propertyChanged(field);
+    Modifier::propertyChanged(field);
 }
 
 /******************************************************************************
 * Creates a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> GrainSegmentationModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<ModifierEnginePtr> GrainSegmentationModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get modifier input.
     const Particles* particles = input.expectObject<Particles>();

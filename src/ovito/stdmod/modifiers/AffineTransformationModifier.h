@@ -154,6 +154,9 @@ public:
     /// If enabled, the transformation is only applied to selected elements.
     void transformVectors(const PipelineFlowState& inputState, const Property* input, Property* output, const Property* selection);
 
+    /// Indicates that this modifier wants preliminary viewport updates whenever its parameters change.
+    virtual bool performPreliminaryUpdateAfterChange() override { return true; }
+
 protected:
 
     /// This property fields stores the transformation matrix (used in 'relative' mode).

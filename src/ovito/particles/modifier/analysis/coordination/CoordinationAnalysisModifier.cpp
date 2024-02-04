@@ -52,7 +52,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(CoordinationAnalysisModifier, numberOfBins, I
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-CoordinationAnalysisModifier::CoordinationAnalysisModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
+CoordinationAnalysisModifier::CoordinationAnalysisModifier(ObjectInitializationFlags flags) : Modifier(flags),
     _cutoff(3.2),
     _numberOfBins(200),
     _computePartialRDF(false),
@@ -71,7 +71,7 @@ bool CoordinationAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollect
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CoordinationAnalysisModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<ModifierEnginePtr> CoordinationAnalysisModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get the current positions.
     const Particles* particles = input.expectObject<Particles>();

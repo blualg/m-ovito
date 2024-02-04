@@ -25,16 +25,15 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
-#include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
-#include <ovito/core/dataset/pipeline/PipelineNode.h>
-#include <ovito/core/dataset/pipeline/AsynchronousModificationNode.h>
+#include <ovito/core/dataset/pipeline/Modifier.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 
 namespace Ovito {
 
 /**
  * \brief Base class for analysis modifiers that require a reference configuration.
  */
-class OVITO_PARTICLES_EXPORT ReferenceConfigurationModifier : public AsynchronousModifier
+class OVITO_PARTICLES_EXPORT ReferenceConfigurationModifier : public Modifier
 {
     /// Give this modifier class its own metaclass.
     class OVITO_PARTICLES_EXPORT ReferenceConfigurationModifierClass : public ModifierClass
@@ -81,13 +80,13 @@ protected:
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<EnginePtr> createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval) = 0;
+    virtual Future<ModifierEnginePtr> createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval) = 0;
 
     /// Base class for compute engines that make use of a reference configuration.
-    class OVITO_PARTICLES_EXPORT RefConfigEngineBase : public Engine
+    class OVITO_PARTICLES_EXPORT RefConfigEngineBase : public ModifierEngine
     {
     public:
 
@@ -189,14 +188,14 @@ protected:
  * This class is no longer used as of 02/2020. It's only here for backward compatibility with files written by older OVITO versions.
  * The class can be removed in the future.
  */
-class OVITO_PARTICLES_EXPORT ReferenceConfigurationModifierApplication : public AsynchronousModificationNode
+class OVITO_PARTICLES_EXPORT ReferenceConfigurationModifierApplication : public ModificationNode
 {
     OVITO_CLASS(ReferenceConfigurationModifierApplication)
 
 public:
 
     /// Constructor.
-    using AsynchronousModificationNode::AsynchronousModificationNode;
+    using ModificationNode::ModificationNode;
 };
 
 }   // End of namespace

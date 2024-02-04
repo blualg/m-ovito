@@ -23,6 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/pipeline/PipelineCache.h>
 #include <ovito/core/dataset/pipeline/PipelineNode.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/data/TransformingDataVis.h>
@@ -54,7 +55,7 @@ PipelineCache::~PipelineCache() // NOLINT
 ******************************************************************************/
 SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEvaluationRequest& request)
 {
-    OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
+    OVITO_ASSERT(ExecutionContext::isMainThread());
     OVITO_ASSERT(ExecutionContext::current().isValid());
     OVITO_ASSERT(this_task::get());
 
@@ -269,7 +270,7 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipelineImpl(const Pipeli
 void PipelineCache::cleanupEvaluation(std::forward_list<EvaluationInProgress>::iterator evaluation)
 {
     OVITO_ASSERT(!_evaluationsInProgress.empty());
-    OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
+    OVITO_ASSERT(ExecutionContext::isMainThread());
     for(auto iter = _evaluationsInProgress.before_begin(), next = iter++; next != _evaluationsInProgress.end(); iter = next++) {
         if(next == evaluation) {
             _evaluationsInProgress.erase_after(iter);
@@ -404,7 +405,8 @@ PipelineFlowState PipelineCache::evaluatePipelineStageSynchronous(const Pipeline
 ******************************************************************************/
 void PipelineCache::invalidate(TimeInterval keepInterval, bool resetSynchronousCache)
 {
-    OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
+    OVITO_ASSERT(ExecutionContext::isMainThread());
+
     if(_preparingEvaluation) {
         qWarning() << "Warning: Invalidating the pipeline cache while preparing the evaluation of the pipeline is not allowed. This error may be the result of an invalid user Python script invoking a function that is not permitted in this context.";
         return;

@@ -27,14 +27,14 @@
 #include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/stdobj/table/DataTable.h>
-#include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
+#include <ovito/core/dataset/pipeline/Modifier.h>
 
 namespace Ovito {
 
 /*
  * Constructs an isosurface from a data grid.
  */
-class OVITO_GRID_EXPORT CreateIsosurfaceModifier : public AsynchronousModifier
+class OVITO_GRID_EXPORT CreateIsosurfaceModifier : public Modifier
 {
     /// Give this modifier class its own metaclass.
     class CreateIsosurfaceModifierClass : public ModifierClass
@@ -65,10 +65,10 @@ public:
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
-    /// Decides whether a preliminary viewport update is performed after the modifier has been
+    /// Indicates whether a preliminary viewport update should be performed after the modifier has been
     /// evaluated but before the entire pipeline evaluation is complete.
     /// We suppress such preliminary updates for this modifier, because it produces a surface mesh,
-    /// which requires further asynchronous processing before a viewport update makes sense.
+    /// which always requires further asynchronous processing before a viewport update makes sense.
     virtual bool performPreliminaryUpdateAfterEvaluation() override { return false; }
 
     /// Returns the level at which to create the isosurface.
@@ -86,7 +86,7 @@ public:
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
     /// Is called when the value of a property of this object has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
@@ -97,7 +97,7 @@ protected:
 private:
 
     /// Computation engine that builds the isosurface mesh.
-    class ComputeIsosurfaceEngine : public Engine
+    class ComputeIsosurfaceEngine : public ModifierEngine
     {
     public:
 
@@ -106,7 +106,7 @@ private:
                                 const VoxelGrid::GridDimensions& gridShape, VoxelGrid::GridType gridType, ConstPropertyPtr property,
                                 int vectorComponent, DataOORef<SurfaceMesh> mesh, FloatType isolevel, int smoothingLevel,
                                 std::vector<ConstPropertyPtr> auxiliaryProperties, DataOORef<DataTable> histogram)
-            : Engine(request, validityInterval),
+            : ModifierEngine(request, validityInterval),
               _gridShape(gridShape),
               _gridType(gridType),
               _property(std::move(property)),

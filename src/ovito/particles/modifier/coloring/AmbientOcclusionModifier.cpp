@@ -48,7 +48,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(AmbientOcclusionModifier, bufferResolution, I
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-AmbientOcclusionModifier::AmbientOcclusionModifier(ObjectInitializationFlags flags) : AsynchronousModifier(flags),
+AmbientOcclusionModifier::AmbientOcclusionModifier(ObjectInitializationFlags flags) : Modifier(flags),
     _intensity(0.7),
     _samplingCount(40),
     _bufferResolution(3)
@@ -67,7 +67,7 @@ bool AmbientOcclusionModifier::OOMetaClass::isApplicableTo(const DataCollection&
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<ModifierEnginePtr> AmbientOcclusionModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get modifier input.
     const Particles* particles = input.expectObject<Particles>();
@@ -109,7 +109,7 @@ Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(c
 ******************************************************************************/
 AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ElementOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
         ConstPropertyPtr particleRadii, const Box3& boundingBox, OORef<SceneRenderer> renderer) :
-    Engine(request, validityInterval),
+    ModifierEngine(request, validityInterval),
     _resolution(resolution),
     _samplingCount(std::max(1,samplingCount)),
     _positions(std::move(positions)),

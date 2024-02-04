@@ -30,22 +30,22 @@
 #include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
-#include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
+#include <ovito/core/dataset/pipeline/Modifier.h>
 
 namespace Ovito {
 
 /**
  * \brief This modifier computes the atomic volume and the Voronoi indices of particles.
  */
-class OVITO_PARTICLES_EXPORT VoronoiAnalysisModifier : public AsynchronousModifier
+class OVITO_PARTICLES_EXPORT VoronoiAnalysisModifier : public Modifier
 {
     /// Give this modifier class its own metaclass.
-    class VoronoiAnalysisModifierClass : public AsynchronousModifier::OOMetaClass
+    class VoronoiAnalysisModifierClass : public Modifier::OOMetaClass
     {
     public:
 
         /// Inherit constructor from base metaclass.
-        using AsynchronousModifier::OOMetaClass::OOMetaClass;
+        using Modifier::OOMetaClass::OOMetaClass;
 
         /// Asks the metaclass whether the modifier can be applied to the given input data.
         virtual bool isApplicableTo(const DataCollection& input) const override;
@@ -65,12 +65,12 @@ public:
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
     /// Computes the modifier's results.
-    class VoronoiAnalysisEngine : public Engine
+    class VoronoiAnalysisEngine : public ModifierEngine
     {
     public:
 
@@ -78,7 +78,7 @@ private:
         VoronoiAnalysisEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleIdentifiers, ConstPropertyPtr radii,
                             const SimulationCell* simCell, DataOORef<SurfaceMesh> polyhedraMesh,
                             bool computeIndices, bool computeBonds, FloatType edgeThreshold, FloatType faceThreshold, FloatType relativeFaceThreshold) :
-            Engine(request, validityInterval),
+            ModifierEngine(request, validityInterval),
             _positions(positions),
             _selection(std::move(selection)),
             _particleIdentifiers(std::move(particleIdentifiers)),

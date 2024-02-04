@@ -28,7 +28,7 @@
 #include <ovito/particles/objects/BondType.h>
 #include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
-#include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
+#include <ovito/core/dataset/pipeline/Modifier.h>
 
 /// This comparison operator is required for using QVariant as key-type in a QMap as done by CreateBondsModifier.
 /// The < operator for QVariant, which is part of the key-type, has been removed in Qt 6. Redefining it here is an ugly hack and should be
@@ -52,7 +52,7 @@ namespace Ovito {
 /**
  * \brief A modifier that creates bonds between pairs of particles based on their distance.
  */
-class OVITO_PARTICLES_EXPORT CreateBondsModifier : public AsynchronousModifier
+class OVITO_PARTICLES_EXPORT CreateBondsModifier : public Modifier
 {
     /// Give this modifier class its own metaclass.
     class CreateBondsModifierClass : public ModifierClass
@@ -86,7 +86,7 @@ public:
 private:
 
     /// Compute engine that creates bonds between particles.
-    class BondsEngine : public Engine
+    class BondsEngine : public ModifierEngine
     {
     public:
 
@@ -94,7 +94,7 @@ private:
         BondsEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr particleTypes,
                 const SimulationCell* simCell, DataOORef<Bonds> bondsObject, DataOORef<BondType> bondType, const Particles* particles, CutoffMode cutoffMode, FloatType maxCutoff, FloatType minCutoff, std::vector<std::vector<FloatType>> pairCutoffsSquared,
                 std::vector<FloatType> typeVdWRadiusMap, FloatType vdwPrefactor, ConstPropertyPtr moleculeIDs, std::vector<bool> isHydrogenType) :
-                    Engine(request),
+                    ModifierEngine(request),
                     _positions(std::move(positions)),
                     _particleTypes(std::move(particleTypes)),
                     _simCell(simCell),
@@ -189,11 +189,10 @@ protected:
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
-    /// This function is called from AsynchronousModifier::evaluateSynchronous() to apply the results from the last
-    /// asycnhronous compute engine during a synchronous pipeline evaluation.
-    virtual bool applyCachedResultsSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Modifies the input data synchronously.
+    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
     /// Looks up a particle type in the type list based on the name or the numeric ID.
     static const ElementType* lookupParticleType(const Property* typeProperty, const QVariant& typeSpecification);

@@ -53,7 +53,7 @@ IdentifyDiamondModifier::IdentifyDiamondModifier(ObjectInitializationFlags flags
  * Creates and initializes a computation engine that will compute the
  * modifier's results.
  ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> IdentifyDiamondModifier::createEngine(const ModifierEvaluationRequest& request,
+Future<ModifierEnginePtr> IdentifyDiamondModifier::createEngine(const ModifierEvaluationRequest& request,
                                                                               const PipelineFlowState& input)
 {
     // Get modifier input.

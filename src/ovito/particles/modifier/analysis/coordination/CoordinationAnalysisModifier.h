@@ -29,22 +29,22 @@
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/table/DataTable.h>
-#include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
+#include <ovito/core/dataset/pipeline/Modifier.h>
 
 namespace Ovito {
 
 /**
  * \brief This modifier computes the coordination number of each particle (i.e. the number of neighbors within a given cutoff radius).
  */
-class OVITO_PARTICLES_EXPORT CoordinationAnalysisModifier : public AsynchronousModifier
+class OVITO_PARTICLES_EXPORT CoordinationAnalysisModifier : public Modifier
 {
     /// Give this modifier class its own metaclass.
-    class CoordinationAnalysisModifierClass : public AsynchronousModifier::OOMetaClass
+    class CoordinationAnalysisModifierClass : public Modifier::OOMetaClass
     {
     public:
 
         /// Inherit constructor from base metaclass.
-        using AsynchronousModifier::OOMetaClass::OOMetaClass;
+        using Modifier::OOMetaClass::OOMetaClass;
 
         /// Asks the metaclass whether the modifier can be applied to the given input data.
         virtual bool isApplicableTo(const DataCollection& input) const override;
@@ -65,19 +65,19 @@ public:
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 
     /// Computes the modifier's results.
-    class CoordinationAnalysisEngine : public Engine
+    class CoordinationAnalysisEngine : public ModifierEngine
     {
     public:
 
         /// Constructor.
         CoordinationAnalysisEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCell* simCell,
                 FloatType cutoff, int rdfSampleCount, ConstPropertyPtr particleTypes, boost::container::flat_map<int,QString> uniqueTypes) :
-            Engine(request),
+            ModifierEngine(request),
             _positions(std::move(positions)),
             _selection(std::move(selection)),
             _simCell(simCell),

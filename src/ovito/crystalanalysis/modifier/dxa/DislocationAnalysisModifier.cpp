@@ -168,7 +168,7 @@ DislocationAnalysisModifier::DislocationAnalysisModifier(ObjectInitializationFla
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> DislocationAnalysisModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<ModifierEnginePtr> DislocationAnalysisModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get modifier inputs.
     const Particles* particles = input.expectObject<Particles>();

@@ -56,7 +56,7 @@ GrainSegmentationEngine1::GrainSegmentationEngine1(
             GrainSegmentationModifier::MergeAlgorithm algorithmType,
             bool handleCoherentInterfaces,
             bool outputBonds) :
-    Engine(request),
+    ModifierEngine(request),
     _inputFingerprint(std::move(fingerprint)),
     _positions(std::move(positions)),
     _simCell(simCell),
@@ -495,7 +495,7 @@ fclose(fout);
 /******************************************************************************
 * Creates another engine that performs the next stage of the computation.
 ******************************************************************************/
-std::shared_ptr<AsynchronousModifier::Engine> GrainSegmentationEngine1::createContinuationEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+std::shared_ptr<ModifierEngine> GrainSegmentationEngine1::createContinuationEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     GrainSegmentationModifier* modifier = static_object_cast<GrainSegmentationModifier>(request.modifier());
 

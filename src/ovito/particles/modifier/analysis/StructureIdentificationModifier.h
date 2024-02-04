@@ -28,22 +28,22 @@
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
-#include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
+#include <ovito/core/dataset/pipeline/Modifier.h>
 
 namespace Ovito {
 
 /**
  * \brief Base class for modifiers that assign a structure type to each particle.
  */
-class OVITO_PARTICLES_EXPORT StructureIdentificationModifier : public AsynchronousModifier
+class OVITO_PARTICLES_EXPORT StructureIdentificationModifier : public Modifier
 {
     /// Give this modifier class its own metaclass.
-    class OVITO_PARTICLES_EXPORT StructureIdentificationModifierClass : public AsynchronousModifier::OOMetaClass
+    class OVITO_PARTICLES_EXPORT StructureIdentificationModifierClass : public Modifier::OOMetaClass
     {
     public:
 
         /// Inherit constructor from base metaclass.
-        using AsynchronousModifier::OOMetaClass::OOMetaClass;
+        using Modifier::OOMetaClass::OOMetaClass;
 
         /// Asks the metaclass whether the modifier can be applied to the given input data.
         virtual bool isApplicableTo(const DataCollection& input) const override;
@@ -54,7 +54,7 @@ class OVITO_PARTICLES_EXPORT StructureIdentificationModifier : public Asynchrono
 public:
 
     /// Computes the modifier's results.
-    class OVITO_PARTICLES_EXPORT StructureIdentificationEngine : public Engine
+    class OVITO_PARTICLES_EXPORT StructureIdentificationEngine : public ModifierEngine
     {
     public:
 
@@ -71,7 +71,7 @@ public:
             // Avoid a recomputation if the user toggles just the color-by-type option.
             if(event.field() == PROPERTY_FIELD(colorByType))
                 return true;
-            return Engine::modifierChanged(event);
+            return ModifierEngine::modifierChanged(event);
         }
 
         /// Returns the property storage that contains the computed per-particle structure types.

@@ -25,7 +25,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/pipeline/ActiveObject.h>
-#include "Modifier.h"
 #include "ModifierGroup.h"
 #include "PipelineNode.h"
 
@@ -43,6 +42,8 @@ class OVITO_CORE_EXPORT ModificationNode : public PipelineNode
 {
     OVITO_CLASS(ModificationNode)
     OVITO_CLASSINFO("ClassNameAlias", "ModifierApplication");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("ClassNameAlias", "AsynchronousModifierApplication");  // For backward compatibility with OVITO 3.9.2
+    OVITO_CLASSINFO("ClassNameAlias", "AsynchronousModificationNode");  // For backward compatibility with OVITO 3.10.2
 
 public:
 
@@ -111,20 +112,25 @@ public:
     ModificationNode* getPredecessorModNode() const;
 
     /// \brief Returns the title of this modification node.
-    virtual QString objectTitle() const override {
-        if(modifier())
-            return modifier()->objectTitle(); // Inherit title from modifier.
-        else
-            return PipelineNode::objectTitle();
-    }
+    virtual QString objectTitle() const override;
 
     /// Returns whether the modifier AND the modifier group (if this node is part of one) are enabled.
-    bool modifierAndGroupEnabled() const {
-        return modifier() && modifier()->isEnabled() && (!modifierGroup() || modifierGroup()->isEnabled());
-    }
+    bool modifierAndGroupEnabled() const;
 
     /// Asks this object to delete itself.
     virtual void requestObjectDeletion() override;
+
+    /// Returns the sequence of compute engines from a recent successfully completed modifier evaluation which are still valid.
+    const std::vector<ModifierEnginePtr>& validStages() const { return _validStages; }
+
+    /// Stores the sequence of compute engines from a recent successfully completed modifier evaluation.
+    void setValidStages(std::vector<ModifierEnginePtr> validStages) { _validStages = std::move(validStages); }
+
+    /// Returns a compute engine containing the results of a fully completed algorithm, which may be outdated.
+    const ModifierEnginePtr& completedEngine() const { return _completedEngine; }
+
+    /// Stores the compute engine containing the results of a fully completed algorithm.
+    void setCompletedEngine(ModifierEnginePtr eng) { _completedEngine = std::move(eng); }
 
 protected:
 
@@ -136,9 +142,7 @@ protected:
 
     /// \brief Decides whether a preliminary viewport update is performed after this pipeline object has been
     ///        evaluated but before the rest of the pipeline is complete.
-    virtual bool performPreliminaryUpdateAfterEvaluation() override {
-        return PipelineNode::performPreliminaryUpdateAfterEvaluation() && (!modifier() || modifier()->performPreliminaryUpdateAfterEvaluation());
-    }
+    virtual bool performPreliminaryUpdateAfterEvaluation() override;
 
     /// Sends an event to all dependents of this RefTarget.
     virtual void notifyDependentsImpl(const ReferenceEvent& event) noexcept override;
@@ -159,44 +163,21 @@ private:
 
     /// The logical group this modification node belongs to (only used in the GUI).
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ModifierGroup>, modifierGroup, setModifierGroup, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_SUB_ANIM);
+
+    /// The sequence of compute engines from a recent successfully completed modifier evaluation which are still valid.
+    std::vector<ModifierEnginePtr> _validStages;
+
+    /// A compute engine containing the results of a fully completed algorithm, which may be outdated.
+    ModifierEnginePtr _completedEngine;
 };
 
 /// This macro registers some ModificationNode-derived class as the pipeline node type of some Modifier-derived class.
 #define SET_MODIFICATION_NODE_TYPE(ModifierClass, ModificationNodeClass) \
     static const int __modnodeSetter##ModifierClass = (Ovito::ModificationNode::registry().registerModificationNodeType(&ModifierClass::OOClass(), &ModificationNodeClass::OOClass()), 0);
 
-/**
- * Data structure representing the evaluation of a modification pipeline node.
- */
-class ModifierEvaluationRequest : public PipelineEvaluationRequest
-{
-public:
-
-    /// Constructor.
-    ModifierEvaluationRequest(const PipelineEvaluationRequest& pipelineRequest, const ModificationNode* node) :
-        PipelineEvaluationRequest(pipelineRequest), _modificationNode(const_cast<ModificationNode*>(node)) {}
-
-    /// Constructor.
-    ModifierEvaluationRequest(AnimationTime time, const ModificationNode* node) :
-        PipelineEvaluationRequest(time), _modificationNode(const_cast<ModificationNode*>(node)) {}
-
-    /// Constructor.
-    ModifierEvaluationRequest(AnimationSettings* animationSettings, const ModificationNode* node) :
-        PipelineEvaluationRequest(animationSettings), _modificationNode(const_cast<ModificationNode*>(node)) {}
-
-    /// Returns the modification node being evaluated.
-    ModificationNode* modificationNode() const { return _modificationNode; }
-
-    /// Returns the modifier being evaluated.
-    Modifier* modifier() const { return modificationNode()->modifier(); }
-
-private:
-
-    /// The modification pipeline node being evaluated.
-    ModificationNode* _modificationNode;
-};
-
-// Data structure passed to Modifier::initializeModifier():
-using ModifierInitializationRequest = ModifierEvaluationRequest;
-
 }   // End of namespace
+
+#include "ModifierEvaluationRequest.h"
+#include "Modifier.h"
+
+

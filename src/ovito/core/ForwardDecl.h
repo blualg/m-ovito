@@ -104,6 +104,8 @@ namespace Ovito
     using ModifierClassPtr = const ModifierClass*;
     class ModifierGroup;
     class ModificationNode;
+    class ModifierEngine;
+    using ModifierEnginePtr = std::shared_ptr<ModifierEngine>;
     class Pipeline;
     class PipelineFlowState;
     class DataCollection;
@@ -119,8 +121,6 @@ namespace Ovito
     class ModifierDelegate;
     class DelegatingModifier;
     class MultiDelegatingModifier;
-    class AsynchronousModifier;
-    class AsynchronousDelegatingModifier;
     class AbstractCameraObject;
     class AbstractCameraSource;
     class SceneRenderer;

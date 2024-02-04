@@ -42,6 +42,7 @@ namespace Ovito {
 class OVITO_CORE_EXPORT Modifier : public RefTarget
 {
     OVITO_CLASS_META(Modifier, ModifierClass)
+    OVITO_CLASSINFO("ClassNameAlias", "AsynchronousModifier");  // For backward compatibility with OVITO 3.10.2
 
 public:
 
@@ -49,7 +50,7 @@ public:
     explicit Modifier(ObjectInitializationFlags flags);
 
     /// \brief Modifies the input data synchronously.
-    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) {}
+    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state);
 
     /// \brief Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const { return TimeInterval::infinite(); }
@@ -107,13 +108,12 @@ public:
     /// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) {}
 
-    /// \brief Decides whether a preliminary viewport update is performed after the modifier has been
+    /// \brief Indicates whether a preliminary viewport update is performed after the modifier has been
     ///        evaluated but before the entire pipeline evaluation is complete.
     virtual bool performPreliminaryUpdateAfterEvaluation() { return true; }
 
-    /// \brief Decides whether a preliminary viewport update is performed every time the modifier
-    ///        itself changes.
-    virtual bool performPreliminaryUpdateAfterChange() { return true; }
+    /// \brief Indicates whether this modifier wants preliminary viewport updates whenever its parameters change.
+    virtual bool performPreliminaryUpdateAfterChange() { return false; }
 
     /// \brief Returns the number of animation frames this modifier provides.
     virtual int numberOfOutputFrames(ModificationNode* node) const;
@@ -132,6 +132,9 @@ protected:
     /// \brief Modifies the input data.
     virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input);
 
+    /// Creates a computation engine that will compute the modifier's results asynchronously.
+    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) { return {}; }
+
 private:
 
     /// Flag that indicates whether the modifier is enabled.
@@ -146,3 +149,5 @@ private:
 }   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Modifier*);
+
+#include "ModifierEngine.h"

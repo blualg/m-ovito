@@ -49,7 +49,7 @@ WignerSeitzAnalysisModifier::WignerSeitzAnalysisModifier(ObjectInitializationFla
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> WignerSeitzAnalysisModifier::createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval)
+Future<ModifierEnginePtr> WignerSeitzAnalysisModifier::createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval)
 {
     // Get the current particle positions.
     const Particles* particles = input.expectObject<Particles>();

@@ -74,6 +74,9 @@ public:
     /// Modifies the input data synchronously.
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
+    /// Indicates that this modifier wants preliminary viewport updates whenever its parameters change.
+    virtual bool performPreliminaryUpdateAfterChange() override { return true; }
+
 private:
 
     /// Computes the interpolated state between two input states.

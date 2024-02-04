@@ -59,7 +59,7 @@ CalculateDisplacementsModifier::CalculateDisplacementsModifier(ObjectInitializat
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> CalculateDisplacementsModifier::createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval)
+Future<ModifierEnginePtr> CalculateDisplacementsModifier::createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval)
 {
     // Get the current particle positions.
     const Particles* particles = input.expectObject<Particles>();

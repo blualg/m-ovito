@@ -72,6 +72,9 @@ public:
             createModifierDelegates(DeleteSelectedModifierDelegate::OOClass());
         }
     }
+
+    /// Indicates that this modifier wants preliminary viewport updates whenever its parameters change.
+    virtual bool performPreliminaryUpdateAfterChange() override { return true; }
 };
 
 }   // End of namespace

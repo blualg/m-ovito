@@ -94,6 +94,11 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
 {
     if(event.type() == ReferenceEvent::TargetEnabledOrDisabled) {
         if(source == modifier() || source == modifierGroup()) {
+
+            // Throw away cached results when the modifier is being disabled.
+            _validStages.clear();
+            _completedEngine.reset();
+
             // If modifier provides animation frames, the animation interval might change when the
             // modifier gets enabled/disabled.
             if(!isBeingLoaded())
@@ -140,7 +145,35 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
         // Propagate animation interval events from the modifier or the upstream pipeline.
         return true;
     }
+    else if(event.type() == ReferenceEvent::PipelineInputChanged && source == modifier()) {
+        // Whenever the modifier's inputs change, invalidate the cached computation results hold on to any
+        // cached results needed for preliminary pipeline evaluation.
+        _validStages.clear();
+        if(_completedEngine)
+            _completedEngine->setValidityInterval(TimeInterval::empty());
+    }
     else if(event.type() == ReferenceEvent::TargetChanged && (source == input() || source == modifier())) {
+
+        if(source == input()) {
+            // Whenever the modifier's inputs change, invalidate the cached async computation results but hold on to any
+            // cached results needed for preliminary pipeline evaluation.
+            _validStages.clear();
+            if(_completedEngine)
+                _completedEngine->setValidityInterval(TimeInterval::empty());
+        }
+        else if(source == modifier()) {
+            // Whenever the modifier changes, invalidate the cached async computation results
+            // unless the engine requests otherwise.
+            for(auto e = _validStages.begin(); e != _validStages.end(); ++e) {
+                if(!(*e)->modifierChanged(static_cast<const PropertyFieldEvent&>(event))) {
+                    _validStages.erase(e, _validStages.end());
+                    if(_completedEngine)
+                        _completedEngine->setValidityInterval(TimeInterval::empty());
+                    break;
+                }
+            }
+        }
+
         // Invalidate cached results when the modifier or the upstream pipeline change.
         TimeInterval validityInterval = static_cast<const TargetChangedEvent&>(event).unchangedInterval();
 
@@ -161,7 +194,14 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
         return false;
     }
     else if(event.type() == ReferenceEvent::PreliminaryStateAvailable && source == input()) {
+
+        // Throw away cached results when the modifier's input changes, unless the engine requests otherwise.
+        if(_completedEngine && !_completedEngine->pipelineInputChanged())
+            _completedEngine.reset();
+
+        // Also discard cached output state.
         pipelineCache().invalidateSynchronousState();
+
         // Inform modifier that the input state has changed.
         if(modifier())
             modifier()->notifyDependents(ReferenceEvent::PipelineInputChanged);
@@ -175,6 +215,11 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
 void ModificationNode::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
     if(field == PROPERTY_FIELD(modifier)) {
+
+        // Discard cached async computation results.
+        _validStages.clear();
+        _completedEngine.reset();
+
         // Reset all caches when the modifier is replaced.
         pipelineCache().invalidate(TimeInterval::empty(), true);
 
@@ -524,6 +569,34 @@ ModificationNode* ModificationNode::getPredecessorModNode() const
         }
     });
     return (pipelineCount <= 1) ? predecessor : nullptr;
+}
+
+/******************************************************************************
+* Returns the title of this modification node.
+******************************************************************************/
+QString ModificationNode::objectTitle() const
+{
+    if(modifier())
+        return modifier()->objectTitle(); // Inherit title from modifier.
+    else
+        return PipelineNode::objectTitle();
+}
+
+/******************************************************************************
+* Returns whether the modifier AND the modifier group (if this node is part of one) are enabled.
+******************************************************************************/
+bool ModificationNode::modifierAndGroupEnabled() const
+{
+    return modifier() && modifier()->isEnabled() && (!modifierGroup() || modifierGroup()->isEnabled());
+}
+
+/******************************************************************************
+* Decides whether a preliminary viewport update is performed after this pipeline object has been
+* evaluated but before the rest of the pipeline is complete.
+******************************************************************************/
+bool ModificationNode::performPreliminaryUpdateAfterEvaluation()
+{
+    return PipelineNode::performPreliminaryUpdateAfterEvaluation() && (!modifier() || modifier()->performPreliminaryUpdateAfterEvaluation());
 }
 
 }   // End of namespace

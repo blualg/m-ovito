@@ -24,7 +24,6 @@
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/pipeline/DelegatingModifier.h>
-#include <ovito/core/dataset/pipeline/AsynchronousDelegatingModifier.h>
 #include <ovito/core/app/PluginManager.h>
 #include "ModifierDelegateParameterUI.h"
 
@@ -72,8 +71,7 @@ void ModifierDelegateParameterUI::resetUI()
 bool ModifierDelegateParameterUI::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(source == editObject() && event.type() == ReferenceEvent::ReferenceChanged &&
-            (static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(DelegatingModifier::delegate) ||
-            static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(AsynchronousDelegatingModifier::delegate))) {
+            static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(DelegatingModifier::delegate)) {
         // The modifier has been assigned a new delegate -> update list of delegates
         updateUI();
     }
@@ -89,9 +87,6 @@ void ModifierDelegateParameterUI::updateUI()
     ParameterUI::updateUI();
 
     if(DelegatingModifier* modifier = dynamic_object_cast<DelegatingModifier>(editObject())) {
-        populateComboBox(comboBox(), editor(), modifier, modifier->delegate(), modifier->delegate() ? modifier->delegate()->inputDataObject() : DataObjectReference(), _delegateType);
-    }
-    else if(AsynchronousDelegatingModifier* modifier = dynamic_object_cast<AsynchronousDelegatingModifier>(editObject())) {
         populateComboBox(comboBox(), editor(), modifier, modifier->delegate(), modifier->delegate() ? modifier->delegate()->inputDataObject() : DataObjectReference(), _delegateType);
     }
 }
@@ -213,16 +208,6 @@ void ModifierDelegateParameterUI::updatePropertyValue()
             if(OvitoClassPtr delegateType = comboBox()->currentData().value<OvitoClassPtr>()) {
                 DataObjectReference ref = comboBox()->currentData(Qt::UserRole + 1).value<DataObjectReference>();
                 if(DelegatingModifier* delegatingMod = dynamic_object_cast<DelegatingModifier>(mod)) {
-                    if(delegatingMod->delegate() == nullptr || &delegatingMod->delegate()->getOOClass() != delegateType || delegatingMod->delegate()->inputDataObject() != ref) {
-                        // Create the new delegate object.
-                        OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(delegateType->createInstance());
-                        // Set which input data object the delegate should operate on.
-                        delegate->setInputDataObject(ref);
-                        // Activate the new delegate.
-                        delegatingMod->setDelegate(std::move(delegate));
-                    }
-                }
-                else if(AsynchronousDelegatingModifier* delegatingMod = dynamic_object_cast<AsynchronousDelegatingModifier>(mod)) {
                     if(delegatingMod->delegate() == nullptr || &delegatingMod->delegate()->getOOClass() != delegateType || delegatingMod->delegate()->inputDataObject() != ref) {
                         // Create the new delegate object.
                         OORef<ModifierDelegate> delegate = static_object_cast<ModifierDelegate>(delegateType->createInstance());

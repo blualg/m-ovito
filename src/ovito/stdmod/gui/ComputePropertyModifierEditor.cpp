@@ -117,7 +117,7 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
     connect(this, &ComputePropertyModifierEditor::contentsReplaced, this, &ComputePropertyModifierEditor::updateVariablesList);
 
     // Show settings editor of modifier delegate.
-    new SubObjectParameterUI(this, PROPERTY_FIELD(AsynchronousDelegatingModifier::delegate), rolloutParams.before(variablesRollout));
+    new SubObjectParameterUI(this, PROPERTY_FIELD(DelegatingModifier::delegate), rolloutParams.before(variablesRollout));
 }
 
 /******************************************************************************

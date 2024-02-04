@@ -115,6 +115,9 @@ public:
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return tr("%1 x %2 x %3").arg(numImagesX()).arg(numImagesY()).arg(numImagesZ()); }
 
+    /// Indicates that this modifier wants preliminary viewport updates whenever its parameters change.
+    virtual bool performPreliminaryUpdateAfterChange() override { return true; }
+
 protected:
 
     /// Is called when the value of a property of this object has changed.

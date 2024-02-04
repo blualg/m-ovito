@@ -82,7 +82,7 @@ ElasticStrainModifier::ElasticStrainModifier(ObjectInitializationFlags flags) : 
 /******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<AsynchronousModifier::EnginePtr> ElasticStrainModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<ModifierEnginePtr> ElasticStrainModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get modifier inputs.
     const Particles* particles = input.expectObject<Particles>();

@@ -26,7 +26,7 @@
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/particles/objects/BondsVis.h>
-#include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
+#include <ovito/core/dataset/pipeline/Modifier.h>
 
 namespace Ovito {
 
@@ -35,15 +35,15 @@ class GrainSegmentationEngine;  // defined in GrainSegmentationEngine.h
 /*
  * Decomposes a polycrystalline microstructure into individual grains.
  */
-class OVITO_CRYSTALANALYSIS_EXPORT GrainSegmentationModifier : public AsynchronousModifier
+class OVITO_CRYSTALANALYSIS_EXPORT GrainSegmentationModifier : public Modifier
 {
     /// Give this modifier class its own metaclass.
-    class OVITO_CRYSTALANALYSIS_EXPORT GrainSegmentationModifierClass : public AsynchronousModifier::OOMetaClass
+    class OVITO_CRYSTALANALYSIS_EXPORT GrainSegmentationModifierClass : public Modifier::OOMetaClass
     {
     public:
 
         /// Inherit constructor from base metaclass.
-        using AsynchronousModifier::OOMetaClass::OOMetaClass;
+        using Modifier::OOMetaClass::OOMetaClass;
 
         /// Asks the metaclass whether the modifier can be applied to the given input data.
         virtual bool isApplicableTo(const DataCollection& input) const override;
@@ -71,7 +71,7 @@ protected:
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 

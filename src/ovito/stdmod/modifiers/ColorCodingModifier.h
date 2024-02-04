@@ -28,7 +28,7 @@
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/util/ElementOrderingFingerprint.h>
-#include <ovito/core/dataset/pipeline/AsynchronousDelegatingModifier.h>
+#include <ovito/core/dataset/pipeline/DelegatingModifier.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/rendering/ColorCodingGradient.h>
@@ -61,7 +61,7 @@ public:
     virtual int outputColorPropertyId() const { return Property::GenericColorProperty; }
 
     /// Asynchronous compute engine that does the actual work in a separate thread.
-    class OVITO_STDMOD_EXPORT ColorCodingEngine : public AsynchronousModifier::Engine
+    class OVITO_STDMOD_EXPORT ColorCodingEngine : public ModifierEngine
     {
     public:
 
@@ -78,7 +78,7 @@ public:
                 FloatType maxValue,
                 bool autoAdjustRange,
                 int outputColorPropertyId)
-            : AsynchronousModifier::Engine(request, validityInterval),
+            : ModifierEngine(request, validityInterval),
                 _gradient(std::move(gradient)),
                 _containerPath(std::move(containerPath)),
                 _input(std::move(input)),
@@ -154,17 +154,17 @@ public:
 /**
  * \brief This modifier assigns a colors to data elements based on the value of a property.
  */
-class OVITO_STDMOD_EXPORT ColorCodingModifier : public AsynchronousDelegatingModifier
+class OVITO_STDMOD_EXPORT ColorCodingModifier : public DelegatingModifier
 {
 public:
 
     /// Give this modifier class its own metaclass.
-    class ColorCodingModifierClass : public AsynchronousDelegatingModifier::OOMetaClass
+    class ColorCodingModifierClass : public DelegatingModifier::OOMetaClass
     {
     public:
 
         /// Inherit constructor from base class.
-        using AsynchronousDelegatingModifier::OOMetaClass::OOMetaClass;
+        using DelegatingModifier::OOMetaClass::OOMetaClass;
 
         /// Return the metaclass of delegates for this modifier type.
         virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const override { return ColorCodingModifierDelegate::OOClass(); }
@@ -182,6 +182,9 @@ public:
 
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
+
+    /// Modifies the input data synchronously.
+    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
     /// Returns the range start value.
     FloatType startValue() const { return startValueController() ? startValueController()->getFloatValue(AnimationTime(0)) : 0; }
@@ -201,7 +204,7 @@ public:
 
     /// Returns the current delegate of this modifier.
     ColorCodingModifierDelegate* delegate() const {
-        return static_object_cast<ColorCodingModifierDelegate>(AsynchronousDelegatingModifier::delegate());
+        return static_object_cast<ColorCodingModifierDelegate>(DelegatingModifier::delegate());
     }
 
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
@@ -210,6 +213,9 @@ public:
     /// Sets the start and end value to the minimum and maximum value of the selected input property.
     /// Returns true if successful.
     bool adjustRange(AnimationTime time);
+
+    /// Indicates that this modifier wants preliminary viewport updates whenever its parameters change.
+    virtual bool performPreliminaryUpdateAfterChange() override { return true; }
 
 public Q_SLOTS:
 
@@ -222,7 +228,7 @@ protected:
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    Future<ModifierEnginePtr> createEngineInternal(const ModifierEvaluationRequest& request, const PipelineFlowState& input);
 
     /// Determines the range of values in the input data for the selected property.
     bool determinePropertyValueRange(const PipelineFlowState& state, FloatType& min, FloatType& max) const;

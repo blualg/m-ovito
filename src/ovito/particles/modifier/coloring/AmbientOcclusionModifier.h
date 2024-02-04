@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/stdobj/properties/Property.h>
-#include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
+#include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 
 namespace Ovito {
@@ -34,7 +34,7 @@ namespace Ovito {
 /**
  * \brief Calculates ambient occlusion lighting for particles.
  */
-class OVITO_PARTICLES_EXPORT AmbientOcclusionModifier : public AsynchronousModifier
+class OVITO_PARTICLES_EXPORT AmbientOcclusionModifier : public Modifier
 {
     /// Give this modifier class its own metaclass.
     class AmbientOcclusionModifierClass : public ModifierClass
@@ -59,7 +59,7 @@ public:
     enum { MAX_AO_RENDER_BUFFER_RESOLUTION = 4 };
 
     /// Computes the modifier's results.
-    class AmbientOcclusionEngine : public Engine
+    class AmbientOcclusionEngine : public ModifierEngine
     {
     public:
 
@@ -80,7 +80,7 @@ public:
             // Avoid a recomputation if the user changes just the intensity parameter.
             if(event.field() == PROPERTY_FIELD(intensity))
                 return true;
-            return Engine::modifierChanged(event);
+            return ModifierEngine::modifierChanged(event);
         }
 
         /// Returns the property storage that contains the computed per-particle brightness values.
@@ -112,7 +112,7 @@ public:
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 

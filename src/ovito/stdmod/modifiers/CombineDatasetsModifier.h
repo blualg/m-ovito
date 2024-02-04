@@ -95,6 +95,9 @@ public:
     /// Implementation method, which performs the merging of two pipeline states.
     void combineDatasets(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& secondaryState);
 
+    /// Indicates that this modifier wants preliminary viewport updates whenever its parameters change.
+    virtual bool performPreliminaryUpdateAfterChange() override { return true; }
+
 protected:
 
     /// \brief Is called when a RefTarget referenced by this object generated an event.
