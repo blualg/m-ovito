@@ -27,7 +27,7 @@
 #include <ovito/particles/objects/VectorVis.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/modifier/analysis/ReferenceConfigurationModifier.h>
-#include <ovito/particles/util/ParticleOrderingFingerprint.h>
+#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 
 namespace Ovito {
@@ -66,7 +66,7 @@ private:
                 const TimeInterval& validityInterval,
                 ConstPropertyPtr positions,
                 const SimulationCell* simCell,
-                ParticleOrderingFingerprint fingerprint,
+                ElementOrderingFingerprint fingerprint,
                 ConstPropertyPtr refPositions,
                 const SimulationCell* simCellRef,
                 ConstPropertyPtr identifiers,
@@ -75,8 +75,8 @@ private:
                 bool useMinimumImageConvention) :
             RefConfigEngineBase(request, validityInterval, positions, simCell, std::move(refPositions), simCellRef,
                 std::move(identifiers), std::move(refIdentifiers), affineMapping, useMinimumImageConvention),
-            _displacements(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), Particles::DisplacementProperty)),
-            _displacementMagnitudes(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), Particles::DisplacementMagnitudeProperty)),
+            _displacements(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.elementCount(), Particles::DisplacementProperty)),
+            _displacementMagnitudes(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.elementCount(), Particles::DisplacementMagnitudeProperty)),
             _inputFingerprint(std::move(fingerprint)) {}
 
         /// Computes the modifier's results.
@@ -95,7 +95,7 @@ private:
 
         const PropertyPtr _displacements;
         const PropertyPtr _displacementMagnitudes;
-        ParticleOrderingFingerprint _inputFingerprint;
+        ElementOrderingFingerprint _inputFingerprint;
     };
 
     /// The vis element for rendering the displacement vectors.

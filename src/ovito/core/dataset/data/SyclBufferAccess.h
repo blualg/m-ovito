@@ -81,7 +81,7 @@ public:
 
             // When modifying the contents of the buffer, invalidate the cached number of non-zero elements.
             if constexpr(AccessMode != access_mode::read) {
-                buffer->invalidateNonzeroCount();
+                buffer->invalidateCachedInfo();
             }
 
             if constexpr(!ComponentWise) {
@@ -122,7 +122,7 @@ public:
 
             // When modifying the contents of the buffer, invalidate the cached number of non-zero elements.
             if constexpr(AccessMode != access_mode::read) {
-                buffer->invalidateNonzeroCount();
+                buffer->invalidateCachedInfo();
             }
 
             if constexpr(!ComponentWise) {
@@ -159,7 +159,7 @@ public:
 
             // When modifying the contents of the buffer, invalidate the cached number of non-zero elements.
             if constexpr(AccessMode != access_mode::read) {
-                buffer->invalidateNonzeroCount();
+                buffer->invalidateCachedInfo();
             }
 
             if constexpr(!ComponentWise) {
@@ -195,7 +195,7 @@ public:
 
             // When modifying the contents of the buffer, invalidate the cached number of non-zero elements.
             if constexpr(AccessMode != access_mode::read) {
-                buffer->invalidateNonzeroCount();
+                buffer->invalidateCachedInfo();
             }
 
             if constexpr(!ComponentWise) {

@@ -74,7 +74,7 @@ private:
     public:
 
         /// Constructor.
-        ChillPlusEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
+        ChillPlusEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
             StructureIdentificationEngine(request, fingerprint, positions, simCell, structureTypes, selection),
             _cutoff(cutoff) {}
 

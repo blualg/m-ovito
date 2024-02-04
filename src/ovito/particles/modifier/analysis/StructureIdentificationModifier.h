@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/particles/objects/Particles.h>
-#include <ovito/particles/util/ParticleOrderingFingerprint.h>
+#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
@@ -59,7 +59,7 @@ public:
     public:
 
         /// Constructor.
-        StructureIdentificationEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection = {});
+        StructureIdentificationEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection = {});
 
         /// Injects the computed results into the data pipeline.
         virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
@@ -135,7 +135,7 @@ public:
         ConstPropertyPtr _selection;
         DataOORef<const SimulationCell> _simCell;
         const PropertyPtr _structures;
-        ParticleOrderingFingerprint _inputFingerprint;
+        ElementOrderingFingerprint _inputFingerprint;
         std::vector<int64_t> _typeCounts;
     };
 

@@ -27,7 +27,7 @@
 #include <ovito/particles/objects/Bonds.h>
 #include <ovito/particles/objects/BondsVis.h>
 #include <ovito/particles/objects/Particles.h>
-#include <ovito/particles/util/ParticleOrderingFingerprint.h>
+#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
@@ -75,7 +75,7 @@ private:
     public:
 
         /// Constructor.
-        VoronoiAnalysisEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleIdentifiers, ConstPropertyPtr radii,
+        VoronoiAnalysisEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleIdentifiers, ConstPropertyPtr radii,
                             const SimulationCell* simCell, DataOORef<SurfaceMesh> polyhedraMesh,
                             bool computeIndices, bool computeBonds, FloatType edgeThreshold, FloatType faceThreshold, FloatType relativeFaceThreshold) :
             Engine(request, validityInterval),
@@ -88,10 +88,10 @@ private:
             _faceThreshold(faceThreshold),
             _relativeFaceThreshold(relativeFaceThreshold),
             _computeBonds(computeBonds),
-            _coordinationNumbers(Particles::OOClass().createStandardProperty(DataBuffer::Initialized, fingerprint.particleCount(), Particles::CoordinationProperty)),
-            _atomicVolumes(Particles::OOClass().createUserProperty(DataBuffer::Initialized, fingerprint.particleCount(), Property::FloatDefault, 1, QStringLiteral("Atomic Volume"))),
-            _cavityRadii(Particles::OOClass().createUserProperty(DataBuffer::Initialized, fingerprint.particleCount(), Property::FloatDefault, 1, QStringLiteral("Cavity Radius"))),
-            _maxFaceOrders(computeIndices ? Particles::OOClass().createUserProperty(DataBuffer::Initialized, fingerprint.particleCount(), Property::Int32, 1, QStringLiteral("Max Face Order")) : nullptr),
+            _coordinationNumbers(Particles::OOClass().createStandardProperty(DataBuffer::Initialized, fingerprint.elementCount(), Particles::CoordinationProperty)),
+            _atomicVolumes(Particles::OOClass().createUserProperty(DataBuffer::Initialized, fingerprint.elementCount(), Property::FloatDefault, 1, QStringLiteral("Atomic Volume"))),
+            _cavityRadii(Particles::OOClass().createUserProperty(DataBuffer::Initialized, fingerprint.elementCount(), Property::FloatDefault, 1, QStringLiteral("Cavity Radius"))),
+            _maxFaceOrders(computeIndices ? Particles::OOClass().createUserProperty(DataBuffer::Initialized, fingerprint.elementCount(), Property::Int32, 1, QStringLiteral("Max Face Order")) : nullptr),
             _inputFingerprint(std::move(fingerprint)),
             _polyhedraMesh(std::move(polyhedraMesh)) {}
 
@@ -148,7 +148,7 @@ private:
         const PropertyPtr _maxFaceOrders;
         std::vector<Bond> _bonds;
         PropertyPtr _bondVoronoiOrder;
-        ParticleOrderingFingerprint _inputFingerprint;
+        ElementOrderingFingerprint _inputFingerprint;
 
         /// The volume sum of all Voronoi cells.
         std::atomic<double> _voronoiVolumeSum{0.0};

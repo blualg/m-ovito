@@ -113,7 +113,9 @@ OORef<RefTarget> DataBuffer::clone(bool deepCopy, CloneHelper& cloneHelper) cons
     clone->_stride = _stride;
     clone->_componentCount = _componentCount;
     clone->_componentNames = _componentNames;
-    clone->_nonzeroCount = _nonzeroCount;
+    clone->_nonzeroCount.store(_nonzeroCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
+    for(size_t i = 0; i < _checksum.size(); i++)
+        clone->_checksum[i].store(_checksum[i].load(std::memory_order_relaxed), std::memory_order_relaxed);
 #ifdef OVITO_DEBUG
     clone->_isDataInitialized = _isDataInitialized;
 #endif
@@ -183,7 +185,7 @@ void DataBuffer::resize(size_t newSize, bool preserveData)
     }
 #endif
     _numElements = newSize;
-    invalidateNonzeroCount();
+    invalidateCachedInfo();
 }
 
 /******************************************************************************
@@ -233,7 +235,7 @@ void DataBuffer::resizeCopyFrom(size_t newSize, const DataBuffer& original)
     }
 #endif
     _numElements = newSize;
-    invalidateNonzeroCount();
+    invalidateCachedInfo();
 }
 
 /******************************************************************************
@@ -287,7 +289,7 @@ bool DataBuffer::grow(size_t numAdditionalElements, bool callerAlreadyHasWriteAc
 #endif
     }
     _numElements = newSize;
-    invalidateNonzeroCount();
+    invalidateCachedInfo();
     return needToGrow;
 }
 
@@ -306,7 +308,7 @@ void DataBuffer::truncate(size_t numElementsToRemove, bool callerAlreadyHasWrite
         writeAccess.emplace(*this);
 #endif
     _numElements -= numElementsToRemove;
-    invalidateNonzeroCount();
+    invalidateCachedInfo();
 }
 
 /******************************************************************************
@@ -459,7 +461,7 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const DataBuffer& selectio
         _data.reset();
 #endif
         _numElements = 0;
-        invalidateNonzeroCount();
+        invalidateCachedInfo();
         return;
     }
     OVITO_ASSERT(original.size() != 0);
@@ -510,7 +512,7 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const DataBuffer& selectio
         _capacity = newSize;
 #endif
         _numElements = newSize;
-        invalidateNonzeroCount();
+        invalidateCachedInfo();
     };
 
     // Optimize filter operation for the most common data types.
@@ -584,7 +586,7 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const DataBuffer& selectio
     _capacity = newSize;
 #endif
     _numElements = newSize;
-    invalidateNonzeroCount();
+    invalidateCachedInfo();
 }
 
 /******************************************************************************
@@ -1053,15 +1055,47 @@ size_t DataBuffer::nonzeroCount() const
     OVITO_ASSERT(this);
     OVITO_ASSERT(componentCount() == 1);
 
-    if(_nonzeroCount == std::numeric_limits<size_t>::max()) {
+    if(_nonzeroCount.load(std::memory_order_relaxed) == std::numeric_limits<size_t>::max()) {
         forAnyType([&](auto _) {
             using T = decltype(_);
             const_cast<DataBuffer*>(this)->setNonzeroCount(this->size() - this->count<T>(0));
         });
     }
 
-    OVITO_ASSERT(_nonzeroCount <= size());
-    return _nonzeroCount;
+    OVITO_ASSERT(_nonzeroCount.load(std::memory_order_relaxed) <= size());
+    return _nonzeroCount.load(std::memory_order_relaxed);
+}
+
+/******************************************************************************
+* Returns the MD5 checksum of the buffer's data.
+******************************************************************************/
+DataBuffer::Checksum DataBuffer::checksum() const
+{
+    OVITO_ASSERT(this);
+
+    if(size() != 0 && _checksum[0].load(std::memory_order_relaxed) == 0 && _checksum[1].load(std::memory_order_relaxed) == 0) {
+        ReadAccess readAccess(*this);
+
+        // Compute MD5 hash of the buffer's data.
+        QCryptographicHash hash(QCryptographicHash::Md5);
+#ifdef OVITO_USE_SYCL
+        sycl::host_accessor readAccessor(*this->_data, sycl::read_only);
+        hash.addData(QByteArrayView(readAccessor.get_pointer(), this->size() * this->stride()));
+#else
+        hash.addData(QByteArrayView(this->cdata(), this->size() * this->stride()));
+#endif
+        OVITO_ASSERT(hash.result().size() == sizeof(Checksum));
+
+        // Cache checksum in the DataBuffer object for future use.
+        // The cached checksum will be invalidated by the invalidateCachedInfo() method when the buffer's data is modified.
+        auto c = reinterpret_cast<const Checksum::value_type*>(hash.resultView().constData());
+        for(size_t i = 0; i < _checksum.size(); i++, c++)
+            const_cast<DataBuffer*>(this)->_checksum[i].store(*c, std::memory_order_relaxed);
+
+        OVITO_ASSERT(_checksum[0].load(std::memory_order_relaxed) != 0 || _checksum[1].load(std::memory_order_relaxed) != 0);
+    }
+
+    return { _checksum[0].load(std::memory_order_relaxed), _checksum[1].load(std::memory_order_relaxed) };
 }
 
 #ifdef OVITO_USE_SYCL

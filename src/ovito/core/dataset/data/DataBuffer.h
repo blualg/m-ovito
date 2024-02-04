@@ -43,6 +43,7 @@ namespace detail {
     template<typename BufferType, bool StrongReference, Ovito::access_mode accessmode> class BufferAccessBase;
     template<typename T, Ovito::access_mode AccessMode> class SyclBufferAccessTyped;
 
+#ifdef OVITO_USE_SYCL
     /// Allocates a new SYCL buffer object of the given type and dimensions.
     /// If possible, creates a buffer that won't block upon destruction.
     template<typename T, int Dimensions = 1>
@@ -54,6 +55,7 @@ namespace detail {
         return sycl::buffer<T, Dimensions>(r);
 #endif
     }
+#endif
 }
 
 #ifdef OVITO_USE_SYCL
@@ -126,6 +128,9 @@ public:
 #else
     using Byte = unsigned char;
 #endif
+
+    /// Type used for MD5 checksum of the buffer's data.
+    using Checksum = std::array<std::uint64_t, 2>;
 
     /// RAII utility class that guards read access to a DataBuffer.
     class ReadAccess
@@ -300,13 +305,20 @@ public:
     /// from a previous computation.
     void setNonzeroCount(size_t count) {
         OVITO_ASSERT(count <= size());
-        _nonzeroCount = count;
+        _nonzeroCount.store(count, std::memory_order_relaxed);
     }
 
-    /// Invalidates the cached count of non-zero array elements.
+    /// Returns the MD5 checksum of the buffer's data.
+    Checksum checksum() const;
+
+    /// Invalidates the cached count of non-zero array elements and the checksum.
     /// Normally, there is no need for user code to call this function.
-    /// Any write access to the buffer implicitly invalidates the cached count.
-    void invalidateNonzeroCount() { _nonzeroCount = std::numeric_limits<size_t>::max(); }
+    /// Any write access to the buffer implicitly invalidates the cached information.
+    void invalidateCachedInfo() {
+        _nonzeroCount.store(std::numeric_limits<size_t>::max(), std::memory_order_relaxed);
+        for(size_t i = 0; i < _checksum.size(); i++)
+            _checksum[i].store(0, std::memory_order_relaxed);
+    }
 
     /// Invokes a generic lampda function with the current data type of the buffer.
     /// The lambda function must accept exactly one generic parameter ("auto _"), whose type
@@ -356,7 +368,7 @@ public:
             OVITO_ASSERT_MSG(false, "DataBuffer::prepareWriteAccess()", "Property cannot be locked for write acccess while it is already locked.");
         }
 #endif
-        invalidateNonzeroCount();
+        invalidateCachedInfo();
     }
 
     /// Informs the buffer object that a write accessor is done.
@@ -440,9 +452,13 @@ private:
 #endif
 
     /// The number of non-zero entries in the array (if known).
-    /// This field can provide a performance optimization if, for example, the number of
-    /// selected elements is queried.
-    size_t _nonzeroCount = std::numeric_limits<size_t>::max();
+    /// This field can provide a performance optimization if the number of
+    /// selected elements is queried via nonzeroCount().
+    std::atomic<size_t> _nonzeroCount = std::numeric_limits<size_t>::max();
+
+    /// The MD5 checksum computed from the data elements.
+    /// This field can provide a performance optimization if the checksum is queried via checksum().
+    std::array<std::atomic<std::uint64_t>, 2> _checksum = {std::uint64_t{0}, std::uint64_t{0}};
 
 #ifdef OVITO_USE_SYCL
     /// Flag indicating that new kernels have been scheduled for execution that read from the buffer.
@@ -696,7 +712,7 @@ inline void DataBuffer::moveElement(size_t fromIndex, size_t toIndex, bool calle
 #else
     std::memmove(data() + toIndex * stride(), cdata() + fromIndex * stride(), stride());
 #endif
-    invalidateNonzeroCount();
+    invalidateCachedInfo();
 }
 
 /// Counts how often the given value occurs in the buffer.

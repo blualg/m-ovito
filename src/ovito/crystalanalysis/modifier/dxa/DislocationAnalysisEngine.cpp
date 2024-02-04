@@ -42,7 +42,7 @@ namespace Ovito {
 ******************************************************************************/
 DislocationAnalysisEngine::DislocationAnalysisEngine(
         const ModifierEvaluationRequest& request,
-        ParticleOrderingFingerprint fingerprint,
+        ElementOrderingFingerprint fingerprint,
         ConstPropertyPtr positions, const SimulationCell* simCell, const OORefVector<ElementType>& structureTypes,
         int inputCrystalStructure, int maxTrialCircuitSize, int maxCircuitElongation,
         ConstPropertyPtr particleSelection,

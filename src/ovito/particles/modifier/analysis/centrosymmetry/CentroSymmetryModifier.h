@@ -25,7 +25,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/Particles.h>
-#include <ovito/particles/util/ParticleOrderingFingerprint.h>
+#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
@@ -87,14 +87,14 @@ private:
     public:
 
         /// Constructor.
-        CentroSymmetryEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCell* simCell, int nneighbors, CSPMode mode, DataOORef<DataTable> histogram) :
+        CentroSymmetryEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCell* simCell, int nneighbors, CSPMode mode, DataOORef<DataTable> histogram) :
             Engine(request),
             _nneighbors(nneighbors),
             _mode(mode),
             _positions(std::move(positions)),
             _selection(std::move(selection)),
             _simCell(simCell),
-            _csp(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), Particles::CentroSymmetryProperty)),
+            _csp(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.elementCount(), Particles::CentroSymmetryProperty)),
             _inputFingerprint(std::move(fingerprint)),
             _histogram(std::move(histogram)) {}
 
@@ -124,7 +124,7 @@ private:
         ConstPropertyPtr _positions;
         ConstPropertyPtr _selection;
         const PropertyPtr _csp;
-        ParticleOrderingFingerprint _inputFingerprint;
+        ElementOrderingFingerprint _inputFingerprint;
 
         /// The computed distribution of the CSP values.
         DataOORef<DataTable> _histogram;

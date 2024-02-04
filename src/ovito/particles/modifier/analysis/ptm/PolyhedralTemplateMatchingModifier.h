@@ -64,7 +64,7 @@ private:
     public:
 
         /// Constructor.
-        PTMEngine(const ModifierEvaluationRequest& request, ConstPropertyPtr positions, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr particleTypes, const SimulationCell* simCell,
+        PTMEngine(const ModifierEvaluationRequest& request, ConstPropertyPtr positions, ElementOrderingFingerprint fingerprint, ConstPropertyPtr particleTypes, const SimulationCell* simCell,
                 const OORefVector<ElementType>& structureTypes, const OORefVector<ElementType>& orderingTypes, ConstPropertyPtr selection,
                 bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient);
 

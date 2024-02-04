@@ -37,7 +37,7 @@ class ElasticStrainEngine : public StructureIdentificationModifier::StructureIde
 public:
 
     /// Constructor.
-    ElasticStrainEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint,
+    ElasticStrainEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint,
             ConstPropertyPtr positions, const SimulationCell* simCell,
             int inputCrystalStructure, std::vector<Matrix3> preferredCrystalOrientations,
             bool calculateDeformationGradients, bool calculateStrainTensors,

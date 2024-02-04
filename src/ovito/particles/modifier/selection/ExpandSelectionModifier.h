@@ -25,7 +25,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/Bonds.h>
-#include <ovito/particles/util/ParticleOrderingFingerprint.h>
+#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/properties/Property.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
@@ -85,7 +85,7 @@ private:
     public:
 
         /// Constructor.
-        ExpandSelectionEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations) :
+        ExpandSelectionEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations) :
             Engine(request),
             _numIterations(numIterations),
             _positions(std::move(positions)),
@@ -130,7 +130,7 @@ private:
         PropertyPtr _outputSelection;
         size_t _numSelectedParticlesInput;
         size_t _numSelectedParticlesOutput;
-        ParticleOrderingFingerprint _inputFingerprint;
+        ElementOrderingFingerprint _inputFingerprint;
     };
 
     /// Computes the expanded selection by using the nearest neighbor criterion.
@@ -139,7 +139,7 @@ private:
     public:
 
         /// Constructor.
-        ExpandSelectionNearestEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations, int numNearestNeighbors) :
+        ExpandSelectionNearestEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations, int numNearestNeighbors) :
             ExpandSelectionEngine(request, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
             _numNearestNeighbors(numNearestNeighbors) {}
 
@@ -157,7 +157,7 @@ private:
     public:
 
         /// Constructor.
-        ExpandSelectionCutoffEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations, FloatType cutoff) :
+        ExpandSelectionCutoffEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations, FloatType cutoff) :
             ExpandSelectionEngine(request, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
             _cutoffRange(cutoff) {}
 
@@ -175,7 +175,7 @@ private:
     public:
 
         /// Constructor.
-        ExpandSelectionBondedEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations, ConstPropertyPtr bondTopology) :
+        ExpandSelectionBondedEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations, ConstPropertyPtr bondTopology) :
             ExpandSelectionEngine(request, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
             _bondTopology(std::move(bondTopology)) {}
 

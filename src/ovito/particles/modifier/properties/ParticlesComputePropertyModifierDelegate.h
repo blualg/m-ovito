@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/util/ParticleExpressionEvaluator.h>
-#include <ovito/particles/util/ParticleOrderingFingerprint.h>
+#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/stdmod/modifiers/ComputePropertyModifier.h>
 
 namespace Ovito {
@@ -147,7 +147,7 @@ private:
         bool _neighborMode;
         ConstPropertyPtr _positions;
         std::unique_ptr<ParticleExpressionEvaluator> _neighborEvaluator;
-        ParticleOrderingFingerprint _inputFingerprint;
+        ElementOrderingFingerprint _inputFingerprint;
     };
 
     /// The math expressions for calculating the neighbor-terms of the property function.

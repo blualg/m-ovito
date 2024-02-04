@@ -186,11 +186,11 @@ void ColorByTypeModifier::colorByType(const Property* typeProperty, PropertyCont
 
     // Create the color output property.
     BufferWriteAccess<ColorG, access_mode::write> colorProperty(
-        container->createProperty(selection ? DataBuffer::Initialized : DataBuffer::Uninitialized, Property::GenericColorProperty, objectPath),
+        container->createProperty(selection ? DataBuffer::Initialized : DataBuffer::Uninitialized, Property::GenericColorProperty, containerPath),
         selection ? DataBuffer::Initialized : DataBuffer::Uninitialized);
 
     // Access selection array.
-    BufferReadAccess<SelectionIntType> selectionAcc(selection.get());
+    BufferReadAccess<SelectionIntType> selectionAcc(selection);
 
     // Create type-color lookup table.
     const std::map<int, ColorG> colorMap = typeProperty->typeColorMap();

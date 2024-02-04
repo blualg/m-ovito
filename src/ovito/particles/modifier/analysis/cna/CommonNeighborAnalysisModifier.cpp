@@ -846,6 +846,7 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::CN
             numNeighbors++;
         }
     }
+#ifdef OVITO_USE_SYCL
     else if constexpr(std::is_same_v<NeighborFinderType, SyclCutoffNeighborFinder::Accessor>) {
         neighFinder.visitNeighborsLocal(particleIndex, [&](const SyclCutoffNeighborFinder::Neighbor& neighbor) {
             if(numNeighbors < MAX_NEIGHBORS)
@@ -853,6 +854,7 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::CN
             numNeighbors++;
         });
     }
+#endif
     else {
         OVITO_ASSERT(false);
     }

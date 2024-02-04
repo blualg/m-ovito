@@ -71,7 +71,7 @@ private:
     public:
 
         /// Constructor.
-        VoroTopAnalysisEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, const TimeInterval& validityInterval, ConstPropertyPtr positions, ConstPropertyPtr selection,
+        VoroTopAnalysisEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, const TimeInterval& validityInterval, ConstPropertyPtr positions, ConstPropertyPtr selection,
                             ConstPropertyPtr radii, const SimulationCell* simCell, const QString& filterFile, std::shared_ptr<Filter> filter, const OORefVector<ElementType>& structureTypes) :
             StructureIdentificationEngine(request, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
             _filterFile(filterFile),

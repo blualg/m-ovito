@@ -24,7 +24,7 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/util/ParticleOrderingFingerprint.h>
+#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/stdobj/properties/Property.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 #include <ovito/core/rendering/SceneRenderer.h>
@@ -64,7 +64,7 @@ public:
     public:
 
         /// Constructor.
-        AmbientOcclusionEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
+        AmbientOcclusionEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ElementOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
             ConstPropertyPtr particleRadii, const Box3& boundingBox, OORef<SceneRenderer> renderer);
 
         /// Computes the modifier's results.
@@ -101,7 +101,7 @@ public:
         ConstPropertyPtr _particleRadii;
         const Box3 _boundingBox;
         DataBufferPtr _brightness;
-        ParticleOrderingFingerprint _inputFingerprint;
+        ElementOrderingFingerprint _inputFingerprint;
     };
 
 public:

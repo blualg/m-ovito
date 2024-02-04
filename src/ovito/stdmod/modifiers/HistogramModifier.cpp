@@ -287,9 +287,10 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
                 const SelectionIntType* sel = inputSelectionAcc ? inputSelectionAcc.cbegin() : nullptr;
                 for(auto v : accessor.componentRange(vecComponent)) {
                     if(sel && !*sel++) continue;
-                    if(v < intervalStart || v > intervalEnd) continue;
-                    int binIndex = (static_cast<FloatType>(v) - intervalStart) / binSize;
-                    histogramAcc[std::max(0, std::min(binIndex, histogramSizeMin1))]++;
+                    if(v < intervalStart || v > intervalEnd)
+                        continue;
+                    size_t binIndex = (static_cast<FloatType>(v) - intervalStart) / binSize;
+                    histogramAcc[std::clamp(binIndex, size_t{0}, histogramSizeMin1)]++;
                 }
             }
             else {

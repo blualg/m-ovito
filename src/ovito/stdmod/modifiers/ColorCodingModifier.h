@@ -27,7 +27,8 @@
 #include <ovito/stdobj/lines/Lines.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
-#include <ovito/core/dataset/pipeline/DelegatingModifier.h>
+#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
+#include <ovito/core/dataset/pipeline/AsynchronousDelegatingModifier.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/rendering/ColorCodingGradient.h>
@@ -46,9 +47,6 @@ public:
     /// Abstract class constructor.
     using ModifierDelegate::ModifierDelegate;
 
-    /// Applies the modifier operation to the data in a pipeline flow state.
-    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
-
     /// Returns the type of input property container that this delegate can process.
     PropertyContainerClassPtr inputContainerClass() const {
         return static_class_cast<PropertyContainer>(&getOOMetaClass().getApplicableObjectClass());
@@ -59,10 +57,65 @@ public:
         return PropertyContainerReference(inputContainerClass(), inputDataObject().dataPath(), inputDataObject().dataTitle());
     }
 
-protected:
-
     /// Returns the ID of the standard property that will receive the computed colors.
     virtual int outputColorPropertyId() const { return Property::GenericColorProperty; }
+
+    /// Asynchronous compute engine that does the actual work in a separate thread.
+    class OVITO_STDMOD_EXPORT ColorCodingEngine : public AsynchronousModifier::Engine
+    {
+    public:
+
+        /// Constructor.
+        ColorCodingEngine(
+                const ModifierEvaluationRequest& request,
+                const TimeInterval& validityInterval,
+                OORef<ColorCodingGradient> gradient,
+                ConstDataObjectPath containerPath,
+                ConstPropertyPtr input,
+                int vectorComponent,
+                ConstPropertyPtr selection,
+                FloatType minValue,
+                FloatType maxValue,
+                bool autoAdjustRange,
+                int outputColorPropertyId)
+            : AsynchronousModifier::Engine(request, validityInterval),
+                _gradient(std::move(gradient)),
+                _containerPath(std::move(containerPath)),
+                _input(std::move(input)),
+                _vectorComponent(vectorComponent),
+                _selection(std::move(selection)),
+                _minValue(minValue),
+                _maxValue(maxValue),
+                _autoAdjustRange(autoAdjustRange),
+                _outputColorPropertyId(outputColorPropertyId),
+                _orderingFingerprint(static_object_cast<PropertyContainer>(_containerPath.back())) {}
+
+        /// Computes the modifier's results.
+        virtual void perform() override;
+
+        /// Decides whether the computation is sufficiently short to perform it synchronously within the GUI thread.
+        virtual bool preferSynchronousExecution() override {
+            // It's okay to perform the modifier operation synchronously for small inputs.
+            return _input->size() <= 10000;
+        }
+
+        /// Injects the computed results into the data pipeline.
+        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+
+    private:
+
+        OORef<ColorCodingGradient> _gradient;
+        ConstDataObjectPath _containerPath;
+        ConstPropertyPtr _input;
+        ConstPropertyPtr _selection;
+        PropertyPtr _colors;
+        FloatType _minValue;
+        FloatType _maxValue;
+        bool _autoAdjustRange;
+        int _vectorComponent;
+        int _outputColorPropertyId;
+        ElementOrderingFingerprint _orderingFingerprint;
+    };
 };
 
 /**
@@ -93,24 +146,25 @@ class LinesColorCodingModifierDelegate : public ColorCodingModifierDelegate
     OVITO_CLASSINFO("ClassNameAlias", "TrajectoryColorCodingModifierDelegate");  // For backward compatibility with OVITO 3.9.2
 
 public:
+
     /// Constructor.
-    explicit LinesColorCodingModifierDelegate(ObjectInitializationFlags flags) : ColorCodingModifierDelegate(flags) {}
+    using ColorCodingModifierDelegate::ColorCodingModifierDelegate;
 };
 
 /**
  * \brief This modifier assigns a colors to data elements based on the value of a property.
  */
-class OVITO_STDMOD_EXPORT ColorCodingModifier : public DelegatingModifier
+class OVITO_STDMOD_EXPORT ColorCodingModifier : public AsynchronousDelegatingModifier
 {
 public:
 
     /// Give this modifier class its own metaclass.
-    class ColorCodingModifierClass : public DelegatingModifier::OOMetaClass
+    class ColorCodingModifierClass : public AsynchronousDelegatingModifier::OOMetaClass
     {
     public:
 
         /// Inherit constructor from base class.
-        using DelegatingModifier::OOMetaClass::OOMetaClass;
+        using AsynchronousDelegatingModifier::OOMetaClass::OOMetaClass;
 
         /// Return the metaclass of delegates for this modifier type.
         virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const override { return ColorCodingModifierDelegate::OOClass(); }
@@ -147,7 +201,7 @@ public:
 
     /// Returns the current delegate of this modifier.
     ColorCodingModifierDelegate* delegate() const {
-        return static_object_cast<ColorCodingModifierDelegate>(DelegatingModifier::delegate());
+        return static_object_cast<ColorCodingModifierDelegate>(AsynchronousDelegatingModifier::delegate());
     }
 
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
@@ -166,6 +220,9 @@ protected:
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
+
+    /// Creates a computation engine that will compute the modifier's results.
+    virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
     /// Determines the range of values in the input data for the selected property.
     bool determinePropertyValueRange(const PipelineFlowState& state, FloatType& min, FloatType& max) const;

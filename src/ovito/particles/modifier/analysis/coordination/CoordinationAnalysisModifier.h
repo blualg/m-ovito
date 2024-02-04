@@ -25,7 +25,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/util/CutoffNeighborFinder.h>
-#include <ovito/particles/util/ParticleOrderingFingerprint.h>
+#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/table/DataTable.h>
@@ -75,7 +75,7 @@ private:
     public:
 
         /// Constructor.
-        CoordinationAnalysisEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCell* simCell,
+        CoordinationAnalysisEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCell* simCell,
                 FloatType cutoff, int rdfSampleCount, ConstPropertyPtr particleTypes, boost::container::flat_map<int,QString> uniqueTypes) :
             Engine(request),
             _positions(std::move(positions)),
@@ -85,7 +85,7 @@ private:
             _computePartialRdfs(particleTypes),
             _particleTypes(std::move(particleTypes)),
             _uniqueTypes(std::move(uniqueTypes)),
-            _coordinationNumbers(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.particleCount(), Particles::CoordinationProperty)),
+            _coordinationNumbers(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.elementCount(), Particles::CoordinationProperty)),
             _inputFingerprint(std::move(fingerprint))
         {
             _uniqueTypeIds.reserve(_uniqueTypes.size());
@@ -149,7 +149,7 @@ private:
         ConstPropertyPtr _selection;
         const PropertyPtr _coordinationNumbers;
         PropertyPtr _rdfY;
-        ParticleOrderingFingerprint _inputFingerprint;
+        ElementOrderingFingerprint _inputFingerprint;
     };
 
 private:

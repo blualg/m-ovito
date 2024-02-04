@@ -140,7 +140,7 @@ void ComputePropertyModifier::referenceReplaced(const PropertyFieldDescriptor* f
 ******************************************************************************/
 Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
-    ComputePropertyModificationNode* myModNode = dynamic_object_cast<ComputePropertyModificationNode>(request.modificationNode());
+    ComputePropertyModificationNode* modNode = dynamic_object_cast<ComputePropertyModificationNode>(request.modificationNode());
 
     // Get the delegate object that will take of the specific details.
     if(!delegate())
@@ -172,8 +172,8 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
         outp = CloneHelper::cloneSingleObject(existingProperty, false);
 
         // Reset cached vis elements.
-        if(myModNode)
-            myModNode->setCachedVisElements({});
+        if(modNode)
+            modNode->setCachedVisElements({});
     }
     else {
         // Allocate new data array.
@@ -187,19 +187,19 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
             throw Exception(tr("Output property of compute property modifier has not been specified."));
         }
 
-        if(myModNode) {
+        if(modNode) {
             // Replace vis elements of output property with cached ones and cache any new vis elements.
             // This is required to avoid losing the output property's display settings
             // each time the modifier is re-evaluated or when serializing the modifier.
             OORefVector<DataVis> currentVisElements = outp->visElements();
             // Replace with cached vis elements if they are of the same class type.
-            for(int i = 0; i < currentVisElements.size() && i < myModNode->cachedVisElements().size(); i++) {
-                if(currentVisElements[i]->getOOClass() == myModNode->cachedVisElements()[i]->getOOClass()) {
-                    currentVisElements[i] = myModNode->cachedVisElements()[i];
+            for(int i = 0; i < currentVisElements.size() && i < modNode->cachedVisElements().size(); i++) {
+                if(currentVisElements[i]->getOOClass() == modNode->cachedVisElements()[i]->getOOClass()) {
+                    currentVisElements[i] = modNode->cachedVisElements()[i];
                 }
             }
             outp->setVisElements(currentVisElements);
-            myModNode->setCachedVisElements(std::move(currentVisElements));
+            modNode->setCachedVisElements(std::move(currentVisElements));
         }
     }
     if(propertyComponentCount() != outp->componentCount())
@@ -223,13 +223,13 @@ Future<AsynchronousModifier::EnginePtr> ComputePropertyModifier::createEngine(co
     }
 
     // Store the list of input variables in the ModificationNode so that the UI component can display it to the user.
-    if(myModNode) {
-        myModNode->setInputVariableNames(engine->inputVariableNames());
-        myModNode->setDelegateInputVariableNames(engine->delegateInputVariableNames());
-        myModNode->setInputVariableTable(engine->inputVariableTable());
+    if(modNode) {
+        modNode->setInputVariableNames(engine->inputVariableNames());
+        modNode->setDelegateInputVariableNames(engine->delegateInputVariableNames());
+        modNode->setInputVariableTable(engine->inputVariableTable());
         delegate()->notifyDependents(ReferenceEvent::ObjectStatusChanged);
         this->notifyDependents(ReferenceEvent::ObjectStatusChanged);
-        myModNode->notifyDependents(ReferenceEvent::ObjectStatusChanged);
+        modNode->notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 
     return engine;

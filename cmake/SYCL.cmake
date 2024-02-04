@@ -35,7 +35,7 @@ MACRO(OVITO_ADD_SYCL_TO_TARGET target_name)
         TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-fsycl-targets=nvptx64-nvidia-cuda")
         TARGET_LINK_OPTIONS(${target_name} PUBLIC "-fsycl-targets=nvptx64-nvidia-cuda")
         TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-undefined-var-template")
-    ELSEIF(NOT OVITO_USE_SYCL STREQUAL None)
+    ELSEIF(NOT OVITO_USE_SYCL STREQUAL None AND NOT OVITO_USE_SYCL STREQUAL OFF)
         MESSAGE(FATAL_ERROR "Invalid OVITO_USE_SYCL setting. Must be one of [None, AdaptiveCpp, DPC++].")
     ENDIF()
 

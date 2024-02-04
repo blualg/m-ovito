@@ -28,7 +28,7 @@
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/Bonds.h>
 #include <ovito/particles/modifier/analysis/ptm/PTMAlgorithm.h>
-#include <ovito/particles/util/ParticleOrderingFingerprint.h>
+#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 #include <ovito/core/utilities/DisjointSet.h>
 #include "GrainSegmentationModifier.h"
@@ -339,7 +339,7 @@ public:
     /// Constructor.
     GrainSegmentationEngine1(
             const ModifierEvaluationRequest& request,
-            ParticleOrderingFingerprint fingerprint,
+            ElementOrderingFingerprint fingerprint,
             ConstPropertyPtr positions,
             ConstPropertyPtr structureProperty,
             ConstPropertyPtr orientationProperty,
@@ -496,7 +496,7 @@ private:
     DataOORef<const SimulationCell> _simCell;
 
     /// Used to detect changes in the input dataset that invalidate cached computation results.
-    ParticleOrderingFingerprint _inputFingerprint;
+    ElementOrderingFingerprint _inputFingerprint;
 
     // The merge distances
     PropertyPtr _mergeDistance;

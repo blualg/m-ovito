@@ -101,7 +101,7 @@ protected:
         // When modifying the contents of the buffer, invalidate the cached number of non-zero elements.
         if constexpr(accessmode != access_mode::read) {
             if(this->_buffer)
-                this->_buffer->invalidateNonzeroCount();
+                this->_buffer->invalidateCachedInfo();
         }
 
 #ifdef OVITO_DEBUG

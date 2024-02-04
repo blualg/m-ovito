@@ -193,7 +193,6 @@ PipelineStatus ParticlesReplicateModifierDelegate::apply(const ModifierEvaluatio
             }
         }
     }
-    ExecutionContext::current().ui().taskManager().syclQueue().wait();
 
     // Replicate angles.
     if(outputParticles->angles()) {

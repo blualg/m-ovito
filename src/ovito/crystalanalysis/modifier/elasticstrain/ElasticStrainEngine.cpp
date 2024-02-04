@@ -35,7 +35,7 @@ namespace Ovito {
 ******************************************************************************/
 ElasticStrainEngine::ElasticStrainEngine(
         const ModifierEvaluationRequest& request,
-        ParticleOrderingFingerprint fingerprint,
+        ElementOrderingFingerprint fingerprint,
         ConstPropertyPtr positions, const SimulationCell* simCell,
         int inputCrystalStructure, std::vector<Matrix3> preferredCrystalOrientations,
         bool calculateDeformationGradients, bool calculateStrainTensors,

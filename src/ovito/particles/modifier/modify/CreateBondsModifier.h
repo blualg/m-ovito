@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/BondsVis.h>
 #include <ovito/particles/objects/BondType.h>
-#include <ovito/particles/util/ParticleOrderingFingerprint.h>
+#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
@@ -91,7 +91,7 @@ private:
     public:
 
         /// Constructor.
-        BondsEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr particleTypes,
+        BondsEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr particleTypes,
                 const SimulationCell* simCell, DataOORef<Bonds> bondsObject, DataOORef<BondType> bondType, const Particles* particles, CutoffMode cutoffMode, FloatType maxCutoff, FloatType minCutoff, std::vector<std::vector<FloatType>> pairCutoffsSquared,
                 std::vector<FloatType> typeVdWRadiusMap, FloatType vdwPrefactor, ConstPropertyPtr moleculeIDs, std::vector<bool> isHydrogenType) :
                     Engine(request),
@@ -146,7 +146,7 @@ private:
         ConstPropertyPtr _moleculeIDs;
         DataOORef<const SimulationCell> _simCell;
         DataOORef<const Particles> _particles;
-        ParticleOrderingFingerprint _inputFingerprint;
+        ElementOrderingFingerprint _inputFingerprint;
         DataOORef<Bonds> _bonds;
         DataOORef<BondType> _bondType;
         size_t _numGeneratedBonds;

@@ -107,7 +107,7 @@ Future<AsynchronousModifier::EnginePtr> AmbientOcclusionModifier::createEngine(c
 /******************************************************************************
 * Compute engine constructor.
 ******************************************************************************/
-AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ParticleOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
+AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ElementOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
         ConstPropertyPtr particleRadii, const Box3& boundingBox, OORef<SceneRenderer> renderer) :
     Engine(request, validityInterval),
     _resolution(resolution),
@@ -116,7 +116,7 @@ AmbientOcclusionModifier::AmbientOcclusionEngine::AmbientOcclusionEngine(const M
     _particleRadii(std::move(particleRadii)),
     _boundingBox(boundingBox),
     _renderer(std::move(renderer)),
-    _brightness(DataBufferPtr::create(DataBuffer::Initialized, fingerprint.particleCount(), Property::FloatDefault, 1)),
+    _brightness(DataBufferPtr::create(DataBuffer::Initialized, fingerprint.elementCount(), Property::FloatDefault, 1)),
     _inputFingerprint(std::move(fingerprint))
 {
     OVITO_ASSERT(_particleRadii->size() == _positions->size());

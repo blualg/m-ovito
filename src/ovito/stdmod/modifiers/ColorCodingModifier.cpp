@@ -73,7 +73,7 @@ SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, sourceProperty, "Source property")
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ColorCodingModifier::ColorCodingModifier(ObjectInitializationFlags flags) : DelegatingModifier(flags),
+ColorCodingModifier::ColorCodingModifier(ObjectInitializationFlags flags) : AsynchronousDelegatingModifier(flags),
     _colorOnlySelected(false),
     _keepSelection(true),
     _autoAdjustRange(false)
@@ -121,7 +121,7 @@ ColorCodingModifier::ColorCodingModifier(ObjectInitializationFlags flags) : Dele
 ******************************************************************************/
 TimeInterval ColorCodingModifier::validityInterval(const ModifierEvaluationRequest& request) const
 {
-    TimeInterval iv = DelegatingModifier::validityInterval(request);
+    TimeInterval iv = AsynchronousDelegatingModifier::validityInterval(request);
     if(!autoAdjustRange()) {
         if(startValueController()) iv.intersect(startValueController()->validityInterval(request.time()));
         if(endValueController()) iv.intersect(endValueController()->validityInterval(request.time()));
@@ -139,7 +139,7 @@ void ColorCodingModifier::propertyChanged(const PropertyFieldDescriptor* field)
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 
-    DelegatingModifier::propertyChanged(field);
+    AsynchronousDelegatingModifier::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -148,7 +148,7 @@ void ColorCodingModifier::propertyChanged(const PropertyFieldDescriptor* field)
 ******************************************************************************/
 void ColorCodingModifier::initializeModifier(const ModifierInitializationRequest& request)
 {
-    DelegatingModifier::initializeModifier(request);
+    AsynchronousDelegatingModifier::initializeModifier(request);
 
     // When the modifier is inserted, automatically select the most recently added property from the input.
     if(sourceProperty().isNull() && delegate() && ExecutionContext::isInteractive()) {
@@ -173,10 +173,228 @@ void ColorCodingModifier::initializeModifier(const ModifierInitializationRequest
 void ColorCodingModifier::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
     // Whenever the delegate of this modifier is being replaced, update the source property reference.
-    if(field == PROPERTY_FIELD(DelegatingModifier::delegate) && !isBeingLoaded() && !isBeingDeleted() && !isUndoingOrRedoing()) {
+    if(field == PROPERTY_FIELD(AsynchronousDelegatingModifier::delegate) && !isBeingLoaded() && !isBeingDeleted() && !isUndoingOrRedoing()) {
         setSourceProperty(sourceProperty().convertToContainerClass(delegate() ? delegate()->inputContainerClass() : nullptr));
     }
-    DelegatingModifier::referenceReplaced(field, oldTarget, newTarget, listIndex);
+    AsynchronousDelegatingModifier::referenceReplaced(field, oldTarget, newTarget, listIndex);
+}
+
+/******************************************************************************
+* Creates and initializes a computation engine that will compute the
+* modifier's results.
+******************************************************************************/
+Future<AsynchronousModifier::EnginePtr> ColorCodingModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+{
+    if(!colorGradient())
+        throw Exception(tr("No color gradient has been selected."));
+
+    if(!delegate())
+        throw Exception(tr("No delegate set for the color coding modifier."));
+
+    // Get the source property.
+    const PropertyReference& sourceProperty = this->sourceProperty();
+    if(sourceProperty.isNull())
+        throw Exception(tr("No source property was set as input for color coding."));
+
+    // Look up the selected property container.
+    ConstDataObjectPath containerPath = input.expectObject(delegate()->inputContainerRef());
+    const PropertyContainer* container = static_object_cast<PropertyContainer>(containerPath.back());
+
+    // Check if the source property is the right kind of property.
+    if(sourceProperty.containerClass() != &container->getOOMetaClass()) {
+        throw Exception(tr("Color coding modifier was set to operate on '%1', but the selected input is a '%2' property.")
+                            .arg(delegate()->getOOMetaClass().pythonDataName())
+                            .arg(sourceProperty.containerClass()->propertyClassDisplayName()));
+    }
+
+    // Make sure input data structure is ok.
+    container->verifyIntegrity();
+
+    ConstPropertyPtr property = sourceProperty.findInContainer(container);
+    if(!property)
+        throw Exception(tr("The property with the name '%1' does not exist.").arg(sourceProperty.name()));
+    if(sourceProperty.vectorComponent() >= (int)property->componentCount())
+        throw Exception(tr("The vector component is out of range. The property '%1' has only %2 values per data element.").arg(sourceProperty.name()).arg(property->componentCount()));
+    int vecComponent = std::max(0, sourceProperty.vectorComponent());
+
+    // Get the selection property if enabled by the user.
+    ConstPropertyPtr selection;
+    if(colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty))
+        selection = container->getProperty(Property::GenericSelectionProperty);
+
+    // Get modifier's parameter.
+    FloatType startValue = 0, endValue = 0;
+    TimeInterval validityInterval = input.stateValidity();
+    if(!autoAdjustRange()) {
+        if(startValueController()) startValue = startValueController()->getFloatValue(request.time(), validityInterval);
+        if(endValueController()) endValue = endValueController()->getFloatValue(request.time(), validityInterval);
+    }
+
+    return std::make_shared<ColorCodingModifierDelegate::ColorCodingEngine>(
+            request,
+            validityInterval,
+            colorGradient(),
+            std::move(containerPath),
+            std::move(property),
+            vecComponent,
+            std::move(selection),
+            startValue, endValue,
+            autoAdjustRange(),
+            delegate()->outputColorPropertyId());
+}
+
+/******************************************************************************
+* Performs the actual computation. This method is executed in a worker thread.
+******************************************************************************/
+void ColorCodingModifierDelegate::ColorCodingEngine::perform()
+{
+    // Create the color output property.
+    const PropertyContainer* container = static_object_cast<PropertyContainer>(_containerPath.back());
+    _colors = container->getOOMetaClass().createStandardProperty(_selection ? DataBuffer::Initialized : DataBuffer::Uninitialized, _input->size(), _outputColorPropertyId, _containerPath);
+
+    // Determine input value range.
+    FloatType startValue = _minValue;
+    FloatType endValue = _maxValue;
+    if(_autoAdjustRange) {
+        _minValue = std::numeric_limits<FloatType>::max();
+        _maxValue = std::numeric_limits<FloatType>::lowest();
+
+        // Iterate over the property array to find the lowest/highest value.
+        std::tie(_minValue, _maxValue) = _input->minMax(_vectorComponent, _selection);
+
+        // If the range is valid. It may be not if the property is empty or no elements are selected.
+        if(_minValue != std::numeric_limits<FloatType>::max()) {
+            startValue = _minValue;
+            endValue = _maxValue;
+        }
+        else {
+            _minValue =  std::numeric_limits<FloatType>::infinity();
+            _maxValue = -std::numeric_limits<FloatType>::infinity();
+        }
+    }
+
+    // Clamp to finite range.
+    if(!std::isfinite(startValue)) startValue = std::numeric_limits<FloatType>::lowest();
+    if(!std::isfinite(endValue)) endValue = std::numeric_limits<FloatType>::max();
+    const FloatType intervalRange = endValue - startValue;
+
+#ifdef OVITO_USE_SYCL
+    if(_colors->size() != 0) {
+        // Create color lookup table.
+        ConstDataBufferPtr colorMap = _gradient->getColorMap();
+
+        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+
+            // Access selection flags array (optional).
+            SyclBufferAccess<const SelectionIntType, access_mode::read> selectionAcc(_selection, cgh);
+            // Access color lookup table.
+            SyclBufferAccess<const ColorG, access_mode::read> colorMapAcc(colorMap, cgh);
+            // Access output array.
+            SyclBufferAccess<ColorG, access_mode::write> outputAcc(_colors, cgh, _selection ? DataBuffer::Initialized : DataBuffer::Uninitialized);
+
+            // Duplicate templated code for different input data types.
+            _input->forAnyType([&](auto _) {
+                using T = decltype(_);
+                SyclBufferAccess<const T*, access_mode::read> inputAcc(_input, cgh);
+
+                OVITO_SYCL_PARALLEL_FOR(cgh, ColorCodingModifierDelegate_apply)(sycl::range(_input->size()), [=](size_t i) {
+                    if(selectionAcc.empty() || selectionAcc[i]) {
+                        // Get input value.
+                        const GraphicsFloatType value = static_cast<FloatType>(inputAcc[sycl::id<2>(i, _vectorComponent)]);
+
+                        // Map input value to [0,1] range.
+                        GraphicsFloatType t;
+                        if(intervalRange != 0) {
+                            t = (value - startValue) / intervalRange;
+                        }
+                        else {
+                            if(value == startValue) t = GraphicsFloatType(0.5);
+                            else if(value > startValue) t = 1;
+                            else t = 0;
+                        }
+
+                        // Clamp value.
+                        if(std::isnan(t)) t = 0;
+                        else if(t ==  std::numeric_limits<GraphicsFloatType>::infinity()) t = 1;
+                        else if(t == -std::numeric_limits<GraphicsFloatType>::infinity()) t = 0;
+                        else if(t < 0) t = 0;
+                        else if(t > 1) t = 1;
+
+                        // Map scalar to RGB color. Perform linear interpolation of two adjacent colors.
+                        GraphicsFloatType x = t * (GraphicsFloatType)(colorMapAcc.size() - 1);
+                        int x0 = static_cast<int>(x);
+                        int x1 = x0 + 1;
+                        const ColorG& c0 = colorMapAcc[x0];
+                        const ColorG& c1 = (x1 != colorMapAcc.size()) ? colorMapAcc[x1] : c0;
+                        GraphicsFloatType w0 = (GraphicsFloatType)x1 - x;
+                        GraphicsFloatType w1 = x - (GraphicsFloatType)x0;
+                        outputAcc[i] = w0 * c0 + w1 * c1;
+                    }
+                });
+            });
+        });
+    }
+#else
+    BufferWriteAccess<ColorG, access_mode::write> colorAcc(_colors, _selection ? DataBuffer::Initialized : DataBuffer::Uninitialized);
+    BufferReadAccess<SelectionIntType> selectionAcc(_selection);
+
+    bool result = _input->forEach(_vectorComponent, [&](size_t i, auto value) {
+        if(selectionAcc && !selectionAcc[i])
+            return;
+
+        // Map input value to [0,1] range.
+        GraphicsFloatType t;
+        if(intervalRange != 0) {
+            t = static_cast<GraphicsFloatType>((value - startValue) / intervalRange);
+        }
+        else {
+            if(value == startValue) t = GraphicsFloatType(0.5);
+            else if(value > startValue) t = 1;
+            else t = 0;
+        }
+
+        // Clamp value.
+        if(std::isnan(t)) t = 0;
+        else if(t ==  std::numeric_limits<GraphicsFloatType>::infinity()) t = 1;
+        else if(t == -std::numeric_limits<GraphicsFloatType>::infinity()) t = 0;
+        else if(t < 0) t = 0;
+        else if(t > 1) t = 1;
+
+        // Map scalar to RGB color.
+        colorAcc[i] = _gradient->valueToColor(t);
+    });
+    if(!result)
+        throw Exception(tr("The property '%1' has an invalid or non-numeric data type.").arg(_input->name()));
+#endif
+}
+
+/******************************************************************************
+* Injects the computed results of the engine into the data pipeline.
+******************************************************************************/
+void ColorCodingModifierDelegate::ColorCodingEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+{
+    ColorCodingModifier* modifier = static_object_cast<ColorCodingModifier>(request.modifier());
+
+    if(modifier->autoAdjustRange() && std::isfinite(_minValue)) {
+        state.setAttribute(QStringLiteral("ColorCoding.RangeMin"), _minValue, request.modificationNode());
+        state.setAttribute(QStringLiteral("ColorCoding.RangeMax"), _maxValue, request.modificationNode());
+    }
+
+    // Look up the property container.
+    DataObjectPath objectPath = state.expectMutableObject(modifier->delegate()->inputContainerRef());
+    PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
+
+    if(_orderingFingerprint.hasChanged(container))
+        throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input elements has changed."));
+
+    // Output color property.
+    container->createProperty(_colors);
+
+    // Clear selection if requested.
+    if(_selection && !modifier->keepSelection()) {
+        if(const Property* selection = container->getProperty(Property::GenericSelectionProperty))
+            container->removeProperty(selection);
+    }
 }
 
 /******************************************************************************
@@ -307,174 +525,6 @@ void ColorCodingModifier::reverseRange()
     OORef<Controller> oldStartValue = startValueController();
     setStartValueController(endValueController());
     setEndValueController(std::move(oldStartValue));
-}
-
-/******************************************************************************
-* Applies the modifier operation to the data in a pipeline flow state.
-******************************************************************************/
-PipelineStatus ColorCodingModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
-{
-    const ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(request.modifier());
-
-    if(!mod->colorGradient())
-        throw Exception(tr("No color gradient has been selected."));
-
-    // Get the source property.
-    const PropertyReference& sourceProperty = mod->sourceProperty();
-    int vecComponent;
-    if(sourceProperty.isNull())
-        throw Exception(tr("No source property was set as input for color coding."));
-
-    // Look up the selected property container. Make sure we can safely modify it.
-    DataObjectPath objectPath = state.expectMutableObject(inputContainerRef());
-    PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
-
-    // Check if the source property is the right kind of property.
-    if(sourceProperty.containerClass() != &container->getOOMetaClass()) {
-        throw Exception(tr("Color coding modifier was set to operate on '%1', but the selected input is a '%2' property.")
-                            .arg(getOOMetaClass().pythonDataName())
-                            .arg(sourceProperty.containerClass()->propertyClassDisplayName()));
-    }
-
-    // Make sure input data structure is ok.
-    container->verifyIntegrity();
-
-    ConstPropertyPtr property = sourceProperty.findInContainer(container);
-    if(!property)
-        throw Exception(tr("The property with the name '%1' does not exist.").arg(sourceProperty.name()));
-    if(sourceProperty.vectorComponent() >= (int)property->componentCount())
-        throw Exception(tr("The vector component is out of range. The property '%1' has only %2 values per data element.").arg(sourceProperty.name()).arg(property->componentCount()));
-    vecComponent = std::max(0, sourceProperty.vectorComponent());
-
-    // Get the selection property if enabled by the user.
-    ConstPropertyPtr selection;
-    if(mod->colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty))
-        selection = container->getProperty(Property::GenericSelectionProperty);
-
-    // Get modifier's parameter.
-    FloatType startValue = 0, endValue = 0;
-
-    if(mod->autoAdjustRange()) {
-        FloatType minValue = std::numeric_limits<FloatType>::max();
-        FloatType maxValue = std::numeric_limits<FloatType>::lowest();
-        if(mod->determinePropertyValueRange(state, minValue, maxValue)) {
-            startValue = minValue;
-            endValue = maxValue;
-            state.setAttribute(QStringLiteral("ColorCoding.RangeMin"), minValue, request.modificationNode());
-            state.setAttribute(QStringLiteral("ColorCoding.RangeMax"), maxValue, request.modificationNode());
-        }
-    }
-    else {
-        if(mod->startValueController()) startValue = mod->startValueController()->getFloatValue(request.time(), state.mutableStateValidity());
-        if(mod->endValueController()) endValue = mod->endValueController()->getFloatValue(request.time(), state.mutableStateValidity());
-    }
-
-    // Clamp to finite range.
-    if(!std::isfinite(startValue)) startValue = std::numeric_limits<FloatType>::lowest();
-    if(!std::isfinite(endValue)) endValue = std::numeric_limits<FloatType>::max();
-    const FloatType intervalRange = endValue - startValue;
-
-    // Clear selection if requested. This must happen after calling determinePropertyValueRange(), which needs the input selection.
-    if(!mod->keepSelection() && selection) {
-        container->removeProperty(selection);
-    }
-
-#ifdef OVITO_USE_SYCL
-    // Create the color output property.
-    Property* colorProperty = container->createProperty(selection ? DataBuffer::Initialized : DataBuffer::Uninitialized, outputColorPropertyId(), objectPath);
-
-    if(colorProperty->size() != 0) {
-        // Create color lookup table.
-        ConstDataBufferPtr colorMap = mod->colorGradient()->getColorMap();
-
-        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
-
-            // Access selection flags array (optional).
-            SyclBufferAccess<const SelectionIntType, access_mode::read> selectionAcc(selection, cgh);
-            // Access color lookup table.
-            SyclBufferAccess<const ColorG, access_mode::read> colorMapAcc(colorMap, cgh);
-            // Access output array.
-            SyclBufferAccess<ColorG, access_mode::write> outputAcc(colorProperty, cgh, selection ? DataBuffer::Initialized : DataBuffer::Uninitialized);
-
-            // Duplicate templated code for different input data types.
-            property->forAnyType([&](auto _) {
-                using T = decltype(_);
-                SyclBufferAccess<const T*, access_mode::read> inputAcc(property, cgh);
-
-                OVITO_SYCL_PARALLEL_FOR(cgh, ColorCodingModifierDelegate_apply)(sycl::range(property->size()), [=](size_t i) {
-                    if(selectionAcc.empty() || selectionAcc[i]) {
-                        // Get input value.
-                        const GraphicsFloatType value = static_cast<FloatType>(inputAcc[sycl::id<2>(i, vecComponent)]);
-
-                        // Map input value to [0,1] range.
-                        GraphicsFloatType t;
-                        if(intervalRange != 0) {
-                            t = (value - startValue) / intervalRange;
-                        }
-                        else {
-                            if(value == startValue) t = GraphicsFloatType(0.5);
-                            else if(value > startValue) t = 1;
-                            else t = 0;
-                        }
-
-                        // Clamp value.
-                        if(std::isnan(t)) t = 0;
-                        else if(t ==  std::numeric_limits<GraphicsFloatType>::infinity()) t = 1;
-                        else if(t == -std::numeric_limits<GraphicsFloatType>::infinity()) t = 0;
-                        else if(t < 0) t = 0;
-                        else if(t > 1) t = 1;
-
-                        // Map scalar to RGB color. Perform linear interpolation of two adjacent colors.
-                        GraphicsFloatType x = t * (GraphicsFloatType)(colorMapAcc.size() - 1);
-                        int x0 = static_cast<int>(x);
-                        int x1 = x0 + 1;
-                        const ColorG& c0 = colorMapAcc[x0];
-                        const ColorG& c1 = (x1 != colorMapAcc.size()) ? colorMapAcc[x1] : c0;
-                        GraphicsFloatType w0 = (GraphicsFloatType)x1 - x;
-                        GraphicsFloatType w1 = x - (GraphicsFloatType)x0;
-                        outputAcc[i] = w0 * c0 + w1 * c1;
-                    }
-                });
-            });
-        });
-    }
-#else
-    // Create the color output property.
-    BufferWriteAccess<ColorG, access_mode::write> colorAcc(
-        container->createProperty(selection ? DataBuffer::Initialized : DataBuffer::Uninitialized, outputColorPropertyId(), objectPath),
-        !selection);
-
-    BufferReadAccess<SelectionIntType> selectionAcc(selection.get());
-    bool result = property->forEach(vecComponent, [&](size_t i, auto value) {
-        if(selectionAcc && !selectionAcc[i])
-            return;
-
-        // Map input value to [0,1] range.
-        GraphicsFloatType t;
-        if(intervalRange != 0) {
-            t = static_cast<GraphicsFloatType>((value - startValue) / intervalRange);
-        }
-        else {
-            if(value == startValue) t = GraphicsFloatType(0.5);
-            else if(value > startValue) t = 1;
-            else t = 0;
-        }
-
-        // Clamp value.
-        if(std::isnan(t)) t = 0;
-        else if(t ==  std::numeric_limits<GraphicsFloatType>::infinity()) t = 1;
-        else if(t == -std::numeric_limits<GraphicsFloatType>::infinity()) t = 0;
-        else if(t < 0) t = 0;
-        else if(t > 1) t = 1;
-
-        // Map scalar to RGB color.
-        colorAcc[i] = mod->colorGradient()->valueToColor(t);
-    });
-    if(!result)
-        throw Exception(tr("The property '%1' has an invalid or non-numeric data type.").arg(property->name()));
-#endif
-
-    return PipelineStatus::Success;
 }
 
 }   // End of namespace

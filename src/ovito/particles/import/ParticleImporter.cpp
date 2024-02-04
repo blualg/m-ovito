@@ -486,6 +486,15 @@ void ParticleImporter::FrameLoader::loadFile()
         if(!_impropers) setImproperCount(0);
     }
 
+    // Precompute checksum of Particle Identifier property to speed up
+    // the ElementOrderingFingerprint::hasChanged() check, which detects changes
+    // in the ordering of particles.
+    if(_particles) {
+        if(const Property* identifiers = _particles->getProperty(Particles::IdentifierProperty)) {
+            (void)identifiers->checksum();
+        }
+    }
+
 #ifdef OVITO_DEBUG
     if(_particles) _particles->verifyIntegrity();
     if(_bonds) _bonds->verifyIntegrity();

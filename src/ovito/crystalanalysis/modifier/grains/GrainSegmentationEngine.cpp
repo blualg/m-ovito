@@ -47,7 +47,7 @@ namespace Ovito {
 ******************************************************************************/
 GrainSegmentationEngine1::GrainSegmentationEngine1(
             const ModifierEvaluationRequest& request,
-            ParticleOrderingFingerprint fingerprint,
+            ElementOrderingFingerprint fingerprint,
             ConstPropertyPtr positions,
             ConstPropertyPtr structureProperty,
             ConstPropertyPtr orientationProperty,

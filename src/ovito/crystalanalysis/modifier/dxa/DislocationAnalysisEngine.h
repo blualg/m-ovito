@@ -42,7 +42,7 @@ class DislocationAnalysisEngine : public StructureIdentificationModifier::Struct
 public:
 
     /// Constructor.
-    DislocationAnalysisEngine(const ModifierEvaluationRequest& request, ParticleOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell,
+    DislocationAnalysisEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell,
             const OORefVector<ElementType>& structureTypes, int inputCrystalStructure, int maxTrialCircuitSize, int maxCircuitElongation,
             ConstPropertyPtr particleSelection,
             ConstPropertyPtr crystalClusters,
