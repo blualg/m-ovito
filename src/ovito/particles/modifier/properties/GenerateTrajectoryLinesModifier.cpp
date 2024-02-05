@@ -469,6 +469,7 @@ void GenerateTrajectoryLinesModificationNode::notifyDependentsImpl(const Referen
 {
     if(event.type() == ReferenceEvent::TargetChanged) {
         // Throw away precomputed trajectories when the modifier or the upstream pipeline change.
+        // This also discards the stored trajectory lines in case the modifier is turned off by the user.
         _samplingOperation.reset();
     }
     ModificationNode::notifyDependentsImpl(event);
