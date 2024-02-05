@@ -62,14 +62,11 @@ public:
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+
     /// Modifies the input data synchronously.
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-    /// Indicates that this modifier wants preliminary viewport updates whenever its parameters change.
-    virtual bool performPreliminaryUpdateAfterChange() override { return true; }
-
-    /// Updates the stored trajectories from the source particle object.
-    bool generateTrajectories(AnimationTime currentTime);
 
 protected:
 
@@ -96,10 +93,10 @@ private:
     /// Controls whether trajectories are unwrapped when crossing periodic boundaries.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, unwrapTrajectories, setUnwrapTrajectories);
 
-    /// Controls whether a particle property is sampled and transfered to the output trajectory lines.
+    /// Controls whether a particle property is sampled and transferred to the output trajectory lines.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, transferParticleProperties, setTransferParticleProperties);
 
-    /// The particle property to be transfered to the output trajectory lines.
+    /// The particle property to be transferred onto the trajectory lines.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlePropertyReference, particleProperty, setParticleProperty);
 
     /// The vis element for rendering the trajectory lines.
@@ -119,11 +116,17 @@ public:
     /// Constructor.
     using ModificationNode::ModificationNode;
 
+protected:
+
+    /// Sends an event to all dependents of this RefTarget.
+    virtual void notifyDependentsImpl(const ReferenceEvent& event) noexcept override;
+
 private:
 
-    /// The cached trajectory line data.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const Lines>, trajectoryData, setTrajectoryData,
-                                             PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);
+    /// The asynchronous task object that computes and stores the trajectory lines.
+    SharedFuture<DataOORef<const Lines>> _samplingOperation;
+
+    friend class GenerateTrajectoryLinesModifier;
 };
 
 }   // End of namespace

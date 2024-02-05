@@ -43,7 +43,7 @@ auto for_each_sequential(
     // The output tuple produced by the task.
     using task_tuple_type = std::tuple<std::decay_t<ResultType>...>;
 
-    // Can we report progress because the total number of rerquired iterations is known?
+    // Can we report progress because the total number of required iterations is known?
     constexpr bool is_with_progress = std::is_same_v<typename std::iterator_traits<typename InputRange::iterator>::iterator_category, std::random_access_iterator_tag>;
 
     using task_base_class = std::conditional_t<is_with_progress, ProgressingTask, Task>;

@@ -45,11 +45,6 @@ protected:
 
     /// Creates the user interface controls for the editor.
     virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
-
-private Q_SLOTS:
-
-    /// Is called when the user clicks the 'Regenerate trajectory' button.
-    void onRegenerateTrajectory();
 };
 
 }   // End of namespace

@@ -6,6 +6,17 @@ Changelog
 
 .. sidebar::
 
+  * `Download <https://www.ovito.org/download_history/#3.11.0>`__
+
+----------------------------
+Version 3.11.0 (xx-xxx-2024)
+----------------------------
+
+- The :ref:`particles.modifiers.generate_trajectory_lines` modifier now works automatically without the need to start the generation process manually
+- |ovito-python| Deprecated :py:meth:`!generate` method of the :py:class:`~ovito.modifiers.GenerateTrajectoryLinesModifier`
+- |ovito-python| Added the :py:attr:`HistogramModifier.select_elements <ovito.modifiers.HistogramModifier.select_elements>` option
+- |ovito-python| Initialize global Qt application object only on demand to avoid conflicts with other Python packages that use the Qt framework
+
   * `Download <https://www.ovito.org/download_history/#3.10.2>`__
 
 ----------------------------

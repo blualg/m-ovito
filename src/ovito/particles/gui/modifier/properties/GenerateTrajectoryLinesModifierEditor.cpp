@@ -23,6 +23,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/modifier/properties/GenerateTrajectoryLinesModifier.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/StringParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
@@ -139,9 +140,8 @@ void GenerateTrajectoryLinesModifierEditor::createUI(const RolloutInsertionParam
         layout2a->setColumnStretch(2, 1);
     }
 
-    QPushButton* createTrajectoryButton = new QPushButton(tr("Generate trajectory lines"));
-    layout->addWidget(createTrajectoryButton);
-    connect(createTrajectoryButton, &QPushButton::clicked, this, &GenerateTrajectoryLinesModifierEditor::onRegenerateTrajectory);
+    // Status label.
+    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
 
     // Open a sub-editor for the trajectory vis element.
     SubObjectParameterUI* trajectoryVisSubEditorUI = new SubObjectParameterUI(this, PROPERTY_FIELD(GenerateTrajectoryLinesModifier::trajectoryVis), rolloutParams.after(rollout));
@@ -149,20 +149,6 @@ void GenerateTrajectoryLinesModifierEditor::createUI(const RolloutInsertionParam
     // Whenever the pipeline output of the modifier changes, update visibility of the visual element for the trajectory lines.
     connect(this, &PropertiesEditor::pipelineOutputChanged, this, [this, trajectoryVisSubEditorUI]() {
         trajectoryVisSubEditorUI->setEnabled(getPipelineOutput().getObject<Lines>() != nullptr);
-    });
-}
-
-/******************************************************************************
-* Is called when the user clicks the 'Regenerate trajectory' button.
-******************************************************************************/
-void GenerateTrajectoryLinesModifierEditor::onRegenerateTrajectory()
-{
-    GenerateTrajectoryLinesModifier* modifier = static_object_cast<GenerateTrajectoryLinesModifier>(editObject());
-    if(!modifier) return;
-
-    performTransaction(tr("Generate trajectory"), [&]() {
-        ProgressDialog progressDialog(container(), tr("Generating trajectory lines"));
-        modifier->generateTrajectories(currentAnimationTime());
     });
 }
 

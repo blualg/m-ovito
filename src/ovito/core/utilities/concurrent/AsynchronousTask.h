@@ -96,13 +96,12 @@ public:
 #endif
 
     /// Schedules the given function for execution in a worker thread.
-    /// The function should accept a reference to a ProgressingTask as a parameter.
     template<typename Function>
     static Future<R...> runAsync(Function&& f, bool showInUserInterface) {
         class FuncAsyncTask : public AsynchronousTask {
         public:
             FuncAsyncTask(Function&& f) : _func(std::forward<Function>(f)) {}
-            virtual void perform() override { std::invoke(std::move(_func), *this); }
+            virtual void perform() override { std::move(_func)(); }
         private:
             std::decay_t<Function> _func;
         };
@@ -117,7 +116,7 @@ public:
         QWaitCondition wc;
         QMutex waitMutex;
         bool done = false;
-        auto future = AsynchronousTask::runAsync([&wc, &waitMutex, &done, f = std::forward<Function>(f)](ProgressingTask& task) {
+        auto future = AsynchronousTask::runAsync([&wc, &waitMutex, &done, f = std::forward<Function>(f)]() {
             std::move(f)();
             QMutexLocker locker(&waitMutex);
             done = true;
