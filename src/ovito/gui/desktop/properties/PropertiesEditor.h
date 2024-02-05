@@ -111,10 +111,15 @@ public:
     /// \note The rollout is automatically deleted when the editor is deleted.
     QWidget* createRollout(const QString& title, const RolloutInsertionParameters& rolloutParams, const char* helpPage = nullptr);
 
-    /// \brief Completely disables the UI elements in the given rollout widget.
+    /// \brief Completely disables the UI elements in the given rollout.
     /// \param rolloutWidget The rollout widget to be disabled, which has been created by createRollout().
     /// \param noticeText A text to displayed in the rollout panel to inform the user why the rollout has been disabled.
     void disableRollout(QWidget* rolloutWidget, const QString& noticeText);
+
+    /// \brief Inserts a notice text at the top of the given rollout.
+    /// \param rolloutWidget The rollout widget, which has been created by createRollout().
+    /// \param noticeText A text to displayed in the rollout panel to inform the user why the rollout has been disabled.
+    void showNotice(QWidget* rolloutWidget, const QString& noticeText);
 
     /// Changes the value of a non-animatable property field of the object being edited.
     void changePropertyFieldValue(const PropertyFieldDescriptor* field, const QVariant& newValue);

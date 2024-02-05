@@ -162,10 +162,18 @@ QWidget* PropertiesEditor::parentWindow() const
 void PropertiesEditor::disableRollout(QWidget* rolloutWidget, const QString& noticeText)
 {
     rolloutWidget->setEnabled(false);
+    showNotice(rolloutWidget, noticeText);
+}
+
+/******************************************************************************
+* Inserts a notice text at the top of the given rollout.
+******************************************************************************/
+void PropertiesEditor::showNotice(QWidget* rolloutWidget, const QString& noticeText)
+{
     if(Rollout* rollout = container()->findRolloutFromWidget(rolloutWidget)) {
         rollout->setNotice(noticeText);
         // Force a re-layout of the rollouts.
-        QTimer::singleShot(100, container(), &RolloutContainer::updateRollouts);
+        QTimer::singleShot(60, container(), &RolloutContainer::updateRollouts);
     }
 }
 

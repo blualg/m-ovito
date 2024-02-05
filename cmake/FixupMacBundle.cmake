@@ -156,7 +156,7 @@ INSTALL(CODE "
 
 ")
 
-IF(OVITO_BUILD_PLUGIN_OSPRAY AND NOT OVITO_BUILD_BASIC)
+IF(OVITO_BUILD_PLUGIN_OSPRAY)
     # Extend the rpath information of the rkcommon and libispcrt libraries such that extension modules loaded via dlopen()
     # are found in the Frameworks/ directory at runtime.
     INSTALL(CODE "

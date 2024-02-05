@@ -260,6 +260,11 @@ public:
 	/// Returns the best format for QImage to be used when creating an ImagePrimitive.
 	virtual QImage::Format preferredImageFormat() const { return QImage::Format_ARGB32_Premultiplied; }
 
+#ifdef OVITO_BUILD_BASIC
+	/// Creates an image serving as watermark for demo versions of scene renderers.
+    QImage createWatermark(const QSize& size);
+#endif
+
 protected:
 
 	/// Constructor.

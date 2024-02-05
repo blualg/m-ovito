@@ -803,4 +803,38 @@ void SceneRenderer::renderTextDefaultImplementation(const TextPrimitive& primiti
     renderImage(imagePrimitive);
 }
 
+#ifdef OVITO_BUILD_BASIC
+/******************************************************************************
+ * Creates an image serving as watermark for demo versions of scene renderers.
+ ******************************************************************************/
+QImage SceneRenderer::createWatermark(const QSize& size)
+{
+    static const QBrush watermarkBrush = []() {
+        QFont font;
+        font.setPointSize(24);
+        QFontMetrics fm(font);
+        QRect boundingRect = fm.boundingRect("OVITO Pro Demo");
+        boundingRect.adjust(-10, -10, 10, 10);
+
+        QImage watermark(boundingRect.size(), QImage::Format_ARGB32);
+        watermark.fill(QColor(0, 0, 0, 0));
+        QPainter painter(&watermark);
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setRenderHint(QPainter::TextAntialiasing);
+        painter.setRenderHint(QPainter::SmoothPixmapTransform);
+        painter.setPen(QColor(255, 255, 255, 128));
+        painter.setFont(font);
+        painter.drawText(watermark.rect(), Qt::AlignCenter, "OVITO Pro Demo");
+        return QBrush(watermark);
+    }();
+
+    QImage watermark(size, QImage::Format_ARGB32);
+    watermark.fill(QColor(0, 0, 0, 0));
+    QPainter painter(&watermark);
+    painter.setBackground(watermarkBrush);
+    painter.eraseRect(watermark.rect());
+    return watermark;
+}
+#endif
+
 }   // End of namespace

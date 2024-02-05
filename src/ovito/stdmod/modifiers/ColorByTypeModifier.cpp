@@ -136,6 +136,7 @@ void ColorByTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& r
 
     // Call implementation.
     colorByType(typeProperty, container, objectPath, selection);
+#endif
 }
 
 /******************************************************************************
@@ -207,7 +208,6 @@ void ColorByTypeModifier::colorByType(const Property* typeProperty, PropertyCont
         else
             colorProperty[i] = c->second;
     }
-#endif
 #endif
 }
 
