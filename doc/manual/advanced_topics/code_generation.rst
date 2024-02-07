@@ -40,9 +40,9 @@ The code generator can generate Python code for the following aspects of a visua
   * Rendering engine configuration
   * Image/animation render settings
   * Manual modifications you make to the imported model in the GUI, e.g. changing the colors/radii of particle types
+  * Multiple pipelines in one scene or branched pipelines (new in OVITO 3.11.0)
 
 The following aspects are *not* covered by the code generator yet:
 
   * Data export to an output file
   * Key-frame based parameter animations
-  * Multiple pipelines in one scene or branched pipelines
