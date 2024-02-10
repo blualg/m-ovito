@@ -363,8 +363,8 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
                                          }
                                      });
                         }
-                        if(!roundedCaps() && (pos + 1 != pos_end) && (!id || id[1] == (id + 1)[1])) {
-                            // clipPoint accounts for simulationCell = nullptr
+                        if(!roundedCaps() && (pos + 1 != pos_end) && (!id || id[1] == (id + 1)[1]) &&
+                           (!sampleTime || sampleTime[1] != endFrame)) {
                             clipPoint(pos[1], simulationCell, lines->cuttingPlanes(),
                                       std::bind(clipPointCallback, std::placeholders::_1, 1));
                         }
