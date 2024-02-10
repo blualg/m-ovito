@@ -62,7 +62,7 @@ auto for_each_sequential(
             StartIterFunc&& startFunc,
             CompleteIterFunc&& completeFunc,
             ResultType&&... initialResult) :
-                detail::ContinuationTask<task_tuple_type, task_base_class>(Task::Started, std::forward_as_tuple(std::forward<ResultType>(initialResult)...)),
+                detail::ContinuationTask<task_tuple_type, task_base_class>(Task::State(Task::Started | Task::DontYield), std::forward_as_tuple(std::forward<ResultType>(initialResult)...)),
                 _range(std::forward<InputRange>(inputRange)),
                 _executor(std::forward<Executor>(executor)),
                 _startFunc(std::forward<StartIterFunc>(startFunc)),

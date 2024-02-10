@@ -71,6 +71,16 @@ Pipeline::~Pipeline() // NOLINT
 }
 
 /******************************************************************************
+* Throws an exception if the pipeline stage cannot be evaluated at this time.
+* This is called by the system to catch user mistakes that would lead to infinite recursion.
+******************************************************************************/
+void Pipeline::preEvaluationCheck() const
+{
+    if(head())
+        head()->preEvaluationCheck();
+}
+
+/******************************************************************************
 * Performs a synchronous evaluation of the pipeline yielding only preliminary results.
 ******************************************************************************/
 const PipelineFlowState& Pipeline::evaluatePipelineSynchronous(const PipelineEvaluationRequest& request, bool includeVisElements)

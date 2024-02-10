@@ -61,14 +61,30 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipeline(const PipelineEv
 
     PipelineNode* pipelineNode = dynamic_object_cast<PipelineNode>(ownerObject());
 
+    // Confirm with the pipeline steps that an evaluation is allowed at this time.
+    // This is to prevent infinite recursion in case of user mistakes, e.g. when a Python
+    // modifier calls the Pipeline.compute() method while the pipeline is already being computed.
+    try {
+        // Walks up the pipeline recursively and asks each step if the evaluation is allowed at this time.
+        if(pipelineNode)
+            pipelineNode->preEvaluationCheck();
+        else
+            static_object_cast<Pipeline>(ownerObject())->preEvaluationCheck();
+    }
+    catch(...) {
+        return Future<PipelineFlowState>::createFailed(std::current_exception());
+    }
+
     if(!isEnabled()) {
         if(pipelineNode)
             return pipelineNode->evaluateInternal(request);
         OVITO_ASSERT(false); // Cache may not be disabled for a whole pipeline.
     }
 
-    if(_preparingEvaluation)
+    if(_preparingEvaluation) {
+        OVITO_ASSERT(false);
         return Future<PipelineFlowState>::createFailed(Pipeline::tr("A new pipeline evaluation is not permitted while another pipeline evaluation is already in progress. This error may be the result of an invalid user Python script invoking a function that is not permitted in this context."));
+    }
 
     // Update the times for which we should keep computed pipeline outputs.
     if(!_precomputeAllFrames)

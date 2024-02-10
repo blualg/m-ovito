@@ -46,16 +46,20 @@ public:
     /// \brief Constructs a pipeline scene node.
     explicit Pipeline(ObjectInitializationFlags flags);
 
-    /// \brief Destructor.
+    /// Destructor.
     virtual ~Pipeline();
 
-    /// \brief Performs a synchronous evaluation of the pipeline yielding only preliminary results.
+    /// Throws an exception if the pipeline stage cannot be evaluated at this time.
+    /// This is called by the system to catch user mistakes that would lead to infinite recursion.
+    void preEvaluationCheck() const;
+
+    /// Performs a synchronous evaluation of the pipeline yielding only preliminary results.
     const PipelineFlowState& evaluatePipelineSynchronous(const PipelineEvaluationRequest& request, bool includeVisElements);
 
-    /// \brief Performs an asynchronous evaluation of the data pipeline.
+    /// Performs an asynchronous evaluation of the data pipeline.
     PipelineEvaluationFuture evaluatePipeline(const PipelineEvaluationRequest& request);
 
-    /// \brief Performs an asynchronous evaluation of the data pipeline including the visualization elements.
+    /// Performs an asynchronous evaluation of the data pipeline including the visualization elements.
     PipelineEvaluationFuture evaluateRenderingPipeline(const PipelineEvaluationRequest& request);
 
     /// Sets the data source of this pipeline, i.e., the object that provides the

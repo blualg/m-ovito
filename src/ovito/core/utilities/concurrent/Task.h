@@ -53,7 +53,8 @@ public:
         Canceled       = (1<<2),
         IsProgressing  = (1<<3), // The task is derived from ProgressingTask and can report its progress
         IsAsynchronous = (1<<4), // The task is derived from AsynchronousTaskBase and runs in a worker thread.
-        LoggingEnabled = (1<<5)  // The task's progress messages are printed to the console.
+        LoggingEnabled = (1<<5), // The task's progress messages are printed to the console.
+        DontYield      = (1<<6), // The task should not yield control to the event loop when its progress functions are called.
     };
 
     /// Constructor.

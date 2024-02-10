@@ -64,6 +64,9 @@ public:
     /// Constructor.
     explicit ReferenceConfigurationModifier(ObjectInitializationFlags flags);
 
+    /// Throws an exception if the pipeline stage cannot be evaluated at this time. This is called by the system to catch user mistakes that would lead to infinite recursion.
+    virtual void preEvaluationCheck() const override;
+
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 

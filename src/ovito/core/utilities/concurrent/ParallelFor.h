@@ -156,7 +156,7 @@ bool parallelForInterruptableWithProgress(T loopCount, Kernel&& kernel, const QS
         /// The type of future associated with this task type. This is used by the launchTask() function.
         using future_type = Future<>;
 
-        AsyncTask(Kernel&& kernel, const QString& taskDescription) : ProgressingTask(Task::Started), _kernel(std::forward<Kernel>(kernel)) {
+        AsyncTask(Kernel&& kernel, const QString& taskDescription) : ProgressingTask(Task::State(Task::Started | Task::IsAsynchronous)), _kernel(std::forward<Kernel>(kernel)) {
             setProgressText(taskDescription);
         }
 

@@ -55,7 +55,7 @@ bool ProgressingTask::setProgressValue(qlonglong value)
 {
     // When in the main thread, temporarily yield control back to the event loop to process UI events and
     // keep the UI responsive during long-running tasks.
-    if(ExecutionContext::isMainThread()) {
+    if(!(_state.load(std::memory_order_relaxed) & (DontYield | IsAsynchronous)) && ExecutionContext::isMainThread()) {
         const ExecutionContext& context = ExecutionContext::current();
         if(context.isValid() && context.ui().processUIEvents()) {
             cancel();
@@ -88,7 +88,7 @@ bool ProgressingTask::incrementProgressValue(qlonglong increment)
 {
     // When in the main thread, temporarily yield control back to the event loop to process UI events and
     // keep the UI responsive during long-running tasks.
-    if(ExecutionContext::isMainThread()) {
+    if(!(_state.load(std::memory_order_relaxed) & (DontYield | IsAsynchronous)) && ExecutionContext::isMainThread()) {
         const ExecutionContext& context = ExecutionContext::current();
         if(context.isValid() && context.ui().processUIEvents()) {
             cancel();
@@ -136,7 +136,7 @@ void ProgressingTask::setProgressText(const QString& progressText)
 {
     // When in the main thread, temporarily yield control back to the event loop to process UI events and
     // keep the UI responsive during long-running tasks.
-    if(ExecutionContext::isMainThread()) {
+    if(!(_state.load(std::memory_order_relaxed) & (DontYield | IsAsynchronous)) && ExecutionContext::isMainThread()) {
         const ExecutionContext& context = ExecutionContext::current();
         if(context.isValid() && context.ui().processUIEvents()) {
             cancel();

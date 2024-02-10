@@ -72,6 +72,9 @@ public:
     /// \brief Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const override;
 
+    /// \brief Throws an exception if the pipeline stage cannot be evaluated at this time. This is called by the system to catch user mistakes that would lead to infinite recursion.
+    virtual void preEvaluationCheck() const override;
+
     /// \brief Asks the object for the result of the upstream data pipeline.
     SharedFuture<PipelineFlowState> evaluateInput(const PipelineEvaluationRequest& request) const;
 

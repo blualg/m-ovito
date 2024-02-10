@@ -83,6 +83,17 @@ TimeInterval ReferenceConfigurationModifier::validityInterval(const ModifierEval
 }
 
 /******************************************************************************
+* Throws an exception if the pipeline stage cannot be evaluated at this time.
+* This is called by the system to catch user mistakes that would lead to infinite recursion.
+******************************************************************************/
+void ReferenceConfigurationModifier::preEvaluationCheck() const
+{
+    // Walk up the reference config pipeline and ask each step if evaluation is allowed at this time.
+    if(referenceConfiguration())
+        referenceConfiguration()->preEvaluationCheck();
+}
+
+/******************************************************************************
 * Asks the modifier for the set of animation time intervals that should be
 * cached by the upstream pipeline.
 ******************************************************************************/

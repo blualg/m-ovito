@@ -88,6 +88,18 @@ TimeInterval ModificationNode::validityInterval(const PipelineEvaluationRequest&
 }
 
 /******************************************************************************
+* Throws an exception if the pipeline stage cannot be evaluated at this time.
+* This is called by the system to catch user mistakes that would lead to infinite recursion.
+******************************************************************************/
+void ModificationNode::preEvaluationCheck() const
+{
+    if(modifier())
+        modifier()->preEvaluationCheck();
+    if(input())
+        input()->preEvaluationCheck();
+}
+
+/******************************************************************************
 * Is called when a RefTarget referenced by this object generated an event.
 ******************************************************************************/
 bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& event)
