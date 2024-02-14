@@ -54,6 +54,21 @@ Ambient light
 Brightness
   Radiance of the ambient light source (default value: 0.7).
 
+Occlusion cutoff
+  Maximum range of the ambient occlusion (AO) calculation (default value: 30.0). More distant objects beyond this cutoff range (given in simulation units) will not contribute to the computed
+  local light occlusion effect. Decreasing this parameter will typically brighten up the inside of dark cavities that are otherwise fully occluded by the surrounding objects.
+  Increasing it will make the AO effect stronger and lead to darker contrast.
+
+  .. figure:: /images/rendering/visrtx_small_ao_cutoff.png
+    :figwidth: 35%
+
+    Small AO cutoff range
+
+  .. figure:: /images/rendering/visrtx_large_ao_cutoff.png
+    :figwidth: 35%
+
+    Large AO cutoff range
+
 Direct light
 """"""""""""
 
