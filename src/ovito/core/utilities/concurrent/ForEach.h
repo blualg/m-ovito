@@ -29,6 +29,16 @@
 
 namespace Ovito {
 
+template <typename T, typename R, typename ... Args>
+R return_type_deducer(R(T::*)(Args...) const);
+
+template <typename T, typename R, typename ... Args>
+R return_type_deducer(R(T::*)(Args...));
+
+/// Deduces the return type of a callable object.
+template <typename T>
+using return_type = decltype(return_type_deducer(std::declval<decltype(&T::operator())>()));
+
 template<typename InputRange, class Executor, typename StartIterFunc, typename CompleteIterFunc, typename... ResultType>
 auto for_each_sequential(
     InputRange&& inputRange,
@@ -37,14 +47,14 @@ auto for_each_sequential(
     CompleteIterFunc&& completeFunc,
     ResultType&&... initialResult)
 {
-    // The type of future returned by the user function.
-    using output_future_type = std::invoke_result_t<StartIterFunc, decltype(*std::begin(inputRange)), std::decay_t<ResultType>&...>; // C++20: Use std::indirect_result_t instead.
-
-    // The output tuple produced by the task.
+    // The final output tuple produced by the loop task.
     using task_tuple_type = std::tuple<std::decay_t<ResultType>...>;
 
+    // The type of future returned by the start function.
+    using output_future_type = return_type<std::decay_t<StartIterFunc>>;
+
     // Can we report progress because the total number of required iterations is known?
-    constexpr bool is_with_progress = std::is_same_v<typename std::iterator_traits<typename InputRange::iterator>::iterator_category, std::random_access_iterator_tag>;
+    constexpr bool is_with_progress = std::is_same_v<typename std::iterator_traits<typename std::decay_t<InputRange>::iterator>::iterator_category, std::random_access_iterator_tag>;
 
     using task_base_class = std::conditional_t<is_with_progress, ProgressingTask, Task>;
 
@@ -102,7 +112,7 @@ auto for_each_sequential(
                 try {
                     Task::Scope taskScope(this);
                     // Call the user-provided function with the current loop value and, optionally, the task's result storage
-                    if constexpr(std::is_invocable_v<std::decay_t<StartIterFunc>, decltype(*_iterator), std::decay_t<ResultType>&...> && std::tuple_size_v<task_tuple_type> == 1)
+                    if constexpr(std::is_invocable_v<std::decay_t<StartIterFunc>, decltype(*std::begin(inputRange)), std::decay_t<ResultType>&...> && std::tuple_size_v<task_tuple_type> == 1)
                         future = std::invoke(_startFunc, *_iterator, this->resultsStorage());
                     else
                         future = std::invoke(_startFunc, *_iterator);
@@ -183,7 +193,7 @@ auto for_each_sequential(
         std::decay_t<Executor> _executor;
 
         /// The iterator pointing to the current item from the range.
-        typename InputRange::iterator _iterator;
+        typename std::decay_t<InputRange>::iterator _iterator;
     };
 
     // Launch the task.

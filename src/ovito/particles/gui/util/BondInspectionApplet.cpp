@@ -96,7 +96,7 @@ void BondInspectionApplet::deactivate()
 /******************************************************************************
 * Handles the mouse up events for a Viewport.
 ******************************************************************************/
-void BondInspectionApplet::PickingMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void BondInspectionApplet::PickingMode::mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
     if(event->button() == Qt::LeftButton) {
         PickResult pickResult;
@@ -130,7 +130,7 @@ void BondInspectionApplet::PickingMode::mouseReleaseEvent(ViewportWindowInterfac
 /******************************************************************************
 * Handles the mouse move event for the given viewport.
 ******************************************************************************/
-void BondInspectionApplet::PickingMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void BondInspectionApplet::PickingMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
     // Change mouse cursor while hovering over a bond.
     PickResult pickResult;

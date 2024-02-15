@@ -73,8 +73,10 @@ public:
     /// Changes the validity interval of the computation results.
     void setValidityInterval(const TimeInterval& iv) { _validityInterval = iv; }
 
+#if 0 // TODO: Remove if not needed anymore
     /// Returns the modification pipeline node.
     const ModificationNode* modificationNode() const { return _request.modificationNode(); }
+#endif
 
 private:
 

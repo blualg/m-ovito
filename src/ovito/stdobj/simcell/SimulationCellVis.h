@@ -38,25 +38,25 @@ class OVITO_STDOBJ_EXPORT SimulationCellVis : public DataVis
 
 public:
 
-    /// \brief Constructor.
+    /// Constructor.
     explicit SimulationCellVis(ObjectInitializationFlags flags);
 
-    /// \brief Lets the visualization element render the data object.
-    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;
+    /// Lets the visualization element render the data object.
+    virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
 
-    /// \brief Computes the bounding box of the object.
-    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
+    /// Computes the bounding box of the object.
+    virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
 
-    /// \brief Indicates whether this object should be surrounded by a selection marker in the viewports when it is selected.
+    /// Indicates whether this object should be surrounded by a selection marker in the viewports when it is selected.
     virtual bool showSelectionMarker() override { return false; }
 
 protected:
 
     /// Renders the given simulation using wireframe mode.
-    void renderWireframe(AnimationTime time, const SimulationCell* cell, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline);
+    void renderWireframe(const SimulationCell* cell, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline);
 
     /// Renders the given simulation using solid shading mode.
-    void renderSolid(AnimationTime time, const SimulationCell* cell, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline);
+    void renderSolid(const SimulationCell* cell, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline);
 
 protected:
 

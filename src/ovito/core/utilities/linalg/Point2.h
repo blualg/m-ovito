@@ -92,23 +92,23 @@ public:
     /////////////////////////////// Constructors /////////////////////////////////
 
     /// Constructs a point without initializing its components. The components will have an undefined value!
-    Point_2() = default;
+    Point_2() noexcept = default;
 
     /// Constructs a point with \c x and \c y components initialized to the given value.
-    Q_DECL_CONSTEXPR explicit Point_2(T val) : std::array<T, 2>{{val,val}} {}
+    Q_DECL_CONSTEXPR explicit Point_2(T val) noexcept : std::array<T, 2>{{val,val}} {}
 
     /// Initializes the coordinates of the point with the given values.
-    Q_DECL_CONSTEXPR Point_2(T x, T y) : std::array<T, 2>{{x, y}} {}
+    Q_DECL_CONSTEXPR Point_2(T x, T y) noexcept : std::array<T, 2>{{x, y}} {}
 
     /// Initializes the point to the origin. All coordinates are set to zero.
-    Q_DECL_CONSTEXPR Point_2(Origin) : std::array<T, 2>{{T(0), T(0)}} {}
+    Q_DECL_CONSTEXPR Point_2(Origin) noexcept : std::array<T, 2>{{T(0), T(0)}} {}
 
     /// Initializes the point from an array coordinates.
-    Q_DECL_CONSTEXPR explicit Point_2(const std::array<T, 2>& a) : std::array<T, 2>(a) {}
+    Q_DECL_CONSTEXPR explicit Point_2(const std::array<T, 2>& a) noexcept : std::array<T, 2>(a) {}
 
     /// Casts the point to another coordinate type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, Point_2<U>, const Point_2<T>&> {
+    Q_DECL_CONSTEXPR auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Point_2<U>, const Point_2<T>&> {
         if constexpr(!std::is_same_v<T,U>)
             return Point_2<U>(static_cast<U>(x()), static_cast<U>(y()));
         else

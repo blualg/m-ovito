@@ -67,6 +67,9 @@ public:
     /// Sets the field of view angle of a perspective projection camera.
     virtual void setFov(FloatType newFOV) override;
 
+    /// Returns whether this camera uses a perspective projection.
+    virtual bool isPerspectiveCamera() const override { return isPerspective(); }
+
 protected:
 
     /// Asks the pipeline stage to compute the results.

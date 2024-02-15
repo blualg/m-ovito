@@ -24,7 +24,7 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/rendering/SceneRenderer.h>
+#include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/stdobj/lines/Lines.h>
 #include "LinesVis.h"
 
@@ -58,9 +58,8 @@ QString LinesPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
 {
     QString str;
 
-    if(!linesObj()) {
+    if(!linesObj())
         return str;
-    }
 
     for(size_t i = 0; i < 2; ++i) {
         int index = segmentIndexFromSubObjectID(subobjectId) + i;
@@ -155,38 +154,25 @@ void LinesVis::loadFromStreamComplete(ObjectLoadStream& stream)
 /******************************************************************************
  * Computes the bounding box of the object.
  ******************************************************************************/
-Box3 LinesVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline,
-                           const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 LinesVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
     const Lines* lines = path.lastAs<Lines>();
 
     // Get the simulation cell.
     const SimulationCell* simulationCell = wrappedLines() ? flowState.getObject<SimulationCell>() : nullptr;
 
-    // The key type used for caching the computed bounding box:
-    using CacheKey = RendererResourceKey<struct LinesVisVisBoundBoxCache,
-                                         ConstDataObjectRef,  // Lines object
-                                         FloatType,           // Line width
-                                         ConstDataObjectRef   // Simulation cell
-                                         >;
-
-    // Look up the bounding box in the vis cache.
-    auto& bbox = visCache.get<Box3>(CacheKey(lines, lineWidth(), simulationCell));
-
-    // Check if the cached bounding box information is still up to date.
-    if(bbox.isEmpty()) {
-        // If not, recompute bounding box from trajectory data.
-        if(lines) {
-            if(!simulationCell) {
-                if(BufferReadAccess<Point3> posProperty = lines->getProperty(Lines::PositionProperty)) {
-                    bbox.addPoints(posProperty);
-                }
+    // Compute bounding box from trajectory data.
+    Box3 bbox;
+    if(lines) {
+        if(!simulationCell) {
+            if(BufferReadAccess<Point3> posProperty = lines->getProperty(Lines::PositionProperty)) {
+                bbox.addPoints(posProperty);
             }
-            else {
-                bbox = Box3(Point3(0, 0, 0), Point3(1, 1, 1)).transformed(simulationCell->cellMatrix());
-            }
-            bbox = bbox.padBox(lineWidth() / 2);
         }
+        else {
+            bbox = Box3(Point3(0, 0, 0), Point3(1, 1, 1)).transformed(simulationCell->cellMatrix());
+        }
+        bbox = bbox.padBox(lineWidth() / 2);
     }
     return bbox;
 }
@@ -194,21 +180,13 @@ Box3 LinesVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, 
 /******************************************************************************
  * Lets the visualization element render the data object.
  ******************************************************************************/
-PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState,
-                                SceneRenderer* renderer, const Pipeline* pipeline)
+PipelineStatus LinesVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     PipelineStatus status;
 
-    if(renderer->isBoundingBoxPass()) {
-        TimeInterval validityInterval;
-        renderer->addToLocalBoundingBox(boundingBox(time, path, pipeline, flowState, renderer->visCache(), validityInterval));
-        return status;
-    }
-
     const Lines* lines = path.lastAs<Lines>();
-    if(!lines) {
-        return {};
-    }
+    if(!lines)
+        return status;
 
     // Get the simulation cell.
     const SimulationCell* simulationCell = wrappedLines() ? flowState.getObject<SimulationCell>() : nullptr;
@@ -256,10 +234,10 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
         OORef<LinesPickInfo> pickInfo;
     };
 
-    int endFrame = showUpToCurrentTime() ? time.frame() : std::numeric_limits<int>::max();
+    int endFrame = showUpToCurrentTime() ? frameGraph.time().frame() : std::numeric_limits<int>::max();
 
     // Look up the rendering primitives in the vis cache.
-    auto& visCache = renderer->visCache().get<CacheValue>(CacheKey(lines, lineWidth(), roundedCaps(), lineColor(), shadingMode(), endFrame,
+    auto& visCache = frameGraph.visCache().lookup<CacheValue>(CacheKey(lines, lineWidth(), roundedCaps(), lineColor(), shadingMode(), endFrame,
                                                                    simulationCell, pseudoColorProperty, pseudoColorPropertyComponent));
 
     // The shading mode for corner spheres.
@@ -273,7 +251,7 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
         visCache.corners.setPositions(nullptr);
         visCache.cornerPseudoColors.reset();
 
-        // map from viewport object ids to line segments
+        // Map from viewport object ids to line segments
         std::vector<int> subobjToSegmentMap;
 
         FloatType lineDiameter = lineWidth();
@@ -408,7 +386,8 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
         visCache.pickInfo = OORef<LinesPickInfo>::create(lines, std::move(subobjToSegmentMap));
     }
 
-    if(!visCache.segments.basePositions()) return status;
+    if(!visCache.segments.basePositions())
+        return status;
 
     // Update the color mapping.
     visCache.segments.setPseudoColorMapping(colorMapping()->pseudoColorMapping());
@@ -417,7 +396,7 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
     if(visCache.cornerPseudoColors) {
         // Perform a cache lookup to check if latest pseudocolors have already been mapped to RGB colors.
         auto& cornerColorsUpToDate =
-            renderer->visCache().get<bool>(std::make_pair(visCache.cornerPseudoColors, visCache.segments.pseudoColorMapping()));
+            frameGraph.visCache().lookup<bool>(std::make_pair(visCache.cornerPseudoColors, visCache.segments.pseudoColorMapping()));
         if(!cornerColorsUpToDate) {
             // Create an RGB color array, which will be filled and then assigned to the ParticlesPrimitive.
             BufferFactory<ColorG> cornerColorsArray(visCache.cornerPseudoColors->size());
@@ -428,12 +407,8 @@ PipelineStatus LinesVis::render(AnimationTime time, const ConstDataObjectPath& p
         }
     }
 
-    renderer->beginPickObject(pipeline, visCache.pickInfo);
-    renderer->renderCylinders(visCache.segments);
-    renderer->endPickObject();
-    renderer->beginPickObject(pipeline);
-    renderer->renderParticles(visCache.corners);
-    renderer->endPickObject();
+    frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(visCache.segments), pipeline, visCache.pickInfo);
+    frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(visCache.corners), pipeline);
 
     return status;
 }

@@ -88,36 +88,36 @@ public:
 
     /// \brief Empty default constructor that does not initialize the matrix elements (for performance reasons).
     ///        The matrix elements will have an undefined value and need to be initialized later.
-    Matrix_3() = default;
+    Matrix_3() noexcept = default;
 
     /// \brief Constructor that initializes all 9 elements of the matrix to the given values.
     /// \note Values are given in row-major order, i.e. row by row.
     Q_DECL_CONSTEXPR Matrix_3(T m11, T m12, T m13,
                        T m21, T m22, T m23,
-                       T m31, T m32, T m33)
+                       T m31, T m32, T m33) noexcept
         : std::array<Vector_3<T>,3>{{Vector_3<T>(m11,m21,m31),
                                      Vector_3<T>(m12,m22,m32),
                                      Vector_3<T>(m13,m23,m33)}} {}
 
     /// \brief Constructor that initializes the matrix from three column vectors.
-    Q_DECL_CONSTEXPR Matrix_3(const column_type& c1, const column_type& c2, const column_type& c3)
+    Q_DECL_CONSTEXPR Matrix_3(const column_type& c1, const column_type& c2, const column_type& c3) noexcept
         : std::array<Vector_3<T>,3>{{c1, c2, c3}} {}
 
     /// \brief Initializes the matrix to the null matrix.
     /// All matrix elements are set to zero by this constructor.
-    Q_DECL_CONSTEXPR Matrix_3(Zero)
+    Q_DECL_CONSTEXPR Matrix_3(Zero) noexcept
         : std::array<Vector_3<T>,3>{{typename Vector_3<T>::Zero(), typename Vector_3<T>::Zero(), typename Vector_3<T>::Zero()}} {}
 
     /// \brief Initializes the matrix to the identity matrix.
     /// All diagonal elements are set to one, and all off-diagonal elements are set to zero.
-    Q_DECL_CONSTEXPR Matrix_3(Identity)
+    Q_DECL_CONSTEXPR Matrix_3(Identity) noexcept
         : std::array<Vector_3<T>,3>{{Vector_3<T>(T(1),T(0),T(0)),
                                      Vector_3<T>(T(0),T(1),T(0)),
                                      Vector_3<T>(T(0),T(0),T(1))}} {}
 
     /// \brief Casts the matrix to a matrix with another data type.
     template<typename U>
-    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, Matrix_3<U>, const Matrix_3<T>&> {
+    Q_DECL_CONSTEXPR auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Matrix_3<U>, const Matrix_3<T>&> {
         if constexpr(!std::is_same_v<T,U>)
             return Matrix_3<U>(
                 static_cast<U>((*this)(0,0)), static_cast<U>((*this)(0,1)), static_cast<U>((*this)(0,2)),
@@ -740,6 +740,12 @@ using Matrix3 = Matrix_3<FloatType>;
  * \relates Matrix_3
  */
 using Matrix3F = Matrix_3<float>;
+
+/**
+ * \brief Instantiation of the Matrix_3 class template with the low-precision floating-point type used for graphics data.
+ * \relates Matrix_3
+ */
+using Matrix3G = Matrix_3<GraphicsFloatType>;
 
 }   // End of namespace
 

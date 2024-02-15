@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/mainwin/data_inspector/DataInspectorPanel.h>
 #include <ovito/gui/desktop/widgets/general/CopyableTableView.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
-#include <ovito/core/viewport/ViewportWindowInterface.h>
+#include <ovito/core/viewport/ViewportWindow.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
 #include "ParticleInspectionApplet.h"
 
@@ -222,7 +222,7 @@ void ParticleInspectionApplet::deactivate()
 /******************************************************************************
 * Handles the mouse up events for a Viewport.
 ******************************************************************************/
-void ParticleInspectionApplet::PickingMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void ParticleInspectionApplet::PickingMode::mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
     if(event->button() == Qt::LeftButton) {
         PickResult pickResult;
@@ -259,7 +259,7 @@ void ParticleInspectionApplet::PickingMode::mouseReleaseEvent(ViewportWindowInte
 /******************************************************************************
 * Handles the mouse move event for the given viewport.
 ******************************************************************************/
-void ParticleInspectionApplet::PickingMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void ParticleInspectionApplet::PickingMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
     // Change mouse cursor while hovering over a particle.
     PickResult pickResult;

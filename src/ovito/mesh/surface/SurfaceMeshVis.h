@@ -55,14 +55,14 @@ public:
     };
     Q_ENUM(ColorMappingMode);
 
-    /// \brief Constructor.
+    /// Constructor.
     explicit SurfaceMeshVis(ObjectInitializationFlags flags);
 
     /// Lets the visualization element render the data object.
-    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;
+    virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
 
     /// Computes the bounding box of the object.
-    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
+    virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
 
     /// Returns the transparency of the surface mesh.
     FloatType surfaceTransparency() const { return surfaceTransparencyController() ? surfaceTransparencyController()->getFloatValue(AnimationTime(0)) : 0.0f; }
@@ -268,8 +268,7 @@ public:
     /// Returns the vis element that rendered the surface mesh.
     const SurfaceMeshVis* visElement() const { return _visElement; }
 
-    /// \brief Given an sub-object ID returned by the Viewport::pick() method, looks up the
-    /// corresponding surface face.
+    /// Given an sub-object ID returned by the Viewport::pick() method, looks up the corresponding surface face.
     int faceIndexFromSubObjectID(quint32 subobjID) const {
         if(subobjID < renderableMesh()->originalFaceMap().size())
             return renderableMesh()->originalFaceMap()[subobjID];

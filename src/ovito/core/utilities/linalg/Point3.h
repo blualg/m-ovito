@@ -115,10 +115,10 @@ public:
     /////////////////////////////// Constructors /////////////////////////////////
 
     /// Constructs a point without initializing its components. The components will have an undefined value!
-    Point_3() = default;
+    Point_3() noexcept = default;
 
     /// Constructs a point with all three components initialized to the given value.
-    Q_DECL_CONSTEXPR explicit Point_3(T val) :
+    Q_DECL_CONSTEXPR explicit Point_3(T val) noexcept :
 #ifndef OVITO_USE_SYCL
         base_type{{val,val,val}} {}
 #else
@@ -126,7 +126,7 @@ public:
 #endif
 
     /// Initializes the coordinates of the point with the given values.
-    Q_DECL_CONSTEXPR Point_3(T x, T y, T z) :
+    Q_DECL_CONSTEXPR Point_3(T x, T y, T z) noexcept :
 #ifndef OVITO_USE_SYCL
         base_type{{x, y, z}} {}
 #else
@@ -134,7 +134,7 @@ public:
 #endif
 
     /// Initializes the point to the origin. All coordinates are set to zero.
-    Q_DECL_CONSTEXPR Point_3(Origin) :
+    Q_DECL_CONSTEXPR Point_3(Origin) noexcept :
 #ifndef OVITO_USE_SYCL
         base_type{{T(0), T(0), T(0)}} {}
 #else
@@ -142,11 +142,11 @@ public:
 #endif
 
     /// Initializes the point from an array of three coordinates.
-    Q_DECL_CONSTEXPR explicit Point_3(const base_type& a) : base_type(a) {}
+    Q_DECL_CONSTEXPR explicit Point_3(const base_type& a) noexcept : base_type(a) {}
 
     /// Casts the point to another coordinate type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, Point_3<U>, const Point_3<T>&> {
+    Q_DECL_CONSTEXPR auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Point_3<U>, const Point_3<T>&> {
         if constexpr(!std::is_same_v<T,U>)
             return Point_3<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()));
         else

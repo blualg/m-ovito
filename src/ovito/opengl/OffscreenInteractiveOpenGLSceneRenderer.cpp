@@ -21,9 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include <ovito/core/viewport/ViewportWindowInterface.h>
+#include <ovito/core/viewport/ViewportWindow.h>
 #include <ovito/core/viewport/Viewport.h>
-#include <ovito/core/rendering/RenderSettings.h>
 #include "OffscreenInteractiveOpenGLSceneRenderer.h"
 #include "OpenGLDepthTextureBlitter.h"
 
@@ -31,6 +30,7 @@ namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(OffscreenInteractiveOpenGLSceneRenderer);
 
+#if 0 // TODO
 /******************************************************************************
 * This method is called just before renderFrame() is called.
 ******************************************************************************/
@@ -38,12 +38,11 @@ void OffscreenInteractiveOpenGLSceneRenderer::beginFrame(AnimationTime time, Sce
 {
     OVITO_ASSERT(vp);
 
+#if 0 // TODO
     // Get the viewport's window.
-    ViewportWindowInterface* vpWindow = vp->window();
+    ViewportWindow* vpWindow = vp->window();
     if(!vpWindow)
         throw RendererException(tr("Viewport window has not been created."));
-    if(!vpWindow->isVisible())
-        throw RendererException(tr("Viewport window is not visible."));
 
     // Before making our own GL context current, remember the old context that
     // is currently active so that we can restore it after we are done rendering.
@@ -60,7 +59,7 @@ void OffscreenInteractiveOpenGLSceneRenderer::beginFrame(AnimationTime time, Sce
     initializeOpenGLFunctions();
 
     // Size of the viewport window in physical pixels.
-    QSize size = vpWindow->viewportWindowDeviceSize();
+    _framebufferSize = vpWindow->viewportWindowDeviceSize();
 
     if(!context->isOpenGLES() || !context->hasExtension("WEBGL_depth_texture")) {
         // Create offscreen OpenGL framebuffer.
@@ -119,6 +118,7 @@ void OffscreenInteractiveOpenGLSceneRenderer::beginFrame(AnimationTime time, Sce
         // Tell the base class about the FBO we are rendering into.
         setPrimaryFramebuffer(_framebufferObjectGLES);
     }
+#endif
 
     OpenGLSceneRenderer::beginFrame(time, scene, params, vp, viewportRect, frameBuffer);
 }
@@ -155,9 +155,8 @@ bool OffscreenInteractiveOpenGLSceneRenderer::renderFrame(const QRect& viewportR
     else {
         // Read the color buffer contents.
         glFlush();
-        QSize size = viewport()->window()->viewportWindowDeviceSize();
-        QImage image(size, QImage::Format_ARGB32);
-        OVITO_CHECK_OPENGL(this, this->glReadPixels(0, 0, size.width(), size.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.bits()));
+        QImage image(_framebufferSize, QImage::Format_ARGB32);
+        OVITO_CHECK_OPENGL(this, this->glReadPixels(0, 0, _framebufferSize.width(), _framebufferSize.height(), GL_RGBA, GL_UNSIGNED_BYTE, image.bits()));
         _image = std::move(image).rgbSwapped();
 
         // Detach textures from framebuffer.
@@ -206,5 +205,6 @@ void OffscreenInteractiveOpenGLSceneRenderer::endFrame(bool renderingSuccessful,
     _oldContext = nullptr;
     _oldSurface = nullptr;
 }
+#endif
 
 }   // End of namespace

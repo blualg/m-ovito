@@ -170,7 +170,7 @@ QString VoxelGrid::elementInfoString(size_t elementIndex, const ConstDataObjectR
 * Returns the base point and vector information for visualizing a vector
 * property from this container using a VectorVis element.
 ******************************************************************************/
-std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> VoxelGrid::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, MixedKeyCache& visCache) const
+std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> VoxelGrid::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, const RendererResourceCache::ResourceFrame& visCache) const
 {
     OVITO_ASSERT(path.lastAs<VoxelGrid>(1) == this);
 

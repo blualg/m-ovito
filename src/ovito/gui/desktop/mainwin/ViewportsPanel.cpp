@@ -23,8 +23,8 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/viewport/ViewportMenu.h>
+#include <ovito/gui/desktop/viewport/WidgetViewportWindow.h>
 #include <ovito/gui/base/actions/ActionManager.h>
-#include <ovito/gui/base/viewport/BaseViewportWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/viewport/ViewportSettings.h>
@@ -32,6 +32,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/core/app/PluginManager.h>
 #include "ViewportsPanel.h"
 
 namespace Ovito {
@@ -79,81 +80,73 @@ ViewportsPanel::ViewportsPanel(MainWindow& mainWindow) : _mainWindow(mainWindow)
 /******************************************************************************
 * Factory method which creates a new viewport window widget.
 ******************************************************************************/
-BaseViewportWindow* ViewportsPanel::createViewportWindow(Viewport& vp, MainWindow& mainWindow, QWidget* parent)
+OORef<WidgetViewportWindow> ViewportsPanel::createViewportWindow(Viewport& vp, MainWindow& mainWindow, QWidget* parent)
 {
     // Select the viewport window implementation to use.
-    QSettings settings;
-
     QByteArray selectedGraphicsApi = qgetenv("OVITO_VIEWPORT_RENDERER");
 #if 0
+    QSettings settings;
     if(selectedGraphicsApi.isEmpty())
         selectedGraphicsApi = settings.value("rendering/selected_graphics_api").toString().toUtf8();
 #endif
 
-    const QMetaObject* viewportImplementation = nullptr;
-#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
-    for(const QMetaObject* metaType : ViewportWindowInterface::registry()) {
-#else
-    ViewportWindowInterface* (*viewportWindowConstructor)(Viewport*, UserInterface*, QWidget*) = nullptr;
-    for(auto [metaType, constructor] : ViewportWindowInterface::registry()) {
-#endif
-        if(qstrcmp(metaType->className(), "Ovito::OpenGLViewportWindow") == 0) {
-            viewportImplementation = metaType;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
-            viewportWindowConstructor = constructor;
-#endif
-        }
+    // Select the viewport window implementation to use.
+    OvitoClassPtr windowClass = PluginManager::instance().findClass("OpenGLRendererGui", "OpenGLViewportWindow");
 #ifdef OVITO_BUILD_PROFESSIONAL
-        else if(qstrcmp(metaType->className(), "Ovito::AnariViewportWindow") == 0 && selectedGraphicsApi.compare("anari", Qt::CaseInsensitive) == 0) {
-            viewportImplementation = metaType;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
-            viewportWindowConstructor = constructor;
+    if(selectedGraphicsApi.compare("anari", Qt::CaseInsensitive) == 0) {
+        windowClass = PluginManager::instance().findClass("AnariRendererGui", "AnariViewportWindow");
+    }
 #endif
-            break;
-        }
-#endif
+
+    // Instantiate the selected viewport window implementation.
+    if(windowClass) {
+        OORef<WidgetViewportWindow> window = static_object_cast<WidgetViewportWindow>(windowClass->createInstance());
+        window->initializeWindow(&vp, mainWindow, parent);
+        return window;
     }
 
-    if(viewportImplementation) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
-        ViewportWindowInterface* obj = viewportWindowConstructor(&vp, &mainWindow, parent);
-        return static_cast<BaseViewportWindow*>(obj);
-#else
-        qRegisterMetaType<UserInterface*>("UserInterfacePtr");
-        QObject* obj = viewportImplementation->newInstance(Q_ARG(Viewport*, &vp), Q_ARG(UserInterface*, &mainWindow), Q_ARG(QWidget*, parent));
-        OVITO_ASSERT(dynamic_cast<BaseViewportWindow*>(obj));
-        return dynamic_cast<BaseViewportWindow*>(obj);
-#endif
-    }
+    return {};
+}
 
+/******************************************************************************
+* Returns the window that is associated with the given viewport (if any).
+******************************************************************************/
+WidgetViewportWindow* ViewportsPanel::viewportWindow(Viewport* vp)
+{
+    // Check if the viewport already has an associated window.
+    for(const auto& window : _viewportWindows) {
+        if(window->viewport() == vp)
+            return window;
+    }
     return nullptr;
 }
 
 /******************************************************************************
 * Returns the widget that hosts the given viewport.
+* The widget is automatically created if it does not exist yet.
 ******************************************************************************/
 QWidget* ViewportsPanel::viewportWidget(Viewport* vp)
 {
-    OVITO_ASSERT(_viewportConfig != nullptr);
+    // Check if the viewport already has an associated window.
+    if(WidgetViewportWindow* window = viewportWindow(vp))
+        return window->widget();
 
     // Create the viewport window if it hasn't been created for this viewport yet.
-    if(!vp->window() && !_graphicsInitializationErrorOccurred) {
+    if(!_graphicsInitializationErrorOccurred) {
         try {
-            BaseViewportWindow* viewportWindow = createViewportWindow(*vp, _mainWindow, this);
+            OORef<WidgetViewportWindow> viewportWindow = createViewportWindow(*vp, _mainWindow, this);
             if(!viewportWindow || !viewportWindow->widget())
                 throw Exception(tr("Failed to create viewport window or there is no realtime graphics implementation available. Please check your OVITO installation and the graphics capabilities of your system."));
-            if(_viewportConfig->activeViewport() == vp)
+            if(_viewportConfig && _viewportConfig->activeViewport() == vp)
                 viewportWindow->widget()->setFocus();
+            _viewportWindows.push_back(viewportWindow);
+            return viewportWindow->widget();
         }
         catch(const Exception& ex) {
             _graphicsInitializationErrorOccurred = true;
             _mainWindow.reportError(ex, true);
-            return nullptr;
         }
     }
-
-    if(BaseViewportWindow* window = dynamic_cast<BaseViewportWindow*>(vp->window()))
-        return window->widget();
 
     return nullptr;
 }
@@ -161,17 +154,17 @@ QWidget* ViewportsPanel::viewportWidget(Viewport* vp)
 /******************************************************************************
 * Displays the context menu for a viewport window.
 ******************************************************************************/
-void ViewportsPanel::onViewportMenuRequested(Viewport* viewport, const QPoint& pos)
+void ViewportsPanel::onViewportMenuRequested(ViewportWindow* viewportWindow, const QPoint& pos)
 {
-    // Get the viewport's window.
-    BaseViewportWindow* vpwin = dynamic_cast<BaseViewportWindow*>(viewport->window());
-    OVITO_ASSERT(vpwin && vpwin->widget() && vpwin->widget()->parentWidget() == this);
+    // Get the viewport's widget.
+    if(QWidget* widget = viewportWidget(viewportWindow->viewport())) {
 
-    // Create the context menu for the viewport.
-    ViewportMenu contextMenu(_mainWindow, viewport, vpwin->widget());
+        // Create the context menu for the viewport.
+        ViewportMenu contextMenu(_mainWindow, viewportWindow, widget);
 
-    // Show menu.
-    contextMenu.show(pos);
+        // Show menu.
+        contextMenu.show(pos);
+    }
 }
 
 /******************************************************************************
@@ -190,17 +183,19 @@ void ViewportsPanel::onViewportConfigurationReplaced(ViewportConfiguration* newV
 ******************************************************************************/
 void ViewportsPanel::recreateViewportWindows()
 {
-    // Delete all existing viewport widgets first.
+    // Delete all existing viewport windows.
+    _viewportWindows.clear();
+
+    // Now all child widgets should be gone.
 #if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
-    for(QWidget* widget : findChildren<QWidget*>(Qt::FindDirectChildrenOnly))
+    OVITO_ASSERT(findChildren<QWidget*>(Qt::FindDirectChildrenOnly).empty());
 #else
-    for(QWidget* widget : findChildren<QWidget*>(QString{}, Qt::FindDirectChildrenOnly))
+    OVITO_ASSERT(findChildren<QWidget*>(QString{}, Qt::FindDirectChildrenOnly).empty());
 #endif
-        delete widget;
 
     if(_viewportConfig) {
         // Layout viewport widgets.
-        // This function implicitly creates the Qt widgets for all viewports.
+        // This function implicitly creates the windows for all viewports.
         layoutViewports();
     }
 }
@@ -225,10 +220,8 @@ void ViewportsPanel::onViewportModeCursorChanged(const QCursor& cursor)
 {
     if(!_viewportConfig) return;
 
-    for(Viewport* vp : _viewportConfig->viewports()) {
-        if(ViewportWindowInterface* window = vp->window()) {
-            window->setCursor(cursor);
-        }
+    for(const auto& window : _viewportWindows) {
+        window->setCursor(cursor);
     }
 }
 
@@ -241,9 +234,11 @@ void ViewportsPanel::paintEvent(QPaintEvent* event)
 
     // Get the active viewport and its associated Qt widget.
     Viewport* vp = _viewportConfig->activeViewport();
-    if(!vp) return;
+    if(!vp)
+        return;
     QWidget* vpWidget = viewportWidget(vp);
-    if(!vpWidget || vpWidget->isHidden()) return;
+    if(!vpWidget || vpWidget->isHidden())
+        return;
 
     QPainter painter(this);
 
@@ -317,12 +312,14 @@ void ViewportsPanel::layoutViewports()
     // Get the list of all viewports.
     const auto& viewports = _viewportConfig->viewports();
 
-    // Delete stale viewport widgets belonging to removed viewports.
-    for(QObject* childWidget : children()) {
-        OVITO_ASSERT(childWidget->isWidgetType());
-        if(boost::algorithm::none_of(viewports, [&](Viewport* vp) { return viewportWidget(vp) == childWidget; })) {
-            delete childWidget;
-        }
+    // Delete stale viewport windows belonging to removed viewports.
+    _viewportWindows.erase(std::remove_if(_viewportWindows.begin(), _viewportWindows.end(), [&](const auto& window) {
+        return boost::algorithm::none_of(viewports, [&](Viewport* vp) { return window->viewport() == vp; });
+    }), _viewportWindows.end());
+
+    // Create new viewport windows for viewports that don't have one yet.
+    for(Viewport* viewport : viewports) {
+        viewportWidget(viewport);
     }
 
     // Get the viewport that is currently maximized.
@@ -350,13 +347,13 @@ void ViewportsPanel::layoutViewports()
     }
 
     // Automatically activate a different viewport if the currently active one has been hidden.
-    if(_viewportConfig->maximizedViewport() && !_viewportConfig->maximizedViewport()->window()) {
+    if(_viewportConfig->maximizedViewport() && !viewportWindow(_viewportConfig->maximizedViewport())) {
         _mainWindow.handleExceptions([&] {
             _viewportConfig->setMaximizedViewport(viewports.empty() ? nullptr : viewports.front());
             _viewportConfig->setActiveViewport(_viewportConfig->maximizedViewport());
         });
     }
-    if(_viewportConfig->activeViewport() && !_viewportConfig->activeViewport()->window()) {
+    if(_viewportConfig->activeViewport() && !viewportWindow(_viewportConfig->activeViewport())) {
         _mainWindow.handleExceptions([&] {
             _viewportConfig->setActiveViewport(viewports.empty() ? nullptr : viewports.front());
         });
@@ -653,53 +650,54 @@ bool ViewportsPanel::onKeyShortcut(QKeyEvent* event)
     if(qobject_cast<QAbstractItemView*>(focusWidget))
         return false;
 
-    // Get the viewport the input pertains to.
-    Viewport* vp = _viewportConfig ? _viewportConfig->activeViewport() : nullptr;
-    if(!vp) return false;
+    // Get the viewport window the input pertains to.
+    ViewportWindow* vpwin = viewportWindow(_viewportConfig ? _viewportConfig->activeViewport() : nullptr);
+    if(!vpwin)
+        return false;
 
     qreal delta = 1.0;
     if(event->key() == Qt::Key_Left) {
         _mainWindow.performTransaction(tr("Move camera"), [&] {
             if(!(event->modifiers() & Qt::ShiftModifier))
-                _mainWindow.viewportInputManager()->orbitMode()->discreteStep(vp->window(), QPointF(-delta, 0));
+                _mainWindow.viewportInputManager()->orbitMode()->discreteStep(vpwin, QPointF(-delta, 0));
             else
-                _mainWindow.viewportInputManager()->panMode()->discreteStep(vp->window(), QPointF(-delta, 0));
+                _mainWindow.viewportInputManager()->panMode()->discreteStep(vpwin, QPointF(-delta, 0));
         });
         return true;
     }
     else if(event->key() == Qt::Key_Right) {
         _mainWindow.performTransaction(tr("Move camera"), [&] {
             if(!(event->modifiers() & Qt::ShiftModifier))
-                _mainWindow.viewportInputManager()->orbitMode()->discreteStep(vp->window(), QPointF(delta, 0));
+                _mainWindow.viewportInputManager()->orbitMode()->discreteStep(vpwin, QPointF(delta, 0));
             else
-                _mainWindow.viewportInputManager()->panMode()->discreteStep(vp->window(), QPointF(delta, 0));
+                _mainWindow.viewportInputManager()->panMode()->discreteStep(vpwin, QPointF(delta, 0));
         });
         return true;
     }
     else if(event->key() == Qt::Key_Up) {
         _mainWindow.performTransaction(tr("Move camera"), [&] {
             if(!(event->modifiers() & Qt::ShiftModifier))
-                _mainWindow.viewportInputManager()->orbitMode()->discreteStep(vp->window(), QPointF(0, -delta));
+                _mainWindow.viewportInputManager()->orbitMode()->discreteStep(vpwin, QPointF(0, -delta));
             else
-                _mainWindow.viewportInputManager()->panMode()->discreteStep(vp->window(), QPointF(0, -delta));
+                _mainWindow.viewportInputManager()->panMode()->discreteStep(vpwin, QPointF(0, -delta));
         });
         return true;
     }
     else if(event->key() == Qt::Key_Down) {
         _mainWindow.performTransaction(tr("Move camera"), [&] {
             if(!(event->modifiers() & Qt::ShiftModifier))
-                _mainWindow.viewportInputManager()->orbitMode()->discreteStep(vp->window(), QPointF(0, delta));
+                _mainWindow.viewportInputManager()->orbitMode()->discreteStep(vpwin, QPointF(0, delta));
             else
-                _mainWindow.viewportInputManager()->panMode()->discreteStep(vp->window(), QPointF(0, delta));
+                _mainWindow.viewportInputManager()->panMode()->discreteStep(vpwin, QPointF(0, delta));
         });
         return true;
     }
     else if(event->matches(QKeySequence::ZoomIn)) {
-        _mainWindow.viewportInputManager()->zoomMode()->zoom(vp, 50, _mainWindow);
+        _mainWindow.viewportInputManager()->zoomMode()->zoom(vpwin->viewport(), 50, _mainWindow);
         return true;
     }
     else if(event->matches(QKeySequence::ZoomOut)) {
-        _mainWindow.viewportInputManager()->zoomMode()->zoom(vp, -50, _mainWindow);
+        _mainWindow.viewportInputManager()->zoomMode()->zoom(vpwin->viewport(), -50, _mainWindow);
         return true;
     }
     return false;

@@ -139,14 +139,14 @@ QString SurfaceMeshFaces::OOMetaClass::formatDataObjectPath(const ConstDataObjec
 * Returns the base point and vector information for visualizing a vector
 * property from this container using a VectorVis element.
 ******************************************************************************/
-std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshFaces::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, MixedKeyCache& visCache) const
+std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshFaces::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, const RendererResourceCache::ResourceFrame& visCache) const
 {
     OVITO_ASSERT(path.lastAs<SurfaceMeshFaces>(1) == this);
     if(const SurfaceMesh* mesh = path.lastAs<SurfaceMesh>(2)) {
         mesh->verifyMeshIntegrity();
         // Look up the face centroids in the cache.
         using CacheKey = RendererResourceKey<struct SurfaceMeshFacesCentroidsCache, ConstDataObjectRef, ConstDataObjectRef>;
-        auto& [basePositions, vectorProperty] = visCache.get<std::tuple<ConstDataBufferPtr,ConstDataBufferPtr>>(CacheKey(mesh, path.lastAs<DataBuffer>()));
+        auto& [basePositions, vectorProperty] = visCache.lookup<std::tuple<ConstDataBufferPtr,ConstDataBufferPtr>>(CacheKey(mesh, path.lastAs<DataBuffer>()));
         if(!basePositions) {
             BufferWriteAccessAndRef<Vector3, access_mode::write> filteredVectors;
             vectorProperty = path.lastAs<DataBuffer>();

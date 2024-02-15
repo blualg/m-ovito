@@ -41,14 +41,14 @@ class OVITO_CORE_EXPORT TriangleMeshVis : public DataVis
 
 public:
 
-    /// \brief Constructor.
+    /// Constructor.
     explicit TriangleMeshVis(ObjectInitializationFlags flags);
 
-    /// \brief Lets the vis element render a data object.
-    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;
+    /// Lets the vis element produce a visual representation of a data object.
+    virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
 
-    /// \brief Computes the bounding box of the object.
-    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
+    /// Computes the bounding box of the object.
+    virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
 
     /// Returns the transparency parameter.
     FloatType transparency() const { return transparencyController()->getFloatValue(AnimationTime(0)); }

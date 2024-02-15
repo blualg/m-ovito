@@ -33,7 +33,7 @@
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/viewport/Viewport.h>
-#include <ovito/core/viewport/ViewportWindowInterface.h>
+#include <ovito/core/viewport/ViewportWindow.h>
 #include "XFormModes.h"
 
 namespace Ovito {
@@ -64,10 +64,10 @@ void XFormMode::activated(bool temporaryActivation)
 ******************************************************************************/
 void XFormMode::deactivated(bool temporary)
 {
-    if(viewport()) {
+    if(viewportWindow()) {
         // Restore old state if change has not been committed.
         _undoTransaction.cancel();
-        _viewport = nullptr;
+        _viewportWindow = nullptr;
     }
     disconnect(&inputManager()->datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &XFormMode::onSelectionChangeComplete);
     disconnect(&inputManager()->datasetContainer(), &DataSetContainer::currentFrameChanged, this, &XFormMode::onCurrentFrameChanged);
@@ -128,19 +128,19 @@ void XFormMode::onCurrentFrameChanged(int frame)
 /******************************************************************************
 * Handles the mouse down event for the given viewport.
 ******************************************************************************/
-void XFormMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void XFormMode::mousePressEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
     if(event->button() == Qt::LeftButton) {
-        if(viewport() == nullptr) {
+        if(viewportWindow() == nullptr) {
 
             // Select object under mouse cursor.
             ViewportPickResult pickResult = vpwin->pick(getMousePosition(event));
-            if(pickResult.isValid()) {
-                _viewport = vpwin->viewport();
+            if(pickResult.isValid() && vpwin->viewport()->scene()) {
+                _viewportWindow = vpwin;
                 _startPoint = getMousePosition(event);
                 _undoTransaction.begin(inputManager()->userInterface(), undoDisplayName());
                 inputManager()->userInterface().performActions(_undoTransaction, [&] {
-                    viewport()->scene()->selection()->setNode(pickResult.pipeline());
+                    viewportWindow()->viewport()->scene()->selection()->setNode(pickResult.pipeline());
                 });
                 _undoSelectionOperation = _undoTransaction.snapshot();
                 startXForm();
@@ -149,10 +149,10 @@ void XFormMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* eve
         return;
     }
     else if(event->button() == Qt::RightButton) {
-        if(viewport()) {
+        if(viewportWindow()) {
             // Restore old state when aborting the operation.
             _undoTransaction.cancel();
-            _viewport = nullptr;
+            _viewportWindow = nullptr;
             return;
         }
     }
@@ -162,12 +162,12 @@ void XFormMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* eve
 /******************************************************************************
 * Handles the mouse up event for the given viewport.
 ******************************************************************************/
-void XFormMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void XFormMode::mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
-    if(viewport()) {
+    if(viewportWindow()) {
         // Commit change.
         _undoTransaction.commit();
-        _viewport = nullptr;
+        _viewportWindow = nullptr;
     }
     ViewportInputMode::mouseReleaseEvent(vpwin, event);
 }
@@ -175,9 +175,9 @@ void XFormMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* e
 /******************************************************************************
 * Handles the mouse move event for the given viewport.
 ******************************************************************************/
-void XFormMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void XFormMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
-    if(viewport() == vpwin->viewport()) {
+    if(viewportWindow() == vpwin) {
         // Take the current mouse cursor position to make the input mode
         // look more responsive. The cursor position recorded when the mouse event was
         // generates may be too old.
@@ -203,12 +203,12 @@ void XFormMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* even
 /******************************************************************************
 * Is called when a viewport looses the input focus.
 ******************************************************************************/
-void XFormMode::focusOutEvent(ViewportWindowInterface* vpwin, QFocusEvent* event)
+void XFormMode::focusOutEvent(ViewportWindow* vpwin, QFocusEvent* event)
 {
-    if(viewport()) {
+    if(viewportWindow()) {
         // Restore old state if change has not been committed.
         _undoTransaction.cancel();
-        _viewport = nullptr;
+        _viewportWindow = nullptr;
     }
 }
 
@@ -217,16 +217,16 @@ void XFormMode::focusOutEvent(ViewportWindowInterface* vpwin, QFocusEvent* event
 ******************************************************************************/
 Point3 XFormMode::transformationCenter()
 {
-    OVITO_ASSERT(viewport());
-    OVITO_ASSERT(viewport()->scene());
-    if(!viewport() || !viewport()->scene())
+    OVITO_ASSERT(viewportWindow());
+    OVITO_ASSERT(viewportWindow()->viewport()->scene());
+    if(!viewportWindow() || !viewportWindow()->viewport()->scene())
         return Point3::Origin();
 
     Point3 center = Point3::Origin();
-    SelectionSet* selection = viewport()->scene()->selection();
+    SelectionSet* selection = viewportWindow()->viewport()->scene()->selection();
     if(selection && !selection->nodes().empty()) {
         TimeInterval interval;
-        AnimationTime time = viewport()->scene()->animationSettings()->currentTime();
+        AnimationTime time = viewportWindow()->viewport()->scene()->animationSettings()->currentTime();
         for(SceneNode* node : selection->nodes()) {
             const AffineTransformation& nodeTM = node->getWorldTransform(time, interval);
             center += nodeTM.translation();
@@ -241,7 +241,7 @@ Point3 XFormMode::transformationCenter()
 *******************************************************************************/
 AffineTransformation XFormMode::transformationSystem()
 {
-    return viewport()->gridMatrix();
+    return viewportWindow()->viewport()->gridMatrix();
 }
 
 /******************************************************************************
@@ -251,7 +251,7 @@ void MoveMode::startXForm()
 {
     _translationSystem = transformationSystem();
     _initialPoint = Point3::Origin();
-    viewport()->snapPoint(_startPoint, _initialPoint, _translationSystem);
+    viewportWindow()->snapPoint(_startPoint, _initialPoint, _translationSystem);
 }
 
 /******************************************************************************
@@ -260,13 +260,13 @@ void MoveMode::startXForm()
 void MoveMode::doXForm()
 {
     Point3 point2;
-    if(viewport()->snapPoint(_currentPoint, point2, _translationSystem)) {
+    if(viewportWindow()->snapPoint(_currentPoint, point2, _translationSystem)) {
 
         // Get movement in world space.
         _delta = _translationSystem * (point2 - _initialPoint);
 
         // Apply transformation to selected nodes.
-        applyXForm(viewport()->scene()->animationSettings()->currentTime(), viewport()->scene()->selection()->nodes(), 1);
+        applyXForm(viewportWindow()->viewport()->scene()->animationSettings()->currentTime(), viewportWindow()->viewport()->scene()->selection()->nodes(), 1);
     }
 }
 
@@ -368,7 +368,7 @@ void RotateMode::doXForm()
     _rotation = Rotation(Vector3(0,0,1), angle1);
 
     // Apply transformation to selected nodes.
-    applyXForm(viewport()->scene()->animationSettings()->currentTime(), viewport()->scene()->selection()->nodes(), 1);
+    applyXForm(viewportWindow()->viewport()->scene()->animationSettings()->currentTime(), viewportWindow()->viewport()->scene()->selection()->nodes(), 1);
 }
 
 /******************************************************************************

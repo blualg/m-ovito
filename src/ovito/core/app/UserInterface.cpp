@@ -49,6 +49,13 @@ void UserInterface::exitWithFatalError(const Exception& ex)
 {
     OVITO_ASSERT(ExecutionContext::isMainThread());
 
+    // Avoid reentrance.
+    if(_exitingWithFatalError)
+        return;
+
+    // Set flag.
+    _exitingWithFatalError = true;
+
     // Display fatal error message to the user.
     reportError(ex, true);
 
@@ -138,20 +145,11 @@ std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, 
 }
 
 /******************************************************************************
-* This immediately redraws the viewports reflecting all
-* changes made to the scene.
+* Immediately redraws the viewports to reflect any changes made to the scene.
 ******************************************************************************/
 void UserInterface::processViewportUpdateRequests()
 {
-    if(areViewportUpdatesSuspended())
-        return;
-
-    if(DataSet* dataset = datasetContainer().currentSet()) {
-        if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
-            for(Viewport* vp : viewportConfig->viewports())
-                vp->processUpdateRequest();
-        }
-    }
+    // Currently, this is a no-op. The viewports are always updated asynchronously.
 }
 
 /******************************************************************************
@@ -159,18 +157,9 @@ void UserInterface::processViewportUpdateRequests()
 ******************************************************************************/
 void UserInterface::updateViewports()
 {
-    // Check if viewport updates are suppressed.
-    if(areViewportUpdatesSuspended()) {
-        _viewportsNeedUpdate = true;
-        return;
-    }
-    _viewportsNeedUpdate = false;
-
-    if(DataSet* dataset = datasetContainer().currentSet()) {
-        if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
-            for(Viewport* vp : viewportConfig->viewports())
-                vp->updateViewport();
-        }
+    if(ViewportConfiguration* viewportConfig = datasetContainer().activeViewportConfig()) {
+        for(Viewport* vp : viewportConfig->viewports())
+            vp->updateViewport();
     }
 }
 
@@ -180,10 +169,12 @@ void UserInterface::updateViewports()
 void UserInterface::resumeViewportUpdates()
 {
     OVITO_ASSERT(areViewportUpdatesSuspended());
-    _viewportSuspendCount--;
-    if(_viewportSuspendCount == 0) {
-        if(_viewportsNeedUpdate)
-            updateViewports();
+    if(--_viewportSuspendCount == 0) {
+        if(ViewportConfiguration* viewportConfig = datasetContainer().activeViewportConfig()) {
+            for(Viewport* vp : viewportConfig->viewports()) {
+                vp->notifyDependents(Viewport::ViewportWindowResumeUpdatesRequested);
+            }
+        }
     }
 }
 

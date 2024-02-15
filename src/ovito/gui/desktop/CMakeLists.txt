@@ -123,6 +123,7 @@ OVITO_STANDARD_PLUGIN(Gui
         rendering/RenderSettingsEditor.cpp
         rendering/StandardSceneRendererEditor.cpp
         viewport/ViewportMenu.cpp
+        viewport/WidgetViewportWindow.cpp
         viewport/input/XFormModes.cpp
         viewport/overlays/CoordinateTripodOverlayEditor.cpp
         viewport/overlays/TextLabelOverlayEditor.cpp

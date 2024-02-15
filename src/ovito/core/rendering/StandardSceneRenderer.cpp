@@ -45,12 +45,9 @@ StandardSceneRenderer::StandardSceneRenderer(ObjectInitializationFlags flags) : 
 /******************************************************************************
 * Prepares the renderer for rendering one or more frames.
 ******************************************************************************/
-bool StandardSceneRenderer::startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache)
+void StandardSceneRenderer::startRender(const QSize& frameBufferSize)
 {
-    OVITO_ASSERT(!_internalRenderer);
-
-    if(!SceneRenderer::startRender(settings, frameBufferSize, visCache))
-        return false;
+    SceneRenderer::startRender(frameBufferSize);
 
     // Create the internal renderer implementation.
     OvitoClassPtr rendererClass = {};
@@ -69,55 +66,22 @@ bool StandardSceneRenderer::startRender(const RenderSettings* settings, const QS
     // Instantiate the renderer implementation.
     if(!rendererClass)
         throw Exception(tr("The OffscreenOpenGLSceneRenderer class is not available. Please make sure the OpenGLRenderer plugin is installed correctly."));
+    OVITO_ASSERT(!_internalRenderer);
     _internalRenderer = static_object_cast<SceneRenderer>(rendererClass->createInstance());
 
     // Pass supersampling level requested by the user to the renderer implementation.
-    _internalRenderer->setAntialiasingHint(std::max(1, antialiasingLevel()));
+    _internalRenderer->setMultisamplingLevel(std::max(1, antialiasingLevel()));
 
-    if(!_internalRenderer->startRender(settings, frameBufferSize, visCache))
-        return false;
-
-    return true;
-}
-
-/******************************************************************************
-* This method is called just before renderFrame() is called.
-******************************************************************************/
-void StandardSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
-{
-    SceneRenderer::beginFrame(time, scene, params, vp, viewportRect, frameBuffer);
-
-    // Call implementation class.
-    _internalRenderer->beginFrame(time, scene, params, vp, viewportRect, frameBuffer);
+    _internalRenderer->startRender(frameBufferSize);
 }
 
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-bool StandardSceneRenderer::renderFrame(const QRect& viewportRect)
+void StandardSceneRenderer::renderFrame(const FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
     // Delegate rendering work to implementation class.
-    return _internalRenderer->renderFrame(viewportRect);
-}
-
-/******************************************************************************
-* Renders the overlays/underlays of the viewport into the framebuffer.
-******************************************************************************/
-bool StandardSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect)
-{
-    // Delegate rendering work to implementation class.
-    return _internalRenderer->renderOverlays(underlays, logicalViewportRect, physicalViewportRect);
-}
-
-/******************************************************************************
-* This method is called after renderFrame() has been called.
-******************************************************************************/
-void StandardSceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewportRect)
-{
-    SceneRenderer::endFrame(renderingSuccessful, viewportRect);
-
-    // Call implementation class.
-    _internalRenderer->endFrame(renderingSuccessful, viewportRect);
+    _internalRenderer->renderFrame(frameGraph, viewportRect, frameBuffer);
 }
 
 /******************************************************************************

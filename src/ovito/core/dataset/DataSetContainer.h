@@ -28,6 +28,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/scene/SceneAnimationPlayback.h>
 #include <ovito/core/oo/RefMaker.h>
+#include <ovito/core/rendering/RendererResourceCache.h>
 
 namespace Ovito {
 
@@ -61,6 +62,9 @@ public:
 
     /// Returns whether the animation is currently being played back in the interactive viewports.
     bool isPlaybackActive() const { return _animationPlayback && _animationPlayback->isPlaybackActive(); }
+
+    /// Returns the data cache used by visualzation elements to store rendering primitives.
+    const std::shared_ptr<RendererResourceCache>& visCache() { return _visCache; }
 
 public Q_SLOTS:
 
@@ -186,6 +190,9 @@ private:
 
     /// Used for deferred emission of selectionChangeComplete() signal.
     QBasicTimer _selectionChangeCompleteTimer;
+
+    /// Used by visualization elements to cache generated rendering primitives.
+    std::shared_ptr<RendererResourceCache> _visCache = std::make_shared<RendererResourceCache>();
 };
 
 }   // End of namespace

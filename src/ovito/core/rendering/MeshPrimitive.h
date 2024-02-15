@@ -27,13 +27,14 @@
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 #include "PseudoColorMapping.h"
+#include "FrameGraphPrimitive.h"
 
 namespace Ovito {
 
 /**
  * \brief A triangle mesh to be rendered by a scene renderer.
  */
-class OVITO_CORE_EXPORT MeshPrimitive final
+class OVITO_CORE_EXPORT MeshPrimitive final : public FrameGraphPrimitive
 {
     Q_GADGET
 
@@ -149,6 +150,12 @@ public:
 
     /// Generates a list of vertices for rendering the wireframe as individual line segments.
     ConstDataBufferPtr generateWireframeLines() const;
+
+	/// Computes the 3d bounding box of the primitive in local coordinate space.
+	virtual Box3 computeBoundingBox(const RendererResourceCache::ResourceFrame& visCache) const override {
+        OVITO_ASSERT(!useInstancedRendering());
+        return mesh() ? mesh()->boundingBox() : Box3();
+    }
 
 private:
 

@@ -25,7 +25,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/viewport/ViewportWindowInterface.h>
+#include <ovito/core/viewport/ViewportWindow.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/ParticlesVis.h>
 #include "ParticlePickingHelper.h"
@@ -35,7 +35,7 @@ namespace Ovito {
 /******************************************************************************
 * Finds the particle under the mouse cursor.
 ******************************************************************************/
-bool ParticlePickingHelper::pickParticle(ViewportWindowInterface* vpwin, const QPoint& clickPoint, PickResult& result)
+bool ParticlePickingHelper::pickParticle(ViewportWindow* vpwin, const QPoint& clickPoint, PickResult& result)
 {
     ViewportPickResult vpPickResult = vpwin->pick(clickPoint);
     // Check if user has clicked on something.

@@ -43,16 +43,16 @@ public:
     explicit XFormMode(const QString& cursorImagePath) : _xformCursor(QPixmap(cursorImagePath)) {}
 
     /// \brief Handles the mouse down event for the given viewport.
-    virtual void mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    virtual void mousePressEvent(ViewportWindow* vpwin, QMouseEvent* event) override;
 
     /// \brief Handles the mouse up event for the given viewport.
-    virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    virtual void mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event) override;
 
     /// \brief Handles the mouse move event for the given viewport.
-    virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    virtual void mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event) override;
 
     /// Is called when a viewport looses the input focus.
-    virtual void focusOutEvent(ViewportWindowInterface* vpwin, QFocusEvent* event) override;
+    virtual void focusOutEvent(ViewportWindow* vpwin, QFocusEvent* event) override;
 
     /// \brief Returns the origin of the transformation system to use for xform modes.
     Point3 transformationCenter();
@@ -70,8 +70,8 @@ protected:
     ///        no longer the active handler.
     virtual void deactivated(bool temporary) override;
 
-    /// Returns the current viewport we are working in.
-    Viewport* viewport() const { return _viewport; }
+    /// Returns the current viewport window we are working in.
+    ViewportWindow* viewportWindow() const { return _viewportWindow; }
 
     /// Is called when the transformation operation begins.
     virtual void startXForm() {}
@@ -120,8 +120,8 @@ protected:
     /// The current mouse position.
     QPointF _currentPoint;
 
-    /// The current viewport we are working in.
-    Viewport* _viewport = nullptr;
+    /// The current viewport window we are working in.
+    ViewportWindow* _viewportWindow = nullptr;
 
     /// The cursor shown while the mouse cursor is over an object.
     QCursor _xformCursor;

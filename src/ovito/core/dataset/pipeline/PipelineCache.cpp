@@ -192,7 +192,7 @@ SharedFuture<PipelineFlowState> PipelineCache::evaluatePipelineImpl(const Pipeli
             if(state) {
                 for(const auto& dataObj : state.data()->objects()) {
                     for(DataVis* vis : dataObj->visElements()) {
-                        // Let the PipelineSceneNode substitude the vis element with another one.
+                        // Let the Pipeline substitude the vis element with another one.
                         vis = pipeline->getReplacementVisElement(vis);
                         if(TransformingDataVis* transformingVis = dynamic_object_cast<TransformingDataVis>(vis)) {
                             if(transformingVis->isEnabled()) {

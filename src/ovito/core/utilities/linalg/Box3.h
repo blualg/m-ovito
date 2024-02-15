@@ -72,12 +72,12 @@ public:
     /////////////////////////////// Constructors /////////////////////////////////
 
     /// \brief Constructs an empty box.
-    Box_3() : minc(std::numeric_limits<T>::max()), maxc(std::numeric_limits<T>::lowest()) {}
+    Box_3() noexcept : minc(std::numeric_limits<T>::max()), maxc(std::numeric_limits<T>::lowest()) {}
 
     /// \brief Initializes the box with lower and upper coordinates.
     /// \param lower The corner of the box that specifies the lower boundary coordinates.
     /// \param upper The corner of the box that specifies the upper boundary coordinates.
-    Box_3(const Point_3<T>& lower, const Point_3<T>& upper) : minc(lower), maxc(upper) {
+    Box_3(const Point_3<T>& lower, const Point_3<T>& upper) noexcept : minc(lower), maxc(upper) {
         OVITO_ASSERT_MSG(minc.x() <= maxc.x(), "Box_3 constructor", "Lower X coordinate must not be larger than upper X coordinate.");
         OVITO_ASSERT_MSG(minc.y() <= maxc.y(), "Box_3 constructor", "Lower Y coordinate must not be larger than upper Y coordinate.");
         OVITO_ASSERT_MSG(minc.z() <= maxc.z(), "Box_3 constructor", "Lower Z coordinate must not be larger than upper Z coordinate.");
@@ -86,7 +86,7 @@ public:
     /// \brief Crates a cubic box.
     /// \param center The center of the cubic box.
     /// \param halfEdgeLength One half of the edge length of the cube.
-    Box_3(const Point_3<T>& center, T halfEdgeLength) {
+    Box_3(const Point_3<T>& center, T halfEdgeLength) noexcept {
         OVITO_ASSERT(halfEdgeLength >= 0);
         minc.x() = center.x() - halfEdgeLength;
         minc.y() = center.y() - halfEdgeLength;
@@ -98,9 +98,12 @@ public:
 
     /// \brief Casts the box to a box with another data type.
     template<typename U>
-    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, Box_3<U>, const Box_3<T>&> {
+    Q_DECL_CONSTEXPR auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Box_3<U>, const Box_3<T>&> {
         if constexpr(!std::is_same_v<T,U>)
-            return Box_3<U>(minc.template toDataType<U>(), maxc.template toDataType<U>());
+            if(!isEmpty())
+                return Box_3<U>(minc.template toDataType<U>(), maxc.template toDataType<U>());
+            else
+                return Box_3<U>();
         else
             return *this;  // When casting to the same type \a T, this method becomes a no-op.
     }
@@ -151,7 +154,7 @@ public:
     /// \brief Returns the position of one of the eight corners of the box.
     /// \param i The index of the corner in the range 0 to 7.
     /// \return The coordinates of the i-th corner of the box.
-    Point_3<T> operator[](typename Point_3<T>::size_type i) const {
+    Point_3<T> operator[](typename Point_3<T>::size_type i) const noexcept {
         OVITO_ASSERT_MSG(!isEmpty(), "Box_3::operator[]", "Cannot compute the corners of an empty box.");
         OVITO_ASSERT_MSG(i >= 0 && i < 8, "Box_3::operator[]", "Corner index out of range.");
         const Point_3<T>* const c = &minc;

@@ -44,20 +44,11 @@ public:
     /// Constructor.
     explicit OffscreenOpenGLSceneRenderer(ObjectInitializationFlags flags);
 
-    /// Prepares the renderer for rendering one or more frames.
-    virtual bool startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache) override;
+	/// Prepares the renderer for rendering one or more frames.
+	virtual void startRender(const QSize& frameBufferSize) override;
 
-    /// This method is called just before renderFrame() is called.
-    virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
-
-    /// Renders the current animation frame.
-    virtual bool renderFrame(const QRect& viewportRect) override;
-
-    /// Renders the overlays/underlays of the viewport into the framebuffer.
-    virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect) override;
-
-    /// This method is called after renderFrame() has been called.
-    virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;
+    /// Renders a single frame.
+    virtual void renderFrame(const FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
 
     /// Is called after rendering has finished.
     virtual void endRender() override;
@@ -80,9 +71,6 @@ private:
 
     /// The resolution of the offscreen framebuffer.
     QSize _framebufferSize;
-
-    /// The monotonically increasing identifier of the last frame that was rendered.
-    OpenGLResourceManager::ResourceFrameHandle _previousResourceFrame = 0;
 };
 
 }   // End of namespace

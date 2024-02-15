@@ -55,13 +55,13 @@ class OVITO_STDOBJ_EXPORT TargetVis : public DataVis
 public:
 
     /// Constructor.
-    explicit TargetVis(ObjectInitializationFlags flags) : DataVis(flags) {}
+    using DataVis::DataVis;
 
-    /// Lets the vis element render a data object.
-    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) override;
+    /// Renders the given data object.
+    virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
 
     /// Computes the bounding box of the object.
-    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
+    virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
 };
 
 }   // End of namespace

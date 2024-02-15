@@ -26,13 +26,14 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include "PseudoColorMapping.h"
+#include "FrameGraphPrimitive.h"
 
 namespace Ovito {
 
 /**
  * \brief A set of cylinders or arrow glyphs to be rendered by a SceneRenderer implementation.
  */
-class OVITO_CORE_EXPORT CylinderPrimitive
+class OVITO_CORE_EXPORT CylinderPrimitive final : public FrameGraphPrimitive
 {
     Q_GADGET
 
@@ -133,6 +134,26 @@ public:
     /// Sets the mapping from pseudo-color values to RGB colors.
     void setPseudoColorMapping(const PseudoColorMapping& mapping) {
         _pseudoColorMapping = mapping;
+    }
+
+	/// Computes the 3d bounding box of the primitive in local coordinate space.
+	virtual Box3 computeBoundingBox(const RendererResourceCache::ResourceFrame& visCache) const override {
+        auto& bb = visCache.lookup<Box3>(RendererResourceKey<struct CylinderBoundingBoxCache, ConstDataBufferPtr, ConstDataBufferPtr>{basePositions(), headPositions()});
+        if(bb.isEmpty() && basePositions() && headPositions()) {
+            bb.addBox(basePositions()->boundingBox3());
+            bb.addBox(headPositions()->boundingBox3());
+        }
+        FloatType maxWidth = 0;
+        if(widths()) {
+            auto& cachedMaxWidth = visCache.lookup<FloatType>(RendererResourceKey<struct CylinderMaxWidthBoundingBoxCache, ConstDataBufferPtr>{widths()});
+            if(cachedMaxWidth == 0)
+                cachedMaxWidth = widths()->minMax().second;
+            maxWidth = std::max(maxWidth, cachedMaxWidth);
+        }
+        else {
+            maxWidth = std::max(maxWidth, uniformWidth());
+        }
+        return bb.padBox(maxWidth / (shape() == CylinderShape ? FloatType(2) : FloatType(4)) * std::sqrt(FloatType(3)));
     }
 
 private:

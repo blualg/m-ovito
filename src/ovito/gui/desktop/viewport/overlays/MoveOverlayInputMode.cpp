@@ -26,6 +26,7 @@
 #include <ovito/gui/desktop/mainwin/ViewportsPanel.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/core/viewport/Viewport.h>
+#include <ovito/core/viewport/ViewportWindow.h>
 #include <ovito/core/viewport/overlays/ViewportOverlay.h>
 #include "MoveOverlayInputMode.h"
 
@@ -68,7 +69,7 @@ void MoveOverlayInputMode::deactivated(bool temporary)
 /******************************************************************************
 * Handles the mouse down events for a Viewport.
 ******************************************************************************/
-void MoveOverlayInputMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void MoveOverlayInputMode::mousePressEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
     if(event->button() == Qt::LeftButton) {
         if(viewport() == nullptr) {
@@ -95,7 +96,7 @@ void MoveOverlayInputMode::mousePressEvent(ViewportWindowInterface* vpwin, QMous
 /******************************************************************************
 * Handles the mouse move events for a Viewport.
 ******************************************************************************/
-void MoveOverlayInputMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void MoveOverlayInputMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
     // Get the viewport layer being moved.
     ViewportOverlay* layer = dynamic_object_cast<ViewportOverlay>(_editor->editObject());
@@ -113,12 +114,12 @@ void MoveOverlayInputMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouse
 
             if(!inputManager()->userInterface().performActions(_undoTransaction, [&] {
                 // Compute the displacement based on the new mouse position.
-                Box2 renderFrameRect = viewport()->renderFrameRect(inputManager()->datasetContainer().currentSet());
-                if(!renderFrameRect.isEmpty()) {
-                    QSize vpSize = vpwin->viewportWindowDeviceIndependentSize();
+                QSize vpSize = vpwin->viewportWindowDeviceIndependentSize();
+                QRect previewFrameRect = vpwin->previewFrameGeometry(inputManager()->datasetContainer().currentSet(), vpSize);
+                if(!previewFrameRect.isNull()) {
                     Vector2 delta;
-                    delta.x() =  (FloatType)(_currentPoint.x() - _startPoint.x()) / vpSize.width() / renderFrameRect.width() * 2;
-                    delta.y() = -(FloatType)(_currentPoint.y() - _startPoint.y()) / vpSize.height() / renderFrameRect.height() * 2;
+                    delta.x() =  (FloatType)(_currentPoint.x() - _startPoint.x()) / previewFrameRect.width();
+                    delta.y() = -(FloatType)(_currentPoint.y() - _startPoint.y()) / previewFrameRect.height();
 
                     // Move the layer.
                     layer->moveLayerInViewport(delta);
@@ -140,7 +141,7 @@ void MoveOverlayInputMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouse
 /******************************************************************************
 * Handles the mouse up events for a Viewport.
 ******************************************************************************/
-void MoveOverlayInputMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void MoveOverlayInputMode::mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
     if(viewport()) {
         // Commit change.

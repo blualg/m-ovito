@@ -84,7 +84,7 @@ public:
 
     /// \brief Empty default constructor that does not initialize the matrix elements (for performance reasons).
     ///        The matrix elements will have an undefined value and need to be initialized later.
-    AffineTransformationT() = default;
+    AffineTransformationT() noexcept = default;
 
     /// \brief Constructor that initializes 9 elements of the left 3x3 submatrix to the given values.
     ///        The translation (4th column) is set to zero.
@@ -92,7 +92,7 @@ public:
     Q_DECL_CONSTEXPR AffineTransformationT(
                         T m11, T m12, T m13,
                         T m21, T m22, T m23,
-                        T m31, T m32, T m33)
+                        T m31, T m32, T m33) noexcept
         : std::array<Vector_3<T>,4>{{
             Vector_3<T>(m11,m21,m31),
             Vector_3<T>(m12,m22,m32),
@@ -104,7 +104,7 @@ public:
     Q_DECL_CONSTEXPR AffineTransformationT(
                         T m11, T m12, T m13, T m14,
                         T m21, T m22, T m23, T m24,
-                        T m31, T m32, T m33, T m34)
+                        T m31, T m32, T m33, T m34) noexcept
         : std::array<Vector_3<T>,4>{{
             Vector_3<T>(m11,m21,m31),
             Vector_3<T>(m12,m22,m32),
@@ -112,12 +112,12 @@ public:
             Vector_3<T>(m14,m24,m34)}} {}
 
     /// \brief Constructor that initializes the matrix from four column vectors.
-    Q_DECL_CONSTEXPR AffineTransformationT(const column_type& c1, const column_type& c2, const column_type& c3, const column_type& c4)
+    Q_DECL_CONSTEXPR AffineTransformationT(const column_type& c1, const column_type& c2, const column_type& c3, const column_type& c4) noexcept
         : std::array<Vector_3<T>,4>{{c1, c2, c3, c4}} {}
 
     /// \brief Initializes the matrix to the null matrix.
     /// All matrix elements are set to zero by this constructor.
-    Q_DECL_CONSTEXPR AffineTransformationT(Zero)
+    Q_DECL_CONSTEXPR AffineTransformationT(Zero) noexcept
         : std::array<Vector_3<T>,4>{{
             typename Vector_3<T>::Zero(),
             typename Vector_3<T>::Zero(),
@@ -126,7 +126,7 @@ public:
 
     /// \brief Initializes the matrix to the identity matrix.
     /// All diagonal elements are set to one and all off-diagonal elements are set to zero.
-    Q_DECL_CONSTEXPR AffineTransformationT(Identity)
+    Q_DECL_CONSTEXPR AffineTransformationT(Identity) noexcept
         : std::array<Vector_3<T>,4>{{
             Vector_3<T>(T(1),T(0),T(0)),
             Vector_3<T>(T(0),T(1),T(0)),
@@ -135,11 +135,11 @@ public:
 
     /// \brief Initializes the 3x4 matrix from a 3x3 matrix.
     /// The translation vector (4th column) is set to zero.
-    explicit Q_DECL_CONSTEXPR AffineTransformationT(const Matrix_3<T>& tm)
+    explicit Q_DECL_CONSTEXPR AffineTransformationT(const Matrix_3<T>& tm) noexcept
         : std::array<Vector_3<T>,4>{{tm.column(0), tm.column(1), tm.column(2), typename Vector_3<T>::Zero()}} {}
 
     /// Conversion constructor from a Qt matrix.
-    Q_DECL_CONSTEXPR AffineTransformationT(const QMatrix4x4& m)
+    Q_DECL_CONSTEXPR AffineTransformationT(const QMatrix4x4& m) noexcept
         : std::array<Vector_3<T>,4>{{
             Vector_3<T>(m(0,0),m(1,0),m(2,0)),
             Vector_3<T>(m(0,1),m(1,1),m(2,1)),
@@ -148,7 +148,7 @@ public:
 
     /// \brief Casts the matrix to a matrix with another data type.
     template<typename U>
-    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, AffineTransformationT<U>, const AffineTransformationT<T>&> {
+    Q_DECL_CONSTEXPR auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, AffineTransformationT<U>, const AffineTransformationT<T>&> {
         if constexpr(!std::is_same_v<T,U>)
             return AffineTransformationT<U>(
                 static_cast<U>((*this)(0,0)), static_cast<U>((*this)(0,1)), static_cast<U>((*this)(0,2)), static_cast<U>((*this)(0,3)),
@@ -256,6 +256,18 @@ public:
     /// \return true if not all elements are equal; false if all are equal.
     Q_DECL_CONSTEXPR bool operator!=(const AffineTransformationT& b) const {
         return !(*this == b);
+    }
+
+    /// \brief Compares this matrix to the zero matrix for exact equality.
+    /// \return true if all matrix elements are zero; false otherwise.
+    Q_DECL_CONSTEXPR bool operator==(Zero) const {
+        return ((*this)[0] == typename column_type::Zero()) && ((*this)[1] == typename column_type::Zero()) && ((*this)[2] == typename column_type::Zero()) && ((*this)[3] == typename column_type::Zero());
+    }
+
+    /// \brief Compares this matrix to the zero matrix for inequality.
+    /// \return true if any matrix element is non-zero; false otherwise.
+    Q_DECL_CONSTEXPR bool operator!=(Zero) const {
+        return ((*this)[0] != typename column_type::Zero()) || ((*this)[1] != typename column_type::Zero()) || ((*this)[2] != typename column_type::Zero()) || ((*this)[3] != typename column_type::Zero());
     }
 
     /// \brief Tests if two matrices are equal within a given tolerance.

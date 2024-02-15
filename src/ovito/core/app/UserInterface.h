@@ -86,6 +86,9 @@ public:
     /// Closes the user interface and shuts down the entire application after displaying an error message.
     virtual void exitWithFatalError(const Exception& ex);
 
+    /// Indicates that exitWithFatalError() has been called and the application is shutting down.
+    bool exitingWithFatalError() const { return _exitingWithFatalError; }
+
     /// Closes the user interface immediately (without asking user to save changes).
     void shutdown();
 
@@ -104,8 +107,8 @@ public:
     /// The function can return true to indicate that the running operation should be canceled.
     virtual bool processUIEvents();
 
-    /// Immediately repaints all viewports that have been flagged for an update.
-    virtual void processViewportUpdateRequests();
+    /// Immediately redraws the viewports to reflect any changes made to the scene.
+    void processViewportUpdateRequests();
 
     /// Returns the manager of the user interface actions.
     ActionManager* actionManager() const { return _actionManager; }
@@ -126,8 +129,7 @@ public:
 
     /// Temporarily suspends repainting of the viewports.
     /// To resume redrawing of viewports call resumeViewportUpdates().
-    /// Normally, you should use the ViewportSuspender helper class to suspend viewport update.
-    /// It has the advantage of being exception-safe.
+    /// You should use the ViewportSuspender RAII helper class to temporarily suspend viewport updates.
     void suspendViewportUpdates() { _viewportSuspendCount++; }
 
     /// Resumes redrawing of the viewports after a call to suspendViewportUpdates().
@@ -149,17 +151,18 @@ public:
     bool arePreliminaryViewportUpdatesSuspended() const { return _preliminaryViewportUpdatesSuspendCount != 0; }
 
     /// Flags all viewports for redrawing.
-    ///
     /// This function does not lead to an immediate repainting of the viewports; instead it schedules a
-    /// paint event for deferred processing when execution returns to the Qt event loop.
-    ///
-    /// To update just a single viewport, Viewport::updateViewport() should be used instead.
-    ///
-    /// To redraw all viewports immediately, also call processViewportUpdateRequests().
+    /// refresh request, which will be processed at some later time when execution returns to the Qt event loop.
     void updateViewports();
 
     /// Returns whether any of the visible interactive viewports is currently being rendered.
-    bool isRenderingInteractiveViewports() const { return _viewportBeingRendered != nullptr; }
+    bool isRenderingInteractiveViewports() const { return _interactiveViewportRenderingCount != 0; }
+
+    /// Informs the user interface that rendering of an interactive viewport has started.
+    void interactiveViewportRenderingStarted() { _interactiveViewportRenderingCount++; }
+
+    /// Informs the user interface that rendering of an interactive viewport has finished.
+    void interactiveViewportRenderingFinished() { OVITO_ASSERT(_interactiveViewportRenderingCount > 0); _interactiveViewportRenderingCount--; }
 
     /// Zooms all visible viewports to the extents of the scene when all scene pipelines have been fully evaluated and the extents are known.
     void zoomToSceneExtentsWhenReady();
@@ -193,7 +196,7 @@ protected:
     /// Assigns an UndoStack.
     void setUndoStack(UndoStack* undoStack) { _undoStack = undoStack; }
 
-private:
+protected:
 
     /// Hosts the dataset that is currently being edited in this user interface.
     OORef<DataSetContainer> _datasetContainer;
@@ -216,19 +219,17 @@ private:
     /// This counter tracks temporary suspension of viewport updates.
     int _viewportSuspendCount = 0;
 
-    /// Indicates that the viewports have been invalidated while updates were suspended.
-    bool _viewportsNeedUpdate = false;
-
     /// Counts the number of times preliminary viewport updates have been suspended.
     int _preliminaryViewportUpdatesSuspendCount = 0;
 
-    /// The interactive viewport currently being rendered.
-    Viewport* _viewportBeingRendered = nullptr;
+    /// This counter tracks whether rendering of interactive viewports is currently in progress.
+    int _interactiveViewportRenderingCount = 0;
+
+    /// Indicates that exitWithFatalError() has been called and the application is shutting down.
+    bool _exitingWithFatalError = false;
 
     /// This keeps the UI object itself alive until shutdown() is called.
     OORef<UserInterface> _selfGuard;
-
-    friend class Viewport;
 };
 
 }   // End of namespace

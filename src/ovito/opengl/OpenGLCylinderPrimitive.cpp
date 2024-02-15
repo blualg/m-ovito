@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/rendering/CylinderPrimitive.h>
 #include "OpenGLSceneRenderer.h"
 #include "OpenGLShaderHelper.h"
 
@@ -34,9 +35,6 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
     // Make sure there is something to be rendered. Otherwise, step out early.
     if(!primitive.basePositions() || !primitive.headPositions() || primitive.basePositions()->size() == 0)
         return;
-
-    rebindVAO();
-    OVITO_REPORT_OPENGL_ERRORS(this);
 
     // The OpenGL drawing primitive.
     GLenum primitiveDrawMode = GL_TRIANGLE_STRIP;
@@ -219,7 +217,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
             shader.setUniformValue("color_range_max", maxValue);
 
             // Upload color map as a 1-d OpenGL texture.
-            colorMapTexture = OpenGLResourceManager::instance()->uploadColorMap(primitive.pseudoColorMapping().gradient(), currentResourceFrame());
+            colorMapTexture = uploadColorMap(primitive.pseudoColorMapping().gradient());
             colorMapTexture->bind();
         }
         else {
@@ -231,7 +229,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
             // Upload a null color map to satisfy the picky OpenGL driver on macOS, which complains about
             // no texture being bound when a sampler1D is defined in the fragment shader.
             if(!isPickingPass() && primitive.shape() == CylinderPrimitive::CylinderShape) {
-                colorMapTexture = OpenGLResourceManager::instance()->uploadColorMap(nullptr, currentResourceFrame());
+                colorMapTexture = uploadColorMap(nullptr);
                 colorMapTexture->bind();
             }
 #endif
@@ -257,8 +255,6 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
     if(colorMapTexture) {
         colorMapTexture->release();
     }
-
-    OVITO_REPORT_OPENGL_ERRORS(this);
 }
 
 }   // End of namespace

@@ -25,13 +25,14 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
+#include "FrameGraphPrimitive.h"
 
 namespace Ovito {
 
 /**
  * \brief A set of particles to be rendered by a SceneRenderer implementation.
  */
-class OVITO_CORE_EXPORT ParticlePrimitive final
+class OVITO_CORE_EXPORT ParticlePrimitive final : public FrameGraphPrimitive
 {
     Q_GADGET
 
@@ -182,6 +183,29 @@ public:
 
     /// Returns the color used for rendering all selected particles.
     const Color& selectionColor() const { return _selectionParticleColor; }
+
+	/// Computes the 3d bounding box of the primitive in local coordinate space.
+	virtual Box3 computeBoundingBox(const RendererResourceCache::ResourceFrame& visCache) const override {
+        OVITO_ASSERT(!indices());
+        auto& bb = visCache.lookup<Box3>(RendererResourceKey<struct ParticlePositionsBoundingBoxCache, ConstDataBufferPtr>{positions()});
+        if(bb.isEmpty() && positions()) {
+            bb = positions()->boundingBox3();
+        }
+        FloatType maxRadius = std::max(uniformRadius(), FloatType(0));
+        if(radii()) {
+            auto& cachedMaxRadius = visCache.lookup<FloatType>(RendererResourceKey<struct ParticlesMaxRadiusCache, ConstDataBufferPtr>{radii()});
+            if(cachedMaxRadius == 0)
+                cachedMaxRadius = radii()->minMax().second;
+            maxRadius = std::max(maxRadius, cachedMaxRadius);
+        }
+        if(asphericalShapes()) {
+            auto& cachedMaxShape = visCache.lookup<FloatType>(RendererResourceKey<struct ParticleMaxShapeBoxCache, ConstDataBufferPtr>{asphericalShapes()});
+            if(cachedMaxShape == 0)
+                cachedMaxShape = (asphericalShapes()->boundingBox3().maxc - Point3::Origin()).length();
+            maxRadius = std::max(maxRadius, cachedMaxShape);
+        }
+        return bb.padBox(maxRadius);
+    }
 
 private:
 

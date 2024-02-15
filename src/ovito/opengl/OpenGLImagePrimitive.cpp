@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/rendering/ImagePrimitive.h>
 #include "OpenGLSceneRenderer.h"
 #include "OpenGLShaderHelper.h"
 
@@ -31,15 +32,8 @@ namespace Ovito {
 ******************************************************************************/
 void OpenGLSceneRenderer::renderImageImplementation(const ImagePrimitive& primitive)
 {
-    if(primitive.image().isNull() || !isImagePass() || primitive.windowRect().isEmpty())
+    if(isPickingPass() || primitive.image().isNull() || primitive.windowRect().isEmpty())
         return;
-
-    rebindVAO();
-    OVITO_REPORT_OPENGL_ERRORS(this);
-
-    // Temporarily disable depth testing.
-    bool wasDepthTestEnabled = glIsEnabled(GL_DEPTH_TEST);
-    OVITO_CHECK_OPENGL(this, glDisable(GL_DEPTH_TEST));
 
     // Activate the OpenGL shader program.
     OpenGLShaderHelper shader(this);
@@ -49,12 +43,12 @@ void OpenGLSceneRenderer::renderImageImplementation(const ImagePrimitive& primit
     shader.setInstanceCount(1);
 
     // Turn the image into an OpenGL texture.
-    QOpenGLTexture* texture = OpenGLResourceManager::instance()->uploadImage(primitive.image(), currentResourceFrame());
+    QOpenGLTexture* texture = uploadImage(primitive.image());
     texture->bind();
 
     // Transform rectangle to normalized device coordinates.
     Box2 b = primitive.windowRect();
-    int aaLevel = antialiasingLevel();
+    int aaLevel = multisamplingLevel();
     if(aaLevel > 1) {
         b.minc.x() = (int)(b.minc.x() / aaLevel) * aaLevel;
         b.minc.y() = (int)(b.minc.y() / aaLevel) * aaLevel;
@@ -79,12 +73,6 @@ void OpenGLSceneRenderer::renderImageImplementation(const ImagePrimitive& primit
 
     // Release the texture.
     texture->release();
-
-    // Restore old context state.
-    if(wasDepthTestEnabled)
-        glEnable(GL_DEPTH_TEST);
-
-    OVITO_REPORT_OPENGL_ERRORS(this);
 }
 
 }   // End of namespace

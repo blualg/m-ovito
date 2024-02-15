@@ -24,10 +24,11 @@
 #include <ovito/stdobj/camera/TargetObject.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/rendering/RenderSettings.h>
-#include <ovito/core/rendering/SceneRenderer.h>
+#include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/app/Application.h>
 #include "StandardCameraObject.h"
@@ -160,20 +161,21 @@ FloatType StandardCameraObject::getTargetDistance(AnimationTime time, const Pipe
 /******************************************************************************
 * Lets the vis element render a camera object.
 ******************************************************************************/
-PipelineStatus CameraVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
+PipelineStatus CameraVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     // Camera objects are only visible in the interactive viewports.
-    if(renderer->isInteractive() == false || renderer->viewport() == nullptr)
+    if(frameGraph.isInteractive() == false)
         return {};
 
     TimeInterval iv;
 
     // Determine the camera and target positions when rendering a target camera.
+    const AffineTransformation cameraTM = pipeline->getWorldTransform(frameGraph.time(), iv);
+    Point3 cameraPos = Point3::Origin() + cameraTM.translation();
     FloatType targetDistance = 0;
     bool showTargetLine = false;
     if(pipeline->lookatTargetNode()) {
-        Vector3 cameraPos = pipeline->getWorldTransform(time, iv).translation();
-        Vector3 targetPos = pipeline->lookatTargetNode()->getWorldTransform(time, iv).translation();
+        Point3 targetPos = Point3::Origin() + pipeline->lookatTargetNode()->getWorldTransform(frameGraph.time(), iv).translation();
         targetDistance = (cameraPos - targetPos).length();
         showTargetLine = true;
     }
@@ -182,140 +184,112 @@ PipelineStatus CameraVis::render(AnimationTime time, const ConstDataObjectPath& 
     FloatType aspectRatio = 0;
     FloatType coneAngle = 0;
     if(pipeline->isSelected()) {
-        aspectRatio = renderer->renderSettings().outputImageAspectRatio();
-        if(const StandardCameraObject* camera = path.lastAs<StandardCameraObject>()) {
-            if(camera->isPerspective()) {
-                coneAngle = camera->fieldOfView(time, iv);
-                if(targetDistance == 0)
-                    targetDistance = StandardCameraObject::getTargetDistance(time, pipeline);
-            }
-        }
-    }
-
-    if(!renderer->isBoundingBoxPass()) {
-        if(renderer->isImagePass()) {
-            // The key type used for caching the geometry primitive:
-            using CacheKey = RendererResourceKey<struct CameraCone,
-                FloatType,                  // Camera target distance
-                bool,                       // Target line visible
-                FloatType,                  // Cone aspect ratio
-                FloatType                   // Cone angle
-            >;
-
-            // Lookup the rendering primitive in the vis cache.
-            auto& conePrimitive = renderer->visCache().get<LinePrimitive>(CacheKey(
-                    targetDistance,
-                    showTargetLine,
-                    aspectRatio,
-                    coneAngle));
-
-            // Check if we already have a valid rendering primitive that is up to date.
-            if(!conePrimitive.positions()) {
-                BufferFactory<Point3G> targetLineVertices(0);
-                if(targetDistance != 0) {
-                    if(showTargetLine) {
-                        targetLineVertices.push_back(Point3G::Origin());
-                        targetLineVertices.push_back(Point3G(0,0,-targetDistance));
-                    }
-                    if(aspectRatio != 0 && coneAngle != 0) {
-                        GraphicsFloatType sizeY = std::tan(GraphicsFloatType(0.5) * coneAngle) * targetDistance;
-                        GraphicsFloatType sizeX = sizeY / aspectRatio;
-                        targetLineVertices.push_back(Point3G::Origin());
-                        targetLineVertices.push_back(Point3G(sizeX, sizeY, -targetDistance));
-                        targetLineVertices.push_back(Point3G::Origin());
-                        targetLineVertices.push_back(Point3G(-sizeX, sizeY, -targetDistance));
-                        targetLineVertices.push_back(Point3G::Origin());
-                        targetLineVertices.push_back(Point3G(-sizeX, -sizeY, -targetDistance));
-                        targetLineVertices.push_back(Point3G::Origin());
-                        targetLineVertices.push_back(Point3G(sizeX, -sizeY, -targetDistance));
-
-                        targetLineVertices.push_back(Point3G(sizeX, sizeY, -targetDistance));
-                        targetLineVertices.push_back(Point3G(-sizeX, sizeY, -targetDistance));
-                        targetLineVertices.push_back(Point3G(-sizeX, sizeY, -targetDistance));
-                        targetLineVertices.push_back(Point3G(-sizeX, -sizeY, -targetDistance));
-                        targetLineVertices.push_back(Point3G(-sizeX, -sizeY, -targetDistance));
-                        targetLineVertices.push_back(Point3G(sizeX, -sizeY, -targetDistance));
-                        targetLineVertices.push_back(Point3G(sizeX, -sizeY, -targetDistance));
-                        targetLineVertices.push_back(Point3G(sizeX, sizeY, -targetDistance));
-                    }
+        DataSet* dataset = ExecutionContext::current().ui().datasetContainer().currentSet();
+        if(dataset && dataset->renderSettings()) {
+            aspectRatio = dataset->renderSettings()->outputImageAspectRatio();
+            if(const StandardCameraObject* camera = path.lastAs<StandardCameraObject>()) {
+                if(camera->isPerspective()) {
+                    coneAngle = camera->fieldOfView(frameGraph.time(), iv);
+                    if(targetDistance == 0)
+                        targetDistance = StandardCameraObject::getTargetDistance(frameGraph.time(), pipeline);
                 }
-                conePrimitive.setPositions(targetLineVertices.take());
             }
-            conePrimitive.setUniformColor(ViewportSettings::getSettings().viewportColor(ViewportSettings::COLOR_CAMERAS));
-            renderer->renderLines(conePrimitive);
-        }
-    }
-    else {
-        // Add camera view cone to bounding box.
-        if(showTargetLine) {
-            renderer->addToLocalBoundingBox(Point3::Origin());
-            renderer->addToLocalBoundingBox(Point3(0,0,-targetDistance));
-        }
-        if(aspectRatio != 0 && coneAngle != 0) {
-            FloatType sizeY = std::tan(FloatType(0.5) * coneAngle) * targetDistance;
-            FloatType sizeX = sizeY / aspectRatio;
-            renderer->addToLocalBoundingBox(Point3(sizeX, sizeY, -targetDistance));
-            renderer->addToLocalBoundingBox(Point3(-sizeX, sizeY, -targetDistance));
-            renderer->addToLocalBoundingBox(Point3(-sizeX, -sizeY, -targetDistance));
-            renderer->addToLocalBoundingBox(Point3(sizeX, -sizeY, -targetDistance));
         }
     }
 
-    // Setup transformation matrix to always show the camera icon at the same size.
-    Point3 cameraPos = Point3::Origin() + renderer->worldTransform().translation();
-    FloatType scaling = FloatType(0.3) * renderer->viewport()->nonScalingSize(cameraPos);
-    renderer->setWorldTransform(renderer->worldTransform() * AffineTransformation::scaling(scaling));
+    // Render camera code.
 
-    if(!renderer->isBoundingBoxPass()) {
+    // The key type used for caching the geometry primitive:
+    using CacheKey = RendererResourceKey<struct CameraCone,
+        FloatType,                  // Camera target distance
+        bool,                       // Target line visible
+        FloatType,                  // Cone aspect ratio
+        FloatType                   // Cone angle
+    >;
 
-        // Load 3d camera icon.
-        if(!_cameraIconVertices) {
-            BufferFactory<Point3G> lines(0);
-            // Load and parse PLY file that contains the camera icon.
-            QFile meshFile(QStringLiteral(":/core/3dicons/camera.ply"));
-            meshFile.open(QIODevice::ReadOnly | QIODevice::Text);
-            QTextStream stream(&meshFile);
-            for(int i = 0; i < 3; i++) stream.readLine();
-            int numVertices = stream.readLine().section(' ', 2, 2).toInt();
-            OVITO_ASSERT(numVertices > 0);
-            for(int i = 0; i < 3; i++) stream.readLine();
-            int numFaces = stream.readLine().section(' ', 2, 2).toInt();
-            for(int i = 0; i < 2; i++) stream.readLine();
-            std::vector<Point3G> vertices(numVertices);
-            for(int i = 0; i < numVertices; i++)
-                stream >> vertices[i].x() >> vertices[i].y() >> vertices[i].z();
-            for(int i = 0; i < numFaces; i++) {
-                int numEdges, vindex, lastvindex, firstvindex;
-                stream >> numEdges;
-                for(int j = 0; j < numEdges; j++) {
-                    stream >> vindex;
-                    if(j != 0) {
-                        lines.push_back(vertices[lastvindex]);
-                        lines.push_back(vertices[vindex]);
-                    }
-                    else firstvindex = vindex;
-                    lastvindex = vindex;
+    // Lookup the rendering primitive in the vis cache.
+    auto& conePrimitive = frameGraph.visCache().lookup<LinePrimitive>(CacheKey(
+            targetDistance,
+            showTargetLine,
+            aspectRatio,
+            coneAngle));
+
+    // Check if we already have a valid rendering primitive that is up to date.
+    if(!conePrimitive.positions()) {
+        BufferFactory<Point3G> targetLineVertices(0);
+        if(targetDistance != 0) {
+            if(showTargetLine) {
+                targetLineVertices.push_back(Point3G::Origin());
+                targetLineVertices.push_back(Point3G(0,0,-targetDistance));
+            }
+            if(aspectRatio != 0 && coneAngle != 0) {
+                GraphicsFloatType sizeY = std::tan(GraphicsFloatType(0.5) * coneAngle) * targetDistance;
+                GraphicsFloatType sizeX = sizeY / aspectRatio;
+                targetLineVertices.push_back(Point3G::Origin());
+                targetLineVertices.push_back(Point3G(sizeX, sizeY, -targetDistance));
+                targetLineVertices.push_back(Point3G::Origin());
+                targetLineVertices.push_back(Point3G(-sizeX, sizeY, -targetDistance));
+                targetLineVertices.push_back(Point3G::Origin());
+                targetLineVertices.push_back(Point3G(-sizeX, -sizeY, -targetDistance));
+                targetLineVertices.push_back(Point3G::Origin());
+                targetLineVertices.push_back(Point3G(sizeX, -sizeY, -targetDistance));
+
+                targetLineVertices.push_back(Point3G(sizeX, sizeY, -targetDistance));
+                targetLineVertices.push_back(Point3G(-sizeX, sizeY, -targetDistance));
+                targetLineVertices.push_back(Point3G(-sizeX, sizeY, -targetDistance));
+                targetLineVertices.push_back(Point3G(-sizeX, -sizeY, -targetDistance));
+                targetLineVertices.push_back(Point3G(-sizeX, -sizeY, -targetDistance));
+                targetLineVertices.push_back(Point3G(sizeX, -sizeY, -targetDistance));
+                targetLineVertices.push_back(Point3G(sizeX, -sizeY, -targetDistance));
+                targetLineVertices.push_back(Point3G(sizeX, sizeY, -targetDistance));
+            }
+        }
+        conePrimitive.setPositions(targetLineVertices.take());
+    }
+    conePrimitive.setUniformColor(ViewportSettings::getSettings().viewportColor(ViewportSettings::COLOR_CAMERAS));
+    frameGraph.addPrimitive(std::make_unique<LinePrimitive>(conePrimitive), pipeline, {}, FrameGraph::RenderingCommand::SkipPickingPass);
+
+    // Load 3d camera icon.
+    if(!_cameraIconVertices) {
+        BufferFactory<Point3G> lines(0);
+        // Load and parse PLY file that contains the camera icon.
+        QFile meshFile(QStringLiteral(":/core/3dicons/camera.ply"));
+        meshFile.open(QIODevice::ReadOnly | QIODevice::Text);
+        QTextStream stream(&meshFile);
+        for(int i = 0; i < 3; i++) stream.readLine();
+        int numVertices = stream.readLine().section(' ', 2, 2).toInt();
+        OVITO_ASSERT(numVertices > 0);
+        for(int i = 0; i < 3; i++) stream.readLine();
+        int numFaces = stream.readLine().section(' ', 2, 2).toInt();
+        for(int i = 0; i < 2; i++) stream.readLine();
+        std::vector<Point3G> vertices(numVertices);
+        for(int i = 0; i < numVertices; i++)
+            stream >> vertices[i].x() >> vertices[i].y() >> vertices[i].z();
+        for(int i = 0; i < numFaces; i++) {
+            int numEdges, vindex, lastvindex, firstvindex;
+            stream >> numEdges;
+            for(int j = 0; j < numEdges; j++) {
+                stream >> vindex;
+                if(j != 0) {
+                    lines.push_back(vertices[lastvindex]);
+                    lines.push_back(vertices[vindex]);
                 }
-                lines.push_back(vertices[lastvindex]);
-                lines.push_back(vertices[firstvindex]);
+                else firstvindex = vindex;
+                lastvindex = vindex;
             }
-            _cameraIconVertices = lines.take();
+            lines.push_back(vertices[lastvindex]);
+            lines.push_back(vertices[firstvindex]);
         }
-
-        LinePrimitive cameraPrimitives;
-        cameraPrimitives.setPositions(_cameraIconVertices);
-        cameraPrimitives.setUniformColor(ViewportSettings::getSettings().viewportColor(pipeline->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_CAMERAS));
-        if(!renderer->isImagePass())
-            cameraPrimitives.setLineWidth(renderer->defaultLinePickingWidth());
-
-        renderer->beginPickObject(pipeline);
-        renderer->renderLines(cameraPrimitives);
-        renderer->endPickObject();
+        _cameraIconVertices = lines.take();
     }
-    else {
-        // Add camera symbol to bounding box.
-        renderer->addToLocalBoundingBox(Box3(Point3::Origin(), scaling * 2));
-    }
+
+    // Always show the camera icon at the same size.
+    FloatType scaling = FloatType(0.3) * frameGraph.nonScalingSize(cameraPos);
+
+    std::unique_ptr<LinePrimitive> cameraPrimitive = std::make_unique<LinePrimitive>();
+    cameraPrimitive->setPositions(_cameraIconVertices);
+    cameraPrimitive->setUniformColor(ViewportSettings::getSettings().viewportColor(pipeline->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_CAMERAS));
+    frameGraph.addPrimitive(std::move(cameraPrimitive), cameraTM * AffineTransformation::scaling(scaling), Box3(Point3::Origin(), 2), pipeline);
 
     return {};
 }
@@ -323,7 +297,7 @@ PipelineStatus CameraVis::render(AnimationTime time, const ConstDataObjectPath& 
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 CameraVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 CameraVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
     // This is not a physical object. It doesn't have a size.
     return Box3(Point3::Origin(), Point3::Origin());

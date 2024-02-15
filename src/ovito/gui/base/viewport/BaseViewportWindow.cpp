@@ -25,12 +25,13 @@
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/viewport/Viewport.h>
-#include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include "BaseViewportWindow.h"
 
 namespace Ovito {
+
+IMPLEMENT_ABSTRACT_OVITO_CLASS(BaseViewportWindow);
 
 /******************************************************************************
 * Returns the input manager handling mouse events of the viewport (if any).
@@ -49,6 +50,25 @@ std::span<ViewportGizmo*> BaseViewportWindow::viewportGizmos()
         return std::span<ViewportGizmo*>{const_cast<ViewportGizmo**>(man->viewportGizmos().data()), man->viewportGizmos().size()};
     else
         return {};
+}
+
+/******************************************************************************
+* Handles show events.
+******************************************************************************/
+void BaseViewportWindow::showEvent(QShowEvent* event)
+{
+    // Schedule a rendering pass if the window becomes visible and an update request has been scheduled while it was hidden.
+    if(!event->spontaneous() && !userInterface().areViewportUpdatesSuspended())
+        resumeViewportUpdates();
+}
+
+/******************************************************************************
+* Handles hide events.
+******************************************************************************/
+void BaseViewportWindow::hideEvent(QHideEvent* event)
+{
+    // Release all renderer resources when the window becomes hidden.
+    releaseResources();
 }
 
 /******************************************************************************
@@ -84,7 +104,7 @@ void BaseViewportWindow::mousePressEvent(QMouseEvent* event)
 
     // Intercept mouse clicks on the viewport caption.
     if(contextMenuArea().contains(ViewportInputMode::getMousePosition(event))) {
-        inputManager()->requestContextMenu(viewport(), event->pos());
+        inputManager()->requestContextMenu(this, event->pos());
         return;
     }
 
@@ -114,13 +134,11 @@ void BaseViewportWindow::mouseReleaseEvent(QMouseEvent* event)
 ******************************************************************************/
 void BaseViewportWindow::mouseMoveEvent(QMouseEvent* event)
 {
-    if(contextMenuArea().contains(ViewportInputMode::getMousePosition(event)) && !_cursorInContextMenuArea && event->buttons() == Qt::NoButton) {
-        _cursorInContextMenuArea = true;
-        viewport()->updateViewport();
+    if(contextMenuArea().contains(ViewportInputMode::getMousePosition(event)) && event->buttons() == Qt::NoButton) {
+        setCursorInContextMenuArea(true);
     }
-    else if(!contextMenuArea().contains(ViewportInputMode::getMousePosition(event)) && _cursorInContextMenuArea) {
-        _cursorInContextMenuArea = false;
-        viewport()->updateViewport();
+    else if(!contextMenuArea().contains(ViewportInputMode::getMousePosition(event))) {
+        setCursorInContextMenuArea(false);
     }
 
     if(inputManager()) {
@@ -151,15 +169,12 @@ void BaseViewportWindow::wheelEvent(QWheelEvent* event)
 ******************************************************************************/
 void BaseViewportWindow::leaveEvent(QEvent* event)
 {
-    if(_cursorInContextMenuArea) {
-        _cursorInContextMenuArea = false;
-        viewport()->updateViewport();
-    }
+    setCursorInContextMenuArea(false);
     userInterface().clearStatusBarMessage();
 }
 
 /******************************************************************************
-* Is called when the widgets looses the input focus.
+* Is called when the widget looses the input focus.
 ******************************************************************************/
 void BaseViewportWindow::focusOutEvent(QFocusEvent* event)
 {
@@ -170,6 +185,14 @@ void BaseViewportWindow::focusOutEvent(QFocusEvent* event)
             });
         }
     }
+}
+
+/******************************************************************************
+* Is called when the widget is resized.
+******************************************************************************/
+void BaseViewportWindow::resizeEvent(QResizeEvent* event)
+{
+    requestUpdate();
 }
 
 /******************************************************************************
@@ -185,27 +208,6 @@ void BaseViewportWindow::keyPressEvent(QKeyEvent* event)
             });
         }
     }
-}
-
-/******************************************************************************
-* Renders custom GUI elements in the viewport on top of the scene.
-******************************************************************************/
-void BaseViewportWindow::renderGui(SceneRenderer* renderer)
-{
-    if(viewport()->renderPreviewMode()) {
-        // Render render frame.
-        renderRenderFrame(renderer);
-    }
-    else {
-        // Render orientation tripod.
-        renderOrientationIndicator(renderer);
-    }
-
-    // Render viewport caption.
-    if(isViewportTitleVisible())
-        _contextMenuArea = renderViewportTitle(renderer, _cursorInContextMenuArea);
-    else
-        _contextMenuArea = QRectF();
 }
 
 }   // End of namespace

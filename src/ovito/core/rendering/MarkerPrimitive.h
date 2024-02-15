@@ -26,13 +26,14 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
+#include "FrameGraphPrimitive.h"
 
 namespace Ovito {
 
 /**
  * \brief A point-like marker primitive to be rendered by a SceneRenderer implementation.
  */
-class OVITO_CORE_EXPORT MarkerPrimitive final
+class OVITO_CORE_EXPORT MarkerPrimitive final : public FrameGraphPrimitive
 {
     Q_GADGET
 
@@ -80,6 +81,14 @@ public:
 
     /// \brief Returns the display shape of markers.
     MarkerShape shape() const { return _shape; }
+
+	/// Computes the 3d bounding box of the primitive in local coordinate space.
+	virtual Box3 computeBoundingBox(const RendererResourceCache::ResourceFrame& visCache) const override {
+        auto& bb = visCache.lookup<Box3>(RendererResourceKey<struct MarkerBoundingBoxCache, ConstDataBufferPtr>{positions()});
+        if(bb.isEmpty() && positions())
+            bb = positions()->boundingBox3();
+        return bb;
+    }
 
 private:
 

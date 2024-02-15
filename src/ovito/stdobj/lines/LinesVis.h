@@ -107,16 +107,14 @@ public:
     };
     Q_ENUM(ColoringMode);
 
-    /// \brief Constructor.
+    /// Constructor.
     explicit LinesVis(ObjectInitializationFlags flags);
 
-    /// \brief Renders the associated data object.
-    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState,
-                                  SceneRenderer* renderer, const Pipeline* pipeline) override;
+    /// Renders the associated data object.
+    virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
 
-    /// \brief Computes the display bounding box of the data object.
-    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline,
-                             const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) override;
+    /// Computes the bounding box of the data object.
+    virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
 
 public:
     Q_PROPERTY(Ovito::LinesVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)

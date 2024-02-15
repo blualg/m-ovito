@@ -48,13 +48,13 @@ public:
     virtual InputModeType modeType() override { return ExclusiveMode; }
 
     /// \brief Handles the mouse down event for the given viewport.
-    virtual void mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    virtual void mousePressEvent(ViewportWindow* vpwin, QMouseEvent* event) override;
 
     /// \brief Handles the mouse up event for the given viewport.
-    virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    virtual void mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event) override;
 
     /// \brief Handles the mouse move event for the given viewport.
-    virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    virtual void mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event) override;
 
     /// \brief Returns the cursor that is used by OVITO's viewports to indicate a selection.
     static QCursor& selectionCursor() {

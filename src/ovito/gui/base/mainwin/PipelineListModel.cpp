@@ -664,6 +664,9 @@ QVariant PipelineListModel::data(const QModelIndex& index, int role) const
             if(item->itemType() != PipelineListItem::DataSource)
                 return object->isEnabled() ? Qt::Checked : Qt::Unchecked;
         }
+        else if(item->itemType() == PipelineListItem::DeletedVisualElement) {
+            return Qt::Unchecked; // This is to prevent the checkbox element from temporarily disappearing while the list of visual elements is being regenerated.
+        }
     }
     else if(role == CheckedRole) {
         if(ModificationNode* node = dynamic_object_cast<ModificationNode>(item->object()))
@@ -790,6 +793,7 @@ Qt::ItemFlags PipelineListModel::flags(const QModelIndex& index) const
                 return Qt::ItemIsDropEnabled;
             case PipelineListItem::DeletedObject:
             case PipelineListItem::DeletedDataObject:
+            case PipelineListItem::DeletedVisualElement:
                 return QAbstractListModel::flags(index); // Keep entries with deleted objects selectable to not loose the current selection before the model is updated.
             default:
                 return Qt::NoItemFlags;

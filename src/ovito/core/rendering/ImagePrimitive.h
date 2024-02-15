@@ -24,17 +24,27 @@
 
 
 #include <ovito/core/Core.h>
+#include "FrameGraphPrimitive.h"
 
 namespace Ovito {
 
 /**
  * \brief A 2d image to be rendered by a SceneRenderer implementation.
  */
-class OVITO_CORE_EXPORT ImagePrimitive final
+class OVITO_CORE_EXPORT ImagePrimitive final : public FrameGraphPrimitive
 {
     Q_GADGET
 
 public:
+
+    /// Default constructor.
+    ImagePrimitive() = default;
+
+    /// Constructor taking an image and a window rectangle.
+    ImagePrimitive(const QImage& image, const Box2& windowRect) : _image(image), _windowRect(windowRect) {}
+
+    /// Constructor taking an image and a window rectangle.
+    ImagePrimitive(const QImage& image, const QRectF& windowRect) : _image(image) { setRectWindow(windowRect); }
 
     /// \brief Sets the mage to be rendered.
     void setImage(const QImage& image) { _image = image; }
@@ -50,9 +60,6 @@ public:
 
     /// \brief Sets the destination rectangle for rendering the image in window coordinates.
     void setRectWindow(const QRectF& rect) { _windowRect.minc = Point2(rect.left(), rect.top()); _windowRect.maxc = Point2(rect.right(), rect.bottom()); }
-
-    /// \brief Sets the destination rectangle for rendering the image in viewport coordinates.
-    void setRectViewport(const SceneRenderer* renderer, const Box2& rect);
 
     /// \brief Returns the destination rectangle in window coordinates.
     const Box2& windowRect() const { return _windowRect; }

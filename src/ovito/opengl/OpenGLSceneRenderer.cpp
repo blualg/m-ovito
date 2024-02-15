@@ -29,9 +29,12 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/rendering/RenderSettings.h>
+#include <ovito/core/rendering/ColorCodingGradient.h>
+#include <ovito/core/rendering/FrameGraph.h>
 #include "OpenGLSceneRenderer.h"
 #include "OpenGLHelpers.h"
 #include "OpenGLShaderHelper.h"
+#include "OpenGLTexture.h"
 
 #include <QOffscreenSurface>
 #include <QSurface>
@@ -39,6 +42,7 @@
 #include <QScreen>
 #include <QOpenGLFunctions_3_0>
 #include <QOpenGLVersionFunctionsFactory>
+#include <QOpenGLTexture>
 #ifdef OVITO_DEBUG
     #include <QOpenGLDebugLogger>
 #endif
@@ -181,15 +185,18 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 }
 
 /******************************************************************************
-* This method is called just before renderFrame() is called.
+* Renders a single frame.
 ******************************************************************************/
-void OpenGLSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer)
+void OpenGLSceneRenderer::renderFrame(const FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
-    // Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
-    QRect openGLViewportRect(viewportRect.x() * antialiasingLevel(), viewportRect.y() * antialiasingLevel(), viewportRect.width() * antialiasingLevel(), viewportRect.height() * antialiasingLevel());
+    // Make sure we have a valid cache frame set for the resource manager during this render pass.
+    OVITO_ASSERT(hasCurrentResourceFrame());
 
-    SceneRenderer::beginFrame(time, scene, params, vp, openGLViewportRect, frameBuffer);
-    OVITO_ASSERT(isPickingPass() != isImagePass());
+    // Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
+    _viewportRect = QRect(viewportRect.x() * multisamplingLevel(), viewportRect.y() * multisamplingLevel(), viewportRect.width() * multisamplingLevel(), viewportRect.height() * multisamplingLevel());
+
+    // Adopt viewport projection parameters.
+    _projParams = frameGraph.projectionParams();
 
     // OpenGL rendering requires a Qt GUI application.
     if(!qobject_cast<QGuiApplication*>(QCoreApplication::instance())) {
@@ -198,6 +205,10 @@ void OpenGLSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const Vie
                 "Please use a different rendering backend or see https://docs.ovito.org/python/modules/ovito_vis.html#ovito.vis.OpenGLRenderer for instructions "
                 "on how to enable OpenGL rendering in Python script environments."));
     }
+
+    // Are we rendering the contents of an interactive viewport window?
+    _isInteractive = frameGraph.isInteractive();
+    OVITO_ASSERT(_isInteractive == (frameBuffer == nullptr));
 
     // Get the GL context being used for the current rendering pass.
     _glcontext = QOpenGLContext::currentContext();
@@ -264,32 +275,16 @@ void OpenGLSceneRenderer::beginFrame(AnimationTime time, Scene* scene, const Vie
     OVITO_ASSERT(glMultiDrawArrays); // glMultiDrawArrays() should always be available in desktop OpenGL 2.0+.
 #endif
 
-    // Set up a vertex array object (VAO). An active VAO is required during rendering according to the OpenGL core profile.
+    // Set up a vertex array object (VAO). An active VAO is required during rendering according to the OpenGL 3.2 core profile.
+    std::optional<QOpenGLVertexArrayObject> vertexArrayObject;
     if(glformat().majorVersion() >= 3) {
-        _vertexArrayObject = std::make_unique<QOpenGLVertexArrayObject>();
-        OVITO_CHECK_OPENGL(this, _vertexArrayObject->create());
-        OVITO_CHECK_OPENGL(this, _vertexArrayObject->bind());
+        vertexArrayObject.emplace();
+        OVITO_CHECK_OPENGL(this, vertexArrayObject->create());
+        OVITO_CHECK_OPENGL(this, vertexArrayObject->bind());
     }
     OVITO_REPORT_OPENGL_ERRORS(this);
 
-    // Make sure we have a valid frame set for the resource manager during this render pass.
-    OVITO_ASSERT(_currentResourceFrame != 0);
-
-    // Reset OpenGL state.
-    initializeGLState();
-
-    // Clear background.
-    clearFrameBuffer();
-    OVITO_REPORT_OPENGL_ERRORS(this);
-}
-
-/******************************************************************************
-* Puts the GL context into its default initial state before rendering
-* a frame begins.
-******************************************************************************/
-void OpenGLSceneRenderer::initializeGLState()
-{
-    // Set up OpenGL state.
+    // Put the GL context into its default initial state before rendering a frame begins.
     OVITO_CHECK_OPENGL(this, this->glDisable(GL_STENCIL_TEST));
     OVITO_CHECK_OPENGL(this, this->glDisable(GL_BLEND));
     OVITO_CHECK_OPENGL(this, this->glEnable(GL_DEPTH_TEST));
@@ -298,34 +293,33 @@ void OpenGLSceneRenderer::initializeGLState()
     OVITO_CHECK_OPENGL(this, this->glClearDepthf(1));
     OVITO_CHECK_OPENGL(this, this->glDepthMask(GL_TRUE));
     OVITO_CHECK_OPENGL(this, this->glDisable(GL_SCISSOR_TEST));
-    setClearColor(ColorA(0, 0, 0, 0));
 
     // Set up OpenGL render viewport.
-    OVITO_CHECK_OPENGL(this, this->glViewport(viewportRect().x(), viewportRect().y(), viewportRect().width(), viewportRect().height()));
+    OVITO_CHECK_OPENGL(this, this->glViewport(_viewportRect.x(), _viewportRect.y(), _viewportRect.width(), _viewportRect.height()));
 
-    // When rendering an interactive viewport, use viewport background color to clear frame buffer.
-    if(viewport() && viewport()->window() && isInteractive() && isImagePass()) {
-        if(!viewport()->renderPreviewMode())
-            setClearColor(Viewport::viewportColor(ViewportSettings::COLOR_VIEWPORT_BKG));
-        else
-            setClearColor(renderSettings().backgroundColorAt(time()));
+    // Clear frame buffer.
+    if(!isPickingPass()) {
+        OVITO_CHECK_OPENGL(this, this->glClearColor(frameGraph.clearColor().r(), frameGraph.clearColor().g(), frameGraph.clearColor().b(), frameGraph.clearColor().a()));
     }
     else {
-        if(isImagePass())
-            setClearColor(ColorA(renderSettings().backgroundColorAt(time()), 0));
+        OVITO_CHECK_OPENGL(this, this->glClearColor(0, 0, 0, 0));
     }
+    OVITO_CHECK_OPENGL(this, this->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT));
     OVITO_REPORT_OPENGL_ERRORS(this);
-}
 
-/******************************************************************************
-* This method is called after renderFrame() has been called.
-******************************************************************************/
-void OpenGLSceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewportRect)
-{
-    if(QOpenGLContext::currentContext()) {
-        initializeOpenGLFunctions();
-        OVITO_REPORT_OPENGL_ERRORS(this);
+    // Render 2d background graphics.
+    renderFrameGraph(frameGraph, RenderPass::BackgroundPass);
+
+    // Render opaque 3d geometry.
+    if(renderFrameGraph(frameGraph, RenderPass::SceneOpaquePass)) {
+
+        // Render translucent 3d geometry in a second pass.
+        renderTransparentGeometry(frameGraph);
     }
+
+    // Render forground graphics.
+    renderFrameGraph(frameGraph, RenderPass::ForegroundPass);
+
 #ifdef OVITO_DEBUG
     // Stop debug logger.
     if(_glcontext) {
@@ -334,68 +328,16 @@ void OpenGLSceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewpo
         }
     }
 #endif
-    _vertexArrayObject.reset();
     _glcontext = nullptr;
-
-    // Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
-    QRect openGLViewportRect(viewportRect.x() * antialiasingLevel(), viewportRect.y() * antialiasingLevel(), viewportRect.width() * antialiasingLevel(), viewportRect.height() * antialiasingLevel());
-
-    SceneRenderer::endFrame(renderingSuccessful, openGLViewportRect);
-}
-
-/******************************************************************************
-* Renders the current animation frame.
-******************************************************************************/
-bool OpenGLSceneRenderer::renderFrame(const QRect& viewportRect)
-{
-    makeContextCurrent();
-    OVITO_REPORT_OPENGL_ERRORS(this);
-
-    // Let the visual elements in the scene send their primitives to this renderer.
-    if(renderScene()) {
-        OVITO_REPORT_OPENGL_ERRORS(this);
-
-        // Render additional content that is only visible in the interactive viewports.
-        if(viewport() && isInteractive()) {
-            renderInteractiveContent();
-            OVITO_REPORT_OPENGL_ERRORS(this);
-        }
-
-        // Render translucent objects in a second pass.
-        renderTransparentGeometry();
-    }
-
-    return !this_task::isCanceled();
-}
-
-/******************************************************************************
-* Renders the overlays/underlays of the viewport into the framebuffer.
-******************************************************************************/
-bool OpenGLSceneRenderer::renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect)
-{
-    // Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
-    QRect openGLViewportRect(physicalViewportRect.x() * antialiasingLevel(), physicalViewportRect.y() * antialiasingLevel(), physicalViewportRect.width() * antialiasingLevel(), physicalViewportRect.height() * antialiasingLevel());
-
-    // Delegate rendering work to base class.
-    return SceneRenderer::renderOverlays(underlays, logicalViewportRect, openGLViewportRect);
 }
 
 /******************************************************************************
 * Renders all semi-transparent geometry in a second rendering pass.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderTransparentGeometry()
+void OpenGLSceneRenderer::renderTransparentGeometry(const FrameGraph& frameGraph)
 {
-    // Skip this step if there are no semi-transparent objects in the scene.
-    if(_translucentParticles.empty() && _translucentCylinders.empty() && _translucentMeshes.empty()) {
-        _oitFramebuffer.reset();
-        return;
-    }
-
-    // Restore GL context.
-    makeContextCurrent();
-
     // Transparency should never play a role in a picking render pass.
-    OVITO_ASSERT(isImagePass());
+    OVITO_ASSERT(!isPickingPass());
 
     // Prepare for order-independent transparency pass.
     if(orderIndependentTransparency()) {
@@ -429,8 +371,8 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
         OVITO_CHECK_OPENGL(this, this->glDrawBuffers(2, drawBuffersList));
 
         // Clear the contents of the OIT buffer.
-        setClearColor(ColorA(0, 0, 0, 1));
-        clearFrameBuffer(false, false);
+        OVITO_CHECK_OPENGL(this, this->glClearColor(0, 0, 0, 1));
+        OVITO_CHECK_OPENGL(this, this->glClear(GL_COLOR_BUFFER_BIT));
 
         // Blit depth buffer from primary FBO to transparency FBO.
         OVITO_CHECK_OPENGL(this, this->glBindFramebuffer(GL_READ_FRAMEBUFFER, _primaryFramebuffer));
@@ -445,27 +387,9 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
         OVITO_CHECK_OPENGL(this, this->glBlendEquation(GL_FUNC_ADD));
         OVITO_CHECK_OPENGL(this, this->glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ZERO, GL_ONE_MINUS_SRC_ALPHA));
     }
-    _isTransparencyPass = true;
 
-    for(const auto& [tm, primitive] : _translucentParticles) {
-        setWorldTransform(tm);
-        renderParticlesImplementation(primitive);
-    }
-    _translucentParticles.clear();
+    renderFrameGraph(frameGraph, RenderPass::SceneTransparencyPass);
 
-    for(const auto& [tm, primitive] : _translucentCylinders) {
-        setWorldTransform(tm);
-        renderCylindersImplementation(primitive);
-    }
-    _translucentCylinders.clear();
-
-    for(const auto& [tm, primitive] : _translucentMeshes) {
-        setWorldTransform(tm);
-        renderMeshImplementation(primitive);
-    }
-    _translucentMeshes.clear();
-
-    _isTransparencyPass = false;
     if(orderIndependentTransparency()) {
 
         // Switch back to the primary rendering buffer.
@@ -477,8 +401,7 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
         OVITO_CHECK_OPENGL(this, this->glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE));
 
         // Perform 2D compositing step.
-        setDepthTestEnabled(false);
-        rebindVAO();
+        this->glDisable(GL_DEPTH_TEST);
 
         // Activate the OpenGL shader program for drawing a screen-filling quad.
         OpenGLShaderHelper shader(this);
@@ -503,20 +426,8 @@ void OpenGLSceneRenderer::renderTransparentGeometry()
         this->glBindTexture(GL_TEXTURE_2D, 0);
         this->glDepthMask(GL_TRUE);
         this->glDisable(GL_BLEND);
-        setDepthTestEnabled(true);
+        this->glEnable(GL_DEPTH_TEST);
     }
-}
-
-/******************************************************************************
-* Makes the renderer's GL context current.
-******************************************************************************/
-void OpenGLSceneRenderer::makeContextCurrent()
-{
-#ifndef Q_OS_WASM
-    OVITO_ASSERT(glcontext());
-    if(!glcontext()->makeCurrent(_glsurface))
-        throw RendererException(tr("Failed to make OpenGL context current."));
-#endif
 }
 
 /******************************************************************************
@@ -539,21 +450,85 @@ const char* OpenGLSceneRenderer::openglErrorString(GLenum errorCode)
 }
 
 /******************************************************************************
-* Renders the line primitives stored in the given buffer.
+* Executes the rendering commands stored in the given frame graph.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderLines(const LinePrimitive& primitive)
+bool OpenGLSceneRenderer::renderFrameGraph(const FrameGraph& frameGraph, RenderPass renderPass)
 {
-    renderLinesImplementation(primitive);
+    _currentRenderPass = renderPass;
+    bool hasTransparentGeometry = false;
+    bool skipCommands = false;
+    if(currentRenderPass() == RenderPass::ForegroundPass)
+        skipCommands = true;
+
+    for(const FrameGraph::RenderingCommand& command : frameGraph.commands()) {
+
+        if(currentRenderPass() == RenderPass::BackgroundPass) {
+            if(!command.skipDepthTesting())
+                return false;
+        }
+        else if(currentRenderPass() == RenderPass::ForegroundPass) {
+            if(!command.skipDepthTesting())
+                skipCommands = false;
+        }
+
+        if(skipCommands)
+            continue;
+
+        if(command.skipDepthTesting()) {
+            if(currentRenderPass() == RenderPass::SceneOpaquePass || currentRenderPass() == RenderPass::SceneTransparencyPass)
+                continue;
+            OVITO_CHECK_OPENGL(this, glDisable(GL_DEPTH_TEST));
+        }
+        else {
+            if(currentRenderPass() == RenderPass::BackgroundPass || currentRenderPass() == RenderPass::ForegroundPass)
+                continue;
+            OVITO_CHECK_OPENGL(this, glEnable(GL_DEPTH_TEST));
+        }
+
+        if(command.modelWorldTM() != AffineTransformation::Zero()) {
+            _preprojectedCoordinates = false;
+            _modelViewTM = projParams().viewMatrix * command.modelWorldTM();
+        }
+        else {
+            _preprojectedCoordinates = true;
+            _modelViewTM.setZero();
+        }
+
+        if(const ParticlePrimitive* primitive = dynamic_cast<const ParticlePrimitive*>(command.primitive())) {
+            hasTransparentGeometry |= renderParticles(*primitive);
+        }
+        else if(const CylinderPrimitive* primitive = dynamic_cast<const CylinderPrimitive*>(command.primitive())) {
+            hasTransparentGeometry |= renderCylinders(*primitive);
+        }
+        else if(const MeshPrimitive* primitive = dynamic_cast<const MeshPrimitive*>(command.primitive())) {
+            hasTransparentGeometry |= renderMesh(*primitive);
+        }
+        else if(currentRenderPass() != RenderPass::SceneTransparencyPass) {
+            if(const LinePrimitive* primitive = dynamic_cast<const LinePrimitive*>(command.primitive())) {
+                renderLinesImplementation(*primitive);
+            }
+            else if(const ImagePrimitive* primitive = dynamic_cast<const ImagePrimitive*>(command.primitive())) {
+                renderImageImplementation(*primitive);
+            }
+            else if(const MarkerPrimitive* primitive = dynamic_cast<const MarkerPrimitive*>(command.primitive())) {
+                renderMarkersImplementation(*primitive);
+            }
+        }
+        OVITO_REPORT_OPENGL_ERRORS(this);
+    }
+    return hasTransparentGeometry;
 }
 
 /******************************************************************************
-* Renders the particles stored in the given buffer.
+* Renders a particles primitive.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
+bool OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
 {
     // Render particles immediately if they are all fully opaque. Otherwise defer rendering to a later time.
-    if(!isImagePass() || !primitive.transparencies())
+    if(isPickingPass() || !primitive.transparencies() || currentRenderPass() == RenderPass::SceneTransparencyPass) {
         renderParticlesImplementation(primitive);
+        return false;
+    }
     else {
         if(orderIndependentTransparency()) {
             // The order-independent transparency method does not support fully opaque geometry (transparency=0) very well.
@@ -563,8 +538,8 @@ void OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
                 ConstDataBufferPtr opaqueIndices;
                 bool initialized = false;
             };
-            auto& cache = OpenGLResourceManager::instance()->lookup<OpaqueParticlesCache>(
-                RendererResourceKey<struct OpaqueParticlesCacheKey, ConstDataBufferPtr, ConstDataBufferPtr>(primitive.transparencies(), primitive.indices()), currentResourceFrame());
+            auto& cache = currentResourceFrame().lookup<OpaqueParticlesCache>(
+                RendererResourceKey<struct OpaqueParticlesCacheKey, ConstDataBufferPtr, ConstDataBufferPtr>(primitive.transparencies(), primitive.indices()));
             if(!cache.initialized) {
                 cache.initialized = true;
                 // Are there any particles having a non-positive transparency value?
@@ -593,56 +568,34 @@ void OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
                 renderParticlesImplementation(opaqueParticles);
             }
         }
-        _translucentParticles.emplace_back(worldTransform(), primitive);
+        return true;
     }
 }
 
 /******************************************************************************
-* Renders the text stored in the given buffer.
+* Renders a cylinders primitive.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderText(const TextPrimitive& primitive)
-{
-    renderTextDefaultImplementation(primitive);
-}
-
-/******************************************************************************
-* Renders the 2d image stored in the given buffer.
-******************************************************************************/
-void OpenGLSceneRenderer::renderImage(const ImagePrimitive& primitive)
-{
-    renderImageImplementation(primitive);
-}
-
-/******************************************************************************
-* Renders the cylinders stored in the given buffer.
-******************************************************************************/
-void OpenGLSceneRenderer::renderCylinders(const CylinderPrimitive& primitive)
+bool OpenGLSceneRenderer::renderCylinders(const CylinderPrimitive& primitive)
 {
     // Render primitives immediately if they are all fully opaque. Otherwise defer rendering to a later time.
-    if(!isImagePass() || !primitive.transparencies())
+    if(isPickingPass() || !primitive.transparencies() || currentRenderPass() == RenderPass::SceneTransparencyPass) {
         renderCylindersImplementation(primitive);
-    else
-        _translucentCylinders.emplace_back(worldTransform(), primitive);
+        return false;
+    }
+    return true;
 }
 
 /******************************************************************************
-* Renders the markers stored in the given buffer.
+* Renders a triangle mesh primitive.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderMarkers(const MarkerPrimitive& primitive)
-{
-    renderMarkersImplementation(primitive);
-}
-
-/******************************************************************************
-* Renders the triangle mesh stored in the given buffer.
-******************************************************************************/
-void OpenGLSceneRenderer::renderMesh(const MeshPrimitive& primitive)
+bool OpenGLSceneRenderer::renderMesh(const MeshPrimitive& primitive)
 {
     // Render mesh immediately if it is fully opaque. Otherwise defer rendering to a later time.
-    if(!isImagePass() || primitive.isFullyOpaque())
+    if(isPickingPass() || currentRenderPass() == RenderPass::SceneTransparencyPass || primitive.isFullyOpaque()) {
         renderMeshImplementation(primitive);
-    else
-        _translucentMeshes.emplace_back(worldTransform(), primitive);
+        return false;
+    }
+    return true;
 }
 
 /******************************************************************************
@@ -659,7 +612,7 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
     OVITO_ASSERT(QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Fragment));
 
     // Are we doing the transparency pass for "Weighted Blended Order-Independent Transparency"?
-    bool isWBOITPass = (_isTransparencyPass && orderIndependentTransparency());
+    bool isWBOITPass = (currentRenderPass() == RenderPass::SceneTransparencyPass && orderIndependentTransparency());
 
     // Compile a modified version of each shader for the transparency pass.
     // This is accomplished by giving the shader a unique identifier.
@@ -1029,37 +982,7 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
     OVITO_REPORT_OPENGL_ERRORS(this);
 }
 
-/******************************************************************************
-* Sets the frame buffer background color.
-******************************************************************************/
-void OpenGLSceneRenderer::setClearColor(const ColorA& color)
-{
-    OVITO_CHECK_OPENGL(this, this->glClearColor(color.r(), color.g(), color.b(), color.a()));
-}
-
-/******************************************************************************
-* Clears the frame buffer contents.
-******************************************************************************/
-void OpenGLSceneRenderer::clearFrameBuffer(bool clearDepthBuffer, bool clearStencilBuffer)
-{
-    OVITO_CHECK_OPENGL(this, this->glClear(GL_COLOR_BUFFER_BIT |
-            (clearDepthBuffer ? GL_DEPTH_BUFFER_BIT : 0) |
-            (clearStencilBuffer ? GL_STENCIL_BUFFER_BIT : 0)));
-}
-
-/******************************************************************************
-* Temporarily enables/disables the depth test while rendering.
-******************************************************************************/
-void OpenGLSceneRenderer::setDepthTestEnabled(bool enabled)
-{
-    if(enabled) {
-        OVITO_CHECK_OPENGL(this, this->glEnable(GL_DEPTH_TEST));
-    }
-    else {
-        OVITO_CHECK_OPENGL(this, this->glDisable(GL_DEPTH_TEST));
-    }
-}
-
+#if 0 // TODO
 /******************************************************************************
 * Activates the special highlight rendering mode.
 ******************************************************************************/
@@ -1093,6 +1016,7 @@ void OpenGLSceneRenderer::setHighlightMode(int pass)
         this->glDisable(GL_STENCIL_TEST);
     }
 }
+#endif
 
 /******************************************************************************
 * Reports OpenGL error status codes.
@@ -1105,6 +1029,70 @@ void OpenGLSceneRenderer::checkOpenGLErrorStatus(const char* command, const char
                 "in line" << sourceLine << "of file" << sourceFile
                 << "with error" << OpenGLSceneRenderer::openglErrorString(error);
     }
+}
+
+/******************************************************************************
+* Create an OpenGL texture object for a QImage.
+******************************************************************************/
+QOpenGLTexture* OpenGLSceneRenderer::uploadImage(const QImage& image, QOpenGLTexture::MipMapGeneration genMipMaps)
+{
+    OVITO_ASSERT(!image.isNull());
+
+    // Check if this image has already been uploaded to the GPU.
+    RendererResourceKey<struct ImageCache, quint64, QOpenGLContextGroup*> cacheKey{ image.cacheKey(), QOpenGLContextGroup::currentContextGroup() };
+    std::unique_ptr<OpenGLTexture>& texture = currentResourceFrame().lookup<std::unique_ptr<OpenGLTexture>>(cacheKey);
+
+    // Create the texture object.
+    if(!texture || !texture->isCreated()) {
+        texture = std::make_unique<OpenGLTexture>(image, genMipMaps);
+        if(genMipMaps == QOpenGLTexture::DontGenerateMipMaps) {
+            texture->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
+        }
+    }
+
+    return texture.get();
+}
+
+/******************************************************************************
+* Creates a 1-D OpenGL texture object for a ColorCodingGradient.
+******************************************************************************/
+QOpenGLTexture* OpenGLSceneRenderer::uploadColorMap(ColorCodingGradient* gradient)
+{
+    // Check if this color map has already been uploaded to the GPU.
+    RendererResourceKey<struct ColorMapCache, OORef<ColorCodingGradient>, QOpenGLContextGroup*> cacheKey{ gradient, QOpenGLContextGroup::currentContextGroup() };
+    std::unique_ptr<OpenGLTexture>& texture = currentResourceFrame().lookup<std::unique_ptr<OpenGLTexture>>(cacheKey);
+
+    if(!texture || !texture->isCreated()) {
+        // Sample the color gradient to produce a row of RGB pixel data.
+        int resolution;
+        std::vector<uint8_t> pixelData;
+
+        if(gradient) {
+            resolution = 256;
+            pixelData.resize(resolution * 3);
+            for(int x = 0; x < resolution; x++) {
+                Color c = gradient->valueToColor((FloatType)x / (resolution - 1));
+                pixelData[x * 3 + 0] = (uint8_t)(255 * c.r());
+                pixelData[x * 3 + 1] = (uint8_t)(255 * c.g());
+                pixelData[x * 3 + 2] = (uint8_t)(255 * c.b());
+            }
+        }
+        else {
+            resolution = 1;
+            pixelData.resize(3, 255);
+        }
+
+        // Create the 1-d texture object.
+        texture = std::make_unique<OpenGLTexture>(QOpenGLTexture::Target1D);
+        texture->setFormat(QOpenGLTexture::RGB8_UNorm);
+        texture->setSize(resolution);
+        texture->allocateStorage(QOpenGLTexture::RGB, QOpenGLTexture::UInt8);
+        texture->setAutoMipMapGenerationEnabled(true);
+        texture->setWrapMode(QOpenGLTexture::ClampToEdge);
+        texture->setData(QOpenGLTexture::RGB, QOpenGLTexture::UInt8, pixelData.data());
+    }
+
+    return texture.get();
 }
 
 }   // End of namespace

@@ -273,8 +273,12 @@ public:
     /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
     virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
 
-    /// \brief Returns the title of this object.
+    /// Returns the title of this object.
     virtual QString objectTitle() const override { return tr("Simulation cell"); }
+
+    /// Wraps the input coordinates at the periodic boundaries of the cell.
+    /// The wrapped coordinates are returned as a new DataBuffer object.
+    ConstPropertyPtr wrapPoints(const Property* inputPositions) const;
 
 protected:
 

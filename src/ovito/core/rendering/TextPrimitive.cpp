@@ -44,16 +44,6 @@ static void ensureFontRenderingCapability()
 }
 
 /******************************************************************************
-* Sets the destination rectangle for rendering the image in viewport coordinates.
-******************************************************************************/
-void TextPrimitive::setPositionViewport(const SceneRenderer* renderer, const Point2& pos)
-{
-    QSize windowSize = renderer->viewportRect().size();
-    Point2 pwin((pos.x() + 1.0) * windowSize.width() / 2.0, (-pos.y() + 1.0) * windowSize.height() / 2.0);
-    setPositionWindow(pwin);
-}
-
-/******************************************************************************
 * Determines whether the text primitive uses rich text formatting or not.
 ******************************************************************************/
 Qt::TextFormat TextPrimitive::resolvedTextFormat() const

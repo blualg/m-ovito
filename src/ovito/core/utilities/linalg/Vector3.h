@@ -103,10 +103,10 @@ public:
     /////////////////////////////// Constructors /////////////////////////////////
 
     /// Constructs a vector without initializing its components. The components will have an undefined value!
-    Vector_3() = default;
+    Vector_3() noexcept = default;
 
     /// Constructs a vector with all three components initialized to the given value.
-    Q_DECL_CONSTEXPR explicit Vector_3(T val) :
+    Q_DECL_CONSTEXPR explicit Vector_3(T val) noexcept :
 #ifndef OVITO_USE_SYCL
         base_type{{val,val,val}} {}
 #else
@@ -114,7 +114,7 @@ public:
 #endif
 
     /// Initializes the components of the vector with the given values.
-    Q_DECL_CONSTEXPR Vector_3(T x, T y, T z) :
+    Q_DECL_CONSTEXPR Vector_3(T x, T y, T z) noexcept :
 #ifndef OVITO_USE_SYCL
         base_type{{x, y, z}} {}
 #else
@@ -122,7 +122,7 @@ public:
 #endif
 
     /// Initializes the vector to the null vector. All components are set to zero.
-    Q_DECL_CONSTEXPR Vector_3(Zero) :
+    Q_DECL_CONSTEXPR Vector_3(Zero) noexcept :
 #ifndef OVITO_USE_SYCL
         base_type{{T(0), T(0), T(0)}} {}
 #else
@@ -130,10 +130,10 @@ public:
 #endif
 
     /// Initializes the vector from an array.
-    Q_DECL_CONSTEXPR explicit Vector_3(const base_type& a) : base_type(a) {}
+    Q_DECL_CONSTEXPR explicit Vector_3(const base_type& a) noexcept : base_type(a) {}
 
     /// Conversion constructor from a Qt vector.
-    Q_DECL_CONSTEXPR Vector_3(const QVector3D& v) :
+    Q_DECL_CONSTEXPR Vector_3(const QVector3D& v) noexcept :
 #ifndef OVITO_USE_SYCL
         base_type{{T(v.x()), T(v.y()), T(v.z())}} {}
 #else
@@ -142,7 +142,7 @@ public:
 
     /// Casts the vector to another component type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, Vector_3<U>, const Vector_3<T>&> {
+    Q_DECL_CONSTEXPR auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Vector_3<U>, const Vector_3<T>&> {
         if constexpr(!std::is_same_v<T,U>)
             return Vector_3<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()));
         else

@@ -123,6 +123,7 @@ namespace Ovito
     class MultiDelegatingModifier;
     class AbstractCameraObject;
     class AbstractCameraSource;
+    class FrameGraph;
     class SceneRenderer;
     class ObjectPickInfo;
     class ViewportPickResult;
@@ -142,16 +143,16 @@ namespace Ovito
     struct ViewProjectionParameters;
     class ViewportOverlay;
     class ViewportGizmo;
-    class ViewportWindowInterface;
+    class ViewportWindow;
     class FileImporter;
     class FileImporterClass;
     class FileExporter;
     class FileExporterClass;
     class FileSource;
     class FileSourceImporter;
-    class MixedKeyCache;
     class RegisteredBufferAccess;
     class ScenePreparation;
+    class ColorCodingGradient;
 
     class ViewportInputManager;   // Note: This class is defined in another plugin module (GuiBase).
     class ActionManager;          // Note: This class is defined in another plugin module (GuiBase).

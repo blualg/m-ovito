@@ -193,7 +193,7 @@ public:
     /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
     virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const;
 
-    /// Sets the pipeline stage that created this data object.
+    /// Sets the PipelineNode that created this data object.
     template<typename T>
     void setCreatedByNode(const T* node) {
         setCreatedByNode(node ? std::static_pointer_cast<const RefTarget>(node->shared_from_this()) : OOWeakRef<const RefTarget>{});
@@ -233,7 +233,7 @@ private:
     /// The attached visual elements that are responsible for rendering this object's data.
     DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, visElements, setVisElements, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_MEMORIZE);
 
-    /// The pipeline stage that created this data object (may be null).
+    /// The PipelineNode that created this data object (may be null).
     DECLARE_RUNTIME_PROPERTY_FIELD(OOWeakRef<const RefTarget>, createdByNode, setCreatedByNode);
 
     /// The attached editable proxy object.

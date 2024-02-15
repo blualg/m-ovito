@@ -59,7 +59,7 @@ BondsVis::BondsVis(ObjectInitializationFlags flags) : DataVis(flags),
 /******************************************************************************
 * Computes the bounding box of the visual element.
 ******************************************************************************/
-Box3 BondsVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 BondsVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
     const Bonds* bonds = path.lastAs<Bonds>(0);
     const Particles* particles = path.lastAs<Particles>(1);
@@ -142,7 +142,7 @@ Box3 BondsVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, 
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus BondsVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
+PipelineStatus BondsVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     if(renderer->isBoundingBoxPass()) {
         TimeInterval validityInterval;

@@ -44,7 +44,7 @@ class OVITO_CORE_EXPORT SelectionSet : public RefTarget
 public:
 
     /// \brief Creates an empty selection set.
-    explicit SelectionSet(ObjectInitializationFlags flags) : RefTarget(flags) {}
+    using RefTarget::RefTarget;
 
     /// \brief Adds a scene node to this selection set.
     /// \param node The node to be added.

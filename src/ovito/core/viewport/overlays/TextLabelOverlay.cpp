@@ -22,7 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/viewport/Viewport.h>
-#include <ovito/core/rendering/RenderSettings.h>
+#include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/utilities/concurrent/SharedFuture.h>
@@ -125,26 +125,26 @@ QVariant TextLabelOverlay::getPipelineEditorShortInfo(Scene* scene) const
 /******************************************************************************
 * Lets the overlay paint its contents into the framebuffer.
 ******************************************************************************/
-void TextLabelOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect)
+void TextLabelOverlay::render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams)
 {
-    if(!renderer->waitForLongOperationsEnabled()) {
-        const PipelineFlowState& flowState = pipeline() ? pipeline()->evaluatePipelineSynchronous(renderer->time(), true) : PipelineFlowState();
-        renderImplementation(renderer, physicalViewportRect, flowState);
+    if(frameGraph.isInteractive()) {
+        const PipelineFlowState& flowState = pipeline() ? pipeline()->evaluatePipelineSynchronous(frameGraph.time(), true) : PipelineFlowState();
+        renderImplementation(frameGraph, physicalViewportRect, flowState);
     }
     else {
         // Check alignment parameter.
         checkAlignmentParameterValue(alignment());
 
         if(pipeline()) {
-            PipelineEvaluationRequest request(renderer->time());
-            request.setThrowOnError(renderer->renderSettings().stopOnPipelineError());
+            PipelineEvaluationRequest request(frameGraph.time());
+            request.setThrowOnError(frameGraph.stopOnPipelineError());
             PipelineEvaluationFuture pipelineEvaluation = pipeline()->evaluatePipeline(request);
             if(!pipelineEvaluation.waitForFinished())
                 return;
-            renderImplementation(renderer, physicalViewportRect, pipelineEvaluation.result());
+            renderImplementation(frameGraph, physicalViewportRect, pipelineEvaluation.result());
         }
         else {
-            renderImplementation(renderer, physicalViewportRect, {});
+            renderImplementation(frameGraph, physicalViewportRect, {});
         }
     }
 }
@@ -152,7 +152,7 @@ void TextLabelOverlay::render(SceneRenderer* renderer, const QRect& logicalViewp
 /******************************************************************************
 * This method paints the overlay contents onto the given canvas.
 ******************************************************************************/
-void TextLabelOverlay::renderImplementation(SceneRenderer* renderer, const QRect& viewportRect, const PipelineFlowState& flowState)
+void TextLabelOverlay::renderImplementation(FrameGraph& frameGraph, const QRect& viewportRect, const PipelineFlowState& flowState)
 {
     // Resolve the label text.
     QString textString = labelText();
@@ -182,19 +182,21 @@ void TextLabelOverlay::renderImplementation(SceneRenderer* renderer, const QRect
         return;
 
     // Prepare the text rendering primitive.
-    TextPrimitive textPrimitive;
-    textPrimitive.setColor(textColor());
-    if(outlineEnabled()) textPrimitive.setOutlineColor(outlineColor());
-    textPrimitive.setAlignment(alignment());
-    textPrimitive.setText(std::move(textString));
-    textPrimitive.setTextFormat(Qt::AutoText);
+    std::unique_ptr<TextPrimitive> textPrimitive = std::make_unique<TextPrimitive>();
+    textPrimitive->setColor(textColor());
+    if(outlineEnabled())
+        textPrimitive->setOutlineColor(outlineColor());
+    textPrimitive->setAlignment(alignment());
+    textPrimitive->setText(std::move(textString));
+    textPrimitive->setTextFormat(Qt::AutoText);
 
     // Resolve the font used by the label.
     FloatType fontSize = this->fontSize() * viewportRect.height();
-    if(fontSize <= 0) return;
+    if(fontSize <= 0)
+        return;
     QFont font = this->font();
-    font.setPointSizeF(fontSize / renderer->devicePixelRatio()); // Font size if always in logical coordinates.
-    textPrimitive.setFont(std::move(font));
+    font.setPointSizeF(fontSize / frameGraph.devicePixelRatio()); // Font size if always in logical coordinates.
+    textPrimitive->setFont(std::move(font));
 
     // Add an inset to the framebuffer rect.
     int margins = (int)fontSize;
@@ -212,12 +214,8 @@ void TextLabelOverlay::renderImplementation(SceneRenderer* renderer, const QRect
     else pos.y() = marginRect.top();
 
     // Compute final positions.
-    textPrimitive.setPositionWindow(pos + Vector2(offsetX() * viewportRect.width(), -offsetY() * viewportRect.height()));
-
-    // Paint the image into the output framebuffer.
-    renderer->setDepthTestEnabled(false);
-    renderer->renderText(textPrimitive);
-    renderer->setDepthTestEnabled(true);
+    textPrimitive->setPositionWindow(pos + Vector2(offsetX() * viewportRect.width(), -offsetY() * viewportRect.height()));
+    frameGraph.addCommand(std::move(textPrimitive));
 }
 
 }   // End of namespace

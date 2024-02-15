@@ -23,6 +23,7 @@
 #include <ovito/gui/base/GUIBase.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
+#include <ovito/core/viewport/ViewportWindow.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/UserInterface.h>
@@ -99,7 +100,7 @@ void ViewportInputMode::setCursor(const QCursor& cursor)
 /******************************************************************************
 * Handles the mouse down event for the given viewport.
 ******************************************************************************/
-void ViewportInputMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void ViewportInputMode::mousePressEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
     _lastMousePressEvent.reset();
     ViewportInputManager* manager = inputManager();
@@ -135,7 +136,7 @@ void ViewportInputMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEv
 /******************************************************************************
 * Handles the mouse up event for the given viewport.
 ******************************************************************************/
-void ViewportInputMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void ViewportInputMode::mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
     _lastMousePressEvent.reset();
 }
@@ -143,7 +144,7 @@ void ViewportInputMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouse
 /******************************************************************************
 * Handles the mouse move event for the given viewport.
 ******************************************************************************/
-void ViewportInputMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void ViewportInputMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
     if(_lastMousePressEvent && (event->pos() - _lastMousePressEvent->pos()).manhattanLength() > 2) {
         if(this != inputManager()->orbitMode()) {
@@ -159,7 +160,7 @@ void ViewportInputMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEve
 /******************************************************************************
 * Handles the mouse wheel event for the given viewport.
 ******************************************************************************/
-void ViewportInputMode::wheelEvent(ViewportWindowInterface* vpwin, QWheelEvent* event)
+void ViewportInputMode::wheelEvent(ViewportWindow* vpwin, QWheelEvent* event)
 {
     _lastMousePressEvent.reset();
 
@@ -172,7 +173,7 @@ void ViewportInputMode::wheelEvent(ViewportWindowInterface* vpwin, QWheelEvent* 
 /******************************************************************************
 * Handles the mouse double-click events for the given viewport.
 ******************************************************************************/
-void ViewportInputMode::mouseDoubleClickEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void ViewportInputMode::mouseDoubleClickEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
     _lastMousePressEvent.reset();
     if(event->button() == Qt::LeftButton) {
@@ -185,7 +186,7 @@ void ViewportInputMode::mouseDoubleClickEvent(ViewportWindowInterface* vpwin, QM
 /******************************************************************************
 * Handles the mouse up event for the given viewport.
 ******************************************************************************/
-void ViewportInputMode::focusOutEvent(ViewportWindowInterface* vpwin, QFocusEvent* event)
+void ViewportInputMode::focusOutEvent(ViewportWindow* vpwin, QFocusEvent* event)
 {
     _lastMousePressEvent.reset();
 }

@@ -66,7 +66,7 @@ public:
     /// \param time The animation at which hit testing is performed.
     /// \param result The output structure that receives information about the picked particle.
     /// \return \c true if a particle has been picked; \c false otherwise.
-    bool pickParticle(ViewportWindowInterface* vpwin, const QPoint& clickPoint, PickResult& result);
+    bool pickParticle(ViewportWindow* vpwin, const QPoint& clickPoint, PickResult& result);
 
     /// \brief Renders the particle selection overlay in a viewport.
     /// \param vp The viewport into which the selection marker should be rendered.

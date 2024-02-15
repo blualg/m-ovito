@@ -52,7 +52,7 @@ public:
     virtual void sceneNodeAdded(SceneNode* node) override;
 
     /// Lets the overlay paint its contents into the framebuffer.
-    virtual void render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect) override;
+    virtual void render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams) override;
 
     /// Moves the position of the overlay in the viewport by the given amount,
     /// which is specified as a fraction of the viewport render size.
@@ -73,7 +73,7 @@ protected:
 private:
 
     /// This method paints the overlay contents onto the given canvas.
-    void renderImplementation(SceneRenderer* renderer, const QRect& targetRect, const PipelineFlowState& flowState);
+    void renderImplementation(FrameGraph& frameGraph, const QRect& targetRect, const PipelineFlowState& flowState);
 
     /// The corner of the viewport where the label is shown in.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, alignment, setAlignment, PROPERTY_FIELD_MEMORIZE);

@@ -41,7 +41,7 @@ class OVITO_CORE_EXPORT ViewportConfiguration : public RefTarget
 public:
 
     /// Constructor.
-    explicit ViewportConfiguration(ObjectInitializationFlags flags);
+    using RefTarget::RefTarget;
 
     /// Registers a viewport with the configuration object so that it takes part in the automatic viewport refresh mechanism.
     /// This method is currently used in the implementation of the Viewport.create_qt_widget() Python method.
@@ -59,14 +59,14 @@ public:
         return viewportRects;
     }
 
-    /// \brief Zooms all viewports to the extents of the currently selected nodes.
+    /// Zooms all viewports to the extents of the currently selected nodes.
     void zoomToSelectionExtents();
 
-    /// \brief Zooms to the extents of the scene.
+    /// Zooms to the extents of the scene.
     void zoomToSceneExtents();
 
-    /// \brief Zooms all viewports to the extents of the scene
-    ///        when all scene pipelines have been fully evaluated and the extents are known.
+    /// Zooms all viewports to the extents of the scene when all scene pipelines
+    /// have been fully evaluated and the extents are known.
     void zoomToSceneExtentsWhenReady();
 
 protected:

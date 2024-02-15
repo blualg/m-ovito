@@ -69,12 +69,12 @@ public:
     explicit Lines(ObjectInitializationFlags flags);
 
     std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
-                                                                        MixedKeyCache& visCache) const override;
+                                                                        const RendererResourceCache::ResourceFrame& visCache) const override;
 
 private:
+
     /// Tests whether the given spatial point is culled by the cutting planes set for this object.
-    bool isPointCulled(const Point3& p) const
-    {
+    bool isPointCulled(const Point3& p) const {
         for(const Plane3& plane : cuttingPlanes()) {
             if(plane.classifyPoint(p) > 0) {
                 return true;

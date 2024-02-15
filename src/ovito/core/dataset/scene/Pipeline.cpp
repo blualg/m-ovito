@@ -423,16 +423,14 @@ void Pipeline::getDataObjectBoundingBox(AnimationTime time, const DataObject* da
         // Let the pipeline substitude the vis element with another one.
         vis = getReplacementVisElement(vis);
         if(vis->isEnabled()) {
-            MixedKeyCache& visCache = Application::instance()->visCache();
-
             // Push the data object onto the stack.
             if(!isOnStack) {
                 dataObjectPath.push_back(dataObj);
                 isOnStack = true;
             }
             try {
-                // Let the vis element do the rendering.
-                bb.addBox(vis->boundingBox(time, dataObjectPath, this, state, visCache, validity));
+                // Let the vis element compute the bounding box in local coordinates.
+                bb.addBox(vis->boundingBoxImmediate(time, dataObjectPath, this, state, validity));
             }
             catch(const Exception& ex) {
                 ex.logError();

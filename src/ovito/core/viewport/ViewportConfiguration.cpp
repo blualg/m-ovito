@@ -24,10 +24,6 @@
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/scene/SelectionSet.h>
-#include <ovito/core/dataset/scene/Scene.h>
-#include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/app/Application.h>
 
 namespace Ovito {
 
@@ -36,13 +32,6 @@ DEFINE_VECTOR_REFERENCE_FIELD(ViewportConfiguration, viewports);
 DEFINE_REFERENCE_FIELD(ViewportConfiguration, activeViewport);
 DEFINE_REFERENCE_FIELD(ViewportConfiguration, maximizedViewport);
 DEFINE_REFERENCE_FIELD(ViewportConfiguration, layoutRootCell);
-
-/******************************************************************************
-* Constructor.
-******************************************************************************/
-ViewportConfiguration::ViewportConfiguration(ObjectInitializationFlags flags) : RefTarget(flags)
-{
-}
 
 /******************************************************************************
 * Is called when the value of a reference field of this RefMaker changes.
@@ -74,17 +63,9 @@ bool ViewportConfiguration::referenceEvent(RefTarget* source, const ReferenceEve
 ******************************************************************************/
 void ViewportConfiguration::zoomToSelectionExtents()
 {
+    // Forward request to the associated viewport window(s).
     for(Viewport* vp : viewports())
-        vp->zoomToSelectionExtents();
-}
-
-/******************************************************************************
-* Zooms to the extents of the scene.
-******************************************************************************/
-void ViewportConfiguration::zoomToSceneExtents()
-{
-    for(Viewport* vp : viewports())
-        vp->zoomToSceneExtents();
+        vp->notifyDependents(Viewport::ZoomToSelectionExtentsRequested);
 }
 
 /******************************************************************************
@@ -93,8 +74,9 @@ void ViewportConfiguration::zoomToSceneExtents()
 ******************************************************************************/
 void ViewportConfiguration::zoomToSceneExtentsWhenReady()
 {
+    // Forward request to the associated viewport window(s).
     for(Viewport* vp : viewports())
-        vp->zoomToSceneExtentsWhenReady();
+        vp->notifyDependents(Viewport::ZoomToSceneExtentsWhenReadyRequested);
 }
 
 /******************************************************************************

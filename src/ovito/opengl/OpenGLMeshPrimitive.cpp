@@ -23,6 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/rendering/MeshPrimitive.h>
 #include <ovito/core/utilities/SortZipped.h>
 #include "OpenGLSceneRenderer.h"
 #include "OpenGLShaderHelper.h"
@@ -41,9 +42,6 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         return;
     if(primitive.useInstancedRendering() && primitive.perInstanceTMs()->size() == 0)
         return;
-
-    rebindVAO();
-    OVITO_REPORT_OPENGL_ERRORS(this);
 
     // Render wireframe lines.
     if(primitive.emphasizeEdges() && !isPickingPass())
@@ -161,7 +159,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         shader.setUniformValue("color_range_max", maxValue);
 
         // Upload color map as a 1-d OpenGL texture.
-        colorMapTexture = OpenGLResourceManager::instance()->uploadColorMap(primitive.pseudoColorMapping().gradient(), currentResourceFrame());
+        colorMapTexture = uploadColorMap(primitive.pseudoColorMapping().gradient());
         colorMapTexture->bind();
     }
 
@@ -211,10 +209,18 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         // Create a buffer for an indexed drawing command to render the triangles in back-to-front order.
 
         // Viewing direction in object space:
-        const Vector3 direction = modelViewTM().inverse().column(2);
+        const Vector3 direction = modelViewTM().linear().inverse().column(2);
+
+        // Coarsen the direction vector's precision for real-time rendering to reduce the frequency at
+        // which the particles must be reordered when moving the camera.
+        Vector3 coarseDirection = direction;
+        if(isInteractive()) {
+            for(size_t dim = 0; dim < 3; dim++)
+                coarseDirection[dim] = std::round(2 * direction[dim]);
+        }
 
         // The caching key for the index buffer.
-        RendererResourceKey<struct DepthSortingCache, DataOORef<const TriangleMesh>, Vector3> indexBufferCacheKey{ primitive.mesh(), direction };
+        RendererResourceKey<struct DepthSortingCache, DataOORef<const TriangleMesh>, Vector3> indexBufferCacheKey{ primitive.mesh(), coarseDirection };
 
         // Create index buffer with three entries per triangle face.
         QOpenGLBuffer indexBuffer = shader.createCachedBuffer(std::move(indexBufferCacheKey), sizeof(GLsizei), QOpenGLBuffer::IndexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer, BufferReadAccess<int32_t> subset) {
@@ -271,10 +277,18 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         // Render the mesh instances in back-to-front order.
 
         // Viewing direction in object space:
-        const Vector3 direction = modelViewTM().inverse().column(2);
+        const Vector3 direction = modelViewTM().linear().inverse().column(2);
+
+        // Coarsen the direction vector's precision for real-time rendering to reduce the frequency at
+        // which the particles must be reordered when moving the camera.
+        Vector3 coarseDirection = direction;
+        if(isInteractive()) {
+            for(size_t dim = 0; dim < 3; dim++)
+                coarseDirection[dim] = std::round(2 * direction[dim]);
+        }
 
         // The caching key for the ordering of the primitives.
-        RendererResourceKey<struct OrderingCache, ConstDataBufferPtr, Vector3> orderingCacheKey{ primitive.perInstanceTMs(), direction };
+        RendererResourceKey<struct OrderingCache, ConstDataBufferPtr, Vector3> orderingCacheKey{ primitive.perInstanceTMs(), coarseDirection };
 
         // Render the primitives.
         shader.drawReordered(GL_TRIANGLES, std::move(orderingCacheKey), [&](std::span<GLuint> sortedIndices) {
@@ -355,7 +369,7 @@ ConstDataBufferPtr OpenGLSceneRenderer::generateMeshWireframeLines(const MeshPri
 
     // Cache the wireframe geometry generated for the current mesh.
     RendererResourceKey<struct WireframeCache, DataOORef<const TriangleMesh>> cacheKey(primitive.mesh());
-    ConstDataBufferPtr& wireframeLines = OpenGLResourceManager::instance()->lookup<ConstDataBufferPtr>(std::move(cacheKey), currentResourceFrame());
+    ConstDataBufferPtr& wireframeLines = currentResourceFrame().lookup<ConstDataBufferPtr>(std::move(cacheKey));
 
     if(!wireframeLines) {
         wireframeLines = primitive.generateWireframeLines();

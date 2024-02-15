@@ -44,8 +44,6 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     QWidget* widget = new QWidget();
     setWidget(widget);
 
-    OVITO_ASSERT(viewport->window());
-
     _oldViewType = viewport->viewType();
     _oldCameraTM = viewport->cameraTransformation();
     _oldFOV = viewport->fieldOfView();

@@ -23,12 +23,12 @@
 #include <ovito/mesh/Mesh.h>
 #include <ovito/mesh/util/CapPolygonTessellator.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
-#include <ovito/core/rendering/SceneRenderer.h>
+#include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
 #include <ovito/core/dataset/data/mesh/TriangleMesh.h>
-#include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/app/Application.h>
 #include "SurfaceMeshVis.h"
 #include "SurfaceMesh.h"
@@ -196,7 +196,7 @@ Future<PipelineFlowState> SurfaceMeshVis::transformDataImpl(const PipelineEvalua
 /******************************************************************************
 * Computes the bounding box of the displayed data.
 ******************************************************************************/
-Box3 SurfaceMeshVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 SurfaceMeshVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
     Box3 bb;
 
@@ -212,27 +212,21 @@ Box3 SurfaceMeshVis::boundingBox(AnimationTime time, const ConstDataObjectPath& 
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus SurfaceMeshVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
+PipelineStatus SurfaceMeshVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     // Ignore render calls for the original SurfaceMesh.
     // We are only interested in the RenderableSurfaceMesh.
     if(path.lastAs<SurfaceMesh>())
         return {};
 
-    if(renderer->isBoundingBoxPass()) {
-        TimeInterval validityInterval;
-        renderer->addToLocalBoundingBox(boundingBox(time, path, pipeline, flowState, renderer->visCache(), validityInterval));
-        return {};
-    }
-
     // Get the rendering colors for the surface and cap meshes.
     FloatType surface_alpha = 1;
     FloatType cap_alpha = 1;
     TimeInterval iv;
     if(surfaceTransparencyController())
-        surface_alpha = qBound(0.0, FloatType(1) - surfaceTransparencyController()->getFloatValue(time, iv), 1.0);
+        surface_alpha = qBound(0.0, FloatType(1) - surfaceTransparencyController()->getFloatValue(frameGraph.time(), iv), 1.0);
     if(capTransparencyController())
-        cap_alpha = qBound(0.0, FloatType(1) - capTransparencyController()->getFloatValue(time, iv), 1.0);
+        cap_alpha = qBound(0.0, FloatType(1) - capTransparencyController()->getFloatValue(frameGraph.time(), iv), 1.0);
     ColorA color_surface(colorMappingMode() == NoPseudoColoring ? surfaceColor() : Color(1,1,1), surface_alpha);
     ColorA color_cap(capColor(), cap_alpha);
 
@@ -253,10 +247,11 @@ PipelineStatus SurfaceMeshVis::render(AnimationTime time, const ConstDataObjectP
 
     // Get the renderable mesh.
     const RenderableSurfaceMesh* renderableMesh = path.lastAs<RenderableSurfaceMesh>();
-    if(!renderableMesh) return {};
+    if(!renderableMesh)
+        return {};
 
     // Lookup the rendering primitive in the vis cache.
-    auto& visCache = renderer->visCache().get<CacheValue>(SurfaceCacheKey(path.back(), color_surface, color_cap, highlightEdges()));
+    auto& visCache = frameGraph.visCache().lookup<CacheValue>(SurfaceCacheKey(path.back(), color_surface, color_cap, highlightEdges()));
 
     // Check if we already have a valid rendering primitive that is up to date.
     if(!visCache.surfacePrimitive.mesh()) {
@@ -283,23 +278,22 @@ PipelineStatus SurfaceMeshVis::render(AnimationTime time, const ConstDataObjectP
         visCache.capPrimitive.setMesh(renderableMesh->capPolygonsMesh(), MeshPrimitive::ConvexShapeMode);
     }
     else if(visCache.capPrimitive.mesh() && !showCap()) {
-        visCache.capPrimitive.setMesh(nullptr);
+        visCache.capPrimitive.setMesh({});
     }
 
     // Handle picking of triangles.
-    renderer->beginPickObject(pipeline, visCache.pickInfo);
     if(visCache.surfacePrimitive.mesh()) {
-
         // Update the color mapping.
         visCache.surfacePrimitive.setPseudoColorMapping(surfaceColorMapping()->pseudoColorMapping());
-
-        renderer->renderMesh(visCache.surfacePrimitive);
+        // Render the surface mesh.
+        frameGraph.addPrimitive(std::make_unique<MeshPrimitive>(visCache.surfacePrimitive), pipeline, visCache.pickInfo);
     }
     if(showCap() && visCache.capPrimitive.mesh()) {
-        if(renderer->isImagePass() || cap_alpha >= 1)
-            renderer->renderMesh(visCache.capPrimitive);
+        // Render the surface mesh cap.
+        // If the caps are semi-transparent, we exclude them from the object picking render pass.
+        frameGraph.addPrimitive(std::make_unique<MeshPrimitive>(visCache.capPrimitive), pipeline, {},
+            (cap_alpha < 1) ? FrameGraph::RenderingCommand::SkipPickingPass : FrameGraph::RenderingCommand::NoFlags);
     }
-    renderer->endPickObject();
 
     return {};
 }

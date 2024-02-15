@@ -25,7 +25,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/Exception.h>
-#include <ovito/core/utilities/MixedKeyCache.h>
 
 namespace Ovito {
 
@@ -74,9 +73,6 @@ public:
 
     /// Returns the global FileManager class instance.
     FileManager& fileManager() { return _fileManager; }
-
-    /// Returns the global data cache used by visualzation elements to store rendering primitives.
-    MixedKeyCache& visCache() { return _visCache; }
 
     /// Returns the number of parallel threads to be used by the application when doing computations.
     int idealThreadCount() const { return _idealThreadCount; }
@@ -142,9 +138,6 @@ protected:
     /// The application-wide network manager object.
     QNetworkAccessManager* _networkAccessManager = nullptr;
 #endif
-
-    /// Data cache used by visualization elements to store rendering primitives.
-    MixedKeyCache _visCache;
 
     /// The default message handler method of Qt.
     static QtMessageHandler defaultQtMessageHandler;

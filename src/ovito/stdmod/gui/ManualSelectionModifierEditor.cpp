@@ -26,7 +26,7 @@
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/viewport/ViewportWindowInterface.h>
+#include <ovito/core/viewport/ViewportWindow.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/widgets/general/ViewportModeButton.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
@@ -52,7 +52,7 @@ public:
     PickElementMode(ManualSelectionModifierEditor* editor) : _editor(editor) {}
 
     /// Handles the mouse up events for a Viewport.
-    virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override {
+    virtual void mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event) override {
         if(event->button() == Qt::LeftButton) {
             ManualSelectionModifier* mod = static_object_cast<ManualSelectionModifier>(_editor->editObject());
             if(mod && mod->subject()) {
@@ -75,7 +75,7 @@ public:
     }
 
     /// Handles the mouse events for a Viewport.
-    virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override {
+    virtual void mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event) override {
         ViewportInputMode::mouseMoveEvent(vpwin, event);
 
         // Check if a selectable element is beneath the mouse cursor position.
@@ -118,7 +118,7 @@ public:
     }
 
     /// Handles the mouse down events for a Viewport.
-    virtual void mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override {
+    virtual void mousePressEvent(ViewportWindow* vpwin, QMouseEvent* event) override {
         _fence.clear();
         if(event->button() == Qt::LeftButton) {
             _fence.push_back(Point2(getMousePosition(event).x(), getMousePosition(event).y())
@@ -130,7 +130,7 @@ public:
     }
 
     /// Handles the mouse move events for a Viewport.
-    virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override {
+    virtual void mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event) override {
         if(!_fence.isEmpty()) {
             _fence.push_back(Point2(getMousePosition(event).x(), getMousePosition(event).y())
                     * (FloatType)vpwin->devicePixelRatio());
@@ -140,7 +140,7 @@ public:
     }
 
     /// Handles the mouse up events for a Viewport.
-    virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override {
+    virtual void mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event) override {
         if(!_fence.isEmpty()) {
             if(_fence.size() >= 3) {
                 ElementSelectionSet::SelectionMode mode = ElementSelectionSet::SelectionReplace;

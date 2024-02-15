@@ -171,7 +171,7 @@ void ViewportInputManager::addViewportGizmo(ViewportGizmo* gizmo)
     if(std::find(viewportGizmos().begin(), viewportGizmos().end(), gizmo) == viewportGizmos().end()) {
         _viewportGizmos.push_back(gizmo);
 
-        // Update viewports to show gzimo overlay.
+        // Update viewports to show gizmo overlay.
         userInterface().updateViewports();
     }
 }

@@ -24,9 +24,11 @@
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/StandardSceneRenderer.h>
 #include <ovito/core/rendering/FrameBuffer.h>
+#include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/viewport/ViewportSuspender.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/UserInterface.h>
 #include "RenderSettings.h"
@@ -175,107 +177,110 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
     // is shutting down while we are still in this function.
     OORef<RenderSettings> self(this);
 
+    // Resize output frame buffer.
+    if(frameBuffer.size() != QSize(outputImageWidth(), outputImageHeight())) {
+        frameBuffer.setSize(QSize(outputImageWidth(), outputImageHeight()));
+        frameBuffer.clear();
+    }
+
+    // Don't render interactive viewports while rendering an offscreen image.
+    ViewportSuspender noVPUpdates;
+
+    // Determine the size of the rendering frame buffer. It must fit the largest viewport rectangle.
+    QSize largestViewportRectSize(0,0);
+    for(const std::pair<Viewport*, QRectF>& rect : viewportLayout) {
+        // Convert viewport layout rect from relative coordinates to frame buffer pixel coordinates and round to nearest integers.
+        QRectF pixelRect(rect.second.x() * frameBuffer.width(), rect.second.y() * frameBuffer.height(), rect.second.width() * frameBuffer.width(), rect.second.height() * frameBuffer.height());
+        largestViewportRectSize = largestViewportRectSize.expandedTo(pixelRect.toRect().size());
+    }
+    if(largestViewportRectSize.isEmpty())
+        throw Exception(tr("There is no valid viewport to be rendered."));
+
+    // Initialize the renderer.
+    this_task::setProgressText(tr("Initializing renderer"));
+    renderer->startRender(largestViewportRectSize);
+    if(this_task::isCanceled()) {
+        renderer->endRender();
+        return;
+    }
+
+    // Wrap the following in a try-catch block to ensure endRender() is called.
     try {
-        // Resize output frame buffer.
-        if(frameBuffer.size() != QSize(outputImageWidth(), outputImageHeight())) {
-            frameBuffer.setSize(QSize(outputImageWidth(), outputImageHeight()));
-            frameBuffer.clear();
-        }
-
-        // Don't update viewports while rendering.
-        ViewportSuspender noVPUpdates;
-
-        // Determine the size of the rendering frame buffer. It must fit the largest viewport rectangle.
-        QSize largestViewportRectSize(0,0);
-        for(const std::pair<Viewport*, QRectF>& rect : viewportLayout) {
-            // Convert viewport layout rect from relative coordinates to frame buffer pixel coordinates and round to nearest integers.
-            QRectF pixelRect(rect.second.x() * frameBuffer.width(), rect.second.y() * frameBuffer.height(), rect.second.width() * frameBuffer.width(), rect.second.height() * frameBuffer.height());
-            largestViewportRectSize = largestViewportRectSize.expandedTo(pixelRect.toRect().size());
-        }
-        if(largestViewportRectSize.isEmpty())
-            throw Exception(tr("There is no valid viewport to be rendered."));
-
-        // Initialize the renderer.
-        this_task::setProgressText(tr("Initializing renderer"));
-        if(renderer->startRender(this, largestViewportRectSize, Application::instance()->visCache())) {
-
-            VideoEncoder* videoEncoder = nullptr;
+        VideoEncoder* videoEncoder = nullptr;
 #ifdef OVITO_VIDEO_OUTPUT_SUPPORT
-            std::unique_ptr<VideoEncoder> videoEncoderPtr;
-            // Initialize video encoder.
-            if(saveToFile() && imageInfo().isMovie()) {
+        std::unique_ptr<VideoEncoder> videoEncoderPtr;
+        // Initialize video encoder.
+        if(saveToFile() && imageInfo().isMovie()) {
 
-                if(imageFilename().isEmpty())
-                    throw Exception(tr("Cannot save rendered images to movie file. Output filename has not been specified."));
+            if(imageFilename().isEmpty())
+                throw Exception(tr("Cannot save rendered images to movie file. Output filename has not been specified."));
 
-                videoEncoderPtr = std::make_unique<VideoEncoder>();
-                videoEncoder = videoEncoderPtr.get();
-                float fps = framesPerSecond();
-                if(fps <= 0)
-                    fps = animationSettings ? animationSettings->framesPerSecond() : 1.0f;
-                videoEncoder->openFile(imageFilename(), outputImageWidth(), outputImageHeight(), fps);
-            }
+            videoEncoderPtr = std::make_unique<VideoEncoder>();
+            videoEncoder = videoEncoderPtr.get();
+            float fps = framesPerSecond();
+            if(fps <= 0)
+                fps = animationSettings ? animationSettings->framesPerSecond() : 1.0f;
+            videoEncoder->openFile(imageFilename(), outputImageWidth(), outputImageHeight(), fps);
+        }
 #endif
 
-            if(renderingRangeType() == RenderSettings::CURRENT_FRAME) {
-                // Render a single frame.
-                int frameNumber = animationSettings ? animationSettings->currentFrame() : 0;
-                this_task::setProgressText(tr("Rendering frame %1").arg(frameNumber));
-                renderFrame(frameNumber, *renderer, frameBuffer, viewportLayout, videoEncoder);
+        // The vis element cache.
+        std::shared_ptr<RendererResourceCache> visCache = ExecutionContext::current().ui().datasetContainer().visCache();
+
+        if(renderingRangeType() == RenderSettings::CURRENT_FRAME) {
+            // Render a single frame.
+            int frameNumber = animationSettings ? animationSettings->currentFrame() : 0;
+            this_task::setProgressText(tr("Rendering frame %1").arg(frameNumber));
+            renderFrame(frameNumber, visCache->acquireResourceFrame(), *renderer, frameBuffer, viewportLayout, videoEncoder);
+        }
+        else if(renderingRangeType() == RenderSettings::CUSTOM_FRAME) {
+            // Render a specific frame.
+            int frameNumber = customFrame();
+            this_task::setProgressText(tr("Rendering frame %1").arg(frameNumber));
+            renderFrame(frameNumber, visCache->acquireResourceFrame(), *renderer, frameBuffer, viewportLayout, videoEncoder);
+        }
+        else if(renderingRangeType() == RenderSettings::ANIMATION_INTERVAL || renderingRangeType() == RenderSettings::CUSTOM_INTERVAL) {
+            // Render an animation interval.
+            int firstFrameNumber, numberOfFrames;
+            if(renderingRangeType() == RenderSettings::ANIMATION_INTERVAL) {
+                firstFrameNumber = animationSettings ? animationSettings->firstFrame() : 0;
+                numberOfFrames = animationSettings ? (animationSettings->lastFrame() - firstFrameNumber + 1) : 0;
             }
-            else if(renderingRangeType() == RenderSettings::CUSTOM_FRAME) {
-                // Render a specific frame.
-                int frameNumber = customFrame();
-                this_task::setProgressText(tr("Rendering frame %1").arg(frameNumber));
-                renderFrame(frameNumber, *renderer, frameBuffer, viewportLayout, videoEncoder);
+            else {
+                firstFrameNumber = customRangeStart();
+                numberOfFrames = (customRangeEnd() - firstFrameNumber + 1);
             }
-            else if(renderingRangeType() == RenderSettings::ANIMATION_INTERVAL || renderingRangeType() == RenderSettings::CUSTOM_INTERVAL) {
-                // Render an animation interval.
-                int firstFrameNumber, numberOfFrames;
-                if(renderingRangeType() == RenderSettings::ANIMATION_INTERVAL) {
-                    firstFrameNumber = animationSettings ? animationSettings->firstFrame() : 0;
-                    numberOfFrames = animationSettings ? (animationSettings->lastFrame() - firstFrameNumber + 1) : 0;
-                }
-                else {
-                    firstFrameNumber = customRangeStart();
-                    numberOfFrames = (customRangeEnd() - firstFrameNumber + 1);
-                }
-                numberOfFrames = (numberOfFrames + everyNthFrame() - 1) / everyNthFrame();
-                if(numberOfFrames < 1)
-                    throw Exception(tr("Invalid rendering range: frame %1 to %2").arg(customRangeStart()).arg(customRangeEnd()));
-                this_task::setProgressMaximum(numberOfFrames);
+            numberOfFrames = (numberOfFrames + everyNthFrame() - 1) / everyNthFrame();
+            if(numberOfFrames < 1)
+                throw Exception(tr("Invalid rendering range: frame %1 to %2").arg(customRangeStart()).arg(customRangeEnd()));
+            this_task::setProgressMaximum(numberOfFrames);
 
-                // Render frames one by one.
-                for(int frameIndex = 0; frameIndex < numberOfFrames && !this_task::isCanceled(); frameIndex++) {
-                    int frameNumber = firstFrameNumber + frameIndex * everyNthFrame() + fileNumberBase();
+            // This is to keep cached resources long enough to be reused in a subsequent animation frame.
+            RendererResourceCache::ResourceFrame inactiveCacheFrame;
 
-                    this_task::setProgressValue(frameIndex);
-                    this_task::setProgressText(tr("Rendering animation (frame %1 of %2)").arg(frameIndex+1).arg(numberOfFrames));
+            // Render frames one by one.
+            for(int frameIndex = 0; frameIndex < numberOfFrames && !this_task::isCanceled(); frameIndex++) {
+                int frameNumber = firstFrameNumber + frameIndex * everyNthFrame() + fileNumberBase();
 
-                    // Create a sub-task to display a second progress bar.
-                    MainThreadOperation frameTask;
+                this_task::setProgressValue(frameIndex);
+                this_task::setProgressText(tr("Rendering animation (frame %1 of %2)").arg(frameIndex+1).arg(numberOfFrames));
 
-                    // Render the animation frame.
-                    renderFrame(frameNumber, *renderer, frameBuffer, viewportLayout, videoEncoder);
+                // Create a sub-task to display a second progress bar.
+                MainThreadOperation frameTask;
 
-                    // Periodically free visual element resources during animation rendering to avoid clogging the memory.
-                    Application::instance()->visCache().discardUnusedObjects();
-                }
+                // Render the animation frame.
+                inactiveCacheFrame = renderFrame(frameNumber, visCache->acquireResourceFrame(), *renderer, frameBuffer, viewportLayout, videoEncoder);
             }
+        }
 
 #ifdef OVITO_VIDEO_OUTPUT_SUPPORT
-            // Finalize movie file.
-            if(videoEncoder)
-                videoEncoder->closeFile();
+        // Finalize movie file.
+        if(videoEncoder)
+            videoEncoder->closeFile();
 #endif
-        }
 
         // Shutdown renderer.
         renderer->endRender();
-
-        // Free visual element resources to avoid clogging the memory in cases where render() gets called repeatedly from a script.
-        if(!ExecutionContext::isInteractive())
-            Application::instance()->visCache().discardUnusedObjects();
     }
     catch(...) {
         // Shutdown renderer.
@@ -287,8 +292,13 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
 /******************************************************************************
 * Renders a single frame and saves the output file.
 ******************************************************************************/
-void RenderSettings::renderFrame(int frameNumber, SceneRenderer& renderer,
-        FrameBuffer& frameBuffer, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, VideoEncoder* videoEncoder)
+RendererResourceCache::ResourceFrame RenderSettings::renderFrame(
+        int frameNumber,
+        RendererResourceCache::ResourceFrame visCache,
+        SceneRenderer& renderer,
+        FrameBuffer& frameBuffer,
+        const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout,
+        VideoEncoder* videoEncoder)
 {
     // Determine output filename for this frame.
     QString outputFilename;
@@ -304,7 +314,7 @@ void RenderSettings::renderFrame(int frameNumber, SceneRenderer& renderer,
 
             // Check for existing image file and skip.
             if(skipExistingImages() && QFileInfo(outputFilename).isFile())
-                return;
+                return {};
         }
     }
 
@@ -328,49 +338,53 @@ void RenderSettings::renderFrame(int frameNumber, SceneRenderer& renderer,
         if(!destinationRect.isEmpty()) {
 
             // Set up preliminary projection.
-            FloatType viewportAspectRatio = (FloatType)destinationRect.height() / (FloatType)destinationRect.width();
-            ViewProjectionParameters projParams = viewport->computeProjectionParameters(renderTime, viewportAspectRatio, renderer.waitForLongOperationsEnabled());
-
-            // Request scene bounding box.
-            Box3 boundingBox = renderer.computeSceneBoundingBox(renderTime, viewport->scene(), projParams, nullptr);
+            FloatType viewportAspectRatio = (FloatType)destinationRect.height() / destinationRect.width();
+            ViewProjectionParameters projParams = viewport->computeProjectionParameters(renderTime, viewportAspectRatio);
             if(this_task::isCanceled())
-                return;
+                return {};
 
-            // Determine final view projection.
-            projParams = viewport->computeProjectionParameters(renderTime, viewportAspectRatio, renderer.waitForLongOperationsEnabled(), boundingBox);
+            // Take into account the multi-sampling level used by the renderer.
+            // For offscreen rendering, this value is also used as device pixel ratio.
+            int multisamplingLevel = renderer.multisamplingLevel();
 
-            // Render one frame.
-            try {
-                renderer.beginFrame(renderTime, viewport->scene(), projParams, viewport, destinationRect, &frameBuffer);
+            // Create a new frame graph.
+            std::unique_ptr<FrameGraph> frameGraph = std::make_unique<FrameGraph>(
+                std::move(visCache),
+                renderTime, projParams, destinationRect.size(), false, false, stopOnPipelineError(),
+                renderer.preferredImageFormat(), multisamplingLevel);
 
-                // Clear frame buffer with background color.
-                ColorA clearColor = generateAlphaChannel() ? ColorA(0,0,0,0) : ColorA(backgroundColorAt(renderTime));
-                frameBuffer.clear(clearColor, destinationRect, true);
+            // Set background color.
+            frameGraph->setClearColor(generateAlphaChannel() ? ColorA(0,0,0,0) : ColorA(backgroundColorAt(renderTime)));
 
-                // Render viewport "underlays".
-                if(!renderer.renderOverlays(true, destinationRect, destinationRect)) {
-                    renderer.endFrame(false, destinationRect);
-                    return;
-                }
+            // Target rectangles for overlay/underlay rendering.
+            QRect logicalOverlayRect(0, 0, destinationRect.width(), destinationRect.height());
+            QRect physicalOverlayRect(0, 0, multisamplingLevel * destinationRect.width(), multisamplingLevel * destinationRect.height());
 
-                // Let the scene renderer do its work.
-                if(!renderer.renderFrame(destinationRect)) {
-                    renderer.endFrame(false, destinationRect);
-                    return;
-                }
+            // Render viewport "underlays".
+            if(!frameGraph->renderOverlays(viewport, true, logicalOverlayRect, physicalOverlayRect, projParams))
+                return {};
 
-                // Render viewport "overlays" on top.
-                if(!renderer.renderOverlays(false, destinationRect, destinationRect)) {
-                    renderer.endFrame(false, destinationRect);
-                    return;
-                }
+            // Render the 3d scene objects.
+            if(!frameGraph->renderSceneNode(viewport->scene(), viewport))
+                return {};
 
-                renderer.endFrame(true, destinationRect);
-            }
-            catch(...) {
-                renderer.endFrame(false, destinationRect);
-                throw;
-            }
+            // Render viewport "overlays".
+            if(!frameGraph->renderOverlays(viewport, false, logicalOverlayRect, physicalOverlayRect, projParams))
+                return {};
+
+            // Let the renderer implementation post-process the frame graph.
+            renderer.postprocessFrameGraph(*frameGraph);
+            if(this_task::isCanceled())
+                return {};
+
+            // Compute final projection based on the now known bounding box.
+            frameGraph->setProjectionParams(viewport->computeProjectionParameters(renderTime, viewportAspectRatio, frameGraph->sceneBoundingBox()));
+
+            // Pass the frame graph to the renderer to produce the rendering in the framebuffer.
+            renderer.renderFrame(*frameGraph, destinationRect, &frameBuffer);
+
+            // Get the cache frame back from the frame graph to keep resources alive until we start the next frame.
+            visCache = std::move(*frameGraph).takeVisCache();
         }
 
         this_task::nextProgressSubStep();
@@ -395,6 +409,32 @@ void RenderSettings::renderFrame(int frameNumber, SceneRenderer& renderer,
 #endif
         }
     }
+
+    return visCache;
+}
+
+/******************************************************************************
+* Computes a viewport's area in the framebuffer to be rendered.
+******************************************************************************/
+QRect RenderSettings::viewportFramebufferArea(const Viewport* viewport, const ViewportConfiguration* viewportConfig) const
+{
+    QRect frameBufferRect(0, 0, outputImageWidth(), outputImageHeight());
+
+    // Aspect ratio of the viewport rectangle in the rendered output image.
+    if(renderAllViewports() && viewportConfig && viewport) {
+
+        // Compute target rectangles of all viewports of the current layout.
+        // TODO: This should be optimized. Computing the full layout everytime seems unnecessary.
+        std::vector<std::pair<Viewport*, QRectF>> viewportRects = viewportConfig->getViewportRectangles(frameBufferRect);
+
+        // Find the viewport among the list of all viewports to look up its target rectangle in the output image.
+        for(const std::pair<Viewport*, QRectF>& rect : viewportRects) {
+            if(rect.first == viewport)
+                return rect.second.toRect();
+        }
+    }
+
+    return frameBufferRect;
 }
 
 }   // End of namespace

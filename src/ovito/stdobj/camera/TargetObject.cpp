@@ -24,7 +24,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
-#include <ovito/core/rendering/SceneRenderer.h>
+#include <ovito/core/rendering/FrameGraph.h>
 #include "TargetObject.h"
 
 namespace Ovito {
@@ -45,60 +45,48 @@ TargetObject::TargetObject(ObjectInitializationFlags flags) : DataObject(flags)
 /******************************************************************************
 * Lets the vis element render a data object.
 ******************************************************************************/
-PipelineStatus TargetVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
+PipelineStatus TargetVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
-    // Target objects are only visible in the viewports.
-    if(renderer->isInteractive() == false || renderer->viewport() == nullptr)
+    // Target objects are only visible in the interactive viewport windows.
+    if(!frameGraph.isInteractive())
         return {};
 
     // Setup transformation matrix to always show the icon at the same size.
-    Point3 objectPos = Point3::Origin() + renderer->worldTransform().translation();
-    FloatType scaling = FloatType(0.2) * renderer->viewport()->nonScalingSize(objectPos);
-    renderer->setWorldTransform(renderer->worldTransform() * AffineTransformation::scaling(scaling));
+    TimeInterval interval;
+    const AffineTransformation& nodeTM = pipeline->getWorldTransform(frameGraph.time(), interval);
+    FloatType scaling = FloatType(0.2) * frameGraph.nonScalingSize(Point3::Origin() + nodeTM.translation());
 
-    if(!renderer->isBoundingBoxPass()) {
+    // Cache the line vertices for the icon.
+    auto& vertexPositions = frameGraph.visCache().lookup<ConstDataBufferPtr>(RendererResourceKey<struct WireframeCube>{});
 
-        // Cache the line vertices for the icon.
-        RendererResourceKey<struct WireframeCube> cacheKey;
-        auto& vertexPositions = renderer->visCache().get<ConstDataBufferPtr>(std::move(cacheKey));
-
-        // Initialize geometry of wireframe cube.
-        if(!vertexPositions) {
-            const Point3G linePoints[] = {
-                {-1, -1, -1}, { 1,-1,-1},
-                {-1, -1,  1}, { 1,-1, 1},
-                {-1, -1, -1}, {-1,-1, 1},
-                { 1, -1, -1}, { 1,-1, 1},
-                {-1,  1, -1}, { 1, 1,-1},
-                {-1,  1,  1}, { 1, 1, 1},
-                {-1,  1, -1}, {-1, 1, 1},
-                { 1,  1, -1}, { 1, 1, 1},
-                {-1, -1, -1}, {-1, 1,-1},
-                { 1, -1, -1}, { 1, 1,-1},
-                { 1, -1,  1}, { 1, 1, 1},
-                {-1, -1,  1}, {-1, 1, 1}
-            };
-            BufferFactory<Point3G> vertices(sizeof(linePoints) / sizeof(Point3G));
-            boost::copy(linePoints, vertices.begin());
-            vertexPositions = vertices.take();
-        }
-
-        // Create line rendering primitive.
-        LinePrimitive iconPrimitive;
-        iconPrimitive.setUniformColor(ViewportSettings::getSettings().viewportColor(pipeline->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_CAMERAS));
-        iconPrimitive.setPositions(vertexPositions);
-        if(!renderer->isImagePass())
-            iconPrimitive.setLineWidth(renderer->defaultLinePickingWidth());
-
-        // Render the lines.
-        renderer->beginPickObject(pipeline);
-        renderer->renderLines(iconPrimitive);
-        renderer->endPickObject();
+    // Initialize geometry of wireframe cube.
+    if(!vertexPositions) {
+        const Point3G linePoints[] = {
+            {-1, -1, -1}, { 1,-1,-1},
+            {-1, -1,  1}, { 1,-1, 1},
+            {-1, -1, -1}, {-1,-1, 1},
+            { 1, -1, -1}, { 1,-1, 1},
+            {-1,  1, -1}, { 1, 1,-1},
+            {-1,  1,  1}, { 1, 1, 1},
+            {-1,  1, -1}, {-1, 1, 1},
+            { 1,  1, -1}, { 1, 1, 1},
+            {-1, -1, -1}, {-1, 1,-1},
+            { 1, -1, -1}, { 1, 1,-1},
+            { 1, -1,  1}, { 1, 1, 1},
+            {-1, -1,  1}, {-1, 1, 1}
+        };
+        BufferFactory<Point3G> vertices(sizeof(linePoints) / sizeof(Point3G));
+        boost::copy(linePoints, vertices.begin());
+        vertexPositions = vertices.take();
     }
-    else {
-        // Add target symbol to bounding box.
-        renderer->addToLocalBoundingBox(Box3(Point3::Origin(), scaling));
-    }
+
+    // Create line rendering primitive.
+    std::unique_ptr<LinePrimitive> iconPrimitive = std::make_unique<LinePrimitive>();
+    iconPrimitive->setUniformColor(ViewportSettings::getSettings().viewportColor(pipeline->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_CAMERAS));
+    iconPrimitive->setPositions(vertexPositions);
+
+    // Render the lines.
+    frameGraph.addPrimitive(std::move(iconPrimitive), nodeTM * AffineTransformation::scaling(scaling), Box3(Point3::Origin(), 1), pipeline);
 
     return {};
 }
@@ -106,7 +94,7 @@ PipelineStatus TargetVis::render(AnimationTime time, const ConstDataObjectPath& 
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 TargetVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 TargetVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
     // This is not a physical object. It is point-like and doesn't have any size.
     return Box3(Point3::Origin(), Point3::Origin());

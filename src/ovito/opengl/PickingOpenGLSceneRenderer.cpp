@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include <ovito/core/viewport/ViewportWindowInterface.h>
+#include <ovito/core/viewport/ViewportWindow.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include "PickingOpenGLSceneRenderer.h"
@@ -36,10 +36,9 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(PickingOpenGLSceneRenderer);
 ******************************************************************************/
 PickingOpenGLSceneRenderer::PickingOpenGLSceneRenderer(ObjectInitializationFlags flags) : OffscreenInteractiveOpenGLSceneRenderer(flags)
 {
-    setPickingPass(true);
-    setImagePass(false);
 }
 
+#if 0 // TODO
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
@@ -87,7 +86,7 @@ bool PickingOpenGLSceneRenderer::renderFrame(const QRect& viewportRect)
     else {
         // Create a temporary OpenGL framebuffer.
         QOpenGLFramebufferObjectFormat framebufferFormat;
-        QSize size = viewport()->window()->viewportWindowDeviceSize();
+        QSize size = viewportRect.size();
         QOpenGLFramebufferObject framebufferObject(size, framebufferFormat);
 
         // Clear OpenGL error state and verify validity of framebuffer.
@@ -122,7 +121,9 @@ bool PickingOpenGLSceneRenderer::renderFrame(const QRect& viewportRect)
 
     return true;
 }
+#endif
 
+#if 0 // TODO
 /******************************************************************************
 * Resets the internal state of the picking renderer and clears the stored object records.
 ******************************************************************************/
@@ -131,12 +132,14 @@ void PickingOpenGLSceneRenderer::resetPickingBuffer()
     discardFramebufferImage();
     OffscreenInteractiveOpenGLSceneRenderer::resetPickingBuffer();
 }
+#endif
 
 /******************************************************************************
 * Returns the object record and the sub-object ID for the object at the given pixel coordinates.
 ******************************************************************************/
 std::tuple<const SceneRenderer::ObjectPickingRecord*, quint32> PickingOpenGLSceneRenderer::objectAtLocation(const QPoint& pos) const
 {
+#if 0 // TODO
     if(!framebufferImage().isNull()) {
         if(pos.x() >= 0 && pos.x() < framebufferImage().width() && pos.y() >= 0 && pos.y() < framebufferImage().height()) {
             QPoint mirroredPos(pos.x(), framebufferImage().height() - 1 - pos.y());
@@ -158,6 +161,7 @@ std::tuple<const SceneRenderer::ObjectPickingRecord*, quint32> PickingOpenGLScen
             }
         }
     }
+#endif
     return std::tuple<const SceneRenderer::ObjectPickingRecord*, quint32>(nullptr, 0);
 }
 
@@ -198,6 +202,7 @@ FloatType PickingOpenGLSceneRenderer::depthAtPixel(const QPoint& pos) const
 ******************************************************************************/
 Point3 PickingOpenGLSceneRenderer::worldPositionFromLocation(const QPoint& pos) const
 {
+#if 0 // TODO
     FloatType zvalue = depthAtPixel(pos);
     if(zvalue != 0) {
         OVITO_ASSERT(!framebufferImage().isNull());
@@ -208,6 +213,7 @@ Point3 PickingOpenGLSceneRenderer::worldPositionFromLocation(const QPoint& pos) 
         Point3 worldPos = projParams().inverseViewMatrix * (projParams().inverseProjectionMatrix * ndc);
         return worldPos;
     }
+#endif
     return Point3::Origin();
 }
 

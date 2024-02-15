@@ -44,56 +44,58 @@
 /******************************************************************************
  * Forward declaration of classes.
  ******************************************************************************/
-namespace Ovito {
-class UtilityApplet;
-class GuiAutoStartObject;
-class MainWindow;
-class GuiApplication;
-class WidgetActionManager;
-class DataInspectionApplet;
-class PropertiesPanel;
-class SpinnerWidget;
-class ColorPickerWidget;
-class RolloutContainer;
-class FrameBufferWindow;
-class FrameBufferWidget;
-class AutocompleteTextEdit;
-class AutocompleteLineEdit;
-class ElidedTextLabel;
-class HtmlListWidget;
-class PropertiesEditor;
-class AffineTransformationParameterUI;
-class BooleanParameterUI;
-class BooleanActionParameterUI;
-class BooleanGroupBoxParameterUI;
-class BooleanRadioButtonParameterUI;
-class ColorParameterUI;
-class CustomParameterUI;
-class FilenameParameterUI;
-class FloatParameterUI;
-class FontParameterUI;
-class IntegerRadioButtonParameterUI;
-class IntegerParameterUI;
-class ParameterUI;
-class RefTargetListParameterUI;
-class StringParameterUI;
-class SubObjectParameterUI;
-class VariantComboBoxParameterUI;
-class Vector3ParameterUI;
-class ViewportModeAction;
-class FileExporterSettingsDialog;
-class CoordinateDisplayWidget;
-class CommandPanel;
-class DataInspectorPanel;
-class ModifyCommandPage;
-class RenderCommandPage;
-class OverlayCommandPage;
-class UtilityCommandPage;
-class ViewportMenu;
-class StatusBar;
-class MenuToolButton;
-class PopupUpdateComboBox;
-class ViewportsPanel;
+namespace Ovito
+{
+    class UtilityApplet;
+    class GuiAutoStartObject;
+    class MainWindow;
+    class GuiApplication;
+    class WidgetActionManager;
+    class DataInspectionApplet;
+    class PropertiesPanel;
+    class SpinnerWidget;
+    class ColorPickerWidget;
+    class RolloutContainer;
+    class FrameBufferWindow;
+    class FrameBufferWidget;
+    class AutocompleteTextEdit;
+    class AutocompleteLineEdit;
+    class ElidedTextLabel;
+    class HtmlListWidget;
+    class PropertiesEditor;
+    class AffineTransformationParameterUI;
+    class BooleanParameterUI;
+    class BooleanActionParameterUI;
+    class BooleanGroupBoxParameterUI;
+    class BooleanRadioButtonParameterUI;
+    class ColorParameterUI;
+    class CustomParameterUI;
+    class FilenameParameterUI;
+    class FloatParameterUI;
+    class FontParameterUI;
+    class IntegerRadioButtonParameterUI;
+    class IntegerParameterUI;
+    class ParameterUI;
+    class RefTargetListParameterUI;
+    class StringParameterUI;
+    class SubObjectParameterUI;
+    class VariantComboBoxParameterUI;
+    class Vector3ParameterUI;
+    class ViewportModeAction;
+    class FileExporterSettingsDialog;
+    class CoordinateDisplayWidget;
+    class CommandPanel;
+    class DataInspectorPanel;
+    class ModifyCommandPage;
+    class RenderCommandPage;
+    class OverlayCommandPage;
+    class UtilityCommandPage;
+    class ViewportMenu;
+    class StatusBar;
+    class MenuToolButton;
+    class PopupUpdateComboBox;
+    class ViewportsPanel;
+    class WidgetViewportWindow;
 }  // namespace Ovito
 
 #endif  // __OVITO_GUI_

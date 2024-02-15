@@ -27,6 +27,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
+#include <ovito/core/viewport/ViewportWindow.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/gui/desktop/dialogs/AdjustViewDialog.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
@@ -37,10 +38,10 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the menu.
 ******************************************************************************/
-ViewportMenu::ViewportMenu(MainWindow& mainWindow, Viewport* viewport, QWidget* viewportWidget) :
+ViewportMenu::ViewportMenu(MainWindow& mainWindow, ViewportWindow* viewportWindow, QWidget* viewportWidget) :
     QMenu(viewportWidget),
     _mainWindow(mainWindow),
-    _viewport(viewport),
+    _viewportWindow(viewportWindow),
     _viewportWidget(viewportWidget)
 {
     QAction* action;
@@ -48,11 +49,11 @@ ViewportMenu::ViewportMenu(MainWindow& mainWindow, Viewport* viewport, QWidget* 
     // Build menu.
     action = addAction(tr("Preview Mode"), this, &ViewportMenu::onRenderPreviewMode);
     action->setCheckable(true);
-    action->setChecked(_viewport->renderPreviewMode());
+    action->setChecked(viewport()->renderPreviewMode());
 #ifdef OVITO_DEBUG
     action = addAction(tr("Show Grid"), this, &ViewportMenu::onShowGrid);
     action->setCheckable(true);
-    action->setChecked(_viewport->isGridVisible());
+    action->setChecked(viewport()->isGridVisible());
 #endif
     action = addAction(tr("Constrain Rotation"), this, &ViewportMenu::onConstrainRotation);
     action->setCheckable(true);
@@ -65,48 +66,48 @@ ViewportMenu::ViewportMenu(MainWindow& mainWindow, Viewport* viewport, QWidget* 
     QActionGroup* viewTypeGroup = new QActionGroup(this);
     action = viewTypeGroup->addAction(tr("Top"));
     action->setCheckable(true);
-    action->setChecked(_viewport->viewType() == Viewport::VIEW_TOP);
+    action->setChecked(viewport()->viewType() == Viewport::VIEW_TOP);
     action->setData((int)Viewport::VIEW_TOP);
     action = viewTypeGroup->addAction(tr("Bottom"));
     action->setCheckable(true);
-    action->setChecked(_viewport->viewType() == Viewport::VIEW_BOTTOM);
+    action->setChecked(viewport()->viewType() == Viewport::VIEW_BOTTOM);
     action->setData((int)Viewport::VIEW_BOTTOM);
     action = viewTypeGroup->addAction(tr("Front"));
     action->setCheckable(true);
-    action->setChecked(_viewport->viewType() == Viewport::VIEW_FRONT);
+    action->setChecked(viewport()->viewType() == Viewport::VIEW_FRONT);
     action->setData((int)Viewport::VIEW_FRONT);
     action = viewTypeGroup->addAction(tr("Back"));
     action->setCheckable(true);
-    action->setChecked(_viewport->viewType() == Viewport::VIEW_BACK);
+    action->setChecked(viewport()->viewType() == Viewport::VIEW_BACK);
     action->setData((int)Viewport::VIEW_BACK);
     action = viewTypeGroup->addAction(tr("Left"));
     action->setCheckable(true);
-    action->setChecked(_viewport->viewType() == Viewport::VIEW_LEFT);
+    action->setChecked(viewport()->viewType() == Viewport::VIEW_LEFT);
     action->setData((int)Viewport::VIEW_LEFT);
     action = viewTypeGroup->addAction(tr("Right"));
     action->setCheckable(true);
-    action->setChecked(_viewport->viewType() == Viewport::VIEW_RIGHT);
+    action->setChecked(viewport()->viewType() == Viewport::VIEW_RIGHT);
     action->setData((int)Viewport::VIEW_RIGHT);
     action = viewTypeGroup->addAction(tr("Ortho"));
     action->setCheckable(true);
-    action->setChecked(_viewport->viewType() == Viewport::VIEW_ORTHO);
+    action->setChecked(viewport()->viewType() == Viewport::VIEW_ORTHO);
     action->setData((int)Viewport::VIEW_ORTHO);
     action = viewTypeGroup->addAction(tr("Perspective"));
     action->setCheckable(true);
-    action->setChecked(_viewport->viewType() == Viewport::VIEW_PERSPECTIVE);
+    action->setChecked(viewport()->viewType() == Viewport::VIEW_PERSPECTIVE);
     action->setData((int)Viewport::VIEW_PERSPECTIVE);
     _viewTypeMenu->addActions(viewTypeGroup->actions());
     connect(viewTypeGroup, &QActionGroup::triggered, this, &ViewportMenu::onViewType);
 
-    addAction(tr("Adjust View..."), this, &ViewportMenu::onAdjustView)->setEnabled(_viewport->viewType() != Viewport::VIEW_SCENENODE);
+    addAction(tr("Adjust View..."), this, &ViewportMenu::onAdjustView)->setEnabled(viewport()->viewType() != Viewport::VIEW_SCENENODE);
 
     addSeparator();
 
     ViewportConfiguration* viewportConfig = mainWindow.datasetContainer().currentSet()->viewportConfig();
 
-    if(ViewportLayoutCell* layoutCell = viewport->layoutCell()) {
+    if(ViewportLayoutCell* layoutCell = viewport()->layoutCell()) {
         QMenu* layoutMenu = addMenu(tr("Window Layout"));
-        layoutMenu->setEnabled(viewport != viewportConfig->maximizedViewport());
+        layoutMenu->setEnabled(viewport() != viewportConfig->maximizedViewport());
         _layoutCell = layoutCell;
         OVITO_ASSERT(layoutCell->splitDirection() == ViewportLayoutCell::None && layoutCell->children().empty());
 
@@ -126,12 +127,12 @@ ViewportMenu::ViewportMenu(MainWindow& mainWindow, Viewport* viewport, QWidget* 
 
     // Pipeline visibility
     QMenu* visibilityMenu = addMenu(tr("Pipeline Visibility"));
-    for(SceneNode* node : viewport->scene()->children()) {
+    for(SceneNode* node : viewport()->scene()->children()) {
         QAction* action = visibilityMenu->addAction(node->objectTitle());
         action->setData(QVariant::fromValue(OORef<OvitoObject>(node)));
         action->setCheckable(true);
-        action->setChecked(!node->isHiddenInViewport(viewport, false) && node != viewport->viewNode());
-        action->setEnabled(node != viewport->viewNode());
+        action->setChecked(!node->isHiddenInViewport(viewport(), false) && node != viewport()->viewNode());
+        action->setEnabled(node != viewport()->viewNode());
         connect(action, &QAction::toggled, this, &ViewportMenu::onPipelineVisibility);
     }
     visibilityMenu->setEnabled(!visibilityMenu->isEmpty());
@@ -160,13 +161,13 @@ void ViewportMenu::onShowViewTypeMenu()
     // Pipeline evaulation performed in the following requires a valid execution context.
     _mainWindow.handleExceptions([&] {
         // Find all cameras in the scene.
-        _viewport->scene()->visitPipelines([this, viewNodeGroup](Pipeline* pipeline) -> bool {
-            const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(_viewport->scene()->animationSettings()->currentTime(), false);
+        viewport()->scene()->visitPipelines([this, viewNodeGroup](Pipeline* pipeline) -> bool {
+            const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(viewport()->scene()->animationSettings()->currentTime(), false);
             if(state.data() && state.data()->containsObject<AbstractCameraObject>()) {
                 // Add a menu entry for this camera.
                 QAction* action = viewNodeGroup->addAction(pipeline->sceneNodeName());
                 action->setCheckable(true);
-                action->setChecked(_viewport->viewNode() == pipeline);
+                action->setChecked(viewport()->viewNode() == pipeline);
                 action->setData(QVariant::fromValue((void*)pipeline));
             }
             return true;
@@ -180,7 +181,7 @@ void ViewportMenu::onShowViewTypeMenu()
     }
 
     _viewTypeMenu->addSeparator();
-    _viewTypeMenu->addAction(tr("Create Camera"), this, SLOT(onCreateCamera()))->setEnabled(_viewport->viewNode() == nullptr);
+    _viewTypeMenu->addAction(tr("Create Camera"), this, SLOT(onCreateCamera()))->setEnabled(viewport()->viewNode() == nullptr);
 
     disconnect(_viewTypeMenu, &QMenu::aboutToShow, this, &ViewportMenu::onShowViewTypeMenu);
 }
@@ -191,7 +192,7 @@ void ViewportMenu::onShowViewTypeMenu()
 void ViewportMenu::onRenderPreviewMode(bool checked)
 {
     _mainWindow.handleExceptions([&] {
-        _viewport->setRenderPreviewMode(checked);
+        viewport()->setRenderPreviewMode(checked);
     });
 }
 
@@ -201,7 +202,7 @@ void ViewportMenu::onRenderPreviewMode(bool checked)
 void ViewportMenu::onShowGrid(bool checked)
 {
     _mainWindow.handleExceptions([&] {
-        _viewport->setGridVisible(checked);
+        viewport()->setGridVisible(checked);
     });
 }
 
@@ -220,13 +221,13 @@ void ViewportMenu::onConstrainRotation(bool checked)
 void ViewportMenu::onViewType(QAction* action)
 {
     _mainWindow.handleExceptions([&] {
-        _viewport->setViewType(static_cast<Viewport::ViewType>(action->data().toInt()), true, false);
+        viewport()->setViewType(static_cast<Viewport::ViewType>(action->data().toInt()), true, false);
 
         // Remember which viewport was maximized across program sessions.
         // The same viewport will be maximized next time OVITO is started.
         ViewportConfiguration* viewportConfig = _mainWindow.datasetContainer().currentSet()->viewportConfig();
-        if(viewportConfig->maximizedViewport() == _viewport) {
-            ViewportSettings::getSettings().setDefaultMaximizedViewportType(_viewport->viewType());
+        if(viewportConfig->maximizedViewport() == viewport()) {
+            ViewportSettings::getSettings().setDefaultMaximizedViewportType(viewport()->viewType());
             ViewportSettings::getSettings().save();
         }
     });
@@ -237,7 +238,7 @@ void ViewportMenu::onViewType(QAction* action)
 ******************************************************************************/
 void ViewportMenu::onAdjustView()
 {
-    AdjustViewDialog* dialog = new AdjustViewDialog(_mainWindow, _viewport, _viewportWidget);
+    AdjustViewDialog* dialog = new AdjustViewDialog(_mainWindow, viewport(), _viewportWidget);
     dialog->show();
 }
 
@@ -250,8 +251,8 @@ void ViewportMenu::onViewNode(QAction* action)
     OVITO_CHECK_OBJECT_POINTER(pipeline);
 
     _mainWindow.performTransaction(tr("Set camera"), [this, pipeline]() {
-        _viewport->setViewNode(pipeline);
-        OVITO_ASSERT(_viewport->viewType() == Viewport::VIEW_SCENENODE);
+        viewport()->setViewNode(pipeline);
+        OVITO_ASSERT(viewport()->viewType() == Viewport::VIEW_SCENENODE);
     });
 }
 
@@ -261,7 +262,7 @@ void ViewportMenu::onViewNode(QAction* action)
 void ViewportMenu::onCreateCamera()
 {
     _mainWindow.performTransaction(tr("Create camera"), [this]() {
-        Scene* scene = _viewport->scene();
+        Scene* scene = viewport()->scene();
         AnimationSuspender animSuspender(_mainWindow);
 
         // Create and initialize the camera object.
@@ -285,21 +286,23 @@ void ViewportMenu::onCreateCamera()
             cameraPipeline->setSceneNodeName(scene->makeNameUnique(tr("Camera")));
 
             // Position camera node to match the current view.
-            AffineTransformation tm = _viewport->projectionParams().inverseViewMatrix;
-            if(_viewport->isPerspectiveProjection() == false) {
+            AffineTransformation tm = _viewportWindow->projectionParams().inverseViewMatrix;
+            if(_viewportWindow->isPerspectiveProjection() == false) {
                 // Position camera with parallel projection outside of scene bounding box.
                 tm = tm * AffineTransformation::translation(
-                        Vector3(0, 0, -_viewport->projectionParams().znear + FloatType(0.2) * (_viewport->projectionParams().zfar -_viewport->projectionParams().znear)));
+                        Vector3(0, 0, -_viewportWindow->projectionParams().znear + FloatType(0.2) * (_viewportWindow->projectionParams().zfar -_viewportWindow->projectionParams().znear)));
             }
             cameraPipeline->transformationController()->setTransformationValue(AnimationTime(0), tm, true);
         }
 
         // Insert node into scene.
         scene->addChildNode(cameraPipeline);
+        if(scene->selection()->nodes().empty())
+            scene->selection()->setNode(cameraPipeline);
 
         // Set new camera as view node for current viewport.
-        _viewport->setViewNode(cameraPipeline);
-        OVITO_ASSERT(_viewport->viewType() == Viewport::VIEW_SCENENODE);
+        viewport()->setViewNode(cameraPipeline);
+        OVITO_ASSERT(viewport()->viewType() == Viewport::VIEW_SCENENODE);
     });
 }
 
@@ -325,7 +328,7 @@ void ViewportMenu::onSplitViewport(ViewportLayoutCell::SplitDirection direction)
     _mainWindow.performTransaction(tr("Split viewport"), [&]() {
 
         OORef<ViewportLayoutCell> newCell = OORef<ViewportLayoutCell>::create();
-        newCell->setViewport(CloneHelper::cloneSingleObject(_viewport, true));
+        newCell->setViewport(CloneHelper::cloneSingleObject(viewport(), true));
 
         if(ViewportLayoutCell* parentCell = _layoutCell->parentCell()) {
             if(parentCell->splitDirection() == direction) {
@@ -337,7 +340,7 @@ void ViewportMenu::onSplitViewport(ViewportLayoutCell::SplitDirection direction)
         }
 
         OORef<ViewportLayoutCell> newCell2 = OORef<ViewportLayoutCell>::create();
-        newCell2->setViewport(_viewport);
+        newCell2->setViewport(viewport());
 
         _layoutCell->setSplitDirection(direction);
         _layoutCell->setViewport(nullptr);
@@ -356,7 +359,7 @@ void ViewportMenu::onPipelineVisibility(bool checked)
 
     _mainWindow.performTransaction(tr("Change pipeline visibility"), [&]() {
         if(OORef<SceneNode> node = static_object_cast<SceneNode>(action->data().value<OORef<OvitoObject>>())) {
-            node->setPerViewportVisibility(_viewport, checked);
+            node->setPerViewportVisibility(viewport(), checked);
         }
     });
 }

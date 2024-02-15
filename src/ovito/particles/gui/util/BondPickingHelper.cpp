@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/viewport/ViewportWindowInterface.h>
+#include <ovito/core/viewport/ViewportWindow.h>
 #include "BondPickingHelper.h"
 
 namespace Ovito {
@@ -36,7 +36,7 @@ namespace Ovito {
 /******************************************************************************
 * Finds the bond under the mouse cursor.
 ******************************************************************************/
-bool BondPickingHelper::pickBond(ViewportWindowInterface* vpwin, const QPoint& clickPoint, PickResult& result)
+bool BondPickingHelper::pickBond(ViewportWindow* vpwin, const QPoint& clickPoint, PickResult& result)
 {
     ViewportPickResult vpPickResult = vpwin->pick(clickPoint);
     // Check if user has clicked on something.

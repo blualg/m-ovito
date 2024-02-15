@@ -48,24 +48,24 @@ public:
     virtual InputModeType modeType() override { return TemporaryMode; }
 
     /// Handles the mouse down event for the given viewport.
-    virtual void mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    virtual void mousePressEvent(ViewportWindow* vpwin, QMouseEvent* event) override;
 
     /// Handles the mouse up event for the given viewport.
-    virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    virtual void mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event) override;
 
     /// Handles the mouse move event for the given viewport.
-    virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    virtual void mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event) override;
 
     /// Is called when a viewport looses the input focus.
-    virtual void focusOutEvent(ViewportWindowInterface* vpwin, QFocusEvent* event) override;
+    virtual void focusOutEvent(ViewportWindow* vpwin, QFocusEvent* event) override;
 
     /// Applies a step-wise change of the view orientation.
-    void discreteStep(ViewportWindowInterface* vpwin, QPointF delta);
+    void discreteStep(ViewportWindow* vpwin, QPointF delta);
 
 protected:
 
     /// Computes the new view based on the new mouse position.
-    virtual void modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF delta, bool discreteStep) {}
+    virtual void modifyView(ViewportWindow* vpwin, Viewport* vp, QPointF delta, bool discreteStep) {}
 
     /// This is called by the system after the input handler has become the active handler.
     virtual void activated(bool temporaryActivation) override;
@@ -135,7 +135,7 @@ public:
 protected:
 
     /// Computes the new view based on the new mouse position.
-    virtual void modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF delta, bool discreteStep) override;
+    virtual void modifyView(ViewportWindow* vpwin, Viewport* vp, QPointF delta, bool discreteStep) override;
 };
 
 /******************************************************************************
@@ -161,7 +161,7 @@ public:
 protected:
 
     /// Computes the new view based on the new mouse position.
-    virtual void modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF delta, bool discreteStep) override;
+    virtual void modifyView(ViewportWindow* vpwin, Viewport* vp, QPointF delta, bool discreteStep) override;
 };
 
 
@@ -191,7 +191,7 @@ public:
 protected:
 
     /// Computes the new view based on the new mouse position.
-    virtual void modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF delta, bool discreteStep) override;
+    virtual void modifyView(ViewportWindow* vpwin, Viewport* vp, QPointF delta, bool discreteStep) override;
 
     /// Computes a scaling factor that depends on the total size of the scene which is used to
     /// control the zoom sensitivity in perspective mode.
@@ -221,7 +221,7 @@ public:
 protected:
 
     /// Computes the new view based on the new mouse position.
-    virtual void modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF delta, bool discreteStep) override;
+    virtual void modifyView(ViewportWindow* vpwin, Viewport* vp, QPointF delta, bool discreteStep) override;
 };
 
 /******************************************************************************
@@ -245,21 +245,21 @@ public:
     }
 
     /// Handles the mouse click event for a Viewport.
-    virtual void mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    virtual void mousePressEvent(ViewportWindow* vpwin, QMouseEvent* event) override;
 
     /// Is called when the user moves the mouse.
-    virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    virtual void mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event) override;
 
     /// Sets the orbit rotation center to the space location under given mouse coordinates.
-    bool pickOrbitCenter(ViewportWindowInterface* vpwin, const QPointF& pos);
+    bool pickOrbitCenter(ViewportWindow* vpwin, const QPointF& pos);
 
     /// Lets the input mode render its overlay content in a viewport.
-    virtual void renderOverlay3D(Viewport* vp, SceneRenderer* renderer) override;
+    virtual void renderOverlay(Viewport* vp, ViewportWindow* vpWin, FrameGraph& frameGraph, DataSet* dataset) override;
 
 private:
 
     /// Finds the intersection point between a ray originating from the current mouse cursor position and the scene.
-    bool findIntersection(ViewportWindowInterface* vpwin, const QPointF& mousePos, Point3& intersectionPoint);
+    bool findIntersection(ViewportWindow* vpwin, const QPointF& mousePos, Point3& intersectionPoint);
 
     /// The mouse cursor that is shown when over an object.
     QCursor _hoverCursor;

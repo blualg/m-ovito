@@ -185,20 +185,18 @@ public:
     /// \undoable
     LookAtController* setLookatTargetNode(AnimationTime time, SceneNode* targetNode);
 
-    /// \brief Returns the bounding box of the scene node in local coordinates.
-    /// \param time The time at which the bounding box should be computed.
+    /// \brief Computes the bounding box of the scene node in local coordinates.
+    /// \param time The animation time at which to compute the bounding box.
     /// \return An axis-aligned box in the node's local coordinate system that contains
     ///         the whole node geometry.
     /// \note The returned box does not contains the bounding boxes of the child nodes.
-    /// \sa worldBoundingBox()
     virtual Box3 localBoundingBox(AnimationTime time, TimeInterval& validity) const = 0;
 
     /// \brief Returns the bounding box of the scene node in world coordinates.
-    /// \param time The time at which the bounding box should be computed.
+    /// \param time The animation time at which to compute the bounding box.
     /// \param vp The viewport in which to compute the bounding box. If specified, the method takes into account per-viewport visibility of the scene nodes.
     /// \return An axis-aligned box in the world local coordinate system that contains
-    ///         the whole node geometry including the bounding boxes of all child nodes.
-    /// \note The returned box does also contain the bounding boxes of the child nodes.
+    ///         the whole node geometry including all child nodes.
     Box3 worldBoundingBox(AnimationTime time, Viewport* vp = nullptr) const;
 
     /// \brief Returns whether this scene node is currently selected.

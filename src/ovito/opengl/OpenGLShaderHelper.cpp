@@ -53,14 +53,23 @@ void OpenGLShaderHelper::load(const QString& id, const QString& vertexShaderFile
     OVITO_REPORT_OPENGL_ERRORS(_renderer);
 
     // Set shader uniforms.
-    OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("modelview_projection_matrix", static_cast<QMatrix4x4>(_renderer->projParams().projectionMatrix * _renderer->modelViewTM())));
-    OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("projection_matrix", static_cast<QMatrix4x4>(_renderer->projParams().projectionMatrix)));
-    OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("inverse_projection_matrix", static_cast<QMatrix4x4>(_renderer->projParams().inverseProjectionMatrix)));
-    OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("modelview_matrix", static_cast<QMatrix4x4>(Matrix4(_renderer->modelViewTM()))));
-    Matrix3 normalTM;
-    if(!_renderer->modelViewTM().linear().inverse(normalTM))
-        normalTM.setIdentity();
-    OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("normal_tm", static_cast<QMatrix4x4>(Matrix4(normalTM.transposed()))));
+    if(!_renderer->_preprojectedCoordinates) {
+        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("modelview_projection_matrix", static_cast<QMatrix4x4>(_renderer->projParams().projectionMatrix * _renderer->modelViewTM())));
+        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("projection_matrix", static_cast<QMatrix4x4>(_renderer->projParams().projectionMatrix)));
+        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("inverse_projection_matrix", static_cast<QMatrix4x4>(_renderer->projParams().inverseProjectionMatrix)));
+        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("modelview_matrix", static_cast<QMatrix4x4>(Matrix4(_renderer->modelViewTM()))));
+        Matrix3 normalTM;
+        if(!_renderer->modelViewTM().linear().inverse(normalTM))
+            normalTM.setIdentity();
+        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("normal_tm", static_cast<QMatrix4x4>(Matrix4(normalTM.transposed()))));
+    }
+    else {
+        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("modelview_projection_matrix", QMatrix4x4{}));
+        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("projection_matrix", QMatrix4x4{}));
+        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("inverse_projection_matrix", QMatrix4x4{}));
+        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("modelview_matrix", QMatrix4x4{}));
+        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("normal_tm", QMatrix4x4{}));
+    }
 
     // Set up uniform constant data arrays.
     int unitCubeTriangleStripUniform = _shader->uniformLocation("unit_cube_triangle_strip");
@@ -486,9 +495,7 @@ void OpenGLShaderHelper::draw(GLenum mode)
             };
 
             // Look up indirect drawing buffer.
-            QOpenGLBuffer& indirectBuffer =
-                OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::move(indirectDrawingCacheKey),
-                    _renderer->currentResourceFrame());
+            QOpenGLBuffer& indirectBuffer = _renderer->currentResourceFrame().lookup<QOpenGLBuffer>(std::move(indirectDrawingCacheKey));
 
             // Data structure used by the glMultiDrawArraysIndirect() command:
             struct DrawArraysIndirectCommand {
@@ -634,7 +641,7 @@ void OpenGLShaderHelper::setupVertexAndInstanceIDOpenGL2()
         // In GLSL 1.20, the 'gl_VertexID' and 'gl_InstanceID' special variables are not available.
         // Then we have to emulate them by providing a buffer-backed vertex attribute named 'vertexID' instead.
 
-        std::pair<QOpenGLBuffer, GLsizei>& buf = OpenGLResourceManager::instance()->lookup<std::pair<QOpenGLBuffer, GLsizei>>(RendererResourceKey<struct VertexIDCache>{}, _renderer->currentResourceFrame());
+        std::pair<QOpenGLBuffer, GLsizei>& buf = _renderer->currentResourceFrame().lookup<std::pair<QOpenGLBuffer, GLsizei>>(RendererResourceKey<struct VertexIDCache>{});
 
         if(!buf.first.isCreated() || buf.second < verticesPerInstance() * instanceCount()) {
             buf.second = verticesPerInstance() * instanceCount();
@@ -687,7 +694,7 @@ void OpenGLShaderHelper::drawOpenGL2(GLenum mode, GLsizei renderInstanceCount)
         // Use glMultiDrawArrays() if available to draw all instances in one go.
         if(_renderer->glMultiDrawArrays) {
             RendererResourceKey<struct IndexArrayCache, GLsizei, GLsizei> indexArrayCacheKey{ renderInstanceCount, verticesPerInstance() };
-            std::pair<std::vector<GLint>, std::vector<GLsizei>>& indexArrays = OpenGLResourceManager::instance()->lookup<std::pair<std::vector<GLint>, std::vector<GLsizei>>>(indexArrayCacheKey, _renderer->currentResourceFrame());
+            std::pair<std::vector<GLint>, std::vector<GLsizei>>& indexArrays = _renderer->currentResourceFrame().lookup<std::pair<std::vector<GLint>, std::vector<GLsizei>>>(indexArrayCacheKey);
             if(indexArrays.first.empty()) {
                 // Fill the two arrays needed for glMultiDrawArrays().
                 indexArrays.second.resize(renderInstanceCount, verticesPerInstance());

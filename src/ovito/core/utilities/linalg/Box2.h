@@ -68,18 +68,18 @@ public:
     /////////////////////////////// Constructors /////////////////////////////////
 
     /// \brief Constructs an empty box.
-    Box_2() : minc(std::numeric_limits<T>::max()), maxc(std::numeric_limits<T>::lowest()) {}
+    Box_2() noexcept : minc(std::numeric_limits<T>::max()), maxc(std::numeric_limits<T>::lowest()) {}
 
     /// \brief Initializes the box with lower and upper coordinates.
     /// \param lower The corner of the box that specifies the lower boundary coordinates.
     /// \param upper The corner of the box that specifies the upper boundary coordinates.
-    Box_2(const Point_2<T>& lower, const Point_2<T>& upper) : minc(lower), maxc(upper) {
+    Box_2(const Point_2<T>& lower, const Point_2<T>& upper) noexcept : minc(lower), maxc(upper) {
         OVITO_ASSERT_MSG(minc.x() <= maxc.x(), "Box_2 constructor", "Lower X coordinate must not be larger than upper X coordinate.");
         OVITO_ASSERT_MSG(minc.y() <= maxc.y(), "Box_2 constructor", "Lower Y coordinate must not be larger than upper Y coordinate.");
     }
 
     /// \brief Initializes the box with the given coordinates.
-    Box_2(T xmin, T ymin, T xmax, T ymax) : minc(Point_2<T>(xmin, ymin)), maxc(Point_2<T>(xmax, ymax)) {
+    Box_2(T xmin, T ymin, T xmax, T ymax) noexcept : minc(Point_2<T>(xmin, ymin)), maxc(Point_2<T>(xmax, ymax)) {
         OVITO_ASSERT(minc.x() <= maxc.x());
         OVITO_ASSERT(minc.y() <= maxc.y());
     }
@@ -87,7 +87,7 @@ public:
     /// \brief Crates a square box.
     /// \param center The center of the cubic box.
     /// \param halfEdgeLength One half of the edge length of the square.
-    Box_2(const Point_2<T>& center, T halfEdgeLength) {
+    Box_2(const Point_2<T>& center, T halfEdgeLength) noexcept {
         OVITO_ASSERT(halfEdgeLength >= 0);
         minc.x() = center.x() - halfEdgeLength;
         minc.y() = center.y() - halfEdgeLength;
@@ -97,9 +97,12 @@ public:
 
     /// \brief Casts the box to a box with another data type.
     template<typename U>
-    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, Box_2<U>, const Box_2<T>&> {
+    Q_DECL_CONSTEXPR auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Box_2<U>, const Box_2<T>&> {
         if constexpr(!std::is_same_v<T,U>)
-            return Box_2<U>(minc.template toDataType<U>(), maxc.template toDataType<U>());
+            if(!isEmpty())
+                return Box_2<U>(minc.template toDataType<U>(), maxc.template toDataType<U>());
+            else
+                return Box_2<U>();
         else
             return *this;  // When casting to the same type \a T, this method becomes a no-op.
     }

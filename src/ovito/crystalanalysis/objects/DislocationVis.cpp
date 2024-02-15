@@ -129,7 +129,7 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 DislocationVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 DislocationVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
     const RenderableDislocationLines* renderableObj = path.lastAs<RenderableDislocationLines>();
     if(!renderableObj) return {};
@@ -182,7 +182,7 @@ Box3 DislocationVis::boundingBox(AnimationTime time, const ConstDataObjectPath& 
 /******************************************************************************
 * Lets the vis element render a data object.
 ******************************************************************************/
-PipelineStatus DislocationVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
+PipelineStatus DislocationVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     // Ignore render calls for the original DislocationNetworkObject or MicrostrucureObject.
     // We are only interested in the RenderableDIslocationLines.

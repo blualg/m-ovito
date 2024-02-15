@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/rendering/MarkerPrimitive.h>
 #include "OpenGLSceneRenderer.h"
 #include "OpenGLShaderHelper.h"
 
@@ -34,9 +35,6 @@ void OpenGLSceneRenderer::renderMarkersImplementation(const MarkerPrimitive& pri
     // Step out early if there is nothing to render.
     if(!primitive.positions() || primitive.positions()->size() == 0)
         return;
-
-    rebindVAO();
-    OVITO_REPORT_OPENGL_ERRORS(this);
 
     OpenGLShaderHelper shader(this);
     switch(primitive.shape()) {
@@ -77,8 +75,6 @@ void OpenGLSceneRenderer::renderMarkersImplementation(const MarkerPrimitive& pri
 
     // Issue instance drawing command.
     shader.draw(GL_LINES);
-
-    OVITO_REPORT_OPENGL_ERRORS(this);
 }
 
 }   // End of namespace

@@ -24,13 +24,14 @@
 
 
 #include <ovito/core/Core.h>
+#include "FrameGraphPrimitive.h"
 
 namespace Ovito {
 
 /**
  * \brief A text string to be rendered by a SceneRenderer implementation.
  */
-class OVITO_CORE_EXPORT TextPrimitive final
+class OVITO_CORE_EXPORT TextPrimitive final : public FrameGraphPrimitive
 {
     Q_GADGET
 
@@ -80,9 +81,6 @@ public:
 
     /// \brief Sets the text position in window coordinates.
     void setPositionWindow(const QPointF& pos) { _position = Point2(pos.x(), pos.y()); }
-
-    /// \brief Sets the text position in viewport coordinates.
-    void setPositionViewport(const SceneRenderer* renderer, const Point2& pos);
 
     /// \brief Returns the text position in window coordinates.
     const Point2& position() const { return _position; }

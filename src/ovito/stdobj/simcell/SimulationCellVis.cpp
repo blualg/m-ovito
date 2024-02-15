@@ -22,7 +22,7 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/core/rendering/SceneRenderer.h>
+#include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/rendering/LinePrimitive.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
@@ -57,7 +57,7 @@ SimulationCellVis::SimulationCellVis(ObjectInitializationFlags flags) : DataVis(
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 SimulationCellVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 SimulationCellVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
     const SimulationCell* cellObject = path.lastAs<SimulationCell>();
     if(!cellObject)
@@ -75,47 +75,30 @@ Box3 SimulationCellVis::boundingBox(AnimationTime time, const ConstDataObjectPat
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus SimulationCellVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
+PipelineStatus SimulationCellVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
-    const SimulationCell* cell = path.lastAs<SimulationCell>();
-    if(!cell) return {};
-
-    if(renderer->isInteractive() && !renderer->viewport()->renderPreviewMode()) {
-        if(!renderer->isBoundingBoxPass()) {
-            renderWireframe(time, cell, flowState, renderer, pipeline);
+    if(const SimulationCell* cell = path.lastAs<SimulationCell>()) {
+        if(frameGraph.isInteractive() && !frameGraph.isPreviewMode()) {
+            renderWireframe(cell, flowState, frameGraph, pipeline);
         }
         else {
-            TimeInterval validityInterval;
-            renderer->addToLocalBoundingBox(boundingBox(time, path, pipeline, flowState, renderer->visCache(), validityInterval));
+            if(!renderCellEnabled())
+                return {};      // Do nothing if rendering has been disabled by the user.
+
+            renderSolid(cell, flowState, frameGraph, pipeline);
         }
     }
-    else {
-        if(!renderCellEnabled())
-            return {};      // Do nothing if rendering has been disabled by the user.
-
-        if(!renderer->isBoundingBoxPass()) {
-            renderSolid(time, cell, flowState, renderer, pipeline);
-        }
-        else {
-            TimeInterval validityInterval;
-            Box3 bb = boundingBox(time, path, pipeline, flowState, renderer->visCache(), validityInterval);
-            renderer->addToLocalBoundingBox(bb.padBox(cellLineWidth()));
-        }
-    }
-
     return {};
 }
 
 /******************************************************************************
 * Renders the given simulation cell using lines.
 ******************************************************************************/
-void SimulationCellVis::renderWireframe(AnimationTime time, const SimulationCell* cell, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
+void SimulationCellVis::renderWireframe(const SimulationCell* cell, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
-    OVITO_ASSERT(!renderer->isBoundingBoxPass());
-
     // Look up the vertex data in the vis cache.
     RendererResourceKey<struct WireframeVertices, bool> cacheKey{ cell->is2D() };
-    auto& lineVertices = renderer->visCache().get<ConstDataBufferPtr>(std::move(cacheKey));
+    auto& lineVertices = frameGraph.visCache().lookup<ConstDataBufferPtr>(std::move(cacheKey));
 
     // Check if we already have a valid rendering primitive that is up to date.
     if(!lineVertices) {
@@ -151,30 +134,24 @@ void SimulationCellVis::renderWireframe(AnimationTime time, const SimulationCell
     }
 
     // Prepare line drawing primitive.
-    LinePrimitive linePrimitive;
-    linePrimitive.setPositions(lineVertices);
-    linePrimitive.setUniformColor(ViewportSettings::getSettings().viewportColor(pipeline->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_UNSELECTED));
-    if(!renderer->isImagePass())
-        linePrimitive.setLineWidth(renderer->defaultLinePickingWidth());
+    std::unique_ptr<LinePrimitive> linePrimitive = std::make_unique<LinePrimitive>();
+    linePrimitive->setPositions(lineVertices);
+    linePrimitive->setUniformColor(ViewportSettings::getSettings().viewportColor(pipeline->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_UNSELECTED));
 
-    const AffineTransformation oldTM = renderer->worldTransform();
+    // Compute transformation matrix from unit cell space to world space.
+    TimeInterval iv;
+    const AffineTransformation nodeTM = pipeline->getWorldTransform(frameGraph.time(), iv);
     AffineTransformation cellMatrix = cell->cellMatrix();
     if(cell->is2D())
         cellMatrix(2,3) = 0; // For 2D cells, implicitly set z-coordinate of origin to zero.
-    renderer->setWorldTransform(oldTM * cellMatrix);
-    renderer->beginPickObject(pipeline);
-    renderer->renderLines(linePrimitive);
-    renderer->endPickObject();
-    renderer->setWorldTransform(oldTM);
+    frameGraph.addPrimitive(std::move(linePrimitive), nodeTM * cellMatrix, Box3(Point3(0), Point3(1)), pipeline);
 }
 
 /******************************************************************************
 * Renders the given simulation cell using solid shading mode.
 ******************************************************************************/
-void SimulationCellVis::renderSolid(AnimationTime time, const SimulationCell* cell, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
+void SimulationCellVis::renderSolid(const SimulationCell* cell, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
-    OVITO_ASSERT(!renderer->isBoundingBoxPass());
-
     // The key type used for caching the geometry primitive:
     RendererResourceKey<struct SolidCellCache, ConstDataObjectRef, FloatType, Color> cacheKey{ cell, cellLineWidth(), cellColor() };
 
@@ -185,7 +162,7 @@ void SimulationCellVis::renderSolid(AnimationTime time, const SimulationCell* ce
     };
 
     // Lookup the rendering primitive in the vis cache.
-    auto& visCache = renderer->visCache().get<CacheValue>(std::move(cacheKey));
+    auto& visCache = frameGraph.visCache().lookup<CacheValue>(std::move(cacheKey));
 
     // Check if we already have a valid rendering primitive that is up to date.
     if(!visCache.corners.positions()) {
@@ -249,10 +226,8 @@ void SimulationCellVis::renderSolid(AnimationTime time, const SimulationCell* ce
         visCache.corners.setUniformRadius(cellLineWidth());
         visCache.corners.setUniformColor(cellColor());
     }
-    renderer->beginPickObject(pipeline);
-    renderer->renderCylinders(visCache.edges);
-    renderer->renderParticles(visCache.corners);
-    renderer->endPickObject();
+    frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(visCache.edges), pipeline);
+    frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(visCache.corners), pipeline);
 }
 
 }   // End of namespace

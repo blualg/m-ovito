@@ -67,6 +67,73 @@ struct ViewProjectionParameters
 
     /// Specifies the time interval during which the stored parameters stay constant.
     TimeInterval validityInterval = TimeInterval::empty();
+
+    /// \brief Computes a ray in world space going through a viewport pixel.
+    /// \param viewportPoint Viewport coordinates of the point in the range [-1,+1].
+    /// \return The ray that goes from the viewpoint through the specified position in the viewport.
+    Ray3 viewportRay(const Point2& viewportPoint) const {
+        if(isPerspective) {
+            Point3 ndc1(viewportPoint.x(), viewportPoint.y(), 1);
+            Point3 ndc2(viewportPoint.x(), viewportPoint.y(), 0);
+            Point3 p1 = inverseViewMatrix * (inverseProjectionMatrix * ndc1);
+            Point3 p2 = inverseViewMatrix * (inverseProjectionMatrix * ndc2);
+            return { Point3::Origin() + inverseViewMatrix.translation(), p1 - p2 };
+        }
+        else {
+            Point3 ndc(viewportPoint.x(), viewportPoint.y(), -1);
+            return { inverseViewMatrix * (inverseProjectionMatrix * ndc), inverseViewMatrix * Vector3(0,0,-1) };
+        }
+    }
+
+    /// Computes the world size of an object that should appear always in the same size on the screen.
+    /// The window size must be specified in device-independent pixels.
+    FloatType nonScalingSize(const Point3& worldPosition, const QSize& windowSize) const {
+
+        OVITO_ASSERT(std::isfinite(fieldOfView));
+
+        // Window height.
+        int height = windowSize.height();
+        if(height <= 0)
+            return 1;
+
+        constexpr FloatType baseSize = 60;
+
+        if(isPerspective) {
+            Point3 p = viewMatrix * worldPosition;
+            if(p == Point3::Origin())
+                return 1;
+            Point3 p1 = projectionMatrix * p;
+            Point3 p2 = projectionMatrix * (p + Vector3(0,1,0));
+            FloatType dist = (p1 - p2).length();
+            if(std::abs(dist) < FLOATTYPE_EPSILON)
+                return 1;
+            return FloatType(0.8) * baseSize / dist / (FloatType)height;
+        }
+        else {
+            return fieldOfView / (FloatType)height * baseSize;
+        }
+    }
+
+	/// Computes the world size of an object that should appear one pixel wide in the rendered image.
+	FloatType projectedPixelSize(const Point3& worldPosition, const QSize& windowSize) const {
+        // Get window size in device pixels.
+        if(windowSize.height() == 0)
+            return 0;
+
+        if(isPerspective) {
+
+            Point3 p = viewMatrix * worldPosition;
+            if(p.z() == 0) return 1;
+
+            Point3 p1 = projectionMatrix * p;
+            Point3 p2 = projectionMatrix * (p + Vector3(1,0,0));
+
+            return 1.0 / (p1 - p2).length() / (FloatType)windowSize.height();
+        }
+        else {
+            return fieldOfView / (FloatType)windowSize.height();
+        }
+    }
 };
 
 }   // End of namespace

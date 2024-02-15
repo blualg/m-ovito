@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/rendering/ParticlePrimitive.h>
 #include <ovito/core/utilities/SortZipped.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "OpenGLSceneRenderer.h"
@@ -38,9 +39,6 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
         return;
     if(primitive.indices() && primitive.indices()->size() == 0)
         return;
-
-    rebindVAO();
-    OVITO_REPORT_OPENGL_ERRORS(this);
 
     // Activate the right OpenGL shader program.
     OpenGLShaderHelper shader(this);
@@ -318,9 +316,9 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
         OVITO_ASSERT(!isPickingPass() && !orderIndependentTransparency());
 
         // Viewing direction in object space:
-        const Vector3 direction = modelViewTM().inverse().column(2);
+        const Vector3 direction = modelViewTM().linear().inverse().column(2);
 
-        // Coarsen the direction vector's precision to reduce the frequency at
+        // Coarsen the direction vector's precision for real-time rendering to reduce the frequency at
         // which the particles must be reordered when moving the camera.
         Vector3 coarseDirection = direction;
         if(isInteractive()) {
@@ -366,8 +364,6 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
             Ovito::sort_zipped(distances, sortedIndices);
         });
     }
-
-    OVITO_REPORT_OPENGL_ERRORS(this);
 }
 
 }   // End of namespace

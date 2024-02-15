@@ -72,13 +72,13 @@ public:
 
     /// \brief Empty default constructor that does not initialize the matrix elements (for performance reasons).
     ///        The matrix elements will have an undefined value and need to be initialized later.
-    Matrix_4() = default;
+    Matrix_4() noexcept = default;
 
     /// \brief Constructor that initializes 9 elements of the matrix to the given values. All other elements are set to zero.
     /// \note Values are given in row-major order, i.e. row by row.
     Q_DECL_CONSTEXPR Matrix_4(T m11, T m12, T m13,
                        T m21, T m22, T m23,
-                       T m31, T m32, T m33)
+                       T m31, T m32, T m33) noexcept
         : std::array<Vector_4<T>,4>{{{m11,m21,m31,T(0)},{m12,m22,m32,T(0)},{m13,m23,m33,T(0)}, typename Vector_4<T>::Zero()}} {}
 
     /// \brief Constructor that initializes the 12 elements of the 3x4 submatrix to the given values.
@@ -87,7 +87,7 @@ public:
     Q_DECL_CONSTEXPR Matrix_4(
                         T m11, T m12, T m13, T m14,
                         T m21, T m22, T m23, T m24,
-                        T m31, T m32, T m33, T m34)
+                        T m31, T m32, T m33, T m34) noexcept
         : std::array<Vector_4<T>,4>{{
             Vector_4<T>(m11,m21,m31,T(0)),
             Vector_4<T>(m12,m22,m32,T(0)),
@@ -100,7 +100,7 @@ public:
                         T m11, T m12, T m13, T m14,
                         T m21, T m22, T m23, T m24,
                         T m31, T m32, T m33, T m34,
-                        T m41, T m42, T m43, T m44)
+                        T m41, T m42, T m43, T m44) noexcept
         : std::array<Vector_4<T>,4>{{
             Vector_4<T>(m11,m21,m31,m41),
             Vector_4<T>(m12,m22,m32,m42),
@@ -109,7 +109,7 @@ public:
 
     /// \brief Initializes the 4x4 matrix from a 3x3 matrix.
     /// The lower matrix row and the right column are initialized to (0,0,0,1).
-    Q_DECL_CONSTEXPR explicit Matrix_4(const Matrix_3<T>& tm)
+    Q_DECL_CONSTEXPR explicit Matrix_4(const Matrix_3<T>& tm) noexcept
         : std::array<Vector_4<T>,4>{{
             Vector_4<T>(tm(0,0),tm(1,0),tm(2,0),T(0)),
             Vector_4<T>(tm(0,1),tm(1,1),tm(2,1),T(0)),
@@ -117,12 +117,12 @@ public:
             Vector_4<T>(   T(0),   T(0),   T(0),T(1))}} {}
 
     /// \brief Constructor that initializes the matrix from four column vectors.
-    Q_DECL_CONSTEXPR Matrix_4(const Vector_4<T>& c1, const Vector_4<T>& c2, const Vector_4<T>& c3, const Vector_4<T>& c4)
+    Q_DECL_CONSTEXPR Matrix_4(const Vector_4<T>& c1, const Vector_4<T>& c2, const Vector_4<T>& c3, const Vector_4<T>& c4) noexcept
         : std::array<Vector_4<T>,4>{{c1, c2, c3, c4}} {}
 
     /// \brief Initializes the 4x4 matrix from a 3x4 matrix.
     /// The lower matrix row is initialized to (0,0,0,1).
-    Q_DECL_CONSTEXPR explicit Matrix_4(const AffineTransformationT<T>& tm)
+    Q_DECL_CONSTEXPR explicit Matrix_4(const AffineTransformationT<T>& tm) noexcept
         : std::array<Vector_4<T>,4>{{
             Vector_4<T>(tm(0,0),tm(1,0),tm(2,0),T(0)),
             Vector_4<T>(tm(0,1),tm(1,1),tm(2,1),T(0)),
@@ -131,7 +131,7 @@ public:
 
     /// \brief Constructor that initializes the top 3x4 submatrix from four column 3-vectors.
     /// The lower matrix row is initialized to (0,0,0,1).
-    Q_DECL_CONSTEXPR Matrix_4(const Vector_3<T>& c1, const Vector_3<T>& c2, const Vector_3<T>& c3, const Vector_3<T>& c4)
+    Q_DECL_CONSTEXPR Matrix_4(const Vector_3<T>& c1, const Vector_3<T>& c2, const Vector_3<T>& c3, const Vector_3<T>& c4) noexcept
         : std::array<Vector_4<T>,4>{{
             Vector_4<T>(c1[0],c1[1],c1[2],T(0)),
             Vector_4<T>(c2[0],c2[1],c2[2],T(0)),
@@ -140,7 +140,7 @@ public:
 
     /// \brief Initializes the matrix to the null matrix.
     /// All matrix elements are set to zero by this constructor.
-    Q_DECL_CONSTEXPR Matrix_4(Zero)
+    Q_DECL_CONSTEXPR Matrix_4(Zero) noexcept
         : std::array<Vector_4<T>,4>{{
             typename Vector_4<T>::Zero(),
             typename Vector_4<T>::Zero(),
@@ -149,7 +149,7 @@ public:
 
     /// \brief Initializes the matrix to the identity matrix.
     /// All diagonal elements are set to one, and all off-diagonal elements are set to zero.
-    Q_DECL_CONSTEXPR Matrix_4(Identity)
+    Q_DECL_CONSTEXPR Matrix_4(Identity) noexcept
         : std::array<Vector_4<T>,4>{{
             Vector_4<T>(T(1),T(0),T(0),T(0)),
             Vector_4<T>(T(0),T(1),T(0),T(0)),
@@ -158,7 +158,7 @@ public:
 
     /// \brief Casts the matrix to a matrix with another data type.
     template<typename U>
-    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, Matrix_4<U>, const Matrix_4<T>&> {
+    Q_DECL_CONSTEXPR auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Matrix_4<U>, const Matrix_4<T>&> {
         if constexpr(!std::is_same_v<T,U>)
             return Matrix_4<U>(
                 static_cast<U>((*this)(0,0)), static_cast<U>((*this)(0,1)), static_cast<U>((*this)(0,2)), static_cast<U>((*this)(0,3)),
@@ -420,7 +420,7 @@ Q_DECL_CONSTEXPR inline Vector_4<T> operator*(const Matrix_4<T>& a, const Vector
 template<typename T>
 Q_DECL_CONSTEXPR inline Vector_3<T> operator*(const Matrix_4<T>& a, const Vector_3<T>& v)
 {
-    T s = a(3,0)*v[0] + a(3,1)*v[1] + a(3,2)*v[2] + a(3,3);
+    const T s = a(3,0)*v[0] + a(3,1)*v[1] + a(3,2)*v[2] + a(3,3);
     OVITO_ASSERT(s != 0);
     return {
         (a(0,0)*v[0] + a(0,1)*v[1] + a(0,2)*v[2]) / s,
@@ -434,12 +434,26 @@ Q_DECL_CONSTEXPR inline Vector_3<T> operator*(const Matrix_4<T>& a, const Vector
 template<typename T>
 Q_DECL_CONSTEXPR inline Point_3<T> operator*(const Matrix_4<T>& a, const Point_3<T>& v)
 {
-    T s = a(3,0)*v[0] + a(3,1)*v[1] + a(3,2)*v[2] + a(3,3);
+    const T s = a(3,0)*v[0] + a(3,1)*v[1] + a(3,2)*v[2] + a(3,3);
     OVITO_ASSERT(s != 0);
     return {
         (a(0,0)*v[0] + a(0,1)*v[1] + a(0,2)*v[2] + a(0,3)) / s,
         (a(1,0)*v[0] + a(1,1)*v[1] + a(1,2)*v[2] + a(1,3)) / s,
         (a(2,0)*v[0] + a(2,1)*v[1] + a(2,2)*v[2] + a(2,3)) / s
+    };
+}
+
+/// \brief Computes the product of a 4x4 matrix and the origin Point3 (which is assumed to be a 4-vector with the last element equal to 1).
+/// \relates Matrix_4
+template<typename T>
+Q_DECL_CONSTEXPR inline Point_3<T> operator*(const Matrix_4<T>& a, typename Point_3<T>::Origin o)
+{
+    const T s = a(3,3);
+    OVITO_ASSERT(s != 0);
+    return {
+        a(0,3) / s,
+        a(1,3) / s,
+        a(2,3) / s
     };
 }
 
@@ -555,6 +569,12 @@ using Matrix4 = Matrix_4<FloatType>;
  * \relates Matrix_4
  */
 using Matrix4F = Matrix_4<float>;
+
+/**
+ * \brief Instantiation of the Matrix_4 class template with the low-precision floating-point type used for graphics data.
+ * \relates Matrix_4
+ */
+using Matrix4G = Matrix_4<GraphicsFloatType>;
 
 }   // End of namespace
 

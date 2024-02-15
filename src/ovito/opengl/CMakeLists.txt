@@ -32,7 +32,6 @@ OVITO_STANDARD_PLUGIN(OpenGLRenderer
         OpenGLCylinderPrimitive.cpp
         OpenGLMeshPrimitive.cpp
         OpenGLMarkerPrimitive.cpp
-        OpenGLResourceManager.cpp
         OpenGLShaderHelper.cpp
         OpenGLSceneRenderer.cpp
         OffscreenOpenGLSceneRenderer.cpp

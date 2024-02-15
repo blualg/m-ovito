@@ -37,28 +37,22 @@ class OVITO_CORE_EXPORT DataVis : public ActiveObject
 {
     OVITO_CLASS(DataVis)
 
-protected:
-
-    /// \brief Constructor.
-    using ActiveObject::ActiveObject;
-
 public:
 
-    /// \brief Lets the vis element render a data object.
-    ///
-    /// \param time The animation time at which to render the object
-    /// \param path The data object to be rendered and its parent objects.
-    /// \param flowState The pipeline evaluation results of the object node.
-    /// \param renderer The renderer that should be used to produce the visualization.
-    /// \param pipeline The pipeline scene node that is being rendered.
-    /// \return A status code indicating the success or failure of the rendering operation.
-    ///
-    /// The world transformation matrix is already set up when this method is called by the
-    /// system. The data has to be rendered in the local object coordinate system.
-    virtual PipelineStatus render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline) = 0;
+    /// Constructor.
+    using ActiveObject::ActiveObject;
 
-    /// \brief Computes the view-independent bounding box of the given data object.
-    virtual Box3 boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval) = 0;
+    /// \brief Lets the vis element produce a visual representation of a data object.
+    ///
+    /// \param path The data object to be rendered and its parent objects.
+    /// \param flowState The pipeline evaluation results.
+    /// \param frameGraph The output frame graph being generated.
+    /// \param pipeline The pipeline scene node that produced the data object.
+    /// \return A status code indicating the success or failure of the rendering operation.
+    virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) = 0;
+
+    /// \brief Computes the view-dependent bounding box of the given data object.
+    virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval) = 0;
 
     /// \brief Indicates whether this visual element should be surrounded by a selection marker in the viewports when it is selected.
     /// \return \c true to let the system render a selection marker around the object when it is selected.

@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdobj/StdObj.h>
+#include <ovito/stdobj/properties/Property.h>
 #include <ovito/core/dataset/data/DataObjectReference.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include <ovito/core/dataset/DataSet.h>
@@ -125,6 +126,62 @@ void SimulationCell::updateEditableProxies(PipelineFlowState& state, ConstDataOb
     }
 
     DataObject::updateEditableProxies(state, dataPath);
+}
+
+/******************************************************************************
+* Wraps the input coordinates at the periodic boundaries of the cell.
+* The wrapped coordinates are returned as a new DataBuffer object.
+******************************************************************************/
+ConstPropertyPtr SimulationCell::wrapPoints(const Property* inputPositions) const
+{
+    // Check the input data type and component count.
+    OVITO_ASSERT(inputPositions);
+    OVITO_ASSERT(inputPositions->dataType() == DataBuffer::FloatDefault);
+    OVITO_ASSERT(inputPositions->componentCount() == 3);
+
+    // If PBCs are turned off, we have nothing to do and can return the input coordinates as is.
+    if(!hasPbcCorrected())
+        return inputPositions;
+
+    // Create a new buffer to store the wrapped coordinates.
+    PropertyPtr outputPositions = inputPositions->cloneWithoutData(inputPositions->size());
+
+    const AffineTransformation cellMatrix = this->cellMatrix();
+    const AffineTransformation reciprocalCellMatrix = this->reciprocalCellMatrix();
+    const auto pbcFlags = this->pbcFlagsCorrected();
+
+#ifdef OVITO_USE_SYCL
+    if(inputPositions->size() != 0) {
+        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            SyclBufferAccess<Point3, access_mode::read> posInAcc{inputPositions, cgh};
+            SyclBufferAccess<Point3, access_mode::discard_write> posOutAcc{outputPositions, cgh};
+            OVITO_SYCL_PARALLEL_FOR(cgh, SimulationCell_wrapPoints)(sycl::range(posInAcc.size()), [=](size_t i) {
+                const Point3 p = posInAcc[i];
+                const Point3 rp = reciprocalCellMatrix * p;
+                const Vector3 rv(
+                    pbcFlags[0] * sycl::floor(rp.x()),
+                    pbcFlags[1] * sycl::floor(rp.y()),
+                    pbcFlags[2] * sycl::floor(rp.z())
+                );
+                posOutAcc[i] = p - cellMatrix * rv;
+            });
+        });
+    }
+#else
+    BufferReadAccess<Point3> inputPosAcc{inputPositions};
+    BufferWriteAccess<Point3, access_mode::discard_write> outputPosAcc{outputPositions};
+    boost::transform(inputPosAcc, outputPosAcc.begin(), [&](const Point3& p) {
+        const Point3 rp = reciprocalCellMatrix * p;
+        const Vector3 rv(
+            pbcFlags[0] * std::floor(rp.x()),
+            pbcFlags[1] * std::floor(rp.y()),
+            pbcFlags[2] * std::floor(rp.z())
+        );
+        return p - cellMatrix * rv;
+    });
+#endif
+
+    return outputPositions;
 }
 
 }   // End of namespace

@@ -91,10 +91,10 @@ public:
     explicit PickPlanePointsInputMode(SliceModifierEditor* editor) : _editor(editor) {}
 
     /// Handles the mouse events for a Viewport.
-    virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    virtual void mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event) override;
 
     /// Handles mouse move events for a Viewport.
-    virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+    virtual void mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event) override;
 
     /// Lets the input mode render its overlay content in a viewport.
     virtual void renderOverlay3D(Viewport* vp, SceneRenderer* renderer) override;

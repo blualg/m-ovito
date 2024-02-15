@@ -48,21 +48,21 @@ int main(int argc, char** argv)
     // Initialize the application.
     Ovito::OORef<Ovito::GuiApplication> app = Ovito::OORef<Ovito::GuiApplication>::create();
 
-    int result = 1;
+    int exitCode = 1;
     if(app->initialize(argc, argv)) {
         if(!QCoreApplication::instance()) {
             // Application::initialize() may return successfully but without creating a Qt application object.
             // This happens, for example, when the --version command line parameter has been specified by the user.
             // In this case we quit immediately without entering the event loop.
             app->processUIEvents();
-            result = app->isShuttingDown() ? 1 : 0;
+            exitCode = app->isShuttingDown() ? 1 : 0;
         }
         else {
             // Enter event loop.
-            result = QCoreApplication::exec();
+            exitCode = QCoreApplication::exec();
         }
     }
     app->shutdown();
 
-    return result;
+    return exitCode;
 }

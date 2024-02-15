@@ -23,12 +23,14 @@
 #include <ovito/gui/base/GUIBase.h>
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/viewport/Viewport.h>
+#include <ovito/core/viewport/ViewportWindow.h>
 #include <ovito/core/viewport/ViewportSettings.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/data/camera/AbstractCameraObject.h>
 #include <ovito/core/dataset/data/camera/AbstractCameraSource.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/DataSet.h>
@@ -75,7 +77,7 @@ void NavigationMode::deactivated(bool temporary)
 /******************************************************************************
 * Applies a step-wise change of the view orientation.
 ******************************************************************************/
-void NavigationMode::discreteStep(ViewportWindowInterface* vpwin, QPointF delta)
+void NavigationMode::discreteStep(ViewportWindow* vpwin, QPointF delta)
 {
     Viewport* vp = vpwin->viewport();
     if(_viewport == nullptr) {
@@ -85,8 +87,8 @@ void NavigationMode::discreteStep(ViewportWindowInterface* vpwin, QPointF delta)
         _oldCameraPosition = _viewport->cameraPosition();
         _oldCameraDirection = _viewport->cameraDirection();
         _oldFieldOfView = _viewport->fieldOfView();
-        _oldViewMatrix = _viewport->projectionParams().viewMatrix;
-        _oldInverseViewMatrix = _viewport->projectionParams().inverseViewMatrix;
+        _oldViewMatrix = vpwin->projectionParams().viewMatrix;
+        _oldInverseViewMatrix = vpwin->projectionParams().inverseViewMatrix;
         _currentOrbitCenter = _viewport->orbitCenter();
     }
     modifyView(vpwin, vpwin->viewport(), delta, true);
@@ -96,7 +98,7 @@ void NavigationMode::discreteStep(ViewportWindowInterface* vpwin, QPointF delta)
 /******************************************************************************
 * Handles the mouse down event for the given viewport.
 ******************************************************************************/
-void NavigationMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void NavigationMode::mousePressEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
     if(event->button() == Qt::RightButton) {
         ViewportInputMode::mousePressEvent(vpwin, event);
@@ -110,8 +112,8 @@ void NavigationMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent
         _oldCameraPosition = _viewport->cameraPosition();
         _oldCameraDirection = _viewport->cameraDirection();
         _oldFieldOfView = _viewport->fieldOfView();
-        _oldViewMatrix = _viewport->projectionParams().viewMatrix;
-        _oldInverseViewMatrix = _viewport->projectionParams().inverseViewMatrix;
+        _oldViewMatrix = vpwin->projectionParams().viewMatrix;
+        _oldInverseViewMatrix = vpwin->projectionParams().inverseViewMatrix;
         _currentOrbitCenter = _viewport->orbitCenter();
         _undoTransaction.begin(inputManager()->userInterface(), tr("Modify camera"));
     }
@@ -120,7 +122,7 @@ void NavigationMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent
 /******************************************************************************
 * Handles the mouse up event for the given viewport.
 ******************************************************************************/
-void NavigationMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void NavigationMode::mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
     if(_viewport) {
         // Commit view change.
@@ -135,7 +137,7 @@ void NavigationMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEve
 /******************************************************************************
 * Is called when a viewport looses the input focus.
 ******************************************************************************/
-void NavigationMode::focusOutEvent(ViewportWindowInterface* vpwin, QFocusEvent* event)
+void NavigationMode::focusOutEvent(ViewportWindow* vpwin, QFocusEvent* event)
 {
     if(_viewport) {
         if(_temporaryActivation)
@@ -146,7 +148,7 @@ void NavigationMode::focusOutEvent(ViewportWindowInterface* vpwin, QFocusEvent* 
 /******************************************************************************
 * Handles the mouse move event for the given viewport.
 ******************************************************************************/
-void NavigationMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void NavigationMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
     if(_viewport == vpwin->viewport()) {
         QPointF pos = getMousePosition(event);
@@ -178,12 +180,12 @@ PipelineNode* NavigationMode::getViewportCamera(Viewport* vp)
 /******************************************************************************
 * Computes the new view matrix based on the new mouse position.
 ******************************************************************************/
-void PanMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF delta, bool discreteStep)
+void PanMode::modifyView(ViewportWindow* vpwin, Viewport* vp, QPointF delta, bool discreteStep)
 {
     FloatType scaling;
     FloatType normalization = discreteStep ? 20.0 : vpwin->viewportWindowDeviceIndependentSize().height();
     if(vp->isPerspectiveProjection())
-        scaling = FloatType(10) * vp->nonScalingSize(_currentOrbitCenter) / normalization;
+        scaling = FloatType(10) * vpwin->projectionParams().nonScalingSize(_currentOrbitCenter, vpwin->viewportWindowDeviceIndependentSize()) / normalization;
     else
         scaling = FloatType(2) * _oldFieldOfView / normalization;
     FloatType deltaX = -scaling * delta.x();
@@ -216,7 +218,7 @@ void PanMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF d
 /******************************************************************************
 * Computes the new view matrix based on the new mouse position.
 ******************************************************************************/
-void ZoomMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF delta, bool discreteStep)
+void ZoomMode::modifyView(ViewportWindow* vpwin, Viewport* vp, QPointF delta, bool discreteStep)
 {
     if(vp->isPerspectiveProjection()) {
         FloatType amount =  FloatType(-5) * sceneSizeFactor(vp) * delta.y();
@@ -294,7 +296,7 @@ void ZoomMode::zoom(Viewport* vp, FloatType steps, UserInterface& ui)
 /******************************************************************************
 * Computes the new field of view based on the new mouse position.
 ******************************************************************************/
-void FOVMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF delta, bool discreteStep)
+void FOVMode::modifyView(ViewportWindow* vpwin, Viewport* vp, QPointF delta, bool discreteStep)
 {
     FloatType oldFOV = _oldFieldOfView;
     if(AbstractCameraSource* cameraSource = dynamic_object_cast<AbstractCameraSource>(getViewportCamera(vp))) {
@@ -328,12 +330,12 @@ void FOVMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF d
 /******************************************************************************
 * Computes the new view matrix based on the new mouse position.
 ******************************************************************************/
-void OrbitMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF delta, bool discreteStep)
+void OrbitMode::modifyView(ViewportWindow* vpwin, Viewport* vp, QPointF delta, bool discreteStep)
 {
     if(vp->viewType() < Viewport::VIEW_ORTHO)
         vp->setViewType(Viewport::VIEW_ORTHO, true);
 
-    FloatType speed = discreteStep ? 0.05 : (5.0 / vp->windowSize().height());
+    FloatType speed = discreteStep ? 0.05 : (5.0 / vpwin->viewportWindowDeviceIndependentSize().height());
     FloatType deltaTheta = speed * delta.x();
     FloatType deltaPhi = -speed * delta.y();
 
@@ -408,7 +410,7 @@ void OrbitMode::modifyView(ViewportWindowInterface* vpwin, Viewport* vp, QPointF
 /******************************************************************************
 * Sets the orbit rotation center to the space location under given mouse coordinates.
 ******************************************************************************/
-bool PickOrbitCenterMode::pickOrbitCenter(ViewportWindowInterface* vpwin, const QPointF& pos)
+bool PickOrbitCenterMode::pickOrbitCenter(ViewportWindow* vpwin, const QPointF& pos)
 {
     Point3 p;
     Viewport* vp = vpwin->viewport();
@@ -430,7 +432,7 @@ bool PickOrbitCenterMode::pickOrbitCenter(ViewportWindowInterface* vpwin, const 
 /******************************************************************************
 * Handles the mouse down events for a Viewport.
 ******************************************************************************/
-void PickOrbitCenterMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void PickOrbitCenterMode::mousePressEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
     if(event->button() == Qt::LeftButton) {
         if(pickOrbitCenter(vpwin, getMousePosition(event)))
@@ -442,7 +444,7 @@ void PickOrbitCenterMode::mousePressEvent(ViewportWindowInterface* vpwin, QMouse
 /******************************************************************************
 * Is called when the user moves the mouse while the operation is not active.
 ******************************************************************************/
-void PickOrbitCenterMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void PickOrbitCenterMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
     ViewportInputMode::mouseMoveEvent(vpwin, event);
 
@@ -463,7 +465,7 @@ void PickOrbitCenterMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseE
 * Finds the closest intersection point between a ray originating from the
 * current mouse cursor position and the whole scene.
 ******************************************************************************/
-bool PickOrbitCenterMode::findIntersection(ViewportWindowInterface* vpwin, const QPointF& mousePos, Point3& intersectionPoint)
+bool PickOrbitCenterMode::findIntersection(ViewportWindow* vpwin, const QPointF& mousePos, Point3& intersectionPoint)
 {
     ViewportPickResult pickResult = vpwin->pick(mousePos);
     if(pickResult.isValid()) {
@@ -476,37 +478,42 @@ bool PickOrbitCenterMode::findIntersection(ViewportWindowInterface* vpwin, const
 /******************************************************************************
 * Lets the input mode render its overlay content in a viewport.
 ******************************************************************************/
-void PickOrbitCenterMode::renderOverlay3D(Viewport* vp, SceneRenderer* renderer)
+void PickOrbitCenterMode::renderOverlay(Viewport* vp, ViewportWindow* vpWin, FrameGraph& frameGraph, DataSet* dataset)
 {
-    if(!renderer->isImagePass() || !vp->scene())
-        return;
-
-    // Render center of rotation.
-    Point3 center = vp->orbitCenter();
-    FloatType symbolSize = vp->nonScalingSize(center);
-    renderer->setWorldTransform(AffineTransformation::translation(center - Point3::Origin()) * AffineTransformation::scaling(symbolSize));
-
-    if(!renderer->isBoundingBoxPass()) {
-        auto& orbitCenterMarker = renderer->visCache().get<CylinderPrimitive>(RendererResourceKey<struct OrbitGlyphCache>{});
-        if(!orbitCenterMarker.basePositions()) {
-            BufferFactory<Point3G> basePositions(3);
-            BufferFactory<Point3G> headPositions(3);
-            BufferFactory<ColorG> colors(3);
-            basePositions[0] = Point3G(-1,0,0); headPositions[0] = Point3G(1,0,0); colors[0] = ColorG(1,0,0);
-            basePositions[1] = Point3G(0,-1,0); headPositions[1] = Point3G(0,1,0); colors[1] = ColorG(0,1,0);
-            basePositions[2] = Point3G(0,0,-1); headPositions[2] = Point3G(0,0,1); colors[2] = ColorG(0.4f,0.4f,1);
-            orbitCenterMarker.setShape(CylinderPrimitive::CylinderShape);
-            orbitCenterMarker.setShadingMode(CylinderPrimitive::NormalShading);
-            orbitCenterMarker.setUniformWidth(0.1);
-            orbitCenterMarker.setPositions(basePositions.take(), headPositions.take());
-            orbitCenterMarker.setColors(colors.take());
-        }
-        renderer->renderCylinders(orbitCenterMarker);
+    // Prepare the cylinder graphics primitive for rendering the orbit center marker as a crosshair symbol.
+    // The graphics primitive is immutable and can be reused across multiple frames.
+    auto& orbitCenterMarker = frameGraph.visCache().lookup<CylinderPrimitive>(RendererResourceKey<struct OrbitGlyphCache>{});
+    if(!orbitCenterMarker.basePositions()) {
+        BufferFactory<Point3G> basePositions(3);
+        BufferFactory<Point3G> headPositions(3);
+        BufferFactory<ColorG> colors(3);
+        basePositions[0] = Point3G(-1,0,0); headPositions[0] = Point3G(1,0,0); colors[0] = ColorG(1,0,0);
+        basePositions[1] = Point3G(0,-1,0); headPositions[1] = Point3G(0,1,0); colors[1] = ColorG(0,1,0);
+        basePositions[2] = Point3G(0,0,-1); headPositions[2] = Point3G(0,0,1); colors[2] = ColorG(0.4f,0.4f,1);
+        orbitCenterMarker.setShape(CylinderPrimitive::CylinderShape);
+        orbitCenterMarker.setShadingMode(CylinderPrimitive::NormalShading);
+        orbitCenterMarker.setUniformWidth(0.1);
+        orbitCenterMarker.setPositions(basePositions.take(), headPositions.take());
+        orbitCenterMarker.setColors(colors.take());
     }
-    else {
-        // Add marker to bounding box.
-        renderer->addToLocalBoundingBox(Box3(Point3::Origin(), symbolSize));
+
+    // Determine current center of rotation.
+    // Note: Always using the active viewport's orbit center here to show a consistent picture across all viewports.
+    Viewport* activeViewport = vp;
+    if(dataset) {
+        if(dataset->viewportConfig() && dataset->viewportConfig()->activeViewport())
+            activeViewport = dataset->viewportConfig()->activeViewport();
     }
+    const Point3 center = activeViewport->orbitCenter();
+
+    // The cross-hair should appear always the same size on the screen.
+    const FloatType symbolSize = frameGraph.projectionParams().nonScalingSize(center, vpWin->viewportWindowDeviceIndependentSize());
+
+    // Emit the graphics primitive.
+    frameGraph.addPrimitive(
+        std::make_unique<CylinderPrimitive>(orbitCenterMarker),
+        AffineTransformation::translation(center - Point3::Origin()) * AffineTransformation::scaling(symbolSize),
+        Box3(Point3(-1), Point3(1)));
 }
 
 }   // End of namespace

@@ -80,7 +80,7 @@ public:
     /// It also activates temporary viewport navigation modes like
     /// pan, zoom and orbit when the user uses the corresponding
     /// mouse+key combination.
-    virtual void mousePressEvent(ViewportWindowInterface* vpwin, QMouseEvent* event);
+    virtual void mousePressEvent(ViewportWindow* vpwin, QMouseEvent* event);
 
     /// \brief Handles mouse release events for a Viewport.
     /// \param vpwin The viewport window in which the mouse event occurred.
@@ -89,7 +89,7 @@ public:
     /// The default implementation deactivates any
     /// temporary viewport navigation mode like pan, zoom and orbit
     /// when they have been activated by the mousePressEvent() method.
-    virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event);
+    virtual void mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event);
 
     /// \brief Handles mouse move events for a Viewport.
     /// \param vpwin The viewport window in which the mouse event occurred.
@@ -98,27 +98,27 @@ public:
     /// The default implementation delegates the event to the
     /// temporary viewport navigation mode like pan, zoom and orbit
     /// when it has been activated in the mousePressEvent() method.
-    virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event);
+    virtual void mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event);
 
     /// \brief Handles mouse wheel events for a Viewport.
     /// \param vpwin The viewport window in which the mouse event occurred.
     /// \param event The mouse event.
     ///
     /// The default implementation zooms in or out according to the wheel rotation.
-    virtual void wheelEvent(ViewportWindowInterface* vpwin, QWheelEvent* event);
+    virtual void wheelEvent(ViewportWindow* vpwin, QWheelEvent* event);
 
     /// \brief Handles double click events for a Viewport.
     /// \param vpwin The viewport window in which the mouse event occurred.
     /// \param event The mouse event.
-    virtual void mouseDoubleClickEvent(ViewportWindowInterface* vpwin, QMouseEvent* event);
+    virtual void mouseDoubleClickEvent(ViewportWindow* vpwin, QMouseEvent* event);
 
     /// \brief Is called when a viewport looses the input focus.
     /// \param vpwin The viewport window.
     /// \param event The focus event.
-    virtual void focusOutEvent(ViewportWindowInterface* vpwin, QFocusEvent* event);
+    virtual void focusOutEvent(ViewportWindow* vpwin, QFocusEvent* event);
 
     /// \brief Handles key-press events in a viewport window.
-    virtual bool keyPressEvent(ViewportWindowInterface* vpwin, QKeyEvent* event) { return false; }
+    virtual bool keyPressEvent(ViewportWindow* vpwin, QKeyEvent* event) { return false; }
 
     /// \brief Return the mouse cursor shown in the viewport windows
     ///        while this input handler is active.

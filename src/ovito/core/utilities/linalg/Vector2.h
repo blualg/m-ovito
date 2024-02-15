@@ -81,26 +81,26 @@ public:
     /////////////////////////////// Constructors /////////////////////////////////
 
     /// Constructs a vector without initializing its components. The components will have an undefined value!
-    Vector_2() = default;
+    Vector_2() noexcept = default;
 
     /// Constructs a vector with the two components initialized to the given value.
-    Q_DECL_CONSTEXPR explicit Vector_2(T val) : std::array<T, 2>{{val,val}} {}
+    Q_DECL_CONSTEXPR explicit Vector_2(T val) noexcept : std::array<T, 2>{{val,val}} {}
 
     /// Initializes the components of the vector with the given values.
-    Q_DECL_CONSTEXPR Vector_2(T x, T y) : std::array<T, 2>{{x, y}} {}
+    Q_DECL_CONSTEXPR Vector_2(T x, T y) noexcept : std::array<T, 2>{{x, y}} {}
 
     /// Initializes the vector to the null vector. All components are set to zero.
-    Q_DECL_CONSTEXPR Vector_2(Zero) : std::array<T, 2>{{T(0), T(0)}} {}
+    Q_DECL_CONSTEXPR Vector_2(Zero) noexcept : std::array<T, 2>{{T(0), T(0)}} {}
 
     /// Initializes the vector from an array.
-    Q_DECL_CONSTEXPR explicit Vector_2(const std::array<T, 2>& a) : std::array<T, 2>(a) {}
+    Q_DECL_CONSTEXPR explicit Vector_2(const std::array<T, 2>& a) noexcept : std::array<T, 2>(a) {}
 
     /// Conversion constructor from a Qt vector.
-    Q_DECL_CONSTEXPR Vector_2(const QVector2D& v) : std::array<T, 2>{{T(v.x()), T(v.y())}} {}
+    Q_DECL_CONSTEXPR Vector_2(const QVector2D& v) noexcept : std::array<T, 2>{{T(v.x()), T(v.y())}} {}
 
     /// Casts the vector to another component type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, Vector_2<U>, const Vector_2<T>&> {
+    Q_DECL_CONSTEXPR auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Vector_2<U>, const Vector_2<T>&> {
         if constexpr(!std::is_same_v<T,U>)
             return Vector_2<U>(static_cast<U>(x()), static_cast<U>(y()));
         else

@@ -135,52 +135,65 @@ Lines::Lines(ObjectInitializationFlags flags) : PropertyContainer(flags)
  * property from this container using a VectorVis element.
  ******************************************************************************/
 std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> Lines::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
-                                                                           MixedKeyCache& visCache) const
+                                                                           const RendererResourceCache::ResourceFrame& visCache) const
 {
     // Get lines object
     if(const Lines* lines = path.lastAs<Lines>(1)) {
         OVITO_ASSERT(path.lastAs<Lines>(1) == this);
+        lines->verifyIntegrity();
 
+        // Get the simulation cell if needed. This depends on the settings made in the visualization element.
+        const SimulationCell* simulationCell = nullptr;
         if(const LinesVis* linesVis = dynamic_object_cast<LinesVis>(lines->visElement())) {
-            // Get the simulation cell.
-            const SimulationCell* simulationCell = linesVis->wrappedLines() ? state.getObject<SimulationCell>() : nullptr;
-            // Get the input data buffer
-            ConstDataBufferPtr vectorProperty = path.lastAs<DataBuffer>();
-            if(vectorProperty && vectorProperty->componentCount() == 3) {
-                OVITO_ASSERT(vectorProperty->dataType() == Property::FloatDefault);
-                if(vectorProperty->dataType() == Property::FloatDefault) {
-                    if(BufferReadAccess<Point3> positions = getProperty(PositionProperty)) {
-                        BufferWriteAccessAndRef<Vector3, access_mode::write> filteredVectors = vectorProperty.makeCopy();
-                        // wrap points
+            if(linesVis->wrappedLines()) {
+                simulationCell = state.getObject<SimulationCell>();
+            }
+        }
+
+        // Get the input data buffer
+        ConstPropertyPtr vectorProperty = path.lastAs<Property>();
+        if(vectorProperty && vectorProperty->componentCount() == 3) {
+            OVITO_ASSERT(vectorProperty->dataType() == Property::FloatDefault);
+            if(vectorProperty->dataType() == Property::FloatDefault) {
+                if(const Property* positions = getProperty(PositionProperty)) {
+
+                    // The line points are expensive to filter. That's why we store them in the vis cache.
+                    using CacheKey = RendererResourceKey<struct LinesVectorVisCache, ConstDataObjectRef, ConstDataObjectRef, DataOORef<const SimulationCell>>;
+                    auto& [filteredPositions, filteredVectors] = visCache.lookup<std::tuple<ConstDataBufferPtr, ConstDataBufferPtr>>(CacheKey(
+                        positions,
+                        vectorProperty,
+                        simulationCell));
+
+                    if(!filteredPositions) {
                         if(simulationCell) {
-                            // create output buffer for wrapped points
-                            ConstDataBufferPtr wrappedPositionsPtr = getProperty(PositionProperty);
-                            BufferWriteAccessAndRef<Point3, access_mode::discard_write> wrappedPositions =
-                                Lines::OOClass().createStandardProperty(DataBuffer::Uninitialized, lines->elementCount(),
-                                                                        Lines::PositionProperty);
-                            // process points
-                            for(size_t i = 0; i < positions.size(); ++i) {
-                                wrappedPositions[i] = simulationCell->wrapPoint(positions[i]);
-                                if(isPointCulled(wrappedPositions[i])) {
-                                    filteredVectors[i].setZero();
-                                }
-                            }
-                            wrappedPositionsPtr = wrappedPositions.take();
-                            vectorProperty = filteredVectors.take();
-                            return {std::move(wrappedPositionsPtr), std::move(vectorProperty)};
+                            // Use wrapped point positions.
+                            filteredPositions = simulationCell->wrapPoints(positions);
                         }
-                        // use unwrapped points
                         else {
-                            // process points
-                            for(size_t i = 0; i < positions.size(); ++i) {
-                                if(isPointCulled(positions[i])) {
-                                    filteredVectors[i].setZero();
-                                }
+                            // Use unwrapped point positions
+                            filteredPositions = positions;
+                        }
+
+                        if(cuttingPlanes().empty()) {
+                            // Use vectors as they are.
+                            filteredVectors = vectorProperty;
+                        }
+                        else {
+                            BufferReadAccess<Vector3> vecInAcc{vectorProperty};
+                            BufferWriteAccessAndRef<Vector3, access_mode::discard_write> vecOutAcc{vectorProperty->cloneWithoutData(vectorProperty->size())};
+                            // Cull points at the clipping planes. Culled points get hidden by setting their correponding vector to zero.
+                            size_t i = 0;
+                            for(const Point3& p : BufferReadAccess<Point3>{filteredPositions}) {
+                                if(isPointCulled(p))
+                                    vecOutAcc[i].setZero();
+                                else
+                                    vecOutAcc[i] = vecInAcc[i];
+                                i++;
                             }
-                            vectorProperty = filteredVectors.take();
-                            return {getProperty(PositionProperty), std::move(vectorProperty)};
+                            filteredVectors = vecOutAcc.take();
                         }
                     }
+                    return { filteredPositions, filteredVectors };
                 }
             }
         }

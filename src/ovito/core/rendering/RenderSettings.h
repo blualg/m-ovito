@@ -94,10 +94,19 @@ public:
     /// \throw Exception on error.
     void render(const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, AnimationSettings* animationSettings, FrameBuffer& frameBuffer);
 
+    /// Computes a viewport's area in the rendered output image.
+    QRect viewportFramebufferArea(const Viewport* viewport, const ViewportConfiguration* viewportConfig) const;
+
 private:
 
     /// Renders a single frame and saves the output file. This is part of the implementation of the render() method.
-    void renderFrame(int frameNumber, SceneRenderer& renderer, FrameBuffer& frameBuffer, const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, VideoEncoder* videoEncoder);
+    RendererResourceCache::ResourceFrame renderFrame(
+        int frameNumber,
+        RendererResourceCache::ResourceFrame visCache,
+        SceneRenderer& renderer,
+        FrameBuffer& frameBuffer,
+        const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout,
+        VideoEncoder* videoEncoder);
 
 private:
 

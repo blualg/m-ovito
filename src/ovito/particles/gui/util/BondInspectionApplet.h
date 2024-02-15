@@ -76,10 +76,10 @@ private:
         PickingMode(BondInspectionApplet* applet) : _applet(applet) {}
 
         /// Handles the mouse up events for a viewport.
-        virtual void mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+        virtual void mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event) override;
 
         /// Handles the mouse move event for the given viewport.
-        virtual void mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event) override;
+        virtual void mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event) override;
 
         /// Clears the list of picked bonds.
         void resetSelection() {

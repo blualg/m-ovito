@@ -78,7 +78,7 @@ void VoxelGridVis::loadFromStreamComplete(ObjectLoadStream& stream)
 /******************************************************************************
 * Computes the bounding box of the displayed data.
 ******************************************************************************/
-Box3 VoxelGridVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 VoxelGridVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
     if(const VoxelGrid* gridObj = path.lastAs<VoxelGrid>()) {
         if(gridObj->domain()) {
@@ -95,7 +95,7 @@ Box3 VoxelGridVis::boundingBox(AnimationTime time, const ConstDataObjectPath& pa
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus VoxelGridVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
+PipelineStatus VoxelGridVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     PipelineStatus status;
 

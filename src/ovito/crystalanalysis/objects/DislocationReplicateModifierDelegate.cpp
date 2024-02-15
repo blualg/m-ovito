@@ -62,8 +62,11 @@ PipelineStatus DislocationReplicateModifierDelegate::apply(const ModifierEvaluat
 
     for(const DataObject* obj : state.data()->objects()) {
         if(const DislocationNetworkObject* existingDislocations = dynamic_object_cast<DislocationNetworkObject>(obj)) {
-            // For replication, a domain is required.
-            if(!existingDislocations->domain()) continue;
+
+            // For periodic replication, a domain is needed.
+            if(!existingDislocations->domain())
+                continue;
+
             AffineTransformation simCell = existingDislocations->domain()->cellMatrix();
             AffineTransformation inverseSimCell;
             if(!simCell.inverse(inverseSimCell))
@@ -104,7 +107,7 @@ PipelineStatus DislocationReplicateModifierDelegate::apply(const ModifierEvaluat
             }
             OVITO_ASSERT(dislocations->segments().size() == oldSegmentCount * numCopies);
 
-            // Extend the periodic domain the surface is embedded in.
+            // Extend the periodic domain the dislocation network is embedded in.
             simCell.translation() += (FloatType)newImages.minc.x() * simCell.column(0);
             simCell.translation() += (FloatType)newImages.minc.y() * simCell.column(1);
             simCell.translation() += (FloatType)newImages.minc.z() * simCell.column(2);

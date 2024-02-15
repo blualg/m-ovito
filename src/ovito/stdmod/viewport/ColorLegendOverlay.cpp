@@ -273,7 +273,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
         renderer->scene()->visitPipelines([&](Pipeline* pipeline) {
 
             // Evaluate pipeline and obtain output data collection.
-            if(renderer->waitForLongOperationsEnabled()) {
+            if(!renderer->isInteractive()) {
                 PipelineEvaluationRequest request(renderer->time());
                 request.setThrowOnError(renderer->renderSettings().stopOnPipelineError());
                 PipelineEvaluationFuture pipelineEvaluation = pipeline->evaluatePipeline(request);
@@ -374,7 +374,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
                 QVariant minValue, maxValue;
                 PipelineEvaluationRequest request(renderer->time());
                 request.setThrowOnError(renderer->renderSettings().stopOnPipelineError());
-                if(renderer->waitForLongOperationsEnabled()) {
+                if(!renderer->isInteractive()) {
                     SharedFuture<PipelineFlowState> stateFuture = modNode->evaluate(request);
                     if(!stateFuture.waitForFinished())
                         return;

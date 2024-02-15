@@ -22,7 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/mesh/TriangleMesh.h>
-#include <ovito/core/rendering/SceneRenderer.h>
+#include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
@@ -57,44 +57,35 @@ TriangleMeshVis::TriangleMeshVis(ObjectInitializationFlags flags) : DataVis(flag
 /******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
-Box3 TriangleMeshVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 TriangleMeshVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-    // Compute bounding box.
+    // Let the triangle mesh do the computing of the bounding box.
     if(const TriangleMesh* triMeshObj = path.lastAs<TriangleMesh>()) {
         return triMeshObj->boundingBox();
     }
-    return Box3();
+    return {};
 }
 
 /******************************************************************************
-* Lets the vis element render a data object.
+* Lets the vis element produce a visual representation of a data object.
 ******************************************************************************/
-PipelineStatus TriangleMeshVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
+PipelineStatus TriangleMeshVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
-    if(!renderer->isBoundingBoxPass()) {
+    // Obtain transparency parameter value and display color value.
+    FloatType transp = 0;
+    TimeInterval iv;
+    if(transparencyController())
+        transp = transparencyController()->getFloatValue(frameGraph.time(), iv);
 
-        // Obtains transparency parameter value and display color value.
-        FloatType transp = 0;
-        TimeInterval iv;
-        if(transparencyController()) transp = transparencyController()->getFloatValue(time, iv);
+    // Prepare the mesh rendering primitive.
+    auto primitive = std::make_unique<MeshPrimitive>();
+    primitive->setEmphasizeEdges(highlightEdges());
+    primitive->setUniformColor(ColorA(color(), FloatType(1) - transp));
+    primitive->setMesh(path.lastAs<TriangleMesh>());
+    primitive->setCullFaces(backfaceCulling());
 
-        // Prepare the mesh rendering primitive.
-        MeshPrimitive primitive;
-        primitive.setEmphasizeEdges(highlightEdges());
-        primitive.setUniformColor(ColorA(color(), FloatType(1) - transp));
-        primitive.setMesh(path.lastAs<TriangleMesh>());
-        primitive.setCullFaces(backfaceCulling());
-
-        // Submit primitive to the renderer.
-        renderer->beginPickObject(pipeline);
-        renderer->renderMesh(primitive);
-        renderer->endPickObject();
-    }
-    else {
-        // Add mesh to bounding box.
-        TimeInterval validityInterval;
-        renderer->addToLocalBoundingBox(boundingBox(time, path, pipeline, flowState, renderer->visCache(), validityInterval));
-    }
+    // Emit graphics primitive.
+    frameGraph.addPrimitive(std::move(primitive), pipeline);
 
     return {};
 }

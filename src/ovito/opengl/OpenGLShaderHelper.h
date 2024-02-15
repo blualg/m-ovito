@@ -24,8 +24,8 @@
 
 
 #include <ovito/core/Core.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 #include "OpenGLSceneRenderer.h"
-#include "OpenGLResourceManager.h"
 
 #ifndef Q_OS_WASM
     #ifndef QT_OPENGL_4
@@ -207,7 +207,7 @@ public:
                 std::forward<KeyType>(cacheKey),
                 (inputRate == PerInstance && usage == QOpenGLBuffer::VertexBuffer) ? _instancesSubset : nullptr
             };
-            bufferObject = &OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::move(combinedKey), _renderer->currentResourceFrame());
+            bufferObject = &_renderer->currentResourceFrame().lookup<QOpenGLBuffer>(std::move(combinedKey));
         }
         else {
             // When not using instanced rendering, the no. of vertices per primitive must be included in the cache key,
@@ -218,7 +218,7 @@ public:
                 verticesPerInstance(),
                 (inputRate == PerInstance && usage == QOpenGLBuffer::VertexBuffer) ? _instancesSubset : nullptr
             };
-            bufferObject = &OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::move(combinedKey), _renderer->currentResourceFrame());
+            bufferObject = &_renderer->currentResourceFrame().lookup<QOpenGLBuffer>(std::move(combinedKey));
         }
 
         // If not, do it now.
@@ -252,7 +252,7 @@ public:
                 ConstDataBufferPtr     // the instances subset (if any)
             >
             indexBufferKey{ std::forward<KeyType>(cacheKey), instanceCount(), _instancesSubset };
-            drawReorderedGeometryShader(OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::move(indexBufferKey), _renderer->currentResourceFrame()),
+            drawReorderedGeometryShader(_renderer->currentResourceFrame().lookup<QOpenGLBuffer>(std::move(indexBufferKey)),
                 std::move(computeOrderingFunc));
         }
 #ifndef Q_OS_WASM
@@ -260,7 +260,7 @@ public:
         else if(usingMultiDrawArraysIndirect()) {
             // Look up the indirect drawing buffer from the cache and call implementation.
             drawReorderedOpenGL4(mode,
-                OpenGLResourceManager::instance()->lookup<QOpenGLBuffer>(std::forward<KeyType>(cacheKey), _renderer->currentResourceFrame()),
+                _renderer->currentResourceFrame().lookup<QOpenGLBuffer>(std::forward<KeyType>(cacheKey)),
                 std::move(computeOrderingFunc));
         }
         else if(usingInstancedArrays()) {
@@ -280,7 +280,7 @@ public:
             >
             indexBufferKey{ std::forward<KeyType>(cacheKey), instanceCount(), _instancesSubset };
             drawReorderedOpenGL2or3(mode,
-                OpenGLResourceManager::instance()->lookup<std::pair<std::vector<GLint>, std::vector<GLsizei>>>(std::move(indexBufferKey), _renderer->currentResourceFrame()),
+                _renderer->currentResourceFrame().lookup<std::pair<std::vector<GLint>, std::vector<GLsizei>>>(std::move(indexBufferKey)),
                 std::move(computeOrderingFunc));
         }
     }

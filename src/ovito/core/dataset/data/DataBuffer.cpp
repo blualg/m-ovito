@@ -1048,6 +1048,34 @@ std::pair<FloatType, FloatType> DataBuffer::minMax(size_t component, const DataB
 }
 
 /******************************************************************************
+* Computes the axis-aligned bounding box of the 3d coordinates stored in the buffer.
+******************************************************************************/
+Box3 DataBuffer::boundingBox3() const
+{
+#ifdef OVITO_USE_SYCL
+    if(dataType() == Float32 && componentCount() == 3) {
+        return SyclBufferAccess<Point_3<float>, access_mode::read>{this}.boundingBox().toDataType<FloatType>();
+    }
+    else if(dataType() == Float64 && componentCount() == 3) {
+        return SyclBufferAccess<Point_3<double>, access_mode::read>{this}.boundingBox().toDataType<FloatType>();
+    }
+#else
+    if(dataType() == Float32 && componentCount() == 3) {
+        Box_3<float> bb;
+        bb.addPoints(BufferReadAccess<Point_3<float>>(this));
+        return bb.toDataType<FloatType>();
+    }
+    else if(dataType() == Float64 && componentCount() == 3) {
+        Box_3<double> bb;
+        bb.addPoints(BufferReadAccess<Point_3<double>>(this));
+        return bb.toDataType<FloatType>();
+    }
+#endif
+    OVITO_ASSERT(false); // Unsupported data type or component count
+    return {};
+}
+
+/******************************************************************************
 * Returns the number of non-zero entries in the array.
 ******************************************************************************/
 size_t DataBuffer::nonzeroCount() const

@@ -26,6 +26,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportLayout.h>
+#include <ovito/core/viewport/ViewportWindow.h>
 
 namespace Ovito {
 
@@ -39,10 +40,13 @@ class OVITO_GUI_EXPORT ViewportMenu : public QMenu
 public:
 
     /// Initializes the menu.
-    ViewportMenu(MainWindow& mainWindow, Viewport* viewport, QWidget* viewportWidget);
+    ViewportMenu(MainWindow& mainWindow, ViewportWindow* viewportWindow, QWidget* viewportWidget);
 
     /// Displays the menu.
     void show(const QPoint& pos);
+
+    /// Returns the viewport this menu belongs to.
+    Viewport* viewport() const { return _viewportWindow->viewport(); }
 
 private Q_SLOTS:
 
@@ -63,8 +67,8 @@ private:
     /// The main window this context menu belongs to.
     MainWindow& _mainWindow;
 
-    /// The viewport this menu belongs to.
-    Viewport* _viewport;
+    /// The viewport window this menu belongs to.
+    ViewportWindow* _viewportWindow;
 
     /// The viewport widget this menu is shown in.
     QWidget* _viewportWidget;

@@ -48,7 +48,7 @@ NucleotidesVis::NucleotidesVis(ObjectInitializationFlags flags) : ParticlesVis(f
 /******************************************************************************
 * Computes the bounding box of the visual element.
 ******************************************************************************/
-Box3 NucleotidesVis::boundingBox(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, MixedKeyCache& visCache, TimeInterval& validityInterval)
+Box3 NucleotidesVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
     const Particles* particles = path.lastAs<Particles>();
     if(!particles) return {};
@@ -181,7 +181,7 @@ ConstPropertyPtr NucleotidesVis::nucleobaseColors(const Particles* particles, bo
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus NucleotidesVis::render(AnimationTime time, const ConstDataObjectPath& path, const PipelineFlowState& flowState, SceneRenderer* renderer, const Pipeline* pipeline)
+PipelineStatus NucleotidesVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     if(renderer->isBoundingBoxPass()) {
         TimeInterval validityInterval;

@@ -40,6 +40,7 @@ public:
     /// Constructor.
     using OpenGLSceneRenderer::OpenGLSceneRenderer;
 
+#if 0 // TODO
     /// This method is called just before renderFrame() is called.
     virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
 
@@ -48,6 +49,7 @@ public:
 
     /// This method is called after renderFrame() has been called.
     virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;
+#endif
 
 protected:
 
@@ -64,6 +66,9 @@ protected:
     GLuint depthTextureId() const { return _framebufferTexturesGLES[1]; }
 
 private:
+
+    /// The size of the OpenGL offscreen framebuffer.
+    QSize _framebufferSize;
 
     /// The OpenGL offscreen framebuffer used on desktop OpenGL platform.
     std::unique_ptr<QOpenGLFramebufferObject> _framebufferObject;

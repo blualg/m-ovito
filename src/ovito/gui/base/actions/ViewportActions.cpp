@@ -56,10 +56,13 @@ void ActionManager::on_ViewportZoomSceneExtents_triggered()
     ViewportConfiguration* vpconf = dataset()->viewportConfig();
 
     userInterface().handleExceptions([&] {
-        if(vpconf->activeViewport() && !QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier))
-            vpconf->activeViewport()->zoomToSceneExtents();
-        else
-            vpconf->zoomToSceneExtents();
+        if(vpconf->activeViewport() && !QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier)) {
+            vpconf->activeViewport()->notifyDependents(Viewport::ZoomToSceneExtentsRequested);
+        }
+        else {
+            for(Viewport* vp : vpconf->viewports())
+                vp->notifyDependents(Viewport::ZoomToSceneExtentsRequested);
+        }
     });
 }
 
@@ -69,7 +72,8 @@ void ActionManager::on_ViewportZoomSceneExtents_triggered()
 void ActionManager::on_ViewportZoomSceneExtentsAll_triggered()
 {
     userInterface().handleExceptions([&] {
-        dataset()->viewportConfig()->zoomToSceneExtents();
+        for(Viewport* vp : dataset()->viewportConfig()->viewports())
+            vp->notifyDependents(Viewport::ZoomToSceneExtentsRequested);
     });
 }
 
@@ -80,8 +84,12 @@ void ActionManager::on_ViewportZoomSelectionExtents_triggered()
 {
     userInterface().handleExceptions([&] {
         ViewportConfiguration* vpconf = dataset()->viewportConfig();
-        if(vpconf->activeViewport())
-            vpconf->activeViewport()->zoomToSelectionExtents();
+        if(vpconf->activeViewport() && !QGuiApplication::keyboardModifiers().testFlag(Qt::ControlModifier))
+            vpconf->activeViewport()->notifyDependents(Viewport::ZoomToSelectionExtentsRequested);
+        else {
+            for(Viewport* vp : vpconf->viewports())
+                vp->notifyDependents(Viewport::ZoomToSelectionExtentsRequested);
+        }
     });
 }
 
@@ -91,7 +99,8 @@ void ActionManager::on_ViewportZoomSelectionExtents_triggered()
 void ActionManager::on_ViewportZoomSelectionExtentsAll_triggered()
 {
     userInterface().handleExceptions([&] {
-        dataset()->viewportConfig()->zoomToSelectionExtents();
+        for(Viewport* vp : dataset()->viewportConfig()->viewports())
+            vp->notifyDependents(Viewport::ZoomToSelectionExtentsRequested);
     });
 }
 

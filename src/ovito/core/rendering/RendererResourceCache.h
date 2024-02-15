@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/MoveOnlyAny.h>
+#include <ovito/core/utilities/concurrent/ExecutionContext.h>
 
 namespace Ovito {
 
@@ -41,12 +42,63 @@ struct RendererResourceKey : public std::tuple<TupleFields...>
 /**
  * \brief A cache data structure that accepts keys with arbitrary type and which handles resource lifetime.
  */
-class RendererResourceCache
+class RendererResourceCache : public std::enable_shared_from_this<RendererResourceCache>
 {
 public:
 
-    /// Data type used by the resource cache to refer to an frame being rendered (in flight) on the CPU and/or the GPU.
+    /// Data type used by the resource cache to refer to a frame being in flight.
     using ResourceFrameHandle = int;
+
+    /// A frame being in flight.
+    class ResourceFrame
+    {
+    public:
+        /// Default constructor.
+        ResourceFrame() = default;
+
+        /// Destructor.
+        ~ResourceFrame() {
+            if(_cache)
+                _cache->releaseResourceFrame(_frameNumber);
+        }
+
+        // A frame cannot be copied.
+        ResourceFrame(const ResourceFrame& other) = delete;
+        ResourceFrame& operator=(const ResourceFrame& other) = delete;
+
+        // A frame can be moved.
+        ResourceFrame(ResourceFrame&& rhs) noexcept : _cache(std::exchange(rhs._cache, {})), _frameNumber(std::exchange(rhs._frameNumber, 0)) { OVITO_ASSERT(!rhs._cache); }
+        ResourceFrame& operator=(ResourceFrame&& rhs) noexcept {
+            ResourceFrame(std::move(rhs)).swap(*this);
+            return *this;
+        }
+        inline void swap(ResourceFrame& rhs) noexcept {
+            _cache.swap(rhs._cache);
+            std::swap(_frameNumber, rhs._frameNumber);
+        }
+
+        /// Returns a reference to the cached value for the given key.
+        /// Creates a new cache entry with a default-initialized value if the key doesn't exist.
+        template<typename Value, typename Key>
+        Value& lookup(Key&& key) const {
+            OVITO_ASSERT(_cache && _frameNumber != 0);
+            return _cache->lookup<Value>(std::forward<Key>(key), _frameNumber);
+        }
+
+        /// Returns true if the frame is valid.
+        inline operator bool() const noexcept { return (bool)_cache; }
+
+    private:
+        /// Constructor.
+        ResourceFrame(std::shared_ptr<RendererResourceCache> cache, ResourceFrameHandle frameNumber) noexcept : _cache(std::move(cache)), _frameNumber(frameNumber) {}
+
+        std::shared_ptr<RendererResourceCache> _cache;
+        ResourceFrameHandle _frameNumber = 0;
+
+        friend class RendererResourceCache;
+    };
+
+public:
 
     /// Constructor.
     RendererResourceCache() = default;
@@ -60,18 +112,17 @@ public:
     }
 #endif
 
-    // A cache cannot be copied.
+    // A cache cannot be copied or moved.
     RendererResourceCache(const RendererResourceCache& other) = delete;
     RendererResourceCache& operator=(const RendererResourceCache& other) = delete;
-
-    // A cache is movable.
-    RendererResourceCache(RendererResourceCache&& other) = default;
-    RendererResourceCache& operator=(RendererResourceCache&& other) = default;
+    RendererResourceCache(RendererResourceCache&& other) = delete;
+    RendererResourceCache& operator=(RendererResourceCache&& other) = delete;
 
     /// Returns a reference to the value for the given key.
     /// Creates a new cache entry with a default-initialized value if the key doesn't exist.
     template<typename Value, typename Key>
     Value& lookup(Key&& key, ResourceFrameHandle resourceFrame) {
+        OVITO_ASSERT(ExecutionContext::isMainThread());
         OVITO_ASSERT(std::find(_activeResourceFrames.begin(), _activeResourceFrames.end(), resourceFrame) != _activeResourceFrames.end());
 
         // Check if the key exists in the cache.
@@ -100,7 +151,9 @@ public:
     size_t size() const { return _entries.size(); }
 
     /// Informs the resource manager that a new frame is going to be rendered.
-    ResourceFrameHandle acquireResourceFrame() {
+    ResourceFrame acquireResourceFrame() {
+        OVITO_ASSERT(ExecutionContext::isMainThread());
+
         // On the first frame, the cache should be empty.
         OVITO_ASSERT(!_activeResourceFrames.empty() || _entries.empty());
 
@@ -112,11 +165,14 @@ public:
         _nextResourceFrame++;
         _activeResourceFrames.push_back(_nextResourceFrame);
 
-        return _nextResourceFrame;
+        return ResourceFrame(shared_from_this(), _nextResourceFrame);
     }
+
+private:
 
     /// Informs the resource manager that a frame has completely finished rendering and all resources associated with that frame may be released.
     void releaseResourceFrame(ResourceFrameHandle frame) {
+        OVITO_ASSERT(ExecutionContext::isMainThread());
         OVITO_ASSERT(frame > 0);
 
         // Remove frame from the list of active frames.
@@ -148,8 +204,6 @@ public:
 
         OVITO_ASSERT(!_activeResourceFrames.empty() || _entries.empty());
     }
-
-private:
 
     struct CacheEntry {
         template<typename Key> CacheEntry(Key&& _key, ResourceFrameHandle _frame) noexcept : key(std::forward<Key>(_key)) { frames.push_back(_frame); }

@@ -28,7 +28,7 @@
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
-#include <ovito/core/viewport/ViewportWindowInterface.h>
+#include <ovito/core/viewport/ViewportWindow.h>
 #include <ovito/core/rendering/MarkerPrimitive.h>
 #include <ovito/core/rendering/LinePrimitive.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
@@ -372,7 +372,7 @@ void PickPlanePointsInputMode::deactivated(bool temporary)
 /******************************************************************************
 * Handles the mouse events for a Viewport.
 ******************************************************************************/
-void PickPlanePointsInputMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void PickPlanePointsInputMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
     ViewportInputMode::mouseMoveEvent(vpwin, event);
 
@@ -393,7 +393,7 @@ void PickPlanePointsInputMode::mouseMoveEvent(ViewportWindowInterface* vpwin, QM
 /******************************************************************************
 * Handles the mouse events for a Viewport.
 ******************************************************************************/
-void PickPlanePointsInputMode::mouseReleaseEvent(ViewportWindowInterface* vpwin, QMouseEvent* event)
+void PickPlanePointsInputMode::mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
     if(event->button() == Qt::LeftButton) {
 

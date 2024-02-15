@@ -145,9 +145,6 @@ void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor* field, R
         // Inform clients about the change.
         Q_EMIT dataSetChanged(currentSet());
 
-        // Discard all objects in the vis cache.
-        Application::instance()->visCache().reset();
-
         if(currentSet()) {
             Q_EMIT renderSettingsReplaced(currentSet()->renderSettings());
             Q_EMIT filePathChanged(currentSet()->filePath());

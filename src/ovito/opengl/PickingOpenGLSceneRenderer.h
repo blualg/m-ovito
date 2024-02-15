@@ -40,8 +40,13 @@ public:
     /// Constructor.
     explicit PickingOpenGLSceneRenderer(ObjectInitializationFlags flags);
 
+    /// Indicates whether this renderer performs an object picking pass.
+    virtual bool isPickingPass() const override { return true; }
+
+#if 0 // TODO
     /// Renders the current animation frame.
     virtual bool renderFrame(const QRect& viewportRect) override;
+#endif
 
     /// Returns the object record and the sub-object ID for the object at the given pixel coordinates.
     std::tuple<const ObjectPickingRecord*, quint32> objectAtLocation(const QPoint& pos) const;
@@ -52,8 +57,10 @@ public:
     /// Returns true if the picking buffer needs to be regenerated; returns false if the picking buffer still contains valid data.
     bool isRefreshRequired() const { return framebufferImage().isNull(); }
 
+#if 0 // TODO
     /// Resets the picking buffer and clears the stored object records.
     virtual void resetPickingBuffer() override;
+#endif
 
     /// Returns the Z-value at the given window position.
     FloatType depthAtPixel(const QPoint& pos) const;

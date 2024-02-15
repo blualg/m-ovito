@@ -415,6 +415,9 @@ void GuiApplication::reportError(const Exception& ex, bool blocking)
 
     // In GUI mode, display a message box (application modal).
     if(guiMode()) {
+        // Require a Qt event loop to show message box.
+        createQtApplication(true);
+
         MessageDialog msgbox;
         msgbox.setWindowTitle(tr("Error - %1").arg(applicationName()));
         msgbox.setStandardButtons(QMessageBox::Ok);

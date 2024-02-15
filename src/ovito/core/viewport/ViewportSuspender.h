@@ -30,7 +30,7 @@
 namespace Ovito {
 
 /**
- * \brief RAII helper class that suspends viewport redrawing while it exists.
+ * \brief RAII helper class that suspends redrawing of the interactive viewports while it exists.
  *
  * Use this to make your code exception-safe.
  * Just create an instance of this class on the stack to suspend viewport updates
@@ -40,17 +40,20 @@ class OVITO_CORE_EXPORT ViewportSuspender
 {
 public:
 
-    ViewportSuspender(UserInterface& userInterface = ExecutionContext::current().ui()) noexcept : _ui(userInterface) {
+    /// Calls UserInterface::suspendViewportUpdates().
+    ViewportSuspender(UserInterface& userInterface = ExecutionContext::current().ui()) noexcept : _userInterface(&userInterface) {
         userInterface.suspendViewportUpdates();
     }
 
+    /// Calls UserInterface::resumeViewportUpdates().
     ~ViewportSuspender() {
-        _ui.resumeViewportUpdates();
+        if(auto ui = _userInterface.lock())
+            ui->resumeViewportUpdates();
     }
 
 private:
 
-    UserInterface& _ui;
+    OOWeakRef<UserInterface> _userInterface;
 };
 
 /**

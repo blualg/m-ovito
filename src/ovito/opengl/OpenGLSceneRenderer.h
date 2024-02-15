@@ -25,8 +25,8 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/SceneRenderer.h>
+#include <ovito/core/rendering/FrameGraph.h>
 #include "OpenGLHelpers.h"
-#include "OpenGLResourceManager.h"
 
 #include <QOpenGLExtraFunctions>
 #include <QOpenGLShader>
@@ -35,6 +35,7 @@
 #include <QOpenGLBuffer>
 #include <QOpenGLFramebufferObject>
 #include <QOpenGLFramebufferObjectFormat>
+#include <QOpenGLTexture>
 
 namespace Ovito {
 
@@ -66,44 +67,20 @@ public:
     /// Constructor.
     explicit OpenGLSceneRenderer(ObjectInitializationFlags flags);
 
+    /// Renders a single frame.
+    virtual void renderFrame(const FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
+
+    /// Indicates whether this renderer performs an object picking pass.
+    virtual bool isPickingPass() const { return false; }
+
+    /// Indicates whether we are rendering the contents of an interactive viewport window.
+    bool isInteractive() const { return _isInteractive; }
+
     /// This may be called on a renderer before startRender() to control its supersampling level.
-    virtual void setAntialiasingHint(int antialiasingLevel) override { _antialiasingLevel = antialiasingLevel; }
+    virtual void setMultisamplingLevel(int multisamplingLevel) override { _multisamplingLevel = multisamplingLevel; }
 
-    /// Returns the device pixel ratio of the output device we are rendering to.
-    virtual qreal devicePixelRatio() const override { return antialiasingLevel() * SceneRenderer::devicePixelRatio(); }
-
-    /// Renders the current animation frame.
-    virtual bool renderFrame(const QRect& viewportRect) override;
-
-    /// This method is called just before renderFrame() is called.
-    virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
-
-    /// Renders the overlays/underlays of the viewport into the framebuffer.
-    virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect) override;
-
-    /// This method is called after renderFrame() has been called.
-    virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;
-
-    /// Renders the line geometry stored in the given buffer.
-    virtual void renderLines(const LinePrimitive& primitive) override;
-
-    /// Renders the particles stored in the given primitive buffer.
-    virtual void renderParticles(const ParticlePrimitive& primitive) override;
-
-    /// Renders the marker geometry stored in the given buffer.
-    virtual void renderMarkers(const MarkerPrimitive& primitive) override;
-
-    /// Renders the text stored in the given primitive buffer.
-    virtual void renderText(const TextPrimitive& primitive) override;
-
-    /// Renders the image stored in the given primitive buffer.
-    virtual void renderImage(const ImagePrimitive& primitive) override;
-
-    /// Renders the cylinder or arrow elements stored in the given buffer.
-    virtual void renderCylinders(const CylinderPrimitive& primitive) override;
-
-    /// Renders the triangle mesh stored in the given buffer.
-    virtual void renderMesh(const MeshPrimitive& primitive) override;
+	/// Returns the multisampling level currently used by the renderer.
+	virtual int multisamplingLevel() const override final { return _multisamplingLevel; }
 
     /// Returns the OpenGL context this renderer uses.
     QOpenGLContext* glcontext() const { return _glcontext; }
@@ -117,33 +94,24 @@ public:
     /// Loads and compiles an OpenGL shader program.
     QOpenGLShaderProgram* loadShaderProgram(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile = QString());
 
-    /// Binds the default vertex array object again in case another VAO was bound in between.
-    /// This method should be called before calling an OpenGL rendering function.
-    void rebindVAO() {
-        makeContextCurrent();
-        if(_vertexArrayObject) _vertexArrayObject->bind();
-    }
-
-    /// Sets the frame buffer background color.
-    void setClearColor(const ColorA& color);
-
-    /// Clears the frame buffer contents.
-    void clearFrameBuffer(bool clearDepthBuffer = true, bool clearStencilBuffer = true);
-
-    /// Temporarily enables/disables the depth test while rendering.
-    virtual void setDepthTestEnabled(bool enabled) override;
-
-    /// Activates the special highlight rendering mode.
-    virtual void setHighlightMode(int pass) override;
-
     /// Reports OpenGL error status codes.
     void checkOpenGLErrorStatus(const char* command, const char* sourceFile, int sourceLine);
 
     /// Returns the monotonically increasing identifier of the current frame being rendered.
-    OpenGLResourceManager::ResourceFrameHandle currentResourceFrame() const { return _currentResourceFrame; }
+    RendererResourceCache::ResourceFrame& currentResourceFrame() {
+        OVITO_ASSERT(_currentResourceFrame);
+        return _currentResourceFrame;
+    }
+
+    /// Returns whether the renderer has an in-flight frame for OpenGL resource caching.
+    bool hasCurrentResourceFrame() const {
+        return (bool)_currentResourceFrame;
+    }
 
     /// Sets monotonically increasing identifier of the current frame being rendered.
-    void setCurrentResourceFrame(OpenGLResourceManager::ResourceFrameHandle frame) { _currentResourceFrame = frame; }
+    RendererResourceCache::ResourceFrame setCurrentResourceFrame(RendererResourceCache::ResourceFrame frame) {
+        return std::exchange(_currentResourceFrame, std::move(frame));
+    }
 
     /// Returns the OpenGL context version encoded as an integer.
     quint32 glversion() const { return _glversion; }
@@ -159,6 +127,20 @@ public:
 
     /// Sets the primary framebuffer to be used by the renderer.
     void setPrimaryFramebuffer(GLuint primaryFramebuffer) { _primaryFramebuffer = primaryFramebuffer; }
+
+    /// Creates an OpenGL texture object for a QImage.
+    QOpenGLTexture* uploadImage(const QImage& image, QOpenGLTexture::MipMapGeneration genMipMaps = QOpenGLTexture::DontGenerateMipMaps);
+
+    /// Creates a 1-D OpenGL texture object for a ColorCodingGradient.
+    QOpenGLTexture* uploadColorMap(ColorCodingGradient* gradient);
+
+    /// Lets the renderer implementation perform post-processing of a newly generated frame graph.
+    virtual void postprocessFrameGraph(FrameGraph& frameGraph) override {
+        // Convert all text rendering primitives into image primitives.
+        frameGraph.renderTextAsImagePrimitives();
+        // Adjust the line widths of all wireframe primitives.
+        frameGraph.adjustWireframeLineWidths();
+    }
 
 	/// Returns the best format for QImage to be used when creating an ImagePrimitive.
 	virtual QImage::Format preferredImageFormat() const override { return QImage::QImage::Format_RGBA8888; }
@@ -189,22 +171,45 @@ public:
 
 protected:
 
+    /// Returns he model-view transformation matrix for the current graphics primitive being rendered.
+    const AffineTransformation& modelViewTM() const { return _modelViewTM; }
+
+	/// Returns the rectangular region of the framebuffer we are rendering into (in device coordinates).
+	const QRect& viewportRect() const { return _viewportRect; }
+
+    /// Returns the current viewport projection parameter.
+    const ViewProjectionParameters& projParams() const { return _projParams; }
+
     /// Loads and compiles a GLSL shader and adds it to the given program object.
     void loadShader(QOpenGLShaderProgram* program, QOpenGLShader::ShaderType shaderType, const QString& filename, bool isWBOITPass);
 
-    /// Makes the renderer's GL context current.
-    void makeContextCurrent();
-
-    /// Returns the supersampling level.
-    int antialiasingLevel() const { return _antialiasingLevel; }
-
-    /// Puts the GL context into its default initial state before rendering of a frame begins.
-    virtual void initializeGLState();
-
 private:
 
+    /// The render passes performed by the renderer.
+    enum RenderPass {
+        BackgroundPass,
+        SceneOpaquePass,
+        SceneTransparencyPass,
+        ForegroundPass
+    };
+
+    /// Returns the current rendering pass.
+    RenderPass currentRenderPass() const { return _currentRenderPass; }
+
+    /// Executes the rendering commands stored in the given frame graph.
+    bool renderFrameGraph(const FrameGraph& frameGraph, RenderPass renderPass);
+
     /// Render all semi-transparent geometry in a second rendering pass.
-    void renderTransparentGeometry();
+    void renderTransparentGeometry(const FrameGraph& frameGraph);
+
+    /// Renders a particles primitive.
+    bool renderParticles(const ParticlePrimitive& primitive);
+
+    /// Renders a cylinders primitive.
+    bool renderCylinders(const CylinderPrimitive& primitive);
+
+    /// Renders a triangle mesh primitive.
+    bool renderMesh(const MeshPrimitive& primitive);
 
     /// Renders a set of particles.
     void renderParticlesImplementation(const ParticlePrimitive& primitive);
@@ -260,23 +265,20 @@ private:
     /// Pointer to the optional glMultiDrawArraysIndirect() function. Requires OpenGL 4.3.
     void (QOPENGLF_APIENTRY *glMultiDrawArraysIndirect)(GLenum mode, const void* indirect, GLsizei drawcount, GLsizei stride) = nullptr;
 
-    /// The OpenGL vertex array object that is required by OpenGL 3.2 core profile.
-    std::unique_ptr<QOpenGLVertexArrayObject> _vertexArrayObject;
-
     /// The OpenGL surface format.
     QSurfaceFormat _glformat;
 
     /// The OpenGL version of the context encoded as an integer.
     quint32 _glversion;
 
-    /// Controls the number of sub-pixels to render.
-    int _antialiasingLevel = 1;
+    /// Controls the level of multisampling used by the renderer to reduce antialiasing effects.
+    int _multisamplingLevel = 1;
 
     /// Controls whether the renderer is using a two-pass OIT method.
     bool _orderIndependentTransparency = false;
 
-    /// Indicates that we are currently rendering the semi-transparent geometry of the scene.
-    bool _isTransparencyPass = false;
+    /// The current rendering pass.
+    RenderPass _currentRenderPass;
 
     /// Indicates that the use of geometry shaders has explicitly been disabled.
     bool _disableGeometryShaders = (qEnvironmentVariableIntValue("OVITO_DISABLE_GEOMETRY_SHADERS") != 0);
@@ -295,16 +297,22 @@ private:
     std::unique_ptr<QOpenGLFramebufferObject> _oitFramebuffer;
 
     /// The monotonically increasing identifier of the current frame being rendered.
-    OpenGLResourceManager::ResourceFrameHandle _currentResourceFrame = 0;
+    RendererResourceCache::ResourceFrame _currentResourceFrame;
 
-    /// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
-    std::vector<std::tuple<AffineTransformation, ParticlePrimitive>> _translucentParticles;
+    /// Indicates whether we are rendering the contents of an interactive viewport window.
+    bool _isInteractive = false;
 
-    /// List of semi-transparent czlinder primitives collected during the first rendering pass, which need to be rendered during the second pass.
-    std::vector<std::tuple<AffineTransformation, CylinderPrimitive>> _translucentCylinders;
+    /// The model-view transformation matrix for the current graphics primitive being rendered.
+    AffineTransformation _modelViewTM = AffineTransformation::Identity();
 
-    /// List of semi-transparent particles primitives collected during the first rendering pass, which need to be rendered during the second pass.
-    std::vector<std::tuple<AffineTransformation, MeshPrimitive>> _translucentMeshes;
+	/// The rectangular region of the framebuffer we are rendering into (in device coordinates).
+	QRect _viewportRect;
+
+    /// The current viewport projection.
+    ViewProjectionParameters _projParams;
+
+    /// Indicates that the current primitive being rendered is using preprojected NDC coordinates.
+    bool _preprojectedCoordinates = false;
 
     /// The vendor of the OpenGL implementation in use.
     static QByteArray _openGLVendor;

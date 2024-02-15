@@ -44,25 +44,22 @@ public:
     explicit StandardSceneRenderer(ObjectInitializationFlags flags);
 
     /// Prepares the renderer for rendering one or more frames.
-    virtual bool startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache) override;
+    virtual void startRender(const QSize& frameBufferSize) override;
 
-    /// This method is called just before renderFrame() is called.
-    virtual void beginFrame(AnimationTime time, Scene* scene, const ViewProjectionParameters& params, Viewport* vp, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
+    /// Renders a single frame into the frame buffer.
+    virtual void renderFrame(const FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
 
-    /// Renders the current animation frame.
-    virtual bool renderFrame(const QRect& viewportRect) override;
-
-    /// Renders the overlays/underlays of the viewport into the framebuffer.
-    virtual bool renderOverlays(bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect) override;
-
-    /// This method is called after renderFrame() has been called.
-    virtual void endFrame(bool renderingSuccessful, const QRect& viewportRect) override;
-
-    /// Is called after rendering has finished.
+    /// Is called after rendering of one or more frames has finished.
     virtual void endRender() override;
 
 	/// Returns the best format for QImage to be used when creating an ImagePrimitive.
 	virtual QImage::Format preferredImageFormat() const override { return _internalRenderer->preferredImageFormat(); }
+
+	/// Returns the multisampling level currently used by the internal renderer.
+	virtual int multisamplingLevel() const override { return _internalRenderer->multisamplingLevel(); }
+
+    /// Lets the renderer perform post-processing of a newly generated frame graph.
+    virtual void postprocessFrameGraph(FrameGraph& frameGraph) override { _internalRenderer->postprocessFrameGraph(frameGraph); }
 
 private:
 

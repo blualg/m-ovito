@@ -44,7 +44,7 @@
 #include <ovito/core/app/undo/UndoStack.h>
 #include <ovito/core/app/StandaloneApplication.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
-#include <ovito/core/viewport/ViewportWindowInterface.h>
+#include <ovito/core/viewport/ViewportWindow.h>
 #include "MainWindow.h"
 #include "ViewportsPanel.h"
 #include "TaskDisplayWidget.h"
@@ -505,6 +505,13 @@ void MainWindow::closeEvent(QCloseEvent* event)
 void MainWindow::exitWithFatalError(const Exception& ex)
 {
     OVITO_ASSERT(ExecutionContext::isMainThread());
+
+    // Avoid reentrance.
+    if(_exitingWithFatalError)
+        return;
+
+    // Set flag.
+    _exitingWithFatalError = true;
 
     // Disable all further viewport updates, because they may have beeen the reason for this fatal error.
     suspendViewportUpdates();

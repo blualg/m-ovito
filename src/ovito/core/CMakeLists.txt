@@ -130,19 +130,15 @@ SET(SourceFiles
     utilities/io/ssh/openssh/DownloadRequest.cpp
     utilities/io/ssh/openssh/FileListingRequest.cpp
     rendering/SceneRenderer.cpp
-    rendering/ParticlePrimitive.cpp
+    rendering/FrameGraph.cpp
     rendering/MeshPrimitive.cpp
-    rendering/MarkerPrimitive.cpp
-    rendering/LinePrimitive.cpp
-    rendering/CylinderPrimitive.cpp
-    rendering/ImagePrimitive.cpp
     rendering/TextPrimitive.cpp
     rendering/RenderSettings.cpp
     rendering/FrameBuffer.cpp
     rendering/StandardSceneRenderer.cpp
     rendering/ColorCodingGradient.cpp
     viewport/Viewport.cpp
-    viewport/ViewportWindowInterface.cpp
+    viewport/ViewportWindow.cpp
     viewport/ViewportConfiguration.cpp
     viewport/ViewportLayout.cpp
     viewport/ViewportSettings.cpp

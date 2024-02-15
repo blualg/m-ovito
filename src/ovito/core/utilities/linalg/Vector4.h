@@ -79,31 +79,31 @@ public:
     /////////////////////////////// Constructors /////////////////////////////////
 
     /// Constructs a vector without initializing its components. The components will have an undefined value!
-    Vector_4() = default;
+    Vector_4() noexcept = default;
 
     /// Constructs a vector with all four components initialized to the given value.
-    Q_DECL_CONSTEXPR explicit Vector_4(T val) : std::array<T, 4>{{val,val,val,val}} {}
+    Q_DECL_CONSTEXPR explicit Vector_4(T val) noexcept : std::array<T, 4>{{val,val,val,val}} {}
 
         /// Initializes the components of the vector with the given values.
-    Q_DECL_CONSTEXPR Vector_4(T x, T y, T z, T w) : std::array<T, 4>{{x, y, z, w}} {}
+    Q_DECL_CONSTEXPR Vector_4(T x, T y, T z, T w) noexcept : std::array<T, 4>{{x, y, z, w}} {}
 
         /// Initializes the vector to the null vector. All components are set to zero.
-    Q_DECL_CONSTEXPR Vector_4(Zero) : std::array<T, 4>{{T(0), T(0), T(0), T(0)}} {}
+    Q_DECL_CONSTEXPR Vector_4(Zero) noexcept : std::array<T, 4>{{T(0), T(0), T(0), T(0)}} {}
 
     /// Initializes the vector from an array.
-    Q_DECL_CONSTEXPR explicit Vector_4(const std::array<T, 4>& a) : std::array<T, 4>(a) {}
+    Q_DECL_CONSTEXPR explicit Vector_4(const std::array<T, 4>& a) noexcept : std::array<T, 4>(a) {}
 
     /// Initializes the 4-vector from a 3-vector.
     /// \param v Specifies the xyz components of the new vector.
     /// \param w The w component of the new vector.
-    Q_DECL_CONSTEXPR explicit Vector_4(const Vector_3<T>& v, T w) : std::array<T, 4>{{v.x(), v.y(), v.z(), w}} {}
+    Q_DECL_CONSTEXPR explicit Vector_4(const Vector_3<T>& v, T w) noexcept : std::array<T, 4>{{v.x(), v.y(), v.z(), w}} {}
 
     /// Conversion constructor from a Qt vector.
-    Q_DECL_CONSTEXPR explicit Vector_4(const QVector4D& v) : std::array<T, 4>{{T(v.x()), T(v.y()), T(v.z()), T(v.w())}} {}
+    Q_DECL_CONSTEXPR explicit Vector_4(const QVector4D& v) noexcept : std::array<T, 4>{{T(v.x()), T(v.y()), T(v.z()), T(v.w())}} {}
 
     /// Casts the vector to another component type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR auto toDataType() const -> std::conditional_t<!std::is_same_v<T,U>, Vector_4<U>, const Vector_4<T>&> {
+    Q_DECL_CONSTEXPR auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Vector_4<U>, const Vector_4<T>&> {
         if constexpr(!std::is_same_v<T,U>)
             return Vector_4<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()), static_cast<U>(w()));
         else

@@ -62,6 +62,9 @@ public:
 
     /// Sets the field of view angle of a perspective projection camera.
     virtual void setFov(FloatType newFOV) = 0;
+
+    /// Returns whether this camera uses a perspective projection.
+    virtual bool isPerspectiveCamera() const = 0;
 };
 
 }   // End of namespace

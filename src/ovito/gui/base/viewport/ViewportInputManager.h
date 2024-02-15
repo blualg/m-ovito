@@ -96,8 +96,8 @@ public:
     const OORef<SelectionMode>& selectionMode() const { return _selectionMode; }
 
     /// \brief Signals to the UI to display a viewport context menu.
-    void requestContextMenu(Viewport* viewport, const QPoint& pos) {
-        Q_EMIT contextMenuRequested(viewport, pos);
+    void requestContextMenu(ViewportWindow* viewportWindow, const QPoint& pos) {
+        Q_EMIT contextMenuRequested(viewportWindow, pos);
     }
 
 public Q_SLOTS:
@@ -116,7 +116,7 @@ Q_SIGNALS:
     void inputModeChanged(ViewportInputMode* oldMode, ViewportInputMode* newMode);
 
     /// \brief This signal is emiited when the viewport context menu should be displayed by the UI.
-    void contextMenuRequested(Viewport* viewport, const QPoint& pos);
+    void contextMenuRequested(ViewportWindow* viewportWindow, const QPoint& pos);
 
 private:
 

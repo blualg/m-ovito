@@ -24,19 +24,22 @@
 
 
 #include <ovito/gui/base/GUIBase.h>
-#include <ovito/core/viewport/ViewportWindowInterface.h>
+#include <ovito/core/viewport/ViewportWindow.h>
 
 namespace Ovito {
 
 /**
- * \brief Generic base class for viewport windows.
+ * \brief Generic base class for viewport windows that implements mouse input handling.
  */
-class OVITO_GUIBASE_EXPORT BaseViewportWindow : public ViewportWindowInterface
+class OVITO_GUIBASE_EXPORT BaseViewportWindow : public ViewportWindow
 {
+    Q_OBJECT
+	OVITO_CLASS(BaseViewportWindow)
+
 public:
 
     /// Constructor.
-    BaseViewportWindow(UserInterface& userInterface, Viewport* vp) : ViewportWindowInterface(userInterface, vp) {}
+    using ViewportWindow::ViewportWindow;
 
     /// Returns the input manager handling mouse events of the viewport (if any).
     ViewportInputManager* inputManager() const;
@@ -44,20 +47,18 @@ public:
     /// Returns the list of gizmos to render in the viewport.
     virtual std::span<ViewportGizmo*> viewportGizmos() override;
 
-    /// Renders custom GUI elements in the viewport on top of the scene.
-    virtual void renderGui(SceneRenderer* renderer) override;
+public Q_SLOTS:
 
-    /// Returns the QWidget that is associated with this viewport window.
-    virtual QWidget* widget() { return nullptr; }
+    /// Releases the renderer resources held by the viewport window and the renderer.
+    virtual void releaseResources() = 0;
 
-    /// Returns the zone in the upper left corner of the viewport where the context menu can be activated by the user.
-    const QRectF& contextMenuArea() const { return _contextMenuArea; }
+protected:
 
-    /// Returns whether the viewport title is shown in the user interface.
-    bool isViewportTitleVisible() const { return _showViewportTitle; }
+    /// Is called when the viewport becomes visible.
+    void showEvent(QShowEvent* event);
 
-    /// Sets whether the viewport title is shown in the user interface.
-    void setViewportTitleVisible(bool visible) { _showViewportTitle = visible; }
+    /// Is called when the viewport becomes hidden.
+    void hideEvent(QHideEvent* event);
 
     /// Is called when the mouse cursor leaves the widget.
     void leaveEvent(QEvent* event);
@@ -77,24 +78,14 @@ public:
     /// Handles mouse wheel events.
     void wheelEvent(QWheelEvent* event);
 
-    /// Is called when the widgets looses the input focus.
+    /// Is called when the widget looses the input focus.
     void focusOutEvent(QFocusEvent* event);
+
+    /// Is called when the widget is resized.
+    void resizeEvent(QResizeEvent* event);
 
     /// Handles key-press events.
     void keyPressEvent(QKeyEvent* event);
-
-private:
-
-    /// The zone in the upper left corner of the viewport where
-    /// the context menu can be activated by the user.
-    QRectF _contextMenuArea;
-
-    /// Indicates that the mouse cursor is currently positioned inside the
-    /// viewport area that activates the viewport context menu.
-    bool _cursorInContextMenuArea = false;
-
-    /// Controls the visibility of the viewport title in the user interface.
-    bool _showViewportTitle = true;
 };
 
 }   // End of namespace

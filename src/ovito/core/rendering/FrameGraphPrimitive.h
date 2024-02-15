@@ -20,9 +20,23 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#pragma once
+
+
 #include <ovito/core/Core.h>
-#include "MarkerPrimitive.h"
+#include "RendererResourceCache.h"
 
 namespace Ovito {
+
+class OVITO_CORE_EXPORT FrameGraphPrimitive
+{
+public:
+
+	/// Virtual destructor.
+	virtual ~FrameGraphPrimitive() {}
+
+	/// Computes the 3d bounding box of the primitive in local coordinate space.
+	virtual Box3 computeBoundingBox(const RendererResourceCache::ResourceFrame& visCache) const { return Box3(); }
+};
 
 }   // End of namespace

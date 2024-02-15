@@ -35,25 +35,17 @@ class ViewportGizmo
 {
 public:
 
-    /// \brief Lets the input mode render its 3d overlay content in a viewport.
+    /// \brief Lets the input mode render its overlay content in a viewport.
     /// \param vp The viewport into which the mode should render its specific overlay content.
-    /// \param renderer The renderer that should be used to display the overlay.
+    /// \param vpWin The viewport window into which the mode should render its specific overlay content.
+    /// \param frameGraph The frame graph to be populated with visual primitives.
+    /// \param dataset The data set being visualized in the viewport.
     ///
     /// This method is called by the system every time the viewports are redrawn and this input
     /// mode is on the input mode stack.
     ///
     /// The default implementation of this method does nothing.
-    virtual void renderOverlay3D(Viewport* vp, SceneRenderer* renderer) {}
-
-    /// \brief Lets the input mode render its 2d overlay content in a viewport.
-    /// \param vp The viewport into which the mode should render its specific overlay content.
-    /// \param renderer The renderer that should be used to display the overlay.
-    ///
-    /// This method is called by the system every time the viewports are redrawn and this input
-    /// mode is on the input mode stack.
-    ///
-    /// The default implementation of this method does nothing.
-    virtual void renderOverlay2D(Viewport* vp, SceneRenderer* renderer) {}
+    virtual void renderOverlay(Viewport* vp, ViewportWindow* vpWin, FrameGraph& frameGraph, DataSet* dataset) {}
 };
 
 }   // End of namespace

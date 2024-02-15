@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/rendering/LinePrimitive.h>
 #include "OpenGLSceneRenderer.h"
 #include "OpenGLShaderHelper.h"
 
@@ -31,19 +32,16 @@ namespace Ovito {
 ******************************************************************************/
 void OpenGLSceneRenderer::renderLinesImplementation(const LinePrimitive& primitive)
 {
+    OVITO_ASSERT(primitive.lineWidth() > 0);
+
     // Step out early if there is nothing to render.
     if(!primitive.positions() || primitive.positions()->size() == 0)
         return;
 
-    rebindVAO();
-    OVITO_REPORT_OPENGL_ERRORS(this);
-
-    if(primitive.lineWidth() == 1 || (primitive.lineWidth() <= 0 && devicePixelRatio() <= 1))
+    if(primitive.lineWidth() == 1)
         renderThinLinesImplementation(primitive);
     else
         renderThickLinesImplementation(primitive);
-
-    OVITO_REPORT_OPENGL_ERRORS(this);
 }
 
 /******************************************************************************
@@ -99,9 +97,6 @@ void OpenGLSceneRenderer::renderThinLinesImplementation(const LinePrimitive& pri
 ******************************************************************************/
 void OpenGLSceneRenderer::renderThickLinesImplementation(const LinePrimitive& primitive)
 {
-    // Effective line width.
-    FloatType effectiveLineWidth = (primitive.lineWidth() <= 0) ? devicePixelRatio() : primitive.lineWidth();
-
     // Activate the right OpenGL shader program.
     OpenGLShaderHelper shader(this);
     if(isPickingPass())
@@ -144,7 +139,7 @@ void OpenGLSceneRenderer::renderThickLinesImplementation(const LinePrimitive& pr
     }
 
     // Compute line width in viewport space.
-    shader.setUniformValue("line_thickness", effectiveLineWidth / viewportRect().height());
+    shader.setUniformValue("line_thickness", primitive.lineWidth() / viewportRect().height());
 
     // Issue instanced drawing command.
     shader.draw(GL_TRIANGLE_STRIP);

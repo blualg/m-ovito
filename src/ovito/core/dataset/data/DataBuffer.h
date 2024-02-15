@@ -289,6 +289,9 @@ public:
     /// Optionally, a selection flags array can be specified, which restricts the considered data elements to a subset.
     std::pair<FloatType, FloatType> minMax(size_t component = 0, const DataBuffer* selection = nullptr) const;
 
+    /// Computes the axis-aligned bounding box of the 3d coordinates stored in the buffer.
+    Box3 boundingBox3() const;
+
     /// Based on a selection flag array as input, computes the mapping of original indices to a packed array.
     ConstDataBufferPtr computePackedMapping() const;
 

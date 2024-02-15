@@ -95,6 +95,8 @@ bool PipelineListItem::referenceEvent(RefTarget* source, const ReferenceEvent& e
     else if(event.type() == ReferenceEvent::TargetDeleted) {
         if(_itemType == DataObject)
             _itemType = DeletedDataObject;
+        else if(_itemType == VisualElement)
+            _itemType = DeletedVisualElement;
         else
             _itemType = DeletedObject;
         Q_EMIT subitemsChanged(this);

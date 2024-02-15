@@ -22,7 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/viewport/Viewport.h>
-#include <ovito/core/rendering/RenderSettings.h>
+#include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/app/Application.h>
@@ -109,7 +109,7 @@ void CoordinateTripodOverlay::propertyChanged(const PropertyFieldDescriptor* fie
 /******************************************************************************
 * Lets the overlay paint its contents into the framebuffer.
 ******************************************************************************/
-void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect)
+void CoordinateTripodOverlay::render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams)
 {
     // Check alignment parameter.
     checkAlignmentParameterValue(alignment());
@@ -133,14 +133,12 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
     else if(alignment() & Qt::AlignBottom) origin.ry() += physicalViewportRect.height() - margin;
     else if(alignment() & Qt::AlignVCenter) origin.ry() += FloatType(0.5) * physicalViewportRect.height();
 
-    const ViewProjectionParameters& projParams = renderer->projParams();
-
     // Project axes to view space.
     Vector3 axisDirs[4] = {
-            projParams.viewMatrix * axis1Dir(),
-            projParams.viewMatrix * axis2Dir(),
-            projParams.viewMatrix * axis3Dir(),
-            projParams.viewMatrix * axis4Dir()
+            noninteractiveProjParams.viewMatrix * axis1Dir(),
+            noninteractiveProjParams.viewMatrix * axis2Dir(),
+            noninteractiveProjParams.viewMatrix * axis3Dir(),
+            noninteractiveProjParams.viewMatrix * axis4Dir()
     };
 
     // Get axis colors.
@@ -170,18 +168,18 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
     QFont font = this->font();
     qreal fontSize = tripodSize * std::max(0.0, (double)this->fontSize());
     if(fontSize != 0)
-        font.setPointSizeF(fontSize / renderer->devicePixelRatio()); // Font size if always in logical units.
+        font.setPointSizeF(fontSize / frameGraph.devicePixelRatio()); // Font size if always in logical units.
 
     auto renderSolidJoint = [&]() {
         // Look up the image primitive for the axis arrow in the cache.
-        auto& [imagePrimitive, offset] = renderer->visCache().get<std::tuple<ImagePrimitive, QPointF>>(
+        auto& [image, offset] = frameGraph.visCache().lookup<std::tuple<QImage, QPointF>>(
             RendererResourceKey<struct SolidJointImageCache, Matrix3, FloatType>{
-                projParams.viewMatrix.linear(),
+                noninteractiveProjParams.viewMatrix.linear(),
                 lineWidth
             });
 
         // Render joint.
-        if(imagePrimitive.image().isNull()) {
+        if(image.isNull()) {
             // Compute bounding box of joint.
             FloatType margin = sqrt(3.0) * lineWidth;
             QRectF imageRect = QRectF(-margin, -margin, 2*margin, 2*margin);
@@ -190,21 +188,22 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
             QRect pixelBounds = imageRect.toAlignedRect();
 
             // Draw the joint into an image buffer, which will be cached.
-            QImage textureImage(pixelBounds.width(), pixelBounds.height(), renderer->preferredImageFormat());
-            textureImage.fill(0);
-            QPainter painter(&textureImage);
+            image = QImage(pixelBounds.width(), pixelBounds.height(), frameGraph.preferredImageFormat());
+            image.fill(0);
+            QPainter painter(&image);
             painter.setRenderHint(QPainter::Antialiasing);
             painter.setWindow(pixelBounds);
-            paintSolidJoint(painter, QPointF(0,0), projParams.viewMatrix, lineWidth);
+            paintSolidJoint(painter, QPointF(0,0), noninteractiveProjParams.viewMatrix, lineWidth);
             painter.end(); // Release the QImage we've been painting into.
             offset = imageRect.topLeft();
-            imagePrimitive.setImage(std::move(textureImage));
         }
 
         // Render the prepared image into the output framebuffer.
         QPoint alignedPos = (origin + offset).toPoint();
-        imagePrimitive.setRectWindow(QRect(alignedPos, imagePrimitive.image().size()));
-        renderer->renderImage(imagePrimitive);
+        std::unique_ptr<ImagePrimitive> imagePrimitive = std::make_unique<ImagePrimitive>();
+        imagePrimitive->setImage(image);
+        imagePrimitive->setRectWindow(QRect(alignedPos, image.size()));
+        frameGraph.addCommand(std::move(imagePrimitive));
     };
 
     // Render axis arrows.
@@ -221,32 +220,32 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
         Vector2 dir2d(dir3d.x(), dir3d.y());
 
         // Apply perspective distortion to tripod axis.
-        if(perspectiveDistortion() && projParams.isPerspective) {
+        if(perspectiveDistortion() && noninteractiveProjParams.isPerspective) {
             // Calculate the tripod's origin in normalized device coordinates.
             FloatType vporiginX =  (origin.x() - physicalViewportRect.left()) / physicalViewportRect.width()  * 2.0 - 1.0;
             FloatType vporiginY = -(origin.y() - physicalViewportRect.top())  / physicalViewportRect.height() * 2.0 + 1.0;
-            FloatType distance = projParams.zfar;
+            FloatType distance = noninteractiveProjParams.zfar;
             // Calculate the screen-space points on the near and far clipping planes.
-            Point3 p1 = projParams.inverseProjectionMatrix * Point3(vporiginX, vporiginY, 1);
-            Point3 p2 = projParams.inverseProjectionMatrix * Point3(vporiginX, vporiginY, 0);
+            Point3 p1 = noninteractiveProjParams.inverseProjectionMatrix * Point3(vporiginX, vporiginY, 1);
+            Point3 p2 = noninteractiveProjParams.inverseProjectionMatrix * Point3(vporiginX, vporiginY, 0);
             Vector3 rayDir = (p1 - p2).safelyNormalized();
             // View-space position of the tripod's origin.
             Point3 viewSpaceOrigin = Point3::Origin() + rayDir * (distance / -rayDir.z());
             // View-space position of the tripod's tip. Scale the axis length with the distance from the viewer.
-            Point3 viewSpaceTip = viewSpaceOrigin + (std::tan(projParams.fieldOfView / 2) * distance * axisDirs[axis]);
+            Point3 viewSpaceTip = viewSpaceOrigin + (std::tan(noninteractiveProjParams.fieldOfView / 2) * distance * axisDirs[axis]);
             // Screen-space position of the tripod's tip.
-            Point3 screenSpaceTip = projParams.projectionMatrix * viewSpaceTip;
+            Point3 screenSpaceTip = noninteractiveProjParams.projectionMatrix * viewSpaceTip;
             // Screen-space direction of the tripod axis.
             dir2d = Point2(screenSpaceTip.x(), screenSpaceTip.y()) - Point2(vporiginX, vporiginY);
             dir2d.y() = -dir2d.y();
-            dir2d.x() /= projParams.aspectRatio;
+            dir2d.x() /= noninteractiveProjParams.aspectRatio;
             dir2d *= this->tripodSize() * physicalViewportRect.height();
         }
 
         FloatType labelMargin = lineWidth * 2.5;
 
         // Look up the image primitive for the axis arrow in the cache.
-        auto& [imagePrimitive, offset, addedMargin] = renderer->visCache().get<std::tuple<ImagePrimitive, QPointF, FloatType>>(
+        auto& [image, offset, addedMargin] = frameGraph.visCache().lookup<std::tuple<QImage, QPointF, FloatType>>(
             RendererResourceKey<struct ArrowAxisImageCache, TripodStyle, Vector3, Vector2, FloatType, Color>{
                 tripodStyle(),
                 dir3d,
@@ -256,7 +255,7 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
             });
 
         // Render axis arrow.
-        if(imagePrimitive.image().isNull()) {
+        if(image.isNull()) {
             // Compute bounding box of arrow.
             QRectF imageRect = QRectF(0, 0, dir2d.x(), dir2d.y()).normalized();
             FloatType margin = std::max(lineWidth, (tripodStyle() == FlatArrows) ? (arrowSize * tripodSize) : 0.0);
@@ -266,9 +265,9 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
             QRect pixelBounds = imageRect.toAlignedRect();
 
             // Draw the arrow into an image buffer, which will be cached.
-            QImage textureImage(pixelBounds.width(), pixelBounds.height(), renderer->preferredImageFormat());
-            textureImage.fill(0);
-            QPainter painter(&textureImage);
+            image = QImage(pixelBounds.width(), pixelBounds.height(), frameGraph.preferredImageFormat());
+            image.fill(0);
+            QPainter painter(&image);
             painter.setRenderHint(QPainter::Antialiasing);
             painter.setWindow(pixelBounds);
             QBrush brush(axisColors[axis]);
@@ -284,27 +283,29 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
                 addedMargin += paintSolidArrow(painter, dir2d, dir3d, arrowSize, lineWidth, tripodSize, QPointF(0,0));
             painter.end(); // Release the QImage we've been painting into.
             offset = imageRect.topLeft();
-            imagePrimitive.setImage(std::move(textureImage));
         }
 
         // Paint the prepared image into the output framebuffer.
         labelMargin += addedMargin;
         QPoint alignedPos = (origin + offset).toPoint();
-        imagePrimitive.setRectWindow(QRect(alignedPos, imagePrimitive.image().size()));
-        renderer->renderImage(imagePrimitive);
+        std::unique_ptr<ImagePrimitive> imagePrimitive = std::make_unique<ImagePrimitive>();
+        imagePrimitive->setImage(image);
+        imagePrimitive->setRectWindow(QRect(alignedPos, image.size()));
+        frameGraph.addCommand(std::move(imagePrimitive));
 
         // Render axis label.
         if(fontSize != 0 && !labels[axis].isEmpty()) {
-            TextPrimitive textPrimitive;
-            textPrimitive.setText(labels[axis]);
-            textPrimitive.setFont(font);
-            textPrimitive.setColor(axisColors[axis]);
-            if(outlineEnabled()) textPrimitive.setOutlineColor(outlineColor());
-            textPrimitive.setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-            textPrimitive.setUseTightBox(true);
-            textPrimitive.setTextFormat(Qt::AutoText);
+            std::unique_ptr<TextPrimitive> textPrimitive = std::make_unique<TextPrimitive>();
+            textPrimitive->setText(labels[axis]);
+            textPrimitive->setFont(font);
+            textPrimitive->setColor(axisColors[axis]);
+            if(outlineEnabled())
+                textPrimitive->setOutlineColor(outlineColor());
+            textPrimitive->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            textPrimitive->setUseTightBox(true);
+            textPrimitive->setTextFormat(Qt::AutoText);
 
-            QRectF textRect = textPrimitive.queryLocalBounds(renderer->devicePixelRatio());
+            QRectF textRect = textPrimitive->queryLocalBounds(frameGraph.devicePixelRatio());
             textRect.moveTopLeft(QPointF(-textRect.width() / 2, -textRect.height() / 2));
             textRect.translate(origin + QPointF(dir2d.x(), dir2d.y()));
             if(dir2d.isZero() && orderedAxes.size() >= 2) {
@@ -325,8 +326,8 @@ void CoordinateTripodOverlay::render(SceneRenderer* renderer, const QRect& logic
                 dir2d_normalized.resize(labelMargin);
                 textRect.translate(dir2d_normalized.x(), dir2d_normalized.y());
             }
-            textPrimitive.setPositionWindow(Point2(textRect.center().x(), textRect.center().y()));
-            renderer->renderText(textPrimitive);
+            textPrimitive->setPositionWindow(Point2(textRect.center().x(), textRect.center().y()));
+            frameGraph.addCommand(std::move(textPrimitive));
         }
     }
 

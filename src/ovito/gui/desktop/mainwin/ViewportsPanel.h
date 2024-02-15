@@ -43,9 +43,12 @@ public:
     explicit ViewportsPanel(MainWindow& parent);
 
     /// Factory method which creates a new viewport window widget.
-    static BaseViewportWindow* createViewportWindow(Viewport& vp, MainWindow& mainWindow, QWidget* parent);
+    static OORef<WidgetViewportWindow> createViewportWindow(Viewport& vp, MainWindow& mainWindow, QWidget* parent);
 
-    /// Returns the widget that hosts the given viewport.
+    /// Returns the window that is associated with the given viewport (if any).
+    WidgetViewportWindow* viewportWindow(Viewport* vp);
+
+    /// Returns the widget that hosts the given viewport. The widget is automatically created if it does not exist yet.
     QWidget* viewportWidget(Viewport* vp);
 
     /// Returns the current viewport configuration object.
@@ -88,7 +91,7 @@ protected:
 private Q_SLOTS:
 
     /// Displays the context menu for a viewport window.
-    void onViewportMenuRequested(Viewport* viewport, const QPoint& pos);
+    void onViewportMenuRequested(ViewportWindow* viewportWindow, const QPoint& pos);
 
     /// This is called when a new viewport configuration has been loaded.
     void onViewportConfigurationReplaced(ViewportConfiguration* newViewportConfiguration);
@@ -119,11 +122,8 @@ private:
 
     OORef<ViewportConfiguration> _viewportConfig;
     MainWindow& _mainWindow;
+    std::vector<OORef<WidgetViewportWindow>> _viewportWindows;
     bool _graphicsInitializationErrorOccurred = false;
-
-    static constexpr int _splitterSize = 2;
-    static constexpr int _windowInset = 2;
-
     bool _relayoutRequested = false;
     std::vector<SplitterRectangle> _splitterRegions;
     int _hoveredSplitter = -1;
@@ -132,6 +132,9 @@ private:
     QPoint _dragStartPos;
     QBasicTimer _highlightSplitterTimer;
     UndoableTransaction _undoTransaction;
+
+    static constexpr int _splitterSize = 2;
+    static constexpr int _windowInset = 2;
 };
 
 }   // End of namespace
