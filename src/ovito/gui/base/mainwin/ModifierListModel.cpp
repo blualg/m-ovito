@@ -131,7 +131,7 @@ QT_WARNING_POP
 
         // Create action for the modifier class.
         ModifierAction* action = ModifierAction::createForClass(clazz);
-        _allActions.push_back(action);
+        _actions.push_back(action);
 
         // Register it with the global ActionManager.
         userInterface.actionManager()->addAction(action);
@@ -142,10 +142,10 @@ QT_WARNING_POP
     }
 
     // Order actions list by category name.
-    std::sort(_allActions.begin(), _allActions.end(), [](ModifierAction* a, ModifierAction* b) { return QString::localeAwareCompare(a->category(), b->category()) < 0; });
+    std::sort(_actions.begin(), _actions.end(), [](ModifierAction* a, ModifierAction* b) { return QString::localeAwareCompare(a->category(), b->category()) < 0; });
 
     // Sort actions into categories.
-    for(ModifierAction* action : _allActions) {
+    for(ModifierAction* action : _actions) {
         if(_categoryNames.empty() || _categoryNames.back() != action->category()) {
             _categoryNames.push_back(action->category());
             _actionsPerCategory.emplace_back();
@@ -154,11 +154,9 @@ QT_WARNING_POP
     }
 
     // Sort actions by name within each category.
-    for(std::vector<ModifierAction*>& actions : _actionsPerCategory)
-        std::sort(actions.begin(), actions.end(), [](ModifierAction* a, ModifierAction* b) { return QString::localeAwareCompare(a->text(), b->text()) < 0; });
-
-    // Sort complete list of actions by name.
-    std::sort(_allActions.begin(), _allActions.end(), [](const ModifierAction* a, const ModifierAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
+    for(std::vector<ModifierAction*>& categoryActions : _actionsPerCategory) {
+        std::sort(categoryActions.begin(), categoryActions.end(), [](ModifierAction* a, ModifierAction* b) { return QString::localeAwareCompare(a->text(), b->text()) < 0; });
+    }
 
     // Create category for modifier templates.
     _categoryNames.push_back(tr("Modifier templates"));
@@ -175,10 +173,12 @@ QT_WARNING_POP
         // Handle the action.
         connect(action, &QAction::triggered, this, &ModifierListModel::insertModifier);
 
-        // Insert action into complete list, which is alphabetically sorted by name.
-        auto insertionIter = std::lower_bound(_allActions.begin(), _allActions.end(), action, [](const ModifierAction* a, const ModifierAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
-        _allActions.insert(insertionIter, action);
+        // Insert action into complete list.
+        _actions.push_back(action);
     }
+
+    // Sort complete list of actions by name.
+    std::sort(_actions.begin(), _actions.end(), [](const ModifierAction* a, const ModifierAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
 
     // Listen for changes to the underlying modifier template list.
     connect(ModifierTemplates::get(), &QAbstractItemModel::rowsInserted, this, &ModifierListModel::refreshModifierTemplates);
@@ -195,6 +195,9 @@ QT_WARNING_POP
     else
         _categoryFont.setPixelSize(_categoryFont.pixelSize() * 4 / 5);
 #endif
+
+    // Generate list items.
+    updateModelLists();
 }
 
 /******************************************************************************
@@ -212,91 +215,11 @@ void ModifierListModel::updateColorPalette(const QPalette& palette)
 }
 
 /******************************************************************************
-* Returns the action that belongs to the given model index.
-******************************************************************************/
-ModifierAction* ModifierListModel::actionFromIndex(int index) const
-{
-    if(index == 0) return nullptr; // Index 0 is the "Add modification..." item.
-    index--;
-
-    if(_useCategories) {
-        for(const auto& categoryActions : _actionsPerCategory) {
-            if(!categoryActions.empty()) {
-                if(index == 0) return nullptr;
-                index--;
-                if(index < categoryActions.size())
-                    return categoryActions[index];
-                index -= categoryActions.size();
-            }
-        }
-    }
-    else {
-        if(index < _allActions.size())
-            return _allActions[index];
-    }
-
-    return nullptr;
-}
-
-/******************************************************************************
-* Returns the index of the modifier category to which the given list model index belongs.
-******************************************************************************/
-int ModifierListModel::categoryIndexFromListIndex(int index) const
-{
-    if(index == 0) return -1;
-    index--;
-
-    if(_useCategories) {
-        int categoryIndex = 0;
-        for(const auto& categoryActions : _actionsPerCategory) {
-            if(index == 0)
-                return categoryIndex;
-            if(!categoryActions.empty())
-                index -= categoryActions.size() + 1;
-            categoryIndex++;
-        }
-    }
-
-    return -1;
-}
-
-/******************************************************************************
-* Returns the list model index where the given modifier category starts.
-******************************************************************************/
-int ModifierListModel::listIndexFromCategoryIndex(int categoryIndex) const
-{
-    if(_useCategories) {
-        int index = 1;
-        for(const auto& categoryActions : _actionsPerCategory) {
-            if(categoryIndex == 0)
-                return index;
-            if(!categoryActions.empty())
-                index += categoryActions.size() + 1;
-            categoryIndex--;
-        }
-    }
-
-    OVITO_ASSERT(false);
-    return -1;
-}
-
-/******************************************************************************
 * Returns the number of rows in the model.
 ******************************************************************************/
 int ModifierListModel::rowCount(const QModelIndex& parent) const
 {
-    int sum = 1; // First entry is the "Add modification..." item.
-
-    if(_useCategories) {
-        for(const auto& categoryActions : _actionsPerCategory)
-            if(!categoryActions.empty())
-                sum += categoryActions.size() + 1;  // Take into account category header.
-    }
-    else {
-        sum += _allActions.size();
-    }
-
-    return sum;
+    return _modelStrings.size();
 }
 
 /******************************************************************************
@@ -312,42 +235,72 @@ QHash<int, QByteArray> ModifierListModel::roleNames() const
 }
 
 /******************************************************************************
+* Rebuilds the internal list of model items.
+******************************************************************************/
+void ModifierListModel::updateModelLists()
+{
+    beginResetModel();
+    _modelStrings.clear();
+    _modelStrings.push_back(tr("Add modification..."));
+    _modelActions.clear();
+    _modelActions.push_back(nullptr);
+    if(_useCategories) {
+        int categoryIndex = 0;
+        for(const auto& categoryActions : _actionsPerCategory) {
+            if(!categoryActions.empty()) {
+                _modelActions.push_back(nullptr);
+                _modelStrings.push_back(_categoryNames[categoryIndex]);
+                for(ModifierAction* action : categoryActions) {
+                    _modelActions.push_back(action);
+                    _modelStrings.push_back(action->text());
+                }
+            }
+            categoryIndex++;
+        }
+    }
+    else {
+        _modelActions.insert(_modelActions.end(), _actions.begin(), _actions.end());
+        _modelStrings.reserve(_modelActions.size());
+        for(ModifierAction* action : _actions)
+            _modelStrings.push_back(action->text());
+    }
+    endResetModel();
+}
+
+/******************************************************************************
 * Returns the data associated with a list item.
 ******************************************************************************/
 QVariant ModifierListModel::data(const QModelIndex& index, int role) const
 {
     if(role == Qt::DisplayRole) {
-        if(ModifierAction* action = actionFromIndex(index)) {
-            return action->text();
-        }
-        else {
-            int categoryIndex = categoryIndexFromListIndex(index.row());
-            if(categoryIndex < 0)
-                return tr("Add modification...");
-            else
-                return _categoryNames[categoryIndex];
-        }
+        if(index.row() >= 0 && index.row() < _modelStrings.size())
+            return _modelStrings[index.row()];
     }
     else if(role == Qt::UserRole) {
-        if(categoryIndexFromListIndex(index.row()) >= 0)
+        // Is it a category header?
+        if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr)
             return true;
         else
             return false;
     }
     else if(role == Qt::FontRole) {
-        if(categoryIndexFromListIndex(index.row()) >= 0)
+        // Is it a category header?
+        if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr)
             return _categoryFont;
     }
     else if(role == Qt::ForegroundRole) {
-        if(categoryIndexFromListIndex(index.row()) >= 0)
+        // Is it a category header?
+        if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr)
             return _categoryForegroundBrush;
     }
     else if(role == Qt::BackgroundRole) {
-        if(categoryIndexFromListIndex(index.row()) >= 0)
+        // Is it a category header?
+        if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr)
             return _categoryBackgroundBrush;
     }
     else if(role == Qt::TextAlignmentRole) {
-        if(categoryIndexFromListIndex(index.row()) >= 0)
+        // Is it a category header?
+        if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr)
             return Qt::AlignCenter;
     }
     return {};
@@ -358,11 +311,12 @@ QVariant ModifierListModel::data(const QModelIndex& index, int role) const
 ******************************************************************************/
 Qt::ItemFlags ModifierListModel::flags(const QModelIndex& index) const
 {
-    if(categoryIndexFromListIndex(index.row()) >= 0)
-        return Qt::ItemIsEnabled;
-    else if(ModifierAction* action = actionFromIndex(index))
-        return action->isEnabled() ? (Qt::ItemIsEnabled | Qt::ItemIsSelectable) : Qt::NoItemFlags;
-
+    if(index.row() > 0 && index.row() < _modelActions.size()) {
+        if(_modelActions[index.row()])
+            return _modelActions[index.row()]->isEnabled() ? (Qt::ItemIsEnabled | Qt::ItemIsSelectable) : Qt::NoItemFlags;
+        else
+            return Qt::ItemIsEnabled;
+    }
     return QAbstractListModel::flags(index);
 }
 
@@ -418,33 +372,18 @@ void ModifierListModel::refreshModifierTemplates()
 
     // Discard old list of actions.
     if(!templateActions.empty()) {
-        if(_useCategories) {
-            int startIndex = listIndexFromCategoryIndex(modifierTemplatesCategory());
-            beginRemoveRows(QModelIndex(), startIndex, startIndex + templateActions.size());
-        }
         for(ModifierAction* action : templateActions) {
-            auto iter = std::find(_allActions.begin(), _allActions.end(), action);
-            OVITO_ASSERT(iter != _allActions.end());
-            int deleteIndex = 1 + std::distance(_allActions.begin(), iter);
-            if(!_useCategories)
-                beginRemoveRows(QModelIndex(), deleteIndex, deleteIndex);
-            _allActions.erase(iter);
-            if(!_useCategories)
-                endRemoveRows();
+            auto iter = std::find(_actions.begin(), _actions.end(), action);
+            OVITO_ASSERT(iter != _actions.end());
+            _actions.erase(iter);
             _userInterface.actionManager()->deleteAction(action);
         }
         templateActions.clear();
-        if(_useCategories)
-            endRemoveRows();
     }
 
     // Create new actions for the modifier templates.
     int count = ModifierTemplates::get()->templateList().size();
     if(count != 0) {
-        if(_useCategories) {
-            int startIndex = listIndexFromCategoryIndex(modifierTemplatesCategory());
-            beginInsertRows(QModelIndex(), startIndex, startIndex + count);
-        }
         for(const QString& templateName : ModifierTemplates::get()->templateList()) {
             // Create action for the modifier template.
             ModifierAction* action = ModifierAction::createForTemplate(templateName);
@@ -457,19 +396,16 @@ void ModifierListModel::refreshModifierTemplates()
             // Handle the action.
             connect(action, &QAction::triggered, this, &ModifierListModel::insertModifier);
 
-            // Insert action into complete, alphabetically sorted list.
-            auto insertionIter = std::lower_bound(_allActions.begin(), _allActions.end(), action, [](const ModifierAction* a, const ModifierAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
-            if(!_useCategories) {
-                int insertionIndex = std::distance(_allActions.begin(), insertionIter);
-                beginInsertRows(QModelIndex(), insertionIndex, insertionIndex);
-            }
-            _allActions.insert(insertionIter, action);
-            if(!_useCategories)
-                endInsertRows();
+            // Append action to flat list.
+            _actions.push_back(action);
         }
-        if(_useCategories)
-            endInsertRows();
     }
+
+    // Sort complete list of actions by name.
+    std::sort(_actions.begin(), _actions.end(), [](const ModifierAction* a, const ModifierAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
+
+    // Regenerate list items.
+    updateModelLists();
 }
 
 /******************************************************************************
@@ -502,24 +438,9 @@ void ModifierListModel::updateActionState()
     }
 
     // Update the actions.
-    int row = 1;
-    if(_useCategories) {
-        for(const auto& categoryActions : _actionsPerCategory) {
-            if(!categoryActions.empty())
-                row++;
-            for(ModifierAction* action : categoryActions) {
-                if(action->updateState(inputState))
-                    Q_EMIT dataChanged(index(row), index(row));
-                row++;
-            }
-        }
-    }
-    else {
-        for(ModifierAction* action : _allActions) {
-            if(action->updateState(inputState))
-                Q_EMIT dataChanged(index(row), index(row));
-            row++;
-        }
+    for(int row = 1; row < _modelActions.size(); row++) {
+        if(_modelActions[row] && _modelActions[row]->updateState(inputState))
+            Q_EMIT dataChanged(index(row), index(row));
     }
 }
 
@@ -529,9 +450,8 @@ void ModifierListModel::updateActionState()
 void ModifierListModel::setUseCategories(bool on)
 {
     if(on != _useCategories) {
-        beginResetModel();
         _useCategories = on;
-        endResetModel();
+        updateModelLists();
     }
 }
 
