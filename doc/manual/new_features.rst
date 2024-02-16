@@ -6,6 +6,19 @@ Changelog
 
 .. sidebar::
 
+  * `Download <https://www.ovito.org/download_history/#3.10.3>`__
+
+----------------------------
+Version 3.10.3 (19-Feb-2024)
+----------------------------
+
+- :ref:`visual_elements.lines` visual element: Fixed wrong line caps when using option "Show up to current time only"
+- |ovito-python| Fix ColorTrait (numpy array) error
+- |ovito-pro| Added parameter for ambient occlusion cutoff to :ref:`VisRTX renderer <rendering.visrtx_renderer>`
+- |ovito-pro| Fixed code line duplications in :ref:`modifiers.render_lammps_regions` modifier, which caused warning messages
+
+.. sidebar::
+
   * `Download <https://www.ovito.org/download_history/#3.10.2>`__
 
 ----------------------------

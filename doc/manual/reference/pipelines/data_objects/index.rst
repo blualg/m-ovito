@@ -26,7 +26,7 @@ rendering the graphical representation do.
   :ref:`Triangle mesh <scene_objects.triangle_mesh>`                 A general polyhedral mesh made of vertices and triangular faces
   :ref:`Data table <scene_objects.data_table>`                       A table of values arranged in columns and rows, which can be visualized as a 2d data plot
   :ref:`Voxel grid <scene_objects.voxel_grid>`                       A structured 2d or 3d grid made of uniform voxel elements
-  :ref:`Lines <scene_objects.lines>`                                 Trajectory lines created by the :ref:`particles.modifiers.generate_trajectory_lines` modifier or the :py:attr:`lines.create() <ovito.data.DataCollection.lines>` method
+  :ref:`Lines <scene_objects.lines>`                                 Trajectory lines created by the :ref:`particles.modifiers.generate_trajectory_lines` modifier or the :py:attr:`DataCollection.lines.create() <ovito.data.DataCollection.lines>` method
   :ref:`Dislocations <scene_objects.dislocations>`                   Line crystal defects extracted by the :ref:`particles.modifiers.dislocation_analysis` modifier
   ================================================================== ==================================================================
 
