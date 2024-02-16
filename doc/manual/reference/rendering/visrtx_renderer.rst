@@ -3,10 +3,6 @@
 VisRTX renderer (experimental) |ovito-pro|
 ==========================================
 
-.. image:: /images/rendering/visrtx_renderer_panel.*
-  :width: 30%
-  :align: right
-
 .. versionadded:: 3.10.0
 
 VisRTX is a scientific visualization renderer based on the NVIDIA OptiX™ Ray Tracing Engine.
@@ -35,6 +31,10 @@ The renderer is not available on the macOS platform.
 Parameters
 ----------
 
+.. image:: /images/rendering/visrtx_renderer_panel.*
+  :width: 30%
+  :align: right
+
 Quality settings
 """"""""""""""""
 
@@ -60,12 +60,12 @@ Occlusion cutoff
   Increasing it will make the AO effect stronger and lead to darker contrast.
 
   .. figure:: /images/rendering/visrtx_small_ao_cutoff.png
-    :figwidth: 35%
+    :figwidth: 30%
 
     Small AO cutoff range
 
   .. figure:: /images/rendering/visrtx_large_ao_cutoff.png
-    :figwidth: 35%
+    :figwidth: 30%
 
     Large AO cutoff range
 

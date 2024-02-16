@@ -13,7 +13,8 @@ Version 3.10.3 (19-Feb-2024)
 ----------------------------
 
 - :ref:`visual_elements.lines` visual element: Fixed wrong line caps when using option "Show up to current time only"
-- |ovito-python| Fix ColorTrait (numpy array) error
+- |ovito-python| Fixed error in :py:meth:`~ovito.vis.Viewport.create_jupyter_widget` (`issue #229 <https://gitlab.com/stuko/ovito/-/issues/229>`__)
+- |ovito-python| Fixed an issue with :py:class:`ovito.traits.Color` not accepting a NumPy array
 - |ovito-pro| Added parameter for ambient occlusion cutoff to :ref:`VisRTX renderer <rendering.visrtx_renderer>`
 - |ovito-pro| Fixed code line duplications in :ref:`modifiers.render_lammps_regions` modifier, which caused warning messages
 
