@@ -13,11 +13,11 @@ Version 3.10.3 (19-Feb-2024)
 ----------------------------
 
 - Fix: :ref:`visual_elements.lines` visual element renders wrong line caps when using option "Show up to current time only"
-- Fix: Drop-down list of available modifiers may insert wrong modifier templates into a pipeline after a new template was added to the list
-- |ovito-python| Fix: Error in :py:meth:`~ovito.vis.Viewport.create_jupyter_widget` (`issue #229 <https://gitlab.com/stuko/ovito/-/issues/229>`__)
+- Fix: Drop-down list of available modifiers inserts wrong modifier template into pipeline after an entry was added to the list
+- |ovito-python| Fix: :py:meth:`~ovito.vis.Viewport.create_jupyter_widget` method failing (`issue #229 <https://gitlab.com/stuko/ovito/-/issues/229>`__)
 - |ovito-python| Fix: Issue with :py:class:`ovito.traits.Color` not accepting a NumPy array
 - |ovito-pro| Added parameter for ambient occlusion cutoff to :ref:`VisRTX renderer <rendering.visrtx_renderer>`
-- |ovito-pro| Fix: Code line duplications in :ref:`modifiers.render_lammps_regions` modifier lead to warning messages
+- |ovito-pro| Fix: Warnings in :ref:`modifiers.render_lammps_regions` modifier due to code line duplications
 
 .. sidebar::
 
