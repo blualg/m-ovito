@@ -50,9 +50,13 @@ public:
 public Q_SLOTS:
 
     /// Releases the renderer resources held by the viewport window and the renderer.
-    virtual void releaseResources() = 0;
+    virtual void releaseResources();
 
 protected:
+
+    /// This method is called after the reference counter of this object has reached zero
+    /// and before the object is being finally deleted.
+    virtual void aboutToBeDeleted() override;
 
     /// Is called when the viewport becomes visible.
     void showEvent(QShowEvent* event);

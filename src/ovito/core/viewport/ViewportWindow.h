@@ -42,6 +42,46 @@ class OVITO_CORE_EXPORT ViewportWindow : public QObject, public RefMaker
 
 public:
 
+    /// Data structure returned by the ViewportWindow::pick() method,
+    /// holding information about the object that was picked in a viewport at
+    /// the current cursor location.
+    class OVITO_CORE_EXPORT PickResult
+    {
+    public:
+
+        /// Constructor.
+        PickResult(OORef<Pipeline> pipeline, OORef<ObjectPickInfo> pickInfo, const Point3& hitLocation, quint32 subobjectId)
+            : _pipeline(std::move(pipeline)), _pickInfo(std::move(pickInfo)), _hitLocation(hitLocation), _subobjectId(subobjectId) {}
+
+        /// Returns the pipeline that has been picked.
+        const OORef<Pipeline>& pipeline() const { return _pipeline; }
+
+        /// Returns the object-specific data at the pick location.
+        const OORef<ObjectPickInfo>& pickInfo() const { return _pickInfo; }
+
+        /// Returns the coordinates of the hit point in world space.
+        const Point3& hitLocation() const { return _hitLocation; }
+
+        /// Returns the subobject that was picked.
+        quint32 subobjectId() const { return _subobjectId; }
+
+    private:
+
+        /// The pipeline that was picked.
+        OORef<Pipeline> _pipeline;
+
+        /// The object-specific data at the pick location.
+        OORef<ObjectPickInfo> _pickInfo;
+
+        /// The coordinates of the hit point in world space.
+        Point3 _hitLocation;
+
+        /// The subobject that was picked.
+        quint32 _subobjectId = 0;
+    };
+
+public:
+
     /// Constructor.
     using RefMaker::RefMaker;
 
@@ -53,6 +93,9 @@ public:
 
     /// Returns the object responsible for evaluating all pipelines in the scene to prepare interactive rendering.
     ScenePreparation& scenePreparation() { OVITO_ASSERT(_scenePreparation); return *_scenePreparation; }
+
+    /// Returns the current frame graph displayed in the viewport window.
+    const FrameGraph* frameGraph() const { return _frameGraph.get(); }
 
     /// Sets the frame graph to be displayed in the viewport window and returns the old frame graph.
     std::unique_ptr<FrameGraph> setFrameGraph(std::unique_ptr<FrameGraph> frameGraph) {
@@ -81,9 +124,6 @@ public:
     /// Returns the device pixel ratio of the viewport window's canvas.
     virtual qreal devicePixelRatio() const = 0;
 
-	/// Returns the best QImage pixel format to be used for textures and image primitives.
-	virtual QImage::Format preferredImageFormat() const { return QImage::Format_ARGB32_Premultiplied; }
-
     /// Returns whether the viewport caption is displayed.
     bool isViewportTitleVisible() const { return _showViewportTitle; }
 
@@ -96,18 +136,13 @@ public:
 
     /// Sets a flag indicatring whether the mouse cursor is currently located in the
     /// viewport window area that activates the context menu.
-    void setCursorInContextMenuArea(bool flag) {
-        if(_cursorInContextMenuArea != flag) {
-            _cursorInContextMenuArea = flag;
-            viewport()->updateViewport();
-        }
-    }
+    void setCursorInContextMenuArea(bool flag);
 
     /// Returns the zone in the upper left corner of the viewport where the context menu can be activated by the user.
     const QRectF& contextMenuArea() const { return _contextMenuArea; }
 
     /// Determines the object that is located under the given mouse cursor position.
-    virtual ViewportPickResult pick(const QPointF& pos) = 0;
+    virtual std::optional<PickResult> pick(const QPointF& pos) = 0;
 
     /// Returns the list of gizmos to render in the viewport.
     virtual std::span<ViewportGizmo*> viewportGizmos() = 0;
@@ -131,9 +166,7 @@ public:
     /// \param[out] snapPoint The resulting snap point in the viewport's grid coordinate system. If the method returned
     ///                       \c false then the value of this output variable is undefined.
     /// \return \c true if a snapping point has been found; \c false if no snapping point was found for the given screen position.
-    bool snapPoint(const QPointF& screenPoint, Point3& snapPoint) const {
-        return this->snapPoint(screenPoint, snapPoint, viewport()->gridMatrix());
-    }
+    bool snapPoint(const QPointF& screenPoint, Point3& snapPoint) const;
 
     /// \brief Computes a ray in world space going through a pixel of the viewport window.
     /// \param screenPoint A screen point relative to the upper left corner of the viewport window.
@@ -180,9 +213,6 @@ protected:
     /// This is called after the frame graph has been updated to render the viewport contents on screen.
     virtual void refreshDisplay() = 0;
 
-    /// Lets the renderer implementation perform post-processing of a newly generated frame graph.
-    virtual void postprocessFrameGraph(FrameGraph& frameGraph) {}
-
     /// Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
@@ -200,7 +230,7 @@ protected:
     QRectF renderViewportTitle(FrameGraph& frameGraph);
 
 	/// Renders the visual representation of the modifiers in a pipeline.
-	void renderPipelineModifiers(Pipeline* pipeline, bool renderOverlay);
+	void renderPipelineModifiers(Scene* scene, Pipeline* pipeline, FrameGraph& frameGraph);
 
 	/// Determines the range of the construction grid to display.
 	std::tuple<FloatType, Box2I> determineConstructionGridRange();
@@ -212,6 +242,9 @@ private:
 
     /// The viewport associated with this window.
     DECLARE_REFERENCE_FIELD_FLAGS(Viewport*, viewport, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_UNDO);
+
+    /// The renderer used by this window.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SceneRenderer>, renderer, setRenderer, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_NO_UNDO);
 
     /// The abstract user interface hosting this viewport window.
     UserInterface* _userInterface = nullptr;
@@ -249,3 +282,6 @@ private:
 };
 
 }   // End of namespace
+
+#include <ovito/core/viewport/Viewport.h>
+#include <ovito/core/rendering/SceneRenderer.h>

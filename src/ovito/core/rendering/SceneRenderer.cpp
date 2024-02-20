@@ -34,103 +34,29 @@
 namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(SceneRenderer);
-IMPLEMENT_ABSTRACT_OVITO_CLASS(ObjectPickInfo);
-
-#if 0 // TODO
-/******************************************************************************
-* Sets the view projection parameters, the animation frame to render,
-* and the viewport being rendered.
-******************************************************************************/
-void SceneRenderer::endFrame(bool renderingSuccessful, const QRect& viewportRect)
-{
-    endPickObject();
-    _scene.reset();
-    if(frameBuffer()) {
-        if(renderingSuccessful)
-            frameBuffer()->commitChanges();
-        else
-            frameBuffer()->discardChanges();
-    }
-}
-#endif
 
 /******************************************************************************
-* Registers a range of sub-IDs belonging to the current object being rendered.
-******************************************************************************/
-quint32 SceneRenderer::registerSubObjectIDs(quint32 subObjectCount, const ConstDataBufferPtr& indices)
+ * Renders the 2d graphics of a render layer into the frame buffer.
+ ******************************************************************************/
+void SceneRenderer::render2DPrimitives(FrameGraph::RenderLayer renderLayer, FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer) const
 {
-#if 0 // TODO
-    quint32 baseObjectID = _nextAvailablePickingID;
-    if(indices)
-        _currentObjectPickingRecord.indexedRanges.push_back(std::make_pair(indices, _nextAvailablePickingID - _currentObjectPickingRecord.baseObjectID));
-    _nextAvailablePickingID += subObjectCount;
-    return baseObjectID;
-#else
-    return 0;
-#endif
-}
+    if(!frameBuffer)
+        return;
 
-#if 0 // TODO
-/******************************************************************************
-* When picking mode is active, this registers an object being rendered.
-******************************************************************************/
-quint32 SceneRenderer::beginPickObject(const Pipeline* pipeline, ObjectPickInfo* pickInfo)
-{
-    _currentObjectPickingRecord.pipeline = const_cast<Pipeline*>(pipeline);
-    _currentObjectPickingRecord.pickInfo = pickInfo;
-    _currentObjectPickingRecord.baseObjectID = _nextAvailablePickingID;
-    return _currentObjectPickingRecord.baseObjectID;
-}
+    for(const FrameGraph::RenderingCommand& command : frameGraph.commands()) {
 
-/******************************************************************************
-* Call this when rendering of a pickable object is finished.
-******************************************************************************/
-void SceneRenderer::endPickObject()
-{
-    if(_currentObjectPickingRecord.pipeline) {
-        _objectPickingRecords.push_back(std::move(_currentObjectPickingRecord));
-    }
-    _currentObjectPickingRecord.baseObjectID = 0;
-    _currentObjectPickingRecord.pipeline = nullptr;
-    _currentObjectPickingRecord.pickInfo = nullptr;
-    _currentObjectPickingRecord.indexedRanges.clear();
-}
+        // Skip commands that are not relevant for the current rendering pass.
+        if(command.skipInVisualPass() || command.renderLayer() != renderLayer)
+            continue;
 
-/******************************************************************************
-* Resets the internal state of the picking renderer and clears the stored object records.
-******************************************************************************/
-void SceneRenderer::resetPickingBuffer()
-{
-    endPickObject();
-    _objectPickingRecords.clear();
-#if 1
-    _nextAvailablePickingID = 1;
-#else
-    // This can be enabled during debugging to avoid alpha!=1 pixels in the picking render buffer.
-    _nextAvailablePickingID = 0xEF000000;
-#endif
-}
-
-/******************************************************************************
-* Given an object picking ID, looks up the corresponding record.
-******************************************************************************/
-const SceneRenderer::ObjectPickingRecord* SceneRenderer::lookupObjectPickingRecord(quint32 objectID) const
-{
-    if(objectID == 0 || _objectPickingRecords.empty())
-        return nullptr;
-
-    for(auto iter = _objectPickingRecords.begin(); iter != _objectPickingRecords.end(); iter++) {
-        if(iter->baseObjectID > objectID) {
-            OVITO_ASSERT(iter != _objectPickingRecords.begin());
-            OVITO_ASSERT(objectID >= (iter-1)->baseObjectID);
-            return &*std::prev(iter);
+        if(const ImagePrimitive* primitive = dynamic_cast<const ImagePrimitive*>(command.primitive())) {
+            frameBuffer->renderImagePrimitive(*primitive, viewportRect);
+        }
+        else if(const TextPrimitive* primitive = dynamic_cast<const TextPrimitive*>(command.primitive())) {
+            frameBuffer->renderTextPrimitive(*primitive, viewportRect);
         }
     }
-
-    OVITO_ASSERT(objectID >= _objectPickingRecords.back().baseObjectID);
-    return &_objectPickingRecords.back();
 }
-#endif
 
 #ifdef OVITO_BUILD_BASIC
 /******************************************************************************

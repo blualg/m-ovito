@@ -47,7 +47,7 @@ public:
     virtual void startRender(const QSize& frameBufferSize) override;
 
     /// Renders a single frame into the frame buffer.
-    virtual void renderFrame(const FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
+    virtual void renderFrame(FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
 
     /// Is called after rendering of one or more frames has finished.
     virtual void endRender() override;

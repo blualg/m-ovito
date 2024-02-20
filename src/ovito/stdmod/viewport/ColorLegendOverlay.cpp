@@ -23,6 +23,7 @@
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/rendering/RenderSettings.h>
+#include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/dataset/scene/Scene.h>
@@ -250,7 +251,7 @@ QVariant ColorLegendOverlay::getPipelineEditorShortInfo(Scene* scene) const
 /******************************************************************************
 * Lets the overlay paint its contents into the framebuffer.
 ******************************************************************************/
-void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect)
+void ColorLegendOverlay::render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene)
 {
     DataOORef<const Property> typedProperty;
 
@@ -260,7 +261,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
     _autoLabel2Text.clear();
 
     // Check alignment parameter.
-    if(!renderer->isInteractive())
+    if(!frameGraph.isInteractive())
         checkAlignmentParameterValue(alignment());
 
     // Check whether a source has been set for this color legend:
@@ -270,12 +271,12 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
     }
     else if(sourceProperty()) {
         // Look up the typed property in one of the scene's pipeline outputs.
-        renderer->scene()->visitPipelines([&](Pipeline* pipeline) {
+        scene->visitPipelines([&](Pipeline* pipeline) {
 
             // Evaluate pipeline and obtain output data collection.
-            if(!renderer->isInteractive()) {
-                PipelineEvaluationRequest request(renderer->time());
-                request.setThrowOnError(renderer->renderSettings().stopOnPipelineError());
+            if(!frameGraph.isInteractive()) {
+                PipelineEvaluationRequest request(frameGraph.time());
+                request.setThrowOnError(frameGraph.stopOnPipelineError());
                 PipelineEvaluationFuture pipelineEvaluation = pipeline->evaluatePipeline(request);
                 if(!pipelineEvaluation.waitForFinished())
                     return false;
@@ -284,7 +285,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
                 typedProperty = pipelineEvaluation.result().getLeafObject(sourceProperty());
             }
             else {
-                const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(renderer->time(), false);
+                const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(frameGraph.time(), false);
                 // Look up the typed property.
                 typedProperty = state.getLeafObject(sourceProperty());
             }
@@ -301,7 +302,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
             // Set warning status to be displayed in the GUI.
             setStatus(PipelineStatus(PipelineStatus::Warning, tr("The property '%1' is not available in the pipeline output.").arg(sourceProperty().dataTitleOrString())));
 
-            // Escalate to an error state if in terminal mode.
+            // Escalate to an error state if in console mode.
             if(Application::instance()->consoleMode())
                 throw Exception(tr("The property '%1' set as source of the color legend is not present in the data pipeline output.").arg(sourceProperty().dataTitleOrString()));
             else
@@ -311,7 +312,7 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
             // Set warning status to be displayed in the GUI.
             setStatus(PipelineStatus(PipelineStatus::Warning, tr("The property '%1' is not a typed property.").arg(sourceProperty().dataTitleOrString())));
 
-            // Escalate to an error state if in terminal mode.
+            // Escalate to an error state if in console mode.
             if(Application::instance()->consoleMode())
                 throw Exception(tr("The property '%1' set as source of the color legend is not a typed property, i.e., it has no ElementType(s) attached.").arg(sourceProperty().dataTitleOrString()));
             else
@@ -325,10 +326,10 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
         // Set warning status to be displayed in the GUI.
         setStatus(PipelineStatus(PipelineStatus::Warning, tr("No data source has been specified for the color legend.")));
 
-        // Escalate to an error state if in terminal mode.
+        // Escalate to an error state if in console mode.
         if(Application::instance()->consoleMode()) {
             throw Exception(tr("You are rendering a Viewport with a ColorLegendOverlay that is not associated with any "
-                              "data source. Did you forget to specify a data source for the color legend?"));
+                               "data source. Did you forget to specify a data source for the color legend?"));
         }
         else {
             // Ignore invalid configuration in GUI mode by not rendering the legend.
@@ -372,9 +373,9 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
             endValue = std::numeric_limits<FloatType>::quiet_NaN();
             if(ModificationNode* modNode = modifier()->someNode()) {
                 QVariant minValue, maxValue;
-                PipelineEvaluationRequest request(renderer->time());
-                request.setThrowOnError(renderer->renderSettings().stopOnPipelineError());
-                if(!renderer->isInteractive()) {
+                PipelineEvaluationRequest request(frameGraph.time());
+                request.setThrowOnError(frameGraph.stopOnPipelineError());
+                if(!frameGraph.isInteractive()) {
                     SharedFuture<PipelineFlowState> stateFuture = modNode->evaluate(request);
                     if(!stateFuture.waitForFinished())
                         return;
@@ -396,15 +397,15 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
         }
 
         _autoTitleText = modifier()->sourceProperty().nameWithComponent();
-        drawContinuousColorMap(renderer, colorBarRect, legendSize, PseudoColorMapping(startValue, endValue, modifier()->colorGradient()));
+        drawContinuousColorMap(frameGraph, colorBarRect, legendSize, PseudoColorMapping(startValue, endValue, modifier()->colorGradient()));
     }
     else if(colorMapping()) {
         _autoTitleText = colorMapping()->sourceProperty().nameWithComponent();
-        drawContinuousColorMap(renderer, colorBarRect, legendSize, colorMapping()->pseudoColorMapping());
+        drawContinuousColorMap(frameGraph, colorBarRect, legendSize, colorMapping()->pseudoColorMapping());
     }
     else if(typedProperty) {
         _autoTitleText = typedProperty->objectTitle();
-        drawDiscreteColorMap(renderer, colorBarRect, legendSize, typedProperty);
+        drawDiscreteColorMap(frameGraph, colorBarRect, legendSize, typedProperty);
     }
 
     // Notify the UI that the automatic label texts were recalculated during rendering.
@@ -532,9 +533,9 @@ void ColorLegendOverlay::render(SceneRenderer* renderer, const QRect& logicalVie
 /******************************************************************************
 * Draws the color legend for a Color Coding modifier.
 ******************************************************************************/
-void ColorLegendOverlay::drawContinuousColorMap(SceneRenderer* renderer, const QRectF& colorBarRect, FloatType legendSize, const PseudoColorMapping& mapping)
+void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QRectF& colorBarRect, FloatType legendSize, const PseudoColorMapping& mapping)
 {
-    const qreal devicePixelRatio = renderer->devicePixelRatio();
+    const qreal devicePixelRatio = frameGraph.devicePixelRatio();
 
     // Controls the tick color: Currently the order is:
     // Border color -> text color
@@ -562,19 +563,19 @@ void ColorLegendOverlay::drawContinuousColorMap(SceneRenderer* renderer, const Q
     QRectF boundingBox;
 
     // Look up the image primitive for the color bar in the cache.
-    auto& [imagePrimitive, offset] = renderer->visCache().get<std::tuple<ImagePrimitive, QPointF>>(
+    auto& [image, offset] = frameGraph.visCache().lookup<std::tuple<QImage, QPointF>>(
         RendererResourceKey<struct ColorBarImageCache, OORef<ColorCodingGradient>, FloatType, int, bool, Color, QSizeF>{
             mapping.gradient(), devicePixelRatio, orientation(), borderEnabled(), borderColor(),
             colorBarRect.size()});
 
     // Render the color bar into an image texture.
     int borderWidth = borderEnabled() ? tickWidth : 0;
-    if(imagePrimitive.image().isNull()) {
+    if(image.isNull()) {
         // Allocate the image buffer.
         QSize gradientSize = colorBarRect.size().toSize();
-        QImage textureImage(gradientSize.width() + 2 * borderWidth, gradientSize.height() + 2 * borderWidth,
-                            renderer->preferredImageFormat());
-        if(borderEnabled()) textureImage.fill((QColor)borderColor());
+        image = QImage(gradientSize.width() + 2 * borderWidth, gradientSize.height() + 2 * borderWidth,
+                       frameGraph.preferredImageFormat());
+        if(borderEnabled()) image.fill((QColor)borderColor());
 
         // Create the color gradient image.
         if(orientation() == Qt::Vertical) {
@@ -582,7 +583,7 @@ void ColorLegendOverlay::drawContinuousColorMap(SceneRenderer* renderer, const Q
                 FloatType t = (FloatType)y / (FloatType)std::max(1, gradientSize.height() - 1);
                 unsigned int color = QColor(mapping.gradient()->valueToColor(1.0 - t)).rgb();
                 for(int x = 0; x < gradientSize.width(); x++) {
-                    textureImage.setPixel(x + borderWidth, y + borderWidth, color);
+                    image.setPixel(x + borderWidth, y + borderWidth, color);
                 }
             }
         }
@@ -591,18 +592,19 @@ void ColorLegendOverlay::drawContinuousColorMap(SceneRenderer* renderer, const Q
                 FloatType t = (FloatType)x / (FloatType)std::max(1, gradientSize.width() - 1);
                 unsigned int color = QColor(mapping.gradient()->valueToColor(t)).rgb();
                 for(int y = 0; y < gradientSize.height(); y++) {
-                    textureImage.setPixel(x + borderWidth, y + borderWidth, color);
+                    image.setPixel(x + borderWidth, y + borderWidth, color);
                 }
             }
         }
-        imagePrimitive.setImage(std::move(textureImage));
         offset = QPointF(-borderWidth, -borderWidth);
     }
     QPoint alignedPos = (colorBarRect.topLeft() + offset).toPoint();
-    imagePrimitive.setRectWindow(QRect(alignedPos, imagePrimitive.image().size()));
+    std::unique_ptr<ImagePrimitive> imagePrimitive = std::make_unique<ImagePrimitive>();
+    imagePrimitive->setRectWindow(QRect(alignedPos, image.size()));
+    imagePrimitive->setImage(image);
 
     // Actual bounding box of the rendered color bar including the border (if set).
-    const QRectF colorBarImageRect{imagePrimitive.windowRect()};
+    const QRectF colorBarImageRect{imagePrimitive->windowRect()};
     boundingBox |= colorBarImageRect;
 
     QByteArray format = valueFormatString().toUtf8();
@@ -621,15 +623,16 @@ void ColorLegendOverlay::drawContinuousColorMap(SceneRenderer* renderer, const Q
     const qreal textMargin = 0.2 * legendSize / std::max(FloatType(0.01), aspectRatio());
 
     // Prepare limit labels.
-    TextPrimitive label1Primitive, label2Primitive;
+    std::unique_ptr<TextPrimitive> label1Primitive = std::make_unique<TextPrimitive>();
+    std::unique_ptr<TextPrimitive> label2Primitive = std::make_unique<TextPrimitive>();
 
     // Font size is always in logical units.
     FloatType labelFontSize{fontSize * relLabelFontSize() / devicePixelRatio};
     // Qt font size is always in logical units.
     QFont labelFont = this->font();
     labelFont.setPointSizeF(labelFontSize);
-    label1Primitive.setFont(labelFont);
-    label2Primitive.setFont(labelFont);
+    label1Primitive->setFont(labelFont);
+    label2Primitive->setFont(labelFont);
 
     int topFlags = 0;
     int bottomFlags = 0;
@@ -659,24 +662,24 @@ void ColorLegendOverlay::drawContinuousColorMap(SceneRenderer* renderer, const Q
         }
     }
 
-    label1Primitive.setText(topLabel);
-    label1Primitive.setAlignment(topFlags);
-    label1Primitive.setPositionWindow(topPos);
-    label1Primitive.setColor(textColor());
-    label1Primitive.setTextFormat(Qt::AutoText);
+    label1Primitive->setText(topLabel);
+    label1Primitive->setAlignment(topFlags);
+    label1Primitive->setPositionWindow(topPos);
+    label1Primitive->setColor(textColor());
+    label1Primitive->setTextFormat(Qt::AutoText);
     if(outlineEnabled())
-        label1Primitive.setOutlineColor(outlineColor());
-    QRectF topLabelBoundingBox = label1Primitive.computeBoundingBox(devicePixelRatio);
+        label1Primitive->setOutlineColor(outlineColor());
+    QRectF topLabelBoundingBox = label1Primitive->computeBoundingBox(devicePixelRatio);
     boundingBox |= topLabelBoundingBox;
 
-    label2Primitive.setText(bottomLabel);
-    label2Primitive.setAlignment(bottomFlags);
-    label2Primitive.setPositionWindow(bottomPos);
-    label2Primitive.setColor(textColor());
-    label2Primitive.setTextFormat(Qt::AutoText);
+    label2Primitive->setText(bottomLabel);
+    label2Primitive->setAlignment(bottomFlags);
+    label2Primitive->setPositionWindow(bottomPos);
+    label2Primitive->setColor(textColor());
+    label2Primitive->setTextFormat(Qt::AutoText);
     if(outlineEnabled())
-        label2Primitive.setOutlineColor(outlineColor());
-    boundingBox |= label2Primitive.computeBoundingBox(devicePixelRatio);
+        label2Primitive->setOutlineColor(outlineColor());
+    boundingBox |= label2Primitive->computeBoundingBox(devicePixelRatio);
 
     // Place the title label at the correct location based on color bar direction and position.
     int titleFlags = Qt::AlignBottom;
@@ -716,23 +719,23 @@ void ColorLegendOverlay::drawContinuousColorMap(SceneRenderer* renderer, const Q
     }
 
     // Prepare title label.
-    TextPrimitive titlePrimitive;
+    std::unique_ptr<TextPrimitive> titlePrimitive = std::make_unique<TextPrimitive>();
     QFont titleFont = this->font();
     titleFont.setPointSizeF(fontSize / devicePixelRatio); // Qt font size is always in logical units.
-    titlePrimitive.setFont(titleFont);
-    titlePrimitive.setText(titleLabel);
-    titlePrimitive.setColor(textColor());
+    titlePrimitive->setFont(titleFont);
+    titlePrimitive->setText(titleLabel);
+    titlePrimitive->setColor(textColor());
     if(outlineEnabled())
-        titlePrimitive.setOutlineColor(outlineColor());
-    titlePrimitive.setAlignment(titleFlags);
-    titlePrimitive.setPositionWindow(titlePos);
-    titlePrimitive.setTextFormat(Qt::AutoText);
+        titlePrimitive->setOutlineColor(outlineColor());
+    titlePrimitive->setAlignment(titleFlags);
+    titlePrimitive->setPositionWindow(titlePos);
+    titlePrimitive->setTextFormat(Qt::AutoText);
     if(titleRotationEnabled() && orientation() == Qt::Vertical)
-        titlePrimitive.setRotation(qDegreesToRadians(270));
-    boundingBox |= titlePrimitive.computeBoundingBox(devicePixelRatio);
+        titlePrimitive->setRotation(qDegreesToRadians(270));
+    boundingBox |= titlePrimitive->computeBoundingBox(devicePixelRatio);
 
     std::vector<Box2> tickRects;
-    std::vector<TextPrimitive> tickLabels;
+    std::vector<std::unique_ptr<TextPrimitive>> tickLabels;
 
     if(ticksEnabled() && std::isfinite(mapping.minValue()) && std::isfinite(mapping.maxValue())) {
         // The font metric needs to be caculated without device pixel ratio scaling of the font.
@@ -745,7 +748,7 @@ void ColorLegendOverlay::drawContinuousColorMap(SceneRenderer* renderer, const Q
                                                                          : colorBarImageRect.height()};
 
         // Look up tick configuration in the cache
-        auto& [tickStart, tickStep, tickSpacingCacheSet] = renderer->visCache().get<std::tuple<FloatType, FloatType, bool>>(
+        auto& [tickStart, tickStep, tickSpacingCacheSet] = frameGraph.visCache().lookup<std::tuple<FloatType, FloatType, bool>>(
             RendererResourceKey<struct TickSpacingCache, QByteArray, FloatType, FloatType, FloatType, FloatType, FloatType, int>{
                 format, labelFontSize, mapping.maxValue(), mapping.minValue(), tickSpacing(), colorbarLength, orientation()});
         // Calculate new tick configuration if it not found in the cache
@@ -789,7 +792,7 @@ void ColorLegendOverlay::drawContinuousColorMap(SceneRenderer* renderer, const Q
         TextPrimitive labelPrimitive;
         labelPrimitive.setColor(textColor());
         labelPrimitive.setTextFormat(Qt::AutoText);
-        labelPrimitive.setFont(label1Primitive.font());
+        labelPrimitive.setFont(label1Primitive->font());
         if(outlineEnabled())
             labelPrimitive.setOutlineColor(outlineColor());
         if(orientation() == Qt::Horizontal) {
@@ -819,7 +822,7 @@ void ColorLegendOverlay::drawContinuousColorMap(SceneRenderer* renderer, const Q
                 label_pos.x() = colorBarImageRect.left() + colorBarImageRect.width() * tick_position;
                 labelPrimitive.setPositionWindow(label_pos);
                 boundingBox |= labelPrimitive.computeBoundingBox(devicePixelRatio);
-                tickLabels.push_back(labelPrimitive);
+                tickLabels.push_back(std::make_unique<TextPrimitive>(labelPrimitive));
 
                 // Tick.
                 tick_min.x() = colorBarImageRect.left() + tick_position * colorBarImageRect.width() - tickWidth / 2;
@@ -870,7 +873,7 @@ void ColorLegendOverlay::drawContinuousColorMap(SceneRenderer* renderer, const Q
                     continue;
                 labelPrimitive.setPositionWindow(label_pos);
                 boundingBox |= labelPrimitive.computeBoundingBox(devicePixelRatio);
-                tickLabels.push_back(labelPrimitive);
+                tickLabels.push_back(std::make_unique<TextPrimitive>(labelPrimitive));
 
                 // Tick
                 tick_min.y() = colorBarImageRect.bottom() - tick_position * colorBarImageRect.height() - tickWidth / 2;
@@ -888,65 +891,61 @@ void ColorLegendOverlay::drawContinuousColorMap(SceneRenderer* renderer, const Q
 
     // Render background rectangle.
     if(backgroundEnabled()) {
-        // Look up tick image primitve in the cache
-        auto& backgroundImagePrimitive = renderer->visCache().get<ImagePrimitive>(
+        // Look up tick image in the cache
+        auto& backgroundImage = frameGraph.visCache().lookup<QImage>(
             RendererResourceKey<struct ColorBarBackgroundImageCache, Color>{backgroundColor()});
 
-        // Generate image primitive if not found in the cache
-        if(backgroundImagePrimitive.image().isNull()) {
-            // 1 x 1 px texture of the right color which will be streched to the desired rectangle dimensions.
-            QImage backgroundTextureImage{QSize(1, 1), renderer->preferredImageFormat()};
-            backgroundTextureImage.fill(static_cast<QColor>(backgroundColor()));
-            backgroundImagePrimitive.setImage(std::move(backgroundTextureImage));
+        // Generate image if not found in the cache
+        if(backgroundImage.isNull()) {
+            // 1 x 1 px texture of the right color which will be stretched to the desired rectangle dimensions.
+            backgroundImage = QImage{QSize(1, 1), frameGraph.preferredImageFormat()};
+            backgroundImage.fill(static_cast<QColor>(backgroundColor()));
         }
 
         boundingBox.adjust(-textMargin, -textMargin, textMargin, textMargin);
-        backgroundImagePrimitive.setRectWindow(boundingBox.toAlignedRect());
-        renderer->renderImage(backgroundImagePrimitive);
+        frameGraph.addCommand(std::make_unique<ImagePrimitive>(backgroundImage, boundingBox.toAlignedRect()));
     }
 
     // Render color bar.
-    renderer->renderImage(imagePrimitive);
+    frameGraph.addCommand(std::move(imagePrimitive));
 
     // Render title and limit labels.
-    renderer->renderText(titlePrimitive);
-    renderer->renderText(label1Primitive);
-    renderer->renderText(label2Primitive);
+    frameGraph.addCommand(std::move(titlePrimitive));
+    frameGraph.addCommand(std::move(label1Primitive));
+    frameGraph.addCommand(std::move(label2Primitive));
 
     // Render ticks.
     if(!tickRects.empty()) {
 
-        // Look up tick image primitve in the cache.
-        auto& tickImagePrimitive = renderer->visCache().get<ImagePrimitive>(
+        // Look up tick image in the cache.
+        auto& tickImage = frameGraph.visCache().lookup<QImage>(
             RendererResourceKey<struct ColorBarTickImageCache, Color>{tickColor});
 
         // Generate tick image primitive if not found in the cache.
-        if(tickImagePrimitive.image().isNull()) {
+        if(tickImage.isNull()) {
             // 1 x 1 px texture of the right color which will be streched to the desired tick dimensions
-            QImage tickTextureImage{QSize(1, 1), QImage::Format_ARGB32_Premultiplied};
-            tickTextureImage.fill(static_cast<QColor>(tickColor));
-            tickImagePrimitive.setImage(std::move(tickTextureImage));
+            tickImage = QImage{QSize(1, 1), frameGraph.preferredImageFormat()};
+            tickImage.fill(static_cast<QColor>(tickColor));
         }
 
         // Render the series of tick images.
         for(const auto& rect : tickRects) {
-            tickImagePrimitive.setRectWindow(rect);
-            renderer->renderImage(tickImagePrimitive);
+            frameGraph.addCommand(std::make_unique<ImagePrimitive>(tickImage, rect));
         }
     }
 
     // Render tick labels.
-    for(const auto& labelPrimitive : tickLabels) {
-        renderer->renderText(labelPrimitive);
+    for(auto& labelPrimitive : tickLabels) {
+        frameGraph.addCommand(std::move(labelPrimitive));
     }
 }
 
 /******************************************************************************
 * Draws the color legend for a typed property.
 ******************************************************************************/
-void ColorLegendOverlay::drawDiscreteColorMap(SceneRenderer* renderer, const QRectF& colorBarRect, FloatType legendSize, const Property* property)
+void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, const QRectF& colorBarRect, FloatType legendSize, const Property* property)
 {
-    qreal devicePixelRatio = renderer->devicePixelRatio();
+    const qreal devicePixelRatio = frameGraph.devicePixelRatio();
 
     // Compute bounding box of the entire legend to draw the background rectangle.
     QRectF boundingBox;
@@ -959,7 +958,7 @@ void ColorLegendOverlay::drawDiscreteColorMap(SceneRenderer* renderer, const QRe
     }
 
     // Look up the image primitive for the color bar in the cache.
-    auto& [imagePrimitive, offset] = renderer->visCache().get<std::tuple<ImagePrimitive, QPointF>>(
+    auto& [image, offset] = frameGraph.visCache().lookup<std::tuple<QImage, QPointF>>(
         RendererResourceKey<struct TypeColorsImageCache, std::vector<Color>, FloatType, int, bool, Color, QSizeF>{
             typeColors,
             devicePixelRatio,
@@ -970,18 +969,18 @@ void ColorLegendOverlay::drawDiscreteColorMap(SceneRenderer* renderer, const QRe
         });
 
     // Render the color fields into an image texture.
-    if(imagePrimitive.image().isNull()) {
+    if(image.isNull()) {
 
         // Allocate the image buffer.
         QSize gradientSize = colorBarRect.size().toSize();
         int borderWidth = borderEnabled() ? (int)std::ceil(2.0 * devicePixelRatio) : 0;
-        QImage textureImage(gradientSize.width() + 2*borderWidth, gradientSize.height() + 2*borderWidth, renderer->preferredImageFormat());
+        image = QImage(gradientSize.width() + 2*borderWidth, gradientSize.height() + 2*borderWidth, frameGraph.preferredImageFormat());
         if(borderEnabled())
-            textureImage.fill((QColor)borderColor());
+            image.fill((QColor)borderColor());
 
         // Create the color gradient image.
         if(!typeColors.empty()) {
-            QPainter painter(&textureImage);
+            QPainter painter(&image);
             if(orientation() == Qt::Vertical) {
                 int effectiveSize = gradientSize.height() - borderWidth * (typeColors.size() - 1);
                 for(size_t i = 0; i < typeColors.size(); i++) {
@@ -999,14 +998,15 @@ void ColorLegendOverlay::drawDiscreteColorMap(SceneRenderer* renderer, const QRe
                 }
             }
         }
-        imagePrimitive.setImage(std::move(textureImage));
         offset = QPointF(-borderWidth,-borderWidth);
     }
     QPoint alignedPos = (colorBarRect.topLeft() + offset).toPoint();
-    imagePrimitive.setRectWindow(QRect(alignedPos, imagePrimitive.image().size()));
+    std::unique_ptr<ImagePrimitive> imagePrimitive = std::make_unique<ImagePrimitive>();
+    imagePrimitive->setRectWindow(QRect(alignedPos, image.size()));
+    imagePrimitive->setImage(image);
 
     // Actual bounding box of the rendered color bar including the border (if set).
-    const QRectF colorBarImageRect{imagePrimitive.windowRect()};
+    const QRectF colorBarImageRect{imagePrimitive->windowRect()};
     boundingBox |= colorBarImageRect;
 
     // Count the number of element types that are enabled.
@@ -1053,20 +1053,20 @@ void ColorLegendOverlay::drawDiscreteColorMap(SceneRenderer* renderer, const QRe
     }
 
     // Prepare title label.
-    TextPrimitive titlePrimitive;
+    std::unique_ptr<TextPrimitive> titlePrimitive = std::make_unique<TextPrimitive>();
     QFont titleFont = this->font();
     titleFont.setPointSizeF(fontSize / devicePixelRatio); // Qt font size is always in logical units.
-    titlePrimitive.setFont(titleFont);
-    titlePrimitive.setText(title().isEmpty() ? _autoTitleText : title());
-    titlePrimitive.setColor(textColor());
+    titlePrimitive->setFont(titleFont);
+    titlePrimitive->setText(title().isEmpty() ? _autoTitleText : title());
+    titlePrimitive->setColor(textColor());
     if(outlineEnabled())
-        titlePrimitive.setOutlineColor(outlineColor());
-    titlePrimitive.setAlignment(titleFlags);
-    titlePrimitive.setPositionWindow(titlePos);
-    titlePrimitive.setTextFormat(Qt::AutoText);
+        titlePrimitive->setOutlineColor(outlineColor());
+    titlePrimitive->setAlignment(titleFlags);
+    titlePrimitive->setPositionWindow(titlePos);
+    titlePrimitive->setTextFormat(Qt::AutoText);
     if(titleRotationEnabled() && orientation() == Qt::Vertical)
-        titlePrimitive.setRotation(qDegreesToRadians(270));
-    boundingBox |= titlePrimitive.computeBoundingBox(devicePixelRatio);
+        titlePrimitive->setRotation(qDegreesToRadians(270));
+    boundingBox |= titlePrimitive->computeBoundingBox(devicePixelRatio);
 
     // Prepare type name labels.
     if(numTypes == 0)
@@ -1109,7 +1109,7 @@ void ColorLegendOverlay::drawDiscreteColorMap(SceneRenderer* renderer, const QRe
     labelPrimitive.setAlignment(labelFlags);
     labelPrimitive.setTextFormat(Qt::AutoText);
 
-    std::vector<TextPrimitive> labels;
+    std::vector<std::unique_ptr<TextPrimitive>> labels;
     for(const ElementType* type : property->elementTypes()) {
         if(!type || !type->enabled())
             continue;
@@ -1117,7 +1117,7 @@ void ColorLegendOverlay::drawDiscreteColorMap(SceneRenderer* renderer, const QRe
         labelPrimitive.setText(type->objectTitle());
         labelPrimitive.setPositionWindow(labelPos);
         boundingBox |= labelPrimitive.computeBoundingBox(devicePixelRatio);
-        labels.push_back(labelPrimitive);
+        labels.push_back(std::make_unique<TextPrimitive>(labelPrimitive));
 
         if(orientation() == Qt::Vertical)
             labelPos.ry() += colorBarRect.height() / numTypes;
@@ -1127,32 +1127,30 @@ void ColorLegendOverlay::drawDiscreteColorMap(SceneRenderer* renderer, const QRe
 
     // Render background rectangle.
     if(backgroundEnabled()) {
-        // Look up tick image primitve in the cache
-        auto& backgroundImagePrimitive = renderer->visCache().get<ImagePrimitive>(
+        // Look up tick image in the cache
+        auto& backgroundImage = frameGraph.visCache().lookup<QImage>(
             RendererResourceKey<struct ColorBarBackgroundImageCache, Color>{backgroundColor()});
 
-        // Generate image primitive if not found in the cache
-        if(backgroundImagePrimitive.image().isNull()) {
+        // Generate image if not found in the cache
+        if(backgroundImage.isNull()) {
             // 1 x 1 px texture of the right color which will be streched to the desired rectangle dimensions.
-            QImage backgroundTextureImage{QSize(1, 1), renderer->preferredImageFormat()};
-            backgroundTextureImage.fill(static_cast<QColor>(backgroundColor()));
-            backgroundImagePrimitive.setImage(std::move(backgroundTextureImage));
+            backgroundImage = QImage{QSize(1, 1), frameGraph.preferredImageFormat()};
+            backgroundImage.fill(static_cast<QColor>(backgroundColor()));
         }
 
         boundingBox.adjust(-textMargin, -textMargin, textMargin, textMargin);
-        backgroundImagePrimitive.setRectWindow(boundingBox.toAlignedRect());
-        renderer->renderImage(backgroundImagePrimitive);
+        frameGraph.addCommand(std::make_unique<ImagePrimitive>(backgroundImage, boundingBox.toAlignedRect()));
     }
 
     // Render title.
-    renderer->renderText(titlePrimitive);
+    frameGraph.addCommand(std::move(titlePrimitive));
 
     // Render color bar.
-    renderer->renderImage(imagePrimitive);
+    frameGraph.addCommand(std::move(imagePrimitive));
 
     // Render type labels.
-    for(const auto& labelPrimitive : labels) {
-        renderer->renderText(labelPrimitive);
+    for(auto& labelPrimitive : labels) {
+        frameGraph.addCommand(std::move(labelPrimitive));
     }
 }
 

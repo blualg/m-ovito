@@ -407,8 +407,9 @@ PipelineStatus LinesVis::render(const ConstDataObjectPath& path, const PipelineF
         }
     }
 
-    frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(visCache.segments), pipeline, visCache.pickInfo);
-    frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(visCache.corners), pipeline);
+    auto pickingGroup = frameGraph.addPickingGroup(pipeline, visCache.pickInfo);
+    frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(visCache.segments), pipeline, pickingGroup);
+    frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(visCache.corners), pipeline, pickingGroup);
 
     return status;
 }

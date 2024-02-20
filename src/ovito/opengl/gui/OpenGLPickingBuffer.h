@@ -23,31 +23,47 @@
 #pragma once
 
 
-#include <ovito/core/Core.h>
-#include "OpenGLSceneRenderer.h"
+#include <ovito/gui/desktop/GUI.h>
+#include <ovito/opengl/OpenGLSceneRenderer.h>
 
 namespace Ovito {
 
-class OpenGLDepthTextureBlitter
+/**
+ * \brief Stores the result of an object picking render pass.
+ */
+class OpenGLPickingBuffer
 {
 public:
-    ~OpenGLDepthTextureBlitter() { destroy(); }
-    bool create();
-    bool isCreated() const;
-    void bind();
-    void release();
-    void destroy();
-    void blit(GLuint texture);
+
+    /// Returns whether the picking buffer contains valid data.
+    bool isValid() const { return !_image.isNull(); }
+
+    /// Discards the contents of the picking buffer.
+    void reset() {
+        _image = {};
+        _depthBuffer.reset();
+        _numDepthBufferBits = 0;
+    }
+
+    /// Reads out the contents of the OpenGL framebuffer.
+    void acquire(const QSize& size, QOpenGLFunctions* glfuncs);
+
+    /// Returns the object ID at the given window position.
+    quint32 objectAt(const QPoint& pos) const;
+
+    /// Returns the z-value at the given window position.
+    FloatType depthAt(const QPoint& pos) const;
 
 private:
 
-    bool buildProgram(const char *vs, const char *fs);
+    /// Color component of the OpenGL framebuffer.
+    QImage _image;
 
-    QOpenGLBuffer vertexBuffer;
-    QOpenGLBuffer textureBuffer;
-    std::unique_ptr<QOpenGLShaderProgram> glProgram;
-    GLuint vertexCoordAttribPos = 0;
-    GLuint textureCoordAttribPos = 0;
+    /// Depth component of the OpenGL framebuffer.
+    std::unique_ptr<quint8[]> _depthBuffer;
+
+    /// The number of depth buffer bits per pixel.
+    int _numDepthBufferBits;
 };
 
 }   // End of namespace

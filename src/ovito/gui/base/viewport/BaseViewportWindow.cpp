@@ -34,6 +34,27 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(BaseViewportWindow);
 
 /******************************************************************************
+* This method is called after the reference counter of this object has reached zero
+* and before the object is being finally deleted.
+******************************************************************************/
+void BaseViewportWindow::aboutToBeDeleted()
+{
+    // Release all renderer resources when the viewport window is deleted.
+    releaseResources();
+
+    ViewportWindow::aboutToBeDeleted();
+}
+
+/******************************************************************************
+* Releases the renderer resources held by the viewport window and the renderer.
+******************************************************************************/
+void BaseViewportWindow::releaseResources()
+{
+    // Drop current frame graph.
+    setFrameGraph({});
+}
+
+/******************************************************************************
 * Returns the input manager handling mouse events of the viewport (if any).
 ******************************************************************************/
 ViewportInputManager* BaseViewportWindow::inputManager() const

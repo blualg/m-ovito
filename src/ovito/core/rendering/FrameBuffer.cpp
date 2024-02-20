@@ -160,8 +160,10 @@ void FrameBuffer::renderImagePrimitive(const ImagePrimitive& primitive, const QR
     QPainter painter(&image());
     if(!viewportRect.isNull() && viewportRect != image().rect())
         painter.setClipRect(viewportRect);
+    painter.translate(viewportRect.left(), viewportRect.top());
     QRect rect(primitive.windowRect().minc.x(), primitive.windowRect().minc.y(), primitive.windowRect().width(), primitive.windowRect().height());
     painter.drawImage(rect, primitive.image());
+    painter.end();
 
     if(update)
         this->update(rect);
@@ -187,6 +189,7 @@ void FrameBuffer::renderTextPrimitive(const TextPrimitive& primitive, const QRec
     // Bounds are calculated as if text was drawn at base coordinates (0,0).
     QRectF textBounds = primitive.queryLocalBounds(1.0, resolvedTextFormat);
 
+    painter.translate(viewportRect.left(), viewportRect.top());
     painter.translate(primitive.position().x(), primitive.position().y());
     if(primitive.rotation() != 0)
         painter.rotate(qRadiansToDegrees(primitive.rotation()));
@@ -209,6 +212,7 @@ void FrameBuffer::renderTextPrimitive(const TextPrimitive& primitive, const QRec
     painter.translate(textOffset);
 
     primitive.draw(painter, resolvedTextFormat, textBounds.width());
+    painter.end();
 
     if(update) {
         QRectF boundingBox = primitive.computeBoundingBox(textBounds.size(), 1.0);

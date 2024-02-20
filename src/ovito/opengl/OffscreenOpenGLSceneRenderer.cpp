@@ -165,7 +165,7 @@ void OffscreenOpenGLSceneRenderer::startRender(const QSize& frameBufferSize)
 /******************************************************************************
 * Renders a single frame.
 ******************************************************************************/
-void OffscreenOpenGLSceneRenderer::renderFrame(const FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer)
+void OffscreenOpenGLSceneRenderer::renderFrame(FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
     // Make GL context current.
     if(!_offscreenContext || !_offscreenContext->makeCurrent(&_offscreenSurface.value()))

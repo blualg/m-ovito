@@ -25,7 +25,8 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/viewport/WidgetViewportWindow.h>
-#include <ovito/opengl/PickingOpenGLSceneRenderer.h>
+#include <ovito/opengl/OpenGLSceneRenderer.h>
+#include "OpenGLPickingBuffer.h"
 
 #include <QOpenGLWidget>
 
@@ -44,20 +45,14 @@ public:
     /// Constructor.
     OpenGLViewportWindow();
 
-    /// Destructor.
-    virtual ~OpenGLViewportWindow() { releaseResources(); }
-
-    /// Returns the renderer generating an offscreen image of the scene used for object picking.
-    PickingOpenGLSceneRenderer* pickingRenderer() const { return _pickingRenderer; }
-
     /// Determines the object that is located under the given mouse cursor position.
-    virtual ViewportPickResult pick(const QPointF& pos) override;
+    virtual std::optional<PickResult> pick(const QPointF& pos) override;
 
     /// Releases the renderer resources held by the viewport's surface and picking renderers.
     virtual void releaseResources() override;
 
-	/// Returns the best QImage pixel format to be used for textures and image primitives.
-	virtual QImage::Format preferredImageFormat() const override { return _viewportRenderer->preferredImageFormat(); }
+    /// Returns the OpenGL renderer associated with this viewport window.
+    OpenGLSceneRenderer* openglRenderer() const { return static_object_cast<OpenGLSceneRenderer>(renderer()); }
 
 protected:
 
@@ -67,24 +62,19 @@ protected:
     /// This is called after the frame graph has been updated to render the viewport contents on screen.
     virtual void refreshDisplay() override;
 
-    /// Lets the renderer implementation perform post-processing of a newly generated frame graph.
-    virtual void postprocessFrameGraph(FrameGraph& frameGraph) override {
-        _viewportRenderer->postprocessFrameGraph(frameGraph);
-    }
-
     /// Returns the QOpenGLWidget that is associated with this viewport window.
     QOpenGLWidget* widget() const { return static_cast<QOpenGLWidget*>(WidgetViewportWindow::widget()); }
 
     /// Is called whenever the widget needs to be painted.
     void paint();
 
+    /// Computes the 3d world-space location corresponding to the given 2d window position.
+    Point3 worldPositionFromLocation(const QPoint& pos) const;
+
 private:
 
-    /// This is the renderer of the interactive viewport.
-    OORef<OpenGLSceneRenderer> _viewportRenderer;
-
-    /// This renderer generates an offscreen rendering of the scene that allows picking of objects.
-    OORef<PickingOpenGLSceneRenderer> _pickingRenderer;
+    /// The image read from the OpenGL framebuffer.
+    OpenGLPickingBuffer _pickingBuffer;
 };
 
 }   // End of namespace

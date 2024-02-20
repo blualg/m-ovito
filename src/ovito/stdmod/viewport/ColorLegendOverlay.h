@@ -57,7 +57,7 @@ public:
     virtual void initializeOverlay(Viewport* viewport) override;
 
     /// Lets the overlay paint its contents into the framebuffer.
-    virtual void render(SceneRenderer* renderer, const QRect& logicalViewportRect, const QRect& physicalViewportRect) override;
+    virtual void render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene) override;
 
     /// Moves the position of the overlay in the viewport by the given amount,
     /// which is specified as a fraction of the viewport render size.
@@ -84,10 +84,10 @@ protected:
 private:
 
     /// Draws the color legend for a Color Coding modifier.
-    void drawContinuousColorMap(SceneRenderer* renderer, const QRectF& colorBarRect, FloatType legendSize, const PseudoColorMapping& mapping);
+    void drawContinuousColorMap(FrameGraph& frameGraph, const QRectF& colorBarRect, FloatType legendSize, const PseudoColorMapping& mapping);
 
 	/// Draws the color legend for a typed property.
-	void drawDiscreteColorMap(SceneRenderer* renderer, const QRectF& colorBarRect, FloatType legendSize, const Property* property);
+	void drawDiscreteColorMap(FrameGraph& frameGraph, const QRectF& colorBarRect, FloatType legendSize, const Property* property);
 
     // Determine the starting value and the tick spacing for a given color bar length and character size
     [[nodiscard]] std::tuple<FloatType, FloatType> getAutomaticTickPositions(FloatType lowerLimit, FloatType upperLimit,

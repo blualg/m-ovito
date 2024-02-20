@@ -31,12 +31,15 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(WidgetViewportWindow);
 
 /******************************************************************************
-* Destructor.
+* This method is called after the reference counter of this object has reached zero
+* and before the object is being finally deleted.
 ******************************************************************************/
-WidgetViewportWindow::~WidgetViewportWindow()
+void WidgetViewportWindow::aboutToBeDeleted()
 {
     // Release the UI widget.
     delete widget();
+
+    BaseViewportWindow::aboutToBeDeleted();
 }
 
 /******************************************************************************

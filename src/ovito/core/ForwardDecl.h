@@ -126,7 +126,6 @@ namespace Ovito
     class FrameGraph;
     class SceneRenderer;
     class ObjectPickInfo;
-    class ViewportPickResult;
     class RenderSettings;
     class FrameBuffer;
     class CylinderPrimitive;

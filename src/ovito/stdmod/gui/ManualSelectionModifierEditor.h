@@ -44,10 +44,10 @@ public:
     using PropertiesEditor::PropertiesEditor;
 
     /// This is called when the user has selected an element in the viewports.
-    void onElementPicked(const ViewportPickResult& pickResult, size_t elementIndex, const ConstDataObjectPath& pickedObjectPath);
+    void onElementPicked(const ViewportWindow::PickResult& pickResult, size_t elementIndex, const ConstDataObjectPath& pickedObjectPath);
 
     /// This is called when the user has drawn a selection fence around elements.
-    void onFence(const QVector<Point2>& fence, Viewport* viewport, ElementSelectionSet::SelectionMode mode);
+    void onFence(const QVector<Point2>& fence, ViewportWindow* vpwin, ElementSelectionSet::SelectionMode mode);
 
 protected:
 

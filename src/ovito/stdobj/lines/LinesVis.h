@@ -26,7 +26,7 @@
 #include <ovito/stdobj/properties/PropertyColorMapping.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
-#include <ovito/core/rendering/SceneRenderer.h>
+#include <ovito/core/rendering/FrameGraph.h>
 
 namespace Ovito {
 

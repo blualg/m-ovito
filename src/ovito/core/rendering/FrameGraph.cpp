@@ -29,21 +29,25 @@
 
 namespace Ovito {
 
+IMPLEMENT_ABSTRACT_OVITO_CLASS(ObjectPickInfo);
+
 /******************************************************************************
 * Add a 3d graphics primitive to the frame graph.
 ******************************************************************************/
-void FrameGraph::addPrimitive(std::unique_ptr<FrameGraphPrimitive> primitive, const SceneNode* sceneNode, OORef<ObjectPickInfo> pickInfo, RenderingCommand::Flags flags)
+void FrameGraph::addPrimitive(std::unique_ptr<FrameGraphPrimitive> primitive, const Pipeline* pipeline, int pickingGroup, const Box3& boundingBox, RenderingCommand::Flags flags)
 {
+    OVITO_ASSERT(pipeline);
+
     // Get world transformation matrix of scene node.
     TimeInterval interval;
-    const AffineTransformation& nodeTM = sceneNode->getWorldTransform(time(), interval);
-    addPrimitive(std::move(primitive), nodeTM, Box3{}, sceneNode, flags);
+    const AffineTransformation& nodeTM = pipeline->getWorldTransform(time(), interval);
+    addPrimitive(std::move(primitive), nodeTM, pickingGroup, boundingBox, flags);
 }
 
 /******************************************************************************
 * Add a 3d graphics primitive to the frame graph.
 ******************************************************************************/
-void FrameGraph::addPrimitive(std::unique_ptr<FrameGraphPrimitive> primitive, const AffineTransformation& modelTM, const Box3& boundingBox, const SceneNode* sceneNode, RenderingCommand::Flags flags)
+void FrameGraph::addPrimitive(std::unique_ptr<FrameGraphPrimitive> primitive, const AffineTransformation& modelTM, int pickingGroup, const Box3& boundingBox, RenderingCommand::Flags flags)
 {
     OVITO_ASSERT(primitive);
 
@@ -51,7 +55,7 @@ void FrameGraph::addPrimitive(std::unique_ptr<FrameGraphPrimitive> primitive, co
     _sceneBoundingBox.addBox((boundingBox.isEmpty() ? primitive->computeBoundingBox(visCache()) : boundingBox).transformed(modelTM));
 
     // Record the draw command.
-    addCommand(std::move(primitive), modelTM, flags);
+    addCommand(std::move(primitive), modelTM, pickingGroup, flags);
 }
 
 /******************************************************************************
@@ -175,7 +179,7 @@ bool FrameGraph::renderOverlays(Viewport* viewport, bool underlays, const QRect&
 {
     for(ViewportOverlay* layer : (underlays ? viewport->underlays() : viewport->overlays())) {
         if(layer->isEnabled()) {
-            layer->render(*this, logicalViewportRect, physicalViewportRect, noninteractiveProjParams);
+            layer->render(*this, logicalViewportRect, physicalViewportRect, noninteractiveProjParams, viewport->scene());
             if(this_task::isCanceled())
                 return false;
         }
@@ -324,9 +328,12 @@ void FrameGraph::adjustWireframeLineWidths()
 {
     for(RenderingCommand& command : _commands) {
         if(LinePrimitive* primitive = dynamic_cast<LinePrimitive*>(command.primitive())) {
+            // Make the line 1 device-independent pixel wide.
             if(primitive->lineWidth() <= 0) {
-                // Make the line one device-independent pixel wide.
                 primitive->setLineWidth(devicePixelRatio());
+            }
+            if(primitive->pickingLineWidth() <= 0) {
+                primitive->setPickingLineWidth(defaultLinePickingWidth());
             }
         }
     }
@@ -338,6 +345,35 @@ void FrameGraph::adjustWireframeLineWidths()
 FloatType FrameGraph::defaultLinePickingWidth() const
 {
     return FloatType(6) * devicePixelRatio();
+}
+
+/******************************************************************************
+* Given an object ID from the picking render buffer, looks up the corresponding picking group.
+******************************************************************************/
+const FrameGraph::ObjectPickingGroup* FrameGraph::lookupPickingGroupFromObjectId(quint32 objectID) const
+{
+    if(objectID == 0 || _pickingGroups.empty())
+        return nullptr;
+
+    // Make sure the groups are sorted by base object ID.
+    OVITO_ASSERT(std::is_sorted(_pickingGroups.begin(), _pickingGroups.end(), [](const ObjectPickingGroup& a, const ObjectPickingGroup& b) { return a.baseObjectID() < b.baseObjectID(); }));
+
+    // Find the group that succeeds the one containing the given object ID.
+    auto iter = std::upper_bound(_pickingGroups.begin(), _pickingGroups.end(), objectID,
+        [](quint32 id, const ObjectPickingGroup& group) { return id < group.baseObjectID(); });
+
+    if(iter == _pickingGroups.begin())
+        return nullptr;
+
+    if(iter != _pickingGroups.end()) {
+        OVITO_ASSERT(iter->baseObjectID() > objectID);
+        OVITO_ASSERT(objectID >= std::prev(iter)->baseObjectID());
+        return &*std::prev(iter);
+    }
+    else {
+        OVITO_ASSERT(objectID >= _pickingGroups.back().baseObjectID());
+        return &_pickingGroups.back();
+    }
 }
 
 }   // End of namespace

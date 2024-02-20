@@ -255,7 +255,7 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
                 throw Exception(tr("Invalid rendering range: frame %1 to %2").arg(customRangeStart()).arg(customRangeEnd()));
             this_task::setProgressMaximum(numberOfFrames);
 
-            // This is to keep cached resources long enough to be reused in a subsequent animation frame.
+            // This is to keep cached resources alive long enough to be reused in the subsequent animation frame.
             RendererResourceCache::ResourceFrame inactiveCacheFrame;
 
             // Render frames one by one.
@@ -265,7 +265,7 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
                 this_task::setProgressValue(frameIndex);
                 this_task::setProgressText(tr("Rendering animation (frame %1 of %2)").arg(frameIndex+1).arg(numberOfFrames));
 
-                // Create a sub-task to display a second progress bar.
+                // Create a sub-task to display a second progress bar in the UI.
                 MainThreadOperation frameTask;
 
                 // Render the animation frame.
@@ -360,19 +360,22 @@ RendererResourceCache::ResourceFrame RenderSettings::renderFrame(
             QRect logicalOverlayRect(0, 0, destinationRect.width(), destinationRect.height());
             QRect physicalOverlayRect(0, 0, multisamplingLevel * destinationRect.width(), multisamplingLevel * destinationRect.height());
 
-            // Render viewport "underlays".
+            // Generate draw commands for the viewport "underlays".
+            frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::UnderLayer);
             if(!frameGraph->renderOverlays(viewport, true, logicalOverlayRect, physicalOverlayRect, projParams))
                 return {};
 
-            // Render the 3d scene objects.
+            // Generate draw commands for the 3d scene objects.
+            frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::SceneLayer);
             if(!frameGraph->renderSceneNode(viewport->scene(), viewport))
                 return {};
 
-            // Render viewport "overlays".
+            // Generate draw commands for the viewport "overlays".
+            frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::OverLayer);
             if(!frameGraph->renderOverlays(viewport, false, logicalOverlayRect, physicalOverlayRect, projParams))
                 return {};
 
-            // Let the renderer implementation post-process the frame graph.
+            // Let the scene renderer implementation post-process the frame graph.
             renderer.postprocessFrameGraph(*frameGraph);
             if(this_task::isCanceled())
                 return {};
@@ -380,8 +383,11 @@ RendererResourceCache::ResourceFrame RenderSettings::renderFrame(
             // Compute final projection based on the now known bounding box.
             frameGraph->setProjectionParams(viewport->computeProjectionParameters(renderTime, viewportAspectRatio, frameGraph->sceneBoundingBox()));
 
-            // Pass the frame graph to the renderer to produce the rendering in the framebuffer.
+            // Pass the frame graph to the scene renderer to produce the rendering in the framebuffer.
+            frameBuffer.discardChanges();
             renderer.renderFrame(*frameGraph, destinationRect, &frameBuffer);
+            if(!this_task::isCanceled())
+                frameBuffer.commitChanges();
 
             // Get the cache frame back from the frame graph to keep resources alive until we start the next frame.
             visCache = std::move(*frameGraph).takeVisCache();

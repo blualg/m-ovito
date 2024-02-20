@@ -22,7 +22,7 @@
 
 #include <ovito/grid/Grid.h>
 #include <ovito/grid/objects/VoxelGrid.h>
-#include <ovito/core/rendering/SceneRenderer.h>
+#include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/data/mesh/TriangleMesh.h>
@@ -99,16 +99,10 @@ PipelineStatus VoxelGridVis::render(const ConstDataObjectPath& path, const Pipel
 {
     PipelineStatus status;
 
-    // Check if this is just the bounding box computation pass.
-    if(renderer->isBoundingBoxPass()) {
-        TimeInterval validityInterval;
-        renderer->addToLocalBoundingBox(boundingBox(time, path, pipeline, flowState, renderer->visCache(), validityInterval));
-        return status;
-    }
-
     // Get the grid object being rendered.
     const VoxelGrid* gridObj = path.lastAs<VoxelGrid>();
-    if(!gridObj) return status;
+    if(!gridObj)
+        return status;
 
     // Throws an exception if the input data structure is corrupt.
     gridObj->verifyIntegrity();
@@ -151,19 +145,20 @@ PipelineStatus VoxelGridVis::render(const ConstDataObjectPath& path, const Pipel
     struct CacheValue {
         MeshPrimitive volumeFaces;
         OORef<ObjectPickInfo> pickInfo;
+        Box3 boundingBox;
     };
 
     // Determine the opacity value for rendering the mesh.
     FloatType transp = 0;
     TimeInterval iv;
     if(transparencyController()) {
-        transp = transparencyController()->getFloatValue(time, iv);
+        transp = transparencyController()->getFloatValue(frameGraph.time(), iv);
         if(transp >= 1.0) return status;
     }
     GraphicsFloatType alpha = GraphicsFloatType(1) - transp;
 
     // Look up the rendering primitive in the vis cache.
-    auto& primitives = renderer->visCache().get<CacheValue>(CacheKey(
+    auto& cachedInfo = frameGraph.visCache().lookup<CacheValue>(CacheKey(
         gridObj,
         colorProperty,
         pseudoColorProperty,
@@ -173,7 +168,7 @@ PipelineStatus VoxelGridVis::render(const ConstDataObjectPath& path, const Pipel
         interpolateColors()));
 
     // Check if we already have valid rendering primitives that are up to date.
-    if(!primitives.volumeFaces.mesh()) {
+    if(!cachedInfo.volumeFaces.mesh()) {
         if(gridObj->domain() && gridObj->elementCount() != 0) {
             // Determine the number of triangle faces to be created per voxel cell.
             size_t trianglesPerCell = 2;
@@ -205,7 +200,7 @@ PipelineStatus VoxelGridVis::render(const ConstDataObjectPath& path, const Pipel
                 numCells[dim] = numLines[dim] - 1;
 
             // Create viewport picking object.
-            primitives.pickInfo = OORef<VoxelGridPickInfo>::create(this, gridObj, numCells, trianglesPerCell);
+            cachedInfo.pickInfo = OORef<VoxelGridPickInfo>::create(this, gridObj, numCells, trianglesPerCell);
 
             // Helper function that creates the mesh vertices and faces for one side of the grid volume.
             auto createFacesForSide = [&](size_t dim1, size_t dim2, size_t dim3, bool oppositeSide) {
@@ -625,21 +620,24 @@ PipelineStatus VoxelGridVis::render(const ConstDataObjectPath& path, const Pipel
                 createFacesForSide(2, 0, 1, false);
                 createFacesForSide(2, 0, 1, true);
             }
-            primitives.volumeFaces.setMesh(std::move(mesh));
-            primitives.volumeFaces.setUniformColor(ColorA(1,1,1,alpha));
-            primitives.volumeFaces.setEmphasizeEdges(highlightGridLines());
-            primitives.volumeFaces.setCullFaces(false);
+            cachedInfo.volumeFaces.setMesh(std::move(mesh));
+            cachedInfo.volumeFaces.setUniformColor(ColorA(1,1,1,alpha));
+            cachedInfo.volumeFaces.setEmphasizeEdges(highlightGridLines());
+            cachedInfo.volumeFaces.setCullFaces(false);
+
+            AffineTransformation cellMatrix = gridObj->domain()->cellMatrix();
+            if(gridObj->domain()->is2D())
+                cellMatrix.column(2).setZero();
+            cachedInfo.boundingBox = Box3(Point3(0), Point3(1)).transformed(cellMatrix);
         }
     }
 
     // Update the color mapping.
-    primitives.volumeFaces.setPseudoColorMapping(colorMapping()->pseudoColorMapping());
+    cachedInfo.volumeFaces.setPseudoColorMapping(colorMapping()->pseudoColorMapping());
 
-    if(primitives.volumeFaces.mesh()) {
-        renderer->beginPickObject(pipeline, primitives.pickInfo);
-        renderer->renderMesh(primitives.volumeFaces);
-        renderer->endPickObject();
-    }
+    // Add the mesh to the frame graph.
+    if(cachedInfo.volumeFaces.mesh())
+        frameGraph.addPrimitive(std::make_unique<MeshPrimitive>(cachedInfo.volumeFaces), pipeline, frameGraph.addPickingGroup(pipeline, cachedInfo.pickInfo), cachedInfo.boundingBox);
 
     return status;
 }

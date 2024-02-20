@@ -23,6 +23,7 @@
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
+#include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
@@ -30,11 +31,11 @@
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
-#include <ovito/stdobj/lines/Lines.h>
 #include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/app/PluginManager.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/lines/Lines.h>
 #include "SliceModifier.h"
 
 namespace Ovito {
@@ -210,93 +211,85 @@ std::tuple<Plane3, FloatType> SliceModifier::slicingPlane(AnimationTime time, Ti
 }
 
 /******************************************************************************
-* Lets the modifier render itself into the viewport.
+* Lets the modifier render itself in an interactive viewport.
 ******************************************************************************/
-void SliceModifier::renderModifierVisual(const ModifierEvaluationRequest& request, Pipeline* pipeline, SceneRenderer* renderer, bool renderOverlay)
+void SliceModifier::renderModifierVisual(const ModifierEvaluationRequest& request, Pipeline* pipeline, FrameGraph& frameGraph)
 {
-    if(!renderOverlay && isBeingEdited() && renderer->isInteractive() && renderer->isImagePass()) {
+    if(isBeingEdited()) {
         const PipelineFlowState& state = request.modificationNode()->evaluateInputSynchronous(request);
-        renderVisual(request.time(), pipeline, renderer, state);
-    }
-}
+        TimeInterval interval;
 
-/******************************************************************************
-* Renders the modifier's visual representation and computes its bounding box.
-******************************************************************************/
-void SliceModifier::renderVisual(AnimationTime time, Pipeline* pipeline, SceneRenderer* renderer, const PipelineFlowState& state)
-{
-    TimeInterval interval;
+        Box3 bb = pipeline->localBoundingBox(frameGraph.time(), interval);
+        if(bb.isEmpty())
+            return;
 
-    Box3 bb = pipeline->localBoundingBox(time, interval);
-    if(bb.isEmpty())
-        return;
+        // Obtain modifier parameter values.
+        Plane3 plane;
+        FloatType slabWidth;
+        std::tie(plane, slabWidth) = slicingPlane(frameGraph.time(), interval, state);
+        if(plane.normal.isZero())
+            return;
 
-    // Obtain modifier parameter values.
-    Plane3 plane;
-    FloatType slabWidth;
-    std::tie(plane, slabWidth) = slicingPlane(time, interval, state);
-    if(plane.normal.isZero())
-        return;
-
-    constexpr ColorA color(0.8, 0.3, 0.3);
-    if(slabWidth <= 0) {
-        renderPlane(renderer, plane, bb, color);
-    }
-    else {
-        plane.dist += slabWidth / 2;
-        renderPlane(renderer, plane, bb, color);
-        plane.dist -= slabWidth;
-        renderPlane(renderer, plane, bb, color);
+        constexpr ColorA color(0.8, 0.3, 0.3);
+        if(slabWidth <= 0) {
+            renderPlane(frameGraph, pipeline, plane, bb, color);
+        }
+        else {
+            plane.dist += slabWidth / 2;
+            renderPlane(frameGraph, pipeline, plane, bb, color);
+            plane.dist -= slabWidth;
+            renderPlane(frameGraph, pipeline, plane, bb, color);
+        }
     }
 }
 
 /******************************************************************************
 * Renders the plane in the viewports.
 ******************************************************************************/
-void SliceModifier::renderPlane(SceneRenderer* renderer, const Plane3& plane, const Box3& bb, const ColorA& color) const
+void SliceModifier::renderPlane(FrameGraph& frameGraph, const Pipeline* pipeline, const Plane3& plane, const Box3& bb, const ColorA& color) const
 {
-    // Compute intersection lines of slicing plane and bounding box.
-    Point3 corners[8];
-    for(size_t i = 0; i < 8; i++)
-        corners[i] = bb[i];
+    auto& vertexBuffer = frameGraph.visCache().lookup<ConstDataBufferPtr>(RendererResourceKey<struct SlicePlaneCache, Plane3, Box3>{plane, bb});
+    if(!vertexBuffer) {
+        // Compute intersection lines of slicing plane and bounding box.
+        Point3 corners[8];
+        for(size_t i = 0; i < 8; i++)
+            corners[i] = bb[i];
 
-    std::vector<Point3> vertices;
-    vertices.reserve(8);
-    planeQuadIntersection(corners, {{0, 1, 5, 4}}, plane, vertices);
-    planeQuadIntersection(corners, {{1, 3, 7, 5}}, plane, vertices);
-    planeQuadIntersection(corners, {{3, 2, 6, 7}}, plane, vertices);
-    planeQuadIntersection(corners, {{2, 0, 4, 6}}, plane, vertices);
-    planeQuadIntersection(corners, {{4, 5, 7, 6}}, plane, vertices);
-    planeQuadIntersection(corners, {{0, 2, 3, 1}}, plane, vertices);
+        std::vector<Point3> vertices;
+        vertices.reserve(8);
+        planeQuadIntersection(corners, {{0, 1, 5, 4}}, plane, vertices);
+        planeQuadIntersection(corners, {{1, 3, 7, 5}}, plane, vertices);
+        planeQuadIntersection(corners, {{3, 2, 6, 7}}, plane, vertices);
+        planeQuadIntersection(corners, {{2, 0, 4, 6}}, plane, vertices);
+        planeQuadIntersection(corners, {{4, 5, 7, 6}}, plane, vertices);
+        planeQuadIntersection(corners, {{0, 2, 3, 1}}, plane, vertices);
 
-    // If there is not intersection with the simulation box then
-    // project the simulation box onto the plane.
-    if(vertices.empty()) {
-        const static int edges[12][2] = {
-                {0,1},{1,3},{3,2},{2,0},
-                {4,5},{5,7},{7,6},{6,4},
-                {0,4},{1,5},{3,7},{2,6}
-        };
-        vertices.reserve(24);
-        for(int edge = 0; edge < 12; edge++) {
-            vertices.push_back(plane.projectPoint(corners[edges[edge][0]]));
-            vertices.push_back(plane.projectPoint(corners[edges[edge][1]]));
+        // If there is not intersection with the simulation box then
+        // project the simulation box onto the plane.
+        if(vertices.empty()) {
+            const static int edges[12][2] = {
+                    {0,1},{1,3},{3,2},{2,0},
+                    {4,5},{5,7},{7,6},{6,4},
+                    {0,4},{1,5},{3,7},{2,6}
+            };
+            vertices.reserve(24);
+            for(int edge = 0; edge < 12; edge++) {
+                vertices.push_back(plane.projectPoint(corners[edges[edge][0]]));
+                vertices.push_back(plane.projectPoint(corners[edges[edge][1]]));
+            }
         }
-    }
 
-    // Render plane-box intersection lines.
-    if(renderer->isBoundingBoxPass()) {
-        for(const Point3& p : vertices)
-            renderer->addToLocalBoundingBox(p);
-    }
-    else {
+        // Render plane-box intersection lines.
         BufferFactory<Point3> positions(vertices.size());
         boost::range::copy(vertices, positions.begin());
-        LinePrimitive buffer;
-        buffer.setPositions(positions.take());
-        buffer.setUniformColor(color);
-        renderer->renderLines(buffer);
+        vertexBuffer = positions.take();
     }
+
+    // Render the wireframe lines to visualize the cutting plane.
+    std::unique_ptr<LinePrimitive> lines = std::make_unique<LinePrimitive>();
+    lines->setPositions(vertexBuffer);
+    lines->setUniformColor(color);
+    frameGraph.addPrimitive(std::move(lines), pipeline);
 }
 
 /******************************************************************************

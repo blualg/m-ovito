@@ -68,6 +68,9 @@ OVITO_STANDARD_PLUGIN(Mesh
     LIB_DEPENDENCIES Qt6::Xml
 )
 
+# Let the code know that we are building the plugin.
+TARGET_COMPILE_DEFINITIONS(Mesh PUBLIC OVITO_BUILD_PLUGIN_MESH)
+
 # Polytess code does not support unity build. Need to turn it off.
 FOREACH(file ${GLUSourceFiles})
     SET_SOURCE_FILES_PROPERTIES(${file} PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)

@@ -86,7 +86,7 @@ PipelineStatus TargetVis::render(const ConstDataObjectPath& path, const Pipeline
     iconPrimitive->setPositions(vertexPositions);
 
     // Render the lines.
-    frameGraph.addPrimitive(std::move(iconPrimitive), nodeTM * AffineTransformation::scaling(scaling), Box3(Point3::Origin(), 1), pipeline);
+    frameGraph.addPrimitive(std::move(iconPrimitive), nodeTM * AffineTransformation::scaling(scaling), frameGraph.addPickingGroup(pipeline), Box3(Point3::Origin(), 1));
 
     return {};
 }

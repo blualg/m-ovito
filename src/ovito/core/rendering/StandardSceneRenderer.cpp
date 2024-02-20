@@ -78,7 +78,7 @@ void StandardSceneRenderer::startRender(const QSize& frameBufferSize)
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-void StandardSceneRenderer::renderFrame(const FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer)
+void StandardSceneRenderer::renderFrame(FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
     // Delegate rendering work to implementation class.
     _internalRenderer->renderFrame(frameGraph, viewportRect, frameBuffer);

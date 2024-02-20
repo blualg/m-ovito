@@ -187,7 +187,7 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 /******************************************************************************
 * Renders a single frame.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderFrame(const FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer)
+void OpenGLSceneRenderer::renderFrame(FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer)
 {
     // Make sure we have a valid cache frame set for the resource manager during this render pass.
     OVITO_ASSERT(hasCurrentResourceFrame());
@@ -303,22 +303,32 @@ void OpenGLSceneRenderer::renderFrame(const FrameGraph& frameGraph, const QRect&
     }
     else {
         OVITO_CHECK_OPENGL(this, this->glClearColor(0, 0, 0, 0));
+#if 1
+        // Object IDs start at 1 when rendering for object picking.
+        _nextAvailablePickingID = 1;
+#else
+        // This can be enabled during debugging to avoid alpha!=1 pixels in the picking render buffer.
+        _nextAvailablePickingID = 0xEF000000;
+#endif
+        // Reset the object IDs assigned to the object picking groups.
+        frameGraph.resetPickingGroupObjectIDs();
     }
     OVITO_CHECK_OPENGL(this, this->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT));
     OVITO_REPORT_OPENGL_ERRORS(this);
 
     // Render 2d background graphics.
-    renderFrameGraph(frameGraph, RenderPass::BackgroundPass);
+    _isTransparencyPass = false;
+    renderFrameGraph(frameGraph, FrameGraph::RenderLayer::UnderLayer);
 
     // Render opaque 3d geometry.
-    if(renderFrameGraph(frameGraph, RenderPass::SceneOpaquePass)) {
+    if(renderFrameGraph(frameGraph, FrameGraph::RenderLayer::SceneLayer)) {
 
         // Render translucent 3d geometry in a second pass.
         renderTransparentGeometry(frameGraph);
     }
 
-    // Render forground graphics.
-    renderFrameGraph(frameGraph, RenderPass::ForegroundPass);
+    // Render foreground graphics.
+    renderFrameGraph(frameGraph, FrameGraph::RenderLayer::OverLayer);
 
 #ifdef OVITO_DEBUG
     // Stop debug logger.
@@ -334,9 +344,9 @@ void OpenGLSceneRenderer::renderFrame(const FrameGraph& frameGraph, const QRect&
 /******************************************************************************
 * Renders all semi-transparent geometry in a second rendering pass.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderTransparentGeometry(const FrameGraph& frameGraph)
+void OpenGLSceneRenderer::renderTransparentGeometry(FrameGraph& frameGraph)
 {
-    // Transparency should never play a role in a picking render pass.
+    // Semi-transparent geomertry should never get rendered in a picking render pass.
     OVITO_ASSERT(!isPickingPass());
 
     // Prepare for order-independent transparency pass.
@@ -388,7 +398,9 @@ void OpenGLSceneRenderer::renderTransparentGeometry(const FrameGraph& frameGraph
         OVITO_CHECK_OPENGL(this, this->glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ZERO, GL_ONE_MINUS_SRC_ALPHA));
     }
 
-    renderFrameGraph(frameGraph, RenderPass::SceneTransparencyPass);
+    _isTransparencyPass = true;
+    renderFrameGraph(frameGraph, FrameGraph::RenderLayer::SceneLayer);
+    _isTransparencyPass = false;
 
     if(orderIndependentTransparency()) {
 
@@ -431,60 +443,37 @@ void OpenGLSceneRenderer::renderTransparentGeometry(const FrameGraph& frameGraph
 }
 
 /******************************************************************************
-* Translates an OpenGL error code to a human-readable message string.
-******************************************************************************/
-const char* OpenGLSceneRenderer::openglErrorString(GLenum errorCode)
-{
-    switch(errorCode) {
-    case GL_NO_ERROR: return "GL_NO_ERROR - No error has been recorded.";
-    case GL_INVALID_ENUM: return "GL_INVALID_ENUM - An unacceptable value is specified for an enumerated argument.";
-    case GL_INVALID_VALUE: return "GL_INVALID_VALUE - A numeric argument is out of range.";
-    case GL_INVALID_OPERATION: return "GL_INVALID_OPERATION - The specified operation is not allowed in the current state.";
-    case 0x0503 /*GL_STACK_OVERFLOW*/: return "GL_STACK_OVERFLOW - This command would cause a stack overflow.";
-    case 0x0504 /*GL_STACK_UNDERFLOW*/: return "GL_STACK_UNDERFLOW - This command would cause a stack underflow.";
-    case GL_OUT_OF_MEMORY: return "GL_OUT_OF_MEMORY - There is not enough memory left to execute the command.";
-    case 0x8031 /*GL_TABLE_TOO_LARGE*/: return "GL_TABLE_TOO_LARGE - The specified table exceeds the implementation's maximum supported table size.";
-    case 0x0506 /*GL_INVALID_FRAMEBUFFER_OPERATION*/: return "GL_INVALID_FRAMEBUFFER_OPERATION - The read and draw framebuffers are not framebuffer complete.";
-    default: return "Unknown OpenGL error code.";
-    }
-}
-
-/******************************************************************************
 * Executes the rendering commands stored in the given frame graph.
 ******************************************************************************/
-bool OpenGLSceneRenderer::renderFrameGraph(const FrameGraph& frameGraph, RenderPass renderPass)
+bool OpenGLSceneRenderer::renderFrameGraph(FrameGraph& frameGraph, FrameGraph::RenderLayer renderLayer)
 {
-    _currentRenderPass = renderPass;
     bool hasTransparentGeometry = false;
-    bool skipCommands = false;
-    if(currentRenderPass() == RenderPass::ForegroundPass)
-        skipCommands = true;
 
     for(const FrameGraph::RenderingCommand& command : frameGraph.commands()) {
 
-        if(currentRenderPass() == RenderPass::BackgroundPass) {
-            if(!command.skipDepthTesting())
-                return false;
-        }
-        else if(currentRenderPass() == RenderPass::ForegroundPass) {
-            if(!command.skipDepthTesting())
-                skipCommands = false;
-        }
-
-        if(skipCommands)
+        // Skip commands that are not part of the current render layer.
+        if(command.renderLayer() != renderLayer)
             continue;
 
-        if(command.skipDepthTesting()) {
-            if(currentRenderPass() == RenderPass::SceneOpaquePass || currentRenderPass() == RenderPass::SceneTransparencyPass)
+        // Skip commands that are not relevant for the current rendering pass.
+        if(isPickingPass()) {
+            if(command.skipInPickingPass())
                 continue;
+        }
+        else {
+            if(command.skipInVisualPass())
+                continue;
+        }
+
+        // Enable/disable depth testing as needed.
+        if(command.noDepthTesting()) {
             OVITO_CHECK_OPENGL(this, glDisable(GL_DEPTH_TEST));
         }
         else {
-            if(currentRenderPass() == RenderPass::BackgroundPass || currentRenderPass() == RenderPass::ForegroundPass)
-                continue;
             OVITO_CHECK_OPENGL(this, glEnable(GL_DEPTH_TEST));
         }
 
+        // Set up the model-view transformation matrix.
         if(command.modelWorldTM() != AffineTransformation::Zero()) {
             _preprojectedCoordinates = false;
             _modelViewTM = projParams().viewMatrix * command.modelWorldTM();
@@ -494,24 +483,36 @@ bool OpenGLSceneRenderer::renderFrameGraph(const FrameGraph& frameGraph, RenderP
             _modelViewTM.setZero();
         }
 
+        // Get the object picking group the current primitive belongs to.
+        // Assign a unique base object ID to the picking group if this is the first primitive from the group.
+        FrameGraph::ObjectPickingGroup* pickingGroup = nullptr;
+        if(isPickingPass()) {
+            OVITO_ASSERT(command.pickingGroupId() != 0);
+            pickingGroup = frameGraph.pickingGroup(command.pickingGroupId());
+            OVITO_ASSERT(pickingGroup);
+            if(pickingGroup->baseObjectID() == 0) {
+                pickingGroup->setBaseObjectID(_nextAvailablePickingID);
+            }
+        }
+
         if(const ParticlePrimitive* primitive = dynamic_cast<const ParticlePrimitive*>(command.primitive())) {
-            hasTransparentGeometry |= renderParticles(*primitive);
+            hasTransparentGeometry |= renderParticles(*primitive, pickingGroup);
         }
         else if(const CylinderPrimitive* primitive = dynamic_cast<const CylinderPrimitive*>(command.primitive())) {
-            hasTransparentGeometry |= renderCylinders(*primitive);
+            hasTransparentGeometry |= renderCylinders(*primitive, pickingGroup);
         }
         else if(const MeshPrimitive* primitive = dynamic_cast<const MeshPrimitive*>(command.primitive())) {
-            hasTransparentGeometry |= renderMesh(*primitive);
+            hasTransparentGeometry |= renderMesh(*primitive, pickingGroup);
         }
-        else if(currentRenderPass() != RenderPass::SceneTransparencyPass) {
+        else if(!isTransparencyPass()) {
             if(const LinePrimitive* primitive = dynamic_cast<const LinePrimitive*>(command.primitive())) {
-                renderLinesImplementation(*primitive);
+                renderLinesImplementation(*primitive, pickingGroup);
             }
             else if(const ImagePrimitive* primitive = dynamic_cast<const ImagePrimitive*>(command.primitive())) {
                 renderImageImplementation(*primitive);
             }
             else if(const MarkerPrimitive* primitive = dynamic_cast<const MarkerPrimitive*>(command.primitive())) {
-                renderMarkersImplementation(*primitive);
+                renderMarkersImplementation(*primitive, pickingGroup);
             }
         }
         OVITO_REPORT_OPENGL_ERRORS(this);
@@ -522,11 +523,11 @@ bool OpenGLSceneRenderer::renderFrameGraph(const FrameGraph& frameGraph, RenderP
 /******************************************************************************
 * Renders a particles primitive.
 ******************************************************************************/
-bool OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
+bool OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup)
 {
     // Render particles immediately if they are all fully opaque. Otherwise defer rendering to a later time.
-    if(isPickingPass() || !primitive.transparencies() || currentRenderPass() == RenderPass::SceneTransparencyPass) {
-        renderParticlesImplementation(primitive);
+    if(isPickingPass() || !primitive.transparencies() || isTransparencyPass()) {
+        renderParticlesImplementation(primitive, pickingGroup);
         return false;
     }
     else {
@@ -565,7 +566,7 @@ bool OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
                 ParticlePrimitive opaqueParticles = primitive;
                 opaqueParticles.setTransparencies({});
                 opaqueParticles.setIndices(cache.opaqueIndices);
-                renderParticlesImplementation(opaqueParticles);
+                renderParticlesImplementation(opaqueParticles, pickingGroup);
             }
         }
         return true;
@@ -575,11 +576,11 @@ bool OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive)
 /******************************************************************************
 * Renders a cylinders primitive.
 ******************************************************************************/
-bool OpenGLSceneRenderer::renderCylinders(const CylinderPrimitive& primitive)
+bool OpenGLSceneRenderer::renderCylinders(const CylinderPrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup)
 {
     // Render primitives immediately if they are all fully opaque. Otherwise defer rendering to a later time.
-    if(isPickingPass() || !primitive.transparencies() || currentRenderPass() == RenderPass::SceneTransparencyPass) {
-        renderCylindersImplementation(primitive);
+    if(isPickingPass() || !primitive.transparencies() || isTransparencyPass()) {
+        renderCylindersImplementation(primitive, pickingGroup);
         return false;
     }
     return true;
@@ -588,11 +589,11 @@ bool OpenGLSceneRenderer::renderCylinders(const CylinderPrimitive& primitive)
 /******************************************************************************
 * Renders a triangle mesh primitive.
 ******************************************************************************/
-bool OpenGLSceneRenderer::renderMesh(const MeshPrimitive& primitive)
+bool OpenGLSceneRenderer::renderMesh(const MeshPrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup)
 {
     // Render mesh immediately if it is fully opaque. Otherwise defer rendering to a later time.
-    if(isPickingPass() || currentRenderPass() == RenderPass::SceneTransparencyPass || primitive.isFullyOpaque()) {
-        renderMeshImplementation(primitive);
+    if(isPickingPass() || isTransparencyPass() || primitive.isFullyOpaque()) {
+        renderMeshImplementation(primitive, pickingGroup);
         return false;
     }
     return true;
@@ -612,7 +613,7 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
     OVITO_ASSERT(QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Fragment));
 
     // Are we doing the transparency pass for "Weighted Blended Order-Independent Transparency"?
-    bool isWBOITPass = (currentRenderPass() == RenderPass::SceneTransparencyPass && orderIndependentTransparency());
+    bool isWBOITPass = (isTransparencyPass() && orderIndependentTransparency());
 
     // Compile a modified version of each shader for the transparency pass.
     // This is accomplished by giving the shader a unique identifier.
@@ -1018,6 +1019,26 @@ void OpenGLSceneRenderer::setHighlightMode(int pass)
 }
 #endif
 
+
+/******************************************************************************
+* Translates an OpenGL error code to a human-readable message string.
+******************************************************************************/
+static const char* openglErrorString(GLenum errorCode)
+{
+    switch(errorCode) {
+    case GL_NO_ERROR: return "GL_NO_ERROR - No error has been recorded.";
+    case GL_INVALID_ENUM: return "GL_INVALID_ENUM - An unacceptable value is specified for an enumerated argument.";
+    case GL_INVALID_VALUE: return "GL_INVALID_VALUE - A numeric argument is out of range.";
+    case GL_INVALID_OPERATION: return "GL_INVALID_OPERATION - The specified operation is not allowed in the current state.";
+    case 0x0503 /*GL_STACK_OVERFLOW*/: return "GL_STACK_OVERFLOW - This command would cause a stack overflow.";
+    case 0x0504 /*GL_STACK_UNDERFLOW*/: return "GL_STACK_UNDERFLOW - This command would cause a stack underflow.";
+    case GL_OUT_OF_MEMORY: return "GL_OUT_OF_MEMORY - There is not enough memory left to execute the command.";
+    case 0x8031 /*GL_TABLE_TOO_LARGE*/: return "GL_TABLE_TOO_LARGE - The specified table exceeds the implementation's maximum supported table size.";
+    case 0x0506 /*GL_INVALID_FRAMEBUFFER_OPERATION*/: return "GL_INVALID_FRAMEBUFFER_OPERATION - The read and draw framebuffers are not framebuffer complete.";
+    default: return "Unknown OpenGL error code.";
+    }
+}
+
 /******************************************************************************
 * Reports OpenGL error status codes.
 ******************************************************************************/
@@ -1027,7 +1048,7 @@ void OpenGLSceneRenderer::checkOpenGLErrorStatus(const char* command, const char
     while((error = this->glGetError()) != GL_NO_ERROR) {
         qDebug() << "WARNING: OpenGL call" << command << "failed "
                 "in line" << sourceLine << "of file" << sourceFile
-                << "with error" << OpenGLSceneRenderer::openglErrorString(error);
+                << "with error" << openglErrorString(error);
     }
 }
 
@@ -1093,6 +1114,20 @@ QOpenGLTexture* OpenGLSceneRenderer::uploadColorMap(ColorCodingGradient* gradien
     }
 
     return texture.get();
+}
+
+/******************************************************************************
+* Registers a range of unique IDs for the current object picking group being rendered.
+******************************************************************************/
+quint32 OpenGLSceneRenderer::allocateObjectPickingIDs(FrameGraph::ObjectPickingGroup* pickingGroup, quint32 objectCount, const ConstDataBufferPtr& indices)
+{
+    quint32 baseObjectID = _nextAvailablePickingID;
+    if(pickingGroup) {
+        if(indices)
+            pickingGroup->addIndexedRange(indices, _nextAvailablePickingID - pickingGroup->baseObjectID());
+    }
+    _nextAvailablePickingID += objectCount;
+    return baseObjectID;
 }
 
 }   // End of namespace

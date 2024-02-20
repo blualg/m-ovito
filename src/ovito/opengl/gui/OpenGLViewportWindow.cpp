@@ -25,7 +25,6 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/opengl/OpenGLSceneRenderer.h>
-#include <ovito/opengl/PickingOpenGLSceneRenderer.h>
 #include "OpenGLViewportWindow.h"
 
 namespace Ovito {
@@ -37,11 +36,8 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(OpenGLViewportWindow);
 ******************************************************************************/
 OpenGLViewportWindow::OpenGLViewportWindow()
 {
-    // Create the viewport renderer.
-    _viewportRenderer = OORef<OpenGLSceneRenderer>::create();
-
-    // Create the object picking renderer.
-    _pickingRenderer = OORef<PickingOpenGLSceneRenderer>::create();
+    // Create the window's viewport renderer.
+    setRenderer(OORef<OpenGLSceneRenderer>::create());
 }
 
 /******************************************************************************
@@ -62,6 +58,9 @@ QWidget* OpenGLViewportWindow::createWidget(QWidget* parent)
             // Determine OpenGL vendor string so other parts of the code can decide
             // which OpenGL features are safe to use.
             OpenGLSceneRenderer::determineOpenGLInfo();
+
+            // Release OpenGL resources before the widget's QOpenGLContext gets destroyed.
+            connect(context(), &QOpenGLContext::aboutToBeDestroyed, _owner, &OpenGLViewportWindow::releaseResources);
         }
 
         /// Is called whenever the widget needs to be painted.
@@ -81,17 +80,16 @@ QWidget* OpenGLViewportWindow::createWidget(QWidget* parent)
 ******************************************************************************/
 void OpenGLViewportWindow::releaseResources()
 {
-    // Release any OpenGL resources held by the viewport renderers.
-    if(_viewportRenderer && _viewportRenderer->hasCurrentResourceFrame()) {
+    OVITO_ASSERT(openglRenderer());
+
+    // Release any OpenGL resources held by the viewport renderer.
+    if(openglRenderer() && openglRenderer()->hasCurrentResourceFrame() && widget()) {
         widget()->makeCurrent();
-        _viewportRenderer->setCurrentResourceFrame({});
+        openglRenderer()->setCurrentResourceFrame({});
         widget()->doneCurrent();
     }
-    if(_pickingRenderer && _pickingRenderer->hasCurrentResourceFrame()) {
-        widget()->makeCurrent();
-        _pickingRenderer->setCurrentResourceFrame({});
-        widget()->doneCurrent();
-    }
+
+    WidgetViewportWindow::releaseResources();
 }
 
 /******************************************************************************
@@ -99,59 +97,8 @@ void OpenGLViewportWindow::releaseResources()
 ******************************************************************************/
 void OpenGLViewportWindow::refreshDisplay()
 {
-    widget()->update();
-}
-
-/******************************************************************************
-* Determines the object that is visible under the given mouse cursor position.
-******************************************************************************/
-ViewportPickResult OpenGLViewportWindow::pick(const QPointF& pos)
-{
-    ViewportPickResult result;
-
-#if 0 // TODO
-    // Cannot perform picking while viewport is not visible or currently rendering or when updates are disabled.
-    if(isVisible() && !userInterface().isRenderingInteractiveViewports() && !userInterface().areViewportUpdatesSuspended() && pickingRenderer()) {
-        OpenGLResourceManager::ResourceFrameHandle previousResourceFrame = 0;
-        try {
-            if(pickingRenderer()->isRefreshRequired()) {
-                // A dataset is required for rendering.
-                if(DataSet* dataset = userInterface().datasetContainer().currentSet()) {
-                    // Request a new frame from the resource manager for this render pass.
-                    previousResourceFrame = pickingRenderer()->currentResourceFrame();
-                    pickingRenderer()->setCurrentResourceFrame(OpenGLResourceManager::instance()->acquireResourceFrame());
-                    pickingRenderer()->setPrimaryFramebuffer(defaultFramebufferObject());
-
-                    // Let the viewport do the actual rendering work.
-                    viewport()->renderInteractive(userInterface(), dataset, pickingRenderer());
-                }
-                else {
-                    return result; // Return null result if no dataset is available.
-                }
-            }
-
-            // Query which object is located at the given window position.
-            const QPoint pixelPos = (pos * devicePixelRatio()).toPoint();
-            const PickingOpenGLSceneRenderer::ObjectPickingRecord* objInfo;
-            quint32 subobjectId;
-            std::tie(objInfo, subobjectId) = pickingRenderer()->objectAtLocation(pixelPos);
-            if(objInfo) {
-                result.setPipeline(objInfo->pipeline);
-                result.setPickInfo(objInfo->pickInfo);
-                result.setHitLocation(pickingRenderer()->worldPositionFromLocation(pixelPos));
-                result.setSubobjectId(subobjectId);
-            }
-        }
-        catch(const Exception& ex) {
-            userInterface().reportError(ex);
-        }
-
-        // Release the resources created by the OpenGL renderer during the last render pass before the current pass.
-        if(previousResourceFrame)
-            OpenGLResourceManager::instance()->releaseResourceFrame(previousResourceFrame);
-    }
-#endif
-    return result;
+    if(widget())
+        widget()->update();
 }
 
 /******************************************************************************
@@ -159,8 +106,8 @@ ViewportPickResult OpenGLViewportWindow::pick(const QPointF& pos)
 ******************************************************************************/
 void OpenGLViewportWindow::paint()
 {
-    // Do nothing if window has been detached from its viewport.
-    if(!viewport())
+    // Do nothing if window has been detached from its viewport or renderer.
+    if(!viewport() || !openglRenderer())
         return;
 
     // OpenGL in a VirtualBox machine Windows guest reports "2.1 Chromium 1.9" as version string, which is
@@ -171,10 +118,8 @@ void OpenGLViewportWindow::paint()
         format.setMinorVersion(1);
     }
 
-#if 0 // TODO
-    // Invalidate picking buffer every time the visible contents of the viewport change.
-    _pickingRenderer->resetPickingBuffer();
-#endif
+    // Invalidate current picking buffer whenever the visible contents of the viewport change.
+    _pickingBuffer.reset();
 
     if(format.majorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MAJOR || (format.majorVersion() == OVITO_OPENGL_MINIMUM_VERSION_MAJOR && format.minorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MINOR)) {
         userInterface().exitWithFatalError(Exception(tr(
@@ -226,21 +171,21 @@ void OpenGLViewportWindow::paint()
     try {
         // Create a new OpenGL resource management frame. Keep the previous frame around until the new frame is rendered to re-use existing OpenGL resources.
         DataSetContainer& datasetContainer = userInterface().datasetContainer();
-        RendererResourceCache::ResourceFrame previousResourceFrame = _viewportRenderer->setCurrentResourceFrame(datasetContainer.visCache()->acquireResourceFrame());
+        RendererResourceCache::ResourceFrame previousResourceFrame = openglRenderer()->setCurrentResourceFrame(datasetContainer.visCache()->acquireResourceFrame());
 
         // Tell the OpenGL renderer to render into the widget's framebuffer.
-        _viewportRenderer->setPrimaryFramebuffer(widget()->defaultFramebufferObject());
+        openglRenderer()->setPrimaryFramebuffer(widget()->defaultFramebufferObject());
 
         // Set up the renderer.
-        _viewportRenderer->startRender(viewportWindowDeviceSize());
+        openglRenderer()->startRender(viewportWindowDeviceSize());
 
         // Wrap the following in a try-catch block to ensure endRender() is called.
         try {
-            _viewportRenderer->renderFrame(*frameGraph, QRect(QPoint(0,0), viewportWindowDeviceSize()), nullptr);
-            _viewportRenderer->endRender();
+            openglRenderer()->renderFrame(*frameGraph, QRect(QPoint(0,0), viewportWindowDeviceSize()), nullptr);
+            openglRenderer()->endRender();
         }
         catch(...) {
-            _viewportRenderer->endRender();
+            openglRenderer()->endRender();
             throw;
         }
     }
@@ -263,6 +208,113 @@ void OpenGLViewportWindow::paint()
 
     // Return the frame graph back to the window.
     setFrameGraph(std::move(frameGraph));
+}
+
+/******************************************************************************
+* Determines the object that is visible under the given mouse cursor position.
+******************************************************************************/
+std::optional<ViewportWindow::PickResult> OpenGLViewportWindow::pick(const QPointF& pos)
+{
+    std::optional<PickResult> pickResult;
+
+    // Cannot perform picking while viewport is not visible or when updates are disabled.
+    if(isVisible() && !userInterface().exitingWithFatalError() && !userInterface().areViewportUpdatesSuspended() && openglRenderer() && openglRenderer()->hasCurrentResourceFrame() && widget()->isValid() && widget()->defaultFramebufferObject() != 0) {
+
+        // Is the picking buffer still valid? If not, we need to render a new frame.
+        if(!_pickingBuffer.isValid()) {
+
+            // Take the current frame graph from the window (we'll give it back later).
+            if(std::unique_ptr<FrameGraph> frameGraph = setFrameGraph({})) {
+
+                // We need an active OpenGL context to render the picking buffer.
+                widget()->makeCurrent();
+
+                // Put the renderer into picking mode.
+                openglRenderer()->setPickingPass(true);
+
+                // Gracefully handle any exceptions that occur during rendering.
+                userInterface().handleExceptions([&]() {
+
+                    // Create an offscreen OpenGL framebuffer.
+                    QSize windowSize = viewportWindowDeviceSize();
+                    QOpenGLFramebufferObjectFormat framebufferFormat;
+                    framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
+                    QOpenGLFramebufferObject framebufferObject(windowSize, framebufferFormat);
+                    if(!framebufferObject.isValid())
+                        throw Exception(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
+
+                    // Bind OpenGL framebuffer.
+                    if(!framebufferObject.bind())
+                        throw Exception(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
+
+                    // Tell the OpenGL renderer to render into the offscreen framebuffer.
+                    openglRenderer()->setPrimaryFramebuffer(framebufferObject.handle());
+
+                    // Set up the renderer.
+                    openglRenderer()->startRender(viewportWindowDeviceSize());
+
+                    // Wrap the following in a try-catch block to ensure endRender() is called.
+                    try {
+                        openglRenderer()->renderFrame(*frameGraph, QRect(QPoint(0,0), windowSize), nullptr);
+
+                        // Read out the contents of the OpenGL framebuffer.
+                        _pickingBuffer.acquire(windowSize, openglRenderer());
+
+                        openglRenderer()->endRender();
+                    }
+                    catch(...) {
+                        openglRenderer()->endRender();
+                        throw;
+                    }
+                });
+
+                // Put the renderer back into visual rendering mode.
+                openglRenderer()->setPickingPass(false);
+
+                // Tell the OpenGL renderer to render into the widget's framebuffer again.
+                openglRenderer()->setPrimaryFramebuffer(widget()->defaultFramebufferObject());
+
+                // Done with the OpenGL context.
+                widget()->doneCurrent();
+
+                // Return the frame graph back to the window.
+                setFrameGraph(std::move(frameGraph));
+            }
+        }
+
+        // Query which object is at the given window location.
+        if(_pickingBuffer.isValid()) {
+            const QPoint devicePixelPos = (pos * devicePixelRatio()).toPoint();
+            if(quint32 objectID = _pickingBuffer.objectAt(devicePixelPos)) {
+                if(const FrameGraph::ObjectPickingGroup* pickingGroup = frameGraph()->lookupPickingGroupFromObjectId(objectID)) {
+                    pickResult.emplace(
+                        pickingGroup->pipeline(),
+                        pickingGroup->pickInfo(),
+                        worldPositionFromLocation(devicePixelPos),
+                        pickingGroup->resolveObjectID(objectID));
+                }
+            }
+        }
+    }
+
+    return pickResult;
+}
+
+/******************************************************************************
+* Computes the 3d world-space location corresponding to the given 2d window position.
+******************************************************************************/
+Point3 OpenGLViewportWindow::worldPositionFromLocation(const QPoint& pos) const
+{
+    FloatType zvalue = _pickingBuffer.depthAt(pos);
+    if(zvalue != 0) {
+        const QSize windowSize = viewportWindowDeviceSize();
+        Point3 ndc(
+                (FloatType)pos.x() / windowSize.width() * 2 - 1,
+                1 - (FloatType)pos.y() / windowSize.height() * 2,
+                zvalue * 2 - 1);
+        return projectionParams().inverseViewMatrix * (projectionParams().inverseProjectionMatrix * ndc);
+    }
+    return Point3::Origin();
 }
 
 }   // End of namespace

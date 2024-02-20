@@ -247,7 +247,7 @@ PipelineStatus CameraVis::render(const ConstDataObjectPath& path, const Pipeline
         conePrimitive.setPositions(targetLineVertices.take());
     }
     conePrimitive.setUniformColor(ViewportSettings::getSettings().viewportColor(ViewportSettings::COLOR_CAMERAS));
-    frameGraph.addPrimitive(std::make_unique<LinePrimitive>(conePrimitive), pipeline, {}, FrameGraph::RenderingCommand::SkipPickingPass);
+    frameGraph.addPrimitive(std::make_unique<LinePrimitive>(conePrimitive), pipeline);
 
     // Load 3d camera icon.
     if(!_cameraIconVertices) {
@@ -289,7 +289,7 @@ PipelineStatus CameraVis::render(const ConstDataObjectPath& path, const Pipeline
     std::unique_ptr<LinePrimitive> cameraPrimitive = std::make_unique<LinePrimitive>();
     cameraPrimitive->setPositions(_cameraIconVertices);
     cameraPrimitive->setUniformColor(ViewportSettings::getSettings().viewportColor(pipeline->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_CAMERAS));
-    frameGraph.addPrimitive(std::move(cameraPrimitive), cameraTM * AffineTransformation::scaling(scaling), Box3(Point3::Origin(), 2), pipeline);
+    frameGraph.addPrimitive(std::move(cameraPrimitive), cameraTM * AffineTransformation::scaling(scaling), frameGraph.addPickingGroup(pipeline), Box3(Point3::Origin(), 2));
 
     return {};
 }

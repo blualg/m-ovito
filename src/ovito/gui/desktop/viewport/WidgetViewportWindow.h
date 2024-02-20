@@ -41,9 +41,6 @@ public:
     /// Constructor.
     using BaseViewportWindow::BaseViewportWindow;
 
-    /// Destructor.
-    virtual ~WidgetViewportWindow();
-
     /// Associates this window with a viewport and creates the UI widget.
     void initializeWindow(Viewport* vp, UserInterface& userInterface, QWidget* parent);
 
@@ -81,6 +78,10 @@ public:
     }
 
 protected:
+
+    /// This method is called after the reference counter of this object has reached zero
+    /// and before the object is being finally deleted.
+    virtual void aboutToBeDeleted() override;
 
     /// Creates the UI widget that is associated with this viewport window.
     virtual QWidget* createWidget(QWidget* parent) = 0;

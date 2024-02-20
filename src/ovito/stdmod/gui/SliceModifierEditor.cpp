@@ -327,7 +327,7 @@ void SliceModifierEditor::onAlignViewToPlane()
             vp->setCameraDirection(-planeWorld.normal);
         }
 
-        vp->zoomToSelectionExtents();
+        vp->notifyDependents(Viewport::ZoomToSelectionExtentsRequested);
     });
 }
 
@@ -376,10 +376,10 @@ void PickPlanePointsInputMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent
 {
     ViewportInputMode::mouseMoveEvent(vpwin, event);
 
-    ViewportPickResult pickResult = vpwin->pick(getMousePosition(event));
-    setCursor(pickResult.isValid() ? SelectionMode::selectionCursor() : QCursor());
-    if(pickResult.isValid() && _numPickedPoints < 3) {
-        _pickedPoints[_numPickedPoints] = pickResult.hitLocation();
+    std::optional<ViewportWindow::PickResult> pickResult = vpwin->pick(getMousePosition(event));
+    setCursor(pickResult ? SelectionMode::selectionCursor() : QCursor{});
+    if(pickResult && _numPickedPoints < 3) {
+        _pickedPoints[_numPickedPoints] = pickResult->hitLocation();
         _hasPreliminaryPoint = true;
         requestViewportUpdate();
     }
@@ -402,16 +402,15 @@ void PickPlanePointsInputMode::mouseReleaseEvent(ViewportWindow* vpwin, QMouseEv
             requestViewportUpdate();
         }
 
-        ViewportPickResult pickResult = vpwin->pick(getMousePosition(event));
-        if(pickResult.isValid()) {
+        if(std::optional<ViewportWindow::PickResult> pickResult = vpwin->pick(getMousePosition(event))) {
 
             // Do not select the same point twice.
             bool ignore = false;
-            if(_numPickedPoints >= 1 && _pickedPoints[0].equals(pickResult.hitLocation(), FLOATTYPE_EPSILON)) ignore = true;
-            if(_numPickedPoints >= 2 && _pickedPoints[1].equals(pickResult.hitLocation(), FLOATTYPE_EPSILON)) ignore = true;
+            if(_numPickedPoints >= 1 && _pickedPoints[0].equals(pickResult->hitLocation(), FLOATTYPE_EPSILON)) ignore = true;
+            if(_numPickedPoints >= 2 && _pickedPoints[1].equals(pickResult->hitLocation(), FLOATTYPE_EPSILON)) ignore = true;
 
             if(!ignore) {
-                _pickedPoints[_numPickedPoints] = pickResult.hitLocation();
+                _pickedPoints[_numPickedPoints] = pickResult->hitLocation();
                 _numPickedPoints++;
                 _hasPreliminaryPoint = false;
                 requestViewportUpdate();
@@ -479,51 +478,45 @@ void PickPlanePointsInputMode::alignPlane(SliceModifier* mod)
 /******************************************************************************
 * Lets the input mode render its overlay content in a viewport.
 ******************************************************************************/
-void PickPlanePointsInputMode::renderOverlay3D(Viewport* vp, SceneRenderer* renderer)
+void PickPlanePointsInputMode::renderOverlay(Viewport* vp, ViewportWindow* vpWin, FrameGraph& frameGraph, DataSet* dataset)
 {
-    if(!renderer->isImagePass())
-        return;
-
     int npoints = _numPickedPoints;
     if(_hasPreliminaryPoint && npoints < 3) npoints++;
     if(_numPickedPoints == 0)
         return;
 
-    renderer->setWorldTransform(AffineTransformation::Identity());
-    if(!renderer->isBoundingBoxPass()) {
-        MarkerPrimitive markers(MarkerPrimitive::BoxShape);
-        markers.makePositions(_pickedPoints, _pickedPoints + npoints);
-        markers.setColor(ColorA(1, 1, 1));
-        renderer->renderMarkers(markers);
+    Box3 boundingBox;
+    for(int i = 0; i < npoints; i++)
+        boundingBox.addPoint(_pickedPoints[i]);
 
-        if(npoints == 2) {
-            LinePrimitive lines;
-            lines.makePositions(_pickedPoints, _pickedPoints + 2);
-            lines.setUniformColor(ColorA(1, 1, 1));
-            renderer->renderLines(lines);
-        }
-        else if(npoints == 3) {
-            DataOORef<TriangleMesh> tri = DataOORef<TriangleMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
-            tri->setVertexCount(3);
-            tri->setVertex(0, _pickedPoints[0]);
-            tri->setVertex(1, _pickedPoints[1]);
-            tri->setVertex(2, _pickedPoints[2]);
-            tri->addFace().setVertices(0, 1, 2);
-            MeshPrimitive meshPrimitive;
-            meshPrimitive.setMesh(std::move(tri), MeshPrimitive::ConvexShapeMode);
-            meshPrimitive.setUniformColor(ColorA(0.7, 0.7, 1.0, 0.5));
-            renderer->renderMesh(meshPrimitive);
+    std::unique_ptr<MarkerPrimitive> markers = std::make_unique<MarkerPrimitive>(MarkerPrimitive::BoxShape);
+    markers->makePositions(_pickedPoints, _pickedPoints + npoints);
+    markers->setColor(ColorA(1, 1, 1));
+    frameGraph.addPrimitive(std::move(markers), AffineTransformation::Identity(), 0, boundingBox);
 
-            LinePrimitive lines;
-            const Point3 vertices[6] = { _pickedPoints[0], _pickedPoints[1], _pickedPoints[1], _pickedPoints[2], _pickedPoints[2], _pickedPoints[0] };
-            lines.makePositions(vertices);
-            lines.setUniformColor(ColorA(1, 1, 1));
-            renderer->renderLines(lines);
-        }
+    if(npoints == 2) {
+        std::unique_ptr<LinePrimitive> lines = std::make_unique<LinePrimitive>();
+        lines->makePositions(_pickedPoints, _pickedPoints + 2);
+        lines->setUniformColor(ColorA(1, 1, 1));
+        frameGraph.addPrimitive(std::move(lines), AffineTransformation::Identity(), 0, boundingBox);
     }
-    else {
-        for(int i = 0; i < npoints; i++)
-            renderer->addToLocalBoundingBox(_pickedPoints[i]);
+    else if(npoints == 3) {
+        DataOORef<TriangleMesh> tri = DataOORef<TriangleMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
+        tri->setVertexCount(3);
+        tri->setVertex(0, _pickedPoints[0]);
+        tri->setVertex(1, _pickedPoints[1]);
+        tri->setVertex(2, _pickedPoints[2]);
+        tri->addFace().setVertices(0, 1, 2);
+        std::unique_ptr<MeshPrimitive> meshPrimitive = std::make_unique<MeshPrimitive>();
+        meshPrimitive->setMesh(std::move(tri), MeshPrimitive::ConvexShapeMode);
+        meshPrimitive->setUniformColor(ColorA(0.7, 0.7, 1.0, 0.5));
+        frameGraph.addPrimitive(std::move(meshPrimitive), AffineTransformation::Identity(), 0, boundingBox);
+
+        std::unique_ptr<LinePrimitive> lines = std::make_unique<LinePrimitive>();
+        const Point3 vertices[6] = { _pickedPoints[0], _pickedPoints[1], _pickedPoints[1], _pickedPoints[2], _pickedPoints[2], _pickedPoints[0] };
+        lines->makePositions(vertices);
+        lines->setUniformColor(ColorA(1, 1, 1));
+        frameGraph.addPrimitive(std::move(lines), AffineTransformation::Identity(), 0, boundingBox);
     }
 }
 

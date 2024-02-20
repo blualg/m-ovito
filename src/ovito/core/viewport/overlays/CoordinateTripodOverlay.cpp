@@ -109,7 +109,7 @@ void CoordinateTripodOverlay::propertyChanged(const PropertyFieldDescriptor* fie
 /******************************************************************************
 * Lets the overlay paint its contents into the framebuffer.
 ******************************************************************************/
-void CoordinateTripodOverlay::render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams)
+void CoordinateTripodOverlay::render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene)
 {
     // Check alignment parameter.
     checkAlignmentParameterValue(alignment());

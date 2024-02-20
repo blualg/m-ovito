@@ -143,6 +143,9 @@ OVITO_STANDARD_PLUGIN(Particles
     LIB_DEPENDENCIES Qt6::Xml
 )
 
+# Let the code know that we are building the plugin.
+TARGET_COMPILE_DEFINITIONS(Particles PUBLIC OVITO_BUILD_PLUGIN_PARTICLES)
+
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_APP)
     ADD_SUBDIRECTORY(gui)

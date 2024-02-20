@@ -33,7 +33,7 @@ namespace Ovito {
 /******************************************************************************
 * Renders a triangle mesh.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitive)
+void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup)
 {
     QOpenGLTexture* colorMapTexture = nullptr;
 
@@ -112,7 +112,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 
     // Pass picking base ID to shader.
     if(isPickingPass()) {
-        shader.setPickingBaseId(registerSubObjectIDs(primitive.useInstancedRendering() ? primitive.perInstanceTMs()->size() : mesh.faceCount()));
+        shader.setPickingBaseId(allocateObjectPickingIDs(pickingGroup, primitive.useInstancedRendering() ? primitive.perInstanceTMs()->size() : mesh.faceCount()));
     }
 
     // The lookup key for the buffer cache.

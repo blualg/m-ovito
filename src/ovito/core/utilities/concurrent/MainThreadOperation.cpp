@@ -36,7 +36,7 @@ class MainThreadTask : public ProgressingTask, public detail::TaskCallback<MainT
 {
 public:
 
-    MainThreadTask(Task* parentTask) noexcept : ProgressingTask(Task::Started) {
+    MainThreadTask(Task* parentTask) noexcept : ProgressingTask(Task::State(Task::Started | Task::YieldUI)) {
         if(parentTask) {
             // When this sub-task gets canceled, we cancel the parent task too.
             this->registerContinuation([this]() noexcept {

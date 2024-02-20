@@ -27,6 +27,7 @@
 #include <ovito/core/dataset/data/DataObject.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
+#include <ovito/core/viewport/ViewportWindow.h>
 
 namespace Ovito {
 
@@ -62,7 +63,7 @@ public:
     virtual bool supportsViewportPicking() const { return false; }
 
     /// Returns the index of the data element that was picked in a viewport.
-    virtual std::pair<size_t, ConstDataObjectPath> elementFromPickResult(const ViewportPickResult& pickResult) const {
+    virtual std::pair<size_t, ConstDataObjectPath> elementFromPickResult(const ViewportWindow::PickResult& pickResult) const {
         return std::pair<size_t, ConstDataObjectPath>(std::numeric_limits<size_t>::max(), ConstDataObjectPath{});
     }
 

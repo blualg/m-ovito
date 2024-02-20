@@ -85,7 +85,7 @@ PipelineStatus TriangleMeshVis::render(const ConstDataObjectPath& path, const Pi
     primitive->setCullFaces(backfaceCulling());
 
     // Emit graphics primitive.
-    frameGraph.addPrimitive(std::move(primitive), pipeline);
+    frameGraph.addPrimitive(std::move(primitive), pipeline, frameGraph.addPickingGroup(pipeline));
 
     return {};
 }

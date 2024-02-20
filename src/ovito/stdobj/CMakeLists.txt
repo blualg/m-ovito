@@ -51,6 +51,9 @@ OVITO_STANDARD_PLUGIN(StdObj
         StdObj.h
 )
 
+# Let the code know that we are building the plugin.
+TARGET_COMPILE_DEFINITIONS(StdObj PUBLIC OVITO_BUILD_PLUGIN_STDOBJ)
+
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_APP)
     ADD_SUBDIRECTORY(gui)

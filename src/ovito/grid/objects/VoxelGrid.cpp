@@ -179,7 +179,7 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> VoxelGrid::getVectorVisData(c
 
     // Look up the cell center coordinates in the cache.
     using CacheKey = RendererResourceKey<struct VoxelGridCellCentersCache, ConstDataObjectRef>;
-    auto& basePositions = visCache.get<ConstDataBufferPtr>(CacheKey(this));
+    auto& basePositions = visCache.lookup<ConstDataBufferPtr>(CacheKey(this));
 
     if(!basePositions) {
         BufferFactory<Point3> points(elementCount());

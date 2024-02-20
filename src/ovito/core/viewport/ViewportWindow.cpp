@@ -44,6 +44,7 @@ namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(ViewportWindow);
 DEFINE_REFERENCE_FIELD(ViewportWindow, viewport);
+DEFINE_REFERENCE_FIELD(ViewportWindow, renderer);
 
 /******************************************************************************
 * Associates this window with a viewport.
@@ -102,7 +103,7 @@ void ViewportWindow::handleUpdateRequest()
     _updateScheduled = false;
 
     // Skip if the viewport is currently hidden but keep the update request pending.
-    if(!isVisible() || !viewport())
+    if(!isVisible() || !viewport() || !renderer())
         return;
 
     // Do nothing if viewport updates are currently disabled.
@@ -155,7 +156,7 @@ void ViewportWindow::handleUpdateRequest()
         std::unique_ptr<FrameGraph> frameGraph = std::make_unique<FrameGraph>(
             userInterface().datasetContainer().visCache()->acquireResourceFrame(),
             time, _projParams, viewportWindowDeviceIndependentSize(), isInteractive, isPreviewMode, stopOnPipelineError,
-            preferredImageFormat(), devicePixelRatio());
+            renderer()->preferredImageFormat(), devicePixelRatio());
 
         // Set background color.
         if(!viewport()->renderPreviewMode())
@@ -170,6 +171,7 @@ void ViewportWindow::handleUpdateRequest()
                 if(!viewportRect.isEmpty()) {
                     QRect frameBox = previewFrameGeometry(dataset, windowSize);
                     if(!frameBox.isNull()) {
+                        frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::UnderLayer);
                         frameGraph->renderOverlays(viewport(), true, viewportRect, frameBox, noninteractiveProjParams);
                     }
                 }
@@ -177,6 +179,7 @@ void ViewportWindow::handleUpdateRequest()
         }
 
         // Render the 3d scene objects.
+        frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::SceneLayer);
         if(!frameGraph->renderSceneNode(viewport()->scene(), viewport()))
             return;
 
@@ -184,15 +187,9 @@ void ViewportWindow::handleUpdateRequest()
         if(viewport()->isGridVisible())
             renderConstructionGrid(*frameGraph);
 
-        // Render visual 3D representation of the modifiers.
+        // Render visual representations of the modifiers.
         viewport()->scene()->visitPipelines([&](Pipeline* pipeline) {
-            renderPipelineModifiers(pipeline, false);
-            return true;
-        });
-
-        // Render visual 2D representation of the modifiers.
-        viewport()->scene()->visitPipelines([&](Pipeline* pipeline) {
-            renderPipelineModifiers(pipeline, true);
+            renderPipelineModifiers(viewport()->scene(), pipeline, *frameGraph);
             return true;
         });
 
@@ -200,6 +197,8 @@ void ViewportWindow::handleUpdateRequest()
         for(ViewportGizmo* gizmo : viewportGizmos()) {
             gizmo->renderOverlay(viewport(), this, *frameGraph, dataset);
         }
+
+        frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::OverLayer);
 
         // Render viewport "overlays".
         if(isPreviewMode) {
@@ -229,7 +228,7 @@ void ViewportWindow::handleUpdateRequest()
             _contextMenuArea = QRectF();
 
         // Let the renderer implementation post-process the frame graph.
-        postprocessFrameGraph(*frameGraph);
+        renderer()->postprocessFrameGraph(*frameGraph);
 
         // Compute final projection based on the now known bounding box.
         _projParams = viewport()->computeProjectionParameters(time, aspectRatio, frameGraph->sceneBoundingBox());
@@ -526,6 +525,15 @@ bool ViewportWindow::snapPoint(const QPointF& screenPoint, Point3& snapPoint, co
 }
 
 /******************************************************************************
+* Computes a point in the grid coordinate system based on a screen position and
+* the current snap settings.
+******************************************************************************/
+bool ViewportWindow::snapPoint(const QPointF& screenPoint, Point3& snapPoint) const
+{
+    return this->snapPoint(screenPoint, snapPoint, viewport()->gridMatrix());
+}
+
+/******************************************************************************
 * Computes a ray in world space going through a pixel of the viewport window.
 ******************************************************************************/
 Ray3 ViewportWindow::screenRay(const QPointF& screenPoint) const
@@ -609,28 +617,34 @@ QRectF ViewportWindow::renderViewportTitle(FrameGraph& frameGraph)
 }
 
 /******************************************************************************
+* Sets a flag indicatring whether the mouse cursor is currently located in the
+* viewport window area that activates the context menu.
+******************************************************************************/
+void ViewportWindow::setCursorInContextMenuArea(bool flag)
+{
+    if(_cursorInContextMenuArea != flag) {
+        _cursorInContextMenuArea = flag;
+        viewport()->updateViewport();
+    }
+}
+
+/******************************************************************************
 * Renders the visual representation of the modifiers in a pipeline.
 ******************************************************************************/
-void ViewportWindow::renderPipelineModifiers(Pipeline* pipeline, bool renderOverlay)
+void ViewportWindow::renderPipelineModifiers(Scene* scene, Pipeline* pipeline, FrameGraph& frameGraph)
 {
     ModificationNode* node = dynamic_object_cast<ModificationNode>(pipeline->head());
     while(node) {
         Modifier* mod = node->modifier();
 
-#if 0 // TODO
-        // Setup local transformation.
-        TimeInterval interval;
-        setWorldTransform(pipeline->getWorldTransform(time(), interval));
-
         try {
             // Render modifier.
-            mod->renderModifierVisual(ModifierEvaluationRequest(scene()->animationSettings(), node), pipeline, this, renderOverlay);
+            mod->renderModifierVisual(ModifierEvaluationRequest(scene->animationSettings(), node), pipeline, frameGraph);
         }
         catch(const Exception& ex) {
             // Swallow exceptions, because we are in interactive rendering mode.
             ex.logError();
         }
-#endif
 
         // Traverse up the pipeline.
         node = dynamic_object_cast<ModificationNode>(node->input());

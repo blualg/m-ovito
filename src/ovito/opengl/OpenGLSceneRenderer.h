@@ -68,10 +68,7 @@ public:
     explicit OpenGLSceneRenderer(ObjectInitializationFlags flags);
 
     /// Renders a single frame.
-    virtual void renderFrame(const FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
-
-    /// Indicates whether this renderer performs an object picking pass.
-    virtual bool isPickingPass() const { return false; }
+    virtual void renderFrame(FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
 
     /// Indicates whether we are rendering the contents of an interactive viewport window.
     bool isInteractive() const { return _isInteractive; }
@@ -88,16 +85,13 @@ public:
     /// Returns the surface format of the current OpenGL context.
     const QSurfaceFormat& glformat() const { return _glformat; }
 
-    /// Translates an OpenGL error code to a human-readable message string.
-    static const char* openglErrorString(GLenum errorCode);
-
     /// Loads and compiles an OpenGL shader program.
     QOpenGLShaderProgram* loadShaderProgram(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile = QString());
 
     /// Reports OpenGL error status codes.
     void checkOpenGLErrorStatus(const char* command, const char* sourceFile, int sourceLine);
 
-    /// Returns the monotonically increasing identifier of the current frame being rendered.
+    /// Returns the cache used by the renderer to manage OpenGL resources.
     RendererResourceCache::ResourceFrame& currentResourceFrame() {
         OVITO_ASSERT(_currentResourceFrame);
         return _currentResourceFrame;
@@ -108,7 +102,7 @@ public:
         return (bool)_currentResourceFrame;
     }
 
-    /// Sets monotonically increasing identifier of the current frame being rendered.
+    /// Sets the cache to be used by the renderer to manage OpenGL resources.
     RendererResourceCache::ResourceFrame setCurrentResourceFrame(RendererResourceCache::ResourceFrame frame) {
         return std::exchange(_currentResourceFrame, std::move(frame));
     }
@@ -171,7 +165,7 @@ public:
 
 protected:
 
-    /// Returns he model-view transformation matrix for the current graphics primitive being rendered.
+    /// Returns the model-view transformation matrix for the current graphics primitive being rendered.
     const AffineTransformation& modelViewTM() const { return _modelViewTM; }
 
 	/// Returns the rectangular region of the framebuffer we are rendering into (in device coordinates).
@@ -185,37 +179,35 @@ protected:
 
 private:
 
-    /// The render passes performed by the renderer.
-    enum RenderPass {
-        BackgroundPass,
-        SceneOpaquePass,
-        SceneTransparencyPass,
-        ForegroundPass
-    };
+    /// Indicates that we are currently rendering a false-color image for object picking.
+    bool isPickingPass() const { return _isPickingPass; }
 
-    /// Returns the current rendering pass.
-    RenderPass currentRenderPass() const { return _currentRenderPass; }
+    /// Activates picking render mode.
+    void setPickingPass(bool enable) { _isPickingPass = enable; }
+
+    /// Returns whether we are currently rendering semi-transparent geometry.
+    bool isTransparencyPass() const { return _isTransparencyPass; }
 
     /// Executes the rendering commands stored in the given frame graph.
-    bool renderFrameGraph(const FrameGraph& frameGraph, RenderPass renderPass);
+    bool renderFrameGraph(FrameGraph& frameGraph, FrameGraph::RenderLayer renderLayer);
 
     /// Render all semi-transparent geometry in a second rendering pass.
-    void renderTransparentGeometry(const FrameGraph& frameGraph);
+    void renderTransparentGeometry(FrameGraph& frameGraph);
 
     /// Renders a particles primitive.
-    bool renderParticles(const ParticlePrimitive& primitive);
+    bool renderParticles(const ParticlePrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup);
 
     /// Renders a cylinders primitive.
-    bool renderCylinders(const CylinderPrimitive& primitive);
+    bool renderCylinders(const CylinderPrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup);
 
     /// Renders a triangle mesh primitive.
-    bool renderMesh(const MeshPrimitive& primitive);
+    bool renderMesh(const MeshPrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup);
 
     /// Renders a set of particles.
-    void renderParticlesImplementation(const ParticlePrimitive& primitive);
+    void renderParticlesImplementation(const ParticlePrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup);
 
     /// Renders a triangle mesh.
-    void renderMeshImplementation(const MeshPrimitive& primitive);
+    void renderMeshImplementation(const MeshPrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup);
 
     /// Renders just the edges of a triangle mesh as a wireframe model.
     void renderMeshWireframeImplementation(const MeshPrimitive& primitive);
@@ -228,25 +220,28 @@ private:
     QOpenGLBuffer getMeshInstanceTMBuffer(const MeshPrimitive& primitive, OpenGLShaderHelper& shader);
 
     /// Renders a set of markers.
-    void renderMarkersImplementation(const MarkerPrimitive& primitive);
+    void renderMarkersImplementation(const MarkerPrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup);
 
     /// Renders a set of lines.
-    void renderLinesImplementation(const LinePrimitive& primitive);
+    void renderLinesImplementation(const LinePrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup);
 
     /// Renders a set of lines using GL_LINES mode.
-    void renderThinLinesImplementation(const LinePrimitive& primitive);
+    void renderThinLinesImplementation(const LinePrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup);
 
     /// Renders a set of lines using triangle strips.
-    void renderThickLinesImplementation(const LinePrimitive& primitive);
+    void renderThickLinesImplementation(const LinePrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup);
 
     /// Renders a set of cylinders or arrow glyphs.
-    void renderCylindersImplementation(const CylinderPrimitive& primitive);
+    void renderCylindersImplementation(const CylinderPrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup);
 
     /// Renders a 2d pixel image into the output framebuffer.
     void renderImageImplementation(const ImagePrimitive& primitive);
 
     /// Returns whether the renderer is using a two-pass OIT method.
     bool orderIndependentTransparency() const { return _orderIndependentTransparency; }
+
+	/// Registers a range of unique IDs for the current object picking group being rendered.
+	quint32 allocateObjectPickingIDs(FrameGraph::ObjectPickingGroup* pickingGroup, quint32 objectCount, const ConstDataBufferPtr& indices = {});
 
 private:
 
@@ -277,8 +272,11 @@ private:
     /// Controls whether the renderer is using a two-pass OIT method.
     bool _orderIndependentTransparency = false;
 
-    /// The current rendering pass.
-    RenderPass _currentRenderPass;
+    /// Indicates whether we are currently rendering a false-color image for object picking.
+    bool _isPickingPass = false;
+
+    /// Indicates whether we are currently rendering semi-transparent geometry.
+    bool _isTransparencyPass = false;
 
     /// Indicates that the use of geometry shaders has explicitly been disabled.
     bool _disableGeometryShaders = (qEnvironmentVariableIntValue("OVITO_DISABLE_GEOMETRY_SHADERS") != 0);
@@ -296,7 +294,10 @@ private:
     /// The additional framebuffer used for the OIT transparency pass.
     std::unique_ptr<QOpenGLFramebufferObject> _oitFramebuffer;
 
-    /// The monotonically increasing identifier of the current frame being rendered.
+    /// The renderer uses this to manage the OpenGL resources created during frame rendering
+    /// and re-use them in subsequent frames. OpenGL objects must be released only while an OpenGL context
+    /// is current, which is why we cannot simply use the FrameGraph's resource cache for
+    /// this purpose. The renderer needs to have control of when resources get released.
     RendererResourceCache::ResourceFrame _currentResourceFrame;
 
     /// Indicates whether we are rendering the contents of an interactive viewport window.
@@ -313,6 +314,9 @@ private:
 
     /// Indicates that the current primitive being rendered is using preprojected NDC coordinates.
     bool _preprojectedCoordinates = false;
+
+	/// The next available object ID to be used for object picking.
+	quint32 _nextAvailablePickingID;
 
     /// The vendor of the OpenGL implementation in use.
     static QByteArray _openGLVendor;
@@ -335,7 +339,8 @@ private:
     /// Indicates whether the OpenGL implementation supports geometry shaders.
     static bool _openGLSupportsGeometryShaders;
 
-    friend class OpenGLShaderHelper;
+    friend class OpenGLShaderHelper; // Using isPickingPass()
+    friend class OpenGLViewportWindow; // Using setPickingPass()
 };
 
 }   // End of namespace

@@ -125,7 +125,7 @@ QVariant TextLabelOverlay::getPipelineEditorShortInfo(Scene* scene) const
 /******************************************************************************
 * Lets the overlay paint its contents into the framebuffer.
 ******************************************************************************/
-void TextLabelOverlay::render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams)
+void TextLabelOverlay::render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene)
 {
     if(frameGraph.isInteractive()) {
         const PipelineFlowState& flowState = pipeline() ? pipeline()->evaluatePipelineSynchronous(frameGraph.time(), true) : PipelineFlowState();

@@ -57,13 +57,12 @@ public:
             ManualSelectionModifier* mod = static_object_cast<ManualSelectionModifier>(_editor->editObject());
             if(mod && mod->subject()) {
                 // Find out what's under the mouse cursor.
-                ViewportPickResult pickResult = vpwin->pick(event->pos());
-                if(pickResult.isValid()) {
+                if(std::optional<ViewportWindow::PickResult> pickResult = vpwin->pick(event->pos())) {
                     // Look up the index of the element that was picked.
-                    std::pair<size_t, ConstDataObjectPath> indexAndContainer = mod->subject().dataClass()->elementFromPickResult(pickResult);
+                    std::pair<size_t, ConstDataObjectPath> indexAndContainer = mod->subject().dataClass()->elementFromPickResult(*pickResult);
                     if(indexAndContainer.first != std::numeric_limits<size_t>::max()) {
                         // Let the editor class handle it from here.
-                        _editor->onElementPicked(pickResult, indexAndContainer.first, indexAndContainer.second);
+                        _editor->onElementPicked(*pickResult, indexAndContainer.first, indexAndContainer.second);
                     }
                     else {
                         inputManager()->userInterface().showStatusBarMessage(tr("You did not click on an element of type '%1'.").arg(mod->subject().dataClass()->elementDescriptionName()), 1000);
@@ -83,10 +82,9 @@ public:
         ManualSelectionModifier* mod = static_object_cast<ManualSelectionModifier>(_editor->editObject());
         if(mod && mod->subject()) {
             // Find out what's under the mouse cursor.
-            ViewportPickResult pickResult = vpwin->pick(event->pos());
-            if(pickResult.isValid()) {
+            if(std::optional<ViewportWindow::PickResult> pickResult = vpwin->pick(event->pos())) {
                 // Look up the index of the element.
-                std::pair<size_t, ConstDataObjectPath> indexAndContainer = mod->subject().dataClass()->elementFromPickResult(pickResult);
+                std::pair<size_t, ConstDataObjectPath> indexAndContainer = mod->subject().dataClass()->elementFromPickResult(*pickResult);
                 if(indexAndContainer.first != std::numeric_limits<size_t>::max()) {
                     setCursor(SelectionMode::selectionCursor());
                     return;
@@ -148,7 +146,7 @@ public:
                     mode = ElementSelectionSet::SelectionAdd;
                 else if(event->modifiers().testFlag(Qt::AltModifier))
                     mode = ElementSelectionSet::SelectionSubtract;
-                _editor->onFence(_fence, vpwin->viewport(), mode);
+                _editor->onFence(_fence, vpwin, mode);
             }
             _fence.clear();
             _activeViewport = nullptr;
@@ -158,9 +156,9 @@ public:
     }
 
     /// Lets the input mode render its 2d overlay content in a viewport.
-    virtual void renderOverlay2D(Viewport* vp, SceneRenderer* renderer) override {
+    virtual void renderOverlay(Viewport* vp, ViewportWindow* vpWin, FrameGraph& frameGraph, DataSet* dataset) override {
         if(isActive() && vp == _activeViewport && _fence.size() >= 2) {
-            renderer->render2DPolyline(_fence.constData(), _fence.size(), ViewportSettings::getSettings().viewportColor(ViewportSettings::COLOR_SELECTION), true);
+            frameGraph.render2DPolyline(_fence.constData(), _fence.size(), ViewportSettings::getSettings().viewportColor(ViewportSettings::COLOR_SELECTION), true);
         }
     }
 
@@ -340,7 +338,7 @@ void ManualSelectionModifierEditor::invertSelection()
 /******************************************************************************
 * This is called when the user has selected an element.
 ******************************************************************************/
-void ManualSelectionModifierEditor::onElementPicked(const ViewportPickResult& pickResult, size_t elementIndex, const ConstDataObjectPath& pickedObjectPath)
+void ManualSelectionModifierEditor::onElementPicked(const ViewportWindow::PickResult& pickResult, size_t elementIndex, const ConstDataObjectPath& pickedObjectPath)
 {
     ManualSelectionModifier* mod = static_object_cast<ManualSelectionModifier>(editObject());
     if(!mod || !mod->subject()) return;
@@ -376,12 +374,12 @@ void ManualSelectionModifierEditor::onElementPicked(const ViewportPickResult& pi
 /******************************************************************************
 * This is called when the user has drawn a fence around particles.
 ******************************************************************************/
-void ManualSelectionModifierEditor::onFence(const QVector<Point2>& fence, Viewport* viewport, ElementSelectionSet::SelectionMode mode)
+void ManualSelectionModifierEditor::onFence(const QVector<Point2>& fence, ViewportWindow* vpwin, ElementSelectionSet::SelectionMode mode)
 {
     ManualSelectionModifier* mod = static_object_cast<ManualSelectionModifier>(editObject());
     if(!mod || !mod->subject()) return;
 
-    performTransaction(tr("Select"), [this, mod, &fence, viewport, mode]() {
+    performTransaction(tr("Select"), [this, mod, &fence, vpwin, mode]() {
         PipelineEvaluationRequest request(currentAnimationTime());
         for(ModificationNode* node : modificationNodes()) {
 
@@ -397,12 +395,12 @@ void ManualSelectionModifierEditor::onFence(const QVector<Point2>& fence, Viewpo
                 TimeInterval interval;
                 const AffineTransformation& nodeTM = pipeline->getWorldTransform(request.time(), interval);
                 Matrix4 ndcToScreen = Matrix4::Identity();
-                ndcToScreen(0,0) = 0.5 * viewport->windowSize().width();
-                ndcToScreen(1,1) = 0.5 * viewport->windowSize().height();
+                ndcToScreen(0,0) = 0.5 * vpwin->viewportWindowDeviceSize().width();
+                ndcToScreen(1,1) = 0.5 * vpwin->viewportWindowDeviceSize().height();
                 ndcToScreen(0,3) = ndcToScreen(0,0);
                 ndcToScreen(1,3) = ndcToScreen(1,1);
                 ndcToScreen(1,1) = -ndcToScreen(1,1);   // Vertical flip.
-                Matrix4 projectionTM = ndcToScreen * viewport->projectionParams().projectionMatrix * (viewport->projectionParams().viewMatrix * nodeTM);
+                Matrix4 projectionTM = ndcToScreen * vpwin->projectionParams().projectionMatrix * (vpwin->projectionParams().viewMatrix * nodeTM);
 
                 // Determine which elements are within the closed fence polygon.
                 boost::dynamic_bitset<> selection = mod->subject().dataClass()->viewportFenceSelection(fence, inputObjectPath, pipeline, projectionTM);

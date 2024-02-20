@@ -32,7 +32,7 @@ namespace Ovito {
 /******************************************************************************
 * Renders a set of particles.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive& primitive)
+void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup)
 {
     // Make sure there is something to be rendered. Otherwise, step out early.
     if(!primitive.positions() || primitive.positions()->size() == 0)
@@ -220,7 +220,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
 
     // Pass picking base ID to shader.
     if(isPickingPass()) {
-        shader.setPickingBaseId(registerSubObjectIDs(primitive.positions()->size()/*, primitive.indices()*/));
+        shader.setPickingBaseId(allocateObjectPickingIDs(pickingGroup, primitive.positions()->size()/*, primitive.indices()*/));
     }
     OVITO_REPORT_OPENGL_ERRORS(this);
 

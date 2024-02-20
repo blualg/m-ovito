@@ -144,7 +144,7 @@ void SimulationCellVis::renderWireframe(const SimulationCell* cell, const Pipeli
     AffineTransformation cellMatrix = cell->cellMatrix();
     if(cell->is2D())
         cellMatrix(2,3) = 0; // For 2D cells, implicitly set z-coordinate of origin to zero.
-    frameGraph.addPrimitive(std::move(linePrimitive), nodeTM * cellMatrix, Box3(Point3(0), Point3(1)), pipeline);
+    frameGraph.addPrimitive(std::move(linePrimitive), nodeTM * cellMatrix, frameGraph.addPickingGroup(pipeline), Box3(Point3(0), Point3(1)));
 }
 
 /******************************************************************************
@@ -226,8 +226,9 @@ void SimulationCellVis::renderSolid(const SimulationCell* cell, const PipelineFl
         visCache.corners.setUniformRadius(cellLineWidth());
         visCache.corners.setUniformColor(cellColor());
     }
-    frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(visCache.edges), pipeline);
-    frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(visCache.corners), pipeline);
+    auto pickingGroup = frameGraph.addPickingGroup(pipeline);
+    frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(visCache.edges), pipeline, pickingGroup);
+    frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(visCache.corners), pipeline, pickingGroup);
 }
 
 }   // End of namespace

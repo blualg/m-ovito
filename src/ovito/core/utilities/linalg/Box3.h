@@ -162,6 +162,9 @@ public:
         return Point_3<T>(c[i&1].x(), c[(i>>1)&1].y(), c[(i>>2)&1].z());
     }
 
+    /// \brief Compares two bxoes for equality.
+    Q_DECL_CONSTEXPR bool operator==(const Box_3<T>& other) const { return minc == other.minc && maxc == other.maxc; }
+
     /////////////////////////////// Classification ///////////////////////////////
 
     /// \brief Checks whether a point is located inside the box.

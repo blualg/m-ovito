@@ -48,6 +48,9 @@ OVITO_STANDARD_PLUGIN(StdMod
         StdMod.h
 )
 
+# Let the code know that we are building the plugin.
+TARGET_COMPILE_DEFINITIONS(StdMod PUBLIC OVITO_BUILD_PLUGIN_STDMOD)
+
 # Build corresponding GUI plugin.
 IF(OVITO_BUILD_APP)
     ADD_SUBDIRECTORY(gui)

@@ -30,7 +30,7 @@ namespace Ovito {
 /******************************************************************************
 * Renders a set of markers.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderMarkersImplementation(const MarkerPrimitive& primitive)
+void OpenGLSceneRenderer::renderMarkersImplementation(const MarkerPrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup)
 {
     // Step out early if there is nothing to render.
     if(!primitive.positions() || primitive.positions()->size() == 0)
@@ -59,7 +59,7 @@ void OpenGLSceneRenderer::renderMarkersImplementation(const MarkerPrimitive& pri
 
     if(isPickingPass()) {
         // Pass picking base ID to shader.
-        shader.setPickingBaseId(registerSubObjectIDs(primitive.positions()->size()));
+        shader.setPickingBaseId(allocateObjectPickingIDs(pickingGroup, primitive.positions()->size()));
     }
     else {
         // Pass uniform marker color to fragment shader as a uniform value.

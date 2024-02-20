@@ -35,9 +35,6 @@ OVITO_STANDARD_PLUGIN(OpenGLRenderer
         OpenGLShaderHelper.cpp
         OpenGLSceneRenderer.cpp
         OffscreenOpenGLSceneRenderer.cpp
-        OffscreenInteractiveOpenGLSceneRenderer.cpp
-        PickingOpenGLSceneRenderer.cpp
-        OpenGLDepthTextureBlitter.cpp
         resources/opengl.qrc
     LIB_DEPENDENCIES
         Qt6::OpenGL

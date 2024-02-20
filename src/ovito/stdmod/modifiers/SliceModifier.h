@@ -106,8 +106,8 @@ public:
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 
-    /// Lets the modifier render itself into the viewport.
-    virtual void renderModifierVisual(const ModifierEvaluationRequest& request, Pipeline* pipeline, SceneRenderer* renderer, bool renderOverlay) override;
+    /// Lets the modifier render itself in an interactive viewport.
+    virtual void renderModifierVisual(const ModifierEvaluationRequest& request, Pipeline* pipeline, FrameGraph& frameGraph) override;
 
     /// Modifies the input data synchronously.
     virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
@@ -152,11 +152,8 @@ protected:
     /// Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
-    /// Renders the modifier's visual representation and computes its bounding box.
-    void renderVisual(AnimationTime time, Pipeline* pipeline, SceneRenderer* renderer, const PipelineFlowState& state);
-
     /// Renders the plane in the viewport.
-    void renderPlane(SceneRenderer* renderer, const Plane3& plane, const Box3& box, const ColorA& color) const;
+    void renderPlane(FrameGraph& frameGraph, const Pipeline* pipeline, const Plane3& plane, const Box3& box, const ColorA& color) const;
 
     /// Computes the intersection lines of a plane and a quad.
     void planeQuadIntersection(const Point3 corners[8], const std::array<int,4>& quadVerts, const Plane3& plane, std::vector<Point3>& vertices) const;

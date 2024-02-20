@@ -160,6 +160,9 @@ public:
         return maxc[dimension] - minc[dimension];
     }
 
+    /// \brief Compares two bxoes for equality.
+    Q_DECL_CONSTEXPR bool operator==(const Box_2<T>& other) const { return minc == other.minc && maxc == other.maxc; }
+
     /// Conversion operator to a Qt rectangle.
     operator QRectF() const {
         return QRectF(minc.x(), minc.y(), width(), height());

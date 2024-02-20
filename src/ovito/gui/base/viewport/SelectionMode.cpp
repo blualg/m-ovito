@@ -57,11 +57,12 @@ void SelectionMode::mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
     if(_viewport != nullptr) {
         // Select object under mouse cursor.
-        ViewportPickResult pickResult = vpwin->pick(_clickPoint);
-        if(pickResult.isValid() && _viewport->scene()) {
-            inputManager()->userInterface().performTransaction(tr("Select"), [&] {
-                _viewport->scene()->selection()->setNode(pickResult.pipeline());
-            });
+        if(std::optional<ViewportWindow::PickResult> pickResult = vpwin->pick(_clickPoint)) {
+            if(_viewport->scene() && pickResult->pipeline()->scene() == _viewport->scene()) {
+                inputManager()->userInterface().performTransaction(tr("Select"), [&] {
+                    _viewport->scene()->selection()->setNode(pickResult->pipeline());
+                });
+            }
         }
         _viewport = nullptr;
     }
@@ -84,18 +85,18 @@ void SelectionMode::deactivated(bool temporary)
 ******************************************************************************/
 void SelectionMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event)
 {
-    // Suppress object picking while animation playback is active, because the offscreen rendering slows down the playback.
-    bool isPlaybackActive = vpwin->userInterface().datasetContainer().isPlaybackActive();
-
     // Perform object picking under the mouse cursor.
-    ViewportPickResult pickResult = !isPlaybackActive ? vpwin->pick(getMousePosition(event)) : ViewportPickResult{};
+    // Suppress object picking while animation playback is active, because the offscreen rendering slows down the playback.
+    std::optional<ViewportWindow::PickResult> pickResult;
+    if(!vpwin->userInterface().datasetContainer().isPlaybackActive())
+        pickResult = vpwin->pick(getMousePosition(event));
 
     // Change mouse cursor while hovering over an object.
-    setCursor(pickResult.isValid() ? selectionCursor() : QCursor());
+    setCursor(pickResult ? selectionCursor() : QCursor{});
 
     // Display a description of the object under the mouse cursor in the status bar and/or in a tooltip window.
-    if(pickResult.isValid() && pickResult.pickInfo()) {
-        QString infoText = pickResult.pickInfo()->infoString(pickResult.pipeline(), pickResult.subobjectId());
+    if(pickResult && pickResult->pickInfo()) {
+        QString infoText = pickResult->pickInfo()->infoString(pickResult->pipeline(), pickResult->subobjectId());
         inputManager()->userInterface().showStatusBarMessage(infoText);
     }
     else {

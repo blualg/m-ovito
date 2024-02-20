@@ -286,13 +286,12 @@ PipelineStatus SurfaceMeshVis::render(const ConstDataObjectPath& path, const Pip
         // Update the color mapping.
         visCache.surfacePrimitive.setPseudoColorMapping(surfaceColorMapping()->pseudoColorMapping());
         // Render the surface mesh.
-        frameGraph.addPrimitive(std::make_unique<MeshPrimitive>(visCache.surfacePrimitive), pipeline, visCache.pickInfo);
+        frameGraph.addPrimitive(std::make_unique<MeshPrimitive>(visCache.surfacePrimitive), pipeline, frameGraph.addPickingGroup(pipeline, visCache.pickInfo));
     }
     if(showCap() && visCache.capPrimitive.mesh()) {
         // Render the surface mesh cap.
         // If the caps are semi-transparent, we exclude them from the object picking render pass.
-        frameGraph.addPrimitive(std::make_unique<MeshPrimitive>(visCache.capPrimitive), pipeline, {},
-            (cap_alpha < 1) ? FrameGraph::RenderingCommand::SkipPickingPass : FrameGraph::RenderingCommand::NoFlags);
+        frameGraph.addPrimitive(std::make_unique<MeshPrimitive>(visCache.capPrimitive), pipeline, (cap_alpha >= 1) ? frameGraph.addPickingGroup(pipeline) : 0);
     }
 
     return {};

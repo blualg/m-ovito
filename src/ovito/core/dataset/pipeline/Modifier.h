@@ -66,16 +66,8 @@ public:
     /// downstream pipeline.
     virtual void restrictInputValidityInterval(TimeInterval& iv) const {}
 
-    /// \brief Lets the modifier render itself into a viewport.
-    /// \param pipeline The pipeline this modifier is part of.
-    /// \param renderer The scene renderer to use.
-    /// \param renderOverlay Specifies the rendering pass. The method is called twice by the system: First with renderOverlay==false
-    ///                      to render any 3d representation of the modifier, and a second time with renderOverlay==true to render
-    ///                      any overlay graphics on top of the 3d scene.
-    ///
-    /// The viewport transformation is already set up when this method is called
-    /// The default implementation does nothing.
-    virtual void renderModifierVisual(const ModifierEvaluationRequest& request, Pipeline* pipeline, SceneRenderer* renderer, bool renderOverlay) {}
+    /// \brief Lets the modifier render itself in an interactive viewport.
+    virtual void renderModifierVisual(const ModifierEvaluationRequest& request, Pipeline* pipeline, FrameGraph& frameGraph) {}
 
     /// \brief Returns the list of pipeline nodes that reference this modifier.
     /// \return The list of ModificationNode objects, each describing a particular use of this Modifier in a pipeline.

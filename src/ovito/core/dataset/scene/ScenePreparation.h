@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
+#include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/utilities/concurrent/TaskWatcher.h>
 #include <ovito/core/utilities/concurrent/MainThreadOperation.h>
 #include <ovito/core/rendering/RenderSettings.h>

@@ -30,7 +30,7 @@ namespace Ovito {
 /******************************************************************************
 * Renders a set of cylinders or arrow glyphs.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive& primitive)
+void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup)
 {
     // Make sure there is something to be rendered. Otherwise, step out early.
     if(!primitive.basePositions() || !primitive.headPositions() || primitive.basePositions()->size() == 0)
@@ -112,7 +112,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
     // Pass picking base ID to shader.
     GLint pickingBaseId;
     if(isPickingPass()) {
-        pickingBaseId = registerSubObjectIDs(primitive.basePositions()->size());
+        pickingBaseId = allocateObjectPickingIDs(pickingGroup, primitive.basePositions()->size());
         shader.setPickingBaseId(pickingBaseId);
     }
     OVITO_REPORT_OPENGL_ERRORS(this);

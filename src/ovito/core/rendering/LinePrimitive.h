@@ -94,11 +94,17 @@ public:
     /// Returns the uniform color of all vertices.
     const ColorA& uniformColor() const { return _uniformColor; }
 
-    /// Returns the line width in pixels.
+    /// Returns the line width in device pixels.
     FloatType lineWidth() const { return _lineWidth; }
 
-    /// Sets the line width in pixels.
+    /// Sets the line width in device pixels.
     void setLineWidth(FloatType width) { _lineWidth = width; }
+
+    /// Returns the pikcing line width in device pixels.
+    FloatType pickingLineWidth() const { return _pickingLineWidth; }
+
+    /// Sets the picking line width in device pixels.
+    void setPickingLineWidth(FloatType width) { _pickingLineWidth = width; }
 
 	/// Computes the 3d bounding box of the primitive in local coordinate space.
 	virtual Box3 computeBoundingBox(const RendererResourceCache::ResourceFrame& visCache) const override {
@@ -113,8 +119,11 @@ private:
     /// The uniform line color.
     ColorA _uniformColor{1,1,1,1};
 
-    /// The line width in pixels.
+    /// The visual line width in device pixels.
     FloatType _lineWidth = 0.0;
+
+    /// The picking line width in device pixels.
+    FloatType _pickingLineWidth = 0.0;
 
     /// The buffer storing the vertex positions.
     ConstDataBufferPtr _positions; // Array of Point3

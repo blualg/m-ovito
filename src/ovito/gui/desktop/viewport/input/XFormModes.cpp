@@ -134,13 +134,13 @@ void XFormMode::mousePressEvent(ViewportWindow* vpwin, QMouseEvent* event)
         if(viewportWindow() == nullptr) {
 
             // Select object under mouse cursor.
-            ViewportPickResult pickResult = vpwin->pick(getMousePosition(event));
-            if(pickResult.isValid() && vpwin->viewport()->scene()) {
+            std::optional<ViewportWindow::PickResult> pickResult = vpwin->pick(getMousePosition(event));
+            if(pickResult && vpwin->viewport()->scene()) {
                 _viewportWindow = vpwin;
                 _startPoint = getMousePosition(event);
                 _undoTransaction.begin(inputManager()->userInterface(), undoDisplayName());
                 inputManager()->userInterface().performActions(_undoTransaction, [&] {
-                    viewportWindow()->viewport()->scene()->selection()->setNode(pickResult.pipeline());
+                    viewportWindow()->viewport()->scene()->selection()->setNode(pickResult->pipeline());
                 });
                 _undoSelectionOperation = _undoTransaction.snapshot();
                 startXForm();
@@ -195,7 +195,7 @@ void XFormMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event)
     }
     else {
         // Change mouse cursor while hovering over an object.
-        setCursor(vpwin->pick(getMousePosition(event)).isValid() ? _xformCursor : QCursor());
+        setCursor(vpwin->pick(getMousePosition(event)) ? _xformCursor : QCursor{});
     }
     ViewportInputMode::mouseMoveEvent(vpwin, event);
 }
