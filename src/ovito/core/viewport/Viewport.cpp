@@ -262,8 +262,9 @@ DataOORef<const AbstractCameraObject> Viewport::cameraObject(AnimationTime time)
 {
     OVITO_ASSERT(ExecutionContext::current().isValid());
     if(viewNode()) {
-        const PipelineFlowState& state = viewNode()->evaluatePipelineSynchronous(time, false);
-        return state.getObject<AbstractCameraObject>();
+        if(const AbstractCameraSource* cameraSource = dynamic_object_cast<AbstractCameraSource>(viewNode()->head())) {
+            return cameraSource->cameraObject(time);
+        }
     }
     return {};
 }
@@ -393,8 +394,7 @@ bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
                 AnimationTime time = scene()->animationSettings()->currentTime();
                 TimeInterval iv;
                 setCameraTransformation(viewNode()->getWorldTransform(time, iv));
-                const PipelineFlowState& state = viewNode()->evaluatePipelineSynchronous(time, false);
-                if(const AbstractCameraObject* camera = state.data() ? state.data()->getObject<AbstractCameraObject>() : nullptr) {
+                if(DataOORef<const AbstractCameraObject> camera = cameraObject(time)) {
                     setFieldOfView(camera->fieldOfView(time, iv));
                 }
             }
@@ -620,6 +620,35 @@ ViewportLayoutCell* Viewport::layoutCell() const
         }
     });
     return result;
+}
+
+/******************************************************************************
+* Adds a gizmo to be shown in all interactive viewports.
+******************************************************************************/
+void Viewport::addViewportGizmo(ViewportGizmo* gizmo)
+{
+    OVITO_ASSERT(gizmo);
+    if(std::find(viewportGizmos().begin(), viewportGizmos().end(), gizmo) == viewportGizmos().end()) {
+        _viewportGizmos.push_back(gizmo);
+
+        // Update viewport to show gizmo overlay.
+        updateViewport();
+    }
+}
+
+/******************************************************************************
+* Removes a gizmo, which will no longer be shown in the interactive viewports.
+******************************************************************************/
+void Viewport::removeViewportGizmo(ViewportGizmo* gizmo)
+{
+    OVITO_ASSERT(gizmo);
+    auto iter = std::find(_viewportGizmos.begin(), _viewportGizmos.end(), gizmo);
+    if(iter != _viewportGizmos.end()) {
+        _viewportGizmos.erase(iter);
+
+        // Update viewport to hide gizmo.
+        updateViewport();
+    }
 }
 
 }   // End of namespace

@@ -88,6 +88,10 @@ bool VoroTopModifier::loadFilterDefinition(const QString& filepath)
 ******************************************************************************/
 Future<ModifierEnginePtr> VoroTopModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
+    // If pipeline is in interactive mode, skip the long-running computation step.
+    if(request.interactiveMode())
+        return {};
+
     // Get the current positions.
     const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();

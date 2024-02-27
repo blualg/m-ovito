@@ -132,6 +132,10 @@ bool VoronoiAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 ******************************************************************************/
 Future<ModifierEnginePtr> VoronoiAnalysisModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
+    // If pipeline is in interactive mode, skip the long-running computation step.
+    if(request.interactiveMode())
+        return {};
+
     // Get the input particles.
     const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
@@ -862,6 +866,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 ******************************************************************************/
 void VoronoiAnalysisModifier::VoronoiAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
+    ModifierEngine::applyResults(request, state);
+
     VoronoiAnalysisModifier* modifier = static_object_cast<VoronoiAnalysisModifier>(request.modifier());
     Particles* particles = state.expectMutableObject<Particles>();
 

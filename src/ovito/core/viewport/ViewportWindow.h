@@ -145,7 +145,7 @@ public:
     virtual std::optional<PickResult> pick(const QPointF& pos) = 0;
 
     /// Returns the list of gizmos to render in the viewport.
-    virtual std::span<ViewportGizmo*> viewportGizmos() = 0;
+    virtual std::vector<ViewportGizmo*> viewportGizmos() = 0;
 
     /// Sets the mouse cursor shape for the window.
     virtual void setCursor(const QCursor& cursor) {}

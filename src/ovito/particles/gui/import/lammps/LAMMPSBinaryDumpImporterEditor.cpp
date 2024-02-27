@@ -39,7 +39,7 @@ SET_OVITO_OBJECT_EDITOR(LAMMPSBinaryDumpImporter, LAMMPSBinaryDumpImporterEditor
 /******************************************************************************
 * This is called by the system when the user has selected a new file to import.
 ******************************************************************************/
-bool LAMMPSBinaryDumpImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow)
+void LAMMPSBinaryDumpImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow)
 {
     // Retrieve column information of input file.
     LAMMPSBinaryDumpImporter* lammpsImporter = static_object_cast<LAMMPSBinaryDumpImporter>(importer);
@@ -48,15 +48,14 @@ bool LAMMPSBinaryDumpImporterEditor::inspectNewFile(FileImporter* importer, cons
     {
         // Block UI until reading is done.
         ProgressDialog progressDialog(&mainWindow, tr("Inspecting file header"));
-        if(!inspectFuture.waitForFinished())
-            return false;
+        inspectFuture.waitForFinished();
     }
 
     ParticleInputColumnMapping mapping = inspectFuture.result();
 
     // If column names were given in the binary dump file, use them rather than popping up a dialog.
     if(mapping.hasFileColumnNames()) {
-        return true;
+        return;
     }
 
     if(lammpsImporter->columnMapping().size() != mapping.size()) {
@@ -85,17 +84,16 @@ bool LAMMPSBinaryDumpImporterEditor::inspectNewFile(FileImporter* importer, cons
             settings.beginGroup("viz/importer/lammps_binary_dump/");
             settings.setValue("colmapping", dialog.mapping().toByteArray());
             settings.endGroup();
-            return true;
         }
-
-        return false;
+        else {
+            this_task::cancelAndThrow();
+        }
     }
     else {
         // If number of columns did not change since last time, only update the stored file excerpt.
         ParticleInputColumnMapping newMapping = lammpsImporter->columnMapping();
         newMapping.setFileExcerpt(mapping.fileExcerpt());
         lammpsImporter->setColumnMapping(newMapping);
-        return true;
     }
 }
 
@@ -103,15 +101,14 @@ bool LAMMPSBinaryDumpImporterEditor::inspectNewFile(FileImporter* importer, cons
  * Displays a dialog box that allows the user to edit the custom file column to particle
  * property mapping.
  *****************************************************************************/
-bool LAMMPSBinaryDumpImporterEditor::showEditColumnMappingDialog(LAMMPSBinaryDumpImporter* importer, const FileSourceImporter::Frame& frame)
+void LAMMPSBinaryDumpImporterEditor::showEditColumnMappingDialog(LAMMPSBinaryDumpImporter* importer, const FileSourceImporter::Frame& frame)
 {
     Future<ParticleInputColumnMapping> inspectFuture = importer->inspectFileHeader(frame);
 
     {
         // Block UI until reading is done.
         ProgressDialog progressDialog(parentWindow(), inspectFuture, tr("Inspecting file header"));
-        if(!inspectFuture.waitForFinished())
-            return false;
+        inspectFuture.waitForFinished();
     }
 
     ParticleInputColumnMapping mapping = inspectFuture.result();
@@ -132,9 +129,10 @@ bool LAMMPSBinaryDumpImporterEditor::showEditColumnMappingDialog(LAMMPSBinaryDum
         settings.beginGroup("viz/importer/lammps_binary_dump/");
         settings.setValue("colmapping", dialog.mapping().toByteArray());
         settings.endGroup();
-        return true;
     }
-    return false;
+    else {
+        this_task::cancelAndThrow();
+    }
 }
 
 /******************************************************************************
@@ -198,9 +196,9 @@ void LAMMPSBinaryDumpImporterEditor::onEditColumnMapping()
                 return;
             int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size()-1);
 
-            if(showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex])) {
-                importer->requestReload();
-            }
+            showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex]);
+
+            importer->requestReload();
         });
     }
 }

@@ -53,21 +53,34 @@ public:
     /// This is called by the system to catch user mistakes that would lead to infinite recursion.
     void preEvaluationCheck() const;
 
-    /// Performs a synchronous evaluation of the pipeline yielding only preliminary results.
-    const PipelineFlowState& evaluatePipelineSynchronous(const PipelineEvaluationRequest& request, bool includeVisElements);
-
     /// Performs an asynchronous evaluation of the data pipeline.
-    PipelineEvaluationFuture evaluatePipeline(const PipelineEvaluationRequest& request);
+    PipelineEvaluationResult evaluatePipeline(const PipelineEvaluationRequest& request) {
+        return _pipelineCache.evaluatePipeline(request);
+    }
 
     /// Performs an asynchronous evaluation of the data pipeline including the visualization elements.
-    PipelineEvaluationFuture evaluateRenderingPipeline(const PipelineEvaluationRequest& request);
+    PipelineEvaluationResult evaluateRenderingPipeline(const PipelineEvaluationRequest& request) {
+        return _pipelineRenderingCache.evaluatePipeline(request);
+    }
+
+    /// Returns the cached output of the data pipeline at the given time if available.
+    /// This method will never throw an exception and doesn't require a valid execution context.
+    PipelineFlowState getCachedPipelineOutput(AnimationTime time, bool interactiveMode = true) const {
+        return _pipelineCache.getAt(time, interactiveMode);
+    }
+
+    /// Returns the cached output of the data pipeline's rendering stage at the given time if available.
+    /// This method will never throw an exception and doesn't require a valid execution context.
+    PipelineFlowState getCachedRenderingPipelineOutput(AnimationTime time, bool interactiveMode = true) const {
+        return _pipelineRenderingCache.getAt(time, interactiveMode);
+    }
 
     /// Sets the data source of this pipeline, i.e., the object that provides the
     /// input data entering the pipeline.
     void setSource(PipelineNode* sourceObject);
 
     /// \brief Applies a modifier by appending a node for it to the pipeline.
-    ModificationNode* applyModifier(AnimationTime time, Modifier* modifier);
+    ModificationNode* applyModifier(AnimationTime time, bool interactiveMode, Modifier* modifier);
 
     /// \brief Returns the title of this object.
     virtual QString objectTitle() const override;

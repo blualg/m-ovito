@@ -37,21 +37,20 @@ namespace Ovito {
 ******************************************************************************/
 bool ParticlePickingHelper::pickParticle(ViewportWindow* vpwin, const QPoint& clickPoint, PickResult& result)
 {
-    ViewportPickResult vpPickResult = vpwin->pick(clickPoint);
     // Check if user has clicked on something.
-    if(vpPickResult.isValid()) {
+    if(std::optional<ViewportWindow::PickResult> vpPickResult = vpwin->pick(clickPoint)) {
 
         // Check if that was a particle.
-        ParticlePickInfo* pickInfo = dynamic_object_cast<ParticlePickInfo>(vpPickResult.pickInfo());
+        ParticlePickInfo* pickInfo = dynamic_object_cast<ParticlePickInfo>(vpPickResult->pickInfo());
         if(pickInfo) {
             const Particles* particles = pickInfo->particles();
             BufferReadAccess<Point3> posProperty = particles->expectProperty(Particles::PositionProperty);
-            size_t particleIndex = pickInfo->particleIndexFromSubObjectID(vpPickResult.subobjectId());
+            size_t particleIndex = pickInfo->particleIndexFromSubObjectID(vpPickResult->subobjectId());
             if(posProperty && particleIndex < posProperty.size()) {
                 // Save reference to the selected particle.
                 TimeInterval iv;
                 AnimationTime time = vpwin->viewport()->scene()->animationSettings()->currentTime();
-                result.pipeline = vpPickResult.pipeline();
+                result.pipeline = vpPickResult->pipeline();
                 result.particleIndex = particleIndex;
                 result.localPos = posProperty[result.particleIndex];
                 result.worldPos = result.pipeline->getWorldTransform(time, iv) * result.localPos;
@@ -75,17 +74,16 @@ bool ParticlePickingHelper::pickParticle(ViewportWindow* vpwin, const QPoint& cl
 /******************************************************************************
 * Renders the particle selection overlay in a viewport.
 ******************************************************************************/
-void ParticlePickingHelper::renderSelectionMarker(Viewport* vp, SceneRenderer* renderer, const PickResult& pickRecord)
+void ParticlePickingHelper::renderSelectionMarker(Viewport* vp, FrameGraph& frameGraph, const PickResult& pickRecord)
 {
     if(!pickRecord.pipeline)
         return;
 
-    if(!renderer->isInteractive() || !renderer->isImagePass())
-        return;
-
-    const PipelineFlowState& flowState = pickRecord.pipeline->evaluatePipelineSynchronous(renderer->time(), true);
+    PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
+    const PipelineFlowState& flowState = pickRecord.pipeline->evaluateRenderingPipeline(request).result();
     const Particles* particles = flowState.getObject<Particles>();
-    if(!particles) return;
+    if(!particles)
+        return;
 
     // If particle selection is based on ID, find particle with the given ID.
     size_t particleIndex = pickRecord.particleIndex;
@@ -93,7 +91,8 @@ void ParticlePickingHelper::renderSelectionMarker(Viewport* vp, SceneRenderer* r
         if(BufferReadAccess<IdentifierIntType> identifierProperty = particles->getProperty(Particles::IdentifierProperty)) {
             if(particleIndex >= identifierProperty.size() || identifierProperty[particleIndex] != pickRecord.particleId) {
                 auto iter = boost::find(identifierProperty, pickRecord.particleId);
-                if(iter == identifierProperty.cend()) return;
+                if(iter == identifierProperty.cend())
+                    return;
                 particleIndex = (iter - identifierProperty.cbegin());
             }
         }
@@ -104,13 +103,15 @@ void ParticlePickingHelper::renderSelectionMarker(Viewport* vp, SceneRenderer* r
     if(!particleVis)
         return;
 
+#if 0 // TODO
     // Set up transformation.
     TimeInterval iv;
-    const AffineTransformation& nodeTM = pickRecord.pipeline->getWorldTransform(renderer->time(), iv);
+    const AffineTransformation& nodeTM = pickRecord.pipeline->getWorldTransform(frameGraph.time(), iv);
     renderer->setWorldTransform(nodeTM);
 
     // Render highlight marker.
-    particleVis->highlightParticle(particleIndex, particles, renderer);
+    particleVis->highlightParticle(particleIndex, particles, frameGraph);
+#endif
 }
 
 }   // End of namespace

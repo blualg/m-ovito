@@ -59,6 +59,10 @@ ChillPlusModifier::ChillPlusModifier(ObjectInitializationFlags flags) : Structur
 ******************************************************************************/
 Future<ModifierEnginePtr> ChillPlusModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
+    // If pipeline is in interactive mode, skip the long-running computation step.
+    if(request.interactiveMode())
+        return {};
+
     // Get modifier input.
     const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();

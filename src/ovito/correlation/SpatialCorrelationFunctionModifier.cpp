@@ -161,6 +161,10 @@ void SpatialCorrelationFunctionModifier::initializeModifier(const ModifierInitia
 ******************************************************************************/
 Future<ModifierEnginePtr> SpatialCorrelationFunctionModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
+    // If pipeline is in interactive mode, skip the long-running computation step.
+    if(request.interactiveMode())
+        return {};
+
     // Get the source data.
     if(sourceProperty1().isNull())
         throw Exception(tr("Please select a first input particle property."));
@@ -718,6 +722,8 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::perform()
 ******************************************************************************/
 void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
+    ModifierEngine::applyResults(request, state);
+
     // Output real-space correlation function to the pipeline as a data table.
     DataTable* realSpaceCorrelationObj = state.createObject<DataTable>(QStringLiteral("correlation-real-space"), request.modificationNode(), DataTable::Line, tr("Real-space correlation"), realSpaceCorrelation());
     realSpaceCorrelationObj->setAxisLabelX(tr("Distance r"));

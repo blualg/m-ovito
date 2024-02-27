@@ -487,17 +487,13 @@ void ModifierListModel::updateActionState()
         currentItem = currentItem->parent();
     }
 
-    // Evaluate pipeline at the selected stage.
+    // Obtain pipeline output at the selected stage.
     if(currentItem) {
-        if(AnimationSettings* anim = _userInterface.datasetContainer().activeAnimationSettings()) {
-            _userInterface.handleExceptions([&] {
-                if(PipelineNode* pipelineNode = dynamic_object_cast<PipelineNode>(currentItem->object())) {
-                    inputState = pipelineNode->evaluateSynchronous(PipelineEvaluationRequest(anim));
-                }
-                else if(Pipeline* pipeline = _pipelineListModel->selectedPipeline()) {
-                    inputState = pipeline->evaluatePipelineSynchronous(anim->currentTime(), false);
-                }
-            });
+        if(PipelineNode* pipelineNode = dynamic_object_cast<PipelineNode>(currentItem->object())) {
+            inputState = pipelineNode->getCachedPipelineNodeOutput(_userInterface.datasetContainer().currentAnimationTime());
+        }
+        else if(Pipeline* pipeline = _pipelineListModel->selectedPipeline()) {
+            inputState = pipeline->getCachedPipelineOutput(_userInterface.datasetContainer().currentAnimationTime());
         }
     }
 

@@ -25,6 +25,7 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
 #include "VectorVis.h"
@@ -107,37 +108,17 @@ void VectorVis::loadFromStreamComplete(ObjectLoadStream& stream)
 Box3 VectorVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
     const PropertyContainer* container = path.lastAs<PropertyContainer>(1);
-    if(!container) return {};
-    auto [basePositions, vectorProperty] = container->getVectorVisData(path, flowState, visCache);
+    if(!container)
+        return {};
+
+    auto [basePositions, vectorProperty] = container->getVectorVisData(path, flowState, ExecutionContext::current().ui().datasetContainer().visCache()->acquireResourceFrame());
     OVITO_ASSERT(!basePositions || basePositions->size() == container->elementCount());
     OVITO_ASSERT(!basePositions || basePositions->dataType() == Property::FloatDefault);
     OVITO_ASSERT(!basePositions || (basePositions->componentCount() == 3 && basePositions->dataType() == DataBuffer::FloatDefault));
     if(vectorProperty && ((vectorProperty->dataType() != Property::Float32 && vectorProperty->dataType() != Property::Float64) || vectorProperty->componentCount() != 3))
         vectorProperty = nullptr;
 
-    // The key type used for caching the computed bounding box:
-    using CacheKey = RendererResourceKey<struct VectorVisBoundingBoxCache,
-        ConstDataObjectRef,     // Vector property
-        ConstDataObjectRef,     // Base positions
-        FloatType,              // Scaling factor
-        FloatType,              // Arrow width
-        Vector3                 // Offset
-    >;
-
-    // Look up the bounding box in the vis cache.
-    auto& bbox = visCache.get<Box3>(CacheKey(
-            vectorProperty,
-            basePositions,
-            scalingFactor(),
-            arrowWidth(),
-            offset()));
-
-    // Check if the cached bounding box information is still up to date.
-    if(bbox.isEmpty()) {
-        // If not, recompute bounding box.
-        bbox = arrowBoundingBox(vectorProperty, basePositions);
-    }
-    return bbox;
+    return arrowBoundingBox(vectorProperty, basePositions);
 }
 
 /******************************************************************************
@@ -204,17 +185,12 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
 {
     PipelineStatus status;
 
-    if(renderer->isBoundingBoxPass()) {
-        TimeInterval validityInterval;
-        renderer->addToLocalBoundingBox(boundingBox(time, path, pipeline, flowState, renderer->visCache(), validityInterval));
-        return status;
-    }
-
     // Get input data.
     const PropertyContainer* container = path.lastAs<PropertyContainer>(1);
-    if(!container) return {};
+    if(!container)
+        return {};
     container->verifyIntegrity();
-    auto [basePositions, vectorProperty] = container->getVectorVisData(path, flowState, renderer->visCache());
+    auto [basePositions, vectorProperty] = container->getVectorVisData(path, flowState, frameGraph.visCache());
     OVITO_ASSERT(!basePositions || basePositions->size() == container->elementCount());
     OVITO_ASSERT(!basePositions || basePositions->dataType() == DataBuffer::FloatDefault);
     OVITO_ASSERT(!basePositions || (basePositions->componentCount() == 3 && basePositions->dataType() == DataBuffer::FloatDefault));
@@ -270,10 +246,10 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
     GraphicsFloatType transparency = 0;
     TimeInterval iv;
     if(transparencyController())
-        transparency = transparencyController()->getFloatValue(time, iv);
+        transparency = transparencyController()->getFloatValue(frameGraph.time(), iv);
 
     // Lookup the rendering primitive in the vis cache.
-    auto& [arrows, pickInfo] = renderer->visCache().get<std::pair<CylinderPrimitive, OORef<VectorPickInfo>>>(CacheKey(
+    auto& [arrows, pickInfo] = frameGraph.visCache().lookup<std::pair<CylinderPrimitive, OORef<VectorPickInfo>>>(CacheKey(
             vectorProperty,
             basePositions,
             shadingMode(),
@@ -364,12 +340,15 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
         pickInfo = OORef<VectorPickInfo>::create(this, path);
     }
 
-    renderer->beginPickObject(pipeline, pickInfo);
-    AffineTransformation oldTM = renderer->worldTransform();
-    renderer->setWorldTransform(AffineTransformation::translation(offset()) * oldTM);
-    renderer->renderCylinders(arrows);
-    renderer->setWorldTransform(oldTM);
-    renderer->endPickObject();
+    // Get world transformation matrix of scene node.
+    TimeInterval interval;
+    const AffineTransformation& nodeTM = pipeline->getWorldTransform(frameGraph.time(), interval);
+
+    // Apply offset translation
+    const AffineTransformation tm = AffineTransformation::translation(offset()) * nodeTM;
+
+    // Add arrow glyphs to the frame graph.
+    frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(arrows), tm, frameGraph.addPickingGroup(pipeline, pickInfo));
 
     return status;
 }

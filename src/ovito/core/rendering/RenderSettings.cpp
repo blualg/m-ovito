@@ -314,7 +314,7 @@ RendererResourceCache::ResourceFrame RenderSettings::renderFrame(
 
             // Check for existing image file and skip.
             if(skipExistingImages() && QFileInfo(outputFilename).isFile())
-                return {};
+                return visCache;
         }
     }
 
@@ -340,8 +340,7 @@ RendererResourceCache::ResourceFrame RenderSettings::renderFrame(
             // Set up preliminary projection.
             FloatType viewportAspectRatio = (FloatType)destinationRect.height() / destinationRect.width();
             ViewProjectionParameters projParams = viewport->computeProjectionParameters(renderTime, viewportAspectRatio);
-            if(this_task::isCanceled())
-                return {};
+            this_task::throwIfCanceled();
 
             // Take into account the multi-sampling level used by the renderer.
             // For offscreen rendering, this value is also used as device pixel ratio.
@@ -362,23 +361,18 @@ RendererResourceCache::ResourceFrame RenderSettings::renderFrame(
 
             // Generate draw commands for the viewport "underlays".
             frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::UnderLayer);
-            if(!frameGraph->renderOverlays(viewport, true, logicalOverlayRect, physicalOverlayRect, projParams))
-                return {};
+            frameGraph->renderOverlays(viewport, true, logicalOverlayRect, physicalOverlayRect, projParams);
 
             // Generate draw commands for the 3d scene objects.
             frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::SceneLayer);
-            if(!frameGraph->renderSceneNode(viewport->scene(), viewport))
-                return {};
+            frameGraph->renderSceneNode(viewport->scene(), viewport);
 
             // Generate draw commands for the viewport "overlays".
             frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::OverLayer);
-            if(!frameGraph->renderOverlays(viewport, false, logicalOverlayRect, physicalOverlayRect, projParams))
-                return {};
+            frameGraph->renderOverlays(viewport, false, logicalOverlayRect, physicalOverlayRect, projParams);
 
             // Let the scene renderer implementation post-process the frame graph.
             renderer.postprocessFrameGraph(*frameGraph);
-            if(this_task::isCanceled())
-                return {};
 
             // Compute final projection based on the now known bounding box.
             frameGraph->setProjectionParams(viewport->computeProjectionParameters(renderTime, viewportAspectRatio, frameGraph->sceneBoundingBox()));
@@ -386,8 +380,8 @@ RendererResourceCache::ResourceFrame RenderSettings::renderFrame(
             // Pass the frame graph to the scene renderer to produce the rendering in the framebuffer.
             frameBuffer.discardChanges();
             renderer.renderFrame(*frameGraph, destinationRect, &frameBuffer);
-            if(!this_task::isCanceled())
-                frameBuffer.commitChanges();
+            this_task::throwIfCanceled();
+            frameBuffer.commitChanges();
 
             // Get the cache frame back from the frame graph to keep resources alive until we start the next frame.
             visCache = std::move(*frameGraph).takeVisCache();

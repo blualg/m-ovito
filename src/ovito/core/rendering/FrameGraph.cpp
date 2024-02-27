@@ -61,39 +61,27 @@ void FrameGraph::addPrimitive(std::unique_ptr<FrameGraphPrimitive> primitive, co
 /******************************************************************************
 * Generates the visual representation of a scene node (and all its children).
 ******************************************************************************/
-bool FrameGraph::renderSceneNode(OORef<SceneNode> node, OORef<Viewport> viewport)
+void FrameGraph::renderSceneNode(OORef<SceneNode> node, OORef<Viewport> viewport)
 {
     OVITO_ASSERT(node);
 
-    // Stop if rendering has been canceled.
-    if(this_task::isCanceled())
-        return false;
-
     // Skip node if it is hidden in the current viewport.
     if(viewport && node->isHiddenInViewport(viewport, false))
-        return true;
+        return;
+
+    // Stop if rendering has been canceled.
+    this_task::throwIfCanceled();
 
     if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(node)) {
         // Do not render node if it is the view node of the viewport or
         // if it is the target of the view node.
         if(!viewport || !viewport->viewNode() || (viewport->viewNode() != node && viewport->viewNode()->lookatTargetNode() != node)) {
             // Evaluate pipeline and render the resulting data objects.
-            PipelineEvaluationFuture pipelineEvaluation;
-            if(!isInteractive()) {
-                PipelineEvaluationRequest request(time());
-                request.setThrowOnError(stopOnPipelineError());
-                pipelineEvaluation = pipeline->evaluateRenderingPipeline(request);
-                if(!pipelineEvaluation.waitForFinished())
-                    return false;
-            }
-            const PipelineFlowState& state = pipelineEvaluation.isValid()
-                                             ? pipelineEvaluation.result()
-                                             : pipeline->evaluatePipelineSynchronous(time(), true);
-            if(state) {
+            PipelineEvaluationResult pipelineResult = pipeline->evaluateRenderingPipeline(PipelineEvaluationRequest(time(), stopOnPipelineError(), isInteractive()));
+            if(const PipelineFlowState& state = pipelineResult.result()) {
                 // Invoke all vis elements of all data objects in the pipeline state.
                 ConstDataObjectPath dataObjectPath;
-                if(!renderDataObject(state.data(), pipeline, state, dataObjectPath))
-                    return false;
+                renderDataObject(state.data(), pipeline, state, dataObjectPath);
                 OVITO_ASSERT(dataObjectPath.empty());
             }
         }
@@ -101,21 +89,17 @@ bool FrameGraph::renderSceneNode(OORef<SceneNode> node, OORef<Viewport> viewport
 
     // Render child nodes.
     for(SceneNode* child : node->children()) {
-        if(!renderSceneNode(child, viewport))
-            return false;
+        renderSceneNode(child, viewport);
     }
-
-    return !this_task::isCanceled();
 }
 
 /******************************************************************************
 * Generates the visual representation of a data object and all its sub-objects.
 ******************************************************************************/
-bool FrameGraph::renderDataObject(const DataObject* dataObj, const Pipeline* pipeline, const PipelineFlowState& state, ConstDataObjectPath& dataObjectPath)
+void FrameGraph::renderDataObject(const DataObject* dataObj, const Pipeline* pipeline, const PipelineFlowState& state, ConstDataObjectPath& dataObjectPath)
 {
     // Stop if rendering has been canceled.
-    if(this_task::isCanceled())
-        return false;
+    this_task::throwIfCanceled();
 
     bool isOnStack = false;
 
@@ -162,30 +146,26 @@ bool FrameGraph::renderDataObject(const DataObject* dataObj, const Pipeline* pip
             dataObjectPath.push_back(dataObj);
             isOnStack = true;
         }
-        return !renderDataObject(subObject, pipeline, state, dataObjectPath);
+        renderDataObject(subObject, pipeline, state, dataObjectPath);
+        return false;
     });
 
     // Pop the data object from the stack.
     if(isOnStack)
         dataObjectPath.pop_back();
-
-    return !this_task::isCanceled();
 }
 
 /******************************************************************************
 * Render the overlays/underlays of a viewport.
 ******************************************************************************/
-bool FrameGraph::renderOverlays(Viewport* viewport, bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams)
+void FrameGraph::renderOverlays(Viewport* viewport, bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams)
 {
     for(ViewportOverlay* layer : (underlays ? viewport->underlays() : viewport->overlays())) {
         if(layer->isEnabled()) {
             layer->render(*this, logicalViewportRect, physicalViewportRect, noninteractiveProjParams, viewport->scene());
-            if(this_task::isCanceled())
-                return false;
+            this_task::throwIfCanceled();
         }
     }
-
-    return !this_task::isCanceled();
 }
 
 /******************************************************************************

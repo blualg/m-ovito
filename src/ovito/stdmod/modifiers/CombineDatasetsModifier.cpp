@@ -58,17 +58,17 @@ CombineDatasetsModifier::CombineDatasetsModifier(ObjectInitializationFlags flags
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> CombineDatasetsModifier::evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<PipelineFlowState> CombineDatasetsModifier::evaluateModifier(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Get the secondary data source.
     if(!secondaryDataSource())
         throw Exception(tr("No dataset to be merged has been provided."));
 
     // Get the state.
-    SharedFuture<PipelineFlowState> secondaryStateFuture = secondaryDataSource()->evaluate(request);
+    PipelineEvaluationResult secondaryStateFuture = secondaryDataSource()->evaluate(request);
 
     // Wait for the data to become available.
-    return secondaryStateFuture.then(*this, [this, state = input, request, modNode = OORef<const ModificationNode>(request.modificationNode())](const PipelineFlowState& secondaryState) mutable {
+    return secondaryStateFuture.then(*this, [this, state = input, request](const PipelineFlowState& secondaryState) mutable {
 
         // Make sure the obtained dataset is valid and ready to use.
         if(secondaryState.status().type() == PipelineStatus::Error) {
@@ -96,14 +96,14 @@ Future<PipelineFlowState> CombineDatasetsModifier::evaluate(const ModifierEvalua
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void CombineDatasetsModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void CombineDatasetsModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     // Get the secondary data source.
     if(!secondaryDataSource())
         return;
 
     // Acquire the state to be merged.
-    const PipelineFlowState& secondaryState = secondaryDataSource()->evaluateSynchronous(request);
+    const PipelineFlowState& secondaryState = secondaryDataSource()->evaluate(request).result();
 
     // Perform the merging of two pipeline states.
     combineDatasets(request, state, secondaryState);

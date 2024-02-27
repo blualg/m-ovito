@@ -321,17 +321,13 @@ void DataInspectorPanel::updateTabsList()
 ******************************************************************************/
 bool DataInspectorPanel::updatePipelineOutput()
 {
+    _pipelineOutput.reset();
     if(selectedPipeline()) {
         if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings()) {
-            if(mainWindow().handleExceptions([&] {
-                _pipelineOutput = selectedPipeline()->evaluatePipelineSynchronous(anim->currentTime(), true);
-            })) {
-                return true;
-            }
+            _pipelineOutput = selectedPipeline()->getCachedPipelineOutput(anim->currentTime(), false);
         }
     }
-    _pipelineOutput.reset();
-    return false;
+    return (bool)_pipelineOutput;
 }
 
 /******************************************************************************

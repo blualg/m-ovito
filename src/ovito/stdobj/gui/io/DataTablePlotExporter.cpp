@@ -74,8 +74,6 @@ void DataTablePlotExporter::exportFrame(int frameNumber, const QString& filePath
 {
     // Evaluate pipeline.
     const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber);
-    if(!state)
-        return;
 
     // Look up the DataTable to be exported in the pipeline state.
     DataObjectReference objectRef(&DataTable::OOClass(), dataObjectToExport().dataPath());

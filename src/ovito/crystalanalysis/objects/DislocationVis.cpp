@@ -138,45 +138,22 @@ Box3 DislocationVis::boundingBoxImmediate(AnimationTime time, const ConstDataObj
     const SimulationCell* cellObject = domainObj->domain();
     if(!cellObject) return {};
 
-    // The key type used for caching the computed bounding box:
-    using CacheKey = RendererResourceKey<struct DislocationVisBoundingBoxCache,
-        ConstDataObjectRef, // Source object
-        ConstDataObjectRef, // Simulation cell
-        FloatType,          // Line width
-        bool,               // Burgers vector display
-        FloatType,          // Burgers vectors scaling
-        FloatType           // Burgers vector width
-    >;
+    // Compute bounding box from dislocation data.
+    Box3 bb = Box3(Point3(0,0,0), Point3(1,1,1)).transformed(cellObject->cellMatrix());
+    FloatType padding = std::max(lineWidth(), FloatType(0));
 
-    // Look up the bounding box in the vis cache.
-    auto& bbox = visCache.get<Box3>(CacheKey(
-            renderableObj,
-            cellObject,
-            lineWidth(),
-            showBurgersVectors(),
-            burgersVectorScaling(),
-            burgersVectorWidth()));
-
-    // Check if the cached bounding box information is still up to date.
-    if(bbox.isEmpty()) {
-
-        // If not, recompute bounding box from dislocation data.
-        Box3 bb = Box3(Point3(0,0,0), Point3(1,1,1)).transformed(cellObject->cellMatrix());
-        FloatType padding = std::max(lineWidth(), FloatType(0));
-
-        if(showBurgersVectors()) {
-            padding = std::max(padding, burgersVectorWidth() * FloatType(2));
-            if(const DislocationNetworkObject* dislocationObj = dynamic_object_cast<DislocationNetworkObject>(domainObj)) {
-                for(const DislocationSegment* segment : dislocationObj->segments()) {
-                    Point3 center = cellObject->wrapPoint(segment->getPointOnLine(FloatType(0.5)));
-                    Vector3 dir = burgersVectorScaling() * segment->burgersVector.toSpatialVector();
-                    bb.addPoint(center + dir);
-                }
+    if(showBurgersVectors()) {
+        padding = std::max(padding, burgersVectorWidth() * FloatType(2));
+        if(const DislocationNetworkObject* dislocationObj = dynamic_object_cast<DislocationNetworkObject>(domainObj)) {
+            for(const DislocationSegment* segment : dislocationObj->segments()) {
+                Point3 center = cellObject->wrapPoint(segment->getPointOnLine(FloatType(0.5)));
+                Vector3 dir = burgersVectorScaling() * segment->burgersVector.toSpatialVector();
+                bb.addPoint(center + dir);
             }
         }
-        bbox = bb.padBox(padding * FloatType(0.5));
     }
-    return bbox;
+
+    return bb.padBox(padding * FloatType(0.5));
 }
 
 /******************************************************************************
@@ -185,15 +162,9 @@ Box3 DislocationVis::boundingBoxImmediate(AnimationTime time, const ConstDataObj
 PipelineStatus DislocationVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     // Ignore render calls for the original DislocationNetworkObject or MicrostrucureObject.
-    // We are only interested in the RenderableDIslocationLines.
-    if(path.lastAs<DislocationNetworkObject>()) return {};
-
-    // Just compute the bounding box of the rendered objects if requested.
-    if(renderer->isBoundingBoxPass()) {
-        TimeInterval validityInterval;
-        renderer->addToLocalBoundingBox(boundingBox(time, path, pipeline, flowState, renderer->visCache(), validityInterval));
+    // We are only interested in the RenderableDislocationLines.
+    if(path.lastAs<DislocationNetworkObject>())
         return {};
-    }
 
     // The key type used for caching the rendering primitives:
     using CacheKey = RendererResourceKey<struct DislocationVisCache,
@@ -220,7 +191,8 @@ PipelineStatus DislocationVis::render(const ConstDataObjectPath& path, const Pip
 
     // Get the renderable dislocation lines.
     const RenderableDislocationLines* renderableLines = path.lastAs<RenderableDislocationLines>();
-    if(!renderableLines) return {};
+    if(!renderableLines)
+        return {};
 
     // Make sure we don't exceed our internal limits.
     if(renderableLines->lineSegments().size() > (size_t)std::numeric_limits<int>::max())
@@ -236,7 +208,7 @@ PipelineStatus DislocationVis::render(const ConstDataObjectPath& path, const Pip
     if(!cellObject) return {};
 
     // Lookup the rendering primitives in the vis cache.
-    auto& primitives = renderer->visCache().get<CacheValue>(CacheKey(
+    auto& primitives = frameGraph.visCache().lookup<CacheValue>(CacheKey(
         domainObj,
         renderableLines,
         cellObject,
@@ -389,19 +361,20 @@ PipelineStatus DislocationVis::render(const ConstDataObjectPath& path, const Pip
         }
     }
 
-    renderer->beginPickObject(pipeline, primitives.pickInfo);
+    // Take simulation cell as bounding box of dislocation lines.
+    Box3 bb = Box3(Point3(0), Point3(1)).transformed(cellObject->cellMatrix()).padBox(std::max(lineWidth(), FloatType(0)) * FloatType(0.5));
+
+    auto pickingGroup = frameGraph.addPickingGroup(pipeline, primitives.pickInfo);
 
     // Render dislocation segments.
-    renderer->renderCylinders(primitives.segments);
+    frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(primitives.segments), pipeline, pickingGroup, bb);
 
     // Render segment vertices.
-    renderer->renderParticles(primitives.corners);
+    frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(primitives.corners), pipeline, pickingGroup, bb);
 
     // Render Burgers vectors.
     if(showBurgersVectors() && primitives.burgersArrows.basePositions())
-        renderer->renderCylinders(primitives.burgersArrows);
-
-    renderer->endPickObject();
+        frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(primitives.burgersArrows), pipeline, pickingGroup);
 
     return {};
 }
@@ -409,11 +382,9 @@ PipelineStatus DislocationVis::render(const ConstDataObjectPath& path, const Pip
 /******************************************************************************
 * Renders an overlay marker for a single dislocation segment.
 ******************************************************************************/
-void DislocationVis::renderOverlayMarker(AnimationTime time, const DataObject* dataObject, const PipelineFlowState& flowState, int segmentIndex, SceneRenderer* renderer, const Pipeline* pipeline)
+void DislocationVis::renderOverlayMarker(const DataObject* dataObject, const PipelineFlowState& flowState, int segmentIndex, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
-    if(!renderer->isImagePass())
-        return;
-
+#if 0 // TODO
     // Get the dislocations.
     const DislocationNetworkObject* dislocationsObj = dynamic_object_cast<DislocationNetworkObject>(dataObject);
     if(!dislocationsObj)
@@ -490,6 +461,7 @@ void DislocationVis::renderOverlayMarker(AnimationTime time, const DataObject* d
 
     // Restore old state.
     renderer->setDepthTestEnabled(true);
+#endif
 }
 
 /******************************************************************************

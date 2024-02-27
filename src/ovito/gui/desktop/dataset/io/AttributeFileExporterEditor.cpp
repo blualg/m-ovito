@@ -116,13 +116,12 @@ void AttributeFileExporterEditor::updateAttributesList()
     if(!exporter || !exporter->sceneNodeToExport()) return;
 
     try {
-        QVariantMap attrMap;
         ProgressDialog progressDialog(container());
-        if(!exporter->getAttributesMap(exporter->sceneToExport()->animationSettings()->currentFrame(), attrMap))
-            throw Exception(tr("Operation has been canceled by the user."));
+        QVariantMap attrMap = exporter->getAttributesMap(exporter->sceneToExport()->animationSettings()->currentFrame());
         for(const QString& attrName : attrMap.keys())
             insertAttributeItem(attrName, exporter->attributesToExport());
     }
+    catch(OperationCanceled) {}
     catch(const Exception& ex) {
         // Ignore errors, but display a message in the UI widget to inform user.
         _columnMappingWidget->addItems(ex.messages());

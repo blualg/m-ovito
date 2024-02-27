@@ -42,9 +42,9 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(ModificationNode, input, ReferenceEvent::Pipelin
 SET_PROPERTY_FIELD_CHANGE_EVENT(ModificationNode, modifierGroup, ReferenceEvent::PipelineChanged);
 
 /******************************************************************************
-* Returns the global class registry, which allows looking up the
-* ModificationNode subclass for a Modifier subclass.
-******************************************************************************/
+ * Returns the global class registry, which allows looking up the
+ * ModificationNode subclass for a Modifier subclass.
+ ******************************************************************************/
 ModificationNode::Registry& ModificationNode::registry()
 {
     static Registry singleton;
@@ -52,8 +52,8 @@ ModificationNode::Registry& ModificationNode::registry()
 }
 
 /******************************************************************************
-* Asks this object to delete itself.
-******************************************************************************/
+ * Asks this object to delete itself.
+ ******************************************************************************/
 void ModificationNode::requestObjectDeletion()
 {
     // Detach the node from its input, modifier and group.
@@ -70,27 +70,9 @@ void ModificationNode::requestObjectDeletion()
 }
 
 /******************************************************************************
-* Determines the time interval over which a computed pipeline state will remain valid.
-******************************************************************************/
-TimeInterval ModificationNode::validityInterval(const PipelineEvaluationRequest& request) const
-{
-    TimeInterval iv = PipelineNode::validityInterval(request);
-
-    // Take into account the validity interval of the input state.
-    if(input())
-        iv.intersect(input()->validityInterval(request));
-
-    // Let the modifier determine the local validity interval.
-    if(modifierAndGroupEnabled())
-        iv.intersect(modifier()->validityInterval(ModifierEvaluationRequest(request, this)));
-
-    return iv;
-}
-
-/******************************************************************************
-* Throws an exception if the pipeline stage cannot be evaluated at this time.
-* This is called by the system to catch user mistakes that would lead to infinite recursion.
-******************************************************************************/
+ * Throws an exception if the pipeline stage cannot be evaluated at this time.
+ * This is called by the system to catch user mistakes that would lead to infinite recursion.
+ ******************************************************************************/
 void ModificationNode::preEvaluationCheck() const
 {
     if(modifier())
@@ -100,15 +82,13 @@ void ModificationNode::preEvaluationCheck() const
 }
 
 /******************************************************************************
-* Is called when a RefTarget referenced by this object generated an event.
-******************************************************************************/
+ * Is called when a RefTarget referenced by this object generated an event.
+ ******************************************************************************/
 bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(event.type() == ReferenceEvent::TargetEnabledOrDisabled) {
         if(source == modifier() || source == modifierGroup()) {
-
             // Throw away cached results when the modifier is being disabled.
-            _validStages.clear();
             _completedEngine.reset();
 
             // If modifier provides animation frames, the animation interval might change when the
@@ -160,29 +140,21 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
     else if(event.type() == ReferenceEvent::PipelineInputChanged && source == modifier()) {
         // Whenever the modifier's inputs change, invalidate the cached computation results hold on to any
         // cached results needed for preliminary pipeline evaluation.
-        _validStages.clear();
         if(_completedEngine)
             _completedEngine->setValidityInterval(TimeInterval::empty());
     }
     else if(event.type() == ReferenceEvent::TargetChanged && (source == input() || source == modifier())) {
-
         if(source == input()) {
             // Whenever the modifier's inputs change, invalidate the cached async computation results but hold on to any
             // cached results needed for preliminary pipeline evaluation.
-            _validStages.clear();
             if(_completedEngine)
                 _completedEngine->setValidityInterval(TimeInterval::empty());
         }
         else if(source == modifier()) {
             // Whenever the modifier changes, invalidate the cached async computation results
             // unless the engine requests otherwise.
-            for(auto e = _validStages.begin(); e != _validStages.end(); ++e) {
-                if(!(*e)->modifierChanged(static_cast<const PropertyFieldEvent&>(event))) {
-                    _validStages.erase(e, _validStages.end());
-                    if(_completedEngine)
-                        _completedEngine->setValidityInterval(TimeInterval::empty());
-                    break;
-                }
+            if(_completedEngine && !_completedEngine->modifierChanged(static_cast<const PropertyFieldEvent&>(event))) {
+                _completedEngine->setValidityInterval(TimeInterval::empty());
             }
         }
 
@@ -198,21 +170,14 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
         // takes care of invalidating the pipeline cache.
         notifyTargetChangedOutsideInterval(validityInterval);
 
-        // Trigger a preliminary viewport update if desired by the modifier.
-        if(source == modifier() && modifier()->performPreliminaryUpdateAfterChange()) {
-            notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
-        }
-
         return false;
     }
     else if(event.type() == ReferenceEvent::PreliminaryStateAvailable && source == input()) {
-
         // Throw away cached results when the modifier's input changes, unless the engine requests otherwise.
-        if(_completedEngine && !_completedEngine->pipelineInputChanged())
-            _completedEngine.reset();
+        if(_completedEngine && !_completedEngine->pipelineInputChanged()) _completedEngine.reset();
 
         // Also discard cached output state.
-        pipelineCache().invalidateSynchronousState();
+        pipelineCache().invalidateInteractiveState();
 
         // Inform modifier that the input state has changed.
         if(modifier())
@@ -222,14 +187,12 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
 }
 
 /******************************************************************************
-* Gets called when the data object of the node has been replaced.
-******************************************************************************/
+ * Gets called when the data object of the node has been replaced.
+ ******************************************************************************/
 void ModificationNode::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
     if(field == PROPERTY_FIELD(modifier)) {
-
         // Discard cached async computation results.
-        _validStages.clear();
         _completedEngine.reset();
 
         // Reset all caches when the modifier is replaced.
@@ -279,8 +242,8 @@ void ModificationNode::referenceReplaced(const PropertyFieldDescriptor* field, R
 }
 
 /******************************************************************************
-* Sends an event to all dependents of this RefTarget.
-******************************************************************************/
+ * Sends an event to all dependents of this RefTarget.
+ ******************************************************************************/
 void ModificationNode::notifyDependentsImpl(const ReferenceEvent& event) noexcept
 {
     if(event.type() == ReferenceEvent::TargetChanged) {
@@ -296,9 +259,9 @@ void ModificationNode::notifyDependentsImpl(const ReferenceEvent& event) noexcep
 }
 
 /******************************************************************************
-* Asks the object for the result of the upstream data pipeline.
-******************************************************************************/
-SharedFuture<PipelineFlowState> ModificationNode::evaluateInput(const PipelineEvaluationRequest& request) const
+ * Asks the object for the result of the upstream data pipeline.
+ ******************************************************************************/
+PipelineEvaluationResult ModificationNode::evaluateInput(const PipelineEvaluationRequest& request) const
 {
     // Without a data source, this ModificationNode doesn't produce any data.
     if(!input())
@@ -309,21 +272,25 @@ SharedFuture<PipelineFlowState> ModificationNode::evaluateInput(const PipelineEv
 }
 
 /******************************************************************************
-*  Asks the object for the result of the upstream data pipeline at several animation times.
-******************************************************************************/
+ *  Asks the object for the result of the upstream data pipeline at several animation times.
+ ******************************************************************************/
 Future<std::vector<PipelineFlowState>> ModificationNode::evaluateInputMultiple(const PipelineEvaluationRequest& request, std::vector<AnimationTime> times) const
 {
+    // This function should only be used to request final pipeline results, not preliminary results.
+    OVITO_ASSERT(request.interactiveMode() == false);
+
     // Without a data source, this ModificationNode doesn't produce any data.
     if(!input())
         return std::vector<PipelineFlowState>(times.size(), PipelineFlowState());
 
-    // Request the input data.
+    // Request the data from the input node.
     return input()->evaluateMultiple(request, std::move(times));
 }
 
+#if 0 // TODO
 /******************************************************************************
-* Returns the results of an immediate and preliminary evaluation of the data pipeline.
-******************************************************************************/
+ * Returns the results of an immediate and preliminary evaluation of the data pipeline.
+ ******************************************************************************/
 PipelineFlowState ModificationNode::evaluateSynchronous(const PipelineEvaluationRequest& request)
 {
     // If modifier or the modifier group are disabled, bypass cache and forward results of upstream pipeline.
@@ -332,13 +299,14 @@ PipelineFlowState ModificationNode::evaluateSynchronous(const PipelineEvaluation
 
     return PipelineNode::evaluateSynchronous(request);
 }
+#endif
 
 /******************************************************************************
-* Asks the object for the result of the data pipeline.
-******************************************************************************/
-SharedFuture<PipelineFlowState> ModificationNode::evaluate(const PipelineEvaluationRequest& request)
+ * Asks the object for the result of the data pipeline.
+ ******************************************************************************/
+PipelineEvaluationResult ModificationNode::evaluate(const PipelineEvaluationRequest& request)
 {
-    // If modifier is disabled, bypass cache and forward results of upstream pipeline.
+    // If modifier is disabled, bypass cache and forward results from upstream pipeline.
     if(input() && !modifierAndGroupEnabled())
         return input()->evaluate(request);
 
@@ -347,144 +315,183 @@ SharedFuture<PipelineFlowState> ModificationNode::evaluate(const PipelineEvaluat
 }
 
 /******************************************************************************
-* Asks the object for the result of the data pipeline.
-******************************************************************************/
-Future<PipelineFlowState> ModificationNode::evaluateInternal(const PipelineEvaluationRequest& request)
+ * Asks the object for the result of the data pipeline.
+ ******************************************************************************/
+PipelineEvaluationResult ModificationNode::evaluateInternal(const PipelineEvaluationRequest& request)
 {
-    // Set up the evaluation request for the upstream pipeline.
+    // Set up an evaluation request to be passed to the upstream pipeline.
     ModifierEvaluationRequest modifierRequest(request, this);
 
-    // Ask the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
+    // Ask the modifier for the list of animation frames it wants the upstream pipeline to maintain in the cach.
     if(modifierAndGroupEnabled())
-        modifier()->inputCachingHints(modifierRequest.modifiableCachingIntervals(), this);
+        modifier()->inputCachingHints(modifierRequest);
 
-    // Obtain input data and pass it on to the modifier.
-    return evaluateInput(modifierRequest)
-        .then(*this, [this, modifierRequest](PipelineFlowState inputData) -> Future<PipelineFlowState> {
+    // Obtain input data at the current frame from the upstream pipeline.
+    PipelineEvaluationResult input = evaluateInput(modifierRequest);
 
-            // Clear the status of the input unless it is an error.
-            if(inputData.status().type() != PipelineStatus::Error) {
-                inputData.setStatus(PipelineStatus::Success);
-            }
-            OVITO_ASSERT(!modifierRequest.throwOnError() || inputData.status().type() != PipelineStatus::Error);
+    // If the modifier is currently disabled, we can skip it and simply forward the unmodified results from the upstream pipeline.
+    if(!modifierAndGroupEnabled())
+        return input;
 
-            // Without a modifier, this ModificationNode becomes a no-op.
-            // The same is true when the Modifier is disabled or if the input data is invalid.
-            if(!modifierAndGroupEnabled() || !inputData)
-                return inputData;
+    // Make a copy of the (future) upstream pipeline results. We may need them later in case this modifier fails.
+    PipelineEvaluationResult output = input;
 
-            Future<PipelineFlowState> future;
-            try {
-                // Let the modifier do its job.
-                future = modifier()->evaluate(modifierRequest, inputData);
-                // Register the task with this pipeline stage.
-                registerActiveFuture(future);
-            }
-            catch(...) {
-                future = Future<PipelineFlowState>::createFailed(std::current_exception());
-            }
-
-            // Post-process the modifier results before returning them to the caller.
-            // Turn any exception that was thrown during modifier evaluation into a
-            // valid pipeline state with an error code (unless throwOnError was set).
-            return future.then(*this, [this, inputData = std::move(inputData), throwOnError = modifierRequest.throwOnError()](Future<PipelineFlowState> future) mutable {
-                OVITO_ASSERT(future.isFinished() && !future.isCanceled());
-                try {
-                    try {
-                        PipelineFlowState state = future.result();
-                        if(inputData.status().type() != PipelineStatus::Error || state.status().type() == PipelineStatus::Success)
-                            setStatus(state.status());
-                        else
-                            setStatus(PipelineStatus());
-                        return state;
-                    }
-                    catch(const Exception&) {
-                        throw;
-                    }
-                    catch(const std::bad_alloc&) {
-                        throw Exception(tr("Not enough memory."));
-                    }
-                    catch(const std::exception& ex) {
-                        qWarning() << "WARNING: Modifier" << modifier() << "has thrown a non-standard exception:" << ex.what();
-                        OVITO_ASSERT(false);
-                        throw Exception(tr("Exception: %1").arg(QString::fromLatin1(ex.what())));
-                    }
-                }
-                catch(Exception& ex) {
-                    if(throwOnError)
-                        throw;
-                    setStatus(PipelineStatus(ex));
-                    ex.prependToMessage(tr("Modifier '%1' reported: ").arg(modifier()->objectTitle()));
-                    inputData.setStatus(PipelineStatus(ex, QStringLiteral(" ")));
-                    return std::move(inputData);
-                }
-                catch(...) {
-                    if(throwOnError)
-                        throw;
-                    OVITO_ASSERT_MSG(false, "ModificationNode::evaluate()", "Caught an unexpected exception type during modifier evaluation.");
-                    PipelineStatus status(PipelineStatus::Error, tr("Unknown exception caught during evaluation of modifier '%1'.").arg(modifier()->objectTitle()));
-                    setStatus(status);
-                    inputData.setStatus(status);
-                    return std::move(inputData);
-                }
-            });
-        });
-}
-
-/******************************************************************************
-* Lets the pipeline stage compute a preliminary result in a synchronous fashion.
-******************************************************************************/
-PipelineFlowState ModificationNode::evaluateInternalSynchronous(const PipelineEvaluationRequest& request)
-{
-    OVITO_ASSERT(!isUndoRecording());
-
-    PipelineFlowState state;
-
-    if(input()) {
-        // First get the preliminary results from the upstream pipeline.
-        state = input()->evaluateSynchronous(request);
-        try {
-            if(!state)
-                throw Exception(tr("Modifier input is empty."));
-
-            // Apply modifier:
-            if(modifierAndGroupEnabled())
-                modifier()->evaluateSynchronous(ModifierEvaluationRequest(request, this), state);
+    // Check if results exist in the form of an async compute engine, which can be reused as is.
+    ModifierEnginePtr existingEngine;
+    if(completedEngine()) {
+        if(completedEngine()->validityInterval().contains(request.time())) {
+            existingEngine = completedEngine();
+            output.intersectValidityInterval(existingEngine->validityInterval());
         }
-        catch(const Exception& ex) {
-            if(request.throwOnError())
-                throw;
-            // Turn exceptions thrown during modifier evaluation into an error pipeline state (unless throwOnError is set).
-            state.setStatus(PipelineStatus(ex, QStringLiteral(": ")));
-        }
-        catch(const std::bad_alloc&) {
-            if(request.throwOnError())
-                throw Exception(tr("Not enough memory."));
-            // Turn exceptions thrown during modifier evaluation into an error pipeline state (unless throwOnError is set).
-            state.setStatus(PipelineStatus(PipelineStatus::Error, tr("Not enough memory.")));
-        }
-        catch(const std::exception& ex) {
-            qWarning() << "WARNING: Modifier" << modifier() << "has thrown a non-standard exception:" << ex.what();
-            OVITO_ASSERT(false);
-            if(request.throwOnError())
-                throw;
-            state.setStatus(PipelineStatus(PipelineStatus::Error, tr("Exception: %1").arg(QString::fromLatin1(ex.what()))));
-        }
-        catch(...) {
-            OVITO_ASSERT_MSG(false, "ModificationNode::evaluateSynchronous()", "Caught an unexpected exception type during preliminary modifier evaluation.");
-            if(request.throwOnError())
-                throw;
-            // Turn exceptions thrown during modifier evaluation into an error pipeline state.
-            state.setStatus(PipelineStatus(PipelineStatus::Error, tr("Unknown exception caught during evaluation of modifier '%1'.").arg(modifier()->objectTitle())));
+        else if(request.interactiveMode()) {
+            // If the compute results exist but are out of date, we can still try to reuse them in interactive mode.
+            // This requires flagging the pipeline output as preliminary.
+            existingEngine = completedEngine();
+            output.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Interactive);
+            output.intersectValidityInterval(request.time());
         }
     }
 
-    return state;
+    // Let the modifier function determine the validity interval of its computation
+    // and whether it can provide preliminary or full pipeline results.
+    if(!modifier()->preEvaluationRun(modifierRequest, output, existingEngine)) {
+        OVITO_ASSERT_MSG(modifierRequest.interactiveMode(), "ModificationNode::evaluateInternal", "Modifier must participate in non-interactive pipeline evaluation.");
+        // The modifier has indicated that it WON'T participate in the current interactive pipeline evaluation, because it cannot run at an interactive rate.
+        // We will skip the modifier and return the upstream pipeline results as is - after marking it as a preliminary result.
+        output.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Interactive);
+        return output;
+    }
+
+//    qDebug() << "Modifier" << objectTitle() << "interactive=" << request.interactiveMode();
+
+    // Pass the input data on to the modifier function.
+    output.postprocess(*this, [this, request = std::move(modifierRequest), existingEngine = std::move(existingEngine)](PipelineFlowState state) -> Future<PipelineFlowState> {
+        // Clear the status of the input unless it is an error state, which must be retained.
+        state.mutableStatus().resetShortInfo();
+        if(state.status().type() != PipelineStatus::Error) {
+            state.setStatus(PipelineStatus::Success);
+        }
+
+        // Sanity check: With the throwOnError option set, the input data must never be in an error state.
+        OVITO_ASSERT(!request.throwOnError() || state.status().type() != PipelineStatus::Error);
+
+        // This ModificationNode becomes a no-op if
+        //  - it doesn't have a modifier,
+        //  - the modifier is disabled,
+        //  - the upstream pipeline did not yield any data, or
+        //  - the modifier cannot be evaluated in interactive mode (this is handled by the modifier directly).
+        if(!modifierAndGroupEnabled() || !state)
+            return state;
+
+        // Check if async computation results exist that can be reused as is.
+        if(existingEngine) {
+            // Inject the computation results of the engine back into the pipeline, applying them to the new input state.
+            existingEngine->applyResults(request, state);
+            return state;
+        }
+
+        Future<PipelineFlowState> future;
+        bool interactiveMode = request.interactiveMode();
+
+        // Ask the modifier to create an async compute engine to perform the computation (may not be supported by some modifiers).
+        Future<ModifierEnginePtr> engineFuture = modifier()->createEngine(request, state);
+        if(engineFuture.isValid()) {
+
+            // Wait for the compute engine to become available.
+            future = engineFuture.then(*this, [this, request = std::move(request), state = std::move(state)](ModifierEnginePtr engine) mutable {
+
+                // Launch the engine (or execute the work in the current thread if it is small).
+                auto execFuture = engine->preferSynchronousExecution() ? engine->runImmediately(true) : engine->runAsync(true);
+
+                // Wait for the compute engine to complete.
+                return execFuture.then(*this, [this, engine = std::move(engine), request = std::move(request), state = std::move(state)]() mutable {
+
+                    // Apply the computed results to the input pipeline state.
+                    engine->applyResults(request, state);
+
+                    // Double-check that engine has applied its state validity interval to the pipeline data.
+                    OVITO_ASSERT(engine->validityInterval().contains(state.stateValidity().start()) && engine->validityInterval().contains(state.stateValidity().end()));
+
+                    // Store the compute engine (including the results that it holds) in the modification node for later reuse.
+                    setCompletedEngine(std::move(engine));
+
+                    return std::move(state);
+                });
+            });
+        }
+        else {
+            // Modifier does not use async compute engine. Perform the computation using the future-based interface.
+            future = modifier()->evaluateModifier(request, state);
+        }
+
+        // Register the task with this pipeline stage to indicate in the UI that this stage is currently performing work.
+        if(!interactiveMode)
+            registerActiveFuture(future);
+
+        return future;
+    });
+
+    // Post-process the modifier results before returning them to the caller.
+    // Turn any exception thrown during modifier evaluation into a
+    // valid pipeline state with an error code (unless throwOnError is set).
+    output.postprocess(*this, [this, input = std::move(input), throwOnError = request.throwOnError(), interactiveMode = request.interactiveMode()](SharedFuture<PipelineFlowState> future) mutable {
+        OVITO_ASSERT(future.isFinished() && !future.isCanceled());
+        OVITO_ASSERT(input.isFinished() && !input.isCanceled());
+        try {
+            try {
+                const PipelineFlowState& state = future.result();
+
+                // Indicate the status of the modifier calculation in the GUI.
+                if(!interactiveMode)
+                    setStatus(state.status());
+
+                return state;
+            }
+            catch(const Exception&) {
+                throw;  // Pass through regular exceptions.
+            }
+            catch(const std::bad_alloc&) {
+                throw Exception(tr("Not enough memory."));
+            }
+            catch(const std::exception& ex) {
+                OVITO_ASSERT_MSG(false, "ModificationNode::evaluateInternal()", "Caught an unexpected exception type during modifier evaluation.");
+                throw Exception(tr("A non-standard exception occurred: %1").arg(QString::fromLatin1(ex.what())));
+            }
+            catch(...) {
+                OVITO_ASSERT_MSG(false, "ModificationNode::evaluateInternal()", "Caught an unknown exception type during modifier evaluation.");
+                throw Exception(tr("An unknown exception occurred."));
+            }
+        }
+        catch(Exception& ex) {
+            if(throwOnError)
+                throw;
+
+            // Indicate the failure of the modifier calculation in the GUI.
+            if(!interactiveMode)
+                setStatus(ex);
+
+            ex.prependToMessage(tr("Modifier '%1' reported: ").arg(modifier()->objectTitle()));
+
+            // Fall back to the results produced by the upstream pipeline.
+            // Note: This should never throw an exception, because the input pipeline results have already been access successfully.
+            try {
+                PipelineFlowState state = input.result();
+                state.setStatus(PipelineStatus(ex, QStringLiteral(" ")));
+                return state;
+            }
+            catch(...) {
+                OVITO_ASSERT_MSG(false, "ModificationNode::evaluateInternal()", "Caught an unexpected exception type during modifier fallback.");
+                return PipelineFlowState(nullptr, PipelineStatus(PipelineStatus::Error, tr("An unknown exception occurred.")));
+            }
+        }
+    });
+
+    return output;
 }
 
 /******************************************************************************
-* Returns the number of animation frames this pipeline object can provide.
-******************************************************************************/
+ * Returns the number of animation frames this pipeline object can provide.
+ ******************************************************************************/
 int ModificationNode::numberOfSourceFrames() const
 {
     OVITO_ASSERT(ExecutionContext::current().isValid());
@@ -497,8 +504,8 @@ int ModificationNode::numberOfSourceFrames() const
 }
 
 /******************************************************************************
-* Given an animation time, computes the source frame to show.
-******************************************************************************/
+ * Given an animation time, computes the source frame to show.
+ ******************************************************************************/
 int ModificationNode::animationTimeToSourceFrame(AnimationTime time) const
 {
     int frame = input() ? input()->animationTimeToSourceFrame(time) : PipelineNode::animationTimeToSourceFrame(time);
@@ -508,8 +515,8 @@ int ModificationNode::animationTimeToSourceFrame(AnimationTime time) const
 }
 
 /******************************************************************************
-* Given a source frame index, returns the animation time at which it is shown.
-******************************************************************************/
+ * Given a source frame index, returns the animation time at which it is shown.
+ ******************************************************************************/
 AnimationTime ModificationNode::sourceFrameToAnimationTime(int frame) const
 {
     AnimationTime time = input() ? input()->sourceFrameToAnimationTime(frame) : PipelineNode::sourceFrameToAnimationTime(frame);
@@ -519,8 +526,8 @@ AnimationTime ModificationNode::sourceFrameToAnimationTime(int frame) const
 }
 
 /******************************************************************************
-* Returns the human-readable labels associated with the animation frames.
-******************************************************************************/
+ * Returns the human-readable labels associated with the animation frames.
+ ******************************************************************************/
 QMap<int, QString> ModificationNode::animationFrameLabels() const
 {
     QMap<int, QString> labels = input() ? input()->animationFrameLabels() : PipelineNode::animationFrameLabels();
@@ -530,21 +537,20 @@ QMap<int, QString> ModificationNode::animationFrameLabels() const
 }
 
 /******************************************************************************
-* Returns a short piece information (typically a string or color) to be
-* displayed next to the object's title in the pipeline editor.
-******************************************************************************/
+ * Returns a short piece information (typically a string or color) to be
+ * displayed next to the object's title in the pipeline editor.
+ ******************************************************************************/
 QVariant ModificationNode::getPipelineEditorShortInfo(Scene* scene) const
 {
     QVariant info = ActiveObject::getPipelineEditorShortInfo(scene);
-    if(!info.isValid() && modifier())
-        info.setValue(modifier()->getPipelineEditorShortInfo(scene, const_cast<ModificationNode*>(this)));
+    if(!info.isValid() && modifier()) info.setValue(modifier()->getPipelineEditorShortInfo(scene, const_cast<ModificationNode*>(this)));
     return info;
 }
 
 /******************************************************************************
-* Traverses the pipeline from this modifier application up to the source and
-* returns the source object that generates the input data for the pipeline.
-******************************************************************************/
+ * Traverses the pipeline from this modifier application up to the source and
+ * returns the source object that generates the input data for the pipeline.
+ ******************************************************************************/
 PipelineNode* ModificationNode::pipelineSource() const
 {
     PipelineNode* node = input();
@@ -558,10 +564,10 @@ PipelineNode* ModificationNode::pipelineSource() const
 }
 
 /******************************************************************************
-* Returns the modification node that precedes this node in the pipeline.
-* If this node is referenced by more than one pipeline node (=it is preceded by a pipeline branch),
-* then nullptr is returned.
-******************************************************************************/
+ * Returns the modification node that precedes this node in the pipeline.
+ * If this node is referenced by more than one pipeline node (=it is preceded by a pipeline branch),
+ * then nullptr is returned.
+ ******************************************************************************/
 ModificationNode* ModificationNode::getPredecessorModNode() const
 {
     int pipelineCount = 0;
@@ -584,31 +590,32 @@ ModificationNode* ModificationNode::getPredecessorModNode() const
 }
 
 /******************************************************************************
-* Returns the title of this modification node.
-******************************************************************************/
+ * Returns the title of this modification node.
+ ******************************************************************************/
 QString ModificationNode::objectTitle() const
 {
     if(modifier())
-        return modifier()->objectTitle(); // Inherit title from modifier.
+        return modifier()->objectTitle();  // Inherit title from modifier.
     else
         return PipelineNode::objectTitle();
 }
 
 /******************************************************************************
-* Returns whether the modifier AND the modifier group (if this node is part of one) are enabled.
-******************************************************************************/
+ * Returns whether the modifier AND the modifier group (if this node is part of one) are enabled.
+ ******************************************************************************/
 bool ModificationNode::modifierAndGroupEnabled() const
 {
     return modifier() && modifier()->isEnabled() && (!modifierGroup() || modifierGroup()->isEnabled());
 }
 
 /******************************************************************************
-* Decides whether a preliminary viewport update is performed after this pipeline object has been
-* evaluated but before the rest of the pipeline is complete.
-******************************************************************************/
+ * Decides whether a preliminary viewport update is performed after this pipeline object has been
+ * evaluated but before the rest of the pipeline is complete.
+ ******************************************************************************/
 bool ModificationNode::performPreliminaryUpdateAfterEvaluation()
 {
-    return PipelineNode::performPreliminaryUpdateAfterEvaluation() && (!modifier() || modifier()->performPreliminaryUpdateAfterEvaluation());
+    return PipelineNode::performPreliminaryUpdateAfterEvaluation() &&
+           (!modifier() || modifier()->performPreliminaryUpdateAfterEvaluation());
 }
 
-}   // End of namespace
+}  // namespace Ovito

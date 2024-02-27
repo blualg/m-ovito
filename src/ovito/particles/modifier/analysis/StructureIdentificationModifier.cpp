@@ -118,6 +118,8 @@ StructureIdentificationModifier::StructureIdentificationEngine::StructureIdentif
 ******************************************************************************/
 void StructureIdentificationModifier::StructureIdentificationEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
+    ModifierEngine::applyResults(request, state);
+
     StructureIdentificationModifier* modifier = static_object_cast<StructureIdentificationModifier>(request.modifier());
     OVITO_ASSERT(modifier);
 

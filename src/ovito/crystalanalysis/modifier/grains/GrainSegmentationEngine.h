@@ -371,9 +371,6 @@ public:
         return ModifierEngine::modifierChanged(event);
     }
 
-    /// Creates another engine that performs the next stage of the computation.
-    virtual ModifierEnginePtr createContinuationEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
-
     /// Returns the property storage that contains the input particle positions.
     const ConstPropertyPtr& positions() const { return _positions; }
 

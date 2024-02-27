@@ -149,7 +149,7 @@ void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
         // the first available typed property as color source.
         if(!modifier() && !sourceProperty() && !colorMapping() && viewport->scene()) {
             viewport->scene()->visitPipelines([&](Pipeline* pipeline) {
-                const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(viewport->scene()->animationSettings()->currentTime(), false);
+                const PipelineFlowState& state = pipeline->getCachedPipelineOutput(viewport->scene()->animationSettings()->currentTime());
                 for(const ConstDataObjectPath& dataPath : state.getObjectsRecursive(Property::OOClass())) {
                     const Property* property = static_object_cast<Property>(dataPath.back());
                     // Check if the property is a typed property, i.e. it has one or more ElementType objects attached to it.
@@ -274,21 +274,11 @@ void ColorLegendOverlay::render(FrameGraph& frameGraph, const QRect& logicalView
         scene->visitPipelines([&](Pipeline* pipeline) {
 
             // Evaluate pipeline and obtain output data collection.
-            if(!frameGraph.isInteractive()) {
-                PipelineEvaluationRequest request(frameGraph.time());
-                request.setThrowOnError(frameGraph.stopOnPipelineError());
-                PipelineEvaluationFuture pipelineEvaluation = pipeline->evaluatePipeline(request);
-                if(!pipelineEvaluation.waitForFinished())
-                    return false;
+            PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
+            const PipelineFlowState state = pipeline->evaluatePipeline(request).result();
 
-                // Look up the typed property.
-                typedProperty = pipelineEvaluation.result().getLeafObject(sourceProperty());
-            }
-            else {
-                const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(frameGraph.time(), false);
-                // Look up the typed property.
-                typedProperty = state.getLeafObject(sourceProperty());
-            }
+            // Look up the typed property.
+            typedProperty = state.getLeafObject(sourceProperty());
             if(typedProperty)
                 return false;
 
@@ -372,23 +362,10 @@ void ColorLegendOverlay::render(FrameGraph& frameGraph, const QRect& logicalView
             startValue = std::numeric_limits<FloatType>::quiet_NaN();
             endValue = std::numeric_limits<FloatType>::quiet_NaN();
             if(ModificationNode* modNode = modifier()->someNode()) {
-                QVariant minValue, maxValue;
-                PipelineEvaluationRequest request(frameGraph.time());
-                request.setThrowOnError(frameGraph.stopOnPipelineError());
-                if(!frameGraph.isInteractive()) {
-                    SharedFuture<PipelineFlowState> stateFuture = modNode->evaluate(request);
-                    if(!stateFuture.waitForFinished())
-                        return;
-
-                    const PipelineFlowState& state = stateFuture.result();
-                    minValue = state.getAttributeValue(modNode, QStringLiteral("ColorCoding.RangeMin"));
-                    maxValue = state.getAttributeValue(modNode, QStringLiteral("ColorCoding.RangeMax"));
-                }
-                else {
-                    const PipelineFlowState& state = modNode->evaluateSynchronous(request);
-                    minValue = state.getAttributeValue(modNode, QStringLiteral("ColorCoding.RangeMin"));
-                    maxValue = state.getAttributeValue(modNode, QStringLiteral("ColorCoding.RangeMax"));
-                }
+                PipelineEvaluationResult stateFuture = modNode->evaluate(PipelineEvaluationRequest(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive()));
+                const PipelineFlowState& state = stateFuture.result();
+                QVariant minValue = state.getAttributeValue(modNode, QStringLiteral("ColorCoding.RangeMin"));
+                QVariant maxValue = state.getAttributeValue(modNode, QStringLiteral("ColorCoding.RangeMax"));
                 if(minValue.isValid() && maxValue.isValid()) {
                     startValue = minValue.value<FloatType>();
                     endValue = maxValue.value<FloatType>();

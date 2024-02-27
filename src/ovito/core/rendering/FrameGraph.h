@@ -297,13 +297,13 @@ public:
 	const ObjectPickingGroup* lookupPickingGroupFromObjectId(quint32 objectID) const;
 
 	/// Generates the visual representation of a scene node (and all its children).
-	bool renderSceneNode(OORef<SceneNode> node, OORef<Viewport> viewport);
+	void renderSceneNode(OORef<SceneNode> node, OORef<Viewport> viewport);
 
 	/// Generates the visual representation of a data object and all its sub-objects.
-	bool renderDataObject(const DataObject* dataObj, const Pipeline* pipeline, const PipelineFlowState& state, ConstDataObjectPath& dataObjectPath);
+	void renderDataObject(const DataObject* dataObj, const Pipeline* pipeline, const PipelineFlowState& state, ConstDataObjectPath& dataObjectPath);
 
 	/// Render the overlays/underlays of a viewport.
-	bool renderOverlays(Viewport* viewport, bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams);
+	void renderOverlays(Viewport* viewport, bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams);
 
 	/// Renders a 2d polyline or polygon into an interactive viewport.
 	void render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed);

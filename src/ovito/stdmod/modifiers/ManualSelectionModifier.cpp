@@ -56,7 +56,7 @@ void ManualSelectionModifier::initializeModifier(const ModifierInitializationReq
 
     // Take a snapshot of the existing selection state at the time the modifier is created.
     if(!getSelectionSet(request.modificationNode(), false)) {
-        resetSelection(request.modificationNode(), request.modificationNode()->evaluateInputSynchronous(request));
+        resetSelection(request.modificationNode(), request.modificationNode()->evaluateInput(request).result());
     }
 }
 
@@ -69,7 +69,12 @@ void ManualSelectionModifier::propertyChanged(const PropertyFieldDescriptor* fie
     if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
         PipelineEvaluationRequest request(ExecutionContext::current().ui().datasetContainer().currentAnimationTime());
         for(ModificationNode* node : nodes()) {
-            resetSelection(node, node->evaluateInputSynchronous(request));
+            try {
+                resetSelection(node, node->evaluateInput(request).result());
+            }
+            catch(...) {
+                // Ignore exceptions that occur during upstream pipeline evaluation.
+            }
         }
     }
     GenericPropertyModifier::propertyChanged(field);
@@ -78,7 +83,7 @@ void ManualSelectionModifier::propertyChanged(const PropertyFieldDescriptor* fie
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void ManualSelectionModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void ManualSelectionModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     // Retrieve the selection stored in the modifier application.
     ElementSelectionSet* selectionSet = getSelectionSet(request.modificationNode(), false);

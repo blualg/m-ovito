@@ -39,9 +39,11 @@ class OVITO_CORE_EXPORT PipelineEvaluationRequest
 public:
 
     /// Constructs a request object for evaluating the pipeline at a certain animation time.
-    PipelineEvaluationRequest(AnimationTime time = AnimationTime::fromFrame(0)) :
+    PipelineEvaluationRequest(AnimationTime time = AnimationTime::fromFrame(0), bool throwOnError = false, bool interactiveMode = false) :
         _time(time),
-        _cachingIntervals(time) {}
+        _cachingIntervals(time),
+        _throwOnError(throwOnError),
+        _interactiveMode(interactiveMode) {}
 
     /// Constructs a request object for evaluating the pipeline at the current animation time.
     PipelineEvaluationRequest(AnimationSettings* animationSettings) : PipelineEvaluationRequest(animationSettings->currentTime()) {}
@@ -61,6 +63,14 @@ public:
     /// Sets whether the pipeline system should abort the evaluation by throwing an exception as soon as a first error occurs in one of the pipeline stages.
     void setThrowOnError(bool enable = true) { _throwOnError = enable; }
 
+    /// Returns whether long-running pipeline steps should be skipped. In interactive mode,
+    /// the pipeline system may choose to skip the evaluation of certain pipeline stages in order to
+    /// generate a preliminary result faster. This is useful for interactive rendering in the viewports.
+    bool interactiveMode() const { return _interactiveMode; }
+
+    /// Sets whether long-running pipeline steps should be skipped.
+    void setInteractiveMode(bool interactive) { _interactiveMode = interactive; }
+
     /// Returns the animation time intervals over which the pipeline should pre-cache the state.
     const TimeIntervalUnion& cachingIntervals() const { return _cachingIntervals; }
 
@@ -75,49 +85,13 @@ private:
     /// Controls whether the pipeline system should abort the evaluation by throwing an exception as soon as a first error occurs in one of the modifiers.
     bool _throwOnError = false;
 
+    /// Controls whether long-running pipeline steps should be skipped. In interactive mode,
+    /// the pipeline system may choose to skip the evaluation of certain pipeline stages in order to
+    /// generate a preliminary result faster. This is useful for interactive rendering in the viewports.
+    bool _interactiveMode = false;
+
     /// Indicates to the upstream pipeline stages which animation frames they should keep in the cache.
     TimeIntervalUnion _cachingIntervals;
-};
-
-/**
- * \brief This helper class manages the evaluation of a PipelineSceneNode.
- */
-class OVITO_CORE_EXPORT PipelineEvaluationFuture : public SharedFuture<PipelineFlowState>
-{
-public:
-
-    /// Default constructor.
-    PipelineEvaluationFuture() = default;
-
-    /// Constructs a pipeline evaluation object for a given evaluation request.
-    explicit PipelineEvaluationFuture(const PipelineEvaluationRequest& request) : _request(request) {}
-
-    /// Constructs a pipeline evaluation object and initializes it with an existing future.
-    explicit PipelineEvaluationFuture(const PipelineEvaluationRequest& request, SharedFuture<PipelineFlowState>&& future, Pipeline* pipeline = nullptr) :
-        SharedFuture<PipelineFlowState>(std::move(future)),
-        _request(request),
-        _pipeline(pipeline) {}
-
-    /// Resets the state of the pipeline evaluation.
-    void reset() {
-        SharedFuture<PipelineFlowState>::reset();
-        _request.reset();
-        _pipeline = nullptr;
-    }
-
-    /// Returns the animation time at which the pipeline is being evaluated.
-    AnimationTime time() const { OVITO_ASSERT(_request); return _request->time(); }
-
-    /// Returns the pipeline that is being evaluated.
-    Pipeline* pipeline() const { return _pipeline; }
-
-private:
-
-    /// Request that triggered the pipeline evaluation.
-    std::optional<PipelineEvaluationRequest> _request;
-
-    /// Pipeline currently being evaluated.
-    Pipeline* _pipeline = nullptr;
 };
 
 }   // End of namespace

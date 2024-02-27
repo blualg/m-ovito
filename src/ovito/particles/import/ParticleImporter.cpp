@@ -507,7 +507,7 @@ void ParticleImporter::FrameLoader::loadFile()
 /******************************************************************************
 * Is called when importing multiple files of different formats.
 ******************************************************************************/
-bool ParticleImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, Pipeline* pipeline)
+void ParticleImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, Pipeline* pipeline)
 {
     OVITO_ASSERT(!sourceUrlsAndImporters.empty());
     OORef<ParticleImporter> nextImporter = dynamic_object_cast<ParticleImporter>(sourceUrlsAndImporters.front().second);
@@ -531,18 +531,19 @@ bool ParticleImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<QU
         sourceUrlsAndImporters.erase(sourceUrlsAndImporters.begin(), iter);
 
         // Set the input file location(s) and importer.
-        if(!fileSource->setSource(std::move(sourceUrls), nextImporter, autodetectFileSequences))
-            return {};
+        fileSource->setSource(std::move(sourceUrls), nextImporter, autodetectFileSequences);
+        this_task::throwIfCanceled();
 
         // Create a modifier for injecting the trajectory data into the existing pipeline.
         OORef<LoadTrajectoryModifier> loadTrjMod = OORef<LoadTrajectoryModifier>::create();
         loadTrjMod->setTrajectorySource(std::move(fileSource));
-        pipeline->applyModifier(scene->animationSettings()->currentTime(), std::move(loadTrjMod));
+        pipeline->applyModifier(scene->animationSettings()->currentTime(), true, std::move(loadTrjMod));
 
         if(sourceUrlsAndImporters.empty())
-            return true;
+            return;
     }
-    return FileSourceImporter::importFurtherFiles(scene, std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, multiFileImportMode, pipeline);
+
+    FileSourceImporter::importFurtherFiles(scene, std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, multiFileImportMode, pipeline);
 }
 
 }   // End of namespace

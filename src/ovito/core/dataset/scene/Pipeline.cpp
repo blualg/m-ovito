@@ -25,7 +25,7 @@
 #include <ovito/core/dataset/data/DataObject.h>
 #include <ovito/core/dataset/data/TransformingDataVis.h>
 #include <ovito/core/dataset/pipeline/PipelineNode.h>
-#include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
+#include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
@@ -80,6 +80,7 @@ void Pipeline::preEvaluationCheck() const
         head()->preEvaluationCheck();
 }
 
+#if 0 // TODO
 /******************************************************************************
 * Performs a synchronous evaluation of the pipeline yielding only preliminary results.
 ******************************************************************************/
@@ -90,24 +91,7 @@ const PipelineFlowState& Pipeline::evaluatePipelineSynchronous(const PipelineEva
         _pipelineRenderingCache.evaluatePipelineSynchronous(request) :
         _pipelineCache.evaluatePipelineSynchronous(request);
 }
-
-/******************************************************************************
-* Performs an asynchronous evaluation of the data pipeline.
-******************************************************************************/
-PipelineEvaluationFuture Pipeline::evaluatePipeline(const PipelineEvaluationRequest& request)
-{
-    OVITO_ASSERT(ExecutionContext::current().isValid());
-    return PipelineEvaluationFuture(request, _pipelineCache.evaluatePipeline(request), this);
-}
-
-/******************************************************************************
-* Performs an asynchronous evaluation of the data pipeline.
-******************************************************************************/
-PipelineEvaluationFuture Pipeline::evaluateRenderingPipeline(const PipelineEvaluationRequest& request)
-{
-    OVITO_ASSERT(ExecutionContext::current().isValid());
-    return PipelineEvaluationFuture(request, _pipelineRenderingCache.evaluatePipeline(request), this);
-}
+#endif
 
 /******************************************************************************
 * Invalidates the data pipeline cache of the object node.
@@ -212,8 +196,8 @@ bool Pipeline::referenceEvent(RefTarget* source, const ReferenceEvent& event)
         else if(event.type() == ReferenceEvent::PreliminaryStateAvailable) {
             if(preliminaryUpdatesEnabled()) {
                 // Invalidate the cache whenever the pipeline can provide a new preliminary state.
-                _pipelineCache.invalidateSynchronousState();
-                _pipelineRenderingCache.invalidateSynchronousState();
+                _pipelineCache.invalidateInteractiveState();
+                _pipelineRenderingCache.invalidateInteractiveState();
                 // Also recompute the cached bounding box of this scene node.
                 invalidateBoundingBox();
                 // Inform all vis elements that their input state has changed when the pipeline reports that a new preliminary output state is available.
@@ -348,7 +332,7 @@ QString Pipeline::objectTitle() const
 /******************************************************************************
 * Applies a modifier by appending a node for it to the pipeline.
 ******************************************************************************/
-ModificationNode* Pipeline::applyModifier(AnimationTime time, Modifier* modifier)
+ModificationNode* Pipeline::applyModifier(AnimationTime time, bool interactiveMode, Modifier* modifier)
 {
     OVITO_ASSERT(modifier);
     OVITO_ASSERT(ExecutionContext::current().isValid());
@@ -356,7 +340,7 @@ ModificationNode* Pipeline::applyModifier(AnimationTime time, Modifier* modifier
     OORef<ModificationNode> node = modifier->createModificationNode();
     node->setModifier(modifier);
     node->setInput(head());
-    modifier->initializeModifier(ModifierInitializationRequest(time, node));
+    modifier->initializeModifier(ModifierInitializationRequest(time, false, interactiveMode, node));
     setHead(node);
     return node;
 }
@@ -399,7 +383,7 @@ void Pipeline::setSource(PipelineNode* sourceObject)
 ******************************************************************************/
 Box3 Pipeline::localBoundingBox(AnimationTime time, TimeInterval& validity) const
 {
-    const PipelineFlowState& state = const_cast<Pipeline*>(this)->evaluatePipelineSynchronous(time, true);
+    const PipelineFlowState& state = getCachedRenderingPipelineOutput(time);
 
     // Let visual elements compute the bounding boxes of the data objects.
     Box3 bb;

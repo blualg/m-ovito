@@ -979,7 +979,7 @@ Color Particles::OOMetaClass::getElementTypeDefaultColor(const PropertyReference
 /******************************************************************************
 * Returns the index of the element that was picked in a viewport.
 ******************************************************************************/
-std::pair<size_t, ConstDataObjectPath> Particles::OOMetaClass::elementFromPickResult(const ViewportPickResult& pickResult) const
+std::pair<size_t, ConstDataObjectPath> Particles::OOMetaClass::elementFromPickResult(const ViewportWindow::PickResult& pickResult) const
 {
     // Check if a particle was picked.
     if(const ParticlePickInfo* pickInfo = dynamic_object_cast<ParticlePickInfo>(pickResult.pickInfo())) {

@@ -100,7 +100,7 @@ struct ViewProjectionParameters
 
         if(isPerspective) {
             Point3 p = viewMatrix * worldPosition;
-            if(p == Point3::Origin())
+            if(p.isOrigin())
                 return 1;
             Point3 p1 = projectionMatrix * p;
             Point3 p2 = projectionMatrix * (p + Vector3(0,1,0));
@@ -123,7 +123,8 @@ struct ViewProjectionParameters
         if(isPerspective) {
 
             Point3 p = viewMatrix * worldPosition;
-            if(p.z() == 0) return 1;
+            if(p.isOrigin())
+                return 1;
 
             Point3 p1 = projectionMatrix * p;
             Point3 p2 = projectionMatrix * (p + Vector3(1,0,0));

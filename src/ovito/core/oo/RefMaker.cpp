@@ -264,11 +264,11 @@ bool RefMaker::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 ******************************************************************************/
 bool RefMaker::hasReferenceTo(const RefTarget* target) const
 {
-    if(!target) return false;
-    OVITO_CHECK_OBJECT_POINTER(target);
+    OVITO_ASSERT(target != nullptr);
 
     for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
-        if(!field->isReferenceField()) continue;
+        if(!field->isReferenceField())
+            continue;
         if(!field->isVector()) {
             if(field->_singleReferenceReadFunc(this) == target)
                 return true;
@@ -278,6 +278,7 @@ bool RefMaker::hasReferenceTo(const RefTarget* target) const
                 return true;
         }
     }
+
     return false;
 }
 
@@ -286,8 +287,7 @@ bool RefMaker::hasReferenceTo(const RefTarget* target) const
 ******************************************************************************/
 bool RefMaker::hasStrongReferenceTo(const RefTarget* target) const
 {
-    if(!target) return false;
-    OVITO_CHECK_OBJECT_POINTER(target);
+    OVITO_ASSERT(target != nullptr);
 
     for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
         if(!field->isReferenceField()) continue;

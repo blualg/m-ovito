@@ -23,7 +23,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
-#include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
+#include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "ReferenceConfigurationModifier.h"
@@ -68,6 +68,7 @@ bool ReferenceConfigurationModifier::OOMetaClass::isApplicableTo(const DataColle
     return input.containsObject<Particles>();
 }
 
+#if 0 // TODO
 /******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.
 ******************************************************************************/
@@ -81,6 +82,7 @@ TimeInterval ReferenceConfigurationModifier::validityInterval(const ModifierEval
     }
     return iv;
 }
+#endif
 
 /******************************************************************************
 * Throws an exception if the pipeline stage cannot be evaluated at this time.
@@ -97,28 +99,27 @@ void ReferenceConfigurationModifier::preEvaluationCheck() const
 * Asks the modifier for the set of animation time intervals that should be
 * cached by the upstream pipeline.
 ******************************************************************************/
-void ReferenceConfigurationModifier::inputCachingHints(TimeIntervalUnion& cachingIntervals, ModificationNode* node)
+void ReferenceConfigurationModifier::inputCachingHints(ModifierEvaluationRequest& request)
 {
-    Modifier::inputCachingHints(cachingIntervals, node);
-
     // Only need to communicate caching hints when reference configuration is provided by the upstream pipeline.
     if(!referenceConfiguration()) {
         if(useReferenceFrameOffset()) {
             // When using a relative reference configuration, we need to build the corresponding set of shifted time intervals.
-            TimeIntervalUnion originalIntervals = cachingIntervals;
-            for(const TimeInterval& iv : originalIntervals) {
-                int startFrame = node->animationTimeToSourceFrame(iv.start());
-                int endFrame = node->animationTimeToSourceFrame(iv.end());
-                AnimationTime shiftedStartTime = node->sourceFrameToAnimationTime(startFrame + referenceFrameOffset());
-                AnimationTime shiftedEndTime = node->sourceFrameToAnimationTime(endFrame + referenceFrameOffset());
-                cachingIntervals.add(TimeInterval(shiftedStartTime, shiftedEndTime));
+            for(const TimeInterval& iv : TimeIntervalUnion(request.cachingIntervals())) {
+                int startFrame = request.modificationNode()->animationTimeToSourceFrame(iv.start());
+                int endFrame = request.modificationNode()->animationTimeToSourceFrame(iv.end());
+                AnimationTime shiftedStartTime = request.modificationNode()->sourceFrameToAnimationTime(startFrame + referenceFrameOffset());
+                AnimationTime shiftedEndTime = request.modificationNode()->sourceFrameToAnimationTime(endFrame + referenceFrameOffset());
+                request.modifiableCachingIntervals().add(TimeInterval(shiftedStartTime, shiftedEndTime));
             }
         }
         else {
             // When using a static reference configuration, ask the upstream pipeline to cache the corresponding animation frame.
-            cachingIntervals.add(node->sourceFrameToAnimationTime(referenceFrameNumber()));
+            request.modifiableCachingIntervals().add(request.modificationNode()->sourceFrameToAnimationTime(referenceFrameNumber()));
         }
     }
+
+    Modifier::inputCachingHints(request);
 }
 
 /******************************************************************************
@@ -156,6 +157,10 @@ bool ReferenceConfigurationModifier::referenceEvent(RefTarget* source, const Ref
 ******************************************************************************/
 Future<ModifierEnginePtr> ReferenceConfigurationModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
+    // If pipeline is in interactive mode, skip the long-running computation step.
+    if(request.interactiveMode())
+        return {};
+
     // What is the reference frame number to use?
     TimeInterval validityInterval = input.stateValidity();
     int referenceFrame;
@@ -180,13 +185,10 @@ Future<ModifierEnginePtr> ReferenceConfigurationModifier::createEngine(const Mod
     // Obtain the reference positions of the particles, either from the upstream pipeline or from a user-specified reference data source.
     SharedFuture<PipelineFlowState> refState;
     if(!referenceConfiguration()) {
-        // Convert frame to animation time.
-        AnimationTime referenceTime = request.modificationNode()->sourceFrameToAnimationTime(referenceFrame);
-
         // Set up the pipeline request for obtaining the reference configuration.
-        PipelineEvaluationRequest referenceRequest = request;
-        referenceRequest.setTime(referenceTime);
-        inputCachingHints(referenceRequest.modifiableCachingIntervals(), request.modificationNode());
+        ModifierEvaluationRequest referenceRequest = request;
+        referenceRequest.setTime(request.modificationNode()->sourceFrameToAnimationTime(referenceFrame));
+        inputCachingHints(referenceRequest);
 
         // Send the request to the upstream pipeline.
         refState = request.modificationNode()->evaluateInput(referenceRequest);

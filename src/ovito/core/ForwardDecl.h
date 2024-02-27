@@ -112,7 +112,7 @@ namespace Ovito
     class PipelineNode;
     class PipelineCache;
     class PipelineEvaluationRequest;
-    class PipelineEvaluationFuture;
+    class PipelineEvaluationResult;
     class DataVis;
     class TransformingDataVis;
     class StaticSource;

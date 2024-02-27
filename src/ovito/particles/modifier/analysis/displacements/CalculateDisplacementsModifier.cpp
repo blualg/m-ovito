@@ -166,6 +166,8 @@ void CalculateDisplacementsModifier::DisplacementEngine::perform()
 ******************************************************************************/
 void CalculateDisplacementsModifier::DisplacementEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
+    ModifierEngine::applyResults(request, state);
+
     CalculateDisplacementsModifier* modifier = static_object_cast<CalculateDisplacementsModifier>(request.modifier());
 
     Particles* particles = state.expectMutableObject<Particles>();

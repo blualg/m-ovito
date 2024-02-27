@@ -46,7 +46,9 @@ public:
 #endif
 
     /// Injects the computed results into the data pipeline.
-    virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) = 0;
+    virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) {
+        state.intersectStateValidity(validityInterval());
+    }
 
     /// This method is called by the system whenever a parameter of the modifier changes.
     /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be
@@ -59,9 +61,6 @@ public:
     /// should rather be immediately discarded (return false).
     virtual bool pipelineInputChanged() { return true; }
 
-    /// Creates another engine that performs the next stage of the computation.
-    virtual ModifierEnginePtr createContinuationEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) { return {}; }
-
     /// Decides whether the computation is sufficiently short to perform
     /// it synchronously within the GUI thread. The default implementation returns false,
     /// which means the computation will be performed asynchronously in a worker thread.
@@ -72,11 +71,6 @@ public:
 
     /// Changes the validity interval of the computation results.
     void setValidityInterval(const TimeInterval& iv) { _validityInterval = iv; }
-
-#if 0 // TODO: Remove if not needed anymore
-    /// Returns the modification pipeline node.
-    const ModificationNode* modificationNode() const { return _request.modificationNode(); }
-#endif
 
 private:
 

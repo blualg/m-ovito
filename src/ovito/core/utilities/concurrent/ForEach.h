@@ -147,7 +147,7 @@ auto for_each_sequential(
 
             // Check if the awaited future completed with an error.
             if(future.task()->exceptionStore()) {
-                this->exceptionLocked(future.task()->copyExceptionStore());
+                this->exceptionLocked(future.task()->exceptionStore());
                 this->finishLocked(locker);
                 return;
             }

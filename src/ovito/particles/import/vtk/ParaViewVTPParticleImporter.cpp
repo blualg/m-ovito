@@ -102,8 +102,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 
     // Parse the elements of the XML file.
     while(xml.readNextStartElement()) {
-        if(isCanceled())
-            return;
+        this_task::throwIfCanceled();
 
         if(xml.name().compare(QLatin1String("VTKFile")) == 0) {
             if(xml.attributes().value("type").compare(QLatin1String("PolyData")) != 0)
@@ -188,8 +187,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
         throw Exception(tr("VTP file parsing error on line %1, column %2: %3")
             .arg(xml.lineNumber()).arg(xml.columnNumber()).arg(xml.errorString()));
     }
-    if(isCanceled())
-        return;
+    this_task::throwIfCanceled();
 
     // Convert superquadric 'Blockiness' values from the Aspherix simulation to 'Roundness' values used by OVITO particle visualization.
     bool transposeOrientations = false;
@@ -205,8 +203,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
             if(v.y() != 0) v.y() = GraphicsFloatType(2) / v.y();
         }
         transposeOrientations = true;
-        if(isCanceled())
-            return;
+        this_task::throwIfCanceled();
     }
 
     // Convert 3x3 'Tensor' property into particle orientation.
@@ -222,8 +219,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                 else
                     *q++ = QuaternionG::Identity();
             }
-            if(isCanceled())
-                return;
+            this_task::throwIfCanceled();
         }
     }
 
@@ -379,8 +375,6 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
         // Let the importer parse the geometry file.
         return importer->loadFrame(loadRequest);
     });
-    if(!stateFuture.waitForFinished())
-        return;
 
     // Check if the importer has loaded any data.
     PipelineFlowState state = stateFuture.result();

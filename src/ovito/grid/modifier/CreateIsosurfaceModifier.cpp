@@ -64,6 +64,7 @@ CreateIsosurfaceModifier::CreateIsosurfaceModifier(ObjectInitializationFlags fla
     }
 }
 
+#if 0 // TODO
 /******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.
 ******************************************************************************/
@@ -74,6 +75,7 @@ TimeInterval CreateIsosurfaceModifier::validityInterval(const ModifierEvaluation
         iv.intersect(isolevelController()->validityInterval(request.time()));
     return iv;
 }
+#endif
 
 /******************************************************************************
 * Is called when the value of a property of this object has changed.
@@ -119,7 +121,7 @@ void CreateIsosurfaceModifier::initializeModifier(const ModifierInitializationRe
 
     // Use the first available voxel grid from the input state as data source when the modifier is newly created.
     if(sourceProperty().isNull() && subject().dataPath().isEmpty() && ExecutionContext::isInteractive()) {
-        const PipelineFlowState& input = request.modificationNode()->evaluateInputSynchronous(request);
+        const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
         if(const VoxelGrid* grid = input.getObject<VoxelGrid>()) {
             setSubject(PropertyContainerReference(&grid->getOOMetaClass(), grid->identifier()));
         }
@@ -127,7 +129,7 @@ void CreateIsosurfaceModifier::initializeModifier(const ModifierInitializationRe
 
     // Use the first available property from the input grid as data source when the modifier is newly created.
     if(sourceProperty().isNull() && subject() && ExecutionContext::isInteractive()) {
-        const PipelineFlowState& input = request.modificationNode()->evaluateInputSynchronous(request);
+        const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
         if(const VoxelGrid* grid = dynamic_object_cast<VoxelGrid>(input.getLeafObject(subject()))) {
             for(const Property* property : grid->properties()) {
                 setSourceProperty(VoxelPropertyReference(property, (property->componentCount() > 1) ? 0 : -1));
@@ -143,6 +145,10 @@ void CreateIsosurfaceModifier::initializeModifier(const ModifierInitializationRe
 ******************************************************************************/
 Future<ModifierEnginePtr> CreateIsosurfaceModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
+    // If pipeline is in interactive mode, skip the long-running computation step.
+    if(request.interactiveMode())
+        return {};
+
     if(!subject())
         throw Exception(tr("No input voxel grid set."));
     if(subject().dataClass() != &VoxelGrid::OOClass())
@@ -320,6 +326,8 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
 ******************************************************************************/
 void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
+    ModifierEngine::applyResults(request, state);
+
     state.addObjectWithUniqueId<SurfaceMesh>(_mesh);
     state.addObjectWithUniqueId<DataTable>(_histogram);
     state.setStatus(PipelineStatus(tr("Field value range: [%1, %2]")

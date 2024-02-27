@@ -219,7 +219,7 @@ void TextLabelOverlayEditor::updateEditorFields()
     if(TextLabelOverlay* overlay = static_object_cast<TextLabelOverlay>(editObject())) {
         if((pipeline = overlay->pipeline())) {
             handleExceptions([&] {
-                const PipelineFlowState& flowState = pipeline->evaluatePipelineSynchronous(currentAnimationTime(), false);
+                const PipelineFlowState& flowState = pipeline->getCachedPipelineOutput(currentAnimationTime());
                 if(flowState.data()) {
                     str.append(tr("<p>Dynamic attributes that can be referenced in the label text:</b><ul>"));
                     for(const QString& attrName : flowState.buildAttributesMap().keys()) {

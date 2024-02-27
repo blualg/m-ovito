@@ -135,11 +135,13 @@ public:
     /// Constructor.
     using Modifier::Modifier;
 
-    /// \brief Determines the time interval over which a computed pipeline state will remain valid.
+#if 0 // TODO
+    /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
+#endif
 
     /// Modifies the input data synchronously.
-    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 protected:
 
@@ -192,11 +194,13 @@ public:
     /// Constructor.
     using Modifier::Modifier;
 
-    /// \brief Determines the time interval over which a computed pipeline state will remain valid.
+#if 0 // TODO
+    /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
+#endif
 
     /// Modifies the input data synchronously.
-    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
 protected:
 

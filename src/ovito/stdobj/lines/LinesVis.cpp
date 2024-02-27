@@ -68,7 +68,7 @@ QString LinesPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
         }
 
         if(!str.isEmpty()) str += " ";
-        str += (i == 0) ? tr("<b>Head:</b> ") : tr("<sep><b>Tail:</b> ");
+        str += (i == 0) ? tr("<section>Head:</section> ") : tr("<sep><section>Tail:</section> ");
         str += QStringLiteral("<key>Index:</key> ");
         str += QString::number(index);
         str += QStringLiteral("</val>");

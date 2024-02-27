@@ -100,12 +100,20 @@ public:
     }
 
     /// \brief Blocks execution until this future is fulfilled.
-    /// \return false if either this future or the task waiting for it have been canceled.
-    [[nodiscard]] bool waitForFinished() const& { return Task::waitFor(this->task(), true); }
+    /// Throws an OperationCanceled exception if the future or the task awaiting it got canceled.
+    /// Throws an exception if the awaited task has failed to complete.
+    void waitForFinished() const & {
+        if(!Task::waitFor(this->task(), true))
+            throw OperationCanceled();
+    }
 
     /// \brief Blocks execution until this future is fulfilled.
-    /// \return false if either this future or the task waiting for it have been canceled.
-    [[nodiscard]] bool waitForFinished() && { return Task::waitFor(std::move(this->_task), true); }
+    /// Throws an OperationCanceled exception if the future or the task awaiting it got canceled.
+    /// Throws an exception if the awaited task has failed to complete.
+    void waitForFinished() && {
+        if(!Task::waitFor(std::move(this->_task), true))
+            throw OperationCanceled();
+    }
 
 protected:
 
@@ -240,9 +248,9 @@ public:
     /// This function may only be called after the Promise was fulfilled (and not canceled).
     tuple_type results() {
         OVITO_ASSERT_MSG(isValid(), "Future::results()", "Future must be valid.");
+        waitForFinished();
         OVITO_ASSERT_MSG(isFinished(), "Future::results()", "Future must be in fulfilled state.");
         OVITO_ASSERT_MSG(!isCanceled(), "Future::results()", "Future must not be canceled.");
-        task()->throwPossibleException();
         tuple_type result = task()->template takeResults<tuple_type>();
         reset();
         return result;
@@ -254,7 +262,10 @@ public:
             return std::get<0>(results());
         }
         else {
-            task()->throwPossibleException();
+            OVITO_ASSERT_MSG(isValid(), "Future::results()", "Future must be valid.");
+            waitForFinished();
+            OVITO_ASSERT_MSG(isFinished(), "Future::results()", "Future must be in fulfilled state.");
+            OVITO_ASSERT_MSG(!isCanceled(), "Future::results()", "Future must not be canceled.");
             reset();
         }
     }
@@ -292,7 +303,7 @@ public:
 /// The provided continuation function must accept the results of this future as an input parameter.
 template<typename... R>
 template<typename Executor, typename Function>
-detail::continuation_future_type<Function,Future<R...>>
+detail::continuation_future_type<Function, Future<R...>>
 Future<R...>::then(Executor&& executor, Function&& f)
 {
     // Infer the exact future/promise/task types to create.
@@ -339,7 +350,7 @@ Future<R...>::then(Executor&& executor, Function&& f)
         // Forward any preceding exception state directly to the continuation task.
         if constexpr(!std::is_invocable_v<Function, Future<R...>>) {
             if(finishedTask->exceptionStore()) {
-                continuationTask->exceptionLocked(finishedTask->copyExceptionStore());
+                continuationTask->exceptionLocked(finishedTask->exceptionStore());
                 continuationTask->finishLocked(locker);
                 return;
             }

@@ -205,10 +205,10 @@ Box3I ReplicateModifier::replicaRange() const
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void ReplicateModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void ReplicateModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     // Apply all enabled modifier delegates to the input data.
-    MultiDelegatingModifier::evaluateSynchronous(request, state);
+    MultiDelegatingModifier::evaluateModifierSynchronous(request, state);
 
     // Resize the simulation cell if enabled.
     if(adjustBoxSize()) {

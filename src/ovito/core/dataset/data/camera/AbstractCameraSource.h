@@ -65,6 +65,9 @@ public:
 
     /// Returns whether this camera uses a perspective projection.
     virtual bool isPerspectiveCamera() const = 0;
+
+    /// Lets the source generate a camera object for the given animation time.
+    virtual DataOORef<const AbstractCameraObject> cameraObject(AnimationTime time) const = 0;
 };
 
 }   // End of namespace

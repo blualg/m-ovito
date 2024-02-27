@@ -104,7 +104,7 @@ public:
     virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
 
     /// \brief Renders an overlay marker for a single dislocation segment.
-    void renderOverlayMarker(AnimationTime time, const DataObject* dataObject, const PipelineFlowState& flowState, int segmentIndex, SceneRenderer* renderer, const Pipeline* pipeline);
+    void renderOverlayMarker(const DataObject* dataObject, const PipelineFlowState& flowState, int segmentIndex, FrameGraph& frameGraph, const Pipeline* pipeline);
 
     /// \brief Generates a pretty string representation of a Burgers vector.
     static QString formatBurgersVector(const Vector3& b, const MicrostructurePhase* structure);

@@ -49,7 +49,6 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
         modifier/properties/SmoothTrajectoryModifierEditor.cpp
         modifier/properties/GenerateTrajectoryLinesModifierEditor.cpp
         modifier/properties/ParticlesComputePropertyModifierDelegateEditor.cpp
-        modifier/properties/InteractiveMolecularDynamicsModifierEditor.cpp
         util/CutoffRadiusPresetsUI.cpp
         util/ParticlePickingHelper.cpp
         util/ParticleSettingsPage.cpp

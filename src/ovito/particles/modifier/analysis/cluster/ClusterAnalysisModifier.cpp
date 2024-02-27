@@ -84,6 +84,10 @@ bool ClusterAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 ******************************************************************************/
 Future<ModifierEnginePtr> ClusterAnalysisModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
+    // If pipeline is in interactive mode, skip the long-running computation step.
+    if(request.interactiveMode())
+        return {};
+
     // Get the current particle positions.
     const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
@@ -528,6 +532,8 @@ void ClusterAnalysisModifier::BondClusterAnalysisEngine::doClustering(std::vecto
 ******************************************************************************/
 void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
+    ModifierEngine::applyResults(request, state);
+
     ClusterAnalysisModifier* modifier = static_object_cast<ClusterAnalysisModifier>(request.modifier());
     Particles* particles = state.expectMutableObject<Particles>();
 

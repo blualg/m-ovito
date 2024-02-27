@@ -91,7 +91,7 @@ void ScatterPlotModifier::initializeModifier(const ModifierInitializationRequest
 
     // Use the first available property from the input state as data source when the modifier is newly created.
     if((xAxisProperty().isNull() || yAxisProperty().isNull()) && subject() && ExecutionContext::isInteractive()) {
-        const PipelineFlowState& input = request.modificationNode()->evaluateInputSynchronous(request);
+        const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
         if(const PropertyContainer* container = input.getLeafObject(subject())) {
             PropertyReference bestProperty;
             for(const Property* property : container->properties()) {
@@ -128,7 +128,7 @@ void ScatterPlotModifier::propertyChanged(const PropertyFieldDescriptor* field)
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void ScatterPlotModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void ScatterPlotModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     if(!subject())
         throw Exception(tr("No data element type set."));

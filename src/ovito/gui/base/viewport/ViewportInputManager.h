@@ -68,7 +68,7 @@ public:
     /// \param mode The mode to remove from the stack.
     void removeInputMode(ViewportInputMode* mode);
 
-    /// Returns the list of active viewport gizmos.
+    /// Returns the list of active viewport gizmos that are displayed in all viewports.
     const std::vector<ViewportGizmo*>& viewportGizmos() const { return _viewportGizmos; }
 
     /// Adds a gizmo to be shown in the interactive viewports.

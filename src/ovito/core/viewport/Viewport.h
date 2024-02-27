@@ -190,6 +190,15 @@ public:
     ///        returns false if it is using an orthogonal projection.
     bool isPerspectiveProjection() const;
 
+    /// Returns the list of active viewport gizmos that are displayed in this viewport.
+    const std::vector<ViewportGizmo*>& viewportGizmos() const { return _viewportGizmos; }
+
+    /// Adds a gizmo to be shown in this interactive viewport.
+    void addViewportGizmo(ViewportGizmo* gizmo);
+
+    /// Removes a gizmo, which will no longer be shown in this viewport.
+    void removeViewportGizmo(ViewportGizmo* gizmo);
+
 protected:
 
     /// Is called when the value of a property field of this object has changed.
@@ -253,6 +262,9 @@ private:
 
     /// The scene to be displayed by this viewport.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Scene>, scene, setScene, PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
+
+    /// List of viewport gizmos displayed in this viewport only.
+    std::vector<ViewportGizmo*> _viewportGizmos;
 
     /// Qt signal/slot connection to get notified when the global viewport settings change.
     QMetaObject::Connection _viewportSettingsChangedConnection;

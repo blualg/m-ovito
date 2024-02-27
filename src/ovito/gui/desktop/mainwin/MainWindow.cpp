@@ -473,9 +473,8 @@ void MainWindow::closeEvent(QCloseEvent* event)
 
     handleExceptions([&] {
         // Let the user save changes made to the current dataset.
-        if(isVisible() && !askForSaveChanges()) {
-            return;
-        }
+        if(isVisible())
+            askForSaveChanges();
 
         // Don't allow user to interact with the window anymore.
         setEnabled(false);
@@ -583,15 +582,14 @@ void MainWindow::dropEvent(QDropEvent* event)
 {
     event->acceptProposedAction();
     std::vector<QUrl> importUrls;
-    handleExceptions([&] {
+    bool success = handleExceptions([&] {
         for(const QUrl& url : event->mimeData()->urls()) {
             if(url.fileName().endsWith(".ovito", Qt::CaseInsensitive)) {
                 if(url.isLocalFile()) {
-                    if(askForSaveChanges()) {
-                        OORef<DataSet> dataset = DataSet::createFromFile(url.toLocalFile());
-                        if(checkLoadedDataset(dataset))
-                            datasetContainer().setCurrentSet(std::move(dataset));
-                    }
+                    askForSaveChanges();
+                    OORef<DataSet> dataset = DataSet::createFromFile(url.toLocalFile());
+                    if(checkLoadedDataset(dataset))
+                        datasetContainer().setCurrentSet(std::move(dataset));
                     importUrls.clear();
                     return;
                 }
@@ -601,7 +599,7 @@ void MainWindow::dropEvent(QDropEvent* event)
             }
         }
     });
-    if(!importUrls.empty()) {
+    if(success && !importUrls.empty()) {
         performTransaction(tr("Import data"), [&] {
             importFiles(std::move(importUrls));
         });
@@ -960,15 +958,14 @@ bool MainWindow::fileSaveAs(const QString& filename)
 /******************************************************************************
 * If the scene has been changed this will ask the user if he wants
 * to save the changes.
-* Returns false if the operation has been canceled by the user.
 ******************************************************************************/
-bool MainWindow::askForSaveChanges()
+void MainWindow::askForSaveChanges()
 {
     OVITO_ASSERT(ExecutionContext::current().isValid());
     OORef<DataSet> dataset = datasetContainer().currentSet();
 
     if(!dataset || dataset->filePath().isEmpty() || undoStack()->isClean())
-        return true;
+        return;
 
     QString message;
     if(dataset->filePath().isEmpty() == false) {
@@ -982,20 +979,19 @@ bool MainWindow::askForSaveChanges()
     QMessageBox::StandardButton result = MessageDialog::question(this, tr("Save changes"),
         message,
         QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel, QMessageBox::Cancel);
-    if(result == QMessageBox::Cancel)
-        return false; // Operation canceled by user
-    else if(result == QMessageBox::No)
-        return true; // Continue without saving scene first.
-    else {
+    if(result == QMessageBox::Cancel) {
+        this_task::cancelAndThrow();
+    }
+    else if(result != QMessageBox::No) {
         // Save scene first.
-        return fileSave();
+        fileSave();
     }
 }
 
 /******************************************************************************
 * Imports a given file into the scene.
 ******************************************************************************/
-bool MainWindow::importFiles(const std::vector<QUrl>& urls, const FileImporterClass* importerType, const QString& importerFormat)
+void MainWindow::importFiles(const std::vector<QUrl>& urls, const FileImporterClass* importerType, const QString& importerFormat)
 {
     OVITO_ASSERT(ExecutionContext::current().isValid());
     OVITO_ASSERT(!urls.empty());
@@ -1016,9 +1012,6 @@ bool MainWindow::importFiles(const std::vector<QUrl>& urls, const FileImporterCl
 
             // Detect file format.
             Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(url);
-            if(!importerFuture.waitForFinished())
-                return false;
-
             importer = importerFuture.result();
             if(!importer)
                 throw Exception(tr("Could not auto-detect the format of the file %1. The file format might not be supported.").arg(url.fileName()));
@@ -1051,8 +1044,8 @@ bool MainWindow::importFiles(const std::vector<QUrl>& urls, const FileImporterCl
             if(editorClass && editorClass->isDerivedFrom(FileImporterEditor::OOClass())) {
                 OORef<FileImporterEditor> editor = dynamic_object_cast<FileImporterEditor>(editorClass->createInstance());
                 if(editor) {
-                    if(!editor->inspectNewFile(importer, url, *this))
-                        return false;
+                    editor->inspectNewFile(importer, url, *this);
+                    this_task::throwIfCanceled();
                 }
             }
         }
@@ -1089,13 +1082,12 @@ bool MainWindow::importFiles(const std::vector<QUrl>& urls, const FileImporterCl
         msgBox.exec();
 
         if(msgBox.clickedButton() == msgBox.button(QMessageBox::Cancel)) {
-            return false; // Operation canceled by user.
+            this_task::cancelAndThrow(); // Operation canceled by user.
         }
         else if(msgBox.clickedButton() == msgBox.button(QMessageBox::Yes)) {
             importMode = FileImporter::ResetScene;
             // Ask user if current scene should be saved before it is replaced by the imported data.
-            if(!askForSaveChanges())
-                return false;
+            askForSaveChanges();
         }
         else if(msgBox.clickedButton() == addToSceneButton) {
             importMode = FileImporter::AddToScene;
@@ -1112,14 +1104,13 @@ bool MainWindow::importFiles(const std::vector<QUrl>& urls, const FileImporterCl
             QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel, QMessageBox::Cancel);
 
         if(result == QMessageBox::Cancel) {
-            return false; // Operation canceled by user.
+            this_task::cancelAndThrow(); // Operation canceled by user.
         }
         else if(result == QMessageBox::No) {
             importMode = FileImporter::ResetScene;
 
             // Ask user if current scene should be saved before it is replaced by the imported data.
-            if(!askForSaveChanges())
-                return false;
+            askForSaveChanges();
         }
         else {
             importMode = FileImporter::AddToScene;
@@ -1134,10 +1125,7 @@ bool MainWindow::importFiles(const std::vector<QUrl>& urls, const FileImporterCl
             undoStack()->clear();
             dataset->setFilePath({});
         }
-        return true;
     }
-
-    return false;
 }
 
 }   // End of namespace

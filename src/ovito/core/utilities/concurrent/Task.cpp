@@ -165,14 +165,14 @@ void Task::cancelAndFinishLocked(MutexLocker& locker) noexcept
 /******************************************************************************
 * Puts this task into the 'exception' state to signal that an error has occurred.
 ******************************************************************************/
-void Task::exceptionLocked(std::exception_ptr&& ex) noexcept
+void Task::exceptionLocked(std::exception_ptr ex) noexcept
 {
     OVITO_ASSERT(ex != std::exception_ptr());
 
     // Make sure the task isn't already canceled or finished.
     OVITO_ASSERT(!(_state.load(std::memory_order_relaxed) & (Canceled | Finished)));
 
-    _exceptionStore = std::move(ex); // NOLINT
+    _exceptionStore = std::move(ex);
 }
 
 /******************************************************************************

@@ -59,13 +59,10 @@ public:
     using Modifier::Modifier;
 
     /// Modifies the input data.
-    virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
     /// Modifies the input data synchronously.
-    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-    /// Indicates that this modifier wants preliminary viewport updates whenever its parameters change.
-    virtual bool performPreliminaryUpdateAfterChange() override { return true; }
+    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 };
 
 /**

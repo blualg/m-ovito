@@ -38,7 +38,7 @@ SET_OVITO_OBJECT_EDITOR(LAMMPSDataImporter, LAMMPSDataImporterEditor);
 * This method is called by the FileSource each time a new source
 * file has been selected by the user.
 ******************************************************************************/
-bool LAMMPSDataImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow)
+void LAMMPSDataImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow)
 {
     LAMMPSDataImporter* dataImporter = static_object_cast<LAMMPSDataImporter>(importer);
 
@@ -48,8 +48,7 @@ bool LAMMPSDataImporterEditor::inspectNewFile(FileImporter* importer, const QUrl
     {
         // Block UI until reading is done.
         ProgressDialog progressDialog(&mainWindow, inspectFuture, tr("Inspecting file header"));
-        if(!inspectFuture.waitForFinished())
-            return false;
+        inspectFuture.waitForFinished();
     }
 
     LAMMPSDataImporter::LAMMPSAtomStyleHints detectedAtomStyleHints = inspectFuture.result();
@@ -75,7 +74,7 @@ bool LAMMPSDataImporterEditor::inspectNewFile(FileImporter* importer, const QUrl
 
         LAMMPSAtomStyleDialog dlg(mainWindow, detectedAtomStyleHints, &mainWindow);
         if(dlg.exec() != QDialog::Accepted)
-            return false;
+            this_task::cancelAndThrow();
 
         settings.setValue("DefaultAtomStyle", LAMMPSDataImporter::atomStyleName(detectedAtomStyleHints.atomStyle));
         if(detectedAtomStyleHints.atomStyle == LAMMPSDataImporter::AtomStyle_Hybrid) {
@@ -87,8 +86,6 @@ bool LAMMPSDataImporterEditor::inspectNewFile(FileImporter* importer, const QUrl
     }
     dataImporter->setAtomStyle(detectedAtomStyleHints.atomStyle);
     dataImporter->setAtomSubStyles(std::move(detectedAtomStyleHints.atomSubStyles));
-
-    return true;
 }
 
 /******************************************************************************

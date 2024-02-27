@@ -88,7 +88,7 @@ FileSource::FileSource(ObjectInitializationFlags flags) : BasePipelineSource(fla
 /******************************************************************************
 * Sets the source location for importing data.
 ******************************************************************************/
-bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* importer, bool autodetectFileSequences, bool keepExistingDataCollection)
+void FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* importer, bool autodetectFileSequences, bool keepExistingDataCollection)
 {
     OVITO_ASSERT(ExecutionContext::current().isValid());
 
@@ -102,7 +102,7 @@ bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* imp
     }
 
     if(this->sourceUrls() == sourceUrls && this->importer() == importer)
-        return true;
+        return;
 
     if(!sourceUrls.empty()) {
         QFileInfo fileInfo(sourceUrls.front().path());
@@ -135,7 +135,7 @@ bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* imp
         }
 
         if(this->sourceUrls() == sourceUrls && this->importer() == importer)
-            return true;
+            return;
     }
 
     // Make the call to setSource() undoable.
@@ -177,8 +177,6 @@ bool FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* imp
 
     if(turnOffPatternGeneration)
         setAutoGenerateFilePattern(false);
-
-    return true;
 }
 
 /******************************************************************************
@@ -196,7 +194,7 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::updateListOfFrames(
 
     // Display any errors that occurred during scan operation to the user.
     framesFuture.finally(*this, [](Task& task) {
-        try { task.throwPossibleException(); }
+        try { if(!task.isCanceled()) task.throwPossibleException(); }
         catch(const Exception& ex) { ExecutionContext::current().ui().reportError(ex); }
         catch(...) {}
     });
@@ -349,103 +347,107 @@ QMap<int, QString> FileSource::animationFrameLabels() const
 }
 
 /******************************************************************************
-* Determines the time interval over which a computed pipeline state will remain valid.
-******************************************************************************/
-TimeInterval FileSource::validityInterval(const PipelineEvaluationRequest& request) const
-{
-    TimeInterval iv = BasePipelineSource::validityInterval(request);
-
-    // Restrict the validity interval to the duration of the requested source frame.
-    if(restrictToFrame() < 0 && frames().size() > 1) {
-        int frame = animationTimeToSourceFrame(request.time());
-        if(frame > 0)
-            iv.intersect(TimeInterval(sourceFrameToAnimationTime(frame), AnimationTime::positiveInfinity()));
-        if(frame < frames().size() - 1)
-            iv.intersect(TimeInterval(AnimationTime::negativeInfinity(), std::max(sourceFrameToAnimationTime(frame + 1) - 1, sourceFrameToAnimationTime(frame))));
-    }
-
-    return iv;
-}
-
-/******************************************************************************
 * Asks the object for the result of the data pipeline.
 ******************************************************************************/
-Future<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvaluationRequest& request)
+PipelineEvaluationResult FileSource::evaluateInternal(const PipelineEvaluationRequest& request)
 {
     // Convert the animation time to a frame number.
     int frame = animationTimeToSourceFrame(request.time());
     int frameCount = frames().size();
 
+    // Determine the time interval over which a loaded pipeline state will remain valid.
+    // Restrict the validity interval to the duration of the requested source frame.
+    TimeInterval validityInterval = TimeInterval::infinite();
+    if(restrictToFrame() < 0 && frameCount > 1) {
+        if(frame > 0)
+            validityInterval.intersect(TimeInterval(sourceFrameToAnimationTime(frame), AnimationTime::positiveInfinity()));
+        if(frame < frameCount - 1)
+            validityInterval.intersect(TimeInterval(AnimationTime::negativeInfinity(), std::max(sourceFrameToAnimationTime(frame + 1) - 1, sourceFrameToAnimationTime(frame))));
+    }
+
+#if 0 // TODO
+    if(request.interactiveMode()) {
+        // In interactive mode, there is not enough time to wait for file I/O. Therefore, we directly
+        // return the current internal state to serve the evaluation request immediately.
+        return Future<PipelineFlowState>::createImmediateEmplace(evaluateInternalSynchronous(request).asPreliminaryState());
+    }
+#endif
+
     // Clamp to frame range.
-    if(frame < 0) frame = 0;
-    else if(frame >= frameCount && frameCount > 0) frame = frameCount - 1;
+    if(frame < 0)
+        frame = 0;
+    else if(frame >= frameCount && frameCount > 0)
+        frame = frameCount - 1;
 
-    OVITO_ASSERT(frameTimeInterval(frame).contains(request.time()));
+    // First, request the list of trajectory frames.
+    SharedFuture<QVector<FileSourceImporter::Frame>> framesListFuture = requestFrameList(false);
 
-    // First request the list of source frames and wait until it becomes available.
-    Future<PipelineFlowState> stateFuture = requestFrameList(false)
-        .then(*this, [this, frame](const QVector<FileSourceImporter::Frame>& sourceFrames) -> Future<PipelineFlowState> {
+    // Then continue by loading the file that contains the requested frame.
+    Future<PipelineFlowState> stateFuture = framesListFuture.then(*this, [this, frame](const QVector<FileSourceImporter::Frame>& sourceFrames) -> Future<PipelineFlowState> {
 
-            // Is the requested frame out of range?
-            if(frame >= sourceFrames.size()) {
-                TimeInterval interval = TimeInterval::infinite();
-                if(frame < 0)
-                    interval.setEnd(sourceFrameToAnimationTime(0) - 1);
-                else if(frame >= sourceFrames.size() && !sourceFrames.empty())
-                    interval.setStart(sourceFrameToAnimationTime(sourceFrames.size()));
-                else if(sourceFrames.empty() && _framesValid)
-                    return PipelineFlowState(dataCollection(), PipelineStatus(PipelineStatus::Error, tr("No frames found.")), interval);
-                return PipelineFlowState(dataCollection(), PipelineStatus(PipelineStatus::Error, tr("The file source path is empty or has not been set (no files found).")), interval);
+        // Is the requested frame number out of range?
+        if(frame >= sourceFrames.size()) {
+            TimeInterval interval = TimeInterval::infinite();
+            if(frame < 0)
+                interval.setEnd(sourceFrameToAnimationTime(0) - 1);
+            else if(frame >= sourceFrames.size() && !sourceFrames.empty())
+                interval.setStart(sourceFrameToAnimationTime(sourceFrames.size()));
+            else if(sourceFrames.empty() && _framesValid)
+                return PipelineFlowState(dataCollection(), PipelineStatus(PipelineStatus::Error, tr("No frames found.")), interval);
+            return PipelineFlowState(dataCollection(), PipelineStatus(PipelineStatus::Error, tr("The file source path is empty or has not been set (no files found).")), interval);
+        }
+        else if(frame < 0) {
+            return PipelineFlowState(dataCollection(), PipelineStatus(PipelineStatus::Error, tr("The requested source frame is out of range.")));
+        }
+
+        // Retrieve the source file.
+        SharedFuture<FileHandle> fileFuture = Application::instance()->fileManager().fetchUrl(sourceFrames[frame].sourceFile);
+
+        // Pass the file to the file importer.
+        return fileFuture.then(*this, [this, frame](const FileHandle& fileHandle) -> Future<PipelineFlowState> {
+
+            // Without an importer object we have to give up immediately.
+            if(!importer()) {
+                // In case of an error, just return the stale data that we have cached.
+                return PipelineFlowState(dataCollection(), PipelineStatus(PipelineStatus::Error, tr("The file source path has not been set.")));
             }
-            else if(frame < 0) {
-                return PipelineFlowState(dataCollection(), PipelineStatus(PipelineStatus::Error, tr("The requested source frame is out of range.")));
-            }
+            if(frame >= frames().size())
+                throw Exception(tr("Requested source frame index is out of range."));
 
-            // Retrieve the file.
-            Future<PipelineFlowState> loadFrameFuture = Application::instance()->fileManager().fetchUrl(sourceFrames[frame].sourceFile)
-                .then(*this, [this, frame](const FileHandle& fileHandle) -> Future<PipelineFlowState> {
+            // Compute the validity interval of the returned pipeline state.
+            TimeInterval interval = frameTimeInterval(frame);
+            const FileSourceImporter::Frame& frameInfo = frames()[frame];
 
-                    // Without an importer object we have to give up immediately.
-                    if(!importer()) {
-                        // In case of an error, just return the stale data that we have cached.
-                        return PipelineFlowState(dataCollection(), PipelineStatus(PipelineStatus::Error, tr("The file source path has not been set.")));
-                    }
-                    if(frame >= frames().size())
-                        throw Exception(tr("Requested source frame index is out of range."));
+            // Set up the load request to be submitted to the FileSourceImporter.
+            FileSourceImporter::LoadOperationRequest loadRequest;
+            loadRequest.pipelineNode = std::static_pointer_cast<PipelineNode>(shared_from_this());
+            loadRequest.fileHandle = fileHandle;
+            loadRequest.frame = frameInfo;
+            loadRequest.isNewlyImportedFile = (dataCollection() == nullptr);
+            loadRequest.state.setData(dataCollection()
+                ? DataOORef<const DataCollection>(dataCollection())
+                : DataOORef<const DataCollection>::create());
 
-                    // Compute the validity interval of the returned pipeline state.
-                    TimeInterval interval = frameTimeInterval(frame);
-                    const FileSourceImporter::Frame& frameInfo = frames()[frame];
+            // Add some standard global attributes to the pipeline state to indicate where it is coming from.
+            loadRequest.state.setAttribute(QStringLiteral("SourceFrame"), frame, this);
+            loadRequest.state.setAttribute(QStringLiteral("SourceFile"), frameInfo.sourceFile.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded), this);
 
-                    // Set up the load request to be submitted to the FileSourceImporter.
-                    FileSourceImporter::LoadOperationRequest loadRequest;
-                    loadRequest.pipelineNode = std::static_pointer_cast<PipelineNode>(shared_from_this());
-                    loadRequest.fileHandle = fileHandle;
-                    loadRequest.frame = frameInfo;
-                    loadRequest.isNewlyImportedFile = (dataCollection() == nullptr);
-                    loadRequest.state.setData(dataCollection()
-                        ? DataOORef<const DataCollection>(dataCollection())
-                        : DataOORef<const DataCollection>::create());
+            // Also give the state the precomputed validity interval.
+            loadRequest.state.setStateValidity(interval);
 
-                    // Add some standard global attributes to the pipeline state to indicate where it is coming from.
-                    loadRequest.state.setAttribute(QStringLiteral("SourceFrame"), frame, this);
-                    loadRequest.state.setAttribute(QStringLiteral("SourceFile"), frameInfo.sourceFile.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded), this);
-
-                    // Also give the state the precomputed validity interval.
-                    loadRequest.state.setStateValidity(interval);
-
-                    // Load the frame data and return results to the caller.
-                    return importer()->loadFrame(loadRequest);
-                });
-
-            // Change activity status during long-running load operations.
-            registerActiveFuture(loadFrameFuture);
-
-            return loadFrameFuture;
+            // Load the frame data and return results to the caller.
+            return importer()->loadFrame(loadRequest);
         });
+    });
+
+    // Build the pipeline evaluation results.
+    PipelineEvaluationResult result(std::move(stateFuture), PipelineEvaluationResult::EvaluationType::Both, frameTimeInterval(frame));
+    OVITO_ASSERT(result.validityInterval().contains(request.time()));
 
     // Post-process the results of the loading operation before returning them to the caller.
-    return postprocessDataCollection(frame, frameTimeInterval(frame), std::move(stateFuture), request.throwOnError());
+    postprocessDataCollection(result, request);
+
+    return result;
 }
 
 /******************************************************************************

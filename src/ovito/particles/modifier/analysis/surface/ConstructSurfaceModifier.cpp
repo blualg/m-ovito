@@ -108,6 +108,10 @@ bool ConstructSurfaceModifier::OOMetaClass::isApplicableTo(const DataCollection&
 ******************************************************************************/
 Future<ModifierEnginePtr> ConstructSurfaceModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
+    // If pipeline is in interactive mode, skip the long-running computation step.
+    if(request.interactiveMode())
+        return {};
+
     // Get input particle positions.
     const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
@@ -853,9 +857,10 @@ void ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeSurfaceDistanc
 /******************************************************************************
  * Injects the computed results into the data pipeline.
  ******************************************************************************/
-void ConstructSurfaceModifier::ConstructSurfaceEngineBase::applyResults(const ModifierEvaluationRequest& request,
-                                                                        PipelineFlowState& state)
+void ConstructSurfaceModifier::ConstructSurfaceEngineBase::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
+    ModifierEngine::applyResults(request, state);
+
     // Output the constructed surface mesh to the pipeline.
     state.addObjectWithUniqueId<SurfaceMesh>(mesh());
 
@@ -904,9 +909,9 @@ void ConstructSurfaceModifier::ConstructSurfaceEngineBase::applyResults(const Mo
  ******************************************************************************/
 void ConstructSurfaceModifier::AlphaShapeEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-    ConstructSurfaceModifier* modifier = static_object_cast<ConstructSurfaceModifier>(request.modifier());
-
     ConstructSurfaceEngineBase::applyResults(request, state);
+
+    ConstructSurfaceModifier* modifier = static_object_cast<ConstructSurfaceModifier>(request.modifier());
 
     if(surfaceParticleSelection() || particleRegionIds()) {
         Particles* particles = state.expectMutableObject<Particles>();
@@ -918,16 +923,6 @@ void ConstructSurfaceModifier::AlphaShapeEngine::applyResults(const ModifierEval
         // Output particle region IDs.
         if(particleRegionIds()) particles->createProperty(particleRegionIds());
     }
-}
-
-/******************************************************************************
-* Injects the computed results of the engine into the data pipeline.
-******************************************************************************/
-void ConstructSurfaceModifier::GaussianDensityEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
-{
-    ConstructSurfaceModifier* modifier = static_object_cast<ConstructSurfaceModifier>(request.modifier());
-
-    ConstructSurfaceEngineBase::applyResults(request, state);
 }
 
 }   // End of namespace

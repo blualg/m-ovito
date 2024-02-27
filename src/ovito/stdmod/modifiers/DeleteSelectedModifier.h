@@ -65,16 +65,13 @@ class OVITO_STDMOD_EXPORT DeleteSelectedModifier : public MultiDelegatingModifie
 
 public:
 
-    /// \brief Constructs a new instance of this class.
+    /// Constructor.
     explicit DeleteSelectedModifier(ObjectInitializationFlags flags) : MultiDelegatingModifier(flags) {
         if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
             // Generate the list of delegate objects.
             createModifierDelegates(DeleteSelectedModifierDelegate::OOClass());
         }
     }
-
-    /// Indicates that this modifier wants preliminary viewport updates whenever its parameters change.
-    virtual bool performPreliminaryUpdateAfterChange() override { return true; }
 };
 
 }   // End of namespace

@@ -73,6 +73,10 @@ bool CoordinationAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollect
 ******************************************************************************/
 Future<ModifierEnginePtr> CoordinationAnalysisModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
+    // If pipeline is in interactive mode, skip the long-running computation step.
+    if(request.interactiveMode())
+        return {};
+
     // Get the current positions.
     const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
@@ -360,6 +364,8 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
 ******************************************************************************/
 void CoordinationAnalysisModifier::CoordinationAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
+    ModifierEngine::applyResults(request, state);
+
     Particles* particles = state.expectMutableObject<Particles>();
 
     if(_inputFingerprint.hasChanged(particles))

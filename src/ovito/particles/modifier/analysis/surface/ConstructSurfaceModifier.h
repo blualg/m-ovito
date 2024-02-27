@@ -285,9 +285,6 @@ private:
         /// Computes the modifier's results and stores them in this object for later retrieval.
         virtual void perform() override;
 
-        /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
     private:
 
         /// Scaling factor applied to atomic radii.

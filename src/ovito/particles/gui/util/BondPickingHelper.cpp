@@ -38,18 +38,17 @@ namespace Ovito {
 ******************************************************************************/
 bool BondPickingHelper::pickBond(ViewportWindow* vpwin, const QPoint& clickPoint, PickResult& result)
 {
-    ViewportPickResult vpPickResult = vpwin->pick(clickPoint);
     // Check if user has clicked on something.
-    if(vpPickResult.isValid()) {
+    if(std::optional<ViewportWindow::PickResult> vpPickResult = vpwin->pick(clickPoint)) {
 
         // Check if that was a bond.
-        if(BondPickInfo* pickInfo = dynamic_object_cast<BondPickInfo>(vpPickResult.pickInfo())) {
+        if(BondPickInfo* pickInfo = dynamic_object_cast<BondPickInfo>(vpPickResult->pickInfo())) {
             if(pickInfo->particles()->bonds()) {
-                size_t bondIndex = vpPickResult.subobjectId() / 2;
+                size_t bondIndex = vpPickResult->subobjectId() / 2;
                 const Property* topologyProperty = pickInfo->particles()->bonds()->getTopology();
                 if(topologyProperty && topologyProperty->size() > bondIndex) {
                     // Save reference to the selected bond.
-                    result.pipeline = vpPickResult.pipeline();
+                    result.pipeline = vpPickResult->pipeline();
                     result.bondIndex = bondIndex;
                     return true;
                 }

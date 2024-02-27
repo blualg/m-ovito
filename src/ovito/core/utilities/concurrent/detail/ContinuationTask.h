@@ -163,7 +163,7 @@ public:
 
                 // If the preceding task failed, inherit the error state.
                 if(finishedTask->exceptionStore()) {
-                    thisTask->exceptionLocked(finishedTask->copyExceptionStore());
+                    thisTask->exceptionLocked(finishedTask->exceptionStore());
                 }
                 else {
                     // Adopt result value from the completed future.

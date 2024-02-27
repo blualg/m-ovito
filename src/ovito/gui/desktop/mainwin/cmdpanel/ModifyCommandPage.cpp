@@ -253,10 +253,6 @@ void ModifyCommandPage::onSelectedItemChanged()
 
     if(selectedObject != _propertiesPanel->editObject()) {
         _propertiesPanel->setEditObject(selectedObject);
-
-        // Request a viewport update whenever a new item in the pipeline editor is selected,
-        // because the currently selected modifier may render gizmos in the viewports.
-        _mainWindow.updateViewports();
     }
 
     // Whenever no object is selected, show information about the program.

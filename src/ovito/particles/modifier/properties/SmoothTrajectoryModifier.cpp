@@ -25,7 +25,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
-#include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
+#include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/app/Application.h>
 #include "SmoothTrajectoryModifier.h"
@@ -59,6 +59,7 @@ bool SmoothTrajectoryModifier::OOMetaClass::isApplicableTo(const DataCollection&
     return input.containsObject<Particles>();
 }
 
+#if 0 // TODO
 /******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.
 ******************************************************************************/
@@ -69,31 +70,31 @@ TimeInterval SmoothTrajectoryModifier::validityInterval(const ModifierEvaluation
     iv.intersect(request.time());
     return iv;
 }
+#endif
 
 /******************************************************************************
 * Asks the modifier for the set of animation time intervals that should be
 * cached by the upstream pipeline.
 ******************************************************************************/
-void SmoothTrajectoryModifier::inputCachingHints(TimeIntervalUnion& cachingIntervals, ModificationNode* node)
+void SmoothTrajectoryModifier::inputCachingHints(ModifierEvaluationRequest& request)
 {
-    Modifier::inputCachingHints(cachingIntervals, node);
-
-    TimeIntervalUnion originalIntervals = cachingIntervals;
-    for(const TimeInterval& iv : originalIntervals) {
+    for(const TimeInterval& iv : TimeIntervalUnion(request.cachingIntervals())) {
         // Round interval start down to the previous animation frame.
         // Round interval end up to the next animation frame.
-        int startFrame = node->animationTimeToSourceFrame(iv.start());
-        int endFrame = node->animationTimeToSourceFrame(iv.end());
-        if(node->sourceFrameToAnimationTime(endFrame) < iv.end())
+        int startFrame = request.modificationNode()->animationTimeToSourceFrame(iv.start());
+        int endFrame = request.modificationNode()->animationTimeToSourceFrame(iv.end());
+        if(request.modificationNode()->sourceFrameToAnimationTime(endFrame) < iv.end())
             endFrame++;
         startFrame -= (smoothingWindowSize() - 1) / 2;
         endFrame += smoothingWindowSize() / 2;
-        AnimationTime newStartTime = node->sourceFrameToAnimationTime(startFrame);
-        AnimationTime newEndTime = node->sourceFrameToAnimationTime(endFrame);
+        AnimationTime newStartTime = request.modificationNode()->sourceFrameToAnimationTime(startFrame);
+        AnimationTime newEndTime = request.modificationNode()->sourceFrameToAnimationTime(endFrame);
         OVITO_ASSERT(newStartTime <= iv.start());
         OVITO_ASSERT(newEndTime >= iv.end());
-        cachingIntervals.add(TimeInterval(newStartTime, newEndTime));
+        request.modifiableCachingIntervals().add(TimeInterval(newStartTime, newEndTime));
     }
+
+    Modifier::inputCachingHints(request);
 }
 
 /******************************************************************************
@@ -112,7 +113,7 @@ void SmoothTrajectoryModifier::restrictInputValidityInterval(TimeInterval& iv) c
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> SmoothTrajectoryModifier::evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<PipelineFlowState> SmoothTrajectoryModifier::evaluateModifier(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Determine the current frame, preferably from the attribute stored with the pipeline flow state.
     // If the source frame attribute is not present, fall back to inferring it from the current animation time.
@@ -176,7 +177,7 @@ Future<PipelineFlowState> SmoothTrajectoryModifier::evaluate(const ModifierEvalu
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void SmoothTrajectoryModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void SmoothTrajectoryModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     // Determine the current frame, preferably from the attribute stored with the pipeline flow state.
     // If the source frame attribute is not present, fall back to inferring it from the current animation time.
@@ -198,7 +199,7 @@ void SmoothTrajectoryModifier::evaluateSynchronous(const ModifierEvaluationReque
         AnimationTime time2 = request.modificationNode()->sourceFrameToAnimationTime(nextFrame);
 
         // Get the second frame.
-        const PipelineFlowState& state2 = request.modificationNode()->evaluateInputSynchronous(PipelineEvaluationRequest(time2));
+        const PipelineFlowState& state2 = request.modificationNode()->evaluateInput(PipelineEvaluationRequest(time2)).result();
 
         // Perform the actual interpolation calculation.
         interpolateState(state, state2, request, time1, time2);
@@ -214,7 +215,7 @@ void SmoothTrajectoryModifier::evaluateSynchronous(const ModifierEvaluationReque
         for(int frame = startFrame; frame <= endFrame; frame++) {
             if(frame != currentFrame) {
                 AnimationTime time2 = request.modificationNode()->sourceFrameToAnimationTime(frame);
-                otherStates.push_back(request.modificationNode()->evaluateInputSynchronous(PipelineEvaluationRequest(time2)));
+                otherStates.push_back(request.modificationNode()->evaluateInput(PipelineEvaluationRequest(time2)).result());
             }
         }
 

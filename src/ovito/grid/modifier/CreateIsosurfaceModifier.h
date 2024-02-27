@@ -62,8 +62,10 @@ public:
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
+#if 0 // TODO
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
+#endif
 
     /// Indicates whether a preliminary viewport update should be performed after the modifier has been
     /// evaluated but before the entire pipeline evaluation is complete.

@@ -67,11 +67,13 @@ public:
     /// Throws an exception if the pipeline stage cannot be evaluated at this time. This is called by the system to catch user mistakes that would lead to infinite recursion.
     virtual void preEvaluationCheck() const override;
 
+#if 0 // TODO
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
+#endif
 
     /// Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
-    virtual void inputCachingHints(TimeIntervalUnion& cachingIntervals, ModificationNode* node) override;
+    virtual void inputCachingHints(ModifierEvaluationRequest& request) override;
 
     /// Is called by the ModifierApplication to let the modifier adjust the time interval of a TargetChanged event
     /// received from the upstream pipeline before it is propagated to the downstream pipeline.

@@ -68,8 +68,6 @@ void VTKDislocationsExporter::exportFrame(int frameNumber, const QString& filePa
     // Note: We are requesting the renderable flow state from the pipeline,
     // because we are interested in clipped (post-processed) dislocation lines.
     const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber, true);
-    if(this_task::isCanceled())
-        return;
 
     // Look up the RenderableDislocationLines object in the pipeline state.
     const RenderableDislocationLines* renderableLines = state.getObject<RenderableDislocationLines>();

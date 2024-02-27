@@ -38,8 +38,6 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(ParticleExporter);
 PipelineFlowState ParticleExporter::getParticleData(int frame) const
 {
     PipelineFlowState state = getPipelineDataToBeExported(frame);
-    if(!state)
-        return {};
 
     const Particles* particles = state.getObject<Particles>();
     if(!particles)

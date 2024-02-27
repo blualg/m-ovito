@@ -69,10 +69,7 @@ public:
     bool pickParticle(ViewportWindow* vpwin, const QPoint& clickPoint, PickResult& result);
 
     /// \brief Renders the particle selection overlay in a viewport.
-    /// \param vp The viewport into which the selection marker should be rendered.
-    /// \param renderer The renderer for the viewport.
-    /// \param pickRecord Specifies the particle for which the selection marker should be rendered.
-    void renderSelectionMarker(Viewport* vp, SceneRenderer* renderer, const PickResult& pickRecord);
+    void renderSelectionMarker(Viewport* vp, FrameGraph& frameGraph, const PickResult& pickRecord);
 };
 
 }   // End of namespace

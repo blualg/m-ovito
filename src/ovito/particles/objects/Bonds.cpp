@@ -398,7 +398,7 @@ Color Bonds::OOMetaClass::getElementTypeDefaultColor(const PropertyReference& pr
 /******************************************************************************
 * Returns the index of the element that was picked in a viewport.
 ******************************************************************************/
-std::pair<size_t, ConstDataObjectPath> Bonds::OOMetaClass::elementFromPickResult(const ViewportPickResult& pickResult) const
+std::pair<size_t, ConstDataObjectPath> Bonds::OOMetaClass::elementFromPickResult(const ViewportWindow::PickResult& pickResult) const
 {
     // Check if a bond was picked.
     if(BondPickInfo* pickInfo = dynamic_object_cast<BondPickInfo>(pickResult.pickInfo())) {
@@ -592,7 +592,7 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> Bonds::getVectorVisData(const
 
             // Look up the bond centers in the cache.
             using CacheKey = RendererResourceKey<struct BondCentersCache, ConstDataObjectRef, ConstDataObjectRef>;
-            auto& basePositions = visCache.get<ConstDataBufferPtr>(CacheKey(particles, simulationCell));
+            auto& basePositions = visCache.lookup<ConstDataBufferPtr>(CacheKey(particles, simulationCell));
             if(!basePositions) {
                 // Compute bond centers.
                 BufferFactory<Point3> centers(elementCount());

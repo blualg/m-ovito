@@ -66,8 +66,6 @@ void VTKTriangleMeshExporter::exportFrame(int frameNumber, const QString& filePa
     // Note: We are requesting the rendering state from the pipeline,
     // because we are interested in renderable triangle meshes.
     const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber, true);
-    if(this_task::isCanceled())
-        return;
 
     // Look up the RenderableSurfaceMesh to be exported in the pipeline state.
     DataObjectReference objectRef(&RenderableSurfaceMesh::OOClass(), dataObjectToExport().dataPath());

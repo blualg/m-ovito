@@ -56,6 +56,7 @@ AssignColorModifier::AssignColorModifier(ObjectInitializationFlags flags) : Dele
     }
 }
 
+#if 0 // TODO
 /******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.
 ******************************************************************************/
@@ -66,6 +67,7 @@ TimeInterval AssignColorModifier::validityInterval(const ModifierEvaluationReque
         iv.intersect(colorController()->validityInterval(request.time()));
     return iv;
 }
+#endif
 
 /******************************************************************************
 * Is called when a RefTarget referenced by this object generated an event.

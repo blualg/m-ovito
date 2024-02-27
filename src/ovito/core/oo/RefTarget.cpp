@@ -67,7 +67,7 @@ void RefTarget::aboutToBeDeleted()
         // Strong references to this target should not exist at this point.
         // But this will also remove all remaining weak references to this target object.
         ReferenceEvent deleteEvent(ReferenceEvent::TargetDeleted, this);
-        _dependents.visit_all([&](RefMaker* dependent) {
+        _dependents.visit([&](RefMaker* dependent) {
             dependent->handleReferenceEvent(this, deleteEvent);
         });
     }
@@ -113,7 +113,7 @@ void RefTarget::notifyDependentsImpl(const ReferenceEvent& event) noexcept
     OORef<RefTarget> self(this);
 
     // Send the signal to the registered dependents.
-    _dependents.visit_all([&](RefMaker* dependent) {
+    _dependents.visit([&](RefMaker* dependent) {
         dependent->handleReferenceEvent(this, event);
     });
 }

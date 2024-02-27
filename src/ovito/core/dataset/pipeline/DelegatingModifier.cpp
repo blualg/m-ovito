@@ -57,6 +57,7 @@ Modifier* ModifierDelegate::modifier() const
     return result;
 }
 
+#if 0 // TODO
 /******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.
 ******************************************************************************/
@@ -69,6 +70,7 @@ TimeInterval DelegatingModifier::validityInterval(const ModifierEvaluationReques
 
     return iv;
 }
+#endif
 
 /******************************************************************************
 * Creates a default delegate for this modifier.
@@ -106,7 +108,7 @@ bool DelegatingModifier::OOMetaClass::isApplicableTo(const DataCollection& input
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void DelegatingModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void DelegatingModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     // Apply the modifier delegate to the input data.
     applyDelegate(request, state);
@@ -146,6 +148,7 @@ void DelegatingModifier::applyDelegate(const ModifierEvaluationRequest& request,
     state.setStatus(std::move(status));
 }
 
+#if 0 // TODO
 /******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.
 ******************************************************************************/
@@ -161,6 +164,7 @@ TimeInterval MultiDelegatingModifier::validityInterval(const ModifierEvaluationR
 
     return iv;
 }
+#endif
 
 /******************************************************************************
 * Creates the list of delegate objects for this modifier.
@@ -195,7 +199,7 @@ bool MultiDelegatingModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void MultiDelegatingModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void MultiDelegatingModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     // Apply all enabled modifier delegates to the input data.
     applyDelegates(request, state);

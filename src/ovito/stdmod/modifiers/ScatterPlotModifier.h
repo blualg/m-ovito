@@ -49,10 +49,7 @@ public:
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
     /// Modifies the input data synchronously.
-    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-    /// Indicates that this modifier wants preliminary viewport updates whenever its parameters change.
-    virtual bool performPreliminaryUpdateAfterChange() override { return true; }
+    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
     /// Set start and end value of the x-axis.
     void setXAxisRange(FloatType start, FloatType end) { setXAxisRangeStart(start); setXAxisRangeEnd(end); }

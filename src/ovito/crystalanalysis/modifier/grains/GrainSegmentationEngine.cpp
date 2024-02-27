@@ -492,6 +492,7 @@ fclose(fout);
     return !isCanceled();
 }
 
+#if 0 // TODO: newly implement this
 /******************************************************************************
 * Creates another engine that performs the next stage of the computation.
 ******************************************************************************/
@@ -507,6 +508,7 @@ std::shared_ptr<ModifierEngine> GrainSegmentationEngine1::createContinuationEngi
         modifier->minGrainAtomCount()
     );
 }
+#endif
 
 /******************************************************************************
 * The grain segmentation algorithm.

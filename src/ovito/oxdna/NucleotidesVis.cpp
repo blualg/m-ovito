@@ -51,46 +51,29 @@ NucleotidesVis::NucleotidesVis(ObjectInitializationFlags flags) : ParticlesVis(f
 Box3 NucleotidesVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
     const Particles* particles = path.lastAs<Particles>();
-    if(!particles) return {};
+    if(!particles)
+        return {};
     particles->verifyIntegrity();
     const Property* positionProperty = particles->getProperty(Particles::PositionProperty);
     const Property* nucleotideAxisProperty = particles->getProperty(Particles::NucleotideAxisProperty);
 
-    // The key type used for caching the computed bounding box:
-    using CacheKey = std::tuple<
-        ConstDataObjectRef, // Position property
-        ConstDataObjectRef, // Nucleotide axis property
-        FloatType           // Default particle radius
-    >;
-
-    // Look up the bounding box in the vis cache.
-    auto& bbox = visCache.get<Box3>(CacheKey(
-            positionProperty,
-            nucleotideAxisProperty,
-            defaultParticleRadius()));
-
-    // Check if the cached bounding box information is still up to date.
-    if(bbox.isEmpty()) {
-
-        // If not, recompute bounding box from particle data.
-        Box3 innerBox;
-        if(BufferReadAccess<Point3> positionArray = positionProperty) {
-            innerBox.addPoints(positionArray);
-            if(BufferReadAccess<Vector3> axisArray = nucleotideAxisProperty) {
-                const Vector3* axis = axisArray.cbegin();
-                for(const Point3& p : positionArray) {
-                    innerBox.addPoint(p + (*axis++));
-                }
+    // Compute bounding box from particle data.
+    Box3 innerBox;
+    if(BufferReadAccess<Point3> positionArray = positionProperty) {
+        innerBox.addPoints(positionArray);
+        if(BufferReadAccess<Vector3> axisArray = nucleotideAxisProperty) {
+            const Vector3* axis = axisArray.cbegin();
+            for(const Point3& p : positionArray) {
+                innerBox.addPoint(p + (*axis++));
             }
         }
-
-        // Extend box to account for radii/shape of particles.
-        FloatType maxAtomRadius = defaultParticleRadius();
-
-        // Extend the bounding box by the largest particle radius.
-        bbox = innerBox.padBox(std::max(maxAtomRadius * sqrt(FloatType(3)), FloatType(0)));
     }
-    return bbox;
+
+    // Extend box to account for radii/shape of particles.
+    FloatType maxAtomRadius = defaultParticleRadius();
+
+    // Extend the bounding box by the largest particle radius.
+    return innerBox.padBox(std::max(maxAtomRadius * std::sqrt(FloatType(3)), FloatType(0)));
 }
 
 /******************************************************************************
@@ -183,22 +166,18 @@ ConstPropertyPtr NucleotidesVis::nucleobaseColors(const Particles* particles, bo
 ******************************************************************************/
 PipelineStatus NucleotidesVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
-    if(renderer->isBoundingBoxPass()) {
-        TimeInterval validityInterval;
-        renderer->addToLocalBoundingBox(boundingBox(time, path, pipeline, flowState, renderer->visCache(), validityInterval));
-        return {};
-    }
-
     // Get input data.
     const Particles* particles = path.lastAs<Particles>();
-    if(!particles) return {};
+    if(!particles)
+        return {};
     particles->verifyIntegrity();
     const Property* positionProperty = particles->getProperty(Particles::PositionProperty);
-    if(!positionProperty) return {};
+    if(!positionProperty)
+        return {};
     const Property* colorProperty = particles->getProperty(Particles::ColorProperty);
     const Property* baseProperty = particles->getProperty(Particles::NucleobaseTypeProperty);
     const Property* strandProperty = particles->getProperty(Particles::DNAStrandProperty);
-    const Property* selectionProperty = renderer->isInteractive() ? particles->getProperty(Particles::SelectionProperty) : nullptr;
+    const Property* selectionProperty = frameGraph.isInteractive() ? particles->getProperty(Particles::SelectionProperty) : nullptr;
     const Property* transparencyProperty = particles->getProperty(Particles::TransparencyProperty);
     const Property* nucleotideAxisProperty = particles->getProperty(Particles::NucleotideAxisProperty);
     const Property* nucleotideNormalProperty = particles->getProperty(Particles::NucleotideNormalProperty);
@@ -231,7 +210,7 @@ PipelineStatus NucleotidesVis::render(const ConstDataObjectPath& path, const Pip
     };
 
     // Look up the rendering primitives in the vis cache.
-    auto& visCache = renderer->visCache().get<NucleotidesCacheValue>(NucleotidesCacheKey(
+    auto& cache = frameGraph.visCache().lookup<NucleotidesCacheValue>(NucleotidesCacheKey(
         const_cast<Pipeline*>(pipeline),
         positionProperty,
         colorProperty,
@@ -244,32 +223,32 @@ PipelineStatus NucleotidesVis::render(const ConstDataObjectPath& path, const Pip
         cylinderRadius()));
 
     // Check if we already have valid rendering primitives that are up to date.
-    if(!visCache.backbonePrimitive.positions()) {
+    if(!cache.backbonePrimitive.positions()) {
 
         // Create the rendering primitive for the backbone sites.
-        visCache.backbonePrimitive.setShadingMode(ParticlePrimitive::NormalShading);
-        visCache.backbonePrimitive.setRenderingQuality(ParticlePrimitive::MediumQuality);
+        cache.backbonePrimitive.setShadingMode(ParticlePrimitive::NormalShading);
+        cache.backbonePrimitive.setRenderingQuality(ParticlePrimitive::MediumQuality);
 
         // Fill in the position data.
-        visCache.backbonePrimitive.setPositions(positionProperty);
+        cache.backbonePrimitive.setPositions(positionProperty);
 
         // Fill in the transparency data.
-        visCache.backbonePrimitive.setTransparencies(transparencyProperty);
+        cache.backbonePrimitive.setTransparencies(transparencyProperty);
 
         // Compute the effective color of each particle.
-        ConstPropertyPtr colors = backboneColors(particles, renderer->isInteractive());
+        ConstPropertyPtr colors = backboneColors(particles, frameGraph.isInteractive());
 
         // Fill in backbone color data.
-        visCache.backbonePrimitive.setColors(colors);
+        cache.backbonePrimitive.setColors(colors);
 
         // Assign a uniform radius to all particles.
-        visCache.backbonePrimitive.setUniformRadius(defaultParticleRadius());
+        cache.backbonePrimitive.setUniformRadius(defaultParticleRadius());
 
         if(nucleotideAxisProperty) {
             // Create the rendering primitive for the base sites.
-            visCache.basePrimitive.setParticleShape(ParticlePrimitive::EllipsoidShape);
-            visCache.basePrimitive.setShadingMode(ParticlePrimitive::NormalShading);
-            visCache.basePrimitive.setRenderingQuality(ParticlePrimitive::MediumQuality);
+            cache.basePrimitive.setParticleShape(ParticlePrimitive::EllipsoidShape);
+            cache.basePrimitive.setShadingMode(ParticlePrimitive::NormalShading);
+            cache.basePrimitive.setRenderingQuality(ParticlePrimitive::MediumQuality);
 
             // Fill in the position data for the base sites.
             BufferFactory<Point3G> baseSites(particles->elementCount());
@@ -277,15 +256,15 @@ PipelineStatus NucleotidesVis::render(const ConstDataObjectPath& path, const Pip
             BufferReadAccess<Vector3> nucleotideAxisArray(nucleotideAxisProperty);
             for(size_t i = 0; i < baseSites.size(); i++)
                 baseSites[i] = (positionsArray[i] + (0.8 * nucleotideAxisArray[i])).toDataType<GraphicsFloatType>();
-            visCache.basePrimitive.setPositions(baseSites.take());
+            cache.basePrimitive.setPositions(baseSites.take());
 
             // Fill in base color data.
-            visCache.basePrimitive.setColors(nucleobaseColors(particles, renderer->isInteractive()));
+            cache.basePrimitive.setColors(nucleobaseColors(particles, frameGraph.isInteractive()));
 
             // Fill in aspherical shape values.
             DataBufferPtr asphericalShapes = DataBufferPtr::create(particles->elementCount(), DataBuffer::FloatGraphics, 3);
             asphericalShapes->fill<Vector3G>(static_cast<GraphicsFloatType>(cylinderRadius()) * Vector3G(2.0f, 3.0f, 1.0f));
-            visCache.basePrimitive.setAsphericalShapes(std::move(asphericalShapes));
+            cache.basePrimitive.setAsphericalShapes(std::move(asphericalShapes));
 
             // Fill in base orientations.
             if(BufferReadAccess<Vector3> nucleotideNormalArray = nucleotideNormalProperty) {
@@ -308,22 +287,22 @@ PipelineStatus NucleotidesVis::render(const ConstDataObjectPath& path, const Pip
                         orientationsAccess[i] = QuaternionG::Identity();
                     }
                 }
-                visCache.basePrimitive.setOrientations(std::move(orientations));
+                cache.basePrimitive.setOrientations(std::move(orientations));
             }
 
             // Create the rendering primitive for the connections between backbone and base sites.
-            visCache.connectionPrimitive.setShape(CylinderPrimitive::CylinderShape);
-            visCache.connectionPrimitive.setShadingMode(CylinderPrimitive::NormalShading);
-            visCache.connectionPrimitive.setUniformWidth(2 * cylinderRadius());
-            visCache.connectionPrimitive.setColors(colors);
+            cache.connectionPrimitive.setShape(CylinderPrimitive::CylinderShape);
+            cache.connectionPrimitive.setShadingMode(CylinderPrimitive::NormalShading);
+            cache.connectionPrimitive.setUniformWidth(2 * cylinderRadius());
+            cache.connectionPrimitive.setColors(colors);
             BufferFactory<Point3G> headPositions(particles->elementCount());
             for(size_t i = 0; i < positionsArray.size(); i++)
                 headPositions[i] = (positionsArray[i] + 0.8 * nucleotideAxisArray[i]).toDataType<GraphicsFloatType>();
-            visCache.connectionPrimitive.setPositions(positionProperty, headPositions.take());
+            cache.connectionPrimitive.setPositions(positionProperty, headPositions.take());
         }
         else {
-            visCache.connectionPrimitive = CylinderPrimitive();
-            visCache.basePrimitive = ParticlePrimitive();
+            cache.connectionPrimitive = CylinderPrimitive();
+            cache.basePrimitive = ParticlePrimitive();
         }
 
         // Create pick info record.
@@ -333,22 +312,22 @@ PipelineStatus NucleotidesVis::render(const ConstDataObjectPath& path, const Pip
             std::iota(subobjectToParticleMapping.begin() +     particles->elementCount(), subobjectToParticleMapping.begin() + 2 * particles->elementCount(), 0);
             std::iota(subobjectToParticleMapping.begin() + 2 * particles->elementCount(), subobjectToParticleMapping.begin() + 3 * particles->elementCount(), 0);
         }
-        visCache.pickInfo = OORef<ParticlePickInfo>::create(this, particles, subobjectToParticleMapping.take());
+        cache.pickInfo = OORef<ParticlePickInfo>::create(this, particles, subobjectToParticleMapping.take());
     }
     else {
         // Update the pipeline state stored in te picking object info.
-        visCache.pickInfo->setParticles(particles);
+        cache.pickInfo->setParticles(particles);
     }
 
-    renderer->beginPickObject(pipeline, visCache.pickInfo);
+    auto pickingGroup = frameGraph.addPickingGroup(pipeline, cache.pickInfo);
 
-    renderer->renderParticles(visCache.backbonePrimitive);
-    if(visCache.connectionPrimitive.basePositions())
-        renderer->renderCylinders(visCache.connectionPrimitive);
-    if(visCache.basePrimitive.positions())
-        renderer->renderParticles(visCache.basePrimitive);
+    frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(cache.backbonePrimitive), pipeline, pickingGroup);
 
-    renderer->endPickObject();
+    if(cache.connectionPrimitive.basePositions())
+        frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(cache.connectionPrimitive), pipeline, pickingGroup);
+
+    if(cache.basePrimitive.positions())
+        frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(cache.basePrimitive), pipeline, pickingGroup);
 
     return {};
 }

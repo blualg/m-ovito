@@ -24,7 +24,7 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
+#include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/utilities/concurrent/TaskWatcher.h>
@@ -109,7 +109,13 @@ private:
     Scene* _completedScene;
 
     /// The current pipeline evaluation that is in progress.
-    PipelineEvaluationFuture _pipelineEvaluation;
+    SharedFuture<PipelineFlowState> _pipelineEvaluationFuture;
+
+    /// The pipeline that is currently being evaluated.
+    OORef<Pipeline> _currentPipeline;
+
+    /// The animation time at which the current pipeline is being evaluated.
+    AnimationTime _currentTime;
 
     /// To get notified when the evaluation of the current data pipeline finishes.
     TaskWatcher _pipelineEvaluationWatcher;

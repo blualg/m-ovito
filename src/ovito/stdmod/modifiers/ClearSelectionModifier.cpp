@@ -41,7 +41,7 @@ ClearSelectionModifier::ClearSelectionModifier(ObjectInitializationFlags flags) 
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void ClearSelectionModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void ClearSelectionModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     if(!subject())
         throw Exception(tr("No input element type selected."));

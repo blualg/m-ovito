@@ -89,7 +89,8 @@ void ScenePreparation::makeReady(bool forceReevaluation)
         // Set the promise to the fulfilled state if there is no scene to prepare.
         _completedScene = nullptr;
         _promise.setFinished();
-        _pipelineEvaluation.reset();
+        _pipelineEvaluationFuture.reset();
+        _currentPipeline = {};
         return;
     }
 
@@ -106,29 +107,26 @@ void ScenePreparation::makeReady(bool forceReevaluation)
     }
 
     // Is there still a pipeline evaluation in progress?
-    if(_pipelineEvaluation.isValid() && !forceReevaluation) {
+    if(_pipelineEvaluationFuture.isValid() && !forceReevaluation) {
         OVITO_ASSERT(scene());
 
         // Keep waiting for the ongoing pipeline evaluation to complete - unless we are at the different animation time now.
         // Or unless the pipeline has been removed from the scene in the meantime.
-        if(_pipelineEvaluation.time() == scene()->animationSettings()->currentTime() && _pipelineEvaluation.pipeline() && _pipelineEvaluation.pipeline()->isChildOf(scene())) {
+        if(_currentTime == scene()->animationSettings()->currentTime() && _currentPipeline && _currentPipeline->isChildOf(scene())) {
             return;
         }
     }
 
-    // If viewport updates are suspended, we simply wait until they get resumed.
-    if(userInterface().areViewportUpdatesSuspended())
-        return;
-
     // Hold on to the old evaluation request until a new request has been made
     // to not loose partial results stored in the pipeline caches.
-    PipelineEvaluationFuture oldEvaluation = std::move(_pipelineEvaluation);
+    SharedFuture<PipelineFlowState> oldEvaluation = std::move(_pipelineEvaluationFuture);
 
     // Request results from all data pipelines in the scene.
     // If at least one of them is not immediately available, we'll have to
     // wait until its evaulation completes.
+    _currentPipeline.reset();
+    _pipelineEvaluationFuture.reset();
     _pipelineEvaluationWatcher.reset();
-    _pipelineEvaluation.reset();
     _completedFrame = scene()->animationSettings()->currentFrame();
     _completedScene = scene();
     PipelineEvaluationRequest request(scene()->animationSettings());
@@ -140,13 +138,15 @@ void ScenePreparation::makeReady(bool forceReevaluation)
     // that is not completely evaluated yet.
     scene()->visitPipelines([&](Pipeline* pipeline) {
         // Request visual elements too.
-        _pipelineEvaluation = pipeline->evaluateRenderingPipeline(request);
-        if(!_pipelineEvaluation.isFinished()) {
+        _pipelineEvaluationFuture = pipeline->evaluateRenderingPipeline(request);
+        if(!_pipelineEvaluationFuture.isFinished()) {
             // Wait for this state to become available and return a pending future.
+            _currentPipeline = pipeline;
+            _currentTime = request.time();
             return false;
         }
-        else if(!_pipelineEvaluation.isCanceled()) {
-            try { _pipelineEvaluation.results(); }
+        else if(!_pipelineEvaluationFuture.isCanceled()) {
+            try { _pipelineEvaluationFuture.result(); }
             catch(const Exception& ex) {
                 qWarning() << "ScenePreparation::makeReady(): Pipeline evaluation raised an exception.";
                 ex.logError();
@@ -155,14 +155,14 @@ void ScenePreparation::makeReady(bool forceReevaluation)
                 qWarning() << "ScenePreparation::makeReady(): Pipeline evaluation raised an exception.";
             }
         }
-        _pipelineEvaluation.reset();
+        _pipelineEvaluationFuture.reset();
         return true;
     });
 
     // Now that a new evaluation request is underway, we can cancel the old request.
     oldEvaluation.reset();
 
-    if(!_pipelineEvaluation.isValid()) {
+    if(!_pipelineEvaluationFuture.isValid()) {
         // If all pipelines are in the complete state, we are done. The scene is prepared for rendering.
 
         // Set the promise to the fulfilled state.
@@ -175,8 +175,9 @@ void ScenePreparation::makeReady(bool forceReevaluation)
         Q_EMIT viewportUpdateRequest();
     }
     else {
+        OVITO_ASSERT(_currentPipeline);
         // If one of the pipelines is not complete yet, wait until it is.
-        _pipelineEvaluationWatcher.watch(_pipelineEvaluation.task());
+        _pipelineEvaluationWatcher.watch(_pipelineEvaluationFuture.task());
     }
 }
 
@@ -185,14 +186,14 @@ void ScenePreparation::makeReady(bool forceReevaluation)
 ******************************************************************************/
 void ScenePreparation::pipelineEvaluationFinished()
 {
-    OVITO_ASSERT(_pipelineEvaluation.isValid());
-    OVITO_ASSERT(_pipelineEvaluation.pipeline());
-    OVITO_ASSERT(_pipelineEvaluation.isFinished());
+    OVITO_ASSERT(_pipelineEvaluationFuture.isValid());
+    OVITO_ASSERT(_pipelineEvaluationFuture.isFinished());
+    OVITO_ASSERT(_currentPipeline);
 
     // Query results of the pipeline evaluation to see if an exception has been thrown.
-    if(_promise.isValid() && !_pipelineEvaluation.isCanceled()) {
+    if(_promise.isValid() && !_pipelineEvaluationFuture.isCanceled()) {
         try {
-            _pipelineEvaluation.results();
+            _pipelineEvaluationFuture.task()->throwPossibleException();
         }
         catch(...) {
             qWarning() << "ScenePreparation::pipelineEvaluationFinished(): An exception was thrown in a data pipeline. This should never happen.";
@@ -200,7 +201,8 @@ void ScenePreparation::pipelineEvaluationFinished()
         }
     }
 
-    _pipelineEvaluation.reset();
+    _currentPipeline.reset();
+    _pipelineEvaluationFuture.reset();
     _pipelineEvaluationWatcher.reset();
 
     // One of the pipelines in the scene became ready.
@@ -270,7 +272,8 @@ void ScenePreparation::restartPreparation()
         _future.reset();
     }
     _pipelineEvaluationWatcher.reset();
-    _pipelineEvaluation.reset();
+    _pipelineEvaluationFuture.reset();
+    _currentPipeline.reset();
     _completedScene = nullptr;
     if(!_isRestartScheduled) {
         _isRestartScheduled = true;

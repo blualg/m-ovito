@@ -95,19 +95,17 @@ void AttributeFileExporter::closeOutputFile(bool exportCompleted)
 * Evaluates the pipeline of the PipelineSceneNode to be exported and returns
 * the attributes list.
 ******************************************************************************/
-bool AttributeFileExporter::getAttributesMap(int frame, QVariantMap& attributes)
+QVariantMap AttributeFileExporter::getAttributesMap(int frame)
 {
     const PipelineFlowState& state = getPipelineDataToBeExported(frame);
-    if(!state)
-        return false;
 
     // Build list of attributes.
-    attributes = state.data()->buildAttributesMap();
+    QVariantMap attributes = state.data()->buildAttributesMap();
 
     // Add the implicit animation frame attribute.
     attributes.insert(QStringLiteral("Frame"), frame);
 
-    return true;
+    return attributes;
 }
 
 /******************************************************************************
@@ -115,9 +113,7 @@ bool AttributeFileExporter::getAttributesMap(int frame, QVariantMap& attributes)
  *****************************************************************************/
 void AttributeFileExporter::exportFrame(int frameNumber, const QString& filePath)
 {
-    QVariantMap attrMap;
-    if(!getAttributesMap(frameNumber, attrMap))
-        return;
+    QVariantMap attrMap = getAttributesMap(frameNumber);
 
     // Write the values of all attributes marked for export to the output file.
     for(const QString& attrName : attributesToExport()) {

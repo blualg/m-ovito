@@ -174,19 +174,19 @@ public:
     /// Executes a functor that performs some actions in an interactive context and catches any exceptions thrown during its execution.
     /// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
     template<typename Function>
-    bool handleExceptions(Function&& func);
+    bool handleExceptions(Function&& func) noexcept;
 
     /// Executes a functor provided by the caller that performs undoable actions in an interactive context.
     /// If an exception is thrown by the functor, the error message is displayed
     /// to the user, and this function returns false.
     template<typename Function>
-    bool performActions(UndoableTransaction& transaction, Function&& func);
+    bool performActions(UndoableTransaction& transaction, Function&& func) noexcept;
 
     /// Executes a functor provided by the caller that performs undoable actions in an interactive context.
     /// If an exception is thrown by the functor, all data changes performed by the functor so far will be undone, the error message is displayed
     /// to the user, and this function returns false. If no exception is thrown, all performed actions are committed and this function returns true.
     template<typename Function>
-    bool performTransaction(const QString& undoOperationName, Function&& func);
+    bool performTransaction(const QString& undoOperationName, Function&& func) noexcept;
 
 protected:
 
@@ -244,7 +244,7 @@ namespace Ovito {
 /// Executes a functor that performs some actions in an interactive context and catches any exceptions thrown during its execution.
 /// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
 template<typename Function>
-bool UserInterface::handleExceptions(Function&& func)
+bool UserInterface::handleExceptions(Function&& func) noexcept
 {
     OVITO_ASSERT(!isBeingDeleted());
     // Note: The MainThreadOperation creates a temporary std::shared_ptr<UserInterface>, which keeps the UI alive until function exit.
@@ -252,6 +252,10 @@ bool UserInterface::handleExceptions(Function&& func)
     try {
         std::forward<Function>(func)();
         return !operation.isCanceled();
+    }
+    catch(OperationCanceled) {
+        OVITO_ASSERT(operation.isCanceled());
+        return false;
     }
     catch(const Exception& ex) {
         reportError(ex);
@@ -263,7 +267,7 @@ bool UserInterface::handleExceptions(Function&& func)
 /// If an exception is thrown by the functor, the error message is displayed
 /// to the user, and this function returns false.
 template<typename Function>
-bool UserInterface::performActions(UndoableTransaction& transaction, Function&& func)
+bool UserInterface::performActions(UndoableTransaction& transaction, Function&& func) noexcept
 {
     OVITO_ASSERT(transaction.operation());
     OVITO_ASSERT(&transaction.userInterface() == this);
@@ -275,7 +279,7 @@ bool UserInterface::performActions(UndoableTransaction& transaction, Function&& 
 /// If an exception is thrown by the functor, all data changes performed by the functor so far will be undone, the error message is displayed
 /// to the user, and this function returns false. If no exception is thrown, all performed actions are committed and this function returns true.
 template<typename Function>
-bool UserInterface::performTransaction(const QString& undoOperationName, Function&& func)
+bool UserInterface::performTransaction(const QString& undoOperationName, Function&& func) noexcept
 {
     UndoableTransaction transaction(*this, undoOperationName);
     if(performActions(transaction, std::forward<Function>(func))) {

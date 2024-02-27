@@ -147,7 +147,7 @@ void parallelFor(T loopCount, Function&& kernel)
 }
 
 template<typename T, class Kernel>
-bool parallelForInterruptableWithProgress(T loopCount, Kernel&& kernel, const QString& taskDescription, T progressChunkSize = 1024)
+void parallelForInterruptableWithProgress(T loopCount, Kernel&& kernel, const QString& taskDescription, T progressChunkSize = 1024)
 {
     class AsyncTask : public ProgressingTask
     {
@@ -211,7 +211,7 @@ bool parallelForInterruptableWithProgress(T loopCount, Kernel&& kernel, const QS
     ExecutionContext::current().ui().taskManager().registerFuture(future);
 
     // Block until the task has finished.
-    return future.waitForFinished();
+    future.waitForFinished();
 }
 
 template<class Function>

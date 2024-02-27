@@ -47,7 +47,7 @@ bool UnwrapTrajectoriesModifier::OOMetaClass::isApplicableTo(const DataCollectio
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluateModifier(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     if(input) {
         if(UnwrapTrajectoriesModificationNode* unwrapModNode = dynamic_object_cast<UnwrapTrajectoriesModificationNode>(request.modificationNode())) {
@@ -74,7 +74,7 @@ Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluate(const ModifierEva
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void UnwrapTrajectoriesModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void UnwrapTrajectoriesModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     if(!state) return;
 
@@ -98,6 +98,8 @@ void UnwrapTrajectoriesModifier::evaluateSynchronous(const ModifierEvaluationReq
 ******************************************************************************/
 SharedFuture<> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(const ModifierEvaluationRequest& request)
 {
+    OVITO_ASSERT(request.modificationNode() == this);
+
     if(_unwrapOperation.isValid() == false || _unwrapOperation.isCanceled()) {
 
         // Determine the range of animation frames to be processed.
@@ -112,8 +114,9 @@ SharedFuture<> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(const
             std::move(inputFrameRange),
             ObjectExecutor(this, true), // Require deferred execution of each frame
             // Requests the next frame from the upstream pipeline.
-            [this](int frame) {
-                return evaluateInput(PipelineEvaluationRequest(sourceFrameToAnimationTime(frame)));
+            [request = request](int frame) mutable -> SharedFuture<PipelineFlowState> {
+                request.setTime(request.modificationNode()->sourceFrameToAnimationTime(frame));
+                return request.modificationNode()->evaluateInput(request).asFuture();
             },
             // This object processes each frame's data.
             WorkingData{this});
@@ -122,7 +125,6 @@ SharedFuture<> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(const
         OVITO_ASSERT(_unwrapOperation.task()->isProgressingTask());
         static_cast<ProgressingTask*>(_unwrapOperation.task().get())->setProgressText(tr("Unwrapping particle trajectories"));
         ExecutionContext::current().ui().taskManager().registerFuture(_unwrapOperation);
-        registerActiveFuture(_unwrapOperation);
     }
     return _unwrapOperation;
 }

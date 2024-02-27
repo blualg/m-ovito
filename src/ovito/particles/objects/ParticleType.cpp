@@ -141,7 +141,7 @@ void ParticleType::updateEditableProxies(PipelineFlowState& state, ConstDataObje
 /******************************************************************************
  * Loads a user-defined display shape from a geometry file and assigns it to this particle type.
  ******************************************************************************/
-bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, const FileImporterClass* importerClass, const QString& importerFormat)
+void ParticleType::loadShapeMesh(const QUrl& sourceUrl, const FileImporterClass* importerClass, const QString& importerFormat)
 {
     this_task::setProgressText(tr("Loading mesh geometry file %1").arg(sourceUrl.fileName()));
 
@@ -155,9 +155,6 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, const FileImporterClass*
 
             // Inspect input file to detect its format.
             Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(sourceUrl);
-            if(!importerFuture.waitForFinished())
-                return false;
-
             importer = dynamic_object_cast<FileSourceImporter>(importerFuture.result());
         }
         else {
@@ -171,14 +168,11 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, const FileImporterClass*
         // Create a temporary FileSource for loading the geometry data from the file.
         OORef<FileSource> fileSource = OORef<FileSource>::create();
         fileSource->setSource({sourceUrl}, importer, false);
-        SharedFuture<PipelineFlowState> stateFuture = fileSource->evaluate(PipelineEvaluationRequest(AnimationTime(0)));
-        if(!stateFuture.waitForFinished())
-            return false;
 
         // Check if the FileSource has provided some useful data.
-        PipelineFlowState state = stateFuture.result();
+        PipelineFlowState state = fileSource->evaluate(PipelineEvaluationRequest(AnimationTime(0), true)).result();
         if(state.status().type() == PipelineStatus::Error)
-            return false;
+            return;
         if(!state)
             throw Exception(tr("The loaded geometry file does not provide any valid mesh data."));
         meshObj = DataOORef<TriangleMesh>::makeCopy(state.expectObject<TriangleMesh>());
@@ -200,8 +194,6 @@ bool ParticleType::loadShapeMesh(const QUrl& sourceUrl, const FileImporterClass*
     // If not, we should turn off back-face culling.
     if(shapeMesh() && !shapeMesh()->isClosed())
         setShapeBackfaceCullingEnabled(false);
-
-    return !this_task::isCanceled();
 }
 
 /******************************************************************************

@@ -170,7 +170,7 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
     groupLayout->addWidget(_dataObjectBox, 0, 4);
 
     scene.visitChildren([this, exporter](SceneNode* node) {
-        if(exporter->isSuitableNode(node)) {
+        if(exporter->isSuitableSceneNode(node)) {
             _sceneNodeBox->addItem(node->objectTitle(), QVariant::fromValue(OORef<OvitoObject>(node)));
             if(node == exporter->sceneNodeToExport())
                 _sceneNodeBox->setCurrentIndex(_sceneNodeBox->count() - 1);
@@ -232,7 +232,7 @@ void FileExporterSettingsDialog::updateDataObjectList()
         std::vector<DataObjectClassPtr> objClasses = _exporter->exportableDataObjectClass();
         if(!objClasses.empty() && _exporter->sceneToExport()) {
             if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(_exporter->sceneNodeToExport())) {
-                if(const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(_exporter->sceneToExport()->animationSettings()->currentTime(), true)) {
+                if(const PipelineFlowState& state = pipeline->getCachedRenderingPipelineOutput(_exporter->sceneToExport()->animationSettings()->currentTime())) {
                     for(DataObjectClassPtr clazz : objClasses) {
                         OVITO_ASSERT(clazz != nullptr);
                         for(const ConstDataObjectPath& dataPath : state.data()->getObjectsRecursive(*clazz)) {

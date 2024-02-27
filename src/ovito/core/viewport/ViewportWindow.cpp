@@ -32,7 +32,7 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/dataset/pipeline/PipelineNode.h>
-#include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
+#include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/app/UserInterface.h>
@@ -180,8 +180,7 @@ void ViewportWindow::handleUpdateRequest()
 
         // Render the 3d scene objects.
         frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::SceneLayer);
-        if(!frameGraph->renderSceneNode(viewport()->scene(), viewport()))
-            return;
+        frameGraph->renderSceneNode(viewport()->scene(), viewport());
 
         // Render construction grid.
         if(viewport()->isGridVisible())
@@ -639,7 +638,8 @@ void ViewportWindow::renderPipelineModifiers(Scene* scene, Pipeline* pipeline, F
 
         try {
             // Render modifier.
-            mod->renderModifierVisual(ModifierEvaluationRequest(scene->animationSettings(), node), pipeline, frameGraph);
+            if(mod)
+                mod->renderModifierVisual(ModifierEvaluationRequest(scene->animationSettings(), node), pipeline, frameGraph);
         }
         catch(const Exception& ex) {
             // Swallow exceptions, because we are in interactive rendering mode.

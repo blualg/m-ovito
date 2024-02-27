@@ -43,12 +43,12 @@ public:
     using FileImporterEditor::FileImporterEditor;
 
     /// This is called by the system when the user has selected a new file to import.
-    virtual bool inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow) override;
+    virtual void inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow) override;
 
 protected:
 
     /// Displays a dialog box that allows the user to edit the custom file column to particle property mapping.
-    bool showEditColumnMappingDialog(LAMMPSBinaryDumpImporter* importer, const FileSourceImporter::Frame& frame);
+    void showEditColumnMappingDialog(LAMMPSBinaryDumpImporter* importer, const FileSourceImporter::Frame& frame);
 
     /// Creates the user interface controls for the editor.
     virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;

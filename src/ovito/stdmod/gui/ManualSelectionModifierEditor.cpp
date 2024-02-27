@@ -280,9 +280,9 @@ void ManualSelectionModifierEditor::resetSelection()
     if(!mod) return;
 
     performTransaction(tr("Reset selection"), [this,mod]() {
-        PipelineEvaluationRequest request(currentAnimationTime());
+        PipelineEvaluationRequest request(currentAnimationTime(), false, true);
         for(ModificationNode* node : modificationNodes()) {
-            mod->resetSelection(node, node->evaluateInputSynchronous(request));
+            mod->resetSelection(node, node->evaluateInput(request).result());
         }
     });
 }
@@ -296,9 +296,9 @@ void ManualSelectionModifierEditor::selectAll()
     if(!mod) return;
 
     performTransaction(tr("Select all"), [this,mod]() {
-        PipelineEvaluationRequest request(currentAnimationTime());
+        PipelineEvaluationRequest request(currentAnimationTime(), false, true);
         for(ModificationNode* node : modificationNodes()) {
-            mod->selectAll(node, node->evaluateInputSynchronous(request));
+            mod->selectAll(node, node->evaluateInput(request).result());
         }
     });
 }
@@ -312,9 +312,9 @@ void ManualSelectionModifierEditor::clearSelection()
     if(!mod) return;
 
     performTransaction(tr("Clear selection"), [this,mod]() {
-        PipelineEvaluationRequest request(currentAnimationTime());
+        PipelineEvaluationRequest request(currentAnimationTime(), false, true);
         for(ModificationNode* node : modificationNodes()) {
-            mod->clearSelection(node, node->evaluateInputSynchronous(request));
+            mod->clearSelection(node, node->evaluateInput(request).result());
         }
     });
 }
@@ -328,9 +328,9 @@ void ManualSelectionModifierEditor::invertSelection()
     if(!mod) return;
 
     performTransaction(tr("Invert selection"), [this,mod]() {
-        PipelineEvaluationRequest request(currentAnimationTime());
+        PipelineEvaluationRequest request(currentAnimationTime(), false, true);
         for(ModificationNode* node : modificationNodes()) {
-            mod->invertSelection(node, node->evaluateInputSynchronous(request));
+            mod->invertSelection(node, node->evaluateInput(request).result());
         }
     });
 }
@@ -344,7 +344,7 @@ void ManualSelectionModifierEditor::onElementPicked(const ViewportWindow::PickRe
     if(!mod || !mod->subject()) return;
 
     performTransaction(tr("Toggle selection"), [this, mod, elementIndex, &pickedObjectPath, &pickResult]() {
-        PipelineEvaluationRequest request(currentAnimationTime());
+        PipelineEvaluationRequest request(currentAnimationTime(), false, true);
         for(ModificationNode* node : modificationNodes()) {
 
             // Make sure we are in the right data pipeline.
@@ -352,7 +352,7 @@ void ManualSelectionModifierEditor::onElementPicked(const ViewportWindow::PickRe
                 continue;
 
             // Get the modifier's input data.
-            const PipelineFlowState& modInput = node->evaluateInputSynchronous(request);
+            const PipelineFlowState& modInput = node->evaluateInput(request).result();
             const ConstDataObjectPath& inputObjectPath = modInput.expectObject(mod->subject());
 
             // Look up the right element in the modifier's input.
@@ -380,11 +380,11 @@ void ManualSelectionModifierEditor::onFence(const QVector<Point2>& fence, Viewpo
     if(!mod || !mod->subject()) return;
 
     performTransaction(tr("Select"), [this, mod, &fence, vpwin, mode]() {
-        PipelineEvaluationRequest request(currentAnimationTime());
+        PipelineEvaluationRequest request(currentAnimationTime(), false, true);
         for(ModificationNode* node : modificationNodes()) {
 
             // Get the modifier's input data.
-            const PipelineFlowState& modInput = node->evaluateInputSynchronous(request);
+            const PipelineFlowState& modInput = node->evaluateInput(request).result();
             const ConstDataObjectPath& inputObjectPath = modInput.expectObject(mod->subject());
 
             // Iterate over the pipelines.

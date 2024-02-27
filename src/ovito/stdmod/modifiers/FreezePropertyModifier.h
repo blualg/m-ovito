@@ -50,13 +50,10 @@ public:
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
     /// Modifies the input data.
-    virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
     /// Modifies the input data synchronously.
-    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-    /// Indicates that this modifier wants preliminary viewport updates whenever its parameters change.
-    virtual bool performPreliminaryUpdateAfterChange() override { return true; }
+    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return sourceProperty().name(); }

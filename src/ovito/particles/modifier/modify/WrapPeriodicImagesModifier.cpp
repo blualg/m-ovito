@@ -43,7 +43,7 @@ bool WrapPeriodicImagesModifier::OOMetaClass::isApplicableTo(const DataCollectio
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void WrapPeriodicImagesModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void WrapPeriodicImagesModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     // Get the periodic simulation cell.
     const SimulationCell* simCell = state.expectObject<SimulationCell>();

@@ -54,7 +54,7 @@ class OVITO_PARTICLES_EXPORT Particles : public PropertyContainer
         virtual bool supportsViewportPicking() const override { return true; }
 
         /// Returns the index of the element that was picked in a viewport.
-        virtual std::pair<size_t, ConstDataObjectPath> elementFromPickResult(const ViewportPickResult& pickResult) const override;
+        virtual std::pair<size_t, ConstDataObjectPath> elementFromPickResult(const ViewportWindow::PickResult& pickResult) const override;
 
         /// Tries to remap an index from one property container to another, considering the possibility that
         /// elements may have been added or removed.

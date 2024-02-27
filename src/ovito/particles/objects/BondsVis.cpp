@@ -63,7 +63,8 @@ Box3 BondsVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPat
 {
     const Bonds* bonds = path.lastAs<Bonds>(0);
     const Particles* particles = path.lastAs<Particles>(1);
-    if(!bonds || !particles) return {};
+    if(!bonds || !particles)
+        return {};
     particles->verifyIntegrity();
     bonds->verifyIntegrity();
     const Property* bondTopologyProperty = bonds->getProperty(Bonds::TopologyProperty);
@@ -72,71 +73,50 @@ Box3 BondsVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPat
     const Property* positionProperty = particles->getProperty(Particles::PositionProperty);
     const SimulationCell* simulationCell = flowState.getObject<SimulationCell>();
 
-    // The key type used for caching the computed bounding box:
-    using CacheKey = RendererResourceKey<struct BondsVisBoundingBoxCache,
-        ConstDataObjectRef,     // Bond topology property
-        ConstDataObjectRef,     // Bond PBC vector property
-        ConstDataObjectRef,     // Bond width property
-        ConstDataObjectRef,     // Particle position property
-        ConstDataObjectRef,     // Simulation cell
-        FloatType               // Bond width
-    >;
+    // Compute bounding box from bond data.
+    if(bondTopologyProperty && positionProperty) {
+        Box3 bbox;
 
-    // Look up the bounding box in the vis cache.
-    auto& bbox = visCache.get<Box3>(CacheKey(
-            bondTopologyProperty,
-            bondPeriodicImageProperty,
-            bondWidthProperty,
-            positionProperty,
-            simulationCell,
-            bondWidth()));
+        BufferReadAccess<ParticleIndexPair> bondTopology(bondTopologyProperty);
+        BufferReadAccess<Vector3I> bondPeriodicImages(bondPeriodicImageProperty);
+        BufferReadAccess<Point3> positions(positionProperty);
 
-    // Check if the cached bounding box information is still up to date.
-    if(bbox.isEmpty()) {
+        size_t particleCount = positions.size();
+        const AffineTransformation cell = simulationCell ? simulationCell->cellMatrix() : AffineTransformation::Zero();
 
-        // If not, recompute bounding box from bond data.
-        if(bondTopologyProperty && positionProperty) {
+        for(size_t bondIndex = 0; bondIndex < bondTopology.size(); bondIndex++) {
+            size_t index1 = bondTopology[bondIndex][0];
+            size_t index2 = bondTopology[bondIndex][1];
+            if(index1 >= particleCount || index2 >= particleCount)
+                continue;
 
-            BufferReadAccess<ParticleIndexPair> bondTopology(bondTopologyProperty);
-            BufferReadAccess<Vector3I> bondPeriodicImages(bondPeriodicImageProperty);
-            BufferReadAccess<Point3> positions(positionProperty);
-
-            size_t particleCount = positions.size();
-            const AffineTransformation cell = simulationCell ? simulationCell->cellMatrix() : AffineTransformation::Zero();
-
-            for(size_t bondIndex = 0; bondIndex < bondTopology.size(); bondIndex++) {
-                size_t index1 = bondTopology[bondIndex][0];
-                size_t index2 = bondTopology[bondIndex][1];
-                if(index1 >= particleCount || index2 >= particleCount)
-                    continue;
-
-                bbox.addPoint(positions[index1]);
-                bbox.addPoint(positions[index2]);
-                if(bondPeriodicImages && bondPeriodicImages[bondIndex] != Vector3I::Zero()) {
-                    Vector3 vec = positions[index2] - positions[index1];
-                    const Vector3I& pbcShift = bondPeriodicImages[bondIndex];
-                    for(size_t k = 0; k < 3; k++) {
-                        if(pbcShift[k] != 0) vec += cell.column(k) * (FloatType)pbcShift[k];
-                    }
-                    bbox.addPoint(positions[index1] + (vec * FloatType(0.5)));
-                    bbox.addPoint(positions[index2] - (vec * FloatType(0.5)));
+            bbox.addPoint(positions[index1]);
+            bbox.addPoint(positions[index2]);
+            if(bondPeriodicImages && bondPeriodicImages[bondIndex] != Vector3I::Zero()) {
+                Vector3 vec = positions[index2] - positions[index1];
+                const Vector3I& pbcShift = bondPeriodicImages[bondIndex];
+                for(size_t k = 0; k < 3; k++) {
+                    if(pbcShift[k] != 0) vec += cell.column(k) * (FloatType)pbcShift[k];
                 }
+                bbox.addPoint(positions[index1] + (vec * FloatType(0.5)));
+                bbox.addPoint(positions[index2] - (vec * FloatType(0.5)));
             }
-
-            // Extend box to account for width of bonds.
-            GraphicsFloatType maxBondWidth = std::max(static_cast<GraphicsFloatType>(bondWidth()), GraphicsFloatType(0));
-            if(bondWidthProperty && bondWidthProperty->size() != 0) {
-                BufferReadAccess<GraphicsFloatType> widthArray(bondWidthProperty);
-                auto minmax = std::minmax_element(widthArray.cbegin(), widthArray.cend());
-                if(*minmax.first <= 0)
-                    maxBondWidth = std::max(maxBondWidth, *minmax.second);
-                else
-                    maxBondWidth = *minmax.second;
-            }
-            bbox = bbox.padBox(maxBondWidth / FloatType(2) * std::sqrt(FloatType(3)));
         }
+
+        // Extend box to account for width of bonds.
+        GraphicsFloatType maxBondWidth = std::max(static_cast<GraphicsFloatType>(bondWidth()), GraphicsFloatType(0));
+        if(bondWidthProperty && bondWidthProperty->size() != 0) {
+            BufferReadAccess<GraphicsFloatType> widthArray(bondWidthProperty);
+            auto minmax = std::minmax_element(widthArray.cbegin(), widthArray.cend());
+            if(*minmax.first <= 0)
+                maxBondWidth = std::max(maxBondWidth, *minmax.second);
+            else
+                maxBondWidth = *minmax.second;
+        }
+
+        return bbox.padBox(maxBondWidth / FloatType(2) * std::sqrt(FloatType(3)));
     }
-    return bbox;
+    return {};
 }
 
 /******************************************************************************
@@ -144,15 +124,10 @@ Box3 BondsVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPat
 ******************************************************************************/
 PipelineStatus BondsVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
-    if(renderer->isBoundingBoxPass()) {
-        TimeInterval validityInterval;
-        renderer->addToLocalBoundingBox(boundingBox(time, path, pipeline, flowState, renderer->visCache(), validityInterval));
-        return {};
-    }
-
     const Bonds* bonds = path.lastAs<Bonds>(0);
     const Particles* particles = path.lastAs<Particles>(1);
-    if(!bonds || !particles) return {};
+    if(!bonds || !particles)
+        return {};
     particles->verifyIntegrity();
     bonds->verifyIntegrity();
     const Property* bondTopologyProperty = bonds->getProperty(Bonds::TopologyProperty);
@@ -162,7 +137,7 @@ PipelineStatus BondsVis::render(const ConstDataObjectPath& path, const PipelineF
     const Property* bondTypeProperty = (coloringMode() == ByTypeColoring) ? bonds->getProperty(Bonds::TypeProperty) : nullptr;
     const Property* bondColorProperty = bonds->getProperty(Bonds::ColorProperty);
     const Property* bondWidthProperty = bonds->getProperty(Bonds::WidthProperty);
-    const Property* bondSelectionProperty = renderer->isInteractive() ? bonds->getProperty(Bonds::SelectionProperty) : nullptr;
+    const Property* bondSelectionProperty = frameGraph.isInteractive() ? bonds->getProperty(Bonds::SelectionProperty) : nullptr;
     const Property* transparencyProperty = bonds->getProperty(Bonds::TransparencyProperty);
 
     // Obtain particle-related properties and the vis element.
@@ -209,7 +184,7 @@ PipelineStatus BondsVis::render(const ConstDataObjectPath& path, const PipelineF
     };
 
     // Lookup the rendering primitive in the vis cache.
-    auto& visCache = renderer->visCache().get<CacheValue>(CacheKey(
+    auto& visCache = frameGraph.visCache().lookup<CacheValue>(CacheKey(
             bondTopologyProperty,
             bondPeriodicImageProperty,
             positionProperty,
@@ -266,7 +241,7 @@ PipelineStatus BondsVis::render(const ConstDataObjectPath& path, const PipelineF
                 particleRadii.reset();
 
             // Determine half-bond colors.
-            std::vector<ColorG> colors = halfBondColors(particles, renderer->isInteractive(), coloringMode(), false);
+            std::vector<ColorG> colors = halfBondColors(particles, frameGraph.isInteractive(), coloringMode(), false);
             OVITO_ASSERT(colors.size() == bondPositions1.size());
 
             size_t cylinderIndex = 0;
@@ -371,14 +346,10 @@ PipelineStatus BondsVis::render(const ConstDataObjectPath& path, const PipelineF
     if(!visCache.pickInfo)
         visCache.pickInfo = OORef<BondPickInfo>::create(particles, simulationCell);
 
-    renderer->beginPickObject(pipeline, visCache.pickInfo);
-    renderer->renderCylinders(visCache.cylinders);
-    renderer->endPickObject();
+    frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(visCache.cylinders), pipeline, frameGraph.addPickingGroup(pipeline, visCache.pickInfo));
 
     if(visCache.vertices.positions() && renderNodalVertices) {
-        renderer->beginPickObject(pipeline);
-        renderer->renderParticles(visCache.vertices);
-        renderer->endPickObject();
+        frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(visCache.vertices), pipeline, frameGraph.addPickingGroup(pipeline));
     }
 
     return {};

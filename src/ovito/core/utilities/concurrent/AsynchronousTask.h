@@ -109,27 +109,6 @@ public:
         return task->runAsync(showInUserInterface);
     }
 
-    /// Runs the given function in a separate worker thread and waits until the function returns.
-    /// Returns false if execution has been canceled due to cancelation of the task calling this function.
-    template<typename Function>
-    static bool runAsyncAndJoin(Function&& f, bool showInUserInterface) {
-        QWaitCondition wc;
-        QMutex waitMutex;
-        bool done = false;
-        auto future = AsynchronousTask::runAsync([&wc, &waitMutex, &done, f = std::forward<Function>(f)]() {
-            std::move(f)();
-            QMutexLocker locker(&waitMutex);
-            done = true;
-            wc.wakeAll();
-        }, showInUserInterface);
-        bool result = std::move(future).waitForFinished();
-        waitMutex.lock();
-        if(!done)
-            wc.wait(&waitMutex);
-        waitMutex.unlock();
-        return result;
-    }
-
     /// Runs the task in place and returns a future for the task's results.
     Future<R...> runImmediately(bool showInUserInterface) {
         this->startInThisThread(showInUserInterface);

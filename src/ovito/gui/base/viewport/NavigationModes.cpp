@@ -53,7 +53,8 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(PickOrbitCenterMode);
 void NavigationMode::activated(bool temporaryActivation)
 {
     _temporaryActivation = temporaryActivation;
-    inputManager()->addViewportGizmo(inputManager()->pickOrbitCenterMode());
+    if(!temporaryActivation)
+        inputManager()->addViewportGizmo(inputManager()->pickOrbitCenterMode());
     ViewportInputMode::activated(temporaryActivation);
 }
 
@@ -68,6 +69,7 @@ void NavigationMode::deactivated(bool temporary)
         _viewport->setCameraTransformation(_oldCameraTM);
         _viewport->setFieldOfView(_oldFieldOfView);
         _undoTransaction.cancel();
+        _viewport->removeViewportGizmo(inputManager()->pickOrbitCenterMode());
         _viewport = nullptr;
     }
     inputManager()->removeViewportGizmo(inputManager()->pickOrbitCenterMode());
@@ -81,7 +83,7 @@ void NavigationMode::discreteStep(ViewportWindow* vpwin, QPointF delta)
 {
     Viewport* vp = vpwin->viewport();
     if(_viewport == nullptr) {
-        std::swap(_viewport, vp);
+        _viewport = vp;
         _startPoint = QPointF(0,0);
         _oldCameraTM = _viewport->cameraTransformation();
         _oldCameraPosition = _viewport->cameraPosition();
@@ -92,7 +94,7 @@ void NavigationMode::discreteStep(ViewportWindow* vpwin, QPointF delta)
         _currentOrbitCenter = _viewport->orbitCenter();
     }
     modifyView(vpwin, vpwin->viewport(), delta, true);
-    std::swap(_viewport, vp);
+    _viewport = {};
 }
 
 /******************************************************************************
@@ -116,6 +118,8 @@ void NavigationMode::mousePressEvent(ViewportWindow* vpwin, QMouseEvent* event)
         _oldInverseViewMatrix = vpwin->projectionParams().inverseViewMatrix;
         _currentOrbitCenter = _viewport->orbitCenter();
         _undoTransaction.begin(inputManager()->userInterface(), tr("Modify camera"));
+        if(_temporaryActivation)
+            _viewport->addViewportGizmo(inputManager()->pickOrbitCenterMode());
     }
 }
 
@@ -127,6 +131,8 @@ void NavigationMode::mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event
     if(_viewport) {
         // Commit view change.
         _undoTransaction.commit();
+        if(_temporaryActivation)
+            _viewport->removeViewportGizmo(inputManager()->pickOrbitCenterMode());
         _viewport = nullptr;
 
         if(_temporaryActivation)

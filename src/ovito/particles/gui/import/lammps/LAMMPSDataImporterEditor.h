@@ -43,7 +43,7 @@ public:
     using FileImporterEditor::FileImporterEditor;
 
     /// This is called by the system when the user has selected a new file to import.
-    virtual bool inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow) override;
+    virtual void inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow) override;
 
 protected:
 

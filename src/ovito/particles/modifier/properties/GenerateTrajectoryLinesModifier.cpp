@@ -25,7 +25,7 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
+#include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
@@ -389,7 +389,7 @@ private:
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> GenerateTrajectoryLinesModifier::evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<PipelineFlowState> GenerateTrajectoryLinesModifier::evaluateModifier(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Need our type of ModificationNode.
     GenerateTrajectoryLinesModificationNode* modNode = dynamic_object_cast<GenerateTrajectoryLinesModificationNode>(request.modificationNode());
@@ -414,13 +414,13 @@ Future<PipelineFlowState> GenerateTrajectoryLinesModifier::evaluate(const Modifi
         Future<std::shared_ptr<TrajectoryGenerator>> future = for_each_sequential(
             boost::irange(startFrame, endFrame, everyNthFrame()),
             ObjectExecutor(modNode, true), // Request deferred execution
-            [request = PipelineEvaluationRequest(request), modNode](int frame, auto&) mutable {
+            [request = request](int frame) mutable -> SharedFuture<PipelineFlowState> {
                 this_task::setProgressText(tr("Generating trajectory lines"));
                 // Evaluate upstream pipeline at current frame.
-                request.setTime(modNode->sourceFrameToAnimationTime(frame));
-                return modNode->evaluateInput(request);
+                request.setTime(request.modificationNode()->sourceFrameToAnimationTime(frame));
+                return request.modificationNode()->evaluateInput(request).asFuture();
             },
-            [modNode](int frame, const PipelineFlowState& state, auto& generator) {
+            [](int frame, const PipelineFlowState& state, auto& generator) {
                 generator->addFrame(frame, state);
             },
             std::make_shared<TrajectoryGenerator>(
@@ -454,7 +454,7 @@ Future<PipelineFlowState> GenerateTrajectoryLinesModifier::evaluate(const Modifi
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void GenerateTrajectoryLinesModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void GenerateTrajectoryLinesModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     GenerateTrajectoryLinesModificationNode* modNode = dynamic_object_cast<GenerateTrajectoryLinesModificationNode>(request.modificationNode());
     if(modNode && modNode->_samplingOperation.isValid() && modNode->_samplingOperation.isFinished()) {

@@ -218,7 +218,7 @@ public:
     /// \return \c true if the node has a root node.
     bool isInScene() const { return scene() != nullptr; }
 
-    /// \brief Returns the root node of the scene node tree; or \c nullptr if the node is not currently part of a scene.
+    /// \brief Returns the root node of the scene tree; or \c nullptr if the node is not currently part of a scene.
     Scene* scene() const;
 
     /// \brief Returns the title of this object.

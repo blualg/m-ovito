@@ -39,7 +39,7 @@ SET_OVITO_OBJECT_EDITOR(LAMMPSTextDumpImporter, LAMMPSTextDumpImporterEditor);
  * Displays a dialog box that allows the user to edit the custom file column to particle
  * property mapping.
  *****************************************************************************/
-bool LAMMPSTextDumpImporterEditor::showEditColumnMappingDialog(LAMMPSTextDumpImporter* importer, const FileSourceImporter::Frame& frame)
+void LAMMPSTextDumpImporterEditor::showEditColumnMappingDialog(LAMMPSTextDumpImporter* importer, const FileSourceImporter::Frame& frame)
 {
     // Read the list of columns from the file's header.
     Future<ParticleInputColumnMapping> inspectFuture = importer->inspectFileHeader(frame);
@@ -47,8 +47,7 @@ bool LAMMPSTextDumpImporterEditor::showEditColumnMappingDialog(LAMMPSTextDumpImp
     // Block UI until reading is done.
     {
         ProgressDialog progressDialog(parentWindow(), inspectFuture, tr("Inspecting file header"));
-        if(!inspectFuture.waitForFinished())
-            return false;
+        inspectFuture.waitForFinished();
     }
 
     ParticleInputColumnMapping mapping = inspectFuture.result();
@@ -65,10 +64,9 @@ bool LAMMPSTextDumpImporterEditor::showEditColumnMappingDialog(LAMMPSTextDumpImp
     if(dialog.exec() == QDialog::Accepted) {
         importer->setCustomColumnMapping(dialog.mapping());
         importer->setUseCustomColumnMapping(true);
-        return true;
     }
     else {
-        return false;
+        this_task::cancelAndThrow();
     }
 }
 
@@ -147,9 +145,9 @@ void LAMMPSTextDumpImporterEditor::onEditColumnMapping()
             int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size() - 1);
 
             // Show the dialog box, which lets the user modify the file column mapping.
-            if(showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex])) {
-                importer->requestReload();
-            }
+            showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex]);
+
+            importer->requestReload();
         });
     }
 }

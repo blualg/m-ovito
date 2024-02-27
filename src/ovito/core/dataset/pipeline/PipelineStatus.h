@@ -78,6 +78,9 @@ public:
     template<typename T>
     void setShortInfo(T&& info) { _shortInfo.setValue(std::forward<T>(info)); }
 
+    /// Resets the information displayed next to the pipeline item in the GUI.
+    void resetShortInfo() { _shortInfo.clear(); }
+
     /// Tests two status objects for equality.
     bool operator==(const PipelineStatus& other) const {
         return (_type == other._type) && (_text == other._text) && (_shortInfo == other._shortInfo);

@@ -65,17 +65,16 @@ class OVITO_CORE_EXPORT FileExporter : public RefTarget
 
 public:
 
-    /// Initializes the object.
+    /// Constructor.
     explicit FileExporter(ObjectInitializationFlags flags);
 
     /// \brief Selects the default scene node to be exported by this exporter.
     virtual void selectDefaultExportableData(DataSet* dataset, Scene* scene);
 
-    /// \brief Determines whether the given scene node is suitable for exporting with this exporter service.
-    /// By default, all pipeline scene nodes are considered suitable that produce suitable data objects
-    /// of the type(s) specified by the FileExporter::exportableDataObjectClass() method.
-    /// Subclasses can refine this behavior as needed.
-    virtual bool isSuitableNode(SceneNode* node) const;
+    /// Determines whether the given scene node is suitable for this file exporter service.
+    /// By default, all pipeline scene nodes are considered suitable that produce
+    /// suitable data objects of the type specified by the FileExporter::exportableDataObjectClass() method.
+    virtual bool isSuitableSceneNode(SceneNode* node) const;
 
     /// \brief Determines whether the given pipeline output is suitable for exporting with this exporter service.
     /// By default, all data collections are considered suitable that contain suitable data objects
@@ -92,9 +91,7 @@ public:
     virtual void setOutputFilename(const QString& filename);
 
     /// \brief Exports the scene data to the output file(s).
-    /// \return \c true if the output file has been successfully written;
-    ///         \c false if the export operation has been canceled by the user.
-    virtual bool doExport();
+    virtual void doExport();
 
     /// Helper function that is called by sub-classes prior to file output in order to
     /// activate the default "C" locale.

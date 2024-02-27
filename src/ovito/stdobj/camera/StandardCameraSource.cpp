@@ -51,11 +51,9 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(StandardCameraSource, zoomController, World
 /******************************************************************************
 * Constructs a camera object.
 ******************************************************************************/
-StandardCameraSource::StandardCameraSource(ObjectInitializationFlags flags) : AbstractCameraSource(flags),
+StandardCameraSource::StandardCameraSource(ObjectInitializationFlags flags) : AbstractCameraSource(flags, false),
     _isPerspective(true)
 {
-    pipelineCache().setEnabled(false);
-
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setFovController(ControllerManager::createFloatController());
         fovController()->setFloatValue(AnimationTime(0), FLOATTYPE_PI/4);
@@ -77,22 +75,26 @@ StandardCameraSource::StandardCameraSource(ObjectInitializationFlags flags) : Ab
 }
 
 /******************************************************************************
-* Asks the object for its validity interval at the given time.
+* Lets the source generate a camera object for the given animation time.
 ******************************************************************************/
-TimeInterval StandardCameraSource::validityInterval(const PipelineEvaluationRequest& request) const
+DataOORef<const AbstractCameraObject> StandardCameraSource::cameraObject(AnimationTime time) const
 {
-    TimeInterval interval = AbstractCameraSource::validityInterval(request);
-    if(isPerspective() && fovController())
-        interval.intersect(fovController()->validityInterval(request.time()));
-    if(!isPerspective() && zoomController())
-        interval.intersect(zoomController()->validityInterval(request.time()));
-    return interval;
+    // Set up the camera data object.
+    DataOORef<StandardCameraObject> camera = DataOORef<StandardCameraObject>::create();
+    camera->setCreatedByNode(this);
+    camera->setIsPerspective(isPerspective());
+    TimeInterval stateValidity = TimeInterval::infinite();
+    if(fovController())
+        camera->setFov(fovController()->getFloatValue(time, stateValidity));
+    if(zoomController())
+        camera->setZoom(zoomController()->getFloatValue(time, stateValidity));
+    return camera;
 }
 
 /******************************************************************************
 * Asks the pipeline stage to compute the results.
 ******************************************************************************/
-PipelineFlowState StandardCameraSource::evaluateInternalSynchronous(const PipelineEvaluationRequest& request)
+PipelineEvaluationResult StandardCameraSource::evaluateInternal(const PipelineEvaluationRequest& request)
 {
     // Create a new DataCollection.
     DataOORef<DataCollection> data = DataOORef<DataCollection>::create();
@@ -102,12 +104,14 @@ PipelineFlowState StandardCameraSource::evaluateInternalSynchronous(const Pipeli
     camera->setCreatedByNode(this);
     camera->setIsPerspective(isPerspective());
     TimeInterval stateValidity = TimeInterval::infinite();
-    if(fovController()) camera->setFov(fovController()->getFloatValue(request.time(), stateValidity));
-    if(zoomController()) camera->setZoom(zoomController()->getFloatValue(request.time(), stateValidity));
+    if(fovController())
+        camera->setFov(fovController()->getFloatValue(request.time(), stateValidity));
+    if(zoomController())
+        camera->setZoom(zoomController()->getFloatValue(request.time(), stateValidity));
     data->addObject(std::move(camera));
 
     // Wrap the DataCollection in a PipelineFlowState.
-    return PipelineFlowState(std::move(data), PipelineStatus::Success, stateValidity);
+    return PipelineEvaluationResult(PipelineFlowState(std::move(data), PipelineStatus::Success, stateValidity));
 }
 
 /******************************************************************************

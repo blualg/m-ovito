@@ -103,17 +103,16 @@ public:
     /// Constructor.
     explicit SliceModifier(ObjectInitializationFlags flags);
 
+#if 0 // TODO
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
+#endif
 
     /// Lets the modifier render itself in an interactive viewport.
     virtual void renderModifierVisual(const ModifierEvaluationRequest& request, Pipeline* pipeline, FrameGraph& frameGraph) override;
 
     /// Modifies the input data synchronously.
-    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-    /// Indicates that this modifier wants preliminary viewport updates whenever its parameters change.
-    virtual bool performPreliminaryUpdateAfterChange() override { return true; }
+    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
     // Property access functions:
 
@@ -143,6 +142,18 @@ public:
 
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override;
+
+    /// Called when the object is opened in a new parameter editor in the UI.
+    virtual void editingStarted(UserInterface& ui) override {
+        // Refresh viewports because this modifier renders an overlay while being edited.
+        ui.updateViewports();
+    }
+
+    /// Called when the object is now longer opened in a parameter editor in the UI.
+    virtual void editingStopped(UserInterface& ui) override {
+        // Refresh viewports because this modifier renders an overlay while being edited.
+        ui.updateViewports();
+    }
 
 protected:
 

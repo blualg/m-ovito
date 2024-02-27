@@ -24,6 +24,7 @@
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/data/camera/AbstractCameraObject.h>
+#include <ovito/core/dataset/data/camera/AbstractCameraSource.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
@@ -162,8 +163,7 @@ void ViewportMenu::onShowViewTypeMenu()
     _mainWindow.handleExceptions([&] {
         // Find all cameras in the scene.
         viewport()->scene()->visitPipelines([this, viewNodeGroup](Pipeline* pipeline) -> bool {
-            const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(viewport()->scene()->animationSettings()->currentTime(), false);
-            if(state.data() && state.data()->containsObject<AbstractCameraObject>()) {
+            if(const AbstractCameraSource* cameraSource = dynamic_object_cast<AbstractCameraSource>(pipeline->head())) {
                 // Add a menu entry for this camera.
                 QAction* action = viewNodeGroup->addAction(pipeline->sceneNodeName());
                 action->setCheckable(true);

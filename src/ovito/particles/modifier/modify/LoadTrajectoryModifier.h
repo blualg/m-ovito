@@ -56,14 +56,11 @@ public:
     /// Constructor.
     explicit LoadTrajectoryModifier(ObjectInitializationFlags flags);
 
-    /// Determines the time interval over which a computed pipeline state will remain valid.
-    virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
-
     /// Modifies the input data.
-    virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
     /// Modifies the input data synchronously.
-    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
     /// Returns the number of animation frames this modifier can provide.
     virtual int numberOfOutputFrames(ModificationNode* node) const override {
@@ -86,9 +83,6 @@ public:
             inputLabels.insert(trajectorySource()->animationFrameLabels());
         return std::move(inputLabels);
     }
-
-    /// Indicates that this modifier wants preliminary viewport updates whenever its parameters change.
-    virtual bool performPreliminaryUpdateAfterChange() override { return true; }
 
 protected:
 

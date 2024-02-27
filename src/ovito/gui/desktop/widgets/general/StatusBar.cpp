@@ -13,7 +13,7 @@
 //  You should have received a copy of the GPL along with this program in a
 //  file LICENSE.GPL.txt.  You should have received a copy of the MIT License along
 //  with this program in a file LICENSE.MIT.txt
-//  
+//
 //  This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND,
 //  either express or implied. See the GPL or the MIT License for the specific language
 //  governing rights and limitations.
@@ -28,7 +28,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructs a status bar widget.
 ******************************************************************************/
-StatusBar::StatusBar(QWidget* parent) : QLabel(parent) 
+StatusBar::StatusBar(QWidget* parent) : QLabel(parent)
 {
     setMargin(2);
     setTextFormat(Qt::RichText);
@@ -50,7 +50,7 @@ void StatusBar::showMessage(const QString& message, int timeout)
             connect(_timer, &QTimer::timeout, this, &StatusBar::clearMessage);
         }
         _timer->start(timeout);
-    } 
+    }
     else if(_timer) {
         delete _timer;
         _timer = nullptr;
@@ -63,6 +63,10 @@ void StatusBar::showMessage(const QString& message, int timeout)
     const QString keyBeginText = QStringLiteral("<font color=\"%1\">").arg(palette().color(QPalette::Link).name());
     static const QString keyEndMarker = QStringLiteral("</key>");
     static const QString keyEndText = QStringLiteral("</font>");
+    static const QString sectionBeginMarker = QStringLiteral("<section>");
+    static const QString sectionBeginText = QStringLiteral("<b>");
+    static const QString sectionEndMarker = QStringLiteral("</section>");
+    static const QString sectionEndText = QStringLiteral("</b>");
     static const QString valueBeginMarker = QStringLiteral("<val>");
     static const QString valueBeginText = QStringLiteral("");
     static const QString valueEndMarker = QStringLiteral("</val>");
@@ -73,12 +77,15 @@ void StatusBar::showMessage(const QString& message, int timeout)
     plainText.replace(separatorMarker, separatorText);
     plainText.remove(keyBeginMarker);
     plainText.remove(keyEndMarker);
+    plainText.remove(sectionBeginMarker);
+    plainText.remove(sectionEndMarker);
     plainText.remove(valueBeginMarker);
     auto orgLength = plainText.length();
     plainText.remove(valueEndMarker);
-    int nvalues = (orgLength - plainText.length()) / valueEndMarker.length();
 
     int availableSpace = contentsRect().width() - 2 * margin();
+
+//    int nvalues = (orgLength - plainText.length()) / valueEndMarker.length();
 //    availableSpace -= 6 * nvalues;
 
     // Determine if the complete message fits into a single line of the status bar.
@@ -93,6 +100,8 @@ void StatusBar::showMessage(const QString& message, int timeout)
         richText.replace(separatorMarker, separatorTextColored);
         richText.replace(keyBeginMarker, keyBeginText);
         richText.replace(keyEndMarker, keyEndText);
+        richText.replace(sectionBeginMarker, sectionBeginText);
+        richText.replace(sectionEndMarker, sectionEndText);
         richText.replace(valueBeginMarker, valueBeginText);
         richText.replace(valueEndMarker, valueEndText);
         setText(richText);
@@ -100,7 +109,7 @@ void StatusBar::showMessage(const QString& message, int timeout)
         _overflowLabel->clear();
     }
     else {
-        // Determine where to break the message string into two lines. 
+        // Determine where to break the message string into two lines.
         // Prefer breaking at a <sep> marker.
         QString firstLine;
         QString currentSpan;
@@ -129,6 +138,14 @@ void StatusBar::showMessage(const QString& message, int timeout)
             else if(QStringView(&*inputIter, message.cend() - inputIter).startsWith(keyEndMarker)) {
                 currentSpan.append(keyEndText);
                 inputIter += keyEndMarker.length();
+            }
+            else if(QStringView(&*inputIter, message.cend() - inputIter).startsWith(sectionBeginMarker)) {
+                currentSpan.append(sectionBeginText);
+                inputIter += sectionBeginMarker.length();
+            }
+            else if(QStringView(&*inputIter, message.cend() - inputIter).startsWith(sectionEndMarker)) {
+                currentSpan.append(sectionEndText);
+                inputIter += sectionEndMarker.length();
             }
             else if(QStringView(&*inputIter, message.cend() - inputIter).startsWith(valueBeginMarker)) {
                 currentSpan.append(valueBeginText);
@@ -172,6 +189,14 @@ void StatusBar::showMessage(const QString& message, int timeout)
                 secondLine.append(keyEndText);
                 inputIter += keyEndMarker.length();
             }
+            else if(QStringView(&*inputIter, message.cend() - inputIter).startsWith(sectionBeginMarker)) {
+                secondLine.append(sectionBeginText);
+                inputIter += sectionBeginMarker.length();
+            }
+            else if(QStringView(&*inputIter, message.cend() - inputIter).startsWith(sectionEndMarker)) {
+                secondLine.append(sectionEndText);
+                inputIter += sectionEndMarker.length();
+            }
             else if(QStringView(&*inputIter, message.cend() - inputIter).startsWith(valueBeginMarker)) {
                 secondLine.append(valueBeginText);
                 inputIter += valueBeginMarker.length();
@@ -214,7 +239,7 @@ QSize StatusBar::sizeHint() const
 /******************************************************************************
 * Is called when the size of the status bar changes.
 ******************************************************************************/
-void StatusBar::resizeEvent(QResizeEvent* event) 
+void StatusBar::resizeEvent(QResizeEvent* event)
 {
     QWidget* parent = _overflowLabel->parentWidget();
     QPoint p = parent->mapFrom(window(), mapTo(window(), QPoint(0,0)));

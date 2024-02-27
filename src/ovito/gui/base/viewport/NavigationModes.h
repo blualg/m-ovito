@@ -100,7 +100,7 @@ protected:
     AffineTransformation _oldInverseViewMatrix;
 
     /// The current viewport we are working in.
-    Viewport* _viewport = nullptr;
+    OORef<Viewport> _viewport;
 
     /// Indicates whether this navigation mode is only temporarily activated.
     bool _temporaryActivation;

@@ -84,6 +84,10 @@ ElasticStrainModifier::ElasticStrainModifier(ObjectInitializationFlags flags) : 
 ******************************************************************************/
 Future<ModifierEnginePtr> ElasticStrainModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
+    // If pipeline is in interactive mode, skip the long-running computation step.
+    if(request.interactiveMode())
+        return {};
+
     // Get modifier inputs.
     const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();

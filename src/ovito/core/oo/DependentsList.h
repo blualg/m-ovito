@@ -42,7 +42,7 @@ private:
     /// If a RefMaker has multiple references to this target, it will appear only once in this list.
 	QVarLengthArray<RefMaker*, 2> _entries;
 
-    /// Keeps track of the number of nested calls to visit_all().
+    /// Keeps track of the number of nested calls to visit().
     int _reentranceCounter = 0;
 
 public:
@@ -50,10 +50,11 @@ public:
     /// Invokes the given visitor function for each entry in the list.
     /// It's allowed to modify the list while visiting it.
     template<class Callable>
-    void visit_all(Callable&& fn) {
+    void visit(Callable&& fn) noexcept {
         _reentranceCounter++;
 #ifdef OVITO_DEBUG
         try {
+        auto const originalSize = _entries.size();
 #endif
         // Visit all entries in the list. Skip nullptr entries. The length of the list
         // may grow (but not shrink) during the iteration process.
@@ -64,6 +65,8 @@ public:
             else
                 containsEmptySlots = true;
         }
+
+        OVITO_ASSERT(originalSize <= _entries.size());
 
         // Compact the list if necessary.
         // But only do it if we are not currently visiting the list recursively.
@@ -82,19 +85,17 @@ public:
     /// Adds a RefMaker to the list unless it is already in the list.
     void insert(RefMaker* dependent) noexcept {
         OVITO_ASSERT(dependent != nullptr);
-        size_type free_slot = -1;
-        size_type i = 0;
-        for(RefMaker* entry : _entries) {
+        RefMaker** free_slot = nullptr;
+        for(auto& entry : _entries) {
             if(entry == dependent)
                 return;
-            else if(free_slot == -1 && entry == nullptr)
-                free_slot = i;
-            i++;
+            else if(entry == nullptr && free_slot == nullptr)
+                free_slot = &entry;
         }
-        if(free_slot == -1)
+        if(free_slot == nullptr)
             _entries.push_back(dependent);
         else
-            _entries[free_slot] = dependent;
+            *free_slot = dependent;
         OVITO_ASSERT(_entries.size() <= 255);
     }
 
@@ -103,7 +104,8 @@ public:
         OVITO_ASSERT(dependent != nullptr);
         auto idx = _entries.indexOf(dependent);
         OVITO_ASSERT(idx >= 0);
-        _entries[idx] = nullptr;
+        _entries.replace(idx, nullptr);
+        OVITO_ASSERT(!_entries.contains(dependent));
     }
 
     /// Checks if the list currently contains no RefMakers.

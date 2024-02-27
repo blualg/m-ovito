@@ -66,7 +66,7 @@ void FreezePropertyModifier::initializeModifier(const ModifierInitializationRequ
 
     // Use the first available particle property from the input state as data source when the modifier is newly created.
     if(sourceProperty().isNull() && subject() && ExecutionContext::isInteractive()) {
-        const PipelineFlowState& input = request.modificationNode()->evaluateInputSynchronous(request);
+        const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
         if(const PropertyContainer* container = input.getLeafObject(subject())) {
             for(const Property* property : container->properties()) {
                 setSourceProperty(PropertyReference(subject().dataClass(), property));
@@ -98,14 +98,14 @@ void FreezePropertyModifier::propertyChanged(const PropertyFieldDescriptor* fiel
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> FreezePropertyModifier::evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<PipelineFlowState> FreezePropertyModifier::evaluateModifier(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     // Check if we already have the frozen property available.
     if(FreezePropertyModificationNode* node = dynamic_object_cast<FreezePropertyModificationNode>(request.modificationNode())) {
         if(node->hasFrozenState(AnimationTime::fromFrame(freezeTime()))) {
             // Perform replacement of the property in the input pipeline state.
             PipelineFlowState output = input;
-            evaluateSynchronous(request, output);
+            evaluateModifierSynchronous(request, output);
             return std::move(output);
         }
     }
@@ -133,7 +133,7 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluate(const ModifierEvaluat
                             frozenState.stateValidity());
 
                         // Perform the actual replacement of the property in the input pipeline state.
-                        evaluateSynchronous(request, state);
+                        evaluateModifierSynchronous(request, state);
                         return std::move(state);
                     }
                     else {
@@ -150,7 +150,7 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluate(const ModifierEvaluat
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void FreezePropertyModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void FreezePropertyModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     if(!subject())
         throw Exception(tr("No property type selected."));

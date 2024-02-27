@@ -127,25 +127,16 @@ QVariant TextLabelOverlay::getPipelineEditorShortInfo(Scene* scene) const
 ******************************************************************************/
 void TextLabelOverlay::render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene)
 {
-    if(frameGraph.isInteractive()) {
-        const PipelineFlowState& flowState = pipeline() ? pipeline()->evaluatePipelineSynchronous(frameGraph.time(), true) : PipelineFlowState();
-        renderImplementation(frameGraph, physicalViewportRect, flowState);
-    }
-    else {
-        // Check alignment parameter.
+    // Check alignment parameter.
+    if(!frameGraph.isInteractive())
         checkAlignmentParameterValue(alignment());
 
-        if(pipeline()) {
-            PipelineEvaluationRequest request(frameGraph.time());
-            request.setThrowOnError(frameGraph.stopOnPipelineError());
-            PipelineEvaluationFuture pipelineEvaluation = pipeline()->evaluatePipeline(request);
-            if(!pipelineEvaluation.waitForFinished())
-                return;
-            renderImplementation(frameGraph, physicalViewportRect, pipelineEvaluation.result());
-        }
-        else {
-            renderImplementation(frameGraph, physicalViewportRect, {});
-        }
+    if(pipeline()) {
+        PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
+        renderImplementation(frameGraph, physicalViewportRect, pipeline()->evaluatePipeline(request).result());
+    }
+    else {
+        renderImplementation(frameGraph, physicalViewportRect, {});
     }
 }
 

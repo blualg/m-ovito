@@ -100,7 +100,6 @@ SET(SourceFiles
     dataset/pipeline/ActiveObject.cpp
     dataset/pipeline/PipelineFlowState.cpp
     dataset/pipeline/PipelineCache.cpp
-    dataset/pipeline/PipelineEvaluation.cpp
     dataset/pipeline/PipelineNode.cpp
     dataset/pipeline/PipelineStatus.cpp
     dataset/pipeline/Modifier.cpp

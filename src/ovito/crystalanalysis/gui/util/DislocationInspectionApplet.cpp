@@ -194,14 +194,12 @@ void DislocationInspectionApplet::PickingMode::mouseReleaseEvent(ViewportWindow*
 ******************************************************************************/
 int DislocationInspectionApplet::PickingMode::pickDislocation(ViewportWindow* vpwin, const QPoint& pos) const
 {
-    ViewportPickResult vpPickResult = vpwin->pick(pos);
-
     // Check if user has clicked on something.
-    if(vpPickResult.isValid()) {
+    if(std::optional<ViewportWindow::PickResult> vpPickResult = vpwin->pick(pos)) {
         // Check if that was a dislocation.
-        DislocationPickInfo* pickInfo = dynamic_object_cast<DislocationPickInfo>(vpPickResult.pickInfo());
-        if(pickInfo && vpPickResult.pipeline() == _applet->currentPipeline()) {
-            return pickInfo->segmentIndexFromSubObjectID(vpPickResult.subobjectId());
+        DislocationPickInfo* pickInfo = dynamic_object_cast<DislocationPickInfo>(vpPickResult->pickInfo());
+        if(pickInfo && vpPickResult->pipeline() == _applet->currentPipeline()) {
+            return pickInfo->segmentIndexFromSubObjectID(vpPickResult->subobjectId());
         }
     }
 
@@ -225,20 +223,24 @@ void DislocationInspectionApplet::PickingMode::mouseMoveEvent(ViewportWindow* vp
 /******************************************************************************
 * Lets the input mode render its overlay content in a viewport.
 ******************************************************************************/
-void DislocationInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneRenderer* renderer)
+void DislocationInspectionApplet::PickingMode::renderOverlay(Viewport* vp, ViewportWindow* vpWin, FrameGraph& frameGraph, DataSet* dataset)
 {
-    if(!_applet->currentPipeline()) return;
+    if(!_applet->currentPipeline())
+        return;
 
-    const PipelineFlowState& flowState = _applet->currentPipeline()->evaluatePipelineSynchronous(renderer->time(), true);
+    PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
+    const PipelineFlowState& flowState = _applet->currentPipeline()->evaluateRenderingPipeline(request).result();
     const DislocationNetworkObject* dislocationObj = flowState.getObject<DislocationNetworkObject>();
-    if(!dislocationObj) return;
+    if(!dislocationObj)
+        return;
     DislocationVis* vis = dynamic_object_cast<DislocationVis>(dislocationObj->visElement());
-    if(!vis) return;
+    if(!vis)
+        return;
 
     for(const QModelIndex& index : _applet->_tableView->selectionModel()->selectedRows()) {
         int segmentIndex = index.row();
         if(segmentIndex >= 0 && segmentIndex < dislocationObj->segments().size())
-            vis->renderOverlayMarker(renderer->time(), dislocationObj, flowState, segmentIndex, renderer, _applet->currentPipeline());
+            vis->renderOverlayMarker(dislocationObj, flowState, segmentIndex, frameGraph, _applet->currentPipeline());
     }
 }
 

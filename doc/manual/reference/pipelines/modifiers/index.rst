@@ -111,7 +111,6 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.create_isosurface`               Generates an isosurface from a scalar field.
   :ref:`particles.modifiers.coordination_polyhedra`          Shows coordination polyhedra.
   :ref:`particles.modifiers.generate_trajectory_lines`       Generates trajectory lines from the time-dependent particle positions.
-  :ref:`particles.modifiers.interactive_molecular_dynamics`  Visualize live atomic trajectories from a running MD simulation as they are being calculated.
   ========================================================== ==========================================================
 
 .. _particles.modifiers.pythonbased:

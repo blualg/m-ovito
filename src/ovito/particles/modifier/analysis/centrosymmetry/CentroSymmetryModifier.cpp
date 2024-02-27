@@ -66,6 +66,10 @@ bool CentroSymmetryModifier::OOMetaClass::isApplicableTo(const DataCollection& i
 ******************************************************************************/
 Future<ModifierEnginePtr> CentroSymmetryModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
+    // If pipeline is in interactive mode, skip the long-running computation step.
+    if(request.interactiveMode())
+        return {};
+
     // Get modifier input.
     const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
@@ -201,6 +205,8 @@ FloatType CentroSymmetryModifier::computeCSP(NearestNeighborFinder& neighFinder,
 ******************************************************************************/
 void CentroSymmetryModifier::CentroSymmetryEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
+    ModifierEngine::applyResults(request, state);
+
     Particles* particles = state.expectMutableObject<Particles>();
     if(_inputFingerprint.hasChanged(particles))
         throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));

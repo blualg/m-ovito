@@ -146,8 +146,6 @@ void OXDNAImporter::FrameLoader::loadFile()
 
     // Fetch the oxDNA topology file if it is stored on a remote location.
     SharedFuture<FileHandle> localTopologyFileFuture = Application::instance()->fileManager().fetchUrl(topoFileUrl);
-    if(!localTopologyFileFuture.waitForFinished())
-        return;
 
     // Open oxDNA topology file for reading.
     CompressedTextReader topoStream(localTopologyFileFuture.result());
@@ -189,7 +187,8 @@ void OXDNAImporter::FrameLoader::loadFile()
     auto* baseTypeIter = baseAccess.begin();
     auto* strandId = strandsAccess.begin();
     for(size_t i = 0; i < numNucleotidesLong; i++, ++strandId) {
-        if(!setProgressValueIntermittent(i)) return;
+        if(!setProgressValueIntermittent(i))
+            return;
 
         char baseName[32];
         qlonglong neighbor1, neighbor2;

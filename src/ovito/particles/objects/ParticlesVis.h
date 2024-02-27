@@ -76,7 +76,7 @@ public:
     static ParticlePrimitive::ParticleShape effectiveParticleShape(ParticleShape shape, const Property* shapeProperty, const Property* orientationProperty, const Property* roundnessProperty);
 
     /// Returns the actual rendering quality used to render the particles.
-    ParticlePrimitive::RenderingQuality effectiveRenderingQuality(SceneRenderer* renderer, const Particles* particles) const;
+    ParticlePrimitive::RenderingQuality effectiveRenderingQuality(bool isInteractiveRenderer, const Particles* particles) const;
 
     /// Determines the color of each particle to be used for rendering.
     ConstPropertyPtr particleColors(const Particles* particles, bool highlightSelection) const;
@@ -94,7 +94,7 @@ public:
     Box3 particleBoundingBox(BufferReadAccess<Point3> positionProperty, const Property* typeProperty, BufferReadAccess<GraphicsFloatType> radiusProperty, BufferReadAccess<Vector3G> shapeProperty, bool includeParticleRadius) const;
 
     /// Render a marker around a particle to highlight it in the viewports.
-    void highlightParticle(size_t particleIndex, const Particles* particles, SceneRenderer* renderer) const;
+    void highlightParticle(size_t particleIndex, const Particles* particles, FrameGraph& frameGraph) const;
 
     /// Returns the typed particle property used to determine the rendering colors of particles (if no per-particle colors are defined).
     virtual const Property* getParticleTypeColorProperty(const Particles* particles) const;
@@ -110,13 +110,13 @@ public:
 private:
 
     /// Renders particle types that have a mesh-based shape assigned.
-    void renderMeshBasedParticles(const Particles* particles, SceneRenderer* renderer, const Pipeline* pipeline);
+    void renderMeshBasedParticles(const Particles* particles, FrameGraph& frameGraph, const Pipeline* pipeline);
 
     /// Renders all particles with a primitive shape (spherical, box, (super)quadrics).
-    void renderPrimitiveParticles(const Particles* particles, SceneRenderer* renderer, const Pipeline* pipeline);
+    void renderPrimitiveParticles(const Particles* particles, FrameGraph& frameGraph, const Pipeline* pipeline);
 
     /// Renders all particles with a (sphero-)cylindrical shape.
-    void renderCylindricParticles(const Particles* particles, SceneRenderer* renderer, const Pipeline* pipeline);
+    void renderCylindricParticles(const Particles* particles, FrameGraph& frameGraph, const Pipeline* pipeline);
 
 private:
 

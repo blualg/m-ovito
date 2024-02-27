@@ -319,7 +319,14 @@ public:
 
     /// Add a time interval to the union.
     void add(TimeInterval iv) {
-        if(iv.isEmpty()) return;
+        if(iv.isEmpty()) {
+            return;
+        }
+        else if(iv.isInfinite()) {
+            clear();
+            push_back(iv);
+            return;
+        }
 
         // Subtract existing intervals from interval to be added.
         for(iterator iter = begin(); iter != end(); ) {

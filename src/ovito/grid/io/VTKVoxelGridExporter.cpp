@@ -62,8 +62,6 @@ void VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath)
 {
     // Evaluate pipeline.
     const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber);
-    if(this_task::isCanceled())
-        return;
 
     // Look up the VoxelGrid to be exported in the pipeline state.
     DataObjectReference objectRef(&VoxelGrid::OOClass(), dataObjectToExport().dataPath());

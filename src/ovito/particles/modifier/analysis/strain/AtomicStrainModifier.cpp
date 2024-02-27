@@ -336,6 +336,8 @@ void AtomicStrainModifier::AtomicStrainEngine::perform()
 ******************************************************************************/
 void AtomicStrainModifier::AtomicStrainEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
+    ModifierEngine::applyResults(request, state);
+
     Particles* particles = state.expectMutableObject<Particles>();
 
     if(_inputFingerprint.hasChanged(particles))

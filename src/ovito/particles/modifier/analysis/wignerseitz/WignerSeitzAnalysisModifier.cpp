@@ -264,6 +264,8 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
 ******************************************************************************/
 void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
+    ModifierEngine::applyResults(request, state);
+
     const Particles* refParticles = referenceState().getObject<Particles>();
     if(!refParticles)
         throw Exception(tr("This modifier cannot be evaluated, because the reference configuration does not contain any particles."));

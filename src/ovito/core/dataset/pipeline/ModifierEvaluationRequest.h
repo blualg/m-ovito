@@ -24,7 +24,7 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
+#include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 
 namespace Ovito {
 
@@ -40,15 +40,11 @@ public:
         PipelineEvaluationRequest(pipelineRequest), _modificationNode(const_cast<ModificationNode*>(node)) {}
 
     /// Constructor.
-    ModifierEvaluationRequest(AnimationTime time, const ModificationNode* node) :
-        PipelineEvaluationRequest(time), _modificationNode(const_cast<ModificationNode*>(node)) {}
-
-    /// Constructor.
-    ModifierEvaluationRequest(AnimationSettings* animationSettings, const ModificationNode* node) :
-        PipelineEvaluationRequest(animationSettings), _modificationNode(const_cast<ModificationNode*>(node)) {}
+    ModifierEvaluationRequest(AnimationTime time, bool throwOnError, bool interactiveMode, const ModificationNode* node) :
+        PipelineEvaluationRequest(time, throwOnError, interactiveMode), _modificationNode(const_cast<ModificationNode*>(node)) {}
 
     /// Returns the modification node being evaluated.
-    ModificationNode* modificationNode() const { return _modificationNode; }
+    const OORef<ModificationNode>& modificationNode() const { return _modificationNode; }
 
     /// Returns the modifier being evaluated.
     Modifier* modifier() const;
@@ -56,7 +52,7 @@ public:
 private:
 
     /// The modification pipeline node being evaluated.
-    ModificationNode* _modificationNode;
+    OORef<ModificationNode> _modificationNode;
 };
 
 // Data structure passed to Modifier::initializeModifier():

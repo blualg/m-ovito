@@ -141,7 +141,7 @@ void CreateBondsModifier::initializeModifier(const ModifierInitializationRequest
     Modifier::initializeModifier(request);
 
     int bondTypeId = 1;
-    const PipelineFlowState& input = request.modificationNode()->evaluateInputSynchronous(request);
+    const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
     if(const Particles* particles = input.getObject<Particles>()) {
         // Adopt the upstream BondsVis object if there already is one.
         // Also choose a unique numeric bond type ID, which does not conflict with any existing bond type.
@@ -208,6 +208,10 @@ const ElementType* CreateBondsModifier::lookupParticleType(const Property* typeP
 ******************************************************************************/
 Future<ModifierEnginePtr> CreateBondsModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
+    // If pipeline is in interactive mode, skip the long-running computation step.
+    if(request.interactiveMode())
+        return {};
+
     // Get modifier input.
     const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
@@ -402,6 +406,8 @@ void CreateBondsModifier::BondsEngine::perform()
 ******************************************************************************/
 void CreateBondsModifier::BondsEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
+    ModifierEngine::applyResults(request, state);
+
     CreateBondsModifier* modifier = static_object_cast<CreateBondsModifier>(request.modifier());
     OVITO_ASSERT(modifier);
 
@@ -432,10 +438,10 @@ void CreateBondsModifier::BondsEngine::applyResults(const ModifierEvaluationRequ
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void CreateBondsModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void CreateBondsModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-    // If results are still available from the last pipeline evaluation, apply them to the input data.
-    Modifier::evaluateSynchronous(request, state);
+    // Let the base class mark the output as preliminary, because the bonds have not been computed yet.
+    Modifier::evaluateModifierSynchronous(request, state);
 
     // Bonds have not been computed yet, but still add the empty Bonds to the pipeline output
     // so that subsequent modifiers in the pipeline see it in any case.

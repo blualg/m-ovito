@@ -283,8 +283,9 @@ void DislocationAnalysisEngine::perform()
 ******************************************************************************/
 void DislocationAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-    DislocationAnalysisModifier* modifier = static_object_cast<DislocationAnalysisModifier>(request.modifier());
     StructureIdentificationEngine::applyResults(request, state);
+
+    DislocationAnalysisModifier* modifier = static_object_cast<DislocationAnalysisModifier>(request.modifier());
 
     // Output defect mesh.
     state.addObjectWithUniqueId<SurfaceMesh>(_defectMesh);

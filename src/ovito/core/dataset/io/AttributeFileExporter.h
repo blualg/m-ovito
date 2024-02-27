@@ -59,7 +59,7 @@ public:
     virtual bool supportsMultiFrameFiles() const override { return true; }
 
     /// \brief Evaluates the pipeline of the PipelineSceneNode to be exported and returns the attributes list.
-    bool getAttributesMap(int frame, QVariantMap& attributes);
+    QVariantMap getAttributesMap(int frame);
 
 protected:
 

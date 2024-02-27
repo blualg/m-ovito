@@ -185,9 +185,9 @@ void ElasticStrainEngine::perform()
 ******************************************************************************/
 void ElasticStrainEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-    ElasticStrainModifier* modifier = static_object_cast<ElasticStrainModifier>(request.modifier());
-
     StructureIdentificationEngine::applyResults(request, state);
+
+    ElasticStrainModifier* modifier = static_object_cast<ElasticStrainModifier>(request.modifier());
 
     // Output cluster graph.
     ClusterGraphObject* clusterGraphObj = state.createObject<ClusterGraphObject>(request.modificationNode());

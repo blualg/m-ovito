@@ -24,6 +24,7 @@
 
 
 #include <ovito/core/Core.h>
+#include <ovito/core/utilities/Exception.h>
 #include <function2/function2.hpp>
 #include "detail/FutureDetail.h"
 
@@ -35,6 +36,9 @@ namespace detail {
     template<typename Derived> class TaskCallback;
     template<typename tuple_type, typename task_type> class ContinuationTask;
 }
+
+/// Exception type thrown by a task in case it got canceled.
+struct OVITO_CORE_EXPORT OperationCanceled {};
 
 /**
  * \brief The shared state of promises and futures.
@@ -110,11 +114,7 @@ public:
 
     /// \brief Switches the task into the 'exception' state to signal that an exception has occurred.
     /// \param ex The exception to store into the task object.
-    void setException(const std::exception_ptr& ex) { setException(std::exception_ptr(ex)); }
-
-    /// \brief Switches the task into the 'exception' state to signal that an exception has occurred.
-    /// \param ex The exception to store into the task object.
-    void setException(std::exception_ptr&& ex) {
+    void setException(std::exception_ptr ex) {
         const MutexLocker locker(&taskMutex());
 
         // Check if task is already canceled or finished.
@@ -199,9 +199,6 @@ public:
     /// \brief Returns the internal exception store, which contains an exception object in case the task has failed.
     const std::exception_ptr& exceptionStore() const noexcept { return _exceptionStore; }
 
-    /// \brief Returns a copy of the internal exception store, which contains an exception object in case the task has failed.
-    std::exception_ptr copyExceptionStore() const { return std::exception_ptr{exceptionStore()}; }
-
 protected:
 
     /// Assigns a tuple of values to the internal results storage of the task.
@@ -269,7 +266,7 @@ protected:
     bool startLocked() noexcept;
 
     /// Puts this task into the 'canceled' state (without newly locking the task).
-    void exceptionLocked(std::exception_ptr&& ex) noexcept;
+    void exceptionLocked(std::exception_ptr ex) noexcept;
 
     /// Puts this task into the 'canceled' state (without newly locking the task).
     void cancelLocked(MutexLocker& locker) noexcept;
@@ -371,6 +368,19 @@ OVITO_CORE_EXPORT bool setProgressValueIntermittent(qlonglong progressValue, int
 OVITO_CORE_EXPORT inline bool isCanceled() noexcept {
     OVITO_ASSERT(get() != nullptr);
     return get()->isCanceled();
+}
+
+/// Throws an OperationCanceled exception if a cancelation request was made on the current task.
+OVITO_CORE_EXPORT inline void throwIfCanceled() {
+    if(isCanceled())
+        throw OperationCanceled();
+}
+
+/// Cancels the current task and throws an OperationCanceled exception.
+OVITO_CORE_EXPORT inline void cancelAndThrow() {
+    OVITO_ASSERT(get() != nullptr);
+    get()->cancel();
+    throw OperationCanceled();
 }
 
 /// Starts a sequence of sub-steps in the progress range of this task.

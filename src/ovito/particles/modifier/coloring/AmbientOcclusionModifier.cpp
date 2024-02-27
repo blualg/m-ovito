@@ -29,6 +29,7 @@
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/rendering/FrameBuffer.h>
+#include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include "AmbientOcclusionModifier.h"
 
@@ -69,6 +70,10 @@ bool AmbientOcclusionModifier::OOMetaClass::isApplicableTo(const DataCollection&
 ******************************************************************************/
 Future<ModifierEnginePtr> AmbientOcclusionModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
+    // If pipeline is in interactive mode, skip the long-running computation step.
+    if(request.interactiveMode())
+        return {};
+
     // Get modifier input.
     const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
@@ -95,10 +100,6 @@ Future<ModifierEnginePtr> AmbientOcclusionModifier::createEngine(const ModifierE
     if(!rendererClass)
         throw Exception(tr("The OffscreenOpenGLSceneRenderer class is not available. Please make sure the OpenGLRenderer plugin is installed correctly."));
     OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClass->createInstance());
-
-    // Activate picking mode, because we want to render particles using false colors.
-    renderer->setImagePass(false);
-    renderer->setPickingPass(true);
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     return std::make_shared<AmbientOcclusionEngine>(request, validityInterval, particles, resolution, samplingCount(), posProperty, std::move(radii), boundingBox, std::move(renderer));
@@ -139,10 +140,10 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 
         // Create a local vis cache, because we are not in the main thread.
         // But we assume that this cache is not being used much anyway.
-        MixedKeyCache visCache;
+        auto visCache = std::make_shared<RendererResourceCache>();
 
         // Initialize the renderer.
-        _renderer->startRender(nullptr, frameBufferRect.size(), visCache);
+        _renderer->startRender(frameBufferRect.size());
         try {
             // The buffered particle geometry used for rendering the particles.
             ParticlePrimitive particleBuffer;
@@ -185,6 +186,13 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
                 // frame buffer contents.
                 frameBuffer.image() = QImage();
 
+                // Create a frame graph.
+                std::unique_ptr<FrameGraph> frameGraph = std::make_unique<FrameGraph>(
+                    visCache->acquireResourceFrame(),
+                    AnimationTime(0), projParams, frameBufferRect.size(), true, false, false,
+                    _renderer->preferredImageFormat(), 1.0);
+
+#if 0 // TODO
                 _renderer->beginFrame(AnimationTime(0), nullptr, projParams, nullptr, frameBufferRect, &frameBuffer);
                 _renderer->setWorldTransform(AffineTransformation::Identity());
                 _renderer->resetPickingBuffer();
@@ -205,6 +213,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 
                 // Retrieve the frame buffer contents.
                 _renderer->endFrame(true, frameBufferRect);
+#endif
 
                 // Extract brightness values from rendered image.
                 const QImage& image = frameBuffer.image();
@@ -235,7 +244,7 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
         _renderer->endRender();
 
         // The vis cache should remain unused when rendering just a bunch of spherical particles.
-        OVITO_ASSERT(visCache.size() == 0);
+        OVITO_ASSERT(visCache->empty());
 
         if(isCanceled())
             return;
@@ -274,6 +283,8 @@ void AmbientOcclusionModifier::AmbientOcclusionEngine::perform()
 ******************************************************************************/
 void AmbientOcclusionModifier::AmbientOcclusionEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
+    ModifierEngine::applyResults(request, state);
+
     AmbientOcclusionModifier* modifier = static_object_cast<AmbientOcclusionModifier>(request.modifier());
     OVITO_ASSERT(modifier);
 

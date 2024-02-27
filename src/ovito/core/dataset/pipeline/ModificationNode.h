@@ -69,26 +69,23 @@ public:
     /// \brief Constructor.
     explicit ModificationNode(ObjectInitializationFlags flags) : PipelineNode(flags) {}
 
-    /// \brief Determines the time interval over which a computed pipeline state will remain valid.
-    virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const override;
-
     /// \brief Throws an exception if the pipeline stage cannot be evaluated at this time. This is called by the system to catch user mistakes that would lead to infinite recursion.
     virtual void preEvaluationCheck() const override;
 
     /// \brief Asks the object for the result of the upstream data pipeline.
-    SharedFuture<PipelineFlowState> evaluateInput(const PipelineEvaluationRequest& request) const;
+    PipelineEvaluationResult evaluateInput(const PipelineEvaluationRequest& request) const;
 
     /// \brief Asks the object for the result of the upstream data pipeline at several animation times.
     Future<std::vector<PipelineFlowState>> evaluateInputMultiple(const PipelineEvaluationRequest& request, std::vector<AnimationTime> times) const;
 
-    /// \brief Requests the preliminary computation results from the upstream data pipeline.
-    PipelineFlowState evaluateInputSynchronous(const PipelineEvaluationRequest& request) const { return input() ? input()->evaluateSynchronous(request) : PipelineFlowState(); }
-
     /// \brief Asks the object for the result of the data pipeline.
-    virtual SharedFuture<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request) override;
+    virtual PipelineEvaluationResult evaluate(const PipelineEvaluationRequest& request) override;
 
-    /// \brief Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
-    virtual PipelineFlowState evaluateSynchronous(const PipelineEvaluationRequest& request) override;
+    /// \brief Returns the cached input of this modification node at the given time if available.
+    /// This method will never throw an exception and doesn't require a valid execution context.
+    PipelineFlowState getCachedPipelineNodeInput(AnimationTime time, bool interactiveMode = true) const {
+        return input() ? input()->pipelineCache().getAt(time, interactiveMode) : PipelineFlowState();
+    }
 
     /// \brief Returns the number of animation frames this pipeline object can provide.
     virtual int numberOfSourceFrames() const override;
@@ -123,12 +120,6 @@ public:
     /// Asks this object to delete itself.
     virtual void requestObjectDeletion() override;
 
-    /// Returns the sequence of compute engines from a recent successfully completed modifier evaluation which are still valid.
-    const std::vector<ModifierEnginePtr>& validStages() const { return _validStages; }
-
-    /// Stores the sequence of compute engines from a recent successfully completed modifier evaluation.
-    void setValidStages(std::vector<ModifierEnginePtr> validStages) { _validStages = std::move(validStages); }
-
     /// Returns a compute engine containing the results of a fully completed algorithm, which may be outdated.
     const ModifierEnginePtr& completedEngine() const { return _completedEngine; }
 
@@ -138,10 +129,7 @@ public:
 protected:
 
     /// \brief Asks the object for the result of the data pipeline.
-    virtual Future<PipelineFlowState> evaluateInternal(const PipelineEvaluationRequest& request) override;
-
-    /// \brief Lets the pipeline stage compute a preliminary result in a synchronous fashion.
-    virtual PipelineFlowState evaluateInternalSynchronous(const PipelineEvaluationRequest& request) override;
+    virtual PipelineEvaluationResult evaluateInternal(const PipelineEvaluationRequest& request) override;
 
     /// \brief Decides whether a preliminary viewport update is performed after this pipeline object has been
     ///        evaluated but before the rest of the pipeline is complete.
@@ -166,9 +154,6 @@ private:
 
     /// The logical group this modification node belongs to (only used in the GUI).
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ModifierGroup>, modifierGroup, setModifierGroup, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_SUB_ANIM);
-
-    /// The sequence of compute engines from a recent successfully completed modifier evaluation which are still valid.
-    std::vector<ModifierEnginePtr> _validStages;
 
     /// A compute engine containing the results of a fully completed algorithm, which may be outdated.
     ModifierEnginePtr _completedEngine;

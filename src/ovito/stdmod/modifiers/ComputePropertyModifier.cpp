@@ -140,6 +140,10 @@ void ComputePropertyModifier::referenceReplaced(const PropertyFieldDescriptor* f
 ******************************************************************************/
 Future<ModifierEnginePtr> ComputePropertyModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
+    // If pipeline is in interactive mode, skip the long-running computation step.
+    if(request.interactiveMode())
+        return {};
+
     ComputePropertyModificationNode* modNode = dynamic_object_cast<ComputePropertyModificationNode>(request.modificationNode());
 
     // Get the delegate object that will take of the specific details.
@@ -364,6 +368,8 @@ bool ComputePropertyModifierDelegate::PropertyComputeEngine::modifierChanged(con
 ******************************************************************************/
 void ComputePropertyModifierDelegate::PropertyComputeEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
+    ModifierEngine::applyResults(request, state);
+
     ComputePropertyModifier* modifier = static_object_cast<ComputePropertyModifier>(request.modifier());
 
     if(!modifier->delegate())

@@ -100,6 +100,10 @@ void GrainSegmentationModifier::propertyChanged(const PropertyFieldDescriptor* f
 ******************************************************************************/
 Future<ModifierEnginePtr> GrainSegmentationModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
+    // If pipeline is in interactive mode, skip the long-running computation step.
+    if(request.interactiveMode())
+        return {};
+
     // Get modifier input.
     const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
@@ -140,6 +144,8 @@ Future<ModifierEnginePtr> GrainSegmentationModifier::createEngine(const Modifier
 ******************************************************************************/
 void GrainSegmentationEngine1::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
+    ModifierEngine::applyResults(request, state);
+
     GrainSegmentationModifier* modifier = static_object_cast<GrainSegmentationModifier>(request.modifier());
     OVITO_ASSERT(modifier);
 
@@ -204,6 +210,8 @@ void GrainSegmentationEngine1::applyResults(const ModifierEvaluationRequest& req
 ******************************************************************************/
 void GrainSegmentationEngine2::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
+    ModifierEngine::applyResults(request, state);
+
     // Output the results from the 1st algorithm stage.
     _engine1->applyResults(request, state);
 

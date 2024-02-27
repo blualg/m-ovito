@@ -38,7 +38,7 @@ SET_OVITO_OBJECT_EDITOR(XYZImporter, XYZImporterEditor);
 * This method is called by the FileSource each time a new source
 * file has been selected by the user.
 ******************************************************************************/
-bool XYZImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow)
+void XYZImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow)
 {
     XYZImporter* xyzImporter = static_object_cast<XYZImporter>(importer);
     Future<ParticleInputColumnMapping> inspectFuture = xyzImporter->inspectFileHeader(FileSourceImporter::Frame(sourceFile));
@@ -46,15 +46,14 @@ bool XYZImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourc
     {
         // Block UI until reading is done.
         ProgressDialog progressDialog(&mainWindow, inspectFuture, tr("Inspecting file header"));
-        if(!inspectFuture.waitForFinished())
-            return false;
+        inspectFuture.waitForFinished();
     }
 
     ParticleInputColumnMapping mapping = inspectFuture.result();
 
     // If column names were given in the XYZ file, use them rather than popping up a dialog.
     if(mapping.hasFileColumnNames())
-        return true;
+        return;
 
     // If this is a newly created file importer, load old mapping from application settings store.
     if(xyzImporter->columnMapping().empty()) {
@@ -92,26 +91,24 @@ bool XYZImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourc
         settings.beginGroup("viz/importer/xyz/");
         settings.setValue("columnmapping", dialog.mapping().toByteArray());
         settings.endGroup();
-
-        return true;
     }
-
-    return false;
+    else {
+        this_task::cancelAndThrow();
+    }
 }
 
 /******************************************************************************
  * Displays a dialog box that allows the user to edit the custom file column to particle
  * property mapping.
  *****************************************************************************/
-bool XYZImporterEditor::showEditColumnMappingDialog(XYZImporter* importer, const FileSourceImporter::Frame& frame)
+void XYZImporterEditor::showEditColumnMappingDialog(XYZImporter* importer, const FileSourceImporter::Frame& frame)
 {
     Future<ParticleInputColumnMapping> inspectFuture = importer->inspectFileHeader(frame);
 
     {
         // Block UI until reading is done.
         ProgressDialog progressDialog(parentWindow(),inspectFuture, tr("Inspecting file header"));
-        if(!inspectFuture.waitForFinished())
-            return false;
+        inspectFuture.waitForFinished();
     }
 
     ParticleInputColumnMapping mapping = inspectFuture.result();
@@ -132,10 +129,9 @@ bool XYZImporterEditor::showEditColumnMappingDialog(XYZImporter* importer, const
         settings.beginGroup("viz/importer/xyz/");
         settings.setValue("columnmapping", dialog.mapping().toByteArray());
         settings.endGroup();
-        return true;
     }
     else {
-        return false;
+        this_task::cancelAndThrow();
     }
 }
 
@@ -204,9 +200,9 @@ void XYZImporterEditor::onEditColumnMapping()
             int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size()-1);
 
             // Show the dialog box, which lets the user modify the file column mapping.
-            if(showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex])) {
-                importer->requestReload();
-            }
+            showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex]);
+
+            importer->requestReload();
         });
     }
 }

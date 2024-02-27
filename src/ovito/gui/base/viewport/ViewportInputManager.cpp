@@ -69,8 +69,10 @@ ViewportInputManager::~ViewportInputManager()
 ******************************************************************************/
 ViewportInputMode* ViewportInputManager::activeMode()
 {
-    if(_inputModeStack.empty()) return nullptr;
-    return _inputModeStack.back();
+    if(_inputModeStack.empty())
+        return nullptr;
+    else
+        return _inputModeStack.back();
 }
 
 /******************************************************************************
@@ -81,7 +83,8 @@ void ViewportInputManager::pushInputMode(ViewportInputMode* newMode, bool tempor
     OVITO_CHECK_POINTER(newMode);
 
     ViewportInputMode* oldMode = activeMode();
-    if(newMode == oldMode) return;
+    if(newMode == oldMode)
+        return;
 
     bool oldModeRemoved = false;
     if(oldMode) {
@@ -138,7 +141,8 @@ void ViewportInputManager::removeInputMode(ViewportInputMode* mode)
     OVITO_CHECK_POINTER(mode);
 
     auto iter = std::find(_inputModeStack.begin(), _inputModeStack.end(), mode);
-    if(iter == _inputModeStack.end()) return;
+    if(iter == _inputModeStack.end())
+        return;
 
     OVITO_ASSERT(mode->_manager == this);
 
@@ -163,7 +167,7 @@ void ViewportInputManager::removeInputMode(ViewportInputMode* mode)
 }
 
 /******************************************************************************
-* Adds a gizmo to be shown in the interactive viewports.
+* Adds a gizmo to be shown in all interactive viewports.
 ******************************************************************************/
 void ViewportInputManager::addViewportGizmo(ViewportGizmo* gizmo)
 {

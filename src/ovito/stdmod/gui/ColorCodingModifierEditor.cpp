@@ -284,14 +284,16 @@ void ColorCodingModifierEditor::onModifierChanged()
 void ColorCodingModifierEditor::autoRangeChanged()
 {
     ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject());
-    if(!mod || !mod->autoAdjustRange()) return;
+    if(!mod || !mod->autoAdjustRange())
+        return;
+
     ModificationNode* modNode = modificationNode();
     if(!modNode)
         return;
 
     handleExceptions([&] {
         // Request the modifier's pipeline output.
-        const PipelineFlowState& state = modNode->evaluateSynchronous(currentAnimationTime());
+        const PipelineFlowState& state = getPipelineOutput();
 
         QVariant minValue = state.getAttributeValue(modNode, QStringLiteral("ColorCoding.RangeMin"));
         QVariant maxValue = state.getAttributeValue(modNode, QStringLiteral("ColorCoding.RangeMax"));

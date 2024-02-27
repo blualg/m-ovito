@@ -193,7 +193,7 @@ public:
     ///        and invokes the given function for every dependent encountered.
     template<class Callable>
     inline void visitDependents(Callable&& fn) const {
-        const_cast<DependentsList&>(_dependents).visit_all(std::forward<Callable>(fn));
+        const_cast<DependentsList&>(_dependents).visit(std::forward<Callable>(fn));
     }
 
     /// \brief Asks this object to delete itself. This happens by requesting all dependents of the object to delete their reference to it.
@@ -211,6 +211,12 @@ public:
 
     /// \brief Returns whether this object is currently opened in a parameter editor in the UI.
     bool isBeingEdited() const;
+
+    /// \brief Called when the object is opened in a new parameter editor in the UI.
+    virtual void editingStarted(UserInterface& ui) {}
+
+    /// \brief Called when the object is now longer opened in a parameter editor in the UI.
+    virtual void editingStopped(UserInterface& ui) {}
 
     /// \brief Rescales the times of all animation keys from the old animation interval to the new interval.
     /// \param oldAnimationInterval The old animation interval, which should be mapped to the new animation interval.

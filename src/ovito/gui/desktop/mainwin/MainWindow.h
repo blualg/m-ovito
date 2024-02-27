@@ -157,9 +157,8 @@ public:
     /// \param urls The locations of the files to import.
     /// \param importerType The FileImporter type selected by the user. If null, the file's format will be auto-detected.
     /// \param importerFormat The sub-format name selected by the user, which is supported by the selected importer class.
-    /// \return true if the file(s) were successfully imported; false if operation has been canceled by the user.
     /// \throw Exception on error.
-    bool importFiles(const std::vector<QUrl>& urls, const FileImporterClass* importerType = nullptr, const QString& importerFormat = {});
+    void importFiles(const std::vector<QUrl>& urls, const FileImporterClass* importerType = nullptr, const QString& importerFormat = {});
 
     /// \brief Save the current dataset.
     /// \return \c true, if the dataset has been saved; \c false if the operation has been canceled by the user.
@@ -177,12 +176,10 @@ public:
     bool fileSaveAs(const QString& filename = QString());
 
     /// \brief Asks the user if changes made to the dataset should be saved.
-    /// \return \c false if the operation has been canceled by the user; \c true on success.
-    /// \throw Exception on error.
     ///
     /// If the current dataset has been changed, this method asks the user if changes should be saved.
     /// If yes, then the dataset is saved by calling fileSave().
-    bool askForSaveChanges();
+    void askForSaveChanges();
 
 protected:
 

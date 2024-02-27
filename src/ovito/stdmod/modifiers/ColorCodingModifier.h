@@ -180,11 +180,13 @@ public:
     /// Constructor.
     explicit ColorCodingModifier(ObjectInitializationFlags flags);
 
+#if 0 // TODO
     /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
+#endif
 
     /// Modifies the input data synchronously.
-    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
     /// Returns the range start value.
     FloatType startValue() const { return startValueController() ? startValueController()->getFloatValue(AnimationTime(0)) : 0; }
@@ -200,7 +202,7 @@ public:
 
     /// Sets the start and end value to the minimum and maximum value of the selected input property
     /// determined over the entire animation sequence.
-    bool adjustRangeGlobal(int startFrame, int endFrame);
+    void adjustRangeGlobal(int startFrame, int endFrame);
 
     /// Returns the current delegate of this modifier.
     ColorCodingModifierDelegate* delegate() const {
@@ -214,9 +216,6 @@ public:
     /// Returns true if successful.
     bool adjustRange(AnimationTime time);
 
-    /// Indicates that this modifier wants preliminary viewport updates whenever its parameters change.
-    virtual bool performPreliminaryUpdateAfterChange() override { return true; }
-
 public Q_SLOTS:
 
     /// Swaps the minimum and maximum values to reverse the color scale.
@@ -228,7 +227,7 @@ protected:
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
     /// Creates a computation engine that will compute the modifier's results.
-    Future<ModifierEnginePtr> createEngineInternal(const ModifierEvaluationRequest& request, const PipelineFlowState& input);
+    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
     /// Determines the range of values in the input data for the selected property.
     bool determinePropertyValueRange(const PipelineFlowState& state, FloatType& min, FloatType& max) const;

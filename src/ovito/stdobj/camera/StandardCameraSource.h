@@ -25,7 +25,7 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/data/camera/AbstractCameraSource.h>
-#include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
+#include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 
 namespace Ovito {
@@ -42,9 +42,6 @@ public:
 
     /// Constructor.
     explicit StandardCameraSource(ObjectInitializationFlags flags);
-
-    /// Determines the time interval over which a computed pipeline state will remain valid.
-    virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const override;
 
     /// Returns whether this camera is a target camera directed at a target object.
     virtual bool isTargetCamera() const override;
@@ -70,15 +67,13 @@ public:
     /// Returns whether this camera uses a perspective projection.
     virtual bool isPerspectiveCamera() const override { return isPerspective(); }
 
+    /// Lets the source generate a camera object for the given animation time.
+    virtual DataOORef<const AbstractCameraObject> cameraObject(AnimationTime time) const override;
+
 protected:
 
-    /// Asks the pipeline stage to compute the results.
-    virtual Future<PipelineFlowState> evaluateInternal(const PipelineEvaluationRequest& request) override {
-        return evaluateInternalSynchronous(request);
-    }
-
-    /// Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
-    virtual PipelineFlowState evaluateInternalSynchronous(const PipelineEvaluationRequest& request) override;
+    /// Asks the object for the result of the data pipeline.
+    virtual PipelineEvaluationResult evaluateInternal(const PipelineEvaluationRequest& request) override;
 
 private:
 

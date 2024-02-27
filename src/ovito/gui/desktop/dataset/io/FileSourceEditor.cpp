@@ -270,7 +270,7 @@ void FileSourceEditor::onPickRemoteInputFile()
 /******************************************************************************
 * Loads a new file into the FileSource.
 ******************************************************************************/
-bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, OvitoClassPtr importerType, const QString& importerFormat)
+void FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, OvitoClassPtr importerType, const QString& importerFormat)
 {
     OORef<FileImporter> importer;
 
@@ -279,9 +279,6 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 
         // Detect file format.
         Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(url, fileSource->importer());
-        if(!importerFuture.waitForFinished())
-            return false;
-
         importer = importerFuture.result();
         if(!importer)
             throw Exception(tr("Could not detect the format of the file to be imported. The format might not be supported."));
@@ -296,7 +293,7 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
             // Create a new importer instance.
             importer = static_object_cast<FileImporter>(importerType->createInstance());
             if(!importer)
-                return false;
+                return;
         }
         importer->setSelectedFileFormat(importerFormat);
     }
@@ -321,7 +318,7 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
             "<p>In either case, modifiers you have added to the pipeline will be preserved.</p>"));
         int result = msgBox.exec();
         if(result == QMessageBox::Cancel)
-            return false; // Operation canceled by user.
+            this_task::cancelAndThrow(); // Operation canceled by user.
         else if(result == QMessageBox::Yes)
             keepExistingDataCollection = true;
     }
@@ -332,14 +329,14 @@ bool FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
         if(editorClass && editorClass->isDerivedFrom(FileImporterEditor::OOClass())) {
             OORef<FileImporterEditor> editor = dynamic_object_cast<FileImporterEditor>(editorClass->createInstance());
             if(editor) {
-                if(!editor->inspectNewFile(newImporter, url, mainWindow()))
-                    return false;
+                editor->inspectNewFile(newImporter, url, mainWindow());
+                this_task::throwIfCanceled();
             }
         }
     }
 
     // Set the new input location.
-    return fileSource->setSource({url}, std::move(newImporter), false, keepExistingDataCollection);
+    fileSource->setSource({url}, std::move(newImporter), false, keepExistingDataCollection);
 }
 
 /******************************************************************************

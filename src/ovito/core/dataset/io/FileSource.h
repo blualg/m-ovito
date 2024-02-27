@@ -46,16 +46,12 @@ public:
 	/// Constructor.
 	explicit FileSource(ObjectInitializationFlags flags);
 
-	/// \brief Determines the time interval over which a computed pipeline state will remain valid.
-	virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const override;
-
 	/// \brief Sets the source location(s) for importing data.
 	/// \param sourceUrls The new source location(s).
 	/// \param importer The importer object that will parse the input file.
 	/// \param autodetectFileSequences Enables the automatic detection of file sequences.
 	/// \param keepExistingDataCollection Tells the file source to maintain the existing data objects and visual elements when importing a new file.
-	/// \return false if the operation has been canceled by the user.
-	bool setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* importer, bool autodetectFileSequences, bool keepExistingDataCollection = false);
+	void setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* importer, bool autodetectFileSequences, bool keepExistingDataCollection = false);
 
 	/// \brief This triggers a reload of input data from the external file for the given frame or all frames.
 	/// \param refetchFiles Clears the remote file cache so that file data will be retreived again from the remote location.
@@ -101,7 +97,7 @@ public:
 protected:
 
 	/// Asks the object for the results of the data pipeline.
-	virtual Future<PipelineFlowState> evaluateInternal(const PipelineEvaluationRequest& request) override;
+	virtual PipelineEvaluationResult evaluateInternal(const PipelineEvaluationRequest& request) override;
 
 	/// Is called when the value of a property of this object has changed.
 	virtual void propertyChanged(const PropertyFieldDescriptor* field) override;

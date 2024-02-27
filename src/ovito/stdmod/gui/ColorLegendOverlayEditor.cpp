@@ -280,7 +280,7 @@ void ColorLegendOverlayEditor::updateSourcesList()
             handleExceptions([&] {
 
                 // Now evaluate the pipeline and look for typed properties in its output data collection.
-                const PipelineFlowState& state = pipeline->evaluatePipelineSynchronous(currentAnimationTime(), false);
+                const PipelineFlowState& state = pipeline->getCachedPipelineOutput(currentAnimationTime());
                 for(const ConstDataObjectPath& dataPath : state.getObjectsRecursive(Property::OOClass())) {
                     const Property* property = static_object_cast<Property>(dataPath.back());
 

@@ -42,22 +42,24 @@ class OVITO_CORE_EXPORT PipelineNode : public ActiveObject
 public:
 
     /// Constructor.
-    explicit PipelineNode(ObjectInitializationFlags flags);
-
-    /// \brief Determines the time interval over which a computed pipeline state will remain valid.
-    virtual TimeInterval validityInterval(const PipelineEvaluationRequest& request) const;
+    explicit PipelineNode(ObjectInitializationFlags flags, bool enableCaching = true);
 
     /// \brief Throws an exception if the pipeline stage cannot be evaluated at this time. This is called by the system to catch user mistakes that would lead to infinite recursion.
     virtual void preEvaluationCheck() const {}
 
     /// \brief Asks the pipeline stage to compute the results.
-    virtual SharedFuture<PipelineFlowState> evaluate(const PipelineEvaluationRequest& request);
+    virtual PipelineEvaluationResult evaluate(const PipelineEvaluationRequest& request) {
+        return pipelineCache().evaluatePipeline(request);
+    }
 
     /// \brief Asks the pipeline stage to compute the results for several animation times in a row.
     Future<std::vector<PipelineFlowState>> evaluateMultiple(const PipelineEvaluationRequest& request, std::vector<AnimationTime> times);
 
-    /// \brief Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
-    virtual PipelineFlowState evaluateSynchronous(const PipelineEvaluationRequest& request);
+    /// Returns the cached output of this data pipeline stage at the given time if available.
+    /// This method will never throw an exception and doesn't require a valid execution context.
+    PipelineFlowState getCachedPipelineNodeOutput(AnimationTime time, bool interactiveMode = true) const {
+        return pipelineCache().getAt(time, interactiveMode);
+    }
 
     /// \brief Returns a list of pipelines that contain this node.
     /// \param onlyScenePipelines If true, pipelines which are currently not part of the scene are ignored.
@@ -104,17 +106,10 @@ protected:
     virtual void loadFromStream(ObjectLoadStream& stream) override;
 
     /// Asks the object for the result of the data pipeline.
-    virtual Future<PipelineFlowState> evaluateInternal(const PipelineEvaluationRequest& request) = 0;
+    virtual PipelineEvaluationResult evaluateInternal(const PipelineEvaluationRequest& request) = 0;
 
     /// Gets called by the PipelineCache whenever it returns a pipeline state from the cache.
-    virtual Future<PipelineFlowState> postprocessCachedState(const PipelineEvaluationRequest& request, const PipelineFlowState& state) {
-        return Future<PipelineFlowState>::createImmediateEmplace(state);
-    }
-
-    /// Lets the pipeline stage compute a preliminary result in a synchronous fashion.
-    virtual PipelineFlowState evaluateInternalSynchronous(const PipelineEvaluationRequest& request) {
-        return PipelineFlowState(getSourceDataCollection(), status());
-    }
+    virtual PipelineEvaluationResult postprocessCachedState(const PipelineEvaluationRequest& request, const PipelineFlowState& state) { return state; }
 
     /// Decides whether a preliminary viewport update is performed after this pipeline object has been
     /// evaluated but before the rest of the pipeline is complete.

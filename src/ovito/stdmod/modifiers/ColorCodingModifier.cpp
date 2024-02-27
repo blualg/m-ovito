@@ -116,6 +116,7 @@ ColorCodingModifier::ColorCodingModifier(ObjectInitializationFlags flags) : Dele
     }
 }
 
+#if 0 // TODO
 /******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.
 ******************************************************************************/
@@ -127,6 +128,15 @@ TimeInterval ColorCodingModifier::validityInterval(const ModifierEvaluationReque
         if(endValueController()) iv.intersect(endValueController()->validityInterval(request.time()));
     }
     return iv;
+}
+#endif
+
+/******************************************************************************
+* Modifies the input data synchronously.
+******************************************************************************/
+void ColorCodingModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+{
+    // No-op, because this modifier performs its computation asynchronously.
 }
 
 /******************************************************************************
@@ -152,7 +162,7 @@ void ColorCodingModifier::initializeModifier(const ModifierInitializationRequest
 
     // When the modifier is inserted, automatically select the most recently added property from the input.
     if(sourceProperty().isNull() && delegate() && ExecutionContext::isInteractive()) {
-        const PipelineFlowState& input = request.modificationNode()->evaluateInputSynchronous(request);
+        const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
         if(const PropertyContainer* container = input.getLeafObject(delegate()->inputContainerRef())) {
             PropertyReference bestProperty;
             for(const Property* property : container->properties()) {
@@ -183,7 +193,7 @@ void ColorCodingModifier::referenceReplaced(const PropertyFieldDescriptor* field
 * Creates and initializes a computation engine that will compute the
 * modifier's results.
 ******************************************************************************/
-Future<ModifierEnginePtr> ColorCodingModifier::createEngineInternal(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<ModifierEnginePtr> ColorCodingModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
     if(!colorGradient())
         throw Exception(tr("No color gradient has been selected."));
@@ -363,6 +373,8 @@ void ColorCodingModifierDelegate::ColorCodingEngine::perform()
         // Map scalar to RGB color.
         colorAcc[i] = _gradient->valueToColor(t);
     });
+    colorAcc.reset();
+    selectionAcc.reset();
     if(!result)
         throw Exception(tr("The property '%1' has an invalid or non-numeric data type.").arg(_input->name()));
 #endif
@@ -379,6 +391,8 @@ void ColorCodingModifierDelegate::ColorCodingEngine::perform()
 ******************************************************************************/
 void ColorCodingModifierDelegate::ColorCodingEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
+    ModifierEngine::applyResults(request, state);
+
     ColorCodingModifier* modifier = static_object_cast<ColorCodingModifier>(request.modifier());
 
     if(modifier->autoAdjustRange() && std::isfinite(_minValue)) {
@@ -462,9 +476,8 @@ bool ColorCodingModifier::adjustRange(AnimationTime time)
 
     // Loop over all input data.
     bool success = false;
-    PipelineEvaluationRequest request(time);
     for(ModificationNode* node : nodes()) {
-        const PipelineFlowState& inputState = node->evaluateInputSynchronous(request);
+        const PipelineFlowState& inputState = node->evaluateInput(PipelineEvaluationRequest(time, false, true)).result();
 
         // Determine the minimum and maximum values of the selected property.
         success |= determinePropertyValueRange(inputState, minValue, maxValue);
@@ -485,7 +498,7 @@ bool ColorCodingModifier::adjustRange(AnimationTime time)
 * Sets the start and end value to the minimum and maximum value of the selected
 * particle or bond property determined over the entire animation sequence.
 ******************************************************************************/
-bool ColorCodingModifier::adjustRangeGlobal(int startFrame, int endFrame)
+void ColorCodingModifier::adjustRangeGlobal(int startFrame, int endFrame)
 {
     this_task::setProgressMaximum(endFrame - startFrame + 1);
 
@@ -494,32 +507,26 @@ bool ColorCodingModifier::adjustRangeGlobal(int startFrame, int endFrame)
 
     // Loop over all animation frames, evaluate data pipeline, and determine
     // minimum and maximum values.
-    for(int frame = startFrame; frame <= endFrame && !this_task::isCanceled(); frame++) {
+    for(int frame = startFrame; frame <= endFrame; frame++) {
         this_task::setProgressText(tr("Analyzing frame %1").arg(frame));
 
         for(ModificationNode* node : nodes()) {
 
             // Evaluate data pipeline up to this color coding modifier.
-            SharedFuture<PipelineFlowState> stateFuture = node->evaluateInput(PipelineEvaluationRequest(AnimationTime::fromFrame(frame)));
-            if(!stateFuture.waitForFinished())
-                break;
+            PipelineEvaluationResult stateFuture = node->evaluateInput(PipelineEvaluationRequest(AnimationTime::fromFrame(frame)));
 
             // Determine min/max value of the selected property.
             determinePropertyValueRange(stateFuture.result(), minValue, maxValue);
         }
         this_task::incrementProgressValue(1);
+        this_task::throwIfCanceled();
     }
 
-    if(!this_task::isCanceled()) {
-        // Adjust range of color coding to the min/max values.
-        if(minValue != std::numeric_limits<FloatType>::max())
-            setStartValue(minValue);
-        if(maxValue != std::numeric_limits<FloatType>::lowest())
-            setEndValue(maxValue);
-
-        return true;
-    }
-    return false;
+    // Adjust range of color coding to the min/max values.
+    if(minValue != std::numeric_limits<FloatType>::max())
+        setStartValue(minValue);
+    if(maxValue != std::numeric_limits<FloatType>::lowest())
+        setEndValue(maxValue);
 }
 
 /******************************************************************************
@@ -531,19 +538,6 @@ void ColorCodingModifier::reverseRange()
     OORef<Controller> oldStartValue = startValueController();
     setStartValueController(endValueController());
     setEndValueController(std::move(oldStartValue));
-}
-
-/******************************************************************************
-* Modifies the input data synchronously.
-******************************************************************************/
-void ColorCodingModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
-{
-    Future<ModifierEnginePtr> engineFuture = createEngineInternal(request, state);
-    OVITO_ASSERT(engineFuture.isFinished());
-
-    ModifierEnginePtr engine = engineFuture.result();
-    engine->perform();
-    engine->applyResults(request, state);
 }
 
 }   // End of namespace

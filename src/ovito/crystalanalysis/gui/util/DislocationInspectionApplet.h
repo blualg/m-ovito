@@ -149,7 +149,7 @@ private:
         virtual void mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event) override;
 
         /// Lets the input mode render its overlay content in a viewport.
-        virtual void renderOverlay3D(Viewport* vp, SceneRenderer* renderer) override;
+        virtual void renderOverlay(Viewport* vp, ViewportWindow* vpWin, FrameGraph& frameGraph, DataSet* dataset) override;
 
     private:
 

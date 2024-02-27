@@ -274,18 +274,16 @@ void ParticleInspectionApplet::PickingMode::mouseMoveEvent(ViewportWindow* vpwin
 /******************************************************************************
 * Lets the input mode render its overlay content in a viewport.
 ******************************************************************************/
-void ParticleInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneRenderer* renderer)
+void ParticleInspectionApplet::PickingMode::renderOverlay(Viewport* vp, ViewportWindow* vpWin, FrameGraph& frameGraph, DataSet* dataset)
 {
-    if(!renderer->isInteractive() || !renderer->isImagePass())
-        return;
-
     // Render the highlight markers for the selected particles.
     for(const auto& element : _pickedElements) {
-        renderSelectionMarker(vp, renderer, element);
+        renderSelectionMarker(vp, frameGraph, element);
     }
 
+#if 0 // TODO
     // Render pair-wise connection lines between selected particles.
-    if(_applet->_measuringModeAction->isChecked() && !renderer->isBoundingBoxPass()) {
+    if(_applet->_measuringModeAction->isChecked()) {
         renderer->setWorldTransform(AffineTransformation::Identity());
 
         // Collect world space coordinates of selected particles.
@@ -338,6 +336,7 @@ void ParticleInspectionApplet::PickingMode::renderOverlay3D(Viewport* vp, SceneR
         renderer->renderLines(linesPrimitive);
         renderer->setDepthTestEnabled(true);
     }
+#endif
 }
 
 }   // End of namespace

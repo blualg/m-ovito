@@ -131,8 +131,7 @@ void WidgetActionManager::on_FileNewWindow_triggered()
 void WidgetActionManager::on_FileOpen_triggered()
 {
     mainWindow().handleExceptions([&] {
-        if(!mainWindow().askForSaveChanges())
-            return;
+        mainWindow().askForSaveChanges();
 
         QSettings settings;
         settings.beginGroup("file/scene");
@@ -152,7 +151,7 @@ void WidgetActionManager::on_FileOpen_triggered()
         QString filename = QFileDialog::getOpenFileName(&mainWindow(), tr("Load Session State"),
                 defaultPath, tr("OVITO State Files (*.ovito);;All Files (*)"));
         if(filename.isEmpty())
-            return;
+            this_task::cancelAndThrow();
 
         if(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled()) {
             // Remember directory for the next time...
@@ -230,11 +229,10 @@ void WidgetActionManager::on_FileImport_triggered()
 
         // If user accidentally tries to import a .ovito session state file, redirect to the corresponding session loading function.
         if(!importerClass && urlsToImport.size() == 1 && urlsToImport.front().fileName().endsWith(QStringLiteral(".ovito"))) {
-            if(mainWindow().askForSaveChanges()) {
-                OORef<DataSet> dataset = DataSet::createFromFile(urlsToImport.front().toLocalFile());
-                if(mainWindow().checkLoadedDataset(dataset)) {
-                    mainWindow().datasetContainer().setCurrentSet(std::move(dataset));
-                }
+            mainWindow().askForSaveChanges();
+            OORef<DataSet> dataset = DataSet::createFromFile(urlsToImport.front().toLocalFile());
+            if(mainWindow().checkLoadedDataset(dataset)) {
+                mainWindow().datasetContainer().setCurrentSet(std::move(dataset));
             }
             return;
         }
@@ -363,8 +361,7 @@ void WidgetActionManager::on_FileExport_triggered()
         // Block until all output data is available for the exporter to inspect it and pick a good default export set.
         {
             ProgressDialog progressDialog(&mainWindow(), tr("Waiting for pipeline computations to complete"));
-            if(!OORef<ScenePreparation>::create(mainWindow(), scene)->future().waitForFinished())
-                return;
+            OORef<ScenePreparation>::create(mainWindow(), scene)->future().waitForFinished();
         }
 
         // If the exporter supports it, automatically choose the pipeline(s) and data object(s) to be exported.

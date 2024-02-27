@@ -61,7 +61,7 @@ void SelectTypeModifier::initializeModifier(const ModifierInitializationRequest&
 
         // When the modifier is first inserted, automatically select the most recently added
         // typed property (in GUI mode) or the canonical type property (in script mode).
-        const PipelineFlowState& input = request.modificationNode()->evaluateInputSynchronous(request);
+        const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
         if(const PropertyContainer* container = input.getLeafObject(subject())) {
             PropertyReference bestProperty;
             for(const Property* property : container->properties()) {
@@ -97,7 +97,7 @@ void SelectTypeModifier::propertyChanged(const PropertyFieldDescriptor* field)
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void SelectTypeModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void SelectTypeModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     if(!subject())
         throw Exception(tr("No input element type selected."));
@@ -219,7 +219,7 @@ QVariant SelectTypeModifier::getPipelineEditorShortInfo(Scene* scene, Modificati
 
     QString shortInfo;
     if(node && subject() && !sourceProperty().isNull() && sourceProperty().containerClass() == subject().dataClass()) {
-        const PipelineFlowState& state = node->evaluateInputSynchronous(PipelineEvaluationRequest(scene->animationSettings()));
+        const PipelineFlowState& state = node->getCachedPipelineNodeInput(scene->animationSettings()->currentTime());
         if(const PropertyContainer* container = state.getLeafObject(subject())) {
             if(const Property* inputProperty = sourceProperty().findInContainer(container)) {
                 auto sortedIds = selectedTypeIDs().values();

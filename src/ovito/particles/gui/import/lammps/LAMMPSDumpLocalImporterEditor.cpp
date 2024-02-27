@@ -39,7 +39,7 @@ SET_OVITO_OBJECT_EDITOR(LAMMPSDumpLocalImporter, LAMMPSDumpLocalImporterEditor);
 /******************************************************************************
 * This is called by the system when the user has selected a new file to import.
 ******************************************************************************/
-bool LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow)
+void LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow)
 {
     // Retrieve column information of input file.
     LAMMPSDumpLocalImporter* lammpsImporter = static_object_cast<LAMMPSDumpLocalImporter>(importer);
@@ -48,8 +48,7 @@ bool LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const
     {
         // Block UI until reading is done.
         ProgressDialog progressDialog(&mainWindow, inspectFuture, tr("Inspecting file header"));
-        if(!inspectFuture.waitForFinished())
-            return false;
+        inspectFuture.waitForFinished();
     }
 
     InputColumnMapping mapping = inspectFuture.result();
@@ -96,25 +95,23 @@ bool LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const
         settings.beginGroup("viz/importer/lammps_dump_local/");
         settings.setValue("colmapping", dialog.mapping().toByteArray());
         settings.endGroup();
-
-        return true;
     }
-
-    return false;
+    else {
+        this_task::cancelAndThrow();
+    }
 }
 
 /******************************************************************************
  * Displays a dialog box that allows the user to edit the file column to property mapping.
  *****************************************************************************/
-bool LAMMPSDumpLocalImporterEditor::showEditColumnMappingDialog(LAMMPSDumpLocalImporter* importer, const FileSourceImporter::Frame& frame)
+void LAMMPSDumpLocalImporterEditor::showEditColumnMappingDialog(LAMMPSDumpLocalImporter* importer, const FileSourceImporter::Frame& frame)
 {
     Future<BondInputColumnMapping> inspectFuture = importer->inspectFileHeader(frame);
 
     {
         // Block UI until reading is done.
         ProgressDialog progressDialog(parentWindow(), inspectFuture, tr("Inspecting file header"));
-        if(!inspectFuture.waitForFinished())
-            return false;
+        inspectFuture.waitForFinished();
     }
 
     InputColumnMapping mapping = inspectFuture.result();
@@ -135,9 +132,10 @@ bool LAMMPSDumpLocalImporterEditor::showEditColumnMappingDialog(LAMMPSDumpLocalI
         settings.beginGroup("viz/importer/lammps_dump_local/");
         settings.setValue("colmapping", dialog.mapping().toByteArray());
         settings.endGroup();
-        return true;
     }
-    return false;
+    else {
+        this_task::cancelAndThrow();
+    }
 }
 
 /******************************************************************************
@@ -198,9 +196,9 @@ void LAMMPSDumpLocalImporterEditor::onEditColumnMapping()
             int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size()-1);
 
             // Show the dialog box, which lets the user modify the file column mapping.
-            if(showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex])) {
-                importer->requestReload();
-            }
+            showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex]);
+
+            importer->requestReload();
         });
     }
 }

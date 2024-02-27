@@ -79,10 +79,10 @@ public:
     /// This function may only be called after the Promise was fulfilled (and not canceled).
     const std::tuple<R...>& results() const {
         OVITO_ASSERT_MSG(isValid(), "SharedFuture::results()", "Future must be valid.");
+        waitForFinished();
         OVITO_ASSERT_MSG(isFinished(), "SharedFuture::results()", "Future must be in fulfilled state.");
         OVITO_ASSERT_MSG(!isCanceled(), "SharedFuture::results()", "Future must not be canceled.");
         OVITO_ASSERT_MSG(std::tuple_size_v<tuple_type> != 0, "SharedFuture::results()", "Future must not be of type <void>.");
-        task()->throwPossibleException();
         return task()->template getResults<tuple_type>();
     }
 
@@ -93,7 +93,10 @@ public:
             return std::get<0>(results());
         }
         else {
-            task()->throwPossibleException();
+            OVITO_ASSERT_MSG(isValid(), "SharedFuture::results()", "Future must be valid.");
+            waitForFinished();
+            OVITO_ASSERT_MSG(isFinished(), "SharedFuture::results()", "Future must be in fulfilled state.");
+            OVITO_ASSERT_MSG(!isCanceled(), "SharedFuture::results()", "Future must not be canceled.");
         }
     }
 
@@ -117,7 +120,7 @@ protected:
 /// The provided continuation function must accept the results of this future as an input parameter.
 template<typename... R>
 template<typename Executor, typename Function>
-detail::continuation_future_type<Function,SharedFuture<R...>>
+detail::continuation_future_type<Function, SharedFuture<R...>>
 SharedFuture<R...>::then(Executor&& executor, Function&& f)
 {
     // Infer the exact future/promise/task types to create.
@@ -164,7 +167,7 @@ SharedFuture<R...>::then(Executor&& executor, Function&& f)
         // In such a case, copy the exception state to the continuation promise.
         if constexpr(!std::is_invocable_v<Function, SharedFuture<R...>>) {
             if(finishedTask->exceptionStore()) {
-                continuationTask->exceptionLocked(finishedTask->copyExceptionStore());
+                continuationTask->exceptionLocked(finishedTask->exceptionStore());
                 continuationTask->finishLocked(locker);
                 return;
             }

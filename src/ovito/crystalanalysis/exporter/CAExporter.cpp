@@ -68,8 +68,6 @@ void CAExporter::exportFrame(int frameNumber, const QString& filePath)
 {
     // Evaluate data pipeline.
     const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber);
-    if(this_task::isCanceled())
-        return;
 
     // Get simulation cell info.
     const SimulationCell* simulationCell = state.expectObject<SimulationCell>();

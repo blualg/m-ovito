@@ -466,7 +466,7 @@ void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers
                 modNode->setModifier(modifier);
                 modNode->setInput(pnode);
                 modNode->setModifierGroup(modifierGroup);
-                modifier->initializeModifier(ModifierInitializationRequest(time, modNode));
+                modifier->initializeModifier(ModifierInitializationRequest(time, false, true, modNode));
                 setNextObjectToSelect(modNode);
                 for(RefMaker* dependent : dependentsList) {
                     if(ModificationNode* predecessorModNode = dynamic_object_cast<ModificationNode>(dependent)) {
@@ -487,7 +487,7 @@ void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers
 
     // Insert modifiers at the end of the selected pipelines.
     for(int index = modifiers.size() - 1; index >= 0; --index) {
-        ModificationNode* modNode = selectedPipeline()->applyModifier(time, modifiers[index]);
+        ModificationNode* modNode = selectedPipeline()->applyModifier(time, true, modifiers[index]);
         if(group)
             modNode->setModifierGroup(group);
         else

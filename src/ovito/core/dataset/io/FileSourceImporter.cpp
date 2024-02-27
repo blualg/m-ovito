@@ -231,8 +231,7 @@ OORef<Pipeline> FileSourceImporter::importFileSet(Scene* scene, std::vector<std:
 
     // Set the input file location(s) and importer.
     bool keepExistingDataCollection = true;
-    if(!fileSource->setSource(std::move(sourceUrls), this, autodetectFileSequences && (sourceUrls.size() == 1 && sourceUrlsAndImporters.empty()), keepExistingDataCollection))
-        return {};
+    fileSource->setSource(std::move(sourceUrls), this, autodetectFileSequences && (sourceUrls.size() == 1 && sourceUrlsAndImporters.empty()), keepExistingDataCollection);
 
     if(importMode != ReplaceSelected && importMode != DontAddToScene) {
         // Adjust viewports to completely show the newly imported object.
@@ -243,8 +242,7 @@ OORef<Pipeline> FileSourceImporter::importFileSet(Scene* scene, std::vector<std:
     // If this importer did not handle all supplied input files,
     // continue importing the remaining files.
     if(!sourceUrlsAndImporters.empty()) {
-        if(!importFurtherFiles(scene, std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, multiFileImportMode, pipeline))
-            return {};
+        importFurtherFiles(scene, std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, multiFileImportMode, pipeline);
     }
 
     return pipeline;
@@ -253,14 +251,14 @@ OORef<Pipeline> FileSourceImporter::importFileSet(Scene* scene, std::vector<std:
 /******************************************************************************
 * Is called when importing multiple files of different formats.
 ******************************************************************************/
-bool FileSourceImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, Pipeline* pipeline)
+void FileSourceImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, Pipeline* pipeline)
 {
     if(importMode == DontAddToScene)
-        return true;    // It doesn't make sense to import additional datasets if they are not being added to the scene. They would get lost.
+        return;    // It doesn't make sense to import additional datasets if they are not being added to the scene. They would get lost.
 
     OVITO_ASSERT(!sourceUrlsAndImporters.empty());
     OORef<FileImporter> importer = sourceUrlsAndImporters.front().second;
-    return importer->importFileSet(scene, std::move(sourceUrlsAndImporters), AddToScene, autodetectFileSequences, multiFileImportMode);
+    importer->importFileSet(scene, std::move(sourceUrlsAndImporters), AddToScene, autodetectFileSequences, multiFileImportMode);
 }
 
 /******************************************************************************

@@ -71,6 +71,10 @@ bool ExpandSelectionModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 ******************************************************************************/
 Future<ModifierEnginePtr> ExpandSelectionModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
 {
+    // If pipeline is in interactive mode, skip the long-running computation step.
+    if(request.interactiveMode())
+        return {};
+
     // Get the input particles.
     const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
@@ -207,6 +211,8 @@ void ExpandSelectionModifier::ExpandSelectionCutoffEngine::expandSelection()
 ******************************************************************************/
 void ExpandSelectionModifier::ExpandSelectionEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
+    ModifierEngine::applyResults(request, state);
+
     // Get the output particles.
     Particles* particles = state.expectMutableObject<Particles>();
     if(_inputFingerprint.hasChanged(particles))

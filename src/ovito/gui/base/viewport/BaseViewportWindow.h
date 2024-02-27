@@ -45,7 +45,7 @@ public:
     ViewportInputManager* inputManager() const;
 
     /// Returns the list of gizmos to render in the viewport.
-    virtual std::span<ViewportGizmo*> viewportGizmos() override;
+    virtual std::vector<ViewportGizmo*> viewportGizmos() override;
 
 public Q_SLOTS:
 

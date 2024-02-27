@@ -34,20 +34,20 @@ SET_PROPERTY_FIELD_LABEL(StaticSource, dataCollection, "Data");
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-StaticSource::StaticSource(ObjectInitializationFlags flags, DataCollection* data) : PipelineNode(flags)
+StaticSource::StaticSource(ObjectInitializationFlags flags, DataCollection* data) : PipelineNode(flags, false)
 {
-    pipelineCache().setEnabled(false);
     setDataCollection(data);
 }
 
 /******************************************************************************
 * Asks the object for the result of the data pipeline.
 ******************************************************************************/
-Future<PipelineFlowState> StaticSource::evaluateInternal(const PipelineEvaluationRequest& request)
+PipelineEvaluationResult StaticSource::evaluateInternal(const PipelineEvaluationRequest& request)
 {
-    return Future<PipelineFlowState>::createImmediateEmplace(dataCollection(), PipelineStatus::Success);
+    return PipelineFlowState(dataCollection(), PipelineStatus::Success);
 }
 
+#if 0 // TODO
 /******************************************************************************
 * Asks the object for the result of the data pipeline.
 ******************************************************************************/
@@ -55,6 +55,7 @@ PipelineFlowState StaticSource::evaluateInternalSynchronous(const PipelineEvalua
 {
     return PipelineFlowState(dataCollection(), PipelineStatus::Success);
 }
+#endif
 
 /******************************************************************************
 * Handles reference events sent by reference targets of this object.

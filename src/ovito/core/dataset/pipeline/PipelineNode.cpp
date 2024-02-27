@@ -38,37 +38,13 @@ SET_PROPERTY_FIELD_LABEL(PipelineNode, pipelineTrajectoryCachingEnabled, "Precom
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PipelineNode::PipelineNode(ObjectInitializationFlags flags) : ActiveObject(flags),
-    _pipelineCache(this, false),
+PipelineNode::PipelineNode(ObjectInitializationFlags flags, bool enableCaching) : ActiveObject(flags),
+    _pipelineCache(this, false, enableCaching),
     _pipelineTrajectoryCachingEnabled(false)
 {
 }
 
-/******************************************************************************
-* Determines the time interval over which a computed pipeline state will remain valid.
-******************************************************************************/
-TimeInterval PipelineNode::validityInterval(const PipelineEvaluationRequest& request) const
-{
-    TimeInterval iv = TimeInterval::infinite();
-
-    // If the requested frame is available in the cache, restrict the returned validity interval to
-    // the validity interval of the cached state. Otherwise, assume that a new pipeline computation
-    // will be performed and let the sub-class determine the actual validity interval.
-    const PipelineFlowState& state = pipelineCache().getAt(request.time());
-    if(state.stateValidity().contains(request.time()))
-        iv.intersect(state.stateValidity());
-
-    return iv;
-}
-
-/******************************************************************************
-* Asks the object for the result of the data pipeline.
-******************************************************************************/
-SharedFuture<PipelineFlowState> PipelineNode::evaluate(const PipelineEvaluationRequest& request)
-{
-    return pipelineCache().evaluatePipeline(request);
-}
-
+#if 0 // TODO
 /******************************************************************************
 * Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
 ******************************************************************************/
@@ -76,6 +52,7 @@ PipelineFlowState PipelineNode::evaluateSynchronous(const PipelineEvaluationRequ
 {
     return pipelineCache().evaluatePipelineStageSynchronous(request);
 }
+#endif
 
 /******************************************************************************
 * Is called when the value of a non-animatable property field of this RefMaker has changed.
@@ -180,13 +157,16 @@ void PipelineNode::rescaleTime(const TimeInterval& oldAnimationInterval, const T
 ******************************************************************************/
 Future<std::vector<PipelineFlowState>> PipelineNode::evaluateMultiple(const PipelineEvaluationRequest& request, std::vector<AnimationTime> times)
 {
-    // Perform the evaluation for all requested animation frames:
+    // This function should only be used to request final pipeline results, not preliminary results.
+    OVITO_ASSERT(request.interactiveMode() == false);
+
+    // Perform the evaluation for all requested animation frames.
     return map_sequential(
         std::move(times),
         ObjectExecutor(this, true), // require deferred execution
-        [request = PipelineEvaluationRequest(request), this](AnimationTime time) mutable {
+        [request = PipelineEvaluationRequest(request), this](AnimationTime time) mutable -> SharedFuture<PipelineFlowState> {
             request.setTime(time);
-            return this->evaluate(request);
+            return this->evaluate(request).asFuture();
         });
 }
 

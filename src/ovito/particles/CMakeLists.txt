@@ -127,12 +127,6 @@ IF(OVITO_USE_SYCL)
     )
 ENDIF()
 
-IF(NOT EMSCRIPTEN)
-    LIST(APPEND SourceFiles
-        modifier/properties/InteractiveMolecularDynamicsModifier.cpp
-    )
-ENDIF()
-
 # Define the plugin module.
 OVITO_STANDARD_PLUGIN(Particles
     SOURCES ${SourceFiles}

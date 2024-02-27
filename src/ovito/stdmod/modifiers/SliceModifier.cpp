@@ -159,6 +159,7 @@ bool SliceModifier::referenceEvent(RefTarget* source, const ReferenceEvent& even
     return MultiDelegatingModifier::referenceEvent(source, event);
 }
 
+#if 0 // TODO
 /******************************************************************************
 * Determines the time interval over which a computed pipeline state will remain valid.
 ******************************************************************************/
@@ -170,6 +171,7 @@ TimeInterval SliceModifier::validityInterval(const ModifierEvaluationRequest& re
     if(widthController()) iv.intersect(widthController()->validityInterval(request.time()));
     return iv;
 }
+#endif
 
 /******************************************************************************
 * Returns the slicing plane and the slab width.
@@ -216,7 +218,6 @@ std::tuple<Plane3, FloatType> SliceModifier::slicingPlane(AnimationTime time, Ti
 void SliceModifier::renderModifierVisual(const ModifierEvaluationRequest& request, Pipeline* pipeline, FrameGraph& frameGraph)
 {
     if(isBeingEdited()) {
-        const PipelineFlowState& state = request.modificationNode()->evaluateInputSynchronous(request);
         TimeInterval interval;
 
         Box3 bb = pipeline->localBoundingBox(frameGraph.time(), interval);
@@ -224,6 +225,7 @@ void SliceModifier::renderModifierVisual(const ModifierEvaluationRequest& reques
             return;
 
         // Obtain modifier parameter values.
+        const PipelineFlowState& state = request.modificationNode()->evaluateInput(request).result();
         Plane3 plane;
         FloatType slabWidth;
         std::tie(plane, slabWidth) = slicingPlane(frameGraph.time(), interval, state);
@@ -328,7 +330,7 @@ void SliceModifier::initializeModifier(const ModifierInitializationRequest& requ
 
     // Initially place the cutting plane in the center of the simulation cell.
     if(ExecutionContext::isInteractive() && distanceController() && distanceController()->getFloatValue(AnimationTime(0)) == 0) {
-        const PipelineFlowState& input = request.modificationNode()->evaluateInputSynchronous(request);
+        const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
         if(const SimulationCell* cell = input.getObject<SimulationCell>()) {
             Point3 centerPoint = cell->cellMatrix() * Point3(0.5, 0.5, 0.5);
             FloatType centerDistance = normal().dot(centerPoint - Point3::Origin());
@@ -341,9 +343,9 @@ void SliceModifier::initializeModifier(const ModifierInitializationRequest& requ
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void SliceModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void SliceModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
-    MultiDelegatingModifier::evaluateSynchronous(request, state);
+    MultiDelegatingModifier::evaluateModifierSynchronous(request, state);
 
     if(enablePlaneVisualization()) {
 
@@ -420,7 +422,7 @@ void SliceModifier::centerPlaneInSimulationCell(ModificationNode* node, Animatio
 
     // Get the simulation cell from the input object to center the slicing plane in
     // the center of the simulation cell.
-    const PipelineFlowState& input = node->evaluateSynchronous(PipelineEvaluationRequest(time));
+    const PipelineFlowState& input = node->evaluateInput(PipelineEvaluationRequest(time, false, true)).result();
     if(const SimulationCell* cell = input.getObject<SimulationCell>()) {
 
         FloatType centerDistance;

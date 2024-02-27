@@ -135,8 +135,6 @@ public:
     /// \param importMode Controls how the imported data is inserted into the scene.
     /// \param autodetectFileSequences Enables the automatic detection of file sequences.
     /// \param multiFileImportMode Specifies what should happen if the user imports several files of the same kind.
-    /// \return \c The new pipeline if the file has been successfully imported.
-    //          \c nullptr if the operation has been canceled by the user.
     /// \throw Exception when the import operation has failed.
     virtual OORef<Pipeline> importFileSet(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode) = 0;
 

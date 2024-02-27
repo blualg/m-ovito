@@ -27,7 +27,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
-#include <ovito/core/dataset/pipeline/PipelineEvaluation.h>
+#include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include "FileExporter.h"
 
@@ -58,7 +58,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(FileExporter, floatOutputPrecision, IntegerPa
 SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(FileExporter, sceneNodeToExport, "nodeToExport"); // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
-* Constructs a new instance of the class.
+* Constructor.
 ******************************************************************************/
 FileExporter::FileExporter(ObjectInitializationFlags flags) : RefTarget(flags),
     _exportAnimation(false),
@@ -125,7 +125,7 @@ void FileExporter::selectDefaultExportableData(DataSet* dataset, Scene* scene)
     // By default, export the data of the selected pipeline.
     if(!sceneNodeToExport() && sceneToExport()) {
         if(SceneNode* selectedNode = sceneToExport()->selection()->firstNode()) {
-            if(isSuitableNode(selectedNode)) {
+            if(isSuitableSceneNode(selectedNode)) {
                 setSceneNodeToExport(selectedNode);
             }
         }
@@ -133,12 +133,12 @@ void FileExporter::selectDefaultExportableData(DataSet* dataset, Scene* scene)
 
     // If no scene node is currently selected, pick the first suitable node from the scene.
     if(!sceneNodeToExport() && sceneToExport()) {
-        if(isSuitableNode(sceneToExport())) {
+        if(isSuitableSceneNode(sceneToExport())) {
             setSceneNodeToExport(sceneToExport());
         }
         else {
             sceneToExport()->visitChildren([this](SceneNode* node) {
-                if(isSuitableNode(node)) {
+                if(isSuitableSceneNode(node)) {
                     setSceneNodeToExport(node);
                     return false;
                 }
@@ -149,16 +149,16 @@ void FileExporter::selectDefaultExportableData(DataSet* dataset, Scene* scene)
 }
 
 /******************************************************************************
-* Determines whether the given scene node is suitable for exporting with this
-* exporter service. By default, all pipeline scene nodes are considered suitable
-* that produce suitable data objects of the type specified by the
-* FileExporter::exportableDataObjectClass() method.
+* Determines whether the given scene node is suitable for this file exporter service.
+* By default, all pipeline scene nodes are considered suitable that produce
+* suitable data objects of the type specified by the FileExporter::exportableDataObjectClass() method.
 ******************************************************************************/
-bool FileExporter::isSuitableNode(SceneNode* node) const
+bool FileExporter::isSuitableSceneNode(SceneNode* node) const
 {
     if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(node)) {
         if(sceneToExport()) {
-            return isSuitablePipelineOutput(pipeline->evaluatePipelineSynchronous(sceneToExport()->animationSettings()->currentTime(), true));
+            AnimationTime time = sceneToExport()->animationSettings()->currentTime();
+            return isSuitablePipelineOutput(pipeline->evaluateRenderingPipeline(PipelineEvaluationRequest(time)).result());
         }
     }
     return false;
@@ -172,7 +172,8 @@ bool FileExporter::isSuitableNode(SceneNode* node) const
 ******************************************************************************/
 bool FileExporter::isSuitablePipelineOutput(const PipelineFlowState& state) const
 {
-    if(!state) return false;
+    if(!state)
+        return false;
     std::vector<DataObjectClassPtr> objClasses = exportableDataObjectClass();
     if(objClasses.empty())
         return true;
@@ -199,10 +200,8 @@ PipelineFlowState FileExporter::getPipelineDataToBeExported(int frame, bool requ
         // Evaluate pipeline.
         PipelineEvaluationRequest request(AnimationTime::fromFrame(frame));
         request.setThrowOnError(ExecutionContext::current().isScripting());
-        PipelineEvaluationFuture future = requestRenderState ? pipeline->evaluateRenderingPipeline(request) : pipeline->evaluatePipeline(request);
-        if(!future.waitForFinished())
-            return {};
-        PipelineFlowState state = future.result();
+        PipelineEvaluationResult result = requestRenderState ? pipeline->evaluateRenderingPipeline(request) : pipeline->evaluatePipeline(request);
+        const PipelineFlowState& state = result.result();
 
         if(ExecutionContext::current().isScripting() && state.status().type() == PipelineStatus::Error)
             throw Exception(state.status().text());
@@ -220,7 +219,7 @@ PipelineFlowState FileExporter::getPipelineDataToBeExported(int frame, bool requ
 /******************************************************************************
  * Exports the scene data to the output file(s).
  *****************************************************************************/
-bool FileExporter::doExport()
+void FileExporter::doExport()
 {
     if(outputFilename().isEmpty())
         throw Exception(tr("The output filename not been set for the file exporter."));
@@ -296,8 +295,7 @@ bool FileExporter::doExport()
             if(exportAnimation() && useWildcardFilename())
                 closeOutputFile(!this_task::isCanceled());
 
-            if(this_task::isCanceled())
-                break;
+            this_task::throwIfCanceled();
         }
         this_task::endProgressSubSteps();
     }
@@ -308,10 +306,8 @@ bool FileExporter::doExport()
 
     // Close output file.
     if(!exportAnimation() || !useWildcardFilename()) {
-        closeOutputFile(!this_task::isCanceled());
+        closeOutputFile(true);
     }
-
-    return !this_task::isCanceled();
 }
 
 /******************************************************************************

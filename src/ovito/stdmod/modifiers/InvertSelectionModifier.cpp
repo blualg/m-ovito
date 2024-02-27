@@ -42,7 +42,7 @@ InvertSelectionModifier::InvertSelectionModifier(ObjectInitializationFlags flags
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void InvertSelectionModifier::evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void InvertSelectionModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
     if(!subject())
         throw Exception(tr("No data element type set."));

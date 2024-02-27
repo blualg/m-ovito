@@ -30,7 +30,7 @@
 #include "PipelineFlowState.h"
 #include "PipelineStatus.h"
 #include "ModifierClass.h"
-#include "PipelineEvaluation.h"
+#include "PipelineEvaluationRequest.h"
 
 namespace Ovito {
 
@@ -50,16 +50,16 @@ public:
     explicit Modifier(ObjectInitializationFlags flags);
 
     /// \brief Modifies the input data synchronously.
-    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state);
+    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state);
 
     /// \brief Throws an exception if the pipeline stage cannot be evaluated at this time. This is called by the system to catch user mistakes that would lead to infinite recursion.
     virtual void preEvaluationCheck() const {}
 
-    /// \brief Determines the time interval over which a computed pipeline state will remain valid.
-    virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const { return TimeInterval::infinite(); }
-
     /// \brief Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
-    virtual void inputCachingHints(TimeIntervalUnion& cachingIntervals, ModificationNode* node) {}
+    virtual void inputCachingHints(ModifierEvaluationRequest& request) {}
+
+    /// \brief This function is called by the pipeline system before a new modifier evaluation begins.
+    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result, const ModifierEnginePtr& existingEngine) const { return true; }
 
     /// \brief This method is called by the ModificationNode to let the modifier adjust the time interval
     /// of a TargetChanged event received from the upstream pipeline before it is propagated to the
@@ -107,9 +107,6 @@ public:
     ///        evaluated but before the entire pipeline evaluation is complete.
     virtual bool performPreliminaryUpdateAfterEvaluation() { return true; }
 
-    /// \brief Indicates whether this modifier wants preliminary viewport updates whenever its parameters change.
-    virtual bool performPreliminaryUpdateAfterChange() { return false; }
-
     /// \brief Returns the number of animation frames this modifier provides.
     virtual int numberOfOutputFrames(ModificationNode* node) const;
 
@@ -124,8 +121,8 @@ public:
 
 protected:
 
-    /// \brief Modifies the input data.
-    virtual Future<PipelineFlowState> evaluate(const ModifierEvaluationRequest& request, const PipelineFlowState& input);
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, const PipelineFlowState& input);
 
     /// Creates a computation engine that will compute the modifier's results asynchronously.
     virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) { return {}; }

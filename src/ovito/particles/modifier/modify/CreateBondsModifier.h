@@ -192,7 +192,7 @@ protected:
     virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
     /// Modifies the input data synchronously.
-    virtual void evaluateSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
     /// Looks up a particle type in the type list based on the name or the numeric ID.
     static const ElementType* lookupParticleType(const Property* typeProperty, const QVariant& typeSpecification);

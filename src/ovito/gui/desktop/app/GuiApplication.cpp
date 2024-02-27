@@ -339,7 +339,7 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
             else
                 importUrls.push_back(Application::instance()->fileManager().urlFromUserInput(importFilename));
         }
-        try {
+        userInterface.handleExceptions([&](){
             if(!importUrls.empty()) {
                 if(numSessionFiles)
                     throw Exception(tr("Detected incompatible arguments: Cannot open a session state file and a simulation data file at the same time."));
@@ -350,10 +350,7 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
             }
             if(numSessionFiles > 1)
                 throw Exception(tr("Detected incompatible arguments: Cannot open multiple session state files at the same time."));
-        }
-        catch(const Exception& ex) {
-            userInterface.reportError(ex);
-        }
+        });
 
         // Make sure we start with a clean undo stack at application startup.
         if(userInterface.undoStack())
@@ -383,8 +380,7 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
         if(mainWindow) {
             mainWindow->handleExceptions([&] {
                 if(openEvent->file().endsWith(".ovito", Qt::CaseInsensitive)) {
-                    if(!mainWindow->askForSaveChanges())
-                        return;
+                    mainWindow->askForSaveChanges();
                     OORef<DataSet> dataset = DataSet::createFromFile(openEvent->file());
                     if(mainWindow->checkLoadedDataset(dataset))
                         mainWindow->datasetContainer().setCurrentSet(std::move(dataset));

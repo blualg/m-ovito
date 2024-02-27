@@ -58,15 +58,14 @@ SET_OVITO_OBJECT_EDITOR(AMBERNetCDFImporter, AMBERNetCDFImporterEditor);
  * Displays a dialog box that allows the user to edit the custom file column to particle
  * property mapping.
  *****************************************************************************/
-bool AMBERNetCDFImporterEditor::showEditColumnMappingDialog(AMBERNetCDFImporter* importer, const FileSourceImporter::Frame& frame)
+void AMBERNetCDFImporterEditor::showEditColumnMappingDialog(AMBERNetCDFImporter* importer, const FileSourceImporter::Frame& frame)
 {
     Future<ParticleInputColumnMapping> inspectFuture = importer->inspectFileHeader(frame);
 
     {
         // Block UI until reading is done.
         ProgressDialog progressDialog(parentWindow(), inspectFuture, tr("Inspecting file header"));
-        if(!inspectFuture.waitForFinished())
-            return false;
+        inspectFuture.waitForFinished();
     }
 
     ParticleInputColumnMapping mapping = inspectFuture.result();
@@ -83,10 +82,9 @@ bool AMBERNetCDFImporterEditor::showEditColumnMappingDialog(AMBERNetCDFImporter*
     if(dialog.exec() == QDialog::Accepted) {
         importer->setCustomColumnMapping(dialog.mapping());
         importer->setUseCustomColumnMapping(true);
-        return true;
     }
     else {
-        return false;
+        this_task::cancelAndThrow();
     }
 }
 
@@ -150,9 +148,9 @@ void AMBERNetCDFImporterEditor::onEditColumnMapping()
             int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size()-1);
 
             // Show the dialog box, which lets the user modify the file column mapping.
-            if(showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex])) {
-                importer->requestReload();
-            }
+            showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex]);
+
+            importer->requestReload();
         });
     }
 }
