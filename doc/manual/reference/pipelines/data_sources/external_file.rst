@@ -86,6 +86,8 @@ button, which opens the *Configure trajectory playback* dialog (see next section
 
 .. _scene_objects.file_source.configure_playback:
 
+.. _scene_objects.file_source.configure_trajectory_playback:
+
 Configure trajectory playback
 """""""""""""""""""""""""""""
 
