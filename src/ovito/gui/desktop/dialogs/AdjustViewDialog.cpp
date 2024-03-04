@@ -23,6 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
+#include <ovito/core/viewport/ViewportSettings.h>
 #include <ovito/gui/desktop/widgets/general/SpinnerWidget.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/base/actions/ActionManager.h>
@@ -63,7 +64,7 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
 
     QVBoxLayout* mainLayout = new QVBoxLayout(widget);
 
-    QGroupBox* viewPosBox = new QGroupBox(tr("View position"));
+    QGroupBox* viewPosBox = new QGroupBox(tr("Camera position"));
     mainLayout->addWidget(viewPosBox);
 
     QGridLayout* gridLayout = new QGridLayout(viewPosBox);
@@ -158,15 +159,47 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     gridLayout->addLayout(fieldLayout, 0, 3);
     connect(_camDirZSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
 
-    QGroupBox* upDirBox = new QGroupBox(tr("Up direction (read-only)"));
+    QGroupBox* upDirBox = new QGroupBox(tr("Up direction"));
     mainLayout->addWidget(upDirBox);
 
     gridLayout = new QGridLayout(upDirBox);
     gridLayout->setColumnStretch(1,1);
     gridLayout->setColumnStretch(2,1);
     gridLayout->setColumnStretch(3,1);
-    gridLayout->addWidget(new QLabel(tr("XYZ:")), 0, 0);
+    gridLayout->setVerticalSpacing(4);
 
+    QHBoxLayout* hLayout = new QHBoxLayout();
+    hLayout->setContentsMargins(0,0,0,0);
+    hLayout->setSpacing(4);
+
+    _constrainRotationBtn = new QRadioButton();
+    gridLayout->addWidget(_constrainRotationBtn, 0, 0, 1, 4);
+    _rollAngleBtn = new QRadioButton(tr("Specify roll angle:"));
+    hLayout->addWidget(_rollAngleBtn);
+    _rollAngleSpinner = new SpinnerWidget();
+    _rollAngleSpinner->setUnit(mainWindow.unitsManager().angleUnit());
+    _rollAngleSpinner->setEnabled(false);
+    connect(_rollAngleBtn, &QRadioButton::toggled, _rollAngleSpinner, &SpinnerWidget::setEnabled);
+    fieldLayout = new QHBoxLayout();
+    fieldLayout->setContentsMargins(0,0,0,0);
+    fieldLayout->setSpacing(0);
+    textBox = new QLineEdit();
+    _rollAngleSpinner->setTextBox(textBox);
+    fieldLayout->addWidget(textBox);
+    fieldLayout->addWidget(_rollAngleSpinner);
+    hLayout->addLayout(fieldLayout);
+    hLayout->addStretch(1);
+    gridLayout->addLayout(hLayout, 1, 0, 1, 4);
+
+    connect(_constrainRotationBtn, &QRadioButton::clicked, this, [this](bool checked) {
+        ViewportSettings::getSettings().setConstrainCameraRotation(checked);
+    });
+    connect(_rollAngleBtn, &QRadioButton::clicked, this, [this](bool checked) {
+        ViewportSettings::getSettings().setConstrainCameraRotation(!checked);
+    });
+    connect(_rollAngleSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
+
+    gridLayout->addWidget(new QLabel(tr("XYZ (read-only):")), 2, 0);
     _upDirXSpinner = new SpinnerWidget();
     _upDirYSpinner = new SpinnerWidget();
     _upDirZSpinner = new SpinnerWidget();
@@ -178,37 +211,46 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     fieldLayout->setContentsMargins(0,0,0,0);
     fieldLayout->setSpacing(0);
     textBox = new QLineEdit();
-    textBox->setReadOnly(true);
     _upDirXSpinner->setTextBox(textBox);
-    _upDirXSpinner->hide();
     fieldLayout->addWidget(textBox);
     fieldLayout->addWidget(_upDirXSpinner);
-    gridLayout->addLayout(fieldLayout, 0, 1);
-//  connect(_upDirXSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
+    gridLayout->addLayout(fieldLayout, 2, 1);
+#if 0
+    connect(_upDirXSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
+#else
+    _upDirXSpinner->hide();
+    textBox->setReadOnly(true);
+#endif
 
     fieldLayout = new QHBoxLayout();
     fieldLayout->setContentsMargins(0,0,0,0);
     fieldLayout->setSpacing(0);
     textBox = new QLineEdit();
-    textBox->setReadOnly(true);
     _upDirYSpinner->setTextBox(textBox);
-    _upDirYSpinner->hide();
     fieldLayout->addWidget(textBox);
     fieldLayout->addWidget(_upDirYSpinner);
-    gridLayout->addLayout(fieldLayout, 0, 2);
-//  connect(_upDirYSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
+    gridLayout->addLayout(fieldLayout, 2, 2);
+#if 0
+    connect(_upDirYSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
+#else
+    _upDirYSpinner->hide();
+    textBox->setReadOnly(true);
+#endif
 
     fieldLayout = new QHBoxLayout();
     fieldLayout->setContentsMargins(0,0,0,0);
     fieldLayout->setSpacing(0);
     textBox = new QLineEdit();
-    textBox->setReadOnly(true);
     _upDirZSpinner->setTextBox(textBox);
-    _upDirZSpinner->hide();
     fieldLayout->addWidget(textBox);
     fieldLayout->addWidget(_upDirZSpinner);
-    gridLayout->addLayout(fieldLayout, 0, 3);
-//  connect(_camDirZSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
+    gridLayout->addLayout(fieldLayout, 2, 3);
+#if 0
+    connect(_camDirZSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);
+#else
+    _upDirZSpinner->hide();
+    textBox->setReadOnly(true);
+#endif
 
     QGroupBox* projectionBox = new QGroupBox(tr("Projection type"));
     mainLayout->addWidget(projectionBox);
@@ -271,6 +313,8 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     mainLayout->addWidget(buttonBox);
 
     updateGUI();
+
+    connect(&ViewportSettings::getSettings(), &ViewportSettings::settingsChanged, this, &AdjustViewDialog::updateGUI);
 }
 
 /******************************************************************************
@@ -288,16 +332,47 @@ void AdjustViewDialog::updateGUI()
 
     Vector3 oldCameraDir(_camDirXSpinner->floatValue(), _camDirYSpinner->floatValue(), _camDirZSpinner->floatValue());
     FloatType oldDirLength = oldCameraDir.length();
-    if(oldDirLength == 0) oldDirLength = 1;
+    if(oldDirLength == 0)
+        oldDirLength = 1;
     const Vector3& cameraDir = viewport->cameraDirection();
     _camDirXSpinner->setFloatValue(cameraDir.x() * oldDirLength);
     _camDirYSpinner->setFloatValue(cameraDir.y() * oldDirLength);
     _camDirZSpinner->setFloatValue(cameraDir.z() * oldDirLength);
 
-    const Vector3& upDir = viewport->cameraTransformation().column(1);
+    QString constrainAxisName;
+    switch(ViewportSettings::getSettings().upDirection()) {
+    case ViewportSettings::X_AXIS: constrainAxisName = QStringLiteral("x"); break;
+    case ViewportSettings::Y_AXIS: constrainAxisName = QStringLiteral("y"); break;
+    case ViewportSettings::Z_AXIS: constrainAxisName = QStringLiteral("z"); break;
+    }
+    _constrainRotationBtn->setText(tr("Constrained: %1-axis pointing upward").arg(constrainAxisName));
+    _constrainRotationBtn->setChecked(ViewportSettings::getSettings().constrainCameraRotation());
+    _rollAngleBtn->setChecked(!ViewportSettings::getSettings().constrainCameraRotation());
+
+    Vector3 upVector = viewport->cameraUpDirection();
+    if(upVector.isZero())
+        upVector = ViewportSettings::getSettings().upVector();
+
+    // Compute current roll angle.
+    AffineTransformation constrainedOrientation = AffineTransformation::lookAlong(cameraPos, cameraDir, upVector);
+    AffineTransformation unconstrainedOrientation = viewport->cameraTransformation();
+    AffineTransformation delta = constrainedOrientation * unconstrainedOrientation;
+    FloatType rollAngle = std::atan2(delta(1,0), delta(0,0));
+    if(std::abs(rollAngle) < FLOATTYPE_EPSILON) rollAngle = 0;
+    _rollAngleSpinner->setFloatValue(rollAngle);
+
+    Vector3 upDir = viewport->cameraTransformation().column(1);
+    if(std::abs(upDir.x()) < FLOATTYPE_EPSILON) upDir.x() = 0;
+    if(std::abs(upDir.y()) < FLOATTYPE_EPSILON) upDir.y() = 0;
+    if(std::abs(upDir.z()) < FLOATTYPE_EPSILON) upDir.z() = 0;
     _upDirXSpinner->setFloatValue(upDir.x());
     _upDirYSpinner->setFloatValue(upDir.y());
     _upDirZSpinner->setFloatValue(upDir.z());
+#if 0
+    _upDirXSpinner->setEnabled(!_constrainRotationBox->isChecked());
+    _upDirYSpinner->setEnabled(!_constrainRotationBox->isChecked());
+    _upDirZSpinner->setEnabled(!_constrainRotationBox->isChecked());
+#endif
 
     if(viewport->isPerspectiveProjection()) {
         _camPerspective->setChecked(true);
@@ -320,6 +395,11 @@ void AdjustViewDialog::onAdjustCamera()
 
     _mainWindow.handleExceptions([&] {
         Viewport* viewport = _viewportListener.target();
+
+        FloatType newRollAngle = _rollAngleSpinner->floatValue();
+        Point3 cameraPos(_camPosXSpinner->floatValue(), _camPosYSpinner->floatValue(), _camPosZSpinner->floatValue());
+        Vector3 cameraDir(_camDirXSpinner->floatValue(), _camDirYSpinner->floatValue(), _camDirZSpinner->floatValue());
+
         if(_camPerspective->isChecked()) {
             viewport->setViewType(Viewport::VIEW_PERSPECTIVE);
             viewport->setFieldOfView(_camFOVAngleSpinner->floatValue());
@@ -329,8 +409,18 @@ void AdjustViewDialog::onAdjustCamera()
             viewport->setFieldOfView(_camFOVSpinner->floatValue());
         }
 
-        viewport->setCameraPosition(Point3(_camPosXSpinner->floatValue(), _camPosYSpinner->floatValue(), _camPosZSpinner->floatValue()));
-        viewport->setCameraDirection(Vector3(_camDirXSpinner->floatValue(), _camDirYSpinner->floatValue(), _camDirZSpinner->floatValue()));
+        if(_constrainRotationBtn->isChecked()) {
+            viewport->setCameraPosition(cameraPos);
+            viewport->setCameraDirection(cameraDir);
+        }
+        else {
+            // Compute the new camera transformation matrix including the roll angle.
+            Vector3 upVector = ViewportSettings::getSettings().upVector();
+            AffineTransformation cameraTM = AffineTransformation::lookAlong(cameraPos, cameraDir, upVector).inverse();
+            AffineTransformation rollTM = AffineTransformation::rotationZ(newRollAngle);
+            cameraTM = cameraTM * rollTM;
+            viewport->setCameraTransformation(cameraTM);
+        }
     });
 }
 
