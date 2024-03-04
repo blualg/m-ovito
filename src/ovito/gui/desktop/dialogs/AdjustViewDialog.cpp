@@ -166,14 +166,18 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     gridLayout->setColumnStretch(1,1);
     gridLayout->setColumnStretch(2,1);
     gridLayout->setColumnStretch(3,1);
-    gridLayout->setVerticalSpacing(4);
+    gridLayout->setVerticalSpacing(2);
 
     QHBoxLayout* hLayout = new QHBoxLayout();
     hLayout->setContentsMargins(0,0,0,0);
-    hLayout->setSpacing(4);
-
+    hLayout->setSpacing(0);
     _constrainRotationBtn = new QRadioButton();
-    gridLayout->addWidget(_constrainRotationBtn, 0, 0, 1, 4);
+    hLayout->addWidget(_constrainRotationBtn);
+    gridLayout->addLayout(hLayout, 0, 0, 1, 4);
+
+    hLayout = new QHBoxLayout();
+    hLayout->setContentsMargins(0,0,0,0);
+    hLayout->setSpacing(4);
     _rollAngleBtn = new QRadioButton(tr("Specify roll angle:"));
     hLayout->addWidget(_rollAngleBtn);
     _rollAngleSpinner = new SpinnerWidget();
