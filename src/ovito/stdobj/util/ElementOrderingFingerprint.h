@@ -34,7 +34,7 @@ namespace Ovito {
  * Modifiers can use this class to detect if the storage order or the number of of input elements
  * have changed, rendering any previously computed results invalid.
  */
-class OVITO_STDOBJ_EXPORT ElementOrderingFingerprint
+class ElementOrderingFingerprint
 {
 public:
 
