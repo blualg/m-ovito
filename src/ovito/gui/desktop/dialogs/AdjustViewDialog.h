@@ -68,6 +68,9 @@ private:
     SpinnerWidget* _camDirYSpinner;
     SpinnerWidget* _camDirZSpinner;
 
+    QRadioButton* _constrainRotationBtn;
+    QRadioButton* _rollAngleBtn;
+    SpinnerWidget* _rollAngleSpinner;
     SpinnerWidget* _upDirXSpinner;
     SpinnerWidget* _upDirYSpinner;
     SpinnerWidget* _upDirZSpinner;

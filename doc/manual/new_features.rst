@@ -4,6 +4,7 @@
 Changelog
 =========
 
+
 .. sidebar::
 
   * `Download <https://www.ovito.org/download_history/#3.11.0>`__
@@ -16,6 +17,27 @@ Version 3.11.0 (xx-xxx-2024)
 - |ovito-python| Deprecated :py:meth:`!generate` method of the :py:class:`~ovito.modifiers.GenerateTrajectoryLinesModifier`
 - |ovito-python| Added the :py:attr:`HistogramModifier.select_elements <ovito.modifiers.HistogramModifier.select_elements>` option
 - |ovito-python| Initialize global Qt application object only on demand to avoid conflicts with other Python packages that use the Qt framework
+
+.. sidebar::
+
+  * `Download <https://www.ovito.org/download_history/#3.10.4>`__
+
+----------------------------
+Version 3.10.4 (xx-Mar-2024)
+----------------------------
+
+  * `Download <https://www.ovito.org/download_history/#3.10.3>`__
+
+----------------------------
+Version 3.10.3 (19-Feb-2024)
+----------------------------
+
+- Fix: :ref:`visual_elements.lines` visual element renders wrong line caps when using option "Show up to current time only"
+- Fix: Drop-down list of available modifiers inserts wrong modifier template into pipeline after an entry was added to the list
+- |ovito-python| Fix: :py:meth:`~ovito.vis.Viewport.create_jupyter_widget` method failing (`issue #229 <https://gitlab.com/stuko/ovito/-/issues/229>`__)
+- |ovito-python| Fix: Issue with :py:class:`ovito.traits.Color` not accepting a NumPy array
+- |ovito-pro| Added parameter for ambient occlusion cutoff to :ref:`VisRTX renderer <rendering.visrtx_renderer>`
+- |ovito-pro| Fix: Warnings in :ref:`modifiers.render_lammps_regions` modifier due to code line duplications
 
   * `Download <https://www.ovito.org/download_history/#3.10.2>`__
 
@@ -228,7 +250,7 @@ GUI of OVITO Pro and work seamlessly with the :py:func:`~ovito.io.import_file` f
 
 Python extensions for OVITO Pro or the OVITO Python module (i.e. user-defined modifiers and file readers) can now be :ref:`packaged as Python modules <registering_custom_python_classes>`,
 making it easier to deploy and install them (using :command:`pip install`). Custom extensions you've developed can be put under version control in a Git repo
-and shared online with other OVITO users if desired -- we have set up the new `OVITO Extensions Directory <https://ovito-org.github.io/extensions-contrib-page/>`__ for that purpose.
+and shared online with other OVITO users if desired -- we have set up the new `OVITO Extensions Directory <https://www.ovito.org/extensions/>`__ for that purpose.
 After :ref:`easy installation on a user's computer <particles.modifiers.python_script.installing_extensions>`, OVITO Pro automatically discovers all extensions
 and makes them available in the GUI.
 

@@ -325,139 +325,141 @@ std::pair<FloatType,FloatType> SpatialCorrelationFunctionModifierEditor::plotDat
 ******************************************************************************/
 void SpatialCorrelationFunctionModifierEditor::plotAllData()
 {
-    SpatialCorrelationFunctionModifier* modifier = static_object_cast<SpatialCorrelationFunctionModifier>(editObject());
+    handleExceptions([&]() {
+        SpatialCorrelationFunctionModifier* modifier = static_object_cast<SpatialCorrelationFunctionModifier>(editObject());
 
-    // Set type of plot.
-    if(modifier && modifier->typeOfRealSpacePlot() & 1)
-        _realSpacePlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLogScaleEngine());
-    else
-        _realSpacePlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine());
-    if(modifier && modifier->typeOfRealSpacePlot() & 2)
-        _realSpacePlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine());
-    else
-        _realSpacePlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine());
+        // Set type of plot.
+        if(modifier && modifier->typeOfRealSpacePlot() & 1)
+            _realSpacePlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLogScaleEngine());
+        else
+            _realSpacePlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine());
+        if(modifier && modifier->typeOfRealSpacePlot() & 2)
+            _realSpacePlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine());
+        else
+            _realSpacePlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine());
 
-    if(modifier && modifier->typeOfReciprocalSpacePlot() & 1)
-        _reciprocalSpacePlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLogScaleEngine());
-    else
-        _reciprocalSpacePlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine());
-    if(modifier && modifier->typeOfReciprocalSpacePlot() & 2)
-        _reciprocalSpacePlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine());
-    else
-        _reciprocalSpacePlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine());
+        if(modifier && modifier->typeOfReciprocalSpacePlot() & 1)
+            _reciprocalSpacePlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLogScaleEngine());
+        else
+            _reciprocalSpacePlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine());
+        if(modifier && modifier->typeOfReciprocalSpacePlot() & 2)
+            _reciprocalSpacePlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine());
+        else
+            _reciprocalSpacePlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine());
 
-    // Set axis ranges.
-    if(modifier && modifier->fixRealSpaceXAxisRange())
-        _realSpacePlot->setAxisScale(QwtPlot::xBottom, modifier->realSpaceXAxisRangeStart(), modifier->realSpaceXAxisRangeEnd());
-    else
-        _realSpacePlot->setAxisAutoScale(QwtPlot::xBottom);
-    if(modifier && modifier->fixRealSpaceYAxisRange())
-        _realSpacePlot->setAxisScale(QwtPlot::yLeft, modifier->realSpaceYAxisRangeStart(), modifier->realSpaceYAxisRangeEnd());
-    else
-        _realSpacePlot->setAxisAutoScale(QwtPlot::yLeft);
-    if(modifier && modifier->fixReciprocalSpaceXAxisRange())
-        _reciprocalSpacePlot->setAxisScale(QwtPlot::xBottom, modifier->reciprocalSpaceXAxisRangeStart(), modifier->reciprocalSpaceXAxisRangeEnd());
-    else
-        _reciprocalSpacePlot->setAxisAutoScale(QwtPlot::xBottom);
-    if(modifier && modifier->fixReciprocalSpaceYAxisRange())
-        _reciprocalSpacePlot->setAxisScale(QwtPlot::yLeft, modifier->reciprocalSpaceYAxisRangeStart(), modifier->reciprocalSpaceYAxisRangeEnd());
-    else
-        _reciprocalSpacePlot->setAxisAutoScale(QwtPlot::yLeft);
+        // Set axis ranges.
+        if(modifier && modifier->fixRealSpaceXAxisRange())
+            _realSpacePlot->setAxisScale(QwtPlot::xBottom, modifier->realSpaceXAxisRangeStart(), modifier->realSpaceXAxisRangeEnd());
+        else
+            _realSpacePlot->setAxisAutoScale(QwtPlot::xBottom);
+        if(modifier && modifier->fixRealSpaceYAxisRange())
+            _realSpacePlot->setAxisScale(QwtPlot::yLeft, modifier->realSpaceYAxisRangeStart(), modifier->realSpaceYAxisRangeEnd());
+        else
+            _realSpacePlot->setAxisAutoScale(QwtPlot::yLeft);
+        if(modifier && modifier->fixReciprocalSpaceXAxisRange())
+            _reciprocalSpacePlot->setAxisScale(QwtPlot::xBottom, modifier->reciprocalSpaceXAxisRangeStart(), modifier->reciprocalSpaceXAxisRangeEnd());
+        else
+            _reciprocalSpacePlot->setAxisAutoScale(QwtPlot::xBottom);
+        if(modifier && modifier->fixReciprocalSpaceYAxisRange())
+            _reciprocalSpacePlot->setAxisScale(QwtPlot::yLeft, modifier->reciprocalSpaceYAxisRangeStart(), modifier->reciprocalSpaceYAxisRangeEnd());
+        else
+            _reciprocalSpacePlot->setAxisAutoScale(QwtPlot::yLeft);
 
-    // Obtain the pipeline data produced by the modifier.
-    const PipelineFlowState& state = getPipelineOutput();
+        // Obtain the pipeline data produced by the modifier.
+        const PipelineFlowState& state = getPipelineOutput();
 
-    // Retreive computed values from pipeline.
-    const QVariant& mean1 = state.getAttributeValue(modificationNode(), QStringLiteral("CorrelationFunction.mean1"));
-    const QVariant& mean2 = state.getAttributeValue(modificationNode(), QStringLiteral("CorrelationFunction.mean2"));
-    const QVariant& variance1 = state.getAttributeValue(modificationNode(), QStringLiteral("CorrelationFunction.variance1"));
-    const QVariant& variance2 = state.getAttributeValue(modificationNode(), QStringLiteral("CorrelationFunction.variance2"));
-    const QVariant& covariance = state.getAttributeValue(modificationNode(), QStringLiteral("CorrelationFunction.covariance"));
+        // Retreive computed values from pipeline.
+        const QVariant& mean1 = state.getAttributeValue(modificationNode(), QStringLiteral("CorrelationFunction.mean1"));
+        const QVariant& mean2 = state.getAttributeValue(modificationNode(), QStringLiteral("CorrelationFunction.mean2"));
+        const QVariant& variance1 = state.getAttributeValue(modificationNode(), QStringLiteral("CorrelationFunction.variance1"));
+        const QVariant& variance2 = state.getAttributeValue(modificationNode(), QStringLiteral("CorrelationFunction.variance2"));
+        const QVariant& covariance = state.getAttributeValue(modificationNode(), QStringLiteral("CorrelationFunction.covariance"));
 
-    // Determine scaling factor and offset.
-    FloatType offset = 0.0;
-    FloatType uniformFactor = 1;
-    if(modifier && variance1.isValid() && variance2.isValid() && covariance.isValid()) {
-        if(modifier->normalizeRealSpace() == SpatialCorrelationFunctionModifier::DIFFERENCE_CORRELATION) {
-            offset = 0.5 * (variance1.toDouble() + variance2.toDouble());
-            uniformFactor = -1;
+        // Determine scaling factor and offset.
+        FloatType offset = 0.0;
+        FloatType uniformFactor = 1;
+        if(modifier && variance1.isValid() && variance2.isValid() && covariance.isValid()) {
+            if(modifier->normalizeRealSpace() == SpatialCorrelationFunctionModifier::DIFFERENCE_CORRELATION) {
+                offset = 0.5 * (variance1.toDouble() + variance2.toDouble());
+                uniformFactor = -1;
+            }
+            if(modifier->normalizeRealSpaceByCovariance() && covariance.toDouble() != 0) {
+                uniformFactor /= covariance.toDouble();
+            }
         }
-        if(modifier->normalizeRealSpaceByCovariance() && covariance.toDouble() != 0) {
-            uniformFactor /= covariance.toDouble();
-        }
-    }
 
-    // Display direct neighbor correlation function.
-    const DataTable* neighCorrelation = state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("correlation-neighbor"));
-    const DataTable* neighRDF = state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("correlation-neighbor-rdf"));
-    if(modifier && modificationNode() && modifier->doComputeNeighCorrelation() && neighCorrelation && neighRDF) {
-        const auto& xStorage = neighCorrelation->getXValues();
-        BufferReadAccess<FloatType> xData(xStorage);
-        const auto& yStorage = neighCorrelation->y();
-        BufferReadAccess<FloatType> yData(yStorage);
-        const auto& rdfStorage = neighRDF->y();
-        BufferReadAccess<FloatType> rdfData(rdfStorage);
-        size_t numberOfDataPoints = yData.size();
-        QVector<QPointF> plotData(numberOfDataPoints);
-        bool normByRDF = modifier->normalizeRealSpaceByRDF();
-        for(size_t i = 0; i < numberOfDataPoints; i++) {
-            FloatType xValue = xData[i];
-            FloatType yValue = yData[i];
-            if(normByRDF)
-                yValue = rdfData[i] > 1e-12 ? (yValue / rdfData[i]) : 0.0;
-            yValue = uniformFactor * (yValue - offset);
-            plotData[i].rx() = xValue;
-            plotData[i].ry() = yValue;
+        // Display direct neighbor correlation function.
+        const DataTable* neighCorrelation = state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("correlation-neighbor"));
+        const DataTable* neighRDF = state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("correlation-neighbor-rdf"));
+        if(modifier && modificationNode() && modifier->doComputeNeighCorrelation() && neighCorrelation && neighRDF) {
+            const auto& xStorage = neighCorrelation->getXValues();
+            BufferReadAccess<FloatType> xData(xStorage);
+            const auto& yStorage = neighCorrelation->y();
+            BufferReadAccess<FloatType> yData(yStorage);
+            const auto& rdfStorage = neighRDF->y();
+            BufferReadAccess<FloatType> rdfData(rdfStorage);
+            size_t numberOfDataPoints = yData.size();
+            QVector<QPointF> plotData(numberOfDataPoints);
+            bool normByRDF = modifier->normalizeRealSpaceByRDF();
+            for(size_t i = 0; i < numberOfDataPoints; i++) {
+                FloatType xValue = xData[i];
+                FloatType yValue = yData[i];
+                if(normByRDF)
+                    yValue = rdfData[i] > 1e-12 ? (yValue / rdfData[i]) : 0.0;
+                yValue = uniformFactor * (yValue - offset);
+                plotData[i].rx() = xValue;
+                plotData[i].ry() = yValue;
+            }
+            _neighCurve->setSamples(plotData);
+            _neighCurve->show();
         }
-        _neighCurve->setSamples(plotData);
-        _neighCurve->show();
-    }
-    else {
-        _neighCurve->hide();
-    }
+        else {
+            _neighCurve->hide();
+        }
 
-    // Plot real-space correlation function.
-    const DataTable* realSpaceCorrelation = state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("correlation-real-space"));
-    const DataTable* realSpaceRDF = state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("correlation-real-space-rdf"));
-    if(modifier && modificationNode() && realSpaceCorrelation) {
-        auto realSpaceYRange = plotData(realSpaceCorrelation, _realSpacePlot, offset, uniformFactor,
-            (realSpaceRDF && modifier->normalizeRealSpaceByRDF()) ? realSpaceRDF->y() : nullptr);
+        // Plot real-space correlation function.
+        const DataTable* realSpaceCorrelation = state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("correlation-real-space"));
+        const DataTable* realSpaceRDF = state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("correlation-real-space-rdf"));
+        if(modifier && modificationNode() && realSpaceCorrelation) {
+            auto realSpaceYRange = plotData(realSpaceCorrelation, _realSpacePlot, offset, uniformFactor,
+                (realSpaceRDF && modifier->normalizeRealSpaceByRDF()) ? realSpaceRDF->y() : nullptr);
 
-        UndoSuspender noUndo;
-        if(!modifier->fixRealSpaceXAxisRange()) {
-            modifier->setRealSpaceXAxisRangeStart(realSpaceCorrelation->intervalStart());
-            modifier->setRealSpaceXAxisRangeEnd(realSpaceCorrelation->intervalEnd());
+            UndoSuspender noUndo;
+            if(!modifier->fixRealSpaceXAxisRange()) {
+                modifier->setRealSpaceXAxisRangeStart(realSpaceCorrelation->intervalStart());
+                modifier->setRealSpaceXAxisRangeEnd(realSpaceCorrelation->intervalEnd());
+            }
+            if(!modifier->fixRealSpaceYAxisRange()) {
+                modifier->setRealSpaceYAxisRangeStart(realSpaceYRange.first);
+                modifier->setRealSpaceYAxisRangeEnd(realSpaceYRange.second);
+            }
         }
-        if(!modifier->fixRealSpaceYAxisRange()) {
-            modifier->setRealSpaceYAxisRangeStart(realSpaceYRange.first);
-            modifier->setRealSpaceYAxisRangeEnd(realSpaceYRange.second);
+        else {
+            _realSpacePlot->reset();
         }
-    }
-    else {
-        _realSpacePlot->reset();
-    }
 
-    // Plot reciprocal-space correlation function.
-    const DataTable* reciprocalSpaceCorrelation = state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("correlation-reciprocal-space"));
-    if(modifier && modificationNode() && reciprocalSpaceCorrelation) {
-        FloatType rfac = 1;
-        if(modifier->normalizeReciprocalSpace() && covariance.toDouble() != 0)
-            rfac = 1.0 / covariance.toDouble();
-        auto reciprocalSpaceYRange = plotData(reciprocalSpaceCorrelation, _reciprocalSpacePlot, 0.0, rfac, nullptr);
+        // Plot reciprocal-space correlation function.
+        const DataTable* reciprocalSpaceCorrelation = state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("correlation-reciprocal-space"));
+        if(modifier && modificationNode() && reciprocalSpaceCorrelation) {
+            FloatType rfac = 1;
+            if(modifier->normalizeReciprocalSpace() && covariance.toDouble() != 0)
+                rfac = 1.0 / covariance.toDouble();
+            auto reciprocalSpaceYRange = plotData(reciprocalSpaceCorrelation, _reciprocalSpacePlot, 0.0, rfac, nullptr);
 
-        UndoSuspender noUndo;
-        if(!modifier->fixReciprocalSpaceXAxisRange()) {
-            modifier->setReciprocalSpaceXAxisRangeStart(reciprocalSpaceCorrelation->intervalStart());
-            modifier->setReciprocalSpaceXAxisRangeEnd(reciprocalSpaceCorrelation->intervalEnd());
+            UndoSuspender noUndo;
+            if(!modifier->fixReciprocalSpaceXAxisRange()) {
+                modifier->setReciprocalSpaceXAxisRangeStart(reciprocalSpaceCorrelation->intervalStart());
+                modifier->setReciprocalSpaceXAxisRangeEnd(reciprocalSpaceCorrelation->intervalEnd());
+            }
+            if(!modifier->fixReciprocalSpaceYAxisRange()) {
+                modifier->setReciprocalSpaceYAxisRangeStart(reciprocalSpaceYRange.first);
+                modifier->setReciprocalSpaceYAxisRangeEnd(reciprocalSpaceYRange.second);
+            }
         }
-        if(!modifier->fixReciprocalSpaceYAxisRange()) {
-            modifier->setReciprocalSpaceYAxisRangeStart(reciprocalSpaceYRange.first);
-            modifier->setReciprocalSpaceYAxisRangeEnd(reciprocalSpaceYRange.second);
+        else {
+            _reciprocalSpacePlot->reset();
         }
-    }
-    else {
-        _reciprocalSpacePlot->reset();
-    }
+    });
 }
 
 }   // End of namespace
