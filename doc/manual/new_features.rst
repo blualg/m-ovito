@@ -6,6 +6,12 @@ Changelog
 
 .. sidebar::
 
+  * `Download <https://www.ovito.org/download_history/#3.10.4>`__
+
+----------------------------
+Version 3.10.4 (xx-Mar-2024)
+----------------------------
+
   * `Download <https://www.ovito.org/download_history/#3.10.3>`__
 
 ----------------------------
