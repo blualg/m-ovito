@@ -238,7 +238,7 @@ GUI of OVITO Pro and work seamlessly with the :py:func:`~ovito.io.import_file` f
 
 Python extensions for OVITO Pro or the OVITO Python module (i.e. user-defined modifiers and file readers) can now be :ref:`packaged as Python modules <registering_custom_python_classes>`,
 making it easier to deploy and install them (using :command:`pip install`). Custom extensions you've developed can be put under version control in a Git repo
-and shared online with other OVITO users if desired -- we have set up the new `OVITO Extensions Directory <https://ovito-org.github.io/extensions-contrib-page/>`__ for that purpose.
+and shared online with other OVITO users if desired -- we have set up the new `OVITO Extensions Directory <https://www.ovito.org/extensions/>`__ for that purpose.
 After :ref:`easy installation on a user's computer <particles.modifiers.python_script.installing_extensions>`, OVITO Pro automatically discovers all extensions
 and makes them available in the GUI.
 

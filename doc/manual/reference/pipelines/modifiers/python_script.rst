@@ -181,7 +181,7 @@ it is defined in embedded source code or in an installed extension module.
   which are part of the OVITO Python module. Additionally, you can install :ref:`user extension modules <particles.modifiers.python_script.installing_extensions>` that were
   developed by you or others, and which seamlessly integrate into the OVITO Pro GUI.
 
-  See also :ref:`registering_custom_python_classes` and the `OVITO Extensions Directory <https://ovito-org.github.io/extensions-contrib-page/>`__.
+  See also :ref:`registering_custom_python_classes` and the `OVITO Extensions Directory <https://www.ovito.org/extensions/>`__.
 
 The option :guilabel:`Edit embedded code with` only applies to embedded extension code developed within OVITO Pro and not imported from an external Python module.
 The option selects what the button :guilabel:`Edit code...` should do: OVITO Pro can open a simple integrated code editor, or you can

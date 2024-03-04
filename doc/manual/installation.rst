@@ -59,7 +59,7 @@ Python module installation
 ==========================
 
 The *OVITO Pro* program package includes an :ref:`integrated Python interpreter <ovitos_interpreter>` (:command:`ovitos`) that gets installed alongside with the application,
-allowing you to run Python code written for OVITO and install third-party modules from the `OVITO Extensions Directory <https://ovito-org.github.io/extensions-contrib-page/>`__ for example.
+allowing you to run Python code written for OVITO and install third-party modules from the `OVITO Extensions Directory <https://www.ovito.org/extensions/>`__ for example.
 You can also install the standalone ``ovito`` Python module into an external Python interpreter on your system  (e.g. :program:`Anaconda` or the standard :program:`CPython` interpreter) in case you
 would like to make use of OVITO's functionality in script-based workflows. Please refer to :ref:`this section <pydoc:installation>` for further setup instructions.
 
