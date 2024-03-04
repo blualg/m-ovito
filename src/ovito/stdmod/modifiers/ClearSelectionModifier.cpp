@@ -39,16 +39,19 @@ ClearSelectionModifier::ClearSelectionModifier(ObjectInitializationFlags flags) 
 }
 
 /******************************************************************************
-* Modifies the input data synchronously.
+* Modifies the input data.
 ******************************************************************************/
-void ClearSelectionModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+Future<PipelineFlowState> ClearSelectionModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
     if(!subject())
         throw Exception(tr("No input element type selected."));
 
-    PropertyContainer* container = state.expectMutableLeafObject(subject());
+    PipelineFlowState output = input;
+    PropertyContainer* container = output.expectMutableLeafObject(subject());
     if(const Property* selProperty = container->getProperty(Property::GenericSelectionProperty))
         container->removeProperty(selProperty);
+
+    return output;
 }
 
 }   // End of namespace

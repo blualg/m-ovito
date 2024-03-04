@@ -67,12 +67,6 @@ public:
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 #endif
 
-    /// Indicates whether a preliminary viewport update should be performed after the modifier has been
-    /// evaluated but before the entire pipeline evaluation is complete.
-    /// We suppress such preliminary updates for this modifier, because it produces a surface mesh,
-    /// which always requires further asynchronous processing before a viewport update makes sense.
-    virtual bool performPreliminaryUpdateAfterEvaluation() override { return false; }
-
     /// Returns the level at which to create the isosurface.
     FloatType isolevel() const { return isolevelController() ? isolevelController()->getFloatValue(AnimationTime(0)) : 0; }
 

@@ -73,7 +73,7 @@ void AsynchronousTaskBase::startInThreadPool(QThreadPool* pool, bool showInUserI
     this->setStarted();
 
     // Submit to thread pool.
-    pool->start(this);
+    pool->start(this, this->priority());
 }
 
 /******************************************************************************

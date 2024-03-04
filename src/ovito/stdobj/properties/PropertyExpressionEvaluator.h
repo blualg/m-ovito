@@ -50,8 +50,10 @@ public:
     /// Specifies the expressions to be evaluated for each element and creates the input variables.
     virtual void initialize(const QStringList& expressions, const PipelineFlowState& state, const ConstDataObjectPath& containerPath, int animationFrame = 0);
 
+#if 0 // TODO
     /// Initializes the parser object and evaluates the expressions for every element.
     void evaluate(const std::function<void(size_t,size_t,double)>& callback, const std::function<bool(size_t)>& filter = std::function<bool(size_t)>());
+#endif
 
     /// Returns the maximum number of threads used to evaluate the expression (or 0 if all processor cores are used).
     size_t maxThreadCount() const { return _maxThreadCount; }
@@ -223,7 +225,7 @@ public:
         /// The worker routine.
         void run(size_t startIndex, size_t endIndex, std::function<void(size_t,size_t,double)> callback, std::function<bool(size_t)> filter);
 
-        // Paremt of this worker object.
+        // Parent of this worker object.
         PropertyExpressionEvaluator& _evaluator;
 
         /// List of parser objects used by this thread.

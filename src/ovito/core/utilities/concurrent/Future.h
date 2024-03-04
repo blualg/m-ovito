@@ -216,36 +216,8 @@ public:
         return Future(std::move(task));
     }
 
-    /// Creates a future that will be fulfilled after the user-supplied function was executed by the given executor.
-    template<typename Executor, typename Function>
-    static Future exec(Executor&& executor, Function&& f) {
-        promise_type promise = promise_type::template create<Task>(false);
-        auto future = promise.future();
-        std::forward<Executor>(executor).execute([promise = std::move(promise), f = std::forward<Function>(f)]() mutable noexcept {
-            if(!promise.isCanceled()) {
-                promise.setStarted();
-                try {
-                    Task::Scope taskScope(promise.task());
-                    if constexpr(!std::is_void_v<std::invoke_result_t<Function>>) {
-                        promise.setResults(std::invoke(std::forward<Function>(f)));
-                    }
-                    else {
-                        std::invoke(std::forward<Function>(f));
-                        promise.setResults();
-                    }
-                }
-                catch(...) {
-                    promise.captureException();
-                }
-                promise.setFinished();
-            }
-        });
-
-        return future;
-    }
-
     /// Returns the results computed by the associated Promise.
-    /// This function may only be called after the Promise was fulfilled (and not canceled).
+    /// The function blocks until the result become available.
     tuple_type results() {
         OVITO_ASSERT_MSG(isValid(), "Future::results()", "Future must be valid.");
         waitForFinished();
@@ -257,6 +229,7 @@ public:
     }
 
     /// Returns the results computed by the associated task.
+    /// The function blocks until the result become available.
     auto result() {
         if constexpr(sizeof...(R) == 1) {
             return std::get<0>(results());
@@ -279,6 +252,12 @@ public:
     /// Overload of the function above using the default inline executor.
     template<typename Function>
     decltype(auto) then(Function&& f) { return then(InlineExecutor{}, std::forward<Function>(f)); }
+
+    /// Applies a post-processing function to the future's results.
+    template<typename Executor, typename Function>
+    void postprocess(Executor&& executor, Function&& f) {
+        *this = then(std::forward<Executor>(executor), std::forward<Function>(f));
+    }
 
 #ifndef Q_CC_GNU
 protected:
@@ -318,6 +297,10 @@ Future<R...>::then(Executor&& executor, Function&& f)
     result_promise_type promise{std::make_shared<continuation_task_type>()};
     result_future_type future = promise.future();
     continuation_task_type* continuationTask = static_cast<continuation_task_type*>(promise.task().get());
+
+    // Inherit the priority from the task that invoked then(). If then() was not invoked from a task, inherit the
+    // priority from future's task.
+    continuationTask->setPriority(this_task::get() ? this_task::get()->priority() : this->task()->priority());
 
     // Run the following function once the existing task finishes. We'll then invoke the user's continuation function.
     continuationTask->whenTaskFinishes(

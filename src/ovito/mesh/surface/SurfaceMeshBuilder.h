@@ -401,7 +401,7 @@ public:
     void flipFaces() { mutableTopology()->flipFaces(); }
 
     /// Fairs the surface mesh.
-    bool smoothMesh(int numIterations, ProgressingTask& task, FloatType k_PB = FloatType(0.1), FloatType lambda = FloatType(0.5));
+    void smoothMesh(int numIterations, FloatType k_PB = FloatType(0.1), FloatType lambda = FloatType(0.5));
 
     /// Splits a face along the edge given by the second vertices of two of its border edges.
     edge_index splitFace(edge_index edge1, edge_index edge2, FaceGrower& faceGrower);

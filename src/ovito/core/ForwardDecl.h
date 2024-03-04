@@ -104,8 +104,6 @@ namespace Ovito
     using ModifierClassPtr = const ModifierClass*;
     class ModifierGroup;
     class ModificationNode;
-    class ModifierEngine;
-    using ModifierEnginePtr = std::shared_ptr<ModifierEngine>;
     class Pipeline;
     class PipelineFlowState;
     class DataCollection;

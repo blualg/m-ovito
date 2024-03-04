@@ -47,7 +47,7 @@ bool UnwrapTrajectoriesModifier::OOMetaClass::isApplicableTo(const DataCollectio
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluateModifier(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
     if(input) {
         if(UnwrapTrajectoriesModificationNode* unwrapModNode = dynamic_object_cast<UnwrapTrajectoriesModificationNode>(request.modificationNode())) {

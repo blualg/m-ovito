@@ -194,6 +194,10 @@ public Q_SLOTS:
     /// Schedules a refresh for this window.
     void requestUpdate();
 
+    /// If an update request is pending for this viewport window, immediately
+    /// processes it and redraw the window contents.
+    void processViewportUpdate();
+
     /// Zooms to the extents of the scene.
     void zoomToSceneExtents();
 
@@ -209,6 +213,9 @@ private Q_SLOTS:
     void handleUpdateRequest();
 
 protected:
+
+    /// Handles timer events for this object.
+    virtual void timerEvent(QTimerEvent* event) override;
 
     /// This is called after the frame graph has been updated to render the viewport contents on screen.
     virtual void refreshDisplay() = 0;
@@ -260,8 +267,8 @@ private:
     /// Indicates that a rerendering of the viewport has been requested by the program.
     bool _updateRequested = false;
 
-    /// Indicates that an update of the viewport contents has been scheduled.
-    bool _updateScheduled = false;
+    /// Used to update the viewport contents after a short waiting period.
+    QBasicTimer _updateTimer;
 
     /// Controls the visibility of the viewport caption.
     bool _showViewportTitle = true;

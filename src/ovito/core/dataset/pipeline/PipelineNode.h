@@ -113,7 +113,7 @@ protected:
 
     /// Decides whether a preliminary viewport update is performed after this pipeline object has been
     /// evaluated but before the rest of the pipeline is complete.
-    virtual bool performPreliminaryUpdateAfterEvaluation() { return true; }
+    virtual bool shouldRefreshViewportsAfterEvaluation() { return false; }
 
 private:
 

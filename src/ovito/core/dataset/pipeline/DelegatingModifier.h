@@ -79,13 +79,16 @@ public:
     /// Constructor.
     explicit ModifierDelegate(ObjectInitializationFlags flags, const DataObjectReference& inputDataObj = DataObjectReference()) : RefTarget(flags), _isEnabled(true), _inputDataObject(inputDataObj) {}
 
-    /// \brief Determines the time interval over which a computed pipeline state will remain valid.
+    /// Determines the time interval over which a computed pipeline state will remain valid.
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const { return TimeInterval::infinite(); }
 
-    /// \brief Applies the modifier operation to the data in a pipeline flow state.
-    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) { return PipelineStatus::Success; }
+    /// This function is called by the pipeline system before a new modifier evaluation begins.
+    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const { return true; }
 
-    /// \brief Returns the modifier owning this delegate.
+    /// Applies this modifier delegate to the data.
+    virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) = 0;
+
+    /// Returns the modifier owning this delegate.
     Modifier* modifier() const;
 
 private:
@@ -135,13 +138,11 @@ public:
     /// Constructor.
     using Modifier::Modifier;
 
-#if 0 // TODO
-    /// Determines the time interval over which a computed pipeline state will remain valid.
-    virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
-#endif
+    /// This function is called by the pipeline system before a new modifier evaluation begins.
+    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
 
-    /// Modifies the input data synchronously.
-    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) override;
 
 protected:
 
@@ -149,7 +150,7 @@ protected:
     void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName);
 
     /// Lets the modifier's delegate operate on a pipeline flow state.
-    void applyDelegate(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
+    Future<PipelineFlowState> applyDelegate(const ModifierEvaluationRequest& request, PipelineFlowState input, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
 
 protected:
 
@@ -199,8 +200,8 @@ public:
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 #endif
 
-    /// Modifies the input data synchronously.
-    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) override;
 
 protected:
 
@@ -208,7 +209,7 @@ protected:
     void createModifierDelegates(const OvitoClass& delegateType);
 
     /// Lets the registered modifier delegates operate on a pipeline flow state.
-    void applyDelegates(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
+    Future<PipelineFlowState> applyDelegates(const ModifierEvaluationRequest& request, PipelineFlowState input, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
 
 protected:
 

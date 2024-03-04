@@ -385,6 +385,7 @@ void ColorCodingModifierEditor::onAdjustRange()
     OVITO_CHECK_OBJECT_POINTER(mod);
 
     performTransaction(tr("Adjust range"), [&]() {
+        ProgressDialog progressDialog(container(), tr("Determining property value range"));
         mod->adjustRange(currentAnimationTime());
     });
 }

@@ -70,9 +70,8 @@ public:
     /// Constructor.
     explicit LinesSliceModifierDelegate(ObjectInitializationFlags flags) : SliceModifierDelegate(flags) {}
 
-    /// \brief Applies a slice operation to a data object.
-    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState,
-                                 const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    /// Applies this modifier delegate to the data.
+    virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
 /**
@@ -108,11 +107,11 @@ public:
     virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
 #endif
 
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) override;
+
     /// Lets the modifier render itself in an interactive viewport.
     virtual void renderModifierVisual(const ModifierEvaluationRequest& request, Pipeline* pipeline, FrameGraph& frameGraph) override;
-
-    /// Modifies the input data synchronously.
-    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
     // Property access functions:
 

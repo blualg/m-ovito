@@ -40,15 +40,18 @@ class OVITO_STDMOD_EXPORT AssignColorModifierDelegate : public ModifierDelegate
 
 public:
 
-    /// \brief Applies the modifier operation to the data in a pipeline flow state.
-    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    /// Applies the modifier operation to the data in a pipeline flow state.
+    virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+
+    /// This function is called by the pipeline system before a new modifier evaluation begins.
+    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
 
     /// Returns the type of input property container that this delegate can process.
     PropertyContainerClassPtr inputContainerClass() const {
         return static_class_cast<PropertyContainer>(&getOOMetaClass().getApplicableObjectClass());
     }
 
-    /// \brief Returns a reference to the property container being modified by this delegate.
+    /// Returns a reference to the property container being modified by this delegate.
     PropertyContainerReference inputContainerRef() const {
         return PropertyContainerReference(inputContainerClass(), inputDataObject().dataPath(), inputDataObject().dataTitle());
     }
@@ -58,10 +61,9 @@ protected:
     /// Abstract class constructor.
     using ModifierDelegate::ModifierDelegate;
 
-    /// \brief returns the ID of the standard property that will receive the assigned colors.
+    /// returns the ID of the standard property that will receive the assigned colors.
     virtual int outputColorPropertyId() const = 0;
 };
-
 
 /**
  * \brief This modifier assigns a uniform color to all selected elements.
@@ -91,11 +93,6 @@ public:
 
     /// Constructor.
     explicit AssignColorModifier(ObjectInitializationFlags flags);
-
-#if 0 // TODO
-    /// Determines the time interval over which a computed pipeline state will remain valid.
-    virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
-#endif
 
     /// Returns the color that is assigned to the selected elements.
     Color color() const { return colorController() ? colorController()->getColorValue(AnimationTime(0)) : Color(0,0,0); }

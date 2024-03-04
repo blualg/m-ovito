@@ -94,6 +94,10 @@ public:
 	/// The path is displayed in the UI panel of the FileSource.
 	QString currentDirectoryPath() const;
 
+    /// Indicates that a preliminary viewport update will be performed immediately after this pipeline stage
+	/// has computed new results.
+    virtual bool shouldRefreshViewportsAfterEvaluation() override { return true; }
+
 protected:
 
 	/// Asks the object for the results of the data pipeline.

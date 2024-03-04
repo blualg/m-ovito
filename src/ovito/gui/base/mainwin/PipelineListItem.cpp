@@ -70,7 +70,7 @@ bool PipelineListItem::referenceEvent(RefTarget* source, const ReferenceEvent& e
     // Update item with some delay after its status has changed.
     else if(event.type() == ReferenceEvent::ObjectStatusChanged) {
         if(!_statusTimer.isActive()) {
-            _statusTimer.start(50, Qt::CoarseTimer, this);
+            _statusTimer.start(100, Qt::CoarseTimer, this);
         }
     }
     // Update item with some delay after its activity status has changed.
@@ -78,13 +78,12 @@ bool PipelineListItem::referenceEvent(RefTarget* source, const ReferenceEvent& e
         // Indicate activity status in the UI with a 100 ms delay to prevent excessive updates in case of short-running tasks.
         ActiveObject* activeObject = static_object_cast<ActiveObject>(object());
         if(activeObject->isObjectActive()) {
-            if(!_statusTimer.isActive()) {
+            if(!_activityTimer.isActive()) {
                 _activityTimer.start(100, Qt::CoarseTimer, this);
             }
         }
         else {
             _activityTimer.stop();
-            updateTitle();
             Q_EMIT itemChanged(this);
         }
     }

@@ -38,6 +38,9 @@ public:
 
     MainThreadTask(Task* parentTask) noexcept : ProgressingTask(Task::State(Task::Started | Task::YieldUI)) {
         if(parentTask) {
+            // Inherit priority from the parent task.
+            setPriority(parentTask->priority());
+
             // When this sub-task gets canceled, we cancel the parent task too.
             this->registerContinuation([this]() noexcept {
                 if(isCanceled() && callbackTask() && !callbackTask()->isCanceled()) {

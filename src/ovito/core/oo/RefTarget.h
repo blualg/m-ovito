@@ -176,8 +176,8 @@ public:
 
     /// \brief Notifies the dependents that this object's state has changed outside of the given animation time interval
     ///        but remained the same within the interval.
-    inline void notifyTargetChangedOutsideInterval(const TimeInterval& interval) const noexcept {
-        const_cast<RefTarget*>(this)->notifyDependentsImpl(TargetChangedEvent(const_cast<RefTarget*>(this), nullptr, interval));
+    inline void notifyTargetChangedOutsideInterval(const TimeInterval& interval, const PropertyFieldDescriptor* field = nullptr) const noexcept {
+        const_cast<RefTarget*>(this)->notifyDependentsImpl(TargetChangedEvent(const_cast<RefTarget*>(this), field, interval));
     }
 
     ////////////////////////////////// Dependency graph ///////////////////////////////////////

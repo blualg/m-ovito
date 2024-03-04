@@ -263,7 +263,7 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     connect(buttonBox, &QDialogButtonBox::accepted, this, &AdjustViewDialog::close);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &AdjustViewDialog::onCancel);
     connect(buttonBox, &QDialogButtonBox::helpRequested, &mainWindow, [&mainWindow]() {
-        mainWindow.actionManager()->openHelpTopic("manual:viewports.adjust_view_dialog");
+        mainWindow.actionManager()->openHelpTopic(QStringLiteral("manual:viewports.adjust_view_dialog"));
     });
     mainLayout->addWidget(buttonBox);
 

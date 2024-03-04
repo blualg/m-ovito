@@ -111,7 +111,7 @@ PipelineEvaluationResult StandardCameraSource::evaluateInternal(const PipelineEv
     data->addObject(std::move(camera));
 
     // Wrap the DataCollection in a PipelineFlowState.
-    return PipelineEvaluationResult(PipelineFlowState(std::move(data), PipelineStatus::Success, stateValidity));
+    return PipelineFlowState(std::move(data), PipelineStatus::Success, stateValidity);
 }
 
 /******************************************************************************

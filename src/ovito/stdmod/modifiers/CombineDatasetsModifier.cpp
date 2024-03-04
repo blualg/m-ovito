@@ -58,7 +58,7 @@ CombineDatasetsModifier::CombineDatasetsModifier(ObjectInitializationFlags flags
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> CombineDatasetsModifier::evaluateModifier(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<PipelineFlowState> CombineDatasetsModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
     // Get the secondary data source.
     if(!secondaryDataSource())

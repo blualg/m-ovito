@@ -67,10 +67,10 @@ class OVITO_STDMOD_EXPORT SimulationCellAffineTransformationModifierDelegate : p
 public:
 
     /// Constructor.
-    explicit SimulationCellAffineTransformationModifierDelegate(ObjectInitializationFlags flags) : AffineTransformationModifierDelegate(flags) {}
+    using AffineTransformationModifierDelegate::AffineTransformationModifierDelegate;
 
-    /// Applies the modifier operation to the data in a pipeline flow state.
-    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    /// Applies this modifier delegate to the data.
+    virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
 /**
@@ -98,11 +98,10 @@ class OVITO_STDMOD_EXPORT LinesAffineTransformationModifierDelegate : public Aff
 public:
 
     /// Constructor.
-    explicit LinesAffineTransformationModifierDelegate(ObjectInitializationFlags flags) : AffineTransformationModifierDelegate(flags) {}
+    using AffineTransformationModifierDelegate::AffineTransformationModifierDelegate;
 
-    /// Applies the modifier operation to the data in a pipeline flow state.
-    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState,
-                                 const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    /// Applies this modifier delegate to the data.
+    virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
 /**
@@ -140,6 +139,10 @@ public:
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
+    /// Indicates whether the interactive viewports should be updated after a parameter of the the modifier has
+    /// been changed and before the entire pipeline is recomputed.
+    virtual bool shouldRefreshViewportsAfterChange() override { return true; }
+
     /// Returns the effective affine transformation matrix to be applied to points.
     /// It depends on the linear matrix, the translation vector, relative/target cell mode, and
     /// whether the translation is specified in terms of reduced cell coordinates.
@@ -148,11 +151,17 @@ public:
 
     /// Copies positions from one buffer to another while transforming them.
     /// If enabled, the transformation is only applied to selected elements.
-    void transformCoordinates(const PipelineFlowState& inputState, const Property* input, Property* output, const Property* selection);
+    void transformCoordinates(const PipelineFlowState& inputState, const Property* input, Property* output, const Property* selection) const {
+        transformCoordinates(effectiveAffineTransformation(inputState), selectionOnly(), input, output, selection);
+    }
 
     /// Copies vectors from one buffer to another while transforming them.
     /// If enabled, the transformation is only applied to selected elements.
     void transformVectors(const PipelineFlowState& inputState, const Property* input, Property* output, const Property* selection);
+
+    /// Copies positions from one buffer to another while transforming them.
+    /// The transformation may be applied only to selected elements.
+    static void transformCoordinates(const AffineTransformation tm, bool selectionOnly, const Property* input, Property* output, const Property* selection);
 
 protected:
 

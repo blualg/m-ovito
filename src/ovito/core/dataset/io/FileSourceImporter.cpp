@@ -333,7 +333,7 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
             future = discoverFrames(url);
         }
         else {
-            future = future.then(*this, [this, combinedList, url](const QVector<Frame>& frames) {
+            future.postprocess(*this, [this, combinedList, url](const QVector<Frame>& frames) {
                 *combinedList += frames;
                 return discoverFrames(url);
             });

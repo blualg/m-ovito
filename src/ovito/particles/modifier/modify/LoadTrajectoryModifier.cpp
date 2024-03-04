@@ -59,7 +59,7 @@ bool LoadTrajectoryModifier::OOMetaClass::isApplicableTo(const DataCollection& i
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> LoadTrajectoryModifier::evaluateModifier(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<PipelineFlowState> LoadTrajectoryModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
     OVITO_ASSERT(input);
 

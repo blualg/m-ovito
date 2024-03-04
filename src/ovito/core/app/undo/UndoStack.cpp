@@ -183,7 +183,8 @@ void UndoStack::debugPrint()
     qDebug() << "Undo stack (index=" << _index << "clean index=" << _cleanIndex << "):";
     int index = 0;
     for(const auto& op : _operations) {
-        qDebug() << "  " << index << ":" << qPrintable(op->displayName());
+        UndoableOperation& opRef = *op;
+        qDebug() << "  " << index << ":" << qPrintable(op->displayName()) << "(" << typeid(opRef).name() << ")";
         if(CompoundOperation* compOp = dynamic_cast<CompoundOperation*>(op.get())) {
             compOp->debugPrint(2);
         }

@@ -125,10 +125,15 @@ void VoxelGrid::loadFromStream(ObjectLoadStream& stream)
     stream.expectChunk(0x01);
 
     size_t ndim = stream.readSizeT();
-    if(ndim != _shape.get().size()) throw Exception(tr("Invalid voxel grid dimensionality."));
+    if(ndim != _shape.get().size())
+        throw Exception(tr("Invalid voxel grid dimensionality."));
 
     for(size_t& d : _shape.mutableValue())
         stream.readSizeT(d);
+
+    // If grid properties were excluded from the state file, reset grid dimensions to zero to match the current property container length.
+    if(elementCount() == 0)
+        _shape.mutableValue().fill(0);
 
     stream.closeChunk();
 }

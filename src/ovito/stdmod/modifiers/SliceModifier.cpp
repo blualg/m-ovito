@@ -83,9 +83,7 @@ QVector<DataObjectReference> LinesSliceModifierDelegate::OOMetaClass::getApplica
 /******************************************************************************
  * Performs the slicing of the lines.
  ******************************************************************************/
-PipelineStatus LinesSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state,
-                                                 const PipelineFlowState& inputState,
-                                                 const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+Future<PipelineFlowState> LinesSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     SliceModifier* mod = static_object_cast<SliceModifier>(request.modifier());
     QString statusMessage;
@@ -98,7 +96,7 @@ PipelineStatus LinesSliceModifierDelegate::apply(const ModifierEvaluationRequest
     bool invert = mod->inverse();
 
     // Loop over all lines objects in data collection
-    for(const DataObject* obj : inputState.data()->objects()) {
+    for(const DataObject* obj : originalState.data()->objects()) {
         // Transform the Lines.
         if(const Lines* inputLines = dynamic_object_cast<Lines>(obj)) {
             // Make sure we can safely modify the lines object.
@@ -115,7 +113,8 @@ PipelineStatus LinesSliceModifierDelegate::apply(const ModifierEvaluationRequest
             outputLines->setCuttingPlanes(std::move(planes));
         }
     }
-    return PipelineStatus::Success;
+
+    return state;
 }
 
 /******************************************************************************
@@ -341,75 +340,78 @@ void SliceModifier::initializeModifier(const ModifierInitializationRequest& requ
 }
 
 /******************************************************************************
-* Modifies the input data synchronously.
+* Modifies the input data.
 ******************************************************************************/
-void SliceModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+Future<PipelineFlowState> SliceModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
-    MultiDelegatingModifier::evaluateModifierSynchronous(request, state);
+    Future<PipelineFlowState> future = MultiDelegatingModifier::evaluateModifier(request, input);
 
     if(enablePlaneVisualization()) {
+        future.postprocess(*this, [this, request](PipelineFlowState state) {
+            Plane3 plane;
+            FloatType slabWidth;
+            TimeInterval interval;
+            std::tie(plane, slabWidth) = slicingPlane(request.time(), interval, state);
+            if(plane.normal.isZero())
+                return state;
 
-        Plane3 plane;
-        FloatType slabWidth;
-        TimeInterval interval;
-        std::tie(plane, slabWidth) = slicingPlane(request.time(), interval, state);
-        if(plane.normal.isZero())
-            return;
+            // Compute intersection polygon of slicing plane with simulation cell.
+            const SimulationCell* cellObj = state.expectObject<SimulationCell>();
+            const AffineTransformation& cellMatrix = cellObj->cellMatrix();
 
-        // Compute intersection polygon of slicing plane with simulation cell.
-        const SimulationCell* cellObj = state.expectObject<SimulationCell>();
-        const AffineTransformation& cellMatrix = cellObj->cellMatrix();
+            // Create an output mesh for visualizing the cutting plane.
+            TriangleMesh* mesh = state.createObjectWithVis<TriangleMesh>(QStringLiteral("plane"), request.modificationNode(), planeVis());
 
-        // Create an output mesh for visualizing the cutting plane.
-        TriangleMesh* mesh = state.createObjectWithVis<TriangleMesh>(QStringLiteral("plane"), request.modificationNode(), planeVis());
-
-        // Compute intersection lines of slicing plane and simulation cell.
-        auto createIntersectionPolygon = [&](const Plane3& plane) {
-            QVector<Point3> vertices;
-            auto planeEdgeIntersection = [&](const Vector3& b, const Vector3& d) {
-                Ray3 edge(Point3::Origin() + b, d);
-                FloatType t = plane.intersectionT(edge, FLOATTYPE_EPSILON);
-                if(t >= -FLOATTYPE_EPSILON && t <= 1 + FLOATTYPE_EPSILON)
-                    vertices.push_back(edge.point(t));
+            // Compute intersection lines of slicing plane and simulation cell.
+            auto createIntersectionPolygon = [&](const Plane3& plane) {
+                QVector<Point3> vertices;
+                auto planeEdgeIntersection = [&](const Vector3& b, const Vector3& d) {
+                    Ray3 edge(Point3::Origin() + b, d);
+                    FloatType t = plane.intersectionT(edge, FLOATTYPE_EPSILON);
+                    if(t >= -FLOATTYPE_EPSILON && t <= 1 + FLOATTYPE_EPSILON)
+                        vertices.push_back(edge.point(t));
+                };
+                planeEdgeIntersection(cellMatrix.translation(), cellMatrix.column(0));
+                planeEdgeIntersection(cellMatrix.translation(), cellMatrix.column(1));
+                planeEdgeIntersection(cellMatrix.translation(), cellMatrix.column(2));
+                planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(0), cellMatrix.column(1));
+                planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(0), cellMatrix.column(2));
+                planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(1), cellMatrix.column(0));
+                planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(1), cellMatrix.column(2));
+                planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(2), cellMatrix.column(0));
+                planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(2), cellMatrix.column(1));
+                planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(0) + cellMatrix.column(1), cellMatrix.column(2));
+                planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(1) + cellMatrix.column(2), cellMatrix.column(0));
+                planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(2) + cellMatrix.column(0), cellMatrix.column(1));
+                if(vertices.size() < 3) return;
+                vertices.erase(std::remove_if(vertices.begin() + 1, vertices.end(),
+                    [p = vertices.front()](const Point3& p2) { return p2.equals(p); }), vertices.end());
+                if(vertices.size() < 3) return;
+                std::sort(vertices.begin() + 1, vertices.end(), [&](const Point3& a, const Point3& b) {
+                    return (a - vertices.front()).cross(b - vertices.front()).dot(plane.normal) < 0;
+                });
+                int baseVertexCount = mesh->vertexCount();
+                mesh->setVertexCount(baseVertexCount + vertices.size());
+                std::copy(vertices.begin(), vertices.end(), mesh->vertices().begin() + baseVertexCount);
+                for(int f = 2; f < vertices.size(); f++) {
+                    TriMeshFace& face = mesh->addFace();
+                    face.setVertices(baseVertexCount, baseVertexCount+f-1, baseVertexCount+f);
+                    face.setEdgeVisibility(f == 2, true, f == vertices.size()-1);
+                }
             };
-            planeEdgeIntersection(cellMatrix.translation(), cellMatrix.column(0));
-            planeEdgeIntersection(cellMatrix.translation(), cellMatrix.column(1));
-            planeEdgeIntersection(cellMatrix.translation(), cellMatrix.column(2));
-            planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(0), cellMatrix.column(1));
-            planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(0), cellMatrix.column(2));
-            planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(1), cellMatrix.column(0));
-            planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(1), cellMatrix.column(2));
-            planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(2), cellMatrix.column(0));
-            planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(2), cellMatrix.column(1));
-            planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(0) + cellMatrix.column(1), cellMatrix.column(2));
-            planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(1) + cellMatrix.column(2), cellMatrix.column(0));
-            planeEdgeIntersection(cellMatrix.translation() + cellMatrix.column(2) + cellMatrix.column(0), cellMatrix.column(1));
-            if(vertices.size() < 3) return;
-            vertices.erase(std::remove_if(vertices.begin() + 1, vertices.end(),
-                [p = vertices.front()](const Point3& p2) { return p2.equals(p); }), vertices.end());
-            if(vertices.size() < 3) return;
-            std::sort(vertices.begin() + 1, vertices.end(), [&](const Point3& a, const Point3& b) {
-                return (a - vertices.front()).cross(b - vertices.front()).dot(plane.normal) < 0;
-            });
-            int baseVertexCount = mesh->vertexCount();
-            mesh->setVertexCount(baseVertexCount + vertices.size());
-            std::copy(vertices.begin(), vertices.end(), mesh->vertices().begin() + baseVertexCount);
-            for(int f = 2; f < vertices.size(); f++) {
-                TriMeshFace& face = mesh->addFace();
-                face.setVertices(baseVertexCount, baseVertexCount+f-1, baseVertexCount+f);
-                face.setEdgeVisibility(f == 2, true, f == vertices.size()-1);
+            if(slabWidth <= 0) {
+                createIntersectionPolygon(plane);
             }
-        };
-        if(slabWidth <= 0) {
-            createIntersectionPolygon(plane);
-        }
-        else {
-            plane.dist += slabWidth / 2;
-            createIntersectionPolygon(plane);
-            plane.dist -= slabWidth;
-            createIntersectionPolygon(plane);
-        }
+            else {
+                plane.dist += slabWidth / 2;
+                createIntersectionPolygon(plane);
+                plane.dist -= slabWidth;
+                createIntersectionPolygon(plane);
+            }
+            return state;
+        });
     }
+    return future;
 }
 
 /******************************************************************************

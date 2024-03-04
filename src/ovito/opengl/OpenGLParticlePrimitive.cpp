@@ -339,19 +339,9 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
             // First, compute distance of each particle from the camera along the viewing direction (=camera z-axis).
             std::vector<GraphicsFloatType> distances(sortedIndices.size());
             if(primitive.positions()->dataType() == DataBuffer::Float64) {
-                if(sortedIndices.size() < 10000) {
-                    // Serial code version (used for small datasets).
-                    std::transform(sortedIndices.begin(), sortedIndices.end(), distances.begin(), [direction = direction.toDataType<double>(), positionsArray = BufferReadAccess<Vector_3<double>>(primitive.positions())](size_t i) {
-                        return static_cast<GraphicsFloatType>(direction.dot(positionsArray[i]));
-                    });
-                }
-                else {
-                    // Parallelized code version.
-                    BufferReadAccess<Vector_3<double>> positionsArray(primitive.positions());
-                    parallelFor(sortedIndices.size(), [&, direction = direction.toDataType<double>()](size_t i) {
-                        distances[i] = static_cast<GraphicsFloatType>(direction.dot(positionsArray[sortedIndices[i]]));
-                    });
-                }
+                std::transform(sortedIndices.begin(), sortedIndices.end(), distances.begin(), [direction = direction.toDataType<double>(), positionsArray = BufferReadAccess<Vector_3<double>>(primitive.positions())](size_t i) {
+                    return static_cast<GraphicsFloatType>(direction.dot(positionsArray[i]));
+                });
             }
             else if(primitive.positions()->dataType() == DataBuffer::Float32) {
                 std::transform(sortedIndices.begin(), sortedIndices.end(), distances.begin(), [direction = direction.toDataType<float>(), positionsArray = BufferReadAccess<Vector_3<float>>(primitive.positions())](size_t i) {

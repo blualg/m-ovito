@@ -542,6 +542,14 @@ void Viewport::updateViewport()
 }
 
 /******************************************************************************
+* If an update request is pending for this viewport, immediately processes it and refresh the viewport.
+******************************************************************************/
+void Viewport::processUpdateRequest()
+{
+    notifyDependents(Viewport::ViewportWindowHandleUpdatesRequested);
+}
+
+/******************************************************************************
 * Determines the aspect ratio of this viewport's area in the rendered output image.
 ******************************************************************************/
 FloatType Viewport::renderAspectRatio(DataSet* dataset) const
@@ -577,8 +585,9 @@ Point3 Viewport::orbitCenter()
             for(SceneNode* node : scene()->selection()->nodes()) {
                 selectionBoundingBox.addBox(node->worldBoundingBox(time, this));
             }
-            if(!selectionBoundingBox.isEmpty())
+            if(!selectionBoundingBox.isEmpty()) {
                 center = selectionBoundingBox.center();
+            }
             else {
                 Box3 sceneBoundingBox = scene()->worldBoundingBox(time, this);
                 if(!sceneBoundingBox.isEmpty())
@@ -603,6 +612,7 @@ Point3 Viewport::orbitCenter()
             }
         }
     }
+
     return center;
 }
 

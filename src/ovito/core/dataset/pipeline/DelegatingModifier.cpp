@@ -106,46 +106,42 @@ bool DelegatingModifier::OOMetaClass::isApplicableTo(const DataCollection& input
 }
 
 /******************************************************************************
-* Modifies the input data synchronously.
+* This function is called by the pipeline system before a new modifier evaluation begins.
 ******************************************************************************/
-void DelegatingModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+bool DelegatingModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
+{
+    if(!delegate() || !delegate()->isEnabled())
+        return true;
+
+    return delegate()->preEvaluationRun(request, result);
+}
+
+/******************************************************************************
+* Modifies the input data.
+******************************************************************************/
+Future<PipelineFlowState> DelegatingModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
     // Apply the modifier delegate to the input data.
-    applyDelegate(request, state);
+    return applyDelegate(request, std::move(input));
 }
 
 /******************************************************************************
 * Lets the modifier's delegate operate on a pipeline flow state.
 ******************************************************************************/
-void DelegatingModifier::applyDelegate(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+Future<PipelineFlowState> DelegatingModifier::applyDelegate(const ModifierEvaluationRequest& request, PipelineFlowState input, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     OVITO_ASSERT(!isUndoRecording());
     OVITO_ASSERT(request.modifier() == this);
 
     if(!delegate() || !delegate()->isEnabled())
-        return;
+        return std::move(input);
 
-    // Skip function if not applicable.
-    if(delegate()->getOOMetaClass().getApplicableObjects(state).empty())
+    // Skip function if not applicable to the given input.
+    if(delegate()->getOOMetaClass().getApplicableObjects(input).empty())
         throw Exception(tr("The modifier's pipeline input does not contain the expected kind of data."));
 
     // Call the delegate function.
-    PipelineStatus delegateStatus = delegate()->apply(request, state, state, additionalInputs);
-
-    // Append status text and code returned by the delegate function to the status returned to our caller.
-    PipelineStatus status = state.status();
-    if(status.type() == PipelineStatus::Success || delegateStatus.type() == PipelineStatus::Error)
-        status.setType(delegateStatus.type());
-    if(!delegateStatus.text().isEmpty()) {
-        if(!status.text().isEmpty())
-            status.setText(status.text() + QStringLiteral("\n") + delegateStatus.text());
-        else
-            status.setText(delegateStatus.text());
-    }
-    if(delegateStatus.shortInfo().isValid()) {
-        status.setShortInfo(delegateStatus.shortInfo());
-    }
-    state.setStatus(std::move(status));
+    return delegate()->apply(request, input, input, additionalInputs);
 }
 
 #if 0 // TODO
@@ -197,34 +193,36 @@ bool MultiDelegatingModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 }
 
 /******************************************************************************
-* Modifies the input data synchronously.
+* Modifies the input data.
 ******************************************************************************/
-void MultiDelegatingModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+Future<PipelineFlowState> MultiDelegatingModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
     // Apply all enabled modifier delegates to the input data.
-    applyDelegates(request, state);
+    return applyDelegates(request, std::move(input));
 }
 
 /******************************************************************************
 * Lets the registered modifier delegates operate on a pipeline flow state.
 ******************************************************************************/
-void MultiDelegatingModifier::applyDelegates(const ModifierEvaluationRequest& request, PipelineFlowState& state, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+Future<PipelineFlowState> MultiDelegatingModifier::applyDelegates(const ModifierEvaluationRequest& request, PipelineFlowState input, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     OVITO_ASSERT(!isUndoRecording());
     OVITO_ASSERT(request.modifier() == this);
 
-    // Make a shallow copy of the input pipeline state.
-    PipelineFlowState inputState = state;
+    Future<PipelineFlowState> future = input;
 
     for(ModifierDelegate* delegate : delegates()) {
 
         // Skip function if not applicable.
-        if(!state.data() || !delegate || !delegate->isEnabled() || delegate->getOOMetaClass().getApplicableObjects(*state.data()).empty())
+        if(!input.data() || !delegate || !delegate->isEnabled() || delegate->getOOMetaClass().getApplicableObjects(*input.data()).empty())
             continue;
 
         // Call the delegate function.
-        PipelineStatus delegateStatus = delegate->apply(request, state, inputState, additionalInputs);
+        future.postprocess(*delegate, [delegate, request, input, additionalInputs](PipelineFlowState state) {
+            return delegate->apply(request, std::move(state), input, additionalInputs);
+        });
 
+#if 0 // TODO
         // Append status text and code returned by the delegate function to the status returned to our caller.
         PipelineStatus status = state.status();
         if(status.type() == PipelineStatus::Success || delegateStatus.type() == PipelineStatus::Error)
@@ -236,7 +234,10 @@ void MultiDelegatingModifier::applyDelegates(const ModifierEvaluationRequest& re
                 status.setText(delegateStatus.text());
         }
         state.setStatus(std::move(status));
+#endif
     }
+
+    return future;
 }
 
 }   // End of namespace

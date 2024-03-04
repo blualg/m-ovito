@@ -23,28 +23,33 @@
 #pragma once
 
 
-#include <ovito/stdmod/StdMod.h>
-#include <ovito/stdobj/properties/GenericPropertyModifier.h>
+#include <ovito/core/Core.h>
 
 namespace Ovito {
 
-/**
- * \brief This modifier clears the current selection of data elements.
- */
-class OVITO_STDMOD_EXPORT ClearSelectionModifier : public GenericPropertyModifier
+/******************************************************************************
+ * \brief A thread-specific container for objects of type T.
+ *
+ * This class allows to create multiple objects of type T, one for each thread
+ * from which the create() method is called. The objects are stored in a map
+ * that is indexed by the thread ID.
+******************************************************************************/
+template<typename T>
+class EnumerableThreadSpecific
 {
-    OVITO_CLASS(ClearSelectionModifier)
-    OVITO_CLASSINFO("DisplayName", "Clear selection");
-    OVITO_CLASSINFO("Description", "Reset the selection state of all elements.");
-    OVITO_CLASSINFO("ModifierCategory", "Selection");
-
 public:
 
-    /// Constructor.
-    explicit ClearSelectionModifier(ObjectInitializationFlags flags);
+    template<typename... Args>
+    T& create(Args&&... args) {
+        std::lock_guard<std::mutex> lock(_mutex);
+        return _data.try_emplace(std::this_thread::get_id(), std::forward<Args>(args)...).first->second;
+    }
 
-    /// Modifies the input data.
-    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) override;
+private:
+
+    std::map<std::thread::id, T> _data;
+
+    std::mutex _mutex;
 };
 
 }   // End of namespace

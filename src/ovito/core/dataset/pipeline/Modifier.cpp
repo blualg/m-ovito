@@ -26,22 +26,15 @@
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 
-#ifdef Q_OS_LINUX
-    #include <malloc.h>
-#endif
-
 namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(Modifier);
 DEFINE_PROPERTY_FIELD(Modifier, isEnabled);
 DEFINE_PROPERTY_FIELD(Modifier, title);
 SET_PROPERTY_FIELD_LABEL(Modifier, isEnabled, "Enabled");
-SET_PROPERTY_FIELD_CHANGE_EVENT(Modifier, isEnabled, ReferenceEvent::TargetEnabledOrDisabled);
 SET_PROPERTY_FIELD_LABEL(Modifier, title, "Name");
+SET_PROPERTY_FIELD_CHANGE_EVENT(Modifier, isEnabled, ReferenceEvent::TargetEnabledOrDisabled);
 SET_PROPERTY_FIELD_CHANGE_EVENT(Modifier, title, ReferenceEvent::TitleChanged);
-
-// Export this class template specialization from the DLL under Windows.
-template class OVITO_CORE_EXPORT Future<ModifierEnginePtr>;
 
 /******************************************************************************
 * Constructor.
@@ -86,30 +79,6 @@ int Modifier::numberOfOutputFrames(ModificationNode* node) const
     if(PipelineNode* input = node->input())
         return input->numberOfSourceFrames();
     return 1;
-}
-
-/******************************************************************************
-* Modifies the input data.
-******************************************************************************/
-Future<PipelineFlowState> Modifier::evaluateModifier(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
-{
-    OVITO_ASSERT(!isUndoRecording());
-    OVITO_ASSERT(ExecutionContext::isMainThread());
-    OVITO_ASSERT(ExecutionContext::current().isValid());
-
-    // This modifier does not support asynchronounous computation.
-    // Perform the computation synchronously in the current thread.
-    PipelineFlowState output = input;
-    if(output)
-        evaluateModifierSynchronous(request, output);
-    return output;
-}
-
-/******************************************************************************
-* Modifies the input data synchronously.
-******************************************************************************/
-void Modifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
-{
 }
 
 /******************************************************************************
@@ -162,19 +131,5 @@ PipelineStatus Modifier::globalStatus() const
     }
     return result;
 }
-
-#ifdef Q_OS_LINUX
-/******************************************************************************
-* Destructor.
-******************************************************************************/
-ModifierEngine::~ModifierEngine()
-{
-    // Some compute engines allocate considerable amounts of memory in small chunks,
-    // which is sometimes not released back to the OS by the C memory allocator.
-    // This call to malloc_trim() will explicitly trigger an attempt to release free memory
-    // at the top of the heap.
-    ::malloc_trim(0);
-}
-#endif
 
 }   // End of namespace

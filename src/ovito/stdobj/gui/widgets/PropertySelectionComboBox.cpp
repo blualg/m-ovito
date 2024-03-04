@@ -39,7 +39,7 @@ PropertyReference PropertySelectionComboBox::currentProperty() const
     }
     else {
         QString name = currentText().simplified();
-        if(!name.isEmpty()) {
+        if(!name.isEmpty() && containerClass()) {
             if(int standardTypeId = containerClass()->standardPropertyTypeId(name))
                 return PropertyReference(containerClass(), standardTypeId);
             else

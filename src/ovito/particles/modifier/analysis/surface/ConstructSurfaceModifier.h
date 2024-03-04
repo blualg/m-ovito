@@ -70,12 +70,6 @@ public:
     /// Constructor.
     explicit ConstructSurfaceModifier(ObjectInitializationFlags flags);
 
-    /// Indicates whether a preliminary viewport update should be performed after the modifier has been
-    /// evaluated but before the entire pipeline evaluation is complete.
-    /// We suppress such preliminary updates for this modifier, because it produces a surface mesh,
-    /// which always requires further asynchronous processing before a viewport update makes sense.
-    virtual bool performPreliminaryUpdateAfterEvaluation() override { return false; }
-
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.

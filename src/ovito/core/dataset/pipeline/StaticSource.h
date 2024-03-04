@@ -51,11 +51,6 @@ protected:
     /// \brief Asks the object for the result of the data pipeline.
     virtual PipelineEvaluationResult evaluateInternal(const PipelineEvaluationRequest& request) override;
 
-#if 0 // TODO
-    /// \brief Returns the results of an immediate and preliminary evaluation of the data pipeline.
-    virtual PipelineFlowState evaluateInternalSynchronous(const PipelineEvaluationRequest& request) override;
-#endif
-
     /// Handles reference events sent by reference targets of this object.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 

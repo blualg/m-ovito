@@ -27,6 +27,8 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
+#include <ovito/core/utilities/concurrent/EnumerableThreadSpecific.h>
 #include "ComputePropertyModifier.h"
 
 namespace Ovito {
@@ -48,8 +50,6 @@ DEFINE_VECTOR_REFERENCE_FIELD(ComputePropertyModificationNode, cachedVisElements
 DEFINE_RUNTIME_PROPERTY_FIELD(ComputePropertyModificationNode, inputVariableNames);
 DEFINE_RUNTIME_PROPERTY_FIELD(ComputePropertyModificationNode, delegateInputVariableNames);
 DEFINE_RUNTIME_PROPERTY_FIELD(ComputePropertyModificationNode, inputVariableTable);
-SET_PROPERTY_FIELD_CHANGE_EVENT(ComputePropertyModificationNode, inputVariableNames, ReferenceEvent::ObjectStatusChanged);
-SET_PROPERTY_FIELD_CHANGE_EVENT(ComputePropertyModificationNode, inputVariableTable, ReferenceEvent::ObjectStatusChanged);
 SET_MODIFICATION_NODE_TYPE(ComputePropertyModifier, ComputePropertyModificationNode);
 
 /******************************************************************************
@@ -61,25 +61,14 @@ ComputePropertyModifier::ComputePropertyModifier(ObjectInitializationFlags flags
     _useMultilineFields(false)
 {
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
+#ifndef OVITO_DEBUG // TODO
         // Let this modifier act on particles by default.
         createDefaultModifierDelegate(ComputePropertyModifierDelegate::OOClass(), QStringLiteral("ParticlesComputePropertyModifierDelegate"));
+#endif
         // Set default output property.
         if(delegate())
             setOutputProperty(PropertyReference(delegate()->inputContainerClass(), QStringLiteral("My property")));
     }
-}
-
-/******************************************************************************
-* Is called when the value of a property of this object has changed.
-******************************************************************************/
-void ComputePropertyModifier::propertyChanged(const PropertyFieldDescriptor* field)
-{
-    if(field == PROPERTY_FIELD(ComputePropertyModifier::outputProperty) && !isBeingLoaded()) {
-        // Changes of some the modifier's parameters affect the result of ComputePropertyModifier::getPipelineEditorShortInfo().
-        notifyDependents(ReferenceEvent::ObjectStatusChanged);
-    }
-
-    DelegatingModifier::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -129,257 +118,205 @@ void ComputePropertyModifier::referenceReplaced(const PropertyFieldDescriptor* f
 {
     if(field == PROPERTY_FIELD(DelegatingModifier::delegate) && !isBeingDeleted() && !isBeingLoaded() && !isUndoingOrRedoing()) {
         setOutputProperty(outputProperty().convertToContainerClass(delegate() ? delegate()->inputContainerClass() : nullptr));
-        if(delegate()) delegate()->setComponentCount(expressions().size());
+        if(delegate())
+            delegate()->setComponentCount(expressions().size());
     }
     DelegatingModifier::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
-* Creates and initializes a computation engine that will compute the
-* modifier's results.
+* Is called when the value of a property of this object has changed.
 ******************************************************************************/
-Future<ModifierEnginePtr> ComputePropertyModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+void ComputePropertyModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    // If pipeline is in interactive mode, skip the long-running computation step.
+    if(field == PROPERTY_FIELD(ComputePropertyModifier::outputProperty) && !isBeingLoaded()) {
+        // Changes to some the modifier's parameters affect the result of ComputePropertyModifier::getPipelineEditorShortInfo().
+        notifyDependents(ReferenceEvent::ObjectStatusChanged);
+    }
+
+    DelegatingModifier::propertyChanged(field);
+}
+
+/******************************************************************************
+ * Sends an event to all dependents of this RefTarget.
+ ******************************************************************************/
+void ComputePropertyModifier::notifyDependentsImpl(const ReferenceEvent& event) noexcept
+{
+    if(event.type() == ReferenceEvent::TargetChanged && event.sender() == this) {
+        if(static_cast<const TargetChangedEvent&>(event).field() == PROPERTY_FIELD(ComputePropertyModifier::useMultilineFields)) {
+            // Changes to the 'useMultilineFields' option do not invalidate the modifier's results.
+            // Intercept the change event and modify it such that it does not trigger a re-evaluation of the modifier.
+            DelegatingModifier::notifyDependentsImpl(TargetChangedEvent(this, PROPERTY_FIELD(ComputePropertyModifier::useMultilineFields), TimeInterval::infinite()));
+            return;
+        }
+    }
+    DelegatingModifier::notifyDependentsImpl(event);
+}
+
+/******************************************************************************
+ * Checks if math expressions are time-dependent, i.e. whether they involve the animation frame number.
+ ******************************************************************************/
+bool ComputePropertyModifierDelegate::isExpressionTimeDependent(ComputePropertyModifier* modifier) const
+{
+    for(const QString& expression : modifier->expressions()) {
+        // This is a very simple check for the presence of the word "Frame" in the expression.
+        // It's not perfect, but should catch all relevant cases (maybe more).
+        if(expression.contains(QLatin1String("Frame")))
+            return true;
+    }
+    return false;
+}
+
+/******************************************************************************
+ * Is called by the pipeline system before a new modifier evaluation begins.
+ ******************************************************************************/
+bool ComputePropertyModifierDelegate::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
+{
+    // Determine whether math expressions are time-dependent, i.e. whether they involve the current animation
+    // frame number. If so, then we have to restrict the validity interval of the computation results
+    // to the current animation time.
+    if(isExpressionTimeDependent(static_object_cast<ComputePropertyModifier>(request.modifier()))) {
+        result.intersectValidityInterval(request.time());
+    }
+
+    // Indicate that we do a different computation depending on whether the pipeline is evaluated in interactive mode or not.
     if(request.interactiveMode())
-        return {};
+        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Interactive);
+    else
+        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Noninteractive);
 
-    ComputePropertyModificationNode* modNode = dynamic_object_cast<ComputePropertyModificationNode>(request.modificationNode());
+    return true;
+}
 
-    // Get the delegate object that will take of the specific details.
-    if(!delegate())
-        throw Exception(tr("No delegate set for the compute property modifier."));
+/******************************************************************************
+ * Applies this modifier delegate to the data.
+ ******************************************************************************/
+Future<PipelineFlowState> ComputePropertyModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+{
+    const ComputePropertyModifier* modifier = static_object_cast<ComputePropertyModifier>(request.modifier());
+    ComputePropertyModificationNode* modNode = static_object_cast<ComputePropertyModificationNode>(request.modificationNode());
 
-    // Look up the property container which we will operate on.
-    ConstDataObjectPath objectPath = input.expectObject(delegate()->inputContainerRef());
-    const PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
-    if(outputProperty().containerClass() != delegate()->inputContainerClass())
-        throw Exception(tr("Property %1 to be computed is not a %2 property.").arg(outputProperty().name()).arg(delegate()->inputContainerClass()->elementDescriptionName()));
+    if(modifier->outputProperty().containerClass() != inputContainerClass())
+        throw Exception(tr("Property %1 to be computed is not a %2 property.").arg(modifier->outputProperty().name()).arg(inputContainerClass()->elementDescriptionName()));
+
+    // Look up the property container which we will operate on. Make sure we can safely modify it.
+    ConstDataObjectPath originalContainerPath = originalState.expectObject(inputContainerRef());
+    DataObjectPath containerPath = state.expectMutableObject(inputContainerRef());
+    PropertyContainer* container = static_object_cast<PropertyContainer>(containerPath.back());
+
+    // Make sure input data structure is ok.
     container->verifyIntegrity();
 
     // Get the number of input elements.
     size_t nelements = container->elementCount();
 
-    // Get input selection property and existing property data.
+    // Get input selection property if computation is restricted to selected elements.
     ConstPropertyPtr selectionProperty;
-    if(onlySelectedElements() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
+    if(modifier->onlySelectedElements() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
         selectionProperty = container->getProperty(Property::GenericSelectionProperty);
         if(!selectionProperty)
             throw Exception(tr("Compute property modifier has been restricted to selected elements, but no selection was previously defined."));
     }
 
-    // Prepare output property.
-    PropertyPtr outp;
-    const Property* existingProperty = outputProperty().findInContainer(container);
-    if(existingProperty && existingProperty->componentCount() == propertyComponentCount()) {
-        // Copy existing data.
-        outp = CloneHelper::cloneSingleObject(existingProperty, false);
+    // In interactive mode, do not perform a real computation. Instead, used an old result from the cached state if available.
+    if(request.interactiveMode()) {
+        bool used = false;
+        if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
+            ConstDataObjectPath containerPathCached = cachedState.getObject(inputContainerRef());
+            if(!containerPathCached.empty()) {
+                const PropertyContainer* containerCached = static_object_cast<PropertyContainer>(containerPathCached.back());
+                if(containerCached->elementCount() == nelements) {
+                    if(const Property* cachedProperty = modifier->outputProperty().findInContainer(containerCached)) {
+                        used = true;
+                        container->createProperty(cachedProperty);
+                    }
+                }
+            }
+        }
+        qDebug() << "Using cached result of compute property modifier:" << used;
+        return std::move(state);
+    }
 
-        // Reset cached vis elements.
-        if(modNode)
-            modNode->setCachedVisElements({});
+    // Prepare output property.
+    PropertyPtr outputProperty;
+    const Property* existingProperty = modifier->outputProperty().findInContainer(container);
+    if(existingProperty && existingProperty->componentCount() == modifier->propertyComponentCount()) {
+        outputProperty = container->makePropertyMutable(existingProperty, selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized);
+        modNode->setCachedVisElements({});
     }
     else {
         // Allocate new data array.
-        if(outputProperty().type() != Property::GenericUserProperty) {
-            outp = container->getOOMetaClass().createStandardProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, nelements, outputProperty().type(), objectPath);
+        if(modifier->outputProperty().type() != Property::GenericUserProperty) {
+            outputProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, modifier->outputProperty().type(), containerPath);
         }
-        else if(!outputProperty().name().isEmpty() && propertyComponentCount() > 0) {
-            outp = container->getOOMetaClass().createUserProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, nelements, Property::FloatDefault, propertyComponentCount(), outputProperty().name());
+        else if(!modifier->outputProperty().name().isEmpty() && modifier->propertyComponentCount() > 0) {
+            outputProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, modifier->outputProperty().name(), Property::FloatDefault, modifier->propertyComponentCount());
         }
         else {
             throw Exception(tr("Output property of compute property modifier has not been specified."));
         }
 
-        if(modNode) {
-            // Replace vis elements of output property with cached ones and cache any new vis elements.
-            // This is required to avoid losing the output property's display settings
-            // each time the modifier is re-evaluated or when serializing the modifier.
-            OORefVector<DataVis> currentVisElements = outp->visElements();
-            // Replace with cached vis elements if they are of the same class type.
-            for(int i = 0; i < currentVisElements.size() && i < modNode->cachedVisElements().size(); i++) {
-                if(currentVisElements[i]->getOOClass() == modNode->cachedVisElements()[i]->getOOClass()) {
-                    currentVisElements[i] = modNode->cachedVisElements()[i];
-                }
+        // Replace vis elements of output property with cached ones and cache any new vis elements.
+        // This is required to avoid losing the output property's display settings
+        // each time the modifier is re-evaluated or when serializing the modifier.
+        OORefVector<DataVis> currentVisElements = outputProperty->visElements();
+        // Replace with cached vis elements if they are of the same class type.
+        for(int i = 0; i < currentVisElements.size() && i < modNode->cachedVisElements().size(); i++) {
+            if(currentVisElements[i]->getOOClass() == modNode->cachedVisElements()[i]->getOOClass()) {
+                currentVisElements[i] = modNode->cachedVisElements()[i];
             }
-            outp->setVisElements(currentVisElements);
-            modNode->setCachedVisElements(std::move(currentVisElements));
         }
+        outputProperty->setVisElements(currentVisElements);
+        modNode->setCachedVisElements(std::move(currentVisElements));
     }
-    if(propertyComponentCount() != outp->componentCount())
+    if(modifier->propertyComponentCount() != outputProperty->componentCount())
         throw Exception(tr("Number of expressions does not match component count of output property."));
 
-    TimeInterval validityInterval = input.stateValidity();
-
-    // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    auto engine = delegate()->createEngine(request, input,
-            objectPath, std::move(outp),
-            std::move(selectionProperty),
-            expressions());
-
-    // Determine if math expressions are time-dependent, i.e. if they reference the animation
-    // frame number. If yes, then we have to restrict the validity interval of the computation
-    // to the current time.
-    if(engine->isTimeDependent()) {
-        TimeInterval iv = engine->validityInterval();
-        iv.intersect(request.time());
-        engine->setValidityInterval(iv);
-    }
+    // Initialize expression evaluator.
+    auto evaluator = std::make_unique<PropertyExpressionEvaluator>();
+    evaluator->initialize(modifier->expressions(), originalState, originalContainerPath, request.time().frame());
 
     // Store the list of input variables in the ModificationNode so that the UI component can display it to the user.
-    if(modNode) {
-        modNode->setInputVariableNames(engine->inputVariableNames());
-        modNode->setDelegateInputVariableNames(engine->delegateInputVariableNames());
-        modNode->setInputVariableTable(engine->inputVariableTable());
-        delegate()->notifyDependents(ReferenceEvent::ObjectStatusChanged);
-        this->notifyDependents(ReferenceEvent::ObjectStatusChanged);
-        modNode->notifyDependents(ReferenceEvent::ObjectStatusChanged);
-    }
+    modNode->setInputVariableNames(evaluator->inputVariableNames());
+//    modNode->setDelegateInputVariableNames(delegateInputVariableNames());
+    modNode->setInputVariableTable(evaluator->inputVariableTable());
 
-    return engine;
-}
+    // Notify the UI component that the list of variables should be refreshed.
+    modifier->notifyDependents(ReferenceEvent::ObjectStatusChanged);
+    modNode->notifyDependents(ReferenceEvent::ObjectStatusChanged);
 
-/******************************************************************************
-* Creates and initializes a computation engine that will compute the
-* modifier's results.
-******************************************************************************/
-std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> ComputePropertyModifierDelegate::createEngine(
-                const ModifierEvaluationRequest& request,
-                const PipelineFlowState& input,
-                const ConstDataObjectPath& containerPath,
-                PropertyPtr outputProperty,
-                ConstPropertyPtr selectionProperty,
-                QStringList expressions)
-{
-    // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<PropertyComputeEngine>(
-            request,
-            input.stateValidity(),
-            input,
-            containerPath,
-            std::move(outputProperty),
-            std::move(selectionProperty),
-            std::move(expressions),
-            request.time().frame(), // Note: Using global animation frame here, because that's what the user expects.
-            std::make_unique<PropertyExpressionEvaluator>());
-}
+    // The actual computation can be performed in a separate worker thread.
+    return AsynchronousTask<PipelineFlowState>::runAsync([
+            state = std::move(state),
+            outputProperty = std::move(outputProperty),
+            selectionProperty = std::move(selectionProperty),
+            evaluator = std::move(evaluator)]() mutable
+    {
+        this_task::setProgressText(tr("Computing property '%1'").arg(outputProperty->name()));
 
-/******************************************************************************
-* Constructor.
-******************************************************************************/
-ComputePropertyModifierDelegate::PropertyComputeEngine::PropertyComputeEngine(
-        const ModifierEvaluationRequest& request,
-        const TimeInterval& validityInterval,
-        const PipelineFlowState& input,
-        const ConstDataObjectPath& containerPath,
-        PropertyPtr outputProperty,
-        const Property* selectionProperty,
-        QStringList expressions,
-        int frameNumber,
-        std::unique_ptr<PropertyExpressionEvaluator> evaluator) :
-    ModifierEngine(request, validityInterval),
-    _selection(selectionProperty),
-    _expressions(std::move(expressions)),
-    _frameNumber(frameNumber),
-    _outputProperty(std::move(outputProperty)),
-    _evaluator(std::move(evaluator)),
-    _outputArray(_outputProperty, selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized)
-{
-    OVITO_ASSERT(_expressions.size() == this->outputProperty()->componentCount());
+        RawBufferAccess<access_mode::write> outputAccessor(outputProperty, selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized);
+        BufferReadAccess<SelectionIntType> selectionAccessor(selectionProperty);
 
-    // Initialize expression evaluator.
-    _evaluator->initialize(_expressions, input, containerPath, _frameNumber);
-}
+        EnumerableThreadSpecific<PropertyExpressionEvaluator::Worker> expressionWorkers;
+        size_t componentCount = outputAccessor.componentCount();
 
-/******************************************************************************
-* Performs the actual computation. This method is executed in a worker thread.
-******************************************************************************/
-void ComputePropertyModifierDelegate::PropertyComputeEngine::perform()
-{
-    setProgressText(tr("Computing property '%1'").arg(outputProperty()->name()));
-    setProgressMaximum(outputProperty()->size());
-
-    BufferReadAccess<SelectionIntType> selectionAccessor(selection());
-
-    // Parallelized loop over all data elements.
-    parallelForChunksWithProgress(outputProperty()->size(), [this, &selectionAccessor](size_t startIndex, size_t count, ProgressingTask& operation) {
-        PropertyExpressionEvaluator::Worker worker(*_evaluator);
-
-        size_t endIndex = startIndex + count;
-        size_t componentCount = outputProperty()->componentCount();
-        for(size_t elementIndex = startIndex; elementIndex < endIndex; elementIndex++) {
-
-            // Update progress indicator.
-            if((elementIndex % 1024) == 0)
-                operation.incrementProgressValue(1024);
-
-            // Exit if operation was canceled.
-            if(operation.isCanceled())
-                return;
+        parallelForCancellable(outputProperty->size(), 10000, [&](size_t i) {
+            PropertyExpressionEvaluator::Worker& worker = expressionWorkers.create(*evaluator);
 
             // Skip unselected particles if requested.
-            if(selectionAccessor && !selectionAccessor[elementIndex])
-                continue;
+            if(selectionAccessor && !selectionAccessor[i])
+                return;
 
             for(size_t component = 0; component < componentCount; component++) {
-
                 // Compute expression value.
-                FloatType value = worker.evaluate(elementIndex, component);
+                FloatType value = worker.evaluate(i, component);
 
                 // Store results in output property.
-                outputArray().set(elementIndex, component, value);
+                outputAccessor.set(i, component, value);
             }
-        }
-    });
-
-    // Release data that is no longer needed to reduce memory footprint.
-    releaseWorkingData();
-}
-
-/******************************************************************************
-* Returns the list of available input variables.
-******************************************************************************/
-QStringList ComputePropertyModifierDelegate::PropertyComputeEngine::inputVariableNames() const
-{
-    if(_evaluator) {
-        return _evaluator->inputVariableNames();
-    }
-    else {
-        return {};
-    }
-}
-
-/******************************************************************************
-* This method is called by the system whenever a parameter of the modifier changes.
-* The method can be overridden by subclasses to indicate to the caller whether the engine object should be
-* discarded or may be kept in the cache, because the computation results are not affected by the changing parameter.
-******************************************************************************/
-bool ComputePropertyModifierDelegate::PropertyComputeEngine::modifierChanged(const PropertyFieldEvent& event)
-{
-    // Do not recompute results if just the 'useMultilineFields' option is toggled by the user.
-    if(event.field() == PROPERTY_FIELD(ComputePropertyModifier::useMultilineFields))
-        return true; // This return value tells the system to hold on to the cached engine object.
-
-    return ModifierEngine::modifierChanged(event);
-}
-
-/******************************************************************************
-* Injects the computed results of the engine into the data pipeline.
-******************************************************************************/
-void ComputePropertyModifierDelegate::PropertyComputeEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
-{
-    ModifierEngine::applyResults(request, state);
-
-    ComputePropertyModifier* modifier = static_object_cast<ComputePropertyModifier>(request.modifier());
-
-    if(!modifier->delegate())
-        throw Exception(tr("No delegate set for the Compute Property modifier."));
-
-    // Look up the container we are operating on.
-    PropertyContainer* container = state.expectMutableLeafObject(modifier->delegate()->inputContainerRef());
-
-    // Create the output property object in the container.
-    container->createProperty(outputProperty());
+        });
+        return std::move(state);
+    }, true);
 }
 
 }   // End of namespace

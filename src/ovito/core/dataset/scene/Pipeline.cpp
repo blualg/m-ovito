@@ -96,11 +96,11 @@ const PipelineFlowState& Pipeline::evaluatePipelineSynchronous(const PipelineEva
 /******************************************************************************
 * Invalidates the data pipeline cache of the object node.
 ******************************************************************************/
-void Pipeline::invalidatePipelineCache(TimeInterval keepInterval, bool resetSynchronousCache)
+void Pipeline::invalidatePipelineCache(TimeInterval keepInterval)
 {
     // Invalidate data caches.
-    _pipelineCache.invalidate(keepInterval, resetSynchronousCache);
-    _pipelineRenderingCache.invalidate(keepInterval, resetSynchronousCache);
+    _pipelineCache.invalidate(keepInterval);
+    _pipelineRenderingCache.invalidate(keepInterval);
 
     // Also mark the cached bounding box of this scene node as invalid.
     invalidateBoundingBox();
@@ -177,7 +177,8 @@ bool Pipeline::referenceEvent(RefTarget* source, const ReferenceEvent& event)
         }
         else if(event.type() == ReferenceEvent::TargetDeleted) {
             // Reduce memory footprint when the pipeline's data provider gets deleted.
-            invalidatePipelineCache(TimeInterval::empty(), true);
+            _pipelineCache.reset();
+            _pipelineRenderingCache.reset();
 
             // Data provider has been deleted -> delete scene node as well.
             if(!isUndoingOrRedoing())
@@ -193,25 +194,25 @@ bool Pipeline::referenceEvent(RefTarget* source, const ReferenceEvent& event)
             // Forward animation interval events from the pipeline.
             return true;
         }
-        else if(event.type() == ReferenceEvent::PreliminaryStateAvailable) {
+        else if(event.type() == ReferenceEvent::InteractiveStateAvailable) {
             if(preliminaryUpdatesEnabled()) {
-                // Invalidate the cache whenever the pipeline can provide a new preliminary state.
+                // Invalidate the cache whenever the last pipeline stage can provide a new interactive state.
                 _pipelineCache.invalidateInteractiveState();
                 _pipelineRenderingCache.invalidateInteractiveState();
-                // Also recompute the cached bounding box of this scene node.
+                // Recompute the cached bounding box of this scene node.
                 invalidateBoundingBox();
                 // Inform all vis elements that their input state has changed when the pipeline reports that a new preliminary output state is available.
                 for(DataVis* vis : visElements())
                     vis->notifyDependents(ReferenceEvent::PipelineInputChanged);
             }
             else {
-                // Do not forward signal to scene in order to suppress preliminary viewport updates.
+                // Do not forward signal to scene in order to suppress interactive viewport updates.
                 return false;
             }
         }
         else if(event.type() == ReferenceEvent::TargetEnabledOrDisabled) {
             // Inform vis elements that their input state has changed if the last pipeline stage was disabled.
-            // This is necessary, because we don't receive a PreliminaryStateAvailable signal from the pipeline stage in this case.
+            // This is necessary, because we don't receive a InteractiveStateAvailable signal from the pipeline stage in this case.
             for(DataVis* vis : visElements())
                 vis->notifyDependents(ReferenceEvent::PipelineInputChanged);
         }
@@ -232,8 +233,8 @@ bool Pipeline::referenceEvent(RefTarget* source, const ReferenceEvent& event)
                 notifyTargetChanged(PROPERTY_FIELD(visElements));
             }
             else {
-                // Trigger an immediate viewport repaint without pipeline re-evaluation.
-                notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
+                // Trigger an interactive viewport repaint without pipeline re-evaluation.
+                notifyDependents(ReferenceEvent::InteractiveStateAvailable);
             }
         }
     }
@@ -252,8 +253,8 @@ bool Pipeline::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 void Pipeline::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
     if(field == PROPERTY_FIELD(head)) {
-        // Reset caches when the pipeline's data provider is replaced.
-        invalidatePipelineCache(TimeInterval::empty(), false);
+        // Invalidate caches when the pipeline's data provider is replaced.
+        invalidatePipelineCache();
 
         // The animation length and the title of the pipeline might have changed.
         if(!isBeingLoaded() && !isBeingDeleted())

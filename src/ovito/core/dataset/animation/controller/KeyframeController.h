@@ -76,7 +76,7 @@ protected:
     /// Changes a key's value.
     /// This is a wrapper for the protected function TypedAnimationKey::setValue().
     template<typename KeyType>
-    static void setKeyValueInternal(KeyType* key, const typename KeyType::value_type& newValue) { key->setValue(newValue); }
+    static void setKeyValueInternal(const OORef<KeyType>& key, const typename KeyType::value_type& newValue) { key->setValue(newValue); }
 
 private:
 
@@ -105,7 +105,7 @@ public:
     virtual ControllerType controllerType() const override { return ctrlType; }
 
     /// Returns the list of keys of this animation controller.
-    const QVector<KeyType*>& typedKeys() const { return reinterpret_cast<const QVector<KeyType*>&>(keys()); }
+    const QVector<OORef<KeyType>>& typedKeys() const { return reinterpret_cast<const QVector<OORef<KeyType>>&>(keys()); }
 
     /// Creates am animation key at the given time.
     /// Returns the index of the key, which may be an existing key.
@@ -134,7 +134,7 @@ protected:
 
     /// Queries the controller for its value at a certain time.
     void getInterpolatedValue(AnimationTime time, value_type& result, TimeInterval& validityInterval) const {
-        const QVector<KeyType*>& keys = typedKeys();
+        const auto& keys = typedKeys();
         if(keys.empty()) {
             result = nullvalue_type();
             return;
@@ -181,7 +181,7 @@ protected:
 
     /// Creates a new animation key at the specified time or replaces the value of an existing key.
     void setKeyValue(AnimationTime time, const value_type& newValue) {
-        const QVector<KeyType*>& keys = typedKeys();
+        const auto& keys = typedKeys();
         int index;
         for(index = 0; index < keys.size(); index++) {
             if(keys[index]->time() == time) {
@@ -220,7 +220,7 @@ protected:
                 if(newValue == oldValue) return;
                 deltaValue -= oldValue;
                 // Apply delta value to all keys.
-                for(KeyType* key : typedKeys()) {
+                for(const auto& key : typedKeys()) {
                     value_type v = key->value();
                     v += deltaValue;
                     setKeyValueInternal(key, v);
@@ -249,7 +249,7 @@ protected:
         }
         else if(!ControllerManager::isAutoGenerateAnimationKeysEnabled()) {
             // Apply delta value to all keys.
-            for(KeyType* key : typedKeys()) {
+            for(const auto& key : typedKeys()) {
                 value_type v = key->value();
                 v += deltaValue;
                 setKeyValueInternal(key, v);

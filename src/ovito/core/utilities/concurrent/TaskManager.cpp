@@ -221,7 +221,7 @@ void TaskManager::executePendingWorkLocked(std::unique_lock<std::mutex>& lock)
 ******************************************************************************/
 void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskReference& awaitedTask)
 {
-    // This method must only be called from the main thread.
+    // This method must only be used in the main thread.
     OVITO_ASSERT(ExecutionContext::isMainThread());
 
     TaskPtr awaitedTaskPtr(awaitedTask.get());

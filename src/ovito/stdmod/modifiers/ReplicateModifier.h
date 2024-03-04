@@ -65,12 +65,12 @@ class OVITO_STDMOD_EXPORT LinesReplicateModifierDelegate : public ReplicateModif
     OVITO_CLASSINFO("DisplayName", "Lines");
 
 public:
+
     /// Constructor.
     explicit LinesReplicateModifierDelegate(ObjectInitializationFlags flags) : ReplicateModifierDelegate(flags) {}
 
-    /// Applies the modifier operation to the data in a pipeline flow state.
-    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState,
-                                 const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    /// Applies this modifier delegate to the data.
+    virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
 /**
@@ -106,8 +106,12 @@ public:
     /// Constructor.
     explicit ReplicateModifier(ObjectInitializationFlags flags);
 
-    /// Modifies the input data synchronously.
-    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) override;
+
+    /// Indicates whether the interactive viewports should be updated after a parameter of the the modifier has
+    /// been changed and before the entire pipeline is recomputed.
+    virtual bool shouldRefreshViewportsAfterChange() override { return true; }
 
     /// Helper function that returns the range of replicated boxes.
     Box3I replicaRange() const;

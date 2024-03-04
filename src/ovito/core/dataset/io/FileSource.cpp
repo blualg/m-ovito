@@ -351,6 +351,12 @@ QMap<int, QString> FileSource::animationFrameLabels() const
 ******************************************************************************/
 PipelineEvaluationResult FileSource::evaluateInternal(const PipelineEvaluationRequest& request)
 {
+    if(request.interactiveMode()) {
+        // In interactive mode, there is not enough time to wait for file I/O. Therefore, directly
+        // return the current internal state to serve the evaluation request immediately.
+        return PipelineEvaluationResult(PipelineFlowState(getSourceDataCollection(), status()), PipelineEvaluationResult::EvaluationType::Interactive);
+    }
+
     // Convert the animation time to a frame number.
     int frame = animationTimeToSourceFrame(request.time());
     int frameCount = frames().size();
@@ -364,14 +370,6 @@ PipelineEvaluationResult FileSource::evaluateInternal(const PipelineEvaluationRe
         if(frame < frameCount - 1)
             validityInterval.intersect(TimeInterval(AnimationTime::negativeInfinity(), std::max(sourceFrameToAnimationTime(frame + 1) - 1, sourceFrameToAnimationTime(frame))));
     }
-
-#if 0 // TODO
-    if(request.interactiveMode()) {
-        // In interactive mode, there is not enough time to wait for file I/O. Therefore, we directly
-        // return the current internal state to serve the evaluation request immediately.
-        return Future<PipelineFlowState>::createImmediateEmplace(evaluateInternalSynchronous(request).asPreliminaryState());
-    }
-#endif
 
     // Clamp to frame range.
     if(frame < 0)
@@ -441,7 +439,9 @@ PipelineEvaluationResult FileSource::evaluateInternal(const PipelineEvaluationRe
     });
 
     // Build the pipeline evaluation results.
-    PipelineEvaluationResult result(std::move(stateFuture), PipelineEvaluationResult::EvaluationType::Both, frameTimeInterval(frame));
+    // Note: Marking the pipeline evaluation as "non-interactive", because the loading process takes a longer time.
+    // We don't want interactive requests to wait on it.
+    PipelineEvaluationResult result(std::move(stateFuture), PipelineEvaluationResult::EvaluationType::Noninteractive, frameTimeInterval(frame));
     OVITO_ASSERT(result.validityInterval().contains(request.time()));
 
     // Post-process the results of the loading operation before returning them to the caller.

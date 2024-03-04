@@ -56,26 +56,13 @@ AssignColorModifier::AssignColorModifier(ObjectInitializationFlags flags) : Dele
     }
 }
 
-#if 0 // TODO
-/******************************************************************************
-* Determines the time interval over which a computed pipeline state will remain valid.
-******************************************************************************/
-TimeInterval AssignColorModifier::validityInterval(const ModifierEvaluationRequest& request) const
-{
-    TimeInterval iv = DelegatingModifier::validityInterval(request);
-    if(colorController())
-        iv.intersect(colorController()->validityInterval(request.time()));
-    return iv;
-}
-#endif
-
 /******************************************************************************
 * Is called when a RefTarget referenced by this object generated an event.
 ******************************************************************************/
 bool AssignColorModifier::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(event.type() == ReferenceEvent::TargetChanged && source == colorController()) {
-        // Changes of some the modifier's parameters affect the result of AssignColorModifier::getPipelineEditorShortInfo().
+        // Changes to some the modifier's parameters affect the result of AssignColorModifier::getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
 
@@ -83,40 +70,55 @@ bool AssignColorModifier::referenceEvent(RefTarget* source, const ReferenceEvent
 }
 
 /******************************************************************************
+* This function is called by the pipeline system before a new modifier evaluation begins.
+******************************************************************************/
+bool AssignColorModifierDelegate::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
+{
+    const AssignColorModifier* modifier = static_object_cast<AssignColorModifier>(request.modifier());
+
+    // If the color is animated, restrict the validity interval of the modifier results.
+    if(modifier->colorController())
+        result.intersectValidityInterval(modifier->colorController()->validityInterval(request.time()));
+
+    return true;
+}
+
+/******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/
-PipelineStatus AssignColorModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+Future<PipelineFlowState> AssignColorModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-    const AssignColorModifier* mod = static_object_cast<AssignColorModifier>(request.modifier());
-    if(!mod->colorController())
-        return PipelineStatus::Success;
+    const AssignColorModifier* modifier = static_object_cast<AssignColorModifier>(request.modifier());
+    if(!modifier->colorController())
+        return state;
 
     // Look up the property container object and make sure we can safely modify it.
-    DataObjectPath objectPath = state.expectMutableObject(inputContainerRef());
-    PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
+    DataObjectPath containerPath = state.expectMutableObject(inputContainerRef());
+    PropertyContainer* container = static_object_cast<PropertyContainer>(containerPath.back());
 
     // Get the input selection property.
-    ConstPropertyPtr selProperty;
+    ConstPropertyPtr selection;
     if(container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
-        if(const Property* selPropertyObj = container->getProperty(Property::GenericSelectionProperty)) {
-            selProperty = selPropertyObj;
+        if(const Property* property = container->getProperty(Property::GenericSelectionProperty)) {
+            selection = property;
 
             // Clear selection if requested.
-            if(!mod->keepSelection())
-                container->removeProperty(selPropertyObj);
+            if(!modifier->keepSelection())
+                container->removeProperty(selection);
         }
     }
 
     // Get modifier's color parameter value.
     Color color;
-    mod->colorController()->getColorValue(request.time(), color, state.mutableStateValidity());
+    modifier->colorController()->getColorValue(request.time(), color, state.mutableStateValidity());
 
     // Create the color output property.
-    Property* colorProperty = container->createProperty(selProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, outputColorPropertyId(), objectPath);
-    // Assign color to selected elements (or all elements if there is no selection).
-    colorProperty->fillSelected<ColorG>(color.toDataType<GraphicsFloatType>(), selProperty.get());
+    Property* colorProperty = container->createProperty(selection ? DataBuffer::Initialized : DataBuffer::Uninitialized, outputColorPropertyId(), containerPath);
 
-    return PipelineStatus::Success;
+    // Assign color to selected elements (or all elements if there is no selection).
+    colorProperty->fillSelected<ColorG>(color.toDataType<GraphicsFloatType>(), selection.get());
+
+    return state;
 }
 
 }   // End of namespace

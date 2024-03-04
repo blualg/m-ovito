@@ -68,13 +68,15 @@ void UndoableTransaction::commit()
 {
     OVITO_ASSERT(_operation);
 
-    if(CompoundOperation* parent = CompoundOperation::current()) {
-        parent->addOperation(std::move(_operation));
-    }
-    else {
-        if(UndoStack* undoStack = userInterface().undoStack()) {
-            OVITO_ASSERT(QThread::currentThread() == undoStack->thread());
-            undoStack->push(std::move(_operation));
+    if(_operation->isSignificant()) {
+        if(CompoundOperation* parent = CompoundOperation::current()) {
+            parent->addOperation(std::move(_operation));
+        }
+        else {
+            if(UndoStack* undoStack = userInterface().undoStack()) {
+                OVITO_ASSERT(QThread::currentThread() == undoStack->thread());
+                undoStack->push(std::move(_operation));
+            }
         }
     }
     _operation.reset();
@@ -204,7 +206,8 @@ void CompoundOperation::debugPrint(int level)
 {
     int index = 0;
     for(const auto& op : _subOperations) {
-        qDebug() << QByteArray(level*2, ' ').constData() << index << ":" << qPrintable(op->displayName());
+        UndoableOperation& opRef = *op;
+        qDebug() << QByteArray(level*2, ' ').constData() << index << ":" << qPrintable(op->displayName()) << "(" << typeid(opRef).name() << ")";
         if(CompoundOperation* compOp = dynamic_cast<CompoundOperation*>(op.get())) {
             compOp->debugPrint(level+1);
         }

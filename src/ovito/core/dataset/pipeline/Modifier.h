@@ -49,8 +49,8 @@ public:
     /// Constructor.
     explicit Modifier(ObjectInitializationFlags flags);
 
-    /// \brief Modifies the input data synchronously.
-    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state);
+    /// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
+    virtual void initializeModifier(const ModifierInitializationRequest& request) {}
 
     /// \brief Throws an exception if the pipeline stage cannot be evaluated at this time. This is called by the system to catch user mistakes that would lead to infinite recursion.
     virtual void preEvaluationCheck() const {}
@@ -59,12 +59,20 @@ public:
     virtual void inputCachingHints(ModifierEvaluationRequest& request) {}
 
     /// \brief This function is called by the pipeline system before a new modifier evaluation begins.
-    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result, const ModifierEnginePtr& existingEngine) const { return true; }
+    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const { return true; }
 
     /// \brief This method is called by the ModificationNode to let the modifier adjust the time interval
     /// of a TargetChanged event received from the upstream pipeline before it is propagated to the
     /// downstream pipeline.
     virtual void restrictInputValidityInterval(TimeInterval& iv) const {}
+
+    /// \brief Indicates whether the interactive viewports should be updated after the modifier has computed
+    ///        its results and before the entire pipeline is complete.
+    virtual bool shouldRefreshViewportsAfterEvaluation() { return false; }
+
+    /// \brief Indicates whether the interactive viewports should be updated after a parameter of the the modifier has
+    ///        been changed and before the entire pipeline is recomputed.
+    virtual bool shouldRefreshViewportsAfterChange() { return false; }
 
     /// \brief Lets the modifier render itself in an interactive viewport.
     virtual void renderModifierVisual(const ModifierEvaluationRequest& request, Pipeline* pipeline, FrameGraph& frameGraph) {}
@@ -100,13 +108,6 @@ public:
     /// \brief Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const { return {}; }
 
-    /// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
-    virtual void initializeModifier(const ModifierInitializationRequest& request) {}
-
-    /// \brief Indicates whether a preliminary viewport update is performed after the modifier has been
-    ///        evaluated but before the entire pipeline evaluation is complete.
-    virtual bool performPreliminaryUpdateAfterEvaluation() { return true; }
-
     /// \brief Returns the number of animation frames this modifier provides.
     virtual int numberOfOutputFrames(ModificationNode* node) const;
 
@@ -122,10 +123,7 @@ public:
 protected:
 
     /// Modifies the input data.
-    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, const PipelineFlowState& input);
-
-    /// Creates a computation engine that will compute the modifier's results asynchronously.
-    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) { return {}; }
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) = 0;
 
 private:
 
@@ -141,5 +139,3 @@ private:
 }   // End of namespace
 
 Q_DECLARE_METATYPE(Ovito::Modifier*);
-
-#include "ModifierEngine.h"

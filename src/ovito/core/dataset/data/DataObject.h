@@ -234,6 +234,7 @@ private:
     DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, visElements, setVisElements, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_MEMORIZE);
 
     /// The PipelineNode that created this data object (may be null).
+    /// Note: Weak reference is to a generic RefTarget, because the PipelineNode class will be defined later in the code.
     DECLARE_RUNTIME_PROPERTY_FIELD(OOWeakRef<const RefTarget>, createdByNode, setCreatedByNode);
 
     /// The attached editable proxy object.

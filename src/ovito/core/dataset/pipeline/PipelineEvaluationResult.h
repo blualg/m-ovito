@@ -71,12 +71,6 @@ public:
     /// Sets the type(s) of pipeline evaluation this result is from.
     void setEvaluationTypes(EvaluationTypes evaluationTypes) { _evaluationTypes = evaluationTypes; }
 
-    /// Applies a post-processing function to the pipeline result.
-    template<typename Executor, typename Function>
-    void postprocess(Executor&& executor, Function&& f) {
-        SharedFuture<PipelineFlowState>::operator=(then(std::forward<Executor>(executor), std::forward<Function>(f)));
-    }
-
     /// Turns this result object into a regular future.
     SharedFuture<PipelineFlowState>&& asFuture() && {
         return std::move(*this);

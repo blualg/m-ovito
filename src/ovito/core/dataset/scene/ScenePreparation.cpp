@@ -97,6 +97,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
     // Abort if application is about to shutdown.
     if(userInterface().isShuttingDown()) {
         _completedScene = nullptr;
+        _pipelineEvaluationFuture.reset();
         _promise.cancel();
         return;
     }
@@ -230,8 +231,8 @@ bool ScenePreparation::referenceEvent(RefTarget* source, const ReferenceEvent& e
         // Repaint viewports whenever the user selects a different object in the scene.
         Q_EMIT viewportUpdateRequest();
     }
-    else if(event.type() == ReferenceEvent::PreliminaryStateAvailable && source == scene()) {
-        // Update viewport window when a new preliminiary state from one of the data pipelines in the scene
+    else if(event.type() == ReferenceEvent::InteractiveStateAvailable && source == scene()) {
+        // Update viewport window when a new interactive state from one of the data pipelines in the scene
         // becomes available (unless we are playing an animation).
         if(!userInterface().arePreliminaryViewportUpdatesSuspended())
             Q_EMIT viewportUpdateRequest();
@@ -272,7 +273,7 @@ void ScenePreparation::restartPreparation()
         _future.reset();
     }
     _pipelineEvaluationWatcher.reset();
-    _pipelineEvaluationFuture.reset();
+    // Note: Not resetting pipelineEvaluationFuture here, because we want to keep the in-flight evaluation request going until a new request has been made.
     _currentPipeline.reset();
     _completedScene = nullptr;
     if(!_isRestartScheduled) {

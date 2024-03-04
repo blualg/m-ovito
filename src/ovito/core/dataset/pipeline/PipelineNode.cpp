@@ -44,16 +44,6 @@ PipelineNode::PipelineNode(ObjectInitializationFlags flags, bool enableCaching) 
 {
 }
 
-#if 0 // TODO
-/******************************************************************************
-* Asks the pipeline stage to compute the preliminary results in a synchronous fashion.
-******************************************************************************/
-PipelineFlowState PipelineNode::evaluateSynchronous(const PipelineEvaluationRequest& request)
-{
-    return pipelineCache().evaluatePipelineStageSynchronous(request);
-}
-#endif
-
 /******************************************************************************
 * Is called when the value of a non-animatable property field of this RefMaker has changed.
 ******************************************************************************/

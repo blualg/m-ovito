@@ -389,7 +389,7 @@ private:
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> GenerateTrajectoryLinesModifier::evaluateModifier(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<PipelineFlowState> GenerateTrajectoryLinesModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
     // Need our type of ModificationNode.
     GenerateTrajectoryLinesModificationNode* modNode = dynamic_object_cast<GenerateTrajectoryLinesModificationNode>(request.modificationNode());

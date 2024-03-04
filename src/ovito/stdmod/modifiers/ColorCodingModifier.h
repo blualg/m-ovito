@@ -27,7 +27,6 @@
 #include <ovito/stdobj/lines/Lines.h>
 #include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
-#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/core/dataset/pipeline/DelegatingModifier.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
@@ -60,62 +59,11 @@ public:
     /// Returns the ID of the standard property that will receive the computed colors.
     virtual int outputColorPropertyId() const { return Property::GenericColorProperty; }
 
-    /// Asynchronous compute engine that does the actual work in a separate thread.
-    class OVITO_STDMOD_EXPORT ColorCodingEngine : public ModifierEngine
-    {
-    public:
+    /// This function is called by the pipeline system before a new modifier evaluation begins.
+    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
 
-        /// Constructor.
-        ColorCodingEngine(
-                const ModifierEvaluationRequest& request,
-                const TimeInterval& validityInterval,
-                OORef<ColorCodingGradient> gradient,
-                ConstDataObjectPath containerPath,
-                ConstPropertyPtr input,
-                int vectorComponent,
-                ConstPropertyPtr selection,
-                FloatType minValue,
-                FloatType maxValue,
-                bool autoAdjustRange,
-                int outputColorPropertyId)
-            : ModifierEngine(request, validityInterval),
-                _gradient(std::move(gradient)),
-                _containerPath(std::move(containerPath)),
-                _input(std::move(input)),
-                _vectorComponent(vectorComponent),
-                _selection(std::move(selection)),
-                _minValue(minValue),
-                _maxValue(maxValue),
-                _autoAdjustRange(autoAdjustRange),
-                _outputColorPropertyId(outputColorPropertyId),
-                _orderingFingerprint(static_object_cast<PropertyContainer>(_containerPath.back())) {}
-
-        /// Computes the modifier's results.
-        virtual void perform() override;
-
-        /// Decides whether the computation is sufficiently short to perform it synchronously within the GUI thread.
-        virtual bool preferSynchronousExecution() override {
-            // It's okay to perform the modifier operation synchronously for small inputs.
-            return _input->size() <= 10000;
-        }
-
-        /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-    private:
-
-        OORef<ColorCodingGradient> _gradient;
-        ConstDataObjectPath _containerPath;
-        ConstPropertyPtr _input;
-        ConstPropertyPtr _selection;
-        PropertyPtr _colors;
-        FloatType _minValue;
-        FloatType _maxValue;
-        bool _autoAdjustRange;
-        int _vectorComponent;
-        int _outputColorPropertyId;
-        ElementOrderingFingerprint _orderingFingerprint;
-    };
+    /// Applies this modifier delegate to the data.
+    virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
 /**
@@ -180,14 +128,6 @@ public:
     /// Constructor.
     explicit ColorCodingModifier(ObjectInitializationFlags flags);
 
-#if 0 // TODO
-    /// Determines the time interval over which a computed pipeline state will remain valid.
-    virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
-#endif
-
-    /// Modifies the input data synchronously.
-    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
     /// Returns the range start value.
     FloatType startValue() const { return startValueController() ? startValueController()->getFloatValue(AnimationTime(0)) : 0; }
 
@@ -226,17 +166,14 @@ protected:
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
-    /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
-
-    /// Determines the range of values in the input data for the selected property.
-    bool determinePropertyValueRange(const PipelineFlowState& state, FloatType& min, FloatType& max) const;
-
     /// Is called when the value of a reference field of this RefMaker changes.
     virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
     /// Is called when the value of a property of this object has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+
+    /// Determines the range of values in the input data for the selected property.
+    bool determinePropertyValueRange(const PipelineFlowState& state, FloatType& min, FloatType& max) const;
 
 private:
 

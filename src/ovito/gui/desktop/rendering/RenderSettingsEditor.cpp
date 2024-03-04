@@ -343,7 +343,7 @@ void RenderSettingsEditor::onSwitchRenderer()
     connect(buttonBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
     connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
     connect(buttonBox, &QDialogButtonBox::helpRequested, this, [&]() {
-        mainWindow().actionManager()->openHelpTopic("usage.rendering");
+        mainWindow().actionManager()->openHelpTopic("manual:usage.rendering");
     });
     connect(rendererListWidget, &QListWidget::itemDoubleClicked, &dlg, &QDialog::accept);
     layout->addWidget(buttonBox, 2, 1, Qt::AlignRight);

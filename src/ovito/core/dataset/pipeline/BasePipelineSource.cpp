@@ -83,7 +83,6 @@ void BasePipelineSource::postprocessDataCollection(PipelineEvaluationResult& res
                 if(state.stateValidity().contains(currentTime)) {
                     setDataCollectionFrame(currentTime.frame());
                     setDataCollection(state.data());
-                    notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
                 }
             }
 
@@ -119,7 +118,6 @@ void BasePipelineSource::postprocessDataCollection(PipelineEvaluationResult& res
 PipelineEvaluationResult BasePipelineSource::postprocessCachedState(const PipelineEvaluationRequest& request, const PipelineFlowState& cachedState)
 {
     OVITO_ASSERT(ExecutionContext::current().isValid());
-    OVITO_ASSERT(!isUndoRecording());
 
     PipelineFlowState state = cachedState;
     setStatus(state.status());
@@ -128,6 +126,7 @@ PipelineEvaluationResult BasePipelineSource::postprocessCachedState(const Pipeli
 
         // In GUI mode, create editable proxy objects for the data objects in the generated collection.
         if(Application::instance()->guiMode()) {
+            UndoSuspender noUndo;
             _updatingEditableProxies = true;
             ConstDataObjectPath dataPath = { state.data() };
             state.data()->updateEditableProxies(state, dataPath);
@@ -171,8 +170,8 @@ bool BasePipelineSource::referenceEvent(RefTarget* source, const ReferenceEvent&
             if(dataCollectionFrame() >= 0) {
                 pipelineCache().overrideCache(dataCollection(), frameTimeInterval(dataCollectionFrame()));
             }
-            // Let downstream pipeline now that its input has changed.
-            notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
+            // Let downstream pipeline know that its input has changed.
+            notifyDependents(ReferenceEvent::InteractiveStateAvailable);
             notifyTargetChanged();
         }
         else {

@@ -100,7 +100,7 @@ void PolyhedralTemplateMatchingModifier::propertyChanged(const PropertyFieldDesc
 {
     if(field == PROPERTY_FIELD(rmsdCutoff)) {
         // Immediately update viewports when RMSD cutoff has been changed by the user.
-        notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
+        notifyDependents(ReferenceEvent::InteractiveStateAvailable);
     }
     StructureIdentificationModifier::propertyChanged(field);
 }

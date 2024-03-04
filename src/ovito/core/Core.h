@@ -48,6 +48,7 @@
 #include <random>
 #include <memory>
 #include <mutex>
+#include <latch>
 #include <thread>
 #include <clocale>
 #include <atomic>

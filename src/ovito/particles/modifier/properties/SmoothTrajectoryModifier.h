@@ -71,7 +71,7 @@ public:
     virtual void restrictInputValidityInterval(TimeInterval& iv) const override;
 
     /// Modifies the input data.
-    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) override;
 
     /// Modifies the input data synchronously.
     virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;

@@ -149,7 +149,10 @@ std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, 
 ******************************************************************************/
 void UserInterface::processViewportUpdateRequests()
 {
-    // Currently, this is a no-op. The viewports are always updated asynchronously.
+    if(ViewportConfiguration* viewportConfig = datasetContainer().activeViewportConfig()) {
+        for(Viewport* vp : viewportConfig->viewports())
+            vp->processUpdateRequest();
+    }
 }
 
 /******************************************************************************

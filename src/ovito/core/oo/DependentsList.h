@@ -45,12 +45,19 @@ private:
     /// Keeps track of the number of nested calls to visit().
     int _reentranceCounter = 0;
 
+    /// Returns the mutex to be used for thread-safe access to the list.
+    inline std::mutex& mutex() const {
+        static std::mutex _mutexPool[131];
+        return _mutexPool[reinterpret_cast<quintptr>(this) % (sizeof(_mutexPool)/sizeof(std::mutex))];
+    }
+
 public:
 
     /// Invokes the given visitor function for each entry in the list.
     /// It's allowed to modify the list while visiting it.
     template<class Callable>
     void visit(Callable&& fn) noexcept {
+        std::unique_lock<std::mutex> lock(mutex());
         _reentranceCounter++;
 #ifdef OVITO_DEBUG
         try {
@@ -60,16 +67,20 @@ public:
         // may grow (but not shrink) during the iteration process.
         bool containsEmptySlots = false;
         for(size_type i = 0; i < _entries.size(); i++) {
-            if(RefMaker* d = _entries[i])
+            if(RefMaker* d = _entries[i]) {
+                lock.unlock();
                 fn(d);
-            else
+                lock.lock();
+            }
+            else {
                 containsEmptySlots = true;
+            }
         }
 
         OVITO_ASSERT(originalSize <= _entries.size());
 
         // Compact the list if necessary.
-        // But only do it if we are not currently visiting the list recursively.
+        // But only do it if we are not currently visiting the list recursively or concurrently.
         if(--_reentranceCounter == 0 && containsEmptySlots) {
             _entries.removeAll(nullptr);
         }
@@ -86,6 +97,7 @@ public:
     void insert(RefMaker* dependent) noexcept {
         OVITO_ASSERT(dependent != nullptr);
         RefMaker** free_slot = nullptr;
+        std::lock_guard<std::mutex> lock(mutex());
         for(auto& entry : _entries) {
             if(entry == dependent)
                 return;
@@ -102,20 +114,24 @@ public:
     /// Removes a RefMaker from the list.
     void remove(RefMaker* dependent) noexcept {
         OVITO_ASSERT(dependent != nullptr);
+        std::lock_guard<std::mutex> lock(mutex());
         auto idx = _entries.indexOf(dependent);
         OVITO_ASSERT(idx >= 0);
         _entries.replace(idx, nullptr);
         OVITO_ASSERT(!_entries.contains(dependent));
     }
 
+#ifdef OVITO_DEBUG
     /// Checks if the list currently contains no RefMakers.
     inline bool empty() const {
+        std::lock_guard<std::mutex> lock(mutex());
         for(RefMaker* entry : _entries) {
             if(entry != nullptr)
                 return false;
         }
         return true;
     }
+#endif
 };
 
 }   // End of namespace

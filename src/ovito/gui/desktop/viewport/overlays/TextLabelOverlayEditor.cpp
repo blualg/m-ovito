@@ -181,7 +181,7 @@ bool TextLabelOverlayEditor::referenceEvent(RefTarget* source, const ReferenceEv
     if(source == editObject() && event.type() == ReferenceEvent::TargetChanged && static_cast<const TargetChangedEvent&>(event).field() == PROPERTY_FIELD(TextLabelOverlay::pipeline)) {
         updateEditorFields();
     }
-    else if(source == sourcePipeline() && (event.type() == ReferenceEvent::PreliminaryStateAvailable || event.type() == ReferenceEvent::TargetChanged)) {
+    else if(source == sourcePipeline() && (event.type() == ReferenceEvent::InteractiveStateAvailable || event.type() == ReferenceEvent::TargetChanged)) {
         updateEditorFieldsLater(this);
     }
     else if(source == sourcePipeline() && event.type() == ReferenceEvent::TitleChanged) {

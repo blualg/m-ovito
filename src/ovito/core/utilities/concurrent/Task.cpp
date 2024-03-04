@@ -311,7 +311,7 @@ bool Task::waitFor(detail::TaskReference awaitedTask, bool throwOnError)
             return true;
         });
 
-        // TODO: Implement work-stealing mechanism to avoid dealock when running out of threads in the thread pool.
+        // TODO: Implement work-stealing mechanism to avoid deadlock when running out of threads in the thread pool.
 
         waitMutex.lock();
         // Last minute check if the awaited task has already completed:

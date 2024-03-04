@@ -76,7 +76,7 @@ public:
     SharedFuture& operator=(const SharedFuture& other) noexcept = default;
 
     /// Returns the results computed by the associated Promise.
-    /// This function may only be called after the Promise was fulfilled (and not canceled).
+    /// The function blocks until the result become available.
     const std::tuple<R...>& results() const {
         OVITO_ASSERT_MSG(isValid(), "SharedFuture::results()", "Future must be valid.");
         waitForFinished();
@@ -86,9 +86,23 @@ public:
         return task()->template getResults<tuple_type>();
     }
 
-    /// Returns the results computed by the associated Promise.
-    /// This function may only be called after the Promise was fulfilled (and not canceled).
-    decltype(auto) result() const {
+    /// Returns a const reference to the results computed by the associated Promise.
+    /// The function blocks until the result become available.
+    decltype(auto) result() const& {
+        if constexpr(sizeof...(R) == 1) {
+            return std::get<0>(results());
+        }
+        else {
+            OVITO_ASSERT_MSG(isValid(), "SharedFuture::results()", "Future must be valid.");
+            waitForFinished();
+            OVITO_ASSERT_MSG(isFinished(), "SharedFuture::results()", "Future must be in fulfilled state.");
+            OVITO_ASSERT_MSG(!isCanceled(), "SharedFuture::results()", "Future must not be canceled.");
+        }
+    }
+
+    /// Returns a copy to the results computed by the associated Promise.
+    /// The function blocks until the result become available.
+    auto result() && {
         if constexpr(sizeof...(R) == 1) {
             return std::get<0>(results());
         }
@@ -109,6 +123,12 @@ public:
     /// Overload of the function above using the default inline executor.
     template<typename Function>
     decltype(auto) then(Function&& f) { return then(InlineExecutor{}, std::forward<Function>(f)); }
+
+    /// Applies a post-processing function to the future's results.
+    template<typename Executor, typename Function>
+    void postprocess(Executor&& executor, Function&& f) {
+        *this = then(std::forward<Executor>(executor), std::forward<Function>(f));
+    }
 
 protected:
 
@@ -135,6 +155,10 @@ SharedFuture<R...>::then(Executor&& executor, Function&& f)
     result_promise_type promise{std::make_shared<continuation_task_type>()};
     result_future_type future = promise.future();
     continuation_task_type* continuationTask = static_cast<continuation_task_type*>(promise.task().get());
+
+    // Inherit the priority from the task that invoked then(). If then() was not invoked from a task, inherit the
+    // priority from future's task.
+    continuationTask->setPriority(this_task::get() ? this_task::get()->priority() : this->task()->priority());
 
     // Run the following function once the existing task finishes. We'll then invoke the user's continuation function.
     continuationTask->whenTaskFinishes(

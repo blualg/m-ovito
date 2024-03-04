@@ -90,7 +90,7 @@ void GrainSegmentationModifier::propertyChanged(const PropertyFieldDescriptor* f
 {
     if(field == PROPERTY_FIELD(mergingThreshold) || field == PROPERTY_FIELD(minGrainAtomCount) || field == PROPERTY_FIELD(colorParticlesByGrain) || field == PROPERTY_FIELD(orphanAdoption)) {
         // Immediately update viewports if parameters are changed by the user that don't require a full recalculation.
-        notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
+        notifyDependents(ReferenceEvent::InteractiveStateAvailable);
     }
     Modifier::propertyChanged(field);
 }

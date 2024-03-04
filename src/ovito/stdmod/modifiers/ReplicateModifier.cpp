@@ -26,6 +26,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "ReplicateModifier.h"
 
 namespace Ovito {
@@ -64,85 +65,83 @@ QVector<DataObjectReference> LinesReplicateModifierDelegate::OOMetaClass::getApp
 }
 
 /******************************************************************************
- * Applies the modifier operation to the data in a pipeline flow state.
+ * Applies this modifier delegate to the data.
  ******************************************************************************/
-PipelineStatus LinesReplicateModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state,
-                                                     const PipelineFlowState& inputState,
-                                                     const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+Future<PipelineFlowState> LinesReplicateModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-    ReplicateModifier* mod = static_object_cast<ReplicateModifier>(request.modifier());
-
-    // Loop over all lines objects in data collection
-    // Get number of images
-    std::array<int, 3> nPBC;
-    nPBC[0] = std::max(mod->numImagesX(), 1);
-    nPBC[1] = std::max(mod->numImagesY(), 1);
-    nPBC[2] = std::max(mod->numImagesZ(), 1);
-    size_t numCopies = nPBC[0] * nPBC[1] * nPBC[2];
+    ReplicateModifier* modifier = static_object_cast<ReplicateModifier>(request.modifier());
 
     // Get range of new images
-    const Box3I& newImages = mod->replicaRange();
+    const Box3I& newImages = modifier->replicaRange();
 
-    // Get the simulation cell
-    const SimulationCell* cell = state.expectObject<SimulationCell>();
-    const AffineTransformation& cellMatrix = cell->matrix();
+    // The actual work can be performed in a separate thread.
+    return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), newImages]() mutable {
 
-    for(const DataObject* obj : state.data()->objects()) {
-        // Replicate the Lines.
-        if(const Lines* inputLines = dynamic_object_cast<Lines>(obj)) {
-            // Skip if there's nothing to do
-            if(numCopies <= 1 || !inputLines || inputLines->elementCount() == 0) {
-                continue;
-            }
+        size_t numCopies = (newImages.sizeX() + 1) * (newImages.sizeY() + 1) * (newImages.sizeZ() + 1);
 
-            // Extend lines property arrays.
-            size_t oldVertexCount = inputLines->elementCount();
-            size_t newVertexCount = oldVertexCount * numCopies;
+        // Get the simulation cell
+        const SimulationCell* cell = state.expectObject<SimulationCell>();
+        const AffineTransformation& cellMatrix = cell->matrix();
 
-            // Ensure that the lines can be modified.
-            Lines* outputLines = state.makeMutable(inputLines);
-            outputLines->replicate(numCopies);
+        // Loop over all lines objects in the data collection
+        for(const DataObject* obj : state.data()->objects()) {
+            // Replicate the Lines.
+            if(const Lines* inputLines = dynamic_object_cast<Lines>(obj)) {
+                // Skip if there's nothing to do
+                if(numCopies <= 1 || !inputLines || inputLines->elementCount() == 0) {
+                    continue;
+                }
 
-            // Replicate lines (vertex) property values.
-            for(Property* property : outputLines->makePropertiesMutable()) {
-                OVITO_ASSERT(property->size() == newVertexCount);
+                // Extend lines property arrays.
+                size_t oldVertexCount = inputLines->elementCount();
+                size_t newVertexCount = oldVertexCount * numCopies;
 
-                // Shift vertex positions by the periodicity vector.
-                if(property->type() == Lines::PositionProperty) {
-                    BufferWriteAccess<Point3, access_mode::read_write> positionArray(property);
-                    Point3* p = positionArray.begin();
-                    for(int imageX = newImages.minc.x(); imageX <= newImages.maxc.x(); imageX++) {
-                        for(int imageY = newImages.minc.y(); imageY <= newImages.maxc.y(); imageY++) {
-                            for(int imageZ = newImages.minc.z(); imageZ <= newImages.maxc.z(); imageZ++) {
-                                if(imageX != 0 || imageY != 0 || imageZ != 0) {
-                                    const Vector3 imageDelta = cellMatrix * Vector3(imageX, imageY, imageZ);
-                                    for(size_t i = 0; i < oldVertexCount; i++) {
-                                        *p++ += imageDelta;
+                // Ensure that the lines can be modified.
+                Lines* outputLines = state.makeMutable(inputLines);
+                outputLines->replicate(numCopies);
+
+                // Replicate lines (vertex) property values.
+                for(Property* property : outputLines->makePropertiesMutable()) {
+                    OVITO_ASSERT(property->size() == newVertexCount);
+
+                    // Shift vertex positions by the periodicity vector.
+                    if(property->type() == Lines::PositionProperty) {
+                        BufferWriteAccess<Point3, access_mode::read_write> positionArray(property);
+                        Point3* p = positionArray.begin();
+                        for(int imageX = newImages.minc.x(); imageX <= newImages.maxc.x(); imageX++) {
+                            for(int imageY = newImages.minc.y(); imageY <= newImages.maxc.y(); imageY++) {
+                                for(int imageZ = newImages.minc.z(); imageZ <= newImages.maxc.z(); imageZ++) {
+                                    if(imageX != 0 || imageY != 0 || imageZ != 0) {
+                                        const Vector3 imageDelta = cellMatrix * Vector3(imageX, imageY, imageZ);
+                                        for(size_t i = 0; i < oldVertexCount; i++) {
+                                            *p++ += imageDelta;
+                                        }
                                     }
-                                }
-                                else {
-                                    p += oldVertexCount;
+                                    else {
+                                        p += oldVertexCount;
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                else if(property->type() == Lines::SectionProperty) {
-                    BufferWriteAccess<int64_t, access_mode::read_write> sectionsArray(property);
-                    int64_t* s = sectionsArray.begin();
-                    auto minmax = std::minmax_element(sectionsArray.cbegin(), sectionsArray.cbegin() + oldVertexCount);
-                    auto minSec = *minmax.first;
-                    auto maxSec = *minmax.second;
-                    for(size_t c = 1; c < numCopies; c++) {
-                        auto offset = (maxSec - minSec + 1) * c;
-                        for(auto id = sectionsArray.begin() + c * oldVertexCount, id_end = id + oldVertexCount; id != id_end; ++id)
-                            *id += offset;
+                    else if(property->type() == Lines::SectionProperty) {
+                        BufferWriteAccess<int64_t, access_mode::read_write> sectionsArray(property);
+                        int64_t* s = sectionsArray.begin();
+                        auto minmax = std::minmax_element(sectionsArray.cbegin(), sectionsArray.cbegin() + oldVertexCount);
+                        auto minSec = *minmax.first;
+                        auto maxSec = *minmax.second;
+                        for(size_t c = 1; c < numCopies; c++) {
+                            auto offset = (maxSec - minSec + 1) * c;
+                            for(auto id = sectionsArray.begin() + c * oldVertexCount, id_end = id + oldVertexCount; id != id_end; ++id)
+                                *id += offset;
+                        }
                     }
                 }
             }
         }
-    }
-    return PipelineStatus::Success;
+
+        return std::move(state);
+    });
 }
 
 /******************************************************************************
@@ -199,30 +198,40 @@ Box3I ReplicateModifier::replicaRange() const
     replicaBox.maxc[0] = nPBC[0]/2;
     replicaBox.maxc[1] = nPBC[1]/2;
     replicaBox.maxc[2] = nPBC[2]/2;
+    OVITO_ASSERT(
+        nPBC[0] * nPBC[1] * nPBC[2] ==
+        (replicaBox.sizeX() + 1) *
+        (replicaBox.sizeY() + 1) *
+        (replicaBox.sizeZ() + 1));
     return replicaBox;
 }
 
 /******************************************************************************
-* Modifies the input data synchronously.
+* Modifies the input data.
 ******************************************************************************/
-void ReplicateModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+Future<PipelineFlowState> ReplicateModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
-    // Apply all enabled modifier delegates to the input data.
-    MultiDelegatingModifier::evaluateModifierSynchronous(request, state);
+    // First, apply all delegates to the input data.
+    Future<PipelineFlowState> future = MultiDelegatingModifier::evaluateModifier(request, input);
 
-    // Resize the simulation cell if enabled.
+    // Additionally, resize the simulation cell if enabled.
     if(adjustBoxSize()) {
-        SimulationCell* cellObj = state.expectMutableObject<SimulationCell>();
-        AffineTransformation simCell = cellObj->cellMatrix();
-        Box3I newImages = replicaRange();
-        simCell.translation() += (FloatType)newImages.minc.x() * simCell.column(0);
-        simCell.translation() += (FloatType)newImages.minc.y() * simCell.column(1);
-        simCell.translation() += (FloatType)newImages.minc.z() * simCell.column(2);
-        simCell.column(0) *= (newImages.sizeX() + 1);
-        simCell.column(1) *= (newImages.sizeY() + 1);
-        simCell.column(2) *= (newImages.sizeZ() + 1);
-        cellObj->setCellMatrix(simCell);
+        future.postprocess(*this, [this](PipelineFlowState state) {
+            SimulationCell* cellObj = state.expectMutableObject<SimulationCell>();
+            AffineTransformation simCell = cellObj->cellMatrix();
+            Box3I newImages = replicaRange();
+            simCell.translation() += (FloatType)newImages.minc.x() * simCell.column(0);
+            simCell.translation() += (FloatType)newImages.minc.y() * simCell.column(1);
+            simCell.translation() += (FloatType)newImages.minc.z() * simCell.column(2);
+            simCell.column(0) *= (newImages.sizeX() + 1);
+            simCell.column(1) *= (newImages.sizeY() + 1);
+            simCell.column(2) *= (newImages.sizeZ() + 1);
+            cellObj->setCellMatrix(simCell);
+            return state;
+        });
     }
+
+    return future;
 }
 
 }   // End of namespace

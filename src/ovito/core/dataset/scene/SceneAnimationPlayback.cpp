@@ -122,6 +122,9 @@ void SceneAnimationPlayback::scheduleNextAnimationFrame()
         return;
     }
 
+    // Force immediate viewport update.
+    userInterface().processViewportUpdateRequests();
+
     if(!_nextFrameTimer.isActive()) {
         int playbackSpeed = scene()->animationSettings()->playbackSpeed();
         int timerSpeed = 1000 / std::abs(_activePlaybackRate);

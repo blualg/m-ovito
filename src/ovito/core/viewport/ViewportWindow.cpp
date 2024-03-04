@@ -77,6 +77,17 @@ void ViewportWindow::requestUpdate()
 }
 
 /******************************************************************************
+* If an update request is pending for this viewport window, immediately
+* processes it and redraw the window contents.
+******************************************************************************/
+void ViewportWindow::processViewportUpdate()
+{
+    if(_updateRequested && _updateTimer.isActive()) {
+        handleUpdateRequest();
+    }
+}
+
+/******************************************************************************
 * Asks the window to handle any pending update request now after viewport
 * updates were temporarily suspended.
 ******************************************************************************/
@@ -85,9 +96,19 @@ void ViewportWindow::resumeViewportUpdates()
     OVITO_ASSERT(!userInterface().areViewportUpdatesSuspended());
     OVITO_ASSERT(QCoreApplication::instance());
 
-    if(_updateRequested && !_updateScheduled && isVisible()) {
-        _updateScheduled = true;
-        QMetaObject::invokeMethod(this, "handleUpdateRequest", Qt::QueuedConnection);
+    if(_updateRequested && !_updateTimer.isActive() && isVisible()) {
+        _updateTimer.start(10, Qt::CoarseTimer, this); // Refresh viewport window after a 10 ms delay to avoid excessive repaints.
+    }
+}
+
+/******************************************************************************
+* Handles timer events for this object.
+******************************************************************************/
+void ViewportWindow::timerEvent(QTimerEvent* event)
+{
+    if(event->timerId() == _updateTimer.timerId()) {
+        _updateTimer.stop();
+        handleUpdateRequest();
     }
 }
 
@@ -96,11 +117,7 @@ void ViewportWindow::resumeViewportUpdates()
 ******************************************************************************/
 void ViewportWindow::handleUpdateRequest()
 {
-    OVITO_ASSERT(_updateScheduled);
     OVITO_ASSERT(viewport());
-
-    // Reset handler flag.
-    _updateScheduled = false;
 
     // Skip if the viewport is currently hidden but keep the update request pending.
     if(!isVisible() || !viewport() || !renderer())
@@ -132,6 +149,9 @@ void ViewportWindow::handleUpdateRequest()
 
     // Graceful exception handling.
     bool success = userInterface().handleExceptions([&]() {
+
+        // Interactive rendering is performed with a high priority.
+        this_task::get()->setPriority(1);
 
         // Set up preliminary projection without knowing the scene bounding box yet.
         AnimationTime time = viewport()->scene()->animationSettings()->currentTime();
@@ -261,6 +281,9 @@ bool ViewportWindow::referenceEvent(RefTarget* source, const ReferenceEvent& eve
         }
         else if(event.type() == Viewport::ViewportWindowResumeUpdatesRequested) {
             resumeViewportUpdates();
+        }
+        else if(event.type() == Viewport::ViewportWindowHandleUpdatesRequested) {
+            processViewportUpdate();
         }
         else if(event.type() == Viewport::ZoomToSceneExtentsRequested) {
             zoomToSceneExtents();

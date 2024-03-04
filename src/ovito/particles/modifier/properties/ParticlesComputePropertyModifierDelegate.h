@@ -89,6 +89,9 @@ public:
     /// \undoable
     virtual void setComponentCount(int componentCount) override;
 
+    /// Checks if math expressions are time-dependent, i.e. whether they involve the animation frame number.
+    virtual bool isExpressionTimeDependent(ComputePropertyModifier* modifier) const override;
+
     /// Creates a computation engine that will compute the property values.
     virtual std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> createEngine(
                 const ModifierEvaluationRequest& request,

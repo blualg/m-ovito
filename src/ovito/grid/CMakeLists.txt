@@ -26,7 +26,7 @@ FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Xml REQUIRED)
 SET(SourceFiles
     objects/VoxelGrid.cpp
     objects/VoxelGridVis.cpp
-    modifier/CreateIsosurfaceModifier.cpp
+#    modifier/CreateIsosurfaceModifier.cpp
     modifier/MarchingCubes.cpp
     io/VTKVoxelGridExporter.cpp
     io/ParaViewVTIGridImporter.cpp
@@ -40,7 +40,7 @@ IF(OVITO_BUILD_PLUGIN_STDMOD)
         modifier/VoxelGridAffineTransformationModifierDelegate.cpp
         modifier/VoxelGridColorCodingModifierDelegate.cpp
         modifier/VoxelGridComputePropertyModifierDelegate.cpp
-        modifier/VoxelGridSliceModifierDelegate.cpp
+#        modifier/VoxelGridSliceModifierDelegate.cpp
     )
 ENDIF()
 

@@ -97,16 +97,24 @@ public:
 
     /// Schedules the given function for execution in a worker thread.
     template<typename Function>
-    static Future<R...> runAsync(Function&& f, bool showInUserInterface) {
+    static Future<R...> runAsync(int priority, Function&& f, bool showInUserInterface = false) {
         class FuncAsyncTask : public AsynchronousTask {
         public:
             FuncAsyncTask(Function&& f) : _func(std::forward<Function>(f)) {}
-            virtual void perform() override { std::move(_func)(); }
+            virtual void perform() override { setResult(std::move(_func)()); }
         private:
             std::decay_t<Function> _func;
         };
         auto task = std::make_shared<FuncAsyncTask>(std::forward<Function>(f));
+        task->setPriority(priority);
         return task->runAsync(showInUserInterface);
+    }
+
+    /// Schedules the given function for execution in a worker thread.
+    template<typename Function>
+    static Future<R...> runAsync(Function&& f, bool showInUserInterface = false) {
+        int priority = this_task::get() ? this_task::get()->priority() : 0;
+        return runAsync(priority, std::forward<Function>(f), showInUserInterface);
     }
 
     /// Runs the task in place and returns a future for the task's results.

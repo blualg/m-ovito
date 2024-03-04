@@ -340,8 +340,6 @@ void ParticleImporter::FrameLoader::generateBonds()
             }
         }
     });
-    if(isCanceled())
-        return;
 
     // Create Bonds.
     setBondCount(boost::accumulate(partialBondsLists, (size_t)0, [](size_t n, const std::vector<Bond>& bonds) { return n + bonds.size(); }));

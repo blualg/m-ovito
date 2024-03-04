@@ -98,7 +98,7 @@ void FreezePropertyModifier::propertyChanged(const PropertyFieldDescriptor* fiel
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> FreezePropertyModifier::evaluateModifier(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<PipelineFlowState> FreezePropertyModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
     // Check if we already have the frozen property available.
     if(FreezePropertyModificationNode* node = dynamic_object_cast<FreezePropertyModificationNode>(request.modificationNode())) {

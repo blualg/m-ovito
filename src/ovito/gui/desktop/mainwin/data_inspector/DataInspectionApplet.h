@@ -121,7 +121,7 @@ private:
     QString _selectedDataObjectPathString;
 
     /// Pointer to the currently selected data object.
-    const DataObject* _selectedDataObject = nullptr;
+    DataOORef<const DataObject> _selectedDataObject;
 };
 
 }   // End of namespace

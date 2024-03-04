@@ -44,17 +44,17 @@ QVector<DataObjectReference> VoxelGridAffineTransformationModifierDelegate::OOMe
 /******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/
-PipelineStatus VoxelGridAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+Future<PipelineFlowState> VoxelGridAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-    // Transform the spatial domains of VoxelGrid objects.
+    AffineTransformationModifier* modifier = static_object_cast<AffineTransformationModifier>(request.modifier());
 
+    // Transform the spatial domains of VoxelGrid objects.
     for(const DataObject* obj : state.data()->objects()) {
         if(const VoxelGrid* existingObject = dynamic_object_cast<VoxelGrid>(obj)) {
             if(existingObject->domain()) {
 
                 // Determine transformation matrix.
-                AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
-                const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
+                const AffineTransformation tm = modifier->effectiveAffineTransformation(originalState);
 
                 VoxelGrid* newObject = state.makeMutable(existingObject);
                 newObject->mutableDomain()->setCellMatrix(tm * existingObject->domain()->cellMatrix());
@@ -62,7 +62,7 @@ PipelineStatus VoxelGridAffineTransformationModifierDelegate::apply(const Modifi
         }
     }
 
-    return PipelineStatus::Success;
+    return std::move(state);
 }
 
 }   // End of namespace

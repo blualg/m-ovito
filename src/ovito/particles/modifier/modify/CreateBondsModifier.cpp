@@ -376,8 +376,6 @@ void CreateBondsModifier::BondsEngine::perform()
                 bondList.push_back(bond);
         }
     });
-    if(isCanceled())
-        return;
 
     // Flatten the bonds list into a single std::vector.
     size_t totalBondCount = boost::accumulate(partialBondsLists, (size_t)0, [](size_t n, const std::vector<Bond>& bonds) { return n + bonds.size(); });

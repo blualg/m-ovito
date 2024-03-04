@@ -335,7 +335,7 @@ void SurfaceMeshBuilder::deleteIsolatedVertices()
 /******************************************************************************
 * Fairs a closed triangle mesh.
 ******************************************************************************/
-bool SurfaceMeshBuilder::smoothMesh(int numIterations, ProgressingTask& task, FloatType k_PB, FloatType lambda)
+void SurfaceMeshBuilder::smoothMesh(int numIterations, FloatType k_PB, FloatType lambda)
 {
     // This is the implementation of the mesh smoothing algorithm:
     //
@@ -350,7 +350,7 @@ bool SurfaceMeshBuilder::smoothMesh(int numIterations, ProgressingTask& task, Fl
 
         // Compute displacement for each vertex.
         std::vector<Vector3> displacements(vertexCount());
-        parallelFor(vertexCount(), [&](vertex_index vertex) {
+        parallelForCancellable(vertexCount(), 4096, [&](vertex_index vertex) {
             Vector3 d = Vector3::Zero();
 
             // Go in positive direction around vertex, facet by facet.
@@ -379,16 +379,15 @@ bool SurfaceMeshBuilder::smoothMesh(int numIterations, ProgressingTask& task, Fl
     };
 
     FloatType mu = FloatType(1) / (k_PB - FloatType(1)/lambda);
-    task.setProgressMaximum(numIterations);
 
+    this_task::beginProgressSubSteps(2 * numIterations);
     for(int iteration = 0; iteration < numIterations; iteration++) {
-        if(!task.setProgressValue(iteration))
-            return false;
         smoothMeshIteration(lambda);
+        this_task::nextProgressSubStep();
         smoothMeshIteration(mu);
+        this_task::nextProgressSubStep();
     }
-
-    return !task.isCanceled();
+    this_task::endProgressSubSteps();
 }
 
 /******************************************************************************

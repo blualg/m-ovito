@@ -59,7 +59,6 @@ PipelineEvaluationResult PipelineCache::evaluatePipeline(const PipelineEvaluatio
     OVITO_ASSERT(ExecutionContext::isMainThread());
     OVITO_ASSERT(ExecutionContext::current().isValid());
     OVITO_ASSERT(this_task::get());
-    OVITO_ASSERT(!ownerObject()->isUndoRecording());
 
     PipelineNode* pipelineNode = dynamic_object_cast<PipelineNode>(ownerObject());
 
@@ -99,6 +98,8 @@ PipelineEvaluationResult PipelineCache::evaluatePipeline(const PipelineEvaluatio
     // Check if we can serve the request immediately by returning one of the cached states.
     for(const PipelineFlowState& state : _cachedStates) {
         if(state.stateValidity().contains(request.time())) {
+//            if(pipelineNode)
+//                qDebug() << "Cache lookup:" << ownerObject() << "time=" << request.time() << "interactive=" << request.interactiveMode() << " --> from cached state (validity:" << state.stateValidity() << ")";
             startFramePrecomputation(request);
             if(pipelineNode) {
                 // Give pipeline node the opportunity to postprocess the cached state before it is returned to the caller.
@@ -112,6 +113,8 @@ PipelineEvaluationResult PipelineCache::evaluatePipeline(const PipelineEvaluatio
 
     // Check if cache contains a valid state for interactive rendering.
     if(request.interactiveMode() && _interactiveState.stateValidity().contains(request.time())) {
+//        if(pipelineNode)
+//            qDebug() << "Cache lookup:" << ownerObject() << "time=" << request.time() << "interactive=" << request.interactiveMode() << " --> from interactive cache (validity:" << _interactiveState.stateValidity() << ")";
         return PipelineEvaluationResult(_interactiveState,
             _interactiveStateIsNotPreliminaryResult // Tagging this output state as preliminary if necessary.
                 ? PipelineEvaluationResult::EvaluationType::Both
@@ -124,6 +127,8 @@ PipelineEvaluationResult PipelineCache::evaluatePipeline(const PipelineEvaluatio
             if(eval.evaluationTypes.testFlag(request.interactiveMode() ? PipelineEvaluationResult::EvaluationType::Interactive : PipelineEvaluationResult::EvaluationType::Noninteractive)) {
                 SharedFuture<PipelineFlowState> future = eval.future.lock();
                 if(future.isValid() && !future.isCanceled()) {
+//                    if(pipelineNode)
+//                        qDebug() << "Cache lookup:" << ownerObject() << "time=" << request.time() << "interactive=" << request.interactiveMode() << " --> in-flight eval (validity:" << eval.validityInterval << ")";
                     startFramePrecomputation(request);
                     return PipelineEvaluationResult(std::move(future), eval.evaluationTypes, eval.validityInterval);
                 }
@@ -135,6 +140,9 @@ PipelineEvaluationResult PipelineCache::evaluatePipeline(const PipelineEvaluatio
     _evaluationsInProgress.remove_if([](const EvaluationInProgress& eval) {
         return eval.future.expired();
     });
+
+//    if(pipelineNode)
+//        qDebug() << "Cache lookup:" << ownerObject() << "time=" << request.time() << "interactive=" << request.interactiveMode() << " --> launching new computation";
 
     // To detect unexpected calls to invalidate() and reentrant function calls.
     _preparingEvaluation = true;
@@ -165,6 +173,7 @@ PipelineEvaluationResult PipelineCache::evaluatePipelineImpl(const PipelineEvalu
     OVITO_ASSERT(pipeline != nullptr || pipelineNode != nullptr);
     OVITO_ASSERT(pipeline != nullptr || _includeVisElements == false);
 
+    UndoSuspender noUndo;
     PipelineEvaluationResult evalResult;
 
     if(!pipelineNode) {
@@ -204,7 +213,7 @@ PipelineEvaluationResult PipelineCache::evaluatePipelineImpl(const PipelineEvalu
 
 #if 0 // TODO
         if(!request.interactiveMode()) {
-            future = future.then(*ownerObject(), [this, request](const PipelineFlowState& state) {
+            future.postprocess(*ownerObject(), [this, request](const PipelineFlowState& state) {
 
                 // If requested, turn upstream pipeline errors into hard exceptions, which abort the pipeline evaluation.
                 if(request.throwOnError() && state.status().type() == PipelineStatus::Error)
@@ -285,6 +294,11 @@ PipelineEvaluationResult PipelineCache::evaluatePipelineImpl(const PipelineEvalu
 
             // Post-evaluation work for Pipeline and PipelineNode objects.
             if(state.stateValidity().contains(ExecutionContext::current().ui().datasetContainer().currentAnimationTime())) {
+
+                // Adopt the newly computed state as the current interactive cache state.
+                _interactiveState = state;
+                _interactiveStateIsNotPreliminaryResult = isNotPreliminaryResult;
+
                 if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(ownerObject())) {
                     // Let the pipeline update its list of vis elements.
                     if(!_includeVisElements && isNotPreliminaryResult) {
@@ -293,13 +307,10 @@ PipelineEvaluationResult PipelineCache::evaluatePipelineImpl(const PipelineEvalu
                     }
                 }
                 else {
-                    // Adopt the newly computed state as the current interactive cache state.
-                    setInteractiveState(state, isNotPreliminaryResult);
-
-                    // Inform downstream pipeline that a new interactive state has been generated.
+                    // Inform downstream pipeline that a new new state has been generated.
                     PipelineNode* pipelineNode = static_object_cast<PipelineNode>(ownerObject());
-                    if(pipelineNode->performPreliminaryUpdateAfterEvaluation()) {
-                        pipelineNode->notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
+                    if(isNotPreliminaryResult && pipelineNode->shouldRefreshViewportsAfterEvaluation()) {
+                        pipelineNode->notifyDependents(ReferenceEvent::InteractiveStateAvailable);
                     }
                 }
             }
@@ -340,18 +351,25 @@ void PipelineCache::insertState(const PipelineFlowState& state)
 }
 
 /******************************************************************************
-* Keeps a copy of the pipeline state for interactive rendering.
+* Invalidates the cached results from an interactive pipeline evaluation.
 ******************************************************************************/
-void PipelineCache::setInteractiveState(const PipelineFlowState& state, bool isNotPreliminaryResult)
+void PipelineCache::invalidateInteractiveState()
 {
-    _interactiveState = PipelineFlowState(state.data(), state.status(), TimeInterval::infinite());
-    _interactiveStateIsNotPreliminaryResult = isNotPreliminaryResult;
+    OVITO_ASSERT(ExecutionContext::isMainThread());
+
+    _interactiveState.setStateValidity(TimeInterval::empty());
+
+    // Invalidate in-flight interactive evaluations.
+    for(EvaluationInProgress& evaluation : _evaluationsInProgress) {
+        if(evaluation.evaluationTypes == PipelineEvaluationResult::EvaluationType::Interactive)
+            evaluation.validityInterval = TimeInterval::empty();
+    }
 }
 
 /******************************************************************************
 * Marks the contents of the cache as outdated and throws away data that is no longer needed.
 ******************************************************************************/
-void PipelineCache::invalidate(TimeInterval keepInterval, bool resetSynchronousCache)
+void PipelineCache::invalidate(TimeInterval keepInterval)
 {
     OVITO_ASSERT(ExecutionContext::isMainThread());
 
@@ -360,11 +378,14 @@ void PipelineCache::invalidate(TimeInterval keepInterval, bool resetSynchronousC
         return;
     }
 
+    if(keepInterval.isInfinite())
+        return;
+
     // Interrupt frame precomputation, which might be in progress.
     _precomputeFramesOperation.reset();
     _allFramesPrecomputed = false;
 
-    // Reduce the validity of ongoing evaluations.
+    // Reduce the validity of in-flight evaluations.
     for(EvaluationInProgress& evaluation : _evaluationsInProgress) {
         evaluation.validityInterval.intersect(keepInterval);
     }
@@ -377,13 +398,43 @@ void PipelineCache::invalidate(TimeInterval keepInterval, bool resetSynchronousC
         }
     }
 
-    // Reduce the validity interval of the synchronous state cache.
+    // Reduce the validity interval of the interactive state cache.
     _interactiveState.intersectStateValidity(keepInterval);
-    if(resetSynchronousCache && _interactiveState.stateValidity().isEmpty())
-        _interactiveState.reset();
+}
 
-    if(resetSynchronousCache)
-        _cachedTransformedDataObjects.clear();
+/******************************************************************************
+* Throws away all precomputed data to reduce memory footprint.
+******************************************************************************/
+void PipelineCache::reset()
+{
+    OVITO_ASSERT(ExecutionContext::isMainThread());
+
+    if(_preparingEvaluation) {
+        qWarning() << "Warning: Resetting the pipeline cache while preparing the evaluation of the pipeline is not allowed. This error may be the result of an invalid user Python script invoking a function that is not permitted in this context.";
+        OVITO_ASSERT(false);
+        return;
+    }
+
+    // Interrupt frame precomputation, which might be in progress.
+    _precomputeFramesOperation.reset();
+    _allFramesPrecomputed = false;
+
+    // Reduce the validity of in-flight evaluations.
+    for(EvaluationInProgress& evaluation : _evaluationsInProgress) {
+        evaluation.validityInterval = TimeInterval::empty();
+    }
+
+    // Throw away cached states.
+    _cachedStates.clear();
+
+    // Throw away interactive state cache.
+    _interactiveState.reset();
+
+    // Throw away transformed visual data objects.
+    _cachedTransformedDataObjects.clear();
+
+    // Notify PropertiesEditor about a change in the pipeline stage's output.
+    ownerObject()->notifyDependents(ReferenceEvent::PipelineCacheUpdated);
 }
 
 /******************************************************************************
@@ -425,8 +476,11 @@ PipelineFlowState PipelineCache::getAt(AnimationTime time, bool interactiveMode)
         if(state.stateValidity().contains(time))
             return state;
     }
-    if(interactiveMode && _interactiveState.stateValidity().contains(time))
+    if(interactiveMode) {
+        // Note: Returning this state even if the requested time is not contained in its validity interval.
+        // In interactive mode we always return "something" - even if it is not the most accurate state.
         return _interactiveState;
+    }
     return {};
 }
 

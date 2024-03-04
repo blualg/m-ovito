@@ -113,7 +113,7 @@ void SmoothTrajectoryModifier::restrictInputValidityInterval(TimeInterval& iv) c
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> SmoothTrajectoryModifier::evaluateModifier(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<PipelineFlowState> SmoothTrajectoryModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
     // Determine the current frame, preferably from the attribute stored with the pipeline flow state.
     // If the source frame attribute is not present, fall back to inferring it from the current animation time.

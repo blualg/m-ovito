@@ -63,8 +63,11 @@ public:
         /// Sent by the Viewport to its associated UI windows to request a refresh.
         ViewportWindowUpdateRequested = RefTarget::NEXT_AVAILABLE_EVENT_ID,
 
-        /// Sent by the Viewport to its associated UI windows to request handling of pending refreshs.
+        /// Sent by the Viewport to its associated UI windows to resume handling of pending refreshs again.
         ViewportWindowResumeUpdatesRequested,
+
+        /// Sent by the Viewport to its associated UI windows to request handling of pending refreshs now.
+        ViewportWindowHandleUpdatesRequested,
 
         /// Sent by the Viewport to its associated UI window(s) to request an adjustment of the view such that all scene contents become fully visible in the window.
         ZoomToSceneExtentsRequested,
@@ -176,6 +179,9 @@ public:
     ///
     /// To update all viewports at once, use ViewportConfiguration::updateViewports().
     void updateViewport();
+
+    /// If an update request is pending for this viewport, immediately processes it and refresh the viewport.
+    void processUpdateRequest();
 
     /// \brief Zooms to the extents of the given bounding box.
     void zoomToBox(const Box3& box, FloatType viewportAspectRatio);

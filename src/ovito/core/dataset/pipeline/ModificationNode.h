@@ -120,25 +120,19 @@ public:
     /// Asks this object to delete itself.
     virtual void requestObjectDeletion() override;
 
-    /// Returns a compute engine containing the results of a fully completed algorithm, which may be outdated.
-    const ModifierEnginePtr& completedEngine() const { return _completedEngine; }
-
-    /// Stores the compute engine containing the results of a fully completed algorithm.
-    void setCompletedEngine(ModifierEnginePtr eng) { _completedEngine = std::move(eng); }
-
 protected:
 
-    /// \brief Asks the object for the result of the data pipeline.
+    /// Asks the object for the result of the data pipeline.
     virtual PipelineEvaluationResult evaluateInternal(const PipelineEvaluationRequest& request) override;
 
-    /// \brief Decides whether a preliminary viewport update is performed after this pipeline object has been
-    ///        evaluated but before the rest of the pipeline is complete.
-    virtual bool performPreliminaryUpdateAfterEvaluation() override;
+    /// Decides whether a preliminary viewport update is performed after this pipeline object has been
+    /// evaluated but before the rest of the pipeline is complete.
+    virtual bool shouldRefreshViewportsAfterEvaluation() override;
 
     /// Sends an event to all dependents of this RefTarget.
     virtual void notifyDependentsImpl(const ReferenceEvent& event) noexcept override;
 
-    /// \brief Is called when a RefTarget referenced by this object generated an event.
+    /// Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
     /// Is called when the value of a reference field of this object changes.
@@ -154,9 +148,6 @@ private:
 
     /// The logical group this modification node belongs to (only used in the GUI).
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ModifierGroup>, modifierGroup, setModifierGroup, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_SUB_ANIM);
-
-    /// A compute engine containing the results of a fully completed algorithm, which may be outdated.
-    ModifierEnginePtr _completedEngine;
 };
 
 /// This macro registers some ModificationNode-derived class as the pipeline node type of some Modifier-derived class.

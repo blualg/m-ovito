@@ -102,7 +102,11 @@ void DataObject::loadFromStream(ObjectLoadStream& stream)
 bool DataObject::isSafeToModify() const
 {
     OVITO_CHECK_OBJECT_POINTER(this);
-    OVITO_ASSERT(_dataReferenceCount.load() <= weak_from_this().use_count());
+#ifdef OVITO_DEBUG
+    auto use_count = weak_from_this().use_count();
+    auto ref_count = _dataReferenceCount.load();
+    OVITO_ASSERT(ref_count <= use_count);
+#endif
 
     if(_dataReferenceCount.load() <= 1) {
         bool isExclusivelyOwned = true;
@@ -271,7 +275,7 @@ void DataObject::updateEditableProxies(PipelineFlowState& state, ConstDataObject
                 }
             }
             else {
-                // Note: Making a copy of the vector, because 'self' may get replaced or deleted at any time!
+                // Note: 'self' may get replaced or deleted at any time!
                 int count = self->getVectorReferenceFieldSize(field);
                 for(int i = 0; i < count; i++) {
                     if(const DataObject* subObject = static_object_cast<DataObject>(self->getVectorReferenceFieldTarget(field, i))) {

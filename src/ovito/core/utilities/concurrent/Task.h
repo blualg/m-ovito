@@ -199,6 +199,12 @@ public:
     /// \brief Returns the internal exception store, which contains an exception object in case the task has failed.
     const std::exception_ptr& exceptionStore() const noexcept { return _exceptionStore; }
 
+    /// Returns the priority of this task.
+    int priority() const { return _priority; }
+
+    /// Sets the priority of this task.
+    void setPriority(int priority) { _priority = priority; }
+
 protected:
 
     /// Assigns a tuple of values to the internal results storage of the task.
@@ -309,6 +315,9 @@ protected:
 
     /// Used for managing concurrent access to this task.
     mutable QMutex _mutex;
+
+    /// The priority of this task.
+    int _priority = 0;
 
     /// List of continuation functions that will be called when this task enters the 'finished' or the 'canceled' state.
     QVarLengthArray<fu2::unique_function<void() noexcept>, 2> _continuations;

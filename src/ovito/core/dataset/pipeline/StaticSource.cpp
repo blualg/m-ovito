@@ -47,16 +47,6 @@ PipelineEvaluationResult StaticSource::evaluateInternal(const PipelineEvaluation
     return PipelineFlowState(dataCollection(), PipelineStatus::Success);
 }
 
-#if 0 // TODO
-/******************************************************************************
-* Asks the object for the result of the data pipeline.
-******************************************************************************/
-PipelineFlowState StaticSource::evaluateInternalSynchronous(const PipelineEvaluationRequest& request)
-{
-    return PipelineFlowState(dataCollection(), PipelineStatus::Success);
-}
-#endif
-
 /******************************************************************************
 * Handles reference events sent by reference targets of this object.
 ******************************************************************************/
@@ -64,8 +54,8 @@ bool StaticSource::referenceEvent(RefTarget* source, const ReferenceEvent& event
 {
     if(event.type() == ReferenceEvent::TargetChanged && source == dataCollection()) {
         if(!event.sender()->isBeingLoaded()) {
-            // Inform the pipeline that we have a new preliminary input state.
-            notifyDependents(ReferenceEvent::PreliminaryStateAvailable);
+            // Inform the pipeline that we have a new input state.
+            notifyDependents(ReferenceEvent::InteractiveStateAvailable);
         }
     }
 

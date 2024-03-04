@@ -21,8 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/grid/Grid.h>
-#include <ovito/stdobj/properties/PropertyExpressionEvaluator.h>
-#include <ovito/core/dataset/DataSet.h>
 #include "VoxelGridComputePropertyModifierDelegate.h"
 
 namespace Ovito {

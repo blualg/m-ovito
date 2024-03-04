@@ -224,6 +224,7 @@ bool PropertyExpressionEvaluator::isVariableUsed(const mu::char_type* varName)
     return false;
 }
 
+#if 0 // TODO
 /******************************************************************************
 * Initializes the parser object and evaluates the expressions for every data element
 ******************************************************************************/
@@ -269,6 +270,7 @@ void PropertyExpressionEvaluator::evaluate(const std::function<void(size_t,size_
         });
     }
 }
+#endif
 
 /******************************************************************************
 * Initializes the parser objects of this thread.

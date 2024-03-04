@@ -128,7 +128,7 @@ void ScatterPlotModifier::propertyChanged(const PropertyFieldDescriptor* field)
 /******************************************************************************
 * Modifies the input data synchronously.
 ******************************************************************************/
-void ScatterPlotModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+Future<PipelineFlowState> ScatterPlotModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
     if(!subject())
         throw Exception(tr("No data element type set."));
@@ -148,7 +148,7 @@ void ScatterPlotModifier::evaluateModifierSynchronous(const ModifierEvaluationRe
             .arg(subject().dataClass()->pythonName()).arg(yAxisProperty().containerClass()->propertyClassDisplayName()));
 
     // Look up the property container object.
-    const PropertyContainer* container = state.expectLeafObject(subject());
+    const PropertyContainer* container = input.expectLeafObject(subject());
     container->verifyIntegrity();
 
     // Get the input properties.
@@ -178,12 +178,14 @@ void ScatterPlotModifier::evaluateModifierSynchronous(const ModifierEvaluationRe
     if(selectionYAxisRangeStart > selectionYAxisRangeEnd)
         std::swap(selectionYAxisRangeStart, selectionYAxisRangeEnd);
 
+    PipelineFlowState output = input;
+
     // Create output selection.
     BufferWriteAccess<SelectionIntType, access_mode::discard_write> outputSelection;
     size_t numSelected = 0;
     if((selectXAxisInRange() || selectYAxisInRange()) && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
         // First make sure we can safely modify the property container.
-        PropertyContainer* mutableContainer = state.expectMutableLeafObject(subject());
+        PropertyContainer* mutableContainer = output.expectMutableLeafObject(subject());
         // Add the selection property to the output container.
         outputSelection = mutableContainer->createProperty(Property::GenericSelectionProperty);
         boost::fill(outputSelection, 1);
@@ -229,10 +231,10 @@ void ScatterPlotModifier::evaluateModifierSynchronous(const ModifierEvaluationRe
     out_y_access.reset();
 
     // Output a data table object with the scatter points.
-    DataTable* table = state.createObject<DataTable>(QStringLiteral("scatter"), request.modificationNode(),
+    DataTable* table = output.createObject<DataTable>(QStringLiteral("scatter"), request.modificationNode(),
         DataTable::Scatter, tr("%1 vs. %2").arg(yAxisProperty().nameWithComponent()).arg(xAxisProperty().nameWithComponent()),
         std::move(out_y), std::move(out_x));
-    OVITO_ASSERT(table == state.getObjectBy<DataTable>(request.modificationNode(), QStringLiteral("scatter")));
+    OVITO_ASSERT(table == output.getObjectBy<DataTable>(request.modificationNode(), QStringLiteral("scatter")));
 
     QString statusMessage;
     if(outputSelection) {
@@ -241,7 +243,9 @@ void ScatterPlotModifier::evaluateModifierSynchronous(const ModifierEvaluationRe
                 .arg((FloatType)numSelected * 100 / std::max((size_t)1,outputSelection.size()), 0, 'f', 1);
     }
 
-    state.setStatus(PipelineStatus(std::move(statusMessage)));
+    output.setStatus(PipelineStatus(std::move(statusMessage)));
+
+    return output;
 }
 
 }   // End of namespace
