@@ -68,13 +68,15 @@ void UndoableTransaction::commit()
 {
     OVITO_ASSERT(_operation);
 
-    if(CompoundOperation* parent = CompoundOperation::current()) {
-        parent->addOperation(std::move(_operation));
-    }
-    else {
-        if(UndoStack* undoStack = userInterface().undoStack()) {
-            OVITO_ASSERT(QThread::currentThread() == undoStack->thread());
-            undoStack->push(std::move(_operation));
+    if(_operation->isSignificant()) {
+        if(CompoundOperation* parent = CompoundOperation::current()) {
+            parent->addOperation(std::move(_operation));
+        }
+        else {
+            if(UndoStack* undoStack = userInterface().undoStack()) {
+                OVITO_ASSERT(QThread::currentThread() == undoStack->thread());
+                undoStack->push(std::move(_operation));
+            }
         }
     }
     _operation.reset();
