@@ -35,6 +35,15 @@ The local field values at each isosurface output vertex are computed from the da
 
 The resulting isosurface can optionally be smoothed using a fairing algorithm to even out surface steps resulting from the discrete nature of the voxel grid. The :guilabel:`Smoothing level` parameter controls the number of iterations of the smoothing algorithm to perform. This post-processing procedure slightly displaces the surface mesh vertices to reduce steps and roughness of the isosurface. Mesh smoothing is performed *after* interpolated field values have already been transferred to the surface. Therefore, the surface values reflect the original vertex positions before the smoothing procedure.
 
+**Surface smoothing**
+
+The resulting isosurface can optionally be smoothed using a fairing algorithm to even out surface steps resulting from the discrete nature of the voxel grid. The :guilabel:`Smoothing level` parameter controls the number of iterations of the smoothing algorithm to perform. This post-processing procedure slightly displaces the surface mesh vertices to reduce steps and roughness of the isosurface. Mesh smoothing is performed *after* interpolated field values have already been transferred to the surface. Therefore, the surface values reflect the original vertex positions before the smoothing procedure.
+
+**Identify volumetric regions** |ovito-pro|
+
+This option lets the modifier identify individual volumetric regions (below or above the iso-level) and compute their volumes and surface areas.
+See :ref:`particles.modifiers.construct_surface_mesh.regions` for more details.
+
 .. seealso::
 
   :py:class:`ovito.modifiers.CreateIsosurfaceModifier` (Python API)
