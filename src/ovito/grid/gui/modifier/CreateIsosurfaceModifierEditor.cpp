@@ -24,11 +24,13 @@
 #include <ovito/stdobj/gui/widgets/PropertyContainerParameterUI.h>
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
 #include <ovito/grid/objects/VoxelGrid.h>
+#include <ovito/gui/desktop/properties/BooleanGroupBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
+#include <ovito/gui/desktop/properties/OpenDataInspectorButton.h>
 #include <ovito/grid/modifier/CreateIsosurfaceModifier.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "CreateIsosurfaceModifierEditor.h"
@@ -93,6 +95,33 @@ void CreateIsosurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
     // Transfer field values.
     BooleanParameterUI* transferFieldValuesUI = new BooleanParameterUI(this, PROPERTY_FIELD(CreateIsosurfaceModifier::transferFieldValues));
     layout2->addWidget(transferFieldValuesUI->checkBox(), row++, 1, 1, 1);
+
+    BooleanGroupBoxParameterUI* regionsSettingsUI =
+        new BooleanGroupBoxParameterUI(this, PROPERTY_FIELD(CreateIsosurfaceModifier::identifyRegions));
+#ifdef OVITO_BUILD_PROFESSIONAL
+    regionsSettingsUI->groupBox()->setTitle(tr("Identify volumetric regions"));
+#else
+    regionsSettingsUI->groupBox()->setTitle(tr("Identify volumetric regions (requires OVITO Pro)"));
+    regionsSettingsUI->setEnabled(false);
+#endif
+    layout2->addWidget(regionsSettingsUI->groupBox(), row++, 0, 1, 4);
+
+    QGridLayout* sublayout = new QGridLayout(regionsSettingsUI->childContainer());
+    sublayout->setContentsMargins(4, 4, 4, 4);
+    sublayout->setSpacing(6);
+    sublayout->setColumnStretch(1, 1);
+
+    OpenDataInspectorButton* ShowRegionsListBtn =
+        new OpenDataInspectorButton(this, tr("List of identified regions"), QStringLiteral("surface"),
+                                    2);  // Note: Mode hint "2" is used to switch to the surface mesh regions view.
+    ShowRegionsListBtn->setEnabled(false);
+    sublayout->addWidget(ShowRegionsListBtn, 0, 1, 1, 2);
+#ifdef OVITO_BUILD_PROFESSIONAL
+    connect(this, &PropertiesEditor::contentsChanged, this, [this, ShowRegionsListBtn]() {
+        CreateIsosurfaceModifier* modifier = static_object_cast<CreateIsosurfaceModifier>(editObject());
+        ShowRegionsListBtn->setEnabled(modifier && modifier->identifyRegions());
+    });
+#endif
 
     _plotWidget = new DataTablePlotWidget();
     _plotWidget->setMinimumHeight(200);
