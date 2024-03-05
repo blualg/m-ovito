@@ -323,8 +323,12 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
         if(!manifoldConstructor.formEmptyRegions(*this))
             return;
 
-        _filledRegionCount = manifoldConstructor.filledRegionCount();
-        _emptyRegionCount = manifoldConstructor.emptyRegionCount();
+        // Reference to filledRegionCount for convenience.
+        SurfaceMesh::size_type& filledRegionCount = _aggregateVolumes.filledRegionCount;
+        filledRegionCount = manifoldConstructor.filledRegionCount();
+        // Reference to emptyRegionCount for convenience.
+        SurfaceMesh::size_type& emptyRegionCount = _aggregateVolumes.emptyRegionCount;
+        emptyRegionCount = manifoldConstructor.emptyRegionCount();
 
         // Transfer the region ID information to the output particles.
         if(BufferWriteAccess<int32_t, access_mode::discard_read_write> regionIds = particleRegionIds()) {
@@ -340,7 +344,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
                     continue;
                 queryHint = *cell;
                 if(int regionId = tessellation.getUserField(*cell); regionId >= 0) {
-                    OVITO_ASSERT(regionId >= 0 && regionId <= _filledRegionCount + _emptyRegionCount);
+                    OVITO_ASSERT(regionId >= 0 && regionId <= filledRegionCount + emptyRegionCount);
                     for(int v = 0; v < 4; v++) {
                         size_t particleIndex = tessellation.vertexIndex(tessellation.cellVertex(*cell, v));
                         OVITO_ASSERT(particleIndex < regionIds.size() || particleIndex == std::numeric_limits<size_t>::max());
@@ -350,8 +354,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
                                 if(!setProgressValueIntermittent(++numProcessedParticles))
                                     return;
                             }
-                            if(regionId < _filledRegionCount || regionIds[particleIndex] == -1)
-                                regionIds[particleIndex] = regionId;
+                            if(regionId < filledRegionCount || regionIds[particleIndex] == -1) regionIds[particleIndex] = regionId;
                         }
                     }
                 }
@@ -370,7 +373,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
                     OVITO_ASSERT(cell >= 0 && cell < tessellation.numberOfTetrahedra());
 
                     if(int regionId = tessellation.getUserField(cell); regionId >= 0) {
-                        OVITO_ASSERT(regionId >= 0 && regionId < _filledRegionCount + _emptyRegionCount);
+                        OVITO_ASSERT(regionId >= 0 && regionId < filledRegionCount + emptyRegionCount);
                         *particleRegionId = regionId;
                     }
                     queryHint = cell;
@@ -381,8 +384,8 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
         // Output "Filled" region property.
         BufferWriteAccess<SelectionIntType, access_mode::discard_write> filledProperty(meshBuilder.createRegionProperty(DataBuffer::Uninitialized, SurfaceMeshRegions::IsFilledProperty));
-        std::fill(filledProperty.begin(), filledProperty.begin() + _filledRegionCount, 1);
-        std::fill(filledProperty.begin() + _filledRegionCount, filledProperty.end(), 0);
+        std::fill(filledProperty.begin(), filledProperty.begin() + filledRegionCount, 1);
+        std::fill(filledProperty.begin() + filledRegionCount, filledProperty.end(), 0);
 
         endProgressSubSteps();
     }
@@ -421,14 +424,12 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
     nextProgressSubStep();
 
-    if(_identifyRegions) {
-        if(!ConstructSurfaceEngineBase::computeSurfaceAreaWithRegions(meshBuilder))
-            return;
-        ConstructSurfaceEngineBase::computeAggregateVolumes(meshBuilder);
+    if(identifyRegions()) {
+        _totalSurfaceArea = meshBuilder.computeSurfaceAreaWithRegions();
+        _aggregateVolumes = meshBuilder.computeAggregateVolumes();
     }
     else {
-        if(!ConstructSurfaceEngineBase::computeSurfaceArea(meshBuilder))
-            return;
+        _totalSurfaceArea = meshBuilder.computeTotalSurfaceArea();
     }
 
     if(isCanceled())
@@ -724,11 +725,11 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     nextProgressSubStep();
 
     if(_identifyRegions) {
-        computeSurfaceAreaWithRegions(meshBuilder);
-        computeAggregateVolumes(meshBuilder);
+        _totalSurfaceArea = meshBuilder.computeSurfaceAreaWithRegions();
+        _aggregateVolumes = meshBuilder.computeAggregateVolumes();
     }
     else {
-        computeSurfaceArea(meshBuilder);
+        _totalSurfaceArea = meshBuilder.computeTotalSurfaceArea();
     }
     if(isCanceled())
         return;
@@ -744,87 +745,6 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     releaseWorkingData();
     particleRadii.reset();
     _particleRadii.reset();
-}
-
-/******************************************************************************
- * Computes the surface area per mesh region and the total surface area by summing up the triangle face areas.
- ******************************************************************************/
-bool ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeSurfaceAreaWithRegions(SurfaceMeshBuilder& mesh)
-{
-    BufferWriteAccess<FloatType, access_mode::read_write> surfaceAreaProperty{mesh.createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::SurfaceAreaProperty)};
-    BufferReadAccess<SelectionIntType> isFilled{mesh.regionProperty(SurfaceMeshRegions::IsFilledProperty)};
-    BufferReadAccess<Point3> vertexPositions{mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty)};
-    BufferReadAccess<SurfaceMesh::region_index> faceRegions{mesh.expectFaceProperty(SurfaceMeshFaces::RegionProperty)};
-
-    setProgressMaximum(mesh.faceCount());
-    _totalSurfaceArea = 0;
-    for(SurfaceMesh::edge_index edge : mesh.firstFaceEdges()) {
-        if(!incrementProgressValue()) return false;
-        const Vector3& e1 = mesh.edgeVector(edge, vertexPositions);
-        const Vector3& e2 = mesh.edgeVector(mesh.nextFaceEdge(edge), vertexPositions);
-        FloatType faceArea = 0.5 * e1.cross(e2).length();
-        SurfaceMesh::region_index region = faceRegions[mesh.adjacentFace(edge)];
-        surfaceAreaProperty[region] += faceArea;
-
-        // Only count surface area of outer surface, which is bordering an empty region.
-        // Don't count area of internal interfaces, which have filled regions on either side.
-        if(isFilled[region] == 0) {
-            _totalSurfaceArea += faceArea;
-        };
-    }
-    return true;
-}
-
-/******************************************************************************
- * Computes the total surface of the mesh by summing up the triangle face areas.
- ******************************************************************************/
-bool ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeSurfaceArea(const SurfaceMeshBuilder& mesh)
-{
-    BufferReadAccess<Point3> vertexPositions{mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty)};
-
-    setProgressMaximum(mesh.faceCount());
-    _totalSurfaceArea = 0;
-    for(SurfaceMesh::edge_index edge : mesh.firstFaceEdges()) {
-        if(!incrementProgressValue()) return false;
-        const Vector3& e1 = mesh.edgeVector(edge, vertexPositions);
-        const Vector3& e2 = mesh.edgeVector(mesh.nextFaceEdge(edge), vertexPositions);
-        FloatType faceArea = e1.cross(e2).length() / 2;
-        _totalSurfaceArea += faceArea;
-    }
-    return true;
-}
-
-/******************************************************************************
- * Computes the void, exterior, and total volumes from the per region volume properties.
- ******************************************************************************/
-void ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeAggregateVolumes(const SurfaceMeshBuilder& mesh)
-{
-    _filledRegionCount = 0;
-    _totalFilledVolume = 0;
-    _totalVoidVolume = 0;
-    _voidRegionCount = 0;
-    _emptyRegionCount = 0;
-
-    BufferReadAccess<SelectionIntType> isFilled{mesh.expectRegionProperty(SurfaceMeshRegions::IsFilledProperty)};
-    BufferReadAccess<SelectionIntType> isExterior{mesh.expectRegionProperty(SurfaceMeshRegions::IsExteriorProperty)};
-    BufferReadAccess<FloatType> regionVolumes{mesh.expectRegionProperty(SurfaceMeshRegions::VolumeProperty)};
-
-    for(SurfaceMesh::region_index region{0}; region < mesh.regionCount(); region++) {
-        FloatType volume = regionVolumes[region];
-        if(isFilled[region]) {
-            _filledRegionCount += 1;
-            _totalFilledVolume += volume;
-        }
-        else {
-            _totalEmptyVolume += volume;
-            _emptyRegionCount += 1;
-            if(!isExterior[region]) {
-                _totalVoidVolume += volume;
-                _voidRegionCount++;
-            }
-        };
-    }
-    _totalCellVolume = _totalFilledVolume + _totalEmptyVolume;
 }
 
 /******************************************************************************
@@ -869,27 +789,45 @@ void ConstructSurfaceModifier::ConstructSurfaceEngineBase::applyResults(const Mo
     state.addAttribute(QStringLiteral("ConstructSurfaceMesh.surface_area"), QVariant::fromValue(surfaceArea()), request.modificationNode());
 
     if(_identifyRegions) {
+        const FloatType& totalCellVolume = _aggregateVolumes.totalCellVolume;
+        const FloatType& totalFilledVolume = _aggregateVolumes.totalFilledVolume;
+        const FloatType& totalEmptyVolume = _aggregateVolumes.totalEmptyVolume;
+        const FloatType& totalVoidVolume = _aggregateVolumes.totalVoidVolume;
+        const SurfaceMesh::size_type& filledRegionCount = _aggregateVolumes.filledRegionCount;
+        const SurfaceMesh::size_type& emptyRegionCount = _aggregateVolumes.emptyRegionCount;
+        const SurfaceMesh::size_type& voidRegionCount = _aggregateVolumes.voidRegionCount;
 
         // Output more global attributes.
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.cell_volume"), QVariant::fromValue(_totalCellVolume), request.modificationNode());
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.specific_surface_area"), QVariant::fromValue(_totalCellVolume ? (surfaceArea() / _totalCellVolume) : 0), request.modificationNode());
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_volume"), QVariant::fromValue(_totalFilledVolume), request.modificationNode());
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_fraction"), QVariant::fromValue(_totalCellVolume ? (_totalFilledVolume / _totalCellVolume) : 0), request.modificationNode());
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_region_count"), QVariant::fromValue(_filledRegionCount), request.modificationNode());
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_volume"), QVariant::fromValue(_totalEmptyVolume), request.modificationNode());
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_fraction"), QVariant::fromValue(_totalCellVolume ? (_totalEmptyVolume / _totalCellVolume) : 0), request.modificationNode());
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_region_count"), QVariant::fromValue(_emptyRegionCount), request.modificationNode());
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.void_volume"), QVariant::fromValue(_totalVoidVolume), request.modificationNode());
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.void_region_count"), QVariant::fromValue(_voidRegionCount), request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.cell_volume"), QVariant::fromValue(totalCellVolume),
+                           request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.specific_surface_area"),
+                           QVariant::fromValue(totalCellVolume ? (surfaceArea() / totalCellVolume) : 0), request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_volume"), QVariant::fromValue(totalFilledVolume),
+                           request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_fraction"),
+                           QVariant::fromValue(totalCellVolume ? (totalFilledVolume / totalCellVolume) : 0), request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_region_count"), QVariant::fromValue(filledRegionCount),
+                           request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_volume"), QVariant::fromValue(totalEmptyVolume),
+                           request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_fraction"),
+                           QVariant::fromValue(totalCellVolume ? (totalEmptyVolume / totalCellVolume) : 0), request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_region_count"), QVariant::fromValue(emptyRegionCount),
+                           request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.void_volume"), QVariant::fromValue(totalVoidVolume),
+                           request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.void_region_count"), QVariant::fromValue(voidRegionCount),
+                           request.modificationNode());
 
-        QString statusString = tr("Surface area: %1\n# filled regions (volume): %2 (%3)\n# empty regions (volume): %4 (%5)\n# void regions (volume): %6 (%7)")
+        QString statusString =
+            tr("Surface area: %1\n# filled regions (volume): %2 (%3)\n# empty regions (volume): %4 (%5)\n# void regions (volume): %6 (%7)")
                 .arg(surfaceArea())
-                .arg(_filledRegionCount)
-                .arg(_totalFilledVolume)
-                .arg(_emptyRegionCount)
-                .arg(_totalEmptyVolume)
-                .arg(_voidRegionCount)
-                .arg(_totalVoidVolume);
+                .arg(filledRegionCount)
+                .arg(totalFilledVolume)
+                .arg(emptyRegionCount)
+                .arg(totalEmptyVolume)
+                .arg(voidRegionCount)
+                .arg(totalVoidVolume);
 
         state.setStatus(PipelineStatus(PipelineStatus::Success, std::move(statusString)));
     }
