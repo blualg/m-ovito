@@ -112,7 +112,7 @@ void CreateIsosurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
     sublayout->setColumnStretch(1, 1);
 
     OpenDataInspectorButton* ShowRegionsListBtn =
-        new OpenDataInspectorButton(this, tr("List of identified regions"), QStringLiteral("surface"),
+        new OpenDataInspectorButton(this, tr("List of identified regions"), QStringLiteral("isosurface"),
                                     2);  // Note: Mode hint "2" is used to switch to the surface mesh regions view.
     ShowRegionsListBtn->setEnabled(false);
     sublayout->addWidget(ShowRegionsListBtn, 0, 1, 1, 2);

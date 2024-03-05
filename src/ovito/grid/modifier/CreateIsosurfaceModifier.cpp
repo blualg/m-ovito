@@ -39,11 +39,13 @@ DEFINE_PROPERTY_FIELD(CreateIsosurfaceModifier, subject);
 DEFINE_PROPERTY_FIELD(CreateIsosurfaceModifier, sourceProperty);
 DEFINE_PROPERTY_FIELD(CreateIsosurfaceModifier, transferFieldValues);
 DEFINE_PROPERTY_FIELD(CreateIsosurfaceModifier, smoothingLevel);
+DEFINE_PROPERTY_FIELD(CreateIsosurfaceModifier, identifyRegions);
 DEFINE_REFERENCE_FIELD(CreateIsosurfaceModifier, isolevelController);
 DEFINE_REFERENCE_FIELD(CreateIsosurfaceModifier, surfaceMeshVis);
 SET_PROPERTY_FIELD_LABEL(CreateIsosurfaceModifier, sourceProperty, "Source property");
 SET_PROPERTY_FIELD_LABEL(CreateIsosurfaceModifier, isolevelController, "Isolevel");
 SET_PROPERTY_FIELD_LABEL(CreateIsosurfaceModifier, transferFieldValues, "Transfer field values to surface");
+SET_PROPERTY_FIELD_LABEL(CreateIsosurfaceModifier, identifyRegions, "Identify volumetric regions");
 SET_PROPERTY_FIELD_LABEL(CreateIsosurfaceModifier, smoothingLevel, "Smoothing level");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CreateIsosurfaceModifier, smoothingLevel, IntegerParameterUnit, 0);
 
@@ -200,8 +202,8 @@ Future<AsynchronousModifier::EnginePtr> CreateIsosurfaceModifier::createEngine(c
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     return std::make_shared<ComputeIsosurfaceEngine>(request, validityInterval, voxelGrid->shape(), voxelGrid->gridType(), property,
-                                                     sourceProperty().vectorComponent(), std::move(mesh), isolevel, smoothingLevel(),
-                                                     std::move(auxiliaryProperties), std::move(histogram));
+                                                     sourceProperty().vectorComponent(), std::move(mesh), isolevel, identifyRegions(),
+                                                     smoothingLevel(), std::move(auxiliaryProperties), std::move(histogram));
 }
 
 /******************************************************************************
@@ -249,6 +251,9 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
     // Prepare the output mesh structure.
     SurfaceMeshBuilder mesh(_mesh);
 
+    // Request identification of regions in Marching Cubes algorithm.
+    if(identifyRegions()) mesh.createFaceProperty(DataBuffer::Uninitialized, SurfaceMeshFaces::RegionProperty);
+
     // Invoke marching cubes algorithm.
     MarchingCubes mc(mesh, _gridShape[0], _gridShape[1], _gridShape[2], false, std::move(getFieldValue));
     if(!mc.generateIsosurface(_isolevel, *this))
@@ -274,9 +279,16 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
         AffineTransformation::translation(Vector3(_gridType == VoxelGrid::GridType::PointData ? 0.0 : 0.5));
     mesh.transformVertices(tm);
 
+    // Map mesh region volumes from orthogonal grid space to world space.
+    FloatType tmDeterminant = tm.determinant();
+    BufferWriteAccess<FloatType, access_mode::read_write> regionVolumes = mesh.mutableRegionProperty(SurfaceMeshRegions::VolumeProperty);
+    for(SurfaceMesh::region_index region : mesh.regionsRange()) {
+        regionVolumes[region] *= tmDeterminant;
+    }
+    regionVolumes.reset();
+
     // Flip surface orientation if cell matrix is a mirror transformation.
-    if(tm.determinant() < 0)
-        mesh.flipFaces();
+    if(tmDeterminant < 0) mesh.flipFaces();
     if(isCanceled())
         return;
 
@@ -286,6 +298,14 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
         return;
     if(!mesh.smoothMesh(_smoothingLevel, *this))
         return;
+
+    if(identifyRegions()) {
+        _totalSurfaceArea = mesh.computeSurfaceAreaWithRegions();
+        _aggregateVolumes = mesh.computeAggregateVolumes();
+    }
+    else {
+        _totalSurfaceArea = mesh.computeTotalSurfaceArea();
+    }
 
     // Determine min-max range of input field values.
     // Only used for informational purposes for the user.
@@ -320,11 +340,64 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
 ******************************************************************************/
 void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
 {
+    // Output the constructed surface mesh to the pipeline.
     state.addObjectWithUniqueId<SurfaceMesh>(_mesh);
+
+    // Output the calculated data table.
     state.addObjectWithUniqueId<DataTable>(_histogram);
-    state.setStatus(PipelineStatus(tr("Field value range: [%1, %2]")
-        .arg(_histogram->intervalStart())
-        .arg(_histogram->intervalEnd())));
+
+    // Set the status message of the pipeline.
+    QStringList statusMessage;
+    statusMessage.append(tr("Field value range: [%1, %2]").arg(_histogram->intervalStart()).arg(_histogram->intervalEnd()));
+
+    // Output total surface area.
+    state.addAttribute(QStringLiteral("CreateIsosurface.surface_area"), QVariant::fromValue(_totalSurfaceArea), request.modificationNode());
+
+    if(_identifyRegions) {
+        const FloatType& totalCellVolume = _aggregateVolumes.totalCellVolume;
+        const FloatType& totalFilledVolume = _aggregateVolumes.totalFilledVolume;
+        const FloatType& totalEmptyVolume = _aggregateVolumes.totalEmptyVolume;
+        const FloatType& totalVoidVolume = _aggregateVolumes.totalVoidVolume;
+        const SurfaceMesh::size_type& filledRegionCount = _aggregateVolumes.filledRegionCount;
+        const SurfaceMesh::size_type& emptyRegionCount = _aggregateVolumes.emptyRegionCount;
+        const SurfaceMesh::size_type& voidRegionCount = _aggregateVolumes.voidRegionCount;
+
+        // Output more global attributes.
+        state.addAttribute(QStringLiteral("CreateIsosurface.cell_volume"), QVariant::fromValue(totalCellVolume),
+                           request.modificationNode());
+        state.addAttribute(QStringLiteral("CreateIsosurface.specific_surface_area"),
+                           QVariant::fromValue(totalCellVolume ? (_totalSurfaceArea / totalCellVolume) : 0), request.modificationNode());
+        state.addAttribute(QStringLiteral("CreateIsosurface.filled_volume"), QVariant::fromValue(totalFilledVolume),
+                           request.modificationNode());
+        state.addAttribute(QStringLiteral("CreateIsosurface.filled_fraction"),
+                           QVariant::fromValue(totalCellVolume ? (totalFilledVolume / totalCellVolume) : 0), request.modificationNode());
+        state.addAttribute(QStringLiteral("CreateIsosurface.filled_region_count"), QVariant::fromValue(filledRegionCount),
+                           request.modificationNode());
+        state.addAttribute(QStringLiteral("CreateIsosurface.empty_volume"), QVariant::fromValue(totalEmptyVolume),
+                           request.modificationNode());
+        state.addAttribute(QStringLiteral("CreateIsosurface.empty_fraction"),
+                           QVariant::fromValue(totalCellVolume ? (totalEmptyVolume / totalCellVolume) : 0), request.modificationNode());
+        state.addAttribute(QStringLiteral("CreateIsosurface.empty_region_count"), QVariant::fromValue(emptyRegionCount),
+                           request.modificationNode());
+        state.addAttribute(QStringLiteral("CreateIsosurface.void_volume"), QVariant::fromValue(totalVoidVolume),
+                           request.modificationNode());
+        state.addAttribute(QStringLiteral("CreateIsosurface.void_region_count"), QVariant::fromValue(voidRegionCount),
+                           request.modificationNode());
+
+        statusMessage.append(
+            tr("Surface area: %1\n# filled regions (volume): %2 (%3)\n# empty regions (volume): %4 (%5)\n# void regions (volume): %6 (%7)")
+                .arg(_totalSurfaceArea)
+                .arg(filledRegionCount)
+                .arg(totalFilledVolume)
+                .arg(emptyRegionCount)
+                .arg(totalEmptyVolume)
+                .arg(voidRegionCount)
+                .arg(totalVoidVolume));
+    }
+    else {
+        statusMessage.append(tr("Surface area: %1").arg(_totalSurfaceArea));
+    }
+    state.setStatus(PipelineStatus(PipelineStatus::Success, statusMessage.join('\n')));
 }
 
 /******************************************************************************
