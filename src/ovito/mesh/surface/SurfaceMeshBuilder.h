@@ -452,6 +452,9 @@ public:
     /// Computes the void, exterior, and total volumes from the per region volume properties.
     [[nodiscard]] AggregateVolumes computeAggregateVolumes() const;
 
+    /// Set the volume of external regions to infinity if the simulation cell is non-periodic.
+    void nonPBCexternalVolume();
+
 private:
 
     SurfaceMeshTopology* _mutableTopology = nullptr; ///< The topology of the surface mesh after it was made mutable.

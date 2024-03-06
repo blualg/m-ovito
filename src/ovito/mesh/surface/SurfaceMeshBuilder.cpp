@@ -800,4 +800,25 @@ SurfaceMeshBuilder::AggregateVolumes SurfaceMeshBuilder::computeAggregateVolumes
     return aggregateVolumes;
 }
 
+/******************************************************************************
+ * Set the volume of external regions to infinity if the simulation cell is non-periodic.
+ ******************************************************************************/
+void SurfaceMeshBuilder::nonPBCexternalVolume()
+{
+    // PBC is periodic. Nothing to do.
+    if(domain()->pbcX() && domain()->pbcY() && domain()->pbcZ()) {
+        return;
+    }
+
+    BufferReadAccess<SelectionIntType> isFilled = expectRegionProperty(SurfaceMeshRegions::IsFilledProperty);
+    BufferReadAccess<SelectionIntType> isExterior = expectRegionProperty(SurfaceMeshRegions::IsExteriorProperty);
+    BufferWriteAccess<FloatType, access_mode::write> regionVolumes = mutableRegionProperty(SurfaceMeshRegions::VolumeProperty);
+
+    for(SurfaceMesh::region_index region{0}; region < regionCount(); region++) {
+        if(!isFilled[region] && isExterior[region]) {
+            regionVolumes[region] = std::numeric_limits<FloatType>::infinity();
+        }
+    }
+}
+
 }   // End of namespace
