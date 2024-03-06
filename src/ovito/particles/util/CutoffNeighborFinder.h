@@ -82,10 +82,7 @@ public:
     /// \param positions The property containing the particle coordinates.
     /// \param simCell The input simulation cell geometry and boundary conditions.
     /// \param selectionProperty Determines which particles are included in the neighbor search (optional).
-    /// \return \c false when the operation has been canceled by the user;
-    ///         \c true on success.
-    /// \throw Exception on error.
-    bool prepare(FloatType cutoffRadius, BufferReadAccess<Point3> positions, const SimulationCell* simCell, BufferReadAccess<SelectionIntType> selectionProperty);
+    void prepare(FloatType cutoffRadius, BufferReadAccess<Point3> positions, const SimulationCell* simCell, BufferReadAccess<SelectionIntType> selectionProperty);
 
     /// Returns the cutoff radius set via prepare().
     FloatType cutoffRadius() const { return _cutoffRadius; }

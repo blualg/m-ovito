@@ -27,6 +27,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/data/SyclBufferAccess.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "ParticlesAffineTransformationModifierDelegate.h"
 
 namespace Ovito {
@@ -46,28 +47,36 @@ QVector<DataObjectReference> ParticlesAffineTransformationModifierDelegate::OOMe
 }
 
 /******************************************************************************
-* Applies the modifier operation to the data in a pipeline flow state.
-******************************************************************************/
-PipelineStatus ParticlesAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+ * Applies the modifier operation to the data in a pipeline flow state.
+ ******************************************************************************/
+Future<PipelineFlowState> ParticlesAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-    if(const Particles* inputParticles = state.getObject<Particles>()) {
-        inputParticles->verifyIntegrity();
+    AffineTransformationModifier* modifier = static_object_cast<AffineTransformationModifier>(request.modifier());
 
-        // Get the input particle coordinates (as strong reference to force creation of a mutable clone below).
-        ConstPropertyPtr inputPositionProperty = inputParticles->expectProperty(Particles::PositionProperty);
+    // The actual work can be performed in a separate thread.
+    return AsynchronousTask<PipelineFlowState>::runAsync([
+            state = std::move(state),
+            tm = modifier->effectiveAffineTransformation(originalState),
+            selectionOnly = modifier->selectionOnly()]() mutable {
 
-        // Make sure we can safely modify the particles object.
-        Particles* outputParticles = state.makeMutable(inputParticles);
+        if(const Particles* inputParticles = state.getObject<Particles>()) {
+            inputParticles->verifyIntegrity();
 
-        // Create an uninitialized copy of the particle position property.
-        Property* outputPositionProperty = outputParticles->makePropertyMutable(inputPositionProperty, DataBuffer::Uninitialized);
+            // Get the input particle coordinates (as strong reference to force creation of a mutable clone below).
+            ConstPropertyPtr inputPositionProperty = inputParticles->expectProperty(Particles::PositionProperty);
 
-        // Let the modifier do the actual coordinate transformation work.
-        AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
-        mod->transformCoordinates(inputState, inputPositionProperty, outputPositionProperty, inputParticles->getProperty(Particles::SelectionProperty));
-    }
+            // Make sure we can safely modify the particles object.
+            Particles* outputParticles = state.makeMutable(inputParticles);
 
-    return PipelineStatus::Success;
+            // Create an uninitialized copy of the particle position property.
+            Property* outputPositionProperty = outputParticles->makePropertyMutable(inputPositionProperty, DataBuffer::Uninitialized);
+
+            // Let the modifier class do the actual coordinate transformation work.
+            AffineTransformationModifier::transformCoordinates(tm, selectionOnly, inputPositionProperty, outputPositionProperty, inputParticles->getProperty(Particles::SelectionProperty));
+        }
+
+        return std::move(state);
+    });
 }
 
 /******************************************************************************
@@ -97,44 +106,51 @@ bool VectorParticlePropertiesAffineTransformationModifierDelegate::isTransformab
 }
 
 /******************************************************************************
-* Applies the modifier operation to the data in a pipeline flow state.
-******************************************************************************/
-PipelineStatus VectorParticlePropertiesAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+ * Applies the modifier operation to the data in a pipeline flow state.
+ ******************************************************************************/
+Future<PipelineFlowState> VectorParticlePropertiesAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-    CloneHelper cloneHelper;
+    AffineTransformationModifier* modifier = static_object_cast<AffineTransformationModifier>(request.modifier());
 
-    for(const ConstDataObjectPath& objectPath : state.getObjectsRecursive(Property::OOClass())) {
-        const Property* inputProperty = objectPath.lastAs<Property>();
-        if(inputProperty && isTransformableProperty(inputProperty)) {
-            // Get the parent property container.
-            const PropertyContainer* container = objectPath.lastAs<PropertyContainer>(1);
-            if(!container)
-                throw Exception(tr("Cannot transform vector property '%1' because it is not part of a property container.").arg(inputProperty->name()));
-            container->verifyIntegrity();
+    // The actual work can be performed in a separate thread.
+    return AsynchronousTask<PipelineFlowState>::runAsync([
+            state = std::move(state),
+            tm = modifier->effectiveAffineTransformation(originalState),
+            selectionOnly = modifier->selectionOnly()]() mutable {
 
-            // Check if there is a selection property present.
-            const Property* selProperty = nullptr;
-            if(container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
-                selProperty = container->getProperty(Property::GenericSelectionProperty);
+        CloneHelper cloneHelper;
+        for(const ConstDataObjectPath& objectPath : state.getObjectsRecursive(Property::OOClass())) {
+            const Property* inputProperty = objectPath.lastAs<Property>();
+            if(inputProperty && isTransformableProperty(inputProperty)) {
+                // Get the parent property container.
+                const PropertyContainer* container = objectPath.lastAs<PropertyContainer>(1);
+                if(!container)
+                    throw Exception(tr("Cannot transform vector property '%1' because it is not part of a property container.").arg(inputProperty->name()));
+                container->verifyIntegrity();
+
+                // Check if there is a selection property present.
+                const Property* selProperty = nullptr;
+                if(container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
+                    selProperty = container->getProperty(Property::GenericSelectionProperty);
+                }
+
+                // Strong reference to the input vectors to force creation of a mutable clone below.
+                ConstPropertyPtr inputPropertyRef = inputProperty;
+
+                // Make the property container mutable.
+                DataObjectPath mutableContainerPath = state.makeMutable(objectPath.parentPath(), cloneHelper);
+                PropertyContainer* mutableContainer = static_object_cast<PropertyContainer>(mutableContainerPath.last());
+
+                // Create an uninitialized copy of the vector property.
+                Property* outputProperty = mutableContainer->makePropertyMutable(inputPropertyRef, DataBuffer::Uninitialized);
+
+                // Let the modifier class do the actual vector transformation work.
+                AffineTransformationModifier::transformVectors(tm, selectionOnly, inputPropertyRef, outputProperty, selProperty);
             }
-
-            // Strong reference to the input vectors to force creation of a mutable clone below.
-            ConstPropertyPtr inputPropertyRef = inputProperty;
-
-            // Make the property container mutable.
-            DataObjectPath mutableContainerPath = state.makeMutable(objectPath.parentPath(), cloneHelper);
-            PropertyContainer* mutableContainer = static_object_cast<PropertyContainer>(mutableContainerPath.last());
-
-            // Create an uninitialized copy of the vector property.
-            Property* outputProperty = mutableContainer->makePropertyMutable(inputPropertyRef, DataBuffer::Uninitialized);
-
-            // Let the modifier do the actual vector transformation work.
-            AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
-            mod->transformVectors(inputState, inputPropertyRef, outputProperty, selProperty);
         }
-    }
 
-    return PipelineStatus::Success;
+        return std::move(state);
+    });
 }
 
 }   // End of namespace

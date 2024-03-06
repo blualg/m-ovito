@@ -79,10 +79,13 @@ DataTablePlotWidget::DataTablePlotWidget(QWidget* parent) : QwtPlot(parent)
 /******************************************************************************
 * Sets the data table to be plotted.
 ******************************************************************************/
-void DataTablePlotWidget::setTable(const DataTable* table)
+void DataTablePlotWidget::setTable(const DataTable* table, bool forceUpdate)
 {
     if(table != _table) {
         _table = table;
+        updateDataPlot();
+    }
+    else if(forceUpdate) {
         updateDataPlot();
     }
 }

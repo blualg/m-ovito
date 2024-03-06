@@ -61,8 +61,6 @@ bool LoadTrajectoryModifier::OOMetaClass::isApplicableTo(const DataCollection& i
 ******************************************************************************/
 Future<PipelineFlowState> LoadTrajectoryModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
-    OVITO_ASSERT(input);
-
     // Get the trajectory data source.
     if(!trajectorySource())
         throw Exception(tr("No trajectory data source has been set."));
@@ -71,7 +69,7 @@ Future<PipelineFlowState> LoadTrajectoryModifier::evaluateModifier(const Modifie
     PipelineEvaluationResult trajStateFuture = trajectorySource()->evaluate(request);
 
     // Wait for the data to become available.
-    return trajStateFuture.then(*request.modificationNode(), [state = input, request](const PipelineFlowState& trajState) mutable {
+    return trajStateFuture.then(*request.modificationNode(), [state = std::move(input), request](const PipelineFlowState& trajState) mutable {
 
         if(LoadTrajectoryModifier* trajModifier = dynamic_object_cast<LoadTrajectoryModifier>(request.modifier())) {
             // Make sure the obtained configuration is valid and ready to use.
@@ -84,27 +82,11 @@ Future<PipelineFlowState> LoadTrajectoryModifier::evaluateModifier(const Modifie
             }
             else {
                 trajModifier->applyTrajectoryState(state, trajState);
-
-                // Invalidate the synchronous state cache of the modifier pipeline node.
-                // This is needed to force the pipeline system to call our evaluateSynchronous() method
-                // again next time the system request a synchronous state from the pipeline.
-                request.modificationNode()->pipelineCache().invalidateInteractiveState();
             }
         }
 
         return std::move(state);
     });
-}
-
-/******************************************************************************
-* Modifies the input data synchronously.
-******************************************************************************/
-void LoadTrajectoryModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
-{
-    if(trajectorySource()) {
-        const PipelineFlowState& trajState = trajectorySource()->evaluate(request).result();
-        applyTrajectoryState(state, trajState);
-    }
 }
 
 /******************************************************************************

@@ -101,7 +101,12 @@ public:
         class FuncAsyncTask : public AsynchronousTask {
         public:
             FuncAsyncTask(Function&& f) : _func(std::forward<Function>(f)) {}
-            virtual void perform() override { setResult(std::move(_func)()); }
+            virtual void perform() override {
+                if constexpr(std::tuple_size_v<typename Future<R...>::tuple_type> != 0)
+                    setResult(std::move(_func)());
+                else
+                    std::move(_func)();
+            }
         private:
             std::decay_t<Function> _func;
         };

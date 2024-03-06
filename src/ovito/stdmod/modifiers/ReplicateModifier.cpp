@@ -87,10 +87,10 @@ Future<PipelineFlowState> LinesReplicateModifierDelegate::apply(const ModifierEv
         for(const DataObject* obj : state.data()->objects()) {
             // Replicate the Lines.
             if(const Lines* inputLines = dynamic_object_cast<Lines>(obj)) {
+
                 // Skip if there's nothing to do
-                if(numCopies <= 1 || !inputLines || inputLines->elementCount() == 0) {
+                if(numCopies <= 1 || !inputLines || inputLines->elementCount() == 0)
                     continue;
-                }
 
                 // Extend lines property arrays.
                 size_t oldVertexCount = inputLines->elementCount();
@@ -212,14 +212,13 @@ Box3I ReplicateModifier::replicaRange() const
 Future<PipelineFlowState> ReplicateModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
     // First, apply all delegates to the input data.
-    Future<PipelineFlowState> future = MultiDelegatingModifier::evaluateModifier(request, input);
+    Future<PipelineFlowState> future = MultiDelegatingModifier::evaluateModifier(request, std::move(input));
 
     // Additionally, resize the simulation cell if enabled.
     if(adjustBoxSize()) {
-        future.postprocess(*this, [this](PipelineFlowState state) {
+        future.postprocess(*this, [newImages = replicaRange()](PipelineFlowState state) {
             SimulationCell* cellObj = state.expectMutableObject<SimulationCell>();
             AffineTransformation simCell = cellObj->cellMatrix();
-            Box3I newImages = replicaRange();
             simCell.translation() += (FloatType)newImages.minc.x() * simCell.column(0);
             simCell.translation() += (FloatType)newImages.minc.y() * simCell.column(1);
             simCell.translation() += (FloatType)newImages.minc.z() * simCell.column(2);
@@ -227,7 +226,7 @@ Future<PipelineFlowState> ReplicateModifier::evaluateModifier(const ModifierEval
             simCell.column(1) *= (newImages.sizeY() + 1);
             simCell.column(2) *= (newImages.sizeZ() + 1);
             cellObj->setCellMatrix(simCell);
-            return state;
+            return std::move(state);
         });
     }
 

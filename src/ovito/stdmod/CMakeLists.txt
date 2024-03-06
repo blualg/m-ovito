@@ -25,17 +25,17 @@ OVITO_STANDARD_PLUGIN(StdMod
     SOURCES
         modifiers/SliceModifier.cpp
         modifiers/AffineTransformationModifier.cpp
-#        modifiers/InvertSelectionModifier.cpp
+        modifiers/InvertSelectionModifier.cpp
         modifiers/ClearSelectionModifier.cpp
         modifiers/ColorCodingModifier.cpp
         modifiers/AssignColorModifier.cpp
-#        modifiers/DeleteSelectedModifier.cpp
-#        modifiers/SelectTypeModifier.cpp
+        modifiers/DeleteSelectedModifier.cpp
+        modifiers/SelectTypeModifier.cpp
         modifiers/HistogramModifier.cpp
-#        modifiers/ScatterPlotModifier.cpp
+        modifiers/ScatterPlotModifier.cpp
         modifiers/ReplicateModifier.cpp
 #        modifiers/ExpressionSelectionModifier.cpp
-#        modifiers/FreezePropertyModifier.cpp
+        modifiers/FreezePropertyModifier.cpp
 #        modifiers/ManualSelectionModifier.cpp
         modifiers/ComputePropertyModifier.cpp
 #        modifiers/CombineDatasetsModifier.cpp

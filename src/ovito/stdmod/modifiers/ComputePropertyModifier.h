@@ -33,7 +33,8 @@
 
 namespace Ovito {
 
-class ComputePropertyModifier;  // defined below
+class ComputePropertyModifier;         // defined below
+class ComputePropertyModificationNode; // defined below
 
 /**
  * \brief Base class for modifier delegates used by the ComputePropertyModifier class.
@@ -70,6 +71,11 @@ public:
 
     /// Applies this modifier delegate to the data.
     virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+
+protected:
+
+    /// Launches the actual computations.
+    virtual Future<PipelineFlowState> performComputation(const ComputePropertyModifier* modifier, ComputePropertyModificationNode* modNode, PipelineFlowState state, const PipelineFlowState& originalState, PropertyPtr outputProperty, ConstPropertyPtr selectionProperty, int frame) const;
 };
 
 /**

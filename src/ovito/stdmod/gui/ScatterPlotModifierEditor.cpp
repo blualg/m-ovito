@@ -238,17 +238,9 @@ void ScatterPlotModifierEditor::plotScatterPlot()
         _selectionRangeIndicatorY->hide();
     }
 
-    if(modifier && modificationNode()) {
-        // Request the modifier's pipeline output.
-        const PipelineFlowState& state = getPipelineOutput();
-
-        // Look up the generated data table in the modifier's pipeline output.
-        const DataTable* table = state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("scatter"));
-        _plotWidget->setTable(table);
-    }
-    else {
-        _plotWidget->reset();
-    }
+    // Look up the generated data table in the modifier's pipeline output and plot it.
+    DataOORef<const DataTable> table = getPipelineOutput().getObjectBy<DataTable>(modificationNode(), QStringLiteral("scatter"));
+    _plotWidget->setTable(table, true);
 }
 
 }   // End of namespace

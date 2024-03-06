@@ -26,16 +26,16 @@ OVITO_STANDARD_PLUGIN(StdModGui
         SliceModifierEditor.cpp
         AffineTransformationModifierEditor.cpp
         ClearSelectionModifierEditor.cpp
-#        InvertSelectionModifierEditor.cpp
+        InvertSelectionModifierEditor.cpp
         ColorCodingModifierEditor.cpp
         AssignColorModifierEditor.cpp
-#        DeleteSelectedModifierEditor.cpp
-#        SelectTypeModifierEditor.cpp
+        DeleteSelectedModifierEditor.cpp
+        SelectTypeModifierEditor.cpp
         HistogramModifierEditor.cpp
-#        ScatterPlotModifierEditor.cpp
+        ScatterPlotModifierEditor.cpp
         ReplicateModifierEditor.cpp
 #        ExpressionSelectionModifierEditor.cpp
-#        FreezePropertyModifierEditor.cpp
+        FreezePropertyModifierEditor.cpp
 #        ManualSelectionModifierEditor.cpp
         ComputePropertyModifierEditor.cpp
 #        CombineDatasetsModifierEditor.cpp

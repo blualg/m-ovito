@@ -82,9 +82,7 @@ ColorCodingModifier::ColorCodingModifier(ObjectInitializationFlags flags) : Dele
         setEndValueController(ControllerManager::createFloatController());
 
         // Let this modifier act on particles by default.
-#ifndef OVITO_DEBUG // TODO
         createDefaultModifierDelegate(ColorCodingModifierDelegate::OOClass(), QStringLiteral("ParticlesColorCodingModifierDelegate"));
-#endif
 
         // When the modifier is created by a Python script, enable automatic range adjustment.
         if(ExecutionContext::isScripting()) {

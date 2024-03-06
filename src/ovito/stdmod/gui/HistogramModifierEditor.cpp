@@ -208,11 +208,10 @@ void HistogramModifierEditor::plotHistogram()
 
         // Look up the generated data table in the modifier's pipeline output.
         QString tableName = QStringLiteral("histogram[%1]").arg(modifier->sourceProperty().nameWithComponent());
-        const DataTable* table = state.getObjectBy<DataTable>(modificationNode(), tableName);
-        _plotWidget->setTable(table);
+        _plotWidget->setTable(state.getObjectBy<DataTable>(modificationNode(), tableName), true);
     }
     else {
-        _plotWidget->reset();
+        _plotWidget->setTable({});
     }
 }
 

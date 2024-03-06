@@ -59,9 +59,6 @@ public:
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) override;
 
-    /// Modifies the input data synchronously.
-    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
     /// Returns the number of animation frames this modifier can provide.
     virtual int numberOfOutputFrames(ModificationNode* node) const override {
         return trajectorySource() ? trajectorySource()->numberOfSourceFrames() : Modifier::numberOfOutputFrames(node);
@@ -86,7 +83,7 @@ public:
 
 protected:
 
-    /// \brief Is called when a RefTarget referenced by this object generated an event.
+    /// Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
     /// Is called when the value of a reference field of this object changes.

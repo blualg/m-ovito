@@ -157,11 +157,17 @@ public:
 
     /// Copies vectors from one buffer to another while transforming them.
     /// If enabled, the transformation is only applied to selected elements.
-    void transformVectors(const PipelineFlowState& inputState, const Property* input, Property* output, const Property* selection);
+    void transformVectors(const PipelineFlowState& inputState, const Property* input, Property* output, const Property* selection) const {
+        transformVectors(effectiveAffineTransformation(inputState), selectionOnly(), input, output, selection);
+    }
 
     /// Copies positions from one buffer to another while transforming them.
     /// The transformation may be applied only to selected elements.
     static void transformCoordinates(const AffineTransformation tm, bool selectionOnly, const Property* input, Property* output, const Property* selection);
+
+    /// Copies vectors from one buffer to another while transforming them.
+    /// If enabled, the transformation is only applied to selected elements.
+    static void transformVectors(const AffineTransformation tm, bool selectionOnly, const Property* input, Property* output, const Property* selection);
 
 protected:
 

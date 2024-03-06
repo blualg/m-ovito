@@ -81,10 +81,19 @@ public:
     /// \brief Asks the object for the result of the data pipeline.
     virtual PipelineEvaluationResult evaluate(const PipelineEvaluationRequest& request) override;
 
+    /// Returns the cached output of this data pipeline stage at the given time if available.
+    /// This method will never throw an exception and doesn't require a valid execution context.
+    virtual PipelineFlowState getCachedPipelineNodeOutput(AnimationTime time, bool interactiveMode = true) const override {
+        if(modifierAndGroupEnabled())
+            return PipelineNode::getCachedPipelineNodeOutput(time, interactiveMode);
+        else
+            return getCachedPipelineNodeInput(time, interactiveMode);
+    }
+
     /// \brief Returns the cached input of this modification node at the given time if available.
     /// This method will never throw an exception and doesn't require a valid execution context.
     PipelineFlowState getCachedPipelineNodeInput(AnimationTime time, bool interactiveMode = true) const {
-        return input() ? input()->pipelineCache().getAt(time, interactiveMode) : PipelineFlowState();
+        return input() ? input()->getCachedPipelineNodeOutput(time, interactiveMode) : PipelineFlowState();
     }
 
     /// \brief Returns the number of animation frames this pipeline object can provide.

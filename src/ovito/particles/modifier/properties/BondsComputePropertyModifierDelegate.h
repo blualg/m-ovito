@@ -25,8 +25,6 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/Bonds.h>
-#include <ovito/particles/util/ParticleExpressionEvaluator.h>
-#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/stdmod/modifiers/ComputePropertyModifier.h>
 
 namespace Ovito {
@@ -62,43 +60,10 @@ public:
     /// Constructor.
     using ComputePropertyModifierDelegate::ComputePropertyModifierDelegate;
 
-    /// Creates a computation engine that will compute the property values.
-    virtual std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> createEngine(
-                const ModifierEvaluationRequest& request,
-                const PipelineFlowState& input,
-                const ConstDataObjectPath& containerPath,
-                PropertyPtr outputProperty,
-                ConstPropertyPtr selectionProperty,
-                QStringList expressions) override;
+protected:
 
-private:
-
-    /// Asynchronous compute engine that does the actual work in a separate thread.
-    class Engine : public ComputePropertyModifierDelegate::PropertyComputeEngine
-    {
-    public:
-
-        /// Constructor.
-        Engine(
-                const ModifierEvaluationRequest& request,
-                const TimeInterval& validityInterval,
-                PropertyPtr outputProperty,
-                const ConstDataObjectPath& containerPath,
-                ConstPropertyPtr selectionProperty,
-                QStringList expressions,
-                int frameNumber,
-                const PipelineFlowState& input);
-
-        /// Computes the modifier's results.
-        virtual void perform() override;
-
-        /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-    private:
-
-        ElementOrderingFingerprint _inputFingerprint;
-    };
+    /// Launches the actual computations.
+    virtual Future<PipelineFlowState> performComputation(const ComputePropertyModifier* modifier, ComputePropertyModificationNode* modNode, PipelineFlowState state, const PipelineFlowState& originalState, PropertyPtr outputProperty, ConstPropertyPtr selectionProperty, int frame) const override;
 };
 
 }   // End of namespace

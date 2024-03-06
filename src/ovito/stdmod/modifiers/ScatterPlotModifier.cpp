@@ -21,11 +21,12 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdmod/StdMod.h>
-#include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/table/DataTable.h>
+#include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "ScatterPlotModifier.h"
 
 namespace Ovito {
@@ -126,7 +127,28 @@ void ScatterPlotModifier::propertyChanged(const PropertyFieldDescriptor* field)
 }
 
 /******************************************************************************
-* Modifies the input data synchronously.
+ * Sends an event to all dependents of this RefTarget.
+ ******************************************************************************/
+void ScatterPlotModifier::notifyDependentsImpl(const ReferenceEvent& event) noexcept
+{
+    if(event.type() == ReferenceEvent::TargetChanged && event.sender() == this) {
+        auto field = static_cast<const TargetChangedEvent&>(event).field();
+        if(field == PROPERTY_FIELD(ScatterPlotModifier::fixXAxisRange) || field == PROPERTY_FIELD(ScatterPlotModifier::fixYAxisRange) ||
+            field == PROPERTY_FIELD(ScatterPlotModifier::xAxisRangeStart) || field == PROPERTY_FIELD(ScatterPlotModifier::xAxisRangeEnd) ||
+            field == PROPERTY_FIELD(ScatterPlotModifier::yAxisRangeStart) || field == PROPERTY_FIELD(ScatterPlotModifier::yAxisRangeEnd)) {
+            // Changes to the above parameters do not invalidate the modifier's results.
+            // Intercept the change event and modify it such that it does not trigger a re-evaluation of the modifier.
+            GenericPropertyModifier::notifyDependentsImpl(TargetChangedEvent(this, field, TimeInterval::infinite()));
+            // Trigger a plot widget update in the modifier editor panel:
+            notifyDependents(ReferenceEvent::PipelineCacheUpdated);
+            return;
+        }
+    }
+    GenericPropertyModifier::notifyDependentsImpl(event);
+}
+
+/******************************************************************************
+* Modifies the input data.
 ******************************************************************************/
 Future<PipelineFlowState> ScatterPlotModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
@@ -148,14 +170,15 @@ Future<PipelineFlowState> ScatterPlotModifier::evaluateModifier(const ModifierEv
             .arg(subject().dataClass()->pythonName()).arg(yAxisProperty().containerClass()->propertyClassDisplayName()));
 
     // Look up the property container object.
+    ConstDataObjectPath containerPath = input.expectObject(subject());
     const PropertyContainer* container = input.expectLeafObject(subject());
     container->verifyIntegrity();
 
     // Get the input properties.
-    const Property* xProperty = xAxisProperty().findInContainer(container);
+    ConstPropertyPtr xProperty = xAxisProperty().findInContainer(container);
     if(!xProperty)
         throw Exception(tr("The selected input property '%1' is not present.").arg(xAxisProperty().name()));
-    const Property* yProperty = yAxisProperty().findInContainer(container);
+    ConstPropertyPtr yProperty = yAxisProperty().findInContainer(container);
     if(!yProperty)
         throw Exception(tr("The selected input property '%1' is not present.").arg(yAxisProperty().name()));
 
@@ -178,74 +201,99 @@ Future<PipelineFlowState> ScatterPlotModifier::evaluateModifier(const ModifierEv
     if(selectionYAxisRangeStart > selectionYAxisRangeEnd)
         std::swap(selectionYAxisRangeStart, selectionYAxisRangeEnd);
 
-    PipelineFlowState output = input;
+    // Create output state.
+    PipelineFlowState output = std::move(input);
 
     // Create output selection.
-    BufferWriteAccess<SelectionIntType, access_mode::discard_write> outputSelection;
-    size_t numSelected = 0;
+    PropertyPtr outputSelection;
     if((selectXAxisInRange() || selectYAxisInRange()) && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
         // First make sure we can safely modify the property container.
         PropertyContainer* mutableContainer = output.expectMutableLeafObject(subject());
         // Add the selection property to the output container.
-        outputSelection = mutableContainer->createProperty(Property::GenericSelectionProperty);
-        boost::fill(outputSelection, 1);
-        numSelected = outputSelection.size();
+        outputSelection = mutableContainer->createProperty(DataBuffer::Uninitialized, Property::GenericSelectionProperty, containerPath);
     }
 
-    // Create output arrays.
-    PropertyPtr out_x = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, container->elementCount(), Property::FloatDefault, 1, xAxisProperty().nameWithComponent());
-    PropertyPtr out_y = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, container->elementCount(), Property::FloatDefault, 1, yAxisProperty().nameWithComponent());
-    BufferWriteAccess<FloatType, access_mode::discard_read_write> out_x_access(out_x);
-    BufferWriteAccess<FloatType, access_mode::discard_read_write> out_y_access(out_y);
-
-    // Collect X coordinates.
-    xProperty->copyComponentTo(out_x_access.begin(), xVecComponent);
-
-    // Collect Y coordinates.
-    yProperty->copyComponentTo(out_y_access.begin(), yVecComponent);
-
-    if(outputSelection && selectXAxisInRange()) {
-        SelectionIntType* s = outputSelection.begin();
-        for(const FloatType x : out_x_access) {
-            if(x < selectionXAxisRangeStart || x > selectionXAxisRangeEnd) {
-                *s = 0;
-                numSelected--;
-            }
-            ++s;
-        }
-    }
-
-    if(outputSelection && selectYAxisInRange()) {
-        SelectionIntType* s = outputSelection.begin();
-        for(const FloatType y : out_y_access) {
-            if(y < selectionYAxisRangeStart || y > selectionYAxisRangeEnd) {
-                if(*s) {
-                    *s = 0;
-                    numSelected--;
-                }
-            }
-            ++s;
-        }
-    }
-    out_x_access.reset();
-    out_y_access.reset();
-
-    // Output a data table object with the scatter points.
+    // Create output data table.
     DataTable* table = output.createObject<DataTable>(QStringLiteral("scatter"), request.modificationNode(),
-        DataTable::Scatter, tr("%1 vs. %2").arg(yAxisProperty().nameWithComponent()).arg(xAxisProperty().nameWithComponent()),
-        std::move(out_y), std::move(out_x));
+        DataTable::Scatter, tr("%1 vs. %2").arg(yAxisProperty().nameWithComponent()).arg(xAxisProperty().nameWithComponent()));
     OVITO_ASSERT(table == output.getObjectBy<DataTable>(request.modificationNode(), QStringLiteral("scatter")));
 
-    QString statusMessage;
-    if(outputSelection) {
-        statusMessage = tr("%1 %2 selected (%3%)").arg(numSelected)
-                .arg(container->getOOMetaClass().elementDescriptionName())
-                .arg((FloatType)numSelected * 100 / std::max((size_t)1,outputSelection.size()), 0, 'f', 1);
-    }
+    // The actual computation can be performed in a separate worker thread.
+    return AsynchronousTask<PipelineFlowState>::runAsync([
+            output = std::move(output),
+            xProperty = std::move(xProperty),
+            yProperty = std::move(yProperty),
+            xVecComponent,
+            yVecComponent,
+            xPropertyName = xAxisProperty().nameWithComponent(),
+            yPropertyName = yAxisProperty().nameWithComponent(),
+            outputSelection = std::move(outputSelection),
+            selectXAxisInRange = selectXAxisInRange(),
+            selectYAxisInRange = selectYAxisInRange(),
+            selectionXAxisRangeStart,
+            selectionXAxisRangeEnd,
+            selectionYAxisRangeStart,
+            selectionYAxisRangeEnd,
+            table,
+            elementDescriptionName = container->getOOMetaClass().elementDescriptionName(),
+            createdByNode = request.modificationNode()]() mutable
+    {
+        table->setElementCount(xProperty->size());
 
-    output.setStatus(PipelineStatus(std::move(statusMessage)));
+        // Collect X coordinates.
+        Property* out_x = table->createProperty(DataBuffer::Uninitialized, xPropertyName, Property::FloatDefault);
+        xProperty->copyComponentTo(BufferWriteAccess<FloatType, access_mode::discard_write>{out_x}.begin(), xVecComponent);
 
-    return output;
+        // Collect Y coordinates.
+        Property* out_y;
+        if(yPropertyName != xPropertyName) {
+            out_y = table->createProperty(DataBuffer::Uninitialized, yPropertyName, Property::FloatDefault);
+            yProperty->copyComponentTo(BufferWriteAccess<FloatType, access_mode::discard_write>{out_y}.begin(), yVecComponent);
+        }
+        else {
+            out_y = out_x;
+        }
+
+        table->setX(out_x);
+        table->setY(out_y);
+
+        if(outputSelection) {
+            outputSelection->fill<SelectionIntType>(1);
+            BufferWriteAccess<SelectionIntType, access_mode::write> outputSelectionAcc{outputSelection};
+            size_t numSelected = outputSelection->size();
+
+            if(selectXAxisInRange) {
+                SelectionIntType* s = outputSelectionAcc.begin();
+                for(const FloatType x : BufferReadAccess<FloatType>{out_x}) {
+                    if(x < selectionXAxisRangeStart || x > selectionXAxisRangeEnd) {
+                        *s = 0;
+                        numSelected--;
+                    }
+                    ++s;
+                }
+            }
+
+            if(selectYAxisInRange) {
+                SelectionIntType* s = outputSelectionAcc.begin();
+                for(const FloatType y : BufferReadAccess<FloatType>{out_y}) {
+                    if(y < selectionYAxisRangeStart || y > selectionYAxisRangeEnd) {
+                        if(*s) {
+                            *s = 0;
+                            numSelected--;
+                        }
+                    }
+                    ++s;
+                }
+            }
+
+            QString statusMessage = tr("%1 %2 selected (%3%)").arg(numSelected)
+                        .arg(elementDescriptionName)
+                        .arg((FloatType)numSelected * 100 / std::max((size_t)1, outputSelection->size()), 0, 'f', 1);
+            output.setStatus(PipelineStatus(std::move(statusMessage)));
+        }
+
+        return std::move(output);
+    });
 }
 
 }   // End of namespace

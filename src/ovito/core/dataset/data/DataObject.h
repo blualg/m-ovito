@@ -215,14 +215,14 @@ private:
     /// Increments the shared-ownership count of this DataObject by one. This method is called by the DataOORef smart-pointer class.
     inline void incrementDataReferenceCount() const noexcept {
         OVITO_CHECK_OBJECT_POINTER(this);
-        _dataReferenceCount.fetch_add(1);
+        _dataReferenceCount.fetch_add(1, std::memory_order_relaxed);
     }
 
     /// Decrements the shared-ownership count of this DataObject by one. This method is called by the DataOORef smart-pointer class.
     inline void decrementDataReferenceCount() const noexcept {
         OVITO_CHECK_OBJECT_POINTER(this);
         OVITO_ASSERT(_dataReferenceCount.load() > 0);
-        _dataReferenceCount.fetch_sub(1);
+        _dataReferenceCount.fetch_sub(1, std::memory_order_relaxed);
     }
 
 private:

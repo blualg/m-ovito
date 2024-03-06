@@ -24,6 +24,7 @@
 #include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "InvertSelectionModifier.h"
 
 namespace Ovito {
@@ -40,39 +41,49 @@ InvertSelectionModifier::InvertSelectionModifier(ObjectInitializationFlags flags
 }
 
 /******************************************************************************
-* Modifies the input data synchronously.
+* Modifies the input data.
 ******************************************************************************/
-void InvertSelectionModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+Future<PipelineFlowState> InvertSelectionModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
     if(!subject())
         throw Exception(tr("No data element type set."));
 
-    PropertyContainer* container = state.expectMutableLeafObject(subject());
+    PipelineFlowState output = std::move(input);
+    PropertyContainer* container = output.expectMutableLeafObject(subject());
     if(!container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty))
         throw Exception(tr("Cannot invert selection, because property container type %1 does not support element selections.").arg(container->getOOMetaClass().name()));
 
     ConstPropertyPtr inputSelection = container->getProperty(Property::GenericSelectionProperty);
     PropertyPtr outputSelection = container->createProperty(DataBuffer::Uninitialized, Property::GenericSelectionProperty);
 
-    if(inputSelection) {
+    // The actual computation can be performed in a separate worker thread.
+    return AsynchronousTask<PipelineFlowState>::runAsync([
+            output = std::move(output),
+            inputSelection = std::move(inputSelection),
+            outputSelection = std::move(outputSelection)]() mutable
+    {
+        if(inputSelection) {
 #ifdef OVITO_USE_SYCL
-        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
-            SyclBufferAccess<SelectionIntType, access_mode::read> inputAcc(inputSelection, cgh);
-            SyclBufferAccess<SelectionIntType, access_mode::discard_write> outputAcc(outputSelection, cgh);
-            OVITO_SYCL_PARALLEL_FOR(cgh, InvertSelection_kernel)(sycl::range(inputAcc.size()), [=](size_t i) {
-                outputAcc[i] = !inputAcc[i];
+            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+                SyclBufferAccess<SelectionIntType, access_mode::read> inputAcc(inputSelection, cgh);
+                SyclBufferAccess<SelectionIntType, access_mode::discard_write> outputAcc(outputSelection, cgh);
+                OVITO_SYCL_PARALLEL_FOR(cgh, InvertSelection_kernel)(sycl::range(inputAcc.size()), [=](size_t i) {
+                    outputAcc[i] = !inputAcc[i];
+                });
             });
-        });
 #else
-        BufferReadAccess<SelectionIntType> inputAcc(inputSelection);
-        auto i = inputAcc.begin();
-        for(auto& o : BufferWriteAccess<SelectionIntType, access_mode::discard_write>(outputSelection))
-            o = !(*i++);
+            BufferReadAccess<SelectionIntType> inputAcc(inputSelection);
+            auto i = inputAcc.begin();
+            for(auto& o : BufferWriteAccess<SelectionIntType, access_mode::discard_write>(outputSelection))
+                o = !(*i++);
 #endif
-    }
-    else {
-        outputSelection->fill(SelectionIntType{1});
-    }
+        }
+        else {
+            outputSelection->fill(SelectionIntType{1});
+        }
+
+        return std::move(output);
+    });
 }
 
 }   // End of namespace

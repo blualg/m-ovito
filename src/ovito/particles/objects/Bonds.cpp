@@ -511,7 +511,7 @@ size_t Bonds::OOMetaClass::remapElementIndex(const ConstDataObjectPath& source, 
 * Determines which elements are located within the given
 * viewport fence region (=2D polygon).
 ******************************************************************************/
-boost::dynamic_bitset<> Bonds::OOMetaClass::viewportFenceSelection(const QVector<Point2>& fence, const ConstDataObjectPath& objectPath, Pipeline* pipeline, const Matrix4& projectionTM) const
+ConstPropertyPtr Bonds::OOMetaClass::viewportFenceSelection(const QVector<Point2>& fence, const ConstDataObjectPath& objectPath, Pipeline* pipeline, const Matrix4& projectionTM) const
 {
     const Bonds* bonds = static_object_cast<Bonds>(objectPath.back());
     const Particles* particles = dynamic_object_cast<Particles>(objectPath.size() >= 2 ? objectPath[objectPath.size()-2] : nullptr);
@@ -523,49 +523,50 @@ boost::dynamic_bitset<> Bonds::OOMetaClass::viewportFenceSelection(const QVector
                 if(!bonds->visElement() || bonds->visElement()->isEnabled() == false)
                     throw Exception(tr("Cannot select bonds while the corresponding visual element is disabled. Please enable the display of bonds first."));
 
-                boost::dynamic_bitset<> fullSelection(topologyProperty.size());
-                QMutex mutex;
-                parallelForChunks(topologyProperty.size(), [&topologyProperty, &posProperty, &projectionTM, &fence, &mutex, &fullSelection](size_t startIndex, size_t chunkSize) {
-                    boost::dynamic_bitset<> selection(fullSelection.size());
-                    for(size_t index = startIndex; chunkSize != 0; chunkSize--, index++) {
-                        const ParticleIndexPair& t = topologyProperty[index];
-                        int insideCount = 0;
-                        for(size_t i = 0; i < 2; i++) {
-                            if(t[i] >= (qlonglong)posProperty.size()) continue;
-                            const Point3& p = posProperty[t[i]];
+                // Create the output property storage.
+                PropertyPtr selection = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, topologyProperty.size(), Bonds::SelectionProperty, objectPath);
 
-                            // Project particle center to screen coordinates.
-                            Point3 projPos = projectionTM * p;
+                BufferWriteAccess<SelectionIntType, access_mode::discard_write> selectionAcc{selection};
+                parallelForCancellable(topologyProperty.size(), 16000, [&](size_t index) {
+                    selectionAcc[index] = 0;
+                    const ParticleIndexPair& t = topologyProperty[index];
+                    int insideCount = 0;
+                    for(size_t i = 0; i < 2; i++) {
+                        if(t[i] >= (qlonglong)posProperty.size())
+                            continue;
+                        const Point3& p = posProperty[t[i]];
 
-                            // Perform z-clipping.
-                            if(std::abs(projPos.z()) >= FloatType(1))
-                                break;
+                        // Project particle center to screen coordinates.
+                        Point3 projPos = projectionTM * p;
 
-                            // Perform point-in-polygon test.
-                            int intersectionsLeft = 0;
-                            int intersectionsRight = 0;
-                            for(auto p2 = fence.constBegin(), p1 = p2 + (fence.size()-1); p2 != fence.constEnd(); p1 = p2++) {
-                                if(p1->y() == p2->y()) continue;
-                                if(projPos.y() >= p1->y() && projPos.y() >= p2->y()) continue;
-                                if(projPos.y() < p1->y() && projPos.y() < p2->y()) continue;
-                                FloatType xint = (projPos.y() - p2->y()) / (p1->y() - p2->y()) * (p1->x() - p2->x()) + p2->x();
-                                if(xint >= projPos.x())
-                                    intersectionsRight++;
-                                else
-                                    intersectionsLeft++;
-                            }
-                            if(intersectionsRight & 1)
-                                insideCount++;
+                        // Perform z-clipping.
+                        if(std::abs(projPos.z()) >= FloatType(1))
+                            break;
+
+                        // Perform point-in-polygon test.
+                        int intersectionsLeft = 0;
+                        int intersectionsRight = 0;
+                        for(auto p2 = fence.constBegin(), p1 = p2 + (fence.size()-1); p2 != fence.constEnd(); p1 = p2++) {
+                            if(p1->y() == p2->y())
+                                continue;
+                            if(projPos.y() >= p1->y() && projPos.y() >= p2->y())
+                                continue;
+                            if(projPos.y() < p1->y() && projPos.y() < p2->y())
+                                continue;
+                            FloatType xint = (projPos.y() - p2->y()) / (p1->y() - p2->y()) * (p1->x() - p2->x()) + p2->x();
+                            if(xint >= projPos.x())
+                                intersectionsRight++;
+                            else
+                                intersectionsLeft++;
                         }
-                        if(insideCount == 2)
-                            selection.set(index);
+                        if(intersectionsRight & 1)
+                            insideCount++;
                     }
-                    // Transfer thread-local results to output bit array.
-                    QMutexLocker locker(&mutex);
-                    fullSelection |= selection;
+                    if(insideCount == 2)
+                        selectionAcc[index] = 1;
                 });
 
-                return fullSelection;
+                return selection;
             }
         }
     }

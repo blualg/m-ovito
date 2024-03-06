@@ -57,7 +57,7 @@ public:
 
     /// Returns the cached output of this data pipeline stage at the given time if available.
     /// This method will never throw an exception and doesn't require a valid execution context.
-    PipelineFlowState getCachedPipelineNodeOutput(AnimationTime time, bool interactiveMode = true) const {
+    virtual PipelineFlowState getCachedPipelineNodeOutput(AnimationTime time, bool interactiveMode = true) const {
         return pipelineCache().getAt(time, interactiveMode);
     }
 

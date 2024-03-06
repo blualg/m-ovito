@@ -156,7 +156,7 @@ Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEval
     }
 
     // Create output state.
-    PipelineFlowState output = input;
+    PipelineFlowState output = std::move(input);
 
     // Create storage for output selection.
     PropertyPtr outputSelection;
@@ -351,7 +351,7 @@ Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEval
         }
         output.setStatus(PipelineStatus(std::move(statusMessage)));
 
-        return output;
+        return std::move(output);
     });
 }
 

@@ -204,6 +204,11 @@ bool Pipeline::referenceEvent(RefTarget* source, const ReferenceEvent& event)
                 // Inform all vis elements that their input state has changed when the pipeline reports that a new preliminary output state is available.
                 for(DataVis* vis : visElements())
                     vis->notifyDependents(ReferenceEvent::PipelineInputChanged);
+                // Do not forward this signal to ScenePreparation objects if it comes from the final pipeline stage.
+                // That's to avoid refreshing the viewports twice - once for the preliminary update and once for the final update
+                // when the pipeline evaluation is completed.
+                if(event.sender() == head())
+                    return false;
             }
             else {
                 // Do not forward signal to scene in order to suppress interactive viewport updates.

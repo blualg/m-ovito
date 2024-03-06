@@ -65,6 +65,9 @@ protected:
     /// Is called when the value of a property of this object has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
+    /// Sends an event to all dependents of this RefTarget.
+    virtual void notifyDependentsImpl(const ReferenceEvent& event) noexcept override;
+
 private:
 
     /// The property that is used as source for the x-axis.

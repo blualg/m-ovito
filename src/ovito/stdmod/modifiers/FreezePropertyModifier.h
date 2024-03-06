@@ -31,6 +31,8 @@
 
 namespace Ovito {
 
+class FreezePropertyModificationNode;  // defined below
+
 /**
  * \brief Injects the values of a property taken from a different animation time.
  */
@@ -52,9 +54,6 @@ public:
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) override;
 
-    /// Modifies the input data synchronously.
-    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return sourceProperty().name(); }
 
@@ -65,6 +64,9 @@ protected:
 
     /// This method is called once for this object after it has been completely loaded from a stream.
     virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
+
+    /// Copies the stored property to the current pipeline state.
+    PipelineFlowState transferFrozenProperty(FreezePropertyModificationNode* modNode, PipelineFlowState state) const;
 
 private:
 

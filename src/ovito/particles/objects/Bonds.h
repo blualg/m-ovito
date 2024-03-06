@@ -97,7 +97,7 @@ class OVITO_PARTICLES_EXPORT Bonds : public PropertyContainer
         virtual size_t remapElementIndex(const ConstDataObjectPath& source, size_t elementIndex, const ConstDataObjectPath& dest) const override;
 
         /// Determines which elements are located within the given viewport fence region (=2D polygon).
-        virtual boost::dynamic_bitset<> viewportFenceSelection(const QVector<Point2>& fence, const ConstDataObjectPath& objectPath, Pipeline* pipeline, const Matrix4& projectionTM) const override;
+        virtual ConstPropertyPtr viewportFenceSelection(const QVector<Point2>& fence, const ConstDataObjectPath& objectPath, Pipeline* pipeline, const Matrix4& projectionTM) const override;
 
         /// Generates a human-readable string representation of the data object reference.
         virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override { return this->displayName(); }

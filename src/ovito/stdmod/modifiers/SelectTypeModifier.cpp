@@ -26,6 +26,7 @@
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/data/SyclFlatSet.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "SelectTypeModifier.h"
@@ -95,9 +96,9 @@ void SelectTypeModifier::propertyChanged(const PropertyFieldDescriptor* field)
 }
 
 /******************************************************************************
-* Modifies the input data synchronously.
+* Modifies the input data.
 ******************************************************************************/
-void SelectTypeModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+Future<PipelineFlowState> SelectTypeModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
     if(!subject())
         throw Exception(tr("No input element type selected."));
@@ -109,7 +110,8 @@ void SelectTypeModifier::evaluateModifierSynchronous(const ModifierEvaluationReq
         throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
             .arg(subject().dataClass()->pythonName()).arg(sourceProperty().containerClass()->propertyClassDisplayName()));
 
-    PropertyContainer* container = state.expectMutableLeafObject(subject());
+    PipelineFlowState output = std::move(input);
+    PropertyContainer* container = output.expectMutableLeafObject(subject());
     container->verifyIntegrity();
 
     // Get the input property.
@@ -120,9 +122,6 @@ void SelectTypeModifier::evaluateModifierSynchronous(const ModifierEvaluationReq
         throw Exception(tr("The input property '%1' has the wrong number of components. Must be a scalar property.").arg(typePropertyObject->name()));
     if(typePropertyObject->dataType() != Property::Int32)
         throw Exception(tr("The input property '%1' has the wrong data type. Must be a 32-bit integer property.").arg(typePropertyObject->name()));
-
-    // Counts the number of selected elements.
-    size_t nSelected = 0;
 
     // Generate set of numeric type IDs to select.
     QSet<int32_t> idsToSelect = selectedTypeIDs();
@@ -144,68 +143,82 @@ void SelectTypeModifier::evaluateModifierSynchronous(const ModifierEvaluationReq
         }
     }
 
-    // Create the selection property.
-    Property* selProperty = container->createProperty(DataBuffer::Uninitialized, Property::GenericSelectionProperty);
+    // The actual computation can be performed in a separate worker thread.
+    return AsynchronousTask<PipelineFlowState>::runAsync([
+            output = std::move(output),
+            container,
+            typePropertyObject,
+            idsToSelect = std::move(idsToSelect),
+            createdByNode = request.modificationNode()]() mutable
+    {
+        // Counts the number of selected elements.
+        size_t nSelected = 0;
 
-#ifdef OVITO_USE_SYCL
-    if(typePropertyObject->size() != 0) {
-        if(!idsToSelect.empty()) {
-            // Convert set of type IDs into a SYCL-compatible data structure.
-            SyclFlatSet idsToSelectSycl{std::set<int32_t>{idsToSelect.begin(), idsToSelect.end()}};
-            // This is a single-element counter variable that will be incremented by the kernel for each selected element.
-            sycl::buffer<size_t> numSelectedBuf(&nSelected, 1);
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
-                // Access the input type values.
-                SyclBufferAccess<int32_t, access_mode::read> typeAcc(typePropertyObject, cgh);
-                // Access output selection array.
-                SyclBufferAccess<SelectionIntType, access_mode::write> selectionAcc(selProperty, cgh, DataBuffer::Uninitialized);
-                // Access type ID set.
-                auto idsToSelectAcc = idsToSelectSycl.get_access(cgh);
-#ifdef OVITO_USE_SYCL_ACPP
-                auto reduction = sycl::reduction(sycl::accessor{numSelectedBuf, cgh, sycl::no_init}, size_t{0}, sycl::plus<size_t>());
-#else
-                auto reduction = sycl::reduction(numSelectedBuf, cgh, size_t{0}, sycl::plus<size_t>(), sycl::property::reduction::initialize_to_identity{});
-#endif
-                OVITO_SYCL_PARALLEL_FOR(cgh, SelectTypeModifier_kernel)(sycl::range(typePropertyObject->size()), reduction, [=](size_t i, auto& red) {
-                    if(idsToSelectAcc.contains(typeAcc[i])) {
-                        selectionAcc[i] = 1;
-                        red += (size_t)1;
-                    }
-                    else {
-                        selectionAcc[i] = 0;
-                    }
+        // Create the selection property.
+        Property* selProperty = container->createProperty(DataBuffer::Uninitialized, Property::GenericSelectionProperty);
+
+    #ifdef OVITO_USE_SYCL
+        if(typePropertyObject->size() != 0) {
+            if(!idsToSelect.empty()) {
+                // Convert set of type IDs into a SYCL-compatible data structure.
+                SyclFlatSet idsToSelectSycl{std::set<int32_t>{idsToSelect.begin(), idsToSelect.end()}};
+                // This is a single-element counter variable that will be incremented by the kernel for each selected element.
+                sycl::buffer<size_t> numSelectedBuf(&nSelected, 1);
+                ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+                    // Access the input type values.
+                    SyclBufferAccess<int32_t, access_mode::read> typeAcc(typePropertyObject, cgh);
+                    // Access output selection array.
+                    SyclBufferAccess<SelectionIntType, access_mode::write> selectionAcc(selProperty, cgh, DataBuffer::Uninitialized);
+                    // Access type ID set.
+                    auto idsToSelectAcc = idsToSelectSycl.get_access(cgh);
+    #ifdef OVITO_USE_SYCL_ACPP
+                    auto reduction = sycl::reduction(sycl::accessor{numSelectedBuf, cgh, sycl::no_init}, size_t{0}, sycl::plus<size_t>());
+    #else
+                    auto reduction = sycl::reduction(numSelectedBuf, cgh, size_t{0}, sycl::plus<size_t>(), sycl::property::reduction::initialize_to_identity{});
+    #endif
+                    OVITO_SYCL_PARALLEL_FOR(cgh, SelectTypeModifier_kernel)(sycl::range(typePropertyObject->size()), reduction, [=](size_t i, auto& red) {
+                        if(idsToSelectAcc.contains(typeAcc[i])) {
+                            selectionAcc[i] = 1;
+                            red += (size_t)1;
+                        }
+                        else {
+                            selectionAcc[i] = 0;
+                        }
+                    });
                 });
-            });
+            }
+            else {
+                selProperty->fill<SelectionIntType>(0);
+            }
         }
-        else {
-            selProperty->fill<SelectionIntType>(0);
-        }
-    }
-#else
-    BufferWriteAccess<SelectionIntType, access_mode::discard_write> selectionAcc{selProperty};
-    BufferReadAccess<int32_t> typeAcc{typePropertyObject};
+    #else
+        BufferWriteAccess<SelectionIntType, access_mode::discard_write> selectionAcc{selProperty};
+        BufferReadAccess<int32_t> typeAcc{typePropertyObject};
 
-    boost::transform(typeAcc, selectionAcc.begin(), [&](int32_t type) {
-        if(idsToSelect.contains(type)) {
-            nSelected++;
-            return 1;
-        }
-        return 0;
+        boost::transform(typeAcc, selectionAcc.begin(), [&](int32_t type) {
+            if(idsToSelect.contains(type)) {
+                nSelected++;
+                return 1;
+            }
+            return 0;
+        });
+    #endif
+
+        // To speed up future queries, store the selection count in the selection property object.
+        selProperty->setNonzeroCount(nSelected);
+
+        output.addAttribute(QStringLiteral("SelectType.num_selected"), QVariant::fromValue(nSelected), createdByNode);
+
+        QString statusMessage = tr("%1 out of %2 %3 selected (%4%)")
+            .arg(nSelected)
+            .arg(typePropertyObject->size())
+            .arg(container->getOOMetaClass().elementDescriptionName())
+            .arg((FloatType)nSelected * 100 / std::max((size_t)1,typePropertyObject->size()), 0, 'f', 1);
+
+        output.setStatus(PipelineStatus(std::move(statusMessage)));
+
+        return std::move(output);
     });
-#endif
-
-    // To speed up future queries, store the selection count in the selection property object.
-    selProperty->setNonzeroCount(nSelected);
-
-    state.addAttribute(QStringLiteral("SelectType.num_selected"), QVariant::fromValue(nSelected), request.modificationNode());
-
-    QString statusMessage = tr("%1 out of %2 %3 selected (%4%)")
-        .arg(nSelected)
-        .arg(typePropertyObject->size())
-        .arg(container->getOOMetaClass().elementDescriptionName())
-        .arg((FloatType)nSelected * 100 / std::max((size_t)1,typePropertyObject->size()), 0, 'f', 1);
-
-    state.setStatus(PipelineStatus(std::move(statusMessage)));
 }
 
 /******************************************************************************

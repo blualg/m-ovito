@@ -101,24 +101,26 @@ void FreezePropertyModifier::propertyChanged(const PropertyFieldDescriptor* fiel
 Future<PipelineFlowState> FreezePropertyModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
     // Check if we already have the frozen property available.
-    if(FreezePropertyModificationNode* node = dynamic_object_cast<FreezePropertyModificationNode>(request.modificationNode())) {
-        if(node->hasFrozenState(AnimationTime::fromFrame(freezeTime()))) {
+    if(FreezePropertyModificationNode* modNode = dynamic_object_cast<FreezePropertyModificationNode>(request.modificationNode())) {
+        if(modNode->hasFrozenState(AnimationTime::fromFrame(freezeTime()))) {
             // Perform replacement of the property in the input pipeline state.
-            PipelineFlowState output = input;
-            evaluateModifierSynchronous(request, output);
-            return std::move(output);
+            return transferFrozenProperty(modNode, std::move(input));
         }
     }
 
-    // Set up the upstream pipeline request.
+    // Cannot make upstream requests in interactive mode - this would take too long.
+    if(request.interactiveMode())
+        throw Exception(tr("No stored property values available yet."));
+
+    // Set up the upstream pipeline request for the freeze time.
     PipelineEvaluationRequest upstreamRequest = request;
     upstreamRequest.setTime(AnimationTime::fromFrame(freezeTime()));
 
     // Request the frozen state from the upstream pipeline.
     return request.modificationNode()->evaluateInput(upstreamRequest)
-        .then(*this, [this, request, node = OORef<ModificationNode>(request.modificationNode()), state = input](const PipelineFlowState& frozenState) mutable {
+        .then(*this, [this, request, input = std::move(input)](const PipelineFlowState& frozenState) mutable {
 
-            // Extract the input property.
+            // Extract the property to freeze.
             if(FreezePropertyModificationNode* modNode = dynamic_object_cast<FreezePropertyModificationNode>(request.modificationNode())) {
                 if(modNode->modifier() == this && !sourceProperty().isNull() && subject()) {
 
@@ -133,8 +135,7 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluateModifier(const Modifie
                             frozenState.stateValidity());
 
                         // Perform the actual replacement of the property in the input pipeline state.
-                        evaluateModifierSynchronous(request, state);
-                        return std::move(state);
+                        return transferFrozenProperty(modNode, std::move(input));
                     }
                     else {
                         throw Exception(tr("The property '%1' is not present in the input state.").arg(sourceProperty().name()));
@@ -143,27 +144,26 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluateModifier(const Modifie
                 modNode->invalidateFrozenState();
             }
 
-            return std::move(state);
+            return std::move(input);
         });
 }
 
 /******************************************************************************
-* Modifies the input data synchronously.
+* Copies the stored property to the current pipeline state.
 ******************************************************************************/
-void FreezePropertyModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+PipelineFlowState FreezePropertyModifier::transferFrozenProperty(FreezePropertyModificationNode* modNode, PipelineFlowState state) const
 {
     if(!subject())
         throw Exception(tr("No property type selected."));
 
     if(sourceProperty().isNull()) {
         state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("No source property selected.")));
-        return;
+        return std::move(state);
     }
     if(destinationProperty().isNull())
         throw Exception(tr("No output property selected."));
 
     // Retrieve the property values stored in the ModificationNode.
-    FreezePropertyModificationNode* modNode = dynamic_object_cast<FreezePropertyModificationNode>(request.modificationNode());
     if(!modNode || !modNode->property())
         throw Exception(tr("No stored property values available."));
 
@@ -249,6 +249,8 @@ void FreezePropertyModifier::evaluateModifierSynchronous(const ModifierEvaluatio
     }
     outputProperty->setVisElements(currentVisElements);
     modNode->setCachedVisElements(std::move(currentVisElements));
+
+    return std::move(state);
 }
 
 /******************************************************************************

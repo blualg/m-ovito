@@ -426,21 +426,7 @@ void ModifierListModel::updateActionState()
     // Obtain pipeline output at the selected stage.
     if(currentItem) {
         if(PipelineNode* pipelineNode = dynamic_object_cast<PipelineNode>(currentItem->object())) {
-            // If modifier is currently disabled or cannot yield an output for some reason, walk up the pipeline until we find an enabled modifier.
-            for(;;) {
-                if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(pipelineNode)) {
-                    if(modNode->modifierAndGroupEnabled()) {
-                        inputState = pipelineNode->getCachedPipelineNodeOutput(_userInterface.datasetContainer().currentAnimationTime());
-                        if(inputState)
-                            break;
-                    }
-                    pipelineNode = modNode->input();
-                }
-                else {
-                    inputState = pipelineNode->getCachedPipelineNodeOutput(_userInterface.datasetContainer().currentAnimationTime());
-                    break;
-                }
-            }
+            inputState = pipelineNode->getCachedPipelineNodeOutput(_userInterface.datasetContainer().currentAnimationTime());
         }
         else if(Pipeline* pipeline = _pipelineListModel->selectedPipeline()) {
             inputState = pipeline->getCachedPipelineOutput(_userInterface.datasetContainer().currentAnimationTime());

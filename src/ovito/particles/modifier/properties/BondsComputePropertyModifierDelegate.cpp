@@ -23,8 +23,11 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/Bonds.h>
 #include <ovito/particles/objects/Particles.h>
+#include <ovito/particles/util/ParticleExpressionEvaluator.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
+#include <ovito/core/utilities/concurrent/EnumerableThreadSpecific.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "BondsComputePropertyModifierDelegate.h"
 
@@ -46,108 +49,61 @@ QVector<DataObjectReference> BondsComputePropertyModifierDelegate::OOMetaClass::
 }
 
 /******************************************************************************
-* Creates and initializes a computation engine that will compute the
-* modifier's results.
-******************************************************************************/
-std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> BondsComputePropertyModifierDelegate::createEngine(
-                const ModifierEvaluationRequest& request,
-                const PipelineFlowState& input,
-                const ConstDataObjectPath& containerPath,
-                PropertyPtr outputProperty,
-                ConstPropertyPtr selectionProperty,
-                QStringList expressions)
+ * Launches the actual computations.
+ ******************************************************************************/
+Future<PipelineFlowState> BondsComputePropertyModifierDelegate::performComputation(
+    const ComputePropertyModifier* modifier,
+    ComputePropertyModificationNode* modNode,
+    PipelineFlowState state,
+    const PipelineFlowState& originalState,
+    PropertyPtr outputProperty,
+    ConstPropertyPtr selectionProperty,
+    int frame) const
 {
-    // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<Engine>(
-            request,
-            input.stateValidity(),
-            std::move(outputProperty),
-            containerPath,
-            std::move(selectionProperty),
-            std::move(expressions),
-            request.time().frame(),
-            input);
-}
+    // Initialize expression evaluator.
+    auto evaluator = std::make_unique<BondExpressionEvaluator>();
+    evaluator->initialize(modifier->expressions(), originalState, originalState.expectObject(inputContainerRef()), frame);
 
-/******************************************************************************
-* Constructor.
-******************************************************************************/
-BondsComputePropertyModifierDelegate::Engine::Engine(
-        const ModifierEvaluationRequest& request,
-        const TimeInterval& validityInterval,
-        PropertyPtr outputProperty,
-        const ConstDataObjectPath& containerPath,
-        ConstPropertyPtr selectionProperty,
-        QStringList expressions,
-        int frameNumber,
-        const PipelineFlowState& input) :
-    ComputePropertyModifierDelegate::PropertyComputeEngine(
-            request,
-            validityInterval,
-            input,
-            containerPath,
-            std::move(outputProperty),
-            std::move(selectionProperty),
-            std::move(expressions),
-            frameNumber,
-            std::make_unique<BondExpressionEvaluator>()),
-    _inputFingerprint(input.expectObject<Particles>())
-{
-}
+    // Store the list of input variables in the ModificationNode so that the UI component can display it to the user.
+    modNode->setInputVariableNames(evaluator->inputVariableNames());
+    modNode->setInputVariableTable(evaluator->inputVariableTable());
 
-/******************************************************************************
-* Performs the actual computation. This method is executed in a worker thread.
-******************************************************************************/
-void BondsComputePropertyModifierDelegate::Engine::perform()
-{
-    setProgressText(tr("Computing property '%1'").arg(outputProperty()->name()));
-    setProgressMaximum(outputProperty()->size());
-    BufferReadAccess<SelectionIntType> selectionAccessor(selection());
+    // Notify the UI component that the list of variables should be refreshed.
+    modifier->notifyDependents(ReferenceEvent::ObjectStatusChanged);
+    modNode->notifyDependents(ReferenceEvent::ObjectStatusChanged);
 
-    // Parallelized loop over all bonds.
-    parallelForChunksWithProgress(outputProperty()->size(), [this, &selectionAccessor](size_t startIndex, size_t count, ProgressingTask& operation) {
-        BondExpressionEvaluator::Worker worker(*_evaluator);
+    // The actual computation can be performed in a separate worker thread.
+    return AsynchronousTask<PipelineFlowState>::runAsync([
+            state = std::move(state),
+            outputProperty = std::move(outputProperty),
+            selectionProperty = std::move(selectionProperty),
+            evaluator = std::move(evaluator)]() mutable
+    {
+        this_task::setProgressText(tr("Computing property '%1'").arg(outputProperty->name()));
 
-        size_t endIndex = startIndex + count;
-        size_t componentCount = outputProperty()->componentCount();
-        for(size_t bondIndex = startIndex; bondIndex < endIndex; bondIndex++) {
+        RawBufferAccess<access_mode::write> outputAccessor(outputProperty, selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized);
+        BufferReadAccess<SelectionIntType> selectionAccessor(selectionProperty);
 
-            // Update progress indicator.
-            if((bondIndex % 1024) == 0)
-                operation.incrementProgressValue(1024);
+        EnumerableThreadSpecific<BondExpressionEvaluator::Worker> expressionWorkers;
+        size_t componentCount = outputAccessor.componentCount();
 
-            // Exit if operation was canceled.
-            if(operation.isCanceled())
+        parallelForCancellable(outputProperty->size(), 10000, [&](size_t i) {
+            BondExpressionEvaluator::Worker& worker = expressionWorkers.create(*evaluator);
+
+            // Skip unselected particles if requested.
+            if(selectionAccessor && !selectionAccessor[i])
                 return;
 
-            // Skip unselected bonds if requested.
-            if(selectionAccessor && !selectionAccessor[bondIndex])
-                continue;
-
             for(size_t component = 0; component < componentCount; component++) {
-
                 // Compute expression value.
-                FloatType value = worker.evaluate(bondIndex, component);
+                FloatType value = worker.evaluate(i, component);
 
                 // Store results in output property.
-                outputArray().set(bondIndex, component, value);
+                outputAccessor.set(i, component, value);
             }
-        }
-    });
-
-    // Release data that is no longer needed to reduce memory footprint.
-    releaseWorkingData();
-}
-
-/******************************************************************************
-* Injects the computed results of the engine into the data pipeline.
-******************************************************************************/
-void BondsComputePropertyModifierDelegate::Engine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
-{
-    if(_inputFingerprint.hasChanged(state.expectObject<Particles>()))
-        throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
-
-    PropertyComputeEngine::applyResults(request, state);
+        });
+        return std::move(state);
+    }, true);
 }
 
 }   // End of namespace

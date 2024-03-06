@@ -189,7 +189,7 @@ void AffineTransformationModifier::transformCoordinates(const AffineTransformati
 * Copies vectors from one buffer to another while transforming them.
 * If enabled, the transformation is only applied to selected elements.
 ******************************************************************************/
-void AffineTransformationModifier::transformVectors(const PipelineFlowState& inputState, const Property* input, Property* output, const Property* selection)
+void AffineTransformationModifier::transformVectors(const AffineTransformation tm, bool selectionOnly, const Property* input, Property* output, const Property* selection)
 {
     OVITO_ASSERT(output != input);
     OVITO_ASSERT(output->size() == input->size());
@@ -201,10 +201,10 @@ void AffineTransformationModifier::transformVectors(const PipelineFlowState& inp
         using T = decltype(_);
         using Vec3 = Vector_3<T>;
 
-        // Determine transformation matrix.
-        const AffineTransformationT<T> tm = effectiveAffineTransformation(inputState).toDataType<T>();
+        // Transformation matrix.
+        const AffineTransformationT<T> tm_typed = tm.toDataType<T>();
 
-        if(selectionOnly()) {
+        if(selectionOnly) {
             if(selection) {
 #ifdef OVITO_USE_SYCL
                 ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
@@ -212,7 +212,7 @@ void AffineTransformationModifier::transformVectors(const PipelineFlowState& inp
                     SyclBufferAccess<Vec3, access_mode::discard_write> vecOut(output, cgh);
                     SyclBufferAccess<const SelectionIntType, access_mode::read> selectionIn(selection, cgh);
                     OVITO_SYCL_PARALLEL_FOR(cgh, affine_vec_transformation_selection)(sycl::range(input->size()), [=](size_t i) {
-                        vecOut[i] = selectionIn[i] ? (tm * vecIn[i]) : vecIn[i];
+                        vecOut[i] = selectionIn[i] ? (tm_typed * vecIn[i]) : vecIn[i];
                     });
                 });
 #else
@@ -221,7 +221,7 @@ void AffineTransformationModifier::transformVectors(const PipelineFlowState& inp
                 BufferReadAccess<const SelectionIntType> selAccess(selection);
                 const auto* s = selAccess.cbegin();
                 for(Vec3& vout : BufferWriteAccess<Vec3, access_mode::discard_write>(output)) {
-                    vout = (*s++) ? (tm * (*vin)) : (*vin);
+                    vout = (*s++) ? (tm_typed * (*vin)) : (*vin);
                     ++vin;
                 }
 #endif
@@ -233,7 +233,7 @@ void AffineTransformationModifier::transformVectors(const PipelineFlowState& inp
         }
         else {
             // Check if the matrix describes a pure translation. If so, effectively, no vector transformation takes place.
-            if(tm.isTranslationMatrix()) {
+            if(tm_typed.isTranslationMatrix()) {
                 output->copyFrom(*input);
             }
             else {
@@ -242,14 +242,14 @@ void AffineTransformationModifier::transformVectors(const PipelineFlowState& inp
                     SyclBufferAccess<const Vec3, access_mode::read> vecIn(input, cgh);
                     SyclBufferAccess<Vec3, access_mode::discard_write> vecOut(output, cgh);
                     OVITO_SYCL_PARALLEL_FOR(cgh, affine_vec_transformation_full_xform)(sycl::range(input->size()), [=](size_t i) {
-                        vecOut[i] = tm * vecIn[i];
+                        vecOut[i] = tm_typed * vecIn[i];
                     });
                 });
 #else
                 BufferReadAccess<const Vec3> vecIn(input);
                 const auto* vin = vecIn.cbegin();
                 for(Vec3& vout : BufferWriteAccess<Vec3, access_mode::discard_write>(output))
-                    vout = tm * (*vin++);
+                    vout = tm_typed * (*vin++);
 #endif
             }
         }

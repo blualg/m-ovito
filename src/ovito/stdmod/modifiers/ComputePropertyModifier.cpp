@@ -61,10 +61,9 @@ ComputePropertyModifier::ComputePropertyModifier(ObjectInitializationFlags flags
     _useMultilineFields(false)
 {
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
-#ifndef OVITO_DEBUG // TODO
         // Let this modifier act on particles by default.
         createDefaultModifierDelegate(ComputePropertyModifierDelegate::OOClass(), QStringLiteral("ParticlesComputePropertyModifierDelegate"));
-#endif
+
         // Set default output property.
         if(delegate())
             setOutputProperty(PropertyReference(delegate()->inputContainerClass(), QStringLiteral("My property")));
@@ -200,7 +199,6 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::apply(const ModifierE
         throw Exception(tr("Property %1 to be computed is not a %2 property.").arg(modifier->outputProperty().name()).arg(inputContainerClass()->elementDescriptionName()));
 
     // Look up the property container which we will operate on. Make sure we can safely modify it.
-    ConstDataObjectPath originalContainerPath = originalState.expectObject(inputContainerRef());
     DataObjectPath containerPath = state.expectMutableObject(inputContainerRef());
     PropertyContainer* container = static_object_cast<PropertyContainer>(containerPath.back());
 
@@ -272,13 +270,28 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::apply(const ModifierE
     if(modifier->propertyComponentCount() != outputProperty->componentCount())
         throw Exception(tr("Number of expressions does not match component count of output property."));
 
+    // Launch computations in a separate thread.
+    return performComputation(modifier, modNode, std::move(state), originalState, std::move(outputProperty), std::move(selectionProperty), request.time().frame());
+}
+
+/******************************************************************************
+ * Launches the actual computations.
+ ******************************************************************************/
+Future<PipelineFlowState> ComputePropertyModifierDelegate::performComputation(
+    const ComputePropertyModifier* modifier,
+    ComputePropertyModificationNode* modNode,
+    PipelineFlowState state,
+    const PipelineFlowState& originalState,
+    PropertyPtr outputProperty,
+    ConstPropertyPtr selectionProperty,
+    int frame) const
+{
     // Initialize expression evaluator.
     auto evaluator = std::make_unique<PropertyExpressionEvaluator>();
-    evaluator->initialize(modifier->expressions(), originalState, originalContainerPath, request.time().frame());
+    evaluator->initialize(modifier->expressions(), originalState, originalState.expectObject(inputContainerRef()), frame);
 
     // Store the list of input variables in the ModificationNode so that the UI component can display it to the user.
     modNode->setInputVariableNames(evaluator->inputVariableNames());
-//    modNode->setDelegateInputVariableNames(delegateInputVariableNames());
     modNode->setInputVariableTable(evaluator->inputVariableTable());
 
     // Notify the UI component that the list of variables should be refreshed.

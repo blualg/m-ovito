@@ -74,8 +74,8 @@ public:
     }
 
     /// Determines which elements are located within the given viewport fence region (=2D polygon).
-    virtual boost::dynamic_bitset<> viewportFenceSelection(const QVector<Point2>& fence, const ConstDataObjectPath& objectPath, Pipeline* pipeline, const Matrix4& projectionTM) const {
-        return boost::dynamic_bitset<>{}; // Return empty set to indicate missing fence selection support.
+    virtual ConstPropertyPtr viewportFenceSelection(const QVector<Point2>& fence, const ConstDataObjectPath& objectPath, Pipeline* pipeline, const Matrix4& projectionTM) const {
+        return {}; // Return empty set to indicate missing fence selection support.
     }
 
     /// This method is called by InputColumnMapping::validate() to let the container class perform custom checks

@@ -275,13 +275,15 @@ void ParticleImporter::FrameLoader::generateBondPeriodicImageProperty()
 ******************************************************************************/
 void ParticleImporter::FrameLoader::generateBonds()
 {
-    if(isCanceled()) return;
-    if(!_particles) return;
+    this_task::throwIfCanceled();
+    if(!_particles)
+        return;
 
     // Get the type particle property.
     const Property* typeProperty = _particles->getProperty(Particles::TypeProperty);
     const Property* positionProperty = _particles->getProperty(Particles::PositionProperty);
-    if(!typeProperty || !positionProperty) return;
+    if(!typeProperty || !positionProperty)
+        return;
 
     // Do not delete the generated bonds again in FrameLoader::loadFile().
     setKeepExistingTopology(true);
@@ -315,14 +317,13 @@ void ParticleImporter::FrameLoader::generateBonds()
 
     // Prepare the neighbor list.
     CutoffNeighborFinder neighborFinder;
-    if(!neighborFinder.prepare(maxCutoff, positionProperty, state().getObject<SimulationCell>(), {}))
-        return;
+    neighborFinder.prepare(maxCutoff, positionProperty, state().getObject<SimulationCell>(), {});
 
     BufferReadAccess<int32_t> particleTypesArray(typeProperty);
 
     // Multi-threaded loop over all particles, each thread producing a partial bonds list.
     size_t particleCount = positionProperty->size();
-    auto partialBondsLists = parallelForCollect<std::vector<Bond>>(particleCount, [&](size_t particleIndex, std::vector<Bond>& bondList) {
+    auto partialBondsLists = parallelForCollect<std::vector<Bond>>(particleCount, 4096, [&](size_t particleIndex, std::vector<Bond>& bondList) {
         // Kernel called for each particle: Iterate over the particle's neighbors within the cutoff range.
         for(CutoffNeighborFinder::Query neighborQuery(neighborFinder, particleIndex); !neighborQuery.atEnd(); neighborQuery.next()) {
             int type1 = particleTypesArray[particleIndex];
@@ -341,7 +342,7 @@ void ParticleImporter::FrameLoader::generateBonds()
         }
     });
 
-    // Create Bonds.
+    // Create bonds.
     setBondCount(boost::accumulate(partialBondsLists, (size_t)0, [](size_t n, const std::vector<Bond>& bonds) { return n + bonds.size(); }));
     BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> bondTopologyProperty = this->bonds()->createProperty(Bonds::TopologyProperty);
     Property* bondTypeProperty = this->bonds()->createProperty(Bonds::TypeProperty);

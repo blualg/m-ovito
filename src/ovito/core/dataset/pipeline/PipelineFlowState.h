@@ -58,9 +58,6 @@ public:
         _data.reset();
         _stateValidity.setEmpty();
         _status = {};
-#if 0 // TODO
-        _isPreliminaryState = false;
-#endif
     }
 
     /// \brief Returns whether this flow state has a data collection or not.
@@ -115,27 +112,13 @@ public:
     /// Sets the stored status.
     void setStatus(PipelineStatus&& status) { _status = std::move(status); }
 
-    /// Returns a non-const reference to the status structure of the pipeline evaluation.
+    /// Returns a non-const reference to the status information of the pipeline evaluation.
     PipelineStatus& mutableStatus() { return _status; }
 
-#if 0 // TODO
-    /// Returns whether this pipeline output represents a preliminary result that should not be cached.
-    bool isPreliminaryState() const { return _isPreliminaryState; }
-
-    /// Marks this pipeline output as a preliminary result that should not be cached.
-    void setIsPreliminaryState(bool isPreliminary) { _isPreliminaryState = isPreliminary; }
-
-    /// Marks this pipeline output as a preliminary result that should not be cached.
-    PipelineFlowState&& asPreliminaryState() && {
-        setIsPreliminaryState(true);
-        return std::move(*this);
-    }
-
-    /// Copies the pipeline state and marks the copy as as a preliminary result that should not be cached.
-    PipelineFlowState asPreliminaryState() const& {
-        return PipelineFlowState(*this).asPreliminaryState();
-    }
-#endif
+    /// Merges the status with the existing one.
+    /// This method can be used by modifiers that perform multiple operations in a row
+    /// and want to combine the outcome of each operation into a single status.
+    void combineStatus(const PipelineStatus& otherStatus) { _status.combine(otherStatus); }
 
     /// Returns the (read-only) data collection of this pipeline state.
     const DataCollection* data() const { return _data.get(); }
@@ -478,11 +461,6 @@ private:
 
     /// The status of the pipeline evaluation.
     PipelineStatus _status;
-
-#if 0
-    /// Indicates that this pipeline output represents a preliminary result that should not be cached.
-    bool _isPreliminaryState = false;
-#endif
 };
 
 }   // End of namespace

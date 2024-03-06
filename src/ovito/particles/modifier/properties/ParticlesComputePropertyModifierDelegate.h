@@ -65,7 +65,6 @@ public:
     /// \brief Sets the math expression that is used to compute the neighbor-terms of the property function.
     /// \param index The property component for which the expression should be set.
     /// \param expression The math formula.
-    /// \undoable
     void setNeighborExpression(const QString& expression, int index = 0) {
         if(index < 0 || index >= neighborExpressions().size())
             throw Exception("Property component index is out of range.");
@@ -77,81 +76,24 @@ public:
     /// \brief Returns the math expression that is used to compute the neighbor-terms of the property function.
     /// \param index The property component for which the expression should be returned.
     /// \return The math formula.
-    /// \undoable
     const QString& neighborExpression(int index = 0) const {
         if(index < 0 || index >= neighborExpressions().size())
             throw Exception("Property component index is out of range.");
         return neighborExpressions()[index];
     }
 
-    /// \brief Sets the number of vector components of the property to compute.
-    /// \param componentCount The number of vector components.
-    /// \undoable
+    /// Sets the number of vector components of the property to compute.
     virtual void setComponentCount(int componentCount) override;
 
     /// Checks if math expressions are time-dependent, i.e. whether they involve the animation frame number.
     virtual bool isExpressionTimeDependent(ComputePropertyModifier* modifier) const override;
 
-    /// Creates a computation engine that will compute the property values.
-    virtual std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> createEngine(
-                const ModifierEvaluationRequest& request,
-                const PipelineFlowState& input,
-                const ConstDataObjectPath& containerPath,
-                PropertyPtr outputProperty,
-                ConstPropertyPtr selectionProperty,
-                QStringList expressions) override;
+protected:
+
+    /// Launches the actual computations.
+    virtual Future<PipelineFlowState> performComputation(const ComputePropertyModifier* modifier, ComputePropertyModificationNode* modNode, PipelineFlowState state, const PipelineFlowState& originalState, PropertyPtr outputProperty, ConstPropertyPtr selectionProperty, int frame) const override;
 
 private:
-
-    /// Asynchronous compute engine that does the actual work in a separate thread.
-    class Engine : public ComputePropertyModifierDelegate::PropertyComputeEngine
-    {
-    public:
-
-        /// Constructor.
-        Engine(
-                const ModifierEvaluationRequest& request,
-                const TimeInterval& validityInterval,
-                PropertyPtr outputProperty,
-                const ConstDataObjectPath& containerPath,
-                ConstPropertyPtr selectionProperty,
-                QStringList expressions,
-                int frameNumber,
-                const PipelineFlowState& input,
-                ConstPropertyPtr positions,
-                QStringList neighborExpressions,
-                FloatType cutoff);
-
-        /// Returns the list of available input variables for the expressions managed by the delegate.
-        virtual QStringList delegateInputVariableNames() const override;
-
-        /// Determines whether any of the math expressions is explicitly time-dependent.
-        virtual bool isTimeDependent() override;
-
-        /// Returns a human-readable text listing the input variables.
-        virtual QString inputVariableTable() const override;
-
-        /// Computes the modifier's results.
-        virtual void perform() override;
-
-        /// Returns the property storage that contains the input particle positions.
-        const ConstPropertyPtr& positions() const { return _positions; }
-
-        /// Indicates whether contributions from particle neighbors are taken into account.
-        bool neighborMode() const { return _neighborMode; }
-
-        /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-    private:
-
-        const FloatType _cutoff;
-        QStringList _neighborExpressions;
-        bool _neighborMode;
-        ConstPropertyPtr _positions;
-        std::unique_ptr<ParticleExpressionEvaluator> _neighborEvaluator;
-        ElementOrderingFingerprint _inputFingerprint;
-    };
 
     /// The math expressions for calculating the neighbor-terms of the property function.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QStringList, neighborExpressions, setNeighborExpressions);

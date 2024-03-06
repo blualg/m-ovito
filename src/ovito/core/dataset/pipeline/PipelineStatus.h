@@ -89,6 +89,11 @@ public:
     /// Tests two status objects for inequality.
     bool operator!=(const PipelineStatus& other) const { return !(*this == other); }
 
+    /// Combines the status with another one.
+    /// This method can be used by modifiers that perform multiple operations in a row
+    /// and want to combine the outcome of each operation into a single status.
+    void combine(const PipelineStatus& other);
+
 private:
 
     /// The status.

@@ -184,12 +184,14 @@ public:
     /// Returns the color used for rendering all selected particles.
     const Color& selectionColor() const { return _selectionParticleColor; }
 
-	/// Computes the 3d bounding box of the primitive in local coordinate space.
+	/// Computes the 3d bounding box of the primitive in local coordinates.
 	virtual Box3 computeBoundingBox(const RendererResourceCache::ResourceFrame& visCache) const override {
-        OVITO_ASSERT(!indices());
-        auto& bb = visCache.lookup<Box3>(RendererResourceKey<struct ParticlePositionsBoundingBoxCache, ConstDataBufferPtr>{positions()});
+        auto& bb = visCache.lookup<Box3>(RendererResourceKey<struct ParticlePositionsBoundingBoxCache, ConstDataBufferPtr, ConstDataBufferPtr>{positions(), indices()});
         if(bb.isEmpty() && positions()) {
-            bb = positions()->boundingBox3();
+            if(!indices())
+                bb = positions()->boundingBox3();
+            else
+                bb = positions()->boundingBox3Indexed(*indices());
         }
         FloatType maxRadius = std::max(uniformRadius(), FloatType(0));
         if(radii()) {

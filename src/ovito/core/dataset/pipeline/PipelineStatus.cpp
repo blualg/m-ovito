@@ -81,4 +81,27 @@ QDebug operator<<(QDebug debug, const PipelineStatus& s)
     return debug;
 }
 
+/******************************************************************************
+* Combines the status with another one.
+* This method can be used by modifiers that perform multiple operations in a row
+* and want to combine the status of each operation into a single status.
+******************************************************************************/
+void PipelineStatus::combine(const PipelineStatus& other)
+{
+    // Error status takes precedence over success status.
+    if(type() == PipelineStatus::Success || other.type() == PipelineStatus::Error)
+        setType(other.type());
+
+    // Combine the text messages.
+    if(!other.text().isEmpty()) {
+        if(!text().isEmpty())
+            setText(text() + QStringLiteral("\n") + other.text());
+        else
+            setText(other.text());
+    }
+
+    OVITO_ASSERT_MSG(other.shortInfo().isNull(), "PipelineStatus::combine()", "PipelineStatus::combine() does not support combining short info yet");
+}
+
+
 }   // End of namespace

@@ -31,11 +31,9 @@ namespace Ovito {
 /******************************************************************************
 * Initialization function.
 ******************************************************************************/
-bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, BufferReadAccess<Point3> positions, const SimulationCell* cell, BufferReadAccess<SelectionIntType> selectionProperty)
+void CutoffNeighborFinder::prepare(FloatType cutoffRadius, BufferReadAccess<Point3> positions, const SimulationCell* cell, BufferReadAccess<SelectionIntType> selectionProperty)
 {
     OVITO_ASSERT(positions);
-    Task* currentTask = this_task::get();
-    OVITO_ASSERT(currentTask);
 
     _cutoffRadius = cutoffRadius;
     _cutoffRadiusSquared = cutoffRadius * cutoffRadius;
@@ -162,8 +160,7 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, BufferReadAccess<Poin
                 for(int iz = -stencilRadiusZ; iz <= stencilRadiusZ; iz++) {
                     if(std::abs(ix) < stencilRadius && std::abs(iy) < stencilRadius && std::abs(iz) < stencilRadius)
                         continue;
-                    if(currentTask && currentTask->isCanceled())
-                        return false;
+                    this_task::throwIfCanceled();
                     FloatType shortestDistance = FLOATTYPE_MAX;
                     for(int dx = -1; dx <= 1; dx++) {
                         for(int dy = -1; dy <= 1; dy++) {
@@ -190,7 +187,7 @@ bool CutoffNeighborFinder::prepare(FloatType cutoffRadius, BufferReadAccess<Poin
     particles = std::make_unique<NeighborListParticle[]>(_particleCount);
 
     // Sort particles into bins.
-    return parallelForWithProgress(_particleCount, [&](size_t pindex) {
+    parallelForCancellable(_particleCount, 4096, [&](size_t pindex) {
         const Point3& p = positions[pindex];
 
         NeighborListParticle& a = particles[pindex];

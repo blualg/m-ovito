@@ -25,6 +25,8 @@
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
+#include <ovito/core/utilities/concurrent/EnumerableThreadSpecific.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "ParticlesComputePropertyModifierDelegate.h"
 
@@ -76,259 +78,199 @@ void ParticlesComputePropertyModifierDelegate::setComponentCount(int componentCo
 }
 
 /******************************************************************************
-* Creates and initializes a computation engine that will compute the
-* modifier's results.
-******************************************************************************/
-std::shared_ptr<ComputePropertyModifierDelegate::PropertyComputeEngine> ParticlesComputePropertyModifierDelegate::createEngine(
-                const ModifierEvaluationRequest& request,
-                const PipelineFlowState& input,
-                const ConstDataObjectPath& containerPath,
-                PropertyPtr outputProperty,
-                ConstPropertyPtr selectionProperty,
-                QStringList expressions)
+ * Checks if math expressions are time-dependent, i.e. whether they involve the animation frame number.
+ ******************************************************************************/
+bool ParticlesComputePropertyModifierDelegate::isExpressionTimeDependent(ComputePropertyModifier* modifier) const
 {
-    if(!neighborExpressions().empty() && neighborExpressions().size() != outputProperty->componentCount() && (neighborExpressions().size() != 1 || !neighborExpressions().front().isEmpty()))
-        throw Exception(tr("Number of neighbor expressions that have been specified (%1) does not match the number of components per particle (%2) of the output property '%3'.")
-            .arg(neighborExpressions().size()).arg(outputProperty->componentCount()).arg(outputProperty->name()));
-
-    const Particles* particles = input.expectObject<Particles>();
-    const Property* positions = particles->expectProperty(Particles::PositionProperty);
-
-    // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<Engine>(
-            request,
-            input.stateValidity(),
-            std::move(outputProperty),
-            containerPath,
-            std::move(selectionProperty),
-            std::move(expressions),
-            request.time().frame(),
-            input,
-            positions,
-            neighborExpressions(),
-            cutoff());
-}
-
-/******************************************************************************
-* Constructor.
-******************************************************************************/
-ParticlesComputePropertyModifierDelegate::Engine::Engine(
-        const ModifierEvaluationRequest& request,
-        const TimeInterval& validityInterval,
-        PropertyPtr outputProperty,
-        const ConstDataObjectPath& containerPath,
-        ConstPropertyPtr selectionProperty,
-        QStringList expressions,
-        int frameNumber,
-        const PipelineFlowState& input,
-        ConstPropertyPtr positions,
-        QStringList neighborExpressions,
-        FloatType cutoff) :
-    ComputePropertyModifierDelegate::PropertyComputeEngine(
-            request,
-            validityInterval,
-            input,
-            containerPath,
-            std::move(outputProperty),
-            std::move(selectionProperty),
-            std::move(expressions),
-            frameNumber,
-            std::make_unique<ParticleExpressionEvaluator>()),
-    _inputFingerprint(input.expectObject<Particles>()),
-    _positions(std::move(positions)),
-    _neighborExpressions(std::move(neighborExpressions)),
-    _cutoff(cutoff),
-    _neighborEvaluator(std::make_unique<ParticleExpressionEvaluator>())
-{
-    // Make sure we have the right number of expression strings.
-    while((size_t)_neighborExpressions.size() < this->outputProperty()->componentCount())
-        _neighborExpressions.append(QString());
-    while((size_t)_neighborExpressions.size() > this->outputProperty()->componentCount())
-        _neighborExpressions.pop_back();
-
-    // Determine whether any neighbor expressions are present.
-    _neighborMode = false;
-    for(QString& expr : _neighborExpressions) {
-        if(expr.trimmed().isEmpty()) expr = QStringLiteral("0");
-        else if(expr.trimmed() != QStringLiteral("0")) _neighborMode = true;
-    }
-
-    _evaluator->registerGlobalParameter("Cutoff", _cutoff);
-    _evaluator->registerGlobalParameter("NumNeighbors", 0);
-
-    _neighborEvaluator->initialize(_neighborExpressions, input, containerPath, _frameNumber);
-    _neighborEvaluator->registerGlobalParameter("Cutoff", _cutoff);
-    _neighborEvaluator->registerGlobalParameter("NumNeighbors", 0);
-    _neighborEvaluator->registerGlobalParameter("Distance", 0);
-    _neighborEvaluator->registerGlobalParameter("Delta.X", 0);
-    _neighborEvaluator->registerGlobalParameter("Delta.Y", 0);
-    _neighborEvaluator->registerGlobalParameter("Delta.Z", 0);
-    _neighborEvaluator->registerIndexVariable(QStringLiteral("@") + _neighborEvaluator->indexVarName(), 1);
-
-    // Build list of properties that will be made available as expression variables.
-    std::vector<ConstPropertyPtr> inputProperties;
-    const Particles* particles = input.expectObject<Particles>();
-    for(const Property* prop : particles->properties()) {
-        inputProperties.push_back(prop);
-    }
-    _neighborEvaluator->registerPropertyVariables(inputProperties, 1, _T("@"));
-
-    // Activate neighbor mode if NumNeighbors variable is referenced in tghe central particle expression(s).
-    if(_evaluator->isVariableUsed(_T("NumNeighbors")))
-        _neighborMode = true;
-}
-
-/********************************§**********************************************
-* Returns a human-readable text listing the input variables.
-******************************************************************************/
-QString ParticlesComputePropertyModifierDelegate::Engine::inputVariableTable() const
-{
-    QString table = ComputePropertyModifierDelegate::PropertyComputeEngine::inputVariableTable();
-    table.append(QStringLiteral("<p><b>Neighbor expression variables:</b><ul>"));
-    table.append(QStringLiteral("<li>Cutoff (<i style=\"color: #555;\">radius</i>)</li>"));
-    table.append(QStringLiteral("<li>NumNeighbors (<i style=\"color: #555;\">of central particle</i>)</li>"));
-    table.append(QStringLiteral("<li>Distance (<i style=\"color: #555;\">from central particle</i>)</li>"));
-    table.append(QStringLiteral("<li>Delta.X (<i style=\"color: #555;\">neighbor vector component</i>)</li>"));
-    table.append(QStringLiteral("<li>Delta.Y (<i style=\"color: #555;\">neighbor vector component</i>)</li>"));
-    table.append(QStringLiteral("<li>Delta.Z (<i style=\"color: #555;\">neighbor vector component</i>)</li>"));
-    table.append(QStringLiteral("<li>@... (<i style=\"color: #555;\">central particle properties</i>)</li>"));
-    table.append(QStringLiteral("</ul></p>"));
-    return table;
-}
-
-/******************************************************************************
-* Determines whether any of the math expressions is explicitly time-dependent.
-******************************************************************************/
-QStringList ParticlesComputePropertyModifierDelegate::Engine::delegateInputVariableNames() const
-{
-    return _neighborEvaluator->inputVariableNames();
-}
-
-/******************************************************************************
-* Determines whether the math expressions are time-dependent,
-* i.e. if they reference the animation frame number.
-******************************************************************************/
-bool ParticlesComputePropertyModifierDelegate::Engine::isTimeDependent()
-{
-    if(ComputePropertyModifierDelegate::PropertyComputeEngine::isTimeDependent())
+    if(ComputePropertyModifierDelegate::isExpressionTimeDependent(modifier))
         return true;
 
-    if(neighborMode())
-        return _neighborEvaluator->isTimeDependent();
+    for(const QString& expression : neighborExpressions()) {
+        // This is a very simple check for the presence of the word "Frame" in the expression.
+        // It's not perfect, but should catch all relevant cases (maybe more).
+        if(expression.contains(QLatin1String("Frame")))
+            return true;
+    }
 
     return false;
 }
 
 /******************************************************************************
-* Performs the actual computation. This method is executed in a worker thread.
-******************************************************************************/
-void ParticlesComputePropertyModifierDelegate::Engine::perform()
+ * Launches the actual computations.
+ ******************************************************************************/
+Future<PipelineFlowState> ParticlesComputePropertyModifierDelegate::performComputation(
+    const ComputePropertyModifier* modifier,
+    ComputePropertyModificationNode* modNode,
+    PipelineFlowState state,
+    const PipelineFlowState& originalState,
+    PropertyPtr outputProperty,
+    ConstPropertyPtr selectionProperty,
+    int frame) const
 {
-    setProgressText(tr("Computing property '%1'").arg(outputProperty()->name()));
+    if(!neighborExpressions().empty() && neighborExpressions().size() != outputProperty->componentCount() && (neighborExpressions().size() != 1 || !neighborExpressions().front().isEmpty()))
+        throw Exception(tr("Number of neighbor expressions that have been specified (%1) does not match the number of components per particle (%2) of the output property '%3'.")
+            .arg(neighborExpressions().size()).arg(outputProperty->componentCount()).arg(outputProperty->name()));
 
-    // Only used when neighbor mode is active.
-    CutoffNeighborFinder neighborFinder;
-    if(neighborMode()) {
-        // Prepare the neighbor list.
-        if(!neighborFinder.prepare(_cutoff, positions(), _neighborEvaluator->simCell(), {}))
-            return;
+    const Particles* particles = originalState.expectObject<Particles>();
+
+    // Initialize expression evaluator.
+    auto evaluator = std::make_unique<ParticleExpressionEvaluator>();
+    evaluator->initialize(modifier->expressions(), originalState, originalState.expectObject(inputContainerRef()), frame);
+
+    // Make sure we have the right number of expression strings.
+    QStringList neighborExpressions = this->neighborExpressions();
+    while((size_t)neighborExpressions.size() < outputProperty->componentCount())
+        neighborExpressions.append(QString());
+    while((size_t)neighborExpressions.size() > outputProperty->componentCount())
+        neighborExpressions.pop_back();
+
+    // Determine whether any neighbor expressions are present.
+    bool neighborMode = false;
+    for(QString& expr : neighborExpressions) {
+        if(expr.trimmed().isEmpty())
+            expr = QStringLiteral("0");
+        else if(expr.trimmed() != QStringLiteral("0"))
+            neighborMode = true;
     }
 
-    setProgressMaximum(positions()->size());
+    evaluator->registerGlobalParameter("Cutoff", cutoff());
+    evaluator->registerGlobalParameter("NumNeighbors", 0);
 
-    BufferReadAccess<SelectionIntType> selectionAccessor(selection());
+    auto neighborEvaluator = std::make_unique<ParticleExpressionEvaluator>();
+    neighborEvaluator->initialize(neighborExpressions, originalState, originalState.expectObject(inputContainerRef()), frame);
+    neighborEvaluator->registerGlobalParameter("Cutoff", _cutoff);
+    neighborEvaluator->registerGlobalParameter("NumNeighbors", 0);
+    neighborEvaluator->registerGlobalParameter("Distance", 0);
+    neighborEvaluator->registerGlobalParameter("Delta.X", 0);
+    neighborEvaluator->registerGlobalParameter("Delta.Y", 0);
+    neighborEvaluator->registerGlobalParameter("Delta.Z", 0);
+    neighborEvaluator->registerIndexVariable(QStringLiteral("@") + neighborEvaluator->indexVarName(), 1);
 
-    // Parallelized loop over all particles.
-    parallelForChunksWithProgress(positions()->size(), [this, &neighborFinder, &selectionAccessor](size_t startIndex, size_t count, ProgressingTask& operation) {
-        ParticleExpressionEvaluator::Worker worker(*_evaluator);
-        ParticleExpressionEvaluator::Worker neighborWorker(*_neighborEvaluator);
+    // Build list of properties that will be made available as expression variables.
+    std::vector<ConstPropertyPtr> inputProperties;
+    for(const Property* prop : particles->properties()) {
+        inputProperties.push_back(prop);
+    }
+    neighborEvaluator->registerPropertyVariables(inputProperties, 1, _T("@"));
 
-        // Obtain addresses where variables are stored so we can update their values
-        // quickly later in the loop.
-        double* distanceVar;
-        double* deltaX;
-        double* deltaY;
-        double* deltaZ;
-        double* selfNumNeighbors = nullptr;
-        double* neighNumNeighbors = nullptr;
-        if(neighborMode()) {
-            distanceVar = neighborWorker.variableAddress(_T("Distance"));
-            deltaX = neighborWorker.variableAddress(_T("Delta.X"));
-            deltaY = neighborWorker.variableAddress(_T("Delta.Y"));
-            deltaZ = neighborWorker.variableAddress(_T("Delta.Z"));
-            selfNumNeighbors = worker.variableAddress(_T("NumNeighbors"));
-            neighNumNeighbors = neighborWorker.variableAddress(_T("NumNeighbors"));
-            if(!worker.isVariableUsed(_T("NumNeighbors")) && !neighborWorker.isVariableUsed(_T("NumNeighbors")))
-                selfNumNeighbors = neighNumNeighbors = nullptr;
-        }
+    // Activate neighbor mode if NumNeighbors variable is referenced in the central particle expression(s).
+    if(evaluator->isVariableUsed(_T("NumNeighbors")))
+        neighborMode = true;
 
-        size_t endIndex = startIndex + count;
-        size_t componentCount = outputProperty()->componentCount();
-        for(size_t particleIndex = startIndex; particleIndex < endIndex; particleIndex++) {
+    // Store the list of input variables in the ModificationNode so that the UI component can display it to the user.
+    modNode->setInputVariableNames(evaluator->inputVariableNames());
+    modNode->setDelegateInputVariableNames(neighborEvaluator->inputVariableNames());
+    QString variableTable = evaluator->inputVariableTable();
+    variableTable.append(QStringLiteral("<p><b>Neighbor expression variables:</b><ul>"));
+    variableTable.append(QStringLiteral("<li>Cutoff (<i style=\"color: #555;\">radius</i>)</li>"));
+    variableTable.append(QStringLiteral("<li>NumNeighbors (<i style=\"color: #555;\">of central particle</i>)</li>"));
+    variableTable.append(QStringLiteral("<li>Distance (<i style=\"color: #555;\">from central particle</i>)</li>"));
+    variableTable.append(QStringLiteral("<li>Delta.X (<i style=\"color: #555;\">neighbor vector component</i>)</li>"));
+    variableTable.append(QStringLiteral("<li>Delta.Y (<i style=\"color: #555;\">neighbor vector component</i>)</li>"));
+    variableTable.append(QStringLiteral("<li>Delta.Z (<i style=\"color: #555;\">neighbor vector component</i>)</li>"));
+    variableTable.append(QStringLiteral("<li>@... (<i style=\"color: #555;\">central particle properties</i>)</li>"));
+    variableTable.append(QStringLiteral("</ul></p>"));
+    modNode->setInputVariableTable(std::move(variableTable));
 
-            // Update progress indicator.
-            if((particleIndex % 1024) == 0)
-                operation.incrementProgressValue(1024);
+    // Notify the UI component that the list of variables should be refreshed.
+    modifier->notifyDependents(ReferenceEvent::ObjectStatusChanged);
+    modNode->notifyDependents(ReferenceEvent::ObjectStatusChanged);
 
-            // Exit if operation was canceled.
-            if(operation.isCanceled())
-                return;
+    // Get the input particle positions.
+    ConstPropertyPtr positions = particles->expectProperty(Particles::PositionProperty);
+
+    // The actual computation can be performed in a separate worker thread.
+    return AsynchronousTask<PipelineFlowState>::runAsync([
+            state = std::move(state),
+            outputProperty = std::move(outputProperty),
+            selectionProperty = std::move(selectionProperty),
+            evaluator = std::move(evaluator),
+            neighborEvaluator = std::move(neighborEvaluator),
+            positions = std::move(positions),
+            neighborMode,
+            cutoff = cutoff()]() mutable
+    {
+        this_task::setProgressText(tr("Computing property '%1'").arg(outputProperty->name()));
+
+        // Prepare the neighbor finder (only used when neighbor mode is active).
+        CutoffNeighborFinder neighborFinder;
+        if(neighborMode)
+            neighborFinder.prepare(cutoff, positions, neighborEvaluator->simCell(), {});
+
+        RawBufferAccess<access_mode::write> outputAccessor(outputProperty, selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized);
+        BufferReadAccess<SelectionIntType> selectionAccessor(selectionProperty);
+
+        // Per-worker data structure.
+        struct WorkerData {
+            ParticleExpressionEvaluator::Worker worker;
+            ParticleExpressionEvaluator::Worker neighborWorker;
+            double* distanceVar;
+            double* deltaX;
+            double* deltaY;
+            double* deltaZ;
+            double* selfNumNeighbors = nullptr;
+            double* neighNumNeighbors = nullptr;
+
+            WorkerData(ParticleExpressionEvaluator& evaluator, ParticleExpressionEvaluator& neighborEvaluator, bool neighborMode) : worker(evaluator), neighborWorker(neighborEvaluator)
+            {
+                if(neighborMode) {
+                    distanceVar = neighborWorker.variableAddress(_T("Distance"));
+                    deltaX = neighborWorker.variableAddress(_T("Delta.X"));
+                    deltaY = neighborWorker.variableAddress(_T("Delta.Y"));
+                    deltaZ = neighborWorker.variableAddress(_T("Delta.Z"));
+                    selfNumNeighbors = worker.variableAddress(_T("NumNeighbors"));
+                    neighNumNeighbors = neighborWorker.variableAddress(_T("NumNeighbors"));
+                    if(!worker.isVariableUsed(_T("NumNeighbors")) && !neighborWorker.isVariableUsed(_T("NumNeighbors")))
+                        selfNumNeighbors = neighNumNeighbors = nullptr;
+                }
+            }
+        };
+
+        EnumerableThreadSpecific<WorkerData> workerData;
+        size_t componentCount = outputAccessor.componentCount();
+
+        parallelForCancellable(outputProperty->size(), 4096, [&](size_t i) {
 
             // Skip unselected particles if requested.
-            if(selectionAccessor && !selectionAccessor[particleIndex])
-                continue;
+            if(selectionAccessor && !selectionAccessor[i])
+                return;
 
-            if(selfNumNeighbors != nullptr) {
+            WorkerData& wd = workerData.create(*evaluator, *neighborEvaluator, neighborMode);
+
+            if(wd.selfNumNeighbors) {
                 // Determine number of neighbors (only if this value is being referenced in the expressions).
                 int nneigh = 0;
-                for(CutoffNeighborFinder::Query neighQuery(neighborFinder, particleIndex); !neighQuery.atEnd(); neighQuery.next())
+                for(CutoffNeighborFinder::Query neighQuery(neighborFinder, i); !neighQuery.atEnd(); neighQuery.next())
                     nneigh++;
-                *selfNumNeighbors = *neighNumNeighbors = nneigh;
+                *wd.selfNumNeighbors = *wd.neighNumNeighbors = nneigh;
             }
 
             // Update neighbor expression variables that provide access to the properties of the central particle.
-            if(neighborMode()) {
-                neighborWorker.updateVariables(1, particleIndex);
-            }
+            if(neighborMode)
+                wd.neighborWorker.updateVariables(1, i);
 
             for(size_t component = 0; component < componentCount; component++) {
-
                 // Compute central term.
-                FloatType value = worker.evaluate(particleIndex, component);
+                FloatType value = wd.worker.evaluate(i, component);
 
-                if(neighborMode()) {
+                if(neighborMode) {
                     // Compute and add neighbor terms.
-                    for(CutoffNeighborFinder::Query neighQuery(neighborFinder, particleIndex); !neighQuery.atEnd(); neighQuery.next()) {
-                        *distanceVar = sqrt(neighQuery.distanceSquared());
-                        *deltaX = neighQuery.delta().x();
-                        *deltaY = neighQuery.delta().y();
-                        *deltaZ = neighQuery.delta().z();
-                        value += neighborWorker.evaluate(neighQuery.current(), component);
+                    for(CutoffNeighborFinder::Query neighQuery(neighborFinder, i); !neighQuery.atEnd(); neighQuery.next()) {
+                        *wd.distanceVar = sqrt(neighQuery.distanceSquared());
+                        *wd.deltaX = neighQuery.delta().x();
+                        *wd.deltaY = neighQuery.delta().y();
+                        *wd.deltaZ = neighQuery.delta().z();
+                        value += wd.neighborWorker.evaluate(neighQuery.current(), component);
                     }
                 }
 
                 // Store results in output property.
-                outputArray().set(particleIndex, component, value);
+                outputAccessor.set(i, component, value);
             }
-        }
-    });
+        });
 
-    // Release data that is no longer needed to reduce memory footprint.
-    releaseWorkingData();
-    _positions.reset();
-    _neighborExpressions.clear();
-    _neighborEvaluator.reset();
-}
-
-/******************************************************************************
-* Injects the computed results of the engine into the data pipeline.
-******************************************************************************/
-void ParticlesComputePropertyModifierDelegate::Engine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
-{
-    if(_inputFingerprint.hasChanged(state.expectObject<Particles>()))
-        throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
-
-    PropertyComputeEngine::applyResults(request, state);
+        return std::move(state);
+    }, true);
 }
 
 }   // End of namespace

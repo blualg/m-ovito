@@ -221,20 +221,6 @@ Future<PipelineFlowState> MultiDelegatingModifier::applyDelegates(const Modifier
         future.postprocess(*delegate, [delegate, request, input, additionalInputs](PipelineFlowState state) {
             return delegate->apply(request, std::move(state), input, additionalInputs);
         });
-
-#if 0 // TODO
-        // Append status text and code returned by the delegate function to the status returned to our caller.
-        PipelineStatus status = state.status();
-        if(status.type() == PipelineStatus::Success || delegateStatus.type() == PipelineStatus::Error)
-            status.setType(delegateStatus.type());
-        if(!delegateStatus.text().isEmpty()) {
-            if(!status.text().isEmpty())
-                status.setText(status.text() + QStringLiteral("\n") + delegateStatus.text());
-            else
-                status.setText(delegateStatus.text());
-        }
-        state.setStatus(std::move(status));
-#endif
     }
 
     return future;

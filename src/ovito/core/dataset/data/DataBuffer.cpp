@@ -1076,6 +1076,36 @@ Box3 DataBuffer::boundingBox3() const
 }
 
 /******************************************************************************
+* Computes the axis-aligned bounding box of a sub-set of the 3d coordinates stored in the buffer.
+******************************************************************************/
+Box3 DataBuffer::boundingBox3Indexed(const DataBuffer& indices) const
+{
+    OVITO_ASSERT(indices.dataType() == Int32 && indices.componentCount() == 1);
+#ifdef OVITO_USE_SYCL
+    OVITO_ASSERT(false); // TODO
+#else
+    if(dataType() == Float32 && componentCount() == 3) {
+        Box_3<float> bb;
+        BufferReadAccess<Point_3<float>> coordAcc(this);
+        for(auto idx : BufferReadAccess<int32_t>(&indices)) {
+            bb.addPoint(coordAcc[idx]);
+        }
+        return bb.toDataType<FloatType>();
+    }
+    else if(dataType() == Float64 && componentCount() == 3) {
+        Box_3<double> bb;
+        BufferReadAccess<Point_3<double>> coordAcc(this);
+        for(auto idx : BufferReadAccess<int32_t>(&indices)) {
+            bb.addPoint(coordAcc[idx]);
+        }
+        return bb.toDataType<FloatType>();
+    }
+#endif
+    OVITO_ASSERT(false); // Unsupported data type or component count
+    return {};
+}
+
+/******************************************************************************
 * Returns the number of non-zero entries in the array.
 ******************************************************************************/
 size_t DataBuffer::nonzeroCount() const

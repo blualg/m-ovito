@@ -234,8 +234,9 @@ bool ScenePreparation::referenceEvent(RefTarget* source, const ReferenceEvent& e
     else if(event.type() == ReferenceEvent::InteractiveStateAvailable && source == scene()) {
         // Update viewport window when a new interactive state from one of the data pipelines in the scene
         // becomes available (unless we are playing an animation).
-        if(!userInterface().arePreliminaryViewportUpdatesSuspended())
+        if(!userInterface().arePreliminaryViewportUpdatesSuspended()) {
             Q_EMIT viewportUpdateRequest();
+        }
     }
     return RefMaker::referenceEvent(source, event);
 }
