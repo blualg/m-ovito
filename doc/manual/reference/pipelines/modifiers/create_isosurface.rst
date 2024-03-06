@@ -33,11 +33,11 @@ The local field values at each isosurface output vertex are computed from the da
 
 **Surface smoothing**
 
-The resulting isosurface can optionally be smoothed using a fairing algorithm to even out surface steps resulting from the discrete nature of the voxel grid. The :guilabel:`Smoothing level` parameter controls the number of iterations of the smoothing algorithm to perform. This post-processing procedure slightly displaces the surface mesh vertices to reduce steps and roughness of the isosurface. Mesh smoothing is performed *after* interpolated field values have already been transferred to the surface. Therefore, the surface values reflect the original vertex positions before the smoothing procedure.
-
-**Surface smoothing**
-
-The resulting isosurface can optionally be smoothed using a fairing algorithm to even out surface steps resulting from the discrete nature of the voxel grid. The :guilabel:`Smoothing level` parameter controls the number of iterations of the smoothing algorithm to perform. This post-processing procedure slightly displaces the surface mesh vertices to reduce steps and roughness of the isosurface. Mesh smoothing is performed *after* interpolated field values have already been transferred to the surface. Therefore, the surface values reflect the original vertex positions before the smoothing procedure.
+The generated isosurface can optionally be smoothed using a mesh fairing algorithm to even out surface steps resulting from the discrete nature of the input voxel grid.
+The :guilabel:`Smoothing level` parameter specifies the number of iterations of the smoothing algorithm to apply. A value of 0 disables smoothing, which is the default setting.
+The post-processing procedure slightly displaces the surface mesh vertices to reduce steps and roughness of the isosurface.
+Mesh smoothing is performed *after* interpolated field values have been transferred to the surface, which means that the surface property values reflect the
+original vertex positions prior to smoothing.
 
 **Identify volumetric regions** |ovito-pro|
 
