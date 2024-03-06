@@ -9,7 +9,7 @@ Expression selection
 
 This modifier let you select particles, bonds or other data elements based on user-defined criteria, i.e., by entering a Boolean expression,
 which is evaluated by the modifier for every input element.
-Those elements get selected for which the Boolean expression yields a non-zero result (*true*); 
+Those elements get selected for which the Boolean expression yields a non-zero result (*true*);
 all other elements, for which the expression evaluates to zero (*false*), get deselected.
 
 The Boolean expression can contain references to local properties as well as global quantities, e.g. the simulation cell size or the current timestep number.
@@ -55,30 +55,42 @@ The expression parser supports the following functions:
   Function name       Description
   =================== =========================================================================
   ``abs(A)``          Absolute value of A. If A is negative, returns -A otherwise returns A.
-  ``acos(A)``         Arc-cosine of A. Returns the angle, measured in radians, whose cosine is A. 
-  ``acosh(A)``        Same as ``acos()`` but for hyperbolic cosine. 
-  ``asin(A)``         Arc-sine of A. Returns the angle, measured in radians, whose sine is A. 
-  ``asinh(A)``        Same as ``asin()`` but for hyperbolic sine. 
-  ``atan(A)``         Arc-tangent of A. Returns the angle, measured in radians, whose tangent is A. 
-  ``atan2(Y,X)``      Two argument variant of the arctangent function. Returns the angle, measured in radians. see `here <http://en.wikipedia.org/wiki/Atan2>`__. 
-  ``atanh(A)``        Same as ``atan()`` but for hyperbolic tangent. 
-  ``avg(A,B,...)``    Returns the average of all arguments. 
-  ``cos(A)``          Cosine of A. Returns the cosine of the angle A, where A is measured in radians. 
-  ``cosh(A)``         Same as ``cos()`` but for hyperbolic cosine. 
-  ``exp(A)``          Exponential of A. Returns the value of e raised to the power A where e is the base of the natural logarithm, i.e. the non-repeating value approximately equal to 2.71828182846. 
-  ``fmod(A,B)``       Returns the floating-point remainder of A/B (rounded towards zero). 
-  ``rint(A)``         Rounds A to the closest integer. 0.5 is rounded to 1. 
-  ``ln(A)``           Natural (base e) logarithm of A. 
-  ``log10(A)``        Base 10 logarithm of A. 
-  ``log2(A)``         Base 2 logarithm of A. 
-  ``max(A,B,...)``    Returns the maximum of all values. 
-  ``min(A,B,...)``    Returns the minimum of all values. 
-  ``sign(A)``         Returns: 1 if A is positive; -1 if A is negative; 0 if A is zero. 
-  ``sin(A)``          Sine of A. Returns the sine of the angle A, where A is measured in radians. 
-  ``sinh(A)``         Same as ``sin()`` but for hyperbolic sine. 
-  ``sqrt(A)``         Square root of a value. 
-  ``sum(A,B,...)``    Returns the sum of all parameter values. 
-  ``tan(A)``          Tangent of A. Returns the tangent of the angle A, where A is measured in radians. 
+  ``acos(A)``         Arc-cosine of A. Returns the angle, measured in radians, whose cosine is A.
+  ``acosh(A)``        Same as ``acos()`` but for hyperbolic cosine.
+  ``asin(A)``         Arc-sine of A. Returns the angle, measured in radians, whose sine is A.
+  ``asinh(A)``        Same as ``asin()`` but for hyperbolic sine.
+  ``atan(A)``         Arc-tangent of A. Returns the angle, measured in radians, whose tangent is A.
+  ``atan2(Y,X)``      Two argument variant of the arctangent function. Returns the angle, measured in radians. see `here <http://en.wikipedia.org/wiki/Atan2>`__.
+  ``atanh(A)``        Same as ``atan()`` but for hyperbolic tangent.
+  ``avg(A,B,...)``    Returns the average of all arguments.
+  ``cos(A)``          Cosine of A. Returns the cosine of the angle A, where A is measured in radians.
+  ``cosh(A)``         Same as ``cos()`` but for hyperbolic cosine.
+  ``exp(A)``          Exponential of A. Returns the value of e raised to the power A where e is the base of the natural logarithm, i.e. the non-repeating value approximately equal to 2.71828182846.
+  ``fmod(A,B)``       Returns the floating-point remainder of A/B (rounded towards zero).
+  ``rint(A)``         Rounds A to the closest integer. 0.5 is rounded to 1.
+  ``ln(A)``           Natural (base e) logarithm of A.
+  ``log10(A)``        Base 10 logarithm of A.
+  ``log2(A)``         Base 2 logarithm of A.
+  ``max(A,B,...)``    Returns the maximum of all values.
+  ``min(A,B,...)``    Returns the minimum of all values.
+  ``sign(A)``         Returns: 1 if A is positive; -1 if A is negative; 0 if A is zero.
+  ``sin(A)``          Sine of A. Returns the sine of the angle A, where A is measured in radians.
+  ``sinh(A)``         Same as ``sin()`` but for hyperbolic sine.
+  ``sqrt(A)``         Square root of a value.
+  ``sum(A,B,...)``    Returns the sum of all parameter values.
+  ``tan(A)``          Tangent of A. Returns the tangent of the angle A, where A is measured in radians.
+  =================== =========================================================================
+
+The expression parser supports the following constants:
+
+.. table::
+  :widths: auto
+
+  =================== =========================================================================
+  Constant name       Description
+  =================== =========================================================================
+  *pi*                Pi (3.14159...)
+  *inf*               Infinity (∞)
   =================== =========================================================================
 
 Usage examples
@@ -92,5 +104,5 @@ does. The second expression will select particles within a cylindrical region of
     sqrt(Position.X*Position.X + Position.Y*Position.Y) < 10.0
 
 .. seealso::
-  
+
   :py:class:`ovito.modifiers.ExpressionSelectionModifier` (Python API)
