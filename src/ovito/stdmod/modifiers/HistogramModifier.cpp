@@ -178,62 +178,50 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
     BufferWriteAccess<int64_t, access_mode::read_write> histogramAccess(histogram);
     int histogramSizeMin1 = histogram->size() - 1;
 
-#define HISTOGRAMFUNCTION(TYPE)                                                                                                            \
-    {                                                                                                                                      \
-        BufferReadAccess<TYPE*> array(property);                                                                                           \
-        if(!fixXAxisRange()) {                                                                                                             \
-            intervalStart = std::numeric_limits<FloatType>::max();                                                                         \
-            intervalEnd = std::numeric_limits<FloatType>::lowest();                                                                        \
-            const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;                                              \
-            for(TYPE v : array.componentRange(vecComponent)) {                                                                             \
-                if(sel && !*sel++) continue;                                                                                               \
-                if(std::isfinite(static_cast<FloatType>(v)) && (v < intervalStart)) intervalStart = v;                                     \
-                if(std::isfinite(static_cast<FloatType>(v)) && (v > intervalEnd)) intervalEnd = v;                                         \
-            }                                                                                                                              \
-        }                                                                                                                                  \
-        if(intervalEnd > intervalStart) {                                                                                                  \
-            FloatType binSize = (intervalEnd - intervalStart) / histogram->size();                                                         \
-            const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;                                              \
-            for(TYPE v : array.componentRange(vecComponent)) {                                                                             \
-                if(sel && !*sel++) continue;                                                                                               \
-                if(v < intervalStart || v > intervalEnd) continue;                                                                         \
-                int binIndex = ((FloatType)v - intervalStart) / binSize;                                                                   \
-                histogramAccess[std::max(0, std::min(binIndex, histogramSizeMin1))]++;                                                     \
-            }                                                                                                                              \
-        }                                                                                                                                  \
-        else {                                                                                                                             \
-            if(!inputSelection)                                                                                                            \
-                histogramAccess[0] = property->size();                                                                                     \
-            else                                                                                                                           \
-                histogramAccess[0] = property->size() - boost::count(inputSelection, 0);                                                   \
-        }                                                                                                                                  \
-        if(outputSelection) {                                                                                                              \
-            OVITO_ASSERT(outputSelection.size() == property->size());                                                                      \
-            SelectionIntType* s = outputSelection.begin();                                                                                 \
-            const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;                                              \
-            for(TYPE v : array.componentRange(vecComponent)) {                                                                             \
-                if((!sel || *sel++) && v >= selectionRangeStart && v <= selectionRangeEnd) {                                               \
-                    *s++ = 1;                                                                                                              \
-                    numSelected++;                                                                                                         \
-                }                                                                                                                          \
-                else                                                                                                                       \
-                    *s++ = 0;                                                                                                              \
-            }                                                                                                                              \
-        }                                                                                                                                  \
-    }
-
     if(property->size() > 0) {
-        switch(property->dataType()) {
-            case Property::Float32: HISTOGRAMFUNCTION(float); break;
-            case Property::Float64: HISTOGRAMFUNCTION(double); break;
-            case Property::Int32: HISTOGRAMFUNCTION(int32_t); break;
-            case Property::Int64: HISTOGRAMFUNCTION(int64_t); break;
-            case Property::Int8: HISTOGRAMFUNCTION(int8_t); break;
-            default:
-                throw Exception(
-                    tr("The property '%1' has a data type that is not supported by the histogram modifier.").arg(property->name()));
-                break;
-        }
+        property->forAnyType([&](auto _) {
+            using T = decltype(_);
+            BufferReadAccess<T*> array(property);
+            if(!fixXAxisRange()) {
+                intervalStart = std::numeric_limits<FloatType>::max();
+                intervalEnd = std::numeric_limits<FloatType>::lowest();
+                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
+                for(T v : array.componentRange(vecComponent)) {
+                    if(sel && !*sel++) continue;
+                    if(std::isfinite(static_cast<FloatType>(v)) && (v < intervalStart)) intervalStart = v;
+                    if(std::isfinite(static_cast<FloatType>(v)) && (v > intervalEnd)) intervalEnd = v;
+                }
+            }
+            if(intervalEnd > intervalStart) {
+                FloatType binSize = (intervalEnd - intervalStart) / histogram->size();
+                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
+                for(T v : array.componentRange(vecComponent)) {
+                    if(sel && !*sel++) continue;
+                    if(v < intervalStart || v > intervalEnd) continue;
+                    int binIndex = ((FloatType)v - intervalStart) / binSize;
+                    histogramAccess[std::max(0, std::min(binIndex, histogramSizeMin1))]++;
+                }
+            }
+            else {
+                if(!inputSelection)
+                    histogramAccess[0] = property->size();
+                else
+                    histogramAccess[0] = property->size() - boost::count(inputSelection, 0);
+            }
+            if(outputSelection) {
+                OVITO_ASSERT(outputSelection.size() == property->size());
+                SelectionIntType* s = outputSelection.begin();
+                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
+                for(T v : array.componentRange(vecComponent)) {
+                    if((!sel || *sel++) && v >= selectionRangeStart && v <= selectionRangeEnd) {
+                        *s++ = 1;
+                        numSelected++;
+                    }
+                    else
+                        *s++ = 0;
+                }
+            }
+        });
     }
     else {
         intervalStart = intervalEnd = 0;
