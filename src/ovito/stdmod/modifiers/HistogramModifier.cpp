@@ -187,8 +187,8 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
             const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;                                              \
             for(TYPE v : array.componentRange(vecComponent)) {                                                                             \
                 if(sel && !*sel++) continue;                                                                                               \
-                if(v < intervalStart) intervalStart = v;                                                                                   \
-                if(v > intervalEnd) intervalEnd = v;                                                                                       \
+                if(std::isfinite(static_cast<FloatType>(v)) && (v < intervalStart)) intervalStart = v;                                     \
+                if(std::isfinite(static_cast<FloatType>(v)) && (v > intervalEnd)) intervalEnd = v;                                         \
             }                                                                                                                              \
         }                                                                                                                                  \
         if(intervalEnd > intervalStart) {                                                                                                  \
