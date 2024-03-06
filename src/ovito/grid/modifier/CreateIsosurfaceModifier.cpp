@@ -252,7 +252,9 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
     SurfaceMeshBuilder mesh(_mesh);
 
     // Request identification of regions in Marching Cubes algorithm.
-    if(identifyRegions()) mesh.createFaceProperty(DataBuffer::Uninitialized, SurfaceMeshFaces::RegionProperty);
+    if(identifyRegions()) {
+        mesh.createFaceProperty(DataBuffer::Uninitialized, SurfaceMeshFaces::RegionProperty);
+    }
 
     // Invoke marching cubes algorithm.
     MarchingCubes mc(mesh, _gridShape[0], _gridShape[1], _gridShape[2], false, std::move(getFieldValue));
@@ -300,6 +302,7 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
         return;
 
     if(identifyRegions()) {
+        mesh.nonPBCexternalVolume();
         _totalSurfaceArea = mesh.computeSurfaceAreaWithRegions();
         _aggregateVolumes = mesh.computeAggregateVolumes();
     }
@@ -354,45 +357,47 @@ void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::applyResults(const Modif
     state.addAttribute(QStringLiteral("CreateIsosurface.surface_area"), QVariant::fromValue(_totalSurfaceArea), request.modificationNode());
 
     if(_identifyRegions) {
-        const FloatType& totalCellVolume = _aggregateVolumes.totalCellVolume;
-        const FloatType& totalFilledVolume = _aggregateVolumes.totalFilledVolume;
-        const FloatType& totalEmptyVolume = _aggregateVolumes.totalEmptyVolume;
-        const FloatType& totalVoidVolume = _aggregateVolumes.totalVoidVolume;
-        const SurfaceMesh::size_type& filledRegionCount = _aggregateVolumes.filledRegionCount;
-        const SurfaceMesh::size_type& emptyRegionCount = _aggregateVolumes.emptyRegionCount;
-        const SurfaceMesh::size_type& voidRegionCount = _aggregateVolumes.voidRegionCount;
+        const SimulationCell& simCell = *(state.expectObject<SimulationCell>());
+        bool periodic = simCell.pbcX() && simCell.pbcY() && simCell.pbcZ();
+        FloatType totalCellVolume = (periodic) ? simCell.volume3D() : std::numeric_limits<FloatType>::quiet_NaN();
 
         // Output more global attributes.
-        state.addAttribute(QStringLiteral("CreateIsosurface.cell_volume"), QVariant::fromValue(totalCellVolume),
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.cell_volume"), QVariant::fromValue(totalCellVolume),
                            request.modificationNode());
-        state.addAttribute(QStringLiteral("CreateIsosurface.specific_surface_area"),
-                           QVariant::fromValue(totalCellVolume ? (_totalSurfaceArea / totalCellVolume) : 0), request.modificationNode());
-        state.addAttribute(QStringLiteral("CreateIsosurface.filled_volume"), QVariant::fromValue(totalFilledVolume),
+        state.addAttribute(
+            QStringLiteral("ConstructSurfaceMesh.specific_surface_area"),
+            QVariant::fromValue(totalCellVolume ? (_totalSurfaceArea / totalCellVolume) : std::numeric_limits<FloatType>::quiet_NaN()),
+            request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_volume"), QVariant::fromValue(_aggregateVolumes.totalFilledVolume),
                            request.modificationNode());
-        state.addAttribute(QStringLiteral("CreateIsosurface.filled_fraction"),
-                           QVariant::fromValue(totalCellVolume ? (totalFilledVolume / totalCellVolume) : 0), request.modificationNode());
-        state.addAttribute(QStringLiteral("CreateIsosurface.filled_region_count"), QVariant::fromValue(filledRegionCount),
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_fraction"),
+                           QVariant::fromValue(totalCellVolume ? (_aggregateVolumes.totalFilledVolume / totalCellVolume)
+                                                               : std::numeric_limits<FloatType>::quiet_NaN()),
                            request.modificationNode());
-        state.addAttribute(QStringLiteral("CreateIsosurface.empty_volume"), QVariant::fromValue(totalEmptyVolume),
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_region_count"),
+                           QVariant::fromValue(_aggregateVolumes.filledRegionCount), request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_volume"), QVariant::fromValue(_aggregateVolumes.totalEmptyVolume),
                            request.modificationNode());
-        state.addAttribute(QStringLiteral("CreateIsosurface.empty_fraction"),
-                           QVariant::fromValue(totalCellVolume ? (totalEmptyVolume / totalCellVolume) : 0), request.modificationNode());
-        state.addAttribute(QStringLiteral("CreateIsosurface.empty_region_count"), QVariant::fromValue(emptyRegionCount),
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_fraction"),
+                           QVariant::fromValue(totalCellVolume ? (_aggregateVolumes.totalEmptyVolume / totalCellVolume)
+                                                               : std::numeric_limits<FloatType>::quiet_NaN()),
                            request.modificationNode());
-        state.addAttribute(QStringLiteral("CreateIsosurface.void_volume"), QVariant::fromValue(totalVoidVolume),
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_region_count"),
+                           QVariant::fromValue(_aggregateVolumes.emptyRegionCount), request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.void_volume"), QVariant::fromValue(_aggregateVolumes.totalVoidVolume),
                            request.modificationNode());
-        state.addAttribute(QStringLiteral("CreateIsosurface.void_region_count"), QVariant::fromValue(voidRegionCount),
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.void_region_count"), QVariant::fromValue(_aggregateVolumes.voidRegionCount),
                            request.modificationNode());
 
         statusMessage.append(
             tr("Surface area: %1\n# filled regions (volume): %2 (%3)\n# empty regions (volume): %4 (%5)\n# void regions (volume): %6 (%7)")
                 .arg(_totalSurfaceArea)
-                .arg(filledRegionCount)
-                .arg(totalFilledVolume)
-                .arg(emptyRegionCount)
-                .arg(totalEmptyVolume)
-                .arg(voidRegionCount)
-                .arg(totalVoidVolume));
+                .arg(_aggregateVolumes.filledRegionCount)
+                .arg(_aggregateVolumes.totalFilledVolume)
+                .arg(_aggregateVolumes.emptyRegionCount)
+                .arg(_aggregateVolumes.totalEmptyVolume)
+                .arg(_aggregateVolumes.voidRegionCount)
+                .arg(_aggregateVolumes.totalVoidVolume));
     }
     else {
         statusMessage.append(tr("Surface area: %1").arg(_totalSurfaceArea));
