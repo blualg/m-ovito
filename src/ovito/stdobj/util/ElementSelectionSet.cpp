@@ -52,7 +52,7 @@ public:
 private:
 
     OORef<ElementSelectionSet> _owner;
-    boost::dynamic_bitset<> _selection;
+    ConstPropertyPtr _selection;
     QSet<qlonglong> _selectedIdentifiers; // Note: using qlonglong instead of IdentifierIntType for compatibility with corresponding field of ElementSelectionSet class
 };
 
@@ -87,8 +87,8 @@ private:
 void ElementSelectionSet::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
     RefTarget::saveToStream(stream, excludeRecomputableData);
-    stream.beginChunk(0x02);
-    stream << _selection;
+    stream.beginChunk(0x03);
+    stream.saveObject(_selection);
     stream << _selectedIdentifiers;
     stream.endChunk();
 }
@@ -99,8 +99,20 @@ void ElementSelectionSet::saveToStream(ObjectSaveStream& stream, bool excludeRec
 void ElementSelectionSet::loadFromStream(ObjectLoadStream& stream)
 {
     RefTarget::loadFromStream(stream);
-    stream.expectChunk(0x02);
-    stream >> _selection;
+    int version = stream.expectChunkRange(0x02, 1);
+    if(version >= 1) {
+        _selection = stream.loadObject<Property>();
+    }
+    else {
+        // For backward compatibility with OVITO 3.10:
+        boost::dynamic_bitset<> bs;
+        stream >> bs;
+        PropertyPtr selection = PropertyPtr::create(DataBuffer::Uninitialized, bs.size(), DataBuffer::IntSelection, 1, QStringLiteral("Selection"), Property::GenericSelectionProperty);
+        size_t index = 0;
+        for(auto& s : BufferWriteAccess<SelectionIntType, access_mode::discard_write>{selection})
+            s = bs[index++];
+        _selection = std::move(selection);
+    }
     stream >> _selectedIdentifiers;
     stream.closeChunk();
 }
@@ -125,7 +137,7 @@ void ElementSelectionSet::resetSelection(const PropertyContainer* container)
     OVITO_ASSERT(container != nullptr);
 
     // Take a snapshot of the current selection state.
-    if(BufferReadAccess<SelectionIntType> selectionProperty = container->getProperty(Property::GenericSelectionProperty)) {
+    if(const Property* selectionProperty = container->getProperty(Property::GenericSelectionProperty)) {
 
         // Make a backup of the old snapshot so it may be restored.
         pushIfUndoRecording<ReplaceSelectionOperation>(this);
@@ -134,12 +146,13 @@ void ElementSelectionSet::resetSelection(const PropertyContainer* container)
         BufferReadAccess<IdentifierIntType> identifierProperty;
         if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericIdentifierProperty))
             identifierProperty = container->getProperty(Property::GenericIdentifierProperty);
-        OVITO_ASSERT(!identifierProperty || selectionProperty.size() == identifierProperty.size());
+        OVITO_ASSERT(!identifierProperty || selectionProperty->size() == identifierProperty.size());
 
-        if(identifierProperty && selectionProperty.size() == identifierProperty.size()) {
+        if(identifierProperty && selectionProperty->size() == identifierProperty.size()) {
             _selectedIdentifiers.clear();
-            _selection.clear();
-            auto s = selectionProperty.begin();
+            _selection.reset();
+            BufferReadAccess<SelectionIntType> selectionAcc{selectionProperty};
+            auto s = selectionAcc.begin();
             for(auto id : identifierProperty) {
                 if(*s++)
                     _selectedIdentifiers.insert(id);
@@ -148,11 +161,7 @@ void ElementSelectionSet::resetSelection(const PropertyContainer* container)
         else {
             // Take a snapshot of the selection state.
             _selectedIdentifiers.clear();
-            _selection.resize(selectionProperty.size());
-            size_t index = 0;
-            for(auto s : selectionProperty) {
-                _selection.set(index++, s);
-            }
+            _selection = selectionProperty;
         }
 
         notifyTargetChanged();
@@ -174,12 +183,13 @@ void ElementSelectionSet::clearSelection(const PropertyContainer* container)
     pushIfUndoRecording<ReplaceSelectionOperation>(this);
 
     if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericIdentifierProperty) && container->getProperty(Property::GenericIdentifierProperty)) {
-        _selection.clear();
+        _selection.reset();
         _selectedIdentifiers.clear();
     }
     else {
-        _selection.reset();
-        _selection.resize(container->elementCount(), false);
+        PropertyPtr selection = container->getOOMetaClass().createStandardProperty(DataBuffer::Uninitialized, container->elementCount(), Property::GenericSelectionProperty);
+        selection->fill<SelectionIntType>(0);
+        _selection = std::move(selection);
         _selectedIdentifiers.clear();
     }
     notifyTargetChanged();
@@ -188,8 +198,12 @@ void ElementSelectionSet::clearSelection(const PropertyContainer* container)
 /******************************************************************************
 * Replaces the selection set.
 ******************************************************************************/
-void ElementSelectionSet::setSelection(const PropertyContainer* container, const boost::dynamic_bitset<>& selection, SelectionMode mode)
+void ElementSelectionSet::setSelection(const PropertyContainer* container, ConstPropertyPtr selection, SelectionMode mode)
 {
+    OVITO_ASSERT(container);
+    OVITO_ASSERT(selection);
+    OVITO_ASSERT(selection->size() == container->elementCount());
+
     // Make a backup of the old snapshot so it may be restored.
     pushIfUndoRecording<ReplaceSelectionOperation>(this);
 
@@ -197,42 +211,59 @@ void ElementSelectionSet::setSelection(const PropertyContainer* container, const
     BufferReadAccess<IdentifierIntType> identifierProperty;
     if(useIdentifiers() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericIdentifierProperty))
         identifierProperty = container->getProperty(Property::GenericIdentifierProperty);
-    OVITO_ASSERT(!identifierProperty || selection.size() == identifierProperty.size());
+    OVITO_ASSERT(!identifierProperty || selection->size() == identifierProperty.size());
 
     if(identifierProperty) {
-        _selection.clear();
-        size_t index = 0;
+        _selection.reset();
+        BufferReadAccess<SelectionIntType> selectionAcc{selection};
+        auto s = selectionAcc.begin();
         if(mode == SelectionReplace) {
             _selectedIdentifiers.clear();
             for(auto id : identifierProperty) {
-                if(selection.test(index++))
+                if(*s++)
                     _selectedIdentifiers.insert(id);
             }
         }
         else if(mode == SelectionAdd) {
             for(auto id : identifierProperty) {
-                if(selection.test(index++))
+                if(*s++)
                     _selectedIdentifiers.insert(id);
             }
         }
         else if(mode == SelectionSubtract) {
             for(auto id : identifierProperty) {
-                if(selection.test(index++))
+                if(*s++)
                     _selectedIdentifiers.remove(id);
             }
         }
     }
     else {
         _selectedIdentifiers.clear();
-        if(mode == SelectionReplace)
-            _selection = selection;
+        if(mode == SelectionReplace) {
+            _selection = std::move(selection);
+        }
         else if(mode == SelectionAdd) {
-            _selection.resize(selection.size());
-            _selection |= selection;
+            if(!_selection) {
+                _selection = std::move(selection);
+            }
+            else {
+                OVITO_ASSERT(_selection->size() == selection->size());
+                if(_selection->size() == selection->size()) {
+                    BufferWriteAccess<SelectionIntType, access_mode::read_write> outAcc{_selection.makeMutableInplace()};
+                    auto sout = outAcc.begin();
+                    for(auto sin : BufferReadAccess<SelectionIntType>{selection})
+                        *sout++ |= sin;
+                }
+            }
         }
         else if(mode == SelectionSubtract) {
-            _selection.resize(selection.size());
-            _selection &= ~selection;
+            OVITO_ASSERT(_selection && _selection->size() == selection->size());
+            if(_selection && _selection->size() == selection->size()) {
+                BufferWriteAccess<SelectionIntType, access_mode::read_write> outAcc{_selection.makeMutableInplace()};
+                auto sout = outAcc.begin();
+                for(auto sin : BufferReadAccess<SelectionIntType>{selection})
+                    *sout++ &= ~sin;
+            }
         }
     }
 
@@ -253,12 +284,15 @@ void ElementSelectionSet::toggleElement(const PropertyContainer* container, size
         identifierProperty = container->getProperty(Property::GenericIdentifierProperty);
 
     if(identifierProperty) {
-        _selection.clear();
+        _selection.reset();
         toggleElementById(identifierProperty[elementIndex]);
     }
-    else if(elementIndex < _selection.size()) {
-        _selectedIdentifiers.clear();
-        toggleElementByIndex(elementIndex);
+    else {
+        OVITO_ASSERT(_selection);
+        if(_selection && elementIndex < _selection->size()) {
+            _selectedIdentifiers.clear();
+            toggleElementByIndex(elementIndex);
+        }
     }
 }
 
@@ -287,8 +321,10 @@ void ElementSelectionSet::toggleElementByIndex(size_t elementIndex)
     // Make a backup of the old selection state so it may be restored.
     pushIfUndoRecording<ToggleSelectionOperation>(this, -1, elementIndex);
 
-    if(elementIndex < _selection.size())
-        _selection.flip(elementIndex);
+    if(_selection && elementIndex < _selection->size()) {
+        BufferWriteAccess<SelectionIntType, access_mode::read_write> acc{_selection.makeMutableInplace()};
+        acc[elementIndex] = !acc[elementIndex];
+    }
     notifyTargetChanged();
 }
 
@@ -306,14 +342,15 @@ void ElementSelectionSet::selectAll(const PropertyContainer* container)
         identifierProperty = container->getProperty(Property::GenericIdentifierProperty);
 
     if(identifierProperty) {
-        _selection.clear();
+        _selection.reset();
         _selectedIdentifiers.clear();
         for(auto id : identifierProperty)
             _selectedIdentifiers.insert(id);
     }
     else {
-        _selection.set();
-        _selection.resize(container->elementCount(), true);
+        PropertyPtr selection = container->getOOMetaClass().createStandardProperty(DataBuffer::Uninitialized, container->elementCount(), Property::GenericSelectionProperty);
+        selection->fill<SelectionIntType>(1);
+        _selection = std::move(selection);
         _selectedIdentifiers.clear();
     }
     notifyTargetChanged();
@@ -333,51 +370,50 @@ void ElementSelectionSet::invertSelection(const PropertyContainer* container)
         identifierProperty = container->getProperty(Property::GenericIdentifierProperty);
 
     if(identifierProperty) {
-        _selection.clear();
+        _selection.reset();
         for(auto id : identifierProperty) {
             if(!_selectedIdentifiers.remove(id))
                 _selectedIdentifiers.insert(id);
         }
     }
     else {
-        _selection.resize(container->elementCount(), false);
-        _selection.flip();
+        OVITO_ASSERT(_selection && _selection->size() == container->elementCount());
+        if(_selection) {
+            for(auto& s : BufferWriteAccess<SelectionIntType, access_mode::read_write>{_selection.makeMutableInplace()})
+                s = !s;
+        }
         _selectedIdentifiers.clear();
     }
     notifyTargetChanged();
 }
 
-
 /******************************************************************************
 * Copies the stored selection set into the given output selection property.
 ******************************************************************************/
-PipelineStatus ElementSelectionSet::applySelection(BufferWriteAccess<SelectionIntType, access_mode::discard_write> outputSelectionProperty, BufferReadAccess<IdentifierIntType> identifierProperty)
+PipelineStatus ElementSelectionSet::applySelection(PropertyContainer* container, BufferReadAccess<IdentifierIntType> identifierProperty)
 {
     size_t nselected = 0;
     if(!identifierProperty || !useIdentifiers()) {
 
         // When not using identifiers, the number of input elements must match.
-        if(outputSelectionProperty.size() != _selection.size())
+        if(!_selection || container->elementCount() != _selection->size())
             throw Exception(tr("Stored selection state became invalid, because the number of input elements has changed."));
 
         // Restore selection simply by placing the snapshot into the pipeline.
-        size_t index = 0;
-        for(auto& s : outputSelectionProperty) {
-            if((s = _selection.test(index++)))
-                nselected++;
-        }
+        nselected = _selection->nonzeroCount();
+        container->createProperty(_selection);
     }
     else if(identifierProperty) {
-        OVITO_ASSERT(outputSelectionProperty.size() == identifierProperty.size());
-
+        Property* selectionProperty = container->createProperty(DataBuffer::Uninitialized, Property::GenericSelectionProperty);
         auto id = identifierProperty.begin();
-        for(auto& s : outputSelectionProperty) {
+        for(auto& s : BufferWriteAccess<SelectionIntType, access_mode::discard_write>{selectionProperty}) {
             if((s = _selectedIdentifiers.contains(*id++)))
                 nselected++;
         }
+        selectionProperty->setNonzeroCount(nselected);
     }
     else {
-        std::fill(outputSelectionProperty.begin(), outputSelectionProperty.end(), 0);
+        container->createProperty(DataBuffer::Uninitialized, Property::GenericSelectionProperty)->fillZero();
     }
 
     return PipelineStatus(PipelineStatus::Success, tr("%1 elements selected").arg(nselected));

@@ -1041,7 +1041,7 @@ ConstPropertyPtr Particles::OOMetaClass::viewportFenceSelection(const QVector<Po
         PropertyPtr selection = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, posProperty.size(), Particles::SelectionProperty, objectPath);
 
         BufferWriteAccess<SelectionIntType, access_mode::discard_write> selectionAcc{selection};
-        parallelForCancellable(posProperty.size(), 16000, [&](size_t index) {
+        parallelFor(posProperty.size(), 16000, [&](size_t index) {
             selectionAcc[index] = 0;
 
             // Project particle center to screen coordinates.
@@ -1054,21 +1054,22 @@ ConstPropertyPtr Particles::OOMetaClass::viewportFenceSelection(const QVector<Po
             // Perform point-in-polygon test.
             int intersectionsLeft = 0;
             int intersectionsRight = 0;
-            for(auto p2 = fence.constBegin(), p1 = p2 + (fence.size()-1); p2 != fence.constEnd(); p1 = p2++) {
+            for(auto p2 = fence.constBegin(), p1 = std::prev(fence.constEnd()); p2 != fence.constEnd(); p1 = p2++) {
                 if(p1->y() == p2->y())
-                    return;
+                    continue;
                 if(projPos.y() >= p1->y() && projPos.y() >= p2->y())
-                    return;
+                    continue;
                 if(projPos.y() < p1->y() && projPos.y() < p2->y())
-                    return;
+                    continue;
                 FloatType xint = (projPos.y() - p2->y()) / (p1->y() - p2->y()) * (p1->x() - p2->x()) + p2->x();
                 if(xint >= projPos.x())
                     intersectionsRight++;
                 else
                     intersectionsLeft++;
             }
-            if(intersectionsRight & 1)
+            if(intersectionsRight & 1) {
                 selectionAcc[index] = 1;
+            }
         });
 
         return selection;

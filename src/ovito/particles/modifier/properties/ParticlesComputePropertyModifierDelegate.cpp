@@ -229,44 +229,45 @@ Future<PipelineFlowState> ParticlesComputePropertyModifierDelegate::performCompu
         EnumerableThreadSpecific<WorkerData> workerData;
         size_t componentCount = outputAccessor.componentCount();
 
-        parallelForCancellable(outputProperty->size(), 4096, [&](size_t i) {
-
-            // Skip unselected particles if requested.
-            if(selectionAccessor && !selectionAccessor[i])
-                return;
-
+        parallelForInnerOuter(outputProperty->size(), 4096, [&](auto&& iterate) {
             WorkerData& wd = workerData.create(*evaluator, *neighborEvaluator, neighborMode);
+            iterate([&](size_t i) {
 
-            if(wd.selfNumNeighbors) {
-                // Determine number of neighbors (only if this value is being referenced in the expressions).
-                int nneigh = 0;
-                for(CutoffNeighborFinder::Query neighQuery(neighborFinder, i); !neighQuery.atEnd(); neighQuery.next())
-                    nneigh++;
-                *wd.selfNumNeighbors = *wd.neighNumNeighbors = nneigh;
-            }
+                // Skip unselected particles if requested.
+                if(selectionAccessor && !selectionAccessor[i])
+                    return;
 
-            // Update neighbor expression variables that provide access to the properties of the central particle.
-            if(neighborMode)
-                wd.neighborWorker.updateVariables(1, i);
-
-            for(size_t component = 0; component < componentCount; component++) {
-                // Compute central term.
-                FloatType value = wd.worker.evaluate(i, component);
-
-                if(neighborMode) {
-                    // Compute and add neighbor terms.
-                    for(CutoffNeighborFinder::Query neighQuery(neighborFinder, i); !neighQuery.atEnd(); neighQuery.next()) {
-                        *wd.distanceVar = sqrt(neighQuery.distanceSquared());
-                        *wd.deltaX = neighQuery.delta().x();
-                        *wd.deltaY = neighQuery.delta().y();
-                        *wd.deltaZ = neighQuery.delta().z();
-                        value += wd.neighborWorker.evaluate(neighQuery.current(), component);
-                    }
+                if(wd.selfNumNeighbors) {
+                    // Determine number of neighbors (only if this value is being referenced in the expressions).
+                    int nneigh = 0;
+                    for(CutoffNeighborFinder::Query neighQuery(neighborFinder, i); !neighQuery.atEnd(); neighQuery.next())
+                        nneigh++;
+                    *wd.selfNumNeighbors = *wd.neighNumNeighbors = nneigh;
                 }
 
-                // Store results in output property.
-                outputAccessor.set(i, component, value);
-            }
+                // Update neighbor expression variables that provide access to the properties of the central particle.
+                if(neighborMode)
+                    wd.neighborWorker.updateVariables(1, i);
+
+                for(size_t component = 0; component < componentCount; component++) {
+                    // Compute central term.
+                    FloatType value = wd.worker.evaluate(i, component);
+
+                    if(neighborMode) {
+                        // Compute and add neighbor terms.
+                        for(CutoffNeighborFinder::Query neighQuery(neighborFinder, i); !neighQuery.atEnd(); neighQuery.next()) {
+                            *wd.distanceVar = neighQuery.distance();
+                            *wd.deltaX = neighQuery.delta().x();
+                            *wd.deltaY = neighQuery.delta().y();
+                            *wd.deltaZ = neighQuery.delta().z();
+                            value += wd.neighborWorker.evaluate(neighQuery.current(), component);
+                        }
+                    }
+
+                    // Store results in output property.
+                    outputAccessor.set(i, component, value);
+                }
+            });
         });
 
         return std::move(state);

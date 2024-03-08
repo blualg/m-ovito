@@ -57,21 +57,6 @@ Modifier* ModifierDelegate::modifier() const
     return result;
 }
 
-#if 0 // TODO
-/******************************************************************************
-* Determines the time interval over which a computed pipeline state will remain valid.
-******************************************************************************/
-TimeInterval DelegatingModifier::validityInterval(const ModifierEvaluationRequest& request) const
-{
-    TimeInterval iv = Modifier::validityInterval(request);
-
-    if(delegate() && delegate()->isEnabled())
-        iv.intersect(delegate()->validityInterval(request));
-
-    return iv;
-}
-#endif
-
 /******************************************************************************
 * Creates a default delegate for this modifier.
 ******************************************************************************/
@@ -95,7 +80,8 @@ void DelegatingModifier::createDefaultModifierDelegate(const OvitoClass& delegat
 ******************************************************************************/
 bool DelegatingModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    if(!ModifierClass::isApplicableTo(input)) return false;
+    if(!ModifierClass::isApplicableTo(input))
+        return false;
 
     // Check if there is any modifier delegate that could handle the input data.
     for(const ModifierDelegate::OOMetaClass* clazz : PluginManager::instance().metaclassMembers<ModifierDelegate>(delegateMetaclass())) {
@@ -144,23 +130,21 @@ Future<PipelineFlowState> DelegatingModifier::applyDelegate(const ModifierEvalua
     return delegate()->apply(request, input, input, additionalInputs);
 }
 
-#if 0 // TODO
 /******************************************************************************
-* Determines the time interval over which a computed pipeline state will remain valid.
+* This function is called by the pipeline system before a new modifier evaluation begins.
 ******************************************************************************/
-TimeInterval MultiDelegatingModifier::validityInterval(const ModifierEvaluationRequest& request) const
+bool MultiDelegatingModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
 {
-    TimeInterval iv = Modifier::validityInterval(request);
+    bool returnValue = true;
 
     for(const ModifierDelegate* delegate : delegates()) {
         if(delegate && delegate->isEnabled()) {
-            iv.intersect(delegate->validityInterval(request));
+            returnValue = delegate->preEvaluationRun(request, result) && returnValue;
         }
     }
 
-    return iv;
+    return returnValue;
 }
-#endif
 
 /******************************************************************************
 * Creates the list of delegate objects for this modifier.
@@ -182,13 +166,15 @@ void MultiDelegatingModifier::createModifierDelegates(const OvitoClass& delegate
 ******************************************************************************/
 bool MultiDelegatingModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    if(!ModifierClass::isApplicableTo(input)) return false;
+    if(!ModifierClass::isApplicableTo(input))
+        return false;
 
     // Check if there is any modifier delegate that could handle the input data.
     for(const ModifierDelegate::OOMetaClass* clazz : PluginManager::instance().metaclassMembers<ModifierDelegate>(delegateMetaclass())) {
         if(clazz->getApplicableObjects(input).empty() == false)
             return true;
     }
+
     return false;
 }
 

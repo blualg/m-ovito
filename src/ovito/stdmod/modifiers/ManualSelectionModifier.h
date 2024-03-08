@@ -49,8 +49,8 @@ public:
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
-    /// Modifies the input data synchronously.
-    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) override;
 
     /// Adopts the selection state from the modifier's input.
     void resetSelection(ModificationNode* modApp, const PipelineFlowState& state);
@@ -68,7 +68,7 @@ public:
     void toggleElementSelection(ModificationNode* modApp, const PipelineFlowState& state, size_t elementIndex);
 
     /// Replaces the selection.
-    void setSelection(ModificationNode* modApp, const PipelineFlowState& state, const boost::dynamic_bitset<>& selection, ElementSelectionSet::SelectionMode mode);
+    void setSelection(ModificationNode* modApp, const PipelineFlowState& state, ConstPropertyPtr selection, ElementSelectionSet::SelectionMode mode);
 
 protected:
 

@@ -350,7 +350,7 @@ void SurfaceMeshBuilder::smoothMesh(int numIterations, FloatType k_PB, FloatType
 
         // Compute displacement for each vertex.
         std::vector<Vector3> displacements(vertexCount());
-        parallelForCancellable(vertexCount(), 4096, [&](vertex_index vertex) {
+        parallelFor(vertexCount(), 4096, [&](vertex_index vertex) {
             Vector3 d = Vector3::Zero();
 
             // Go in positive direction around vertex, facet by facet.

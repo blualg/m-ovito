@@ -144,7 +144,7 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
 }
 
 template<typename Setup, typename Kernel>
-void parallelForChunksCancellable(size_t loopCount, size_t minimumChunkSize, Setup&& setup, Kernel&& kernel)
+void parallelForChunks(size_t loopCount, size_t minimumChunkSize, Setup&& setup, Kernel&& kernel)
 {
     OVITO_ASSERT(minimumChunkSize > 0);
     size_t maxWorkerCount = (loopCount + minimumChunkSize - 1) / minimumChunkSize;
@@ -161,7 +161,7 @@ void parallelForChunksCancellable(size_t loopCount, size_t minimumChunkSize, Set
 }
 
 template<typename Kernel>
-void parallelForChunksCancellable(size_t loopCount, size_t minimumChunkSize, Kernel&& kernel)
+void parallelForChunks(size_t loopCount, size_t minimumChunkSize, Kernel&& kernel)
 {
     OVITO_ASSERT(minimumChunkSize > 0);
     size_t maxWorkerCount = (loopCount + minimumChunkSize - 1) / minimumChunkSize;
@@ -177,54 +177,66 @@ void parallelForChunksCancellable(size_t loopCount, size_t minimumChunkSize, Ker
     );
 }
 
-template<typename Setup, typename Kernel>
-void parallelForCancellable(size_t loopCount, size_t minimumChunkSize, Setup&& setup, Kernel&& kernel)
+template<typename Setup, typename OuterKernel>
+void parallelForInnerOuter(size_t loopCount, size_t minimumChunkSize, Setup&& setup, OuterKernel&& outerKernel)
 {
-    OVITO_ASSERT(minimumChunkSize > 0);
+    OVITO_ASSERT(minimumChunkSize != 0);
     OVITO_ASSERT(this_task::get());
     OVITO_ASSERT(this_task::get()->isProgressingTask());
     ProgressingTask* task = static_cast<ProgressingTask*>(this_task::get());
     task->setProgressMaximum(loopCount);
-    size_t progressIncrement = std::max(minimumChunkSize * 3 / 2, (size_t)1);
 
-    parallelForChunksCancellable(loopCount, minimumChunkSize, std::forward<Setup>(setup), [kernel = std::forward<Kernel>(kernel), progressIncrement](size_t workerIndex, size_t fromIndex, size_t toIndex) {
-        for(size_t i = fromIndex; i < toIndex; i++) {
-            kernel(workerIndex, i);
-
-            if((i % progressIncrement) == progressIncrement - 1) {
-                this_task::incrementProgressValue(progressIncrement);
+    parallelForChunks(loopCount, minimumChunkSize, std::forward<Setup>(setup), [outerKernel = std::forward<OuterKernel>(outerKernel), minimumChunkSize, task](size_t workerIndex, size_t fromIndex, size_t toIndex) {
+        outerKernel([&](auto&& innerKernel) {
+            for(size_t i = fromIndex; i != toIndex; ) {
+                size_t end = std::min(i + minimumChunkSize, toIndex);
+                size_t count = end - i;
+                for(; i != end; ++i)
+                    innerKernel(workerIndex, i);
+                if(!task->incrementProgressValue(count))
+                    throw OperationCanceled();
             }
-
-            this_task::throwIfCanceled();
-        }
+        });
     });
+}
 
-    task->setProgressValue(loopCount);
+template<typename OuterKernel>
+void parallelForInnerOuter(size_t loopCount, size_t minimumChunkSize, OuterKernel&& outerKernel)
+{
+    OVITO_ASSERT(minimumChunkSize != 0);
+    OVITO_ASSERT(this_task::get());
+    OVITO_ASSERT(this_task::get()->isProgressingTask());
+    ProgressingTask* task = static_cast<ProgressingTask*>(this_task::get());
+    task->setProgressMaximum(loopCount);
+
+    parallelForChunks(loopCount, minimumChunkSize, [outerKernel = std::forward<OuterKernel>(outerKernel), minimumChunkSize, task](size_t fromIndex, size_t toIndex) {
+        outerKernel([&](auto&& innerKernel) {
+            for(size_t i = fromIndex; i != toIndex; ) {
+                size_t end = std::min(i + minimumChunkSize, toIndex);
+                size_t count = end - i;
+                for(; i != end; ++i)
+                    innerKernel(i);
+                if(!task->incrementProgressValue(count))
+                    throw OperationCanceled();
+            }
+        });
+    });
+}
+
+template<typename Setup, typename Kernel>
+void parallelFor(size_t loopCount, size_t minimumChunkSize, Setup&& setup, Kernel&& kernel)
+{
+    parallelForInnerOuter(loopCount, minimumChunkSize, std::forward<Setup>(setup), [kernel = std::forward<Kernel>(kernel)](auto&& iterate) {
+        iterate(kernel);
+    });
 }
 
 template<typename Kernel>
-void parallelForCancellable(size_t loopCount, size_t minimumChunkSize, Kernel&& kernel)
+void parallelFor(size_t loopCount, size_t minimumChunkSize, Kernel&& kernel)
 {
-    OVITO_ASSERT(minimumChunkSize > 0);
-    OVITO_ASSERT(this_task::get());
-    OVITO_ASSERT(this_task::get()->isProgressingTask());
-    ProgressingTask* task = static_cast<ProgressingTask*>(this_task::get());
-    task->setProgressMaximum(loopCount);
-    size_t progressIncrement = std::max(minimumChunkSize * 3 / 2, (size_t)1);
-
-    parallelForChunksCancellable(loopCount, minimumChunkSize, [kernel = std::forward<Kernel>(kernel), progressIncrement](size_t fromIndex, size_t toIndex) {
-        for(size_t i = fromIndex; i < toIndex; i++) {
-            kernel(i);
-
-            if((i % progressIncrement) == progressIncrement - 1) {
-                this_task::incrementProgressValue(progressIncrement);
-            }
-
-            this_task::throwIfCanceled();
-        }
+    parallelForInnerOuter(loopCount, minimumChunkSize, [kernel = std::forward<Kernel>(kernel)](auto&& iterate) {
+        iterate(kernel);
     });
-
-    task->setProgressValue(loopCount);
 }
 
 template<typename ResultObject, typename Kernel>
@@ -232,7 +244,7 @@ std::vector<ResultObject> parallelForCollect(size_t loopCount, size_t minimumChu
 {
     std::vector<ResultObject> results;
 
-    parallelForCancellable(loopCount, minimumChunkSize,
+    parallelFor(loopCount, minimumChunkSize,
         [&](size_t workerCount) { results.resize(workerCount); },
         [&](size_t workerIndex, size_t elementIndex) {
             kernel(elementIndex, results[workerIndex]);

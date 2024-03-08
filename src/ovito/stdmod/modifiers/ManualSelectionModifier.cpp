@@ -81,9 +81,9 @@ void ManualSelectionModifier::propertyChanged(const PropertyFieldDescriptor* fie
 }
 
 /******************************************************************************
-* Modifies the input data synchronously.
+* Modifies the input data.
 ******************************************************************************/
-void ManualSelectionModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+Future<PipelineFlowState> ManualSelectionModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState state)
 {
     // Retrieve the selection stored in the modifier application.
     ElementSelectionSet* selectionSet = getSelectionSet(request.modificationNode(), false);
@@ -95,12 +95,14 @@ void ManualSelectionModifier::evaluateModifierSynchronous(const ModifierEvaluati
         container->verifyIntegrity();
 
         PipelineStatus status = selectionSet->applySelection(
-                container->createProperty(Property::GenericSelectionProperty),
+                container,
                 container->getOOMetaClass().isValidStandardPropertyId(Property::GenericIdentifierProperty) ?
                     container->getProperty(Property::GenericIdentifierProperty) : nullptr);
 
         state.setStatus(std::move(status));
     }
+
+    return std::move(state);
 }
 
 /******************************************************************************
@@ -181,11 +183,11 @@ void ManualSelectionModifier::toggleElementSelection(ModificationNode* modApp, c
 /******************************************************************************
 * Replaces the selection.
 ******************************************************************************/
-void ManualSelectionModifier::setSelection(ModificationNode* modApp, const PipelineFlowState& state, const boost::dynamic_bitset<>& selection, ElementSelectionSet::SelectionMode mode)
+void ManualSelectionModifier::setSelection(ModificationNode* modApp, const PipelineFlowState& state, ConstPropertyPtr selection, ElementSelectionSet::SelectionMode mode)
 {
     if(subject()) {
         const PropertyContainer* container = state.expectLeafObject(subject());
-        getSelectionSet(modApp, true)->setSelection(container, selection, mode);
+        getSelectionSet(modApp, true)->setSelection(container, std::move(selection), mode);
     }
 }
 

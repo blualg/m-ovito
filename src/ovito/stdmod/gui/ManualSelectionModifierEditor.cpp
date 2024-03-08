@@ -158,7 +158,7 @@ public:
     /// Lets the input mode render its 2d overlay content in a viewport.
     virtual void renderOverlay(Viewport* vp, ViewportWindow* vpWin, FrameGraph& frameGraph, DataSet* dataset) override {
         if(isActive() && vp == _activeViewport && _fence.size() >= 2) {
-            frameGraph.render2DPolyline(_fence.constData(), _fence.size(), ViewportSettings::getSettings().viewportColor(ViewportSettings::COLOR_SELECTION), true);
+            frameGraph.render2DPolyline(_fence.constData(), _fence.size(), ViewportSettings::getSettings().viewportColor(ViewportSettings::COLOR_SELECTION), true, vpWin->viewportWindowDeviceSize());
         }
     }
 
@@ -403,9 +403,9 @@ void ManualSelectionModifierEditor::onFence(const QVector<Point2>& fence, Viewpo
                 Matrix4 projectionTM = ndcToScreen * vpwin->projectionParams().projectionMatrix * (vpwin->projectionParams().viewMatrix * nodeTM);
 
                 // Determine which elements are within the closed fence polygon.
-                boost::dynamic_bitset<> selection = mod->subject().dataClass()->viewportFenceSelection(fence, inputObjectPath, pipeline, projectionTM);
-                if(selection.size() != 0) {
-                    mod->setSelection(node, modInput, selection, mode);
+                ConstPropertyPtr selection = mod->subject().dataClass()->viewportFenceSelection(fence, inputObjectPath, pipeline, projectionTM);
+                if(selection) {
+                    mod->setSelection(node, modInput, std::move(selection), mode);
                 }
                 else {
                     throw Exception(tr("Sorry, making a fence-based selection is not supported for %1.").arg(mod->subject().dataClass()->elementDescriptionName()));

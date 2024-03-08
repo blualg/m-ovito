@@ -306,7 +306,7 @@ public:
 	void renderOverlays(Viewport* viewport, bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams);
 
 	/// Renders a 2d polyline or polygon into an interactive viewport.
-	void render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed);
+	void render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed, const QSize& logicalViewportSize);
 
 	/// Replaces all text primitives with (cached) image primitives.
 	void renderTextAsImagePrimitives();

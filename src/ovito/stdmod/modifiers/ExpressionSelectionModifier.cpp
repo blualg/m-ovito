@@ -26,10 +26,13 @@
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/viewport/Viewport.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
+#include <ovito/core/utilities/concurrent/ParallelFor.h>
+#include <ovito/core/utilities/concurrent/EnumerableThreadSpecific.h>
 #include "ExpressionSelectionModifier.h"
 
 namespace Ovito {
@@ -65,71 +68,112 @@ void ExpressionSelectionModifier::propertyChanged(const PropertyFieldDescriptor*
 }
 
 /******************************************************************************
-* Applies the modifier operation to the data in a pipeline flow state.
-******************************************************************************/
-PipelineStatus ExpressionSelectionModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+ * Checks if math expressions are time-dependent, i.e. whether they involve the animation frame number.
+ ******************************************************************************/
+bool ExpressionSelectionModifierDelegate::isExpressionTimeDependent(ExpressionSelectionModifier* modifier) const
 {
-    ExpressionSelectionModifier* expressionMod = static_object_cast<ExpressionSelectionModifier>(request.modifier());
+    // This is a very simple check for the presence of the word "Frame" in the expression.
+    // It's not perfect, but should catch all relevant cases (maybe more).
+    if(modifier->expression().contains(QLatin1String("Frame")))
+        return true;
+    return false;
+}
+
+/******************************************************************************
+ * Is called by the pipeline system before a new modifier evaluation begins.
+ ******************************************************************************/
+bool ExpressionSelectionModifierDelegate::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
+{
+    // Determine whether math expressions are time-dependent, i.e. whether they involve the current animation
+    // frame number. If so, then we have to restrict the validity interval of the computation results
+    // to the current animation time.
+    if(isExpressionTimeDependent(static_object_cast<ExpressionSelectionModifier>(request.modifier()))) {
+        result.intersectValidityInterval(request.time());
+    }
+
+    return true;
+}
+
+/******************************************************************************
+ * Applies this modifier delegate to the data.
+ ******************************************************************************/
+Future<PipelineFlowState> ExpressionSelectionModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+{
+    ExpressionSelectionModifier* modifier = static_object_cast<ExpressionSelectionModifier>(request.modifier());
 
     // The current animation frame number.
     int currentFrame = request.time().frame(); // Note: Using global animation frame here, because that's what the user expects.
 
-    // Look up the input property container.
-    DataObjectPath objectPath = state.expectMutableObject(inputContainerRef());
-    PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
-
     // Initialize the evaluator class.
-    std::unique_ptr<PropertyExpressionEvaluator> evaluator = initializeExpressionEvaluator(QStringList(expressionMod->expression()), state, objectPath, currentFrame);
+    std::unique_ptr<PropertyExpressionEvaluator> evaluator = initializeExpressionEvaluator(QStringList(modifier->expression()), originalState, originalState.expectObject(inputContainerRef()), currentFrame);
 
     // Save list of available input variables, which will be displayed in the modifier's UI.
-    expressionMod->setVariablesInfo(evaluator->inputVariableNames(), evaluator->inputVariableTable());
+    modifier->setVariablesInfo(evaluator->inputVariableNames(), evaluator->inputVariableTable());
 
     // If the user has not entered an expression yet, let them know.
-    if(expressionMod->expression().trimmed().isEmpty()) {
-        if(ExecutionContext::isInteractive())
-            return PipelineStatus(PipelineStatus::Warning, tr("Please enter a Boolean expression."));
-        else
-            throw Exception(tr("Modifier has no expression set. Did you forget to specify the selection expression?"));
+    if(modifier->expression().trimmed().isEmpty()) {
+        if(ExecutionContext::isInteractive()) {
+            state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Please enter a Boolean expression.")));
+            return std::move(state);
+        }
+        throw Exception(tr("Modifier has no expression set. Did you forget to specify the selection expression?"));
     }
 
     // Check if expression contains an assignment ('=' operator).
     // This should be considered a user's mistake, because the user is probably referring the comparison operator '=='.
-    if(expressionMod->expression().contains(QRegularExpression(QStringLiteral("[^=!><]=(?!=)"))))
+    if(modifier->expression().contains(QRegularExpression(QStringLiteral("[^=!><]=(?!=)"))))
         throw Exception(tr("The expression contains the assignment operator '='. Please use the comparison operator '==' instead."));
 
-    // The number of selected elements.
-    std::atomic_size_t nselected(0);
+    // Make the property container mutable.
+    DataObjectPath objectPath = state.expectMutableObject(inputContainerRef());
+    PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
 
     // Generate the output selection property.
-    BufferWriteAccess<SelectionIntType, access_mode::discard_write> selProperty = container->createProperty(DataBuffer::Uninitialized, Property::GenericSelectionProperty);
+    PropertyPtr selection = container->createProperty(DataBuffer::Uninitialized, Property::GenericSelectionProperty);
 
-    // Evaluate Boolean expression for every input data element.
-    evaluator->evaluate([&selProperty, &nselected](size_t elementIndex, size_t componentIndex, double value) {
-        if(value) {
-            selProperty[elementIndex] = 1;
-            ++nselected;
-        }
-        else {
-            selProperty[elementIndex] = 0;
-        }
+    // The actual computation can be performed in a separate worker thread.
+    return AsynchronousTask<PipelineFlowState>::runAsync([
+            state = std::move(state),
+            selection = std::move(selection),
+            evaluator = std::move(evaluator),
+            createdByNode = request.modificationNode()]() mutable
+    {
+
+        // The number of selected elements.
+        std::atomic_size_t nselected(0);
+
+        // Write the output selection property.
+        BufferWriteAccess<SelectionIntType, access_mode::discard_write> selectionAcc{selection};
+
+        // Evaluate Boolean expression for every input data element.
+        EnumerableThreadSpecific<PropertyExpressionEvaluator::Worker> expressionWorkers;
+        parallelForInnerOuter(selection->size(), 4096, [&](auto&& iterate) {
+            PropertyExpressionEvaluator::Worker& worker = expressionWorkers.create(*evaluator);
+            size_t nselectedLocal = 0;
+            iterate([&](size_t i) {
+                if(worker.evaluate(i, 0)) {
+                    selectionAcc[i] = 1;
+                    nselectedLocal++;
+                }
+                else {
+                    selectionAcc[i] = 0;
+                }
+            });
+            nselected.fetch_add(nselectedLocal, std::memory_order_relaxed);
+        });
+
+        // To speed up future queries, store the selection count in the selection property object.
+        selection->setNonzeroCount(nselected.load());
+
+        // Report the total number of selected elements as a pipeline attribute.
+        state.addAttribute(QStringLiteral("ExpressionSelection.count"), QVariant::fromValue(nselected.load()), createdByNode);
+
+        // Update status display in the UI.
+        QString statusMessage = tr("%1 out of %2 elements selected (%3%)").arg(nselected.load()).arg(selection->size()).arg((FloatType)nselected.load() * 100 / std::max((size_t)1,selection->size()), 0, 'f', 1);
+        state.setStatus(PipelineStatus(std::move(statusMessage)));
+
+        return std::move(state);
     });
-
-    // If the expression contains a time-dependent term, then we have to restrict the validity interval
-    // of the generated selection to the current animation time.
-    if(evaluator->isTimeDependent())
-        state.intersectStateValidity(request.time());
-
-    // To speed up future queries, store the selection count in the selection property object.
-    selProperty.buffer()->setNonzeroCount(nselected.load());
-
-    // Report the total number of selected elements as a pipeline attribute.
-    state.addAttribute(QStringLiteral("ExpressionSelection.count"), QVariant::fromValue(nselected.load()), request.modificationNode());
-    // For backward compatibility with OVITO 2.9.0.
-    state.addAttribute(QStringLiteral("SelectExpression.num_selected"), QVariant::fromValue(nselected.load()), request.modificationNode());
-
-    // Update status display in the UI.
-    QString statusMessage = tr("%1 out of %2 elements selected (%3%)").arg(nselected.load()).arg(selProperty.size()).arg((FloatType)nselected.load() * 100 / std::max((size_t)1,selProperty.size()), 0, 'f', 1);
-    return PipelineStatus(std::move(statusMessage));
 }
 
 /******************************************************************************

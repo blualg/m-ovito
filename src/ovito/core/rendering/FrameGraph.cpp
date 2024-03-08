@@ -171,43 +171,33 @@ void FrameGraph::renderOverlays(Viewport* viewport, bool underlays, const QRect&
 /******************************************************************************
 * Renders a 2d polyline in the viewport.
 ******************************************************************************/
-void FrameGraph::render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed)
+void FrameGraph::render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed, const QSize& logicalViewportSize)
 {
     OVITO_ASSERT(count >= 2);
 
-#if 0 // TODO
-    LinePrimitive primitive;
-    primitive.setUniformColor(color);
+    FloatType w = logicalViewportSize.width();
+    FloatType h = logicalViewportSize.height();
+    auto projectPoint = [&](const Point2& p) {
+        return Point3G(2 * p.x() / w - 1, 1 - 2 * p.y() / h, 0.0);
+    };
 
-    BufferFactory<Point3G> vertices((closed ? count : count-1) * 2);
+    BufferFactory<Point3G> vertices((closed ? count : count - 1) * 2);
     Point3G* lineSegment = vertices.begin();
     for(int i = 0; i < count - 1; i++, lineSegment += 2) {
-        lineSegment[0] = Point3G(points[i].x(), points[i].y(), 0.0);
-        lineSegment[1] = Point3G(points[i+1].x(), points[i+1].y(), 0.0);
+        lineSegment[0] = projectPoint(points[i]);
+        lineSegment[1] = projectPoint(points[i+1]);
     }
     if(closed) {
-        lineSegment[0] = Point3G(points[count-1].x(), points[count-1].y(), 0.0);
-        lineSegment[1] = Point3G(points[0].x(), points[0].y(), 0.0);
+        lineSegment[0] = projectPoint(points[count-1]);
+        lineSegment[1] = projectPoint(points[0]);
         lineSegment += 2;
     }
     OVITO_ASSERT(lineSegment == vertices.end());
-    primitive.setPositions(vertices.take());
 
-    // Set up model-view-projection matrices.
-    ViewProjectionParameters originalProjParams = projParams();
-    ViewProjectionParameters newProjParams;
-    newProjParams.aspectRatio = originalProjParams.aspectRatio;
-    newProjParams.projectionMatrix = Matrix4::ortho(viewportRect().left(), viewportRect().right() + 1, viewportRect().bottom() + 1, viewportRect().top(), -1.0, 1.0);
-    newProjParams.inverseProjectionMatrix = newProjParams.projectionMatrix.inverse();
-    setProjParams(newProjParams);
-    setWorldTransform(AffineTransformation::Identity());
-
-    setDepthTestEnabled(false);
-    renderLines(primitive);
-    setDepthTestEnabled(true);
-
-    setProjParams(originalProjParams);
-#endif
+    std::unique_ptr<LinePrimitive> primitive = std::make_unique<LinePrimitive>();
+    primitive->setUniformColor(color);
+    primitive->setPositions(vertices.take());
+    addCommand(std::move(primitive), AffineTransformation::Zero(), 0, FrameGraph::RenderingCommand::NoDepthTesting);
 }
 
 /******************************************************************************

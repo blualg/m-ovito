@@ -251,12 +251,12 @@ void CoordinationAnalysisModifier::CoordinationAnalysisEngine::perform()
                                 auto [lowerIndex, upperIndex] = std::minmax(typeIndex1, typeIndex2);
                                 size_t rdfIndex = (typeCount * lowerIndex) - ((lowerIndex - 1) * lowerIndex) / 2 + upperIndex - lowerIndex;
                                 OVITO_ASSERT(rdfIndex < rdfCount);
-                                size_t rdfBin = static_cast<size_t>(sqrt(neighQuery.distanceSquared()) / rdfBinSize);
+                                size_t rdfBin = static_cast<size_t>(neighQuery.distance() / rdfBinSize);
                                 threadLocalRDF[rdfIndex + std::min(rdfBin, binCount - 1) * rdfCount]++;
                             }
                         }
                         else {
-                            size_t rdfBin = static_cast<size_t>(sqrt(neighQuery.distanceSquared()) / rdfBinSize);
+                            size_t rdfBin = static_cast<size_t>(neighQuery.distance() / rdfBinSize);
                             threadLocalRDF[std::min(rdfBin, binCount - 1)]++;
                         }
                     }

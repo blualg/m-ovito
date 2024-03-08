@@ -187,7 +187,7 @@ void CutoffNeighborFinder::prepare(FloatType cutoffRadius, BufferReadAccess<Poin
     particles = std::make_unique<NeighborListParticle[]>(_particleCount);
 
     // Sort particles into bins.
-    parallelForCancellable(_particleCount, 4096, [&](size_t pindex) {
+    parallelFor(_particleCount, 4096, [&](size_t pindex) {
         const Point3& p = positions[pindex];
 
         NeighborListParticle& a = particles[pindex];

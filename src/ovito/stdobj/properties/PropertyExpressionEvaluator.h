@@ -55,12 +55,6 @@ public:
     void evaluate(const std::function<void(size_t,size_t,double)>& callback, const std::function<bool(size_t)>& filter = std::function<bool(size_t)>());
 #endif
 
-    /// Returns the maximum number of threads used to evaluate the expression (or 0 if all processor cores are used).
-    size_t maxThreadCount() const { return _maxThreadCount; }
-
-    /// Sets The maximum number of threads used to evaluate the expression (or 0 if all processor cores should be used).
-    void setMaxThreadCount(size_t count) { _maxThreadCount = count; }
-
     /// Returns the number of input data element.
     size_t elementCount() const { return _elementCount; }
 
@@ -288,9 +282,6 @@ protected:
 
     /// List of characters allowed in variable names.
     static mu::string_type _validVariableNameChars;
-
-    /// The maximum number of threads used to evaluate the expression.
-    size_t _maxThreadCount = 0;
 
     /// The name of the variable that provides the index of the current element.
     QString _indexVarName;

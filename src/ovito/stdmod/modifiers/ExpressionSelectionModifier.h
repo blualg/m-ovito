@@ -31,6 +31,8 @@
 
 namespace Ovito {
 
+class ExpressionSelectionModifier; // defined below
+
 /**
  * \brief Base class for ExpressionSelectionModifier delegates that operate on different kinds of data.
  */
@@ -40,8 +42,11 @@ class OVITO_STDMOD_EXPORT ExpressionSelectionModifierDelegate : public ModifierD
 
 public:
 
-    /// \brief Applies the modifier operation to the data in a pipeline flow state.
-    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    /// This function is called by the pipeline system before a new modifier evaluation begins.
+    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
+
+    /// Applies this modifier delegate to the data.
+    virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 
     /// Returns the type of input property container that this delegate can process.
     PropertyContainerClassPtr inputContainerClass() const {
@@ -60,6 +65,9 @@ protected:
 
     /// Creates and initializes the expression evaluator object.
     virtual std::unique_ptr<PropertyExpressionEvaluator> initializeExpressionEvaluator(const QStringList& expressions, const PipelineFlowState& inputState, const ConstDataObjectPath& containerPath, int animationFrame);
+
+    /// Checks if the math expression is time-dependent, i.e. whether it involves the animation frame number.
+    bool isExpressionTimeDependent(ExpressionSelectionModifier* modifier) const;
 };
 
 /**

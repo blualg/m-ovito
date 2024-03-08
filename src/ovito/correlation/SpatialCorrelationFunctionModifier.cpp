@@ -600,7 +600,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
         for(size_t i = startIndex; i < endIndex; i++) {
             FloatType data1 = dataAccess1.get<FloatType>(i, vecComponent1);
             for(CutoffNeighborFinder::Query neighQuery(neighborListBuilder, i); !neighQuery.atEnd(); neighQuery.next()) {
-                size_t distanceBinIndex = (size_t)(std::sqrt(neighQuery.distanceSquared()) / gridSpacing);
+                size_t distanceBinIndex = (size_t)(neighQuery.distance() / gridSpacing);
                 distanceBinIndex = std::min(distanceBinIndex, threadLocalCorrelation.size() - 1);
                 FloatType data2 = dataAccess2.get<FloatType>(neighQuery.current(), vecComponent2);
                 threadLocalCorrelation[distanceBinIndex] += data1 * data2;

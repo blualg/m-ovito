@@ -57,8 +57,8 @@ public:
     /// Constructor.
     explicit ElementSelectionSet(ObjectInitializationFlags flags) : RefTarget(flags), _useIdentifiers(true) {}
 
-    /// Returns the stored selection set as a bit array.
-    const boost::dynamic_bitset<>& selection() const { return _selection; }
+    /// Returns the stored selection set.
+    const ConstPropertyPtr& selection() const { return _selection; }
 
     /// Adopts the selection set from the given input property container.
     void resetSelection(const PropertyContainer* container);
@@ -82,10 +82,10 @@ public:
     void toggleElementByIndex(size_t elementIndex);
 
     /// Replaces the selection.
-    void setSelection(const PropertyContainer* container, const boost::dynamic_bitset<>& selection, SelectionMode mode = SelectionReplace);
+    void setSelection(const PropertyContainer* container, ConstPropertyPtr selection, SelectionMode mode = SelectionReplace);
 
     /// Copies the stored selection set into the given output selection property.
-    PipelineStatus applySelection(BufferWriteAccess<SelectionIntType, access_mode::discard_write> outputSelectionProperty, BufferReadAccess<IdentifierIntType> identifierProperty);
+    PipelineStatus applySelection(PropertyContainer* container, BufferReadAccess<IdentifierIntType> identifierProperty);
 
 protected:
 
@@ -100,8 +100,8 @@ protected:
 
 private:
 
-    /// Stores the selection set as a bit array.
-    boost::dynamic_bitset<> _selection;
+    /// The selection flags array.
+    ConstPropertyPtr _selection;
 
     /// Stores the selection as a list of element identifiers.
     QSet<qlonglong> _selectedIdentifiers; // Note: using qlonglong instead of IdentifierIntType for file format backward compatibility with OVITO 3.8

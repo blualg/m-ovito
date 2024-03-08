@@ -48,7 +48,6 @@ public:
 private:
 
     std::map<std::thread::id, T> _data;
-
     std::mutex _mutex;
 };
 

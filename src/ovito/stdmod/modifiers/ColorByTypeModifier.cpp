@@ -22,10 +22,11 @@
 
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/data/SyclFlatMap.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "ColorByTypeModifier.h"
@@ -92,9 +93,9 @@ void ColorByTypeModifier::propertyChanged(const PropertyFieldDescriptor* field)
 }
 
 /******************************************************************************
-* Modifies the input data synchronously.
+* Modifies the input data.
 ******************************************************************************/
-void ColorByTypeModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+Future<PipelineFlowState> ColorByTypeModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
 #ifdef OVITO_BUILD_BASIC
     throw Exception(tr("%1: This program feature is only available in OVITO Pro. Please visit our website www.ovito.org for more information.").arg(objectTitle()));
@@ -109,12 +110,13 @@ void ColorByTypeModifier::evaluateModifierSynchronous(const ModifierEvaluationRe
         throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
             .arg(subject().dataClass()->pythonName()).arg(sourceProperty().containerClass()->propertyClassDisplayName()));
 
-    DataObjectPath objectPath = state.expectMutableObject(subject());
+    PipelineFlowState output = std::move(input);
+    DataObjectPath objectPath = output.expectMutableObject(subject());
     PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
     container->verifyIntegrity();
 
     // Get the input property.
-    const Property* typeProperty = sourceProperty().findInContainer(container);
+    ConstPropertyPtr typeProperty = sourceProperty().findInContainer(container);
     if(!typeProperty)
         throw Exception(tr("The selected input property '%1' is not present.").arg(sourceProperty().name()));
     if(typeProperty->componentCount() != 1)
@@ -134,8 +136,19 @@ void ColorByTypeModifier::evaluateModifierSynchronous(const ModifierEvaluationRe
         }
     }
 
-    // Call implementation.
-    colorByType(typeProperty, container, objectPath, selection);
+    // The actual computation can be performed in a separate worker thread.
+    return AsynchronousTask<PipelineFlowState>::runAsync([
+            output = std::move(output),
+            container,
+            objectPath = std::move(objectPath),
+            typeProperty = std::move(typeProperty),
+            selection = std::move(selection)]() mutable
+    {
+        // Call implementation.
+        colorByType(typeProperty, container, objectPath, selection);
+
+        return std::move(output);
+    });
 #endif
 }
 

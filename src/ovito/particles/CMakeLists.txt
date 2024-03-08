@@ -107,14 +107,14 @@ SET(SourceFiles
 IF(OVITO_BUILD_PLUGIN_STDMOD)
     LIST(APPEND SourceFiles
         modifier/coloring/ParticlesColorCodingModifierDelegate.cpp
-#        modifier/coloring/ParticlesAssignColorModifierDelegate.cpp
+        modifier/coloring/ParticlesAssignColorModifierDelegate.cpp
 #        modifier/modify/ParticlesSliceModifierDelegate.cpp
         modifier/modify/ParticlesAffineTransformationModifierDelegate.cpp
         modifier/modify/ParticlesDeleteSelectedModifierDelegate.cpp
         modifier/modify/ParticlesReplicateModifierDelegate.cpp
         modifier/properties/ParticlesComputePropertyModifierDelegate.cpp
         modifier/properties/BondsComputePropertyModifierDelegate.cpp
-#        modifier/selection/ParticlesExpressionSelectionModifierDelegate.cpp
+        modifier/selection/ParticlesExpressionSelectionModifierDelegate.cpp
 #        modifier/modify/ParticlesCombineDatasetsModifierDelegate.cpp
     )
 ENDIF()

@@ -157,7 +157,7 @@ Future<PipelineFlowState> SelectTypeModifier::evaluateModifier(const ModifierEva
         // Create the selection property.
         Property* selProperty = container->createProperty(DataBuffer::Uninitialized, Property::GenericSelectionProperty);
 
-    #ifdef OVITO_USE_SYCL
+#ifdef OVITO_USE_SYCL
         if(typePropertyObject->size() != 0) {
             if(!idsToSelect.empty()) {
                 // Convert set of type IDs into a SYCL-compatible data structure.
@@ -171,11 +171,11 @@ Future<PipelineFlowState> SelectTypeModifier::evaluateModifier(const ModifierEva
                     SyclBufferAccess<SelectionIntType, access_mode::write> selectionAcc(selProperty, cgh, DataBuffer::Uninitialized);
                     // Access type ID set.
                     auto idsToSelectAcc = idsToSelectSycl.get_access(cgh);
-    #ifdef OVITO_USE_SYCL_ACPP
+#ifdef OVITO_USE_SYCL_ACPP
                     auto reduction = sycl::reduction(sycl::accessor{numSelectedBuf, cgh, sycl::no_init}, size_t{0}, sycl::plus<size_t>());
-    #else
+#else
                     auto reduction = sycl::reduction(numSelectedBuf, cgh, size_t{0}, sycl::plus<size_t>(), sycl::property::reduction::initialize_to_identity{});
-    #endif
+#endif
                     OVITO_SYCL_PARALLEL_FOR(cgh, SelectTypeModifier_kernel)(sycl::range(typePropertyObject->size()), reduction, [=](size_t i, auto& red) {
                         if(idsToSelectAcc.contains(typeAcc[i])) {
                             selectionAcc[i] = 1;
@@ -191,7 +191,7 @@ Future<PipelineFlowState> SelectTypeModifier::evaluateModifier(const ModifierEva
                 selProperty->fill<SelectionIntType>(0);
             }
         }
-    #else
+#else
         BufferWriteAccess<SelectionIntType, access_mode::discard_write> selectionAcc{selProperty};
         BufferReadAccess<int32_t> typeAcc{typePropertyObject};
 
@@ -202,7 +202,7 @@ Future<PipelineFlowState> SelectTypeModifier::evaluateModifier(const ModifierEva
             }
             return 0;
         });
-    #endif
+#endif
 
         // To speed up future queries, store the selection count in the selection property object.
         selProperty->setNonzeroCount(nSelected);

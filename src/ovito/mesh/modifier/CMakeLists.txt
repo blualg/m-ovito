@@ -23,13 +23,13 @@
 # Define the plugin module.
 OVITO_STANDARD_PLUGIN(MeshMod
     SOURCES
-#        SurfaceMeshSliceModifierDelegate.cpp
-#        SurfaceMeshAffineTransformationModifierDelegate.cpp
-#        SurfaceMeshReplicateModifierDelegate.cpp
-#        SurfaceMeshColorCodingModifierDelegate.cpp
-#        SurfaceMeshAssignColorModifierDelegate.cpp
-#        SurfaceMeshDeleteSelectedModifierDelegate.cpp
-#        SurfaceMeshExpressionSelectionModifierDelegate.cpp
+        SurfaceMeshSliceModifierDelegate.cpp
+        SurfaceMeshAffineTransformationModifierDelegate.cpp
+        SurfaceMeshReplicateModifierDelegate.cpp
+        SurfaceMeshColorCodingModifierDelegate.cpp
+        SurfaceMeshAssignColorModifierDelegate.cpp
+        SurfaceMeshDeleteSelectedModifierDelegate.cpp
+        SurfaceMeshExpressionSelectionModifierDelegate.cpp
     PLUGIN_DEPENDENCIES Mesh StdMod
 )
 

@@ -68,7 +68,7 @@ Future<PipelineFlowState> CombineDatasetsModifier::evaluateModifier(const Modifi
     PipelineEvaluationResult secondaryStateFuture = secondaryDataSource()->evaluate(request);
 
     // Wait for the data to become available.
-    return secondaryStateFuture.then(*this, [this, state = input, request](const PipelineFlowState& secondaryState) mutable {
+    return secondaryStateFuture.then(*this, [this, state = std::move(input), request](const PipelineFlowState& secondaryState) mutable {
 
         // Make sure the obtained dataset is valid and ready to use.
         if(secondaryState.status().type() == PipelineStatus::Error) {
@@ -91,22 +91,6 @@ Future<PipelineFlowState> CombineDatasetsModifier::evaluateModifier(const Modifi
 
         return std::move(state);
     });
-}
-
-/******************************************************************************
-* Modifies the input data synchronously.
-******************************************************************************/
-void CombineDatasetsModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
-{
-    // Get the secondary data source.
-    if(!secondaryDataSource())
-        return;
-
-    // Acquire the state to be merged.
-    const PipelineFlowState& secondaryState = secondaryDataSource()->evaluate(request).result();
-
-    // Perform the merging of two pipeline states.
-    combineDatasets(request, state, secondaryState);
 }
 
 /******************************************************************************

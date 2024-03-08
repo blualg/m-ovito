@@ -130,6 +130,9 @@ public:
         /// Returns the distance squared between the central particle and the current neighbor.
         FloatType distanceSquared() const { return _distsq; }
 
+        /// Computes the distance between the central particle and the current neighbor.
+        FloatType distance() const { return std::sqrt(_distsq); }
+
         /// Returns the PBC shift vector between the central particle and the current neighbor.
         /// The vector is non-zero if the current neighbor vector crosses a periodic boundary.
         const Vector3I& pbcShift() const { return _pbcShift; }

@@ -34,12 +34,12 @@ OVITO_STANDARD_PLUGIN(StdMod
         modifiers/HistogramModifier.cpp
         modifiers/ScatterPlotModifier.cpp
         modifiers/ReplicateModifier.cpp
-#        modifiers/ExpressionSelectionModifier.cpp
+        modifiers/ExpressionSelectionModifier.cpp
         modifiers/FreezePropertyModifier.cpp
-#        modifiers/ManualSelectionModifier.cpp
+        modifiers/ManualSelectionModifier.cpp
         modifiers/ComputePropertyModifier.cpp
-#        modifiers/CombineDatasetsModifier.cpp
-#        modifiers/ColorByTypeModifier.cpp
+        modifiers/CombineDatasetsModifier.cpp
+        modifiers/ColorByTypeModifier.cpp
         viewport/ColorLegendOverlay.cpp
     PLUGIN_DEPENDENCIES
         StdObj

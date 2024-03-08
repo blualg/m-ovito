@@ -34,12 +34,12 @@ OVITO_STANDARD_PLUGIN(StdModGui
         HistogramModifierEditor.cpp
         ScatterPlotModifierEditor.cpp
         ReplicateModifierEditor.cpp
-#        ExpressionSelectionModifierEditor.cpp
+        ExpressionSelectionModifierEditor.cpp
         FreezePropertyModifierEditor.cpp
-#        ManualSelectionModifierEditor.cpp
+        ManualSelectionModifierEditor.cpp
         ComputePropertyModifierEditor.cpp
-#        CombineDatasetsModifierEditor.cpp
-#        ColorByTypeModifierEditor.cpp
+        CombineDatasetsModifierEditor.cpp
+        ColorByTypeModifierEditor.cpp
         ColorLegendOverlayEditor.cpp
     PLUGIN_DEPENDENCIES StdMod StdObjGui
     PRIVATE_LIB_DEPENDENCIES Qwt

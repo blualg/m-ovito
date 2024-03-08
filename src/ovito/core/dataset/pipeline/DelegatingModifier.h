@@ -79,9 +79,6 @@ public:
     /// Constructor.
     explicit ModifierDelegate(ObjectInitializationFlags flags, const DataObjectReference& inputDataObj = DataObjectReference()) : RefTarget(flags), _isEnabled(true), _inputDataObject(inputDataObj) {}
 
-    /// Determines the time interval over which a computed pipeline state will remain valid.
-    virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const { return TimeInterval::infinite(); }
-
     /// This function is called by the pipeline system before a new modifier evaluation begins.
     virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const { return true; }
 
@@ -195,10 +192,8 @@ public:
     /// Constructor.
     using Modifier::Modifier;
 
-#if 0 // TODO
-    /// Determines the time interval over which a computed pipeline state will remain valid.
-    virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
-#endif
+    /// This function is called by the pipeline system before a new modifier evaluation begins.
+    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
 
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) override;

@@ -313,21 +313,24 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::performComputation(
         EnumerableThreadSpecific<PropertyExpressionEvaluator::Worker> expressionWorkers;
         size_t componentCount = outputAccessor.componentCount();
 
-        parallelForCancellable(outputProperty->size(), 10000, [&](size_t i) {
+        parallelForInnerOuter(outputProperty->size(), 10000, [&](auto&& iterate) {
             PropertyExpressionEvaluator::Worker& worker = expressionWorkers.create(*evaluator);
+            iterate([&](size_t i) {
 
-            // Skip unselected particles if requested.
-            if(selectionAccessor && !selectionAccessor[i])
-                return;
+                // Skip unselected particles if requested.
+                if(selectionAccessor && !selectionAccessor[i])
+                    return;
 
-            for(size_t component = 0; component < componentCount; component++) {
-                // Compute expression value.
-                FloatType value = worker.evaluate(i, component);
+                for(size_t component = 0; component < componentCount; component++) {
+                    // Compute expression value.
+                    FloatType value = worker.evaluate(i, component);
 
-                // Store results in output property.
-                outputAccessor.set(i, component, value);
-            }
+                    // Store results in output property.
+                    outputAccessor.set(i, component, value);
+                }
+            });
         });
+
         return std::move(state);
     }, true);
 }
