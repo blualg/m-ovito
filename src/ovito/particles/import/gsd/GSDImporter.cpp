@@ -547,25 +547,31 @@ Property* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, const cha
         else
             throw Exception(tr("Property '%1' cannot be read from GSD file, because its data type is not supported by OVITO.").arg(prop->name()));
     }
-    else if(defaultValue != nullptr && gsd.findMatchingChunkName(chunkName, nullptr) != nullptr) {
-        // If the GSD file contains the requested chunk in some other trajectory frame(s), just not in the current frame, then
-        // fill the property array with the default value for that chunk as specified by the HOOMD standard.
-        if(propertyType != Property::GenericUserProperty) {
-            prop = container->createProperty(propertyType);
-        }
-        else {
-            QString propertyName = QString::fromUtf8(chunkName);
-            int slashPos = propertyName.lastIndexOf(QChar('/'));
-            if(slashPos != -1) propertyName.remove(0, slashPos + 1);
-            std::pair<int, size_t> dataTypeAndComponents = gsd.getChunkDataTypeAndComponentCount(chunkName);
-            prop = container->createProperty(Property::makePropertyNameValid(propertyName), dataTypeAndComponents.first, dataTypeAndComponents.second);
-        }
-        OVITO_ASSERT(prop->stride() == defaultValueSize);
-        if(prop->stride() == defaultValueSize) {
-            RawBufferAccess<access_mode::discard_write> access(prop);
-            std::byte* dest = access.data();
-            for(size_t i = 0; i < prop->size(); i++, dest += defaultValueSize) {
-                std::memcpy(dest, defaultValue, defaultValueSize);
+    else if(defaultValue != nullptr) {
+        const char* found_name = gsd.findMatchingChunkName(chunkName, nullptr);
+        if(found_name && qstrcmp(found_name, chunkName) == 0) {
+            // If the GSD file contains the requested chunk in some other trajectory frame(s), just not in the current frame, then
+            // fill the property array with the default value for that chunk as specified by the HOOMD standard.
+            if(propertyType != Property::GenericUserProperty) {
+                prop = container->createProperty(DataBuffer::Uninitialized, propertyType);
+            }
+            else {
+                QString propertyName = QString::fromUtf8(chunkName);
+                int slashPos = propertyName.lastIndexOf(QChar('/'));
+                if(slashPos != -1)
+                    propertyName.remove(0, slashPos + 1);
+                std::pair<int, size_t> dataTypeAndComponents = gsd.getChunkDataTypeAndComponentCount(chunkName);
+                prop = container->createProperty(DataBuffer::Uninitialized, Property::makePropertyNameValid(propertyName), dataTypeAndComponents.first, dataTypeAndComponents.second);
+            }
+            if(prop->stride() == defaultValueSize) {
+                RawBufferAccess<access_mode::discard_write> access(prop);
+                std::byte* dest = access.data();
+                for(size_t i = 0; i < prop->size(); i++, dest += defaultValueSize) {
+                    std::memcpy(dest, defaultValue, defaultValueSize);
+                }
+            }
+            else {
+                prop->fillZero();
             }
         }
     }

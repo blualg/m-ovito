@@ -98,9 +98,11 @@ public:
 
     /// Returns whether a chunk with the given name exists.
     bool hasChunk(const char* chunkName, uint64_t frame) {
-        if(::gsd_find_chunk(&_handle, frame, chunkName) != nullptr) return true;
+        if(::gsd_find_chunk(&_handle, frame, chunkName))
+            return true;
         // Automatically fall back to frame 0 if chunk doesn't exist for the requested simulation frame.
-        if(frame != 0 && ::gsd_find_chunk(&_handle, 0, chunkName) != nullptr) return true;
+        if(frame != 0 && ::gsd_find_chunk(&_handle, 0, chunkName))
+            return true;
         return false;
     }
 
@@ -111,8 +113,15 @@ public:
 
     /// Determines the corresponding OVITO data type of a GSD chunk and the number of vector components.
     std::pair<int, size_t> getChunkDataTypeAndComponentCount(const char* chunkName) {
-        auto chunk = ::gsd_find_chunk(&_handle, 0, chunkName);
-        if(!chunk) throw Exception(GSDImporter::tr("GSD file I/O error. Chunk %1 does not exist.").arg(chunkName));
+        const gsd_index_entry* chunk = nullptr;
+        uint64_t nframes = numerOfFrames();
+        for(uint64_t frame = 0; frame < nframes; frame++) {
+            chunk = ::gsd_find_chunk(&_handle, frame, chunkName);
+            if(chunk)
+                break;
+        }
+        if(!chunk)
+            throw Exception(GSDImporter::tr("GSD file I/O error. Chunk %1 does not exist.").arg(chunkName));
         switch(chunk->type) {
             case GSD_TYPE_INT8:
                 return { Property::Int8, chunk->M };
@@ -139,7 +148,8 @@ public:
     T readOptionalScalar(const char* chunkName, uint64_t frame, T defaultValue) {
         auto chunk = ::gsd_find_chunk(&_handle, frame, chunkName);
         // Automatically fall back to frame 0 if chunk doesn't exist for the requested simulation frame.
-        if(!chunk && frame != 0) chunk = ::gsd_find_chunk(&_handle, 0, chunkName);
+        if(!chunk && frame != 0)
+            chunk = ::gsd_find_chunk(&_handle, 0, chunkName);
         if(chunk) {
             if(chunk->N != 1 || chunk->M != 1)
                 throw Exception(GSDImporter::tr("GSD file I/O error: Chunk '%1' does not contain a scalar value.").arg(chunkName));
@@ -162,7 +172,8 @@ public:
     QVariant readVariant(const char* chunkName, uint64_t frame) {
         auto chunk = ::gsd_find_chunk(&_handle, frame, chunkName);
         // Automatically fall back to frame 0 if chunk doesn't exist for the requested simulation frame.
-        if(!chunk && frame != 0) chunk = ::gsd_find_chunk(&_handle, 0, chunkName);
+        if(!chunk && frame != 0)
+            chunk = ::gsd_find_chunk(&_handle, 0, chunkName);
         if(!chunk)
             throw Exception(GSDImporter::tr("GSD file I/O error: Chunk '%1' does not exist at frame %2 (or the initial frame).").arg(chunkName).arg(frame));
         int errCode = gsd_error::GSD_ERROR_IO;
@@ -305,7 +316,8 @@ public:
     void readOptional1DArray(const char* chunkName, uint64_t frame, std::array<T,N>& a) {
         auto chunk = ::gsd_find_chunk(&_handle, frame, chunkName);
         // Automatically fall back to frame 0 if chunk doesn't exist for the requested simulation frame.
-        if(!chunk && frame != 0) chunk = ::gsd_find_chunk(&_handle, 0, chunkName);
+        if(!chunk && frame != 0)
+            chunk = ::gsd_find_chunk(&_handle, 0, chunkName);
         if(chunk) {
             if(chunk->N != a.size() || chunk->M != 1)
                 throw Exception(GSDImporter::tr("GSD file I/O error: Chunk '%1' does not contain a 1-dimensional array of the expected size.").arg(chunkName));
@@ -328,7 +340,8 @@ public:
         QByteArrayList result;
         auto chunk = ::gsd_find_chunk(&_handle, frame, chunkName);
         // Automatically fall back to frame 0 if chunk doesn't exist for the requested simulation frame.
-        if(!chunk && frame != 0) chunk = ::gsd_find_chunk(&_handle, 0, chunkName);
+        if(!chunk && frame != 0)
+            chunk = ::gsd_find_chunk(&_handle, 0, chunkName);
         if(chunk && chunk->N != 0) {
             if(chunk->type != GSD_TYPE_INT8 && chunk->type != GSD_TYPE_UINT8)
                 throw Exception(GSDImporter::tr("GSD file I/O error: Data type of chunk '%1' is not GSD_TYPE_UINT8 but %2.").arg(chunkName).arg(chunk->type));
@@ -354,7 +367,8 @@ public:
     void readFloatArray(const char* chunkName, uint64_t frame, T* buffer, size_t numElements, size_t componentCount = 1) {
         auto chunk = ::gsd_find_chunk(&_handle, frame, chunkName);
         // Automatically fall back to frame 0 if chunk doesn't exist for the requested simulation frame.
-        if(!chunk && frame != 0) chunk = ::gsd_find_chunk(&_handle, 0, chunkName);
+        if(!chunk && frame != 0)
+            chunk = ::gsd_find_chunk(&_handle, 0, chunkName);
         if(!chunk)
             throw Exception(GSDImporter::tr("GSD file I/O error: Chunk '%1' does not exist at frame %2 (or the initial frame).").arg(chunkName).arg(frame));
         if(chunk->type != GSD_TYPE_FLOAT && chunk->type != GSD_TYPE_DOUBLE)
@@ -409,7 +423,8 @@ public:
     void readIntArray(const char* chunkName, uint64_t frame, IntType* buffer, size_t numElements, size_t intsPerElement = 1) {
         auto chunk = ::gsd_find_chunk(&_handle, frame, chunkName);
         // Automatically fall back to frame 0 if chunk doesn't exist for the requested simulation frame.
-        if(!chunk && frame != 0) chunk = ::gsd_find_chunk(&_handle, 0, chunkName);
+        if(!chunk && frame != 0)
+            chunk = ::gsd_find_chunk(&_handle, 0, chunkName);
         if(!chunk)
             throw Exception(GSDImporter::tr("GSD file I/O error: Chunk '%1' does not exist at frame %2 (or the initial frame).").arg(chunkName).arg(frame));
         if(chunk->type != GSD_TYPE_INT8 && chunk->type != GSD_TYPE_UINT8
