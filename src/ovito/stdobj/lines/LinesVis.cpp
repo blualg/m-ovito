@@ -150,6 +150,11 @@ void LinesVis::loadFromStreamComplete(ObjectLoadStream& stream)
     // For backward compatibility with OVITO 3.5.4.
     // Create a color mapping sub-object if it wasn't loaded from the state file.
     if(!colorMapping()) setColorMapping(OORef<PropertyColorMapping>::create());
+
+    // For backward compatibility with OVITO 3.9.x.
+    if(stream.applicationMajorVersion() == 3 && stream.applicationMinorVersion() < 10) {
+        setRoundedCaps(false); // Override user default setting when loading a legacy state file.
+    }
 }
 
 /******************************************************************************
