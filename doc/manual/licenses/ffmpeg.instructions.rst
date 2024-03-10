@@ -65,12 +65,12 @@ The following commands have been used to generate them::
 macOS
 """""
 
-OVITO for macOS includes shared libraries that have been built from the unmodified sources of ffmpeg 6.0.
+OVITO for macOS includes shared libraries that have been built from the unmodified sources of ffmpeg 6.1.1.
 The following commands have been used to generate them::
 
   git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg_source
   cd ffmpeg_source
-  git checkout n6.0
+  git checkout n6.1.1
   ./configure \
     --disable-network \
     --disable-programs \
