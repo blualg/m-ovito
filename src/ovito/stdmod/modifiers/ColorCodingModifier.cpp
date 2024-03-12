@@ -210,20 +210,17 @@ bool ColorCodingModifier::determinePropertyValueRange(const PipelineFlowState& s
         ? container->getProperty(Property::GenericSelectionProperty) : nullptr;
 
     // Iterate over the property array to find the lowest/highest value.
+    // Nans and infs are ignored.
     FloatType maxValue = std::numeric_limits<FloatType>::lowest();
     FloatType minValue = std::numeric_limits<FloatType>::max();
     property->forEach(vecComponent, [&](size_t i, auto v) {
             if(!selection || selection[i]) {
-                if(v > maxValue) maxValue = v;
-                if(v < minValue) minValue = v;
+                if(std::isfinite(static_cast<FloatType>(v)) && v > maxValue) maxValue = v;
+                if(std::isfinite(static_cast<FloatType>(v)) && v < minValue) minValue = v;
             }
         });
     if(minValue == std::numeric_limits<FloatType>::max())
         return false;
-
-    // Clamp to finite range.
-    if(!std::isfinite(minValue)) minValue = std::numeric_limits<FloatType>::lowest();
-    if(!std::isfinite(maxValue)) maxValue = std::numeric_limits<FloatType>::max();
 
     // Determine global min/max values over all animation frames.
     if(minValue < min) min = minValue;

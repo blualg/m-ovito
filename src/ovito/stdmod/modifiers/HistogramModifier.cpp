@@ -179,110 +179,23 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
     int histogramSizeMin1 = histogram->size() - 1;
 
     if(property->size() > 0) {
-        if(property->dataType() == Property::Float32) {
-            BufferReadAccess<float*> array(property);
-            // Determine value range.
+        property->forAnyType([&](auto _) {
+            using T = decltype(_);
+            BufferReadAccess<T*> array(property);
             if(!fixXAxisRange()) {
                 intervalStart = std::numeric_limits<FloatType>::max();
                 intervalEnd = std::numeric_limits<FloatType>::lowest();
                 const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
-                for(float v : array.componentRange(vecComponent)) {
+                for(T v : array.componentRange(vecComponent)) {
                     if(sel && !*sel++) continue;
-                    if(v < intervalStart) intervalStart = v;
-                    if(v > intervalEnd) intervalEnd = v;
+                    if(std::isfinite(static_cast<FloatType>(v)) && (v < intervalStart)) intervalStart = v;
+                    if(std::isfinite(static_cast<FloatType>(v)) && (v > intervalEnd)) intervalEnd = v;
                 }
             }
-            // Perform binning.
             if(intervalEnd > intervalStart) {
                 FloatType binSize = (intervalEnd - intervalStart) / histogram->size();
                 const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
-                for(float v : array.componentRange(vecComponent)) {
-                    if(sel && !*sel++) continue;
-                    if(v < intervalStart || v > intervalEnd) continue;
-                    int binIndex = (v - intervalStart) / binSize;
-                    histogramAccess[std::max(0, std::min(binIndex, histogramSizeMin1))]++;
-                }
-            }
-            else {
-                if(!inputSelection)
-                    histogramAccess[0] = property->size();
-                else
-                    histogramAccess[0] = property->size() - boost::count(inputSelection, 0);
-            }
-            if(outputSelection) {
-                OVITO_ASSERT(outputSelection.size() == property->size());
-                SelectionIntType* s = outputSelection.begin();
-                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
-                for(float v : array.componentRange(vecComponent)) {
-                    if((!sel || *sel++) && v >= selectionRangeStart && v <= selectionRangeEnd) {
-                        *s++ = 1;
-                        numSelected++;
-                    }
-                    else *s++ = 0;
-                }
-            }
-        }
-        else if(property->dataType() == Property::Float64) {
-            BufferReadAccess<double*> array(property);
-            // Determine value range.
-            if(!fixXAxisRange()) {
-                intervalStart = std::numeric_limits<FloatType>::max();
-                intervalEnd = std::numeric_limits<FloatType>::lowest();
-                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
-                for(double v : array.componentRange(vecComponent)) {
-                    if(sel && !*sel++) continue;
-                    if(v < intervalStart) intervalStart = v;
-                    if(v > intervalEnd) intervalEnd = v;
-                }
-            }
-            // Perform binning.
-            if(intervalEnd > intervalStart) {
-                FloatType binSize = (intervalEnd - intervalStart) / histogram->size();
-                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
-                for(double v : array.componentRange(vecComponent)) {
-                    if(sel && !*sel++) continue;
-                    if(v < intervalStart || v > intervalEnd) continue;
-                    int binIndex = (v - intervalStart) / binSize;
-                    histogramAccess[std::max(0, std::min(binIndex, histogramSizeMin1))]++;
-                }
-            }
-            else {
-                if(!inputSelection)
-                    histogramAccess[0] = property->size();
-                else
-                    histogramAccess[0] = property->size() - boost::count(inputSelection, 0);
-            }
-            if(outputSelection) {
-                OVITO_ASSERT(outputSelection.size() == property->size());
-                SelectionIntType* s = outputSelection.begin();
-                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
-                for(double v : array.componentRange(vecComponent)) {
-                    if((!sel || *sel++) && v >= selectionRangeStart && v <= selectionRangeEnd) {
-                        *s++ = 1;
-                        numSelected++;
-                    }
-                    else *s++ = 0;
-                }
-            }
-        }
-        else if(property->dataType() == Property::Int32) {
-            BufferReadAccess<int32_t*> array(property);
-            // Determine value range.
-            if(!fixXAxisRange()) {
-                intervalStart = std::numeric_limits<FloatType>::max();
-                intervalEnd = std::numeric_limits<FloatType>::lowest();
-                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
-                for(int32_t v : array.componentRange(vecComponent)) {
-                    if(sel && !*sel++) continue;
-                    if(v < intervalStart) intervalStart = v;
-                    if(v > intervalEnd) intervalEnd = v;
-                }
-            }
-            // Perform binning.
-            if(intervalEnd > intervalStart) {
-                FloatType binSize = (intervalEnd - intervalStart) / histogram->size();
-                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
-                for(int32_t v : array.componentRange(vecComponent)) {
+                for(T v : array.componentRange(vecComponent)) {
                     if(sel && !*sel++) continue;
                     if(v < intervalStart || v > intervalEnd) continue;
                     int binIndex = ((FloatType)v - intervalStart) / binSize;
@@ -299,104 +212,16 @@ void HistogramModifier::evaluateSynchronous(const ModifierEvaluationRequest& req
                 OVITO_ASSERT(outputSelection.size() == property->size());
                 SelectionIntType* s = outputSelection.begin();
                 const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
-                for(int32_t v : array.componentRange(vecComponent)) {
+                for(T v : array.componentRange(vecComponent)) {
                     if((!sel || *sel++) && v >= selectionRangeStart && v <= selectionRangeEnd) {
                         *s++ = 1;
                         numSelected++;
                     }
-                    else *s++ = 0;
+                    else
+                        *s++ = 0;
                 }
             }
-        }
-        else if(property->dataType() == Property::Int64) {
-            BufferReadAccess<int64_t*> array(property);
-            // Determine value range.
-            if(!fixXAxisRange()) {
-                intervalStart = std::numeric_limits<FloatType>::max();
-                intervalEnd = std::numeric_limits<FloatType>::lowest();
-                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
-                for(int64_t v : array.componentRange(vecComponent)) {
-                    if(sel && !*sel++) continue;
-                    if(v < intervalStart) intervalStart = v;
-                    if(v > intervalEnd) intervalEnd = v;
-                }
-            }
-            // Perform binning.
-            if(intervalEnd > intervalStart) {
-                FloatType binSize = (intervalEnd - intervalStart) / histogram->size();
-                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
-                for(int64_t v : array.componentRange(vecComponent)) {
-                    if(sel && !*sel++) continue;
-                    if(v < intervalStart || v > intervalEnd) continue;
-                    int binIndex = ((FloatType)v - intervalStart) / binSize;
-                    histogramAccess[std::max(0, std::min(binIndex, histogramSizeMin1))]++;
-                }
-            }
-            else {
-                if(!inputSelection)
-                    histogramAccess[0] = property->size();
-                else
-                    histogramAccess[0] = property->size() - boost::count(inputSelection, 0);
-            }
-            if(outputSelection) {
-                OVITO_ASSERT(outputSelection.size() == property->size());
-                SelectionIntType* s = outputSelection.begin();
-                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
-                for(int64_t v : array.componentRange(vecComponent)) {
-                    if((!sel || *sel++) && v >= selectionRangeStart && v <= selectionRangeEnd) {
-                        *s++ = 1;
-                        numSelected++;
-                    }
-                    else *s++ = 0;
-                }
-            }
-        }
-        else if(property->dataType() == Property::Int8) {
-            BufferReadAccess<int8_t*> array(property);
-            // Determine value range.
-            if(!fixXAxisRange()) {
-                intervalStart = std::numeric_limits<FloatType>::max();
-                intervalEnd = std::numeric_limits<FloatType>::lowest();
-                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
-                for(int8_t v : array.componentRange(vecComponent)) {
-                    if(sel && !*sel++) continue;
-                    if(v < intervalStart) intervalStart = v;
-                    if(v > intervalEnd) intervalEnd = v;
-                }
-            }
-            // Perform binning.
-            if(intervalEnd > intervalStart) {
-                FloatType binSize = (intervalEnd - intervalStart) / histogram->size();
-                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
-                for(int8_t v : array.componentRange(vecComponent)) {
-                    if(sel && !*sel++) continue;
-                    if(v < intervalStart || v > intervalEnd) continue;
-                    int binIndex = ((FloatType)v - intervalStart) / binSize;
-                    histogramAccess[std::max(0, std::min(binIndex, histogramSizeMin1))]++;
-                }
-            }
-            else {
-                if(!inputSelection)
-                    histogramAccess[0] = property->size();
-                else
-                    histogramAccess[0] = property->size() - boost::count(inputSelection, 0);
-            }
-            if(outputSelection) {
-                OVITO_ASSERT(outputSelection.size() == property->size());
-                SelectionIntType* s = outputSelection.begin();
-                const SelectionIntType* sel = inputSelection ? inputSelection.cbegin() : nullptr;
-                for(int8_t v : array.componentRange(vecComponent)) {
-                    if((!sel || *sel++) && v >= selectionRangeStart && v <= selectionRangeEnd) {
-                        *s++ = 1;
-                        numSelected++;
-                    }
-                    else *s++ = 0;
-                }
-            }
-        }
-        else {
-            throw Exception(tr("The property '%1' has a data type that is not supported by the histogram modifier.").arg(property->name()));
-        }
+        });
     }
     else {
         intervalStart = intervalEnd = 0;

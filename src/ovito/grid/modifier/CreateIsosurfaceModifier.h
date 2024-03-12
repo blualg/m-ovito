@@ -22,10 +22,10 @@
 
 #pragma once
 
-
 #include <ovito/grid/Grid.h>
 #include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
+#include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/AsynchronousModifier.h>
 
@@ -40,7 +40,6 @@ class OVITO_GRID_EXPORT CreateIsosurfaceModifier : public AsynchronousModifier
     class CreateIsosurfaceModifierClass : public ModifierClass
     {
     public:
-
         /// Inherit constructor from base class.
         using ModifierClass::ModifierClass;
 
@@ -55,7 +54,6 @@ class OVITO_GRID_EXPORT CreateIsosurfaceModifier : public AsynchronousModifier
     Q_CLASSINFO("ModifierCategory", "Visualization");
 
 public:
-
     /// Constructor.
     Q_INVOKABLE CreateIsosurfaceModifier(ObjectInitializationFlags flags);
 
@@ -75,16 +73,24 @@ public:
     FloatType isolevel() const { return isolevelController() ? isolevelController()->getFloatValue(AnimationTime(0)) : 0; }
 
     /// Sets the level at which to create the isosurface.
-    void setIsolevel(FloatType value) { if(isolevelController()) isolevelController()->setFloatValue(AnimationTime(0), value); }
+    void setIsolevel(FloatType value)
+    {
+        if(isolevelController()) isolevelController()->setFloatValue(AnimationTime(0), value);
+    }
 
-    /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return tr("%1=%2").arg(sourceProperty().nameWithComponent()).arg(isolevel()); }
+    /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor
+    /// list.
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override
+    {
+        return tr("%1=%2").arg(sourceProperty().nameWithComponent()).arg(isolevel());
+    }
 
     /// Transfers voxel grid properties to the vertices of a surfaces mesh.
-    static bool transferPropertiesFromGridToMesh(SurfaceMeshBuilder& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, const SimulationCell& gridDomain, VoxelGrid::GridDimensions gridShape, VoxelGrid::GridType gridType);
+    static bool transferPropertiesFromGridToMesh(SurfaceMeshBuilder& mesh, const std::vector<ConstPropertyPtr>& fieldProperties,
+                                                 const SimulationCell& gridDomain, VoxelGrid::GridDimensions gridShape,
+                                                 VoxelGrid::GridType gridType);
 
 protected:
-
     /// Creates a computation engine that will compute the modifier's results.
     virtual Future<EnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
@@ -95,17 +101,15 @@ protected:
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 private:
-
     /// Computation engine that builds the isosurface mesh.
     class ComputeIsosurfaceEngine : public Engine
     {
     public:
-
         /// Constructor.
         ComputeIsosurfaceEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval,
                                 const VoxelGrid::GridDimensions& gridShape, VoxelGrid::GridType gridType, ConstPropertyPtr property,
-                                int vectorComponent, DataOORef<SurfaceMesh> mesh, FloatType isolevel, int smoothingLevel,
-                                std::vector<ConstPropertyPtr> auxiliaryProperties, DataOORef<DataTable> histogram)
+                                int vectorComponent, DataOORef<SurfaceMesh> mesh, FloatType isolevel, bool identifyRegions,
+                                int smoothingLevel, std::vector<ConstPropertyPtr> auxiliaryProperties, DataOORef<DataTable> histogram)
             : Engine(request, validityInterval),
               _gridShape(gridShape),
               _gridType(gridType),
@@ -113,6 +117,7 @@ private:
               _vectorComponent(std::max(vectorComponent, 0)),
               _mesh(std::move(mesh)),
               _isolevel(isolevel),
+              _identifyRegions(identifyRegions),
               _smoothingLevel(smoothingLevel),
               _auxiliaryProperties(std::move(auxiliaryProperties)),
               _histogram(std::move(histogram))
@@ -128,11 +133,13 @@ private:
         /// Returns the input voxel property.
         const ConstPropertyPtr& property() const { return _property; }
 
+        // Returns the identify regions value
+        bool identifyRegions() const { return _identifyRegions; }
+
         /// Returns the list of grid properties to copy over to the generated isosurface mesh.
         const std::vector<ConstPropertyPtr>& auxiliaryProperties() const { return _auxiliaryProperties; }
 
     private:
-
         const VoxelGrid::GridDimensions _gridShape;
         const FloatType _isolevel;
         const int _smoothingLevel;
@@ -148,6 +155,15 @@ private:
 
         /// The list of grid properties to copy over to the generated isosurface mesh.
         std::vector<ConstPropertyPtr> _auxiliaryProperties;
+
+        /// Controls the identification of disconnected spatial regions (filled and empty).
+        const bool _identifyRegions;
+
+        /// Struct that holds the computeAggregateVolumes output values
+        SurfaceMeshBuilder::AggregateVolumes _aggregateVolumes = {};
+
+        /// The computed total surface area.
+        double _totalSurfaceArea = 0;
     };
 
     /// Specifies the voxel grid this modifier should operate on.
@@ -162,11 +178,16 @@ private:
     /// Controls whether auxiliary field values should be copied over from the grid to the generated isosurface vertices.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, transferFieldValues, setTransferFieldValues, PROPERTY_FIELD_MEMORIZE);
 
+    /// Controls whether the algorithm should identify disconnected spatial regions.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, identifyRegions, setIdentifyRegions);
+
     // Controls the amount of smoothing.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, smoothingLevel, setSmoothingLevel, PROPERTY_FIELD_MEMORIZE);
 
     /// The vis element for rendering the surface.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, surfaceMeshVis, setSurfaceMeshVis,
+                                             PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE |
+                                                 PROPERTY_FIELD_OPEN_SUBEDITOR);
 };
 
-}   // End of namespace
+}  // namespace Ovito

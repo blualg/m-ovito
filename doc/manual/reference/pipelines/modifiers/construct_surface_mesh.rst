@@ -296,6 +296,12 @@ For example, if region ID 1 has the color red, the outside of the surface mesh e
 the inside of this this mesh will have the color of the surrounding region, e.g., blue. Toggling the ``Flip surface orientation`` setting of the
 surface mesh will flip these colorings. Thereby, rendering the red color of region ID 1 on the side, while the outside of the mesh will get a blue color.
 
+.. attention::
+
+  For simulation cells with one or more non-periodic boundaries, the volume of exterior regions is not
+  well defined. Therefore, OVITO will report the volumes of theses regions as infinity (*inf*). Global attributes
+  derived from these volumes will also be reported as either infinty or not a number (*nan*).
+
 The modifier outputs the following :ref:`global attributes <usage.global_attributes>`:
 
 .. list-table::
