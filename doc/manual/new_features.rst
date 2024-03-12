@@ -9,8 +9,20 @@ Changelog
   * `Download <https://www.ovito.org/download_history/#3.10.4>`__
 
 ----------------------------
-Version 3.10.4 (xx-Mar-2024)
+Version 3.10.4 (13-Mar-2024)
 ----------------------------
+
+- :ref:`viewports.adjust_view_dialog`: Added option to numerically control the camera's roll angle
+- Updated third-party libraries: OpenSSL 3.0.13, libssh 0.10.6, ffmpeg 6.1.1, Python 3.11.8, VisRTX 0.8.0
+- |ovito-python| Added :py:attr:`CreateIsosurfaceModifier.smoothing_level <ovito.modifiers.CreateIsosurfaceModifier.smoothing_level>`
+  and :py:attr:`CreateIsosurfaceModifier.identify_regions <ovito.modifiers.CreateIsosurfaceModifier.identify_regions>` options
+- |ovito-pro| :ref:`particles.modifiers.create_isosurface` modifier: New option to identify spatial regions enclosed by the isosurface
+- |ovito-pro| Improved :ref:`glTF file export <file_formats.output.gltf>`: particles and bonds may now be exported as single meshes for better rendering performance (but larger file size)
+- |ovito-pro| :ref:`rendering.ospray_renderer`: Fixed picking of focal length in the interactive viewports
+- |ovito-pro| :ref:`rendering.visrtx_renderer`: Added mesh backface culling support, gracefully handle initialization errors
+- |ovito-pro| :ref:`particles.modifiers.construct_surface_mesh` modifier: Changed how the "external" spatial region is defined in open (non-periodic) systems, now having its volume reported as ``inf``
+
+.. sidebar::
 
   * `Download <https://www.ovito.org/download_history/#3.10.3>`__
 
