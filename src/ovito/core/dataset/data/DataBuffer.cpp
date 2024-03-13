@@ -1029,14 +1029,16 @@ std::pair<FloatType, FloatType> DataBuffer::minMax(size_t component, const DataB
 #else
     if(!selection) {
         forEach(component, [&](size_t i, auto v) {
-            if(v > maxValue) maxValue = v;
-            if(v < minValue) minValue = v;
+            if(std::isfinite(v)) {
+                if(v > maxValue) maxValue = v;
+                if(v < minValue) minValue = v;
+            }
         });
     }
     else {
         BufferReadAccess<SelectionIntType> selectionAcc = selection;
         forEach(component, [&](size_t i, auto v) {
-            if(selectionAcc[i]) {
+            if(selectionAcc[i] && std::isfinite(v)) {
                 if(v > maxValue) maxValue = v;
                 if(v < minValue) minValue = v;
             }

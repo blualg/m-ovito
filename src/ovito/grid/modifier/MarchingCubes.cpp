@@ -1133,7 +1133,7 @@ void MarchingCubes::addVolume(int i, int j, int k, const signed char** volumeReg
             volume += tv[0].dot(tv[1].cross(tv[2]));
         }
         volume = 1.0 / 6.0 * std::abs(volume);
-        OVITO_ASSERT(volume > 0 && volume < (1 + 1e-6));
+        OVITO_ASSERT(volume >= 0 && volume < (1 + 1e-6));
         total_volume += volume;
         _regionVolumes[localRegionMap[ri]] += volume;
     }

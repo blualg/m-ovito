@@ -211,8 +211,10 @@ bool Viewport::isPerspectiveProjection() const
 ******************************************************************************/
 Vector3 Viewport::cameraDirection() const
 {
-    if(cameraTransformation().column(2) == Vector3::Zero()) return Vector3(0,0,1);
-    else return -cameraTransformation().column(2);
+    if(cameraTransformation().column(2) == Vector3::Zero())
+        return Vector3(0,0,1);
+    else
+        return -cameraTransformation().column(2);
 }
 
 /******************************************************************************

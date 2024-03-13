@@ -93,16 +93,10 @@ public:
     virtual QHash<int, QByteArray> roleNames() const override;
 
     /// Returns the action that belongs to the given model index.
-    ModifierAction* actionFromIndex(int index) const;
+    ModifierAction* actionFromIndex(int index) const { return (index >= 0 && index < _modelActions.size()) ? _modelActions[index] : nullptr; }
 
     /// Returns the action that belongs to the given model index.
     ModifierAction* actionFromIndex(const QModelIndex& index) const { return actionFromIndex(index.row()); }
-
-    /// Returns the index of the modifier category to which the given list model index belongs.
-    int categoryIndexFromListIndex(int index) const;
-
-    /// Returns the list model index where the given modifier category starts.
-    int listIndexFromCategoryIndex(int categoryIndex) const;
 
     /// Returns the category index for the modifier templates.
     int modifierTemplatesCategory() const { return (int)_actionsPerCategory.size() - 1; }
@@ -140,14 +134,23 @@ private Q_SLOTS:
 
 private:
 
+    /// Rebuilds the internal list of model items.
+    void updateModelLists();
+
     /// The complete list of modifier actions, sorted alphabetically.
-    std::vector<ModifierAction*> _allActions;
+    std::vector<ModifierAction*> _actions;
 
     /// The list of modifier actions, sorted by category.
     std::vector<std::vector<ModifierAction*>> _actionsPerCategory;
 
     /// The list of modifier categories.
     std::vector<QString> _categoryNames;
+
+    /// The modifier actions as shown by the model.
+    std::vector<ModifierAction*> _modelActions;
+
+    /// The display strings as shown by the model.
+    std::vector<QString> _modelStrings;
 
     /// The abstract user interface.
     UserInterface& _userInterface;

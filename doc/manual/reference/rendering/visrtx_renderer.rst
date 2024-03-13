@@ -3,10 +3,6 @@
 VisRTX renderer (experimental) |ovito-pro|
 ==========================================
 
-.. image:: /images/rendering/visrtx_renderer_panel.*
-  :width: 30%
-  :align: right
-
 .. versionadded:: 3.10.0
 
 VisRTX is a scientific visualization renderer based on the NVIDIA OptiX™ Ray Tracing Engine.
@@ -35,6 +31,10 @@ The renderer is not available on the macOS platform.
 Parameters
 ----------
 
+.. image:: /images/rendering/visrtx_renderer_panel.*
+  :width: 30%
+  :align: right
+
 Quality settings
 """"""""""""""""
 
@@ -53,6 +53,21 @@ Ambient light
 
 Brightness
   Radiance of the ambient light source (default value: 0.7).
+
+Occlusion cutoff
+  Maximum range of the ambient occlusion (AO) calculation (default value: 30.0). More distant objects beyond this cutoff range (given in simulation units) will not contribute to the computed
+  local light occlusion effect. Decreasing this parameter will typically brighten up the inside of dark cavities that are otherwise fully occluded by the surrounding objects.
+  Increasing it will make the AO effect stronger and lead to darker contrast.
+
+  .. figure:: /images/rendering/visrtx_small_ao_cutoff.png
+    :figwidth: 30%
+
+    Small AO cutoff range
+
+  .. figure:: /images/rendering/visrtx_large_ao_cutoff.png
+    :figwidth: 30%
+
+    Large AO cutoff range
 
 Direct light
 """"""""""""

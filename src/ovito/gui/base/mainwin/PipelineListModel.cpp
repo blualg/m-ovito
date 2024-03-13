@@ -225,6 +225,8 @@ void PipelineListModel::refreshList()
                 Q_EMIT selectedItemChanged();
         }
         _itemsRefreshPending.clear();
+        if(_actionUpdateRequired)
+            updateActions();
         return;
     }
 
@@ -824,6 +826,7 @@ void PipelineListModel::updateActions()
 
     // Get the single currently selected object.
     // While the items of the model are out of date, do not enable any actions and wait until the items list is rebuilt.
+    _actionUpdateRequired = !_itemsRefreshPending.empty();
     RefTarget* currentObject = (_itemsRefreshPending.empty() && objects.size() == 1) ? objects.front() : nullptr;
 
     // Check if all selected objects are deletable.

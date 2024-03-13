@@ -89,25 +89,22 @@ private:
     public:
 
         /// Constructor.
-        ConstructSurfaceEngineBase(const ModifierEvaluationRequest& request, ConstPropertyPtr positions,
-                                   ConstPropertyPtr selection, DataOORef<SurfaceMesh> mesh, bool identifyRegions,
-                                   bool mapParticlesToRegions, bool computeSurfaceDistance,
-                                   std::vector<ConstPropertyPtr> particleProperties)
+        ConstructSurfaceEngineBase(const ModifierEvaluationRequest& request, ConstPropertyPtr positions, ConstPropertyPtr selection,
+                                   DataOORef<SurfaceMesh> mesh, bool identifyRegions, bool mapParticlesToRegions,
+                                   bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties)
             : ModifierEngine(request),
               _positions(positions),
               _selection(std::move(selection)),
               _mesh(std::move(mesh)),
               _particleProperties(std::move(particleProperties)),
               _identifyRegions(identifyRegions),
-              _totalCellVolume(mesh->domain()
-                                   ? mesh->domain()->volume3D()
-                                   : 0.0),  // totalCellVolume is initialized before _mesh. Therefore mesh has to be used.
-              _particleRegionIds(mapParticlesToRegions ? Particles::OOClass().createUserProperty(DataBuffer::Uninitialized,
-                                                             positions->size(), Property::Int32, 1, tr("Region"))
+              _particleRegionIds(mapParticlesToRegions ? Particles::OOClass().createUserProperty(
+                                                             DataBuffer::Uninitialized, positions->size(), Property::Int32, 1, tr("Region"))
                                                        : nullptr),
-              _surfaceDistances(computeSurfaceDistance ? Particles::OOClass().createUserProperty(DataBuffer::Uninitialized,
-                                                             positions->size(), Property::FloatDefault, 1, tr("Surface Distance"))
-                                                       : nullptr)
+              _surfaceDistances(computeSurfaceDistance
+                                    ? Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, positions->size(),
+                                                                              Property::FloatDefault, 1, tr("Surface Distance"))
+                                    : nullptr)
         {
         }
 
@@ -136,12 +133,12 @@ private:
         const PropertyPtr& surfaceDistances() const { return _surfaceDistances; }
 
     protected:
-
         /// Injects the computed results into the data pipeline.
         virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
         /// Releases data that is no longer needed.
-        void releaseWorkingData() {
+        void releaseWorkingData()
+        {
             _positions.reset();
             _selection.reset();
             _particleProperties.clear();
@@ -150,41 +147,14 @@ private:
         /// Compute the distance of each input particle from the constructed surface.
         void computeSurfaceDistances(const SurfaceMeshBuilder& mesh);
 
-        // Computes the surface area per mesh region and the total surface area
-        bool computeSurfaceAreaWithRegions(SurfaceMeshBuilder& mesh);
-
-        // Computes the total surface of the mesh
-        bool computeSurfaceArea(const SurfaceMeshBuilder& mesh);
-
-        // Computes the void, exterior, and total volumes from the per region volume properties.
-        void computeAggregateVolumes(const SurfaceMeshBuilder& mesh);
-
         /// Controls the identification of disconnected spatial regions (filled and empty).
         const bool _identifyRegions;
 
-        /// Number of filled regions that have been identified.
-        SurfaceMesh::size_type _filledRegionCount = 0;
-
-        /// Total number of empty regions that have been identified.
-        SurfaceMesh::size_type _emptyRegionCount = 0;
-
-        /// Total number of interior empty regions that have been identified.
-        SurfaceMesh::size_type _voidRegionCount = 0;
+        /// Struct that holds the computeAggregateVolumes output values
+        SurfaceMeshBuilder::AggregateVolumes _aggregateVolumes = {};
 
         /// The computed total surface area.
         double _totalSurfaceArea = 0;
-
-        /// The computed total volume of filled regions.
-        double _totalFilledVolume = 0;
-
-        /// The computed total volume of all empty regions.
-        double _totalEmptyVolume = 0;
-
-        /// The computed total volume of interior empty regions.
-        double _totalVoidVolume = 0;
-
-        /// The total volume of the simulation cell.
-        double _totalCellVolume = 0;
 
         /// The assignment of input particles to volumetric regions.
         PropertyPtr _particleRegionIds;

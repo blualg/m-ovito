@@ -440,10 +440,6 @@ bool ColorCodingModifier::determinePropertyValueRange(const PipelineFlowState& s
     if(minValue == std::numeric_limits<FloatType>::max())
         return false;
 
-    // Clamp to finite range.
-    if(!std::isfinite(minValue)) minValue = std::numeric_limits<FloatType>::lowest();
-    if(!std::isfinite(maxValue)) maxValue = std::numeric_limits<FloatType>::max();
-
     // Determine global min/max values over all animation frames.
     if(minValue < min) min = minValue;
     if(maxValue > max) max = maxValue;

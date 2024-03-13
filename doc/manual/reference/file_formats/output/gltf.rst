@@ -17,12 +17,9 @@ converted to triangle meshes before they can be exported. The parameter  :guilab
 used to approximate the surface of round geometries. The higher the resolution, the more triangles are generated and the smoother the surface will look.
 The default value of 3 is usually sufficient for most applications.
 
-OVITO outputs a separate glTF material for each unique particle or bond color. Thus, for a scene with many different particle colors, the resulting glTF file
-can become quite large and real-time rendering in the application displaying the glTF model may become slow.
-
-Keep in mind that applications such as *PowerPoint* are not designed to handle complex 3d models with many objects and materials
-and they do not employ optimized rendering techniques for particle-based models as OVITO does.
-That's why they may be unable to display scenes containing more than a few thousand particles or bonds.
+Keep in mind that applications such as *PowerPoint* are not designed to handle complex 3d models with many objects
+and they do not employ optimized rendering techniques for particle-based models like OVITO does.
+That's why they may be unable to display scenes containing more than a few tens of thousands of particles or bonds.
 
 .. note::
 
@@ -53,8 +50,13 @@ Python parameters
 
 If you export a scene to the glTF file format with the :py:func:`~ovito.io.export_file` Python function, the following specific keyword parameter is available:
 
-.. py:function:: export_file(None, file, "gltf", mesh_resolution = 3, ...)
+.. py:function:: export_file(None, file, "gltf", mesh_resolution = 3, optimize_size = False, ...)
   :noindex:
 
   :param int mesh_resolution: A numeric value in the range 1-5, which controls the number of triangles used to approximate the surface of round geometries.
                               The higher the resolution, the more triangles are generated and the smoother the surface will look.
+  :param bool optimize_size: If set to true, the exporter will attempt to reduce the size of the glTF file by reusing particle meshes (object instancing).
+                             However, this typically leads to slower rendering speeds, because most rendering applications are optimized for a few
+                             large meshes and not a large number of small objects.
+
+                             .. versionadded:: 3.10.4

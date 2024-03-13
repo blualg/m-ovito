@@ -13,27 +13,41 @@ Create isosurface
 
   Two isosurfaces of the charge density field
 
-This modifier generates an `isosurface <https://en.wikipedia.org/wiki/Isosurface>`__ for a field quantity defined on a structured
+This modifier computes an `isosurface <https://en.wikipedia.org/wiki/Isosurface>`__ for a field defined on a structured
 :ref:`voxel grid <scene_objects.voxel_grid>`.
-The computed isosurface is a :ref:`surface mesh <scene_objects.surface_mesh>` data object and
+The resulting isosurface is a :ref:`surface mesh <scene_objects.surface_mesh>` object and
 its visual appearance is controlled by the accompanying :ref:`surface mesh <visual_elements.surface_mesh>` visual element.
 
-To create multiple isosurfaces at different iso-levels, insert several instances of the the modifier into the same pipeline.
+You can change the iso-level value by clicking into the histogram plot, which shows the distribution of field values.
+To create multiple isosurfaces at different iso-levels, you can insert several instances of the modifier into the pipeline.
 
-See the :ref:`list of supported input file formats <file_formats.input>` to find out which ways of importing
-voxel grid data into the program are available. OVITO Pro also offers the :ref:`particles.modifiers.bin_and_reduce` modifier,
-which lets you dynamically generate a grid by binning a system of particles.
+Voxel grids can be imported into OVITO from several :ref:`input file formats <file_formats.input>`.
+OVITO Pro additionally offers the :ref:`particles.modifiers.bin_and_reduce` modifier, which lets you
+map a particle model onto a voxel grid to obtain a coarse-grained field representation of the model.
 
 **Transfer field values**
 
-The option :guilabel:`Transfer field values to surface` copies all field quantities defined on the input voxel grid over to the isosurface's mesh vertices.
-This includes any secondary field quantities in addition to the selected primary field quantity for which the isosurface is being constructed (which is constant and equal to the iso-level across the
-entire surface). The color mapping mode of the :ref:`visual_elements.surface_mesh` visual element lets you locally color the isosurface based on some secondary field quantity.
-The local field values at each isosurface output vertex are computed from the data of the input voxel cells using trilinear interpolation.
+The modifier option :guilabel:`Transfer field values to surface` copies all field quantities defined on the input voxel grid over to the isosurface's mesh vertices.
+You can then use the color mapping mode of the :ref:`visual_elements.surface_mesh` visual element to locally color the isosurface and visualize a secondary field quantity on the isosurface.
+The field values at each isosurface vertex are computed from the input voxel data using trilinear interpolation.
+
+.. _particles.modifiers.create_isosurface.smoothing:
 
 **Surface smoothing**
 
-The resulting isosurface can optionally be smoothed using a fairing algorithm to even out surface steps resulting from the discrete nature of the voxel grid. The :guilabel:`Smoothing level` parameter controls the number of iterations of the smoothing algorithm to perform. This post-processing procedure slightly displaces the surface mesh vertices to reduce steps and roughness of the isosurface. Mesh smoothing is performed *after* interpolated field values have already been transferred to the surface. Therefore, the surface values reflect the original vertex positions before the smoothing procedure.
+The generated isosurface can optionally be smoothed using a mesh fairing algorithm to even out surface steps resulting from the discrete nature of the input voxel grid.
+The :guilabel:`Smoothing level` parameter specifies the number of iterations of the smoothing algorithm to apply. A value of 0 disables smoothing, which is the default setting.
+The post-processing procedure slightly displaces the surface mesh vertices to reduce steps and roughness of the isosurface.
+Mesh smoothing is performed *after* interpolated field values have been transferred to the surface, which means that the surface property values reflect the
+original vertex positions prior to smoothing.
+
+.. _particles.modifiers.create_isosurface.regions:
+
+**Identify volumetric regions** |ovito-pro|
+
+This option lets the modifier identify the individual volumetric regions (below or above the iso-level), which are separated by the isosurface, and compute their respective volumes and surface areas.
+See :ref:`particles.modifiers.construct_surface_mesh.regions` for more details on how this option works. This feature can be useful to analyze the topology of the isosurface and
+to quantify the volume(s) enclosed by the surface.
 
 .. seealso::
 

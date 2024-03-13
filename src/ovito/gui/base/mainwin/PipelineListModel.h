@@ -261,6 +261,9 @@ private:
     /// List item indices that need to be repainted. A negative entry indicates a refresh of the entire list.
     std::vector<int> _itemsRefreshPending;
 
+    /// Flag indicating that the states of the actions need to be updated after refreshing the list model.
+    bool _actionUpdateRequired = false;
+
     /// The pipeline that was selected last time the list model was refreshed.
     OOWeakRef<Pipeline> _previouslySelectedPipeline;
 
