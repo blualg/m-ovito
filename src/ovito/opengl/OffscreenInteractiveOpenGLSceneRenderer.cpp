@@ -54,7 +54,7 @@ void OffscreenInteractiveOpenGLSceneRenderer::beginFrame(AnimationTime time, Sce
     vpWindow->makeOpenGLContextCurrent();
     QOpenGLContext* context = QOpenGLContext::currentContext();
     if(!context || !context->isValid())
-        throw RendererException(tr("OpenGL context for viewport window has not been created."));
+        throw RendererException(tr("Failed to create the OpenGL context for the viewport window. This issue may have occurred due to a recent (silent) graphics driver update. Please restart your system and try again. If the problem persists, reach out to OVITO support for assistance."));
 
     // Prepare a functions table allowing us to call OpenGL functions in a platform-independent way.
     initializeOpenGLFunctions();
