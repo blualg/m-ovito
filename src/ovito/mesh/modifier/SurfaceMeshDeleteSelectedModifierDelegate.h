@@ -56,10 +56,10 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshRegionsDeleteSelectedModifierDelegate : pu
 public:
 
     /// Constructor.
-    explicit SurfaceMeshRegionsDeleteSelectedModifierDelegate(ObjectInitializationFlags flags) : DeleteSelectedModifierDelegate(flags) {}
+    using DeleteSelectedModifierDelegate::DeleteSelectedModifierDelegate;
 
-    /// Applies the modifier operation to the data in a pipeline flow state.
-    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    /// Applies this modifier delegate to the data.
+    virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
 }   // End of namespace

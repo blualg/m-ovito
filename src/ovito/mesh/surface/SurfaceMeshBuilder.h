@@ -424,6 +424,37 @@ public:
         return new_v;
     }
 
+    /// Computes the surface area per mesh region and the total surface area
+    /// Returns the total surface area of the mesh.
+    [[nodiscard]] FloatType computeSurfaceAreaWithRegions();
+
+    /// Computes the total surface of the mesh
+    /// Returns the total surface area of the mesh.
+    [[nodiscard]] FloatType computeTotalSurfaceArea() const;
+
+    /// Struct that holds the computeAggregateVolumes output values
+    struct AggregateVolumes {
+        /// Number of filled regions that have been identified.
+        SurfaceMesh::size_type filledRegionCount = 0;
+        /// The computed total volume of filled regions.
+        FloatType totalFilledVolume = 0;
+        /// Total number of interior empty regions that have been identified.
+        SurfaceMesh::size_type voidRegionCount = 0;
+        /// The computed total volume of interior empty regions.
+        FloatType totalVoidVolume = 0;
+        /// Total number of empty regions that have been identified.
+        SurfaceMesh::size_type emptyRegionCount = 0;
+        /// The computed total volume of all empty regions.
+        FloatType totalEmptyVolume = 0;
+        /// The total volume of the simulation cell.
+        FloatType totalCellVolume = 0;
+    };
+    /// Computes the void, exterior, and total volumes from the per region volume properties.
+    [[nodiscard]] AggregateVolumes computeAggregateVolumes() const;
+
+    /// Set the volume of external regions to infinity if the simulation cell is non-periodic.
+    void nonPBCexternalVolume();
+
 private:
 
     SurfaceMeshTopology* _mutableTopology = nullptr; ///< The topology of the surface mesh after it was made mutable.

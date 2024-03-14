@@ -40,7 +40,7 @@ SurfaceMeshBuilder::SurfaceMeshBuilder(SurfaceMesh* mesh) : SurfaceMeshReadAcces
 ******************************************************************************/
 SurfaceMeshBuilder::~SurfaceMeshBuilder()
 {
-    if(mesh())
+    if(mesh() && std::uncaught_exceptions() == 0) // Note: Don't perform validation during stack unwinding due to an exception.
         mesh()->verifyMeshIntegrity();
 }
 #endif
@@ -337,6 +337,9 @@ void SurfaceMeshBuilder::deleteIsolatedVertices()
 ******************************************************************************/
 void SurfaceMeshBuilder::smoothMesh(int numIterations, FloatType k_PB, FloatType lambda)
 {
+    if(numIterations <= 0)
+        return;
+
     // This is the implementation of the mesh smoothing algorithm:
     //
     // Gabriel Taubin
@@ -717,6 +720,106 @@ void SurfaceMeshBuilder::joinCoplanarFaces(FloatType thresholdAngle)
         }
         while(edge != faceEdge);
         face = nextFace;
+    }
+}
+
+/******************************************************************************
+ * Computes the surface area per mesh region and the total surface area by summing up the triangle face areas.\
+ * Returns the total surface area of the mesh.
+ ******************************************************************************/
+FloatType SurfaceMeshBuilder::computeSurfaceAreaWithRegions()
+{
+    BufferWriteAccess<FloatType, access_mode::read_write> surfaceAreaProperty{
+        createRegionProperty(DataBuffer::Initialized, SurfaceMeshRegions::SurfaceAreaProperty)};
+    BufferReadAccess<SelectionIntType> isFilled{regionProperty(SurfaceMeshRegions::IsFilledProperty)};
+    BufferReadAccess<Point3> vertexPositions{expectVertexProperty(SurfaceMeshVertices::PositionProperty)};
+    BufferReadAccess<SurfaceMesh::region_index> faceRegions{expectFaceProperty(SurfaceMeshFaces::RegionProperty)};
+
+    FloatType totalSurfaceArea = 0;
+    for(SurfaceMesh::edge_index edge : firstFaceEdges()) {
+        const Vector3& e1 = edgeVector(edge, vertexPositions);
+        const Vector3& e2 = edgeVector(nextFaceEdge(edge), vertexPositions);
+        FloatType faceArea = 0.5 * e1.cross(e2).length();
+        SurfaceMesh::region_index region = faceRegions[adjacentFace(edge)];
+        surfaceAreaProperty[region] += faceArea;
+
+        // Only count surface area of outer surface, which is bordering an empty region.
+        // Don't count area of internal interfaces, which have filled regions on either side.
+        if(isFilled[region] == 0) {
+            totalSurfaceArea += faceArea;
+        };
+    }
+
+    return totalSurfaceArea;
+}
+
+/******************************************************************************
+ * Computes the total surface of the mesh by summing up the triangle face areas.
+ ******************************************************************************/
+FloatType SurfaceMeshBuilder::computeTotalSurfaceArea() const
+{
+    BufferReadAccess<Point3> vertexPositions{expectVertexProperty(SurfaceMeshVertices::PositionProperty)};
+
+    FloatType totalSurfaceArea = 0;
+    for(SurfaceMesh::edge_index edge : firstFaceEdges()) {
+        const Vector3& e1 = edgeVector(edge, vertexPositions);
+        const Vector3& e2 = edgeVector(nextFaceEdge(edge), vertexPositions);
+        FloatType faceArea = e1.cross(e2).length() / 2;
+        totalSurfaceArea += faceArea;
+    }
+
+    return totalSurfaceArea;
+}
+
+/******************************************************************************
+ * Computes the void, exterior, and total volumes from the per region volume properties.
+ ******************************************************************************/
+SurfaceMeshBuilder::AggregateVolumes SurfaceMeshBuilder::computeAggregateVolumes() const
+{
+    BufferReadAccess<SelectionIntType> isFilled{expectRegionProperty(SurfaceMeshRegions::IsFilledProperty)};
+    BufferReadAccess<SelectionIntType> isExterior{expectRegionProperty(SurfaceMeshRegions::IsExteriorProperty)};
+    BufferReadAccess<FloatType> regionVolumes{expectRegionProperty(SurfaceMeshRegions::VolumeProperty)};
+
+    AggregateVolumes aggregateVolumes = {};
+
+    for(SurfaceMesh::region_index region{0}; region < regionCount(); region++) {
+        FloatType volume = regionVolumes[region];
+        if(isFilled[region]) {
+            aggregateVolumes.filledRegionCount += 1;
+            aggregateVolumes.totalFilledVolume += volume;
+        }
+        else {
+            aggregateVolumes.totalEmptyVolume += volume;
+            aggregateVolumes.emptyRegionCount += 1;
+            if(!isExterior[region]) {
+                aggregateVolumes.totalVoidVolume += volume;
+                aggregateVolumes.voidRegionCount++;
+            }
+        };
+    }
+    aggregateVolumes.totalCellVolume = aggregateVolumes.totalFilledVolume + aggregateVolumes.totalEmptyVolume;
+
+    return aggregateVolumes;
+}
+
+/******************************************************************************
+ * Set the volume of external regions to infinity if the simulation cell is non-periodic.
+ ******************************************************************************/
+void SurfaceMeshBuilder::nonPBCexternalVolume()
+{
+    // PBC is periodic. Nothing to do.
+    if(domain()->pbcX() && domain()->pbcY() && domain()->pbcZ()) {
+        return;
+    }
+
+    BufferReadAccess<SelectionIntType> isFilled = expectRegionProperty(SurfaceMeshRegions::IsFilledProperty);
+    BufferReadAccess<SelectionIntType> isExterior = expectRegionProperty(SurfaceMeshRegions::IsExteriorProperty);
+    BufferWriteAccess<FloatType, access_mode::write> regionVolumes = mutableRegionProperty(SurfaceMeshRegions::VolumeProperty);
+
+    for(SurfaceMesh::region_index region{0}; region < regionCount(); region++) {
+        if(!isFilled[region] && isExterior[region]) {
+            regionVolumes[region] = std::numeric_limits<FloatType>::infinity();
+        }
     }
 }
 

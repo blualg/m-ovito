@@ -41,7 +41,7 @@ public:
                   bool outputCellCoordinates = false);
 
     /// The main algorithm routine.
-    bool generateIsosurface(FloatType iso);
+    void generateIsosurface(FloatType iso);
 
     /// Returns the generated surface mesh.
     const SurfaceMeshBuilder& mesh() const { return _outputMesh; }

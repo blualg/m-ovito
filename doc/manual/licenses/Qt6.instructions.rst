@@ -17,7 +17,6 @@ Linux
 OVITO for Linux includes Qt libraries that have been built from the unmodified sources of Qt 6.5.3 distributed by the Qt Company.
 The following commands have been used to generate them::
 
-  # Build platform: CentOS 7 (Toolchain: GCC 10)
   ./configure \
     -opensource -confirm-license -shared -nomake examples -qt-libpng -qt-libjpeg -qt-pcre -xkbcommon -no-cups -pch -no-eglfs -no-linuxfb -fontconfig -libinput \
     -skip qtactiveqt -skip qtconnectivity -skip qt3d -skip qtcanvas3d -skip qtdatavis3d -skip qtcharts -skip qtlocation -skip qtsensors -skip qtdeclarative -skip qtdoc \

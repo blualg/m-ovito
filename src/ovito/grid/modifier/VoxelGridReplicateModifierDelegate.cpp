@@ -53,7 +53,7 @@ Future<PipelineFlowState> VoxelGridReplicateModifierDelegate::apply(const Modifi
     const Box3I& newImagesIn = modifier->replicaRange();
 
     // The actual work can be performed in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), newImagesIn, interactive = request.interactiveMode()]() mutable {
+    return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), newImagesIn]() mutable {
 
         for(const DataObject* obj : state.data()->objects()) {
             if(const VoxelGrid* existingVoxelGrid = dynamic_object_cast<VoxelGrid>(obj)) {

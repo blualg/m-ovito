@@ -57,7 +57,7 @@ MarchingCubes::MarchingCubes(SurfaceMeshBuilder& outputMesh, int size_x, int siz
 /******************************************************************************
  * Main method that constructs the isosurface mesh.
  ******************************************************************************/
-bool MarchingCubes::generateIsosurface(FloatType isolevel)
+void MarchingCubes::generateIsosurface(FloatType isolevel)
 {
     _isolevel = isolevel;
     int size_x = _infiniteDomain ? (_size_x - 1) : _size_x;
@@ -67,14 +67,13 @@ bool MarchingCubes::generateIsosurface(FloatType isolevel)
     this_task::setProgressMaximum(size_z * 2);
     computeIntersectionPoints();
 
-    if(this_task::isCanceled())
-        return false;
+    this_task::throwIfCanceled();
 
     if(_outputMesh.spaceFillingRegion() != SurfaceMesh::InvalidIndex) {
         handleSpaceFillingRegion();
         _vertexGrower.reset();
         _faceGrower.reset();
-        return !this_task::isCanceled();
+        return;
     }
 
     // Setup region calculation
@@ -97,8 +96,7 @@ bool MarchingCubes::generateIsosurface(FloatType isolevel)
                 processCube(i, j, k);
             }
         }
-        if(this_task::isCanceled())
-            return false;
+        this_task::throwIfCanceled();
     }
 
     if(identifyRegions()) {
@@ -116,7 +114,7 @@ bool MarchingCubes::generateIsosurface(FloatType isolevel)
     _vertexGrower.reset();
     _faceGrower.reset();
 
-    return !this_task::isCanceled();
+    this_task::throwIfCanceled();
 }
 
 /******************************************************************************
@@ -1133,7 +1131,7 @@ void MarchingCubes::addVolume(int i, int j, int k, const signed char** volumeReg
             volume += tv[0].dot(tv[1].cross(tv[2]));
         }
         volume = 1.0 / 6.0 * std::abs(volume);
-        OVITO_ASSERT(volume > 0 && volume < (1 + 1e-6));
+        OVITO_ASSERT(volume >= 0 && volume < (1 + 1e-6));
         total_volume += volume;
         _regionVolumes[localRegionMap[ri]] += volume;
     }

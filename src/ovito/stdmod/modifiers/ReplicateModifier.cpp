@@ -211,6 +211,10 @@ Box3I ReplicateModifier::replicaRange() const
 ******************************************************************************/
 Future<PipelineFlowState> ReplicateModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
+    // Return unmodified state if replication is not necessary.
+    if(numImagesX() <= 1 && numImagesY() <= 1 && numImagesZ() <= 1)
+        return std::move(input);
+
     // First, apply all delegates to the input data.
     Future<PipelineFlowState> future = MultiDelegatingModifier::evaluateModifier(request, std::move(input));
 

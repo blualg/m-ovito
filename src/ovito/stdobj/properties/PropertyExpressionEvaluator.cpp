@@ -107,6 +107,11 @@ void PropertyExpressionEvaluator::createInputVariables(const std::vector<ConstPr
 
     // Constant pi
     registerConstant("pi", M_PI, QStringLiteral("%1...").arg(M_PI));
+
+    // Constant infinity
+    if(std::numeric_limits<FloatType>::has_infinity) {
+        registerConstant("inf", std::numeric_limits<FloatType>::infinity(), QStringLiteral("∞"));
+    }
 }
 
 /******************************************************************************

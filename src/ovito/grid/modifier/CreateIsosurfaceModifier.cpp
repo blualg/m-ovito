@@ -24,6 +24,7 @@
 #include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshBuilder.h>
+#include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/Application.h>
@@ -39,11 +40,13 @@ DEFINE_PROPERTY_FIELD(CreateIsosurfaceModifier, subject);
 DEFINE_PROPERTY_FIELD(CreateIsosurfaceModifier, sourceProperty);
 DEFINE_PROPERTY_FIELD(CreateIsosurfaceModifier, transferFieldValues);
 DEFINE_PROPERTY_FIELD(CreateIsosurfaceModifier, smoothingLevel);
+DEFINE_PROPERTY_FIELD(CreateIsosurfaceModifier, identifyRegions);
 DEFINE_REFERENCE_FIELD(CreateIsosurfaceModifier, isolevelController);
 DEFINE_REFERENCE_FIELD(CreateIsosurfaceModifier, surfaceMeshVis);
 SET_PROPERTY_FIELD_LABEL(CreateIsosurfaceModifier, sourceProperty, "Source property");
 SET_PROPERTY_FIELD_LABEL(CreateIsosurfaceModifier, isolevelController, "Isolevel");
 SET_PROPERTY_FIELD_LABEL(CreateIsosurfaceModifier, transferFieldValues, "Transfer field values to surface");
+SET_PROPERTY_FIELD_LABEL(CreateIsosurfaceModifier, identifyRegions, "Identify volumetric regions");
 SET_PROPERTY_FIELD_LABEL(CreateIsosurfaceModifier, smoothingLevel, "Smoothing level");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CreateIsosurfaceModifier, smoothingLevel, IntegerParameterUnit, 0);
 
@@ -64,18 +67,23 @@ CreateIsosurfaceModifier::CreateIsosurfaceModifier(ObjectInitializationFlags fla
     }
 }
 
-#if 0 // TODO
 /******************************************************************************
-* Determines the time interval over which a computed pipeline state will remain valid.
+* This function is called by the pipeline system before a new modifier evaluation begins.
 ******************************************************************************/
-TimeInterval CreateIsosurfaceModifier::validityInterval(const ModifierEvaluationRequest& request) const
+bool CreateIsosurfaceModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
 {
-    TimeInterval iv = Modifier::validityInterval(request);
+    // Indicate that we cannot handle interactive requests, because isosurface calculation is a computationally intensive operation.
+    if(request.interactiveMode()) {
+        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Interactive);
+        return false;
+    }
+
     if(isolevelController())
-        iv.intersect(isolevelController()->validityInterval(request.time()));
-    return iv;
+        result.intersectValidityInterval(isolevelController()->validityInterval(request.time()));
+
+    result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Noninteractive);
+    return true;
 }
-#endif
 
 /******************************************************************************
 * Is called when the value of a property of this object has changed.
@@ -140,15 +148,10 @@ void CreateIsosurfaceModifier::initializeModifier(const ModifierInitializationRe
 }
 
 /******************************************************************************
-* Creates and initializes a computation engine that will compute the
-* modifier's results.
+* Modifies the input data.
 ******************************************************************************/
-Future<ModifierEnginePtr> CreateIsosurfaceModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
 {
-    // If pipeline is in interactive mode, skip the long-running computation step.
-    if(request.interactiveMode())
-        return {};
-
     if(!subject())
         throw Exception(tr("No input voxel grid set."));
     if(subject().dataClass() != &VoxelGrid::OOClass())
@@ -167,7 +170,7 @@ Future<ModifierEnginePtr> CreateIsosurfaceModifier::createEngine(const ModifierE
     OVITO_ASSERT(voxelGrid->domain());
     if(voxelGrid->domain()->is2D())
         throw Exception(tr("Cannot generate isosurface for a two-dimensional voxel grid. Input must be a 3d grid."));
-    const Property* property = sourceProperty().findInContainer(voxelGrid);
+    ConstPropertyPtr property = sourceProperty().findInContainer(voxelGrid);
     if(!property)
         throw Exception(tr("The selected voxel property with the name '%1' does not exist.").arg(sourceProperty().name()));
     if(sourceProperty().vectorComponent() >= (int)property->componentCount())
@@ -191,154 +194,216 @@ Future<ModifierEnginePtr> CreateIsosurfaceModifier::createEngine(const ModifierE
         }
     }
 
+    // Create output state.
+    PipelineFlowState output = std::move(input);
+
     // Create an empty surface mesh object.
-    DataOORef<SurfaceMesh> mesh = DataOORef<SurfaceMesh>::create(ObjectInitializationFlag::DontCreateVisElement, tr("Isosurface"));
-    mesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("isosurface")));
-    mesh->setCreatedByNode(request.modificationNode());
+    SurfaceMesh* mesh = output.createObjectWithVis<SurfaceMesh>(QStringLiteral("isosurface"), request.modificationNode(), surfaceMeshVis(), tr("Isosurface"));
     mesh->setDomain(voxelGrid->domain());
-    mesh->setVisElement(surfaceMeshVis());
 
     // Create an empty data table for the field value histogram.
-    DataOORef<DataTable> histogram = DataOORef<DataTable>::create(DataTable::Histogram, sourceProperty().nameWithComponent());
-    histogram->setIdentifier(input.generateUniqueIdentifier<DataTable>(QStringLiteral("isosurface-histogram")));
-    histogram->setCreatedByNode(request.modificationNode());
+    DataTable* histogram = output.createObject<DataTable>(QStringLiteral("isosurface-histogram"), request.modificationNode(), DataTable::Histogram, sourceProperty().nameWithComponent());
     histogram->setAxisLabelX(sourceProperty().nameWithComponent());
 
-    // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<ComputeIsosurfaceEngine>(request, validityInterval, voxelGrid->shape(), voxelGrid->gridType(), property,
-                                                     sourceProperty().vectorComponent(), std::move(mesh), isolevel, smoothingLevel(),
-                                                     std::move(auxiliaryProperties), std::move(histogram));
-}
+    // The actual computation can be performed in a separate worker thread.
+    return AsynchronousTask<PipelineFlowState>::runAsync([
+            output = std::move(output),
+            gridShape = voxelGrid->shape(),
+            gridType = voxelGrid->gridType(),
+            property = std::move(property),
+            vectorComponent = sourceProperty().vectorComponent(),
+            mesh = std::move(mesh),
+            isolevel,
+            identifyRegions = identifyRegions(),
+            smoothingLevel = smoothingLevel(),
+            auxiliaryProperties = std::move(auxiliaryProperties),
+            histogram = std::move(histogram),
+            createdByNode = request.modificationNode()]() mutable
+    {
+        this_task::setProgressText(tr("Constructing isosurface"));
 
-/******************************************************************************
-* Performs the actual analysis. This method is executed in a worker thread.
-******************************************************************************/
-void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::perform()
-{
-    setProgressText(tr("Constructing isosurface"));
+        // Set up callback function returning the field value, which will be passed to the marching cubes algorithm.
+        BufferReadAccess<FloatType*> data(property);
+        auto getFieldValue = [
+                _data = data.cbegin() + vectorComponent,
+                _pbcFlags = mesh->domain() ? mesh->domain()->pbcFlags() : std::array<bool,3>{{false,false,false}},
+                _gridShape = gridShape,
+                _dataStride = data.componentCount()
+                ](int i, int j, int k) -> FloatType {
+            if(_pbcFlags[0]) {
+                if(i == _gridShape[0]) i = 0;
+            }
+            else {
+                if(i == 0 || i > _gridShape[0]) return std::numeric_limits<FloatType>::lowest();
+                i--;
+            }
+            if(_pbcFlags[1]) {
+                if(j == _gridShape[1]) j = 0;
+            }
+            else {
+                if(j == 0 || j > _gridShape[1]) return std::numeric_limits<FloatType>::lowest();
+                j--;
+            }
+            if(_pbcFlags[2]) {
+                if(k == _gridShape[2]) k = 0;
+            }
+            else {
+                if(k == 0 || k > _gridShape[2]) return std::numeric_limits<FloatType>::lowest();
+                k--;
+            }
+            OVITO_ASSERT(i >= 0 && i < _gridShape[0]);
+            OVITO_ASSERT(j >= 0 && j < _gridShape[1]);
+            OVITO_ASSERT(k >= 0 && k < _gridShape[2]);
+            return _data[(i + j*_gridShape[0] + k*_gridShape[0]*_gridShape[1]) * _dataStride];
+        };
 
-    // Set up callback function returning the field value, which will be passed to the marching cubes algorithm.
-    BufferReadAccess<FloatType*> data(property());
-    auto getFieldValue = [
-            _data = data.cbegin() + _vectorComponent,
-            _pbcFlags = _mesh->domain() ? _mesh->domain()->pbcFlags() : std::array<bool,3>{{false,false,false}},
-            _gridShape = _gridShape,
-            _dataStride = data.componentCount()
-            ](int i, int j, int k) -> FloatType {
-        if(_pbcFlags[0]) {
-            if(i == _gridShape[0]) i = 0;
+        // Prepare the output mesh structure.
+        SurfaceMeshBuilder meshBuilder(mesh);
+
+        // Request identification of regions in Marching Cubes algorithm.
+        if(identifyRegions) {
+            meshBuilder.createFaceProperty(DataBuffer::Uninitialized, SurfaceMeshFaces::RegionProperty);
+        }
+
+        // Invoke marching cubes algorithm.
+        MarchingCubes mc(meshBuilder, gridShape[0], gridShape[1], gridShape[2], false, std::move(getFieldValue));
+        mc.generateIsosurface(isolevel);
+        this_task::throwIfCanceled();
+
+        // Copy field values from voxel grid to surface mesh vertices.
+        transferPropertiesFromGridToMesh(meshBuilder, auxiliaryProperties, *meshBuilder.domain(), gridShape, gridType);
+        this_task::throwIfCanceled();
+
+        // Adjust for non-periodic point-based grids.
+        VoxelGrid::GridDimensions mcShape = gridShape;
+        if(gridType == VoxelGrid::GridType::PointData) {
+            if(!meshBuilder.domain()->hasPbcCorrected(0) && mcShape[0] >= 2) mcShape[0]--;
+            if(!meshBuilder.domain()->hasPbcCorrected(1) && mcShape[1] >= 2) mcShape[1]--;
+            if(!meshBuilder.domain()->hasPbcCorrected(2) && mcShape[2] >= 2) mcShape[2]--;
+        }
+
+        // Transform mesh vertices from orthogonal grid space to world space.
+        const AffineTransformation tm = meshBuilder.domain()->cellMatrix() * Matrix3(
+            FloatType(1) / mcShape[0], 0, 0,
+            0, FloatType(1) / mcShape[1], 0,
+            0, 0, FloatType(1) / mcShape[2]) *
+            AffineTransformation::translation(Vector3(gridType == VoxelGrid::GridType::PointData ? 0.0 : 0.5));
+        meshBuilder.transformVertices(tm);
+
+        // Map mesh region volumes from orthogonal grid space to world space.
+        FloatType tmDeterminant = tm.determinant();
+        BufferWriteAccess<FloatType, access_mode::read_write> regionVolumes = meshBuilder.mutableRegionProperty(SurfaceMeshRegions::VolumeProperty);
+        for(SurfaceMesh::region_index region : meshBuilder.regionsRange()) {
+            regionVolumes[region] *= tmDeterminant;
+        }
+        regionVolumes.reset();
+
+        // Flip surface orientation if cell matrix is a mirror transformation.
+        if(tmDeterminant < 0)
+            meshBuilder.flipFaces();
+        this_task::throwIfCanceled();
+
+        if(!meshBuilder.connectOppositeHalfedges())
+            throw Exception(tr("Something went wrong. Isosurface mesh is not closed."));
+        this_task::throwIfCanceled();
+
+        meshBuilder.smoothMesh(smoothingLevel);
+        this_task::throwIfCanceled();
+
+        FloatType totalSurfaceArea;
+        SurfaceMeshBuilder::AggregateVolumes aggregateVolumes;
+        if(identifyRegions) {
+            meshBuilder.nonPBCexternalVolume();
+            totalSurfaceArea = meshBuilder.computeSurfaceAreaWithRegions();
+            aggregateVolumes = meshBuilder.computeAggregateVolumes();
         }
         else {
-            if(i == 0 || i > _gridShape[0]) return std::numeric_limits<FloatType>::lowest();
-            i--;
+            totalSurfaceArea = meshBuilder.computeTotalSurfaceArea();
         }
-        if(_pbcFlags[1]) {
-            if(j == _gridShape[1]) j = 0;
+        this_task::throwIfCanceled();
+
+        // Determine min-max range of input field values.
+        // Only used for informational purposes for the user.
+        FloatType minValue =  FLOATTYPE_MAX;
+        FloatType maxValue = -FLOATTYPE_MAX;
+        for(FloatType v : data.componentRange(vectorComponent)) {
+            if(v < minValue) minValue = v;
+            if(v > maxValue) maxValue = v;
+        }
+
+        // Compute a histogram of the input field values.
+        histogram->setElementCount(64);
+        Property* histogramValues = histogram->createProperty(DataBuffer::Initialized, QStringLiteral("Count"), Property::Int64);
+        FloatType binSize = (maxValue - minValue) / histogramValues->size();
+        int histogramSizeMin1 = histogramValues->size() - 1;
+        BufferWriteAccess<int64_t, access_mode::read_write> histogramAccess(histogramValues);
+        for(const FloatType v : data.componentRange(vectorComponent)) {
+            int binIndex = (v - minValue) / binSize;
+            histogramAccess[std::max(0, std::min(binIndex, histogramSizeMin1))]++;
+        }
+        histogram->setY(std::move(histogramValues));
+        histogram->setIntervalStart(minValue);
+        histogram->setIntervalEnd(maxValue);
+
+        // Release data that is no longer needed to reduce memory footprint.
+        property.reset();
+        auxiliaryProperties.clear();
+
+        // Set the status message of the pipeline.
+        QStringList statusMessage;
+        statusMessage.append(tr("Field value range: [%1, %2]").arg(histogram->intervalStart()).arg(histogram->intervalEnd()));
+
+        // Output total surface area.
+        output.addAttribute(QStringLiteral("CreateIsosurface.surface_area"), QVariant::fromValue(totalSurfaceArea), createdByNode);
+
+        if(identifyRegions) {
+            const SimulationCell& simCell = *(output.expectObject<SimulationCell>());
+            bool periodic = simCell.pbcX() && simCell.pbcY() && simCell.pbcZ();
+            FloatType totalCellVolume = (periodic) ? simCell.volume3D() : std::numeric_limits<FloatType>::quiet_NaN();
+
+            // Output more global attributes.
+            output.addAttribute(QStringLiteral("ConstructSurfaceMesh.cell_volume"), QVariant::fromValue(totalCellVolume), createdByNode);
+            output.addAttribute(
+                QStringLiteral("ConstructSurfaceMesh.specific_surface_area"),
+                QVariant::fromValue(totalCellVolume ? (totalSurfaceArea / totalCellVolume) : std::numeric_limits<FloatType>::quiet_NaN()), createdByNode);
+            output.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_volume"), QVariant::fromValue(aggregateVolumes.totalFilledVolume), createdByNode);
+            output.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_fraction"),
+                            QVariant::fromValue(totalCellVolume ? (aggregateVolumes.totalFilledVolume / totalCellVolume)
+                                                                : std::numeric_limits<FloatType>::quiet_NaN()), createdByNode);
+            output.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_region_count"),
+                            QVariant::fromValue(aggregateVolumes.filledRegionCount), createdByNode);
+            output.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_volume"), QVariant::fromValue(aggregateVolumes.totalEmptyVolume), createdByNode);
+            output.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_fraction"),
+                            QVariant::fromValue(totalCellVolume ? (aggregateVolumes.totalEmptyVolume / totalCellVolume)
+                                                                : std::numeric_limits<FloatType>::quiet_NaN()), createdByNode);
+            output.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_region_count"),
+                            QVariant::fromValue(aggregateVolumes.emptyRegionCount), createdByNode);
+            output.addAttribute(QStringLiteral("ConstructSurfaceMesh.void_volume"), QVariant::fromValue(aggregateVolumes.totalVoidVolume), createdByNode);
+            output.addAttribute(QStringLiteral("ConstructSurfaceMesh.void_region_count"), QVariant::fromValue(aggregateVolumes.voidRegionCount), createdByNode);
+
+            statusMessage.append(
+                tr("Surface area: %1\n# filled regions (volume): %2 (%3)\n# empty regions (volume): %4 (%5)\n# void regions (volume): %6 (%7)")
+                    .arg(totalSurfaceArea)
+                    .arg(aggregateVolumes.filledRegionCount)
+                    .arg(aggregateVolumes.totalFilledVolume)
+                    .arg(aggregateVolumes.emptyRegionCount)
+                    .arg(aggregateVolumes.totalEmptyVolume)
+                    .arg(aggregateVolumes.voidRegionCount)
+                    .arg(aggregateVolumes.totalVoidVolume));
         }
         else {
-            if(j == 0 || j > _gridShape[1]) return std::numeric_limits<FloatType>::lowest();
-            j--;
+            statusMessage.append(tr("Surface area: %1").arg(totalSurfaceArea));
         }
-        if(_pbcFlags[2]) {
-            if(k == _gridShape[2]) k = 0;
-        }
-        else {
-            if(k == 0 || k > _gridShape[2]) return std::numeric_limits<FloatType>::lowest();
-            k--;
-        }
-        OVITO_ASSERT(i >= 0 && i < _gridShape[0]);
-        OVITO_ASSERT(j >= 0 && j < _gridShape[1]);
-        OVITO_ASSERT(k >= 0 && k < _gridShape[2]);
-        return _data[(i + j*_gridShape[0] + k*_gridShape[0]*_gridShape[1]) * _dataStride];
-    };
+        output.setStatus(PipelineStatus(PipelineStatus::Success, statusMessage.join('\n')));
 
-    // Prepare the output mesh structure.
-    SurfaceMeshBuilder mesh(_mesh);
-
-    // Invoke marching cubes algorithm.
-    MarchingCubes mc(mesh, _gridShape[0], _gridShape[1], _gridShape[2], false, std::move(getFieldValue));
-    if(!mc.generateIsosurface(_isolevel))
-        return;
-
-    // Copy field values from voxel grid to surface mesh vertices.
-    if(!transferPropertiesFromGridToMesh(mesh, auxiliaryProperties(), *mesh.domain(), _gridShape, _gridType))
-        return;
-
-    // Adjust for non-periodic point-based grids.
-    VoxelGrid::GridDimensions mcShape = _gridShape;
-    if(_gridType == VoxelGrid::GridType::PointData) {
-        if(!mesh.domain()->hasPbcCorrected(0) && mcShape[0] >= 2) mcShape[0]--;
-        if(!mesh.domain()->hasPbcCorrected(1) && mcShape[1] >= 2) mcShape[1]--;
-        if(!mesh.domain()->hasPbcCorrected(2) && mcShape[2] >= 2) mcShape[2]--;
-    }
-
-    // Transform mesh vertices from orthogonal grid space to world space.
-    const AffineTransformation tm = mesh.domain()->cellMatrix() * Matrix3(
-        FloatType(1) / mcShape[0], 0, 0,
-        0, FloatType(1) / mcShape[1], 0,
-        0, 0, FloatType(1) / mcShape[2]) *
-        AffineTransformation::translation(Vector3(_gridType == VoxelGrid::GridType::PointData ? 0.0 : 0.5));
-    mesh.transformVertices(tm);
-
-    // Flip surface orientation if cell matrix is a mirror transformation.
-    if(tm.determinant() < 0)
-        mesh.flipFaces();
-    if(isCanceled())
-        return;
-
-    if(!mesh.connectOppositeHalfedges())
-        throw Exception(tr("Something went wrong. Isosurface mesh is not closed."));
-    if(isCanceled())
-        return;
-    if(!mesh.smoothMesh(_smoothingLevel, *this))
-        return;
-
-    // Determine min-max range of input field values.
-    // Only used for informational purposes for the user.
-    FloatType minValue =  FLOATTYPE_MAX;
-    FloatType maxValue = -FLOATTYPE_MAX;
-    for(FloatType v : data.componentRange(_vectorComponent)) {
-        if(v < minValue) minValue = v;
-        if(v > maxValue) maxValue = v;
-    }
-
-    // Compute a histogram of the input field values.
-    _histogram->setElementCount(64);
-    PropertyPtr histogramValues = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, _histogram->elementCount(), Property::Int64, 1, tr("Count"));
-    FloatType binSize = (maxValue - minValue) / histogramValues->size();
-    int histogramSizeMin1 = histogramValues->size() - 1;
-    BufferWriteAccess<int64_t, access_mode::read_write> histogramAccess(histogramValues);
-    for(const FloatType v : data.componentRange(_vectorComponent)) {
-        int binIndex = (v - minValue) / binSize;
-        histogramAccess[std::max(0, std::min(binIndex, histogramSizeMin1))]++;
-    }
-    _histogram->setY(std::move(histogramValues));
-    _histogram->setIntervalStart(minValue);
-    _histogram->setIntervalEnd(maxValue);
-
-    // Release data that is no longer needed to reduce memory footprint.
-    _property.reset();
-    _auxiliaryProperties.clear();
-}
-
-/******************************************************************************
-* Injects the computed results of the engine into the data pipeline.
-******************************************************************************/
-void CreateIsosurfaceModifier::ComputeIsosurfaceEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
-{
-    ModifierEngine::applyResults(request, state);
-
-    state.addObjectWithUniqueId<SurfaceMesh>(_mesh);
-    state.addObjectWithUniqueId<DataTable>(_histogram);
-    state.setStatus(PipelineStatus(tr("Field value range: [%1, %2]")
-        .arg(_histogram->intervalStart())
-        .arg(_histogram->intervalEnd())));
+        return std::move(output);
+    });
 }
 
 /******************************************************************************
 * Transfers voxel grid properties to the vertices of a surfaces mesh.
 ******************************************************************************/
-bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshBuilder& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, const SimulationCell& gridDomain, VoxelGrid::GridDimensions gridShape, VoxelGrid::GridType gridType)
+void CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshBuilder& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, const SimulationCell& gridDomain, VoxelGrid::GridDimensions gridShape, VoxelGrid::GridType gridType)
 {
     OVITO_ASSERT(this_task::get() && this_task::get()->isProgressingTask());
 
@@ -372,7 +437,7 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshBuild
         std::array<bool,3> pbcFlags = gridDomain.pbcFlagsCorrected();
         BufferReadAccess<Point3> vertexPositions = mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty);
 
-        parallelForWithProgress(mesh.vertexCount(), [&](size_t vertexIndex) {
+        parallelFor(mesh.vertexCount(), 4096, [&](size_t vertexIndex) {
             // Trilinear interpolation scheme.
             size_t cornerIndices[8];
             FloatType cornerWeights[8];
@@ -423,7 +488,6 @@ bool CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshBuild
             }
         });
     }
-    return !this_task::get()->isCanceled();
 }
 
 }   // End of namespace

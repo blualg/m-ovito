@@ -315,11 +315,21 @@ public:
                     if(selectionAcc.empty() || selectionAcc[i]) {
                         if constexpr(!ComponentWise) {
                             auto v = (*this)[i];
+                            // Exclude NaN and INF values from reduction.
+                            if constexpr(std::is_same_v<element_type, float> || std::is_same_v<element_type, double>) {
+                                if(!sycl::isfinite(v))
+                                    return;
+                            }
                             red1.combine(v);
                             red2.combine(v);
                         }
                         else {
                             auto v = (*this)[sycl::id<2>(i, component)];
+                            // Exclude NaN and INF values from reduction.
+                            if constexpr(std::is_same_v<element_type, float> || std::is_same_v<element_type, double>) {
+                                if(!sycl::isfinite(v))
+                                    return;
+                            }
                             red1.combine(v);
                             red2.combine(v);
                         }

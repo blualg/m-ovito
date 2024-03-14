@@ -26,7 +26,7 @@ FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Xml REQUIRED)
 SET(SourceFiles
     objects/VoxelGrid.cpp
     objects/VoxelGridVis.cpp
-#    modifier/CreateIsosurfaceModifier.cpp
+    modifier/CreateIsosurfaceModifier.cpp
     modifier/MarchingCubes.cpp
     io/VTKVoxelGridExporter.cpp
     io/ParaViewVTIGridImporter.cpp

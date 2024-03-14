@@ -59,10 +59,10 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshSliceModifierDelegate : public SliceModifi
 public:
 
     /// Constructor.
-    explicit SurfaceMeshSliceModifierDelegate(ObjectInitializationFlags flags) : SliceModifierDelegate(flags) {}
+    using SliceModifierDelegate::SliceModifierDelegate;
 
-    /// \brief Applies a slice operation to a data object.
-    virtual PipelineStatus apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    /// Applies this modifier delegate to the data.
+    virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
 
 }   // End of namespace
