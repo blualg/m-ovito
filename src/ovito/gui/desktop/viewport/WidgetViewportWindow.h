@@ -49,7 +49,7 @@ public:
 
     /// Indicates whether the window is currently shown or not.
     virtual bool isVisible() const override {
-        return widget()->isVisible();
+        return widget() && widget()->isVisible();
     }
 
     /// Sets the mouse cursor shape for the window.

@@ -21,6 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/mesh/Mesh.h>
+#include <ovito/mesh/surface/SurfaceMesh.h>
+#include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/mesh/surface/RenderableSurfaceMesh.h>
 #include <ovito/core/app/Application.h>
 #include "VTKTriangleMeshExporter.h"
@@ -63,20 +65,26 @@ void VTKTriangleMeshExporter::closeOutputFile(bool exportCompleted)
 void VTKTriangleMeshExporter::exportFrame(int frameNumber, const QString& filePath)
 {
     // Evaluate pipeline.
-    // Note: We are requesting the rendering state from the pipeline,
-    // because we are interested in renderable triangle meshes.
-    const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber, true);
+    const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber);
 
-    // Look up the RenderableSurfaceMesh to be exported in the pipeline state.
-    DataObjectReference objectRef(&RenderableSurfaceMesh::OOClass(), dataObjectToExport().dataPath());
-    const RenderableSurfaceMesh* meshObj = static_object_cast<RenderableSurfaceMesh>(state.getLeafObject(objectRef));
-    if(!meshObj) {
+    // Look up the SurfaceMesh to be exported in the pipeline state.
+    DataObjectReference objectRef(&SurfaceMesh::OOClass(), dataObjectToExport().dataPath());
+    const SurfaceMesh* surfaceObj = static_object_cast<SurfaceMesh>(state.getLeafObject(objectRef));
+    if(!surfaceObj) {
         throw Exception(tr("The pipeline output does not contain the surface mesh to be exported (animation frame: %1; object key: %2). Available surface mesh keys: (%3)")
-            .arg(frameNumber).arg(objectRef.dataPath()).arg(getAvailableDataObjectList(state, RenderableSurfaceMesh::OOClass())));
+            .arg(frameNumber).arg(objectRef.dataPath()).arg(getAvailableDataObjectList(state, SurfaceMesh::OOClass())));
     }
 
-    const TriangleMesh* surfaceMesh = meshObj->surfaceMesh();
-    const TriangleMesh* capPolygonsMesh = exportCapPolygons() ? meshObj->capPolygonsMesh() : nullptr;
+    // Get the visual element associated with the surface mesh.
+    OORef<SurfaceMeshVis> surfaceVis = surfaceObj->visElement<SurfaceMeshVis>();
+    if(!surfaceVis)
+        surfaceVis = OORef<SurfaceMeshVis>::create();
+
+    // Convert the SurfaceMesh to a triangle mesh.
+    std::shared_ptr<RenderableSurfaceMesh> meshObj = surfaceVis->transformSurfaceMesh(surfaceObj).result();
+
+    const TriangleMesh* surfaceMesh = meshObj->surface();
+    const TriangleMesh* capPolygonsMesh = exportCapPolygons() ? meshObj->capPolygons() : nullptr;
     auto totalVertexCount = (surfaceMesh ? surfaceMesh->vertexCount() : 0) + (capPolygonsMesh ? capPolygonsMesh->vertexCount() : 0);
     auto totalFaceCount = (surfaceMesh ? surfaceMesh->faceCount() : 0) + (capPolygonsMesh ? capPolygonsMesh->faceCount() : 0);
     textStream() << "# vtk DataFile Version 3.0\n";

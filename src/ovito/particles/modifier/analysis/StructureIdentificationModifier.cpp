@@ -27,6 +27,8 @@
 #include <ovito/stdmod/modifiers/ColorByTypeModifier.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/core/dataset/data/AttributeDataObject.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/app/Application.h>
 #include "StructureIdentificationModifier.h"
 
@@ -93,95 +95,192 @@ void StructureIdentificationModifier::loadFromStream(ObjectLoadStream& stream)
 }
 
 /******************************************************************************
-* Compute engine constructor.
-******************************************************************************/
-StructureIdentificationModifier::StructureIdentificationEngine::StructureIdentificationEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection) :
-    ModifierEngine(request),
-    _positions(std::move(positions)),
-    _simCell(simCell),
-    _selection(std::move(selection)),
-    _structures(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.elementCount(), Particles::StructureTypeProperty)),
-    _inputFingerprint(std::move(fingerprint))
+ * Is called by the pipeline system before a new modifier evaluation begins.
+ ******************************************************************************/
+bool StructureIdentificationModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
 {
-    // Create deep copies of the structure elements types, because data objects owned by the modifier should
-    // not be passed to the data pipeline.
-    for(const ElementType* type : structureTypes) {
-        OVITO_ASSERT(type && type->numericId() == _structures->elementTypes().size());
+    // Indicate that we will do different computations depending on whether the pipeline is evaluated in interactive mode or not.
+    if(request.interactiveMode())
+        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Interactive);
+    else
+        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Noninteractive);
 
-        // Attach structure types to output particle property.
-        _structures->addElementType(DataOORef<ElementType>::makeDeepCopy(type));
-    }
+    return true;
 }
 
 /******************************************************************************
-* Injects the computed results of the engine into the data pipeline.
+* Modifies the input data.
 ******************************************************************************/
-void StructureIdentificationModifier::StructureIdentificationEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+Future<PipelineFlowState> StructureIdentificationModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
-    ModifierEngine::applyResults(request, state);
+    // In interactive mode, do not perform a real computation. Instead, reuse an old result from the cached state if available.
+    if(request.interactiveMode()) {
+        if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
+            Particles* particles = state.expectMutableObject<Particles>();
+            particles->verifyIntegrity();
+            reuseCachedState(request, particles, state, cachedState);
+        }
+        return std::move(state);
+    }
 
-    StructureIdentificationModifier* modifier = static_object_cast<StructureIdentificationModifier>(request.modifier());
-    OVITO_ASSERT(modifier);
+    // Phase I: Perform the structure identification. The results are cached in the node's partial cache.
+    auto identificationFuture = request.modificationNode()->partialResultsCache().getOrCompute(state.data(), [&]() {
 
-    Particles* particles = state.expectMutableObject<Particles>();
-    particles->verifyIntegrity();
+        // Get the input particles.
+        DataOORef<const Particles> particles = state.expectObject<Particles>();
+        particles->verifyIntegrity();
 
-    if(_inputFingerprint.hasChanged(particles))
-        throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
+        // Get input particle selection.
+        ConstPropertyPtr selection = onlySelectedParticles() ? particles->expectProperty(Particles::SelectionProperty) : nullptr;
 
-    // Finalize output property.
-    PropertyPtr structureProperty = postProcessStructureTypes(request, structures());
+        // Create the output structure property.
+        PropertyPtr structures = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), Particles::StructureTypeProperty);
 
-    // Add output property to the particles.
-    particles->createProperty(structureProperty);
+        // Create deep copies of the structure elements types, because data objects owned by the modifier should
+        // not be passed to the data pipeline.
+        for(const ElementType* type : structureTypes()) {
+            OVITO_ASSERT(type && type->numericId() == structures->elementTypes().size());
 
-    // Color particles based on their structural type (if requested).
-    if(modifier->colorByType())
-        ColorByTypeModifier::colorByType(structureProperty, particles);
+            // Attach structure types to output particle property.
+            structures->addElementType(DataOORef<ElementType>::makeDeepCopy(type));
+        }
 
+        // Ask the subclass to create the engine that will perform the structure identification.
+        std::shared_ptr<Algorithm> algorithm = createAlgorithm(request, state, std::move(structures));
+
+        // Get the simulation cell (optional).
+        DataOORef<const SimulationCell> simulationCell = state.getObject<SimulationCell>();
+
+        // Perform the structure identification in a separate thread.
+        return AsynchronousTask<std::shared_ptr<Algorithm>>::runAsync([
+                algorithm = std::move(algorithm),
+                particles = std::move(particles),
+                simulationCell = std::move(simulationCell),
+                selection = std::move(selection)]() mutable
+        {
+            // Run the algorithm.
+            algorithm->identifyStructures(particles, simulationCell, selection);
+            return std::move(algorithm);
+        }, true);
+    });
+
+    // Phase II: Compute structure statistics.
+    return identificationFuture.then([state = std::move(state), colorByType = colorByType(), createdByNode = request.modificationNode()](std::shared_ptr<const Algorithm> algorithm) {
+
+        // Perform the structure identification in a separate thread.
+        return AsynchronousTask<PipelineFlowState>::runAsync([
+                state = std::move(state),
+                algorithm = std::move(algorithm),
+                colorByType,
+                createdByNode = std::move(createdByNode)]() mutable
+        {
+            // Post-process computed structure classifications.
+            PropertyPtr structures = algorithm->postProcessStructureTypes(algorithm->structures());
+            this_task::throwIfCanceled();
+
+            // Add output property to the particles.
+            Particles* particles = state.expectMutableObject<Particles>();
+            particles->createProperty(structures);
+
+            // Color particles based on their structural type (if requested).
+            if(colorByType) {
+                ColorByTypeModifier::colorByType(structures, particles);
+                this_task::throwIfCanceled();
+            }
+
+            // Compute the structure identification statistics.
+            algorithm->computeStructureStatistics(structures, state, createdByNode);
+
+            return std::move(state);
+        });
+    });
+}
+
+/******************************************************************************
+* Computes the structure identification statistics.
+******************************************************************************/
+std::vector<int64_t> StructureIdentificationModifier::Algorithm::computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode) const
+{
     // Count the number of particles of each identified type.
     int maxTypeId = 0;
-    for(ElementType* stype : modifier->structureTypes()) {
+    for(const ElementType* stype : structures->elementTypes()) {
         OVITO_ASSERT(stype->numericId() >= 0);
         maxTypeId = std::max(maxTypeId, stype->numericId());
     }
-    _typeCounts.resize(maxTypeId + 1);
+
+    std::vector<int64_t> counts(maxTypeId + 1);
 
 #ifdef OVITO_USE_SYCL
-    if(!_typeCounts.empty() && structureProperty->size() != 0) {
-        sycl::buffer<int64_t> typeCountsBuf(_typeCounts.data(), _typeCounts.size());
+    if(!counts.empty() && structureProperty->size() != 0) {
+        sycl::buffer<int64_t> countsBuf(counts.data(), counts.size());
         ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
-            auto typeCountsAcc = typeCountsBuf.get_access(cgh, sycl::write_only);
+            auto countsAcc = countsBuf.get_access(cgh, sycl::write_only);
             SyclBufferAccess<int32_t, access_mode::read> typeAcc(structureProperty, cgh);
             OVITO_SYCL_PARALLEL_FOR(cgh, StructureIdentificationModifier_countTypes)(sycl::range(typeAcc.size()), [=](size_t i) {
                 auto t = typeAcc[i];
-                if(t >= 0 && t < typeCountsAcc.size())
-                    sycl::atomic_ref<int64_t, sycl::memory_order::relaxed, sycl::memory_scope::device>(typeCountsAcc[t]).fetch_add((int64_t)1);
+                if(t >= 0 && t < countsAcc.size())
+                    sycl::atomic_ref<int64_t, sycl::memory_order::relaxed, sycl::memory_scope::device>(countsAcc[t]).fetch_add((int64_t)1);
             });
         });
     }
 #else
-    boost::fill(_typeCounts, 0);
-    for(auto t : BufferReadAccess<int32_t>(structureProperty)) {
+    boost::fill(counts, 0);
+    for(auto t : BufferReadAccess<int32_t>(structures)) {
         if(t >= 0 && t <= maxTypeId)
-            _typeCounts[t]++;
+            counts[t]++;
     }
 #endif
 
     // Create the property arrays for the bar chart.
     PropertyPtr typeCounts = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxTypeId + 1, Property::Int64, 1, tr("Count"));
-    boost::copy(_typeCounts, BufferWriteAccess<int64_t, access_mode::discard_write>(typeCounts).begin());
+    boost::copy(counts, BufferWriteAccess<int64_t, access_mode::discard_write>(typeCounts).begin());
     PropertyPtr typeIds = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxTypeId + 1, Property::Int32, 1, tr("Structure type"));
     boost::algorithm::iota_n(BufferWriteAccess<int32_t, access_mode::discard_write>(typeIds).begin(), 0, typeIds->size());
 
     // Use the structure types as labels for the output bar chart.
-    for(const ElementType* type : structureProperty->elementTypes()) {
+    for(const ElementType* type : structures->elementTypes()) {
         if(type->enabled())
             typeIds->addElementType(type);
     }
 
     // Output a bar chart with the type counts.
-    DataTable* table = state.createObject<DataTable>(QStringLiteral("structures"), request.modificationNode(), DataTable::BarChart, tr("Structure counts"), std::move(typeCounts), std::move(typeIds));
+    state.createObject<DataTable>(QStringLiteral("structures"), createdByNode, DataTable::BarChart, tr("Structure counts"), std::move(typeCounts), std::move(typeIds));
+
+    return counts;
+}
+
+/******************************************************************************
+* Adopts existing computation results for an interactive pipeline evaluation.
+******************************************************************************/
+void StructureIdentificationModifier::reuseCachedState(const ModifierEvaluationRequest& request, Particles* particles, PipelineFlowState& output, const PipelineFlowState& cachedState)
+{
+    // Adopt the structure property from the cached state.
+    if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
+        if(cachedParticles->elementCount() == particles->elementCount()) {
+            if(const Property* cachedStructures = cachedParticles->getProperty(Particles::StructureTypeProperty)) {
+                particles->createProperty(cachedStructures);
+            }
+            if(colorByType()) {
+                if(const Property* cachedColors = cachedParticles->getProperty(Particles::ColorProperty)) {
+                    particles->createProperty(cachedColors);
+                }
+            }
+        }
+    }
+
+    // Adopt the structure count data table from the cached state.
+    if(const DataTable* cachedTable = cachedState.getObjectBy<DataTable>(request.modificationNode(), QStringLiteral("structures"))) {
+        output.addObject(cachedTable);
+    }
+
+    // Adopt all global attributes computed by the modifier from the cached state.
+    for(const DataObject* obj : cachedState.data()->objects()) {
+        if(const AttributeDataObject* attribute = dynamic_object_cast<AttributeDataObject>(obj)) {
+            if(attribute->createdByNode() == request.modificationNode()) {
+                output.addObject(attribute);
+            }
+        }
+    }
 }
 
 }   // End of namespace

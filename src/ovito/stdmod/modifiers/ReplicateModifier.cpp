@@ -67,7 +67,7 @@ QVector<DataObjectReference> LinesReplicateModifierDelegate::OOMetaClass::getApp
 /******************************************************************************
  * Applies this modifier delegate to the data.
  ******************************************************************************/
-Future<PipelineFlowState> LinesReplicateModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+Future<PipelineFlowState> LinesReplicateModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     ReplicateModifier* modifier = static_object_cast<ReplicateModifier>(request.modifier());
 
@@ -209,14 +209,14 @@ Box3I ReplicateModifier::replicaRange() const
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> ReplicateModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
+Future<PipelineFlowState> ReplicateModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
     // Return unmodified state if replication is not necessary.
     if(numImagesX() <= 1 && numImagesY() <= 1 && numImagesZ() <= 1)
-        return std::move(input);
+        return std::move(state);
 
     // First, apply all delegates to the input data.
-    Future<PipelineFlowState> future = MultiDelegatingModifier::evaluateModifier(request, std::move(input));
+    Future<PipelineFlowState> future = MultiDelegatingModifier::evaluateModifier(request, std::move(state));
 
     // Additionally, resize the simulation cell if enabled.
     if(adjustBoxSize()) {

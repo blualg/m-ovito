@@ -26,9 +26,6 @@
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/dataset/data/TransformingDataVis.h>
-#include <ovito/core/dataset/data/TransformedDataObject.h>
-#include <ovito/core/app/Application.h>
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/utilities/concurrent/Future.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
@@ -38,8 +35,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PipelineCache::PipelineCache(RefTarget* owner, bool includeVisElements, bool enableCaching)
-    : _ownerObject(owner), _includeVisElements(includeVisElements), _isEnabled(enableCaching)
+PipelineCache::PipelineCache(RefTarget* owner, bool enableCaching)
+    : _ownerObject(owner), _isEnabled(enableCaching)
 {
 }
 
@@ -171,7 +168,6 @@ PipelineEvaluationResult PipelineCache::evaluatePipelineImpl(const PipelineEvalu
     PipelineNode* pipelineNode = dynamic_object_cast<PipelineNode>(ownerObject());
     Pipeline* pipeline = !pipelineNode ? static_object_cast<Pipeline>(ownerObject()) : nullptr;
     OVITO_ASSERT(pipeline != nullptr || pipelineNode != nullptr);
-    OVITO_ASSERT(pipeline != nullptr || _includeVisElements == false);
 
     UndoSuspender noUndo;
     PipelineEvaluationResult evalResult;
@@ -181,16 +177,8 @@ PipelineEvaluationResult PipelineCache::evaluatePipelineImpl(const PipelineEvalu
         if(!pipeline->head())
             return PipelineFlowState(nullptr, PipelineStatus::Success);
 
-        if(!_includeVisElements) {
-            // When requesting the pipeline output WITHOUT the effect of visualization elements,
-            // delegate the evaluation to the head node of the pipeline.
-            evalResult = pipeline->head()->evaluate(request);
-        }
-        else {
-            // When requesting the pipeline output WITH the effect of visualization elements,
-            // delegate the evaluation to the pipeline's other cache.
-            evalResult = pipeline->evaluatePipeline(request);
-        }
+        // Delegate the evaluation to the head node of the pipeline.
+        evalResult = pipeline->head()->evaluate(request);
     }
     else {
         try {
@@ -204,65 +192,6 @@ PipelineEvaluationResult PipelineCache::evaluatePipelineImpl(const PipelineEvalu
             // Return a failed state as pipeline result.
             return PipelineEvaluationResult(PipelineFlowState(nullptr, pipelineNode->status()), request.interactiveMode() ? PipelineEvaluationResult::EvaluationType::Interactive : PipelineEvaluationResult::EvaluationType::Noninteractive);
         }
-    }
-
-    // If the pipeline output should include the effect of visualization elements,
-    // let each transforming visualization element alter the data collection.
-    if(_includeVisElements) {
-        OVITO_ASSERT(!pipelineNode);
-
-#if 0 // TODO
-        if(!request.interactiveMode()) {
-            future.postprocess(*ownerObject(), [this, request](const PipelineFlowState& state) {
-
-                // If requested, turn upstream pipeline errors into hard exceptions, which abort the pipeline evaluation.
-                if(request.throwOnError() && state.status().type() == PipelineStatus::Error)
-                    throw Exception(state.status().text());
-
-                // Give every visualization element the opportunity to apply an asynchronous data transformation.
-                Future<PipelineFlowState> stateFuture;
-                if(state) {
-                    Pipeline* pipeline = static_object_cast<Pipeline>(ownerObject());
-                    // Note: For now, we only process the vis elements of root-level data objects in the data collection.
-                    // The implementation may have to be extended in the future to cover also nested data objects and their vis elements.
-                    for(const auto& dataObj : state.data()->objects()) {
-                        for(DataVis* vis : dataObj->visElements()) {
-                            // Let the Pipeline substitude the vis element with another one. Then check if it is a transforming vis element.
-                            if(TransformingDataVis* transformingVis = dynamic_object_cast<TransformingDataVis>(pipeline->getReplacementVisElement(vis))) {
-                                if(transformingVis->isEnabled()) {
-                                    if(!stateFuture.isValid()) {
-                                        stateFuture = transformingVis->transformData(request, dataObj, PipelineFlowState(state), _cachedTransformedDataObjects);
-                                    }
-                                    else {
-                                        stateFuture = stateFuture.then(*transformingVis, [request, dataObj, transformingVis, this, pipeline = OORef<Pipeline>(pipeline)](PipelineFlowState&& state) {
-                                            // If requested, turn failed vis element transformations into hard exceptions, which abort the pipeline evaluation.
-                                            if(request.throwOnError() && state.status().type() == PipelineStatus::Error)
-                                                throw Exception(state.status().text());
-                                            return transformingVis->transformData(request, dataObj, std::move(state), _cachedTransformedDataObjects);
-                                        });
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                if(!stateFuture.isValid()) {
-                    _cachedTransformedDataObjects.clear();
-                    stateFuture = Future<PipelineFlowState>::createImmediate(state);
-                }
-                else {
-                    // Cache the transformed data objects created by transforming visualization elements.
-                    stateFuture = stateFuture.then(*ownerObject(), [this, throwOnError = request.throwOnError()](PipelineFlowState&& state) {
-                        if(throwOnError && state.status().type() == PipelineStatus::Error)
-                            throw Exception(state.status().text());
-                        cacheTransformedDataObjects(state);
-                        return std::move(state);
-                    });
-                }
-                return stateFuture;
-            });
-        }
-#endif
     }
 
     // Pre-register the evaluation operation.
@@ -301,7 +230,7 @@ PipelineEvaluationResult PipelineCache::evaluatePipelineImpl(const PipelineEvalu
 
                 if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(ownerObject())) {
                     // Let the pipeline update its list of vis elements.
-                    if(!_includeVisElements && isNotPreliminaryResult) {
+                    if(isNotPreliminaryResult) {
                         // Only gather vis elements that are present in the pipeline output at the animation time currently shown in the GUI.
                         pipeline->updateVisElementList(state);
                     }
@@ -430,9 +359,6 @@ void PipelineCache::reset()
     // Throw away interactive state cache.
     _interactiveState.reset();
 
-    // Throw away transformed visual data objects.
-    _cachedTransformedDataObjects.clear();
-
     // Notify PropertiesEditor about a change in the pipeline stage's output.
     ownerObject()->notifyDependents(ReferenceEvent::PipelineCacheUpdated);
 }
@@ -482,22 +408,6 @@ PipelineFlowState PipelineCache::getAt(AnimationTime time, bool interactiveMode)
         return _interactiveState;
     }
     return {};
-}
-
-/******************************************************************************
-* Populates the internal cache with transformed data objects generated by
-* transforming visual elements.
-******************************************************************************/
-void PipelineCache::cacheTransformedDataObjects(const PipelineFlowState& state)
-{
-    _cachedTransformedDataObjects.clear();
-    if(state.data()) {
-        for(const DataObject* o : state.data()->objects()) {
-            if(const TransformedDataObject* transformedDataObject = dynamic_object_cast<TransformedDataObject>(o)) {
-                _cachedTransformedDataObjects.push_back(transformedDataObject);
-            }
-        }
-    }
 }
 
 /******************************************************************************

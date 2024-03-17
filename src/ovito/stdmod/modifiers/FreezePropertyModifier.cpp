@@ -98,13 +98,13 @@ void FreezePropertyModifier::propertyChanged(const PropertyFieldDescriptor* fiel
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> FreezePropertyModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
+Future<PipelineFlowState> FreezePropertyModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
     // Check if we already have the frozen property available.
     if(FreezePropertyModificationNode* modNode = dynamic_object_cast<FreezePropertyModificationNode>(request.modificationNode())) {
         if(modNode->hasFrozenState(AnimationTime::fromFrame(freezeTime()))) {
             // Perform replacement of the property in the input pipeline state.
-            return transferFrozenProperty(modNode, std::move(input));
+            return transferFrozenProperty(modNode, std::move(state));
         }
     }
 
@@ -118,7 +118,7 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluateModifier(const Modifie
 
     // Request the frozen state from the upstream pipeline.
     return request.modificationNode()->evaluateInput(upstreamRequest)
-        .then(*this, [this, request, input = std::move(input)](const PipelineFlowState& frozenState) mutable {
+        .then(*this, [this, request, state = std::move(state)](const PipelineFlowState& frozenState) mutable {
 
             // Extract the property to freeze.
             if(FreezePropertyModificationNode* modNode = dynamic_object_cast<FreezePropertyModificationNode>(request.modificationNode())) {
@@ -135,7 +135,7 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluateModifier(const Modifie
                             frozenState.stateValidity());
 
                         // Perform the actual replacement of the property in the input pipeline state.
-                        return transferFrozenProperty(modNode, std::move(input));
+                        return transferFrozenProperty(modNode, std::move(state));
                     }
                     else {
                         throw Exception(tr("The property '%1' is not present in the input state.").arg(sourceProperty().name()));
@@ -144,7 +144,7 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluateModifier(const Modifie
                 modNode->invalidateFrozenState();
             }
 
-            return std::move(input);
+            return std::move(state);
         });
 }
 

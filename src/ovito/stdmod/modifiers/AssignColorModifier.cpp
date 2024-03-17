@@ -86,7 +86,7 @@ bool AssignColorModifierDelegate::preEvaluationRun(const ModifierEvaluationReque
 /******************************************************************************
 * Applies the modifier operation to the data in a pipeline flow state.
 ******************************************************************************/
-Future<PipelineFlowState> AssignColorModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+Future<PipelineFlowState> AssignColorModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     const AssignColorModifier* modifier = static_object_cast<AssignColorModifier>(request.modifier());
     if(!modifier->colorController())

@@ -62,7 +62,7 @@ public:
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
     /// Modifies the input data.
-    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) override;
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
 
     /// This function is called by the pipeline system before a new modifier evaluation begins.
     virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;

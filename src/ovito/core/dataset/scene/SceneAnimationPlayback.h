@@ -25,14 +25,14 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/concurrent/SharedFuture.h>
-#include "ScenePreparation.h"
+#include <ovito/core/dataset/scene/Scene.h>
 
 namespace Ovito {
 
 /**
  * \brief This object requests the next frames during animation playback in the interactive viewports.
  */
-class OVITO_CORE_EXPORT SceneAnimationPlayback : public ScenePreparation
+class OVITO_CORE_EXPORT SceneAnimationPlayback : public QObject, public RefMaker
 {
     OVITO_CLASS(SceneAnimationPlayback)
     Q_OBJECT
@@ -41,6 +41,9 @@ public:
 
     /// Constructor.
     explicit SceneAnimationPlayback(UserInterface& userInterface);
+
+    /// Returns the abstract user interface in which this object operates.
+    UserInterface& userInterface() const { return _userInterface; }
 
     /// Returns whether the animation is currently being played back in the viewports.
     bool isPlaybackActive() const { return _activePlaybackRate != 0; }
@@ -73,6 +76,12 @@ private:
     /// Jumps to the given animation frame, then schedules the next frame as soon as the scene was completely shown.
     void continuePlaybackAtFrame(int frame);
 
+    /// The scene being played back.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(Scene*, scene, setScene);
+
+    /// The abstract user interface in which this object operates.
+    UserInterface& _userInterface;
+
     /// Indicates that the animation is currently being played back in the interactive viewports.
     FloatType _activePlaybackRate = 0;
 
@@ -81,6 +90,9 @@ private:
 
     /// Timer for scheduling the next animation frame.
     QBasicTimer _nextFrameTimer;
+
+    /// Number of ScenePreparation signals we are waiting for until the current animation frame is complete.
+    int _numPendingPreparations;
 };
 
 }   // End of namespace

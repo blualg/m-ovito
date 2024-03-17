@@ -80,7 +80,7 @@ void ParticlePickingHelper::renderSelectionMarker(Viewport* vp, FrameGraph& fram
         return;
 
     PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
-    const PipelineFlowState& flowState = pickRecord.pipeline->evaluateRenderingPipeline(request).result();
+    const PipelineFlowState flowState = pickRecord.pipeline->evaluatePipeline(request).result();
     const Particles* particles = flowState.getObject<Particles>();
     if(!particles)
         return;

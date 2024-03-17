@@ -84,6 +84,9 @@ std::vector<ViewportGizmo*> BaseViewportWindow::viewportGizmos()
 ******************************************************************************/
 void BaseViewportWindow::showEvent(QShowEvent* event)
 {
+    // Resume updating the scene.
+    scenePreparation().setAutoRestart(true);
+
     // Schedule a rendering pass if the window becomes visible and an update request has been scheduled while it was hidden.
     if(!event->spontaneous() && !userInterface().areViewportUpdatesSuspended())
         resumeViewportUpdates();
@@ -94,6 +97,9 @@ void BaseViewportWindow::showEvent(QShowEvent* event)
 ******************************************************************************/
 void BaseViewportWindow::hideEvent(QHideEvent* event)
 {
+    // Stop updating the scene.
+    scenePreparation().setAutoRestart(false);
+
     // Release all renderer resources when the window becomes hidden.
     releaseResources();
 }

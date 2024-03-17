@@ -150,7 +150,7 @@ void CreateIsosurfaceModifier::initializeModifier(const ModifierInitializationRe
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
+Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
     if(!subject())
         throw Exception(tr("No input voxel grid set."));
@@ -165,7 +165,7 @@ Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const Modif
             .arg(subject().dataClass()->pythonName()).arg(sourceProperty().containerClass()->propertyClassDisplayName()));
 
     // Get modifier inputs.
-    const VoxelGrid* voxelGrid = static_object_cast<VoxelGrid>(input.expectLeafObject(subject()));
+    const VoxelGrid* voxelGrid = static_object_cast<VoxelGrid>(state.expectLeafObject(subject()));
     voxelGrid->verifyIntegrity();
     OVITO_ASSERT(voxelGrid->domain());
     if(voxelGrid->domain()->is2D())
@@ -183,7 +183,7 @@ Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const Modif
             throw Exception(tr("Cannot generate isosurface for this voxel grid with dimensions %1 x %2 x %3. Must be at least 2 voxels wide in each spatial direction.")
                 .arg(voxelGrid->shape()[0]).arg(voxelGrid->shape()[1]).arg(voxelGrid->shape()[2]));
 
-    TimeInterval validityInterval = input.stateValidity();
+    TimeInterval validityInterval = state.stateValidity();
     FloatType isolevel = isolevelController() ? isolevelController()->getFloatValue(request.time(), validityInterval) : 0;
 
     // Collect the set of voxel grid properties that should be transferred over to the isosurface mesh vertices.
@@ -194,20 +194,17 @@ Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const Modif
         }
     }
 
-    // Create output state.
-    PipelineFlowState output = std::move(input);
-
     // Create an empty surface mesh object.
-    SurfaceMesh* mesh = output.createObjectWithVis<SurfaceMesh>(QStringLiteral("isosurface"), request.modificationNode(), surfaceMeshVis(), tr("Isosurface"));
+    SurfaceMesh* mesh = state.createObjectWithVis<SurfaceMesh>(QStringLiteral("isosurface"), request.modificationNode(), surfaceMeshVis(), tr("Isosurface"));
     mesh->setDomain(voxelGrid->domain());
 
     // Create an empty data table for the field value histogram.
-    DataTable* histogram = output.createObject<DataTable>(QStringLiteral("isosurface-histogram"), request.modificationNode(), DataTable::Histogram, sourceProperty().nameWithComponent());
+    DataTable* histogram = state.createObject<DataTable>(QStringLiteral("isosurface-histogram"), request.modificationNode(), DataTable::Histogram, sourceProperty().nameWithComponent());
     histogram->setAxisLabelX(sourceProperty().nameWithComponent());
 
     // The actual computation can be performed in a separate worker thread.
     return AsynchronousTask<PipelineFlowState>::runAsync([
-            output = std::move(output),
+            state = std::move(state),
             gridShape = voxelGrid->shape(),
             gridType = voxelGrid->gridType(),
             property = std::move(property),
@@ -354,32 +351,32 @@ Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const Modif
         statusMessage.append(tr("Field value range: [%1, %2]").arg(histogram->intervalStart()).arg(histogram->intervalEnd()));
 
         // Output total surface area.
-        output.addAttribute(QStringLiteral("CreateIsosurface.surface_area"), QVariant::fromValue(totalSurfaceArea), createdByNode);
+        state.addAttribute(QStringLiteral("CreateIsosurface.surface_area"), QVariant::fromValue(totalSurfaceArea), createdByNode);
 
         if(identifyRegions) {
-            const SimulationCell& simCell = *(output.expectObject<SimulationCell>());
+            const SimulationCell& simCell = *(state.expectObject<SimulationCell>());
             bool periodic = simCell.pbcX() && simCell.pbcY() && simCell.pbcZ();
             FloatType totalCellVolume = (periodic) ? simCell.volume3D() : std::numeric_limits<FloatType>::quiet_NaN();
 
             // Output more global attributes.
-            output.addAttribute(QStringLiteral("ConstructSurfaceMesh.cell_volume"), QVariant::fromValue(totalCellVolume), createdByNode);
-            output.addAttribute(
+            state.addAttribute(QStringLiteral("ConstructSurfaceMesh.cell_volume"), QVariant::fromValue(totalCellVolume), createdByNode);
+            state.addAttribute(
                 QStringLiteral("ConstructSurfaceMesh.specific_surface_area"),
                 QVariant::fromValue(totalCellVolume ? (totalSurfaceArea / totalCellVolume) : std::numeric_limits<FloatType>::quiet_NaN()), createdByNode);
-            output.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_volume"), QVariant::fromValue(aggregateVolumes.totalFilledVolume), createdByNode);
-            output.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_fraction"),
+            state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_volume"), QVariant::fromValue(aggregateVolumes.totalFilledVolume), createdByNode);
+            state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_fraction"),
                             QVariant::fromValue(totalCellVolume ? (aggregateVolumes.totalFilledVolume / totalCellVolume)
                                                                 : std::numeric_limits<FloatType>::quiet_NaN()), createdByNode);
-            output.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_region_count"),
+            state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_region_count"),
                             QVariant::fromValue(aggregateVolumes.filledRegionCount), createdByNode);
-            output.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_volume"), QVariant::fromValue(aggregateVolumes.totalEmptyVolume), createdByNode);
-            output.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_fraction"),
+            state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_volume"), QVariant::fromValue(aggregateVolumes.totalEmptyVolume), createdByNode);
+            state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_fraction"),
                             QVariant::fromValue(totalCellVolume ? (aggregateVolumes.totalEmptyVolume / totalCellVolume)
                                                                 : std::numeric_limits<FloatType>::quiet_NaN()), createdByNode);
-            output.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_region_count"),
+            state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_region_count"),
                             QVariant::fromValue(aggregateVolumes.emptyRegionCount), createdByNode);
-            output.addAttribute(QStringLiteral("ConstructSurfaceMesh.void_volume"), QVariant::fromValue(aggregateVolumes.totalVoidVolume), createdByNode);
-            output.addAttribute(QStringLiteral("ConstructSurfaceMesh.void_region_count"), QVariant::fromValue(aggregateVolumes.voidRegionCount), createdByNode);
+            state.addAttribute(QStringLiteral("ConstructSurfaceMesh.void_volume"), QVariant::fromValue(aggregateVolumes.totalVoidVolume), createdByNode);
+            state.addAttribute(QStringLiteral("ConstructSurfaceMesh.void_region_count"), QVariant::fromValue(aggregateVolumes.voidRegionCount), createdByNode);
 
             statusMessage.append(
                 tr("Surface area: %1\n# filled regions (volume): %2 (%3)\n# empty regions (volume): %4 (%5)\n# void regions (volume): %6 (%7)")
@@ -394,9 +391,9 @@ Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const Modif
         else {
             statusMessage.append(tr("Surface area: %1").arg(totalSurfaceArea));
         }
-        output.setStatus(PipelineStatus(PipelineStatus::Success, statusMessage.join('\n')));
+        state.setStatus(statusMessage.join('\n'));
 
-        return std::move(output);
+        return std::move(state);
     });
 }
 

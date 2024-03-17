@@ -229,11 +229,9 @@ public:
     /// \param positions The particle coordinates.
     /// \param cell The simulation cell information.
     /// \param selection Per-particle selection flags determining which particles are included in the neighbor search (optional).
-    /// \return \c false when the operation has been canceled by the user;
-    ///         \c true on success.
     /// \throw Exception on error.
-    bool prepare(BufferReadAccess<Point3> positions, const SimulationCell* cell, BufferReadAccess<SelectionIntType> selection = {}) {
-        return NearestNeighborFinder::prepare(std::move(positions), cell, std::move(selection));
+    void prepare(BufferReadAccess<Point3> positions, const SimulationCell* cell, BufferReadAccess<SelectionIntType> selection = {}) {
+        NearestNeighborFinder::prepare(std::move(positions), cell, std::move(selection));
     }
 
     /// This nested class performs a PTM calculation on a single input particle.

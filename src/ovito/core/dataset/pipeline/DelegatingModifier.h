@@ -83,7 +83,7 @@ public:
     virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const { return true; }
 
     /// Applies this modifier delegate to the data.
-    virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) = 0;
+    virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) = 0;
 
     /// Returns the modifier owning this delegate.
     Modifier* modifier() const;
@@ -139,7 +139,7 @@ public:
     virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
 
     /// Modifies the input data.
-    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) override;
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
 
 protected:
 
@@ -147,7 +147,7 @@ protected:
     void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName);
 
     /// Lets the modifier's delegate operate on a pipeline flow state.
-    Future<PipelineFlowState> applyDelegate(const ModifierEvaluationRequest& request, PipelineFlowState input, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
+    Future<PipelineFlowState> applyDelegate(const ModifierEvaluationRequest& request, PipelineFlowState&& input, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
 
 protected:
 
@@ -196,7 +196,7 @@ public:
     virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
 
     /// Modifies the input data.
-    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) override;
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
 
 protected:
 
@@ -204,7 +204,7 @@ protected:
     void createModifierDelegates(const OvitoClass& delegateType);
 
     /// Lets the registered modifier delegates operate on a pipeline flow state.
-    Future<PipelineFlowState> applyDelegates(const ModifierEvaluationRequest& request, PipelineFlowState input, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
+    Future<PipelineFlowState> applyDelegates(const ModifierEvaluationRequest& request, PipelineFlowState&& input, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
 
 protected:
 

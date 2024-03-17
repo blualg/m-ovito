@@ -45,7 +45,7 @@ QVector<DataObjectReference> VoxelGridReplicateModifierDelegate::OOMetaClass::ge
 /******************************************************************************
  * Applies this modifier delegate to the data.
  ******************************************************************************/
-Future<PipelineFlowState> VoxelGridReplicateModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+Future<PipelineFlowState> VoxelGridReplicateModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     ReplicateModifier* modifier = static_object_cast<ReplicateModifier>(request.modifier());
 

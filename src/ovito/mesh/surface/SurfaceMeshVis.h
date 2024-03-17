@@ -29,7 +29,7 @@
 #include <ovito/mesh/util/CapPolygonTessellator.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/properties/PropertyColorMapping.h>
-#include <ovito/core/dataset/data/TransformingDataVis.h>
+#include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/dataset/data/mesh/TriangleMesh.h>
@@ -40,7 +40,7 @@ namespace Ovito {
 /**
  * \brief A visualization element for rendering SurfaceMesh data objects.
  */
-class OVITO_MESH_EXPORT SurfaceMeshVis : public TransformingDataVis
+class OVITO_MESH_EXPORT SurfaceMeshVis : public DataVis
 {
     OVITO_CLASS(SurfaceMeshVis)
     OVITO_CLASSINFO("DisplayName", "Surface mesh");
@@ -57,6 +57,9 @@ public:
 
     /// Constructor.
     explicit SurfaceMeshVis(ObjectInitializationFlags flags);
+
+    /// Transforms the SurfaceMesh into a renderable triangle mesh.
+    Future<std::shared_ptr<RenderableSurfaceMesh>> transformSurfaceMesh(const SurfaceMesh* surfaceMesh);
 
     /// Lets the visualization element render the data object.
     virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
@@ -78,41 +81,29 @@ public:
 
 protected:
 
-    /// Lets the vis element transform a data object in preparation for rendering.
-    virtual Future<PipelineFlowState> transformDataImpl(const PipelineEvaluationRequest& request, const DataObject* dataObject, PipelineFlowState&& flowState) override;
-
     /// Is called when the value of a property of this object has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
-
-    /// Is called when the value of a reference field of this RefMaker changes.
-    virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
-
-    /// This method is called when a reference target changes.
-    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
     /// This method is called once for this object after it has been completely loaded from a stream.
     virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
-public:
-
-    /// Computation engine that builds the rendering mesh.
-    class OVITO_MESH_EXPORT PrepareSurfaceEngine : public AsynchronousTask<DataOORef<const TriangleMesh>, DataOORef<const TriangleMesh>, std::vector<ColorA>, std::vector<size_t>, bool, PipelineStatus>
+    /// Algorithm for building the renderable surface mesh.
+    /// Subclasses can customize individual aspects of the algorithm by overriding the virtual methods.
+    class OVITO_MESH_EXPORT RenderableSurfaceBuilder
     {
     public:
 
         /// Constructor.
-        PrepareSurfaceEngine(const SurfaceMesh* mesh, bool reverseOrientation, bool smoothShading, ColorMappingMode colorMappingMode, const PropertyReference& pseudoColorPropertyRef, Color surfaceColor, bool generateCapPolygons, bool clipAtDomainBoundaries) :
+        RenderableSurfaceBuilder(const SurfaceMesh* mesh, bool reverseOrientation, bool smoothShading, ColorMappingMode colorMappingMode, const PropertyReference& pseudoColorPropertyRef, bool clipAtDomainBoundaries) :
             _inputMesh(mesh),
             _reverseOrientation(reverseOrientation),
             _smoothShading(smoothShading),
             _colorMappingMode(colorMappingMode),
             _pseudoColorPropertyRef(pseudoColorPropertyRef),
-            _surfaceColor(surfaceColor),
-            _generateCapPolygons(generateCapPolygons),
             _clipAtDomainBoundaries(clipAtDomainBoundaries) {}
 
-        /// Builds the non-periodic representation of the surface mesh.
-        virtual void perform() override;
+        /// Destructor.
+        virtual ~RenderableSurfaceBuilder() = default;
 
         /// Returns the input surface mesh.
         const DataOORef<const SurfaceMesh>& inputMesh() const { return _inputMesh; }
@@ -123,10 +114,21 @@ public:
         /// Returns the generated output triangle mesh for the surface.
         const DataOORef<TriangleMesh>& capPolygonsMesh() { return _capPolygonsMesh; }
 
+        /// Returns the final RenderableSurfaceMesh.
+        std::shared_ptr<RenderableSurfaceMesh> renderableMesh(bool backfaceCulling) {
+            return std::make_shared<RenderableSurfaceMesh>(
+                std::move(_outputMesh),
+                std::move(_capPolygonsMesh),
+                std::move(_materialColors),
+                std::move(_originalFaceMap),
+                backfaceCulling,
+                std::move(_status));
+        }
+
     protected:
 
         /// This method can be overridden by subclasses to restrict the set of visible mesh faces,
-        virtual void determineVisibleFaces() {}
+        virtual boost::dynamic_bitset<> determineVisibleFaces() { return {}; }
 
         /// This method can be overridden by subclasses to assign colors to invidual mesh faces.
         virtual void determineFaceColors();
@@ -137,15 +139,13 @@ public:
     private:
 
         /// Generates the triangle mesh from the periodic surface mesh, which will be rendered.
-        bool buildSurfaceTriangleMesh();
+        bool buildSurfaceTriangleMesh(const boost::dynamic_bitset<>& faceSubset, bool renderFacesTwoSided);
 
         /// Generates the cap polygons where the surface mesh intersects the periodic domain boundaries.
-        void buildCapTriangleMesh();
+        void buildCapTriangleMesh(const boost::dynamic_bitset<>& faceSubset);
 
         /// Returns the periodic domain the surface mesh is embedded in (if any).
         const SimulationCell* cell() const { return inputMesh()->domain(); }
-
-    private:
 
         /// Splits a triangle face at a periodic boundary.
         bool splitFace(int faceIndex, int oldVertexCount, std::vector<Point3>& newVertices, std::vector<ColorAG>& newVertexColors, std::vector<FloatType>& newVertexPseudoColors, std::map<std::pair<int,int>,std::tuple<int,int,FloatType>>& newVertexLookupMap, size_t dim);
@@ -170,24 +170,22 @@ public:
         DataOORef<const SurfaceMesh> _inputMesh;    ///< The input surface mesh.
         bool _reverseOrientation;                   ///< Flag for inside-out display of the mesh.
         bool _smoothShading;                        ///< Flag for interpolated-normal shading
-        bool _generateCapPolygons;                  ///< Controls the generation of cap polygons where the mesh intersection periodic cell boundaries.
         bool _clipAtDomainBoundaries;               ///< Clip surface mesh at non-periodic cell boundaries.
-        Color _surfaceColor;                        ///< The uniform surface color set by the user.
         ColorMappingMode _colorMappingMode;         ///< The pseudo-coloring mode.
         PropertyReference _pseudoColorPropertyRef;
 
-        DataOORef<TriangleMesh> _outputMesh;       ///< The output mesh generated by clipping the surface mesh at the cell boundaries.
-        DataOORef<TriangleMesh> _capPolygonsMesh;  ///< The output mesh containing the generated cap polygons.
-        boost::dynamic_bitset<> _faceSubset;        ///< Bit array indicating which surface mesh faces are part of the render set.
+        DataOORef<TriangleMesh> _outputMesh;        ///< The output mesh generated by clipping the surface mesh at the cell boundaries.
+        DataOORef<TriangleMesh> _capPolygonsMesh;   ///< The output mesh containing the generated cap polygons.
         std::vector<ColorA> _materialColors;        ///< The list of material colors for the output TriMesh.
         std::vector<size_t> _originalFaceMap;       ///< Maps output mesh triangles to input mesh facets.
-        bool _renderFacesTwoSided = true;           ///< Indicates that output triangle faces should be rendered two-sided.
         PipelineStatus _status;                     ///< The outcome of the process.
+
+        friend class SurfaceMeshVis;
     };
 
-    /// Creates the asynchronous task that builds the non-peridic representation of the input surface mesh.
-    /// This method may be overridden by subclasses who want to implement custom behavior.
-    virtual std::shared_ptr<PrepareSurfaceEngine> createSurfaceEngine(const SurfaceMesh* mesh) const;
+    /// Creates the object that builds the non-peridic representation of the input surface mesh.
+    /// This method may be overridden by subclasses that want to implement custom behavior.
+    virtual std::unique_ptr<RenderableSurfaceBuilder> createRenderableSurfaceBuilder(const SurfaceMesh* mesh) const;
 
 protected:
 
@@ -195,7 +193,7 @@ protected:
     /// The default implementation returns null, because standard surface meshes do not support picking of
     /// mesh faces or vertices. Sub-classes can override this method to implement object-specific picking
     /// strategies.
-    virtual OORef<ObjectPickInfo> createPickInfo(const SurfaceMesh* mesh, const RenderableSurfaceMesh* renderableMesh) const;
+    virtual OORef<ObjectPickInfo> createPickInfo(const SurfaceMesh* mesh, std::shared_ptr<RenderableSurfaceMesh> renderableMesh) const;
 
 private:
 
@@ -244,7 +242,6 @@ private:
     DECLARE_SHADOW_PROPERTY_FIELD(clipAtDomainBoundaries);
 };
 
-
 /**
  * \brief This data structure is attached to the surface mesh by the SurfaceMeshVis when rendering
  * it in the viewports. It facilitates the picking of surface facets with the mouse.
@@ -256,19 +253,19 @@ class OVITO_MESH_EXPORT SurfaceMeshPickInfo : public ObjectPickInfo
 public:
 
     /// Constructor.
-    explicit SurfaceMeshPickInfo(const SurfaceMeshVis* visElement, const SurfaceMesh* surfaceMesh, const RenderableSurfaceMesh* renderableMesh) :
-        _visElement(visElement), _surfaceMesh(surfaceMesh), _renderableMesh(renderableMesh) {}
+    explicit SurfaceMeshPickInfo(const SurfaceMeshVis* visElement, const SurfaceMesh* surfaceMesh, std::shared_ptr<RenderableSurfaceMesh> renderableMesh) :
+        _visElement(visElement), _surfaceMesh(surfaceMesh), _renderableMesh(std::move(renderableMesh)) {}
 
     /// The data object containing the surface mesh.
-    const SurfaceMesh* surfaceMesh() const { return _surfaceMesh; }
+    const OORef<SurfaceMesh>& surfaceMesh() const { return _surfaceMesh; }
 
     /// The renderable version of the surface mesh.
-    const RenderableSurfaceMesh* renderableMesh() const { OVITO_ASSERT(_renderableMesh); return _renderableMesh; }
+    const std::shared_ptr<RenderableSurfaceMesh>& renderableMesh() const { return _renderableMesh; }
 
     /// Returns the vis element that rendered the surface mesh.
-    const SurfaceMeshVis* visElement() const { return _visElement; }
+    const OORef<SurfaceMeshVis>& visElement() const { return _visElement; }
 
-    /// Given an sub-object ID returned by the Viewport::pick() method, looks up the corresponding surface face.
+    /// Given an sub-object ID returned by the ViewportWindow::pick() method, looks up the corresponding surface face.
     int faceIndexFromSubObjectID(quint32 subobjID) const {
         if(subobjID < renderableMesh()->originalFaceMap().size())
             return renderableMesh()->originalFaceMap()[subobjID];
@@ -281,11 +278,11 @@ public:
 
 private:
 
-    /// The data object holding the original surface mesh.
+    /// The original surface mesh.
     OORef<SurfaceMesh> _surfaceMesh;
 
     /// The renderable version of the surface mesh.
-    OORef<RenderableSurfaceMesh> _renderableMesh;
+    std::shared_ptr<RenderableSurfaceMesh> _renderableMesh;
 
     /// The vis element that rendered the surface mesh.
     OORef<SurfaceMeshVis> _visElement;

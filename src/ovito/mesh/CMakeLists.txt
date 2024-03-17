@@ -27,7 +27,6 @@ SET(SourceFiles
     surface/SurfaceMesh.cpp
     surface/SurfaceMeshReadAccess.cpp
     surface/SurfaceMeshBuilder.cpp
-    surface/RenderableSurfaceMesh.cpp
     surface/SurfaceMeshVis.cpp
     surface/SurfaceMeshTopology.cpp
     surface/SurfaceMeshVertices.cpp

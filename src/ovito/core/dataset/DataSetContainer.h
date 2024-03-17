@@ -173,10 +173,10 @@ private:
     /// The active scene.
     DECLARE_REFERENCE_FIELD(Scene*, activeScene);
 
-    /// The active scene node selection set.
+    /// The active selection set of scene nodes.
     DECLARE_REFERENCE_FIELD(SelectionSet*, activeSelectionSet);
 
-    /// The active animation settings.
+    /// The active animation settings object.
     DECLARE_REFERENCE_FIELD(AnimationSettings*, activeAnimationSettings);
 
     /// The manager of asynchronous tasks associated with this container.

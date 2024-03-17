@@ -24,8 +24,8 @@
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/Bonds.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
-#include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "WrapPeriodicImagesModifier.h"
 
 namespace Ovito {
@@ -41,23 +41,30 @@ bool WrapPeriodicImagesModifier::OOMetaClass::isApplicableTo(const DataCollectio
 }
 
 /******************************************************************************
-* Modifies the input data synchronously.
+* Modifies the input data.
 ******************************************************************************/
-void WrapPeriodicImagesModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+Future<PipelineFlowState> WrapPeriodicImagesModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
     // Get the periodic simulation cell.
     const SimulationCell* simCell = state.expectObject<SimulationCell>();
     if(!simCell->hasPbcCorrected()) {
         state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("No periodic boundary conditions are enabled for the simulation cell.")));
-        return;
+        return std::move(state);
     }
 
-    // Make a modifiable copy of the particles object.
-    Particles* outputParticles = state.expectMutableObject<Particles>();
-    outputParticles->verifyIntegrity();
+    // The actual work can be performed in a separate thread.
+    return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), simCell]() mutable
+    {
+        // Make a modifiable copy of the particles object.
+        Particles* outputParticles = state.expectMutableObject<Particles>();
+        outputParticles->verifyIntegrity();
 
-    // Perform the actual coordinate wrapping.
-    outputParticles->wrapCoordinates(*simCell);
+        // Perform the actual coordinate wrapping.
+        outputParticles->wrapCoordinates(*simCell);
+
+        // Return the modified data.
+        return std::move(state);
+    });
 }
 
 }   // End of namespace

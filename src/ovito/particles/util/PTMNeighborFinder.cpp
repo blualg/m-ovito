@@ -41,14 +41,13 @@ PTMNeighborFinder::PTMNeighborFinder(bool all_properties) : NearestNeighborFinde
 /******************************************************************************
 * Prepares the neighbor finder.
 ******************************************************************************/
-bool PTMNeighborFinder::prepare(BufferReadAccess<Point3> positions, const SimulationCell* cell, BufferReadAccess<SelectionIntType> selection,
+void PTMNeighborFinder::prepare(BufferReadAccess<Point3> positions, const SimulationCell* cell, BufferReadAccess<SelectionIntType> selection,
                                 ConstDataBufferPtr structuresArray,
                                 ConstDataBufferPtr orientationsArray,
                                 ConstDataBufferPtr correspondencesArray)
 {
     // Initialize the internal NearestNeighborFinder.
-    if(!NearestNeighborFinder::prepare(std::move(positions), cell, std::move(selection)))
-        return false;
+    NearestNeighborFinder::prepare(std::move(positions), cell, std::move(selection));
 
     OVITO_ASSERT(structuresArray);
     OVITO_ASSERT(orientationsArray);
@@ -57,8 +56,6 @@ bool PTMNeighborFinder::prepare(BufferReadAccess<Point3> positions, const Simula
     _structuresArray = std::move(structuresArray);
     _orientationsArray = std::move(orientationsArray);
     _correspondencesArray = std::move(correspondencesArray);
-
-    return true;
 }
 
 /******************************************************************************

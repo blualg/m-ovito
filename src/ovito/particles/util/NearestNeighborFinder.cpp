@@ -31,7 +31,7 @@ namespace Ovito {
 /******************************************************************************
 * Prepares the neighbor list builder.
 ******************************************************************************/
-bool NearestNeighborFinder::prepare(BufferReadAccess<Point3> posProperty, const SimulationCell* cellData, BufferReadAccess<SelectionIntType> selectionProperty)
+void NearestNeighborFinder::prepare(BufferReadAccess<Point3> posProperty, const SimulationCell* cellData, BufferReadAccess<SelectionIntType> selectionProperty)
 {
     OVITO_ASSERT(posProperty);
     OVITO_ASSERT(cellData);
@@ -124,8 +124,7 @@ bool NearestNeighborFinder::prepare(BufferReadAccess<Point3> posProperty, const 
     const auto* sel = selectionProperty ? selectionProperty.cbegin() : nullptr;
     atoms.resize(posProperty.size());
     for(NeighborListAtom& a : atoms) {
-        if(currentTask && currentTask->isCanceled())
-            return false;
+        this_task::throwIfCanceled();
         a.pos = *p;
         // Wrap atomic positions back into simulation box.
         Point3 rp = inverseCellMatrix * a.pos;
@@ -145,7 +144,7 @@ bool NearestNeighborFinder::prepare(BufferReadAccess<Point3> posProperty, const 
 
     root->convertToAbsoluteCoordinates(cellMatrix);
 
-    return true;
+    this_task::throwIfCanceled();
 }
 
 /******************************************************************************

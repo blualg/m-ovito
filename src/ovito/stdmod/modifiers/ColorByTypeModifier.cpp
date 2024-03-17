@@ -95,7 +95,7 @@ void ColorByTypeModifier::propertyChanged(const PropertyFieldDescriptor* field)
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> ColorByTypeModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
+Future<PipelineFlowState> ColorByTypeModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
 #ifdef OVITO_BUILD_BASIC
     throw Exception(tr("%1: This program feature is only available in OVITO Pro. Please visit our website www.ovito.org for more information.").arg(objectTitle()));
@@ -110,8 +110,7 @@ Future<PipelineFlowState> ColorByTypeModifier::evaluateModifier(const ModifierEv
         throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
             .arg(subject().dataClass()->pythonName()).arg(sourceProperty().containerClass()->propertyClassDisplayName()));
 
-    PipelineFlowState output = std::move(input);
-    DataObjectPath objectPath = output.expectMutableObject(subject());
+    DataObjectPath objectPath = state.expectMutableObject(subject());
     PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
     container->verifyIntegrity();
 
@@ -138,7 +137,7 @@ Future<PipelineFlowState> ColorByTypeModifier::evaluateModifier(const ModifierEv
 
     // The actual computation can be performed in a separate worker thread.
     return AsynchronousTask<PipelineFlowState>::runAsync([
-            output = std::move(output),
+            state = std::move(state),
             container,
             objectPath = std::move(objectPath),
             typeProperty = std::move(typeProperty),
@@ -147,7 +146,7 @@ Future<PipelineFlowState> ColorByTypeModifier::evaluateModifier(const ModifierEv
         // Call implementation.
         colorByType(typeProperty, container, objectPath, selection);
 
-        return std::move(output);
+        return std::move(state);
     });
 #endif
 }

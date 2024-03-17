@@ -39,7 +39,7 @@ DEFINE_REFERENCE_FIELD(ScenePreparation, selectionSet);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ScenePreparation::ScenePreparation(UserInterface& userInterface, Scene* scene) : _userInterface(userInterface)
+ScenePreparation::ScenePreparation(UserInterface& userInterface, Scene* scene, bool autoRestart) : _userInterface(userInterface), _autoRestart(autoRestart)
 {
     // This facility requires a Qt event loop.
     Application::instance()->createQtApplication(false);
@@ -138,8 +138,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
     // Go through all pipelines of the scene until we find one
     // that is not completely evaluated yet.
     scene()->visitPipelines([&](Pipeline* pipeline) {
-        // Request visual elements too.
-        _pipelineEvaluationFuture = pipeline->evaluateRenderingPipeline(request);
+        _pipelineEvaluationFuture = pipeline->evaluatePipeline(request);
         if(!_pipelineEvaluationFuture.isFinished()) {
             // Wait for this state to become available and return a pending future.
             _currentPipeline = pipeline;
@@ -169,11 +168,12 @@ void ScenePreparation::makeReady(bool forceReevaluation)
         // Set the promise to the fulfilled state.
         _promise.setFinished();
 
-        // Emit signal to indicate we've finished preparing the scene.
-        Q_EMIT scenePreparationFinished();
-
-        // Also update the viewports to reflect the final pipeline state.
+        // Update the viewports to reflect the final pipeline state.
         Q_EMIT viewportUpdateRequest();
+
+        // Emit signal to indicate we've finished preparing the scene.
+        // Note: This must come AFTER refreshing the viewports to make animation playback work correctly.
+        Q_EMIT scenePreparationFinished();
     }
     else {
         OVITO_ASSERT(_currentPipeline);
@@ -277,9 +277,16 @@ void ScenePreparation::restartPreparation()
     // Note: Not resetting pipelineEvaluationFuture here, because we want to keep the in-flight evaluation request going until a new request has been made.
     _currentPipeline.reset();
     _completedScene = nullptr;
-    if(!_isRestartScheduled) {
-        _isRestartScheduled = true;
-        QMetaObject::invokeMethod(this, "makeReady", Qt::QueuedConnection, Q_ARG(bool, true));
+    if(autoRestart()) {
+        if(!_isRestartScheduled) {
+            _isRestartScheduled = true;
+            QMetaObject::invokeMethod(this, "makeReady", Qt::QueuedConnection, Q_ARG(bool, true));
+        }
+    }
+    else {
+        _pipelineEvaluationFuture.reset();
+        _future.reset();
+        _promise.reset();
     }
 }
 

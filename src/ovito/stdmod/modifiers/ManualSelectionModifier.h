@@ -50,7 +50,7 @@ public:
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
     /// Modifies the input data.
-    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) override;
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
 
     /// Adopts the selection state from the modifier's input.
     void resetSelection(ModificationNode* modApp, const PipelineFlowState& state);

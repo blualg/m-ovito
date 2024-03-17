@@ -63,26 +63,26 @@ public:
 
 protected:
 
-    /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
-
-private:
+    /// Creates the engine that will perform the structure identification.
+    virtual std::shared_ptr<Algorithm> createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input, PropertyPtr structures) override {
+        return std::make_shared<ChillPlusAlgorithm>(std::move(structures), cutoff());
+    }
 
     /// Computes the modifier's results.
-    class ChillPlusEngine : public StructureIdentificationEngine
+    class ChillPlusAlgorithm : public StructureIdentificationModifier::Algorithm
     {
     public:
 
         /// Constructor.
-        ChillPlusEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
-            StructureIdentificationEngine(request, fingerprint, positions, simCell, structureTypes, selection),
+        ChillPlusAlgorithm(PropertyPtr structures, FloatType cutoff) :
+            Algorithm(std::move(structures)),
             _cutoff(cutoff) {}
 
-        /// Computes the modifier's results.
-        virtual void perform() override;
+        /// Performs the atomic structure classification.
+        virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
 
-        /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+        /// Computes the structure identification statistics.
+        virtual std::vector<int64_t> computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode) const override;
 
         /// Returns the value of the cutoff parameter.
         FloatType cutoff() const { return _cutoff; }
@@ -90,16 +90,9 @@ private:
     private:
 
         /// Implementation of the identification algorithm.
-        StructureType determineStructure(CutoffNeighborFinder& neighFinder, size_t particleIndex);
-
-        /// Helper method.
-        static std::complex<float> compute_q_lm(CutoffNeighborFinder& neighFinder, size_t particleIndex, int, int);
-
-        /// Helper method.
-        static std::pair<float, float> polar_asimuthal(const Vector3& delta);
+        static StructureType determineStructure(const CutoffNeighborFinder& neighFinder, size_t particleIndex, const boost::numeric::ublas::matrix<std::complex<float>>& q_values);
 
         const FloatType _cutoff;
-        boost::numeric::ublas::matrix<std::complex<float>> q_values;
     };
 
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);

@@ -49,7 +49,7 @@ public:
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
     /// Modifies the input data.
-    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) override;
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
 
     /// Set start and end value of the x-axis.
     void setXAxisRange(FloatType start, FloatType end) {

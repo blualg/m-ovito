@@ -43,13 +43,12 @@ InvertSelectionModifier::InvertSelectionModifier(ObjectInitializationFlags flags
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> InvertSelectionModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
+Future<PipelineFlowState> InvertSelectionModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
     if(!subject())
         throw Exception(tr("No data element type set."));
 
-    PipelineFlowState output = std::move(input);
-    PropertyContainer* container = output.expectMutableLeafObject(subject());
+    PropertyContainer* container = state.expectMutableLeafObject(subject());
     if(!container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty))
         throw Exception(tr("Cannot invert selection, because property container type %1 does not support element selections.").arg(container->getOOMetaClass().name()));
 
@@ -58,7 +57,7 @@ Future<PipelineFlowState> InvertSelectionModifier::evaluateModifier(const Modifi
 
     // The actual computation can be performed in a separate worker thread.
     return AsynchronousTask<PipelineFlowState>::runAsync([
-            output = std::move(output),
+            state = std::move(state),
             inputSelection = std::move(inputSelection),
             outputSelection = std::move(outputSelection)]() mutable
     {
@@ -82,7 +81,7 @@ Future<PipelineFlowState> InvertSelectionModifier::evaluateModifier(const Modifi
             outputSelection->fill(SelectionIntType{1});
         }
 
-        return std::move(output);
+        return std::move(state);
     });
 }
 

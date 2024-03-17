@@ -29,11 +29,11 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
         objects/BondsVisEditor.cpp
 #        modifier/coloring/AmbientOcclusionModifierEditor.cpp
 #        modifier/modify/CreateBondsModifierEditor.cpp
-#        modifier/modify/LoadTrajectoryModifierEditor.cpp
-#        modifier/modify/UnwrapTrajectoriesModifierEditor.cpp
-#        modifier/analysis/StructureListParameterUI.cpp
-#        modifier/analysis/ackland_jones/AcklandJonesModifierEditor.cpp
-#        modifier/analysis/chill_plus/ChillPlusModifierEditor.cpp
+        modifier/modify/LoadTrajectoryModifierEditor.cpp
+        modifier/modify/UnwrapTrajectoriesModifierEditor.cpp
+        modifier/analysis/StructureListParameterUI.cpp
+        modifier/analysis/ackland_jones/AcklandJonesModifierEditor.cpp
+        modifier/analysis/chill_plus/ChillPlusModifierEditor.cpp
 #        modifier/analysis/cna/CommonNeighborAnalysisModifierEditor.cpp
 #        modifier/analysis/coordination/CoordinationAnalysisModifierEditor.cpp
 #        modifier/analysis/displacements/CalculateDisplacementsModifierEditor.cpp

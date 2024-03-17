@@ -59,7 +59,7 @@ bool LoadTrajectoryModifier::OOMetaClass::isApplicableTo(const DataCollection& i
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> LoadTrajectoryModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
+Future<PipelineFlowState> LoadTrajectoryModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
     // Get the trajectory data source.
     if(!trajectorySource())
@@ -69,7 +69,7 @@ Future<PipelineFlowState> LoadTrajectoryModifier::evaluateModifier(const Modifie
     PipelineEvaluationResult trajStateFuture = trajectorySource()->evaluate(request);
 
     // Wait for the data to become available.
-    return trajStateFuture.then(*request.modificationNode(), [state = std::move(input), request](const PipelineFlowState& trajState) mutable {
+    return trajStateFuture.then(*request.modificationNode(), [state = std::move(state), request](const PipelineFlowState& trajState) mutable {
 
         if(LoadTrajectoryModifier* trajModifier = dynamic_object_cast<LoadTrajectoryModifier>(request.modifier())) {
             // Make sure the obtained configuration is valid and ready to use.

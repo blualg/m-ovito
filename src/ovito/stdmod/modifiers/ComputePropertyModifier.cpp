@@ -190,7 +190,7 @@ bool ComputePropertyModifierDelegate::preEvaluationRun(const ModifierEvaluationR
 /******************************************************************************
  * Applies this modifier delegate to the data.
  ******************************************************************************/
-Future<PipelineFlowState> ComputePropertyModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+Future<PipelineFlowState> ComputePropertyModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     const ComputePropertyModifier* modifier = static_object_cast<ComputePropertyModifier>(request.modifier());
     ComputePropertyModificationNode* modNode = static_object_cast<ComputePropertyModificationNode>(request.modificationNode());
@@ -218,20 +218,17 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::apply(const ModifierE
 
     // In interactive mode, do not perform a real computation. Instead, used an old result from the cached state if available.
     if(request.interactiveMode()) {
-        bool used = false;
         if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
             ConstDataObjectPath containerPathCached = cachedState.getObject(inputContainerRef());
             if(!containerPathCached.empty()) {
                 const PropertyContainer* containerCached = static_object_cast<PropertyContainer>(containerPathCached.back());
                 if(containerCached->elementCount() == nelements) {
                     if(const Property* cachedProperty = modifier->outputProperty().findInContainer(containerCached)) {
-                        used = true;
                         container->createProperty(cachedProperty);
                     }
                 }
             }
         }
-        qDebug() << "Using cached result of compute property modifier:" << used;
         return std::move(state);
     }
 

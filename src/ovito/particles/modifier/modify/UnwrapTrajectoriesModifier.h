@@ -58,11 +58,11 @@ public:
     /// Constructor.
     using Modifier::Modifier;
 
-    /// Modifies the input data.
-    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) override;
+    /// This function is called by the pipeline system before a new modifier evaluation begins.
+    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
 
-    /// Modifies the input data synchronously.
-    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
 };
 
 /**
@@ -115,11 +115,8 @@ protected:
     /// This method is called once for this object after it has been completely loaded from a stream.
     virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
-    /// \brief Is called when a RefTarget referenced by this object generated an event.
-    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
-
-    /// Is called when the value of a reference field of this object changes.
-    virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+    /// Sends an event to all dependents of this RefTarget.
+    virtual void notifyDependentsImpl(const ReferenceEvent& event) noexcept override;
 
     /// Throws away the precomputed unwrapping information and interrupts
     /// any computation currently in progress.

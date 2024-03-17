@@ -54,92 +54,60 @@ ChillPlusModifier::ChillPlusModifier(ObjectInitializationFlags flags) : Structur
 }
 
 /******************************************************************************
-* Creates and initializes a computation engine that will compute the
-* modifier's results.
+* Performs the actual analysis.
 ******************************************************************************/
-Future<ModifierEnginePtr> ChillPlusModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+void ChillPlusModifier::ChillPlusAlgorithm::identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection)
 {
-    // If pipeline is in interactive mode, skip the long-running computation step.
-    if(request.interactiveMode())
-        return {};
+    if(simulationCell && simulationCell->is2D())
+        throw Exception(tr("The Chill+ algorithm does not support 2d simulation cells."));
 
-    // Get modifier input.
-    const Particles* particles = input.expectObject<Particles>();
-    particles->verifyIntegrity();
-    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
-    const SimulationCell* simCell = input.expectObject<SimulationCell>();
-    if(simCell->is2D())
-        throw Exception(tr("Chill+ modifier does not support 2d simulation cells."));
-
-    // Get particle selection.
-    const Property* selectionProperty = onlySelectedParticles() ? particles->expectProperty(Particles::SelectionProperty) : nullptr;
-
-    // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<ChillPlusEngine>(request, particles, posProperty, simCell, structureTypes(), selectionProperty, cutoff());
-}
-
-/******************************************************************************
-* Performs the actual analysis. This method is executed in a worker thread.
-******************************************************************************/
-void ChillPlusModifier::ChillPlusEngine::perform()
-{
-    setProgressText(tr("Computing q_lm values in Chill+ analysis"));
+    this_task::setProgressText(tr("Computing q_lm values in Chill+ analysis"));
 
     // Prepare the neighbor list.
-    CutoffNeighborFinder neighborListBuilder;
-    if(!neighborListBuilder.prepare(cutoff(), positions(), cell(), selection()))
-        return;
+    CutoffNeighborFinder neighborFinder;
+    neighborFinder.prepare(cutoff(), particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
 
-    BufferWriteAccess<int32_t, access_mode::discard_write> output(structures());
-    BufferReadAccess<SelectionIntType> selectionData(selection());
+    BufferReadAccess<SelectionIntType> selectionAcc(selection);
+    BufferWriteAccess<int32_t, access_mode::discard_write> structureAcc(structures());
 
     // Find all relevant q_lm
     // create matrix of q_lm
-    size_t particleCount = positions()->size();
-    setProgressMaximum(particleCount);
-    setProgressText(tr("Computing c_ij values of Chill+"));
+    size_t particleCount = particles->elementCount();
+    boost::numeric::ublas::matrix<std::complex<float>> q_values(particleCount, 7);
 
-    q_values = boost::numeric::ublas::matrix<std::complex<float>>(particleCount, 7);
+    auto compute_q_lm = [&](size_t particleIndex, int l, int m) {
+        std::complex<float> q = 0;
+        for(CutoffNeighborFinder::Query neighQuery(neighborFinder, particleIndex); !neighQuery.atEnd(); neighQuery.next()) {
+            const Vector3& delta = neighQuery.delta();
+            float asimuthal = std::atan2(delta.y(), delta.x());
+            float xy_distance = std::sqrt(delta.x()*delta.x()+delta.y()*delta.y());
+            float polar = std::atan2(xy_distance, delta.z());
+            q += boost::math::spherical_harmonic(l, m, polar, asimuthal);
+        }
+        return q;
+    };
 
     // Parallel calculation loop:
-    parallelForWithProgress(particleCount, [&](size_t index) {
-        int coordination = 0;
+    parallelFor(particleCount, 1024, [&](size_t index) {
         for(int m = -3; m <= 3; m++) {
-            q_values(index, m+3) = compute_q_lm(neighborListBuilder, index, 3, m);
+            q_values(index, m+3) = compute_q_lm(index, 3, m);
         }
     });
-    if(isCanceled()) return;
 
     // For each particle, count the bonds and determine structure
-    parallelForWithProgress(particleCount, [&](size_t index) {
-        // Skip particles that are not included in the analysis.
-        if(selectionData && !selectionData[index]) {
-            output[index] = OTHER;
-            return;
-        }
-
-        output[index] = determineStructure(neighborListBuilder, index);
+    this_task::setProgressText(tr("Computing c_ij values of Chill+"));
+    parallelFor(particleCount, 4096, [&](size_t index) {
+        structureAcc[index] =
+            (!selectionAcc || selectionAcc[index]) // Skip particles that are not included in the analysis.
+                ? determineStructure(neighborFinder, index, q_values)
+                : OTHER;
     });
-
-    // Release data that is no longer needed.
-    releaseWorkingData();
-}
-
-std::complex<float> ChillPlusModifier::ChillPlusEngine::compute_q_lm(CutoffNeighborFinder& neighFinder, size_t particleIndex, int l, int m)
-{
-    std::complex<float> q = 0;
-    for(CutoffNeighborFinder::Query neighQuery(neighFinder, particleIndex); !neighQuery.atEnd(); neighQuery.next()) {
-        const Vector3& delta = neighQuery.delta();
-        std::pair<float, float> angles = polar_asimuthal(delta);
-        q += boost::math::spherical_harmonic(l, m, angles.first, angles.second);
-    }
-    return q;
 }
 
 /******************************************************************************
 * Determines the structure of an atom based on the number of eclipsed and staggered bonds.
 ******************************************************************************/
-ChillPlusModifier::StructureType ChillPlusModifier::ChillPlusEngine::determineStructure(CutoffNeighborFinder& neighFinder, size_t particleIndex)
+ChillPlusModifier::StructureType ChillPlusModifier::ChillPlusAlgorithm::determineStructure(const CutoffNeighborFinder& neighFinder, size_t particleIndex, const boost::numeric::ublas::matrix<std::complex<float>>& q_values)
 {
     int num_eclipsed = 0;
     int num_staggered = 0;
@@ -192,27 +160,21 @@ ChillPlusModifier::StructureType ChillPlusModifier::ChillPlusEngine::determineSt
 }
 
 /******************************************************************************
-* Injects the computed results of the engine into the data pipeline.
+* Computes the structure identification statistics.
 ******************************************************************************/
-void ChillPlusModifier::ChillPlusEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+std::vector<int64_t> ChillPlusModifier::ChillPlusAlgorithm::computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode) const
 {
-    StructureIdentificationEngine::applyResults(request, state);
+    std::vector<int64_t> typeCounts = StructureIdentificationModifier::Algorithm::computeStructureStatistics(structures, state, createdByNode);
 
     // Also output structure type counts, which have been computed by the base class.
-    state.addAttribute(QStringLiteral("ChillPlus.counts.OTHER"), QVariant::fromValue(getTypeCount(OTHER)), request.modificationNode());
-    state.addAttribute(QStringLiteral("ChillPlus.counts.CUBIC_ICE"), QVariant::fromValue(getTypeCount(CUBIC_ICE)), request.modificationNode());
-    state.addAttribute(QStringLiteral("ChillPlus.counts.HEXAGONAL_ICE"), QVariant::fromValue(getTypeCount(HEXAGONAL_ICE)), request.modificationNode());
-    state.addAttribute(QStringLiteral("ChillPlus.counts.INTERFACIAL_ICE"), QVariant::fromValue(getTypeCount(INTERFACIAL_ICE)), request.modificationNode());
-    state.addAttribute(QStringLiteral("ChillPlus.counts.HYDRATE"), QVariant::fromValue(getTypeCount(HYDRATE)), request.modificationNode());
-    state.addAttribute(QStringLiteral("ChillPlus.counts.INTERFACIAL_HYDRATE"), QVariant::fromValue(getTypeCount(INTERFACIAL_HYDRATE)), request.modificationNode());
-}
+    state.addAttribute(QStringLiteral("ChillPlus.counts.OTHER"), QVariant::fromValue(typeCounts[OTHER]), createdByNode);
+    state.addAttribute(QStringLiteral("ChillPlus.counts.CUBIC_ICE"), QVariant::fromValue(typeCounts[CUBIC_ICE]), createdByNode);
+    state.addAttribute(QStringLiteral("ChillPlus.counts.HEXAGONAL_ICE"), QVariant::fromValue(typeCounts[HEXAGONAL_ICE]), createdByNode);
+    state.addAttribute(QStringLiteral("ChillPlus.counts.INTERFACIAL_ICE"), QVariant::fromValue(typeCounts[INTERFACIAL_ICE]), createdByNode);
+    state.addAttribute(QStringLiteral("ChillPlus.counts.HYDRATE"), QVariant::fromValue(typeCounts[HYDRATE]), createdByNode);
+    state.addAttribute(QStringLiteral("ChillPlus.counts.INTERFACIAL_HYDRATE"), QVariant::fromValue(typeCounts[INTERFACIAL_HYDRATE]), createdByNode);
 
-std::pair<float, float> ChillPlusModifier::ChillPlusEngine::polar_asimuthal(const Vector3& delta)
-{
-    float asimuthal = std::atan2(delta.y(), delta.x());
-    float xy_distance = std::sqrt(delta.x()*delta.x()+delta.y()*delta.y());
-    float polar = std::atan2(xy_distance, delta.z());
-    return std::pair<float, float>(polar, asimuthal);
+    return typeCounts;
 }
 
 }   // End of namespace

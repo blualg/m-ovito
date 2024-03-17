@@ -61,29 +61,29 @@ public:
 
 protected:
 
-    /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
-
-private:
+    /// Creates the engine that will perform the structure identification.
+    virtual std::shared_ptr<Algorithm> createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input, PropertyPtr structures) override {
+        return std::make_shared<AcklandJonesAnalysisAlgorithm>(std::move(structures));
+    }
 
     /// Computes the modifier's results.
-    class AcklandJonesAnalysisEngine : public StructureIdentificationEngine
+    class AcklandJonesAnalysisAlgorithm : public StructureIdentificationModifier::Algorithm
     {
     public:
 
         /// Constructor.
-        using StructureIdentificationEngine::StructureIdentificationEngine;
+        using Algorithm::Algorithm;
 
-        /// Computes the modifier's results.
-        virtual void perform() override;
+        /// Performs the atomic structure classification.
+        virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
 
-        /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+        /// Computes the structure identification statistics.
+        virtual std::vector<int64_t> computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode) const override;
 
     private:
 
         /// Determines the coordination structure of a single particle using the bond-angle analysis method.
-        StructureType determineStructure(NearestNeighborFinder& neighFinder, size_t particleIndex);
+        StructureType determineStructure(NearestNeighborFinder& neighFinder, size_t particleIndex) const;
     };
 };
 

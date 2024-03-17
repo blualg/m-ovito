@@ -27,12 +27,12 @@
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/concurrent/ForEach.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "UnwrapTrajectoriesModifier.h"
 
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(UnwrapTrajectoriesModifier);
-
 IMPLEMENT_CREATABLE_OVITO_CLASS(UnwrapTrajectoriesModificationNode);
 SET_MODIFICATION_NODE_TYPE(UnwrapTrajectoriesModifier, UnwrapTrajectoriesModificationNode);
 
@@ -45,50 +45,66 @@ bool UnwrapTrajectoriesModifier::OOMetaClass::isApplicableTo(const DataCollectio
 }
 
 /******************************************************************************
-* Modifies the input data.
-******************************************************************************/
-Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
+ * Is called by the pipeline system before a new modifier evaluation begins.
+ ******************************************************************************/
+bool UnwrapTrajectoriesModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
 {
-    if(input) {
-        if(UnwrapTrajectoriesModificationNode* unwrapModNode = dynamic_object_cast<UnwrapTrajectoriesModificationNode>(request.modificationNode())) {
-
-            // If the periodic image flags property is present, use it to unwrap particle positions.
-            const Particles* inputParticles = input.expectObject<Particles>();
-            if(inputParticles->getProperty(Particles::PeriodicImageProperty)) {
-                PipelineFlowState output = input;
-                unwrapModNode->unwrapParticleCoordinates(request, output);
-                return output;
-            }
-
-            // Without the periodic image flags information, we have to scan the particle trajectories
-            // from beginning to end before making them continuous.
-            return unwrapModNode->detectPeriodicCrossings(request).then(*unwrapModNode, [state = input, request]() mutable {
-                static_object_cast<UnwrapTrajectoriesModificationNode>(request.modificationNode())->unwrapParticleCoordinates(request, state);
-                return std::move(state);
-            });
-        }
+    // Unless the unwrapping information has already been computed (up to the current time), indicate that we will do different
+    // computations depending on whether the pipeline is evaluated in interactive mode or not.
+    UnwrapTrajectoriesModificationNode* modNode = dynamic_object_cast<UnwrapTrajectoriesModificationNode>(request.modificationNode());
+    if(modNode && request.time() > modNode->unwrappedUpToTime()) {
+        if(request.interactiveMode())
+            result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Interactive);
+        else
+            result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Noninteractive);
     }
-    return input;
+
+    return true;
 }
 
 /******************************************************************************
-* Modifies the input data synchronously.
+* Modifies the input data.
 ******************************************************************************/
-void UnwrapTrajectoriesModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
-    if(!state) return;
+    if(!state)
+        return std::move(state);
 
-    // The pipeline system may call evaluateSynchronous() with an outdated trajectory frame, which doesn't match the current
-    // animation time. This would lead to artifacts, because particles might get unwrapped even though they haven't crossed
-    // a periodic cell boundary yet. To avoid this from happening, we try to determine the true animation time of the
-    // current input data collection and use it for looking up the unwrap information.
-    AnimationTime time = request.time();
-    int sourceFrame = state.data()->sourceFrame();
-    if(sourceFrame != -1)
-        time = request.modificationNode()->sourceFrameToAnimationTime(sourceFrame);
+    // If the periodic image flags property is present, use it to unwrap particle positions.
+    if(state.expectObject<Particles>()->getProperty(Particles::PeriodicImageProperty)) {
+        // The actual work can be performed in a separate thread.
+        return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state)]() mutable {
 
-    if(UnwrapTrajectoriesModificationNode* unwrapModNode = dynamic_object_cast<UnwrapTrajectoriesModificationNode>(request.modificationNode())) {
-        unwrapModNode->unwrapParticleCoordinates(request, state);
+            // Simulation cell is needed for this.
+            const SimulationCell* cell = state.expectObject<SimulationCell>();
+
+            // Make a modifiable copy of the particles object.
+            Particles* outputParticles = state.expectMutableObject<Particles>();
+            outputParticles->verifyIntegrity();
+
+            // Perform the coordinate unwrapping.
+            outputParticles->unwrapCoordinates(*cell);
+
+            state.setStatus(tr("Unwrapping particle coordinates using stored PBC image flags."));
+            return std::move(state);
+        });
+    }
+
+    UnwrapTrajectoriesModificationNode* modNode = dynamic_object_cast<UnwrapTrajectoriesModificationNode>(request.modificationNode());
+    if(!modNode)
+        throw Exception(tr("Internal error: The UnwrapTrajectoriesModifier is not associated with a valid UnwrapTrajectoriesModificationNode."));
+
+    if(!request.interactiveMode()) {
+        // Without the periodic image flags information, we have to scan the particle trajectories
+        // from beginning to end before making them continuous.
+        return modNode->detectPeriodicCrossings(request).then(*modNode, [state = std::move(state), request]() mutable {
+            static_object_cast<UnwrapTrajectoriesModificationNode>(request.modificationNode())->unwrapParticleCoordinates(request, state);
+            return std::move(state);
+        });
+    }
+    else {
+        modNode->unwrapParticleCoordinates(request, state);
+        return std::move(state);
     }
 }
 
@@ -142,25 +158,16 @@ void UnwrapTrajectoriesModificationNode::invalidateUnwrapData()
 }
 
 /******************************************************************************
-* Is called when a RefTarget referenced by this object generated an event.
+* Sends an event to all dependents of this RefTarget.
 ******************************************************************************/
-bool UnwrapTrajectoriesModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+void UnwrapTrajectoriesModificationNode::notifyDependentsImpl(const ReferenceEvent& event) noexcept
 {
-    if(event.type() == ReferenceEvent::TargetChanged && source == input()) {
+    if(event.type() == ReferenceEvent::TargetChanged) {
+        // Throw away precomputed information when the modifier or the upstream pipeline change.
+        // This also discards the stored information in case the modifier is turned off by the user.
         invalidateUnwrapData();
     }
-    return ModificationNode::referenceEvent(source, event);
-}
-
-/******************************************************************************
-* Gets called when the data object of the node has been replaced.
-******************************************************************************/
-void UnwrapTrajectoriesModificationNode::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
-{
-    if(field == PROPERTY_FIELD(input)) {
-        invalidateUnwrapData();
-    }
-    ModificationNode::referenceReplaced(field, oldTarget, newTarget, listIndex);
+    ModificationNode::notifyDependentsImpl(event);
 }
 
 /******************************************************************************
@@ -180,24 +187,19 @@ void UnwrapTrajectoriesModificationNode::unwrapParticleCoordinates(const Modifie
     const Particles* inputParticles = state.expectObject<Particles>();
     inputParticles->verifyIntegrity();
 
-    // If the periodic image flags particle property is present, use it to unwrap particle positions.
-    if(inputParticles->getProperty(Particles::PeriodicImageProperty)) {
-        // Get current simulation cell.
-        const SimulationCell* cell = state.expectObject<SimulationCell>();
-
-        // Make a modifiable copy of the particles object.
-        Particles* outputParticles = state.expectMutableObject<Particles>();
-
-        // Perform the coordinate unwrapping.
-        outputParticles->unwrapCoordinates(*cell);
-
-        state.setStatus(tr("Unwrapping particle coordinates using stored PBC image flags."));
-
-        return;
+    // The pipeline system may call evaluateModifier() with an outdated trajectory frame, which doesn't match the current
+    // animation time when doing an interactive viewport update. This would lead to artifacts, because particles might get unwrapped even though they haven't crossed
+    // a periodic cell boundary yet. To avoid this from happening, we try to determine the true animation time of the
+    // current input data collection and use it for looking up the unwrap information.
+    AnimationTime time = request.time();
+    if(request.interactiveMode()) {
+        int sourceFrame = state.data()->sourceFrame();
+        if(sourceFrame != -1)
+            time = request.modificationNode()->sourceFrameToAnimationTime(sourceFrame);
     }
 
     // Check if periodic cell boundary crossing have been precomputed or not.
-    if(request.time() > unwrappedUpToTime()) {
+    if(time > unwrappedUpToTime()) {
         if(ExecutionContext::isInteractive())
             state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Particle crossings of periodic cell boundaries have not been determined yet.")));
         else
@@ -206,9 +208,9 @@ void UnwrapTrajectoriesModificationNode::unwrapParticleCoordinates(const Modifie
     }
 
     // Reverse any cell shear flips made by LAMMPS.
-    if(!unflipRecords().empty() && request.time() >= unflipRecords().front().first) {
+    if(!unflipRecords().empty() && time >= unflipRecords().front().first) {
         auto iter = unflipRecords().rbegin();
-        while(iter->first > request.time()) {
+        while(iter->first > time) {
             ++iter;
             OVITO_ASSERT(iter != unflipRecords().rend());
         }
@@ -245,7 +247,7 @@ void UnwrapTrajectoriesModificationNode::unwrapParticleCoordinates(const Modifie
         bool shifted = false;
         Vector3 pbcShift = Vector3::Zero();
         for(auto iter = range.first; iter != range.second; ++iter) {
-            if(std::get<0>(iter->second) <= request.time()) {
+            if(std::get<0>(iter->second) <= time) {
                 pbcShift[std::get<1>(iter->second)] += std::get<2>(iter->second);
                 shifted = true;
             }
@@ -270,12 +272,12 @@ void UnwrapTrajectoriesModificationNode::unwrapParticleCoordinates(const Modifie
                 auto range1 = unwrapRecords().equal_range(identifierProperty ? identifierProperty[particleIndex1] : particleIndex1);
                 auto range2 = unwrapRecords().equal_range(identifierProperty ? identifierProperty[particleIndex2] : particleIndex2);
                 for(auto iter = range1.first; iter != range1.second; ++iter) {
-                    if(std::get<0>(iter->second) <= request.time()) {
+                    if(std::get<0>(iter->second) <= time) {
                         pbcShift[std::get<1>(iter->second)] += std::get<2>(iter->second);
                     }
                 }
                 for(auto iter = range2.first; iter != range2.second; ++iter) {
-                    if(std::get<0>(iter->second) <= request.time()) {
+                    if(std::get<0>(iter->second) <= time) {
                         pbcShift[std::get<1>(iter->second)] -= std::get<2>(iter->second);
                     }
                 }

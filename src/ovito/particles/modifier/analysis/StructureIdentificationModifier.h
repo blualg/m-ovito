@@ -53,17 +53,24 @@ class OVITO_PARTICLES_EXPORT StructureIdentificationModifier : public Modifier
 
 public:
 
-    /// Computes the modifier's results.
-    class OVITO_PARTICLES_EXPORT StructureIdentificationEngine : public ModifierEngine
+    /// Abstract base class for structure identification algorithms.
+    class OVITO_PARTICLES_EXPORT Algorithm
     {
     public:
 
         /// Constructor.
-        StructureIdentificationEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection = {});
+        Algorithm(PropertyPtr structures) : _structures(std::move(structures)) {}
 
-        /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+        /// Performs the atomic structure classification.
+        virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) = 0;
 
+        /// Gives subclasses the possibility to post-process per-particle structure types.
+        virtual PropertyPtr postProcessStructureTypes(const PropertyPtr& structures) const { return structures; }
+
+        /// Computes the structure identification statistics.
+        virtual std::vector<int64_t> computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode) const;
+
+#if 0 // TODO
         /// This method is called by the system whenever a parameter of the modifier changes.
         /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be
         /// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true).
@@ -73,18 +80,10 @@ public:
                 return true;
             return ModifierEngine::modifierChanged(event);
         }
+#endif
 
-        /// Returns the property storage that contains the computed per-particle structure types.
+        /// Returns the property storage for the computed per-particle structure types.
         const PropertyPtr& structures() const { return _structures; }
-
-        /// Returns the property storage that contains the input particle positions.
-        const ConstPropertyPtr& positions() const { return _positions; }
-
-        /// Returns the property storage that contains the particle selection (optional).
-        const ConstPropertyPtr& selection() const { return _selection; }
-
-        /// Returns the simulation cell data.
-        const DataOORef<const SimulationCell>& cell() const { return _simCell; }
 
         /// Returns whether a given structural type is enabled for identification.
         bool typeIdentificationEnabled(int typeId) const {
@@ -93,14 +92,6 @@ public:
                 return false;
             OVITO_ASSERT(structures()->elementTypes()[typeId]->numericId() == typeId);
             return structures()->elementTypes()[typeId]->enabled();
-        }
-
-        /// Returns the number of identified particles of the given structure type.
-        int64_t getTypeCount(int typeIndex) const {
-            if(_typeCounts.size() > typeIndex)
-                return _typeCounts[typeIndex];
-            else
-                return 0;
         }
 
         /// Returns an array of boolean flags indicating for which structure types identification is enabled.
@@ -114,35 +105,33 @@ public:
             return arr;
         }
 
-    protected:
-
-        /// Releases data that is no longer needed.
-        void releaseWorkingData() {
-            _positions.reset();
-            _selection.reset();
-            _simCell.reset();
-        }
-
-        /// Gives subclasses the possibility to post-process per-particle structure types
-        /// before they are output to the data pipeline.
-        virtual PropertyPtr postProcessStructureTypes(const ModifierEvaluationRequest& request, const PropertyPtr& structures) {
-            return structures;
-        }
-
     private:
 
-        ConstPropertyPtr _positions;
-        ConstPropertyPtr _selection;
-        DataOORef<const SimulationCell> _simCell;
-        const PropertyPtr _structures;
-        ElementOrderingFingerprint _inputFingerprint;
-        std::vector<int64_t> _typeCounts;
+        PropertyPtr _structures;
     };
 
 public:
 
     /// Constructor.
     explicit StructureIdentificationModifier(ObjectInitializationFlags flags);
+
+    /// This function is called by the pipeline system before a new modifier evaluation begins.
+    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
+
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
+
+    /// Indicates that a preliminary viewport update will be performed immediately after this modifier
+	/// has computed new results.
+    virtual bool shouldRefreshViewportsAfterEvaluation() override { return true; }
+
+    /// Indicates whether the modifier wants to keep its partial compute results after one of its parameters has been changed.
+    virtual bool shouldKeepPartialResultsAfterChange(const PropertyFieldEvent& event) override {
+        // Avoid a full recomputation if the user toggles just the color-by-type option.
+        if(event.field() == PROPERTY_FIELD(colorByType))
+            return true;
+        return Modifier::shouldKeepPartialResultsAfterChange(event);
+    }
 
     /// Returns an existing structure type managed by the modifier.
     ElementType* structureTypeById(int id) const {
@@ -152,6 +141,12 @@ public:
     }
 
 protected:
+
+    /// Creates the engine that will perform the structure identification.
+    virtual std::shared_ptr<Algorithm> createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input, PropertyPtr structures) = 0;
+
+    /// Adopts existing computation results for an interactive pipeline evaluation.
+    virtual void reuseCachedState(const ModifierEvaluationRequest& request, Particles* particles, PipelineFlowState& output, const PipelineFlowState& cachedState);
 
     /// Saves the class' contents to the given stream.
     virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;

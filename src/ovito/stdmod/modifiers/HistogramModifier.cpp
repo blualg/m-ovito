@@ -123,7 +123,7 @@ void HistogramModifier::propertyChanged(const PropertyFieldDescriptor* field)
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
+Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
     if(!subject())
         throw Exception(tr("No data element type set."));
@@ -136,8 +136,8 @@ Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEval
             .arg(subject().dataClass()->pythonName()).arg(sourceProperty().containerClass()->propertyClassDisplayName()));
 
     // Look up the property container object.
-    ConstDataObjectPath containerPath = input.expectObject(subject());
-    const PropertyContainer* container = input.expectLeafObject(subject());
+    ConstDataObjectPath containerPath = state.expectObject(subject());
+    const PropertyContainer* container = state.expectLeafObject(subject());
     container->verifyIntegrity();
 
     // Get the input property.
@@ -155,14 +155,11 @@ Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEval
         inputSelection = container->expectProperty(Property::GenericSelectionProperty);
     }
 
-    // Create output state.
-    PipelineFlowState output = std::move(input);
-
     // Create storage for output selection.
     PropertyPtr outputSelection;
     if(selectInRange() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
         // First make sure we can safely modify the property container.
-        PropertyContainer* mutableContainer = output.expectMutableLeafObject(subject());
+        PropertyContainer* mutableContainer = state.expectMutableLeafObject(subject());
         // Add the selection property to the output container.
         outputSelection = mutableContainer->createProperty(DataBuffer::Uninitialized, Property::GenericSelectionProperty, containerPath);
     }
@@ -174,14 +171,14 @@ Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEval
         std::swap(selectionRangeStart, selectionRangeEnd);
 
     // Create output data table.
-    DataTable* table = output.createObject<DataTable>(
+    DataTable* table = state.createObject<DataTable>(
         QStringLiteral("histogram[%1]").arg(sourceProperty().nameWithComponent()),
         request.modificationNode(), DataTable::Histogram, sourceProperty().nameWithComponent());
     table->setAxisLabelX(sourceProperty().nameWithComponent());
 
     // The actual computation can be performed in a separate worker thread.
     return AsynchronousTask<PipelineFlowState>::runAsync([
-            output = std::move(output),
+            state = std::move(state),
             property = std::move(property),
             inputSelection = std::move(inputSelection),
             outputSelection = std::move(outputSelection),
@@ -347,11 +344,11 @@ Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEval
                     .arg(numSelected)
                     .arg(elementDescriptionName)
                     .arg((FloatType)numSelected * 100 / std::max((size_t)1,outputSelection->size()), 0, 'f', 1);
-            output.addAttribute(QStringLiteral("Histogram.num_selected"), QVariant::fromValue(numSelected), createdByNode);
+            state.addAttribute(QStringLiteral("Histogram.num_selected"), QVariant::fromValue(numSelected), createdByNode);
         }
-        output.setStatus(PipelineStatus(std::move(statusMessage)));
+        state.setStatus(PipelineStatus(std::move(statusMessage)));
 
-        return std::move(output);
+        return std::move(state);
     });
 }
 

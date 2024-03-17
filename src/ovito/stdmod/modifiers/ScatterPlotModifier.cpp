@@ -150,7 +150,7 @@ void ScatterPlotModifier::notifyDependentsImpl(const ReferenceEvent& event) noex
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> ScatterPlotModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
+Future<PipelineFlowState> ScatterPlotModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
     if(!subject())
         throw Exception(tr("No data element type set."));
@@ -170,8 +170,8 @@ Future<PipelineFlowState> ScatterPlotModifier::evaluateModifier(const ModifierEv
             .arg(subject().dataClass()->pythonName()).arg(yAxisProperty().containerClass()->propertyClassDisplayName()));
 
     // Look up the property container object.
-    ConstDataObjectPath containerPath = input.expectObject(subject());
-    const PropertyContainer* container = input.expectLeafObject(subject());
+    ConstDataObjectPath containerPath = state.expectObject(subject());
+    const PropertyContainer* container = state.expectLeafObject(subject());
     container->verifyIntegrity();
 
     // Get the input properties.
@@ -201,26 +201,23 @@ Future<PipelineFlowState> ScatterPlotModifier::evaluateModifier(const ModifierEv
     if(selectionYAxisRangeStart > selectionYAxisRangeEnd)
         std::swap(selectionYAxisRangeStart, selectionYAxisRangeEnd);
 
-    // Create output state.
-    PipelineFlowState output = std::move(input);
-
     // Create output selection.
     PropertyPtr outputSelection;
     if((selectXAxisInRange() || selectYAxisInRange()) && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
         // First make sure we can safely modify the property container.
-        PropertyContainer* mutableContainer = output.expectMutableLeafObject(subject());
+        PropertyContainer* mutableContainer = state.expectMutableLeafObject(subject());
         // Add the selection property to the output container.
         outputSelection = mutableContainer->createProperty(DataBuffer::Uninitialized, Property::GenericSelectionProperty, containerPath);
     }
 
     // Create output data table.
-    DataTable* table = output.createObject<DataTable>(QStringLiteral("scatter"), request.modificationNode(),
+    DataTable* table = state.createObject<DataTable>(QStringLiteral("scatter"), request.modificationNode(),
         DataTable::Scatter, tr("%1 vs. %2").arg(yAxisProperty().nameWithComponent()).arg(xAxisProperty().nameWithComponent()));
-    OVITO_ASSERT(table == output.getObjectBy<DataTable>(request.modificationNode(), QStringLiteral("scatter")));
+    OVITO_ASSERT(table == state.getObjectBy<DataTable>(request.modificationNode(), QStringLiteral("scatter")));
 
     // The actual computation can be performed in a separate worker thread.
     return AsynchronousTask<PipelineFlowState>::runAsync([
-            output = std::move(output),
+            state = std::move(state),
             xProperty = std::move(xProperty),
             yProperty = std::move(yProperty),
             xVecComponent,
@@ -289,10 +286,10 @@ Future<PipelineFlowState> ScatterPlotModifier::evaluateModifier(const ModifierEv
             QString statusMessage = tr("%1 %2 selected (%3%)").arg(numSelected)
                         .arg(elementDescriptionName)
                         .arg((FloatType)numSelected * 100 / std::max((size_t)1, outputSelection->size()), 0, 'f', 1);
-            output.setStatus(PipelineStatus(std::move(statusMessage)));
+            state.setStatus(std::move(statusMessage));
         }
 
-        return std::move(output);
+        return std::move(state);
     });
 }
 

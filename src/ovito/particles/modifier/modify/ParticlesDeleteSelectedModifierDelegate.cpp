@@ -47,7 +47,7 @@ QVector<DataObjectReference> ParticlesDeleteSelectedModifierDelegate::OOMetaClas
 /******************************************************************************
  * Applies this modifier delegate to the data.
  ******************************************************************************/
-Future<PipelineFlowState> ParticlesDeleteSelectedModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+Future<PipelineFlowState> ParticlesDeleteSelectedModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     // The actual computation can be performed in a separate worker thread.
     return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state)]() mutable {
@@ -123,7 +123,7 @@ QVector<DataObjectReference> BondsDeleteSelectedModifierDelegate::OOMetaClass::g
 /******************************************************************************
  * Applies this modifier delegate to the data.
  ******************************************************************************/
-Future<PipelineFlowState> BondsDeleteSelectedModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+Future<PipelineFlowState> BondsDeleteSelectedModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     // The actual computation can be performed in a separate worker thread.
     return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state)]() mutable {

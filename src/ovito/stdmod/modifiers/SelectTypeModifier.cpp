@@ -98,7 +98,7 @@ void SelectTypeModifier::propertyChanged(const PropertyFieldDescriptor* field)
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> SelectTypeModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
+Future<PipelineFlowState> SelectTypeModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
     if(!subject())
         throw Exception(tr("No input element type selected."));
@@ -110,8 +110,7 @@ Future<PipelineFlowState> SelectTypeModifier::evaluateModifier(const ModifierEva
         throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
             .arg(subject().dataClass()->pythonName()).arg(sourceProperty().containerClass()->propertyClassDisplayName()));
 
-    PipelineFlowState output = std::move(input);
-    PropertyContainer* container = output.expectMutableLeafObject(subject());
+    PropertyContainer* container = state.expectMutableLeafObject(subject());
     container->verifyIntegrity();
 
     // Get the input property.
@@ -145,7 +144,7 @@ Future<PipelineFlowState> SelectTypeModifier::evaluateModifier(const ModifierEva
 
     // The actual computation can be performed in a separate worker thread.
     return AsynchronousTask<PipelineFlowState>::runAsync([
-            output = std::move(output),
+            state = std::move(state),
             container,
             typePropertyObject,
             idsToSelect = std::move(idsToSelect),
@@ -207,7 +206,7 @@ Future<PipelineFlowState> SelectTypeModifier::evaluateModifier(const ModifierEva
         // To speed up future queries, store the selection count in the selection property object.
         selProperty->setNonzeroCount(nSelected);
 
-        output.addAttribute(QStringLiteral("SelectType.num_selected"), QVariant::fromValue(nSelected), createdByNode);
+        state.addAttribute(QStringLiteral("SelectType.num_selected"), QVariant::fromValue(nSelected), createdByNode);
 
         QString statusMessage = tr("%1 out of %2 %3 selected (%4%)")
             .arg(nSelected)
@@ -215,9 +214,9 @@ Future<PipelineFlowState> SelectTypeModifier::evaluateModifier(const ModifierEva
             .arg(container->getOOMetaClass().elementDescriptionName())
             .arg((FloatType)nSelected * 100 / std::max((size_t)1,typePropertyObject->size()), 0, 'f', 1);
 
-        output.setStatus(PipelineStatus(std::move(statusMessage)));
+        state.setStatus(std::move(statusMessage));
 
-        return std::move(output);
+        return std::move(state);
     });
 }
 

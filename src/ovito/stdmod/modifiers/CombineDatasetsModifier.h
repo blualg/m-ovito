@@ -74,7 +74,7 @@ public:
     explicit CombineDatasetsModifier(ObjectInitializationFlags flags);
 
     /// Modifies the input data.
-    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) override;
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
 
     /// Returns the number of animation frames this modifier can provide.
     virtual int numberOfOutputFrames(ModificationNode* node) const override {
@@ -89,16 +89,16 @@ public:
         return std::move(inputLabels);
     }
 
-    /// Implementation method, which performs the merging of two pipeline states.
-    void combineDatasets(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& secondaryState);
-
 protected:
 
-    /// \brief Is called when a RefTarget referenced by this object generated an event.
+    /// Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
     /// Is called when the value of a reference field of this object changes.
     virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
+
+    /// Implementation method, which performs the merging of two pipeline states.
+    Future<PipelineFlowState> combineDatasets(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& secondaryState);
 
 private:
 

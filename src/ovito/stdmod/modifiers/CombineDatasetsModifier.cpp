@@ -58,7 +58,7 @@ CombineDatasetsModifier::CombineDatasetsModifier(ObjectInitializationFlags flags
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> CombineDatasetsModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
+Future<PipelineFlowState> CombineDatasetsModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
     // Get the secondary data source.
     if(!secondaryDataSource())
@@ -68,7 +68,7 @@ Future<PipelineFlowState> CombineDatasetsModifier::evaluateModifier(const Modifi
     PipelineEvaluationResult secondaryStateFuture = secondaryDataSource()->evaluate(request);
 
     // Wait for the data to become available.
-    return secondaryStateFuture.then(*this, [this, state = std::move(input), request](const PipelineFlowState& secondaryState) mutable {
+    return secondaryStateFuture.then(*this, [this, state = std::move(state), request](const PipelineFlowState& secondaryState) mutable -> Future<PipelineFlowState> {
 
         // Make sure the obtained dataset is valid and ready to use.
         if(secondaryState.status().type() == PipelineStatus::Error) {
@@ -87,19 +87,17 @@ Future<PipelineFlowState> CombineDatasetsModifier::evaluateModifier(const Modifi
         state.intersectStateValidity(secondaryState.stateValidity());
 
         // Perform the merging of two pipeline states.
-        combineDatasets(request, state, secondaryState);
-
-        return std::move(state);
+        return combineDatasets(request, std::move(state), secondaryState);
     });
 }
 
 /******************************************************************************
 * Implementation method, which performs the merging of two pipeline states.
 ******************************************************************************/
-void CombineDatasetsModifier::combineDatasets(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& secondaryState)
+Future<PipelineFlowState> CombineDatasetsModifier::combineDatasets(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& secondaryState)
 {
     if(!state || !secondaryState)
-        return;
+        return std::move(state);
 
     // Merge validity intervals of primary and secondary datasets.
     state.intersectStateValidity(secondaryState.stateValidity());
@@ -124,9 +122,6 @@ void CombineDatasetsModifier::combineDatasets(const ModifierEvaluationRequest& r
         }
     }
 
-    // Let the delegates do their job and merge the data objects of the two datasets.
-    applyDelegates(request, state, { std::reference_wrapper<const PipelineFlowState>(secondaryState) });
-
     // Special handling for the simulation cell. If the secondary dataset contains a simulation cell but
     // the primary doesn't, then copy it over to the primary dataset.
     if(const SimulationCell* secondaryCell = secondaryState.getObject<SimulationCell>()) {
@@ -135,6 +130,9 @@ void CombineDatasetsModifier::combineDatasets(const ModifierEvaluationRequest& r
             state.addObject(secondaryCell);
         }
     }
+
+    // Let the delegates do their job and merge the data objects of the two datasets.
+    return applyDelegates(request, std::move(state), { std::reference_wrapper<const PipelineFlowState>(secondaryState) });
 }
 
 /******************************************************************************

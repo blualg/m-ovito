@@ -39,7 +39,7 @@ SET_PROPERTY_FIELD_LABEL(PipelineNode, pipelineTrajectoryCachingEnabled, "Precom
 * Constructor.
 ******************************************************************************/
 PipelineNode::PipelineNode(ObjectInitializationFlags flags, bool enableCaching) : ActiveObject(flags),
-    _pipelineCache(this, false, enableCaching),
+    _pipelineCache(this, enableCaching),
     _pipelineTrajectoryCachingEnabled(false)
 {
 }

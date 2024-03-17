@@ -105,16 +105,16 @@ bool DelegatingModifier::preEvaluationRun(const ModifierEvaluationRequest& reque
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> DelegatingModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
+Future<PipelineFlowState> DelegatingModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
     // Apply the modifier delegate to the input data.
-    return applyDelegate(request, std::move(input));
+    return applyDelegate(request, std::move(state));
 }
 
 /******************************************************************************
 * Lets the modifier's delegate operate on a pipeline flow state.
 ******************************************************************************/
-Future<PipelineFlowState> DelegatingModifier::applyDelegate(const ModifierEvaluationRequest& request, PipelineFlowState input, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+Future<PipelineFlowState> DelegatingModifier::applyDelegate(const ModifierEvaluationRequest& request, PipelineFlowState&& input, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     OVITO_ASSERT(!isUndoRecording());
     OVITO_ASSERT(request.modifier() == this);
@@ -127,7 +127,7 @@ Future<PipelineFlowState> DelegatingModifier::applyDelegate(const ModifierEvalua
         throw Exception(tr("The modifier's pipeline input does not contain the expected kind of data."));
 
     // Call the delegate function.
-    return delegate()->apply(request, input, input, additionalInputs);
+    return delegate()->apply(request, PipelineFlowState(input), input, additionalInputs);
 }
 
 /******************************************************************************
@@ -181,16 +181,16 @@ bool MultiDelegatingModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> MultiDelegatingModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
+Future<PipelineFlowState> MultiDelegatingModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
     // Apply all enabled modifier delegates to the input data.
-    return applyDelegates(request, std::move(input));
+    return applyDelegates(request, std::move(state));
 }
 
 /******************************************************************************
 * Lets the registered modifier delegates operate on a pipeline flow state.
 ******************************************************************************/
-Future<PipelineFlowState> MultiDelegatingModifier::applyDelegates(const ModifierEvaluationRequest& request, PipelineFlowState input, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+Future<PipelineFlowState> MultiDelegatingModifier::applyDelegates(const ModifierEvaluationRequest& request, PipelineFlowState&& input, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     OVITO_ASSERT(!isUndoRecording());
     OVITO_ASSERT(request.modifier() == this);

@@ -112,7 +112,6 @@ namespace Ovito
     class PipelineEvaluationRequest;
     class PipelineEvaluationResult;
     class DataVis;
-    class TransformingDataVis;
     class StaticSource;
     class ModifierEvaluationRequest;
     using ModifierInitializationRequest = ModifierEvaluationRequest;

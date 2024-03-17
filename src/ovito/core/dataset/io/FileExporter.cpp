@@ -158,7 +158,7 @@ bool FileExporter::isSuitableSceneNode(SceneNode* node) const
     if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(node)) {
         if(sceneToExport()) {
             AnimationTime time = sceneToExport()->animationSettings()->currentTime();
-            return isSuitablePipelineOutput(pipeline->evaluateRenderingPipeline(PipelineEvaluationRequest(time)).result());
+            return isSuitablePipelineOutput(pipeline->evaluatePipeline(PipelineEvaluationRequest(time)).result());
         }
     }
     return false;
@@ -187,7 +187,7 @@ bool FileExporter::isSuitablePipelineOutput(const PipelineFlowState& state) cons
 /******************************************************************************
 * Evaluates the pipeline whose data is to be exported.
 ******************************************************************************/
-PipelineFlowState FileExporter::getPipelineDataToBeExported(int frame, bool requestRenderState) const
+PipelineFlowState FileExporter::getPipelineDataToBeExported(int frame) const
 {
     if(!sceneToExport())
         throw Exception(tr("No scene has been specified for file export."));
@@ -198,9 +198,8 @@ PipelineFlowState FileExporter::getPipelineDataToBeExported(int frame, bool requ
 
     try {
         // Evaluate pipeline.
-        PipelineEvaluationRequest request(AnimationTime::fromFrame(frame));
-        request.setThrowOnError(ExecutionContext::current().isScripting());
-        PipelineEvaluationResult result = requestRenderState ? pipeline->evaluateRenderingPipeline(request) : pipeline->evaluatePipeline(request);
+        PipelineEvaluationRequest request(AnimationTime::fromFrame(frame), ExecutionContext::current().isScripting());
+        PipelineEvaluationResult result = pipeline->evaluatePipeline(request);
         const PipelineFlowState& state = result.result();
 
         if(ExecutionContext::current().isScripting() && state.status().type() == PipelineStatus::Error)

@@ -35,7 +35,7 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshReplicateModifierDelegate);
 /******************************************************************************
  * Applies this modifier delegate to the data.
  ******************************************************************************/
-Future<PipelineFlowState> SurfaceMeshReplicateModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+Future<PipelineFlowState> SurfaceMeshReplicateModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     ReplicateModifier* modifier = static_object_cast<ReplicateModifier>(request.modifier());
 

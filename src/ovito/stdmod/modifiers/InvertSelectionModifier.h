@@ -44,7 +44,7 @@ public:
     explicit InvertSelectionModifier(ObjectInitializationFlags flags);
 
     /// Modifies the input data.
-    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) override;
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
 };
 
 }   // End of namespace

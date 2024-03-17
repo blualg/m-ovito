@@ -57,7 +57,7 @@ public:
     explicit LoadTrajectoryModifier(ObjectInitializationFlags flags);
 
     /// Modifies the input data.
-    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) override;
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
 
     /// Returns the number of animation frames this modifier can provide.
     virtual int numberOfOutputFrames(ModificationNode* node) const override {

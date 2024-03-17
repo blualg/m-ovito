@@ -48,10 +48,8 @@ public:
     PTMNeighborFinder(bool all_properties);
 
     /// \brief Prepares the tree data structure.
-    /// \return \c false when the operation has been canceled by the user;
-    ///         \c true on success.
     /// \throw Exception on error.
-    bool prepare(BufferReadAccess<Point3> positions, const SimulationCell* cell, BufferReadAccess<SelectionIntType> selection,
+    void prepare(BufferReadAccess<Point3> positions, const SimulationCell* cell, BufferReadAccess<SelectionIntType> selection,
                  ConstDataBufferPtr structuresArray,
                  ConstDataBufferPtr orientationsArray,
                  ConstDataBufferPtr correspondencesArray);

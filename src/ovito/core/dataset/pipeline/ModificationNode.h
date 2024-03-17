@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/pipeline/ActiveObject.h>
+#include <ovito/core/utilities/concurrent/FutureCache.h>
 #include "ModifierGroup.h"
 #include "PipelineNode.h"
 
@@ -129,6 +130,10 @@ public:
     /// Asks this object to delete itself.
     virtual void requestObjectDeletion() override;
 
+    /// Returns the node's cache for partial modifier results.
+    /// This cache can be used to enable fast interactive updates after parameter changes that do not invalidate the entire result.
+    FutureCache<DataOORef<const DataCollection>>& partialResultsCache() { return _partialResultsCache; }
+
 protected:
 
     /// Asks the object for the result of the data pipeline.
@@ -157,6 +162,10 @@ private:
 
     /// The logical group this modification node belongs to (only used in the GUI).
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<ModifierGroup>, modifierGroup, setModifierGroup, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_SUB_ANIM);
+
+    /// Cache for partial results computed by the modifier.
+    /// This can be used by the modifier to enable fast interactive updates after parameter changes that do not invalidate the entire result.
+    FutureCache<DataOORef<const DataCollection>> _partialResultsCache;
 };
 
 /// This macro registers some ModificationNode-derived class as the pipeline node type of some Modifier-derived class.

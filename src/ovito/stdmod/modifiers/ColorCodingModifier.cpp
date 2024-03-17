@@ -185,7 +185,7 @@ bool ColorCodingModifierDelegate::preEvaluationRun(const ModifierEvaluationReque
 /******************************************************************************
  * Applies this modifier delegate to the data.
  ******************************************************************************/
-Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     const ColorCodingModifier* modifier = static_object_cast<ColorCodingModifier>(request.modifier());
 

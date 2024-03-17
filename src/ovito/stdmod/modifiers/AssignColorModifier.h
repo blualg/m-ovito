@@ -41,7 +41,7 @@ class OVITO_STDMOD_EXPORT AssignColorModifierDelegate : public ModifierDelegate
 public:
 
     /// Applies the modifier operation to the data in a pipeline flow state.
-    virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+    virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 
     /// This function is called by the pipeline system before a new modifier evaluation begins.
     virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;

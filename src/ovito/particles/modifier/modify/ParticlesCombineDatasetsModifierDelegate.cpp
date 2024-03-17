@@ -27,7 +27,7 @@
 #include <ovito/core/oo/CloneHelper.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
-#include <ovito/core/app/Application.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "ParticlesCombineDatasetsModifierDelegate.h"
 
 namespace Ovito {
@@ -45,19 +45,19 @@ QVector<DataObjectReference> ParticlesCombineDatasetsModifierDelegate::OOMetaCla
 }
 
 /******************************************************************************
-* Modifies the input data.
-******************************************************************************/
-PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+ * Applies this modifier delegate to the data.
+ ******************************************************************************/
+Future<PipelineFlowState> ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     // Get the secondary dataset.
     if(additionalInputs.empty())
-        return PipelineStatus::Success;
+        return std::move(state);
     const PipelineFlowState& secondaryState = additionalInputs.front();
 
     // Get the particles from secondary dataset.
     const Particles* secondaryParticles = secondaryState.getObject<Particles>();
     if(!secondaryParticles)
-        return PipelineStatus::Success;
+        return std::move(state);
     const Property* secondaryPosProperty = secondaryParticles->expectProperty(Particles::PositionProperty);
 
     // Get the positions from the primary dataset.
@@ -65,7 +65,7 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
     // If primary dataset does not contain particles yet, simply copy the particles from the secondary dataset over to the first.
     if(!primaryParticles) {
         state.addObject(secondaryParticles);
-        return PipelineStatus::Success;
+        return std::move(state);
     }
     Particles* particles = state.makeMutable(primaryParticles);
 
@@ -291,11 +291,12 @@ PipelineStatus ParticlesCombineDatasetsModifierDelegate::apply(const ModifierEva
     if(secondaryFrame < 0)
         secondaryFrame = request.time().frame();
 
-    QString statusMessage = tr("Merged %1 existing particles with %2 particles from frame %3 of second dataset.")
+    state.setStatus(PipelineStatus(secondaryState.status().type(), tr("Merged %1 existing particles with %2 particles from frame %3 of second dataset.")
             .arg(primaryParticleCount)
             .arg(secondaryParticleCount)
-            .arg(secondaryFrame);
-    return PipelineStatus(secondaryState.status().type(), statusMessage);
+            .arg(secondaryFrame)));
+
+    return std::move(state);
 }
 
 }   // End of namespace

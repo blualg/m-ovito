@@ -90,8 +90,6 @@ SET(SourceFiles
     dataset/data/DataObject.cpp
     dataset/data/DataBuffer.cpp
     dataset/data/DataCollection.cpp
-    dataset/data/TransformingDataVis.cpp
-    dataset/data/TransformedDataObject.cpp
     dataset/data/camera/AbstractCameraObject.cpp
     dataset/data/camera/AbstractCameraSource.cpp
     dataset/data/AttributeDataObject.cpp

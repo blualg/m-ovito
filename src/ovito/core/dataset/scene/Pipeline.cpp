@@ -23,7 +23,6 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/data/DataObject.h>
-#include <ovito/core/dataset/data/TransformingDataVis.h>
 #include <ovito/core/dataset/pipeline/PipelineNode.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
@@ -56,8 +55,7 @@ SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(Pipeline, source, "pipelineSource"); // For 
 * Constructor.
 ******************************************************************************/
 Pipeline::Pipeline(ObjectInitializationFlags flags) : SceneNode(flags),
-    _pipelineCache(this, false),
-    _pipelineRenderingCache(this, true),
+    _pipelineCache(this),
     _pipelineTrajectoryCachingEnabled(false),
     _preliminaryUpdatesEnabled(true)
 {
@@ -80,27 +78,13 @@ void Pipeline::preEvaluationCheck() const
         head()->preEvaluationCheck();
 }
 
-#if 0 // TODO
-/******************************************************************************
-* Performs a synchronous evaluation of the pipeline yielding only preliminary results.
-******************************************************************************/
-const PipelineFlowState& Pipeline::evaluatePipelineSynchronous(const PipelineEvaluationRequest& request, bool includeVisElements)
-{
-    OVITO_ASSERT(ExecutionContext::current().isValid());
-    return includeVisElements ?
-        _pipelineRenderingCache.evaluatePipelineSynchronous(request) :
-        _pipelineCache.evaluatePipelineSynchronous(request);
-}
-#endif
-
 /******************************************************************************
 * Invalidates the data pipeline cache of the object node.
 ******************************************************************************/
 void Pipeline::invalidatePipelineCache(TimeInterval keepInterval)
 {
-    // Invalidate data caches.
+    // Invalidate data cache.
     _pipelineCache.invalidate(keepInterval);
-    _pipelineRenderingCache.invalidate(keepInterval);
 
     // Also mark the cached bounding box of this scene node as invalid.
     invalidateBoundingBox();
@@ -178,7 +162,6 @@ bool Pipeline::referenceEvent(RefTarget* source, const ReferenceEvent& event)
         else if(event.type() == ReferenceEvent::TargetDeleted) {
             // Reduce memory footprint when the pipeline's data provider gets deleted.
             _pipelineCache.reset();
-            _pipelineRenderingCache.reset();
 
             // Data provider has been deleted -> delete scene node as well.
             if(!isUndoingOrRedoing())
@@ -198,7 +181,6 @@ bool Pipeline::referenceEvent(RefTarget* source, const ReferenceEvent& event)
             if(preliminaryUpdatesEnabled()) {
                 // Invalidate the cache whenever the last pipeline stage can provide a new interactive state.
                 _pipelineCache.invalidateInteractiveState();
-                _pipelineRenderingCache.invalidateInteractiveState();
                 // Recompute the cached bounding box of this scene node.
                 invalidateBoundingBox();
                 // Inform all vis elements that their input state has changed when the pipeline reports that a new preliminary output state is available.
@@ -228,19 +210,8 @@ bool Pipeline::referenceEvent(RefTarget* source, const ReferenceEvent& event)
             // Recompute bounding box when a visual element changes.
             invalidateBoundingBox();
 
-            // Invalidate the rendering pipeline cache whenever an asynchronous visual element changes.
-            if(dynamic_object_cast<TransformingDataVis>(source)) {
-                // Do not completely discard these cached objects, because we might be able to re-use the transformed data objects.
-                _pipelineRenderingCache.invalidate();
-
-                // Trigger a pipeline re-evaluation.
-                // Note: We have to call notifyTargetChanged() here, because the visElements field is flagged as PROPERTY_FIELD_NO_CHANGE_MESSAGE.
-                notifyTargetChanged(PROPERTY_FIELD(visElements));
-            }
-            else {
-                // Trigger an interactive viewport repaint without pipeline re-evaluation.
-                notifyDependents(ReferenceEvent::InteractiveStateAvailable);
-            }
+            // Trigger an interactive viewport repaint without pipeline re-evaluation.
+            notifyDependents(ReferenceEvent::InteractiveStateAvailable);
         }
     }
     if(source == this->source()) {
@@ -305,7 +276,7 @@ void Pipeline::loadFromStream(ObjectLoadStream& stream)
     stream.closeChunk();
 
     // Transfer the caching flag loaded from the state file to the internal cache instance.
-    _pipelineRenderingCache.setPrecomputeAllFrames(pipelineTrajectoryCachingEnabled());
+    _pipelineCache.setPrecomputeAllFrames(pipelineTrajectoryCachingEnabled());
 }
 
 /******************************************************************************
@@ -315,7 +286,6 @@ void Pipeline::rescaleTime(const TimeInterval& oldAnimationInterval, const TimeI
 {
     SceneNode::rescaleTime(oldAnimationInterval, newAnimationInterval);
     _pipelineCache.invalidate();
-    _pipelineRenderingCache.invalidate();
 }
 
 /******************************************************************************
@@ -389,7 +359,7 @@ void Pipeline::setSource(PipelineNode* sourceObject)
 ******************************************************************************/
 Box3 Pipeline::localBoundingBox(AnimationTime time, TimeInterval& validity) const
 {
-    const PipelineFlowState& state = getCachedRenderingPipelineOutput(time);
+    const PipelineFlowState& state = getCachedPipelineOutput(time);
 
     // Let visual elements compute the bounding boxes of the data objects.
     Box3 bb;
@@ -423,6 +393,7 @@ void Pipeline::getDataObjectBoundingBox(AnimationTime time, const DataObject* da
                 bb.addBox(vis->boundingBoxImmediate(time, dataObjectPath, this, state, validity));
             }
             catch(const Exception& ex) {
+                // Swallow any errors that might occur during the computation of the bounding box after printing them to the console.
                 ex.logError();
             }
         }
@@ -514,7 +485,7 @@ void Pipeline::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget*
 void Pipeline::propertyChanged(const PropertyFieldDescriptor* field)
 {
     if(field == PROPERTY_FIELD(pipelineTrajectoryCachingEnabled)) {
-        _pipelineRenderingCache.setPrecomputeAllFrames(pipelineTrajectoryCachingEnabled());
+        _pipelineCache.setPrecomputeAllFrames(pipelineTrajectoryCachingEnabled());
 
         // Send target changed event to trigger a new pipeline evaluation, which is
         // needed to start the precomputation process.

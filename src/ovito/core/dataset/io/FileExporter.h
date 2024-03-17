@@ -101,7 +101,7 @@ public:
     virtual bool supportsMultiFrameFiles() const { return false; }
 
     /// \brief Evaluates the pipeline whose data is to be exported.
-    PipelineFlowState getPipelineDataToBeExported(int frame, bool requestRenderState = false) const;
+    PipelineFlowState getPipelineDataToBeExported(int frame) const;
 
     /// \brief Returns a string with the list of available data objects of the given type.
     QString getAvailableDataObjectList(const PipelineFlowState& state, const DataObject::OOMetaClass& objectType) const;

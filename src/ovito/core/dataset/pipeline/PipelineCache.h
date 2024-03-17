@@ -40,7 +40,7 @@ class OVITO_CORE_EXPORT PipelineCache final
 public:
 
     /// Constructor.
-    PipelineCache(RefTarget* owner, bool includeVisElements, bool enableCaching = true);
+    PipelineCache(RefTarget* owner, bool enableCaching = true);
 
     /// Destructor.
     ~PipelineCache();
@@ -116,14 +116,8 @@ private:
     /// The set of activate pipeline evaluations.
     std::forward_list<EvaluationInProgress> _evaluationsInProgress;
 
-    /// A cache with the transformed data objects generated during the last pipeline evaluation.
-    std::vector<OORef<TransformedDataObject>> _cachedTransformedDataObjects;
-
     /// The object this cache belongs to (either a PipelineSceneNode or a CachingPipelineObject).
     RefTarget* _ownerObject;
-
-    /// Include the effect of visual elements in the pipeline evaluation.
-    bool _includeVisElements = false;
 
     /// Enables the precomputation of the pipeline output for all animation frames.
     bool _precomputeAllFrames = false;

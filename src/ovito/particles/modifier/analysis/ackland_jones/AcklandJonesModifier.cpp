@@ -33,7 +33,7 @@ namespace Ovito {
 IMPLEMENT_CREATABLE_OVITO_CLASS(AcklandJonesModifier);
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
 AcklandJonesModifier::AcklandJonesModifier(ObjectInitializationFlags flags) : StructureIdentificationModifier(flags)
 {
@@ -48,70 +48,35 @@ AcklandJonesModifier::AcklandJonesModifier(ObjectInitializationFlags flags) : St
 }
 
 /******************************************************************************
-* Creates and initializes a computation engine that will compute the
-* modifier's results.
+* Performs the actual analysis.
 ******************************************************************************/
-Future<ModifierEnginePtr> AcklandJonesModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+void AcklandJonesModifier::AcklandJonesAnalysisAlgorithm::identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection)
 {
-    // If pipeline is in interactive mode, skip the long-running computation step.
-    if(request.interactiveMode())
-        return {};
+    if(simulationCell && simulationCell->is2D())
+        throw Exception(tr("The Ackland-Jones analysis algorithm does not support 2d simulation cells."));
 
-    // Get modifier input.
-    const Particles* particles = input.expectObject<Particles>();
-    particles->verifyIntegrity();
-    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
-    const SimulationCell* simCell = input.expectObject<SimulationCell>();
-    if(simCell->is2D())
-        throw Exception(tr("The Ackland-Jones ananlysis modifier does not support 2d simulation cells."));
-
-    // Get particle selection.
-    const Property* selectionProperty = onlySelectedParticles() ? particles->expectProperty(Particles::SelectionProperty) : nullptr;
-
-    // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<AcklandJonesAnalysisEngine>(request, particles, posProperty, simCell, structureTypes(), selectionProperty);
-}
-
-/******************************************************************************
-* Performs the actual analysis. This method is executed in a worker thread.
-******************************************************************************/
-void AcklandJonesModifier::AcklandJonesAnalysisEngine::perform()
-{
-    setProgressText(tr("Performing Ackland-Jones analysis"));
+    this_task::setProgressText(tr("Performing Ackland-Jones analysis"));
 
     // Prepare the neighbor finder.
     NearestNeighborFinder neighborFinder(14);
-    if(!neighborFinder.prepare(positions(), cell(), selection()))
-        return;
-
-    BufferWriteAccess<int32_t, access_mode::discard_write> output(structures());
+    neighborFinder.prepare(particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
 
     // Perform analysis on each particle.
-    if(!selection()) {
-        parallelForWithProgress(positions()->size(), [&](size_t index) {
-            output[index] = determineStructure(neighborFinder, index);
-        });
-    }
-    else {
-        BufferReadAccess<SelectionIntType> selectionData(selection());
-        parallelForWithProgress(positions()->size(), [&](size_t index) {
-            // Skip particles that are not included in the analysis.
-            if(selectionData[index])
-                output[index] = determineStructure(neighborFinder, index);
-            else
-                output[index] = OTHER;
-        });
-    }
-
-    // Release data that is no longer needed.
-    releaseWorkingData();
+    BufferReadAccess<SelectionIntType> selectionAcc(selection);
+    BufferWriteAccess<int32_t, access_mode::discard_write> structureAcc(structures());
+    parallelFor(particles->elementCount(), 1024, [&](size_t index) {
+        structureAcc[index] =
+            (!selectionAcc || selectionAcc[index]) // Skip particles that are not included in the analysis.
+                ? determineStructure(neighborFinder, index)
+                : OTHER;
+    });
 }
 
 /******************************************************************************
 * Determines the coordination structure of a single particle using the
 * bond-angle analysis method.
 ******************************************************************************/
-AcklandJonesModifier::StructureType AcklandJonesModifier::AcklandJonesAnalysisEngine::determineStructure(NearestNeighborFinder& neighFinder, size_t particleIndex)
+AcklandJonesModifier::StructureType AcklandJonesModifier::AcklandJonesAnalysisAlgorithm::determineStructure(NearestNeighborFinder& neighFinder, size_t particleIndex) const
 {
     // Find 14 nearest neighbors of current particle.
     NearestNeighborFinder::Query<14> neighborQuery(neighFinder);
@@ -191,18 +156,20 @@ AcklandJonesModifier::StructureType AcklandJonesModifier::AcklandJonesAnalysisEn
 }
 
 /******************************************************************************
-* Injects the computed results of the engine into the data pipeline.
+* Computes the structure identification statistics.
 ******************************************************************************/
-void AcklandJonesModifier::AcklandJonesAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+std::vector<int64_t> AcklandJonesModifier::AcklandJonesAnalysisAlgorithm::computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode) const
 {
-    StructureIdentificationEngine::applyResults(request, state);
+    std::vector<int64_t> typeCounts = StructureIdentificationModifier::Algorithm::computeStructureStatistics(structures, state, createdByNode);
 
     // Also output structure type counts, which have been computed by the base class.
-    state.addAttribute(QStringLiteral("AcklandJones.counts.OTHER"), QVariant::fromValue(getTypeCount(OTHER)), request.modificationNode());
-    state.addAttribute(QStringLiteral("AcklandJones.counts.FCC"), QVariant::fromValue(getTypeCount(FCC)), request.modificationNode());
-    state.addAttribute(QStringLiteral("AcklandJones.counts.HCP"), QVariant::fromValue(getTypeCount(HCP)), request.modificationNode());
-    state.addAttribute(QStringLiteral("AcklandJones.counts.BCC"), QVariant::fromValue(getTypeCount(BCC)), request.modificationNode());
-    state.addAttribute(QStringLiteral("AcklandJones.counts.ICO"), QVariant::fromValue(getTypeCount(ICO)), request.modificationNode());
+    state.addAttribute(QStringLiteral("AcklandJones.counts.OTHER"), QVariant::fromValue(typeCounts[OTHER]), createdByNode);
+    state.addAttribute(QStringLiteral("AcklandJones.counts.FCC"), QVariant::fromValue(typeCounts[FCC]), createdByNode);
+    state.addAttribute(QStringLiteral("AcklandJones.counts.HCP"), QVariant::fromValue(typeCounts[HCP]), createdByNode);
+    state.addAttribute(QStringLiteral("AcklandJones.counts.BCC"), QVariant::fromValue(typeCounts[BCC]), createdByNode);
+    state.addAttribute(QStringLiteral("AcklandJones.counts.ICO"), QVariant::fromValue(typeCounts[ICO]), createdByNode);
+
+    return typeCounts;
 }
 
 }   // End of namespace

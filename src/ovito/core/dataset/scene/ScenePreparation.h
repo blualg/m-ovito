@@ -45,13 +45,24 @@ class OVITO_CORE_EXPORT ScenePreparation : public QObject, public RefMaker
 public:
 
     /// Constructor.
-    explicit ScenePreparation(UserInterface& userInterface, Scene* scene = nullptr);
+    explicit ScenePreparation(UserInterface& userInterface, Scene* scene = nullptr, bool autoRestart = true);
 
     /// Returns the abstract user interface in which this object operates.
     UserInterface& userInterface() const { return _userInterface; }
 
     /// Returns a future that gets fulfilled once the scene is ready.
     SharedFuture<> future();
+
+    /// Returns whether automatic restarting of the scene preparation is enabled after the scene has been changed.
+    bool autoRestart() const { return _autoRestart; }
+
+    /// Controls automatic restarting of the scene preparation after the scene has been changed.
+    void setAutoRestart(bool enable) {
+        if(_autoRestart != enable) {
+            _autoRestart = enable;
+            restartPreparation();
+        }
+    }
 
 Q_SIGNALS:
 
@@ -128,6 +139,9 @@ private:
 
     /// Indicates that a restart of the preparation has already been scheduled.
     bool _isRestartScheduled = false;
+
+    /// Enables automatical restarting of the scene preparation after the scene has been changed.
+    bool _autoRestart = true;
 };
 
 }   // End of namespace

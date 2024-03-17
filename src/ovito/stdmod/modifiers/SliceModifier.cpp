@@ -83,7 +83,7 @@ QVector<DataObjectReference> LinesSliceModifierDelegate::OOMetaClass::getApplica
 /******************************************************************************
  * Performs the slicing of the lines.
  ******************************************************************************/
-Future<PipelineFlowState> LinesSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+Future<PipelineFlowState> LinesSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     SliceModifier* mod = static_object_cast<SliceModifier>(request.modifier());
     QString statusMessage;
@@ -342,12 +342,12 @@ void SliceModifier::initializeModifier(const ModifierInitializationRequest& requ
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> SliceModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input)
+Future<PipelineFlowState> SliceModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
-    Future<PipelineFlowState> future = MultiDelegatingModifier::evaluateModifier(request, input);
+    Future<PipelineFlowState> future = MultiDelegatingModifier::evaluateModifier(request, std::move(state));
 
     if(enablePlaneVisualization()) {
-        future.postprocess(*this, [this, request](PipelineFlowState state) {
+        future.postprocess(*this, [this, request](PipelineFlowState&& state) {
             Plane3 plane;
             FloatType slabWidth;
             TimeInterval interval;
@@ -408,7 +408,7 @@ Future<PipelineFlowState> SliceModifier::evaluateModifier(const ModifierEvaluati
                 plane.dist -= slabWidth;
                 createIntersectionPolygon(plane);
             }
-            return state;
+            return std::move(state);
         });
     }
     return future;

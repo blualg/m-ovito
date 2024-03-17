@@ -55,7 +55,7 @@ void ViewportWindow::setViewport(Viewport* vp, UserInterface& userInterface)
 
     _userInterface = &userInterface;
     _viewport.set(this, PROPERTY_FIELD(viewport), vp);
-    _scenePreparation = OORef<ScenePreparation>::create(userInterface, vp->scene());
+    _scenePreparation = OORef<ScenePreparation>::create(userInterface, vp->scene(), isVisible());
 
     // Automatically rerender window whenever the scene is changed.
     connect(&scenePreparation(), &ScenePreparation::viewportUpdateRequest, this, &ViewportWindow::requestUpdate);
@@ -83,6 +83,7 @@ void ViewportWindow::requestUpdate()
 void ViewportWindow::processViewportUpdate()
 {
     if(_updateRequested && _updateTimer.isActive()) {
+        _updateTimer.stop();
         handleUpdateRequest();
     }
 }

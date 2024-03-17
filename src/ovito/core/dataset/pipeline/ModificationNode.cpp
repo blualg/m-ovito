@@ -101,6 +101,7 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
                     setStatus(PipelineStatus(tr("Modifier group is currently turned off.")));
                 // Also clear pipeline cache in order to reduce memory footprint when modifier is disabled.
                 pipelineCache().reset();
+                partialResultsCache().reset();
             }
 
             // Manually generate target changed event when modifier group is being enabled/disabled.
@@ -139,18 +140,28 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
         // Invalidate cached results when the modifier or the upstream pipeline change.
         TimeInterval validityInterval = static_cast<const TargetChangedEvent&>(event).unchangedInterval();
 
-        // Let the modifier further reduce the remaining validity interval, e.g., if the modifier depends on other animation times.
-        if(modifier() && source == input())
-            modifier()->restrictInputValidityInterval(validityInterval);
+        if(source == input()) {
+            // Partial modifier results become invalid when the upstream pipeline changes.
+            partialResultsCache().reset();
+
+            // Let the modifier further reduce the remaining validity interval, e.g., if the modifier depends on other animation times.
+            if(modifier())
+                modifier()->restrictInputValidityInterval(validityInterval);
+        }
 
         // Propagate change event to upstream pipeline.
         // Note that this will invoke ModificationNode::notifyDependentsImpl(), which
         // takes care of invalidating the pipeline cache.
         notifyTargetChangedOutsideInterval(validityInterval);
 
-        // Refresh interactive viewports if requested by the modifier.
-        if(source == modifier() && modifier()->shouldRefreshViewportsAfterChange()) {
-            notifyDependents(ReferenceEvent::InteractiveStateAvailable);
+        if(source == modifier()) {
+            // Let the modifier decide whether partial compute results should be kept (depending on which modifier parameter has changed).
+            if(!modifier()->shouldKeepPartialResultsAfterChange(static_cast<const TargetChangedEvent&>(event)))
+                partialResultsCache().reset();
+
+            // Refresh interactive viewports if requested by the modifier.
+            if(modifier()->shouldRefreshViewportsAfterChange())
+                notifyDependents(ReferenceEvent::InteractiveStateAvailable);
         }
 
         return false;
@@ -176,6 +187,7 @@ void ModificationNode::referenceReplaced(const PropertyFieldDescriptor* field, R
 
         // Reset all caches when the modifier is replaced.
         pipelineCache().reset();
+        partialResultsCache().reset();
 
         // Update the status of the Modifier when it is detached from the ModificationNode.
         if(Modifier* oldMod = static_object_cast<Modifier>(oldTarget)) {
@@ -195,6 +207,7 @@ void ModificationNode::referenceReplaced(const PropertyFieldDescriptor* field, R
     else if(field == PROPERTY_FIELD(input) && !isBeingLoaded() && !isBeingDeleted()) {
         // Reset cache when the upstream pipeline is being replaced.
         pipelineCache().reset();
+        partialResultsCache().reset();
         // Update the status of the Modifier when ModificationNode is inserted/removed into pipeline.
         if(modifier())
             modifier()->notifyDependents(ReferenceEvent::PipelineInputChanged);
@@ -226,7 +239,7 @@ void ModificationNode::referenceReplaced(const PropertyFieldDescriptor* field, R
 void ModificationNode::notifyDependentsImpl(const ReferenceEvent& event) noexcept
 {
     if(event.type() == ReferenceEvent::TargetChanged) {
-        // Invalidate cached results when this modification node itself or its associated modifier change.
+        // Invalidate cached results when this modification node or its associated modifier change.
         pipelineCache().invalidate(static_cast<const TargetChangedEvent&>(event).unchangedInterval());
     }
     else if(event.type() == ReferenceEvent::ObjectStatusChanged) {

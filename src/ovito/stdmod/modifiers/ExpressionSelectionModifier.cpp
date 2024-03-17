@@ -97,7 +97,7 @@ bool ExpressionSelectionModifierDelegate::preEvaluationRun(const ModifierEvaluat
 /******************************************************************************
  * Applies this modifier delegate to the data.
  ******************************************************************************/
-Future<PipelineFlowState> ExpressionSelectionModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+Future<PipelineFlowState> ExpressionSelectionModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     ExpressionSelectionModifier* modifier = static_object_cast<ExpressionSelectionModifier>(request.modifier());
 

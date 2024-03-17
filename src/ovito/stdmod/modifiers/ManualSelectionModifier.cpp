@@ -83,7 +83,7 @@ void ManualSelectionModifier::propertyChanged(const PropertyFieldDescriptor* fie
 /******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> ManualSelectionModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState state)
+Future<PipelineFlowState> ManualSelectionModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
     // Retrieve the selection stored in the modifier application.
     ElementSelectionSet* selectionSet = getSelectionSet(request.modificationNode(), false);

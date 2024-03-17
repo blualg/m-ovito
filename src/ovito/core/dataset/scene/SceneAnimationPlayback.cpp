@@ -23,20 +23,24 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
+#include <ovito/core/dataset/scene/ScenePreparation.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
+#include <ovito/core/app/Application.h>
 #include <ovito/core/app/UserInterface.h>
 #include "SceneAnimationPlayback.h"
 
 namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(SceneAnimationPlayback);
+DEFINE_REFERENCE_FIELD(SceneAnimationPlayback, scene);
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-SceneAnimationPlayback::SceneAnimationPlayback(UserInterface& userInterface) : ScenePreparation(userInterface)
+SceneAnimationPlayback::SceneAnimationPlayback(UserInterface& userInterface) : _userInterface(userInterface)
 {
-    connect(this, &ScenePreparation::scenePreparationFinished, this, &SceneAnimationPlayback::scheduleNextAnimationFrame);
+    // This facility requires a Qt event loop.
+    Application::instance()->createQtApplication(false);
 }
 
 /******************************************************************************
@@ -97,11 +101,26 @@ void SceneAnimationPlayback::continuePlaybackAtFrame(int frame)
         scene()->animationSettings()->setCurrentFrame(frame);
 
         if(isPlaybackActive()) {
-            // Take time as we start to render the current frame.
+            // Take time as we start to prepare and render the current frame.
             _frameRenderingTimer.start();
 
-            // Once the scene is ready, schedule the next animation frame.
-            restartPreparation();
+            // Wait for the scene to be fully prepared, then schedule the next animation frame.
+            _numPendingPreparations = 1;
+            scene()->visitDependents([&](RefMaker* dependent) {
+                if(ScenePreparation* preparation = dynamic_object_cast<ScenePreparation>(dependent)) {
+                    if(preparation->autoRestart()) {
+                        _numPendingPreparations++;
+                        preparation->future().finally([self = OOWeakRef<SceneAnimationPlayback>(this)](Task&) noexcept {
+                            if(OORef<SceneAnimationPlayback> playback = self.lock()) {
+                                if(--playback->_numPendingPreparations == 0)
+                                    QMetaObject::invokeMethod(playback.get(), "scheduleNextAnimationFrame", Qt::QueuedConnection);
+                            }
+                        });
+                    }
+                }
+            });
+            if(--_numPendingPreparations == 0)
+                QMetaObject::invokeMethod(this, "scheduleNextAnimationFrame", Qt::QueuedConnection);
         }
     })) {
         // Stop playback on error during time change.
@@ -123,6 +142,7 @@ void SceneAnimationPlayback::scheduleNextAnimationFrame()
     }
 
     // Force immediate viewport update.
+    userInterface().updateViewports();
     userInterface().processViewportUpdateRequests();
 
     if(!_nextFrameTimer.isActive()) {
@@ -210,7 +230,8 @@ void SceneAnimationPlayback::timerEvent(QTimerEvent* event)
         if(isPlaybackActive())
             continuePlaybackAtFrame(newFrame);
     }
-    ScenePreparation::timerEvent(event);
+
+    QObject::timerEvent(event);
 }
 
 }   // End of namespace

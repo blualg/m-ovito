@@ -77,7 +77,7 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(SurfaceMeshPickInfo);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-SurfaceMeshVis::SurfaceMeshVis(ObjectInitializationFlags flags) : TransformingDataVis(flags),
+SurfaceMeshVis::SurfaceMeshVis(ObjectInitializationFlags flags) : DataVis(flags),
     _surfaceColor(1, 1, 1),
     _capColor(0.8, 0.8, 1.0),
     _showCap(true),
@@ -104,7 +104,7 @@ SurfaceMeshVis::SurfaceMeshVis(ObjectInitializationFlags flags) : TransformingDa
 ******************************************************************************/
 void SurfaceMeshVis::loadFromStreamComplete(ObjectLoadStream& stream)
 {
-    TransformingDataVis::loadFromStreamComplete(stream);
+    DataVis::loadFromStreamComplete(stream);
 
     // For backward compatibility with OVITO 3.5.4.
     // Create a color mapping sub-object if it wasn't loaded from the state file.
@@ -117,11 +117,6 @@ void SurfaceMeshVis::loadFromStreamComplete(ObjectLoadStream& stream)
 ******************************************************************************/
 void SurfaceMeshVis::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(smoothShading) || field == PROPERTY_FIELD(reverseOrientation) || field == PROPERTY_FIELD(colorMappingMode) || field == PROPERTY_FIELD(clipAtDomainBoundaries)) {
-        // This kind of parameter change triggers a regeneration of the cached RenderableSurfaceMesh.
-        invalidateTransformedObjects();
-    }
-
     // Whenever the pseudo-coloring mode is changed, update the source property reference.
     if(field == PROPERTY_FIELD(colorMappingMode) && !isBeingLoaded() && !isBeingDeleted() && !isUndoingOrRedoing() && surfaceColorMapping()) {
         const PropertyContainerClass* newContainerClass = nullptr;
@@ -132,65 +127,7 @@ void SurfaceMeshVis::propertyChanged(const PropertyFieldDescriptor* field)
             surfaceColorMapping()->setSourceProperty(surfaceColorMapping()->sourceProperty().convertToContainerClass(newContainerClass));
     }
 
-    TransformingDataVis::propertyChanged(field);
-}
-
-/******************************************************************************
-* This method is called when a reference target changes.
-******************************************************************************/
-bool SurfaceMeshVis::referenceEvent(RefTarget* source, const ReferenceEvent& event)
-{
-    if(source == surfaceColorMapping() && event.type() == ReferenceEvent::TargetChanged) {
-        if(static_cast<const TargetChangedEvent&>(event).field() == PROPERTY_FIELD(PropertyColorMapping::sourceProperty)) {
-            // This kind of parameter change triggers a regeneration of the cached RenderableSurfaceMesh.
-            invalidateTransformedObjects();
-        }
-    }
-    return TransformingDataVis::referenceEvent(source, event);
-}
-
-/******************************************************************************
-* Is called when the value of a reference field of this RefMaker changes.
-******************************************************************************/
-void SurfaceMeshVis::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
-{
-    if(field == PROPERTY_FIELD(surfaceColorMapping)) {
-        // This kind of parameter change triggers a regeneration of the cached RenderableSurfaceMesh.
-        invalidateTransformedObjects();
-    }
-    TransformingDataVis::referenceReplaced(field, oldTarget, newTarget, listIndex);
-}
-
-/******************************************************************************
-* Lets the vis element transform a data object in preparation for rendering.
-******************************************************************************/
-Future<PipelineFlowState> SurfaceMeshVis::transformDataImpl(const PipelineEvaluationRequest& request, const DataObject* dataObject, PipelineFlowState&& flowState)
-{
-    // Get the input surface mesh.
-    const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(dataObject);
-    if(!surfaceMesh)
-        return std::move(flowState);
-
-    // Make sure the surface mesh is ok.
-    surfaceMesh->verifyMeshIntegrity();
-
-    // Create compute engine.
-    auto engine = createSurfaceEngine(surfaceMesh);
-
-    // Submit engine for execution and post-process results.
-    return engine->runAsync(true)
-        .then(*this, [this, flowState = std::move(flowState), dataObject = OORef<DataObject>(dataObject)](DataOORef<const TriangleMesh>&& surfaceMesh, DataOORef<const TriangleMesh>&& capPolygonsMesh, std::vector<ColorA>&& materialColors, std::vector<size_t>&& originalFaceMap, bool renderFacesTwoSided, PipelineStatus&& status) mutable {
-            // Output the computed mesh as a RenderableSurfaceMesh.
-            DataOORef<RenderableSurfaceMesh> renderableMesh = DataOORef<RenderableSurfaceMesh>::create(
-                ObjectInitializationFlag::DontCreateVisElement, this, dataObject, std::move(surfaceMesh), std::move(capPolygonsMesh), !renderFacesTwoSided);
-            renderableMesh->setVisElement(this);
-            renderableMesh->setMaterialColors(std::move(materialColors));
-            renderableMesh->setOriginalFaceMap(std::move(originalFaceMap));
-            flowState.addObject(std::move(renderableMesh));
-            if(flowState.status().type() != PipelineStatus::Error && status.type() != PipelineStatus::Success)
-                flowState.setStatus(std::move(status));
-            return std::move(flowState);
-        });
+    DataVis::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -198,14 +135,31 @@ Future<PipelineFlowState> SurfaceMeshVis::transformDataImpl(const PipelineEvalua
 ******************************************************************************/
 Box3 SurfaceMeshVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-    Box3 bb;
+    // Get the input surface mesh.
+    const SurfaceMesh* surfaceMesh = path.lastAs<SurfaceMesh>();
+    if(!surfaceMesh)
+        return{};
+
+    // Check validity of the surface mesh.
+    surfaceMesh->verifyMeshIntegrity();
+    const SimulationCell* cell = surfaceMesh->domain();
+    if(cell && cell->is2D())
+        return {};
+
+    // Access mesh vertex coordinates.
+    BufferReadAccess<Point3> vertexPositions(surfaceMesh->vertices()->getProperty(SurfaceMeshVertices::PositionProperty));
+    if(!vertexPositions)
+        return {};
 
     // Compute mesh bounding box.
-    // Requires that the periodic SurfaceMesh has already been transformed into a non-periodic RenderableSurfaceMesh.
-    if(const RenderableSurfaceMesh* meshObj = path.lastAs<RenderableSurfaceMesh>()) {
-        if(meshObj->surfaceMesh()) bb.addBox(meshObj->surfaceMesh()->boundingBox());
-        if(meshObj->capPolygonsMesh()) bb.addBox(meshObj->capPolygonsMesh()->boundingBox());
+    Box3 bb;
+    for(Point3 p : vertexPositions) {
+        if(cell)
+            p = cell->wrapPoint(p);
+        if(!surfaceMesh->isPointCulled(p))
+            bb.addPoint(p);
     }
+
     return bb;
 }
 
@@ -214,10 +168,36 @@ Box3 SurfaceMeshVis::boundingBoxImmediate(AnimationTime time, const ConstDataObj
 ******************************************************************************/
 PipelineStatus SurfaceMeshVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
-    // Ignore render calls for the original SurfaceMesh.
-    // We are only interested in the RenderableSurfaceMesh.
-    if(path.lastAs<SurfaceMesh>())
+    // Get the surface mesh.
+    const SurfaceMesh* surfaceMesh = path.lastAs<SurfaceMesh>();
+    if(!surfaceMesh)
         return {};
+
+    // The key type used for caching the surface primitive:
+    using RenderableMeshCacheKey = RendererResourceKey<struct PrimitiveCache,
+        ConstDataObjectRef,     // SurfaceMesh object
+        bool,                   // reverseOrientation
+        bool,                   // smoothShading
+        ColorMappingMode,       // colorMappingMode
+        PropertyReference,      // surfaceColorMapping()->sourceProperty()
+        bool                    // clipAtDomainBoundaries
+    >;
+
+    // Lookup the renderable mesh in the vis cache.
+    auto& renderableMesh = frameGraph.visCache().lookup<std::shared_ptr<RenderableSurfaceMesh>>(RenderableMeshCacheKey(
+        path.back(),
+        reverseOrientation(),
+        smoothShading(),
+        colorMappingMode(),
+        surfaceColorMapping()->sourceProperty(),
+        clipAtDomainBoundaries()));
+
+    // Generate renderable mesh.
+    if(!renderableMesh) {
+        auto future = transformSurfaceMesh(surfaceMesh);
+        registerActiveFuture(future);
+        renderableMesh = future.result();
+    }
 
     // Get the rendering colors for the surface and cap meshes.
     FloatType surface_alpha = 1;
@@ -230,9 +210,9 @@ PipelineStatus SurfaceMeshVis::render(const ConstDataObjectPath& path, const Pip
     ColorA color_surface(colorMappingMode() == NoPseudoColoring ? surfaceColor() : Color(1,1,1), surface_alpha);
     ColorA color_cap(capColor(), cap_alpha);
 
-    // The key type used for caching the surface primitive:
-    using SurfaceCacheKey = RendererResourceKey<struct SurfaceMeshCache,
-        ConstDataObjectRef,         // Mesh object
+    // The key type used for caching the rendering primitives:
+    using PrimitiveCacheKey = RendererResourceKey<struct PrimitiveCache,
+        std::shared_ptr<RenderableSurfaceMesh>, // Renderable mesh
         ColorA,                     // Surface color
         ColorA,                     // Cap color
         bool                        // Edge highlighting
@@ -245,13 +225,8 @@ PipelineStatus SurfaceMeshVis::render(const ConstDataObjectPath& path, const Pip
         OORef<ObjectPickInfo> pickInfo;
     };
 
-    // Get the renderable mesh.
-    const RenderableSurfaceMesh* renderableMesh = path.lastAs<RenderableSurfaceMesh>();
-    if(!renderableMesh)
-        return {};
-
     // Lookup the rendering primitive in the vis cache.
-    auto& visCache = frameGraph.visCache().lookup<CacheValue>(SurfaceCacheKey(path.back(), color_surface, color_cap, highlightEdges()));
+    auto& visCache = frameGraph.visCache().lookup<CacheValue>(PrimitiveCacheKey(renderableMesh, color_surface, color_cap, highlightEdges()));
 
     // Check if we already have a valid rendering primitive that is up to date.
     if(!visCache.surfacePrimitive.mesh()) {
@@ -263,19 +238,16 @@ PipelineStatus SurfaceMeshVis::render(const ConstDataObjectPath& path, const Pip
         visCache.surfacePrimitive.setUniformColor(color_surface);
         visCache.surfacePrimitive.setEmphasizeEdges(highlightEdges());
         visCache.surfacePrimitive.setCullFaces(renderableMesh->backfaceCulling());
-        visCache.surfacePrimitive.setMesh(renderableMesh->surfaceMesh());
+        visCache.surfacePrimitive.setMesh(renderableMesh->surface());
 
-        // Get the original surface mesh.
-        if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(renderableMesh->sourceDataObject().get())) {
-            // Create the pick record that keeps a reference to the original data.
-            visCache.pickInfo = createPickInfo(surfaceMesh, renderableMesh);
-        }
+        // Create the pick record that keeps a reference to the original data.
+        visCache.pickInfo = createPickInfo(surfaceMesh, renderableMesh);
     }
 
     // Check if we already have a valid rendering primitive that is up to date.
     if(!visCache.capPrimitive.mesh() && showCap()) {
         visCache.capPrimitive.setUniformColor(color_cap);
-        visCache.capPrimitive.setMesh(renderableMesh->capPolygonsMesh(), MeshPrimitive::ConvexShapeMode);
+        visCache.capPrimitive.setMesh(renderableMesh->capPolygons(), MeshPrimitive::ConvexShapeMode);
     }
     else if(visCache.capPrimitive.mesh() && !showCap()) {
         visCache.capPrimitive.setMesh({});
@@ -294,17 +266,15 @@ PipelineStatus SurfaceMeshVis::render(const ConstDataObjectPath& path, const Pip
         frameGraph.addPrimitive(std::make_unique<MeshPrimitive>(visCache.capPrimitive), pipeline, (cap_alpha >= 1) ? frameGraph.addPickingGroup(pipeline) : 0);
     }
 
-    return {};
+    return renderableMesh->status();
 }
 
 /******************************************************************************
 * Create the viewport picking record for the surface mesh object.
 ******************************************************************************/
-OORef<ObjectPickInfo> SurfaceMeshVis::createPickInfo(const SurfaceMesh* mesh, const RenderableSurfaceMesh* renderableMesh) const
+OORef<ObjectPickInfo> SurfaceMeshVis::createPickInfo(const SurfaceMesh* mesh, std::shared_ptr<RenderableSurfaceMesh> renderableMesh) const
 {
-    OVITO_ASSERT(mesh);
-    OVITO_ASSERT(renderableMesh);
-    return OORef<SurfaceMeshPickInfo>::create(this, mesh, renderableMesh);
+    return OORef<SurfaceMeshPickInfo>::create(this, mesh, std::move(renderableMesh));
 }
 
 /******************************************************************************
@@ -439,84 +409,80 @@ QString SurfaceMeshPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
 }
 
 /******************************************************************************
-* Creates the asynchronous task that builds the non-peridic representation of the input surface mesh.
+* Transforms the SurfaceMesh into a renderable triangle mesh.
 ******************************************************************************/
-std::shared_ptr<SurfaceMeshVis::PrepareSurfaceEngine> SurfaceMeshVis::createSurfaceEngine(const SurfaceMesh* mesh) const
+Future<std::shared_ptr<RenderableSurfaceMesh>> SurfaceMeshVis::transformSurfaceMesh(const SurfaceMesh* surfaceMesh)
 {
-    return std::make_shared<PrepareSurfaceEngine>(
+    // Make sure the surface mesh is ok.
+    surfaceMesh->verifyMeshIntegrity();
+
+    // The actual work can be performed in a separate thread.
+    return AsynchronousTask<std::shared_ptr<RenderableSurfaceMesh>>::runAsync([
+            builder = createRenderableSurfaceBuilder(surfaceMesh),
+            surfaceIsClosed = surfaceIsClosed()]()
+    {
+        this_task::setProgressText(tr("Preparing mesh for display"));
+
+        // Determine which parts of the surface mesh to render.
+        // The following method may return optionally return a bit array indicating which mesh faces are part of the render set.
+        boost::dynamic_bitset<> faceSubset = builder->determineVisibleFaces();
+        this_task::throwIfCanceled();
+
+        const SurfaceMesh* inputMesh = builder->inputMesh();
+        OVITO_ASSERT(faceSubset.empty() || faceSubset.size() == inputMesh->topology()->faceCount());
+
+        // Determine whether we can use double-sided rendering mode for the faces.
+        // This is the case if there are no visible mesh faces that have an opposite face.
+        // If the input mesh contains pairs of faces, we have to use back-face culling during rendering.
+        bool renderFacesTwoSided;
+        if(faceSubset.empty()) {
+            renderFacesTwoSided = boost::algorithm::none_of(inputMesh->topology()->facesRange(),
+                std::bind(&SurfaceMeshTopology::hasOppositeFace, inputMesh->topology(), std::placeholders::_1));
+        }
+        else {
+            renderFacesTwoSided = boost::algorithm::none_of(inputMesh->topology()->facesRange(),
+                [&, topology=inputMesh->topology()](SurfaceMesh::face_index face) { return faceSubset[face] && topology->hasOppositeFace(face) && faceSubset[topology->oppositeFace(face)]; });
+        }
+        this_task::throwIfCanceled();
+
+        // Generate the non-periodic representation of the main surface mesh.
+        if(!builder->buildSurfaceTriangleMesh(faceSubset, renderFacesTwoSided))
+            throw Exception(tr("Failed to build non-periodic representation of periodic surface mesh. Periodic domain might be too small."));
+        this_task::throwIfCanceled();
+
+        // Determine the colors of the triangle mesh faces.
+        builder->determineFaceColors();
+        this_task::throwIfCanceled();
+
+        // Decide whether cap polygons need to be built.
+        if(surfaceIsClosed && inputMesh->domain() && !inputMesh->domain()->isDegenerate() && inputMesh->topology()->isClosed()) {
+            builder->buildCapTriangleMesh(faceSubset);
+        }
+
+        return builder->renderableMesh(!renderFacesTwoSided);
+    });
+}
+
+/******************************************************************************
+* Creates the object that builds the non-peridic representation of the input surface mesh.
+******************************************************************************/
+std::unique_ptr<SurfaceMeshVis::RenderableSurfaceBuilder> SurfaceMeshVis::createRenderableSurfaceBuilder(const SurfaceMesh* mesh) const
+{
+    return std::make_unique<RenderableSurfaceBuilder>(
         mesh,
         reverseOrientation(),
         smoothShading(),
         colorMappingMode(),
         surfaceColorMapping()->sourceProperty(),
-        colorMappingMode() == NoPseudoColoring ? surfaceColor() : Color(1,1,1),
-        surfaceIsClosed(),
         clipAtDomainBoundaries());
-}
-
-/******************************************************************************
-* Computes the results and stores them in this object for later retrieval.
-******************************************************************************/
-void SurfaceMeshVis::PrepareSurfaceEngine::perform()
-{
-    setProgressText(tr("Preparing mesh for display"));
-    bool generateCapPolygons = (_generateCapPolygons && cell() && cell()->volume3D() > FLOATTYPE_EPSILON && inputMesh()->topology()->isClosed());
-    if(generateCapPolygons)
-        beginProgressSubStepsWithWeights({1,1,12,1,8});
-    else
-        beginProgressSubStepsWithWeights({1,1,12,1});
-
-    determineVisibleFaces();
-
-    if(isCanceled()) return;
-    nextProgressSubStep();
-
-    // Determine whether we can simply use two-sided rendering to display faces.
-    // Thisis the case if there is no visible mesh face that has a
-    // corresponding opposite face.
-    if(_faceSubset.empty()) {
-        _renderFacesTwoSided = boost::algorithm::none_of(inputMesh()->topology()->facesRange(),
-            std::bind(&SurfaceMeshTopology::hasOppositeFace, inputMesh()->topology(), std::placeholders::_1));
-    }
-    else {
-        _renderFacesTwoSided = boost::algorithm::none_of(inputMesh()->topology()->facesRange(),
-            [&, topology=inputMesh()->topology()](SurfaceMesh::face_index face) { return _faceSubset[face] && topology->hasOppositeFace(face) && _faceSubset[topology->oppositeFace(face)]; });
-    }
-
-    if(isCanceled()) return;
-    nextProgressSubStep();
-
-    if(!buildSurfaceTriangleMesh() && !isCanceled())
-        throw Exception(tr("Failed to build non-periodic representation of periodic surface mesh. Periodic domain might be too small."));
-
-    if(isCanceled()) return;
-    nextProgressSubStep();
-
-    determineFaceColors();
-    if(isCanceled()) return;
-
-    if(generateCapPolygons) {
-        nextProgressSubStep();
-        buildCapTriangleMesh();
-    }
-
-    setResult(
-        std::move(_outputMesh),
-        std::move(_capPolygonsMesh),
-        std::move(_materialColors),
-        std::move(_originalFaceMap),
-        _renderFacesTwoSided,
-        std::move(_status));
-
-    endProgressSubSteps();
 }
 
 /******************************************************************************
 * Transfers face colors from the input to the output mesh.
 ******************************************************************************/
-void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
+void SurfaceMeshVis::RenderableSurfaceBuilder::determineFaceColors()
 {
-    ColorAG defaultFaceColor = _surfaceColor.toDataType<GraphicsFloatType>();
+    constexpr ColorAG defaultFaceColor(1,1,1,1);
 
     if(BufferReadAccess<ColorG> colorProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::ColorProperty)) {
         // The "Color" property of mesh faces has the highest priority.
@@ -598,7 +564,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
         }
     }
     else if(BufferReadAccess<SelectionIntType> selectionProperty = inputMesh()->regions()->getProperty(SurfaceMeshRegions::SelectionProperty)) {
-        // If the "Selection" property of mesh regions is present, use it information to highlight the
+        // If the "Selection" property of mesh regions is present, use it to highlight the
         // mesh faces that belong to selected regions.
         if(BufferReadAccess<int32_t> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
             size_t regionCount = selectionProperty.size();
@@ -616,7 +582,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineFaceColors()
 /******************************************************************************
 * Transfers vertex colors from the input to the output mesh.
 ******************************************************************************/
-void SurfaceMeshVis::PrepareSurfaceEngine::determineVertexColors()
+void SurfaceMeshVis::RenderableSurfaceBuilder::determineVertexColors()
 {
     if(BufferReadAccess<ColorG> colorProperty = inputMesh()->vertices()->getProperty(SurfaceMeshVertices::ColorProperty)) {
         OVITO_ASSERT(colorProperty.size() == outputMesh()->vertexCount());
@@ -645,36 +611,28 @@ void SurfaceMeshVis::PrepareSurfaceEngine::determineVertexColors()
 /******************************************************************************
 * Generates the triangle mesh from the periodic surface mesh, which will be rendered.
 ******************************************************************************/
-bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
+bool SurfaceMeshVis::RenderableSurfaceBuilder::buildSurfaceTriangleMesh(const boost::dynamic_bitset<>& faceSubset, bool renderFacesTwoSided)
 {
     if(cell() && cell()->is2D())
         throw Exception(tr("Cannot generate surface triangle mesh when domain is two-dimensional."));
-
-    beginProgressSubStepsWithWeights({1,1,1,1,1,1});
 
     // Create accessor for the input mesh data.
     const SurfaceMeshReadAccess inputMeshData(inputMesh());
 
     // Transfer vertices and faces from half-edge mesh structure to triangle mesh structure.
     _outputMesh = DataOORef<TriangleMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
-    inputMeshData.convertToTriMesh(*outputMesh(), _smoothShading, _faceSubset, &_originalFaceMap, !_renderFacesTwoSided);
-
-    // Check for early abortion.
-    if(isCanceled())
-        return false;
-    nextProgressSubStep();
+    inputMeshData.convertToTriMesh(*_outputMesh, _smoothShading, faceSubset, &_originalFaceMap, !renderFacesTwoSided);
+    this_task::throwIfCanceled();
 
     // Assign mesh vertex colors if available.
     determineVertexColors();
+    this_task::throwIfCanceled();
 
     // Flip orientation of mesh faces if requested.
-    if(_reverseOrientation)
+    if(_reverseOrientation) {
         outputMesh()->flipFaces();
-
-    // Check for early abortion.
-    if(isCanceled())
-        return false;
-    nextProgressSubStep();
+        this_task::throwIfCanceled();
+    }
 
     // Convert vertex positions to reduced coordinates and transfer them to the output mesh.
     OVITO_ASSERT(outputMesh()->vertices().size() == inputMeshData.vertexCount());
@@ -686,15 +644,12 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
             OVITO_ASSERT(std::isfinite(p.x()) && std::isfinite(p.y()) && std::isfinite(p.z()));
         }
     }
-
-    nextProgressSubStep();
+    this_task::throwIfCanceled();
 
     // Wrap mesh at periodic boundaries.
     for(size_t dim = 0; dim < 3; dim++) {
-        if(!cell() || cell()->hasPbc(dim) == false) continue;
-
-        if(isCanceled())
-            return false;
+        if(!cell() || cell()->hasPbc(dim) == false)
+            continue;
 
         // Make sure all vertices are located inside the periodic box.
         for(Point3& p : outputMesh()->vertices()) {
@@ -702,10 +657,11 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
             p[dim] -= std::floor(p[dim]);
             OVITO_ASSERT(p[dim] >= FloatType(0) && p[dim] <= FloatType(1));
         }
+        this_task::throwIfCanceled();
 
         // Split triangle faces at periodic boundaries.
-        int oldFaceCount = outputMesh()->faceCount();
-        int oldVertexCount = outputMesh()->vertexCount();
+        auto oldFaceCount = outputMesh()->faceCount();
+        auto oldVertexCount = outputMesh()->vertexCount();
         std::vector<Point3> newVertices;
         std::vector<ColorAG> newVertexColors;
         std::vector<FloatType> newVertexPseudoColors;
@@ -715,6 +671,7 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
                 return false;
             }
         }
+        this_task::throwIfCanceled();
 
         // Insert newly created vertices into mesh.
         outputMesh()->setVertexCount(oldVertexCount + newVertices.size());
@@ -727,11 +684,8 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
             OVITO_ASSERT(newVertexPseudoColors.size() == newVertices.size());
             std::copy(newVertexPseudoColors.cbegin(), newVertexPseudoColors.cend(), outputMesh()->vertexPseudoColors().begin() + oldVertexCount);
         }
+        this_task::throwIfCanceled();
     }
-    if(isCanceled())
-        return false;
-
-    nextProgressSubStep();
 
     // Convert vertex positions back from reduced coordinates to absolute coordinates.
     if(cell()) {
@@ -739,8 +693,7 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
         for(Point3& p : outputMesh()->vertices())
             p = cellMatrix * p;
     }
-
-    nextProgressSubStep();
+    this_task::throwIfCanceled();
 
     // Clip mesh at cutting planes and non-periodic cell boundaries.
     if(!inputMesh()->cuttingPlanes().empty() || (cell() && _clipAtDomainBoundaries)) {
@@ -749,29 +702,24 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
         auto of = _originalFaceMap.begin();
         for(TriMeshFace& face : outputMesh()->faces())
             face.setMaterialIndex(*of++);
+        this_task::throwIfCanceled();
 
         for(const Plane3& plane : inputMesh()->cuttingPlanes()) {
-            if(isCanceled())
-                return false;
-
             outputMesh()->clipAtPlane(plane);
+            this_task::throwIfCanceled();
         }
 
         if(cell() && _clipAtDomainBoundaries) {
             for(size_t dim = 0; dim < 3; dim++) {
-                if(cell()->hasPbc(dim)) continue;
+                if(cell()->hasPbc(dim))
+                    continue;
 
                 Vector3 normal = cell()->cellNormalVector(dim);
-
                 outputMesh()->clipAtPlane(Plane3(cell()->cellOrigin(), -normal));
-
-                if(isCanceled())
-                    return false;
+                this_task::throwIfCanceled();
 
                 outputMesh()->clipAtPlane(Plane3(cell()->cellOrigin() + cell()->cellMatrix().column(dim), normal));
-
-                if(isCanceled())
-                    return false;
+                this_task::throwIfCanceled();
             }
         }
 
@@ -785,14 +733,286 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::buildSurfaceTriangleMesh()
     outputMesh()->invalidateVertices();
     OVITO_ASSERT(_originalFaceMap.size() == outputMesh()->faces().size());
 
-    endProgressSubSteps();
     return true;
+}
+
+/******************************************************************************
+* Generates the cap polygons where the surface mesh intersects the
+* periodic domain boundaries.
+******************************************************************************/
+void SurfaceMeshVis::RenderableSurfaceBuilder::buildCapTriangleMesh(const boost::dynamic_bitset<>& faceSubset)
+{
+    OVITO_ASSERT(cell());
+
+    // Create the output mesh object.
+    _capPolygonsMesh = DataOORef<TriangleMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
+
+    // Create accessor for the input mesh data.
+    const SurfaceMeshReadAccess inputMeshData(inputMesh());
+    BufferReadAccess<Point3> vertexPositions(inputMeshData.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+    BufferReadAccess<int32_t> faceRegions(inputMeshData.faceProperty(SurfaceMeshFaces::RegionProperty));
+
+    // Access the 'Filled' property of volumetric regions if it is defined for the input surface mesh.
+    BufferReadAccess<SelectionIntType> isFilledProperty(inputMeshData.regionProperty(SurfaceMeshRegions::IsFilledProperty));
+    bool hasRegions = isFilledProperty && faceRegions;
+    bool flipCapNormal = (cell()->matrix().determinant() < 0);
+
+    // Convert vertex positions to reduced coordinates.
+    AffineTransformation invCellMatrix = cell()->inverseMatrix();
+    if(flipCapNormal)
+        invCellMatrix.column(0) = -invCellMatrix.column(0);
+
+    std::vector<Point3> reducedPos(inputMeshData.vertexCount());
+    SurfaceMesh::vertex_index vidx = 0;
+    for(Point3& p : reducedPos)
+        p = invCellMatrix * vertexPositions[vidx++];
+
+    // Indicates for 4 corners of the simulation cell whether they are located inside (1) or outside (0) of the filled mesh region.
+    // Initial value -1 indicates that the inside/outside test has not been performed yet.
+    //
+    // Array index 0: Cell origin
+    // Array index 1: Cell origin + cell vector 1
+    // Array index 2: Cell origin + cell vector 2
+    // Array index 3: Cell origin + cell vector 3
+    int isBoxCornerInside3DRegion[4] = {-1, -1, -1, -1};
+
+    // Create caps on each side of the simulation with periodic boundary conditions.
+    for(size_t dim = 0; dim < 3; dim++) {
+
+        // Are periodic boundary conditions enabled for the current simulation cell direction?
+        bool periodic = cell()->hasPbc(dim);
+
+        // Skip non-periodic boundaries unless clipping of the mesh at non-periodic boundaries has been enabled.
+        if(!periodic && !_clipAtDomainBoundaries)
+            continue;
+
+        this_task::throwIfCanceled();
+
+        // Make sure all vertices are located inside the cell along periodic directions.
+        if(periodic) {
+            for(Point3& p : reducedPos) {
+                FloatType& c = p[dim];
+                OVITO_ASSERT(std::isfinite(c));
+                if(FloatType s = std::floor(c))
+                    c -= s;
+            }
+        }
+
+        // Perform the following just once for periodic boundaries of the simulation cell and twice for non-periodic boundaries,
+        // once for either side of the cell.
+        const auto periodicList = { CapPolygonTessellator::PeriodicFace };
+        const auto nonperiodicList = { CapPolygonTessellator::FrontFace, CapPolygonTessellator::BackFace };
+        for(CapPolygonTessellator::FaceMode faceMode : periodic ? periodicList : nonperiodicList) {
+
+            // Used to keep track of already visited faces during the current pass.
+            std::vector<bool> visitedFaces(inputMeshData.faceCount(), false);
+
+            // The lists of 2d contours generated by clipping the 3d surface mesh.
+            std::vector<std::vector<Point2>> openContours;
+            std::vector<std::vector<Point2>> closedContours;
+
+            // Find a first edge that crosses a cell boundary.
+            for(SurfaceMesh::face_index face : _originalFaceMap) {
+                // Skip faces that have already been visited.
+                if(visitedFaces[face]) continue;
+                this_task::throwIfCanceled();
+                visitedFaces[face] = true;
+
+                // Determine whether the mesh face is bordering a filled or an empty region.
+                if(hasRegions) {
+                    SurfaceMesh::region_index region = faceRegions[face];
+                    if(region >= 0 && region < isFilledProperty.size()) {
+                        if((bool)isFilledProperty[region] == _reverseOrientation) {
+                            // Skip faces that are adjacent to an empty volumetric region.
+                            continue;
+                        }
+
+                        // Also skip any two-sided faces that are part of an interior interface.
+                        SurfaceMesh::face_index oppositeFace = inputMeshData.oppositeFace(face);
+                        if(oppositeFace != SurfaceMesh::InvalidIndex) {
+                            SurfaceMesh::region_index oppositeRegion = faceRegions[oppositeFace];
+                            if(oppositeRegion >= 0 && oppositeRegion < isFilledProperty.size()) {
+                                if((bool)isFilledProperty[oppositeRegion] != _reverseOrientation) {
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Visit the halfedges of the current mesh face.
+                SurfaceMesh::edge_index startEdge = inputMeshData.firstFaceEdge(face);
+                SurfaceMesh::edge_index edge = startEdge;
+                do {
+                    const Point3& v1 = reducedPos[inputMeshData.vertex1(edge)];
+                    const Point3& v2 = reducedPos[inputMeshData.vertex2(edge)];
+                    bool crossesBoundary = periodic
+                        ? (v2[dim] - v1[dim] >= FloatType(0.5))
+                        : (faceMode == CapPolygonTessellator::FrontFace
+                            ? (v2[dim] < 0 && v1[dim] >= 0)
+                            : (v2[dim] <= 1 && v1[dim] > 1));
+                    if(crossesBoundary) {
+                        std::vector<Point2> contour = traceContour(*inputMesh()->topology(), edge, reducedPos, visitedFaces, dim, faceMode);
+                        if(contour.empty())
+                            throw Exception(tr("Surface mesh does not represent a proper closed manifold."));
+                        if(!_clipAtDomainBoundaries) {
+                            sliceContourAtPeriodicBoundaries(contour,
+                                std::array<bool,2>{{ cell()->hasPbc((dim+1)%3), cell()->hasPbc((dim+2)%3) }},
+                                openContours, closedContours);
+                        }
+                        else {
+                            sliceAndClipContour(contour,
+                                std::array<bool,2>{{ cell()->hasPbc((dim+1)%3), cell()->hasPbc((dim+2)%3) }},
+                                openContours, closedContours);
+                        }
+                        break;
+                    }
+                    edge = inputMeshData.nextFaceEdge(edge);
+                }
+                while(edge != startEdge);
+            }
+
+            // Invert surface orientation if requested. (Not needed if regions are defined. Then we can just swap roles of filled and empty regions).
+            if(!hasRegions && _reverseOrientation) {
+                for(auto& contour : openContours)
+                    std::reverse(std::begin(contour), std::end(contour));
+            }
+
+            // Feed contours into tessellator to create triangles.
+            CapPolygonTessellator tessellator(*_capPolygonsMesh, dim, faceMode);
+            tessellator.beginPolygon();
+            for(const auto& contour : closedContours) {
+                this_task::throwIfCanceled();
+                tessellator.beginContour();
+                for(const Point2& p : contour) {
+                    tessellator.vertex(p);
+                }
+                tessellator.endContour();
+            }
+
+            auto yxCoord2ArcLength = [](const Point2& p) {
+                if(p.x() == 0) return p.y();
+                else if(p.y() == 1) return p.x() + FloatType(1);
+                else if(p.x() == 1) return FloatType(3) - p.y();
+                else return std::fmod(FloatType(4) - p.x(), FloatType(4));
+            };
+
+            // Build the outer contour.
+            if(!openContours.empty()) {
+                boost::dynamic_bitset<> visitedContours(openContours.size());
+                for(auto c1 = openContours.begin(); c1 != openContours.end(); ++c1) {
+                    this_task::throwIfCanceled();
+                    if(!visitedContours.test(c1 - openContours.begin())) {
+                        tessellator.beginContour();
+                        auto currentContour = c1;
+                        do {
+                            for(const Point2& p : *currentContour) {
+                                tessellator.vertex(p);
+                            }
+                            visitedContours.set(currentContour - openContours.begin());
+
+                            FloatType t_exit = yxCoord2ArcLength(currentContour->back());
+
+                            // Find the next contour.
+                            FloatType t_entry;
+                            FloatType closestDist = FLOATTYPE_MAX;
+                            for(auto c = openContours.begin(); c != openContours.end(); ++c) {
+                                FloatType t = yxCoord2ArcLength(c->front());
+                                FloatType dist = t_exit - t;
+                                if(dist < 0) dist += FloatType(4);
+                                if(dist < closestDist) {
+                                    closestDist = dist;
+                                    currentContour = c;
+                                    t_entry = t;
+                                }
+                            }
+                            int exitCorner = (int)std::floor(t_exit);
+                            int entryCorner = (int)std::floor(t_entry);
+                            if(exitCorner < 0 || exitCorner >= 4) break;
+                            if(entryCorner < 0 || entryCorner >= 4) break;
+                            if(exitCorner != entryCorner || t_exit < t_entry) {
+                                for(int corner = exitCorner;;) {
+                                    switch(corner) {
+                                    case 0: tessellator.vertex(Point2(0,0)); break;
+                                    case 1: tessellator.vertex(Point2(0,1)); break;
+                                    case 2: tessellator.vertex(Point2(1,1)); break;
+                                    case 3: tessellator.vertex(Point2(1,0)); break;
+                                    }
+                                    corner = (corner + 3) % 4;
+                                    if(corner == entryCorner) break;
+                                }
+                            }
+                        }
+                        while(!visitedContours.test(currentContour - openContours.begin()));
+                        tessellator.endContour();
+                    }
+                }
+            }
+            else {
+                int& isInside = (faceMode != CapPolygonTessellator::BackFace) ? isBoxCornerInside3DRegion[0] : isBoxCornerInside3DRegion[dim+1];
+                if(isInside == -1) {
+                    if(closedContours.empty()) {
+                        Point3 corner = cell()->cellOrigin();
+                        if(faceMode == CapPolygonTessellator::BackFace)
+                            corner += cell()->cellMatrix().column(dim);
+                        if(std::optional<std::pair<SurfaceMesh::region_index, FloatType>> region = inputMeshData.locatePoint(corner, 0, faceSubset)) {
+                            if(hasRegions) {
+                                if(region->first >= 0 && region->first < isFilledProperty.size()) {
+                                    isInside = (bool)isFilledProperty[region->first];
+                                }
+                                else
+                                    isInside = false;
+                            }
+                            else {
+                                isInside = region->first != SurfaceMesh::InvalidIndex;
+                            }
+                        }
+                        else {
+                            isInside = false;
+                        }
+                    }
+                    else {
+                        isInside = isCornerInside2DRegion(closedContours);
+                        if(hasRegions && _reverseOrientation)
+                            isInside = !isInside;
+                    }
+                    if(_reverseOrientation)
+                        isInside = !isInside;
+                }
+                if(isInside) {
+                    tessellator.beginContour();
+                    tessellator.vertex(Point2(0,0));
+                    tessellator.vertex(Point2(1,0));
+                    tessellator.vertex(Point2(1,1));
+                    tessellator.vertex(Point2(0,1));
+                    tessellator.endContour();
+                }
+            }
+
+            tessellator.endPolygon();
+        }
+    }
+
+    // Check for early abortion.
+    this_task::throwIfCanceled();
+
+    // Convert vertex positions back from reduced coordinates to absolute coordinates.
+    const AffineTransformation cellMatrix = invCellMatrix.inverse();
+    for(Point3& p : _capPolygonsMesh->vertices())
+        p = cellMatrix * p;
+    this_task::throwIfCanceled();
+
+    // Clip mesh at cutting planes.
+    for(const Plane3& plane : inputMesh()->cuttingPlanes()) {
+        _capPolygonsMesh->clipAtPlane(plane);
+        this_task::throwIfCanceled();
+    }
 }
 
 /******************************************************************************
 * Splits a triangle face at a periodic boundary.
 ******************************************************************************/
-bool SurfaceMeshVis::PrepareSurfaceEngine::splitFace(int faceIndex, int oldVertexCount, std::vector<Point3>& newVertices, std::vector<ColorAG>& newVertexColors,
+bool SurfaceMeshVis::RenderableSurfaceBuilder::splitFace(int faceIndex, int oldVertexCount, std::vector<Point3>& newVertices, std::vector<ColorAG>& newVertexColors,
         std::vector<FloatType>& newVertexPseudoColors, std::map<std::pair<int,int>,std::tuple<int,int,FloatType>>& newVertexLookupMap, size_t dim)
 {
     TriMeshFace& face = outputMesh()->face(faceIndex);
@@ -927,286 +1147,9 @@ bool SurfaceMeshVis::PrepareSurfaceEngine::splitFace(int faceIndex, int oldVerte
 }
 
 /******************************************************************************
-* Generates the cap polygons where the surface mesh intersects the
-* periodic domain boundaries.
-******************************************************************************/
-void SurfaceMeshVis::PrepareSurfaceEngine::buildCapTriangleMesh()
-{
-    OVITO_ASSERT(cell());
-
-    // Create the output mesh object.
-    _capPolygonsMesh = DataOORef<TriangleMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
-
-    // Create accessor for the input mesh data.
-    const SurfaceMeshReadAccess inputMeshData(inputMesh());
-    BufferReadAccess<Point3> vertexPositions(inputMeshData.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
-    BufferReadAccess<int32_t> faceRegions(inputMeshData.faceProperty(SurfaceMeshFaces::RegionProperty));
-
-    // Access the 'Filled' property of volumetric regions if it is defined for the input surface mesh.
-    BufferReadAccess<SelectionIntType> isFilledProperty(inputMeshData.regionProperty(SurfaceMeshRegions::IsFilledProperty));
-    bool hasRegions = isFilledProperty && faceRegions;
-    bool flipCapNormal = (cell()->matrix().determinant() < 0);
-
-    // Convert vertex positions to reduced coordinates.
-    AffineTransformation invCellMatrix = cell()->inverseMatrix();
-    if(flipCapNormal)
-        invCellMatrix.column(0) = -invCellMatrix.column(0);
-
-    std::vector<Point3> reducedPos(inputMeshData.vertexCount());
-    SurfaceMesh::vertex_index vidx = 0;
-    for(Point3& p : reducedPos)
-        p = invCellMatrix * vertexPositions[vidx++];
-
-    // Indicates for 4 corners of the simulation cell whether they are located inside (1) or outside (0) of the filled mesh region.
-    // Initial value -1 indicates that the inside/outside test has not been performed yet.
-    //
-    // Array index 0: Cell origin
-    // Array index 1: Cell origin + cell vector 1
-    // Array index 2: Cell origin + cell vector 2
-    // Array index 3: Cell origin + cell vector 3
-    int isBoxCornerInside3DRegion[4] = {-1, -1, -1, -1};
-
-    // Create caps on each side of the simulation with periodic boundary conditions.
-    for(size_t dim = 0; dim < 3; dim++) {
-
-        // Are periodic boundary conditions enabled for the current simulation cell direction?
-        bool periodic = cell()->hasPbc(dim);
-
-        // Skip non-periodic boundaries unless clipping of the mesh at non-periodic boundaries has been enabled.
-        if(!periodic && !_clipAtDomainBoundaries)
-            continue;
-
-        if(isCanceled())
-            return;
-
-        // Make sure all vertices are located inside the cell along periodic directions.
-        if(periodic) {
-            for(Point3& p : reducedPos) {
-                FloatType& c = p[dim];
-                OVITO_ASSERT(std::isfinite(c));
-                if(FloatType s = std::floor(c))
-                    c -= s;
-            }
-        }
-
-        // Perform the following just once for periodic boundaries of the simulation cell and twice for non-periodic boundaries,
-        // once for either side of the cell.
-        const auto periodicList = { CapPolygonTessellator::PeriodicFace };
-        const auto nonperiodicList = { CapPolygonTessellator::FrontFace, CapPolygonTessellator::BackFace };
-        for(CapPolygonTessellator::FaceMode faceMode : periodic ? periodicList : nonperiodicList) {
-
-            // Used to keep track of already visited faces during the current pass.
-            std::vector<bool> visitedFaces(inputMeshData.faceCount(), false);
-
-            // The lists of 2d contours generated by clipping the 3d surface mesh.
-            std::vector<std::vector<Point2>> openContours;
-            std::vector<std::vector<Point2>> closedContours;
-
-            // Find a first edge that crosses a cell boundary.
-            for(SurfaceMesh::face_index face : _originalFaceMap) {
-                // Skip faces that have already been visited.
-                if(visitedFaces[face]) continue;
-                if(isCanceled()) return;
-                visitedFaces[face] = true;
-
-                // Determine whether the mesh face is bordering a filled or an empty region.
-                if(hasRegions) {
-                    SurfaceMesh::region_index region = faceRegions[face];
-                    if(region >= 0 && region < isFilledProperty.size()) {
-                        if((bool)isFilledProperty[region] == _reverseOrientation) {
-                            // Skip faces that are adjacent to an empty volumetric region.
-                            continue;
-                        }
-
-                        // Also skip any two-sided faces that are part of an interior interface.
-                        SurfaceMesh::face_index oppositeFace = inputMeshData.oppositeFace(face);
-                        if(oppositeFace != SurfaceMesh::InvalidIndex) {
-                            SurfaceMesh::region_index oppositeRegion = faceRegions[oppositeFace];
-                            if(oppositeRegion >= 0 && oppositeRegion < isFilledProperty.size()) {
-                                if((bool)isFilledProperty[oppositeRegion] != _reverseOrientation) {
-                                    continue;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Visit the halfedges of the current mesh face.
-                SurfaceMesh::edge_index startEdge = inputMeshData.firstFaceEdge(face);
-                SurfaceMesh::edge_index edge = startEdge;
-                do {
-                    const Point3& v1 = reducedPos[inputMeshData.vertex1(edge)];
-                    const Point3& v2 = reducedPos[inputMeshData.vertex2(edge)];
-                    bool crossesBoundary = periodic
-                        ? (v2[dim] - v1[dim] >= FloatType(0.5))
-                        : (faceMode == CapPolygonTessellator::FrontFace
-                            ? (v2[dim] < 0 && v1[dim] >= 0)
-                            : (v2[dim] <= 1 && v1[dim] > 1));
-                    if(crossesBoundary) {
-                        std::vector<Point2> contour = traceContour(*inputMesh()->topology(), edge, reducedPos, visitedFaces, dim, faceMode);
-                        if(contour.empty())
-                            throw Exception(tr("Surface mesh does not represent a proper closed manifold."));
-                        if(!_clipAtDomainBoundaries) {
-                            sliceContourAtPeriodicBoundaries(contour,
-                                std::array<bool,2>{{ cell()->hasPbc((dim+1)%3), cell()->hasPbc((dim+2)%3) }},
-                                openContours, closedContours);
-                        }
-                        else {
-                            sliceAndClipContour(contour,
-                                std::array<bool,2>{{ cell()->hasPbc((dim+1)%3), cell()->hasPbc((dim+2)%3) }},
-                                openContours, closedContours);
-                        }
-                        break;
-                    }
-                    edge = inputMeshData.nextFaceEdge(edge);
-                }
-                while(edge != startEdge);
-            }
-
-            // Invert surface orientation if requested. (Not needed if regions are defined. Then we can just swap roles of filled and empty regions).
-            if(!hasRegions && _reverseOrientation) {
-                for(auto& contour : openContours)
-                    std::reverse(std::begin(contour), std::end(contour));
-            }
-
-            // Feed contours into tessellator to create triangles.
-            CapPolygonTessellator tessellator(*_capPolygonsMesh, dim, faceMode);
-            tessellator.beginPolygon();
-            for(const auto& contour : closedContours) {
-                if(isCanceled())
-                    return;
-                tessellator.beginContour();
-                for(const Point2& p : contour) {
-                    tessellator.vertex(p);
-                }
-                tessellator.endContour();
-            }
-
-            auto yxCoord2ArcLength = [](const Point2& p) {
-                if(p.x() == 0) return p.y();
-                else if(p.y() == 1) return p.x() + FloatType(1);
-                else if(p.x() == 1) return FloatType(3) - p.y();
-                else return std::fmod(FloatType(4) - p.x(), FloatType(4));
-            };
-
-            // Build the outer contour.
-            if(!openContours.empty()) {
-                boost::dynamic_bitset<> visitedContours(openContours.size());
-                for(auto c1 = openContours.begin(); c1 != openContours.end(); ++c1) {
-                    if(isCanceled())
-                        return;
-                    if(!visitedContours.test(c1 - openContours.begin())) {
-                        tessellator.beginContour();
-                        auto currentContour = c1;
-                        do {
-                            for(const Point2& p : *currentContour) {
-                                tessellator.vertex(p);
-                            }
-                            visitedContours.set(currentContour - openContours.begin());
-
-                            FloatType t_exit = yxCoord2ArcLength(currentContour->back());
-
-                            // Find the next contour.
-                            FloatType t_entry;
-                            FloatType closestDist = FLOATTYPE_MAX;
-                            for(auto c = openContours.begin(); c != openContours.end(); ++c) {
-                                FloatType t = yxCoord2ArcLength(c->front());
-                                FloatType dist = t_exit - t;
-                                if(dist < 0) dist += FloatType(4);
-                                if(dist < closestDist) {
-                                    closestDist = dist;
-                                    currentContour = c;
-                                    t_entry = t;
-                                }
-                            }
-                            int exitCorner = (int)std::floor(t_exit);
-                            int entryCorner = (int)std::floor(t_entry);
-                            if(exitCorner < 0 || exitCorner >= 4) break;
-                            if(entryCorner < 0 || entryCorner >= 4) break;
-                            if(exitCorner != entryCorner || t_exit < t_entry) {
-                                for(int corner = exitCorner;;) {
-                                    switch(corner) {
-                                    case 0: tessellator.vertex(Point2(0,0)); break;
-                                    case 1: tessellator.vertex(Point2(0,1)); break;
-                                    case 2: tessellator.vertex(Point2(1,1)); break;
-                                    case 3: tessellator.vertex(Point2(1,0)); break;
-                                    }
-                                    corner = (corner + 3) % 4;
-                                    if(corner == entryCorner) break;
-                                }
-                            }
-                        }
-                        while(!visitedContours.test(currentContour - openContours.begin()));
-                        tessellator.endContour();
-                    }
-                }
-            }
-            else {
-                int& isInside = (faceMode != CapPolygonTessellator::BackFace) ? isBoxCornerInside3DRegion[0] : isBoxCornerInside3DRegion[dim+1];
-                if(isInside == -1) {
-                    if(closedContours.empty()) {
-                        Point3 corner = cell()->cellOrigin();
-                        if(faceMode == CapPolygonTessellator::BackFace)
-                            corner += cell()->cellMatrix().column(dim);
-                        if(std::optional<std::pair<SurfaceMesh::region_index, FloatType>> region = inputMeshData.locatePoint(corner, 0, _faceSubset)) {
-                            if(hasRegions) {
-                                if(region->first >= 0 && region->first < isFilledProperty.size()) {
-                                    isInside = (bool)isFilledProperty[region->first];
-                                }
-                                else
-                                    isInside = false;
-                            }
-                            else {
-                                isInside = region->first != SurfaceMesh::InvalidIndex;
-                            }
-                        }
-                        else {
-                            isInside = false;
-                        }
-                    }
-                    else {
-                        isInside = isCornerInside2DRegion(closedContours);
-                        if(hasRegions && _reverseOrientation)
-                            isInside = !isInside;
-                    }
-                    if(_reverseOrientation)
-                        isInside = !isInside;
-                }
-                if(isInside) {
-                    tessellator.beginContour();
-                    tessellator.vertex(Point2(0,0));
-                    tessellator.vertex(Point2(1,0));
-                    tessellator.vertex(Point2(1,1));
-                    tessellator.vertex(Point2(0,1));
-                    tessellator.endContour();
-                }
-            }
-
-            tessellator.endPolygon();
-        }
-    }
-
-    // Check for early abortion.
-    if(isCanceled())
-        return;
-
-    // Convert vertex positions back from reduced coordinates to absolute coordinates.
-    const AffineTransformation cellMatrix = invCellMatrix.inverse();
-    for(Point3& p : _capPolygonsMesh->vertices())
-        p = cellMatrix * p;
-
-    // Clip mesh at cutting planes.
-    for(const Plane3& plane : inputMesh()->cuttingPlanes()) {
-        if(isCanceled())
-            return;
-        _capPolygonsMesh->clipAtPlane(plane);
-    }
-}
-
-/******************************************************************************
 * Traces the closed contour of the surface-boundary intersection.
 ******************************************************************************/
-std::vector<Point2> SurfaceMeshVis::PrepareSurfaceEngine::traceContour(const SurfaceMeshTopology& inputMeshTopology, SurfaceMesh::edge_index firstEdge, const std::vector<Point3>& reducedPos, std::vector<bool>& visitedFaces, size_t dim, CapPolygonTessellator::FaceMode faceMode) const
+std::vector<Point2> SurfaceMeshVis::RenderableSurfaceBuilder::traceContour(const SurfaceMeshTopology& inputMeshTopology, SurfaceMesh::edge_index firstEdge, const std::vector<Point3>& reducedPos, std::vector<bool>& visitedFaces, size_t dim, CapPolygonTessellator::FaceMode faceMode) const
 {
     OVITO_ASSERT(cell());
     size_t dim1 = (dim + 1) % 3;
@@ -1294,7 +1237,7 @@ std::vector<Point2> SurfaceMeshVis::PrepareSurfaceEngine::traceContour(const Sur
 /******************************************************************************
 * Slices a 2d contour at periodic boundaries.
 ******************************************************************************/
-void SurfaceMeshVis::PrepareSurfaceEngine::sliceContourAtPeriodicBoundaries(std::vector<Point2>& input, std::array<bool,2> pbcFlags, std::vector<std::vector<Point2>>& openContours, std::vector<std::vector<Point2>>& closedContours)
+void SurfaceMeshVis::RenderableSurfaceBuilder::sliceContourAtPeriodicBoundaries(std::vector<Point2>& input, std::array<bool,2> pbcFlags, std::vector<std::vector<Point2>>& openContours, std::vector<std::vector<Point2>>& closedContours)
 {
     if(!pbcFlags[0] && !pbcFlags[1]) {
         closedContours.push_back(std::move(input));
@@ -1396,7 +1339,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::sliceContourAtPeriodicBoundaries(std:
 /******************************************************************************
 * Slices a 2d contour at periodic boundaries and clips it an non-periodic boundaries.
 ******************************************************************************/
-void SurfaceMeshVis::PrepareSurfaceEngine::sliceAndClipContour(std::vector<Point2>& input, std::array<bool,2> pbcFlags, std::vector<std::vector<Point2>>& openContours, std::vector<std::vector<Point2>>& closedContours)
+void SurfaceMeshVis::RenderableSurfaceBuilder::sliceAndClipContour(std::vector<Point2>& input, std::array<bool,2> pbcFlags, std::vector<std::vector<Point2>>& openContours, std::vector<std::vector<Point2>>& closedContours)
 {
     // Ensure all coordinates are mapped into the primary image of the periodic domain.
     if(pbcFlags[0]) {
@@ -1640,7 +1583,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::sliceAndClipContour(std::vector<Point
 /******************************************************************************
 * Computes the intersection point of a 2d contour segment crossing a periodic boundary.
 ******************************************************************************/
-void SurfaceMeshVis::PrepareSurfaceEngine::computeContourIntersectionPeriodic(size_t dim, FloatType t, Point2& base, Vector2& delta, int crossDir, std::vector<std::vector<Point2>>& contours)
+void SurfaceMeshVis::RenderableSurfaceBuilder::computeContourIntersectionPeriodic(size_t dim, FloatType t, Point2& base, Vector2& delta, int crossDir, std::vector<std::vector<Point2>>& contours)
 {
     OVITO_ASSERT(std::isfinite(t));
     Point2 intersection = base + t * delta;
@@ -1662,7 +1605,7 @@ void SurfaceMeshVis::PrepareSurfaceEngine::computeContourIntersectionPeriodic(si
 * Signed Distance Computation Using the Angle Weighted Pseudonormal
 * IEEE Transactions on Visualization and Computer Graphics 11 (2005), Page 243
 ******************************************************************************/
-bool SurfaceMeshVis::PrepareSurfaceEngine::isCornerInside2DRegion(const std::vector<std::vector<Point2>>& contours)
+bool SurfaceMeshVis::RenderableSurfaceBuilder::isCornerInside2DRegion(const std::vector<std::vector<Point2>>& contours)
 {
     OVITO_ASSERT(!contours.empty());
     bool isInside = true;

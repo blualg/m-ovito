@@ -36,17 +36,17 @@ SET(SourceFiles
     objects/Impropers.cpp
     objects/VectorVis.cpp
 #    modifier/coloring/AmbientOcclusionModifier.cpp
-#    modifier/modify/WrapPeriodicImagesModifier.cpp
-#    modifier/modify/UnwrapTrajectoriesModifier.cpp
+    modifier/modify/WrapPeriodicImagesModifier.cpp
+    modifier/modify/UnwrapTrajectoriesModifier.cpp
 #    modifier/modify/CreateBondsModifier.cpp
     modifier/modify/LoadTrajectoryModifier.cpp
 #    modifier/modify/CoordinationPolyhedraModifier.cpp
-#    modifier/analysis/StructureIdentificationModifier.cpp
+    modifier/analysis/StructureIdentificationModifier.cpp
 #    modifier/analysis/ReferenceConfigurationModifier.cpp
-#    modifier/analysis/ackland_jones/AcklandJonesModifier.cpp
+    modifier/analysis/ackland_jones/AcklandJonesModifier.cpp
 #    modifier/analysis/cna/CommonNeighborAnalysisModifier.cpp
 #    modifier/analysis/coordination/CoordinationAnalysisModifier.cpp
-#    modifier/analysis/chill_plus/ChillPlusModifier.cpp
+    modifier/analysis/chill_plus/ChillPlusModifier.cpp
 #    modifier/analysis/displacements/CalculateDisplacementsModifier.cpp
 #    modifier/analysis/centrosymmetry/CentroSymmetryModifier.cpp
 #    modifier/analysis/strain/AtomicStrainModifier.cpp
@@ -108,14 +108,14 @@ IF(OVITO_BUILD_PLUGIN_STDMOD)
     LIST(APPEND SourceFiles
         modifier/coloring/ParticlesColorCodingModifierDelegate.cpp
         modifier/coloring/ParticlesAssignColorModifierDelegate.cpp
-#        modifier/modify/ParticlesSliceModifierDelegate.cpp
+        modifier/modify/ParticlesSliceModifierDelegate.cpp
         modifier/modify/ParticlesAffineTransformationModifierDelegate.cpp
         modifier/modify/ParticlesDeleteSelectedModifierDelegate.cpp
         modifier/modify/ParticlesReplicateModifierDelegate.cpp
         modifier/properties/ParticlesComputePropertyModifierDelegate.cpp
         modifier/properties/BondsComputePropertyModifierDelegate.cpp
         modifier/selection/ParticlesExpressionSelectionModifierDelegate.cpp
-#        modifier/modify/ParticlesCombineDatasetsModifierDelegate.cpp
+        modifier/modify/ParticlesCombineDatasetsModifierDelegate.cpp
     )
 ENDIF()
 

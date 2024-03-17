@@ -74,6 +74,9 @@ public:
     ///        been changed and before the entire pipeline is recomputed.
     virtual bool shouldRefreshViewportsAfterChange() { return false; }
 
+    /// \brief Indicates whether the modifier wants to keep its partial compute results after one of its parameters has been changed.
+    virtual bool shouldKeepPartialResultsAfterChange(const PropertyFieldEvent& event) { return false; }
+
     /// \brief Lets the modifier render itself in an interactive viewport.
     virtual void renderModifierVisual(const ModifierEvaluationRequest& request, Pipeline* pipeline, FrameGraph& frameGraph) {}
 
@@ -123,7 +126,7 @@ public:
 protected:
 
     /// Modifies the input data.
-    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState input) = 0;
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) = 0;
 
 private:
 

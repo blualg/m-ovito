@@ -77,7 +77,7 @@ void FrameGraph::renderSceneNode(OORef<SceneNode> node, OORef<Viewport> viewport
         // if it is the target of the view node.
         if(!viewport || !viewport->viewNode() || (viewport->viewNode() != node && viewport->viewNode()->lookatTargetNode() != node)) {
             // Evaluate pipeline and render the resulting data objects.
-            PipelineEvaluationResult pipelineResult = pipeline->evaluateRenderingPipeline(PipelineEvaluationRequest(time(), stopOnPipelineError(), isInteractive()));
+            PipelineEvaluationResult pipelineResult = pipeline->evaluatePipeline(PipelineEvaluationRequest(time(), stopOnPipelineError(), isInteractive()));
             if(const PipelineFlowState& state = pipelineResult.result()) {
                 // Invoke all vis elements of all data objects in the pipeline state.
                 ConstDataObjectPath dataObjectPath;
@@ -127,7 +127,7 @@ void FrameGraph::renderDataObject(const DataObject* dataObj, const Pipeline* pip
             }
             catch(Exception& ex) {
                 status = ex;
-                ex.prependToMessage(QStringLiteral("Visual element '%1' reported an error during rendering: ").arg(vis->objectTitle()));
+                ex.prependToMessage(QStringLiteral("Visual element '%1' reported an error: ").arg(vis->objectTitle()));
                 // If the vis element fails, interrupt rendering process in console mode; swallow exceptions in GUI mode.
                 if(stopOnPipelineError())
                     throw;

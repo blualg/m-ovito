@@ -125,7 +125,8 @@ void MarchingCubes::computeIntersectionPoints()
     if(_pbcFlags[0] && _pbcFlags[1] && _pbcFlags[2])
         _outputMesh.setSpaceFillingRegion(0);
 
-    for(int k = 0; k < _size_z && !this_task::isCanceled(); k++, this_task::incrementProgressValue()) {
+    for(int k = 0; k < _size_z; k++, this_task::incrementProgressValue()) {
+        this_task::throwIfCanceled();
         for(int j = 0; j < _size_y; j++) {
             for(int i = 0; i < _size_x; i++) {
                 FloatType cube[8];
