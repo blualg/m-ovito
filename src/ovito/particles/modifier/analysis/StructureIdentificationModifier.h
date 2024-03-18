@@ -30,6 +30,8 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 
+#include <any>
+
 namespace Ovito {
 
 /**
@@ -64,23 +66,16 @@ public:
         /// Performs the atomic structure classification.
         virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) = 0;
 
+        /// Obtains the modifier parameters that are relevant for the post-processing phase (phase II).
+        /// The method is called by the StructureIdentificationModifier in the main thread before phase II begins to
+        /// store the modifier's parameters in a std::any container that will be passed to the postProcessStructureTypes() and computeStructureStatistics() methods.
+        virtual std::any getModifierParameters(StructureIdentificationModifier* modifier) const { return {}; }
+
         /// Gives subclasses the possibility to post-process per-particle structure types.
-        virtual PropertyPtr postProcessStructureTypes(const PropertyPtr& structures) const { return structures; }
+        virtual PropertyPtr postProcessStructureTypes(const PropertyPtr& structures, const std::any& modifierParameters) const { return structures; }
 
         /// Computes the structure identification statistics.
-        virtual std::vector<int64_t> computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode) const;
-
-#if 0 // TODO
-        /// This method is called by the system whenever a parameter of the modifier changes.
-        /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be
-        /// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true).
-        virtual bool modifierChanged(const PropertyFieldEvent& event) override {
-            // Avoid a recomputation if the user toggles just the color-by-type option.
-            if(event.field() == PROPERTY_FIELD(colorByType))
-                return true;
-            return ModifierEngine::modifierChanged(event);
-        }
-#endif
+        virtual std::vector<int64_t> computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const;
 
         /// Returns the property storage for the computed per-particle structure types.
         const PropertyPtr& structures() const { return _structures; }

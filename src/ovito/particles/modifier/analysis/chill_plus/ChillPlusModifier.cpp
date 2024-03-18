@@ -162,17 +162,17 @@ ChillPlusModifier::StructureType ChillPlusModifier::ChillPlusAlgorithm::determin
 /******************************************************************************
 * Computes the structure identification statistics.
 ******************************************************************************/
-std::vector<int64_t> ChillPlusModifier::ChillPlusAlgorithm::computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode) const
+std::vector<int64_t> ChillPlusModifier::ChillPlusAlgorithm::computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const
 {
-    std::vector<int64_t> typeCounts = StructureIdentificationModifier::Algorithm::computeStructureStatistics(structures, state, createdByNode);
+    std::vector<int64_t> typeCounts = StructureIdentificationModifier::Algorithm::computeStructureStatistics(structures, state, createdByNode, modifierParameters);
 
     // Also output structure type counts, which have been computed by the base class.
-    state.addAttribute(QStringLiteral("ChillPlus.counts.OTHER"), QVariant::fromValue(typeCounts[OTHER]), createdByNode);
-    state.addAttribute(QStringLiteral("ChillPlus.counts.CUBIC_ICE"), QVariant::fromValue(typeCounts[CUBIC_ICE]), createdByNode);
-    state.addAttribute(QStringLiteral("ChillPlus.counts.HEXAGONAL_ICE"), QVariant::fromValue(typeCounts[HEXAGONAL_ICE]), createdByNode);
-    state.addAttribute(QStringLiteral("ChillPlus.counts.INTERFACIAL_ICE"), QVariant::fromValue(typeCounts[INTERFACIAL_ICE]), createdByNode);
-    state.addAttribute(QStringLiteral("ChillPlus.counts.HYDRATE"), QVariant::fromValue(typeCounts[HYDRATE]), createdByNode);
-    state.addAttribute(QStringLiteral("ChillPlus.counts.INTERFACIAL_HYDRATE"), QVariant::fromValue(typeCounts[INTERFACIAL_HYDRATE]), createdByNode);
+    state.addAttribute(QStringLiteral("ChillPlus.counts.OTHER"), QVariant::fromValue(typeCounts.at(OTHER)), createdByNode);
+    state.addAttribute(QStringLiteral("ChillPlus.counts.CUBIC_ICE"), QVariant::fromValue(typeCounts.at(CUBIC_ICE)), createdByNode);
+    state.addAttribute(QStringLiteral("ChillPlus.counts.HEXAGONAL_ICE"), QVariant::fromValue(typeCounts.at(HEXAGONAL_ICE)), createdByNode);
+    state.addAttribute(QStringLiteral("ChillPlus.counts.INTERFACIAL_ICE"), QVariant::fromValue(typeCounts.at(INTERFACIAL_ICE)), createdByNode);
+    state.addAttribute(QStringLiteral("ChillPlus.counts.HYDRATE"), QVariant::fromValue(typeCounts.at(HYDRATE)), createdByNode);
+    state.addAttribute(QStringLiteral("ChillPlus.counts.INTERFACIAL_HYDRATE"), QVariant::fromValue(typeCounts.at(INTERFACIAL_HYDRATE)), createdByNode);
 
     return typeCounts;
 }

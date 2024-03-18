@@ -38,24 +38,24 @@ SET(SourceFiles
 #    modifier/coloring/AmbientOcclusionModifier.cpp
     modifier/modify/WrapPeriodicImagesModifier.cpp
     modifier/modify/UnwrapTrajectoriesModifier.cpp
-#    modifier/modify/CreateBondsModifier.cpp
+    modifier/modify/CreateBondsModifier.cpp
     modifier/modify/LoadTrajectoryModifier.cpp
 #    modifier/modify/CoordinationPolyhedraModifier.cpp
     modifier/analysis/StructureIdentificationModifier.cpp
 #    modifier/analysis/ReferenceConfigurationModifier.cpp
     modifier/analysis/ackland_jones/AcklandJonesModifier.cpp
-#    modifier/analysis/cna/CommonNeighborAnalysisModifier.cpp
+    modifier/analysis/cna/CommonNeighborAnalysisModifier.cpp
 #    modifier/analysis/coordination/CoordinationAnalysisModifier.cpp
     modifier/analysis/chill_plus/ChillPlusModifier.cpp
 #    modifier/analysis/displacements/CalculateDisplacementsModifier.cpp
 #    modifier/analysis/centrosymmetry/CentroSymmetryModifier.cpp
 #    modifier/analysis/strain/AtomicStrainModifier.cpp
-#    modifier/analysis/diamond/IdentifyDiamondModifier.cpp
+    modifier/analysis/diamond/IdentifyDiamondModifier.cpp
 #    modifier/analysis/voronoi/VoronoiAnalysisModifier.cpp
 #    modifier/analysis/cluster/ClusterAnalysisModifier.cpp
 #    modifier/analysis/wignerseitz/WignerSeitzAnalysisModifier.cpp
-#    modifier/analysis/ptm/PolyhedralTemplateMatchingModifier.cpp
-#    modifier/analysis/ptm/PTMAlgorithm.cpp
+    modifier/analysis/ptm/PolyhedralTemplateMatchingModifier.cpp
+    modifier/analysis/ptm/PTMAlgorithm.cpp
 #    modifier/analysis/surface/ConstructSurfaceModifier.cpp
 #    modifier/selection/ExpandSelectionModifier.cpp
 #    modifier/properties/SmoothTrajectoryModifier.cpp

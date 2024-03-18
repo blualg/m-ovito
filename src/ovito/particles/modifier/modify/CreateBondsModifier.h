@@ -83,82 +83,16 @@ public:
     /// The container type used to store the pair-wise cutoffs.
     using PairwiseCutoffsList = QMap<QPair<QVariant,QVariant>, FloatType>;
 
-private:
-
-    /// Compute engine that creates bonds between particles.
-    class BondsEngine : public ModifierEngine
-    {
-    public:
-
-        /// Constructor.
-        BondsEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr particleTypes,
-                const SimulationCell* simCell, DataOORef<Bonds> bondsObject, DataOORef<BondType> bondType, const Particles* particles, CutoffMode cutoffMode, FloatType maxCutoff, FloatType minCutoff, std::vector<std::vector<FloatType>> pairCutoffsSquared,
-                std::vector<FloatType> typeVdWRadiusMap, FloatType vdwPrefactor, ConstPropertyPtr moleculeIDs, std::vector<bool> isHydrogenType) :
-                    ModifierEngine(request),
-                    _positions(std::move(positions)),
-                    _particleTypes(std::move(particleTypes)),
-                    _simCell(simCell),
-                    _particles(particles),
-                    _cutoffMode(cutoffMode),
-                    _maxCutoff(maxCutoff),
-                    _minCutoff(minCutoff),
-                    _pairCutoffsSquared(std::move(pairCutoffsSquared)),
-                    _typeVdWRadiusMap(std::move(typeVdWRadiusMap)),
-                    _vdwPrefactor(vdwPrefactor),
-                    _moleculeIDs(std::move(moleculeIDs)),
-                    _inputFingerprint(std::move(fingerprint)),
-                    _bonds(std::move(bondsObject)),
-                    _bondType(std::move(bondType)),
-                    _isHydrogenType(std::move(isHydrogenType)) {}
-
-        /// Decides whether the computation is sufficiently short to perform it synchronously within the GUI thread.
-        virtual bool preferSynchronousExecution() override {
-            // It's okay to perform the modifier operation synchronously for small inputs.
-            return _positions->size() < (_cutoffMode == TypeRadiusCutoff ? 400 : 200);
-        }
-
-        /// Computes the modifier's results.
-        virtual void perform() override;
-
-        /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-        /// This method is called by the system whenever the preliminary pipeline input changes.
-        virtual bool pipelineInputChanged() override { return false; }
-
-        /// Returns the generated Bonds.
-        DataOORef<Bonds>& bonds() { return _bonds; }
-
-        /// Returns the input particle positions.
-        const ConstPropertyPtr& positions() const { return _positions; }
-
-    private:
-
-        const CutoffMode _cutoffMode;
-        const FloatType _maxCutoff;
-        const FloatType _minCutoff;
-        const FloatType _vdwPrefactor;
-        std::vector<std::vector<FloatType>> _pairCutoffsSquared;
-        std::vector<FloatType> _typeVdWRadiusMap;
-        std::vector<bool> _isHydrogenType;
-        ConstPropertyPtr _positions;
-        ConstPropertyPtr _particleTypes;
-        ConstPropertyPtr _moleculeIDs;
-        DataOORef<const SimulationCell> _simCell;
-        DataOORef<const Particles> _particles;
-        ElementOrderingFingerprint _inputFingerprint;
-        DataOORef<Bonds> _bonds;
-        DataOORef<BondType> _bondType;
-        size_t _numGeneratedBonds;
-    };
-
 public:
 
     /// Constructor.
     explicit CreateBondsModifier(ObjectInitializationFlags flags);
 
-    /// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
+    /// This method is called by the system when the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
+
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
 
     /// Sets the cutoff radius for a pair of particle types.
     void setPairwiseCutoff(const QVariant& typeA, const QVariant& typeB, FloatType cutoff);
@@ -187,12 +121,6 @@ protected:
 
     /// Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
-
-    /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
-
-    /// Modifies the input data synchronously.
-    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
 
     /// Looks up a particle type in the type list based on the name or the numeric ID.
     static const ElementType* lookupParticleType(const Property* typeProperty, const QVariant& typeSpecification);

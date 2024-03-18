@@ -127,21 +127,21 @@ public:
 
 protected:
 
-    /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    /// Creates the algorithm that will perform the structure identification.
+    virtual std::shared_ptr<Algorithm> createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input, PropertyPtr structures) override;
 
 private:
 
     /// Base class for CNA compute engines.
-    class CNAEngine : public StructureIdentificationEngine
+    class CNAAlgorithm : public StructureIdentificationModifier::Algorithm
     {
     public:
 
-        /// Inherit constructor of base class.
-        using StructureIdentificationEngine::StructureIdentificationEngine;
+        /// Inherit constructor.
+        using Algorithm::Algorithm;
 
-        /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+        /// Computes the structure identification statistics.
+        virtual std::vector<int64_t> computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const override;
 
     protected:
 
@@ -163,17 +163,17 @@ private:
     };
 
     /// Analysis engine that performs the conventional common neighbor analysis.
-    class FixedCNAEngine : public CNAEngine
+    class FixedCNAAlgorithm : public CNAAlgorithm
     {
     public:
 
         /// Constructor.
-        FixedCNAEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, FloatType cutoff) :
-            CNAEngine(request, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
+        FixedCNAAlgorithm(PropertyPtr structures, FloatType cutoff) :
+            CNAAlgorithm(std::move(structures)),
             _cutoff(cutoff) {}
 
-        /// Computes the modifier's results.
-        virtual void perform() override;
+        /// Performs the atomic structure classification.
+        virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
 
     private:
 
@@ -182,46 +182,46 @@ private:
     };
 
     /// Analysis engine that performs the adaptive common neighbor analysis.
-    class AdaptiveCNAEngine : public CNAEngine
+    class AdaptiveCNAAlgorithm : public CNAAlgorithm
     {
     public:
 
-        /// Constructor.
-        using CNAEngine::CNAEngine;
+        /// Inherit constructor.
+        using CNAAlgorithm::CNAAlgorithm;
 
-        /// Computes the modifier's results.
-        virtual void perform() override;
+        /// Performs the atomic structure classification.
+        virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
     };
 
     /// Analysis engine that performs the interval common neighbor analysis.
-    class IntervalCNAEngine : public CNAEngine
+    class IntervalCNAAlgorithm : public CNAAlgorithm
     {
     public:
 
-        /// Constructor.
-        using CNAEngine::CNAEngine;
+        /// Inherit constructor.
+        using CNAAlgorithm::CNAAlgorithm;
 
-        /// Computes the modifier's results.
-        virtual void perform() override;
+        /// Performs the atomic structure classification.
+        virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
     };
 
     /// Analysis engine that performs the common neighbor analysis based on existing bonds.
-    class BondCNAEngine : public CNAEngine
+    class BondCNAAlgorithm : public CNAAlgorithm
     {
     public:
 
         /// Constructor.
-        BondCNAEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, const OORefVector<ElementType>& structureTypes, ConstPropertyPtr selection, ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages) :
-            CNAEngine(request, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
+        BondCNAAlgorithm(PropertyPtr structures, ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages) :
+            CNAAlgorithm(std::move(structures)),
             _bondTopology(std::move(bondTopology)),
             _bondPeriodicImages(std::move(bondPeriodicImages)),
             _cnaIndices(Bonds::OOClass().createUserProperty(DataBuffer::Uninitialized, _bondTopology->size(), Property::Int32, 3, tr("CNA Indices"))) {}
 
-        /// Computes the modifier's results.
-        virtual void perform() override;
+        /// Performs the atomic structure classification.
+        virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
 
-        /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+        /// Computes the structure identification statistics.
+        virtual std::vector<int64_t> computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const override;
 
         /// Returns the output bonds property that stores the computed CNA indices.
         const PropertyPtr& cnaIndices() const { return _cnaIndices; }

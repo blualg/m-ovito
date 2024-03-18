@@ -30,10 +30,9 @@ namespace Ovito {
 /******************************************************************************
 * Initialization function.
 ******************************************************************************/
-bool SyclNearestNeighborFinder::prepare(const Property* positions, const SimulationCell* cell, const Property* selection)
+void SyclNearestNeighborFinder::prepare(const Property* positions, const SimulationCell* cell, const Property* selection)
 {
-    if(!SyclNeighborFinderBase::prepare(positions, cell, selection))
-        return false;
+    SyclNeighborFinderBase::prepare(positions, cell, selection);
 
     const AffineTransformation cellMatrix = simulationCell()->matrix();
     const AffineTransformation inverseCellMatrix = simulationCell()->reciprocalCellMatrix();
@@ -160,7 +159,7 @@ bool SyclNearestNeighborFinder::prepare(const Property* positions, const Simulat
         });
     }
 
-    return true;
+    this_task::throwIfCancelled();
 }
 
 }   // End of namespace

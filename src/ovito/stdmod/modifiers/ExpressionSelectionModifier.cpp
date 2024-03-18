@@ -138,7 +138,6 @@ Future<PipelineFlowState> ExpressionSelectionModifierDelegate::apply(const Modif
             evaluator = std::move(evaluator),
             createdByNode = request.modificationNode()]() mutable
     {
-
         // The number of selected elements.
         std::atomic_size_t nselected(0);
 

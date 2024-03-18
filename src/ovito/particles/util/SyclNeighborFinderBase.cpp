@@ -30,7 +30,7 @@ namespace Ovito {
 /******************************************************************************
 * Initialization function.
 ******************************************************************************/
-bool SyclNeighborFinderBase::prepare(const Property* positions, const SimulationCell* cell, const Property* selection)
+void SyclNeighborFinderBase::prepare(const Property* positions, const SimulationCell* cell, const Property* selection)
 {
     OVITO_ASSERT(positions);
     OVITO_ASSERT(positions->dataType() == DataBuffer::FloatDefault && positions->componentCount() == 3);
@@ -89,7 +89,7 @@ bool SyclNeighborFinderBase::prepare(const Property* positions, const Simulation
         _unpackMapping = unpackMapping.take();
     }
 
-    return true;
+    this_task::throwIfCancelled();
 }
 
 }   // End of namespace

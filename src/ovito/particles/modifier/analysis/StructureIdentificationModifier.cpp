@@ -165,17 +165,18 @@ Future<PipelineFlowState> StructureIdentificationModifier::evaluateModifier(cons
     });
 
     // Phase II: Compute structure statistics.
-    return identificationFuture.then([state = std::move(state), colorByType = colorByType(), createdByNode = request.modificationNode()](std::shared_ptr<const Algorithm> algorithm) {
+    return identificationFuture.then(*this, [this, state = std::move(state), createdByNode = request.modificationNode()](std::shared_ptr<const Algorithm> algorithm) {
 
         // Perform the structure identification in a separate thread.
         return AsynchronousTask<PipelineFlowState>::runAsync([
                 state = std::move(state),
+                modifierParameters = algorithm->getModifierParameters(this),
                 algorithm = std::move(algorithm),
-                colorByType,
+                colorByType = colorByType(),
                 createdByNode = std::move(createdByNode)]() mutable
         {
             // Post-process computed structure classifications.
-            PropertyPtr structures = algorithm->postProcessStructureTypes(algorithm->structures());
+            PropertyPtr structures = algorithm->postProcessStructureTypes(algorithm->structures(), modifierParameters);
             this_task::throwIfCanceled();
 
             // Add output property to the particles.
@@ -189,7 +190,7 @@ Future<PipelineFlowState> StructureIdentificationModifier::evaluateModifier(cons
             }
 
             // Compute the structure identification statistics.
-            algorithm->computeStructureStatistics(structures, state, createdByNode);
+            algorithm->computeStructureStatistics(structures, state, createdByNode, modifierParameters);
 
             return std::move(state);
         });
@@ -199,7 +200,7 @@ Future<PipelineFlowState> StructureIdentificationModifier::evaluateModifier(cons
 /******************************************************************************
 * Computes the structure identification statistics.
 ******************************************************************************/
-std::vector<int64_t> StructureIdentificationModifier::Algorithm::computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode) const
+std::vector<int64_t> StructureIdentificationModifier::Algorithm::computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const
 {
     // Count the number of particles of each identified type.
     int maxTypeId = 0;

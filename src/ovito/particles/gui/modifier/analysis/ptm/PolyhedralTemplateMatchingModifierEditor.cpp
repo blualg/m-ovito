@@ -143,7 +143,7 @@ void PolyhedralTemplateMatchingModifierEditor::plotHistogram()
         _rmsdPlotWidget->setTable(state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("ptm-rmsd")));
     }
     else {
-        _rmsdPlotWidget->reset();
+        _rmsdPlotWidget->setTable({});
     }
 }
 

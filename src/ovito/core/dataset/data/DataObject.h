@@ -199,6 +199,11 @@ public:
         setCreatedByNode(node ? std::static_pointer_cast<const RefTarget>(node->shared_from_this()) : OOWeakRef<const RefTarget>{});
     }
 
+#ifdef OVITO_DEBUG
+    /// Enables or disables reference tracking for this DataObject for debugging purposes.
+    void setReferenceTrackingEnabled(bool enabled) const { _referenceTrackingEnabled.store(enabled, std::memory_order_seq_cst); }
+#endif
+
 protected:
 
     /// Is called when a RefTarget referenced by this object generated an event.
@@ -210,19 +215,36 @@ protected:
     /// Loads the class' contents from the given stream.
     virtual void loadFromStream(ObjectLoadStream& stream) override;
 
+#ifdef OVITO_DEBUG
+    void trackReferenceIncrement() const;
+    void trackReferenceDecrement() const;
+#endif
+
 private:
 
     /// Increments the shared-ownership count of this DataObject by one. This method is called by the DataOORef smart-pointer class.
     inline void incrementDataReferenceCount() const noexcept {
         OVITO_CHECK_OBJECT_POINTER(this);
-        _dataReferenceCount.fetch_add(1, std::memory_order_relaxed);
+#ifdef OVITO_DEBUG
+        if(_referenceTrackingEnabled.load()) {
+            trackReferenceIncrement();
+        }
+#endif
+        _dataReferenceCount.fetch_add(1, std::memory_order_acquire);
     }
 
     /// Decrements the shared-ownership count of this DataObject by one. This method is called by the DataOORef smart-pointer class.
     inline void decrementDataReferenceCount() const noexcept {
         OVITO_CHECK_OBJECT_POINTER(this);
-        OVITO_ASSERT(_dataReferenceCount.load() > 0);
-        _dataReferenceCount.fetch_sub(1, std::memory_order_relaxed);
+#ifdef OVITO_DEBUG
+        if(_referenceTrackingEnabled.load()) {
+            trackReferenceDecrement();
+        }
+        _dataReferenceCount.fetch_sub(1, std::memory_order_release);
+#else
+        auto oldVal = _dataReferenceCount.fetch_sub(1, std::memory_order_release);
+        OVITO_ASSERT(oldVal > 0);
+#endif
     }
 
 private:
@@ -242,6 +264,11 @@ private:
 
     /// The current number of strong references to this DataObject that exist.
     mutable std::atomic<int> _dataReferenceCount{0};
+
+#ifdef OVITO_DEBUG
+    /// Determines whether reference tracking is enabled for this DataObject for debugging purposes.
+    mutable std::atomic_bool _referenceTrackingEnabled{false};
+#endif
 
     // Give DataOORef smart-pointer class direct access to the DataObject's shared owenership counter.
     template<typename DataObjectClass> friend class DataOORef;

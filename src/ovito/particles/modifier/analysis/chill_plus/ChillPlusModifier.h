@@ -82,7 +82,7 @@ protected:
         virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
 
         /// Computes the structure identification statistics.
-        virtual std::vector<int64_t> computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode) const override;
+        virtual std::vector<int64_t> computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const override;
 
         /// Returns the value of the cutoff parameter.
         FloatType cutoff() const { return _cutoff; }

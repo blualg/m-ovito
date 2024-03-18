@@ -48,41 +48,47 @@ public:
     /// Constructor.
     explicit PolyhedralTemplateMatchingModifier(ObjectInitializationFlags flags);
 
+    /// Indicates whether the modifier wants to keep its partial compute results after one of its parameters has been changed.
+    virtual bool shouldKeepPartialResultsAfterChange(const PropertyFieldEvent& event) override {
+        // Avoid a full recomputation if the user changes just the RMSD cutoff parameter.
+        if(event.field() == PROPERTY_FIELD(rmsdCutoff) || event.field() == PROPERTY_FIELD(outputRmsd))
+            return true;
+        return StructureIdentificationModifier::shouldKeepPartialResultsAfterChange(event);
+    }
+
 protected:
 
-    /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
-
-    /// Is called when the value of a property of this object has changed.
-    virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+    /// Creates the engine that will perform the structure identification.
+    virtual std::shared_ptr<Algorithm> createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input, PropertyPtr structures) override;
 
 private:
 
     /// Analysis engine that performs the PTM.
-    class PTMEngine : public StructureIdentificationEngine
+    class PTMEngine : public StructureIdentificationModifier::Algorithm
     {
     public:
 
         /// Constructor.
-        PTMEngine(const ModifierEvaluationRequest& request, ConstPropertyPtr positions, ElementOrderingFingerprint fingerprint, ConstPropertyPtr particleTypes, const SimulationCell* simCell,
-                const OORefVector<ElementType>& structureTypes, const OORefVector<ElementType>& orderingTypes, ConstPropertyPtr selection,
+        PTMEngine(PropertyPtr structures, size_t particleCount, ConstPropertyPtr particleTypes, const OORefVector<ElementType>& orderingTypes,
                 bool outputInteratomicDistance, bool outputOrientation, bool outputDeformationGradient);
 
-        /// Computes the modifier's results.
-        virtual void perform() override;
+        /// Performs the atomic structure classification.
+        virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
 
-        /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-        /// This method is called by the system whenever a parameter of the modifier changes.
-        /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be
-        /// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true).
-        virtual bool modifierChanged(const PropertyFieldEvent& event) override {
-            // Avoid a recomputation if the user changes just the RMSD cutoff parameter.
-            if(event.field() == PROPERTY_FIELD(rmsdCutoff))
-                return true;
-            return StructureIdentificationEngine::modifierChanged(event);
+        /// Obtains the modifier parameters that are relevant for the post-processing phase (phase II).
+        /// The method is called by the StructureIdentificationModifier in the main thread before phase II begins to
+        /// store the modifier's parameters in a std::any container that will be passed to the postProcessStructureTypes() and computeStructureStatistics() methods.
+        virtual std::any getModifierParameters(StructureIdentificationModifier* modifier) const override {
+            return std::make_pair(
+                static_object_cast<PolyhedralTemplateMatchingModifier>(modifier)->rmsdCutoff(),
+                static_object_cast<PolyhedralTemplateMatchingModifier>(modifier)->outputRmsd());
         }
+
+        /// Post-processes the per-particle structure types before they are output to the data pipeline.
+        virtual PropertyPtr postProcessStructureTypes(const PropertyPtr& structures, const std::any& modifierParameters) const override;
+
+        /// Computes the structure identification statistics.
+        virtual std::vector<int64_t> computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const override;
 
         const PropertyPtr& rmsd() const { return _rmsd; }
         const PropertyPtr& interatomicDistances() const { return _interatomicDistances; }
@@ -97,16 +103,11 @@ private:
         /// Returns the histogram of computed RMSD values.
         const PropertyPtr& rmsdHistogram() const { return _rmsdHistogram; }
 
-    protected:
-
-        /// Post-processes the per-particle structure types before they are output to the data pipeline.
-        virtual PropertyPtr postProcessStructureTypes(const ModifierEvaluationRequest& request, const PropertyPtr& structures) override;
-
     private:
 
         /// The internal PTM algorithm object.
-        /// Store it in an optional<> so that it can be released early in the cleanup() method.
-        std::optional<PTMAlgorithm> _algorithm;
+        /// Store it in an optional<> so that it can be released early.
+        std::optional<PTMAlgorithm> _algorithm{std::in_place};
 
         // Modifier outputs:
         const PropertyPtr _rmsd;

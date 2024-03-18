@@ -43,10 +43,8 @@ public:
     /// \param positions The data buffer containing the particle coordinates.
     /// \param simCell The input simulation cell geometry and boundary conditions.
     /// \param selection Determines which particles are included in the neighbor search (optional).
-    /// \return \c false when the operation has been canceled by the user;
-    ///         \c true on success.
     /// \throw Exception on error.
-    bool prepare(const Property* positions, const SimulationCell* simCell, const Property* selection = nullptr);
+    void prepare(const Property* positions, const SimulationCell* simCell, const Property* selection = nullptr);
 
 private:
 

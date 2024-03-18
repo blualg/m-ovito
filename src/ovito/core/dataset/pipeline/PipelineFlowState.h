@@ -48,6 +48,12 @@ public:
     PipelineFlowState(DataOORef<const DataCollection> dataCollection, const PipelineStatus& status, const TimeInterval& validityInterval = TimeInterval::infinite()) :
         _data(std::move(dataCollection)), _stateValidity(validityInterval), _status(status) {}
 
+    /// Move constructor.
+    PipelineFlowState(PipelineFlowState&& other) noexcept = default;
+
+    /// Copy constructor.
+    PipelineFlowState(const PipelineFlowState& other) noexcept = default;
+
 #ifdef OVITO_DEBUG
     /// Destructor.
     ~PipelineFlowState();
@@ -62,6 +68,12 @@ public:
 
     /// \brief Returns whether this flow state has a data collection or not.
     explicit operator bool() const { return (bool)_data; }
+
+    /// \brief Move assignment operator.
+    PipelineFlowState& operator=(PipelineFlowState&& other) noexcept = default;
+
+    /// \brief Copy assignment operator.
+    PipelineFlowState& operator=(const PipelineFlowState& other) noexcept = default;
 
     /// \brief Adds an additional data object to this state.
     void addObject(const DataObject* obj) {

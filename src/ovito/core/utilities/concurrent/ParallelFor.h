@@ -250,6 +250,7 @@ std::vector<ResultObject> parallelForCollect(size_t loopCount, size_t minimumChu
             kernel(elementIndex, results[workerIndex]);
         }
     );
+    OVITO_ASSERT(!results.empty() || loopCount == 0);
 
     return results;
 }

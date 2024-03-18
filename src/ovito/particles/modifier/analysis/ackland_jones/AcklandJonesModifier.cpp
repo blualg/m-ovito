@@ -158,16 +158,16 @@ AcklandJonesModifier::StructureType AcklandJonesModifier::AcklandJonesAnalysisAl
 /******************************************************************************
 * Computes the structure identification statistics.
 ******************************************************************************/
-std::vector<int64_t> AcklandJonesModifier::AcklandJonesAnalysisAlgorithm::computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode) const
+std::vector<int64_t> AcklandJonesModifier::AcklandJonesAnalysisAlgorithm::computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const
 {
-    std::vector<int64_t> typeCounts = StructureIdentificationModifier::Algorithm::computeStructureStatistics(structures, state, createdByNode);
+    std::vector<int64_t> typeCounts = StructureIdentificationModifier::Algorithm::computeStructureStatistics(structures, state, createdByNode, modifierParameters);
 
     // Also output structure type counts, which have been computed by the base class.
-    state.addAttribute(QStringLiteral("AcklandJones.counts.OTHER"), QVariant::fromValue(typeCounts[OTHER]), createdByNode);
-    state.addAttribute(QStringLiteral("AcklandJones.counts.FCC"), QVariant::fromValue(typeCounts[FCC]), createdByNode);
-    state.addAttribute(QStringLiteral("AcklandJones.counts.HCP"), QVariant::fromValue(typeCounts[HCP]), createdByNode);
-    state.addAttribute(QStringLiteral("AcklandJones.counts.BCC"), QVariant::fromValue(typeCounts[BCC]), createdByNode);
-    state.addAttribute(QStringLiteral("AcklandJones.counts.ICO"), QVariant::fromValue(typeCounts[ICO]), createdByNode);
+    state.addAttribute(QStringLiteral("AcklandJones.counts.OTHER"), QVariant::fromValue(typeCounts.at(OTHER)), createdByNode);
+    state.addAttribute(QStringLiteral("AcklandJones.counts.FCC"), QVariant::fromValue(typeCounts.at(FCC)), createdByNode);
+    state.addAttribute(QStringLiteral("AcklandJones.counts.HCP"), QVariant::fromValue(typeCounts.at(HCP)), createdByNode);
+    state.addAttribute(QStringLiteral("AcklandJones.counts.BCC"), QVariant::fromValue(typeCounts.at(BCC)), createdByNode);
+    state.addAttribute(QStringLiteral("AcklandJones.counts.ICO"), QVariant::fromValue(typeCounts.at(ICO)), createdByNode);
 
     return typeCounts;
 }

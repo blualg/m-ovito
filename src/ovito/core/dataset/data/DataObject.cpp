@@ -103,7 +103,7 @@ bool DataObject::isSafeToModify() const
 {
     OVITO_CHECK_OBJECT_POINTER(this);
 
-    if(_dataReferenceCount.load(std::memory_order_relaxed) <= 1) {
+    if(_dataReferenceCount.load(std::memory_order_acquire) <= 1) {
         bool isExclusivelyOwned = true;
         visitDependents([&](const RefMaker* dependent) noexcept {
             // Recursively determine if the container of this data object is safe to modify as well.
@@ -131,7 +131,7 @@ bool DataObject::isSafeToModifySubObject(const DataObject* subObject) const
     OVITO_ASSERT(this->hasReferenceTo(subObject));
     OVITO_ASSERT_MSG(this->isSafeToModify(), "DataObject::isSafeToModifySubobject()", qPrintable(QString("Cannot make sub-object %1 mutable, because parent object %2 itself is not safe to modify.").arg(subObject->getOOClass().name()).arg(getOOClass().name())));
 
-    return (subObject->_dataReferenceCount.load(std::memory_order_relaxed) <= 1);
+    return (subObject->_dataReferenceCount.load(std::memory_order_acquire) <= 1);
 }
 
 /******************************************************************************
@@ -283,5 +283,17 @@ void DataObject::updateEditableProxies(PipelineFlowState& state, ConstDataObject
         }
     }
 }
+
+#ifdef OVITO_DEBUG
+void DataObject::trackReferenceIncrement() const
+{
+    qDebug() << "Incrementing data reference count of" << this << "to" << _dataReferenceCount.load() + 1;
+}
+
+void DataObject::trackReferenceDecrement() const
+{
+    qDebug() << "Decrementing data reference count of" << this << "to" << _dataReferenceCount.load() - 1;
+}
+#endif
 
 }   // End of namespace
