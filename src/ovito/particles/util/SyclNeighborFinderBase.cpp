@@ -89,7 +89,7 @@ void SyclNeighborFinderBase::prepare(const Property* positions, const Simulation
         _unpackMapping = unpackMapping.take();
     }
 
-    this_task::throwIfCancelled();
+    this_task::throwIfCanceled();
 }
 
 }   // End of namespace

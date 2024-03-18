@@ -212,11 +212,11 @@ std::vector<int64_t> StructureIdentificationModifier::Algorithm::computeStructur
     std::vector<int64_t> counts(maxTypeId + 1);
 
 #ifdef OVITO_USE_SYCL
-    if(!counts.empty() && structureProperty->size() != 0) {
+    if(!counts.empty() && structures->size() != 0) {
         sycl::buffer<int64_t> countsBuf(counts.data(), counts.size());
         ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
             auto countsAcc = countsBuf.get_access(cgh, sycl::write_only);
-            SyclBufferAccess<int32_t, access_mode::read> typeAcc(structureProperty, cgh);
+            SyclBufferAccess<int32_t, access_mode::read> typeAcc(structures, cgh);
             OVITO_SYCL_PARALLEL_FOR(cgh, StructureIdentificationModifier_countTypes)(sycl::range(typeAcc.size()), [=](size_t i) {
                 auto t = typeAcc[i];
                 if(t >= 0 && t < countsAcc.size())

@@ -155,12 +155,12 @@ void CommonNeighborAnalysisModifier::FixedCNAAlgorithm::identifyStructures(const
     neighborFinder.prepare(_cutoff, particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
 
     // Fill in default output for unselected particles.
-    if(selection())
+    if(selection)
         structures()->fill<int32_t>(OTHER);
 
     // Analyze each particle.
     syclParallelForWithProgress(neighborFinder.localParticleCount(), [&](sycl::handler& cgh, auto&& parallel_kernel) {
-        SyclBufferAccess<int32_t, access_mode::write> structuresAcc(structures(), cgh, selection() ? DataBuffer::Initialized : DataBuffer::Uninitialized);
+        SyclBufferAccess<int32_t, access_mode::write> structuresAcc(structures(), cgh, selection ? DataBuffer::Initialized : DataBuffer::Uninitialized);
         SyclCutoffNeighborFinder::Accessor neighborAcc(neighborFinder, cgh);
         parallel_kernel([=](sycl::nd_item<1> idx, size_t local_problem_size, size_t global_index_offset, auto&& was_canceled) {
             for(size_t i_local = idx.get_global_id(0); i_local < local_problem_size && !was_canceled(); i_local += idx.get_global_range(0)) {

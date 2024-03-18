@@ -290,21 +290,21 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
             ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
 
                 // Access selection flags array (optional).
-                SyclBufferAccess<const SelectionIntType, access_mode::read> selectionAcc(_selection, cgh);
+                SyclBufferAccess<const SelectionIntType, access_mode::read> selectionAcc(selection, cgh);
                 // Access color lookup table.
                 SyclBufferAccess<const ColorG, access_mode::read> colorMapAcc(colorMap, cgh);
                 // Access output array.
-                SyclBufferAccess<ColorG, access_mode::write> outputAcc(_colors, cgh, _selection ? DataBuffer::Initialized : DataBuffer::Uninitialized);
+                SyclBufferAccess<ColorG, access_mode::write> outputAcc(colors, cgh, selection ? DataBuffer::Initialized : DataBuffer::Uninitialized);
 
                 // Duplicate templated code for different input data types.
-                _input->forAnyType([&](auto _) {
+                property->forAnyType([&](auto _) {
                     using T = decltype(_);
-                    SyclBufferAccess<const T*, access_mode::read> inputAcc(_input, cgh);
+                    SyclBufferAccess<const T*, access_mode::read> inputAcc(property, cgh);
 
-                    OVITO_SYCL_PARALLEL_FOR(cgh, ColorCodingModifierDelegate_apply)(sycl::range(_input->size()), [=](size_t i) {
+                    OVITO_SYCL_PARALLEL_FOR(cgh, ColorCodingModifierDelegate_apply)(sycl::range(property->size()), [=](size_t i) {
                         if(selectionAcc.empty() || selectionAcc[i]) {
                             // Get input value.
-                            const GraphicsFloatType value = static_cast<FloatType>(inputAcc[sycl::id<2>(i, _vectorComponent)]);
+                            const GraphicsFloatType value = static_cast<FloatType>(inputAcc[sycl::id<2>(i, vectorComponent)]);
 
                             // Map input value to [0,1] range.
                             GraphicsFloatType t;

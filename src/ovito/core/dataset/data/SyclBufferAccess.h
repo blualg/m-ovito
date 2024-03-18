@@ -251,7 +251,7 @@ public:
         OVITO_STATIC_ASSERT(AccessMode == access_mode::read || AccessMode == access_mode::read_write || AccessMode == access_mode::discard_read_write);
         OVITO_ASSERT(accessor_type::empty() || accessor_type::is_placeholder());
         OVITO_ASSERT(ComponentWise || component == 0);
-        OVITO_ASSERT(!ComponentWise || component < accessor_type::get_range()[1]);
+        OVITO_ASSERT(!ComponentWise || accessor_type::empty() || component < accessor_type::get_range()[1]);
 
         // The buffer the results will be stored in.
         sycl::buffer result = detail::allocateSyclBuffer<std::remove_const_t<element_type>>(sycl::range<1>{1});
@@ -288,7 +288,7 @@ public:
         OVITO_STATIC_ASSERT(AccessMode == access_mode::read || AccessMode == access_mode::read_write || AccessMode == access_mode::discard_read_write);
         OVITO_ASSERT(accessor_type::empty() || accessor_type::is_placeholder());
         OVITO_ASSERT(ComponentWise || component == 0);
-        OVITO_ASSERT(!ComponentWise || component < accessor_type::get_range()[1]);
+        OVITO_ASSERT(!ComponentWise || accessor_type::empty() || component < accessor_type::get_range()[1]);
         OVITO_ASSERT(!selection || selection->size() == this->size());
         OVITO_ASSERT(!selection || (selection->dataType() == DataBuffer::IntSelection && selection->componentCount() == 1));
 

@@ -30,10 +30,9 @@ namespace Ovito {
 /******************************************************************************
 * Initialization function.
 ******************************************************************************/
-bool SyclCutoffNeighborFinder::prepare(FloatType cutoffRadius, const Property* positions, const SimulationCell* cell, const Property* selection)
+void SyclCutoffNeighborFinder::prepare(FloatType cutoffRadius, const Property* positions, const SimulationCell* cell, const Property* selection)
 {
-    if(!SyclNeighborFinderBase::prepare(positions, cell, selection))
-        return false;
+    SyclNeighborFinderBase::prepare(positions, cell, selection);
 
     _cutoffRadius = cutoffRadius;
     _cutoffRadiusSquared = cutoffRadius * cutoffRadius;
@@ -277,7 +276,7 @@ bool SyclCutoffNeighborFinder::prepare(FloatType cutoffRadius, const Property* p
     _binDim = binDim;
     _reciprocalBinCell = reciprocalBinCell;
 
-    return true;
+    this_task::throwIfCanceled();
 }
 
 }   // End of namespace
