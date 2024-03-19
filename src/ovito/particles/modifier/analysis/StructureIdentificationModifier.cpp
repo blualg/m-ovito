@@ -165,16 +165,13 @@ Future<PipelineFlowState> StructureIdentificationModifier::evaluateModifier(cons
     });
 
     // Phase II: Compute structure statistics.
-    return identificationFuture.then(*this, [this, state = std::move(state), createdByNode = request.modificationNode()](std::shared_ptr<const Algorithm> algorithm) {
-
+    return identificationFuture.then(*this, [this, state = std::move(state),
+                                             createdByNode = request.modificationNode()](std::shared_ptr<const Algorithm> algorithm) {
+        auto modifierParameters = algorithm->getModifierParameters(this);
         // Perform the structure identification in a separate thread.
-        return AsynchronousTask<PipelineFlowState>::runAsync([
-                state = std::move(state),
-                modifierParameters = algorithm->getModifierParameters(this),
-                algorithm = std::move(algorithm),
-                colorByType = colorByType(),
-                createdByNode = std::move(createdByNode)]() mutable
-        {
+        return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), modifierParameters = std::move(modifierParameters),
+                                                              algorithm = std::move(algorithm), colorByType = colorByType(),
+                                                              createdByNode = std::move(createdByNode)]() mutable {
             // Post-process computed structure classifications.
             PropertyPtr structures = algorithm->postProcessStructureTypes(algorithm->structures(), modifierParameters);
             this_task::throwIfCanceled();
