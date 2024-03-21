@@ -158,7 +158,8 @@ void IMDImporter::FrameLoader::loadFile()
     // Parse data columns.
     InputColumnReader columnParser(*this, columnMapping, particles());
     for(size_t i = 0; i < numAtoms; i++) {
-        if(!setProgressValueIntermittent(i)) return;
+        // Update progress bar and check for user cancellation.
+        setProgressValueIntermittent(i);
         try {
             columnParser.readElement(i, stream.readLine());
         }

@@ -359,19 +359,19 @@ namespace this_task
 OVITO_CORE_EXPORT Task*& get() noexcept;
 
 /// Changes the description string of the active task.
-OVITO_CORE_EXPORT void setProgressText(const QString& progressText) noexcept;
+OVITO_CORE_EXPORT void setProgressText(const QString& progressText);
 
 /// Sets the maximum value of the current task.
-OVITO_CORE_EXPORT void setProgressMaximum(qlonglong maximum, bool autoReset = true) noexcept;
+OVITO_CORE_EXPORT void setProgressMaximum(qlonglong maximum, bool autoReset = true);
 
 /// Sets the progress value of the current task.
-OVITO_CORE_EXPORT bool setProgressValue(qlonglong progressValue) noexcept;
+OVITO_CORE_EXPORT void setProgressValue(qlonglong progressValue);
 
 /// Increments the progress value of the task.
-OVITO_CORE_EXPORT bool incrementProgressValue(qlonglong increment = 1) noexcept;
+OVITO_CORE_EXPORT void incrementProgressValue(qlonglong increment = 1);
 
 /// Sets the current progress value of the task, generating update events only occasionally.
-OVITO_CORE_EXPORT bool setProgressValueIntermittent(qlonglong progressValue, int updateEvery = 2000) noexcept;
+OVITO_CORE_EXPORT void setProgressValueIntermittent(qlonglong progressValue, int updateEvery = 2000);
 
 /// Returns whether the current task has been canceled.
 OVITO_CORE_EXPORT inline bool isCanceled() noexcept {
@@ -393,19 +393,19 @@ OVITO_CORE_EXPORT inline void cancelAndThrow() {
 }
 
 /// Starts a sequence of sub-steps in the progress range of this task.
-OVITO_CORE_EXPORT void beginProgressSubStepsWithWeights(std::vector<int> weights) noexcept;
+OVITO_CORE_EXPORT void beginProgressSubStepsWithWeights(std::vector<int> weights);
 
 /// Convenience version of the function above, which creates *N* substeps, all with the same weight.
-OVITO_CORE_EXPORT inline void beginProgressSubSteps(int nsteps) noexcept {
+OVITO_CORE_EXPORT inline void beginProgressSubSteps(int nsteps) {
     beginProgressSubStepsWithWeights(std::vector<int>(nsteps, 1));
 }
 
 /// Completes the current sub-step in the sequence started with beginProgressSubSteps() or
 /// beginProgressSubStepsWithWeights() and moves to the next one.
-OVITO_CORE_EXPORT void nextProgressSubStep() noexcept;
+OVITO_CORE_EXPORT void nextProgressSubStep();
 
 /// Completes a sub-step sequence started with beginProgressSubSteps() or beginProgressSubStepsWithWeights().
-OVITO_CORE_EXPORT void endProgressSubSteps() noexcept;
+OVITO_CORE_EXPORT void endProgressSubSteps();
 
 }   // End of namespace this_task
 

@@ -105,8 +105,8 @@ void LAMMPSGridDumpImporter::FrameFinder::discoverFramesInFile(QVector<FileSourc
             else if(stream.lineStartsWith("ITEM: GRID CELLS")) {
                 for(size_t i = 0; i < numVoxels; i++) {
                     stream.readLine();
-                    if(!setProgressValueIntermittent(stream.underlyingByteOffset()))
-                        return;
+                    // Update progress bar and check for cancelation.
+                    setProgressValueIntermittent(stream.underlyingByteOffset());
                 }
                 break;
             }
@@ -297,7 +297,8 @@ void LAMMPSGridDumpImporter::FrameLoader::loadFile()
                 int lineNumber = stream.lineNumber() + 1;
                 try {
                     for(size_t i = 0; i < numVoxels; i++, lineNumber++) {
-                        if(!setProgressValueIntermittent(i)) return;
+                        // Update progress bar and check for cancelation.
+                        setProgressValueIntermittent(i);
                         if(!s)
                             columnParser.readElement(i, stream.readLine());
                         else

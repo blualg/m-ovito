@@ -72,6 +72,10 @@ public:
             createModifierDelegates(DeleteSelectedModifierDelegate::OOClass());
         }
     }
+
+    /// Indicates whether the interactive viewports should be updated after a parameter of the the modifier has
+    /// been changed and before the entire pipeline is recomputed.
+    virtual bool shouldRefreshViewportsAfterChange() override { return true; }
 };
 
 }   // End of namespace

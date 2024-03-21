@@ -110,7 +110,7 @@ void CentroSymmetryModifierEditor::plotHistogram()
         _cspPlotWidget->setTable(state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("csp-centrosymmetry")));
     }
     else {
-        _cspPlotWidget->reset();
+        _cspPlotWidget->setTable({});
     }
 }
 

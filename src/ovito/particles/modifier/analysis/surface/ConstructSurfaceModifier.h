@@ -70,37 +70,47 @@ public:
     /// Constructor.
     explicit ConstructSurfaceModifier(ObjectInitializationFlags flags);
 
-protected:
+    /// This function is called by the pipeline system before a new modifier evaluation begins.
+    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
 
-    /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
+
+    /// Indicates that a preliminary viewport update will be performed immediately after this modifier
+	/// has computed new results.
+    virtual bool shouldRefreshViewportsAfterEvaluation() override { return true; }
 
 private:
 
     /// Abstract base class for computation engines that build the surface mesh.
-    class ConstructSurfaceEngineBase : public ModifierEngine
+    class ConstructSurfaceEngineBase
     {
     public:
 
         /// Constructor.
-        ConstructSurfaceEngineBase(const ModifierEvaluationRequest& request, ConstPropertyPtr positions, ConstPropertyPtr selection,
-                                   DataOORef<SurfaceMesh> mesh, bool identifyRegions, bool mapParticlesToRegions,
-                                   bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties)
-            : ModifierEngine(request),
-              _positions(positions),
+        ConstructSurfaceEngineBase(ConstPropertyPtr positions, ConstPropertyPtr selection,
+                                   SurfaceMesh* mesh, bool identifyRegions, bool mapParticlesToRegions,
+                                   bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties,
+                                   OOWeakRef<const PipelineNode> createdByNode)
+            : _positions(positions),
               _selection(std::move(selection)),
               _mesh(std::move(mesh)),
               _particleProperties(std::move(particleProperties)),
               _identifyRegions(identifyRegions),
-              _particleRegionIds(mapParticlesToRegions ? Particles::OOClass().createUserProperty(
-                                                             DataBuffer::Uninitialized, positions->size(), Property::Int32, 1, tr("Region"))
-                                                       : nullptr),
-              _surfaceDistances(computeSurfaceDistance
-                                    ? Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, positions->size(),
-                                                                              Property::FloatDefault, 1, tr("Surface Distance"))
-                                    : nullptr)
+              _particleRegionIds(mapParticlesToRegions ? Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, positions->size(), Property::Int32, 1, tr("Region")) : nullptr),
+              _surfaceDistances(computeSurfaceDistance ? Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, positions->size(), Property::FloatDefault, 1, tr("Surface Distance")) : nullptr),
+              _createdByNode(std::move(createdByNode))
         {
         }
+
+        /// Destructor.
+        virtual ~ConstructSurfaceEngineBase() = default;
+
+        /// Computes the modifier's results and stores them in this object for later retrieval.
+        virtual void perform() = 0;
+
+        /// Injects the computed results into the data pipeline.
+        virtual void applyResults(PipelineFlowState& state);
 
         /// Returns the computed total surface area.
         FloatType surfaceArea() const { return (FloatType)_totalSurfaceArea; }
@@ -109,7 +119,7 @@ private:
         void addSurfaceArea(FloatType a) { _totalSurfaceArea += a; }
 
         /// Returns the generated surface mesh.
-        DataOORef<SurfaceMesh>& mesh() { return _mesh; }
+        SurfaceMesh* mesh() const { return _mesh; }
 
         // Returns the identify regions value
         bool identifyRegions() const { return _identifyRegions; }
@@ -127,16 +137,6 @@ private:
         const PropertyPtr& surfaceDistances() const { return _surfaceDistances; }
 
     protected:
-        /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-        /// Releases data that is no longer needed.
-        void releaseWorkingData()
-        {
-            _positions.reset();
-            _selection.reset();
-            _particleProperties.clear();
-        }
 
         /// Compute the distance of each input particle from the constructed surface.
         void computeSurfaceDistances(const SurfaceMeshBuilder& mesh);
@@ -162,13 +162,16 @@ private:
         ConstPropertyPtr _selection;
 
         /// The generated surface mesh.
-        DataOORef<SurfaceMesh> _mesh;
+        SurfaceMesh* _mesh;
 
         /// The computed distance of each particle from the constructed surface.
         PropertyPtr _surfaceDistances;
 
         /// The list of particle properties to copy over to the generated mesh.
         std::vector<ConstPropertyPtr> _particleProperties;
+
+        /// The pipeline node that created this engine.
+        OOWeakRef<const PipelineNode> _createdByNode;
     };
 
     /// Compute engine building the surface mesh using the alpha shape method.
@@ -177,12 +180,13 @@ private:
     public:
 
         /// Constructor.
-        AlphaShapeEngine(const ModifierEvaluationRequest& request, ConstPropertyPtr positions, ConstPropertyPtr selection,
-                         ConstPropertyPtr particleGrains, DataOORef<SurfaceMesh> mesh, FloatType probeSphereRadius,
+        AlphaShapeEngine(ConstPropertyPtr positions, ConstPropertyPtr selection,
+                         ConstPropertyPtr particleGrains, SurfaceMesh* mesh, FloatType probeSphereRadius,
                          int smoothingLevel, bool selectSurfaceParticles, bool identifyRegions, bool mapParticlesToRegions,
-                         bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties)
-            : ConstructSurfaceEngineBase(request, std::move(positions), std::move(selection), std::move(mesh), identifyRegions,
-                                         mapParticlesToRegions, computeSurfaceDistance, std::move(particleProperties)),
+                         bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties,
+                         OOWeakRef<const PipelineNode> createdByNode)
+            : ConstructSurfaceEngineBase(std::move(positions), std::move(selection), std::move(mesh), identifyRegions,
+                                         mapParticlesToRegions, computeSurfaceDistance, std::move(particleProperties), std::move(createdByNode)),
               _particleGrains(std::move(particleGrains)),
               _probeSphereRadius(probeSphereRadius),
               _smoothingLevel(smoothingLevel),
@@ -198,7 +202,7 @@ private:
         virtual void perform() override;
 
         /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+        virtual void applyResults(PipelineFlowState& state) override;
 
         /// Returns the input particle grain IDs.
         const ConstPropertyPtr& particleGrains() const { return _particleGrains; }
@@ -233,12 +237,13 @@ private:
     public:
 
         /// Constructor.
-        GaussianDensityEngine(const ModifierEvaluationRequest& request, ConstPropertyPtr positions, ConstPropertyPtr selection,
-                              DataOORef<SurfaceMesh> mesh, FloatType radiusFactor, FloatType isoLevel, int gridResolution,
+        GaussianDensityEngine(ConstPropertyPtr positions, ConstPropertyPtr selection,
+                              SurfaceMesh* mesh, FloatType radiusFactor, FloatType isoLevel, int gridResolution,
                               bool identifyRegions, bool mapParticlesToRegions, bool computeSurfaceDistance,
-                              ConstPropertyPtr radii, std::vector<ConstPropertyPtr> particleProperties)
-            : ConstructSurfaceEngineBase(request, std::move(positions), std::move(selection), std::move(mesh), identifyRegions,
-                                         mapParticlesToRegions, computeSurfaceDistance, std::move(particleProperties)),
+                              ConstPropertyPtr radii, std::vector<ConstPropertyPtr> particleProperties,
+                              OOWeakRef<const PipelineNode> createdByNode)
+            : ConstructSurfaceEngineBase(std::move(positions), std::move(selection), std::move(mesh), identifyRegions,
+                                         mapParticlesToRegions, computeSurfaceDistance, std::move(particleProperties), std::move(createdByNode)),
               _radiusFactor(radiusFactor),
               _isoLevel(isoLevel),
               _gridResolution(gridResolution),

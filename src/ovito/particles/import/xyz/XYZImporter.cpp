@@ -130,8 +130,8 @@ void XYZImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
         // Skip atom lines.
         for(unsigned long long i = 0; i < numParticlesLong; i++) {
             stream.readLine();
-            if(!setProgressValueIntermittent(stream.underlyingByteOffset()))
-                return;
+            // Update progress bar and check for user cancellation.
+            setProgressValueIntermittent(stream.underlyingByteOffset());
         }
 
         // Skip simulation cell section if this is a .exyz file written by OpenBabel.
@@ -425,7 +425,8 @@ void XYZImporter::FrameLoader::loadFile()
     InputColumnReader columnParser(*this, _columnMapping, particles());
     try {
         for(size_t i = 0; i < numParticlesLong; i++) {
-            if(!setProgressValueIntermittent(i)) return;
+            // Update progress bar and check for user cancellation.
+            setProgressValueIntermittent(i);
             stream.readLine();
             columnParser.readElement(i, stream.line());
         }

@@ -139,27 +139,36 @@ public:
             }
             OVITO_ASSERT(nextFuture.isValid());
 
-            // The new future's task now becomes the one we depend on.
+            // The new future's task now becomes the one we wait for.
             QMutexLocker locker(&this->taskMutex());
+            // This continuation task might have been canceled. In this case, there is no need to attach to the new future.
+            if(this->isFinished()) {
+                return;
+            }
             _awaitedTask = nextFuture.task();
             locker.unlock();
 
             // Get results from the future's task once it completes and use it as the results of this continuation task.
             nextFuture.task()->addContinuation(InlineExecutor{}, [promise = std::move(promise)]() mutable noexcept {
-                ContinuationTask* thisTask = static_cast<ContinuationTask*>(promise.task().get());
 
-                // Manage access to the task that represents the continuation.
+                // Thread-safe access to the ContinuationTask.
+                ContinuationTask* thisTask = static_cast<ContinuationTask*>(promise.task().get());
                 QMutexLocker locker(&thisTask->taskMutex());
 
                 // Get the task that did just finish.
                 TaskReference finishedTask = thisTask->takeAwaitedTask();
 
                 // Bail out if the preceding task has been canceled, or if the continuation has been canceled.
-                if(!finishedTask || finishedTask->isCanceled())
+                if(!finishedTask || finishedTask->isCanceled()) {
                     return; // Note: The Promise's destructor automatically puts the continuation task into 'canceled' and 'finished' states if it isn't already.
+                }
 
-                OVITO_ASSERT(!thisTask->isFinished());
-                OVITO_ASSERT(!thisTask->isCanceled());
+                // There is a small chance that the continuation task was canceled in the meantime but hasn't let go of the awaited task yet
+                // (because finishing and running the registered continuation functions is not an atomic operation).
+                // We need to check for this situation here and bail out if it happened.
+                if(thisTask->isFinished()) {
+                    return;
+                }
 
                 // If the preceding task failed, inherit the error state.
                 if(finishedTask->exceptionStore()) {

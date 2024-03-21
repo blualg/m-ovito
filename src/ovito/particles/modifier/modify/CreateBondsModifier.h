@@ -94,6 +94,10 @@ public:
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
 
+    /// Indicates whether the interactive viewports should be updated after a parameter of the the modifier has
+    /// been changed and before the entire pipeline is recomputed.
+    virtual bool shouldRefreshViewportsAfterChange() override { return true; }
+
     /// Sets the cutoff radius for a pair of particle types.
     void setPairwiseCutoff(const QVariant& typeA, const QVariant& typeB, FloatType cutoff);
 

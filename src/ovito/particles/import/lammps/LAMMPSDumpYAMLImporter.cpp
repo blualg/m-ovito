@@ -291,8 +291,8 @@ void LAMMPSDumpYAMLImporter::FrameLoader::loadFile()
     if(natoms != 0) {
         auto line_node = dataNode.begin();
         for(size_t i = 0; i < (size_t)natoms; i++) {
-            if(!setProgressValueIntermittent(i))
-                return;
+            // Update progress bar and check for user cancellation.
+            setProgressValueIntermittent(i);
             if(line_node == dataNode.end())
                 throw Exception(tr("LAMMPS dump yaml file parsing error. Too few lines in 'data' section."));
             size_t col = 0;

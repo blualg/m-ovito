@@ -153,8 +153,9 @@ void DLPOLYImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporte
                 for(int j = 0; j < nLinesPerAtom; j++) {
                     stream.readLine();
                 }
-                if((i % 1024) == 0 && !setProgressValue(stream.underlyingByteOffset()))
-                    return;
+                // Update progress bar and check for user cancellation.
+                if((i % 1024) == 0)
+                    setProgressValue(stream.underlyingByteOffset());
             }
         }
     }

@@ -104,13 +104,12 @@ void Task::finishLocked(MutexLocker& locker) noexcept
     OVITO_ASSERT(isStarted());
 
     // Put this task into the 'finished' state.
-    int state = _state.fetch_or(Finished, std::memory_order_relaxed);
+    _state.fetch_or(Finished, std::memory_order_relaxed);
 
     // Make sure that the result has been set (if not in canceled or error state).
     OVITO_ASSERT_MSG(_exceptionStore || isCanceled() || _hasResultsStored.load() || !_resultsStorage,
         "Task::finishLocked()",
-        qPrintable(QStringLiteral("Result has not been set for the task. Please check program code setting the task to finished. Task's last progress text: %1")
-            .arg(isProgressingTask() ? static_cast<ProgressingTask*>(this)->progressText() : QStringLiteral("<non-progress task>"))));
+        "Result has not been set for the task. Please check program code setting the task to finished.");
 
     // Inform the registered callbacks.
     callCallbacks(Finished);
@@ -372,7 +371,7 @@ Task*& get() noexcept
 /*******************************************************x***********************
 * Changes the description string of the active task.
 ******************************************************************************/
-void setProgressText(const QString& progressText) noexcept
+void setProgressText(const QString& progressText)
 {
     Task* task = get();
     OVITO_ASSERT(task != nullptr);
@@ -384,7 +383,7 @@ void setProgressText(const QString& progressText) noexcept
 /*******************************************************x***********************
 * Sets the current maximum value for progress reporting.
 ******************************************************************************/
-void setProgressMaximum(qlonglong maximum, bool autoReset) noexcept
+void setProgressMaximum(qlonglong maximum, bool autoReset)
 {
     Task* task = get();
     OVITO_ASSERT(task != nullptr);
@@ -396,52 +395,55 @@ void setProgressMaximum(qlonglong maximum, bool autoReset) noexcept
 /*******************************************************x***********************
 * Sets the current progress value of the task.
 ******************************************************************************/
-bool setProgressValue(qlonglong progressValue) noexcept
+void setProgressValue(qlonglong progressValue)
 {
     Task* task = get();
     OVITO_ASSERT(task != nullptr);
     if(task->isProgressingTask()) {
-        return static_cast<ProgressingTask*>(task)->setProgressValue(progressValue);
+        static_cast<ProgressingTask*>(task)->setProgressValue(progressValue);
     }
     else {
-        return !task->isCanceled();
+        if(task->isCanceled())
+            throw OperationCanceled();
     }
 }
 
 /*******************************************************x***********************
 * Increments the progress value of the task.
 ******************************************************************************/
-bool incrementProgressValue(qlonglong increment) noexcept
+void incrementProgressValue(qlonglong increment)
 {
     Task* task = get();
     OVITO_ASSERT(task != nullptr);
     if(task->isProgressingTask()) {
-        return static_cast<ProgressingTask*>(task)->incrementProgressValue(increment);
+        static_cast<ProgressingTask*>(task)->incrementProgressValue(increment);
     }
     else {
-        return !task->isCanceled();
+        if(task->isCanceled())
+            throw OperationCanceled();
     }
 }
 
 /*******************************************************x***********************
 * Sets the current progress value of the task, generating update events only occasionally.
 ******************************************************************************/
-bool setProgressValueIntermittent(qlonglong progressValue, int updateEvery) noexcept
+void setProgressValueIntermittent(qlonglong progressValue, int updateEvery)
 {
     Task* task = get();
     OVITO_ASSERT(task != nullptr);
     if(task->isProgressingTask()) {
-        return static_cast<ProgressingTask*>(task)->setProgressValueIntermittent(progressValue, updateEvery);
+        static_cast<ProgressingTask*>(task)->setProgressValueIntermittent(progressValue, updateEvery);
     }
     else {
-        return !task->isCanceled();
+        if(task->isCanceled())
+            throw OperationCanceled();
     }
 }
 
 /*******************************************************x***********************
 * Starts a sequence of sub-steps in the progress range of this task.
 ******************************************************************************/
-void beginProgressSubStepsWithWeights(std::vector<int> weights) noexcept
+void beginProgressSubStepsWithWeights(std::vector<int> weights)
 {
     Task* task = get();
     OVITO_ASSERT(task != nullptr);
@@ -454,7 +456,7 @@ void beginProgressSubStepsWithWeights(std::vector<int> weights) noexcept
 * Completes the current sub-step in the sequence started with beginProgressSubSteps() or
 * beginProgressSubStepsWithWeights() and moves to the next one.
 ******************************************************************************/
-void nextProgressSubStep() noexcept
+void nextProgressSubStep()
 {
     Task* task = get();
     OVITO_ASSERT(task != nullptr);
@@ -466,7 +468,7 @@ void nextProgressSubStep() noexcept
 /*******************************************************x***********************
 * Completes a sub-step sequence started with beginProgressSubSteps() or beginProgressSubStepsWithWeights().
 ******************************************************************************/
-void endProgressSubSteps() noexcept
+void endProgressSubSteps()
 {
     Task* task = get();
     OVITO_ASSERT(task != nullptr);

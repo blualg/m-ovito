@@ -126,8 +126,9 @@ void XTCImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
     Frame frame(fileHandle());
     while(!file.eof() && !isCanceled()) {
         frame.byteOffset = file.byteOffset();
-        if(!setProgressValue(frame.byteOffset))
-            return;
+
+        // Update progress bar and check for user cancellation.
+        setProgressValue(frame.byteOffset);
 
         // Parse trajectory frame.
         XTCFile::Frame xtcFrame = file.read();

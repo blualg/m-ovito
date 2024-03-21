@@ -45,6 +45,13 @@ public:
         return _data.try_emplace(std::this_thread::get_id(), std::forward<Args>(args)...).first->second;
     }
 
+    template<typename Function>
+    void visitEach(Function&& function) {
+        std::lock_guard<std::mutex> lock(_mutex);
+        for(auto& entry : _data)
+            function(entry.second);
+    }
+
 private:
 
     std::map<std::thread::id, T> _data;

@@ -94,6 +94,10 @@ public:
     /// Constructor.
     explicit AssignColorModifier(ObjectInitializationFlags flags);
 
+    /// Indicates whether the interactive viewports should be updated after a parameter of the the modifier has
+    /// been changed and before the entire pipeline is recomputed.
+    virtual bool shouldRefreshViewportsAfterChange() override { return true; }
+
     /// Returns the color that is assigned to the selected elements.
     Color color() const { return colorController() ? colorController()->getColorValue(AnimationTime(0)) : Color(0,0,0); }
 

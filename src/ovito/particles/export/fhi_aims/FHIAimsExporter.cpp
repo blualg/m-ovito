@@ -74,8 +74,8 @@ void FHIAimsExporter::exportData(const PipelineFlowState& state, int frameNumber
             textStream() << " 1\n";
         }
 
-        if(!this_task::setProgressValueIntermittent(i))
-            return;
+        // Update progress bar and check for user cancellation.
+        this_task::setProgressValueIntermittent(i);
     }
 }
 

@@ -73,8 +73,8 @@ void CastepMDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImpor
             throw Exception(tr("Invalid CASTEP md/geom file. Unexpected end of file."));
         if(boost::algorithm::istarts_with(stream.readLineTrimLeft(), "END header"))
             break;
-        if(!setProgressValueIntermittent(stream.underlyingByteOffset()))
-            return;
+        // Update progress bar and check for user cancellation.
+        setProgressValueIntermittent(stream.underlyingByteOffset());
     }
 
     Frame frame(fileHandle());
@@ -94,8 +94,8 @@ void CastepMDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImpor
             stream.readLine();
         }
 
-        if(!setProgressValueIntermittent(stream.underlyingByteOffset()))
-            return;
+        // Update progress bar and check for user cancellation.
+        setProgressValueIntermittent(stream.underlyingByteOffset());
     }
 }
 

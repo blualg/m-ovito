@@ -97,6 +97,10 @@ public:
     /// Constructor.
     explicit ExpressionSelectionModifier(ObjectInitializationFlags flags);
 
+    /// Indicates whether the interactive viewports should be updated after a parameter of the the modifier has
+    /// been changed and before the entire pipeline is recomputed.
+    virtual bool shouldRefreshViewportsAfterChange() override { return true; }
+
     /// \brief Returns the list of available input variables.
     const QStringList& inputVariableNames() const { return _variableNames; }
 

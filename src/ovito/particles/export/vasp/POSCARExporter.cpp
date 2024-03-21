@@ -111,8 +111,8 @@ void POSCARExporter::exportData(const PipelineFlowState& state, int frameNumber,
                 textStream() << (p->x() - origin.x()) << ' ' << (p->y() - origin.y()) << ' ' << (p->z() - origin.z()) << '\n';
             }
 
-            if(!this_task::setProgressValueIntermittent(currentProgress++))
-                return;
+            // Update progress bar and check for user cancellation.
+            this_task::setProgressValueIntermittent(currentProgress++);
         }
     }
 
@@ -134,8 +134,8 @@ void POSCARExporter::exportData(const PipelineFlowState& state, int frameNumber,
                     textStream() << v->x() << ' ' << v->y() << ' ' << v->z() << '\n';
                 }
 
-                if(!this_task::setProgressValueIntermittent(currentProgress++))
-                    return;
+                // Update progress bar and check for user cancellation.
+                this_task::setProgressValueIntermittent(currentProgress++);
             }
         }
     }

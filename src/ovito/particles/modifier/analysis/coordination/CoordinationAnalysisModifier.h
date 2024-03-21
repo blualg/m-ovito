@@ -24,17 +24,13 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/util/CutoffNeighborFinder.h>
-#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
-#include <ovito/particles/objects/Particles.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
-#include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 
 namespace Ovito {
 
 /**
- * \brief This modifier computes the coordination number of each particle (i.e. the number of neighbors within a given cutoff radius).
+ * \brief This modifier computes the coordination number of each particle (i.e. number of neighbors within a given cutoff range)
+ *        as well as the radial pair distribution function (RDF) of the system.
  */
 class OVITO_PARTICLES_EXPORT CoordinationAnalysisModifier : public Modifier
 {
@@ -62,95 +58,15 @@ public:
     /// Constructor.
     explicit CoordinationAnalysisModifier(ObjectInitializationFlags flags);
 
-protected:
+    /// This function is called by the pipeline system before a new modifier evaluation begins.
+    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
 
-    /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
 
-private:
-
-    /// Computes the modifier's results.
-    class CoordinationAnalysisEngine : public ModifierEngine
-    {
-    public:
-
-        /// Constructor.
-        CoordinationAnalysisEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCell* simCell,
-                FloatType cutoff, int rdfSampleCount, ConstPropertyPtr particleTypes, boost::container::flat_map<int,QString> uniqueTypes) :
-            ModifierEngine(request),
-            _positions(std::move(positions)),
-            _selection(std::move(selection)),
-            _simCell(simCell),
-            _cutoff(cutoff),
-            _computePartialRdfs(particleTypes),
-            _particleTypes(std::move(particleTypes)),
-            _uniqueTypes(std::move(uniqueTypes)),
-            _coordinationNumbers(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.elementCount(), Particles::CoordinationProperty)),
-            _inputFingerprint(std::move(fingerprint))
-        {
-            _uniqueTypeIds.reserve(_uniqueTypes.size());
-            for(const auto& t : _uniqueTypes)
-                _uniqueTypeIds.insert(t.first);
-
-            size_t componentCount = _computePartialRdfs ? (this->uniqueTypeIds().size() * (this->uniqueTypeIds().size()+1) / 2) : 1;
-            QStringList componentNames;
-            if(_computePartialRdfs) {
-                for(auto t1 = _uniqueTypes.cbegin(); t1 != _uniqueTypes.cend(); ++t1) {
-                    for(auto t2 = t1; t2 != _uniqueTypes.cend(); ++t2) {
-                        componentNames.push_back(QStringLiteral("%1-%2").arg(t1->second, t2->second));
-                    }
-                }
-            }
-            _rdfY = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, rdfSampleCount, Property::FloatDefault, componentCount, QStringLiteral("g(r)"), 0, std::move(componentNames));
-        }
-
-        /// Computes the modifier's results.
-        virtual void perform() override;
-
-        /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-        /// Returns the property storage that contains the computed coordination numbers.
-        const PropertyPtr& coordinationNumbers() const { return _coordinationNumbers; }
-
-        /// Returns the property storage array containing the y-coordinates of the data points of the RDF histograms.
-        const PropertyPtr& rdfY() const { return _rdfY; }
-
-        /// Returns the property storage that contains the input particle positions.
-        const ConstPropertyPtr& positions() const { return _positions; }
-
-        /// Returns the property storage that contains the input particle types.
-        const ConstPropertyPtr& particleTypes() const { return _particleTypes; }
-
-        /// Returns the property storage that contains the input particle selection states.
-        const ConstPropertyPtr& selection() const { return _selection; }
-
-        /// Returns the simulation cell data.
-        const DataOORef<const SimulationCell>& cell() const { return _simCell; }
-
-        /// Returns the cutoff radius.
-        FloatType cutoff() const { return _cutoff; }
-
-        /// Returns the set of particle type identifiers in the system.
-        const boost::container::flat_set<int>& uniqueTypeIds() const { return _uniqueTypeIds; }
-
-        /// Returns the mapping of particle type identifiers to particle type names.
-        const boost::container::flat_map<int,QString>& uniqueTypes() const { return _uniqueTypes; }
-
-    private:
-
-        const FloatType _cutoff;
-        DataOORef<const SimulationCell> _simCell;
-        bool _computePartialRdfs;
-        boost::container::flat_set<int> _uniqueTypeIds;
-        boost::container::flat_map<int,QString> _uniqueTypes;
-        ConstPropertyPtr _positions;
-        ConstPropertyPtr _particleTypes;
-        ConstPropertyPtr _selection;
-        const PropertyPtr _coordinationNumbers;
-        PropertyPtr _rdfY;
-        ElementOrderingFingerprint _inputFingerprint;
-    };
+    /// Indicates that a preliminary viewport update will be performed immediately after this modifier
+	/// has computed new results.
+    virtual bool shouldRefreshViewportsAfterEvaluation() override { return true; }
 
 private:
 

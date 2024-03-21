@@ -63,19 +63,16 @@ public:
 
     /// \brief Sets the current progress value of the task.
     /// \param progressValue The new value, which must be in the range 0 to progressMaximum().
-    /// \return false if the task has been canceled.
-    bool setProgressValue(qlonglong progressValue);
+    void setProgressValue(qlonglong progressValue);
 
     /// \brief Increments the progress value of the task.
     /// \param increment The number of progress units to add to the current progress value.
-    /// \return false if the task has been canceled.
-    bool incrementProgressValue(qlonglong increment = 1);
+    void incrementProgressValue(qlonglong increment = 1);
 
     /// \brief Sets the current progress value of the task, generating update events only occasionally.
     /// \param progressValue The new value, which must be in the range 0 to progressMaximum().
     /// \param updateEvery Generate an update event only after the method has been called this many times.
-    /// \return false if the task has been canceled.
-    bool setProgressValueIntermittent(qlonglong progressValue, int updateEvery = 2000);
+    void setProgressValueIntermittent(qlonglong progressValue, int updateEvery = 2000);
 
     /// \brief Changes the description of this task to be displayed in the GUI.
     /// \param progressText The text string that will be displayed in the user interface to describe the operation in progress.

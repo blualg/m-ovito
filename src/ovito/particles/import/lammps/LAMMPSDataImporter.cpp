@@ -297,7 +297,8 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 InputColumnReader columnParser(*this, columnMapping, particles(), false);
                 try {
                     for(size_t i = 0; i < (size_t)natoms; i++) {
-                        if(!setProgressValueIntermittent(i)) return;
+                        // Update progress bar and check for user cancellation.
+                        setProgressValueIntermittent(i);
                         if(i != 0) stream.readLine();
                         columnParser.readElement(i, stream.line());
                     }
@@ -349,7 +350,8 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             InputColumnReader columnParser(*this, columnMapping, particles(), false, false);
             try {
                 for(size_t i = 0; i < (size_t)natoms; i++) {
-                    if(!setProgressValueIntermittent(i)) return;
+                    // Update progress bar and check for user cancellation.
+                    setProgressValueIntermittent(i);
                     const char* line = (i == 0) ? stream.readNonEmptyLine() : stream.readLine();
 
                     // Parse the atom ID at the beginning of the line to perform remapping to
@@ -482,7 +484,8 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             auto* bondType = typePropertyAccess.begin();
             ParticleIndexPair* bond = bondTopologyProperty.begin();
             for(size_t i = 0; i < (size_t)nbonds; i++, ++bond, ++bondType) {
-                if(!setProgressValueIntermittent(i)) return;
+                // Update progress bar and check for user cancellation.
+                setProgressValueIntermittent(i);
                 const char* line = (i == 0) ? stream.readNonEmptyLine() : stream.readLine();
 
                 qlonglong bondId;
@@ -557,7 +560,8 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             auto* angleType = typePropertyAccess.begin();
             ParticleIndexTriplet* angle = angleTopologyProperty.begin();
             for(size_t i = 0; i < (size_t)nangles; i++, ++angle, ++angleType) {
-                if(!setProgressValueIntermittent(i)) return;
+                // Update progress bar and check for user cancellation.
+                setProgressValueIntermittent(i);
                 const char* line = (i == 0) ? stream.readNonEmptyLine() : stream.readLine();
 
                 qlonglong angleId;
@@ -619,7 +623,8 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             auto* dihedralType = typePropertyAccess.begin();
             ParticleIndexQuadruplet* dihedral = dihedralTopologyProperty.begin();
             for(size_t i = 0; i < (size_t)ndihedrals; i++, ++dihedral, ++dihedralType) {
-                if(!setProgressValueIntermittent(i)) return;
+                // Update progress bar and check for user cancellation.
+                setProgressValueIntermittent(i);
                 const char* line = (i == 0) ? stream.readNonEmptyLine() : stream.readLine();
 
                 qlonglong dihedralId;
@@ -681,7 +686,8 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             auto* improperType = typePropertyAccess.begin();
             ParticleIndexQuadruplet* improper = improperTopologyProperty.begin();
             for(size_t i = 0; i < (size_t)nimpropers; i++, ++improper, ++improperType) {
-                if(!setProgressValueIntermittent(i)) return;
+                // Update progress bar and check for user cancellation.
+                setProgressValueIntermittent(i);
                 const char* line = (i == 0) ? stream.readNonEmptyLine() : stream.readLine();
 
                 qlonglong improperId;
@@ -736,7 +742,8 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
             setProgressMaximum(nellipsoids);
             for(size_t i = 0; i < (size_t)nellipsoids; i++) {
-                if(!setProgressValueIntermittent(i)) return;
+                // Update progress bar and check for user cancellation.
+                setProgressValueIntermittent(i);
                 const char* line = (i == 0) ? stream.readNonEmptyLine() : stream.readLine();
 
                 qlonglong atomId;

@@ -35,16 +35,16 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
         modifier/analysis/ackland_jones/AcklandJonesModifierEditor.cpp
         modifier/analysis/chill_plus/ChillPlusModifierEditor.cpp
         modifier/analysis/cna/CommonNeighborAnalysisModifierEditor.cpp
-#        modifier/analysis/coordination/CoordinationAnalysisModifierEditor.cpp
+        modifier/analysis/coordination/CoordinationAnalysisModifierEditor.cpp
 #        modifier/analysis/displacements/CalculateDisplacementsModifierEditor.cpp
-#        modifier/analysis/centrosymmetry/CentroSymmetryModifierEditor.cpp
+        modifier/analysis/centrosymmetry/CentroSymmetryModifierEditor.cpp
 #        modifier/analysis/strain/AtomicStrainModifierEditor.cpp
         modifier/analysis/diamond/IdentifyDiamondModifierEditor.cpp
 #        modifier/analysis/voronoi/VoronoiAnalysisModifierEditor.cpp
 #        modifier/analysis/cluster/ClusterAnalysisModifierEditor.cpp
 #        modifier/analysis/wignerseitz/WignerSeitzAnalysisModifierEditor.cpp
         modifier/analysis/ptm/PolyhedralTemplateMatchingModifierEditor.cpp
-#        modifier/analysis/surface/ConstructSurfaceModifierEditor.cpp
+        modifier/analysis/surface/ConstructSurfaceModifierEditor.cpp
 #        modifier/selection/ExpandSelectionModifierEditor.cpp
 #        modifier/properties/SmoothTrajectoryModifierEditor.cpp
 #        modifier/properties/GenerateTrajectoryLinesModifierEditor.cpp

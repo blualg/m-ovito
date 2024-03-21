@@ -185,8 +185,8 @@ void LAMMPSBinaryDumpImporter::FrameFinder::discoverFramesInFile(QVector<FileSou
             if(!file->seek(filePos))
                 throw Exception(tr("Unexpected end of file."));
 
-            if(!setProgressValue(filePos))
-                return;
+            // Update progress bar and check for user cancellation.
+            setProgressValue(filePos);
         }
 
         // Create a new record for the timestep.
@@ -425,8 +425,8 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
             const double* iter = chunkData.constData();
             for(int nChunkAtoms = n / header.size_one; nChunkAtoms--; ++i, iter += header.size_one) {
 
-                // Update progress indicator.
-                if(!setProgressValueIntermittent(i)) return;
+                // Update progress bar and check for user cancellation.
+                setProgressValueIntermittent(i);
 
                 try {
                     columnParser.readElement(i, iter, header.size_one);

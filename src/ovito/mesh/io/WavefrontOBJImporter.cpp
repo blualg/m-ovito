@@ -215,8 +215,8 @@ void WavefrontOBJImporter::FrameLoader::loadFile()
         else
             throw Exception(tr("Invalid or unsupported OBJ file format. Encountered unknown token in line %1.").arg(stream.lineNumber()));
 
-        if(!setProgressValueIntermittent(stream.underlyingByteOffset()))
-            return;
+        // Update progress bar and check for user cancellation.
+        setProgressValueIntermittent(stream.underlyingByteOffset());
     }
     mesh->invalidateVertices();
 

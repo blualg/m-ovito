@@ -158,19 +158,17 @@ bool SliceModifier::referenceEvent(RefTarget* source, const ReferenceEvent& even
     return MultiDelegatingModifier::referenceEvent(source, event);
 }
 
-#if 0 // TODO
 /******************************************************************************
-* Determines the time interval over which a computed pipeline state will remain valid.
-******************************************************************************/
-TimeInterval SliceModifier::validityInterval(const ModifierEvaluationRequest& request) const
+ * Is called by the pipeline system before a new modifier evaluation begins.
+ ******************************************************************************/
+bool SliceModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
 {
-    TimeInterval iv = MultiDelegatingModifier::validityInterval(request);
-    if(normalController()) iv.intersect(normalController()->validityInterval(request.time()));
-    if(distanceController()) iv.intersect(distanceController()->validityInterval(request.time()));
-    if(widthController()) iv.intersect(widthController()->validityInterval(request.time()));
-    return iv;
+    if(normalController()) result.intersectValidityInterval(normalController()->validityInterval(request.time()));
+    if(distanceController()) result.intersectValidityInterval(distanceController()->validityInterval(request.time()));
+    if(widthController()) result.intersectValidityInterval(widthController()->validityInterval(request.time()));
+
+    return true;
 }
-#endif
 
 /******************************************************************************
 * Returns the slicing plane and the slab width.

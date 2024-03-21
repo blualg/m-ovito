@@ -155,8 +155,8 @@ void STLImporter::FrameLoader::loadFile()
                 throw Exception(tr("Unknown keyword encountered in line %1 of STL file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
             }
 
-            if(!setProgressValueIntermittent(stream.underlyingByteOffset()))
-                return;
+            // Update progress bar and check for user cancellation.
+            setProgressValueIntermittent(stream.underlyingByteOffset());
         }
     }
     else {
@@ -180,8 +180,9 @@ void STLImporter::FrameLoader::loadFile()
 
         setProgressMaximum(nfaces);
         for(quint32 i = 0; i < nfaces; i++) {
-            if(!setProgressValueIntermittent(i))
-                return;
+
+            // Update progress bar and check for user cancellation.
+            setProgressValueIntermittent(i);
 
             Vector_3<float> normal;
             Point_3<float> coordinates[3];

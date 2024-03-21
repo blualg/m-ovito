@@ -26,6 +26,7 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "CentroSymmetryModifier.h"
@@ -62,20 +63,24 @@ bool CentroSymmetryModifier::OOMetaClass::isApplicableTo(const DataCollection& i
 }
 
 /******************************************************************************
-* Creates and initializes a computation engine that will compute the modifier's results.
-******************************************************************************/
-Future<ModifierEnginePtr> CentroSymmetryModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+ * Is called by the pipeline system before a new modifier evaluation begins.
+ ******************************************************************************/
+bool CentroSymmetryModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
 {
-    // If pipeline is in interactive mode, skip the long-running computation step.
+    // Indicate that we will do different computations depending on whether the pipeline is evaluated in interactive mode or not.
     if(request.interactiveMode())
-        return {};
+        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Interactive);
+    else
+        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Noninteractive);
 
-    // Get modifier input.
-    const Particles* particles = input.expectObject<Particles>();
-    particles->verifyIntegrity();
-    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
-    const SimulationCell* simCell = input.expectObject<SimulationCell>();
+    return true;
+}
 
+/******************************************************************************
+* Modifies the input data.
+******************************************************************************/
+Future<PipelineFlowState> CentroSymmetryModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
+{
     if(numNeighbors() < 2)
         throw Exception(tr("The number of neighbors to take into account in the centrosymmetry calculation is invalid. It must be at least 2."));
 
@@ -85,72 +90,85 @@ Future<ModifierEnginePtr> CentroSymmetryModifier::createEngine(const ModifierEva
     if(numNeighbors() % 2)
         throw Exception(tr("The number of neighbors to take into account in the centrosymmetry calculation must be a positive and even integer."));
 
-    // Get particle selection.
-    const Property* selectionProperty = onlySelectedParticles() ? particles->expectProperty(Particles::SelectionProperty) : nullptr;
+    // Get input data.
+    Particles* particles = state.expectMutableObject<Particles>();
+    particles->verifyIntegrity();
 
-    // Create an empty data table for the CSP value histogram to be computed.
-    DataOORef<DataTable> histogram = DataOORef<DataTable>::create(DataTable::Line, tr("CSP distribution"));
-    histogram->setIdentifier(input.generateUniqueIdentifier<DataTable>(QStringLiteral("csp-centrosymmetry")));
-    histogram->setCreatedByNode(request.modificationNode());
-    histogram->setAxisLabelX(tr("CSP"));
-
-    // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<CentroSymmetryEngine>(request, particles, posProperty, selectionProperty, simCell, numNeighbors(), mode(), std::move(histogram));
-}
-
-/******************************************************************************
-* Performs the actual computation. This method is executed in a worker thread.
-******************************************************************************/
-void CentroSymmetryModifier::CentroSymmetryEngine::perform()
-{
-    setProgressText(tr("Computing centrosymmetry parameters"));
-
-    // Prepare the neighbor list.
-    NearestNeighborFinder neighFinder(_nneighbors);
-    if(!neighFinder.prepare(positions(), cell(), selection()))
-        return;
-
-    // Access output array.
-    BufferWriteAccess<FloatType, access_mode::discard_read_write> cspArray(csp());
-
-    // Perform analysis on each particle.
-    BufferReadAccess<SelectionIntType> selectionData(selection());
-    parallelForWithProgress(positions()->size(), [&](size_t index) {
-        if(!selectionData || selectionData[index])
-            cspArray[index] = computeCSP(neighFinder, index, _mode);
-        else
-            cspArray[index] = 0.0;
-    });
-    if(isCanceled())
-        return;
-
-    // Determine histogram bin size based on maximum CSP value.
-    const size_t numHistogramBins = 100;
-    FloatType cspHistogramBinSize = (cspArray.size() != 0) ? (FloatType(1.01) * *boost::max_element(cspArray) / numHistogramBins) : 0;
-    if(cspHistogramBinSize <= 0) cspHistogramBinSize = 1;
-
-    // Perform binning of CSP values.
-    PropertyPtr histogramCounts = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, numHistogramBins, Property::Int64, 1, tr("Count"));
-    BufferWriteAccess<int64_t, access_mode::read_write> histogramAccess(histogramCounts);
-    const auto* sel = selectionData ? selectionData.begin() : nullptr;
-    for(const FloatType cspValue : cspArray) {
-        OVITO_ASSERT(cspValue >= 0);
-        if(!sel || *sel++) {
-            int binIndex = cspValue / cspHistogramBinSize;
-            if(binIndex < numHistogramBins)
-                histogramAccess[binIndex]++;
+    // In interactive mode, do not perform a real computation. Instead, reuse old results if available in the pipeline cache.
+    if(request.interactiveMode()) {
+        if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
+            if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
+                if(cachedParticles->elementCount() == particles->elementCount()) {
+                    if(const Property* cachedCSP = cachedParticles->getProperty(Particles::CentroSymmetryProperty)) {
+                        particles->createProperty(cachedCSP);
+                    }
+                }
+            }
+            if(const DataTable* cachedTable = cachedState.getObjectBy<DataTable>(request.modificationNode(), QStringLiteral("csp-centrosymmetry"))) {
+                state.addObject(cachedTable);
+            }
         }
+        return std::move(state);
     }
-    histogramAccess.reset();
-    _histogram->setY(std::move(histogramCounts));
-    _histogram->setIntervalStart(0);
-    _histogram->setIntervalEnd(cspHistogramBinSize * numHistogramBins);
 
-    // Release data that is no longer needed.
-    selectionData.reset();
-    _positions.reset();
-    _selection.reset();
-    _simCell.reset();
+    // Get selection particle property.
+    const Property* selection = onlySelectedParticles() ? particles->expectProperty(Particles::SelectionProperty) : nullptr;
+
+    // Perform the calculation in a separate thread.
+    return AsynchronousTask<PipelineFlowState>::runAsync([
+            state = std::move(state),
+            particles,
+            selection,
+            mode = mode(),
+            nneighbors = numNeighbors(),
+            createdByNode = request.modificationNode()]() mutable
+    {
+        this_task::setProgressText(tr("Computing centrosymmetry parameters"));
+
+        // Prepare the neighbor list.
+        NearestNeighborFinder neighFinder(nneighbors);
+        neighFinder.prepare(particles->expectProperty(Particles::PositionProperty), state.getObject<SimulationCell>(), selection);
+
+        // Create output array.
+        Property* cspProperty = particles->createProperty(DataBuffer::Uninitialized, Particles::CentroSymmetryProperty);
+        BufferWriteAccess<FloatType, access_mode::discard_read_write> cspArray(cspProperty);
+
+        // Perform analysis on each particle.
+        BufferReadAccess<SelectionIntType> selectionData(selection);
+        parallelFor(particles->elementCount(), 4096, [&](size_t index) {
+            if(!selectionData || selectionData[index])
+                cspArray[index] = computeCSP(neighFinder, index, mode);
+            else
+                cspArray[index] = 0.0;
+        });
+
+        // Determine histogram bin size based on maximum CSP value.
+        const size_t numHistogramBins = 100;
+        FloatType cspHistogramBinSize = (cspArray.size() != 0) ? (FloatType(1.01) * *boost::max_element(cspArray) / numHistogramBins) : 0;
+        if(cspHistogramBinSize <= 0) cspHistogramBinSize = 1;
+
+        // Perform binning of CSP values.
+        PropertyPtr histogramCounts = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, numHistogramBins, Property::Int64, 1, tr("Count"));
+        BufferWriteAccess<int64_t, access_mode::read_write> histogramAccess(histogramCounts);
+        const auto* sel = selectionData ? selectionData.begin() : nullptr;
+        for(const FloatType cspValue : cspArray) {
+            OVITO_ASSERT(cspValue >= 0);
+            if(!sel || *sel++) {
+                int binIndex = cspValue / cspHistogramBinSize;
+                if(binIndex < numHistogramBins)
+                    histogramAccess[binIndex]++;
+            }
+        }
+        histogramAccess.reset();
+
+        // Create an empty data table for the CSP value histogram to be computed.
+        DataTable* histogram = state.createObject<DataTable>(QStringLiteral("csp-centrosymmetry"), createdByNode, DataTable::Line, tr("CSP distribution"), std::move(histogramCounts));
+        histogram->setAxisLabelX(tr("CSP"));
+        histogram->setIntervalStart(0);
+        histogram->setIntervalEnd(cspHistogramBinSize * numHistogramBins);
+
+        return std::move(state);
+    }, true);
 }
 
 /******************************************************************************
@@ -198,24 +216,6 @@ FloatType CentroSymmetryModifier::computeCSP(NearestNeighborFinder& neighFinder,
     OVITO_ASSERT(std::isfinite(csp));
 
     return csp;
-}
-
-/******************************************************************************
-* Injects the computed results of the engine into the data pipeline.
-******************************************************************************/
-void CentroSymmetryModifier::CentroSymmetryEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
-{
-    ModifierEngine::applyResults(request, state);
-
-    Particles* particles = state.expectMutableObject<Particles>();
-    if(_inputFingerprint.hasChanged(particles))
-        throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
-
-    // Output per-particle CSP values.
-    particles->createProperty(csp());
-
-    // Output CSP distribution histogram.
-    state.addObjectWithUniqueId<DataTable>(_histogram);
 }
 
 }   // End of namespace

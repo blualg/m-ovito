@@ -56,6 +56,10 @@ public:
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
 
+    /// Indicates whether the interactive viewports should be updated after a parameter of the the modifier has
+    /// been changed and before the entire pipeline is recomputed.
+    virtual bool shouldRefreshViewportsAfterChange() override { return true; }
+
     /// Implementation of the color-by-type algorithm.
     static void colorByType(const Property* typeProperty, PropertyContainer* container, const ConstDataObjectPath& containerPath = {}, const Property* selection = nullptr);
 

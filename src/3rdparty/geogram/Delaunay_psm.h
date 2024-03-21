@@ -17,7 +17,7 @@
  *  * Neither the name of the ALICE Project-Team nor the names of its
  *  contributors may be used to endorse or promote products derived from this
  *  software without specific prior written permission.
- * 
+ *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -40,9 +40,9 @@
  *     http://www.loria.fr/~levy
  *
  *     ALICE Project
- *     LORIA, INRIA Lorraine, 
+ *     LORIA, INRIA Lorraine,
  *     Campus Scientifique, BP 239
- *     54506 VANDOEUVRE LES NANCY CEDEX 
+ *     54506 VANDOEUVRE LES NANCY CEDEX
  *     FRANCE
  *
  */
@@ -75,16 +75,16 @@
  */
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunknown-pragmas"
-#pragma clang diagnostic ignored "-Wdocumentation-unknown-command" 
+#pragma clang diagnostic ignored "-Wdocumentation-unknown-command"
 #endif
 
 
 #if defined(GEO_DYNAMIC_LIBS)
    #if defined(_MSC_VER)
-      #define GEO_IMPORT __declspec(dllimport) 
-      #define GEO_EXPORT __declspec(dllexport) 
+      #define GEO_IMPORT __declspec(dllimport)
+      #define GEO_EXPORT __declspec(dllexport)
    #elif defined(__GNUC__)
-      #define GEO_IMPORT  
+      #define GEO_IMPORT
       #define GEO_EXPORT __attribute__ ((visibility("default")))
    #else
       #define GEO_IMPORT
@@ -108,9 +108,9 @@ typedef int GeoMesh;
 
 typedef unsigned char geo_coord_index_t;
 
-/* 
- * If GARGANTUA is defined, then geogram is compiled 
- * with 64 bit indices. 
+/*
+ * If GARGANTUA is defined, then geogram is compiled
+ * with 64 bit indices.
  */
 #ifdef GARGANTUA
 
@@ -158,7 +158,7 @@ namespace GEO {
     GEOGRAM_NO_HANDLER = 0,
     GEOGRAM_INSTALL_HANDLERS = 1
     };
-    
+
     void GEOGRAM_API initialize(int flags = GEOGRAM_INSTALL_HANDLERS);
 
     void GEOGRAM_API terminate();
@@ -295,18 +295,18 @@ namespace GEO {
 #if defined(GOMGEN)
 #define GEO_NORETURN
 #elif defined(GEO_COMPILER_GCC_FAMILY) || \
-      defined(GEO_COMPILER_INTEL) 
+      defined(GEO_COMPILER_INTEL)
 #define GEO_NORETURN __attribute__((noreturn))
 #else
 #define GEO_NORETURN
 #endif
 
 #if defined(GOMGEN)
-#define GEO_NORETURN_DECL 
+#define GEO_NORETURN_DECL
 #elif defined(GEO_COMPILER_MSVC)
 #define GEO_NORETURN_DECL __declspec(noreturn)
 #else
-#define GEO_NORETURN_DECL 
+#define GEO_NORETURN_DECL
 #endif
 
 #if defined(GEO_COMPILER_CLANG) || defined(GEO_COMPILER_EMSCRIPTEN)
@@ -335,11 +335,11 @@ namespace GEO {
 namespace GEO {
 
     enum AssertMode {
-        
+
         ASSERT_THROW,
-        
+
         ASSERT_ABORT,
-    
+
     ASSERT_BREAKPOINT
     };
 
@@ -350,7 +350,7 @@ namespace GEO {
     GEO_NORETURN_DECL void GEOGRAM_API geo_abort() GEO_NORETURN;
 
     GEO_NORETURN_DECL void GEOGRAM_API geo_breakpoint() GEO_NORETURN;
-    
+
     GEO_NORETURN_DECL void GEOGRAM_API geo_assertion_failed(
         const std::string& condition_string,
         const std::string& file, int line
@@ -453,37 +453,37 @@ namespace GEO {
 
     namespace Numeric {
 
-        
+
         typedef void* pointer;
 
-        
+
         typedef int8_t int8;
 
-        
+
         typedef int16_t int16;
 
-        
+
         typedef int32_t int32;
 
-        
+
         typedef int64_t int64;
 
-        
+
         typedef uint8_t uint8;
 
-        
+
         typedef uint16_t uint16;
 
-        
+
         typedef uint32_t uint32;
 
-        
+
         typedef uint64_t uint64;
 
-        
+
         typedef float float32;
 
-        
+
         typedef double float64;
 
         inline float32 max_float32() {
@@ -526,26 +526,26 @@ namespace GEO {
 
         template <class T>
         struct LimitsHelper<T, true> : std::numeric_limits<T> {
-            
+
             static const size_t size = sizeof(T);
-            
+
             static const size_t numbits = 8 * sizeof(T);
         };
 
         template <class T>
-        struct Limits : 
+        struct Limits :
             LimitsHelper<T, std::numeric_limits<T>::is_specialized> {
         };
     }
 
-    
+
 
     enum Sign {
-        
+
         NEGATIVE = -1,
-        
+
         ZERO = 0,
-        
+
         POSITIVE = 1
     };
 
@@ -625,24 +625,24 @@ namespace GEO {
 namespace GEO {
 
     namespace Memory {
-        
+
         typedef unsigned char byte;
 
-        
+
         typedef unsigned char word8;
 
-        
+
         typedef unsigned short word16;
 
-        
+
         typedef unsigned int word32;
 
-        
+
         typedef byte* pointer;
 
-    
+
     typedef void (*function_pointer)();
-    
+
         inline void clear(void* addr, size_t size) {
             ::memset(addr, 0, size);
         }
@@ -674,7 +674,7 @@ namespace GEO {
         ::memcpy(&result, &ptr, sizeof(pointer));
         return result;
     }
-    
+
 #define GEO_MEMORY_ALIGNMENT 64
 
         template <int DIM>
@@ -736,7 +736,7 @@ namespace GEO {
             free(p);
 #elif defined(GEO_COMPILER_INTEL)
             _mm_free(p);
-#elif defined(GEO_COMPILER_GCC_FAMILY) 
+#elif defined(GEO_COMPILER_GCC_FAMILY)
             free(p);
 #elif defined(GEO_COMPILER_MSVC)
             _aligned_free(p);
@@ -754,7 +754,7 @@ namespace GEO {
 #elif defined(GEO_COMPILER_MSVC)
 #define geo_decl_aligned(var) __declspec(align(GEO_MEMORY_ALIGNMENT)) var
 #elif defined(GEO_COMPILER_EMSCRIPTEN)
-#define geo_decl_aligned(var) var        
+#define geo_decl_aligned(var) var
 #endif
 
 #if   defined(GEO_OS_ANDROID)
@@ -774,14 +774,14 @@ namespace GEO {
         // affected otherwise it is not taken into account (verified by
         // looking at the output of gcc -S)
 #else
-#define geo_assume_aligned(var, alignment)        
-#endif        
-#elif defined(GEO_COMPILER_MSVC) 
+#define geo_assume_aligned(var, alignment)
+#endif
+#elif defined(GEO_COMPILER_MSVC)
 #define geo_assume_aligned(var, alignment)
         // TODO: I do not know how to do that with MSVC
-#elif defined(GEO_COMPILER_EMSCRIPTEN)        
+#elif defined(GEO_COMPILER_EMSCRIPTEN)
 #define geo_assume_aligned(var, alignment)
-#elif defined(GEO_COMPILER_MINGW)        
+#elif defined(GEO_COMPILER_MINGW)
 #define geo_assume_aligned(var, alignment)
 #endif
 
@@ -792,7 +792,7 @@ namespace GEO {
 #elif defined(GEO_COMPILER_MSVC)
 #define geo_restrict __restrict
 #elif defined(GEO_COMPILER_EMSCRIPTEN)
-#define geo_restrict 
+#define geo_restrict
 #endif
 
         inline bool is_aligned(
@@ -815,30 +815,30 @@ namespace GEO {
         template <class T, int ALIGN = GEO_MEMORY_ALIGNMENT>
         class aligned_allocator {
         public:
-            
+
             typedef T value_type;
 
-            
+
             typedef T* pointer;
 
-            
+
             typedef T& reference;
 
-            
+
             typedef const T* const_pointer;
 
-            
+
             typedef const T& const_reference;
 
-            
+
             typedef ::std::size_t size_type;
 
-            
+
             typedef ::std::ptrdiff_t difference_type;
 
             template <class U>
             struct rebind {
-                
+
                 typedef aligned_allocator<U> other;
             };
 
@@ -900,7 +900,7 @@ namespace GEO {
         }
     }
 
-    
+
 
     template <class T>
     class vector : public ::std::vector<T, Memory::aligned_allocator<T> > {
@@ -969,8 +969,8 @@ namespace GEO {
             geo_debug_assert(i >= 0 && index_t(i) < size());
             return baseclass::operator[] (index_t(i));
         }
-#endif  
-    
+#endif
+
         T* data() {
             return size() == 0 ? nullptr : &(*this)[0];
         }
@@ -986,22 +986,22 @@ namespace GEO {
         typedef ::std::vector<bool> baseclass;
 
     public:
-        
+
         vector() :
             baseclass() {
         }
 
-        
+
         explicit vector(index_t size) :
             baseclass(size) {
         }
 
-        
+
         explicit vector(index_t size, bool val) :
             baseclass(size, val) {
         }
 
-        
+
         index_t size() const {
             //   casts baseclass::size() from size_t (64 bits)
             //   to index_t (32 bits), because all
@@ -1048,7 +1048,7 @@ namespace GEO {
         int nb_refs() const {
         return nb_refs_;
     }
-    
+
         static void ref(const Counted* counted) {
             if(counted != nullptr) {
                 counted->ref();
@@ -1069,9 +1069,9 @@ namespace GEO {
         virtual ~Counted();
 
     private:
-        
+
         Counted(const Counted&);
-        
+
         Counted& operator= (const Counted&);
 
         mutable int nb_refs_;
@@ -1090,7 +1090,7 @@ namespace GEO {
 
 namespace GEO {
 
-    
+
 
     template <class T>
     class SmartPointer {
@@ -1210,8 +1210,8 @@ namespace GEO {
 namespace GEO {
 
     class Environment;
-    
-    
+
+
 
     class GEOGRAM_API VariableObserver {
     public:
@@ -1230,7 +1230,7 @@ namespace GEO {
         Environment* environment_;
     };
 
-    
+
 
     class GEOGRAM_API VariableObserverList {
     public:
@@ -1245,13 +1245,13 @@ namespace GEO {
         void remove_observer(VariableObserver* observer);
 
     private:
-        
+
         typedef std::vector<VariableObserver*> Observers;
         Observers observers_;
         bool block_notify_;
     };
 
-    
+
 
     class GEOGRAM_API Environment : public Counted {
     public:
@@ -1274,7 +1274,7 @@ namespace GEO {
         );
 
         virtual Environment* find_environment(const std::string& name);
-        
+
         virtual bool add_observer(
             const std::string& name, VariableObserver* observer
         );
@@ -1308,13 +1308,13 @@ namespace GEO {
         );
 
     private:
-        
+
         typedef SmartPointer<Environment> Environment_var;
 
-        
+
         typedef std::vector<Environment_var> Environments;
 
-        
+
         typedef std::map<std::string, VariableObserverList> ObserverMap;
 
         static Environment_var instance_;
@@ -1322,11 +1322,11 @@ namespace GEO {
         ObserverMap observers_;
     };
 
-    
+
 
     class SystemEnvironment : public Environment {
     protected:
-        
+
         virtual ~SystemEnvironment();
 
         virtual bool set_local_value(
@@ -1375,7 +1375,7 @@ namespace GEO {
         LoggerStream* loggerStream_;
     };
 
-    
+
 
     class NO_GEOGRAM_API LoggerStream : public std::ostream {
     public:
@@ -1391,7 +1391,7 @@ namespace GEO {
         friend class LoggerStreamBuf;
     };
 
-    
+
 
     class GEOGRAM_API LoggerClient : public Counted {
     public:
@@ -1408,10 +1408,10 @@ namespace GEO {
         virtual ~LoggerClient();
     };
 
-    
+
     typedef SmartPointer<LoggerClient> LoggerClient_var;
 
-    
+
 
     class GEOGRAM_API ConsoleLogger : public LoggerClient {
     public:
@@ -1431,7 +1431,7 @@ namespace GEO {
         virtual ~ConsoleLogger();
     };
 
-    
+
 
     class GEOGRAM_API FileLogger : public LoggerClient {
     public:
@@ -1459,7 +1459,7 @@ namespace GEO {
         std::ostream* log_file_;
     };
 
-    
+
 
     class GEOGRAM_API Logger : public Environment {
     public:
@@ -1471,8 +1471,8 @@ namespace GEO {
 
 
         static bool is_initialized();
-        
-       
+
+
         static std::ostream& div(const std::string& title);
 
         static std::ostream& out(const std::string& feature);
@@ -1488,7 +1488,7 @@ namespace GEO {
         void unregister_client(LoggerClient* client);
 
         void unregister_all_clients();
-        
+
         bool is_client(LoggerClient* client) const;
 
         void set_quiet(bool flag);
@@ -1503,7 +1503,7 @@ namespace GEO {
         bool is_minimal() const {
             return minimal_;
         }
-        
+
         void set_pretty(bool flag);
 
         bool is_pretty() const {
@@ -1515,19 +1515,19 @@ namespace GEO {
 
         virtual ~Logger();
 
-        
+
         std::ostream& div_stream(const std::string& title);
 
-        
+
         std::ostream& out_stream(const std::string& feature);
 
-        
+
         std::ostream& err_stream(const std::string& feature);
 
-        
+
         std::ostream& warn_stream(const std::string& feature);
 
-        
+
         std::ostream& status_stream();
 
         void notify(LoggerStream* sender, const std::string& message);
@@ -1558,7 +1558,7 @@ namespace GEO {
 
         // features we want or don't want to log (only applies to 'out').
 
-        
+
         typedef std::set<std::string> FeatureSet;
         FeatureSet log_features_;
         FeatureSet log_features_exclude_;
@@ -1568,7 +1568,7 @@ namespace GEO {
         std::string current_feature_;
         bool current_feature_changed_;
 
-        
+
         typedef std::set<LoggerClient_var> LoggerClients;
         LoggerClients clients_; // list of registered clients
 
@@ -1576,12 +1576,12 @@ namespace GEO {
         bool pretty_;
         bool minimal_;
     bool notifying_error_;
-        
+
         friend class LoggerStream;
         friend class LoggerStreamBuf;
     };
 
-    
+
 
 }
 
@@ -1616,7 +1616,7 @@ extern int GEOGRAM_API geogram_fprintf(FILE* out, const char* format, ...);
 
 
 #ifdef GEO_OS_LINUX
-#  if defined(GEO_OS_EMSCRIPTEN) 
+#  if defined(GEO_OS_EMSCRIPTEN)
 #    define GEO_USE_DUMMY_ATOMICS
 #  elif defined(GEO_OS_RASPBERRY)
 #    define GEO_USE_ARM32_ATOMICS
@@ -1667,11 +1667,11 @@ inline void memory_barrier_android() {
 }
 
 inline void wait_for_event_android() {
-    /* TODO */    
+    /* TODO */
 }
 
 inline void send_event_android() {
-    /* TODO */    
+    /* TODO */
 }
 
 #elif defined(GEO_USE_ARM32_ATOMICS)
@@ -1751,7 +1751,7 @@ inline void memory_barrier_arm32() {
 inline void wait_for_event_arm32() {
     __asm__ __volatile__ (
         "wfe \n"
-        : : : 
+        : : :
     );
 }
 
@@ -1759,7 +1759,7 @@ inline void send_event_arm32() {
     __asm__ __volatile__ (
         "dsb \n" // ensure completion of store operations
         "sev \n"
-        : : : 
+        : : :
     );
 }
 
@@ -1877,7 +1877,7 @@ inline void geo_pause() {
 #ifdef geo_debug_assert
 #define geo_thread_sync_assert(x) geo_debug_assert(x)
 #else
-#define geo_thread_sync_assert(x) 
+#define geo_thread_sync_assert(x)
 #endif
 
 
@@ -1887,10 +1887,10 @@ namespace GEO {
 
 #if defined(GEO_OS_RASPBERRY)
 
-        
+
         typedef arm32_mutex_t spinlock;
 
-        
+
 #       define GEOGRAM_SPINLOCK_INIT 0
         inline void acquire_spinlock(spinlock& x) {
             lock_mutex_arm32(&x);
@@ -1899,13 +1899,13 @@ namespace GEO {
         inline void release_spinlock(spinlock& x) {
             unlock_mutex_arm32(&x);
         }
-    
+
 #elif defined(GEO_OS_ANDROID)
 
-        
+
         typedef android_mutex_t spinlock;
 
-        
+
 #       define GEOGRAM_SPINLOCK_INIT 0
         inline void acquire_spinlock(spinlock& x) {
             lock_mutex_android(&x);
@@ -1917,10 +1917,10 @@ namespace GEO {
 
 #elif defined(GEO_OS_LINUX) || defined(GEO_COMPILER_MINGW)
 
-        
+
         typedef unsigned char spinlock;
 
-        
+
 #       define GEOGRAM_SPINLOCK_INIT 0
         inline void acquire_spinlock(volatile spinlock& x) {
             while(__sync_lock_test_and_set(&x, 1) == 1) {
@@ -1944,20 +1944,20 @@ namespace GEO {
 #elif defined(GEO_OS_APPLE)
 
 #if defined(MAC_OS_X_VERSION_10_12) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_12
-        
+
         typedef os_unfair_lock spinlock;
-        
-        
+
+
 #       define GEOGRAM_SPINLOCK_INIT OS_UNFAIR_LOCK_INIT
         //inline void init_spinlock(spinlock & s) { s = OS_UNFAIR_LOCK_INIT; }
         //inline bool try_acquire_spinlock (spinlock & s) { return os_unfair_lock_trylock(&s); }
         inline void acquire_spinlock    (spinlock & s) { os_unfair_lock_lock(&s); }
         inline void release_spinlock  (spinlock & s) { os_unfair_lock_unlock(&s); }
 #else
-        
+
         typedef OSSpinLock spinlock;
 
-        
+
 #       define GEOGRAM_SPINLOCK_INIT OS_SPINLOCK_INIT
         inline void acquire_spinlock(volatile spinlock& x) {
             OSSpinLockLock(&x);
@@ -1970,10 +1970,10 @@ namespace GEO {
 
 #elif defined(GEO_OS_WINDOWS) && !defined(GEO_COMPILER_MINGW)
 
-        
+
         typedef short spinlock;
 
-        
+
 #       define GEOGRAM_SPINLOCK_INIT 0
         inline void acquire_spinlock(volatile spinlock& x) {
             while(_InterlockedCompareExchange16(&x, 1, 0) == 1) {
@@ -2042,7 +2042,7 @@ namespace GEO {
             std::vector<spinlock> spinlocks_;
         };
 
-#elif defined(GEO_OS_RASPBERRY) 
+#elif defined(GEO_OS_RASPBERRY)
 
         class SpinLockArray {
         public:
@@ -2102,8 +2102,8 @@ namespace GEO {
             std::vector<word_t> spinlocks_;
             index_t size_;
         };
-    
-#elif defined(GEO_OS_ANDROID) 
+
+#elif defined(GEO_OS_ANDROID)
 
         class SpinLockArray {
         public:
@@ -2164,7 +2164,7 @@ namespace GEO {
             index_t size_;
         };
 
-#elif defined(GEO_OS_LINUX) 
+#elif defined(GEO_OS_LINUX)
 
         class SpinLockArray {
         public:
@@ -2296,7 +2296,7 @@ namespace GEO {
 
     typedef CRITICAL_SECTION pthread_mutex_t;
     typedef unsigned int pthread_mutexattr_t;
-    
+
     inline int pthread_mutex_lock(pthread_mutex_t *m) {
         EnterCriticalSection(m);
         return 0;
@@ -2306,9 +2306,9 @@ namespace GEO {
         LeaveCriticalSection(m);
         return 0;
     }
-        
+
     inline int pthread_mutex_trylock(pthread_mutex_t *m) {
-        return TryEnterCriticalSection(m) ? 0 : EBUSY; 
+        return TryEnterCriticalSection(m) ? 0 : EBUSY;
     }
 
     inline int pthread_mutex_init(pthread_mutex_t *m, pthread_mutexattr_t *a) {
@@ -2348,9 +2348,9 @@ namespace GEO {
         SleepConditionVariableCS(c, m, INFINITE);
         return 0;
     }
-   
-#endif    
-    
+
+#endif
+
 }
 
 #endif
@@ -2457,10 +2457,10 @@ namespace GEO {
         }
 
     private:
-        
+
         PackedArrays(const PackedArrays& rhs);
 
-        
+
         PackedArrays& operator= (const PackedArrays& rhs);
 
     private:
@@ -2495,20 +2495,20 @@ namespace GEO {
         virtual void end(bool canceled) = 0;
 
     protected:
-        
+
         virtual ~ProgressClient();
     };
 
-    
+
     typedef SmartPointer<ProgressClient> ProgressClient_var;
 
-    
+
 
     struct GEOGRAM_API TaskCanceled : std::exception {
         virtual const char* what() const GEO_NOEXCEPT;
     };
 
-    
+
 
     class ProgressTask;
 
@@ -2528,13 +2528,13 @@ namespace GEO {
         void GEOGRAM_API clear_canceled();
     }
 
-    
+
 
     class GEOGRAM_API ProgressTask {
     public:
         ProgressTask(
             const std::string& task_name, index_t max_steps,
-            bool quiet 
+            bool quiet
         );
 
         ProgressTask(
@@ -2600,7 +2600,7 @@ namespace GEO {
 namespace GEO {
 
 // thread_local is supposed to be supported by c++0x,
-// but some old MSVC compilers do not have it.    
+// but some old MSVC compilers do not have it.
 #if defined(GEO_COMPILER_MSVC) && !defined(thread_local)
 #  define thread_local __declspec(thread)
 #endif
@@ -2609,10 +2609,10 @@ namespace GEO {
 #ifdef GEO_OS_APPLE
 # if MAC_OS_X_VERSION_MIN_REQUIRED <= MAC_OS_X_VERSION_10_9
 #  define thread_local
-#  define GEO_NO_THREAD_LOCAL    
+#  define GEO_NO_THREAD_LOCAL
 # endif
 #endif
-   
+
     class GEOGRAM_API Thread : public Counted {
     public:
 
@@ -2629,7 +2629,7 @@ namespace GEO {
 
 
     protected:
-        
+
         virtual ~Thread();
 
 
@@ -2642,12 +2642,12 @@ namespace GEO {
 
         index_t id_;
 
-        // ThreadManager needs to access set_current() and 
+        // ThreadManager needs to access set_current() and
         // set_id().
         friend class ThreadManager;
     };
 
-    
+
     typedef SmartPointer<Thread> Thread_var;
 
     typedef std::vector<Thread_var> ThreadGroup;
@@ -2689,11 +2689,11 @@ namespace GEO {
             Thread::set_current(thread);
         }
 
-        
+
         virtual ~ThreadManager();
     };
 
-    
+
     typedef SmartPointer<ThreadManager> ThreadManager_var;
 
     class GEOGRAM_API MonoThreadingThreadManager : public ThreadManager {
@@ -2705,7 +2705,7 @@ namespace GEO {
         virtual void leave_critical_section();
 
     protected:
-        
+
         virtual ~MonoThreadingThreadManager();
 
         virtual void run_concurrent_threads(
@@ -2721,9 +2721,9 @@ namespace GEO {
 
 
     void GEOGRAM_API sleep(index_t microseconds);
-    
+
         void GEOGRAM_API show_stats();
-        
+
         void GEOGRAM_API brute_force_kill();
 
         index_t GEOGRAM_API maximum_concurrent_threads();
@@ -2777,14 +2777,14 @@ namespace GEO {
 
      void GEOGRAM_API parallel(
      std::function<void()> f1,
-     std::function<void()> f2    
+     std::function<void()> f2
      );
 
      void GEOGRAM_API parallel(
      std::function<void()> f1,
      std::function<void()> f2,
      std::function<void()> f3,
-     std::function<void()> f4    
+     std::function<void()> f4
      );
 
      void GEOGRAM_API parallel(
@@ -2795,9 +2795,9 @@ namespace GEO {
      std::function<void()> f5,
      std::function<void()> f6,
      std::function<void()> f7,
-     std::function<void()> f8    
+     std::function<void()> f8
      );
-     
+
 }
 
 #endif
@@ -2829,7 +2829,7 @@ namespace GEO {
 #define geo_debug_range_assert(x, min_val, max_val) \
     assert((x) >= (min_val) && (x) <= (max_val))
 #else
-#define geo_debug_assert(x) 
+#define geo_debug_assert(x)
 #define geo_debug_range_assert(x, min_val, max_val)
 #endif
 
@@ -2868,7 +2868,7 @@ namespace GEO {
             return std::cerr << "W[" << name << "]";
         }
     }
-    
+
 }
 
 #endif
@@ -2884,19 +2884,19 @@ namespace GEO {
 
 namespace GEO {
     namespace Process {
-    
+
         typedef int spinlock;
-        
+
         inline void acquire_spinlock(spinlock& x) {
             // Not implemented yet for PSMs
             geo_argused(x);
             geo_assert_not_reached;
         }
-    
+
         inline void release_spinlock(spinlock& x) {
             // Not implemented yet for PSMs
-            geo_argused(x); 
-            geo_assert_not_reached;       
+            geo_argused(x);
+            geo_assert_not_reached;
         }
     }
 }
@@ -2940,7 +2940,7 @@ namespace GEO {
         static Instance* get(const std::string& name);
     };
 
-    
+
 
     template <class FactoryCreator>
     class Factory : public InstanceRepo::Instance {
@@ -3066,13 +3066,13 @@ namespace GEO {
     template <index_t DIM, class T>
     class vecng {
     public:
-        
+
         static const index_t dim = DIM;
 
-        
+
         typedef vecng<DIM, T> vector_type;
 
-        
+
         typedef T value_type;
 
         vecng() {
@@ -3299,21 +3299,21 @@ namespace GEO {
         return (T(1) - s) * v1 + s * v2;
     }
 
-    
+
 
     template <class T>
     class vecng<2, T> {
     public:
-        
+
         static const index_t dim = 2;
 
-        
+
         typedef vecng<dim, T> vector_type;
 
-        
+
         typedef T value_type;
 
-        
+
         vecng() :
             x(0),
             y(0) {
@@ -3324,57 +3324,57 @@ namespace GEO {
             y(y_in) {
         }
 
-        
+
         template <class T2>
         explicit vecng(const vecng<dim, T2>& v) :
             x(v.x),
             y(v.y) {
         }
 
-        
+
         template <class T2>
         explicit vecng(const T2* v) :
             x(v[0]),
             y(v[1]) {
         }
 
-        
+
         inline T length2() const {
             return x * x + y * y;
         }
 
-        
+
         inline T length() const {
             return sqrt(x * x + y * y);
         }
 
-        
+
         inline T distance2(const vector_type& v) const {
             T dx = v.x - x;
             T dy = v.y - y;
             return dx * dx + dy * dy;
         }
 
-        
+
         inline T distance(const vector_type& v) const {
             return sqrt(distance2(v));
         }
 
-        
+
         inline vector_type& operator+= (const vector_type& v) {
             x += v.x;
             y += v.y;
             return *this;
         }
 
-        
+
         inline vector_type& operator-= (const vector_type& v) {
             x -= v.x;
             y -= v.y;
             return *this;
         }
 
-        
+
         template <class T2>
         inline vector_type& operator*= (T2 s) {
             x *= T(s);
@@ -3382,7 +3382,7 @@ namespace GEO {
             return *this;
         }
 
-        
+
         template <class T2>
         inline vector_type& operator/= (T2 s) {
             x /= T(s);
@@ -3390,63 +3390,63 @@ namespace GEO {
             return *this;
         }
 
-        
+
         inline vector_type operator+ (const vector_type& v) const {
             return vector_type(x + v.x, y + v.y);
         }
 
-        
+
         inline vector_type operator- (const vector_type& v) const {
             return vector_type(x - v.x, y - v.y);
         }
 
-        
+
         template <class T2>
         inline vector_type operator* (T2 s) const {
             return vector_type(x * T(s), y * T(s));
         }
 
-        
+
         template <class T2>
         inline vector_type operator/ (T2 s) const {
             return vector_type(x / T(s), y / T(s));
         }
 
-        
+
         inline vector_type operator- () const {
             return vector_type(-x, -y);
         }
 
-        
+
         index_t dimension() const {
             return dim;
         }
 
-        
+
         T* data() {
             return &x;
         }
 
-        
+
         const T* data() const {
             return &x;
         }
 
-        
+
         inline T& operator[] (index_t i) {
             geo_debug_assert(i < dim);
             return data()[i];
         }
 
-        
+
         inline const T& operator[] (index_t i) const {
             geo_debug_assert(i < dim);
             return data()[i];
         }
 
-        
+
         T x;
-        
+
         T y;
     };
 
@@ -3471,21 +3471,21 @@ namespace GEO {
         return vecng<2, T>(T(s) * v.x, T(s) * v.y);
     }
 
-    
+
 
     template <class T>
     class vecng<3, T> {
     public:
-        
+
         static const index_t dim = 3;
 
-        
+
         typedef vecng<dim, T> vector_type;
 
-        
+
         typedef T value_type;
 
-        
+
         vecng() :
             x(0),
             y(0),
@@ -3498,7 +3498,7 @@ namespace GEO {
             z(z_in) {
         }
 
-        
+
         template <class T2>
         explicit vecng(const vecng<dim, T2>& v) :
             x(v.x),
@@ -3506,7 +3506,7 @@ namespace GEO {
             z(v.z) {
         }
 
-        
+
         template <class T2>
         explicit vecng(const T2* v) :
             x(v[0]),
@@ -3514,17 +3514,17 @@ namespace GEO {
             z(v[2]) {
         }
 
-        
+
         inline T length2() const {
             return x * x + y * y + z * z;
         }
 
-        
+
         inline T length() const {
             return sqrt(x * x + y * y + z * z);
         }
 
-        
+
         inline T distance2(const vector_type& v) const {
             T dx = v.x - x;
             T dy = v.y - y;
@@ -3532,12 +3532,12 @@ namespace GEO {
             return dx * dx + dy * dy + dz * dz;
         }
 
-        
+
         inline T distance(const vector_type& v) const {
             return sqrt(distance2(v));
         }
 
-        
+
         inline vector_type& operator+= (const vector_type& v) {
             x += v.x;
             y += v.y;
@@ -3545,7 +3545,7 @@ namespace GEO {
             return *this;
         }
 
-        
+
         inline vector_type& operator-= (const vector_type& v) {
             x -= v.x;
             y -= v.y;
@@ -3553,7 +3553,7 @@ namespace GEO {
             return *this;
         }
 
-        
+
         template <class T2>
         inline vector_type& operator*= (T2 s) {
             x *= T(s);
@@ -3562,7 +3562,7 @@ namespace GEO {
             return *this;
         }
 
-        
+
         template <class T2>
         inline vector_type& operator/= (T2 s) {
             x /= T(s);
@@ -3571,65 +3571,65 @@ namespace GEO {
             return *this;
         }
 
-        
+
         inline vector_type operator+ (const vector_type& v) const {
             return vector_type(x + v.x, y + v.y, z + v.z);
         }
 
-        
+
         inline vector_type operator- (const vector_type& v) const {
             return vector_type(x - v.x, y - v.y, z - v.z);
         }
 
-        
+
         template <class T2>
         inline vector_type operator* (T2 s) const {
             return vector_type(x * T(s), y * T(s), z * T(s));
         }
 
-        
+
         template <class T2>
         inline vector_type operator/ (T2 s) const {
             return vector_type(x / T(s), y / T(s), z / T(s));
         }
 
-        
+
         inline vector_type operator- () const {
             return vector_type(-x, -y, -z);
         }
 
-        
+
         index_t dimension() const {
             return dim;
         }
 
-        
+
         T* data() {
             return &x;
         }
 
-        
+
         const T* data() const {
             return &x;
         }
 
-        
+
         inline T& operator[] (index_t i) {
             geo_debug_assert(i < dim);
             return data()[i];
         }
 
-        
+
         inline const T& operator[] (index_t i) const {
             geo_debug_assert(i < dim);
             return data()[i];
         }
 
-        
+
         T x;
-        
+
         T y;
-        
+
         T z;
     };
 
@@ -3658,21 +3658,21 @@ namespace GEO {
         return vecng<3, T>(T(s) * v.x, T(s) * v.y, T(s) * v.z);
     }
 
-    
+
 
     template <class T>
     class vecng<4, T> {
     public:
-        
+
         static const index_t dim = 4;
 
-        
+
         typedef vecng<dim, T> vector_type;
 
-        
+
         typedef T value_type;
 
-        
+
         vecng() :
             x(0),
             y(0),
@@ -3687,7 +3687,7 @@ namespace GEO {
             w(w_in) {
         }
 
-        
+
         template <class T2>
         explicit vecng(const vecng<dim, T2>& v) :
             x(v.x),
@@ -3696,7 +3696,7 @@ namespace GEO {
             w(v.w) {
         }
 
-        
+
         template <class T2>
         explicit vecng(const T2* v) :
             x(v[0]),
@@ -3705,17 +3705,17 @@ namespace GEO {
             w(v[3]) {
         }
 
-        
+
         inline T length2() const {
             return x * x + y * y + z * z + w * w;
         }
 
-        
+
         inline T length() const {
             return sqrt(x * x + y * y + z * z + w * w);
         }
 
-        
+
         inline T distance2(const vector_type& v) const {
             T dx = v.x - x;
             T dy = v.y - y;
@@ -3724,17 +3724,17 @@ namespace GEO {
             return dx * dx + dy * dy + dz * dz + dw * dw;
         }
 
-        
+
         inline T distance(const vector_type& v) const {
             return sqrt(distance2(v));
         }
 
-        
+
         index_t dimension() const {
             return dim;
         }
 
-        
+
         inline vector_type& operator+= (const vector_type& v) {
             x += v.x;
             y += v.y;
@@ -3743,7 +3743,7 @@ namespace GEO {
             return *this;
         }
 
-        
+
         inline vector_type& operator-= (const vector_type& v) {
             x -= v.x;
             y -= v.y;
@@ -3752,7 +3752,7 @@ namespace GEO {
             return *this;
         }
 
-        
+
         template <class T2>
         inline vector_type& operator*= (T2 s) {
             x *= T(s);
@@ -3762,7 +3762,7 @@ namespace GEO {
             return *this;
         }
 
-        
+
         template <class T2>
         inline vector_type& operator/= (T2 s) {
             x /= T(s);
@@ -3772,62 +3772,62 @@ namespace GEO {
             return *this;
         }
 
-        
+
         inline vector_type operator+ (const vector_type& v) const {
             return vector_type(x + v.x, y + v.y, z + v.z, w + v.w);
         }
 
-        
+
         inline vector_type operator- (const vector_type& v) const {
             return vector_type(x - v.x, y - v.y, z - v.z, w - v.w);
         }
 
-        
+
         template <class T2>
         inline vector_type operator* (T2 s) const {
             return vector_type(x * T(s), y * T(s), z * T(s), w * T(s));
         }
 
-        
+
         template <class T2>
         inline vector_type operator/ (T2 s) const {
             return vector_type(x / T(s), y / T(s), z / T(s), w / T(s));
         }
 
-        
+
         inline vector_type operator- () const {
             return vector_type(-x, -y, -z, -w);
         }
 
-        
+
         T* data() {
             return &x;
         }
 
-        
+
         const T* data() const {
             return &x;
         }
 
-        
+
         inline T& operator[] (index_t i) {
             geo_debug_assert(i < dim);
             return data()[i];
         }
 
-        
+
         inline const T& operator[] (index_t i) const {
             geo_debug_assert(i < dim);
             return data()[i];
         }
 
-        
+
         T x;
-        
+
         T y;
-        
+
         T z;
-        
+
         T w;
     };
 
@@ -3880,32 +3880,32 @@ namespace GEO {
 
 namespace GEO {
 
-    
+
 
     inline double det2x2(
-        double a11, double a12,                    
+        double a11, double a12,
         double a21, double a22
-    ) {                                 
+    ) {
         return a11*a22-a12*a21 ;
     }
 
     inline double det3x3(
-        double a11, double a12, double a13,                
-        double a21, double a22, double a23,                
+        double a11, double a12, double a13,
+        double a21, double a22, double a23,
         double a31, double a32, double a33
     ) {
     return
-         a11*det2x2(a22,a23,a32,a33)   
-        -a21*det2x2(a12,a13,a32,a33)   
+         a11*det2x2(a22,a23,a32,a33)
+        -a21*det2x2(a12,a13,a32,a33)
         +a31*det2x2(a12,a13,a22,a23);
-    }   
+    }
 
 
     inline double det4x4(
         double a11, double a12, double a13, double a14,
-        double a21, double a22, double a23, double a24,               
-        double a31, double a32, double a33, double a34,  
-        double a41, double a42, double a43, double a44  
+        double a21, double a22, double a23, double a24,
+        double a31, double a32, double a33, double a34,
+        double a41, double a42, double a43, double a44
     ) {
         double m12 = a21*a12 - a11*a22;
         double m13 = a31*a12 - a11*a32;
@@ -3918,21 +3918,21 @@ namespace GEO {
         double m124 = m24*a13 - m14*a23 + m12*a43;
         double m134 = m34*a13 - m14*a33 + m13*a43;
         double m234 = m34*a23 - m24*a33 + m23*a43;
-        
+
         return (m234*a14 - m134*a24 + m124*a34 - m123*a44);
-    }   
+    }
 
 
     template <index_t DIM, class FT>
     class Matrix {
     public:
-        
+
         typedef Matrix<DIM, FT> matrix_type;
 
-        
+
         typedef FT value_type;
 
-        
+
         static const index_t dim = DIM;
 
         inline Matrix() {
@@ -3947,7 +3947,7 @@ namespace GEO {
                 }
             }
         }
-        
+
         inline index_t dimension() const {
             return DIM;
         }
@@ -3979,7 +3979,7 @@ namespace GEO {
             }
             return true;
         }
-        
+
         inline FT& operator() (index_t i, index_t j) {
             geo_debug_assert(i < DIM);
             geo_debug_assert(j < DIM);
@@ -4120,7 +4120,7 @@ namespace GEO {
                     }
                 }
             }
-            
+
             return true;
         }
 
@@ -4134,13 +4134,13 @@ namespace GEO {
             return result;
         }
 
-        
+
 
         inline const FT* data() const {
             return &(coeff_[0][0]);
         }
 
-        
+
 
         inline FT* data() {
             return &(coeff_[0][0]);
@@ -4158,7 +4158,7 @@ namespace GEO {
         FT coeff_[DIM][DIM];
     };
 
-    
+
 
     template <index_t DIM, class FT>
     inline std::ostream& operator<< (
@@ -4186,7 +4186,7 @@ namespace GEO {
         return input;
     }
 
-    
+
 
     template <index_t DIM, class FT> inline
     void mult(const Matrix<DIM, FT>& M, const FT* x, FT* y) {
@@ -4198,7 +4198,7 @@ namespace GEO {
         }
     }
 
-    
+
 
     template <index_t DIM, class FT> inline
     vecng<DIM,FT> operator*(
@@ -4228,8 +4228,8 @@ namespace GEO {
         return y;
     }
 
-    
-    
+
+
 }
 
 #endif
@@ -4244,7 +4244,7 @@ namespace GEO {
 
 namespace GEO {
 
-    
+
 
     typedef vecng<2, Numeric::float64> vec2;
 
@@ -4258,21 +4258,21 @@ namespace GEO {
 
     typedef vecng<4, Numeric::float32> vec4f;
 
-   
+
     typedef vecng<2, Numeric::int32> vec2i;
 
     typedef vecng<3, Numeric::int32> vec3i;
 
     typedef vecng<4, Numeric::int32> vec4i;
-   
-   
+
+
     typedef Matrix<2, Numeric::float64> mat2;
 
     typedef Matrix<3, Numeric::float64> mat3;
 
     typedef Matrix<4, Numeric::float64> mat4;
 
-    
+
 
     namespace Geom {
 
@@ -4356,17 +4356,17 @@ namespace GEO {
         double Ux = p2[0] - p1[0];
         double Uy = p2[1] - p1[1];
         double Uz = p2[2] - p1[2];
-        
+
         double Vx = p3[0] - p1[0];
         double Vy = p3[1] - p1[1];
         double Vz = p3[2] - p1[2];
-        
+
         double Nx = Uy*Vz - Uz*Vy;
         double Ny = Uz*Vx - Ux*Vz;
         double Nz = Ux*Vy - Uy*Vx;
         return 0.5 * ::sqrt(Nx*Nx+Ny*Ny+Nz*Nz);
     }
-    
+
         inline double triangle_area(
             const vec3& p1, const vec3& p2, const vec3& p3
         ) {
@@ -4382,7 +4382,7 @@ namespace GEO {
         double d = p3[1]-p1[1];
         return 0.5*(a*d-b*c);
         }
-    
+
         inline double triangle_signed_area(
             const vec2& p1, const vec2& p2, const vec2& p3
         ) {
@@ -4400,7 +4400,7 @@ namespace GEO {
         ) {
         return ::fabs(triangle_signed_area_2d(p1,p2,p3));
     }
-    
+
         vec2 GEOGRAM_API triangle_circumcenter(
             const vec2& p1, const vec2& p2, const vec2& p3
         );
@@ -4571,7 +4571,7 @@ namespace GEO {
         }
     }
 
-   
+
 
     template <class FT> vecng<3,FT> transform_vector(
         const vecng<3,FT>& v,
@@ -4588,10 +4588,10 @@ namespace GEO {
                 result[i] += v[j] * m(j,i) ;
             }
         }
-        
+
         return vecng<3,FT>(
             result[0], result[1], result[2]
-        ) ; 
+        ) ;
     }
 
     template <class FT> vecng<3,FT> transform_point(
@@ -4600,7 +4600,7 @@ namespace GEO {
     ){
         index_t i,j ;
         FT result[4] ;
-        
+
         for(i=0; i<4; i++) {
             result[i] = 0 ;
         }
@@ -4610,12 +4610,12 @@ namespace GEO {
             }
             result[i] += m(3,i);
         }
-    
+
         return vecng<3,FT>(
             result[0] / result[3],
             result[1] / result[3],
-            result[2] / result[3] 
-        ) ; 
+            result[2] / result[3]
+        ) ;
     }
 
     template <class FT> vecng<4,FT> transform_vector(
@@ -4624,18 +4624,18 @@ namespace GEO {
     ) {
         index_t i,j ;
         FT res[4] = {FT(0), FT(0), FT(0), FT(0)};
-        
+
         for(i=0; i<4; i++) {
             for(j=0; j<4; j++) {
                 res[i] += v[j] * m(j,i) ;
             }
         }
-    
-        return vecng<4,FT>(res[0], res[1], res[2], res[3]) ; 
+
+        return vecng<4,FT>(res[0], res[1], res[2], res[3]) ;
     }
 
-    
-    
+
+
     inline mat4 create_translation_matrix(const vec3& T) {
         mat4 result;
         result.load_identity();
@@ -4644,17 +4644,17 @@ namespace GEO {
         result(3,2) = T.z;
         return result;
     }
-    
+
     inline mat4 create_scaling_matrix(double s) {
         mat4 result;
         result.load_identity();
         result(0,0) = s;
         result(1,1) = s;
-        result(2,2) = s;        
+        result(2,2) = s;
         return result;
     }
-    
-    
+
+
 
     struct Ray {
     Ray(vec3 O, vec3 D) : origin(O), direction(D) {
@@ -4665,8 +4665,8 @@ namespace GEO {
     vec3 direction;
     };
 
-            
-    
+
+
 }
 
 #endif
@@ -4688,7 +4688,7 @@ namespace GEO {
     void GEOGRAM_API set_SOS_mode(SOSMode m);
 
     SOSMode GEOGRAM_API get_SOS_mode();
-    
+
         Sign GEOGRAM_API side1_SOS(
             const double* p0, const double* p1,
             const double* q0,
@@ -4702,20 +4702,20 @@ namespace GEO {
         );
 
         Sign GEOGRAM_API side3_SOS(
-            const double* p0, const double* p1, 
+            const double* p0, const double* p1,
             const double* p2, const double* p3,
             const double* q0, const double* q1, const double* q2,
             coord_index_t DIM
         );
 
         Sign GEOGRAM_API side3_3dlifted_SOS(
-            const double* p0, const double* p1, 
+            const double* p0, const double* p1,
             const double* p2, const double* p3,
             double h0, double h1, double h2, double h3,
             const double* q0, const double* q1, const double* q2,
         bool SOS=true
         );
-        
+
         Sign GEOGRAM_API side4_SOS(
             const double* p0,
             const double* p1, const double* p2,
@@ -4733,12 +4733,12 @@ namespace GEO {
         );
 
         Sign GEOGRAM_API side4_3d_SOS(
-            const double* p0, const double* p1, 
+            const double* p0, const double* p1,
             const double* p2, const double* p3, const double* p4
         );
-       
+
          Sign GEOGRAM_API in_sphere_3d_SOS(
-            const double* p0, const double* p1, 
+            const double* p0, const double* p1,
             const double* p2, const double* p3,
             const double* p4
          );
@@ -4749,7 +4749,7 @@ namespace GEO {
              const double* p3
          );
 
-     
+
          Sign GEOGRAM_API in_circle_3d_SOS(
              const double* p0, const double* p1, const double* p2,
              const double* p3
@@ -4762,13 +4762,13 @@ namespace GEO {
             double h0, double h1, double h2, double h3,
         bool SOS=true
         );
-        
+
         Sign GEOGRAM_API orient_2d(
             const double* p0, const double* p1, const double* p2
         );
 
 
-#ifndef GEOGRAM_PSM        
+#ifndef GEOGRAM_PSM
         inline Sign orient_2d(
             const vec2& p0, const vec2& p1, const vec2& p2
         ) {
@@ -4776,21 +4776,21 @@ namespace GEO {
         }
 #endif
 
-    
+
         Sign GEOGRAM_API orient_2dlifted_SOS(
             const double* p0, const double* p1,
-            const double* p2, const double* p3, 
+            const double* p2, const double* p3,
             double h0, double h1, double h2, double h3
         );
-    
-        
+
+
         Sign GEOGRAM_API orient_3d(
             const double* p0, const double* p1,
             const double* p2, const double* p3
         );
 
 
-#ifndef GEOGRAM_PSM        
+#ifndef GEOGRAM_PSM
         inline Sign orient_3d(
             const vec3& p0, const vec3& p1,
             const vec3& p2, const vec3& p3
@@ -4798,7 +4798,7 @@ namespace GEO {
             return orient_3d(p0.data(),p1.data(),p2.data(),p3.data());
         }
 #endif
-        
+
         Sign GEOGRAM_API orient_3dlifted(
             const double* p0, const double* p1,
             const double* p2, const double* p3, const double* p4,
@@ -4827,11 +4827,11 @@ namespace GEO {
         const double* p2, const double* p3,
         const double* p4
     );
-    
+
     bool GEOGRAM_API aligned_3d(
         const double* p0, const double* p1, const double* p2
     );
-    
+
     Sign GEOGRAM_API dot_3d(
         const double* p0, const double* p1, const double* p2
     );
@@ -4839,12 +4839,12 @@ namespace GEO {
     Sign GEOGRAM_API dot_compare_3d(
         const double* v0, const double* v1, const double* v2
     );
-    
+
     bool points_are_identical_2d(
         const double* p1,
         const double* p2
     );
-    
+
     bool GEOGRAM_API points_are_identical_3d(
         const double* p1,
         const double* p2
@@ -4863,15 +4863,15 @@ namespace GEO {
         double a11 = p1[0] - p0[0] ;
         double a12 = p1[1] - p0[1] ;
         double a13 = p1[2] - p0[2] ;
-        
+
         double a21 = p2[0] - p0[0] ;
         double a22 = p2[1] - p0[1] ;
         double a23 = p2[2] - p0[2] ;
-        
+
         double a31 = p3[0] - p0[0] ;
         double a32 = p3[1] - p0[1] ;
         double a33 = p3[2] - p0[2] ;
-        
+
         double Delta = det3x3(
         a11,a12,a13,
         a21,a22,a23,
@@ -4880,7 +4880,7 @@ namespace GEO {
 
         return geo_sgn(Delta);
     }
-    
+
         void GEOGRAM_API show_stats();
 
         void GEOGRAM_API initialize();
@@ -4931,7 +4931,7 @@ namespace GEO {
             std::string& left,
             std::string& right
         );
-        
+
         std::string GEOGRAM_API join_strings(
             const std::vector<std::string>& in,
             char separator
@@ -4984,18 +4984,18 @@ namespace GEO {
 
         template <>
         inline std::string to_display_string(const double& value) {
-            std::ostringstream out;     
+            std::ostringstream out;
             out << value;
             return out.str();
     }
 
         template <>
         inline std::string to_display_string(const float& value) {
-            std::ostringstream out;     
+            std::ostringstream out;
             out << value;
             return out.str();
     }
-    
+
         template <>
         inline std::string to_string(const bool& value) {
             return value ? "true" : "false";
@@ -5313,13 +5313,13 @@ namespace GEO {
         long start_;
 #elif defined(GEO_OS_EMSCRIPTEN)
         double startf_;
-#else        
+#else
         tms start_;
         clock_t start_user_;
 #endif
     };
 
-    
+
 
     class GEOGRAM_API ProcessorStopwatch {
     public:
@@ -5337,7 +5337,7 @@ namespace GEO {
         Numeric::uint64 start_;
     };
 
-    
+
 
     class GEOGRAM_API Stopwatch {
     public:
@@ -5358,7 +5358,7 @@ namespace GEO {
         }
         }
 
-        
+
 
     private:
         std::string task_name_;
@@ -5392,32 +5392,32 @@ namespace GEO {
     );
 
     bool GEOGRAM_API config_file_loaded();
-    
+
     std::string GEOGRAM_API get_config_file_name();
 
     void GEOGRAM_API load_config(
         const std::string& filename, const std::string& program_name
     );
-    
+
         enum ArgType {
-            
+
             ARG_UNDEFINED = 0,
-            
+
             ARG_INT = 1,
-            
+
             ARG_DOUBLE = 2,
-            
+
             ARG_STRING = 4,
-            
+
             ARG_BOOL = 8,
-            
+
             ARG_PERCENT = 16
         };
 
         enum ArgFlags {
-            
+
             ARG_FLAGS_DEFAULT = 0,
-            
+
             ARG_ADVANCED = 1
         };
 
@@ -5522,13 +5522,13 @@ namespace GEO {
 
     int GEOGRAM_API argc();
 
-    
+
     typedef char** charptrptr; // Need to do that else the compiler thinks
                                // that GEOGRAM_API qualifies the ptr instead
                                // of the function.
-    
+
     charptrptr GEOGRAM_API argv();
-    
+
         void GEOGRAM_API show_usage(
             const std::string& additional_args = "",
             bool advanced = false
@@ -5566,7 +5566,7 @@ namespace GEO {
 
         void GEOGRAM_API set_arg_percent(const std::string& name, double value);
 
-        
+
 
         void GEOGRAM_API get_args(std::vector<std::string>& args);
 
@@ -5704,7 +5704,7 @@ namespace VBW {
     double z;
     double w;
     };
-#else    
+#else
     using GEO::vector;
     typedef unsigned int index_t;        // Always 32 bits
     typedef GEO::index_t global_index_t; // Possibly 64 bits in GARGANTUA mode
@@ -5712,8 +5712,8 @@ namespace VBW {
     using GEO::vec2;
     using GEO::vec3;
     using GEO::vec4;
-#endif    
-    
+#endif
+
 
 
 
@@ -5725,7 +5725,7 @@ namespace VBW {
     result.y = y;
     return result;
     }
-    
+
 
     inline vec3 make_vec3(
     double x, double y, double z
@@ -5773,7 +5773,7 @@ namespace VBW {
         s*v.x, s*v.y, s*v.z
     );
     }
-    
+
     inline vec4 make_vec4(
     double x, double y, double z, double w
     ) {
@@ -5808,17 +5808,17 @@ namespace VBW {
     result = (result*result) / (P.x*P.x + P.y*P.y + P.z*P.z);
     return result;
     }
-    
+
     enum {
-    CONFLICT_MASK  = 32768, 
-    MARKED_MASK    = 16384,     
-    END_OF_LIST    = 16383, 
-    VERTEX_AT_INFINITY = 0  
+    CONFLICT_MASK  = 32768,
+    MARKED_MASK    = 16384,
+    END_OF_LIST    = 16383,
+    VERTEX_AT_INFINITY = 0
     };
 
 
     typedef unsigned char uchar;
-    
+
     typedef unsigned short ushort;
 
     struct Triangle {
@@ -5861,7 +5861,7 @@ namespace VBW {
     ) {
     return a11*a22 - a12*a21;
     }
-    
+
     inline double det3x3(
     double a11, double a12, double a13,
     double a21, double a22, double a23,
@@ -5875,9 +5875,9 @@ namespace VBW {
 
     inline double det4x4(
     double a11, double a12, double a13, double a14,
-    double a21, double a22, double a23, double a24,               
-    double a31, double a32, double a33, double a34,  
-    double a41, double a42, double a43, double a44  
+    double a21, double a22, double a23, double a24,
+    double a31, double a32, double a33, double a34,
+    double a41, double a42, double a43, double a44
     ) {
     double m12 = a21*a12 - a11*a22;
     double m13 = a31*a12 - a11*a32;
@@ -5885,25 +5885,25 @@ namespace VBW {
     double m23 = a31*a22 - a21*a32;
     double m24 = a41*a22 - a21*a42;
     double m34 = a41*a32 - a31*a42;
-    
+
     double m123 = m23*a13 - m13*a23 + m12*a33;
     double m124 = m24*a13 - m14*a23 + m12*a43;
     double m134 = m34*a13 - m14*a33 + m13*a43;
     double m234 = m34*a23 - m24*a33 + m23*a43;
-    
+
     return (m234*a14 - m134*a24 + m124*a34 - m123*a44);
-    }   
+    }
 
 
 
     enum ConvexCellFlag {
-    None        = 0, 
-    WithVGlobal = 1,  
-    WithTFlags  = 2  
+    None        = 0,
+    WithVGlobal = 1,
+    WithTFlags  = 2
     };
 
     typedef index_t ConvexCellFlags;
-    
+
     class GEOGRAM_API ConvexCell {
       public:
 
@@ -5914,7 +5914,7 @@ namespace VBW {
         use_exact_predicates_ = x;
     }
 #endif
-    
+
     bool has_vglobal() const {
         return has_vglobal_;
     }
@@ -5929,9 +5929,9 @@ namespace VBW {
         vglobal_.assign(max_v(), global_index_t(-1));
         }
     }
-    
+
     void clear();
-    
+
     void init_with_box(
         double xmin, double ymin, double zmin,
         double xmax, double ymax, double zmax
@@ -5946,9 +5946,9 @@ namespace VBW {
         global_index_t P0_global_index,
         global_index_t P1_global_index,
         global_index_t P2_global_index,
-        global_index_t P3_global_index      
+        global_index_t P3_global_index
     );
-      
+
     void save(const std::string& filename, double shrink=0.0) const;
 
 
@@ -5964,13 +5964,13 @@ namespace VBW {
         GEO::Attribute<GEO::index_t>* facet_attr=nullptr
     ) const;
 
-#endif      
+#endif
 
         void for_each_Voronoi_vertex(
         index_t v,
         std::function<void(index_t)> vertex
         );
-      
+
     void clip_by_plane(vec4 P);
 
     void clip_by_plane(vec4 P, global_index_t j);
@@ -5980,11 +5980,11 @@ namespace VBW {
         vec4 P, global_index_t P_global_index,
         std::function<bool(ushort,ushort)> triangle_conflict_predicate
     );
-      
+
         void clip_by_plane_fast(vec4 P);
 
-        void clip_by_plane_fast(vec4 P, global_index_t j);      
-      
+        void clip_by_plane_fast(vec4 P, global_index_t j);
+
     index_t nb_t() const {
         return nb_t_;
     }
@@ -6008,7 +6008,7 @@ namespace VBW {
         vglobal_[nb_v()-1] = v;
         return result;
     }
-    
+
     index_t create_triangle(index_t i, index_t j, index_t k) {
         vbw_assert(i < nb_v());
         vbw_assert(j < nb_v());
@@ -6023,7 +6023,7 @@ namespace VBW {
         return v2t_[v] != END_OF_LIST;
         }
         index_t t = first_valid_;
-        while(t != END_OF_LIST) { 
+        while(t != END_OF_LIST) {
         TriangleWithFlags T = get_triangle_and_flags(t);
         if(T.i == v || T.j == v || T.k == v) {
             return true;
@@ -6043,12 +6043,12 @@ namespace VBW {
 
         void compute_mg(double& m, vec3& mg) const ;
 
-      
+
     double squared_radius(vec3 center) const;
 
     double squared_inner_radius(vec3 center) const;
 
-    
+
     bool empty() const {
         return first_valid_ == END_OF_LIST;
     }
@@ -6064,7 +6064,7 @@ namespace VBW {
         vbw_assert(lv < nb_v());
         vglobal_[lv] = v;
     }
-    
+
     bool has_v_global_index(global_index_t v) const;
 
     ushort first_triangle() const {
@@ -6141,7 +6141,7 @@ namespace VBW {
         }
         return true;
     }
-    
+
      index_t triangle_adjacent(index_t t, index_t le) const {
          vbw_assert(t < max_t());
          vbw_assert(le < 3);
@@ -6162,7 +6162,7 @@ namespace VBW {
          return index_t((lv==0)*T.i+(lv==1)*T.j+(lv==2)*T.k);
      }
 
-      
+
     index_t triangle_find_vertex(index_t t, index_t v) const {
         vbw_assert(t < max_t());
         Triangle T = get_triangle(t);
@@ -6179,7 +6179,7 @@ namespace VBW {
         T.k == VERTEX_AT_INFINITY
         );
     }
-    
+
         vec4 vertex_plane(index_t v) const {
         vbw_assert(v < max_v());
         return plane_eqn_[v];
@@ -6194,12 +6194,12 @@ namespace VBW {
         plane_eqn_[v].z
         );
     }
-    
+
     bool triangle_is_marked_as_conflict(index_t t) const {
         vbw_assert(t < max_t());
         return (get_triangle_flags(t) & ushort(CONFLICT_MASK)) != 0;
     }
-       
+
         bool triangle_is_in_conflict(
         TriangleWithFlags T, const vec4& eqn
     ) const;
@@ -6223,14 +6223,14 @@ namespace VBW {
         );
         set_vv2t(i, j, result);
         set_vv2t(j, k, result);
-        set_vv2t(k, i, result);     
+        set_vv2t(k, i, result);
         first_valid_ = result;
         if(has_tflags_) {
         tflags_[result] = 0;
         }
         return result;
     }
-    
+
     index_t new_triangle(
         index_t i, index_t j, index_t k,
         index_t adj0, index_t adj1, index_t adj2
@@ -6238,7 +6238,7 @@ namespace VBW {
         // Silence warnings
         (void)(adj0);
         (void)(adj1);
-        (void)(adj2);       
+        (void)(adj2);
         return new_triangle(i, j, k);
     }
 
@@ -6248,7 +6248,7 @@ namespace VBW {
         vbw_assert(t < max_t());
         return t_[t];
     }
-    
+
     ushort get_triangle_flags(index_t t) const {
         vbw_assert(t < max_t());
         return t_[t].flags;
@@ -6263,7 +6263,7 @@ namespace VBW {
         vbw_assert(t < max_t());
         return t_[t];
     }
-    
+
     index_t vv2t(index_t v1, index_t v2) const {
         vbw_assert(v1 < max_v());
         vbw_assert(v2 < max_v());
@@ -6306,53 +6306,53 @@ namespace VBW {
         std::swap(has_vglobal_,other.has_vglobal_);
         std::swap(tflags_,other.tflags_);
         std::swap(has_tflags_,other.has_tflags_);
-#ifndef STANDALONE_CONVEX_CELL  
+#ifndef STANDALONE_CONVEX_CELL
         std::swap(use_exact_predicates_,other.use_exact_predicates_);
-#endif  
+#endif
         }
 
         vec3& stored_triangle_point(ushort t) {
-        return triangle_point_[t];      
+        return triangle_point_[t];
         }
-      
+
       protected:
 
         void triangulate_conflict_zone(
        index_t lv, index_t conflict_head, index_t conflict_tail
     );
-      
+
         void set_vertex_plane(index_t v, vec4 P) {
         vbw_assert(v < max_v());
         plane_eqn_[v] = P;
         geometry_dirty_ = true;
     }
 
-      
+
       private:
 
-    
+
     index_t max_t_;
 
-    
+
     index_t max_v_;
 
-    
+
     vector<TriangleWithFlags> t_;
 
     vector<ushort> vv2t_;
 
     vector<vec4> plane_eqn_;
 
-    
+
     index_t nb_t_;
 
-        
+
     index_t nb_v_;
 
-    
+
     index_t first_free_;
 
-    
+
     index_t first_valid_;
 
     bool geometry_dirty_;
@@ -6362,14 +6362,14 @@ namespace VBW {
     vector<ushort> v2t_;
 
     vector<global_index_t> vglobal_;
-    
+
     bool has_vglobal_;
 
     vector<uchar> tflags_;
-    
+
     bool has_tflags_;
 
-#ifndef STANDALONE_CONVEX_CELL  
+#ifndef STANDALONE_CONVEX_CELL
     bool use_exact_predicates_;
 #endif
     };
@@ -6393,7 +6393,7 @@ namespace GEO {
 
     class Mesh;
 
-    
+
 
     class GEOGRAM_API Delaunay : public Counted {
     public:
@@ -6415,14 +6415,14 @@ namespace GEO {
             InvalidInput(const InvalidInput& rhs);
 
             virtual ~InvalidInput() GEO_NOEXCEPT;
-            
+
             virtual const char* what() const GEO_NOEXCEPT;
 
             int error_code;
 
             vector<index_t> invalid_facets;
         };
-        
+
         static Delaunay* create(
             coord_index_t dim, const std::string& name = "default"
         );
@@ -6438,8 +6438,8 @@ namespace GEO {
             return cell_size_;
         }
 
-        virtual bool set_vertices(
-            index_t nb_vertices, const double* vertices, const std::function<bool(index_t,index_t)>& progressCallback
+        virtual void set_vertices(
+            index_t nb_vertices, const double* vertices, void (*progressCallback)(index_t,index_t)
         );
 
 
@@ -6481,7 +6481,7 @@ namespace GEO {
         void set_quality(double qual) {
             quality_ = qual;
         }
-        
+
         const Mesh* constraints() const {
             return constraints_;
         }
@@ -6522,7 +6522,7 @@ namespace GEO {
         bool cell_is_finite(index_t c) const {
             return !cell_is_infinite(c);
         }
-        
+
         index_t index(index_t c, signed_index_t v) const {
             geo_debug_assert(c < nb_cells());
             geo_debug_assert(v < (signed_index_t) nb_vertices());
@@ -6551,7 +6551,7 @@ namespace GEO {
             return v_to_cell_[v];
         }
 
-        
+
         signed_index_t next_around_vertex(index_t c, index_t lv) const {
             geo_debug_assert(c < nb_cells());
             geo_debug_assert(lv < cell_size());
@@ -6598,7 +6598,7 @@ namespace GEO {
         void set_keeps_infinite(bool x) {
             keep_infinite_ = x;
         }
-        
+
         bool thread_safe() const {
             return neighbors_.thread_safe();
         }
@@ -6624,11 +6624,11 @@ namespace GEO {
     }
 
         virtual index_t region(index_t t) const;
-        
+
         virtual index_t locate_point(const double* p, index_t hint) const {
             return index_t(-1);
         }
-    
+
     protected:
         Delaunay(coord_index_t dimension);
 
@@ -6688,14 +6688,14 @@ namespace GEO {
         bool store_neighbors_;
         index_t default_nb_neighbors_;
 
-        bool do_reorder_; 
+        bool do_reorder_;
 
         const Mesh* constraints_;
 
         bool refine_;
         double quality_;
 
-        bool store_cicl_; 
+        bool store_cicl_;
 
         bool keep_infinite_;
 
@@ -6730,8 +6730,8 @@ namespace GEO {
     public:
         Delaunay2d(coord_index_t dimension = 2);
 
-        virtual bool set_vertices(
-            index_t nb_vertices, const double* vertices, const std::function<bool(index_t,index_t)>& progressCallback
+        virtual void set_vertices(
+            index_t nb_vertices, const double* vertices, void (*progressCallback)(index_t,index_t)
         );
 
         virtual index_t nearest_vertex(const double* p) const;
@@ -6750,7 +6750,7 @@ namespace GEO {
             bool thread_safe = false,
             Sign* orient = nullptr
          ) const;
-         
+
          index_t locate_inexact(
              const double* p, index_t hint, index_t max_iter
          ) const;
@@ -6758,24 +6758,24 @@ namespace GEO {
          index_t insert(index_t v, index_t hint = NO_TRIANGLE);
 
          void find_conflict_zone(
-             index_t v, 
+             index_t v,
              index_t t, const Sign* orient,
              index_t& t_bndry, index_t& e_bndry,
              index_t& first, index_t& last
          );
-         
+
          void find_conflict_zone_iterative(
              const double* p, index_t t,
              index_t& t_bndry, index_t& e_bndry,
              index_t& first, index_t& last
          );
 
-         
+
          index_t stellate_conflict_zone(
-             index_t v, 
+             index_t v,
              index_t t_bndry, index_t e_bndry
          );
-         
+
          // _________ Combinatorics - new and delete _________________________
 
         index_t max_t() const {
@@ -6823,12 +6823,12 @@ namespace GEO {
         static const signed_index_t VERTEX_AT_INFINITY = -1;
 
         bool triangle_is_finite(index_t t) const {
-            return 
+            return
                 cell_to_v_store_[3 * t]     >= 0 &&
                 cell_to_v_store_[3 * t + 1] >= 0 &&
                 cell_to_v_store_[3 * t + 2] >= 0 ;
         }
-        
+
         bool triangle_is_real(index_t t) const {
             return !triangle_is_free(t) && triangle_is_finite(t);
         }
@@ -6870,7 +6870,7 @@ namespace GEO {
         }
 
         index_t new_triangle(
-            signed_index_t v1, signed_index_t v2, 
+            signed_index_t v1, signed_index_t v2,
             signed_index_t v3
         ) {
             index_t result = new_triangle();
@@ -6941,7 +6941,7 @@ namespace GEO {
         geo_debug_assert(t1 != t2);
             cell_to_cell_store_[3 * t1 + le1] = signed_index_t(t2);
         }
-        
+
         index_t find_triangle_adjacent(
             index_t t1, index_t t2_in
         ) const {
@@ -6967,7 +6967,7 @@ namespace GEO {
         void set_tet(
             index_t t,
             signed_index_t v0, signed_index_t v1,
-            signed_index_t v2, 
+            signed_index_t v2,
             index_t a0, index_t a1, index_t a2
         ) {
             geo_debug_assert(t < max_t());
@@ -7057,16 +7057,16 @@ namespace GEO {
 
         static index_t find_3(const signed_index_t* T, signed_index_t v) {
             // The following expression is 10% faster than using
-            // if() statements. This uses the C++ norm, that 
-            // ensures that the 'true' boolean value converted to 
-            // an int is always 1. With most compilers, this avoids 
+            // if() statements. This uses the C++ norm, that
+            // ensures that the 'true' boolean value converted to
+            // an int is always 1. With most compilers, this avoids
             // generating branching instructions.
             // Thank to Laurent Alonso for this idea.
             index_t result = index_t( (T[1] == v) | ((T[2] == v) * 2) );
             // Sanity check, important if it was T[0], not explicitly
             // tested (detects input that does not meet the precondition).
             geo_debug_assert(T[result] == v);
-            return result; 
+            return result;
         }
 
         virtual ~Delaunay2d();
@@ -7104,7 +7104,7 @@ namespace GEO {
      std::stack<index_t> S_;
     };
 
-    
+
 
     class GEOGRAM_API RegularWeightedDelaunay2d : public Delaunay2d {
     public:
@@ -7136,16 +7136,16 @@ namespace GEO {
      }
 
      index_t periodic_vertex_real(index_t pv) const {
-         geo_debug_assert(pv < nb_vertices_non_periodic_ * 27);      
+         geo_debug_assert(pv < nb_vertices_non_periodic_ * 27);
          return pv % nb_vertices_non_periodic_;
      }
 
      signed_index_t periodic_vertex_real(signed_index_t pv) const {
          geo_debug_assert(pv < signed_index_t(nb_vertices_non_periodic_ * 27));
          geo_debug_assert(pv != -1);
-         return pv % signed_index_t(nb_vertices_non_periodic_);      
+         return pv % signed_index_t(nb_vertices_non_periodic_);
      }
-     
+
      index_t make_periodic_vertex(index_t real, index_t instance) const {
          geo_debug_assert(real < nb_vertices_non_periodic_);
          geo_debug_assert(instance < 27);
@@ -7155,14 +7155,14 @@ namespace GEO {
      static index_t T_to_instance(int Tx, int Ty, int Tz) {
          geo_debug_assert(Tx >= -1 && Tx <= 1);
          geo_debug_assert(Ty >= -1 && Ty <= 1);
-         geo_debug_assert(Tz >= -1 && Tz <= 1);      
+         geo_debug_assert(Tz >= -1 && Tz <= 1);
          int i = (Tz+1) + 3*(Ty+1) + 9*(Tx+1);
          geo_debug_assert(i >= 0 && i < 27);
          return index_t(reorder_instances[i]);
      }
 
      void periodic_vertex_get_T(index_t pv, int& Tx, int& Ty, int& Tz) const {
-         geo_debug_assert(pv < nb_vertices_non_periodic_ * 27);              
+         geo_debug_assert(pv < nb_vertices_non_periodic_ * 27);
          index_t instance = periodic_vertex_instance(pv);
          Tx = translation[instance][0];
          Ty = translation[instance][1];
@@ -7173,7 +7173,7 @@ namespace GEO {
          geo_debug_assert(pv < nb_vertices_non_periodic_ * 27);
          geo_debug_assert(Tx >= -1 && Tx <= 1);
          geo_debug_assert(Ty >= -1 && Ty <= 1);
-         geo_debug_assert(Tz >= -1 && Tz <= 1);      
+         geo_debug_assert(Tz >= -1 && Tz <= 1);
          pv = make_periodic_vertex(
          periodic_vertex_real(pv), T_to_instance(Tx, Ty, Tz)
          );
@@ -7189,12 +7189,12 @@ namespace GEO {
      std::string binary_to_string(index_t m) const {
          std::string s(32,' ');
          for(index_t i=0; i<32; ++i) {
-         s[i] = ((m & (1u << (31u-i))) != 0) ? '1' : '0'; 
+         s[i] = ((m & (1u << (31u-i))) != 0) ? '1' : '0';
          }
          return s;
      }
 #endif
-     
+
      static int translation[27][3];
 
      static int reorder_instances[27];
@@ -7203,7 +7203,7 @@ namespace GEO {
 
      index_t nb_vertices_non_periodic_;
      };
-    
+
 }
 
 #endif
@@ -7220,8 +7220,8 @@ namespace GEO {
 
     typedef Numeric::uint8 thread_index_t;
     class PeriodicDelaunay3dThread;
-    
-     
+
+
     class GEOGRAM_API PeriodicDelaunay3d : public Delaunay, public Periodic {
     public:
 
@@ -7254,12 +7254,12 @@ namespace GEO {
         return incident_tets_set.end();
         }
         };
-    
-    
+
+
         PeriodicDelaunay3d(bool periodic, double period=1.0);
 
-        virtual bool set_vertices(
-            index_t nb_vertices, const double* vertices, const std::function<bool(index_t,index_t)>& progressCallback
+        virtual void set_vertices(
+            index_t nb_vertices, const double* vertices, void (*progressCallback)(index_t,index_t)
         );
 
     void set_weights(const double* weights);
@@ -7269,10 +7269,10 @@ namespace GEO {
     void use_exact_predicates_for_convex_cell(bool x) {
         convex_cell_exact_predicates_ = x;
     }
-    
+
     vec3 vertex(index_t v) const {
         if(!periodic_) {
-        geo_debug_assert(v < nb_vertices());        
+        geo_debug_assert(v < nb_vertices());
         return vec3(vertices_ + 3*v);
         }
         index_t instance = v/nb_vertices_non_periodic_;
@@ -7301,7 +7301,7 @@ namespace GEO {
         GEO::index_t i,
         ConvexCell& C,
         IncidentTetrahedra& W
-    ) const;         
+    ) const;
 
     void copy_Laguerre_cell_from_Delaunay(
         GEO::index_t i,
@@ -7310,7 +7310,7 @@ namespace GEO {
         IncidentTetrahedra W;
         copy_Laguerre_cell_from_Delaunay(i,C,W);
     }
-    
+
     bool has_empty_cells() const {
         return has_empty_cells_;
     }
@@ -7328,10 +7328,10 @@ namespace GEO {
         ConvexCell& C,
         IncidentTetrahedra& W
     ) const;
-     
-     
+
+
     index_t compress(bool shrink=true);
-    
+
     virtual void update_v_to_cell();
 
     virtual void update_cicl();
@@ -7361,13 +7361,13 @@ namespace GEO {
     index_t nb_threads() const {
         return index_t(threads_.size());
     }
-    
+
     private:
         friend class PeriodicDelaunay3dThread;
-    
+
     bool periodic_;
     double period_;
-    
+
     const double* weights_;
         vector<signed_index_t> cell_to_v_store_;
         vector<signed_index_t> cell_to_cell_store_;
@@ -7382,21 +7382,21 @@ namespace GEO {
          bool verbose_debug_mode_;
 
         bool benchmark_mode_;
-        
+
 
     vector<Numeric::uint32> vertex_instances_;
 
     bool update_periodic_v_to_cell_;
     vector<index_t> periodic_v_to_cell_rowptr_;
     vector<index_t> periodic_v_to_cell_data_;
-    
+
     bool has_empty_cells_;
 
     index_t nb_reallocations_;
 
     bool convex_cell_exact_predicates_;
     };
-    
+
 
 }
 
@@ -7520,18 +7520,18 @@ namespace GEO {
     public:
     KdTree(coord_index_t dim);
 
-    
+
         virtual void set_points(index_t nb_points, const double* points);
 
-        
+
         virtual bool stride_supported() const;
 
-    
+
         virtual void set_points(
             index_t nb_points, const double* points, index_t stride
         );
 
-    
+
         virtual void get_nearest_neighbors(
             index_t nb_neighbors,
             const double* query_point,
@@ -7539,7 +7539,7 @@ namespace GEO {
             double* neighbors_sq_dist
         ) const;
 
-    
+
         virtual void get_nearest_neighbors(
             index_t nb_neighbors,
             const double* query_point,
@@ -7548,16 +7548,16 @@ namespace GEO {
         KeepInitialValues
         ) const;
 
-        
+
         virtual void get_nearest_neighbors(
             index_t nb_neighbors,
             index_t query_point,
             index_t* neighbors,
             double* neighbors_sq_dist
         ) const;
-    
-    
-    
+
+
+
         struct NearestNeighbors {
 
             NearestNeighbors(
@@ -7582,7 +7582,7 @@ namespace GEO {
             neighbors_sq_dist[i] = Numeric::max_float64();
         }
             }
-        
+
             double furthest_neighbor_sq_dist() const {
                 return
             nb_neighbors == nb_neighbors_max ?
@@ -7602,7 +7602,7 @@ namespace GEO {
         for(i=int(nb_neighbors); i>0; --i) {
             if(neighbors_sq_dist[i - 1] < sq_dist) {
             break;
-            } 
+            }
             neighbors[i] = neighbors[i - 1];
             neighbors_sq_dist[i] = neighbors_sq_dist[i - 1];
         }
@@ -7632,10 +7632,10 @@ namespace GEO {
         }
         }
 
-        
+
         index_t nb_neighbors;
 
-        
+
         index_t nb_neighbors_max;
 
             index_t* neighbors;
@@ -7664,7 +7664,7 @@ namespace GEO {
     index_t root() const {
         return root_;
     }
-    
+
     protected:
         static const index_t MAX_LEAF_SIZE = 16;
 
@@ -7677,13 +7677,13 @@ namespace GEO {
         index_t& m,
         double& splitting_val
     ) const = 0;
-    
+
 
 
     virtual void get_nearest_neighbors_leaf(
             index_t node_index, index_t b, index_t e,
         const double* query_point,
-            NearestNeighbors& neighbors     
+            NearestNeighbors& neighbors
     ) const;
 
     void get_minmax(
@@ -7714,8 +7714,8 @@ namespace GEO {
     index_t root_;
     };
 
-    
-    
+
+
     class GEOGRAM_API BalancedKdTree : public KdTree {
     public:
         BalancedKdTree(coord_index_t dim);
@@ -7753,10 +7753,10 @@ namespace GEO {
             index_t node_index, index_t b, index_t e
         );
 
-    
+
     virtual index_t build_tree();
 
-    
+
     virtual void get_node(
         index_t n, index_t b, index_t e,
         index_t& left_child, index_t& right_child,
@@ -7764,9 +7764,9 @@ namespace GEO {
         index_t& m,
         double& splitting_val
     ) const;
-    
+
     protected:
-    
+
         vector<coord_index_t> splitting_coord_;
 
         vector<double> splitting_val_;
@@ -7774,17 +7774,17 @@ namespace GEO {
         index_t m0_, m1_, m2_, m3_, m4_, m5_, m6_, m7_, m8_;
     };
 
-    
+
 
     class GEOGRAM_API AdaptiveKdTree : public KdTree {
     public:
         AdaptiveKdTree(coord_index_t dim);
 
-    protected:  
-    
+    protected:
+
     virtual index_t build_tree();
 
-    
+
     virtual void get_node(
         index_t n, index_t b, index_t e,
         index_t& left_child, index_t& right_child,
@@ -7795,7 +7795,7 @@ namespace GEO {
 
         virtual index_t create_kd_tree_recursive(
         index_t b, index_t e,
-            double* bbox_min, double* bbox_max              
+            double* bbox_min, double* bbox_max
     );
 
         virtual void split_kd_node(
@@ -7817,25 +7817,25 @@ namespace GEO {
         geo_debug_assert(direct_index < nb_points());
         return (points_ + direct_index * stride_)[coord];
     }
-    
-    
+
+
     index_t nb_nodes() const {
         return splitting_coord_.size();
     }
 
     virtual index_t new_node();
-    
+
      protected:
     vector<coord_index_t> splitting_coord_;
 
         vector<double> splitting_val_;
 
     vector<index_t> node_m_;
-    
+
     vector<index_t> node_right_child_;
     };
-    
-        
+
+
 }
 
 #endif

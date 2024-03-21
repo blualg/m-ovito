@@ -24,10 +24,6 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/Particles.h>
-#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
-#include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 
 namespace Ovito {
@@ -71,64 +67,22 @@ public:
     /// Constructor.
     explicit CentroSymmetryModifier(ObjectInitializationFlags flags);
 
-protected:
+    /// This function is called by the pipeline system before a new modifier evaluation begins.
+    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
 
-    /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
+
+    /// Indicates that a preliminary viewport update will be performed immediately after this modifier
+	/// has computed new results.
+    virtual bool shouldRefreshViewportsAfterEvaluation() override { return true; }
+
+protected:
 
     /// Computes the centrosymmetry parameter of a single particle.
     static FloatType computeCSP(NearestNeighborFinder& neighList, size_t particleIndex, CSPMode mode);
 
 private:
-
-    /// Computes the modifier's results.
-    class CentroSymmetryEngine : public ModifierEngine
-    {
-    public:
-
-        /// Constructor.
-        CentroSymmetryEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, const SimulationCell* simCell, int nneighbors, CSPMode mode, DataOORef<DataTable> histogram) :
-            ModifierEngine(request),
-            _nneighbors(nneighbors),
-            _mode(mode),
-            _positions(std::move(positions)),
-            _selection(std::move(selection)),
-            _simCell(simCell),
-            _csp(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.elementCount(), Particles::CentroSymmetryProperty)),
-            _inputFingerprint(std::move(fingerprint)),
-            _histogram(std::move(histogram)) {}
-
-        /// Computes the modifier's results.
-        virtual void perform() override;
-
-        /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-        /// Returns the property storage that contains the computed per-particle CSP values.
-        const PropertyPtr& csp() const { return _csp; }
-
-        /// Returns the property storage that contains the input particle positions.
-        const ConstPropertyPtr& positions() const { return _positions; }
-
-        /// Returns the property storage that contains the particle selection (optional).
-        const ConstPropertyPtr& selection() const { return _selection; }
-
-        /// Returns the simulation cell data.
-        const DataOORef<const SimulationCell>& cell() const { return _simCell; }
-
-    private:
-
-        const int _nneighbors;
-        const CSPMode _mode;
-        DataOORef<const SimulationCell> _simCell;
-        ConstPropertyPtr _positions;
-        ConstPropertyPtr _selection;
-        const PropertyPtr _csp;
-        ElementOrderingFingerprint _inputFingerprint;
-
-        /// The computed distribution of the CSP values.
-        DataOORef<DataTable> _histogram;
-    };
 
     /// Specifies the number of nearest neighbors to take into account when computing the CSP.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, numNeighbors, setNumNeighbors, PROPERTY_FIELD_MEMORIZE);

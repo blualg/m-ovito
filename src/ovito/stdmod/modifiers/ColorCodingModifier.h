@@ -128,6 +128,10 @@ public:
     /// Constructor.
     explicit ColorCodingModifier(ObjectInitializationFlags flags);
 
+    /// Indicates whether the interactive viewports should be updated after a parameter of the the modifier has
+    /// been changed and before the entire pipeline is recomputed.
+    virtual bool shouldRefreshViewportsAfterChange() override { return true; }
+
     /// Returns the range start value.
     FloatType startValue() const { return startValueController() ? startValueController()->getFloatValue(AnimationTime(0)) : 0; }
 

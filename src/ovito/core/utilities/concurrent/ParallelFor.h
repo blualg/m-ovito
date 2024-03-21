@@ -193,8 +193,7 @@ void parallelForInnerOuter(size_t loopCount, size_t minimumChunkSize, Setup&& se
                 size_t count = end - i;
                 for(; i != end; ++i)
                     innerKernel(workerIndex, i);
-                if(!task->incrementProgressValue(count))
-                    throw OperationCanceled();
+                task->incrementProgressValue(count);
             }
         });
     });
@@ -216,8 +215,7 @@ void parallelForInnerOuter(size_t loopCount, size_t minimumChunkSize, OuterKerne
                 size_t count = end - i;
                 for(; i != end; ++i)
                     innerKernel(i);
-                if(!task->incrementProgressValue(count))
-                    throw OperationCanceled();
+                task->incrementProgressValue(count);
             }
         });
     });

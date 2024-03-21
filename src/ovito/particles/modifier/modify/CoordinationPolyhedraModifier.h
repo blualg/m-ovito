@@ -59,59 +59,14 @@ public:
     /// Constructor.
     explicit CoordinationPolyhedraModifier(ObjectInitializationFlags flags);
 
-protected:
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
 
-    /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    /// Indicates whether the interactive viewports should be updated after a parameter of the the modifier has
+    /// been changed and before the entire pipeline is recomputed.
+    virtual bool shouldRefreshViewportsAfterChange() override { return true; }
 
 private:
-
-    /// Computation engine that builds the polyhedra.
-    class ComputePolyhedraEngine : public ModifierEngine
-    {
-    public:
-
-        /// Constructor.
-        ComputePolyhedraEngine(const ModifierEvaluationRequest& request,
-                ConstPropertyPtr positions,
-                ConstPropertyPtr selection,
-                ConstPropertyPtr bondTopology,
-                ConstPropertyPtr bondPeriodicImages,
-                DataOORef<SurfaceMesh> mesh,
-                std::vector<ConstPropertyPtr> particleProperties) :
-            ModifierEngine(request),
-            _positions(std::move(positions)),
-            _selection(std::move(selection)),
-            _bondTopology(std::move(bondTopology)),
-            _bondPeriodicImages(std::move(bondPeriodicImages)),
-            _mesh(std::move(mesh)),
-            _particleProperties(std::move(particleProperties)) {}
-
-        /// Computes the modifier's results and stores them in this object for later retrieval.
-        virtual void perform() override;
-
-        /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-        /// Returns the simulation cell geometry.
-        const SimulationCell* cell() const { return _mesh->domain(); }
-
-        /// Returns the list of particle properties to copy over to the generated mesh.
-        const std::vector<ConstPropertyPtr>& particleProperties() const { return _particleProperties; }
-
-    private:
-
-        ConstPropertyPtr _positions;
-        ConstPropertyPtr _selection;
-        ConstPropertyPtr _bondTopology;
-        ConstPropertyPtr _bondPeriodicImages;
-
-        /// The generated mesh structure.
-        DataOORef<SurfaceMesh> _mesh;
-
-        /// The list of particle properties to copy over to the generated mesh.
-        std::vector<ConstPropertyPtr> _particleProperties;
-    };
 
     /// The vis element for rendering the polyhedra.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);

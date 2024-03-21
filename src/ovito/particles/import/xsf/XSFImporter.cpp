@@ -251,13 +251,14 @@ void XSFImporter::FrameLoader::loadFile()
             InputColumnReader columnParser(*this, columnMapping, particles());
             setProgressMaximum(natoms);
             for(size_t i = 0; i < natoms; i++) {
-                if(!setProgressValueIntermittent(i)) return;
                 try {
                     columnParser.readElement(i, stream.readLine());
                 }
                 catch(Exception& ex) {
                     throw ex.prependGeneralMessage(tr("Parsing error in line %1 of XSF file.").arg(atomsLineNumber + i));
                 }
+                // Update progress bar and check for user cancellation.
+                setProgressValueIntermittent(i);
             }
             columnParser.sortElementTypes();
             columnParser.reset();
@@ -346,7 +347,8 @@ void XSFImporter::FrameLoader::loadFile()
                 if(*s != '\0')
                     s++;
 
-                if(!setProgressValueIntermittent(i)) return;
+                // Update progress bar and check for user cancellation.
+                setProgressValueIntermittent(i);
             }
 
             // Automatically select the property for pseudo-coloring of the grid and adjust the value range.

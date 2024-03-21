@@ -90,24 +90,21 @@ public:
     }
 
     /// Sets the current progress value (must be in the range 0 to progressMaximum()).
-    /// Returns false if the promise has been canceled.
-    bool setProgressValue(qlonglong progressValue) const {
+    void setProgressValue(qlonglong progressValue) const {
         OVITO_ASSERT(task()->isProgressingTask());
-        return static_cast<ProgressingTask*>(task().get())->setProgressValue(progressValue);
+        static_cast<ProgressingTask*>(task().get())->setProgressValue(progressValue);
     }
 
     /// Increments the progress value by 1.
-    /// Returns false if the promise has been canceled.
-    bool incrementProgressValue(qlonglong increment = 1) const {
+    void incrementProgressValue(qlonglong increment = 1) const {
         OVITO_ASSERT(task()->isProgressingTask());
-        return static_cast<ProgressingTask*>(task().get())->incrementProgressValue(increment);
+        static_cast<ProgressingTask*>(task().get())->incrementProgressValue(increment);
     }
 
     /// Sets the progress value of the promise but generates an update event only occasionally.
-    /// Returns false if the promise has been canceled.
-    bool setProgressValueIntermittent(qlonglong progressValue, int updateEvery = 2000) const {
+    void setProgressValueIntermittent(qlonglong progressValue, int updateEvery = 2000) const {
         OVITO_ASSERT(task()->isProgressingTask());
-        return static_cast<ProgressingTask*>(task().get())->setProgressValueIntermittent(progressValue, updateEvery);
+        static_cast<ProgressingTask*>(task().get())->setProgressValueIntermittent(progressValue, updateEvery);
     }
 
     // Progress reporting for tasks with sub-steps:
@@ -136,12 +133,6 @@ public:
     void endProgressSubSteps() const {
         OVITO_ASSERT(task()->isProgressingTask());
         static_cast<ProgressingTask*>(task().get())->endProgressSubSteps();
-    }
-
-    /// Return the current status text set for this promise.
-    QString progressText() const {
-        OVITO_ASSERT(task()->isProgressingTask());
-        return static_cast<ProgressingTask*>(task().get())->progressText();
     }
 
     /// Changes the status text of this promise.

@@ -161,8 +161,8 @@ void LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNum
     for(size_t i = 0; i < atomsCount; i++) {
         columnWriter.writeElement(i, textStream());
 
-        if(!this_task::setProgressValueIntermittent(i))
-            return;
+        // Update progress bar and check for user cancellation.
+        this_task::setProgressValueIntermittent(i);
     }
 }
 

@@ -222,9 +222,8 @@ void CFGImporter::FrameLoader::loadFile()
     bool isFirstLine = true;
     for(int64_t particleIndex = 0; particleIndex < header.numParticles; ) {
 
-        // Update progress indicator.
-        if(!setProgressValueIntermittent(particleIndex))
-            return;
+        // Update progress bar and check for user cancellation.
+        setProgressValueIntermittent(particleIndex);
 
         if(!isFirstLine)
             stream.readLine();

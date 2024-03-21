@@ -112,8 +112,8 @@ void LAMMPSDumpLocalImporter::FrameFinder::discoverFramesInFile(QVector<FileSour
             else if(stream.lineStartsWith("ITEM: ENTRIES")) {
                 for(size_t i = 0; i < numElements; i++) {
                     stream.readLine();
-                    if(!setProgressValueIntermittent(stream.underlyingByteOffset()))
-                        return;
+                    // Update progress bar and check for user cancellation.
+                    setProgressValueIntermittent(stream.underlyingByteOffset());
                 }
                 break;
             }
@@ -246,7 +246,8 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
                 int lineNumber = stream.lineNumber() + 1;
                 try {
                     for(size_t i = 0; i < numElements; i++, lineNumber++) {
-                        if(!setProgressValueIntermittent(i)) return;
+                        // Update progress bar and check for user cancellation.
+                        setProgressValueIntermittent(i);
                         if(!s)
                             columnParser.readElement(i, stream.readLine());
                         else

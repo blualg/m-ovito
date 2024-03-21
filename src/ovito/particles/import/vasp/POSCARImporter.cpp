@@ -167,8 +167,8 @@ void POSCARImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporte
         }
         frames.push_back(frame);
 
-        if(!setProgressValueIntermittent(stream.underlyingByteOffset()))
-            return;
+        // Update progress bar and check for user cancellation.
+        setProgressValueIntermittent(stream.underlyingByteOffset());
     }
 }
 
@@ -450,7 +450,8 @@ Property* POSCARImporter::FrameLoader::readFieldQuantity(CompressedTextReader& s
         if(*s != '\0')
             s++;
 
-        if(!setProgressValueIntermittent(i)) return nullptr;
+        // Update progress bar and check for user cancellation.
+        setProgressValueIntermittent(i);
     }
     return fieldProperty;
 }

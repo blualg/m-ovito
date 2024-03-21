@@ -51,7 +51,7 @@ void ProgressingTask::setProgressMaximum(qlonglong maximum, bool autoReset)
 /******************************************************************************
 * Sets the current progress value of the task.
 ******************************************************************************/
-bool ProgressingTask::setProgressValue(qlonglong value)
+void ProgressingTask::setProgressValue(qlonglong value)
 {
     // When in the main thread, temporarily yield control back to the event loop to process UI events and
     // keep the UI responsive during long-running tasks.
@@ -66,26 +66,30 @@ bool ProgressingTask::setProgressValue(qlonglong value)
     const QMutexLocker locker(&taskMutex());
 
     auto state = _state.load(std::memory_order_relaxed);
-    if(state & (Canceled | Finished) || value == _progressValue)
-        return !(state & Canceled);
+    if(state & Canceled)
+        throw OperationCanceled();
+    if(state & Finished)
+        return;
+    if(value == _progressValue)
+        return;
 
     _progressValue = value;
     updateTotalProgress();
 
-    if(!_progressTime.isValid() || _totalProgressValue >= _totalProgressMaximum || _progressTime.elapsed() >= (1000 / MaxProgressEmitsPerSecond)) {
-        _progressTime.start();
+    if(_callbacks) {
+        if(!_progressTime.isValid() || _totalProgressValue >= _totalProgressMaximum || _progressTime.elapsed() >= (1000 / MaxProgressEmitsPerSecond)) {
+            for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
+                cb->callProgressChanged(_totalProgressValue, _totalProgressMaximum);
 
-        for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
-            cb->callProgressChanged(_totalProgressValue, _totalProgressMaximum);
+            _progressTime.start();
+        }
     }
-
-    return !(state & Canceled);
 }
 
 /******************************************************************************
 * Increments the progress value of the task.
 ******************************************************************************/
-bool ProgressingTask::incrementProgressValue(qlonglong increment)
+void ProgressingTask::incrementProgressValue(qlonglong increment)
 {
     // When in the main thread, temporarily yield control back to the event loop to process UI events and
     // keep the UI responsive during long-running tasks.
@@ -100,34 +104,37 @@ bool ProgressingTask::incrementProgressValue(qlonglong increment)
     const QMutexLocker locker(&taskMutex());
 
     auto state = _state.load(std::memory_order_relaxed);
-    if(state & (Canceled | Finished))
-        return !(state & Canceled);
+    if(state & Canceled)
+        throw OperationCanceled();
+    if(state & Finished)
+        return;
 
     _progressValue += increment;
     updateTotalProgress();
 
-    if(!_progressTime.isValid() || _totalProgressValue >= _totalProgressMaximum || _progressTime.elapsed() >= (1000 / MaxProgressEmitsPerSecond)) {
-        _progressTime.start();
+    if(_callbacks) {
+        if(!_progressTime.isValid() || _totalProgressValue >= _totalProgressMaximum || _progressTime.elapsed() >= (1000 / MaxProgressEmitsPerSecond)) {
+            for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
+                cb->callProgressChanged(_totalProgressValue, _totalProgressMaximum);
 
-        for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
-            cb->callProgressChanged(_totalProgressValue, _totalProgressMaximum);
+            _progressTime.start();
+        }
     }
-
-    return !(state & Canceled);
 }
 
 /******************************************************************************
 * Sets the current progress value of the task, generating update events only occasionally.
 ******************************************************************************/
-bool ProgressingTask::setProgressValueIntermittent(qlonglong progressValue, int updateEvery)
+void ProgressingTask::setProgressValueIntermittent(qlonglong progressValue, int updateEvery)
 {
     if(_intermittentUpdateCounter >= updateEvery) {
         _intermittentUpdateCounter = 0;
-        return setProgressValue(progressValue);
+        setProgressValue(progressValue);
     }
     else {
         _intermittentUpdateCounter++;
-        return !isCanceled();
+        if(isCanceled())
+            throw OperationCanceled();
     }
 }
 
@@ -149,7 +156,7 @@ void ProgressingTask::setProgressText(const QString& progressText)
     const QMutexLocker locker(&taskMutex());
 
     auto state = _state.load(std::memory_order_relaxed);
-    if(state & (Canceled | Finished))
+    if(state & (Finished | Canceled))
         return;
 
     _progressText = progressText;

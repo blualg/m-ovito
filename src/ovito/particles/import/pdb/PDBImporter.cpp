@@ -135,8 +135,8 @@ void PDBImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
 
         stream.readLine();
 
-        if(!setProgressValueIntermittent(stream.underlyingByteOffset()))
-            return;
+        // Update progress bar and check for user cancellation.
+        setProgressValueIntermittent(stream.underlyingByteOffset());
 
         if(stream.lineStartsWithToken("ENDMDL")) {
             frames.push_back(frame);

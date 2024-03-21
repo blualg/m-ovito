@@ -159,8 +159,9 @@ void GroImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
         // Skip atom lines.
         for(unsigned long long i = 0; i < numParticlesLong; i++) {
             stream.readLine();
-            if(!setProgressValueIntermittent(stream.underlyingByteOffset()))
-                return;
+            // Update progress bar and check for user cancellation.
+            if((i % 4096) == 0)
+                setProgressValue(stream.underlyingByteOffset());
         }
 
         // Skip cell geometry line.
@@ -220,7 +221,8 @@ void GroImporter::FrameLoader::loadFile()
     int atomBaseNumber = 0;
     int residueBaseNumber = 0;
     for(size_t i = 0; i < numParticles; i++) {
-        if(!setProgressValueIntermittent(i)) return;
+        // Update progress bar and check for user cancellation.
+        setProgressValueIntermittent(i);
         const char* token = stream.readLine();
 
         // Parse residue number (5 characters).

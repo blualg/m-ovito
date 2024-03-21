@@ -25,20 +25,23 @@
 #include "DelaunayTessellation.h"
 
 #include <boost/functional/hash.hpp>
-#include <cstdlib>
 
 namespace Ovito {
 
 /******************************************************************************
 * Generates the tessellation.
 ******************************************************************************/
-bool DelaunayTessellation::generateTessellation(const SimulationCell* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const SelectionIntType* selectedPoints, ProgressingTask& operation)
+void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const SelectionIntType* selectedPoints)
 {
-    operation.setProgressMaximum(0);
+    this_task::setProgressMaximum(0);
 
-    // Initialize the Geogram library.
-    GEO::initialize(GEO::GEOGRAM_NO_HANDLER);
-    GEO::set_assert_mode(GEO::ASSERT_ABORT);
+    // Initialize the Geogram library (in a thread-safe way).
+    static std::mutex geogramMutex;
+    {
+        std::lock_guard<std::mutex> lock(geogramMutex);
+        GEO::initialize(GEO::GEOGRAM_NO_HANDLER);
+        GEO::set_assert_mode(GEO::ASSERT_ABORT);
+    }
 
     // Make the magnitude of the randomly perturbed particle positions dependent on the size of the system.
     double lengthScale;
@@ -80,8 +83,7 @@ bool DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
 
         _particleIndices.push_back(i);
 
-        if(operation.isCanceled())
-            return false;
+        this_task::throwIfCanceled();
     }
     _primaryVertexCount = _particleIndices.size();
 
@@ -116,8 +118,7 @@ bool DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
 
                     Vector3 shift = simCell->reducedToAbsolute(Vector3(ix,iy,iz));
                     for(size_t vertexIndex = 0; vertexIndex < _primaryVertexCount; vertexIndex++) {
-                        if(operation.isCanceled())
-                            return false;
+                        this_task::throwIfCanceled();
 
                         Point3 pimage = _pointData[vertexIndex] + shift;
                         bool isClipped = false;
@@ -163,17 +164,12 @@ bool DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
     _dt->set_keeps_infinite(true);
     _dt->set_reorder(true);
 
-    // The internal compute_BRIO_order() routine of Geogram uses std::random_shuffle() to randomize the
-    // input points. This results in unstable ordering of the Delaunay cell list, unless we fix the seed number:
-    std::srand(1);
-    GEO::Numeric::random_reset();
-
     // Construct Delaunay tessellation.
-    bool result = _dt->set_vertices(_pointData.size(), reinterpret_cast<const double*>(_pointData.data()), [&operation](size_t value, size_t maxProgress) {
-        operation.setProgressMaximum(maxProgress, false);
-        return operation.setProgressValueIntermittent(value);
+    _dt->set_vertices(_pointData.size(), reinterpret_cast<const double*>(_pointData.data()), [](GEO::index_t value, GEO::index_t maxProgress) {
+        this_task::setProgressMaximum(maxProgress, false);
+        this_task::setProgressValueIntermittent(value);
     });
-    if(!result) return false;
+    this_task::throwIfCanceled();
 
     // Classify tessellation cells as ghost or local cells.
     _numPrimaryTetrahedra = 0;
@@ -190,7 +186,7 @@ bool DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
         }
     }
 
-    return true;
+    this_task::throwIfCanceled();
 }
 
 /******************************************************************************

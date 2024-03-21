@@ -269,8 +269,8 @@ void ParcasFileImporter::FrameLoader::loadFile()
                 prop[i] = (FloatType)stream.get_real64();
         }
 
-        // Update progress indicator.
-        if(!setProgressValueIntermittent(i)) return;
+        // Update progress bar and check for user cancellation.
+        setProgressValueIntermittent(i);
     }
     posProperty.reset();
     typeAccess.reset();

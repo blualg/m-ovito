@@ -33,6 +33,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "ConstructSurfaceModifier.h"
 
 #include <boost/range/numeric.hpp>
@@ -103,17 +104,26 @@ bool ConstructSurfaceModifier::OOMetaClass::isApplicableTo(const DataCollection&
 }
 
 /******************************************************************************
-* Creates and initializes a computation engine that will compute the
-* modifier's results.
-******************************************************************************/
-Future<ModifierEnginePtr> ConstructSurfaceModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+ * Is called by the pipeline system before a new modifier evaluation begins.
+ ******************************************************************************/
+bool ConstructSurfaceModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
 {
-    // If pipeline is in interactive mode, skip the long-running computation step.
+    // Indicate that we will do different computations depending on whether the pipeline is evaluated in interactive mode or not.
     if(request.interactiveMode())
-        return {};
+        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Interactive);
+    else
+        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Noninteractive);
 
+    return true;
+}
+
+/******************************************************************************
+* Modifies the input data.
+******************************************************************************/
+Future<PipelineFlowState> ConstructSurfaceModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
+{
     // Get input particle positions.
-    const Particles* particles = input.expectObject<Particles>();
+    const Particles* particles = state.expectObject<Particles>();
     particles->verifyIntegrity();
     const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
 
@@ -131,7 +141,7 @@ Future<ModifierEnginePtr> ConstructSurfaceModifier::createEngine(const ModifierE
     }
 
     // Get simulation cell.
-    const SimulationCell* simCell = input.expectObject<SimulationCell>();
+    const SimulationCell* simCell = state.expectObject<SimulationCell>();
     if(simCell->is2D())
         throw Exception(tr("The construct surface mesh modifier does not support 2d simulation cells."));
 
@@ -159,16 +169,13 @@ Future<ModifierEnginePtr> ConstructSurfaceModifier::createEngine(const ModifierE
     }
 
     // Create an empty surface mesh.
-    DataOORef<SurfaceMesh> mesh = DataOORef<SurfaceMesh>::create(ObjectInitializationFlag::DontCreateVisElement, tr("Surface"));
-    mesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("surface")));
-    mesh->setCreatedByNode(request.modificationNode());
+    SurfaceMesh* mesh = state.createObjectWithVis<SurfaceMesh>(QStringLiteral("surface"), request.modificationNode(), surfaceMeshVis(), tr("Surface"));
     mesh->setDomain(simCell);
-    mesh->setVisElement(surfaceMeshVis());
 
+    std::unique_ptr<ConstructSurfaceEngineBase> engine;
     if(method() == AlphaShape) {
         // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-        return std::make_shared<AlphaShapeEngine>(
-                request,
+        engine = std::make_unique<AlphaShapeEngine>(
                 posProperty,
                 selProperty,
                 std::move(grainProperty),
@@ -179,15 +186,27 @@ Future<ModifierEnginePtr> ConstructSurfaceModifier::createEngine(const ModifierE
                 identifyRegions(),
                 mapParticlesToRegions() && identifyRegions(),
                 computeSurfaceDistance(),
-                std::move(particleProperties));
+                std::move(particleProperties),
+                request.modificationNode());
     }
     else {
         // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-        return std::make_shared<GaussianDensityEngine>(request, posProperty, selProperty, std::move(mesh), radiusFactor(),
+        engine = std::make_unique<GaussianDensityEngine>(posProperty, selProperty, std::move(mesh), radiusFactor(),
                                                        isoValue(), gridResolution(), identifyRegions(),
                                                        mapParticlesToRegions() && identifyRegions(), computeSurfaceDistance(),
-                                                       particles->inputParticleRadii(), std::move(particleProperties));
+                                                       particles->inputParticleRadii(), std::move(particleProperties), request.modificationNode());
     }
+
+    // Perform the calculation in a separate thread.
+    return AsynchronousTask<PipelineFlowState>::runAsync([
+            state = std::move(state),
+            engine = std::move(engine)]() mutable
+    {
+        engine->perform();
+        this_task::throwIfCanceled();
+        engine->applyResults(state);
+        return std::move(state);
+    }, true);
 }
 
 /******************************************************************************
@@ -195,7 +214,7 @@ Future<ModifierEnginePtr> ConstructSurfaceModifier::createEngine(const ModifierE
 ******************************************************************************/
 void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 {
-    setProgressText(tr("Constructing surface mesh"));
+    this_task::setProgressText(tr("Constructing surface mesh"));
     OVITO_ASSERT(mesh()->domain());
 
     if(probeSphereRadius() <= 0)
@@ -218,7 +237,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
     // Algorithm is divided into several sub-steps.
     // Assign weights to sub-steps according to estimated runtime.
-    beginProgressSubStepsWithWeights({ 10, 30, 2, 2, 2, surfaceDistances() ? 1000 : 1 });
+    this_task::beginProgressSubStepsWithWeights({ 10, 30, 2, 2, 2, surfaceDistances() ? 1000 : 1 });
 
     // Generate Delaunay tessellation.
     DelaunayTessellation tessellation;
@@ -229,18 +248,16 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
     // far away from the simulation cell and any real input particles. These 8 points form a convex hull, whose interior gets tessellated.
     bool coverDomainWithFiniteTets = _identifyRegions;
 
-    if(!tessellation.generateTessellation(
+    tessellation.generateTessellation(
             mesh()->domain(),
             BufferReadAccess<Point3>(positions()).cbegin(),
             positions()->size(),
             ghostLayerSize,
             coverDomainWithFiniteTets,
-            selection() ? BufferReadAccess<SelectionIntType>(selection()).cbegin() : nullptr,
-            *this))
-        return;
+            selection() ? BufferReadAccess<SelectionIntType>(selection()).cbegin() : nullptr);
     OVITO_ASSERT(tessellation.simCell());
 
-    nextProgressSubStep();
+    this_task::nextProgressSubStep();
 
     SurfaceMeshBuilder meshBuilder(this->mesh());
 
@@ -307,25 +324,23 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
         // Just construct a one-sided surface mesh without caring about spatial regions.
         ManifoldConstructionHelper manifoldConstructor(tessellation, meshBuilder, alpha, false, positions());
-        if(!manifoldConstructor.construct(tetrahedronRegion, *this, std::move(prepareMeshFace), std::move(prepareMeshVertex)))
-            return;
+        manifoldConstructor.construct(tetrahedronRegion, std::move(prepareMeshFace), std::move(prepareMeshVertex));
     }
     else {
         if(!particleRegionIds())
-            beginProgressSubStepsWithWeights({ 2, 1 });
+            this_task::beginProgressSubStepsWithWeights({ 2, 1 });
         else
-            beginProgressSubStepsWithWeights({ 2, 1, 1 });
+            this_task::beginProgressSubStepsWithWeights({ 2, 1, 1 });
 
         // Construct a two-sided surface mesh with mesh faces associated with spatial regions (filled or solid).
         ManifoldConstructionHelper manifoldConstructor(tessellation, meshBuilder, alpha, true, positions());
-        if(!manifoldConstructor.construct(tetrahedronRegion, *this, std::move(prepareMeshFace), std::move(prepareMeshVertex)))
-            return;
+        manifoldConstructor.construct(tetrahedronRegion, std::move(prepareMeshFace), std::move(prepareMeshVertex));
 
-        nextProgressSubStep();
+        this_task::nextProgressSubStep();
 
         // After construct() above has identified the filled regions, now identify the empty regions.
-        if(!manifoldConstructor.formEmptyRegions(*this))
-            return;
+        manifoldConstructor.formEmptyRegions();
+        this_task::throwIfCanceled();
 
         // Reference to filledRegionCount for convenience.
         SurfaceMesh::size_type& filledRegionCount = _aggregateVolumes.filledRegionCount;
@@ -336,8 +351,8 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
         // Transfer the region ID information to the output particles.
         if(BufferWriteAccess<int32_t, access_mode::discard_read_write> regionIds = particleRegionIds()) {
-            nextProgressSubStep();
-            setProgressMaximum(regionIds.size());
+            this_task::nextProgressSubStep();
+            this_task::setProgressMaximum(regionIds.size());
             size_t numProcessedParticles = 0;
             // Initially, mark all particles as not assigned to any region (special region ID -1).
             boost::fill(regionIds, -1);
@@ -355,8 +370,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
                         // Give precedence to filled regions. Particles on the boundary are always assigned to the filled region, not the empty region.
                         if(particleIndex != std::numeric_limits<size_t>::max()) {
                             if(regionIds[particleIndex] == -1) {
-                                if(!setProgressValueIntermittent(++numProcessedParticles))
-                                    return;
+                                this_task::setProgressValueIntermittent(++numProcessedParticles);
                             }
                             if(regionId < filledRegionCount || regionIds[particleIndex] == -1) regionIds[particleIndex] = regionId;
                         }
@@ -370,8 +384,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
             auto particleRegionId = regionIds.begin();
             for(const Point3& pos : BufferReadAccess<Point3>(positions())) {
                 if(*particleRegionId == -1) {
-                    if(!setProgressValueIntermittent(++numProcessedParticles))
-                        return;
+                    this_task::setProgressValueIntermittent(++numProcessedParticles);
 
                     DelaunayTessellation::CellHandle cell = tessellation.locate(tessellation.simCell()->wrapPoint(pos), queryHint);
                     OVITO_ASSERT(cell >= 0 && cell < tessellation.numberOfTetrahedra());
@@ -391,7 +404,8 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
         std::fill(filledProperty.begin(), filledProperty.begin() + filledRegionCount, 1);
         std::fill(filledProperty.begin() + filledRegionCount, filledProperty.end(), 0);
 
-        endProgressSubSteps();
+        this_task::endProgressSubSteps();
+        this_task::throwIfCanceled();
     }
 
     // Create mesh vertex properties.
@@ -415,18 +429,19 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
         }
         // Copy particle property values to mesh vertices using precomputed index mapping.
         particleProperty->mappedCopyTo(*vertexProperty, vertexToParticleMap);
+        this_task::throwIfCanceled();
     }
 
-    nextProgressSubStep();
+    this_task::nextProgressSubStep();
 
     // Make sure every mesh vertex is only part of one surface manifold.
     SurfaceMesh::size_type duplicatedVertices = meshBuilder.makeManifold();
+    this_task::throwIfCanceled();
+    this_task::nextProgressSubStep();
 
-    nextProgressSubStep();
-    if(!meshBuilder.smoothMesh(_smoothingLevel, *this))
-        return;
-
-    nextProgressSubStep();
+    meshBuilder.smoothMesh(_smoothingLevel);
+    this_task::throwIfCanceled();
+    this_task::nextProgressSubStep();
 
     if(identifyRegions()) {
         meshBuilder.nonPBCexternalVolume();
@@ -436,19 +451,13 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
     else {
         _totalSurfaceArea = meshBuilder.computeTotalSurfaceArea();
     }
-
-    if(isCanceled())
-        return;
-
-    nextProgressSubStep();
+    this_task::throwIfCanceled();
+    this_task::nextProgressSubStep();
 
     // Compute the distance of each input particle from the constructed surface.
     computeSurfaceDistances(meshBuilder);
-
-    endProgressSubSteps();
-
-    // Release data that is no longer needed.
-    releaseWorkingData();
+    this_task::throwIfCanceled();
+    this_task::endProgressSubSteps();
 }
 
 /******************************************************************************
@@ -456,7 +465,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 ******************************************************************************/
 void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 {
-    setProgressText(tr("Constructing surface mesh"));
+    this_task::setProgressText(tr("Constructing surface mesh"));
     OVITO_ASSERT(mesh()->domain());
 
     // Check input data.
@@ -482,14 +491,12 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
             surfaceArea[0] = 0;
             meshBuilder.setSpaceFillingRegion(0);
         }
-        // Release data that is no longer needed.
-        releaseWorkingData();
         return;
     }
 
     // Algorithm is divided into several sub-steps.
     // Assign weights to sub-steps according to estimated runtime.
-    beginProgressSubStepsWithWeights({ 1, 30, 1600, 1500, 30, 500, 100, 300, surfaceDistances() ? 10000 : 1 });
+    this_task::beginProgressSubStepsWithWeights({ 1, 30, 1600, 1500, 30, 500, 100, 300, surfaceDistances() ? 10000 : 1 });
 
     // Access the atomic radii.
     BufferReadAccess<GraphicsFloatType> particleRadii(_particleRadii);
@@ -533,17 +540,16 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     gridDims[1] = std::max((size_t)2, (size_t)(gridBoundaries.column(1).length() / voxelSize));
     gridDims[2] = std::max((size_t)2, (size_t)(gridBoundaries.column(2).length() / voxelSize));
 
-    nextProgressSubStep();
+    this_task::throwIfCanceled();
+    this_task::nextProgressSubStep();
 
     // Allocate storage for the density grid values.
     std::vector<FloatType> densityData(gridDims[0] * gridDims[1] * gridDims[2], FloatType(0));
 
     // Set up a particle neighbor finder to speed up density field computation.
     CutoffNeighborFinder neighFinder;
-    if(!neighFinder.prepare(cutoffSize, positions(), mesh()->domain(), selection()))
-        return;
-
-    nextProgressSubStep();
+    neighFinder.prepare(cutoffSize, positions(), mesh()->domain(), selection());
+    this_task::nextProgressSubStep();
 
     // Set up a matrix that converts grid coordinates to spatial coordinates.
     AffineTransformation gridToCartesian = gridBoundaries;
@@ -552,7 +558,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     gridToCartesian.column(2) /= gridDims[2] - (mesh()->domain()->hasPbc(2)?0:1);
 
     // Compute the accumulated density at each grid point.
-    parallelForWithProgress(densityData.size(), [&](size_t voxelIndex) {
+    parallelFor(densityData.size(), 4096, [&](size_t voxelIndex) {
 
         // Determine the center coordinates of the current grid cell.
         size_t ix = voxelIndex % gridDims[0];
@@ -567,10 +573,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
             density += std::exp(-neighQuery.distanceSquared() / (FloatType(2) * alpha * alpha));
         }
     });
-    if(isCanceled())
-        return;
-
-    nextProgressSubStep();
+    this_task::nextProgressSubStep();
 
     // Set up callback function returning the field value, which will be passed to the marching cubes algorithm.
     auto getFieldValue = [
@@ -622,14 +625,14 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 
     {  // limit lifetime of mc to free up resources
         MarchingCubes mc(meshBuilder, gridDims[0], gridDims[1], gridDims[2], false, std::move(getFieldValue));
-        if(!mc.generateIsosurface(_isoLevel))
-            return;
+        mc.generateIsosurface(_isoLevel);
     }
-
-    nextProgressSubStep();
+    this_task::throwIfCanceled();
+    this_task::nextProgressSubStep();
 
     // Transform mesh vertices from orthogonal grid space to world space.
     meshBuilder.transformVertices(gridToCartesian);
+    this_task::throwIfCanceled();
 
     // Map mesh region volumes from orthogonal grid space to world space.
     FloatType gridToCartesianDeterminant = gridToCartesian.determinant();
@@ -638,10 +641,9 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
         regionVolumes[region] *= gridToCartesianDeterminant;
     }
     regionVolumes.reset();
-    if(isCanceled())
-        return;
 
-    nextProgressSubStep();
+    this_task::throwIfCanceled();
+    this_task::nextProgressSubStep();
 
     // Create mesh vertex properties for transferring particle property values to the surface.
     std::vector<std::pair<BufferReadAccess<float*>, BufferWriteAccess<float*, access_mode::read_write>>> propertyMapping32;
@@ -670,6 +672,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
                 propertyMapping32.emplace_back(particleProperty, std::move(vertexProperty));
             else
                 propertyMapping64.emplace_back(particleProperty, std::move(vertexProperty));
+            this_task::throwIfCanceled();
         }
     }
 
@@ -677,7 +680,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     if(!propertyMapping32.empty() || !propertyMapping64.empty()) {
         // Compute the accumulated density at each grid point.
         BufferReadAccess<Point3> vertexPositions = meshBuilder.expectVertexProperty(SurfaceMeshVertices::PositionProperty);
-        parallelForWithProgress(meshBuilder.vertexCount(), [&](size_t vertexIndex) {
+        parallelFor(meshBuilder.vertexCount(), 4096, [&](size_t vertexIndex) {
             // Visit all particles in the vicinity of the vertex.
             FloatType weightSum = 0;
             for(CutoffNeighborFinder::Query neighQuery(neighFinder, vertexPositions[vertexIndex]); !neighQuery.atEnd(); neighQuery.next()) {
@@ -710,8 +713,6 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
                 }
             }
         });
-        if(isCanceled())
-            return;
     }
 
     // Flip surface orientation if cell is mirrored.
@@ -721,14 +722,14 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     // Restore original mesh domain.
     meshBuilder.setDomain(std::move(originalDomain));
 
-    nextProgressSubStep();
+    this_task::throwIfCanceled();
+    this_task::nextProgressSubStep();
 
     if(!meshBuilder.connectOppositeHalfedges())
         throw Exception(tr("Something went wrong. Isosurface mesh is not closed."));
-    if(isCanceled())
-        return;
 
-    nextProgressSubStep();
+    this_task::throwIfCanceled();
+    this_task::nextProgressSubStep();
 
     if(_identifyRegions) {
         meshBuilder.nonPBCexternalVolume();
@@ -738,20 +739,15 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     else {
         _totalSurfaceArea = meshBuilder.computeTotalSurfaceArea();
     }
-    if(isCanceled())
-        return;
 
-    nextProgressSubStep();
+    this_task::throwIfCanceled();
+    this_task::nextProgressSubStep();
 
     // Compute the distance of each input particle from the constructed surface.
     computeSurfaceDistances(meshBuilder);
 
-    endProgressSubSteps();
-
-    // Release data that is no longer needed.
-    releaseWorkingData();
-    particleRadii.reset();
-    _particleRadii.reset();
+    this_task::throwIfCanceled();
+    this_task::endProgressSubSteps();
 }
 
 /******************************************************************************
@@ -761,7 +757,7 @@ void ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeSurfaceDistanc
 {
     if(!surfaceDistances())
         return;
-    setProgressText(tr("Computing surface distances"));
+    this_task::setProgressText(tr("Computing surface distances"));
 
     // Access output array.
     BufferWriteAccess<FloatType, access_mode::discard_write> distanceArray(surfaceDistances());
@@ -769,23 +765,17 @@ void ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeSurfaceDistanc
     BufferReadAccess<Point3> positionArray(positions());
 
     // Perform computation for each particle.
-    size_t progressChunkSize = 64;
-    parallelForWithProgress(positions()->size(), [&](size_t index) {
+    parallelFor(positions()->size(), 256, [&](size_t index) {
         auto result = mesh.locatePoint(positionArray[index], 0.0);
         distanceArray[index] = result ? result->second : 0.0;
-    }, progressChunkSize);
+    });
 }
 
 /******************************************************************************
  * Injects the computed results into the data pipeline.
  ******************************************************************************/
-void ConstructSurfaceModifier::ConstructSurfaceEngineBase::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void ConstructSurfaceModifier::ConstructSurfaceEngineBase::applyResults(PipelineFlowState& state)
 {
-    ModifierEngine::applyResults(request, state);
-
-    // Output the constructed surface mesh to the pipeline.
-    state.addObjectWithUniqueId<SurfaceMesh>(mesh());
-
     // Output computed particle distances from surface.
     if(surfaceDistances()) {
         Particles* particles = state.expectMutableObject<Particles>();
@@ -794,7 +784,7 @@ void ConstructSurfaceModifier::ConstructSurfaceEngineBase::applyResults(const Mo
     }
 
     // Output total surface area.
-    state.addAttribute(QStringLiteral("ConstructSurfaceMesh.surface_area"), QVariant::fromValue(surfaceArea()), request.modificationNode());
+    state.addAttribute(QStringLiteral("ConstructSurfaceMesh.surface_area"), QVariant::fromValue(surfaceArea()), _createdByNode);
 
     if(identifyRegions()) {
         const SimulationCell& simCell = *(state.expectObject<SimulationCell>());
@@ -802,32 +792,28 @@ void ConstructSurfaceModifier::ConstructSurfaceEngineBase::applyResults(const Mo
         FloatType totalCellVolume = (periodic) ? simCell.volume3D() : std::numeric_limits<FloatType>::quiet_NaN();
 
         // Output more global attributes.
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.cell_volume"), QVariant::fromValue(totalCellVolume),
-                           request.modificationNode());
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.cell_volume"), QVariant::fromValue(totalCellVolume), _createdByNode);
         state.addAttribute(
             QStringLiteral("ConstructSurfaceMesh.specific_surface_area"),
             QVariant::fromValue(totalCellVolume ? (surfaceArea() / totalCellVolume) : std::numeric_limits<FloatType>::quiet_NaN()),
-            request.modificationNode());
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_volume"), QVariant::fromValue(_aggregateVolumes.totalFilledVolume),
-                           request.modificationNode());
+            _createdByNode);
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_volume"), QVariant::fromValue(_aggregateVolumes.totalFilledVolume), _createdByNode);
         state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_fraction"),
                            QVariant::fromValue(totalCellVolume ? (_aggregateVolumes.totalFilledVolume / totalCellVolume)
-                                                               : std::numeric_limits<FloatType>::quiet_NaN()),
-                           request.modificationNode());
+                                                               : std::numeric_limits<FloatType>::quiet_NaN()), _createdByNode);
         state.addAttribute(QStringLiteral("ConstructSurfaceMesh.filled_region_count"),
-                           QVariant::fromValue(_aggregateVolumes.filledRegionCount), request.modificationNode());
-        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_volume"), QVariant::fromValue(_aggregateVolumes.totalEmptyVolume),
-                           request.modificationNode());
+                           QVariant::fromValue(_aggregateVolumes.filledRegionCount), _createdByNode);
+        state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_volume"), QVariant::fromValue(_aggregateVolumes.totalEmptyVolume), _createdByNode);
         state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_fraction"),
                            QVariant::fromValue(totalCellVolume ? (_aggregateVolumes.totalEmptyVolume / totalCellVolume)
                                                                : std::numeric_limits<FloatType>::quiet_NaN()),
-                           request.modificationNode());
+                           _createdByNode);
         state.addAttribute(QStringLiteral("ConstructSurfaceMesh.empty_region_count"),
-                           QVariant::fromValue(_aggregateVolumes.emptyRegionCount), request.modificationNode());
+                           QVariant::fromValue(_aggregateVolumes.emptyRegionCount), _createdByNode);
         state.addAttribute(QStringLiteral("ConstructSurfaceMesh.void_volume"), QVariant::fromValue(_aggregateVolumes.totalVoidVolume),
-                           request.modificationNode());
+                           _createdByNode);
         state.addAttribute(QStringLiteral("ConstructSurfaceMesh.void_region_count"), QVariant::fromValue(_aggregateVolumes.voidRegionCount),
-                           request.modificationNode());
+                           _createdByNode);
 
         QString statusString =
             tr("Surface area: %1\n# filled regions (volume): %2 (%3)\n# empty regions (volume): %4 (%5)\n# void regions (volume): %6 (%7)")
@@ -849,11 +835,9 @@ void ConstructSurfaceModifier::ConstructSurfaceEngineBase::applyResults(const Mo
 /******************************************************************************
  * Injects the computed results of the engine into the data pipeline.
  ******************************************************************************/
-void ConstructSurfaceModifier::AlphaShapeEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void ConstructSurfaceModifier::AlphaShapeEngine::applyResults(PipelineFlowState& state)
 {
-    ConstructSurfaceEngineBase::applyResults(request, state);
-
-    ConstructSurfaceModifier* modifier = static_object_cast<ConstructSurfaceModifier>(request.modifier());
+    ConstructSurfaceEngineBase::applyResults(state);
 
     if(surfaceParticleSelection() || particleRegionIds()) {
         Particles* particles = state.expectMutableObject<Particles>();

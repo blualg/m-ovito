@@ -102,13 +102,15 @@ public:
     /// Constructor.
     explicit SliceModifier(ObjectInitializationFlags flags);
 
-#if 0 // TODO
-    /// Determines the time interval over which a computed pipeline state will remain valid.
-    virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
-#endif
+    /// This function is called by the pipeline system before a new modifier evaluation begins.
+    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
 
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
+
+    /// Indicates whether the interactive viewports should be updated after a parameter of the the modifier has
+    /// been changed and before the entire pipeline is recomputed.
+    virtual bool shouldRefreshViewportsAfterChange() override { return true; }
 
     /// Lets the modifier render itself in an interactive viewport.
     virtual void renderModifierVisual(const ModifierEvaluationRequest& request, Pipeline* pipeline, FrameGraph& frameGraph) override;

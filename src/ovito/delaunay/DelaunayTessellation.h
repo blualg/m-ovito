@@ -115,7 +115,7 @@ public:
     };
 
     /// Generates the Delaunay tessellation.
-    bool generateTessellation(const SimulationCell* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const SelectionIntType* selectedPoints, ProgressingTask& operation);
+    void generateTessellation(const SimulationCell* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const SelectionIntType* selectedPoints);
 
     /// Returns the total number of tetrahedra in the tessellation.
     size_type numberOfTetrahedra() const { return _dt->nb_cells(); }
