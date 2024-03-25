@@ -241,9 +241,17 @@ public:
     template<typename U>
     OOWeakRef(const U* p) noexcept : std::weak_ptr<T>{OORef<T>(p)} {}
 
-    /// Equal comparison operator.
-    inline bool operator==(const OOWeakRef& rhs) const noexcept {
+    /// Equal comparison operator (with another weak ref).
+    template<class U>
+    inline bool operator==(const OOWeakRef<U>& rhs) const noexcept {
         return !this->owner_before(rhs) && !rhs.owner_before(*this); // In C++26: implement this using owner_equal()
+    }
+
+    /// Equal comparison operator (with a regular object pointer).
+    template<class U>
+    inline bool operator==(U* rhs) const noexcept {
+        const OORef<U> ref(rhs);
+        return !this->owner_before(ref) && !ref.owner_before(*this); // In C++26: implement this using owner_equal()
     }
 };
 

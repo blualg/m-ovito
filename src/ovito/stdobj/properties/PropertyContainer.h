@@ -213,6 +213,12 @@ public:
     /// Does nothing if data elements do not have the ID property.
     virtual std::vector<size_t> sortById();
 
+    /// Copies one or more property arrays from another container to this container if possible.
+    /// Takes care of remapping the property values to the new container's element order.
+    /// Non-existing elements in the source container are filled with default values.
+    /// Copying may not be possible if the property containers have different element counts without unique identifiers.
+    void tryToAdoptProperties(const PropertyContainer* sourceContainer, const std::vector<const Property*>& sourceProperties, const ConstDataObjectPath& containerPath = {});
+
     /// Makes sure that all property arrays in this container have a consistent length.
     /// If this is not the case, the method throws an exception.
     void verifyIntegrity() const;

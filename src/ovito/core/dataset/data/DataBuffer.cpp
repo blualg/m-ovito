@@ -788,13 +788,50 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
 }
 
 /******************************************************************************
-* Reorders the existing elements in this storage array using an index map.
+* Reorders the existing elements in this storage array according to an index map.
 ******************************************************************************/
 void DataBuffer::reorderElements(const std::vector<size_t>& mapping)
 {
-    // TODO: Implement this in a more efficient way.
-    auto copy = CloneHelper::cloneSingleObject(this, false);
-    copy->mappedCopyTo(*this, mapping);
+    OVITO_ASSERT(this->size() == mapping.size());
+
+    if(this->size() == 0)
+        return;
+
+#ifdef OVITO_DEBUG
+    OVITO_ASSERT(_isDataInitialized);
+#endif
+
+    WriteAccess writeAccess(*this);
+    invalidateCachedInfo();
+
+    // Allocate new storage.
+#ifdef OVITO_USE_SYCL
+    auto newBuffer = allocateBufferStorage(size(), stride());
+#else
+#if __cpp_lib_smart_ptr_for_overwrite || _LIBCPP_STD_VER >= 20
+    auto newBuffer = std::make_unique_for_overwrite<DataBuffer::Byte[]>(size() * stride());
+#else
+    auto newBuffer = std::unique_ptr<DataBuffer::Byte[]>(new DataBuffer::Byte[size() * stride()]); // Note: for backward compatibility with GCC 10
+#endif
+#endif
+
+#ifndef OVITO_USE_SYCL
+    const DataBuffer::Byte* __restrict src = cdata();
+    DataBuffer::Byte* __restrict dst = newBuffer.get();
+#else
+    sycl::host_accessor readAccessor(*_data, sycl::read_only);
+    sycl::host_accessor writeAccessor(*newBuffer, sycl::write_only, sycl::no_init);
+    const DataBuffer::Byte* __restrict src = readAccessor.get_pointer();
+    DataBuffer::Byte* __restrict dst = writeAccessor.get_pointer();
+#endif
+    size_t stride = this->stride();
+    for(size_t idx : mapping) {
+        OVITO_ASSERT(idx < size());
+        std::memcpy(dst, src + stride * idx, stride);
+        dst += stride;
+    }
+
+    newBuffer.swap(_data);
 }
 
 /******************************************************************************

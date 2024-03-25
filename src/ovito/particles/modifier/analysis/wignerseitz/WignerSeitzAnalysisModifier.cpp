@@ -47,9 +47,39 @@ WignerSeitzAnalysisModifier::WignerSeitzAnalysisModifier(ObjectInitializationFla
 }
 
 /******************************************************************************
+* Adopts existing computation results for an interactive pipeline evaluation.
+******************************************************************************/
+void WignerSeitzAnalysisModifier::reuseCachedState(const ModifierEvaluationRequest& request, Particles* particles, PipelineFlowState& output, const PipelineFlowState& cachedState)
+{
+    // Adopt the WS analysis results from the cached state.
+    if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
+        if(outputCurrentConfig()) {
+            particles->tryToAdoptProperties(cachedParticles, {
+                cachedParticles->getProperty(QStringLiteral("Occupancy")),
+                cachedParticles->getProperty(QStringLiteral("Site Identifier")),
+                cachedParticles->getProperty(QStringLiteral("Site Type")),
+                cachedParticles->getProperty(QStringLiteral("Site Index"))
+            }, {particles});
+        }
+        else {
+            // Replace complete particles set with the reference configuration.
+            output.mutableData()->replaceObject(particles, cachedParticles);
+            // Also replace simulation cell with reference cell.
+            if(const SimulationCell* cell = output.getObject<SimulationCell>()) {
+                if(const SimulationCell* cachedCell = cachedState.getObject<SimulationCell>())
+                    output.mutableData()->replaceObject(cell, cachedCell);
+            }
+        }
+    }
+
+    // Adopt all global attributes computed by the modifier from the cached state.
+    output.adoptAttributesFrom(cachedState, request.modificationNode());
+}
+
+/******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<ModifierEnginePtr> WignerSeitzAnalysisModifier::createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval)
+std::unique_ptr<ReferenceConfigurationModifier::Engine> WignerSeitzAnalysisModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input, const PipelineFlowState& referenceState)
 {
     // Get the current particle positions.
     const Particles* particles = input.expectObject<Particles>();
@@ -99,17 +129,18 @@ Future<ModifierEnginePtr> WignerSeitzAnalysisModifier::createEngineInternal(cons
     }
 
     // Create compute engine instance. Pass all relevant modifier parameters and the input data to the engine.
-    auto engine = std::make_shared<WignerSeitzAnalysisEngine>(request, validityInterval, posProperty, inputCell,
+    auto engine = std::make_unique<WignerSeitzAnalysisEngine>(posProperty, inputCell,
             referenceState,
             refPosProperty, refCell, affineMapping(), typeProperty, ptypeMinId, ptypeMaxId,
-            referenceTypeProperty, referenceIdentifierProperty);
+            referenceTypeProperty, referenceIdentifierProperty,
+            request.modificationNode());
 
     // Create output properties:
     if(outputCurrentConfig()) {
         if(referenceIdentifierProperty)
-            engine->setSiteIdentifiers(Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, posProperty->size(), Property::IntIdentifier, 1, tr("Site Identifier")));
-        engine->setSiteTypes(Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, posProperty->size(), Property::Int32, 1, tr("Site Type")));
-        engine->setSiteIndices(Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, posProperty->size(), Property::Int64, 1, tr("Site Index")));
+            engine->setSiteIdentifiers(Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, posProperty->size(), Property::IntIdentifier, 1, QStringLiteral("Site Identifier")));
+        engine->setSiteTypes(Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, posProperty->size(), Property::Int32, 1, QStringLiteral("Site Type")));
+        engine->setSiteIndices(Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, posProperty->size(), Property::Int64, 1, QStringLiteral("Site Index")));
     }
 
     return engine;
@@ -118,9 +149,9 @@ Future<ModifierEnginePtr> WignerSeitzAnalysisModifier::createEngineInternal(cons
 /******************************************************************************
 * Performs the actual computation. This method is executed in a worker thread.
 ******************************************************************************/
-void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
+void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform(PipelineFlowState& state)
 {
-    setProgressText(tr("Performing Wigner-Seitz cell analysis"));
+    this_task::setProgressText(tr("Performing Wigner-Seitz cell analysis"));
 
     if(affineMapping() == TO_CURRENT_CELL)
         throw Exception(tr("Remapping coordinates to the current cell is not supported by the Wigner-Seitz analysis routine. Only remapping to the reference cell or no mapping at all are supported options."));
@@ -131,8 +162,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
 
     // Prepare the closest-point query structure.
     NearestNeighborFinder neighborTree(0);
-    if(!neighborTree.prepare(refPositions(), refCell(), {}))
-        return;
+    neighborTree.prepare(refPositions(), refCell(), {});
 
     // Determine the number of components of the occupancy property.
     int ncomponents = 1;
@@ -169,7 +199,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
     BufferReadAccess<Point3> positionsArray(positions());
     if(ncomponents == 1) {
         // Without per-type occupancies:
-        parallelForWithProgress(positions()->size(), [&](size_t index) {
+        parallelFor(positions()->size(), 1024, [&](size_t index) {
             const Point3& p = positionsArray[index];
             FloatType closestDistanceSq;
             size_t closestIndex = neighborTree.findClosestParticle((affineMapping() == TO_REFERENCE_CELL) ? (tm * p) : p, closestDistanceSq);
@@ -182,7 +212,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
     else {
         // With per-type occupancies:
         BufferReadAccess<int32_t> particleTypesArray(particleTypes());
-        parallelForWithProgress(positions()->size(), [&](size_t index) {
+        parallelFor(positions()->size(), 1024, [&](size_t index) {
             const Point3& p = positionsArray[index];
             FloatType closestDistanceSq;
             size_t closestIndex = neighborTree.findClosestParticle((affineMapping() == TO_REFERENCE_CELL) ? (tm * p) : p, closestDistanceSq);
@@ -193,12 +223,11 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
                 atomsToSites[index] = closestIndex;
         });
     }
-    if(isCanceled()) return;
 
     // Create output storage.
     setOccupancyNumbers(Particles::OOClass().createUserProperty(DataBuffer::Uninitialized,
         siteTypes() ? positions()->size() : refPositions()->size(),
-        Property::Int32, ncomponents, tr("Occupancy")));
+        Property::Int32, ncomponents, QStringLiteral("Occupancy")));
     if(ncomponents > 1 && typemin != 1) {
         QStringList componentNames;
         for(int i = typemin; i <= typemax; i++)
@@ -252,20 +281,6 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform()
         }
     }
 
-    // Release data that is no longer needed.
-    releaseWorkingData();
-    _typeProperty.reset();
-    _referenceTypeProperty.reset();
-    _referenceIdentifierProperty.reset();
-}
-
-/******************************************************************************
-* Injects the computed results of the engine into the data pipeline.
-******************************************************************************/
-void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
-{
-    ModifierEngine::applyResults(request, state);
-
     const Particles* refParticles = referenceState().getObject<Particles>();
     if(!refParticles)
         throw Exception(tr("This modifier cannot be evaluated, because the reference configuration does not contain any particles."));
@@ -296,8 +311,8 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::applyResults(const 
     if(siteIdentifiers())
         particles->createProperty(siteIdentifiers());
 
-    state.addAttribute(QStringLiteral("WignerSeitz.vacancy_count"), QVariant::fromValue(vacancyCount()), request.modificationNode());
-    state.addAttribute(QStringLiteral("WignerSeitz.interstitial_count"), QVariant::fromValue(interstitialCount()), request.modificationNode());
+    state.addAttribute(QStringLiteral("WignerSeitz.vacancy_count"), QVariant::fromValue(vacancyCount()), _createdByNode);
+    state.addAttribute(QStringLiteral("WignerSeitz.interstitial_count"), QVariant::fromValue(interstitialCount()), _createdByNode);
 
     state.setStatus(PipelineStatus(PipelineStatus::Success, tr("Found %1 vacancies and %2 interstitials").arg(vacancyCount()).arg(interstitialCount())));
 }

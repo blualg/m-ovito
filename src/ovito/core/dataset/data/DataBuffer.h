@@ -255,7 +255,7 @@ public:
     /// Copies the elements from this storage array into the given destination array using an index mapping.
     void mappedCopyTo(DataBuffer& destination, const std::vector<size_t>& mapping) const;
 
-    /// Reorders the existing elements in this storage array using an index map.
+    /// Reorders the existing elements in this storage array according to an index map.
     void reorderElements(const std::vector<size_t>& mapping);
 
     /// Copies the data elements from the given source array into this array.

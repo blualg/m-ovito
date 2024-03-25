@@ -58,23 +58,22 @@ public:
     /// Constructor.
     explicit SmoothTrajectoryModifier(ObjectInitializationFlags flags);
 
-#if 0 // TODO
-    /// Determines the time interval over which a computed pipeline state will remain valid.
-    virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
-#endif
-
     /// Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
     virtual void inputCachingHints(ModifierEvaluationRequest& request) override;
 
-    /// Is called by the ModifierApplication to let the modifier adjust the time interval of a TargetChanged event
-    /// received from the upstream pipeline before it is propagated to the downstream pipeline.
-    virtual void restrictInputValidityInterval(TimeInterval& iv) const override;
+    /// This function is called by the pipeline system before a new modifier evaluation begins.
+    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
 
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
 
-    /// Modifies the input data synchronously.
-    virtual void evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Indicates that a preliminary viewport update will be performed immediately after this modifier
+	/// has computed new results.
+    virtual bool shouldRefreshViewportsAfterEvaluation() override { return true; }
+
+    /// Is called by the ModificationNode to let the modifier adjust the time interval of a TargetChanged event
+    /// received from the upstream pipeline before it is propagated to the downstream pipeline.
+    virtual void restrictInputValidityInterval(TimeInterval& iv) const override;
 
 private:
 

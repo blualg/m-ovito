@@ -29,8 +29,9 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/data/AttributeDataObject.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/core/app/Application.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "ClusterAnalysisModifier.h"
 
 #include <boost/range/combine.hpp>
@@ -80,21 +81,60 @@ bool ClusterAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 }
 
 /******************************************************************************
-* Creates and initializes a computation engine that will compute the modifier's results.
-******************************************************************************/
-Future<ModifierEnginePtr> ClusterAnalysisModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+ * Is called by the pipeline system before a new modifier evaluation begins.
+ ******************************************************************************/
+bool ClusterAnalysisModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
 {
-    // If pipeline is in interactive mode, skip the long-running computation step.
+    // Indicate that we will do different computations depending on whether the pipeline is evaluated in interactive mode or not.
     if(request.interactiveMode())
-        return {};
+        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Interactive);
+    else
+        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Noninteractive);
 
+    return true;
+}
+
+/******************************************************************************
+* Modifies the input data.
+******************************************************************************/
+Future<PipelineFlowState> ClusterAnalysisModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
+{
     // Get the current particle positions.
-    const Particles* particles = input.expectObject<Particles>();
+    Particles* particles = state.expectMutableObject<Particles>();
     particles->verifyIntegrity();
+
+    // In interactive mode, do not perform a real computation. Instead, reuse old results if available in the pipeline cache.
+    if(request.interactiveMode()) {
+        if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
+            if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
+
+                particles->tryToAdoptProperties(cachedParticles, {
+                    cachedParticles->getProperty(Particles::ClusterProperty),
+                    colorParticlesByCluster() ? cachedParticles->getProperty(Particles::ColorProperty) : nullptr,
+                    unwrapParticleCoordinates() ? cachedParticles->getProperty(Particles::PositionProperty) : nullptr,
+                }, {particles});
+
+                if(unwrapParticleCoordinates()) {
+                    if(particles->bonds() && cachedParticles->bonds() && cachedParticles->bonds()->elementCount() == particles->bonds()->elementCount()) {
+                        if(const Property* cachedImages = cachedParticles->bonds()->getProperty(Bonds::PeriodicImageProperty)) {
+                            particles->makeBondsMutable()->createProperty(cachedImages);
+                        }
+                    }
+                }
+            }
+            if(const DataTable* cachedTable = cachedState.getObjectBy<DataTable>(request.modificationNode(), QStringLiteral("clusters"))) {
+                state.addObject(cachedTable);
+            }
+            // Adopt all global attributes computed by the modifier from the cached state.
+            state.adoptAttributesFrom(cachedState, request.modificationNode());
+        }
+        return std::move(state);
+    }
+
     const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
 
-    // Get simulation cell.
-    const SimulationCell* inputCell = input.expectObject<SimulationCell>();
+    // Get simulation cell (optional).
+    const SimulationCell* inputCell = state.getObject<SimulationCell>();
 
     // Get particle selection.
     const Property* selectionProperty = onlySelectedParticles() ? particles->expectProperty(Particles::SelectionProperty) : nullptr;
@@ -103,7 +143,7 @@ Future<ModifierEnginePtr> ClusterAnalysisModifier::createEngine(const ModifierEv
     PropertyPtr periodicImageBondProperty;
     if(unwrapParticleCoordinates() && particles->bonds()) {
         // Create a copy of the input bond PBC vectors so that it is safe to modify them.
-        periodicImageBondProperty = ConstPropertyPtr(particles->bonds()->getProperty(Bonds::PeriodicImageProperty)).makeCopy();
+        periodicImageBondProperty = ConstPropertyPtr::makeCopy(particles->bonds()->getProperty(Bonds::PeriodicImageProperty));
         // If no PBC vectors are present, create ad-hoc vectors initialized to zero.
         if(!periodicImageBondProperty)
             periodicImageBondProperty = Bonds::OOClass().createStandardProperty(DataBuffer::Initialized, particles->bonds()->elementCount(), Bonds::PeriodicImageProperty);
@@ -145,16 +185,17 @@ Future<ModifierEnginePtr> ClusterAnalysisModifier::createEngine(const ModifierEv
     }
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
+    std::unique_ptr<ClusterAnalysisEngine> engine;
     if(neighborMode() == CutoffRange) {
         const Property* bondTopology = (periodicImageBondProperty && particles->bonds()) ? particles->bonds()->getProperty(Bonds::TopologyProperty) : nullptr;
-        return std::make_shared<CutoffClusterAnalysisEngine>(
-            request,
-            particles,
+        engine = std::make_unique<CutoffClusterAnalysisEngine>(
+            request.modificationNode(),
             posProperty,
             std::move(masses),
             inputCell,
             sortBySize(),
             unwrapParticleCoordinates(),
+            colorParticlesByCluster(),
             computeCentersOfMass(),
             computeRadiusOfGyration(),
             selectionProperty,
@@ -164,14 +205,14 @@ Future<ModifierEnginePtr> ClusterAnalysisModifier::createEngine(const ModifierEv
     }
     else if(neighborMode() == Bonding) {
         particles->expectBonds()->verifyIntegrity();
-        return std::make_shared<BondClusterAnalysisEngine>(
-            request,
-            particles,
+        engine = std::make_unique<BondClusterAnalysisEngine>(
+            request.modificationNode(),
             posProperty,
             std::move(masses),
             inputCell,
             sortBySize(),
             unwrapParticleCoordinates(),
+            colorParticlesByCluster(),
             computeCentersOfMass(),
             computeRadiusOfGyration(),
             selectionProperty,
@@ -181,6 +222,18 @@ Future<ModifierEnginePtr> ClusterAnalysisModifier::createEngine(const ModifierEv
     else {
         throw Exception(tr("Invalid cluster neighbor mode"));
     }
+
+    // Perform the calculation in a separate thread.
+    return AsynchronousTask<PipelineFlowState>::runAsync([
+            state = std::move(state),
+            engine = std::move(engine)]() mutable
+    {
+        // Compute the clustering.
+        engine->perform();
+        this_task::throwIfCanceled();
+        engine->applyResults(state);
+        return std::move(state);
+    }, true);
 }
 
 /******************************************************************************
@@ -188,7 +241,7 @@ Future<ModifierEnginePtr> ClusterAnalysisModifier::createEngine(const ModifierEv
 ******************************************************************************/
 void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
 {
-    setProgressText(tr("Performing cluster analysis"));
+    this_task::setProgressText(tr("Performing cluster analysis"));
 
     // Initialize.
     particleClusters()->fill<int64_t>(-1);
@@ -196,8 +249,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
 
     // Perform the actual clustering.
     doClustering(centersOfMass);
-    if(isCanceled())
-        return;
+    this_task::throwIfCanceled();
 
     // Copy center-of-mass coordinates from local array to output property storage.
     if(_centersOfMass) {
@@ -219,7 +271,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
 
         // Visit all input particles again.
         size_t particleCount = positions()->size();
-        setProgressMaximum(particleCount);
+        this_task::setProgressMaximum(particleCount);
         for(size_t particleIndex = 0; particleIndex < particleCount; particleIndex++) {
 
             // Skip particles that do not belong to any cluster.
@@ -227,8 +279,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
                 continue;
 
             // Update progress indicator.
-            if(!setProgressValueIntermittent(particleIndex))
-                return;
+            this_task::setProgressValueIntermittent(particleIndex);
 
             size_t clusterIndex = particleClusters[particleIndex] - 1;
 
@@ -291,8 +342,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
                 }
                 ++pbcVec;
             }
-            if(isCanceled())
-                return;
+            this_task::throwIfCanceled();
         }
     }
 
@@ -303,8 +353,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
         if(id != 0)
             clusterSizeArray[id-1]++;
     }
-    if(isCanceled())
-        return;
+    this_task::throwIfCanceled();
 
     // Create custer ID property.
     _clusterIds->resize(numClusters(), true);
@@ -343,14 +392,6 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
         for(auto& id : BufferWriteAccess<int64_t, access_mode::read_write>(particleClusters()))
             id = inverseMapping[id];
     }
-
-    // Release data that is no longer needed.
-    _positions.reset();
-    _selection.reset();
-    _bondTopology.reset();
-    _masses.reset();
-    if(!_unwrapParticleCoordinates)
-        _unwrappedPositions.reset();
 }
 
 /******************************************************************************
@@ -360,11 +401,10 @@ void ClusterAnalysisModifier::CutoffClusterAnalysisEngine::doClustering(std::vec
 {
     // Prepare the neighbor finder.
     CutoffNeighborFinder neighborFinder;
-    if(!neighborFinder.prepare(cutoff(), positions(), cell(), selection()))
-        return;
+    neighborFinder.prepare(cutoff(), positions(), cell(), selection());
 
     size_t particleCount = positions()->size();
-    setProgressMaximum(particleCount);
+    this_task::setProgressMaximum(particleCount);
     size_t progress = 0;
 
     BufferWriteAccess<int64_t, access_mode::read_write> particleClusters(this->particleClusters());
@@ -398,8 +438,7 @@ void ClusterAnalysisModifier::CutoffClusterAnalysisEngine::doClustering(std::vec
         toProcess.push_back(seedParticleIndex);
 
         do {
-            if(!setProgressValueIntermittent(progress++))
-                return;
+            this_task::setProgressValueIntermittent(progress++);
 
             size_t currentParticle = toProcess.front();
             toProcess.pop_front();
@@ -440,7 +479,7 @@ void ClusterAnalysisModifier::CutoffClusterAnalysisEngine::doClustering(std::vec
 void ClusterAnalysisModifier::BondClusterAnalysisEngine::doClustering(std::vector<Point3>& centersOfMass)
 {
     size_t particleCount = positions()->size();
-    setProgressMaximum(particleCount);
+    this_task::setProgressMaximum(particleCount);
     size_t progress = 0;
 
     // Prepare particle bond map.
@@ -478,8 +517,7 @@ void ClusterAnalysisModifier::BondClusterAnalysisEngine::doClustering(std::vecto
         toProcess.push_back(seedParticleIndex);
 
         do {
-            if(!setProgressValueIntermittent(progress++))
-                return;
+            this_task::setProgressValueIntermittent(progress++);
 
             size_t currentParticle = toProcess.front();
             toProcess.pop_front();
@@ -530,21 +568,15 @@ void ClusterAnalysisModifier::BondClusterAnalysisEngine::doClustering(std::vecto
 /******************************************************************************
 * Injects the computed results of the engine into the data pipeline.
 ******************************************************************************/
-void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(PipelineFlowState& state)
 {
-    ModifierEngine::applyResults(request, state);
-
-    ClusterAnalysisModifier* modifier = static_object_cast<ClusterAnalysisModifier>(request.modifier());
     Particles* particles = state.expectMutableObject<Particles>();
-
-    if(_inputFingerprint.hasChanged(particles))
-        throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
     // Output the cluster assignment.
     particles->createProperty(particleClusters());
 
     // Give clusters a random color.
-    if(modifier->colorParticlesByCluster()) {
+    if(_colorParticlesByCluster) {
         // Assign random colors to clusters.
         std::vector<ColorG> clusterColors(numClusters() + 1);
         std::default_random_engine rng(1);
@@ -562,7 +594,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(const Modifier
     }
 
     // Output unwrapped particle coordinates.
-    if(modifier->unwrapParticleCoordinates() && _unwrappedPositions) {
+    if(_unwrapParticleCoordinates && _unwrappedPositions) {
         particles->createProperty(_unwrappedPositions);
 
         // Correct the PBC flags of the bonds if particles have been unwrapped.
@@ -571,23 +603,23 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(const Modifier
         }
     }
 
-    state.addAttribute(QStringLiteral("ClusterAnalysis.cluster_count"), QVariant::fromValue(numClusters()), request.modificationNode());
-    if(modifier->sortBySize())
-        state.addAttribute(QStringLiteral("ClusterAnalysis.largest_size"), QVariant::fromValue(largestClusterSize()), request.modificationNode());
+    state.addAttribute(QStringLiteral("ClusterAnalysis.cluster_count"), QVariant::fromValue(numClusters()), createdByNode());
+    if(_sortBySize)
+        state.addAttribute(QStringLiteral("ClusterAnalysis.largest_size"), QVariant::fromValue(largestClusterSize()), createdByNode());
 
     // Output a data table with the cluster list.
-    DataTable* table = state.createObject<DataTable>(QStringLiteral("clusters"), request.modificationNode(), DataTable::Scatter, tr("Cluster list"), _clusterSizes, _clusterIds);
+    DataTable* table = state.createObject<DataTable>(QStringLiteral("clusters"), createdByNode(), DataTable::Scatter, tr("Cluster list"), _clusterSizes, _clusterIds);
 
     // Output centers of mass.
-    if(modifier->computeCentersOfMass() && _centersOfMass)
+    if(_centersOfMass)
         table->createProperty(_centersOfMass);
 
     // Output radii of gyration.
-    if(modifier->computeRadiusOfGyration() && _radiiOfGyration)
+    if(_radiiOfGyration)
         table->createProperty(_radiiOfGyration);
 
     // Output gyration tensors.
-    if(modifier->computeRadiusOfGyration() && _gyrationTensors)
+    if(_gyrationTensors)
         table->createProperty(_gyrationTensors);
 
     PipelineStatus status(

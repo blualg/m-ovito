@@ -162,7 +162,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::identifyStructures(const Par
     std::vector<uint64_t> cachedNeighbors(particles->elementCount());
 
     EnumerableThreadSpecific<PTMAlgorithm::Kernel> ptmKernels;
-    parallelForInnerOuter(particles->elementCount(), 4096, [&](auto&& iterate) {
+    parallelForInnerOuter(particles->elementCount(), 1024, [&](auto&& iterate) {
         // Create a thread-local kernel for the PTM algorithm.
         PTMAlgorithm::Kernel& kernel = ptmKernels.create(*_algorithm);
         iterate([&](size_t index) {
@@ -187,7 +187,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::identifyStructures(const Par
     BufferWriteAccess<int64_t, access_mode::write> correspondencesArray(correspondences());
 
     // Perform analysis on each particle.
-    parallelForInnerOuter(particles->elementCount(), 4096, [&](auto&& iterate) {
+    parallelForInnerOuter(particles->elementCount(), 1024, [&](auto&& iterate) {
         PTMAlgorithm::Kernel& kernel = ptmKernels.create(*_algorithm);
         iterate([&](size_t index) {
             // Skip particles that are not included in the analysis.

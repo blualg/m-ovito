@@ -446,6 +446,12 @@ public:
         return mutableData()->setAttribute(key, std::move(value), std::move(createdByNode));
     }
 
+    /// Copies all global attribute created by the given pipeline node over to this pipeline state.
+    void adoptAttributesFrom(const PipelineFlowState& other, const OOWeakRef<const PipelineNode>& createdByNode) {
+        if(other.data())
+            mutableData()->adoptAttributesFrom(*other.data(), createdByNode);
+    }
+
     /// Returns a new unique data object identifier that does not collide with the
     /// identifiers of any existing data object of the given type in the same data
     /// collection.

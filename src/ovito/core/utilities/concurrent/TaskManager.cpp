@@ -125,11 +125,15 @@ void TaskManager::shutdown()
     _isShuttingDown = true;
 
     // Cancel all registered tasks.
-    for(const std::weak_ptr<Task>& weakPtr : _registeredTasks) {
+    // Need to temporarily release the task manager's mutex to avoid deadlock, because canceling
+    // a task may trigger submission of further work to the task manager's queue.
+    std::vector<std::weak_ptr<Task>> registeredTasks = std::move(_registeredTasks);
+    lock.unlock();
+    for(const std::weak_ptr<Task>& weakPtr : registeredTasks) {
         if(TaskPtr task = weakPtr.lock())
             task->cancel();
     }
-    _registeredTasks.clear();
+    lock.lock();
 
     // Process all remaining work items from the queue.
     executePendingWorkLocked(lock);

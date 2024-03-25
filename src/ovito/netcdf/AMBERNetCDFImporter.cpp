@@ -574,8 +574,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
                     OVITO_ASSERT(countp[particleCountDim] >= 1);
                     OVITO_STATIC_ASSERT(sizeof(T) == sizeof(U));
                     NCERRI( nc_get_vara(ncFile._ncid, varId, startp, countp, reinterpret_cast<U*>(propertyArray.begin() + chunk * property->componentCount())), tr("(While reading variable '%1'.)").arg(columnName) );
-                    if(!incrementProgressValue())
-                        return false;
+                    incrementProgressValue();
                 }
                 OVITO_ASSERT(remaining == 0);
             }

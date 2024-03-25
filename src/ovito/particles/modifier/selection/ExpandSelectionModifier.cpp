@@ -27,8 +27,10 @@
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/core/dataset/data/AttributeDataObject.h>
 #include "ExpandSelectionModifier.h"
 
 namespace Ovito {
@@ -66,18 +68,41 @@ bool ExpandSelectionModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 }
 
 /******************************************************************************
-* Creates and initializes a computation engine that will compute the
-* modifier's results.
-******************************************************************************/
-Future<ModifierEnginePtr> ExpandSelectionModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+ * Is called by the pipeline system before a new modifier evaluation begins.
+ ******************************************************************************/
+bool ExpandSelectionModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
 {
-    // If pipeline is in interactive mode, skip the long-running computation step.
+    // Indicate that we will do different computations depending on whether the pipeline is evaluated in interactive mode or not.
     if(request.interactiveMode())
-        return {};
+        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Interactive);
+    else
+        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Noninteractive);
 
+    return true;
+}
+
+/******************************************************************************
+* Modifies the input data.
+******************************************************************************/
+Future<PipelineFlowState> ExpandSelectionModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
+{
     // Get the input particles.
-    const Particles* particles = input.expectObject<Particles>();
+    const Particles* particles = state.expectObject<Particles>();
     particles->verifyIntegrity();
+
+    // In interactive mode, do not perform a real computation. Instead, reuse old results if available in the pipeline cache.
+    if(request.interactiveMode()) {
+        if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
+            if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
+                state.expectMutableObject<Particles>()->tryToAdoptProperties(cachedParticles, {
+                    cachedParticles->getProperty(Particles::SelectionProperty),
+                }, {particles});
+            }
+            // Adopt all global attributes computed by the modifier from the cached state.
+            state.adoptAttributesFrom(cachedState, request.modificationNode());
+        }
+        return std::move(state);
+    }
 
     // Get the particle positions.
     const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
@@ -85,23 +110,52 @@ Future<ModifierEnginePtr> ExpandSelectionModifier::createEngine(const ModifierEv
     // Get the current particle selection.
     const Property* inputSelection = particles->expectProperty(Particles::SelectionProperty);
 
-    // Get simulation cell.
-    const SimulationCell* inputCell = input.expectObject<SimulationCell>();
+    // Get simulation cell (optional).
+    const SimulationCell* inputCell = state.getObject<SimulationCell>();
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
+    std::unique_ptr<ExpandSelectionEngine> engine;
     if(mode() == CutoffRange) {
-        return std::make_shared<ExpandSelectionCutoffEngine>(request, particles, posProperty, inputCell, inputSelection, numberOfIterations(), cutoffRange());
+        engine = std::make_unique<ExpandSelectionCutoffEngine>(request.modificationNode(), posProperty, inputCell, inputSelection, numberOfIterations(), cutoffRange());
     }
     else if(mode() == NearestNeighbors) {
-        return std::make_shared<ExpandSelectionNearestEngine>(request, particles, posProperty, inputCell, inputSelection, numberOfIterations(), numNearestNeighbors());
+        engine = std::make_unique<ExpandSelectionNearestEngine>(request.modificationNode(), posProperty, inputCell, inputSelection, numberOfIterations(), numNearestNeighbors());
     }
     else if(mode() == BondedNeighbors) {
         particles->expectBonds()->verifyIntegrity();
-        return std::make_shared<ExpandSelectionBondedEngine>(request, particles, posProperty, inputCell, inputSelection, numberOfIterations(), particles->expectBondsTopology());
+        engine = std::make_unique<ExpandSelectionBondedEngine>(request.modificationNode(), posProperty, inputCell, inputSelection, numberOfIterations(), particles->expectBondsTopology());
     }
     else {
         throw Exception(tr("Invalid selection expansion mode."));
     }
+
+    // Perform the calculation in a separate thread.
+    return AsynchronousTask<PipelineFlowState>::runAsync([
+            state = std::move(state),
+            engine = std::move(engine)]() mutable
+    {
+        // Compute the expanded selection.
+        engine->perform();
+        this_task::throwIfCanceled();
+
+        // Get the output particles.
+        Particles* particles = state.expectMutableObject<Particles>();
+
+        // Output the selection property.
+        particles->createProperty(engine->outputSelection());
+
+        // Report the number of newly selected particles as a pipeline attribute.
+        state.addAttribute(QStringLiteral("ExpandSelection.num_added"), QVariant::fromValue(engine->numSelectedParticlesOutput() - engine->numSelectedParticlesInput()), engine->createdByNode());
+
+        state.setStatus(tr("Added %1 particles to selection.\n"
+                "Old selection count was: %2\n"
+                "New selection count is: %3")
+                        .arg(engine->numSelectedParticlesOutput() - engine->numSelectedParticlesInput())
+                        .arg(engine->numSelectedParticlesInput())
+                        .arg(engine->numSelectedParticlesOutput()));
+
+        return std::move(state);
+    }, true);
 }
 
 /******************************************************************************
@@ -109,28 +163,23 @@ Future<ModifierEnginePtr> ExpandSelectionModifier::createEngine(const ModifierEv
 ******************************************************************************/
 void ExpandSelectionModifier::ExpandSelectionEngine::perform()
 {
-    setProgressText(tr("Expanding particle selection"));
+    this_task::setProgressText(tr("Expanding particle selection"));
 
     setNumSelectedParticlesInput(_inputSelection->nonzeroCount());
 
-    beginProgressSubSteps(_numIterations);
+    this_task::beginProgressSubSteps(_numIterations);
     for(int i = 0; i < _numIterations; i++) {
         if(i != 0) {
             _inputSelection = outputSelection();
             setOutputSelection(_inputSelection.makeCopy());
-            nextProgressSubStep();
+            this_task::nextProgressSubStep();
         }
         expandSelection();
-        if(isCanceled()) return;
+        this_task::throwIfCanceled();
     }
-    endProgressSubSteps();
+    this_task::endProgressSubSteps();
 
     setNumSelectedParticlesOutput(outputSelection()->nonzeroCount());
-
-    // Release data that is no longer needed.
-    _positions.reset();
-    _inputSelection.reset();
-    _simCell.reset();
 }
 
 /******************************************************************************
@@ -143,14 +192,14 @@ void ExpandSelectionModifier::ExpandSelectionNearestEngine::expandSelection()
 
     // Prepare the neighbor list.
     NearestNeighborFinder neighFinder(_numNearestNeighbors);
-    if(!neighFinder.prepare(positions(), simCell(), {}))
-        return;
+    neighFinder.prepare(positions(), simCell(), {});
 
     OVITO_ASSERT(inputSelection() != outputSelection());
     BufferReadAccess<SelectionIntType> inputSelectionArray(inputSelection());
     BufferWriteAccess<SelectionIntType, access_mode::write> outputSelectionArray(outputSelection());
-    parallelForWithProgress(positions()->size(), [&](size_t index) {
-        if(!inputSelectionArray[index]) return;
+    parallelFor(positions()->size(), 4096, [&](size_t index) {
+        if(!inputSelectionArray[index])
+            return;
 
         NearestNeighborFinder::Query<MAX_NEAREST_NEIGHBORS> neighQuery(neighFinder);
         neighQuery.findNeighbors(index);
@@ -172,7 +221,7 @@ void ExpandSelectionModifier::ExpandSelectionBondedEngine::expandSelection()
     BufferReadAccess<ParticleIndexPair> bondTopologyArray(_bondTopology);
 
     size_t particleCount = inputSelection()->size();
-    parallelForWithProgress(_bondTopology->size(), [&](size_t index) {
+    parallelFor(_bondTopology->size(), 4096, [&](size_t index) {
         size_t index1 = bondTopologyArray[index][0];
         size_t index2 = bondTopologyArray[index][1];
         if(index1 >= particleCount || index2 >= particleCount)
@@ -191,46 +240,19 @@ void ExpandSelectionModifier::ExpandSelectionCutoffEngine::expandSelection()
 {
     // Prepare the neighbor list.
     CutoffNeighborFinder neighborListBuilder;
-    if(!neighborListBuilder.prepare(_cutoffRange, positions(), simCell(), {}))
-        return;
+    neighborListBuilder.prepare(_cutoffRange, positions(), simCell(), {});
 
     BufferWriteAccess<SelectionIntType, access_mode::write> outputSelectionArray(outputSelection());
     BufferReadAccess<SelectionIntType> inputSelectionArray(inputSelection());
 
-    parallelForWithProgress(positions()->size(), [&](size_t index) {
+    parallelFor(positions()->size(), 4096, [&](size_t index) {
         if(!inputSelectionArray[index])
             return;
+
         for(CutoffNeighborFinder::Query neighQuery(neighborListBuilder, index); !neighQuery.atEnd(); neighQuery.next()) {
             outputSelectionArray[neighQuery.current()] = 1;
         }
     });
-}
-
-/******************************************************************************
-* Injects the computed results of the engine into the data pipeline.
-******************************************************************************/
-void ExpandSelectionModifier::ExpandSelectionEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
-{
-    ModifierEngine::applyResults(request, state);
-
-    // Get the output particles.
-    Particles* particles = state.expectMutableObject<Particles>();
-    if(_inputFingerprint.hasChanged(particles))
-        throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
-
-    // Output the selection property.
-    particles->createProperty(outputSelection());
-
-    // Report the number of newly selected particles as a pipeline attribute.
-    state.addAttribute(QStringLiteral("ExpandSelection.num_added"), QVariant::fromValue(numSelectedParticlesOutput() - numSelectedParticlesInput()), request.modificationNode());
-
-    QString msg = tr("Added %1 particles to selection.\n"
-            "Old selection count was: %2\n"
-            "New selection count is: %3")
-                    .arg(numSelectedParticlesOutput() - numSelectedParticlesInput())
-                    .arg(numSelectedParticlesInput())
-                    .arg(numSelectedParticlesOutput());
-    state.setStatus(PipelineStatus(PipelineStatus::Success, std::move(msg)));
 }
 
 }   // End of namespace

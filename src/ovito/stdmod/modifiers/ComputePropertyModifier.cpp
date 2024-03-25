@@ -222,11 +222,9 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::apply(const ModifierE
             ConstDataObjectPath containerPathCached = cachedState.getObject(inputContainerRef());
             if(!containerPathCached.empty()) {
                 const PropertyContainer* containerCached = static_object_cast<PropertyContainer>(containerPathCached.back());
-                if(containerCached->elementCount() == nelements) {
-                    if(const Property* cachedProperty = modifier->outputProperty().findInContainer(containerCached)) {
-                        container->createProperty(cachedProperty);
-                    }
-                }
+                container->tryToAdoptProperties(containerCached, {
+                    modifier->outputProperty().findInContainer(containerCached)
+                }, containerPath);
             }
         }
         return std::move(state);

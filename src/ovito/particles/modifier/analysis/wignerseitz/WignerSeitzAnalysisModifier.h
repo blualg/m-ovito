@@ -25,7 +25,6 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/stdobj/properties/Property.h>
-#include <ovito/particles/util/NearestNeighborFinder.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/particles/modifier/analysis/ReferenceConfigurationModifier.h>
 
@@ -50,32 +49,34 @@ public:
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<ModifierEnginePtr> createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval) override;
+    virtual std::unique_ptr<Engine> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input, const PipelineFlowState& referenceState) override;
+
+    /// Adopts existing computation results for an interactive pipeline evaluation.
+    virtual void reuseCachedState(const ModifierEvaluationRequest& request, Particles* particles, PipelineFlowState& output, const PipelineFlowState& cachedState) override;
 
 private:
 
     /// Computes the modifier's results.
-    class WignerSeitzAnalysisEngine : public RefConfigEngineBase
+    class WignerSeitzAnalysisEngine : public Engine
     {
     public:
 
         /// Constructor.
-        WignerSeitzAnalysisEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCell* simCell,
+        WignerSeitzAnalysisEngine(ConstPropertyPtr positions, const SimulationCell* simCell,
                 PipelineFlowState referenceState, ConstPropertyPtr refPositions, const SimulationCell* simCellRef, AffineMappingType affineMapping,
-                ConstPropertyPtr typeProperty, int ptypeMinId, int ptypeMaxId, ConstPropertyPtr referenceTypeProperty, ConstPropertyPtr referenceIdentifierProperty) :
-            RefConfigEngineBase(request, validityInterval, std::move(positions), simCell, std::move(refPositions), simCellRef,
+                ConstPropertyPtr typeProperty, int ptypeMinId, int ptypeMaxId, ConstPropertyPtr referenceTypeProperty, ConstPropertyPtr referenceIdentifierProperty,
+                OOWeakRef<const PipelineNode> createdByNode) :
+            Engine(std::move(positions), simCell, std::move(refPositions), simCellRef,
                 nullptr, nullptr, affineMapping, false),
             _typeProperty(std::move(typeProperty)),
             _ptypeMinId(ptypeMinId), _ptypeMaxId(ptypeMaxId),
             _referenceTypeProperty(std::move(referenceTypeProperty)),
             _referenceIdentifierProperty(std::move(referenceIdentifierProperty)),
-            _referenceState(std::move(referenceState)) {}
+            _referenceState(std::move(referenceState)),
+            _createdByNode(std::move(createdByNode)) {}
 
-        /// Computes the modifier's results.
-        virtual void perform() override;
-
-        /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+        /// Performs the actual computation of the modifier's results.
+        virtual void perform(PipelineFlowState& state) override;
 
         /// Returns the number of vacant sites found during the last analysis run.
         size_t vacancyCount() const { return _vacancyCount; }
@@ -133,6 +134,7 @@ private:
         PropertyPtr _siteIdentifiers;
         size_t _vacancyCount = 0;
         size_t _interstitialCount = 0;
+        OOWeakRef<const PipelineNode> _createdByNode;
     };
 
     /// Enables per-type occupancy numbers.

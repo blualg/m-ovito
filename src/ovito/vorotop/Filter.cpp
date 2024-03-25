@@ -30,7 +30,7 @@ namespace Ovito::VoroTop {
 /******************************************************************************
 * Loads the filter definition from the given input stream.
 ******************************************************************************/
-bool Filter::load(CompressedTextReader& stream, bool readHeaderOnly)
+void Filter::load(CompressedTextReader& stream, bool readHeaderOnly)
 {
     // Parse comment lines starting with '#':
     _filterDescription.clear();
@@ -39,8 +39,7 @@ bool Filter::load(CompressedTextReader& stream, bool readHeaderOnly)
         line = stream.readLineTrimLeft();
         if(line[0] != '#') break;
         _filterDescription += QString::fromUtf8(line + 1).trimmed() + QChar('\n');
-        if(this_task::isCanceled())
-            return false;
+        this_task::throwIfCanceled();
     }
 
     // Create the default "Other" structure type.
@@ -65,14 +64,13 @@ bool Filter::load(CompressedTextReader& stream, bool readHeaderOnly)
         _structureTypeDescriptions.push_back(columns.size() >= 2 ? columns[1] : QString());
 
         line = stream.readLineTrimLeft();
-        if(this_task::isCanceled())
-            return false;
+        this_task::throwIfCanceled();
     }
     if(_structureTypeLabels.size() <= 1)
         throw Exception(QString("Invalid filter definition file"));
 
     if(readHeaderOnly)
-        return !this_task::isCanceled();
+        return;
 
     this_task::setProgressMaximum(stream.underlyingSize());
 
@@ -110,11 +108,8 @@ bool Filter::load(CompressedTextReader& stream, bool readHeaderOnly)
         line = stream.readNonEmptyLine();
 
         // Update progress indicator.
-        if(!this_task::setProgressValueIntermittent(stream.underlyingByteOffset()))
-            return false;
+        this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
     }
-
-    return !this_task::isCanceled();
 }
 
 }   // End of namespace

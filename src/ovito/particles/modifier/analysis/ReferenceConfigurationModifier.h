@@ -67,10 +67,8 @@ public:
     /// Throws an exception if the pipeline stage cannot be evaluated at this time. This is called by the system to catch user mistakes that would lead to infinite recursion.
     virtual void preEvaluationCheck() const override;
 
-#if 0 // TODO
-    /// Determines the time interval over which a computed pipeline state will remain valid.
-    virtual TimeInterval validityInterval(const ModifierEvaluationRequest& request) const override;
-#endif
+    /// This function is called by the pipeline system before a new modifier evaluation begins.
+    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
 
     /// Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
     virtual void inputCachingHints(ModifierEvaluationRequest& request) override;
@@ -79,44 +77,38 @@ public:
     /// received from the upstream pipeline before it is propagated to the downstream pipeline.
     virtual void restrictInputValidityInterval(TimeInterval& iv) const override;
 
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
+
+    /// Indicates that a preliminary viewport update will be performed immediately after this modifier
+	/// has computed new results.
+    virtual bool shouldRefreshViewportsAfterEvaluation() override { return true; }
+
 protected:
 
     /// Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
-    /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
-
-    /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<ModifierEnginePtr> createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval) = 0;
-
     /// Base class for compute engines that make use of a reference configuration.
-    class OVITO_PARTICLES_EXPORT RefConfigEngineBase : public ModifierEngine
+    class OVITO_PARTICLES_EXPORT Engine
     {
     public:
 
         /// Constructor.
-        RefConfigEngineBase(const ModifierEvaluationRequest& request,
-                const TimeInterval& validityInterval, ConstPropertyPtr positions, const SimulationCell* simCell,
+        Engine(ConstPropertyPtr positions, const SimulationCell* simCell,
                 ConstPropertyPtr refPositions, const SimulationCell* simCellRef,
                 ConstPropertyPtr identifiers, ConstPropertyPtr refIdentifiers,
                 AffineMappingType affineMapping, bool useMinimumImageConvention);
 
-        /// Releases data that is no longer needed.
-        void releaseWorkingData() {
-            _positions.reset();
-            _refPositions.reset();
-            _identifiers.reset();
-            _refIdentifiers.reset();
-            _simCell.reset();
-            _simCellRef.reset();
-            decltype(_currentToRefIndexMap){}.swap(_currentToRefIndexMap);
-            decltype(_refToCurrentIndexMap){}.swap(_refToCurrentIndexMap);
-        }
+        /// Destructor.
+        virtual ~Engine() = default;
+
+        /// Performs the actual computation of the modifier's results.
+        virtual void perform(PipelineFlowState& state) = 0;
 
         /// Determines the mapping between particles in the reference configuration and
         /// the current configuration and vice versa.
-        bool buildParticleMapping(bool requireCompleteCurrentToRefMapping, bool requireCompleteRefToCurrentMapping);
+        void buildParticleMapping(bool requireCompleteCurrentToRefMapping, bool requireCompleteRefToCurrentMapping);
 
         /// Returns the property storage that contains the input particle positions.
         const ConstPropertyPtr& positions() const { return _positions; }
@@ -167,6 +159,12 @@ protected:
         std::vector<size_t> _currentToRefIndexMap;
         std::vector<size_t> _refToCurrentIndexMap;
     };
+
+    /// Creates a computation engine that will compute the modifier's results.
+    virtual std::unique_ptr<Engine> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input, const PipelineFlowState& referenceState) = 0;
+
+    /// Adopts existing computation results for an interactive pipeline evaluation.
+    virtual void reuseCachedState(const ModifierEvaluationRequest& request, Particles* particles, PipelineFlowState& output, const PipelineFlowState& cachedState) = 0;
 
 protected:
 

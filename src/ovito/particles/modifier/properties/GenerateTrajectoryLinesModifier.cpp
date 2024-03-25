@@ -99,6 +99,20 @@ bool GenerateTrajectoryLinesModifier::OOMetaClass::isApplicableTo(const DataColl
     return input.containsObject<Particles>();
 }
 
+/******************************************************************************
+ * Is called by the pipeline system before a new modifier evaluation begins.
+ ******************************************************************************/
+bool GenerateTrajectoryLinesModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
+{
+    // Indicate that we will do different computations depending on whether the pipeline is evaluated in interactive mode or not.
+    if(request.interactiveMode())
+        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Interactive);
+    else
+        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Noninteractive);
+
+    return true;
+}
+
 /**
  * Helper class that builds up the trajectory lines by sampling the particle positions.
 */
@@ -243,8 +257,7 @@ public:
             if(_idData[a] > _idData[b]) return false;
             return _timeData[a] < _timeData[b];
         });
-        if(this_task::isCanceled())
-            return;
+        this_task::throwIfCanceled();
 
         // Create the lines data container object.
         DataOORef<Lines> trajectoryLines = DataOORef<Lines>::create();
@@ -314,9 +327,7 @@ public:
                 }
             }
         }
-
-        if(this_task::isCanceled())
-            return;
+        this_task::throwIfCanceled();
 
         // Unwrap trajectory vertices at periodic boundaries of the simulation cell.
         if(_unwrapTrajectories && _pointData.size() >= 2 && !_cells.empty() && _cells.front() && _cells.front()->hasPbcCorrected()) {
@@ -326,8 +337,7 @@ public:
             piter = permutation.cbegin();
             const int64_t* id = trajIdProperty.cbegin();
             for(auto pos_end = pos + trajPosProperty.size() - 1; pos != pos_end; ++pos, ++piter, ++id) {
-                if(!this_task::incrementProgressValue())
-                    return;
+                this_task::incrementProgressValue();
                 if(id[0] == id[1]) {
                     const SimulationCell* cell1 = _cells[_timeData[piter[0]]];
                     const SimulationCell* cell2 = _cells[_timeData[piter[1]]];
@@ -394,10 +404,22 @@ Future<PipelineFlowState> GenerateTrajectoryLinesModifier::evaluateModifier(cons
     // Need our type of ModificationNode.
     GenerateTrajectoryLinesModificationNode* modNode = dynamic_object_cast<GenerateTrajectoryLinesModificationNode>(request.modificationNode());
     if(!modNode)
-        return input;
+        return std::move(state);
 
     // Get a reference to the SharedFuture storing the results of a previous run.
     SharedFuture<DataOORef<const Lines>>& samplingOperation = modNode->_samplingOperation;
+
+    // In interactive mode, do not perform a real computation. Instead, reuse an old result from the cached state if available.
+    if(request.interactiveMode()) {
+        if(PipelineFlowState cachedState = modNode->getCachedPipelineNodeOutput(request.time(), true)) {
+            // Adopt all data objects computed by the modifier from the cached state.
+            for(const DataObject* obj : cachedState.data()->objects()) {
+                if(obj->createdByNode() == modNode)
+                    state.addObject(obj);
+            }
+        }
+        return std::move(state);
+    }
 
     // Is there an ongoing or already completed operation that we can reuse?
     if(samplingOperation.isValid() == false || samplingOperation.isCanceled()) {
@@ -445,21 +467,10 @@ Future<PipelineFlowState> GenerateTrajectoryLinesModifier::evaluateModifier(cons
     }
 
     // Pass generated trajectory lines to the pipeline.
-    return samplingOperation.then(*modNode, [output = input](const DataOORef<const Lines>& trajectoryLines) mutable {
-        output.addObject(trajectoryLines);
-        return std::move(output);
+    return samplingOperation.then(*modNode, [state = std::move(state)](const DataOORef<const Lines>& trajectoryLines) mutable {
+        state.addObject(trajectoryLines);
+        return std::move(state);
     });
-}
-
-/******************************************************************************
-* Modifies the input data synchronously.
-******************************************************************************/
-void GenerateTrajectoryLinesModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
-{
-    GenerateTrajectoryLinesModificationNode* modNode = dynamic_object_cast<GenerateTrajectoryLinesModificationNode>(request.modificationNode());
-    if(modNode && modNode->_samplingOperation.isValid() && modNode->_samplingOperation.isFinished()) {
-        state.addObject(modNode->_samplingOperation.result());
-    }
 }
 
 /******************************************************************************

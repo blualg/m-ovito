@@ -50,11 +50,6 @@ public:
     /// Specifies the expressions to be evaluated for each element and creates the input variables.
     virtual void initialize(const QStringList& expressions, const PipelineFlowState& state, const ConstDataObjectPath& containerPath, int animationFrame = 0);
 
-#if 0 // TODO
-    /// Initializes the parser object and evaluates the expressions for every element.
-    void evaluate(const std::function<void(size_t,size_t,double)>& callback, const std::function<bool(size_t)>& filter = std::function<bool(size_t)>());
-#endif
-
     /// Returns the number of input data element.
     size_t elementCount() const { return _elementCount; }
 

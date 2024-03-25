@@ -50,7 +50,7 @@ public:
     explicit VoroTopModifier(ObjectInitializationFlags flags);
 
     /// Loads a new filter definition into the modifier.
-    bool loadFilterDefinition(const QString& filepath);
+    void loadFilterDefinition(const QString& filepath);
 
     /// Returns the VoroTop filter definition cached from the last analysis run.
     const std::shared_ptr<Filter>& filter() const { return _filter; }
@@ -60,29 +60,31 @@ protected:
     /// Is called when the value of a property of this object has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
-    /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    /// Creates the engine that will perform the structure identification.
+    virtual std::shared_ptr<Algorithm> createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input, PropertyPtr structures) override {
+        const Particles* particles = input.expectObject<Particles>();
+        return std::make_shared<VoroTopAnalysisAlgorithm>(std::move(structures), useRadii() ? particles->inputParticleRadii() : nullptr, filterFile(), filter());
+    }
 
 private:
 
     /// Compute engine that performs the actual analysis in a background thread.
-    class VoroTopAnalysisEngine : public StructureIdentificationEngine
+    class VoroTopAnalysisAlgorithm : public StructureIdentificationModifier::Algorithm
     {
     public:
 
         /// Constructor.
-        VoroTopAnalysisEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, const TimeInterval& validityInterval, ConstPropertyPtr positions, ConstPropertyPtr selection,
-                            ConstPropertyPtr radii, const SimulationCell* simCell, const QString& filterFile, std::shared_ptr<Filter> filter, const OORefVector<ElementType>& structureTypes) :
-            StructureIdentificationEngine(request, std::move(fingerprint), std::move(positions), simCell, structureTypes, std::move(selection)),
+        VoroTopAnalysisAlgorithm(PropertyPtr structures, ConstPropertyPtr radii, const QString& filterFile, std::shared_ptr<Filter> filter) :
+            Algorithm(std::move(structures)),
             _filterFile(filterFile),
             _filter(std::move(filter)),
             _radii(std::move(radii)) {}
 
-        /// Computes the modifier's results and stores them in this object for later retrieval.
-        virtual void perform() override;
+        /// Performs the atomic structure classification.
+        virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
 
-        /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+        /// Computes the structure identification statistics.
+        virtual std::vector<int64_t> computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const override;
 
         /// Processes a single Voronoi cell.
         int processCell(voro::voronoicell_neighbor& vcell);

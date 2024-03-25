@@ -53,7 +53,7 @@ VoroTopModifier::VoroTopModifier(ObjectInitializationFlags flags) : StructureIde
 /******************************************************************************
  * Loads a new filter definition into the modifier.
  ******************************************************************************/
-bool VoroTopModifier::loadFilterDefinition(const QString& filepath)
+void VoroTopModifier::loadFilterDefinition(const QString& filepath)
 {
     this_task::setProgressText(tr("Loading VoroTop filter %1").arg(filepath));
 
@@ -63,8 +63,7 @@ bool VoroTopModifier::loadFilterDefinition(const QString& filepath)
 
     // Load filter file header (i.e. list of structure types).
     std::shared_ptr<Filter> filter = std::make_shared<Filter>();
-    if(!filter->load(stream, true))
-        return false;
+    filter->load(stream, true);
 
     // Rebuild structure types list.
     setStructureTypes({});
@@ -78,70 +77,238 @@ bool VoroTopModifier::loadFilterDefinition(const QString& filepath)
 
     // Filter file was successfully loaded. Accept it as the new filter.
     setFilterFile(filepath);
-
-    return !this_task::isCanceled();
 }
 
 /******************************************************************************
-* Creates and initializes a computation engine that will compute the
-* modifier's results.
+* Performs the actual analysis.
 ******************************************************************************/
-Future<ModifierEnginePtr> VoroTopModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+void VoroTopModifier::VoroTopAnalysisAlgorithm::identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection)
 {
-    // If pipeline is in interactive mode, skip the long-running computation step.
-    if(request.interactiveMode())
-        return {};
+    if(!simulationCell)
+        throw Exception(tr("The VoroTop algorithm requires a simulation cell geometry."));
+    if(simulationCell->is2D())
+        throw Exception(tr("The VoroTop algorithm does not support 2d simulation cells."));
 
     // Get the current positions.
-    const Particles* particles = input.expectObject<Particles>();
-    particles->verifyIntegrity();
-    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
+    const Property* positions = particles->expectProperty(Particles::PositionProperty);
 
     // The Voro++ library uses 32-bit integers. It cannot handle more than 2^31 input points.
     if(particles->elementCount() > std::numeric_limits<int>::max())
         throw Exception(tr("VoroTop analysis modifier is limited to a maximum of %1 particles in the current program version.").arg(std::numeric_limits<int>::max()));
 
-    // Get simulation cell.
-    const SimulationCell* inputCell = input.expectObject<SimulationCell>();
+    if(!filter()) {
+        if(_filterFile.isEmpty())
+            throw Exception(tr("No filter file selected"));
+        this_task::setProgressText(tr("Loading VoroTop filter file: %1").arg(_filterFile));
 
-    // Get selection particle property.
-    const Property* selectionProperty = onlySelectedParticles() ? particles->expectProperty(Particles::SelectionProperty) : nullptr;
+        // Open filter file for reading.
+        FileHandle fileHandle(QUrl::fromLocalFile(_filterFile), _filterFile);
+        CompressedTextReader stream(fileHandle);
 
-    // Get particle radii.
-    ConstPropertyPtr radii;
-    if(useRadii())
-        radii = particles->inputParticleRadii();
+        // Parse filter definition.
+        _filter = std::make_shared<Filter>();
+        _filter->load(stream, false);
+    }
 
-    // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<VoroTopAnalysisEngine>(request,
-                                                   particles,
-                                                   input.stateValidity(),
-                                                   posProperty,
-                                                   selectionProperty,
-                                                   std::move(radii),
-                                                   inputCell,
-                                                   filterFile(),
-                                                   filter(),
-                                                   structureTypes());
+    if(positions->size() == 0)
+        return; // Nothing to do when there are zero particles.
+
+    this_task::setProgressText(tr("Performing VoroTop analysis"));
+
+    BufferReadAccess<Point3> positionsArray(positions);
+    BufferReadAccess<SelectionIntType> selectionArray(selection);
+    BufferReadAccess<GraphicsFloatType> radiiArray(_radii);
+    BufferWriteAccess<int32_t, access_mode::discard_write> structuresArray(structures());
+
+    // Decide whether to use Voro++ container class or our own implementation.
+    if(simulationCell->isAxisAligned()) {
+        // Use Voro++ container.
+        double ax = simulationCell->matrix()(0,3);
+        double ay = simulationCell->matrix()(1,3);
+        double az = simulationCell->matrix()(2,3);
+        double bx = ax + simulationCell->matrix()(0,0);
+        double by = ay + simulationCell->matrix()(1,1);
+        double bz = az + simulationCell->matrix()(2,2);
+        if(ax > bx) std::swap(ax,bx);
+        if(ay > by) std::swap(ay,by);
+        if(az > bz) std::swap(az,bz);
+        double volumePerCell = (bx - ax) * (by - ay) * (bz - az) * voro::optimal_particles / positions->size();
+        double cellSize = pow(volumePerCell, 1.0/3.0);
+        int nx = (int)std::ceil((bx - ax) / cellSize);
+        int ny = (int)std::ceil((by - ay) / cellSize);
+        int nz = (int)std::ceil((bz - az) / cellSize);
+
+        if(!radiiArray) {
+            voro::container voroContainer(ax, bx, ay, by, az, bz, nx, ny, nz,
+                                          simulationCell->hasPbc(0), simulationCell->hasPbc(1), simulationCell->hasPbc(2), (int)std::ceil(voro::optimal_particles));
+
+            // Insert particles into Voro++ container.
+            size_t count = 0;
+            for(size_t index = 0; index < positions->size(); index++) {
+                // Skip unselected particles (if requested).
+                if(selectionArray && selectionArray[index] == 0) {
+                    structuresArray[index] = 0;
+                    continue;
+                }
+                const Point3& p = positionsArray[index];
+                voroContainer.put(index, p.x(), p.y(), p.z());
+                count++;
+            }
+            if(!count) return;
+
+            this_task::setProgressMaximum(count);
+            voro::c_loop_all cl(voroContainer);
+            voro::voronoicell_neighbor v;
+            if(cl.start()) {
+                do {
+                    this_task::incrementProgressValue();
+                    if(!voroContainer.compute_cell(v,cl))
+                        continue;
+                    structuresArray[cl.pid()] = processCell(v);
+                    count--;
+                }
+                while(cl.inc());
+            }
+            if(count)
+                throw Exception(tr("Could not compute Voronoi cell for some particles."));
+        }
+        else {
+            voro::container_poly voroContainer(ax, bx, ay, by, az, bz, nx, ny, nz,
+                                               simulationCell->hasPbc(0), simulationCell->hasPbc(1), simulationCell->hasPbc(2), (int)std::ceil(voro::optimal_particles));
+
+            // Insert particles into Voro++ container.
+            size_t count = 0;
+            for(size_t index = 0; index < positions->size(); index++) {
+                structuresArray[index] = 0;
+                // Skip unselected particles (if requested).
+                if(selectionArray && selectionArray[index] == 0) {
+                    continue;
+                }
+                const Point3& p = positionsArray[index];
+                voroContainer.put(index, p.x(), p.y(), p.z(), radiiArray[index]);
+                count++;
+            }
+
+            if(!count) return;
+            this_task::setProgressMaximum(count);
+            voro::c_loop_all cl(voroContainer);
+            voro::voronoicell_neighbor v;
+            if(cl.start()) {
+                do {
+                    this_task::incrementProgressValue();
+                    if(!voroContainer.compute_cell(v,cl))
+                        continue;
+                    structuresArray[cl.pid()] = processCell(v);
+                    count--;
+                }
+                while(cl.inc());
+            }
+            if(count)
+                throw Exception(tr("Could not compute Voronoi cell for some particles."));
+        }
+    }
+    else {
+        // Prepare the nearest neighbor list generator.
+        NearestNeighborFinder nearestNeighborFinder;
+        nearestNeighborFinder.prepare(positions, simulationCell, selection);
+
+        // This is the size we use to initialize Voronoi cells. Must be larger than the simulation box.
+        double boxDiameter = std::sqrt(
+                                  simulationCell->matrix().column(0).squaredLength()
+                                  + simulationCell->matrix().column(1).squaredLength()
+                                  + simulationCell->matrix().column(2).squaredLength());
+
+        // The normal vectors of the three cell planes.
+        std::array<Vector3,3> planeNormals;
+        planeNormals[0] = simulationCell->cellNormalVector(0);
+        planeNormals[1] = simulationCell->cellNormalVector(1);
+        planeNormals[2] = simulationCell->cellNormalVector(2);
+
+        Point3 corner1 = Point3::Origin() + simulationCell->matrix().column(3);
+        Point3 corner2 = corner1 + simulationCell->matrix().column(0) + simulationCell->matrix().column(1) + simulationCell->matrix().column(2);
+
+        // Perform analysis, particle-wise parallel.
+        parallelFor(positions->size(), 1024, [&](size_t index) {
+
+            // Reset structure type.
+            structuresArray[index] = 0;
+
+            // Skip unselected particles (if requested).
+            if(selectionArray && selectionArray[index] == 0)
+                return;
+
+            // Build Voronoi cell.
+            voro::voronoicell_neighbor v;
+
+            // Initialize the Voronoi cell to be a cube larger than the simulation cell, centered at the origin.
+            v.init(-boxDiameter, boxDiameter, -boxDiameter, boxDiameter, -boxDiameter, boxDiameter);
+
+            // Cut Voronoi cell at simulation cell boundaries in non-periodic directions.
+            bool skipParticle = false;
+            for(size_t dim = 0; dim < 3; dim++) {
+                if(!simulationCell->hasPbc(dim)) {
+                    double r;
+                    r = 2 * planeNormals[dim].dot(corner2 - positionsArray[index]);
+                    if(r <= 0) skipParticle = true;
+                    v.nplane(planeNormals[dim].x() * r, planeNormals[dim].y() * r, planeNormals[dim].z() * r, r*r, -1);
+                    r = 2 * planeNormals[dim].dot(positionsArray[index] - corner1);
+                    if(r <= 0) skipParticle = true;
+                    v.nplane(-planeNormals[dim].x() * r, -planeNormals[dim].y() * r, -planeNormals[dim].z() * r, r*r, -1);
+                }
+            }
+            // Skip particles that are located outside of non-periodic box boundaries.
+            if(skipParticle)
+                return;
+
+            // This function will be called for every neighbor particle.
+            int nvisits = 0;
+            auto visitFunc = [&](const NearestNeighborFinder::Neighbor& n, FloatType& mrs) {
+                // Skip unselected particles (if requested).
+                OVITO_ASSERT(!selectionArray || selectionArray[n.index]);
+                FloatType rs = n.distanceSq;
+                if(radiiArray)
+                    rs += radiiArray[index]*radiiArray[index] - radiiArray[n.index]*radiiArray[n.index];
+                v.nplane(n.delta.x(), n.delta.y(), n.delta.z(), rs, n.index);
+                if(nvisits == 0) {
+                    mrs = v.max_radius_squared();
+                    nvisits = 100;
+                }
+                nvisits--;
+            };
+
+            // Visit all neighbors of the current particles.
+            nearestNeighborFinder.visitNeighbors(nearestNeighborFinder.particlePos(index), visitFunc);
+
+            structuresArray[index] = processCell(v);
+        });
+    }
 }
 
 /******************************************************************************
-* Injects the computed results of the engine into the data pipeline.
+* Computes the structure identification statistics.
 ******************************************************************************/
-void VoroTopModifier::VoroTopAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+std::vector<int64_t> VoroTopModifier::VoroTopAnalysisAlgorithm::computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const
 {
-    StructureIdentificationEngine::applyResults(request, state);
-
-    // Cache loaded filter definition for future use.
-    static_object_cast<VoroTopModifier>(request.modifier())->_filter = this->filter();
+    std::vector<int64_t> typeCounts = StructureIdentificationModifier::Algorithm::computeStructureStatistics(structures, state, createdByNode, modifierParameters);
 
     state.setStatus(PipelineStatus(PipelineStatus::Success, tr("%1 Weinberg vectors loaded").arg(filter() ? filter()->size() : 0)));
+
+    // Cache loaded filter definition in modifier for future use.
+    if(auto node = createdByNode.lock()) {
+        const ModificationNode* modNode = static_object_cast<ModificationNode>(node.get());
+        modNode->execute([modNode, filter = filter()]() mutable noexcept {
+            if(VoroTopModifier* modifier = dynamic_object_cast<VoroTopModifier>(modNode->modifier()))
+                modifier->_filter = std::move(filter);
+        });
+    }
+
+    return typeCounts;
 }
 
 /******************************************************************************
  * Processes a single Voronoi cell.
  ******************************************************************************/
-int VoroTopModifier::VoroTopAnalysisEngine::processCell(voro::voronoicell_neighbor& vcell)
+int VoroTopModifier::VoroTopAnalysisAlgorithm::processCell(voro::voronoicell_neighbor& vcell)
 {
     const int max_epf = 256;    // MAXIMUM EDGES PER FACE
     const int max_epc = 512;    // MAXIMUM EDGES PER CELL
@@ -361,208 +528,6 @@ int VoroTopModifier::VoroTopAnalysisEngine::processCell(voro::voronoicell_neighb
     canonical_code.push_back(1);
 
     return filter()->findType(canonical_code);
-}
-
-/******************************************************************************
- * Performs the actual computation. This method is executed in a worker thread.
- ******************************************************************************/
-void VoroTopModifier::VoroTopAnalysisEngine::perform()
-{
-    if(!filter()) {
-        if(_filterFile.isEmpty())
-            throw Exception(tr("No filter file selected"));
-        setProgressText(tr("Loading VoroTop filter file: %1").arg(_filterFile));
-
-        // Open filter file for reading.
-        FileHandle fileHandle(QUrl::fromLocalFile(_filterFile), _filterFile);
-        CompressedTextReader stream(fileHandle);
-
-        // Parse filter definition.
-        _filter = std::make_shared<Filter>();
-        if(!_filter->load(stream, false))
-            return;
-    }
-
-    if(positions()->size() == 0)
-        return; // Nothing to do when there are zero particles.
-
-    setProgressText(tr("Performing VoroTop analysis"));
-
-    BufferReadAccess<Point3> positionsArray(positions());
-    BufferReadAccess<SelectionIntType> selectionArray(selection());
-    BufferReadAccess<GraphicsFloatType> radiiArray(_radii);
-    BufferWriteAccess<int32_t, access_mode::discard_write> structuresArray(structures());
-
-    // Decide whether to use Voro++ container class or our own implementation.
-    if(cell()->isAxisAligned()) {
-        // Use Voro++ container.
-        double ax = cell()->matrix()(0,3);
-        double ay = cell()->matrix()(1,3);
-        double az = cell()->matrix()(2,3);
-        double bx = ax + cell()->matrix()(0,0);
-        double by = ay + cell()->matrix()(1,1);
-        double bz = az + cell()->matrix()(2,2);
-        if(ax > bx) std::swap(ax,bx);
-        if(ay > by) std::swap(ay,by);
-        if(az > bz) std::swap(az,bz);
-        double volumePerCell = (bx - ax) * (by - ay) * (bz - az) * voro::optimal_particles / positions()->size();
-        double cellSize = pow(volumePerCell, 1.0/3.0);
-        int nx = (int)std::ceil((bx - ax) / cellSize);
-        int ny = (int)std::ceil((by - ay) / cellSize);
-        int nz = (int)std::ceil((bz - az) / cellSize);
-
-        if(!radiiArray) {
-            voro::container voroContainer(ax, bx, ay, by, az, bz, nx, ny, nz,
-                                          cell()->hasPbc(0), cell()->hasPbc(1), cell()->hasPbc(2), (int)std::ceil(voro::optimal_particles));
-
-            // Insert particles into Voro++ container.
-            size_t count = 0;
-            for(size_t index = 0; index < positions()->size(); index++) {
-                // Skip unselected particles (if requested).
-                if(selectionArray && selectionArray[index] == 0) {
-                    structuresArray[index] = 0;
-                    continue;
-                }
-                const Point3& p = positionsArray[index];
-                voroContainer.put(index, p.x(), p.y(), p.z());
-                count++;
-            }
-            if(!count) return;
-
-            setProgressMaximum(count);
-            voro::c_loop_all cl(voroContainer);
-            voro::voronoicell_neighbor v;
-            if(cl.start()) {
-                do {
-                    if(!incrementProgressValue())
-                        return;
-                    if(!voroContainer.compute_cell(v,cl))
-                        continue;
-                    structuresArray[cl.pid()] = processCell(v);
-                    count--;
-                }
-                while(cl.inc());
-            }
-            if(count)
-                throw Exception(tr("Could not compute Voronoi cell for some particles."));
-        }
-        else {
-            voro::container_poly voroContainer(ax, bx, ay, by, az, bz, nx, ny, nz,
-                                               cell()->hasPbc(0), cell()->hasPbc(1), cell()->hasPbc(2), (int)std::ceil(voro::optimal_particles));
-
-            // Insert particles into Voro++ container.
-            size_t count = 0;
-            for(size_t index = 0; index < positions()->size(); index++) {
-                structuresArray[index] = 0;
-                // Skip unselected particles (if requested).
-                if(selectionArray && selectionArray[index] == 0) {
-                    continue;
-                }
-                const Point3& p = positionsArray[index];
-                voroContainer.put(index, p.x(), p.y(), p.z(), radiiArray[index]);
-                count++;
-            }
-
-            if(!count) return;
-            setProgressMaximum(count);
-            voro::c_loop_all cl(voroContainer);
-            voro::voronoicell_neighbor v;
-            if(cl.start()) {
-                do {
-                    if(!incrementProgressValue())
-                        return;
-                    if(!voroContainer.compute_cell(v,cl))
-                        continue;
-                    structuresArray[cl.pid()] = processCell(v);
-                    count--;
-                }
-                while(cl.inc());
-            }
-            if(count)
-                throw Exception(tr("Could not compute Voronoi cell for some particles."));
-        }
-    }
-    else {
-        // Prepare the nearest neighbor list generator.
-        NearestNeighborFinder nearestNeighborFinder;
-        if(!nearestNeighborFinder.prepare(positions(), cell(), selection()))
-            return;
-
-        // This is the size we use to initialize Voronoi cells. Must be larger than the simulation box.
-        double boxDiameter = sqrt(
-                                  cell()->matrix().column(0).squaredLength()
-                                  + cell()->matrix().column(1).squaredLength()
-                                  + cell()->matrix().column(2).squaredLength());
-
-        // The normal vectors of the three cell planes.
-        std::array<Vector3,3> planeNormals;
-        planeNormals[0] = cell()->cellNormalVector(0);
-        planeNormals[1] = cell()->cellNormalVector(1);
-        planeNormals[2] = cell()->cellNormalVector(2);
-
-        Point3 corner1 = Point3::Origin() + cell()->matrix().column(3);
-        Point3 corner2 = corner1 + cell()->matrix().column(0) + cell()->matrix().column(1) + cell()->matrix().column(2);
-
-        // Perform analysis, particle-wise parallel.
-        parallelForWithProgress(positions()->size(), [&](size_t index) {
-
-            // Reset structure type.
-            structuresArray[index] = 0;
-
-            // Skip unselected particles (if requested).
-            if(selectionArray && selectionArray[index] == 0)
-                return;
-
-            // Build Voronoi cell.
-            voro::voronoicell_neighbor v;
-
-            // Initialize the Voronoi cell to be a cube larger than the simulation cell, centered at the origin.
-            v.init(-boxDiameter, boxDiameter, -boxDiameter, boxDiameter, -boxDiameter, boxDiameter);
-
-            // Cut Voronoi cell at simulation cell boundaries in non-periodic directions.
-            bool skipParticle = false;
-            for(size_t dim = 0; dim < 3; dim++) {
-                if(!cell()->hasPbc(dim)) {
-                    double r;
-                    r = 2 * planeNormals[dim].dot(corner2 - positionsArray[index]);
-                    if(r <= 0) skipParticle = true;
-                    v.nplane(planeNormals[dim].x() * r, planeNormals[dim].y() * r, planeNormals[dim].z() * r, r*r, -1);
-                    r = 2 * planeNormals[dim].dot(positionsArray[index] - corner1);
-                    if(r <= 0) skipParticle = true;
-                    v.nplane(-planeNormals[dim].x() * r, -planeNormals[dim].y() * r, -planeNormals[dim].z() * r, r*r, -1);
-                }
-            }
-            // Skip particles that are located outside of non-periodic box boundaries.
-            if(skipParticle)
-                return;
-
-            // This function will be called for every neighbor particle.
-            int nvisits = 0;
-            auto visitFunc = [&](const NearestNeighborFinder::Neighbor& n, FloatType& mrs) {
-                // Skip unselected particles (if requested).
-                OVITO_ASSERT(!selectionArray || selectionArray[n.index]);
-                FloatType rs = n.distanceSq;
-                if(radiiArray)
-                    rs += radiiArray[index]*radiiArray[index] - radiiArray[n.index]*radiiArray[n.index];
-                v.nplane(n.delta.x(), n.delta.y(), n.delta.z(), rs, n.index);
-                if(nvisits == 0) {
-                    mrs = v.max_radius_squared();
-                    nvisits = 100;
-                }
-                nvisits--;
-            };
-
-            // Visit all neighbors of the current particles.
-            nearestNeighborFinder.visitNeighbors(nearestNeighborFinder.particlePos(index), visitFunc);
-
-            structuresArray[index] = processCell(v);
-        });
-    }
-
-    // Release data that is no longer needed.
-    releaseWorkingData();
-    radiiArray.reset();
-    _radii.reset();
 }
 
 /******************************************************************************

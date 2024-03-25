@@ -229,54 +229,6 @@ bool PropertyExpressionEvaluator::isVariableUsed(const mu::char_type* varName)
     return false;
 }
 
-#if 0 // TODO
-/******************************************************************************
-* Initializes the parser object and evaluates the expressions for every data element
-******************************************************************************/
-void PropertyExpressionEvaluator::evaluate(const std::function<void(size_t,size_t,double)>& callback, const std::function<bool(size_t)>& filter)
-{
-    // Make sure initialize() has been called.
-    OVITO_ASSERT(!_variables.empty());
-
-    // Determine the number of parallel threads to use.
-    size_t nthreads = Application::instance()->idealThreadCount();
-    if(maxThreadCount() != 0 && nthreads > maxThreadCount()) nthreads = maxThreadCount();
-    if(elementCount() == 0)
-        return;
-    else if(elementCount() < 100) // Not worth spawning multiple threads for so few elements.
-        nthreads = 1;
-    else if(nthreads > elementCount())
-        nthreads = elementCount();
-
-    if(nthreads == 1) {
-        Worker worker(*this);
-        _variables = worker._variables;
-        _referencedVariablesKnown = true;
-        worker.run(0, elementCount(), callback, filter);
-        if(!worker._errorMsg.isEmpty())
-            throw Exception(worker._errorMsg);
-    }
-    else if(nthreads > 1) {
-        Worker worker0(*this);
-        _variables = worker0._variables;
-        _referencedVariablesKnown = true;
-        parallelForChunks(elementCount(), [this, &callback, &filter, &worker0](size_t startIndex, size_t chunkSize) {
-            if(startIndex == 0) {
-                worker0.run(startIndex, startIndex + chunkSize, callback, filter);
-                if(!worker0._errorMsg.isEmpty())
-                    throw Exception(worker0._errorMsg);
-            }
-            else {
-                Worker worker(*this);
-                worker.run(startIndex, startIndex + chunkSize, callback, filter);
-                if(!worker._errorMsg.isEmpty())
-                    throw Exception(worker._errorMsg);
-            }
-        });
-    }
-}
-#endif
-
 /******************************************************************************
 * Initializes the parser objects of this thread.
 ******************************************************************************/

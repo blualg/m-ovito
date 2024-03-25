@@ -99,11 +99,9 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
     if(request.interactiveMode()) {
         if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
             if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
-                if(cachedParticles->elementCount() == particles->elementCount()) {
-                    if(const Property* cachedCoordination = cachedParticles->getProperty(Particles::CoordinationProperty)) {
-                        particles->createProperty(cachedCoordination);
-                    }
-                }
+                particles->tryToAdoptProperties(cachedParticles, {
+                    cachedParticles->getProperty(Particles::CoordinationProperty)
+                }, {particles});
             }
             if(const DataTable* cachedTable = cachedState.getObjectBy<DataTable>(request.modificationNode(), QStringLiteral("coordination-rdf"))) {
                 state.addObject(cachedTable);

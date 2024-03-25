@@ -26,7 +26,6 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/util/ParticleExpressionEvaluator.h>
-#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/stdmod/modifiers/ComputePropertyModifier.h>
 
 namespace Ovito {

@@ -210,11 +210,12 @@ bool Property::equals(const Property& other) const
 ******************************************************************************/
 PropertyPtr Property::cloneWithoutData(size_t newSize) const
 {
+    UndoSuspender noUndo;
+
     PropertyPtr clone = PropertyPtr::create(
             ObjectInitializationFlag::DontInitializeObject, DataBuffer::Uninitialized, newSize, this->dataType(),
             this->componentCount(), this->name(), this->type(), this->componentNames());
 
-    UndoSuspender noUndo;
     clone->setVisElements(this->visElements());
     clone->setElementTypes(this->elementTypes());
     clone->setTitle(this->title());

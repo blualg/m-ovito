@@ -63,9 +63,33 @@ AtomicStrainModifier::AtomicStrainModifier(ObjectInitializationFlags flags) : Re
 }
 
 /******************************************************************************
+* Adopts existing computation results for an interactive pipeline evaluation.
+******************************************************************************/
+void AtomicStrainModifier::reuseCachedState(const ModifierEvaluationRequest& request, Particles* particles, PipelineFlowState& output, const PipelineFlowState& cachedState)
+{
+    // Adopt the atomic strain values from the cached state.
+    if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
+        if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
+            particles->tryToAdoptProperties(cachedParticles, {
+                cachedParticles->getProperty(QStringLiteral("Shear Strain")),
+                cachedParticles->getProperty(QStringLiteral("Volumetric Strain")),
+                calculateStrainTensors() ? cachedParticles->getProperty(Particles::StrainTensorProperty) : nullptr,
+                calculateDeformationGradients() ? cachedParticles->getProperty(Particles::DeformationGradientProperty) : nullptr,
+                calculateNonaffineSquaredDisplacements() ? cachedParticles->getProperty(QStringLiteral("Nonaffine Squared Displacement")) : nullptr,
+                selectInvalidParticles() ? cachedParticles->getProperty(Particles::SelectionProperty) : nullptr,
+                calculateRotations() ? cachedParticles->getProperty(Particles::RotationProperty) : nullptr,
+                calculateStretchTensors() ? cachedParticles->getProperty(Particles::StretchTensorProperty) : nullptr
+            }, {particles});
+        }
+        // Adopt all global attributes computed by the modifier from the cached state.
+        output.adoptAttributesFrom(cachedState, request.modificationNode());
+    }
+}
+
+/******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<ModifierEnginePtr> AtomicStrainModifier::createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval)
+std::unique_ptr<ReferenceConfigurationModifier::Engine> AtomicStrainModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input, const PipelineFlowState& referenceState)
 {
     // Get the current particle positions.
     const Particles* particles = input.expectObject<Particles>();
@@ -96,59 +120,56 @@ Future<ModifierEnginePtr> AtomicStrainModifier::createEngineInternal(const Modif
     const Property* refIdentifierProperty = refParticles->getProperty(Particles::IdentifierProperty);
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<AtomicStrainEngine>(request, validityInterval, particles, posProperty, inputCell, refPosProperty, refCell,
+    return std::make_unique<AtomicStrainEngine>(particles->elementCount(), posProperty, inputCell, refPosProperty, refCell,
             identifierProperty, refIdentifierProperty,
             cutoff(), affineMapping(), useMinimumImageConvention(), calculateDeformationGradients(), calculateStrainTensors(),
-            calculateNonaffineSquaredDisplacements(), calculateRotations(), calculateStretchTensors(), selectInvalidParticles());
+            calculateNonaffineSquaredDisplacements(), calculateRotations(), calculateStretchTensors(), selectInvalidParticles(),
+            request.modificationNode());
 }
 
 /******************************************************************************
 * Performs the actual computation. This method is executed in a worker thread.
 ******************************************************************************/
-void AtomicStrainModifier::AtomicStrainEngine::perform()
+void AtomicStrainModifier::AtomicStrainEngine::perform(PipelineFlowState& state)
 {
-    setProgressText(tr("Computing atomic displacements"));
+    this_task::setProgressText(tr("Computing atomic displacements"));
 
     // First determine the mapping from particles of the reference config to particles
     // of the current config.
-    if(!buildParticleMapping(false, false))
-        return;
+    buildParticleMapping(false, false);
 
     // Compute displacement vectors of particles in the reference configuration.
     BufferWriteAccess<Vector3, access_mode::discard_write> displacementsArray(displacements());
     BufferReadAccess<Point3> positionsArray(positions());
     BufferReadAccess<Point3> refPositionsArray(refPositions());
-    parallelForChunksWithProgress(displacements()->size(), [&](size_t startIndex, size_t count, ProgressingTask& task) {
-        Vector3* u = displacementsArray.begin() + startIndex;
-        const Point3* p0 = refPositionsArray.cbegin() + startIndex;
-        auto index = refToCurrentIndexMap().cbegin() + startIndex;
-        for(; count; --count, ++u, ++p0, ++index) {
-            if(task.isCanceled()) return;
-            if(*index == std::numeric_limits<size_t>::max()) {
-                u->setZero();
-                continue;
-            }
-            Point3 reduced_reference_pos = refCell()->inverseMatrix() * (*p0);
-            Point3 reduced_current_pos = cell()->inverseMatrix() * positionsArray[*index];
-            Vector3 delta = reduced_current_pos - reduced_reference_pos;
-            if(useMinimumImageConvention()) {
-                for(size_t k = 0; k < 3; k++) {
-                    if(refCell()->hasPbcCorrected(k))
-                        delta[k] -= std::floor(delta[k] + FloatType(0.5));
-                }
-            }
-            *u = refCell()->matrix() * delta;
+    const auto refCellPbcFlags = refCell()->pbcFlagsCorrected();
+    const auto refCellMatrix = refCell()->matrix();
+    const auto refCellInverseMatrix = refCell()->inverseMatrix();
+    const auto cellInverseMatrix = cell()->matrix();
+    parallelFor(displacements()->size(), 1024, [&](size_t i) {
+        auto index = refToCurrentIndexMap()[i];
+        if(index == std::numeric_limits<size_t>::max()) {
+            displacementsArray[i].setZero();
+            return;
         }
+        const Point3& p0 = refPositionsArray[i];
+        Point3 reduced_reference_pos = refCellInverseMatrix * p0;
+        Point3 reduced_current_pos = cellInverseMatrix * positionsArray[index];
+        Vector3 delta = reduced_current_pos - reduced_reference_pos;
+        if(useMinimumImageConvention()) {
+            for(size_t k = 0; k < 3; k++) {
+                if(refCellPbcFlags[k])
+                    delta[k] -= std::floor(delta[k] + FloatType(0.5));
+            }
+        }
+        displacementsArray[i] = refCellMatrix * delta;
     });
-    if(isCanceled())
-        return;
 
-    setProgressText(tr("Computing atomic strain tensors"));
+    this_task::setProgressText(tr("Computing atomic strain tensors"));
 
     // Prepare the neighbor list for the reference configuration.
     CutoffNeighborFinder neighborFinder;
-    if(!neighborFinder.prepare(_cutoff, refPositions(), refCell(), {}))
-        return;
+    neighborFinder.prepare(_cutoff, refPositions(), refCell(), {});
 
     // Prepare the output data arrays.
     BufferWriteAccess<SelectionIntType, access_mode::discard_write> invalidParticlesArray(invalidParticles());
@@ -161,7 +182,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform()
     BufferWriteAccess<SymmetricTensor2, access_mode::discard_write> stretchTensorsArray(stretchTensors());
 
     // Perform individual strain calculation for each particle.
-    parallelForWithProgress(positions()->size(), [&](size_t particleIndex) {
+    parallelFor(positions()->size(), 1024, [&](size_t particleIndex) {
 
         // Note: We do the following calculations using double precision numbers to
         // minimize numerical errors. Final results will be converted back to
@@ -323,25 +344,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform()
             invalidParticlesArray[particleIndex] = 0;
     });
 
-    // Release data that is no longer needed.
-    displacementsArray.reset();
-    positionsArray.reset();
-    refPositionsArray.reset();
-    releaseWorkingData();
-    _displacements.reset();
-}
-
-/******************************************************************************
-* Injects the computed results of the engine into the data pipeline.
-******************************************************************************/
-void AtomicStrainModifier::AtomicStrainEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
-{
-    ModifierEngine::applyResults(request, state);
-
     Particles* particles = state.expectMutableObject<Particles>();
-
-    if(_inputFingerprint.hasChanged(particles))
-        throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
 
     OVITO_ASSERT(shearStrains());
     OVITO_ASSERT(shearStrains()->size() == particles->elementCount());
@@ -370,7 +373,7 @@ void AtomicStrainModifier::AtomicStrainEngine::applyResults(const ModifierEvalua
     if(stretchTensors())
         particles->createProperty(stretchTensors());
 
-    state.addAttribute(QStringLiteral("AtomicStrain.invalid_particle_count"), QVariant::fromValue(numInvalidParticles()), request.modificationNode());
+    state.addAttribute(QStringLiteral("AtomicStrain.invalid_particle_count"), QVariant::fromValue(numInvalidParticles()), _createdByNode);
 
     if(numInvalidParticles() != 0)
         state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Could not compute local deformation for %1 particles because of too few neighbors. Increase cutoff radius to include more neighbors.").arg(numInvalidParticles())));

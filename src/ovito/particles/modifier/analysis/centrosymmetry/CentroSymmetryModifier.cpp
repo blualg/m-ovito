@@ -98,11 +98,9 @@ Future<PipelineFlowState> CentroSymmetryModifier::evaluateModifier(const Modifie
     if(request.interactiveMode()) {
         if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
             if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
-                if(cachedParticles->elementCount() == particles->elementCount()) {
-                    if(const Property* cachedCSP = cachedParticles->getProperty(Particles::CentroSymmetryProperty)) {
-                        particles->createProperty(cachedCSP);
-                    }
-                }
+                particles->tryToAdoptProperties(cachedParticles, {
+                    cachedParticles->getProperty(Particles::CentroSymmetryProperty)
+                }, {particles});
             }
             if(const DataTable* cachedTable = cachedState.getObjectBy<DataTable>(request.modificationNode(), QStringLiteral("csp-centrosymmetry"))) {
                 state.addObject(cachedTable);

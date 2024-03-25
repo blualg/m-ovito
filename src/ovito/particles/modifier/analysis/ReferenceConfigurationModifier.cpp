@@ -26,6 +26,7 @@
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "ReferenceConfigurationModifier.h"
 
 namespace Ovito {
@@ -68,21 +69,24 @@ bool ReferenceConfigurationModifier::OOMetaClass::isApplicableTo(const DataColle
     return input.containsObject<Particles>();
 }
 
-#if 0 // TODO
 /******************************************************************************
-* Determines the time interval over which a computed pipeline state will remain valid.
-******************************************************************************/
-TimeInterval ReferenceConfigurationModifier::validityInterval(const ModifierEvaluationRequest& request) const
+ * Is called by the pipeline system before a new modifier evaluation begins.
+ ******************************************************************************/
+bool ReferenceConfigurationModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
 {
-    TimeInterval iv = Modifier::validityInterval(request);
+    // Indicate that we will do different computations depending on whether the pipeline is evaluated in interactive mode or not.
+    if(request.interactiveMode())
+        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Interactive);
+    else
+        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Noninteractive);
 
     if(useReferenceFrameOffset()) {
         // Results will only be valid for the duration of the current frame when using a relative offset.
-        iv.intersect(request.time());
+        result.intersectValidityInterval(request.time());
     }
-    return iv;
+
+    return true;
 }
-#endif
 
 /******************************************************************************
 * Throws an exception if the pipeline stage cannot be evaluated at this time.
@@ -152,30 +156,31 @@ bool ReferenceConfigurationModifier::referenceEvent(RefTarget* source, const Ref
 }
 
 /******************************************************************************
-* Creates and initializes a computation engine that will compute the
-* modifier's results.
+* Modifies the input data.
 ******************************************************************************/
-Future<ModifierEnginePtr> ReferenceConfigurationModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+Future<PipelineFlowState> ReferenceConfigurationModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
-    // If pipeline is in interactive mode, skip the long-running computation step.
-    if(request.interactiveMode())
-        return {};
+    // In interactive mode, do not perform a real computation. Instead, reuse an old result from the cached state if available.
+    if(request.interactiveMode()) {
+        if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
+            Particles* particles = state.expectMutableObject<Particles>();
+            particles->verifyIntegrity();
+            reuseCachedState(request, particles, state, cachedState);
+        }
+        return std::move(state);
+    }
 
     // What is the reference frame number to use?
-    TimeInterval validityInterval = input.stateValidity();
     int referenceFrame;
     if(useReferenceFrameOffset()) {
         // Determine the current frame, preferably from the marker attribute stored in the pipeline flow state.
         // If the source frame attribute is not present, fall back to inferring it from the current animation time.
-        int currentFrame = input.data() ? input.data()->sourceFrame() : -1;
+        int currentFrame = state.data() ? state.data()->sourceFrame() : -1;
         if(currentFrame < 0)
             currentFrame = request.modificationNode()->animationTimeToSourceFrame(request.time());
 
         // Use frame offset relative to current configuration.
         referenceFrame = currentFrame + referenceFrameOffset();
-
-        // Results will only be valid for the duration of the current frame.
-        validityInterval.intersect(request.time());
     }
     else {
         // Use a constant, user-specified frame as reference configuration.
@@ -183,7 +188,7 @@ Future<ModifierEnginePtr> ReferenceConfigurationModifier::createEngine(const Mod
     }
 
     // Obtain the reference positions of the particles, either from the upstream pipeline or from a user-specified reference data source.
-    SharedFuture<PipelineFlowState> refState;
+    PipelineEvaluationResult refState;
     if(!referenceConfiguration()) {
         // Set up the pipeline request for obtaining the reference configuration.
         ModifierEvaluationRequest referenceRequest = request;
@@ -215,12 +220,12 @@ Future<ModifierEnginePtr> ReferenceConfigurationModifier::createEngine(const Mod
         }
         else {
             // Create an empty state for the reference configuration if it is yet to be specified by the user.
-            refState = Future<PipelineFlowState>::createImmediateEmplace();
+            refState = PipelineFlowState{};
         }
     }
 
     // Wait for the reference configuration to become available.
-    return refState.then(*this, [this, request, input = input, referenceFrame, validityInterval](const PipelineFlowState& referenceInput) {
+    return refState.then(*this, [this, request, state = std::move(state), referenceFrame](const PipelineFlowState& referenceInput) mutable {
 
         // Make sure the obtained reference configuration is valid and ready to use.
         if(referenceInput.status().type() == PipelineStatus::Error)
@@ -237,21 +242,28 @@ Future<ModifierEnginePtr> ReferenceConfigurationModifier::createEngine(const Mod
         }
 
         // Let subclass create the compute engine.
-        return createEngineInternal(request, std::move(input), referenceInput, validityInterval);
+        std::unique_ptr<Engine> engine = createEngine(request, state, referenceInput);
+
+        // Perform the actual calculation in a separate thread.
+        return AsynchronousTask<PipelineFlowState>::runAsync([
+                state = std::move(state),
+                engine = std::move(engine)]() mutable
+        {
+            // Run the algorithm.
+            engine->perform(state);
+            return std::move(state);
+        }, true);
     });
 }
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ReferenceConfigurationModifier::RefConfigEngineBase::RefConfigEngineBase(
-    const ModifierEvaluationRequest& request,
-    const TimeInterval& validityInterval,
+ReferenceConfigurationModifier::Engine::Engine(
     ConstPropertyPtr positions, const SimulationCell* simCell,
     ConstPropertyPtr refPositions, const SimulationCell* simCellRef,
     ConstPropertyPtr identifiers, ConstPropertyPtr refIdentifiers,
     AffineMappingType affineMapping, bool useMinimumImageConvention) :
-    ModifierEngine(request, validityInterval),
     _positions(std::move(positions)),
     _refPositions(std::move(refPositions)),
     _identifiers(std::move(identifiers)),
@@ -295,7 +307,7 @@ ReferenceConfigurationModifier::RefConfigEngineBase::RefConfigEngineBase(
 * Determines the mapping between particles in the reference configuration and
 * the current configuration and vice versa.
 ******************************************************************************/
-bool ReferenceConfigurationModifier::RefConfigEngineBase::buildParticleMapping(bool requireCompleteCurrentToRefMapping, bool requireCompleteRefToCurrentMapping)
+void ReferenceConfigurationModifier::Engine::buildParticleMapping(bool requireCompleteCurrentToRefMapping, bool requireCompleteRefToCurrentMapping)
 {
     // Build particle-to-particle index maps.
     _currentToRefIndexMap.resize(positions()->size());
@@ -313,9 +325,7 @@ bool ReferenceConfigurationModifier::RefConfigEngineBase::buildParticleMapping(b
                 throw Exception(tr("Particles with duplicate identifiers detected in reference configuration."));
             index++;
         }
-
-        if(isCanceled())
-            return false;
+        this_task::throwIfCanceled();
 
         // Check for duplicate identifiers in current configuration
         std::map<IdentifierIntType, size_t> currentMap;
@@ -326,9 +336,7 @@ bool ReferenceConfigurationModifier::RefConfigEngineBase::buildParticleMapping(b
                 throw Exception(tr("Particles with duplicate identifiers detected in current configuration."));
             index++;
         }
-
-        if(isCanceled())
-            return false;
+        this_task::throwIfCanceled();
 
         // Build index maps.
         auto id = identifiersArray.cbegin();
@@ -342,9 +350,7 @@ bool ReferenceConfigurationModifier::RefConfigEngineBase::buildParticleMapping(b
                 mappedIndex = std::numeric_limits<size_t>::max();
             ++id;
         }
-
-        if(isCanceled())
-            return false;
+        this_task::throwIfCanceled();
 
         id = refIdentifiersArray.cbegin();
         for(auto& mappedIndex : _refToCurrentIndexMap) {
@@ -369,7 +375,7 @@ bool ReferenceConfigurationModifier::RefConfigEngineBase::buildParticleMapping(b
         std::iota(_currentToRefIndexMap.begin(), _currentToRefIndexMap.end(), size_t(0));
     }
 
-    return !isCanceled();
+    this_task::throwIfCanceled();
 }
 
 }   // End of namespace

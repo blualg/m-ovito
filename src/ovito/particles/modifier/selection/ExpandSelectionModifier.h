@@ -25,7 +25,6 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/Bonds.h>
-#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/properties/Property.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
@@ -72,36 +71,43 @@ public:
     /// Constructor.
     explicit ExpandSelectionModifier(ObjectInitializationFlags flags);
 
-protected:
+    /// This function is called by the pipeline system before a new modifier evaluation begins.
+    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
 
-    /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
+
+    /// Indicates that a preliminary viewport update will be performed immediately after this modifier
+	/// has computed new results.
+    virtual bool shouldRefreshViewportsAfterEvaluation() override { return true; }
 
 private:
 
     /// The modifier's compute engine.
-    class ExpandSelectionEngine : public ModifierEngine
+    class ExpandSelectionEngine
     {
     public:
 
         /// Constructor.
-        ExpandSelectionEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations) :
-            ModifierEngine(request),
+        ExpandSelectionEngine(OOWeakRef<const PipelineNode> createdByNode, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations) :
+            _createdByNode(createdByNode),
             _numIterations(numIterations),
             _positions(std::move(positions)),
             _simCell(simCell),
             _inputSelection(inputSelection),
-            _outputSelection(inputSelection.makeCopy()),
-            _inputFingerprint(std::move(fingerprint)) {}
+            _outputSelection(inputSelection.makeCopy()) {}
+
+        /// Destructor.
+        virtual ~ExpandSelectionEngine() = default;
 
         /// Computes the modifier's results.
-        virtual void perform() override;
+        virtual void perform();
 
         /// Performs one iteration of the expansion.
         virtual void expandSelection() = 0;
 
         /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+        void applyResults(PipelineFlowState& state);
 
         const PropertyPtr& outputSelection() { return _outputSelection; }
 
@@ -121,6 +127,8 @@ private:
 
         const ConstPropertyPtr& inputSelection() const { return _inputSelection; }
 
+        const OOWeakRef<const PipelineNode>& createdByNode() const { return _createdByNode; }
+
     protected:
 
         const int _numIterations;
@@ -130,7 +138,7 @@ private:
         PropertyPtr _outputSelection;
         size_t _numSelectedParticlesInput;
         size_t _numSelectedParticlesOutput;
-        ElementOrderingFingerprint _inputFingerprint;
+        OOWeakRef<const PipelineNode> _createdByNode;
     };
 
     /// Computes the expanded selection by using the nearest neighbor criterion.
@@ -139,8 +147,8 @@ private:
     public:
 
         /// Constructor.
-        ExpandSelectionNearestEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations, int numNearestNeighbors) :
-            ExpandSelectionEngine(request, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
+        ExpandSelectionNearestEngine(OOWeakRef<const PipelineNode> createdByNode, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations, int numNearestNeighbors) :
+            ExpandSelectionEngine(std::move(createdByNode), std::move(positions), simCell, std::move(inputSelection), numIterations),
             _numNearestNeighbors(numNearestNeighbors) {}
 
         /// Expands the selection by one step.
@@ -157,8 +165,8 @@ private:
     public:
 
         /// Constructor.
-        ExpandSelectionCutoffEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations, FloatType cutoff) :
-            ExpandSelectionEngine(request, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
+        ExpandSelectionCutoffEngine(OOWeakRef<const PipelineNode> createdByNode, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations, FloatType cutoff) :
+            ExpandSelectionEngine(std::move(createdByNode), std::move(positions), simCell, std::move(inputSelection), numIterations),
             _cutoffRange(cutoff) {}
 
         /// Expands the selection by one step.
@@ -175,8 +183,8 @@ private:
     public:
 
         /// Constructor.
-        ExpandSelectionBondedEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations, ConstPropertyPtr bondTopology) :
-            ExpandSelectionEngine(request, std::move(fingerprint), std::move(positions), simCell, std::move(inputSelection), numIterations),
+        ExpandSelectionBondedEngine(OOWeakRef<const PipelineNode> createdByNode, ConstPropertyPtr positions, const SimulationCell* simCell, ConstPropertyPtr inputSelection, int numIterations, ConstPropertyPtr bondTopology) :
+            ExpandSelectionEngine(std::move(createdByNode), std::move(positions), simCell, std::move(inputSelection), numIterations),
             _bondTopology(std::move(bondTopology)) {}
 
         /// Expands the selection by one step.

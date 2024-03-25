@@ -367,8 +367,7 @@ void AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
             NCERR(nc_put_vara_double(_ncid, outColumn.ncvar, start, count, BufferReadAccess<double*>(prop).cbegin()));
         }
 
-        if(!this_task::incrementProgressValue())
-            return;
+        this_task::incrementProgressValue();
     }
 
     _frameCounter++;

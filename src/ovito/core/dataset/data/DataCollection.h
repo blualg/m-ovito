@@ -387,6 +387,9 @@ public:
     /// Inserts a new global attribute into the pipeline state overwritting any existing attribute with the same name.
     AttributeDataObject* setAttribute(const QString& key, QVariant value, OOWeakRef<const PipelineNode> createdByNode);
 
+    /// Copies all global attribute created by the given pipeline node over to this data collection.
+    void adoptAttributesFrom(const DataCollection& other, const OOWeakRef<const PipelineNode>& createdByNode);
+
     /// Returns a new unique data object identifier that does not collide with the
     /// identifiers of any existing data object of the given type in the same data
     /// collection.

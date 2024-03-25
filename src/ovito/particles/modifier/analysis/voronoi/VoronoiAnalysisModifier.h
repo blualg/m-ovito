@@ -27,7 +27,6 @@
 #include <ovito/particles/objects/Bonds.h>
 #include <ovito/particles/objects/BondsVis.h>
 #include <ovito/particles/objects/Particles.h>
-#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
@@ -62,23 +61,28 @@ public:
     /// Constructor.
     explicit VoronoiAnalysisModifier(ObjectInitializationFlags flags);
 
-protected:
+    /// This function is called by the pipeline system before a new modifier evaluation begins.
+    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
 
-    /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
+
+    /// Indicates that a preliminary viewport update will be performed immediately after this modifier
+	/// has computed new results.
+    virtual bool shouldRefreshViewportsAfterEvaluation() override { return true; }
 
 private:
 
     /// Computes the modifier's results.
-    class VoronoiAnalysisEngine : public ModifierEngine
+    class VoronoiAnalysisEngine
     {
     public:
 
         /// Constructor.
-        VoronoiAnalysisEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleIdentifiers, ConstPropertyPtr radii,
-                            const SimulationCell* simCell, DataOORef<SurfaceMesh> polyhedraMesh,
-                            bool computeIndices, bool computeBonds, FloatType edgeThreshold, FloatType faceThreshold, FloatType relativeFaceThreshold) :
-            ModifierEngine(request, validityInterval),
+        VoronoiAnalysisEngine(OOWeakRef<const PipelineNode> createdByNode, size_t particleCount, ConstPropertyPtr positions, ConstPropertyPtr selection, ConstPropertyPtr particleIdentifiers, ConstPropertyPtr radii,
+                            const SimulationCell* simCell, SurfaceMesh* polyhedraMesh,
+                            bool computeIndices, bool computeBonds, FloatType edgeThreshold, FloatType faceThreshold, FloatType relativeFaceThreshold, OORef<BondsVis> bondsVis) :
+            _createdByNode(createdByNode),
             _positions(positions),
             _selection(std::move(selection)),
             _particleIdentifiers(std::move(particleIdentifiers)),
@@ -88,18 +92,18 @@ private:
             _faceThreshold(faceThreshold),
             _relativeFaceThreshold(relativeFaceThreshold),
             _computeBonds(computeBonds),
-            _coordinationNumbers(Particles::OOClass().createStandardProperty(DataBuffer::Initialized, fingerprint.elementCount(), Particles::CoordinationProperty)),
-            _atomicVolumes(Particles::OOClass().createUserProperty(DataBuffer::Initialized, fingerprint.elementCount(), Property::FloatDefault, 1, QStringLiteral("Atomic Volume"))),
-            _cavityRadii(Particles::OOClass().createUserProperty(DataBuffer::Initialized, fingerprint.elementCount(), Property::FloatDefault, 1, QStringLiteral("Cavity Radius"))),
-            _maxFaceOrders(computeIndices ? Particles::OOClass().createUserProperty(DataBuffer::Initialized, fingerprint.elementCount(), Property::Int32, 1, QStringLiteral("Max Face Order")) : nullptr),
-            _inputFingerprint(std::move(fingerprint)),
-            _polyhedraMesh(std::move(polyhedraMesh)) {}
+            _coordinationNumbers(Particles::OOClass().createStandardProperty(DataBuffer::Initialized, particleCount, Particles::CoordinationProperty)),
+            _atomicVolumes(Particles::OOClass().createUserProperty(DataBuffer::Initialized, particleCount, Property::FloatDefault, 1, QStringLiteral("Atomic Volume"))),
+            _cavityRadii(Particles::OOClass().createUserProperty(DataBuffer::Initialized, particleCount, Property::FloatDefault, 1, QStringLiteral("Cavity Radius"))),
+            _maxFaceOrders(computeIndices ? Particles::OOClass().createUserProperty(DataBuffer::Initialized, particleCount, Property::Int32, 1, QStringLiteral("Max Face Order")) : nullptr),
+            _polyhedraMesh(polyhedraMesh),
+            _bondsVis(std::move(bondsVis)) {}
 
         /// Computes the modifier's results.
-        virtual void perform() override;
+        void perform();
 
         /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+        void applyResults(PipelineFlowState& state);
 
         /// Returns the property storage that contains the computed coordination numbers.
         const PropertyPtr& coordinationNumbers() const { return _coordinationNumbers; }
@@ -128,6 +132,7 @@ private:
         const SimulationCell* simCell() const { return _simCell; }
         const ConstPropertyPtr& positions() const { return _positions; }
         const ConstPropertyPtr& selection() const { return _selection; }
+        const OOWeakRef<const PipelineNode>& createdByNode() const { return _createdByNode; }
 
     private:
 
@@ -140,6 +145,8 @@ private:
         ConstPropertyPtr _selection;
         ConstPropertyPtr _particleIdentifiers;
         bool _computeBonds;
+        OOWeakRef<const PipelineNode> _createdByNode;
+        OORef<BondsVis> _bondsVis;
 
         const PropertyPtr _coordinationNumbers;
         const PropertyPtr _atomicVolumes;
@@ -148,7 +155,6 @@ private:
         const PropertyPtr _maxFaceOrders;
         std::vector<Bond> _bonds;
         PropertyPtr _bondVoronoiOrder;
-        ElementOrderingFingerprint _inputFingerprint;
 
         /// The volume sum of all Voronoi cells.
         std::atomic<double> _voronoiVolumeSum{0.0};
@@ -157,7 +163,7 @@ private:
         std::atomic<int> _maxFaceOrder{0};
 
         /// A surface mesh representing the computed polyhedral Voronoi cells.
-        DataOORef<SurfaceMesh> _polyhedraMesh;
+        SurfaceMesh* _polyhedraMesh;
 
         /// The total volume of the simulation cell.
         FloatType _simulationBoxVolume;

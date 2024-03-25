@@ -57,9 +57,23 @@ CalculateDisplacementsModifier::CalculateDisplacementsModifier(ObjectInitializat
 }
 
 /******************************************************************************
+* Adopts existing computation results for an interactive pipeline evaluation.
+******************************************************************************/
+void CalculateDisplacementsModifier::reuseCachedState(const ModifierEvaluationRequest& request, Particles* particles, PipelineFlowState& output, const PipelineFlowState& cachedState)
+{
+    // Adopt the displacement property from the cached state.
+    if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
+        particles->tryToAdoptProperties(cachedParticles, {
+            cachedParticles->getProperty(Particles::DisplacementProperty),
+            cachedParticles->getProperty(Particles::DisplacementMagnitudeProperty)
+        }, {particles});
+    }
+}
+
+/******************************************************************************
 * Creates and initializes a computation engine that will compute the modifier's results.
 ******************************************************************************/
-Future<ModifierEnginePtr> CalculateDisplacementsModifier::createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval)
+std::unique_ptr<ReferenceConfigurationModifier::Engine> CalculateDisplacementsModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input, const PipelineFlowState& referenceState)
 {
     // Get the current particle positions.
     const Particles* particles = input.expectObject<Particles>();
@@ -83,99 +97,81 @@ Future<ModifierEnginePtr> CalculateDisplacementsModifier::createEngineInternal(c
     const Property* identifierProperty = particles->getProperty(Particles::IdentifierProperty);
     const Property* refIdentifierProperty = refParticles->getProperty(Particles::IdentifierProperty);
 
+    // Create the output particle properties.
+    PropertyPtr displacements = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), Particles::DisplacementProperty);
+    PropertyPtr displacementMagnitudes = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), Particles::DisplacementMagnitudeProperty);
+    displacements->setVisElement(vectorVis());
+
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<DisplacementEngine>(
-            request,
-            validityInterval, posProperty, inputCell,
-            particles, refPosProperty, refCell,
+    return std::make_unique<DisplacementEngine>(
+            std::move(displacements), std::move(displacementMagnitudes),
+            posProperty, inputCell,
+            refPosProperty, refCell,
             identifierProperty, refIdentifierProperty,
             affineMapping(), useMinimumImageConvention());
 }
 
 /******************************************************************************
-* Asks the object for the result of the data pipeline.
+* Performs the actual computation of the modifier's results.
 ******************************************************************************/
-void CalculateDisplacementsModifier::DisplacementEngine::perform()
+void CalculateDisplacementsModifier::DisplacementEngine::perform(PipelineFlowState& state)
 {
     // First determine the mapping from particles of the reference config to particles
     // of the current config.
-    if(!buildParticleMapping(true, false))
-        return;
+    buildParticleMapping(true, false);
 
-    BufferWriteAccess<Vector3, access_mode::discard_write> displacementsArray(displacements());
-    BufferWriteAccess<FloatType, access_mode::discard_write> displacementMagnitudesArray(displacementMagnitudes());
-    BufferReadAccess<Point3> positionsArray(positions());
+    BufferWriteAccess<Vector3, access_mode::discard_write> displacementsAcc(displacements());
+    BufferWriteAccess<FloatType, access_mode::discard_write> displacementMagnitudesAcc(displacementMagnitudes());
+    BufferReadAccess<Point3> positionsAcc(positions());
     BufferReadAccess<Point3> refPositionsArray(refPositions());
+
+    const auto refCellPbcFlags = refCell()->pbcFlagsCorrected();
+    const auto refCellMatrix = refCell()->matrix();
 
     // Compute displacement vectors.
     if(affineMapping() != NO_MAPPING) {
-        parallelForChunksWithProgress(displacements()->size(), [&](size_t startIndex, size_t count, ProgressingTask& task) {
-            Vector3* u = displacementsArray.begin() + startIndex;
-            FloatType* umag = displacementMagnitudesArray.begin() + startIndex;
-            const Point3* p = positionsArray.cbegin() + startIndex;
-            auto index = currentToRefIndexMap().cbegin() + startIndex;
-            const AffineTransformation& reduced_to_absolute = (affineMapping() == TO_REFERENCE_CELL) ? refCell()->matrix() : cell()->matrix();
-            for(; count; --count, ++u, ++umag, ++p, ++index) {
-                if(task.isCanceled())
-                    return;
-                Point3 reduced_current_pos = cell()->inverseMatrix() * (*p);
-                Point3 reduced_reference_pos = refCell()->inverseMatrix() * refPositionsArray[*index];
-                Vector3 delta = reduced_current_pos - reduced_reference_pos;
-                if(useMinimumImageConvention()) {
-                    for(size_t k = 0; k < 3; k++) {
-                        if(refCell()->hasPbcCorrected(k))
-                            delta[k] -= std::floor(delta[k] + FloatType(0.5));
-                    }
+        const AffineTransformation reduced_to_absolute = (affineMapping() == TO_REFERENCE_CELL) ? refCellMatrix : cell()->matrix();
+        parallelFor(displacements()->size(), 1024, [&](size_t i) {
+            const Point3& p = positionsAcc[i];
+            auto index = currentToRefIndexMap()[i];
+            Point3 reduced_current_pos = cell()->inverseMatrix() * p;
+            Point3 reduced_reference_pos = refCell()->inverseMatrix() * refPositionsArray[index];
+            Vector3 delta = reduced_current_pos - reduced_reference_pos;
+            if(useMinimumImageConvention()) {
+                for(size_t k = 0; k < 3; k++) {
+                    if(refCellPbcFlags[k])
+                        delta[k] -= std::floor(delta[k] + FloatType(0.5));
                 }
-                *u = reduced_to_absolute * delta;
-                *umag = u->length();
             }
+            Vector3 u = reduced_to_absolute * delta;
+            displacementsAcc[i] = u;
+            displacementMagnitudesAcc[i] = u.length();
         });
     }
     else {
-        parallelForChunksWithProgress(displacements()->size(), [&] (size_t startIndex, size_t count, ProgressingTask& task) {
-            Vector3* u = displacementsArray.begin() + startIndex;
-            FloatType* umag = displacementMagnitudesArray.begin() + startIndex;
-            const Point3* p = positionsArray.cbegin() + startIndex;
-            auto index = currentToRefIndexMap().cbegin() + startIndex;
-            for(; count; --count, ++u, ++umag, ++p, ++index) {
-                if(task.isCanceled()) return;
-                *u = *p - refPositionsArray[*index];
-                if(useMinimumImageConvention()) {
-                    for(size_t k = 0; k < 3; k++) {
-                        if(refCell()->hasPbcCorrected(k)) {
-                            while((*u + refCell()->matrix().column(k)).squaredLength() < u->squaredLength())
-                                *u += refCell()->matrix().column(k);
+        parallelFor(displacements()->size(), 1024, [&](size_t i) {
+            const Point3& p = positionsAcc[i];
+            auto index = currentToRefIndexMap()[i];
+            Vector3 u = p - refPositionsArray[index];
+            if(useMinimumImageConvention()) {
+                for(size_t k = 0; k < 3; k++) {
+                    if(refCellPbcFlags[k]) {
+                        while((u + refCellMatrix.column(k)).squaredLength() < u.squaredLength())
+                            u += refCellMatrix.column(k);
 
-                            while((*u - refCell()->matrix().column(k)).squaredLength() < u->squaredLength())
-                                *u -= refCell()->matrix().column(k);
-                        }
+                        while((u - refCellMatrix.column(k)).squaredLength() < u.squaredLength())
+                            u -= refCellMatrix.column(k);
                     }
                 }
-                *umag = u->length();
             }
+            displacementsAcc[i] = u;
+            displacementMagnitudesAcc[i] = u.length();
         });
     }
-
-    // Release data that is no longer needed.
-    releaseWorkingData();
-}
-
-/******************************************************************************
-* Injects the computed results of the engine into the data pipeline.
-******************************************************************************/
-void CalculateDisplacementsModifier::DisplacementEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
-{
-    ModifierEngine::applyResults(request, state);
-
-    CalculateDisplacementsModifier* modifier = static_object_cast<CalculateDisplacementsModifier>(request.modifier());
+    displacementsAcc.reset();
+    displacementMagnitudesAcc.reset();
 
     Particles* particles = state.expectMutableObject<Particles>();
-
-    if(_inputFingerprint.hasChanged(particles))
-        throw Exception(tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
-
-    displacements()->setVisElement(modifier->vectorVis());
     particles->createProperty(displacements());
     particles->createProperty(displacementMagnitudes());
 }

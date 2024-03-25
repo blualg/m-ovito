@@ -59,18 +59,16 @@ bool SmoothTrajectoryModifier::OOMetaClass::isApplicableTo(const DataCollection&
     return input.containsObject<Particles>();
 }
 
-#if 0 // TODO
 /******************************************************************************
-* Determines the time interval over which a computed pipeline state will remain valid.
-******************************************************************************/
-TimeInterval SmoothTrajectoryModifier::validityInterval(const ModifierEvaluationRequest& request) const
+ * Is called by the pipeline system before a new modifier evaluation begins.
+ ******************************************************************************/
+bool SmoothTrajectoryModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
 {
-    TimeInterval iv = Modifier::validityInterval(request);
     // Interpolation results will only be valid for the duration of the current frame.
-    iv.intersect(request.time());
-    return iv;
+    result.intersectValidityInterval(request.time());
+
+    return true;
 }
-#endif
 
 /******************************************************************************
 * Asks the modifier for the set of animation time intervals that should be
@@ -98,7 +96,7 @@ void SmoothTrajectoryModifier::inputCachingHints(ModifierEvaluationRequest& requ
 }
 
 /******************************************************************************
-* Is called by the ModifierApplication to let the modifier adjust the
+* Is called by the ModificationNode to let the modifier adjust the
 * time interval of a TargetChanged event received from the upstream pipeline
 * before it is propagated to the downstream pipeline.
 ******************************************************************************/
@@ -117,7 +115,7 @@ Future<PipelineFlowState> SmoothTrajectoryModifier::evaluateModifier(const Modif
 {
     // Determine the current frame, preferably from the attribute stored with the pipeline flow state.
     // If the source frame attribute is not present, fall back to inferring it from the current animation time.
-    int currentFrame = input.data() ? input.data()->sourceFrame() : -1;
+    int currentFrame = state.data() ? state.data()->sourceFrame() : -1;
     if(currentFrame < 0)
         currentFrame = request.modificationNode()->animationTimeToSourceFrame(request.time());
     AnimationTime time1 = request.modificationNode()->sourceFrameToAnimationTime(currentFrame);
@@ -125,9 +123,8 @@ Future<PipelineFlowState> SmoothTrajectoryModifier::evaluateModifier(const Modif
     // If we are exactly on a source frame, there is no need to interpolate between frames.
     if(time1 == request.time() && smoothingWindowSize() <= 1) {
         // The validity of the resulting state is restricted to the current animation time.
-        PipelineFlowState output = input;
-        output.intersectStateValidity(time1);
-        return output;
+        state.intersectStateValidity(time1);
+        return std::move(state);
     }
 
     if(smoothingWindowSize() == 1) {
@@ -141,7 +138,7 @@ Future<PipelineFlowState> SmoothTrajectoryModifier::evaluateModifier(const Modif
 
         // Wait for the second frame to become available.
         return request.modificationNode()->evaluateInput(frameRequest)
-            .then(*this, [this, request, state = input, time1, time2](const PipelineFlowState& nextState) mutable {
+            .then(*this, [this, request, state = std::move(state), time1, time2](const PipelineFlowState& nextState) mutable {
                 // Compute interpolated state.
                 interpolateState(state, nextState, request, time1, time2);
                 return std::move(state);
@@ -166,61 +163,11 @@ Future<PipelineFlowState> SmoothTrajectoryModifier::evaluateModifier(const Modif
 
         // Obtain the range of input frames from the upstream pipeline.
         return request.modificationNode()->evaluateInputMultiple(frameRequest, std::move(otherTimes))
-            .then(*this, [this, state = input, request](const std::vector<PipelineFlowState>& otherStates) mutable {
+            .then(*this, [this, state = std::move(state), request](const std::vector<PipelineFlowState>& otherStates) mutable {
                 // Compute smoothed state.
                 averageState(state, otherStates, request);
                 return std::move(state);
             });
-    }
-}
-
-/******************************************************************************
-* Modifies the input data synchronously.
-******************************************************************************/
-void SmoothTrajectoryModifier::evaluateModifierSynchronous(const ModifierEvaluationRequest& request, PipelineFlowState& state)
-{
-    // Determine the current frame, preferably from the attribute stored with the pipeline flow state.
-    // If the source frame attribute is not present, fall back to inferring it from the current animation time.
-    int currentFrame = state.data() ? state.data()->sourceFrame() : -1;
-    if(currentFrame < 0)
-        currentFrame = request.modificationNode()->animationTimeToSourceFrame(request.time());
-    AnimationTime time1 = request.modificationNode()->sourceFrameToAnimationTime(currentFrame);
-
-    // If we are exactly on a source frame, there is no need to interpolate between two consecutive frames.
-    if(time1 == request.time() && smoothingWindowSize() <= 1) {
-        // The validity of the resulting state is restricted to the current animation time.
-        state.intersectStateValidity(request.time());
-        return;
-    }
-
-    if(smoothingWindowSize() == 1) {
-        // Perform interpolation between two consecutive frames.
-        int nextFrame = currentFrame + 1;
-        AnimationTime time2 = request.modificationNode()->sourceFrameToAnimationTime(nextFrame);
-
-        // Get the second frame.
-        const PipelineFlowState& state2 = request.modificationNode()->evaluateInput(PipelineEvaluationRequest(time2)).result();
-
-        // Perform the actual interpolation calculation.
-        interpolateState(state, state2, request, time1, time2);
-    }
-    else {
-        // Perform averaging of several frames. Determine frame interval.
-        int startFrame = currentFrame - (smoothingWindowSize() - 1) / 2;
-        int endFrame = currentFrame + smoothingWindowSize() / 2;
-
-        // Obtain the range of input frames from the upstream pipeline.
-        std::vector<PipelineFlowState> otherStates;
-        otherStates.reserve(endFrame - startFrame);
-        for(int frame = startFrame; frame <= endFrame; frame++) {
-            if(frame != currentFrame) {
-                AnimationTime time2 = request.modificationNode()->sourceFrameToAnimationTime(frame);
-                otherStates.push_back(request.modificationNode()->evaluateInput(PipelineEvaluationRequest(time2)).result());
-            }
-        }
-
-        // Compute smoothed state.
-        averageState(state, otherStates, request);
     }
 }
 

@@ -27,7 +27,6 @@
 #include <ovito/particles/objects/VectorVis.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/modifier/analysis/ReferenceConfigurationModifier.h>
-#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 
 namespace Ovito {
@@ -51,39 +50,37 @@ public:
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<ModifierEnginePtr> createEngineInternal(const ModifierEvaluationRequest& request, PipelineFlowState input, const PipelineFlowState& referenceState, TimeInterval validityInterval) override;
+    virtual std::unique_ptr<Engine> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input, const PipelineFlowState& referenceState) override;
+
+    /// Adopts existing computation results for an interactive pipeline evaluation.
+    virtual void reuseCachedState(const ModifierEvaluationRequest& request, Particles* particles, PipelineFlowState& output, const PipelineFlowState& cachedState) override;
 
 private:
 
     /// Computes the modifier's results.
-    class DisplacementEngine : public RefConfigEngineBase
+    class DisplacementEngine : public Engine
     {
     public:
 
         /// Constructor.
         DisplacementEngine(
-                const ModifierEvaluationRequest& request,
-                const TimeInterval& validityInterval,
+                PropertyPtr displacements,
+                PropertyPtr displacementMagnitudes,
                 ConstPropertyPtr positions,
                 const SimulationCell* simCell,
-                ElementOrderingFingerprint fingerprint,
                 ConstPropertyPtr refPositions,
                 const SimulationCell* simCellRef,
                 ConstPropertyPtr identifiers,
                 ConstPropertyPtr refIdentifiers,
                 AffineMappingType affineMapping,
                 bool useMinimumImageConvention) :
-            RefConfigEngineBase(request, validityInterval, positions, simCell, std::move(refPositions), simCellRef,
+            Engine(positions, simCell, std::move(refPositions), simCellRef,
                 std::move(identifiers), std::move(refIdentifiers), affineMapping, useMinimumImageConvention),
-            _displacements(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.elementCount(), Particles::DisplacementProperty)),
-            _displacementMagnitudes(Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, fingerprint.elementCount(), Particles::DisplacementMagnitudeProperty)),
-            _inputFingerprint(std::move(fingerprint)) {}
+            _displacements(std::move(displacements)),
+            _displacementMagnitudes(std::move(displacementMagnitudes)) {}
 
-        /// Computes the modifier's results.
-        virtual void perform() override;
-
-        /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+        /// Performs the actual computation of the modifier's results.
+        virtual void perform(PipelineFlowState& state) override;
 
         /// Returns the property storage that contains the computed displacement vectors.
         const PropertyPtr& displacements() const { return _displacements; }
@@ -95,7 +92,6 @@ private:
 
         const PropertyPtr _displacements;
         const PropertyPtr _displacementMagnitudes;
-        ElementOrderingFingerprint _inputFingerprint;
     };
 
     /// The vis element for rendering the displacement vectors.

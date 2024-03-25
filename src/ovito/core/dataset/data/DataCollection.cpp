@@ -567,6 +567,21 @@ AttributeDataObject* DataCollection::setAttribute(const QString& key, QVariant v
 }
 
 /******************************************************************************
+* Copies all global attribute created by the given pipeline node over to this
+* data collection.
+******************************************************************************/
+void DataCollection::adoptAttributesFrom(const DataCollection& other, const OOWeakRef<const PipelineNode>& createdByNode)
+{
+    for(const DataObject* obj : other.objects()) {
+        if(const AttributeDataObject* attribute = dynamic_object_cast<AttributeDataObject>(obj)) {
+            if(attribute->createdByNode() == createdByNode) {
+                addObject(attribute);
+            }
+        }
+    }
+}
+
+/******************************************************************************
 * Returns a new unique data object identifier that does not collide with the
 * identifiers of any existing data object of the given type in the same data
 * collection.

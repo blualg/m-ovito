@@ -452,6 +452,84 @@ std::vector<size_t> PropertyContainer::sortById()
 }
 
 /******************************************************************************
+* Copies one or more property arrays from another container to this container if possible.
+* Takes care of remapping the property values to the new container's element order.
+* Non-existing elements in the source container are filled with default values.
+* Copying may not be possible if the property containers have different element counts without unique identifiers.
+******************************************************************************/
+void PropertyContainer::tryToAdoptProperties(const PropertyContainer* sourceContainer, const std::vector<const Property*>& sourceProperties, const ConstDataObjectPath& containerPath)
+{
+    OVITO_ASSERT(this != sourceContainer);
+    OVITO_ASSERT(this->getOOClass() == sourceContainer->getOOClass());
+    OVITO_ASSERT(containerPath.empty() || containerPath.back() == this);
+
+    // Are there any properties to adopt? If not, bail out early.
+    if(std::all_of(sourceProperties.begin(), sourceProperties.end(), [](const Property* p) { return p == nullptr; }))
+        return;
+
+    if(this->getOOMetaClass().isValidStandardPropertyId(Property::GenericIdentifierProperty)) {
+        const Property* sourceIdentifiers = sourceContainer->getProperty(Property::GenericIdentifierProperty);
+        const Property* destIdentifiers = this->getProperty(Property::GenericIdentifierProperty);
+        if(sourceIdentifiers && destIdentifiers) {
+
+            // First, check if the mapping is non-trivial, i.e., the IDs are not the same in both containers.
+            if(sourceIdentifiers != destIdentifiers || sourceIdentifiers->size() != destIdentifiers->size() || sourceIdentifiers->checksum() != destIdentifiers->checksum()) {
+
+                // Build id-to-index map for source container.
+                std::unordered_map<IdentifierIntType, size_t> idMap;
+                idMap.reserve(sourceIdentifiers->size());
+                size_t index = 0;
+                for(auto id : BufferReadAccess<IdentifierIntType>{sourceIdentifiers})
+                    idMap.insert(std::make_pair(id, index++));
+
+                for(const Property* sourceProperty : sourceProperties) {
+                    if(!sourceProperty)
+                        continue;
+                    OVITO_ASSERT(sourceIdentifiers->size() == sourceProperty->size());
+
+                    // Create destination property array. Initialize it with default values.
+                    Property* destProperty;
+                    if(sourceProperty->type() != Property::GenericUserProperty)
+                        destProperty = this->createProperty(DataBuffer::Initialized, sourceProperty->type(), containerPath);
+                    else
+                        destProperty = this->createProperty(DataBuffer::Initialized, sourceProperty->name(), sourceProperty->dataType(), sourceProperty->componentCount(), sourceProperty->componentNames());
+                    destProperty->setVisElements(sourceProperty->visElements());
+
+                    // Perform mapped copy of property values to destination container.
+                    RawBufferAccess<access_mode::write> destAcc(destProperty);
+                    RawBufferReadAccess sourceAcc(sourceProperty);
+                    const auto stride = destProperty->stride();
+                    auto* __restrict dst = destAcc.data();
+                    for(auto id : BufferReadAccess<IdentifierIntType>{destIdentifiers}) {
+                        if(auto it = idMap.find(id); it != idMap.end()) {
+                            OVITO_ASSERT(it->second < sourceProperty->size());
+                            const auto* __restrict src = sourceAcc.cdata() + it->second * stride;
+                            std::memcpy(dst, src, stride);
+                        }
+                        dst += stride;
+                    }
+                }
+
+                return;
+            }
+        }
+        else if(sourceIdentifiers || destIdentifiers) {
+            return;
+        }
+    }
+
+    // In case of no unique identifiers, we can only copy properties if the element counts match exactly.
+    if(this->elementCount() == sourceContainer->elementCount()) {
+        for(const Property* sourceProperty : sourceProperties) {
+            if(sourceProperty) {
+                // Copying is trivial in this case: simply adopt the existing Property object into the new container.
+                this->createProperty(sourceProperty);
+            }
+        }
+    };
+}
+
+/******************************************************************************
 * Makes sure that all property arrays in this container have a consistent length.
 * If this is not the case, the method throws an exception.
 ******************************************************************************/

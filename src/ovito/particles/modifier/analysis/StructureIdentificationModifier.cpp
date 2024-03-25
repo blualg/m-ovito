@@ -254,16 +254,10 @@ void StructureIdentificationModifier::reuseCachedState(const ModifierEvaluationR
 {
     // Adopt the structure property from the cached state.
     if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
-        if(cachedParticles->elementCount() == particles->elementCount()) {
-            if(const Property* cachedStructures = cachedParticles->getProperty(Particles::StructureTypeProperty)) {
-                particles->createProperty(cachedStructures);
-            }
-            if(colorByType()) {
-                if(const Property* cachedColors = cachedParticles->getProperty(Particles::ColorProperty)) {
-                    particles->createProperty(cachedColors);
-                }
-            }
-        }
+        particles->tryToAdoptProperties(cachedParticles, {
+            cachedParticles->getProperty(Particles::StructureTypeProperty),
+            colorByType() ? cachedParticles->getProperty(Particles::ColorProperty) : nullptr
+        }, {particles});
     }
 
     // Adopt the structure count data table from the cached state.
@@ -272,13 +266,7 @@ void StructureIdentificationModifier::reuseCachedState(const ModifierEvaluationR
     }
 
     // Adopt all global attributes computed by the modifier from the cached state.
-    for(const DataObject* obj : cachedState.data()->objects()) {
-        if(const AttributeDataObject* attribute = dynamic_object_cast<AttributeDataObject>(obj)) {
-            if(attribute->createdByNode() == request.modificationNode()) {
-                output.addObject(attribute);
-            }
-        }
-    }
+    output.adoptAttributesFrom(cachedState, request.modificationNode());
 }
 
 }   // End of namespace

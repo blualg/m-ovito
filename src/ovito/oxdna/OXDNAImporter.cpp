@@ -107,8 +107,7 @@ void OXDNAImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter
             stream.readLine();
             if(stream.lineStartsWith("t", true))
                 break;
-            if(!setProgressValueIntermittent(stream.underlyingByteOffset()))
-                return;
+            setProgressValueIntermittent(stream.underlyingByteOffset());
         }
     }
 }
@@ -187,8 +186,7 @@ void OXDNAImporter::FrameLoader::loadFile()
     auto* baseTypeIter = baseAccess.begin();
     auto* strandId = strandsAccess.begin();
     for(size_t i = 0; i < numNucleotidesLong; i++, ++strandId) {
-        if(!setProgressValueIntermittent(i))
-            return;
+        setProgressValueIntermittent(i);
 
         char baseName[32];
         qlonglong neighbor1, neighbor2;
@@ -265,7 +263,7 @@ void OXDNAImporter::FrameLoader::loadFile()
     // Parse data table.
     InputColumnReader columnParser(*this, columnMapping, particles(), false);
     for(size_t i = 0; i < numNucleotidesLong; i++) {
-        if(!setProgressValueIntermittent(i)) return;
+        setProgressValueIntermittent(i);
         try {
             columnParser.readElement(i, stream.readLine());
         }

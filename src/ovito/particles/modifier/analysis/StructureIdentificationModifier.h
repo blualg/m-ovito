@@ -26,7 +26,6 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/particles/objects/Particles.h>
-#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 

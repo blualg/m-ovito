@@ -24,10 +24,7 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
-#include <ovito/stdobj/properties/Property.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
-#include <ovito/core/rendering/SceneRenderer.h>
 
 namespace Ovito {
 
@@ -58,61 +55,26 @@ public:
 
     enum { MAX_AO_RENDER_BUFFER_RESOLUTION = 4 };
 
-    /// Computes the modifier's results.
-    class AmbientOcclusionEngine : public ModifierEngine
-    {
-    public:
-
-        /// Constructor.
-        AmbientOcclusionEngine(const ModifierEvaluationRequest& request, const TimeInterval& validityInterval, ElementOrderingFingerprint fingerprint, int resolution, int samplingCount, ConstPropertyPtr positions,
-            ConstPropertyPtr particleRadii, const Box3& boundingBox, OORef<SceneRenderer> renderer);
-
-        /// Computes the modifier's results.
-        virtual void perform() override;
-
-        /// Injects the computed results into the data pipeline.
-        virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-        /// This method is called by the system whenever a parameter of the modifier changes.
-        /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be
-        /// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true).
-        virtual bool modifierChanged(const PropertyFieldEvent& event) override {
-            // Avoid a recomputation if the user changes just the intensity parameter.
-            if(event.field() == PROPERTY_FIELD(intensity))
-                return true;
-            return ModifierEngine::modifierChanged(event);
-        }
-
-        /// Returns the property storage that contains the computed per-particle brightness values.
-        const DataBufferPtr& brightness() const { return _brightness; }
-
-        /// Returns the data buffer containing the input particle positions.
-        const ConstPropertyPtr& positions() const { return _positions; }
-
-        /// Returns the data buffer containing the input particle radii.
-        const ConstPropertyPtr& particleRadii() const { return _particleRadii; }
-
-    private:
-
-        OORef<SceneRenderer> _renderer;
-        const int _resolution;
-        const int _samplingCount;
-        ConstPropertyPtr _positions;
-        ConstPropertyPtr _particleRadii;
-        const Box3 _boundingBox;
-        DataBufferPtr _brightness;
-        ElementOrderingFingerprint _inputFingerprint;
-    };
-
-public:
-
     /// Constructor.
     explicit AmbientOcclusionModifier(ObjectInitializationFlags flags);
 
-protected:
+    /// This function is called by the pipeline system before a new modifier evaluation begins.
+    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
 
-    /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
+
+    /// Indicates that a preliminary viewport update will be performed immediately after this modifier
+	/// has computed new results.
+    virtual bool shouldRefreshViewportsAfterEvaluation() override { return true; }
+
+    /// Indicates whether the modifier wants to keep its partial compute results after one of its parameters has been changed.
+    virtual bool shouldKeepPartialResultsAfterChange(const PropertyFieldEvent& event) override {
+        // Avoid a full recomputation if the user toggles just the intensity.
+        if(event.field() == PROPERTY_FIELD(intensity))
+            return true;
+        return Modifier::shouldKeepPartialResultsAfterChange(event);
+    }
 
 private:
 
