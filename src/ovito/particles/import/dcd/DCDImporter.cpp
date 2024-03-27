@@ -283,8 +283,11 @@ void DCDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
     // Compute number of trajectory frames based on file size.
     qint64 filesize = device->size() - headersize - firstframesize;
     int nframes = 0;
-    if(filesize >= 0)
-        nframes = std::min(header.nsets, 1 + int(filesize / framesize));
+    if(filesize >= 0) {
+        nframes = 1 + int(filesize / framesize);
+        if(header.nsets != 0 && nframes > header.nsets) // Note: DCD files written by CP2K have nsets=0 -> ignore such non-conformant values
+            nframes = header.nsets;
+    }
 
     Frame frame(fileHandle());
     for(int i = 0; i < nframes; i++) {
