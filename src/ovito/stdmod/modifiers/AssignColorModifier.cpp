@@ -72,15 +72,13 @@ bool AssignColorModifier::referenceEvent(RefTarget* source, const ReferenceEvent
 /******************************************************************************
 * This function is called by the pipeline system before a new modifier evaluation begins.
 ******************************************************************************/
-bool AssignColorModifierDelegate::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
+void AssignColorModifierDelegate::preevaluateDelegate(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const
 {
     const AssignColorModifier* modifier = static_object_cast<AssignColorModifier>(request.modifier());
 
     // If the color is animated, restrict the validity interval of the modifier results.
     if(modifier->colorController())
-        result.intersectValidityInterval(modifier->colorController()->validityInterval(request.time()));
-
-    return true;
+        validityInterval.intersect(modifier->colorController()->validityInterval(request.time()));
 }
 
 /******************************************************************************

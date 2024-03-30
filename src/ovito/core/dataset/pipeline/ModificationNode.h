@@ -67,19 +67,22 @@ public:
 
 public:
 
-    /// \brief Constructor.
-    explicit ModificationNode(ObjectInitializationFlags flags) : PipelineNode(flags) {}
+    /// Constructor.
+    using PipelineNode::PipelineNode;
 
-    /// \brief Throws an exception if the pipeline stage cannot be evaluated at this time. This is called by the system to catch user mistakes that would lead to infinite recursion.
+    /// Throws an exception if the pipeline stage cannot be evaluated at this time. This is called by the system to catch user mistakes that would lead to infinite recursion.
     virtual void preEvaluationCheck() const override;
 
-    /// \brief Asks the object for the result of the upstream data pipeline.
+    /// Asks the object for the result of the upstream data pipeline.
     PipelineEvaluationResult evaluateInput(const PipelineEvaluationRequest& request) const;
 
-    /// \brief Asks the object for the result of the upstream data pipeline at several animation times.
+    /// Asks the object for the result of the upstream data pipeline at several animation times.
     Future<std::vector<PipelineFlowState>> evaluateInputMultiple(const PipelineEvaluationRequest& request, std::vector<AnimationTime> times) const;
 
-    /// \brief Asks the object for the result of the data pipeline.
+    /// Is called by the pipeline system before a new evaluation begins to query the validity interval and evaluation result type of this pipeline stage.
+    virtual void preevaluate(const PipelineEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) override;
+
+    /// Asks the object for the result of the data pipeline.
     virtual PipelineEvaluationResult evaluate(const PipelineEvaluationRequest& request) override;
 
     /// Returns the cached output of this data pipeline stage at the given time if available.
@@ -136,8 +139,11 @@ public:
 
 protected:
 
+    /// Is called by the pipeline system before a new modifier evaluation begins to query the validity interval and evaluation result type of the pipeline stage.
+    virtual void preevaluateInternal(const PipelineEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) override;
+
     /// Asks the object for the result of the data pipeline.
-    virtual PipelineEvaluationResult evaluateInternal(const PipelineEvaluationRequest& request) override;
+    virtual SharedFuture<PipelineFlowState> evaluateInternal(const PipelineEvaluationRequest& request) override;
 
     /// Decides whether a preliminary viewport update is performed after this pipeline object has been
     /// evaluated but before the rest of the pipeline is complete.

@@ -61,8 +61,8 @@ public:
     /// Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
     virtual void inputCachingHints(ModifierEvaluationRequest& request) override;
 
-    /// This function is called by the pipeline system before a new modifier evaluation begins.
-    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
+    /// Is called by the pipeline system before a new modifier evaluation begins.
+    virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
 
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;

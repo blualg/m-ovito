@@ -180,10 +180,10 @@ public:
     const StructureAnalysis& structureAnalysis() const { return elasticMapping().structureAnalysis(); }
 
     /// Creates the mesh facets separating good and bad tetrahedra.
-    bool createMesh(FloatType maximumNeighborDistance, BufferReadAccess<int64_t> crystalClusters, ProgressingTask& operation);
+    void createMesh(FloatType maximumNeighborDistance, BufferReadAccess<int64_t> crystalClusters);
 
     /// Generates the nodes and facets of the defect mesh based on the interface mesh.
-    bool generateDefectMesh(const DislocationTracer& tracer, SurfaceMeshBuilder& defectMesh, ProgressingTask& operation);
+    void generateDefectMesh(const DislocationTracer& tracer, SurfaceMeshBuilder& defectMesh);
 
     /// Returns the list of extra per-vertex infos kept by the interface mesh.
     std::vector<Vertex>& vertices() { return _vertices; }

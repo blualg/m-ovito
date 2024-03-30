@@ -347,29 +347,48 @@ QMap<int, QString> FileSource::animationFrameLabels() const
 }
 
 /******************************************************************************
+ * This function is called by the pipeline system before a new modifier evaluation
+ * begins to query the validity interval and evaluation result type for this pipeline stage.
+ ******************************************************************************/
+void FileSource::preevaluateInternal(const PipelineEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval)
+{
+    if(request.interactiveMode()) {
+        // In interactive mode, there is not enough time to wait for file I/O. Therefore, we'll
+        // return the current internal state to serve the interactive evaluation request immediately.
+        evaluationTypes = PipelineEvaluationResult::EvaluationType::Interactive;
+    }
+    else {
+        // Marking the pipeline evaluation results as "non-interactive", because the loading process takes a longer time.
+        // We don't want interactive requests to wait on it.
+        evaluationTypes = PipelineEvaluationResult::EvaluationType::Noninteractive;
+
+        // Compute validity interval of the requested trajectory frame.
+        int frame = animationTimeToSourceFrame(request.time());
+        int frameCount = frames().size();
+        if(restrictToFrame() < 0 && frameCount > 1) {
+            if(frame > 0)
+                validityInterval.intersect(TimeInterval(sourceFrameToAnimationTime(frame), AnimationTime::positiveInfinity()));
+            if(frame < frameCount - 1)
+                validityInterval.intersect(TimeInterval(AnimationTime::negativeInfinity(), std::max(sourceFrameToAnimationTime(frame + 1) - 1, sourceFrameToAnimationTime(frame))));
+        }
+    }
+    OVITO_ASSERT(validityInterval.contains(request.time()));
+}
+
+/******************************************************************************
 * Asks the object for the result of the data pipeline.
 ******************************************************************************/
-PipelineEvaluationResult FileSource::evaluateInternal(const PipelineEvaluationRequest& request)
+SharedFuture<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvaluationRequest& request)
 {
     if(request.interactiveMode()) {
         // In interactive mode, there is not enough time to wait for file I/O. Therefore, directly
         // return the current internal state to serve the evaluation request immediately.
-        return PipelineEvaluationResult(PipelineFlowState(getSourceDataCollection(), status()), PipelineEvaluationResult::EvaluationType::Interactive);
+        return PipelineFlowState(getSourceDataCollection(), status());
     }
 
     // Convert the animation time to a frame number.
     int frame = animationTimeToSourceFrame(request.time());
     int frameCount = frames().size();
-
-    // Determine the time interval over which a loaded pipeline state will remain valid.
-    // Restrict the validity interval to the duration of the requested source frame.
-    TimeInterval validityInterval = TimeInterval::infinite();
-    if(restrictToFrame() < 0 && frameCount > 1) {
-        if(frame > 0)
-            validityInterval.intersect(TimeInterval(sourceFrameToAnimationTime(frame), AnimationTime::positiveInfinity()));
-        if(frame < frameCount - 1)
-            validityInterval.intersect(TimeInterval(AnimationTime::negativeInfinity(), std::max(sourceFrameToAnimationTime(frame + 1) - 1, sourceFrameToAnimationTime(frame))));
-    }
 
     // Clamp to frame range.
     if(frame < 0)
@@ -438,16 +457,10 @@ PipelineEvaluationResult FileSource::evaluateInternal(const PipelineEvaluationRe
         });
     });
 
-    // Build the pipeline evaluation results.
-    // Note: Marking the pipeline evaluation as "non-interactive", because the loading process takes a longer time.
-    // We don't want interactive requests to wait on it.
-    PipelineEvaluationResult result(std::move(stateFuture), PipelineEvaluationResult::EvaluationType::Noninteractive, frameTimeInterval(frame));
-    OVITO_ASSERT(result.validityInterval().contains(request.time()));
-
     // Post-process the results of the loading operation before returning them to the caller.
-    postprocessDataCollection(result, request);
+    postprocessDataCollection(stateFuture, request);
 
-    return result;
+    return std::move(stateFuture);
 }
 
 /******************************************************************************

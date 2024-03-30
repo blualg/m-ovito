@@ -280,6 +280,20 @@ Future<std::vector<PipelineFlowState>> ModificationNode::evaluateInputMultiple(c
 }
 
 /******************************************************************************
+* Is called by the pipeline system before a new evaluation begins to query
+* the validity interval and evaluation result type of this pipeline stage.
+ ******************************************************************************/
+void ModificationNode::preevaluate(const PipelineEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval)
+{
+    // If modifier is disabled, bypass cache and forward results from the upstream pipeline.
+    // Otherwise, let the base class call our preevaluateInternal() method.
+    if(input() && !modifierAndGroupEnabled())
+        input()->preevaluate(request, evaluationTypes, validityInterval);
+    else
+        PipelineNode::preevaluate(request, evaluationTypes, validityInterval);
+}
+
+/******************************************************************************
  * Asks the object for the result of the data pipeline.
  ******************************************************************************/
 PipelineEvaluationResult ModificationNode::evaluate(const PipelineEvaluationRequest& request)
@@ -293,36 +307,43 @@ PipelineEvaluationResult ModificationNode::evaluate(const PipelineEvaluationRequ
 }
 
 /******************************************************************************
+ * This function is called by the pipeline system before a new modifier evaluation
+ * begins to query the validity interval and evaluation result type for this pipeline stage.
+ ******************************************************************************/
+void ModificationNode::preevaluateInternal(const PipelineEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval)
+{
+    if(!input())
+        return;
+
+    input()->preevaluate(request, evaluationTypes, validityInterval);
+
+    if(modifierAndGroupEnabled()) {
+        ModifierEvaluationRequest modifierRequest(request, this);
+        modifier()->preevaluateModifier(modifierRequest, evaluationTypes, validityInterval);
+    }
+}
+
+/******************************************************************************
  * Asks the object for the result of the data pipeline.
  ******************************************************************************/
-PipelineEvaluationResult ModificationNode::evaluateInternal(const PipelineEvaluationRequest& request)
+SharedFuture<PipelineFlowState> ModificationNode::evaluateInternal(const PipelineEvaluationRequest& request)
 {
     // Set up an evaluation request to be passed to the upstream pipeline.
     ModifierEvaluationRequest modifierRequest(request, this);
 
-    // Ask the modifier for the list of animation frames it wants the upstream pipeline to maintain in the cach.
+    // Ask the modifier for the list of animation frames it wants the upstream pipeline to maintain in the cache.
     if(modifierAndGroupEnabled())
         modifier()->inputCachingHints(modifierRequest);
 
     // Obtain input data at the current frame from the upstream pipeline.
-    PipelineEvaluationResult input = evaluateInput(modifierRequest);
+    SharedFuture<PipelineFlowState> input = static_cast<SharedFuture<PipelineFlowState>&&>(evaluateInput(modifierRequest));
 
     // If the modifier is currently disabled, we can skip it and simply forward the unmodified results from the upstream pipeline.
     if(!modifierAndGroupEnabled())
         return input;
 
     // Make a copy of the (future) upstream pipeline results. We may need them later in case this modifier fails.
-    PipelineEvaluationResult output = input;
-
-    // Let the modifier function determine the validity interval of its computation
-    // and whether it can provide preliminary or full pipeline results.
-    if(!modifier()->preEvaluationRun(modifierRequest, output)) {
-        // The modifier has indicated that it WON'T participate in the current interactive pipeline evaluation, because it cannot run at an interactive rate.
-        // We will skip the modifier and return the upstream pipeline results as is - after marking it as a preliminary result.
-        OVITO_ASSERT_MSG(modifierRequest.interactiveMode(), "ModificationNode::evaluateInternal", "All modifiers must participate in a non-interactive pipeline evaluation.");
-        OVITO_ASSERT(output.evaluationTypes() == PipelineEvaluationResult::EvaluationType::Interactive);
-        return output;
-    }
+    SharedFuture<PipelineFlowState> output = input;
 
     // Pass the input data on to the modifier function.
     output.postprocess(*this, [this, request = std::move(modifierRequest)](PipelineFlowState state) -> Future<PipelineFlowState> {

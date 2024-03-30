@@ -60,9 +60,9 @@ ForwardIterator most_common(ForwardIterator first, ForwardIterator last)
 /******************************************************************************
 * Creates the mesh facets separating good and bad tetrahedra.
 ******************************************************************************/
-bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, BufferReadAccess<int64_t> crystalClusters, ProgressingTask& operation)
+void InterfaceMesh::createMesh(FloatType maximumNeighborDistance, BufferReadAccess<int64_t> crystalClusters)
 {
-    operation.beginProgressSubSteps(2);
+    this_task::beginProgressSubSteps(2);
 
     // Determines if a tetrahedron belongs to the good or bad crystal region.
     auto tetrahedronRegion = [this,&crystalClusters](DelaunayTessellation::CellHandle cell) {
@@ -115,13 +115,13 @@ bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, BufferReadAcce
 
     // Construct a one-sided surface mesh.
     ManifoldConstructionHelper manifoldConstructor(tessellation(), *this, alpha, false, structureAnalysis().positions());
-    if(!manifoldConstructor.construct(tetrahedronRegion, operation, prepareMeshFace))
-        return false;
+    manifoldConstructor.construct(tetrahedronRegion, prepareMeshFace);
 
-    operation.nextProgressSubStep();
+    this_task::nextProgressSubStep();
 
     // Make sure each vertex is only part of a single manifold.
     makeManifold();
+    this_task::throwIfCanceled();
 
     // Allocate the internal per-vertex and per-face data arrays.
     _faces.resize(faceCount());
@@ -180,14 +180,14 @@ bool InterfaceMesh::createMesh(FloatType maximumNeighborDistance, BufferReadAcce
     }
 #endif
 
-    operation.endProgressSubSteps();
-    return !operation.isCanceled();
+    this_task::throwIfCanceled();
+    this_task::endProgressSubSteps();
 }
 
 /******************************************************************************
 * Generates the nodes and facets of the defect mesh based on the interface mesh.
 ******************************************************************************/
-bool InterfaceMesh::generateDefectMesh(const DislocationTracer& tracer, SurfaceMeshBuilder& defectMesh, ProgressingTask& operation)
+void InterfaceMesh::generateDefectMesh(const DislocationTracer& tracer, SurfaceMeshBuilder& defectMesh)
 {
     // Adopt all vertices from the interface mesh.
     BufferReadAccess<Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
@@ -229,6 +229,7 @@ bool InterfaceMesh::generateDefectMesh(const DislocationTracer& tracer, SurfaceM
         *faceMapIter++ = faceGrower.createFace(faceVertices.begin(), faceVertices.end());
         face_o_idx++;
     }
+    this_task::throwIfCanceled();
 
     // Link opposite half-edges.
     auto face_c = faceMap.cbegin();
@@ -269,13 +270,12 @@ bool InterfaceMesh::generateDefectMesh(const DislocationTracer& tracer, SurfaceM
             faceGrower.createFace({v1, v2, capVertex});
         }
     }
+    this_task::throwIfCanceled();
 
     // Link dangling half-edges to their opposite edges.
     if(!defectMesh.connectOppositeHalfedges()) {
         OVITO_ASSERT(false);    // Mesh is not closed.
     }
-
-    return true;
 }
 
 }   // End of namespace

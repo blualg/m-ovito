@@ -68,24 +68,6 @@ CreateIsosurfaceModifier::CreateIsosurfaceModifier(ObjectInitializationFlags fla
 }
 
 /******************************************************************************
-* This function is called by the pipeline system before a new modifier evaluation begins.
-******************************************************************************/
-bool CreateIsosurfaceModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
-{
-    // Indicate that we cannot handle interactive requests, because isosurface calculation is a computationally intensive operation.
-    if(request.interactiveMode()) {
-        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Interactive);
-        return false;
-    }
-
-    if(isolevelController())
-        result.intersectValidityInterval(isolevelController()->validityInterval(request.time()));
-
-    result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Noninteractive);
-    return true;
-}
-
-/******************************************************************************
 * Is called when the value of a property of this object has changed.
 ******************************************************************************/
 void CreateIsosurfaceModifier::propertyChanged(const PropertyFieldDescriptor* field)
@@ -148,6 +130,23 @@ void CreateIsosurfaceModifier::initializeModifier(const ModifierInitializationRe
 }
 
 /******************************************************************************
+* This function is called by the pipeline system before a new modifier evaluation begins.
+******************************************************************************/
+void CreateIsosurfaceModifier::preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const
+{
+    // Indicate that we cannot handle interactive requests, because isosurface calculation is a computationally intensive operation.
+    if(request.interactiveMode()) {
+        evaluationTypes = PipelineEvaluationResult::EvaluationType::Interactive;
+        return;
+    }
+
+    if(isolevelController())
+        validityInterval.intersect(isolevelController()->validityInterval(request.time()));
+
+    evaluationTypes = PipelineEvaluationResult::EvaluationType::Noninteractive;
+}
+
+/******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
 Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
@@ -163,6 +162,21 @@ Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const Modif
     if(sourceProperty().containerClass() != subject().dataClass())
         throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
             .arg(subject().dataClass()->pythonName()).arg(sourceProperty().containerClass()->propertyClassDisplayName()));
+
+    // In interactive mode, fetch and return outdated results from the pipeline cache if available.
+    if(request.interactiveMode()) {
+        if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
+            if(const SurfaceMesh* cachedSurface = cachedState.getObjectBy<SurfaceMesh>(request.modificationNode(), QStringLiteral("isosurface"))) {
+                state.addObject(cachedSurface);
+            }
+            if(const DataTable* cachedTable = cachedState.getObjectBy<DataTable>(request.modificationNode(), QStringLiteral("isosurface-histogram"))) {
+                state.addObject(cachedTable);
+            }
+            // Adopt all global attributes computed by the modifier from the cached state.
+            state.adoptAttributesFrom(cachedState, request.modificationNode());
+        }
+        return std::move(state);
+    }
 
     // Get modifier inputs.
     const VoxelGrid* voxelGrid = static_object_cast<VoxelGrid>(state.expectLeafObject(subject()));

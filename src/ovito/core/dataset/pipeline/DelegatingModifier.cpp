@@ -94,12 +94,12 @@ bool DelegatingModifier::OOMetaClass::isApplicableTo(const DataCollection& input
 /******************************************************************************
 * This function is called by the pipeline system before a new modifier evaluation begins.
 ******************************************************************************/
-bool DelegatingModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
+void DelegatingModifier::preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const
 {
     if(!delegate() || !delegate()->isEnabled())
-        return true;
+        return;
 
-    return delegate()->preEvaluationRun(request, result);
+    delegate()->preevaluateDelegate(request, evaluationTypes, validityInterval);
 }
 
 /******************************************************************************
@@ -133,17 +133,13 @@ Future<PipelineFlowState> DelegatingModifier::applyDelegate(const ModifierEvalua
 /******************************************************************************
 * This function is called by the pipeline system before a new modifier evaluation begins.
 ******************************************************************************/
-bool MultiDelegatingModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
+void MultiDelegatingModifier::preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const
 {
-    bool returnValue = true;
-
     for(const ModifierDelegate* delegate : delegates()) {
         if(delegate && delegate->isEnabled()) {
-            returnValue = delegate->preEvaluationRun(request, result) && returnValue;
+            delegate->preevaluateDelegate(request, evaluationTypes, validityInterval);
         }
     }
-
-    return returnValue;
 }
 
 /******************************************************************************

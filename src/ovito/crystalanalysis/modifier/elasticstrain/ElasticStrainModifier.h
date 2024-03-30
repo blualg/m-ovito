@@ -46,8 +46,8 @@ public:
 
 protected:
 
-    /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
+    /// Creates the engine that will perform the structure identification.
+    virtual std::shared_ptr<Algorithm> createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input, PropertyPtr structures) override;
 
 private:
 

@@ -370,6 +370,9 @@ public:
         }
     }
 
+    /// Copies all root-level data objects created by the given pipeline node over to this data collection.
+    void adoptDataObjectsFrom(const DataCollection& other, const OOWeakRef<const PipelineNode>& createdByNode);
+
     /// Builds a list of the global attributes stored in this pipeline state.
     QVariantMap buildAttributesMap() const;
 

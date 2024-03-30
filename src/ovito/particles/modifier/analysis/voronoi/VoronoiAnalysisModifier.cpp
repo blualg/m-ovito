@@ -131,15 +131,13 @@ bool VoronoiAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 /******************************************************************************
  * Is called by the pipeline system before a new modifier evaluation begins.
  ******************************************************************************/
-bool VoronoiAnalysisModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
+void VoronoiAnalysisModifier::preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const
 {
     // Indicate that we will do different computations depending on whether the pipeline is evaluated in interactive mode or not.
     if(request.interactiveMode())
-        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Interactive);
+        evaluationTypes = PipelineEvaluationResult::EvaluationType::Interactive;
     else
-        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Noninteractive);
-
-    return true;
+        evaluationTypes = PipelineEvaluationResult::EvaluationType::Noninteractive;
 }
 
 /******************************************************************************
@@ -150,6 +148,29 @@ Future<PipelineFlowState> VoronoiAnalysisModifier::evaluateModifier(const Modifi
     // Get the current particle positions.
     Particles* particles = state.expectMutableObject<Particles>();
     particles->verifyIntegrity();
+
+    // In interactive mode, fetch and return outdated results from the pipeline cache if available.
+    if(request.interactiveMode()) {
+        if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
+            if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
+                particles->tryToAdoptProperties(cachedParticles, {
+                    cachedParticles->getProperty(Particles::CoordinationProperty),
+                    cachedParticles->getProperty(QStringLiteral("Atomic Volume")),
+                    cachedParticles->getProperty(QStringLiteral("Cavity Radius")),
+                    computeIndices() ? cachedParticles->getProperty(QStringLiteral("Max Face Order")) : nullptr,
+                    computeIndices() ? cachedParticles->getProperty(QStringLiteral("Voronoi Index")) : nullptr,
+                }, {particles});
+            }
+            if(computePolyhedra()) {
+                if(const SurfaceMesh* cachedSurface = cachedState.getObjectBy<SurfaceMesh>(request.modificationNode(), QStringLiteral("voronoi-polyhedra"))) {
+                    state.addObject(cachedSurface);
+                }
+            }
+            // Adopt all global attributes computed by the modifier from the cached state.
+            state.adoptAttributesFrom(cachedState, request.modificationNode());
+        }
+        return std::move(state);
+    }
 
     const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
 
@@ -861,6 +882,10 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
         }
 
         this_task::endProgressSubSteps();
+
+#ifdef OVITO_DEBUG
+        polyhedraMesh.mesh()->verifyMeshIntegrity();
+#endif
     }
 
     this_task::endProgressSubSteps();

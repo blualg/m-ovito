@@ -318,6 +318,9 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             .arg(meshBuilder.vertexCount())
             .arg(meshBuilder.faceCount()));
     }
+#ifdef OVITO_DEBUG
+    meshBuilder.mesh()->verifyMeshIntegrity();
+#endif
 
     // Call base implementation.
     StandardFrameLoader::loadFile();

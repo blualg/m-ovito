@@ -29,7 +29,6 @@
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/data/AttributeDataObject.h>
 #include <ovito/core/utilities/concurrent/AsynchronousTask.h>
-#include <ovito/core/app/Application.h>
 #include "StructureIdentificationModifier.h"
 
 namespace Ovito {
@@ -97,15 +96,13 @@ void StructureIdentificationModifier::loadFromStream(ObjectLoadStream& stream)
 /******************************************************************************
  * Is called by the pipeline system before a new modifier evaluation begins.
  ******************************************************************************/
-bool StructureIdentificationModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
+void StructureIdentificationModifier::preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const
 {
     // Indicate that we will do different computations depending on whether the pipeline is evaluated in interactive mode or not.
     if(request.interactiveMode())
-        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Interactive);
+        evaluationTypes = PipelineEvaluationResult::EvaluationType::Interactive;
     else
-        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Noninteractive);
-
-    return true;
+        evaluationTypes = PipelineEvaluationResult::EvaluationType::Noninteractive;
 }
 
 /******************************************************************************

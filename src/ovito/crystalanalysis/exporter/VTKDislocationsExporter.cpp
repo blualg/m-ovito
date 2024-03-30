@@ -23,6 +23,7 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/crystalanalysis/objects/RenderableDislocationLines.h>
 #include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
+#include <ovito/crystalanalysis/objects/DislocationVis.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/app/Application.h>
@@ -67,17 +68,20 @@ void VTKDislocationsExporter::exportFrame(int frameNumber, const QString& filePa
     // Evaluate data pipeline.
     // Note: We are requesting the renderable flow state from the pipeline,
     // because we are interested in clipped (post-processed) dislocation lines.
-    const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber, true);
+    const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber);
 
-    // Look up the RenderableDislocationLines object in the pipeline state.
-    const RenderableDislocationLines* renderableLines = state.getObject<RenderableDislocationLines>();
-    if(!renderableLines)
-        throw Exception(tr("The object to be exported does not contain any exportable dislocation line data."));
-
-    // Get the original dislocation lines.
-    const DislocationNetworkObject* dislocationsObj = dynamic_object_cast<DislocationNetworkObject>(renderableLines->sourceDataObject().get());
+    // Look up the dislocation network object in the pipeline state.
+    const DislocationNetworkObject* dislocationsObj = state.getObject<DislocationNetworkObject>();
     if(!dislocationsObj)
         throw Exception(tr("The object to be exported does not contain any exportable dislocation line data."));
+
+    // Get the visual element associated with the dislocation network.
+    OORef<DislocationVis> dislocationVis = dislocationsObj->visElement<DislocationVis>();
+    if(!dislocationVis)
+        dislocationVis = OORef<DislocationVis>::create();
+
+    // Generate non-periodic version of the dislocation line network.
+    std::shared_ptr<RenderableDislocationLines> renderableLines = dislocationVis->transformDislocations(dislocationsObj).result();
 
     // Count dislocation polylines and output vertices.
     std::vector<size_t> polyVertexCounts;

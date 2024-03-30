@@ -80,14 +80,10 @@ ElasticStrainModifier::ElasticStrainModifier(ObjectInitializationFlags flags) : 
 }
 
 /******************************************************************************
-* Creates and initializes a computation engine that will compute the modifier's results.
+* Creates the engine that will perform the structure identification.
 ******************************************************************************/
-Future<ModifierEnginePtr> ElasticStrainModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+std::shared_ptr<StructureIdentificationModifier::Algorithm> ElasticStrainModifier::createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input, PropertyPtr structures)
 {
-    // If pipeline is in interactive mode, skip the long-running computation step.
-    if(request.interactiveMode())
-        return {};
-
     // Get modifier inputs.
     const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
@@ -103,8 +99,8 @@ Future<ModifierEnginePtr> ElasticStrainModifier::createEngine(const ModifierEval
     }
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<ElasticStrainEngine>(request, particles, posProperty,
-            simCell, inputCrystalStructure(), std::move(preferredCrystalOrientations),
+    return std::make_shared<ElasticStrainEngine>(std::move(structures), particles->elementCount(),
+            inputCrystalStructure(), std::move(preferredCrystalOrientations),
             calculateDeformationGradients(), calculateStrainTensors(),
             latticeConstant(), axialRatio(), pushStrainTensorsForward());
 }

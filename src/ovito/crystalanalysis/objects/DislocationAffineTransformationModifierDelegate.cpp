@@ -25,6 +25,7 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "DislocationAffineTransformationModifierDelegate.h"
 
 namespace Ovito {
@@ -43,36 +44,41 @@ QVector<DataObjectReference> DislocationAffineTransformationModifierDelegate::OO
 }
 
 /******************************************************************************
-* Applies the modifier operation to the data in a pipeline flow state.
-******************************************************************************/
-PipelineStatus DislocationAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+ * Applies the modifier operation to the data in a pipeline flow state.
+ ******************************************************************************/
+Future<PipelineFlowState> DislocationAffineTransformationModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-    AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(request.modifier());
+    AffineTransformationModifier* modifier = static_object_cast<AffineTransformationModifier>(request.modifier());
 
-    if(mod->selectionOnly())
-        return PipelineStatus::Success;
+    if(modifier->selectionOnly())
+        return std::move(state);
 
-    for(const DataObject* obj : state.data()->objects()) {
-        if(const DislocationNetworkObject* inputDislocations = dynamic_object_cast<DislocationNetworkObject>(obj)) {
-            const AffineTransformation tm = mod->effectiveAffineTransformation(inputState);
-            DislocationNetworkObject* outputDislocations = state.makeMutable(inputDislocations);
+    // The actual work can be performed in a separate thread.
+    return AsynchronousTask<PipelineFlowState>::runAsync([
+            state = std::move(state),
+            tm = modifier->effectiveAffineTransformation(originalState)]() mutable {
 
-            // Apply transformation to the vertices of the dislocation lines.
-            for(DislocationSegment* segment : outputDislocations->modifiableSegments()) {
-                for(Point3& vertex : segment->line) {
-                    vertex = tm * vertex;
+        for(const DataObject* obj : state.data()->objects()) {
+            if(const DislocationNetworkObject* inputDislocations = dynamic_object_cast<DislocationNetworkObject>(obj)) {
+                DislocationNetworkObject* outputDislocations = state.makeMutable(inputDislocations);
+
+                // Apply transformation to the vertices of the dislocation lines.
+                for(DislocationSegment* segment : outputDislocations->modifiableSegments()) {
+                    for(Point3& vertex : segment->line) {
+                        vertex = tm * vertex;
+                    }
                 }
+
+                // Apply transformation to the cutting planes attached to the dislocation network.
+                QVector<Plane3> cuttingPlanes = outputDislocations->cuttingPlanes();
+                for(Plane3& plane : cuttingPlanes)
+                    plane = tm * plane;
+                outputDislocations->setCuttingPlanes(std::move(cuttingPlanes));
             }
-
-            // Apply transformation to the cutting planes attached to the dislocation network.
-            QVector<Plane3> cuttingPlanes = outputDislocations->cuttingPlanes();
-            for(Plane3& plane : cuttingPlanes)
-                plane = tm * plane;
-            outputDislocations->setCuttingPlanes(std::move(cuttingPlanes));
         }
-    }
 
-    return PipelineStatus::Success;
+        return std::move(state);
+    });
 }
 
 }   // End of namespace

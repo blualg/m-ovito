@@ -166,17 +166,14 @@ DislocationAnalysisModifier::DislocationAnalysisModifier(ObjectInitializationFla
 }
 
 /******************************************************************************
-* Creates and initializes a computation engine that will compute the modifier's results.
+* Creates the engine that will perform the structure identification.
 ******************************************************************************/
-Future<ModifierEnginePtr> DislocationAnalysisModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+std::shared_ptr<StructureIdentificationModifier::Algorithm> DislocationAnalysisModifier::createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input, PropertyPtr structures)
 {
-    // If pipeline is in interactive mode, skip the long-running computation step.
-    if(request.interactiveMode())
-        return {};
-
     // Get modifier inputs.
     const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
+
     const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
     const SimulationCell* simCell = input.expectObject<SimulationCell>();
     if(simCell->is2D())
@@ -213,13 +210,7 @@ Future<ModifierEnginePtr> DislocationAnalysisModifier::createEngine(const Modifi
         interfaceMesh->setVisElement(interfaceMeshVis());
     }
 
-    // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<DislocationAnalysisEngine>(
-            request,
-            particles,
-            posProperty,
-            simCell,
-            structureTypes(),
+    return std::make_shared<DislocationAnalysisEngine>(std::move(structures), particles->elementCount(),
             inputCrystalStructure(),
             maxTrialCircuitSize(),
             circuitStretchability(),
@@ -231,7 +222,8 @@ Future<ModifierEnginePtr> DislocationAnalysisModifier::createEngine(const Modifi
             std::move(defectMesh),
             std::move(interfaceMesh),
             lineSmoothingEnabled() ? lineSmoothingLevel() : 0,
-            lineCoarseningEnabled() ? linePointInterval() : 0);
+            lineCoarseningEnabled() ? linePointInterval() : 0,
+            dislocationVis());
 }
 
 }   // End of namespace

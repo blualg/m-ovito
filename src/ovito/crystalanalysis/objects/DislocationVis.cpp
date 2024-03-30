@@ -26,7 +26,7 @@
 #include <ovito/core/rendering/ParticlePrimitive.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
 #include <ovito/core/rendering/SceneRenderer.h>
-#include <ovito/core/app/Application.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "DislocationVis.h"
 #include "RenderableDislocationLines.h"
 
@@ -57,7 +57,7 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(DislocationPickInfo);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DislocationVis::DislocationVis(ObjectInitializationFlags flags) : TransformingDataVis(flags),
+DislocationVis::DislocationVis(ObjectInitializationFlags flags) : DataVis(flags),
     _lineWidth(1.0),
     _shadingMode(CylinderPrimitive::NormalShading),
     _burgersVectorWidth(0.6),
@@ -70,26 +70,22 @@ DislocationVis::DislocationVis(ObjectInitializationFlags flags) : TransformingDa
 }
 
 /******************************************************************************
-* Lets the vis element transform a data object in preparation for rendering.
+* Transforms the DislocationNetwork into a renderable set of lines.
 ******************************************************************************/
-Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvaluationRequest& request, const DataObject* dataObject, PipelineFlowState&& flowState)
+Future<std::shared_ptr<RenderableDislocationLines>> DislocationVis::transformDislocations(const DislocationNetworkObject* dislocationsObj)
 {
-    // Get the input object.
-    const PeriodicDomainObject* periodicDomainObj = dynamic_object_cast<PeriodicDomainObject>(dataObject);
-    if(!periodicDomainObj)
-        return std::move(flowState);
+    // The actual work can be performed in a separate thread.
+    return AsynchronousTask<std::shared_ptr<RenderableDislocationLines>>::runAsync([dislocationsObj = DataOORef<const DislocationNetworkObject>(dislocationsObj)]() {
 
-    // Get the simulation cell (must be 3D).
-    const SimulationCell* cellObject = periodicDomainObj->domain();
-    if(!cellObject || cellObject->is2D())
-        return std::move(flowState);
+        // Get the simulation cell (must be 3D).
+        const SimulationCell* cellObject = dislocationsObj->domain();
+        if(!cellObject || cellObject->is2D())
+            throw Exception(tr("Display of the dislocation line network requires a 3D simulation cell."));
 
-    // Generate the list of clipped line segments.
-    std::vector<RenderableDislocationLines::Segment> outputSegments;
-    std::shared_ptr<ClusterGraph> clusterGraph;
+        // Generate the list of clipped line segments.
+        std::vector<RenderableDislocationLines::Segment> outputSegments;
+        std::shared_ptr<ClusterGraph> clusterGraph = dislocationsObj->storage()->clusterGraph();
 
-    if(const DislocationNetworkObject* dislocationsObj = dynamic_object_cast<DislocationNetworkObject>(periodicDomainObj)) {
-        clusterGraph = dislocationsObj->storage()->clusterGraph();
         // Convert the dislocations object.
         int segmentIndex = 0;
         for(const DislocationSegment* segment : dislocationsObj->segments()) {
@@ -109,21 +105,15 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
                     continue;
                 }
             }
-            clipDislocationLine(segment->line, *cellObject, periodicDomainObj->cuttingPlanes(), [segmentIndex, &outputSegments, &b](const Point3& p1, const Point3& p2, bool isInitialSegment) {
+            clipDislocationLine(segment->line, *cellObject, dislocationsObj->cuttingPlanes(), [segmentIndex, &outputSegments, &b](const Point3& p1, const Point3& p2, bool isInitialSegment) {
                 outputSegments.push_back({ { p1, p2 }, b.localVec(), b.cluster()->id, segmentIndex });
             });
             segmentIndex++;
         }
-    }
 
-    // Create output RenderableDislocationLines object.
-    DataOORef<RenderableDislocationLines> renderableLines = DataOORef<RenderableDislocationLines>::create(ObjectInitializationFlag::DontCreateVisElement, this, dataObject);
-    renderableLines->setVisElement(this);
-    renderableLines->setLineSegments(std::move(outputSegments));
-    renderableLines->setClusterGraph(std::move(clusterGraph));
-    flowState.addObject(std::move(renderableLines));
-
-    return std::move(flowState);
+        // Create output RenderableDislocationLines object.
+        return std::make_shared<RenderableDislocationLines>(std::move(outputSegments), std::move(clusterGraph));
+    });
 }
 
 /******************************************************************************
@@ -131,12 +121,12 @@ Future<PipelineFlowState> DislocationVis::transformDataImpl(const PipelineEvalua
 ******************************************************************************/
 Box3 DislocationVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-    const RenderableDislocationLines* renderableObj = path.lastAs<RenderableDislocationLines>();
-    if(!renderableObj) return {};
-    const PeriodicDomainObject* domainObj = dynamic_object_cast<PeriodicDomainObject>(renderableObj->sourceDataObject().get());
-    if(!domainObj) return {};
-    const SimulationCell* cellObject = domainObj->domain();
-    if(!cellObject) return {};
+    const DislocationNetworkObject* dislocationsObj = path.lastAs<DislocationNetworkObject>();
+    if(!dislocationsObj)
+        return {};
+    const SimulationCell* cellObject = dislocationsObj->domain();
+    if(!cellObject || cellObject->is2D())
+        return {};
 
     // Compute bounding box from dislocation data.
     Box3 bb = Box3(Point3(0,0,0), Point3(1,1,1)).transformed(cellObject->cellMatrix());
@@ -144,12 +134,10 @@ Box3 DislocationVis::boundingBoxImmediate(AnimationTime time, const ConstDataObj
 
     if(showBurgersVectors()) {
         padding = std::max(padding, burgersVectorWidth() * FloatType(2));
-        if(const DislocationNetworkObject* dislocationObj = dynamic_object_cast<DislocationNetworkObject>(domainObj)) {
-            for(const DislocationSegment* segment : dislocationObj->segments()) {
-                Point3 center = cellObject->wrapPoint(segment->getPointOnLine(FloatType(0.5)));
-                Vector3 dir = burgersVectorScaling() * segment->burgersVector.toSpatialVector();
-                bb.addPoint(center + dir);
-            }
+        for(const DislocationSegment* segment : dislocationsObj->segments()) {
+            Point3 center = cellObject->wrapPoint(segment->getPointOnLine(FloatType(0.5)));
+            Vector3 dir = burgersVectorScaling() * segment->burgersVector.toSpatialVector();
+            bb.addPoint(center + dir);
         }
     }
 
@@ -161,15 +149,38 @@ Box3 DislocationVis::boundingBoxImmediate(AnimationTime time, const ConstDataObj
 ******************************************************************************/
 PipelineStatus DislocationVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
-    // Ignore render calls for the original DislocationNetworkObject or MicrostrucureObject.
-    // We are only interested in the RenderableDislocationLines.
-    if(path.lastAs<DislocationNetworkObject>())
+    // Get the dislocation line network to be rendered.
+    const DislocationNetworkObject* dislocationsObj = path.lastAs<DislocationNetworkObject>();
+    if(!dislocationsObj)
         return {};
+
+    // The key type used for caching the renderable lines:
+    using RenderableLineCacheKey = RendererResourceKey<struct RenderableLinesCache,
+        ConstDataObjectRef     // DislocationNetworkObject
+    >;
+
+    // Lookup the renderable lines in the vis cache.
+    auto& renderableLines = frameGraph.visCache().lookup<std::shared_ptr<RenderableDislocationLines>>(RenderableLineCacheKey(path.back()));
+
+    // Generate renderable lines.
+    if(!renderableLines) {
+        auto future = transformDislocations(dislocationsObj);
+        registerActiveFuture(future);
+        renderableLines = future.result();
+    }
+
+    // Get the simulation cell.
+    const SimulationCell* cellObject = dislocationsObj->domain();
+    if(!cellObject)
+        return {};
+
+    // Make sure we don't exceed our internal limits.
+    if(renderableLines->lineSegments().size() > (size_t)std::numeric_limits<int>::max())
+        throw Exception(tr("Cannot render more than %1 dislocation segments.").arg(std::numeric_limits<int>::max()));
 
     // The key type used for caching the rendering primitives:
     using CacheKey = RendererResourceKey<struct DislocationVisCache,
-        ConstDataObjectRef,     // Source object
-        ConstDataObjectRef,     // Renderable object
+        std::shared_ptr<RenderableDislocationLines>,     // Renderable object
         ConstDataObjectRef,     // Simulation cell geometry
         FloatType,              // Line width
         bool,                   // Burgers vector display
@@ -189,27 +200,8 @@ PipelineStatus DislocationVis::render(const ConstDataObjectPath& path, const Pip
         OORef<DislocationPickInfo> pickInfo;
     };
 
-    // Get the renderable dislocation lines.
-    const RenderableDislocationLines* renderableLines = path.lastAs<RenderableDislocationLines>();
-    if(!renderableLines)
-        return {};
-
-    // Make sure we don't exceed our internal limits.
-    if(renderableLines->lineSegments().size() > (size_t)std::numeric_limits<int>::max())
-        throw Exception(tr("Cannot render more than %1 dislocation segments.").arg(std::numeric_limits<int>::max()));
-
-    // Get the original dislocation lines.
-    const PeriodicDomainObject* domainObj = dynamic_object_cast<PeriodicDomainObject>(renderableLines->sourceDataObject().get());
-    const DislocationNetworkObject* dislocationsObj = dynamic_object_cast<DislocationNetworkObject>(domainObj);
-    if(!dislocationsObj) return {};
-
-    // Get the simulation cell.
-    const SimulationCell* cellObject = domainObj->domain();
-    if(!cellObject) return {};
-
     // Lookup the rendering primitives in the vis cache.
     auto& primitives = frameGraph.visCache().lookup<CacheValue>(CacheKey(
-        domainObj,
         renderableLines,
         cellObject,
         lineWidth(),

@@ -67,8 +67,8 @@ public:
     /// Throws an exception if the pipeline stage cannot be evaluated at this time. This is called by the system to catch user mistakes that would lead to infinite recursion.
     virtual void preEvaluationCheck() const override;
 
-    /// This function is called by the pipeline system before a new modifier evaluation begins.
-    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
+    /// Is called by the pipeline system before a new modifier evaluation begins.
+    virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
 
     /// Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
     virtual void inputCachingHints(ModifierEvaluationRequest& request) override;

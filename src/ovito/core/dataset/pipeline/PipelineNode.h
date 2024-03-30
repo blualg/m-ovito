@@ -44,8 +44,13 @@ public:
     /// Constructor.
     explicit PipelineNode(ObjectInitializationFlags flags, bool enableCaching = true);
 
-    /// \brief Throws an exception if the pipeline stage cannot be evaluated at this time. This is called by the system to catch user mistakes that would lead to infinite recursion.
+    /// Throws an exception if the pipeline stage cannot be evaluated at this time. This is called by the system to catch user mistakes that would lead to infinite recursion.
     virtual void preEvaluationCheck() const {}
+
+    /// Is called by the pipeline system before a new evaluation begins to query the validity interval and evaluation result type of this pipeline stage.
+    virtual void preevaluate(const PipelineEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) {
+        pipelineCache().preevaluatePipeline(request, evaluationTypes, validityInterval);
+    }
 
     /// \brief Asks the pipeline stage to compute the results.
     virtual PipelineEvaluationResult evaluate(const PipelineEvaluationRequest& request) {
@@ -105,8 +110,11 @@ protected:
     /// Loads the class' contents from an input stream.
     virtual void loadFromStream(ObjectLoadStream& stream) override;
 
+    /// This function is called by the pipeline system before a new evaluation begins to query the validity interval and evaluation result type of this pipeline stage.
+    virtual void preevaluateInternal(const PipelineEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) = 0;
+
     /// Asks the object for the result of the data pipeline.
-    virtual PipelineEvaluationResult evaluateInternal(const PipelineEvaluationRequest& request) = 0;
+    virtual SharedFuture<PipelineFlowState> evaluateInternal(const PipelineEvaluationRequest& request) = 0;
 
     /// Gets called by the PipelineCache whenever it returns a pipeline state from the cache.
     virtual PipelineEvaluationResult postprocessCachedState(const PipelineEvaluationRequest& request, const PipelineFlowState& state) { return state; }

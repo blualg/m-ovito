@@ -173,8 +173,8 @@ PipelineStatus SurfaceMeshVis::render(const ConstDataObjectPath& path, const Pip
     if(!surfaceMesh)
         return {};
 
-    // The key type used for caching the surface primitive:
-    using RenderableMeshCacheKey = RendererResourceKey<struct PrimitiveCache,
+    // The key type used for caching the renderable mesh:
+    using RenderableMeshCacheKey = RendererResourceKey<struct RenderableMeshCache,
         ConstDataObjectRef,     // SurfaceMesh object
         bool,                   // reverseOrientation
         bool,                   // smoothShading

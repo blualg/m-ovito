@@ -45,6 +45,9 @@ public:
     /// Destructor.
     ~PipelineCache();
 
+    /// Queries the pipeline for the time validity and result type of an evaluation.
+    void preevaluatePipeline(const PipelineEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval);
+
     /// Starts a pipeline evaluation or returns a reference to an existing evaluation that is currently in progress.
     PipelineEvaluationResult evaluatePipeline(const PipelineEvaluationRequest& request);
 
@@ -83,7 +86,7 @@ private:
         WeakSharedFuture<PipelineFlowState> future;
     };
 
-    /// Returns a pointer to the pipeline object that owns this cache.
+    /// Returns a pointer to the pipeline stage owning this cache.
     RefTarget* ownerObject() const { return _ownerObject; }
 
     /// Starts a new pipeline evaluation.

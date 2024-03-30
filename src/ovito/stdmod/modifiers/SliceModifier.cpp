@@ -161,13 +161,14 @@ bool SliceModifier::referenceEvent(RefTarget* source, const ReferenceEvent& even
 /******************************************************************************
  * Is called by the pipeline system before a new modifier evaluation begins.
  ******************************************************************************/
-bool SliceModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
+void SliceModifier::preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const
 {
-    if(normalController()) result.intersectValidityInterval(normalController()->validityInterval(request.time()));
-    if(distanceController()) result.intersectValidityInterval(distanceController()->validityInterval(request.time()));
-    if(widthController()) result.intersectValidityInterval(widthController()->validityInterval(request.time()));
-
-    return true;
+    if(normalController())
+        validityInterval.intersect(normalController()->validityInterval(request.time()));
+    if(distanceController())
+        validityInterval.intersect(distanceController()->validityInterval(request.time()));
+    if(widthController())
+        validityInterval.intersect(widthController()->validityInterval(request.time()));
 }
 
 /******************************************************************************

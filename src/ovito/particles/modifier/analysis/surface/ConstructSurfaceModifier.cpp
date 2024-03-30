@@ -106,15 +106,13 @@ bool ConstructSurfaceModifier::OOMetaClass::isApplicableTo(const DataCollection&
 /******************************************************************************
  * Is called by the pipeline system before a new modifier evaluation begins.
  ******************************************************************************/
-bool ConstructSurfaceModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
+void ConstructSurfaceModifier::preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const
 {
     // Indicate that we will do different computations depending on whether the pipeline is evaluated in interactive mode or not.
     if(request.interactiveMode())
-        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Interactive);
+        evaluationTypes = PipelineEvaluationResult::EvaluationType::Interactive;
     else
-        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Noninteractive);
-
-    return true;
+        evaluationTypes = PipelineEvaluationResult::EvaluationType::Noninteractive;
 }
 
 /******************************************************************************
@@ -122,6 +120,18 @@ bool ConstructSurfaceModifier::preEvaluationRun(const ModifierEvaluationRequest&
 ******************************************************************************/
 Future<PipelineFlowState> ConstructSurfaceModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
+    // In interactive mode, fetch and return outdated results from the pipeline cache if available.
+    if(request.interactiveMode()) {
+        if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
+            if(const SurfaceMesh* cachedSurface = cachedState.getObjectBy<SurfaceMesh>(request.modificationNode(), QStringLiteral("surface"))) {
+                state.addObject(cachedSurface);
+            }
+            // Adopt all global attributes computed by the modifier from the cached state.
+            state.adoptAttributesFrom(cachedState, request.modificationNode());
+        }
+        return std::move(state);
+    }
+
     // Get input particle positions.
     const Particles* particles = state.expectObject<Particles>();
     particles->verifyIntegrity();

@@ -30,7 +30,7 @@ OVITO_STANDARD_PLUGIN(CrystalAnalysisGui
         objects/DislocationVisEditor.cpp
         modifier/DislocationAnalysisModifierEditor.cpp
         modifier/ElasticStrainModifierEditor.cpp
-        modifier/GrainSegmentationModifierEditor.cpp
+#        modifier/GrainSegmentationModifierEditor.cpp
         util/DislocationInspectionApplet.cpp
     PLUGIN_DEPENDENCIES CrystalAnalysis Particles ParticlesGui
     GUI_PLUGIN

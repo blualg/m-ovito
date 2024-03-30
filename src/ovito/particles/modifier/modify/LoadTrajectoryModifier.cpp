@@ -28,6 +28,7 @@
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/data/AttributeDataObject.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "LoadTrajectoryModifier.h"
 
 namespace Ovito {
@@ -57,6 +58,22 @@ bool LoadTrajectoryModifier::OOMetaClass::isApplicableTo(const DataCollection& i
 }
 
 /******************************************************************************
+ * Is called by the pipeline system before a new modifier evaluation begins.
+ ******************************************************************************/
+void LoadTrajectoryModifier::preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const
+{
+    if(trajectorySource()) {
+        // Indicate that we will do different computations depending on whether the pipeline is evaluated in interactive mode or not.
+        if(request.interactiveMode())
+            evaluationTypes = PipelineEvaluationResult::EvaluationType::Interactive;
+        else
+            evaluationTypes = PipelineEvaluationResult::EvaluationType::Noninteractive;
+
+        trajectorySource()->preevaluate(request, evaluationTypes, validityInterval);
+    }
+}
+
+/******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
 Future<PipelineFlowState> LoadTrajectoryModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
@@ -65,12 +82,19 @@ Future<PipelineFlowState> LoadTrajectoryModifier::evaluateModifier(const Modifie
     if(!trajectorySource())
         throw Exception(tr("No trajectory data source has been set."));
 
+    if(request.interactiveMode()) {
+        // In interactive mode, reuse cached node output even though it might be outdated.
+        // This avoids rebuilding the particle positions too often.
+        if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
+            return std::move(cachedState);
+        }
+    }
+
     // Obtain the trajectory frame from the secondary pipeline.
     PipelineEvaluationResult trajStateFuture = trajectorySource()->evaluate(request);
 
     // Wait for the data to become available.
-    return trajStateFuture.then(*request.modificationNode(), [state = std::move(state), request](const PipelineFlowState& trajState) mutable {
-
+    return trajStateFuture.then(*request.modificationNode(), [state = std::move(state), request](const PipelineFlowState& trajState) mutable -> Future<PipelineFlowState> {
         if(LoadTrajectoryModifier* trajModifier = dynamic_object_cast<LoadTrajectoryModifier>(request.modifier())) {
             // Make sure the obtained configuration is valid and ready to use.
             if(trajState.status().type() == PipelineStatus::Error) {
@@ -79,9 +103,14 @@ Future<PipelineFlowState> LoadTrajectoryModifier::evaluateModifier(const Modifie
                         throw Exception(tr("Please pick a trajectory file."));
                 }
                 state.setStatus(trajState.status());
+                return std::move(state);
             }
             else {
-                trajModifier->applyTrajectoryState(state, trajState);
+                // Perform the heavy work in a separate thread.
+                return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), trajState = std::move(trajState)]() mutable {
+                    LoadTrajectoryModifier::applyTrajectoryState(state, trajState);
+                    return std::move(state);
+                });
             }
         }
 
@@ -247,6 +276,10 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             // Transfer the visual element(s) unless the property already existed in the topology dataset.
             if(!replacingProperty) {
                 outputProperty->setVisElements(property->visElements());
+            }
+
+            if(property->type() == Particles::PositionProperty) {
+                qDebug() << "Creating new output position property at frame" << trajState.getAttributeValue("SourceFrame");
             }
         }
 

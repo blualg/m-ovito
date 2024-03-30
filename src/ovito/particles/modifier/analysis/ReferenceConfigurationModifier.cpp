@@ -70,25 +70,6 @@ bool ReferenceConfigurationModifier::OOMetaClass::isApplicableTo(const DataColle
 }
 
 /******************************************************************************
- * Is called by the pipeline system before a new modifier evaluation begins.
- ******************************************************************************/
-bool ReferenceConfigurationModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
-{
-    // Indicate that we will do different computations depending on whether the pipeline is evaluated in interactive mode or not.
-    if(request.interactiveMode())
-        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Interactive);
-    else
-        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Noninteractive);
-
-    if(useReferenceFrameOffset()) {
-        // Results will only be valid for the duration of the current frame when using a relative offset.
-        result.intersectValidityInterval(request.time());
-    }
-
-    return true;
-}
-
-/******************************************************************************
 * Throws an exception if the pipeline stage cannot be evaluated at this time.
 * This is called by the system to catch user mistakes that would lead to infinite recursion.
 ******************************************************************************/
@@ -97,6 +78,23 @@ void ReferenceConfigurationModifier::preEvaluationCheck() const
     // Walk up the reference config pipeline and ask each step if evaluation is allowed at this time.
     if(referenceConfiguration())
         referenceConfiguration()->preEvaluationCheck();
+}
+
+/******************************************************************************
+ * Is called by the pipeline system before a new modifier evaluation begins.
+ ******************************************************************************/
+void ReferenceConfigurationModifier::preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const
+{
+    // Indicate that we will do different computations depending on whether the pipeline is evaluated in interactive mode or not.
+    if(request.interactiveMode())
+        evaluationTypes = PipelineEvaluationResult::EvaluationType::Interactive;
+    else
+        evaluationTypes = PipelineEvaluationResult::EvaluationType::Noninteractive;
+
+    if(useReferenceFrameOffset()) {
+        // Results will only be valid for the duration of the current frame when using a relative offset.
+        validityInterval.intersect(request.time());
+    }
 }
 
 /******************************************************************************

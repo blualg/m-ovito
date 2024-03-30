@@ -82,16 +82,14 @@ bool ExpressionSelectionModifierDelegate::isExpressionTimeDependent(ExpressionSe
 /******************************************************************************
  * Is called by the pipeline system before a new modifier evaluation begins.
  ******************************************************************************/
-bool ExpressionSelectionModifierDelegate::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
+void ExpressionSelectionModifierDelegate::preevaluateDelegate(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const
 {
     // Determine whether math expressions are time-dependent, i.e. whether they involve the current animation
     // frame number. If so, then we have to restrict the validity interval of the computation results
     // to the current animation time.
     if(isExpressionTimeDependent(static_object_cast<ExpressionSelectionModifier>(request.modifier()))) {
-        result.intersectValidityInterval(request.time());
+        validityInterval.intersect(request.time());
     }
-
-    return true;
 }
 
 /******************************************************************************

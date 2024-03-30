@@ -47,19 +47,17 @@ bool UnwrapTrajectoriesModifier::OOMetaClass::isApplicableTo(const DataCollectio
 /******************************************************************************
  * Is called by the pipeline system before a new modifier evaluation begins.
  ******************************************************************************/
-bool UnwrapTrajectoriesModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
+void UnwrapTrajectoriesModifier::preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const
 {
     // Unless the unwrapping information has already been computed (up to the current time), indicate that we will do different
     // computations depending on whether the pipeline is evaluated in interactive mode or not.
     UnwrapTrajectoriesModificationNode* modNode = dynamic_object_cast<UnwrapTrajectoriesModificationNode>(request.modificationNode());
     if(modNode && request.time() > modNode->unwrappedUpToTime()) {
         if(request.interactiveMode())
-            result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Interactive);
+            evaluationTypes = PipelineEvaluationResult::EvaluationType::Interactive;
         else
-            result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Noninteractive);
+            evaluationTypes = PipelineEvaluationResult::EvaluationType::Noninteractive;
     }
-
-    return true;
 }
 
 /******************************************************************************

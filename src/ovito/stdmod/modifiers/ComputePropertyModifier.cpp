@@ -169,22 +169,20 @@ bool ComputePropertyModifierDelegate::isExpressionTimeDependent(ComputePropertyM
 /******************************************************************************
  * Is called by the pipeline system before a new modifier evaluation begins.
  ******************************************************************************/
-bool ComputePropertyModifierDelegate::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
+void ComputePropertyModifierDelegate::preevaluateDelegate(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const
 {
     // Determine whether math expressions are time-dependent, i.e. whether they involve the current animation
     // frame number. If so, then we have to restrict the validity interval of the computation results
     // to the current animation time.
     if(isExpressionTimeDependent(static_object_cast<ComputePropertyModifier>(request.modifier()))) {
-        result.intersectValidityInterval(request.time());
+        validityInterval.intersect(request.time());
     }
 
     // Indicate that we do a different computation depending on whether the pipeline is evaluated in interactive mode or not.
     if(request.interactiveMode())
-        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Interactive);
+        evaluationTypes = PipelineEvaluationResult::EvaluationType::Interactive;
     else
-        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Noninteractive);
-
-    return true;
+        evaluationTypes = PipelineEvaluationResult::EvaluationType::Noninteractive;
 }
 
 /******************************************************************************

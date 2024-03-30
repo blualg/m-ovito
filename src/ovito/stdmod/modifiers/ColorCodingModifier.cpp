@@ -167,19 +167,17 @@ void ColorCodingModifier::referenceReplaced(const PropertyFieldDescriptor* field
 /******************************************************************************
 * This function is called by the pipeline system before a new modifier evaluation begins.
 ******************************************************************************/
-bool ColorCodingModifierDelegate::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
+void ColorCodingModifierDelegate::preevaluateDelegate(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const
 {
     const ColorCodingModifier* modifier = static_object_cast<ColorCodingModifier>(request.modifier());
 
     // If the range of the pseudo-color mapping is animated, restrict the validity interval of the modifier results.
     if(!modifier->autoAdjustRange()) {
         if(modifier->startValueController())
-            result.intersectValidityInterval(modifier->startValueController()->validityInterval(request.time()));
+            validityInterval.intersect(modifier->startValueController()->validityInterval(request.time()));
         if(modifier->endValueController())
-            result.intersectValidityInterval(modifier->endValueController()->validityInterval(request.time()));
+            validityInterval.intersect(modifier->endValueController()->validityInterval(request.time()));
     }
-
-    return true;
 }
 
 /******************************************************************************

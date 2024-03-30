@@ -62,12 +62,10 @@ bool SmoothTrajectoryModifier::OOMetaClass::isApplicableTo(const DataCollection&
 /******************************************************************************
  * Is called by the pipeline system before a new modifier evaluation begins.
  ******************************************************************************/
-bool SmoothTrajectoryModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
+void SmoothTrajectoryModifier::preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const
 {
     // Interpolation results will only be valid for the duration of the current frame.
-    result.intersectValidityInterval(request.time());
-
-    return true;
+    validityInterval.intersect(request.time());
 }
 
 /******************************************************************************

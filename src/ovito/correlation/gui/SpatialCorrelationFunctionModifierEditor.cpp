@@ -435,7 +435,7 @@ void SpatialCorrelationFunctionModifierEditor::plotAllData()
             }
         }
         else {
-            _realSpacePlot->reset();
+            _realSpacePlot->setTable({});
         }
 
         // Plot reciprocal-space correlation function.
@@ -457,7 +457,7 @@ void SpatialCorrelationFunctionModifierEditor::plotAllData()
             }
         }
         else {
-            _reciprocalSpacePlot->reset();
+            _reciprocalSpacePlot->setTable({});
         }
     });
 }

@@ -41,54 +41,62 @@ namespace Ovito {
 * Constructor.
 ******************************************************************************/
 DislocationAnalysisEngine::DislocationAnalysisEngine(
-        const ModifierEvaluationRequest& request,
-        ElementOrderingFingerprint fingerprint,
-        ConstPropertyPtr positions, const SimulationCell* simCell, const OORefVector<ElementType>& structureTypes,
+        PropertyPtr structures, size_t particleCount,
         int inputCrystalStructure, int maxTrialCircuitSize, int maxCircuitElongation,
         ConstPropertyPtr particleSelection,
         ConstPropertyPtr crystalClusters,
         std::vector<Matrix3> preferredCrystalOrientations,
         bool onlyPerfectDislocations, int defectMeshSmoothingLevel, DataOORef<SurfaceMesh> defectMesh, DataOORef<SurfaceMesh> outputInterfaceMesh,
-        int lineSmoothingLevel, FloatType linePointInterval) :
-    StructureIdentificationModifier::StructureIdentificationEngine(request, std::move(fingerprint), positions, simCell, structureTypes, std::move(particleSelection)),
-    _simCellVolume(simCell->volume3D()),
-    _structureAnalysis(std::make_unique<StructureAnalysis>(positions, simCell, (StructureAnalysis::LatticeStructureType)inputCrystalStructure, selection(), structures(), std::move(preferredCrystalOrientations), !onlyPerfectDislocations)),
-    _tessellation(std::make_unique<DelaunayTessellation>()),
-    _elasticMapping(std::make_unique<ElasticMapping>(*_structureAnalysis, *_tessellation)),
-    _interfaceMesh(std::make_unique<InterfaceMesh>(*_elasticMapping)),
-    _dislocationTracer(std::make_unique<DislocationTracer>(*_interfaceMesh, _structureAnalysis->clusterGraph(), maxTrialCircuitSize, maxCircuitElongation)),
+        int lineSmoothingLevel, FloatType linePointInterval,
+        OORef<DislocationVis> dislocationVis) :
+    StructureIdentificationModifier::Algorithm(std::move(structures)),
     _inputCrystalStructure(inputCrystalStructure),
     _crystalClusters(crystalClusters),
+    _preferredCrystalOrientations(std::move(preferredCrystalOrientations)),
     _onlyPerfectDislocations(onlyPerfectDislocations),
     _defectMeshSmoothingLevel(defectMeshSmoothingLevel),
+    _maxTrialCircuitSize(maxTrialCircuitSize),
+    _maxCircuitElongation(maxCircuitElongation),
     _lineSmoothingLevel(lineSmoothingLevel),
     _linePointInterval(linePointInterval),
     _defectMesh(std::move(defectMesh)),
-    _outputInterfaceMesh(std::move(outputInterfaceMesh))
+    _outputInterfaceMesh(std::move(outputInterfaceMesh)),
+    _dislocationVis(std::move(dislocationVis))
 {
-    setAtomClusters(_structureAnalysis->atomClusters());
-    setDislocationNetwork(_dislocationTracer->network());
-    setClusterGraph(_dislocationTracer->clusterGraph());
 }
 
 /******************************************************************************
-* Performs the actual analysis. This method is executed in a worker thread.
+* Performs the actual analysis.
 ******************************************************************************/
-void DislocationAnalysisEngine::perform()
+void DislocationAnalysisEngine::identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection)
 {
-    setProgressText(DislocationAnalysisModifier::tr("Dislocation analysis (DXA)"));
+    if(!simulationCell || simulationCell->is2D())
+        throw Exception(DislocationAnalysisModifier::tr("The DXA requires a 3d simulation cell."));
 
-    beginProgressSubStepsWithWeights({ 35, 6, 1, 220, 60, 1, 53, 190, 146, 20, 4, 4 });
-    if(!_structureAnalysis->identifyStructures())
-        return;
+    this_task::setProgressText(DislocationAnalysisModifier::tr("Dislocation analysis (DXA)"));
 
-    nextProgressSubStep();
-    if(!_structureAnalysis->buildClusters())
-        return;
+    const Property* positions = particles->expectProperty(Particles::PositionProperty);
+    _simCellVolume = simulationCell->volume3D();
+    _structureAnalysis.emplace(positions, simulationCell, (StructureAnalysis::LatticeStructureType)_inputCrystalStructure, selection, structures(), std::move(_preferredCrystalOrientations), !_onlyPerfectDislocations);
+    _tessellation.emplace();
+    _elasticMapping.emplace(*_structureAnalysis, *_tessellation);
+    _interfaceMesh.emplace(*_elasticMapping);
+    _dislocationTracer.emplace(*_interfaceMesh, _structureAnalysis->clusterGraph(), _maxTrialCircuitSize, _maxCircuitElongation);
+    setAtomClusters(_structureAnalysis->atomClusters());
+    setDislocationNetwork(_dislocationTracer->network());
+    setClusterGraph(_dislocationTracer->clusterGraph());
 
-    nextProgressSubStep();
-    if(!_structureAnalysis->connectClusters())
-        return;
+    this_task::beginProgressSubStepsWithWeights({ 35, 6, 1, 220, 60, 1, 53, 190, 146, 20, 4, 4 });
+    _structureAnalysis->identifyStructures();
+    this_task::throwIfCanceled();
+
+    this_task::nextProgressSubStep();
+    _structureAnalysis->buildClusters();
+    this_task::throwIfCanceled();
+
+    this_task::nextProgressSubStep();
+    _structureAnalysis->connectClusters();
+    this_task::throwIfCanceled();
 
 #if 0
     Point3 corners[8];
@@ -117,45 +125,45 @@ void DislocationAnalysisEngine::perform()
     stream << "12" << std::endl;  // Hexahedron
 #endif
 
-    nextProgressSubStep();
+    this_task::nextProgressSubStep();
     FloatType ghostLayerSize = FloatType(3.5) * _structureAnalysis->maximumNeighborDistance();
-    if(!_tessellation->generateTessellation(_structureAnalysis->cell(),
-            BufferReadAccess<Point3>(positions()).cbegin(),
+    _tessellation->generateTessellation(_structureAnalysis->cell(),
+            BufferReadAccess<Point3>(positions).cbegin(),
             _structureAnalysis->atomCount(),
             ghostLayerSize,
             false, // flag coverDomainWithFiniteTets
-            selection() ? BufferReadAccess<SelectionIntType>(selection()).cbegin() : nullptr,
-            *this))
-        return;
+            selection ? BufferReadAccess<SelectionIntType>(selection).cbegin() : nullptr);
+    this_task::throwIfCanceled();
 
     // Build list of edges in the tessellation.
-    nextProgressSubStep();
-    if(!_elasticMapping->generateTessellationEdges(*this))
-        return;
+    this_task::nextProgressSubStep();
+    _elasticMapping->generateTessellationEdges();
+    this_task::throwIfCanceled();
 
     // Assign each vertex to a cluster.
-    nextProgressSubStep();
-    if(!_elasticMapping->assignVerticesToClusters(*this))
-        return;
+    this_task::nextProgressSubStep();
+    _elasticMapping->assignVerticesToClusters();
+    this_task::throwIfCanceled();
 
     // Determine the ideal vector corresponding to each edge of the tessellation.
-    nextProgressSubStep();
-    if(!_elasticMapping->assignIdealVectorsToEdges(4, *this))
-        return;
+    this_task::nextProgressSubStep();
+    _elasticMapping->assignIdealVectorsToEdges(4);
+    this_task::throwIfCanceled();
 
     // Free some memory that is no longer needed.
     _structureAnalysis->freeNeighborLists();
+    this_task::throwIfCanceled();
 
     // Create the mesh facets.
-    nextProgressSubStep();
-    if(!_interfaceMesh->createMesh(_structureAnalysis->maximumNeighborDistance(), crystalClusters(), *this))
-        return;
+    this_task::nextProgressSubStep();
+    _interfaceMesh->createMesh(_structureAnalysis->maximumNeighborDistance(), crystalClusters());
+    this_task::throwIfCanceled();
 
     // Trace dislocation lines.
-    nextProgressSubStep();
-    if(!_dislocationTracer->traceDislocationSegments(*this))
-        return;
+    this_task::nextProgressSubStep();
+    _dislocationTracer->traceDislocationSegments();
     _dislocationTracer->finishDislocationSegments(_inputCrystalStructure);
+    this_task::throwIfCanceled();
 
 #if 0
 
@@ -233,30 +241,33 @@ void DislocationAnalysisEngine::perform()
 #endif
 
     // Generate the defect mesh.
-    nextProgressSubStep();
+    this_task::nextProgressSubStep();
     SurfaceMeshBuilder defectMeshBuilder(_defectMesh);
-    if(!_interfaceMesh->generateDefectMesh(*_dislocationTracer, defectMeshBuilder, *this))
-        return;
+    _interfaceMesh->generateDefectMesh(*_dislocationTracer, defectMeshBuilder);
+#ifdef OVITO_DEBUG
+    _defectMesh->verifyMeshIntegrity();
+#endif
+    this_task::throwIfCanceled();
 
 #if 0
     _tessellation.dumpToVTKFile("tessellation.vtk");
 #endif
 
-    nextProgressSubStep();
+    this_task::nextProgressSubStep();
 
     // Post-process surface mesh.
-    if(_defectMeshSmoothingLevel > 0 && !defectMeshBuilder.smoothMesh(_defectMeshSmoothingLevel, *this))
-        return;
+    if(_defectMeshSmoothingLevel > 0)
+        defectMeshBuilder.smoothMesh(_defectMeshSmoothingLevel);
 
-    nextProgressSubStep();
+    this_task::nextProgressSubStep();
 
     // Post-process dislocation lines.
     if(_lineSmoothingLevel > 0 || _linePointInterval > 0) {
-        if(!dislocationNetwork()->smoothDislocationLines(_lineSmoothingLevel, _linePointInterval, *this))
-            return;
+        dislocationNetwork()->smoothDislocationLines(_lineSmoothingLevel, _linePointInterval);
+        this_task::throwIfCanceled();
     }
 
-    endProgressSubSteps();
+    this_task::endProgressSubSteps();
 
     // Return the results of the compute engine.
     if(_outputInterfaceMesh) {
@@ -269,7 +280,6 @@ void DislocationAnalysisEngine::perform()
     }
 
     // Release data that is no longer needed.
-    releaseWorkingData();
     _structureAnalysis.reset();
     _tessellation.reset();
     _elasticMapping.reset();
@@ -279,13 +289,11 @@ void DislocationAnalysisEngine::perform()
 }
 
 /******************************************************************************
-* Injects the computed results of the engine into the data pipeline.
+* Computes the structure identification statistics.
 ******************************************************************************/
-void DislocationAnalysisEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+std::vector<int64_t> DislocationAnalysisEngine::computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const
 {
-    StructureIdentificationEngine::applyResults(request, state);
-
-    DislocationAnalysisModifier* modifier = static_object_cast<DislocationAnalysisModifier>(request.modifier());
+    std::vector<int64_t> typeCounts = StructureIdentificationModifier::Algorithm::computeStructureStatistics(structures, state, createdByNode, modifierParameters);
 
     // Output defect mesh.
     state.addObjectWithUniqueId<SurfaceMesh>(_defectMesh);
@@ -297,18 +305,18 @@ void DislocationAnalysisEngine::applyResults(const ModifierEvaluationRequest& re
     // Output cluster graph.
     if(const ClusterGraphObject* oldClusterGraph = state.getObject<ClusterGraphObject>())
         state.removeObject(oldClusterGraph);
-    ClusterGraphObject* clusterGraphObj = state.createObject<ClusterGraphObject>(request.modificationNode());
+    ClusterGraphObject* clusterGraphObj = state.createObject<ClusterGraphObject>(createdByNode);
     clusterGraphObj->setStorage(clusterGraph());
 
     // Output dislocations.
-    DislocationNetworkObject* dislocationsObj = state.createObject<DislocationNetworkObject>(request.modificationNode());
+    DislocationNetworkObject* dislocationsObj = state.createObject<DislocationNetworkObject>(createdByNode);
     dislocationsObj->setStorage(dislocationNetwork());
     while(!dislocationsObj->crystalStructures().empty())
         dislocationsObj->removeCrystalStructure(dislocationsObj->crystalStructures().size()-1);
-    for(ElementType* stype : modifier->structureTypes())
+    for(const ElementType* stype : structures->elementTypes())
         dislocationsObj->addCrystalStructure(static_object_cast<MicrostructurePhase>(stype));
     dislocationsObj->setDomain(state.getObject<SimulationCell>());
-    dislocationsObj->setVisElement(modifier->dislocationVis());
+    dislocationsObj->setVisElement(_dislocationVis);
 
     // Output particle properties.
     if(atomClusters()) {
@@ -316,29 +324,31 @@ void DislocationAnalysisEngine::applyResults(const ModifierEvaluationRequest& re
         particles->createProperty(atomClusters());
     }
 
-    state.addAttribute(QStringLiteral("DislocationAnalysis.counts.OTHER"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_OTHER)), request.modificationNode());
-    state.addAttribute(QStringLiteral("DislocationAnalysis.counts.FCC"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_FCC)), request.modificationNode());
-    state.addAttribute(QStringLiteral("DislocationAnalysis.counts.HCP"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_HCP)), request.modificationNode());
-    state.addAttribute(QStringLiteral("DislocationAnalysis.counts.BCC"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_BCC)), request.modificationNode());
-    state.addAttribute(QStringLiteral("DislocationAnalysis.counts.CubicDiamond"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_CUBIC_DIAMOND)), request.modificationNode());
-    state.addAttribute(QStringLiteral("DislocationAnalysis.counts.HexagonalDiamond"), QVariant::fromValue(getTypeCount(StructureAnalysis::LATTICE_HEX_DIAMOND)), request.modificationNode());
-    state.addAttribute(QStringLiteral("DislocationAnalysis.cell_volume"), QVariant::fromValue(simCellVolume()), request.modificationNode());
+    state.addAttribute(QStringLiteral("DislocationAnalysis.counts.OTHER"), QVariant::fromValue(typeCounts.at(StructureAnalysis::LATTICE_OTHER)), createdByNode);
+    state.addAttribute(QStringLiteral("DislocationAnalysis.counts.FCC"), QVariant::fromValue(typeCounts.at(StructureAnalysis::LATTICE_FCC)), createdByNode);
+    state.addAttribute(QStringLiteral("DislocationAnalysis.counts.HCP"), QVariant::fromValue(typeCounts.at(StructureAnalysis::LATTICE_HCP)), createdByNode);
+    state.addAttribute(QStringLiteral("DislocationAnalysis.counts.BCC"), QVariant::fromValue(typeCounts.at(StructureAnalysis::LATTICE_BCC)), createdByNode);
+    state.addAttribute(QStringLiteral("DislocationAnalysis.counts.CubicDiamond"), QVariant::fromValue(typeCounts.at(StructureAnalysis::LATTICE_CUBIC_DIAMOND)), createdByNode);
+    state.addAttribute(QStringLiteral("DislocationAnalysis.counts.HexagonalDiamond"), QVariant::fromValue(typeCounts.at(StructureAnalysis::LATTICE_HEX_DIAMOND)), createdByNode);
+    state.addAttribute(QStringLiteral("DislocationAnalysis.cell_volume"), QVariant::fromValue(simCellVolume()), createdByNode);
 
     // Compute dislocation line statistics.
-    FloatType totalLineLength = generateDislocationStatistics(request.modificationNode(), state, dislocationsObj, false, dislocationsObj->structureById(modifier->inputCrystalStructure()));
+    FloatType totalLineLength = generateDislocationStatistics(createdByNode, state, dislocationsObj, false, dislocationsObj->structureById(_inputCrystalStructure));
     size_t totalSegmentCount = dislocationsObj->storage()->segments().size();
 
     if(totalSegmentCount == 0)
         state.setStatus(PipelineStatus(PipelineStatus::Success, DislocationAnalysisModifier::tr("No dislocations found")));
     else
         state.setStatus(PipelineStatus(PipelineStatus::Success, DislocationAnalysisModifier::tr("Found %1 dislocation segments\nTotal line length: %2").arg(totalSegmentCount).arg(totalLineLength)));
+
+    return typeCounts;
 }
 
 /******************************************************************************
 * Computes statistical information on the identified dislocation lines and
 * outputs it to the pipeline as data tables and global attributes.
 ******************************************************************************/
-FloatType  DislocationAnalysisEngine::generateDislocationStatistics(const OOWeakRef<const PipelineNode>& pipelineNode, PipelineFlowState& state, DislocationNetworkObject* dislocationsObj, bool replaceDataObjects, const MicrostructurePhase* defaultStructure)
+FloatType DislocationAnalysisEngine::generateDislocationStatistics(const OOWeakRef<const PipelineNode>& pipelineNode, PipelineFlowState& state, DislocationNetworkObject* dislocationsObj, bool replaceDataObjects, const MicrostructurePhase* defaultStructure)
 {
     std::map<const BurgersVectorFamily*,FloatType> dislocationLengths;
     std::map<const BurgersVectorFamily*,int> segmentCounts;

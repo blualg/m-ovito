@@ -25,6 +25,7 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "DislocationSliceModifierDelegate.h"
 
 namespace Ovito {
@@ -43,37 +44,36 @@ QVector<DataObjectReference> DislocationSliceModifierDelegate::OOMetaClass::getA
 }
 
 /******************************************************************************
-* Performs the actual rejection of particles.
-******************************************************************************/
-PipelineStatus DislocationSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState& state, const PipelineFlowState& inputState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+ * Applies the modifier operation to the data in a pipeline flow state.
+ ******************************************************************************/
+Future<PipelineFlowState> DislocationSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-    SliceModifier* mod = static_object_cast<SliceModifier>(request.modifier());
-    if(mod->createSelection())
-        return PipelineStatus::Success;
+    SliceModifier* modifier = static_object_cast<SliceModifier>(request.modifier());
+
+    if(modifier->createSelection())
+        return std::move(state);
 
     // Obtain modifier parameter values.
     Plane3 plane;
     FloatType sliceWidth;
-    std::tie(plane, sliceWidth) = mod->slicingPlane(request.time(), state.mutableStateValidity(), state);
+    std::tie(plane, sliceWidth) = modifier->slicingPlane(request.time(), state.mutableStateValidity(), state);
 
-    for(const DataObject* obj : inputState.data()->objects()) {
+    for(const DataObject* obj : state.data()->objects()) {
         if(const DislocationNetworkObject* inputDislocations = dynamic_object_cast<DislocationNetworkObject>(obj)) {
-            if(state.data()->contains(obj)) {
-                QVector<Plane3> planes = inputDislocations->cuttingPlanes();
-                if(sliceWidth <= 0) {
-                    planes.push_back(plane);
-                }
-                else {
-                    planes.push_back(Plane3( plane.normal,  plane.dist + sliceWidth/2));
-                    planes.push_back(Plane3(-plane.normal, -plane.dist + sliceWidth/2));
-                }
-                DislocationNetworkObject* outputDislocations = state.makeMutable(inputDislocations);
-                outputDislocations->setCuttingPlanes(std::move(planes));
+            QVector<Plane3> planes = inputDislocations->cuttingPlanes();
+            if(sliceWidth <= 0) {
+                planes.push_back(plane);
             }
+            else {
+                planes.push_back(Plane3( plane.normal,  plane.dist + sliceWidth/2));
+                planes.push_back(Plane3(-plane.normal, -plane.dist + sliceWidth/2));
+            }
+            DislocationNetworkObject* outputDislocations = state.makeMutable(inputDislocations);
+            outputDislocations->setCuttingPlanes(std::move(planes));
         }
     }
 
-    return PipelineStatus::Success;
+    return std::move(state);
 }
 
 }   // End of namespace

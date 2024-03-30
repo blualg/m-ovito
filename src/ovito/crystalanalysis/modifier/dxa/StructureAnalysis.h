@@ -103,16 +103,16 @@ public:
             bool identifyPlanarDefects = true);
 
     /// Identifies the atomic structures.
-    bool identifyStructures();
+    void identifyStructures();
 
     /// Combines adjacent atoms to clusters.
-    bool buildClusters();
+    void buildClusters();
 
     /// Determines the transition matrices between clusters.
-    bool connectClusters();
+    void connectClusters();
 
     /// Combines clusters to super clusters.
-    bool formSuperClusters();
+    void formSuperClusters();
 
     /// Returns the number of input atoms.
     int atomCount() const { return positions()->size(); }

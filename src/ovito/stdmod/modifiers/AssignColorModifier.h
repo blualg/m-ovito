@@ -43,8 +43,8 @@ public:
     /// Applies the modifier operation to the data in a pipeline flow state.
     virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 
-    /// This function is called by the pipeline system before a new modifier evaluation begins.
-    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
+    /// Is called by the pipeline system before a new modifier evaluation begins.
+    virtual void preevaluateDelegate(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
 
     /// Returns the type of input property container that this delegate can process.
     PropertyContainerClassPtr inputContainerClass() const {

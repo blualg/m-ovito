@@ -80,7 +80,7 @@ public:
     explicit ModifierDelegate(ObjectInitializationFlags flags, const DataObjectReference& inputDataObj = DataObjectReference()) : RefTarget(flags), _isEnabled(true), _inputDataObject(inputDataObj) {}
 
     /// This function is called by the pipeline system before a new modifier evaluation begins.
-    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const { return true; }
+    virtual void preevaluateDelegate(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const {}
 
     /// Applies this modifier delegate to the data.
     virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) = 0;
@@ -135,13 +135,13 @@ public:
     /// Constructor.
     using Modifier::Modifier;
 
-    /// This function is called by the pipeline system before a new modifier evaluation begins.
-    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
+protected:
+
+    /// Is called by the pipeline system before a new modifier evaluation begins.
+    virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
 
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
-
-protected:
 
     /// Creates a default delegate for this modifier.
     void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName);
@@ -192,13 +192,13 @@ public:
     /// Constructor.
     using Modifier::Modifier;
 
-    /// This function is called by the pipeline system before a new modifier evaluation begins.
-    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
+protected:
+
+    /// Is called by the pipeline system before a new modifier evaluation begins.
+    virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
 
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
-
-protected:
 
     /// Creates the list of delegate objects for this modifier.
     void createModifierDelegates(const OvitoClass& delegateType);

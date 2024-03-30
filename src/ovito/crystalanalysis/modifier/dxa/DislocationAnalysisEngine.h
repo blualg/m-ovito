@@ -37,24 +37,24 @@ namespace Ovito {
 /*
  * Computation engine of the DislocationAnalysisModifier, which performs the actual dislocation analysis.
  */
-class DislocationAnalysisEngine : public StructureIdentificationModifier::StructureIdentificationEngine
+class DislocationAnalysisEngine : public StructureIdentificationModifier::Algorithm
 {
 public:
 
     /// Constructor.
-    DislocationAnalysisEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint, ConstPropertyPtr positions, const SimulationCell* simCell,
-            const OORefVector<ElementType>& structureTypes, int inputCrystalStructure, int maxTrialCircuitSize, int maxCircuitElongation,
+    DislocationAnalysisEngine(PropertyPtr structures, size_t particleCount, int inputCrystalStructure, int maxTrialCircuitSize, int maxCircuitElongation,
             ConstPropertyPtr particleSelection,
             ConstPropertyPtr crystalClusters,
             std::vector<Matrix3> preferredCrystalOrientations,
             bool onlyPerfectDislocations, int defectMeshSmoothingLevel, DataOORef<SurfaceMesh> defectMesh, DataOORef<SurfaceMesh> outputInterfaceMesh,
-            int lineSmoothingLevel, FloatType linePointInterval);
+            int lineSmoothingLevel, FloatType linePointInterval,
+            OORef<DislocationVis> dislocationVis);
 
-    /// Computes the modifier's results and stores them in this object for later retrieval.
-    virtual void perform() override;
+    /// Performs the atomic structure classification.
+    virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
 
-    /// Injects the computed results into the data pipeline.
-    virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Computes the structure identification statistics.
+    virtual std::vector<int64_t> computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const override;
 
     /// Returns the array of atom cluster IDs.
     const PropertyPtr& atomClusters() const { return _atomClusters; }
@@ -63,7 +63,7 @@ public:
     void setAtomClusters(PropertyPtr prop) { _atomClusters = std::move(prop); }
 
     /// Returns the created cluster graph.
-    const std::shared_ptr<ClusterGraph>& clusterGraph() { return _clusterGraph; }
+    const std::shared_ptr<ClusterGraph>& clusterGraph() const { return _clusterGraph; }
 
     /// Sets the created cluster graph.
     void setClusterGraph(std::shared_ptr<ClusterGraph> graph) { _clusterGraph = std::move(graph); }
@@ -95,13 +95,17 @@ private:
     bool _onlyPerfectDislocations;
     int _defectMeshSmoothingLevel;
     int _lineSmoothingLevel;
+    int _maxTrialCircuitSize;
+    int _maxCircuitElongation;
     FloatType _linePointInterval;
-    std::unique_ptr<StructureAnalysis> _structureAnalysis;
-    std::unique_ptr<DelaunayTessellation> _tessellation;
-    std::unique_ptr<ElasticMapping> _elasticMapping;
-    std::unique_ptr<InterfaceMesh> _interfaceMesh;
-    std::unique_ptr<DislocationTracer> _dislocationTracer;
+    std::vector<Matrix3> _preferredCrystalOrientations;
+    std::optional<StructureAnalysis> _structureAnalysis;
+    std::optional<DelaunayTessellation> _tessellation;
+    std::optional<ElasticMapping> _elasticMapping;
+    std::optional<InterfaceMesh> _interfaceMesh;
+    std::optional<DislocationTracer> _dislocationTracer;
     ConstPropertyPtr _crystalClusters;
+    OORef<DislocationVis> _dislocationVis;
 
     /// The defect mesh produced by the modifier.
     DataOORef<SurfaceMesh> _defectMesh;

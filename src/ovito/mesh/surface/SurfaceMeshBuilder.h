@@ -187,11 +187,6 @@ public:
     /// Constructor that takes an existing SurfaceMesh object.
     explicit SurfaceMeshBuilder(SurfaceMesh* mesh);
 
-#ifdef OVITO_DEBUG
-    /// Destructor.
-    ~SurfaceMeshBuilder();
-#endif
-
     /// Resets the surface mesh structure by discarding all existing vertices, faces and regions.
     void clearMesh();
 

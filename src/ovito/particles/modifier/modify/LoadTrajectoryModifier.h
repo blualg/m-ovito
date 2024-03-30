@@ -56,6 +56,9 @@ public:
     /// Constructor.
     explicit LoadTrajectoryModifier(ObjectInitializationFlags flags);
 
+    /// Is called by the pipeline system before a new modifier evaluation begins.
+    virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
+
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
 
@@ -92,7 +95,7 @@ protected:
 private:
 
     /// Transfer the particle positions from the trajectory frame to the current pipeline input state.
-    void applyTrajectoryState(PipelineFlowState& state, const PipelineFlowState& trajState);
+    static void applyTrajectoryState(PipelineFlowState& state, const PipelineFlowState& trajState);
 
     /// The source for trajectory data.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineNode>, trajectorySource, setTrajectorySource, PROPERTY_FIELD_NO_SUB_ANIM);

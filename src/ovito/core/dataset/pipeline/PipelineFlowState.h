@@ -418,6 +418,12 @@ public:
         return mutableData()->addObjectWithUniqueId<DataObjectType>(obj);
     }
 
+    /// Copies all root-level data objects created by the given pipeline node over to this pipeline state.
+    void adoptDataObjectsFrom(const PipelineFlowState& other, const OOWeakRef<const PipelineNode>& createdByNode) {
+        if(other.data())
+            mutableData()->adoptDataObjectsFrom(*other.data(), createdByNode);
+    }
+
     /// Builds a list of the global attributes stored in this pipeline state.
     QVariantMap buildAttributesMap() const {
         OVITO_ASSERT(data());

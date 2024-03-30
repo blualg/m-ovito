@@ -58,9 +58,6 @@ public:
     /// \brief Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
     virtual void inputCachingHints(ModifierEvaluationRequest& request) {}
 
-    /// \brief This function is called by the pipeline system before a new modifier evaluation begins.
-    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const { return true; }
-
     /// \brief This method is called by the ModificationNode to let the modifier adjust the time interval
     /// of a TargetChanged event received from the upstream pipeline before it is propagated to the
     /// downstream pipeline.
@@ -124,6 +121,9 @@ public:
     virtual QMap<int, QString> animationFrameLabels(QMap<int, QString> inputLabels) const { return inputLabels; }
 
 protected:
+
+    /// Is called by the pipeline system before a new modifier evaluation begins.
+    virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const {}
 
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) = 0;

@@ -24,10 +24,12 @@
 
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/core/dataset/data/TransformingDataVis.h>
-#include <ovito/core/rendering/SceneRenderer.h>
-#include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
+#include <ovito/crystalanalysis/objects/RenderableDislocationLines.h>
+#include <ovito/core/dataset/data/DataVis.h>
+#include <ovito/core/rendering/SceneRenderer.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 
 namespace Ovito {
 
@@ -78,7 +80,7 @@ private:
 /**
  * \brief A visualization element rendering dislocation lines.
  */
-class OVITO_CRYSTALANALYSIS_EXPORT DislocationVis : public TransformingDataVis
+class OVITO_CRYSTALANALYSIS_EXPORT DislocationVis : public DataVis
 {
     OVITO_CLASS(DislocationVis)
     OVITO_CLASSINFO("DisplayName", "Dislocations");
@@ -97,16 +99,19 @@ public:
     /// Constructor.
     explicit DislocationVis(ObjectInitializationFlags flags);
 
-    /// \brief Lets the vis element render a data object.
+    /// Transforms the DislocationNetwork into a renderable set of lines.
+    Future<std::shared_ptr<RenderableDislocationLines>> transformDislocations(const DislocationNetworkObject* dislocations);
+
+    /// Lets the vis element render a data object.
     virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
 
     /// Computes the bounding box of the object.
     virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
 
-    /// \brief Renders an overlay marker for a single dislocation segment.
+    /// Renders an overlay marker for a single dislocation segment.
     void renderOverlayMarker(const DataObject* dataObject, const PipelineFlowState& flowState, int segmentIndex, FrameGraph& frameGraph, const Pipeline* pipeline);
 
-    /// \brief Generates a pretty string representation of a Burgers vector.
+    /// Generates a pretty string representation of a Burgers vector.
     static QString formatBurgersVector(const Vector3& b, const MicrostructurePhase* structure);
 
 public:
@@ -115,11 +120,8 @@ public:
 
 protected:
 
-    /// Lets the vis element transform a data object in preparation for rendering.
-    virtual Future<PipelineFlowState> transformDataImpl(const PipelineEvaluationRequest& request, const DataObject* dataObject, PipelineFlowState&& flowState) override;
-
     /// Clips a dislocation line at the periodic box boundaries.
-    void clipDislocationLine(const std::deque<Point3>& line, const SimulationCell& simulationCell, const QVector<Plane3>& clippingPlanes, const std::function<void(const Point3&, const Point3&, bool)>& segmentCallback);
+    static void clipDislocationLine(const std::deque<Point3>& line, const SimulationCell& simulationCell, const QVector<Plane3>& clippingPlanes, const std::function<void(const Point3&, const Point3&, bool)>& segmentCallback);
 
 protected:
 

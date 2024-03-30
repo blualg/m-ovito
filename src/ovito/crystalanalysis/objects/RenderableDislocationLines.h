@@ -25,18 +25,14 @@
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/crystalanalysis/data/ClusterVector.h>
-#include <ovito/core/dataset/data/TransformedDataObject.h>
 
 namespace Ovito {
 
 /**
  * \brief A non-periodic version of the dislocation lines that is generated from a periodic DislocationNetworkObject.
  */
-class OVITO_CRYSTALANALYSIS_EXPORT RenderableDislocationLines : public TransformedDataObject
+class OVITO_CRYSTALANALYSIS_EXPORT RenderableDislocationLines
 {
-    OVITO_CLASS(RenderableDislocationLines)
-    OVITO_CLASSINFO("DisplayName", "Renderable dislocations");
-
 public:
 
     /// A linear segment of a dislocation line.
@@ -59,15 +55,22 @@ public:
     };
 
     /// Constructor.
-    explicit RenderableDislocationLines(ObjectInitializationFlags flags, TransformingDataVis* creator = nullptr, const DataObject* sourceData = nullptr) : TransformedDataObject(flags, creator, sourceData) {}
+    RenderableDislocationLines(std::vector<Segment> lineSegments, std::shared_ptr<ClusterGraph> clusterGraph) :
+        _lineSegments(std::move(lineSegments)), _clusterGraph(std::move(clusterGraph)) {}
+
+    /// Returns the list of clipped and wrapped line segments.
+    const std::vector<Segment>& lineSegments() const { return _lineSegments; }
+
+    /// Returns the cluster graph.
+    const std::shared_ptr<ClusterGraph>& clusterGraph() const { return _clusterGraph; }
 
 private:
 
     /// The list of clipped and wrapped line segments.
-    DECLARE_RUNTIME_PROPERTY_FIELD(std::vector<RenderableDislocationLines::Segment>, lineSegments, setLineSegments);
+    std::vector<Segment> _lineSegments;
 
     /// The associated cluster graph.
-    DECLARE_RUNTIME_PROPERTY_FIELD(std::shared_ptr<ClusterGraph>, clusterGraph, setClusterGraph);
+    std::shared_ptr<ClusterGraph> _clusterGraph;
 };
 
 }   // End of namespace

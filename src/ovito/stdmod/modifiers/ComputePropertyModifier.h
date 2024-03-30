@@ -66,8 +66,8 @@ public:
     /// Checks if math expressions are time-dependent, i.e. whether they involve the animation frame number.
     virtual bool isExpressionTimeDependent(ComputePropertyModifier* modifier) const;
 
-    /// This function is called by the pipeline system before a new modifier evaluation begins.
-    virtual bool preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const override;
+    /// Is called by the pipeline system before a new modifier evaluation begins.
+    virtual void preevaluateDelegate(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
 
     /// Applies this modifier delegate to the data.
     virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

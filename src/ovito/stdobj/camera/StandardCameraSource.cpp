@@ -92,9 +92,21 @@ DataOORef<const AbstractCameraObject> StandardCameraSource::cameraObject(Animati
 }
 
 /******************************************************************************
+* Called by the pipeline system before a new evaluation begins to query the
+* validity interval and evaluation result type of this pipeline stage.
+******************************************************************************/
+void StandardCameraSource::preevaluateInternal(const PipelineEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval)
+{
+    if(fovController())
+        validityInterval.intersect(fovController()->validityInterval(request.time()));
+    if(zoomController())
+        validityInterval.intersect(zoomController()->validityInterval(request.time()));
+}
+
+/******************************************************************************
 * Asks the pipeline stage to compute the results.
 ******************************************************************************/
-PipelineEvaluationResult StandardCameraSource::evaluateInternal(const PipelineEvaluationRequest& request)
+SharedFuture<PipelineFlowState> StandardCameraSource::evaluateInternal(const PipelineEvaluationRequest& request)
 {
     // Create a new DataCollection.
     DataOORef<DataCollection> data = DataOORef<DataCollection>::create();

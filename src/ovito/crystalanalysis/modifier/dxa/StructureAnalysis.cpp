@@ -451,18 +451,17 @@ void StructureAnalysis::initializeListOfStructures()
 /******************************************************************************
 * Identifies the atomic structures.
 ******************************************************************************/
-bool StructureAnalysis::identifyStructures()
+void StructureAnalysis::identifyStructures()
 {
     // Prepare the neighbor list.
     int maxNeighborListSize = std::min((int)_neighborListsSize + 1, (int)MAX_NEIGHBORS);
     NearestNeighborFinder neighFinder(maxNeighborListSize);
-    if(!neighFinder.prepare(positions(), cell(), _particleSelection.buffer()))
-        return false;
+    neighFinder.prepare(positions(), cell(), _particleSelection.buffer());
 
     // Identify local structure around each particle.
     _maximumNeighborDistance = 0;
 
-    return parallelForWithProgress(positions()->size(), [this, &neighFinder](size_t index) {
+    parallelFor(positions()->size(), 1024, [this, &neighFinder](size_t index) {
         determineLocalStructure(neighFinder, index);
     });
 }
@@ -761,12 +760,10 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
 /******************************************************************************
 * Combines adjacent atoms to clusters.
 ******************************************************************************/
-bool StructureAnalysis::buildClusters()
+void StructureAnalysis::buildClusters()
 {
-    OVITO_ASSERT(this_task::get() && this_task::get()->isProgressingTask());
-    ProgressingTask& operation = static_cast<ProgressingTask&>(*this_task::get());
-    operation.setProgressMaximum(positions()->size());
-    int progressCounter = 0;
+    this_task::setProgressMaximum(positions()->size());
+    qlonglong progressCounter = 0;
     BufferReadAccess<Point3> positionsArray(positions());
 
     // Iterate over atoms, looking for those that have not been visited yet.
@@ -800,8 +797,7 @@ bool StructureAnalysis::buildClusters()
             atomsToVisit.pop_front();
 
             // Update progress indicator.
-            if(!operation.setProgressValueIntermittent(++progressCounter))
-                return false;
+            this_task::setProgressValueIntermittent(++progressCounter);
 
             // Look up symmetry permutation of current atom.
             int symmetryPermutationIndex = _atomSymmetryPermutations[currentAtomIndex];
@@ -927,18 +923,14 @@ bool StructureAnalysis::buildClusters()
     }
 
 //  qInfo() << "Number of clusters:" << (clusterGraph()->clusters().size() - 1);
-
-    return !operation.isCanceled();
 }
 
 /******************************************************************************
 * Determines the transition matrices between clusters.
 ******************************************************************************/
-bool StructureAnalysis::connectClusters()
+void StructureAnalysis::connectClusters()
 {
-    OVITO_ASSERT(this_task::get() && this_task::get()->isProgressingTask());
-    ProgressingTask& operation = static_cast<ProgressingTask&>(*this_task::get());
-    operation.setProgressMaximum(positions()->size());
+    this_task::setProgressMaximum(positions()->size());
 
     for(size_t atomIndex = 0; atomIndex < positions()->size(); atomIndex++) {
         int clusterId = _atomClustersArray[atomIndex];
@@ -947,8 +939,7 @@ bool StructureAnalysis::connectClusters()
         OVITO_ASSERT(cluster1);
 
         // Update progress indicator.
-        if(!operation.setProgressValueIntermittent(atomIndex))
-            return false;
+        this_task::setProgressValueIntermittent(atomIndex);
 
         // Look up symmetry permutation of current atom.
         int structureType = _structureTypesArray[atomIndex];
@@ -1033,17 +1024,13 @@ bool StructureAnalysis::connectClusters()
     }
 
 //  qInfo() << "Number of cluster transitions:" << clusterGraph()->clusterTransitions().size();
-
-    return !operation.isCanceled();
 }
 
 /******************************************************************************
 * Combines clusters to super clusters.
 ******************************************************************************/
-bool StructureAnalysis::formSuperClusters()
+void StructureAnalysis::formSuperClusters()
 {
-    OVITO_ASSERT(this_task::get());
-    Task& operation = *this_task::get();
     size_t oldTransitionCount = clusterGraph()->clusterTransitions().size();
 
     for(size_t clusterIndex = 0; clusterIndex < clusterGraph()->clusters().size(); clusterIndex++) {
@@ -1051,8 +1038,7 @@ bool StructureAnalysis::formSuperClusters()
         cluster->rank = 0;
         if(cluster->id == 0) continue;
 
-        if(operation.isCanceled())
-            return false;
+        this_task::throwIfCanceled();
 
         OVITO_ASSERT(cluster->parentTransition == nullptr);
         if(cluster->structure != _inputCrystalType) {
@@ -1114,8 +1100,7 @@ bool StructureAnalysis::formSuperClusters()
         Cluster* parentCluster2 = getParentGrain(t->cluster2);
         if(parentCluster1 == parentCluster2) continue;
 
-        if(operation.isCanceled())
-            return false;
+        this_task::throwIfCanceled();
 
         ClusterTransition* parentTransition = t;
         if(parentCluster2 != t->cluster2) {
@@ -1141,8 +1126,7 @@ bool StructureAnalysis::formSuperClusters()
     for(Cluster* cluster : clusterGraph()->clusters()) {
         getParentGrain(cluster);
     }
-
-    return !operation.isCanceled();
+    this_task::throwIfCanceled();
 }
 
 }   // End of namespace

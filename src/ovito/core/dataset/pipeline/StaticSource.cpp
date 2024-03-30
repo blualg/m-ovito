@@ -42,7 +42,7 @@ StaticSource::StaticSource(ObjectInitializationFlags flags, DataCollection* data
 /******************************************************************************
 * Asks the object for the result of the data pipeline.
 ******************************************************************************/
-PipelineEvaluationResult StaticSource::evaluateInternal(const PipelineEvaluationRequest& request)
+SharedFuture<PipelineFlowState> StaticSource::evaluateInternal(const PipelineEvaluationRequest& request)
 {
     return PipelineFlowState(dataCollection(), PipelineStatus::Success);
 }

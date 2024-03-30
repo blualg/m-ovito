@@ -28,7 +28,6 @@ SET(SourceFiles
     objects/ClusterGraphObject.cpp
     objects/DislocationNetworkObject.cpp
     objects/DislocationVis.cpp
-    objects/RenderableDislocationLines.cpp
     objects/MicrostructurePhase.cpp
     data/ClusterGraph.cpp
     data/DislocationNetwork.cpp
@@ -41,9 +40,9 @@ SET(SourceFiles
     modifier/dxa/DislocationTracer.cpp
     modifier/elasticstrain/ElasticStrainModifier.cpp
     modifier/elasticstrain/ElasticStrainEngine.cpp
-    modifier/grains/GrainSegmentationModifier.cpp
-    modifier/grains/GrainSegmentationEngine.cpp
-    modifier/grains/NodePairSampling.cpp
+#    modifier/grains/GrainSegmentationModifier.cpp
+#    modifier/grains/GrainSegmentationEngine.cpp
+#    modifier/grains/NodePairSampling.cpp
 )
 
 IF(OVITO_BUILD_PLUGIN_STDMOD)

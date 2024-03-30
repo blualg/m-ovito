@@ -83,15 +83,13 @@ bool ClusterAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollection& 
 /******************************************************************************
  * Is called by the pipeline system before a new modifier evaluation begins.
  ******************************************************************************/
-bool ClusterAnalysisModifier::preEvaluationRun(const ModifierEvaluationRequest& request, PipelineEvaluationResult& result) const
+void ClusterAnalysisModifier::preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const
 {
     // Indicate that we will do different computations depending on whether the pipeline is evaluated in interactive mode or not.
     if(request.interactiveMode())
-        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Interactive);
+        evaluationTypes = PipelineEvaluationResult::EvaluationType::Interactive;
     else
-        result.setEvaluationTypes(PipelineEvaluationResult::EvaluationType::Noninteractive);
-
-    return true;
+        evaluationTypes = PipelineEvaluationResult::EvaluationType::Noninteractive;
 }
 
 /******************************************************************************

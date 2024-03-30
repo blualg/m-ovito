@@ -93,13 +93,12 @@ void DislocationNetwork::discardSegment(DislocationSegment* segment)
 /******************************************************************************
 * Smoothens and coarsens the dislocation lines.
 ******************************************************************************/
-bool DislocationNetwork::smoothDislocationLines(int lineSmoothingLevel, FloatType linePointInterval, ProgressingTask& operation)
+void DislocationNetwork::smoothDislocationLines(int lineSmoothingLevel, FloatType linePointInterval)
 {
-    operation.setProgressMaximum(segments().size());
+    this_task::setProgressMaximum(segments().size());
 
     for(DislocationSegment* segment : segments()) {
-        if(!operation.incrementProgressValue())
-            return false;
+        this_task::incrementProgressValue();
         if(segment->coreSize.empty())
             continue;
         std::deque<Point3> line;
@@ -109,8 +108,6 @@ bool DislocationNetwork::smoothDislocationLines(int lineSmoothingLevel, FloatTyp
         segment->line = std::move(line);
         segment->coreSize.clear();
     }
-
-    return !operation.isCanceled();
 }
 
 /******************************************************************************

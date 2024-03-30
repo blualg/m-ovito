@@ -34,17 +34,6 @@ SurfaceMeshBuilder::SurfaceMeshBuilder(SurfaceMesh* mesh) : SurfaceMeshReadAcces
     OVITO_ASSERT(!mesh || mesh->isSafeToModify());
 }
 
-#ifdef OVITO_DEBUG
-/******************************************************************************
-* Destructor.
-******************************************************************************/
-SurfaceMeshBuilder::~SurfaceMeshBuilder()
-{
-    if(mesh() && std::uncaught_exceptions() == 0) // Note: Don't perform validation during stack unwinding due to an exception.
-        mesh()->verifyMeshIntegrity();
-}
-#endif
-
 /******************************************************************************
 * Resets the surface mesh structure by discarding all existing vertices, faces and regions.
 ******************************************************************************/

@@ -32,22 +32,21 @@ namespace Ovito {
 /*
  * Computation engine of the ElasticStrainModifier, which performs the actual strain tensor calculation.
  */
-class ElasticStrainEngine : public StructureIdentificationModifier::StructureIdentificationEngine
+class ElasticStrainEngine : public StructureIdentificationModifier::Algorithm
 {
 public:
 
     /// Constructor.
-    ElasticStrainEngine(const ModifierEvaluationRequest& request, ElementOrderingFingerprint fingerprint,
-            ConstPropertyPtr positions, const SimulationCell* simCell,
+    ElasticStrainEngine(PropertyPtr structures, size_t particleCount,
             int inputCrystalStructure, std::vector<Matrix3> preferredCrystalOrientations,
             bool calculateDeformationGradients, bool calculateStrainTensors,
             FloatType latticeConstant, FloatType caRatio, bool pushStrainTensorsForward);
 
-    /// Computes the modifier's results and stores them in this object for later retrieval.
-    virtual void perform() override;
+    /// Performs the atomic structure classification.
+    virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
 
-    /// Injects the computed results into the data pipeline.
-    virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
+    /// Computes the structure identification statistics.
+    virtual std::vector<int64_t> computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const override;
 
     /// Returns the array of atom cluster IDs.
     const PropertyPtr& atomClusters() const { return _atomClusters; }
@@ -56,7 +55,7 @@ public:
     void setAtomClusters(PropertyPtr prop) { _atomClusters = std::move(prop); }
 
     /// Returns the created cluster graph.
-    const std::shared_ptr<ClusterGraph>& clusterGraph() { return _clusterGraph; }
+    const std::shared_ptr<ClusterGraph>& clusterGraph() const { return _clusterGraph; }
 
     /// Returns the property storage that contains the computed per-particle volumetric strain values.
     const PropertyPtr& volumetricStrains() const { return _volumetricStrains; }
@@ -73,7 +72,8 @@ private:
     FloatType _latticeConstant;
     FloatType _axialScaling;
     const bool _pushStrainTensorsForward;
-    std::unique_ptr<StructureAnalysis> _structureAnalysis;
+    std::vector<Matrix3> _preferredCrystalOrientations;
+    std::optional<StructureAnalysis> _structureAnalysis;
 
     /// This stores the cached atom-to-cluster assignments computed by the modifier.
     PropertyPtr _atomClusters;

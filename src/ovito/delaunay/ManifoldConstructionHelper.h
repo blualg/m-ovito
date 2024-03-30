@@ -1112,6 +1112,9 @@ private:
         SurfaceMeshBuilder meshBuilder(_convexHullMesh);
         meshBuilder.clearMesh();
         meshBuilder.constructConvexHull(std::vector<Point3>(lineSegments, lineSegments + numPoints), SurfaceMesh::InvalidIndex);
+#ifdef OVITO_DEBUG
+        _convexHullMesh->verifyMeshIntegrity();
+#endif
 
         // The convex hull may be empty if the input point set is degenerate.
         if(meshBuilder.faceCount() == 0)

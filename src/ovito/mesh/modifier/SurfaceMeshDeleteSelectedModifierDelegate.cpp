@@ -103,6 +103,10 @@ Future<PipelineFlowState> SurfaceMeshRegionsDeleteSelectedModifierDelegate::appl
                 // Delete the selected faces and regions.
                 mesh.deleteFaces(faceMask.take());
                 mesh.deleteRegions(regionMask.take());
+
+#ifdef OVITO_DEBUG
+                mutableSurface->verifyMeshIntegrity();
+#endif
             }
         }
 

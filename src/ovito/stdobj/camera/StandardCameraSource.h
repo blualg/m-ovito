@@ -72,8 +72,11 @@ public:
 
 protected:
 
+    /// Called by the pipeline system before a new evaluation begins to query the validity interval and evaluation result type of this pipeline stage.
+    virtual void preevaluateInternal(const PipelineEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) override;
+
     /// Asks the object for the result of the data pipeline.
-    virtual PipelineEvaluationResult evaluateInternal(const PipelineEvaluationRequest& request) override;
+    virtual SharedFuture<PipelineFlowState> evaluateInternal(const PipelineEvaluationRequest& request) override;
 
 private:
 

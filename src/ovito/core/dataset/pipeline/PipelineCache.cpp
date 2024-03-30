@@ -48,6 +48,58 @@ PipelineCache::~PipelineCache() // NOLINT
 }
 
 /******************************************************************************
+* Queries the pipeline for the time validity and result type of an evaluation.
+******************************************************************************/
+void PipelineCache::preevaluatePipeline(const PipelineEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval)
+{
+    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
+
+    PipelineNode* pipelineNode = dynamic_object_cast<PipelineNode>(ownerObject());
+
+    // Bypass cache if it was disabled by its pipeline stage.
+    // This may be the case for pipeline stages which can deliver results immediately.
+    if(!isEnabled()) {
+        OVITO_ASSERT(pipelineNode); // Cache cannot be disabled for an entire pipeline, only for individual nodes.
+        if(pipelineNode)
+            pipelineNode->preevaluateInternal(request, evaluationTypes, validityInterval);
+        return;
+    }
+
+    // Check if we can serve the request immediately by returning one of the cached states.
+    for(const PipelineFlowState& state : _cachedStates) {
+        if(state.stateValidity().contains(request.time())) {
+            validityInterval.intersect(state.stateValidity());
+            return;
+        }
+    }
+
+    // Check if cache contains a valid state for interactive rendering.
+    if(request.interactiveMode() && _interactiveState.stateValidity().contains(request.time())) {
+        validityInterval.intersect(_interactiveState.stateValidity());
+        evaluationTypes = _interactiveStateIsNotPreliminaryResult // Tagging this output state as preliminary if necessary.
+                ? PipelineEvaluationResult::EvaluationType::Both
+                : PipelineEvaluationResult::EvaluationType::Interactive;
+        return;
+    }
+
+    if(!pipelineNode) {
+        // Delegate request to the pipeline's final output node.
+        pipelineNode = static_object_cast<Pipeline>(ownerObject())->head();
+
+        // Without a pipeline data source, the results will be null.
+        if(!pipelineNode)
+            return;
+
+        pipelineNode->preevaluate(request, evaluationTypes, validityInterval);
+    }
+    else {
+        pipelineNode->preevaluateInternal(request, evaluationTypes, validityInterval);
+    }
+}
+
+/******************************************************************************
 * Starts a pipeline evaluation or returns a reference to an existing evaluation
 * that is currently in progress.
 ******************************************************************************/
@@ -74,11 +126,18 @@ PipelineEvaluationResult PipelineCache::evaluatePipeline(const PipelineEvaluatio
     }
 
     // Bypass cache if it was disabled by its pipeline stage.
-    // This may be the case for pipeline stages which can deliver results immediately without caching them.
+    // This may be the case for pipeline stages which can deliver results immediately.
     if(!isEnabled()) {
         OVITO_ASSERT(pipelineNode); // Cache cannot be disabled for an entire pipeline, only for individual nodes.
-        if(pipelineNode)
-            return pipelineNode->evaluateInternal(request);
+        if(pipelineNode) {
+            // Prepare the pipeline evaluation.
+            PipelineEvaluationResult::EvaluationTypes evaluationTypes = PipelineEvaluationResult::EvaluationType::Both;
+            TimeInterval validityInterval = TimeInterval::infinite();
+            pipelineNode->preevaluateInternal(request, evaluationTypes, validityInterval);
+
+            // Request results from the pipeline stage.
+            return PipelineEvaluationResult(pipelineNode->evaluateInternal(request), evaluationTypes, validityInterval);
+        }
     }
 
     // Prevent re-entrance into the evaluatePipeline() function.
@@ -173,16 +232,24 @@ PipelineEvaluationResult PipelineCache::evaluatePipelineImpl(const PipelineEvalu
     PipelineEvaluationResult evalResult;
 
     if(!pipelineNode) {
+        // Delegate request to the pipeline's final output node.
+        pipelineNode = pipeline->head();
+
         // Without a pipeline data source, the results will be null (no data collection).
-        if(!pipeline->head())
+        if(!pipelineNode)
             return PipelineFlowState(nullptr, PipelineStatus::Success);
 
-        // Delegate the evaluation to the head node of the pipeline.
-        evalResult = pipeline->head()->evaluate(request);
+        evalResult = pipelineNode->evaluate(request);
     }
     else {
         try {
-            evalResult = pipelineNode->evaluateInternal(request);
+            // Prepare the pipeline evaluation.
+            PipelineEvaluationResult::EvaluationTypes evaluationTypes = PipelineEvaluationResult::EvaluationType::Both;
+            TimeInterval validityInterval = TimeInterval::infinite();
+            pipelineNode->preevaluateInternal(request, evaluationTypes, validityInterval);
+
+            // Request results from the pipeline stage.
+            evalResult = PipelineEvaluationResult(pipelineNode->evaluateInternal(request), evaluationTypes, validityInterval);
         }
         catch(const Exception& ex) {
             if(request.throwOnError())

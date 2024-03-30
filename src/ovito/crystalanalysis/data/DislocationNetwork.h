@@ -301,7 +301,7 @@ public:
     void discardSegment(DislocationSegment* segment);
 
     /// Smoothens and coarsens the dislocation lines.
-    bool smoothDislocationLines(int lineSmoothingLevel, FloatType linePointInterval, ProgressingTask& operation);
+    void smoothDislocationLines(int lineSmoothingLevel, FloatType linePointInterval);
 
 private:
 

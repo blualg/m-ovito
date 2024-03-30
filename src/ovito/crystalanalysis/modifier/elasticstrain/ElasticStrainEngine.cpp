@@ -34,64 +34,68 @@ namespace Ovito {
 * Constructor.
 ******************************************************************************/
 ElasticStrainEngine::ElasticStrainEngine(
-        const ModifierEvaluationRequest& request,
-        ElementOrderingFingerprint fingerprint,
-        ConstPropertyPtr positions, const SimulationCell* simCell,
+        PropertyPtr structures, size_t particleCount,
         int inputCrystalStructure, std::vector<Matrix3> preferredCrystalOrientations,
         bool calculateDeformationGradients, bool calculateStrainTensors,
         FloatType latticeConstant, FloatType caRatio, bool pushStrainTensorsForward) :
-    StructureIdentificationModifier::StructureIdentificationEngine(request, std::move(fingerprint), positions, simCell, {}),
-    _structureAnalysis(std::make_unique<StructureAnalysis>(positions, simCell, (StructureAnalysis::LatticeStructureType)inputCrystalStructure, selection(), structures(), std::move(preferredCrystalOrientations))),
+    StructureIdentificationModifier::Algorithm(std::move(structures)),
     _inputCrystalStructure(inputCrystalStructure),
     _latticeConstant(latticeConstant),
     _pushStrainTensorsForward(pushStrainTensorsForward),
-    _volumetricStrains(Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, positions->size(), DataBuffer::FloatDefault, 1, QStringLiteral("Volumetric Strain"))),
-    _strainTensors(calculateStrainTensors ? Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, positions->size(), Particles::ElasticStrainTensorProperty) : nullptr),
-    _deformationGradients(calculateDeformationGradients ? Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, positions->size(), Particles::ElasticDeformationGradientProperty) : nullptr)
+    _preferredCrystalOrientations(std::move(preferredCrystalOrientations)),
+    _volumetricStrains(Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, particleCount, DataBuffer::FloatDefault, 1, QStringLiteral("Volumetric Strain"))),
+    _strainTensors(calculateStrainTensors ? Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized,particleCount, Particles::ElasticStrainTensorProperty) : nullptr),
+    _deformationGradients(calculateDeformationGradients ? Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, particleCount, Particles::ElasticDeformationGradientProperty) : nullptr)
 {
-    setAtomClusters(_structureAnalysis->atomClusters());
     if(inputCrystalStructure == StructureAnalysis::LATTICE_FCC || inputCrystalStructure == StructureAnalysis::LATTICE_BCC || inputCrystalStructure == StructureAnalysis::LATTICE_CUBIC_DIAMOND) {
         // Cubic crystal structures always have a c/a ratio of one.
         _axialScaling = 1;
     }
     else {
         // Convert to internal units.
-        _latticeConstant *= sqrt(2.0);
-        _axialScaling = caRatio / sqrt(8.0/3.0);
+        _latticeConstant *= std::sqrt(2.0);
+        _axialScaling = caRatio / std::sqrt(8.0/3.0);
     }
 }
 
 /******************************************************************************
-* Performs the actual analysis. This method is executed in a worker thread.
+* Performs the actual analysis.
 ******************************************************************************/
-void ElasticStrainEngine::perform()
+void ElasticStrainEngine::identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection)
 {
-    setProgressText(ElasticStrainModifier::tr("Calculating elastic strain tensors"));
+    if(!simulationCell || simulationCell->is2D())
+        throw Exception(ElasticStrainModifier::tr("The elastic strain calculation requires a 3d simulation cell."));
 
-    beginProgressSubStepsWithWeights({ 35, 6, 1, 1, 20 });
-    if(!_structureAnalysis->identifyStructures())
-        return;
+    this_task::setProgressText(ElasticStrainModifier::tr("Calculating elastic strain tensors"));
 
-    nextProgressSubStep();
-    if(!_structureAnalysis->buildClusters())
-        return;
+    const Property* positions = particles->expectProperty(Particles::PositionProperty);
+    _structureAnalysis.emplace(positions, simulationCell, (StructureAnalysis::LatticeStructureType)_inputCrystalStructure, selection, structures(), std::move(_preferredCrystalOrientations));
+    setAtomClusters(_structureAnalysis->atomClusters());
 
-    nextProgressSubStep();
-    if(!_structureAnalysis->connectClusters())
-        return;
+    this_task::beginProgressSubStepsWithWeights({ 35, 6, 1, 1, 20 });
+    _structureAnalysis->identifyStructures();
 
-    nextProgressSubStep();
-    if(!_structureAnalysis->formSuperClusters())
-        return;
+    this_task::nextProgressSubStep();
+    this_task::throwIfCanceled();
+    _structureAnalysis->buildClusters();
 
-    nextProgressSubStep();
+    this_task::nextProgressSubStep();
+    this_task::throwIfCanceled();
+    _structureAnalysis->connectClusters();
 
-    BufferReadAccess<Point3> positionsArray(positions());
+    this_task::nextProgressSubStep();
+    this_task::throwIfCanceled();
+    _structureAnalysis->formSuperClusters();
+
+    this_task::nextProgressSubStep();
+    this_task::throwIfCanceled();
+
+    BufferReadAccess<Point3> positionsArray(positions);
     BufferWriteAccess<Matrix3, access_mode::discard_write> deformationGradientsArray(deformationGradients());
     BufferWriteAccess<SymmetricTensor2, access_mode::discard_write> strainTensorsArray(strainTensors());
     BufferWriteAccess<FloatType, access_mode::discard_write> volumetricStrainsArray(volumetricStrains());
 
-    parallelForWithProgress(positions()->size(), [&](size_t particleIndex) {
+    parallelFor(positions->size(), 1024, [&](size_t particleIndex) {
 
         Cluster* localCluster = _structureAnalysis->atomCluster(particleIndex);
         if(localCluster->id != 0) {
@@ -124,7 +128,8 @@ void ElasticStrainEngine::perform()
                     // Add vector pair to matrices for computing the elastic deformation gradient.
                     Vector3 latticeVector = idealUnitCellTM * _structureAnalysis->neighborLatticeVector(particleIndex, n);
                     Vector3 spatialVector = positionsArray[neighborAtomIndex] - positionsArray[particleIndex];
-                    if(cell()) spatialVector = cell()->wrapVector(spatialVector);
+                    if(simulationCell)
+                        spatialVector = simulationCell->wrapVector(spatialVector);
                     for(size_t i = 0; i < 3; i++) {
                         for(size_t j = 0; j < 3; j++) {
                             orientationV(i,j) += (double)(latticeVector[j] * latticeVector[i]);
@@ -173,37 +178,36 @@ void ElasticStrainEngine::perform()
             deformationGradientsArray[particleIndex] = Matrix3::Zero();
     });
 
-    endProgressSubSteps();
+    this_task::endProgressSubSteps();
 
     // Release data that is no longer needed.
-    releaseWorkingData();
     _structureAnalysis.reset();
 }
 
 /******************************************************************************
-* Injects the computed results of the engine into the data pipeline.
+* Computes the structure identification statistics.
 ******************************************************************************/
-void ElasticStrainEngine::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+std::vector<int64_t> ElasticStrainEngine::computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const
 {
-    StructureIdentificationEngine::applyResults(request, state);
-
-    ElasticStrainModifier* modifier = static_object_cast<ElasticStrainModifier>(request.modifier());
+    std::vector<int64_t> typeCounts = StructureIdentificationModifier::Algorithm::computeStructureStatistics(structures, state, createdByNode, modifierParameters);
 
     // Output cluster graph.
-    ClusterGraphObject* clusterGraphObj = state.createObject<ClusterGraphObject>(request.modificationNode());
+    ClusterGraphObject* clusterGraphObj = state.createObject<ClusterGraphObject>(createdByNode);
     clusterGraphObj->setStorage(clusterGraph());
 
     // Output particle properties.
     Particles* particles = state.expectMutableObject<Particles>();
     particles->createProperty(atomClusters());
-    if(modifier->calculateStrainTensors() && strainTensors())
+    if(strainTensors())
         particles->createProperty(strainTensors());
 
-    if(modifier->calculateDeformationGradients() && deformationGradients())
+    if(deformationGradients())
         particles->createProperty(deformationGradients());
 
     if(volumetricStrains())
         particles->createProperty(volumetricStrains());
+
+    return typeCounts;
 }
 
 }   // End of namespace
