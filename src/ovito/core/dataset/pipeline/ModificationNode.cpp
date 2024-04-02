@@ -184,35 +184,37 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
 void ModificationNode::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
     if(field == PROPERTY_FIELD(modifier)) {
+        if(!isBeingLoaded() && !isBeingDeleted()) {
+            // Reset all caches when the modifier is replaced.
+            pipelineCache().reset();
+            partialResultsCache().reset();
 
-        // Reset all caches when the modifier is replaced.
-        pipelineCache().reset();
-        partialResultsCache().reset();
+            // Update the status of the Modifier when it is detached from the ModificationNode.
+            if(Modifier* oldMod = static_object_cast<Modifier>(oldTarget)) {
+                oldMod->notifyDependents(ReferenceEvent::ObjectStatusChanged);
+                oldMod->notifyDependents(ReferenceEvent::PipelineInputChanged);
+            }
+            if(Modifier* newMod = static_object_cast<Modifier>(newTarget)) {
+                newMod->notifyDependents(ReferenceEvent::ObjectStatusChanged);
+                newMod->notifyDependents(ReferenceEvent::PipelineInputChanged);
+            }
+            notifyDependents(ReferenceEvent::TargetEnabledOrDisabled);
 
-        // Update the status of the Modifier when it is detached from the ModificationNode.
-        if(Modifier* oldMod = static_object_cast<Modifier>(oldTarget)) {
-            oldMod->notifyDependents(ReferenceEvent::ObjectStatusChanged);
-            oldMod->notifyDependents(ReferenceEvent::PipelineInputChanged);
-        }
-        if(Modifier* newMod = static_object_cast<Modifier>(newTarget)) {
-            newMod->notifyDependents(ReferenceEvent::ObjectStatusChanged);
-            newMod->notifyDependents(ReferenceEvent::PipelineInputChanged);
-        }
-        notifyDependents(ReferenceEvent::TargetEnabledOrDisabled);
-
-        // The animation length might have changed when the modifier has changed.
-        if(!isBeingLoaded())
+            // The animation length might have changed when the modifier has changed.
             notifyDependents(ReferenceEvent::AnimationFramesChanged);
+        }
     }
-    else if(field == PROPERTY_FIELD(input) && !isBeingLoaded() && !isBeingDeleted()) {
-        // Reset cache when the upstream pipeline is being replaced.
-        pipelineCache().reset();
-        partialResultsCache().reset();
-        // Update the status of the Modifier when ModificationNode is inserted/removed into pipeline.
-        if(modifier())
-            modifier()->notifyDependents(ReferenceEvent::PipelineInputChanged);
-        // The animation length might have changed when the pipeline has changed.
-        notifyDependents(ReferenceEvent::AnimationFramesChanged);
+    else if(field == PROPERTY_FIELD(input)) {
+        if(!isBeingLoaded() && !isBeingDeleted()) {
+            // Reset cache when the upstream pipeline is being replaced.
+            pipelineCache().reset();
+            partialResultsCache().reset();
+            // Update the status of the Modifier when ModificationNode is inserted/removed into pipeline.
+            if(modifier())
+                modifier()->notifyDependents(ReferenceEvent::PipelineInputChanged);
+            // The animation length might have changed when the pipeline has changed.
+            notifyDependents(ReferenceEvent::AnimationFramesChanged);
+        }
     }
     else if(field == PROPERTY_FIELD(modifierGroup)) {
         // Register/unregister node with modifier group:

@@ -28,7 +28,6 @@
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/Bonds.h>
 #include <ovito/particles/modifier/analysis/ptm/PTMAlgorithm.h>
-#include <ovito/stdobj/util/ElementOrderingFingerprint.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/utilities/DisjointSet.h>
 #include "GrainSegmentationModifier.h"
@@ -96,7 +95,7 @@ static void insert_halfedge(HalfEdge* header, HalfEdge* edge) {
 /*
  * Computation engine of the GrainSegmentationModifier, which decomposes a polycrystalline microstructure into individual grains.
  */
-class GrainSegmentationEngine1 : public ModifierEngine
+class GrainSegmentationEngine1
 {
 public:
 
@@ -339,8 +338,6 @@ public:
 
     /// Constructor.
     GrainSegmentationEngine1(
-            const ModifierEvaluationRequest& request,
-            ElementOrderingFingerprint fingerprint,
             ConstPropertyPtr positions,
             ConstPropertyPtr structureProperty,
             ConstPropertyPtr orientationProperty,
@@ -351,25 +348,10 @@ public:
             bool outputBonds);
 
     /// Performs the computation.
-    virtual void perform() override;
+    void perform();
 
     /// Injects the computed results into the data pipeline.
-    virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-    /// This method is called by the system whenever a parameter of the modifier changes.
-    /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be
-    /// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true).
-    virtual bool modifierChanged(const PropertyFieldEvent& event) override {
-
-        // Avoid a recomputation if a parameters changes that does not affect this algorithm stage.
-        if(event.field() == PROPERTY_FIELD(GrainSegmentationModifier::colorParticlesByGrain)
-                || event.field() == PROPERTY_FIELD(GrainSegmentationModifier::mergingThreshold)
-                || event.field() == PROPERTY_FIELD(GrainSegmentationModifier::minGrainAtomCount)
-                || event.field() == PROPERTY_FIELD(GrainSegmentationModifier::orphanAdoption))
-            return true;
-
-        return ModifierEngine::modifierChanged(event);
-    }
+    void applyResults(PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, BondsVis* bondsVis) const;
 
     /// Returns the property storage that contains the input particle positions.
     const ConstPropertyPtr& positions() const { return _positions; }
@@ -406,17 +388,20 @@ private:
     /// Returns the list of bonds connecting neighboring lattice atoms.
     std::vector<NeighborBond>& neighborBonds() { return _neighborBonds; }
 
+    /// Returns the list of bonds connecting neighboring lattice atoms.
+    const std::vector<NeighborBond>& neighborBonds() const { return _neighborBonds; }
+
     /// Creates neighbor bonds from stored PTM data.
-    bool createNeighborBonds();
+    void createNeighborBonds();
 
     /// Rotates hexagonal atoms (HCP and hex-diamond) to an equivalent cubic orientation.
-    bool rotateInterfaceAtoms();
+    void rotateInterfaceAtoms();
 
     /// Calculates the disorientation angle for each graph edge (i.e. bond).
-    bool computeDisorientationAngles();
+    void computeDisorientationAngles();
 
     /// Builds grains by iterative region merging.
-    bool determineMergeSequence();
+    void determineMergeSequence();
 
     /// Computes the disorientation angle between two crystal clusters of the given lattice type.
     /// Furthermore, the function computes the weighted average of the two cluster orientations.
@@ -424,14 +409,14 @@ private:
     static FloatType calculate_disorientation(int structureType, Quaternion& qa, const Quaternion& qb);
 
     // Algorithm types:
-    bool minimum_spanning_tree_clustering(std::vector<Quaternion>& qsum, DisjointSet& uf);
-    bool node_pair_sampling_clustering(Graph& graph, std::vector<Quaternion>& qsum);
+    void minimum_spanning_tree_clustering(std::vector<Quaternion>& qsum, DisjointSet& uf);
+    void node_pair_sampling_clustering(Graph& graph, std::vector<Quaternion>& qsum);
 
     // Selects a threshold for Node Pair Sampling algorithm
     FloatType calculate_threshold_suggestion();
 
     // Determines if a bond is crystalline
-    bool isCrystallineBond(const NeighborBond& bond)
+    bool isCrystallineBond(const NeighborBond& bond) const
     {
         auto a = _adjustedStructureTypes[bond.a];
         auto b = _adjustedStructureTypes[bond.b];
@@ -493,9 +478,6 @@ private:
     /// The simulation cell geometry.
     DataOORef<const SimulationCell> _simCell;
 
-    /// Used to detect changes in the input dataset that invalidate cached computation results.
-    ElementOrderingFingerprint _inputFingerprint;
-
     // The merge distances
     PropertyPtr _mergeDistance;
 
@@ -538,42 +520,30 @@ private:
 /*
  * Computation engine of the GrainSegmentationModifier, which decomposes a polycrystalline microstructure into individual grains.
  */
-class GrainSegmentationEngine2 : public ModifierEngine
+class GrainSegmentationEngine2
 {
 public:
 
     /// Constructor.
     GrainSegmentationEngine2(
-            const ModifierEvaluationRequest& request,
-            std::shared_ptr<GrainSegmentationEngine1> engine1,
+            std::shared_ptr<const GrainSegmentationEngine1> engine1,
             FloatType mergingThreshold,
             bool adoptOrphanAtoms,
-            size_t minGrainAtomCount) :
-        ModifierEngine(request),
+            size_t minGrainAtomCount,
+            bool colorParticlesByGrain) :
         _engine1(std::move(engine1)),
         _numParticles(_engine1->_numParticles),
         _mergingThreshold(mergingThreshold),
         _adoptOrphanAtoms(adoptOrphanAtoms),
         _minGrainAtomCount(minGrainAtomCount),
+        _colorParticlesByGrain(colorParticlesByGrain),
         _atomClusters(Particles::OOClass().createUserProperty(DataBuffer::Initialized, _numParticles, Property::Int64, 1, QStringLiteral("Grain"))) {}
 
     /// Performs the computation.
-    virtual void perform() override;
+    void perform();
 
     /// Injects the computed results into the data pipeline.
-    virtual void applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state) override;
-
-    /// This method is called by the system whenever a parameter of the modifier changes.
-    /// The method can be overridden by subclasses to indicate to the caller whether the engine object should be
-    /// discarded (false) or may be kept in the cache, because the computation results are not affected by the changing parameter (true).
-    virtual bool modifierChanged(const PropertyFieldEvent& event) override {
-
-        // Avoid a recomputation if a parameters changes that does not affect the algorithm's results.
-        if(event.field() == PROPERTY_FIELD(GrainSegmentationModifier::colorParticlesByGrain))
-            return true; // Indicate that the stored results are not affected by the parameter change.
-
-        return ModifierEngine::modifierChanged(event);
-    }
+    void applyResults(PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, BondsVis* bondsVis) const;
 
     /// Returns the array storing the cluster ID of each particle.
     const PropertyPtr& atomClusters() const { return _atomClusters; }
@@ -587,7 +557,7 @@ public:
 private:
 
     /// Merges any orphan atoms into the closest cluster.
-    bool mergeOrphanAtoms();
+    void mergeOrphanAtoms();
 
     struct PQCompareLength
     {
@@ -597,7 +567,7 @@ private:
 private:
 
     /// Pointer to the first algorithm stage.
-    std::shared_ptr<GrainSegmentationEngine1> _engine1;
+    std::shared_ptr<const GrainSegmentationEngine1> _engine1;
 
     /// The number of input particles.
     size_t _numParticles;
@@ -631,6 +601,8 @@ private:
 
     /// Controls the adoption of orphan atoms after the grains have been formed.
     bool _adoptOrphanAtoms;
+
+    bool _colorParticlesByGrain;
 };
 
 }   // End of namespace

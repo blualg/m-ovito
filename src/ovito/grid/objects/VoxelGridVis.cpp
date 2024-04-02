@@ -155,7 +155,6 @@ PipelineStatus VoxelGridVis::render(const ConstDataObjectPath& path, const Pipel
         transp = transparencyController()->getFloatValue(frameGraph.time(), iv);
         if(transp >= 1.0) return status;
     }
-    GraphicsFloatType alpha = GraphicsFloatType(1) - transp;
 
     // Look up the rendering primitive in the vis cache.
     auto& cachedInfo = frameGraph.visCache().lookup<CacheValue>(CacheKey(
@@ -169,6 +168,7 @@ PipelineStatus VoxelGridVis::render(const ConstDataObjectPath& path, const Pipel
 
     // Check if we already have valid rendering primitives that are up to date.
     if(!cachedInfo.volumeFaces.mesh()) {
+        GraphicsFloatType alpha = GraphicsFloatType(1) - transp;
         if(gridObj->domain() && gridObj->elementCount() != 0) {
             // Determine the number of triangle faces to be created per voxel cell.
             size_t trianglesPerCell = 2;

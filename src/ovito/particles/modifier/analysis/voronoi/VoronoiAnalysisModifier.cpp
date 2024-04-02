@@ -880,6 +880,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
             }
             OVITO_ASSERT(polyhedraMesh.hasOppositeFace(face) || polyhedraVertices[adjacentRegion].second == 0);
         }
+        vertexGrower.reset();
+        faceGrower.reset();
 
         this_task::endProgressSubSteps();
 

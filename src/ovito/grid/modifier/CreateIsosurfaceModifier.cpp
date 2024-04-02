@@ -222,7 +222,7 @@ Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const Modif
             gridShape = voxelGrid->shape(),
             gridType = voxelGrid->gridType(),
             property = std::move(property),
-            vectorComponent = sourceProperty().vectorComponent(),
+            vectorComponent = std::max(0, (int)sourceProperty().vectorComponent()),
             mesh = std::move(mesh),
             isolevel,
             identifyRegions = identifyRegions(),

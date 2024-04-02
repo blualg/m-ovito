@@ -29,7 +29,7 @@ namespace Ovito {
 /******************************************************************************
 * Clustering using pair sampling algorithm.
 ******************************************************************************/
-bool GrainSegmentationEngine1::node_pair_sampling_clustering(GrainSegmentationEngine1::Graph& graph, std::vector<Quaternion>& qsum)
+void GrainSegmentationEngine1::node_pair_sampling_clustering(GrainSegmentationEngine1::Graph& graph, std::vector<Quaternion>& qsum)
 {
     FloatType totalWeight = 1;
 
@@ -67,8 +67,7 @@ bool GrainSegmentationEngine1::node_pair_sampling_clustering(GrainSegmentationEn
 
                     // Update progress indicator.
                     if((progress++ % 1024) == 0) {
-                        if(!incrementProgressValue(1024))
-                            return false;
+                        this_task::incrementProgressValue(1024);
                     }
                 }
                 else {
@@ -88,8 +87,6 @@ bool GrainSegmentationEngine1::node_pair_sampling_clustering(GrainSegmentationEn
             }
         }
     }
-
-    return true;
 }
 
 }   // End of namespace

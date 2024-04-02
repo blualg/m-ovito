@@ -526,12 +526,12 @@ bool OpenGLSceneRenderer::renderFrameGraph(FrameGraph& frameGraph, FrameGraph::R
 bool OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup)
 {
     // Render particles immediately if they are all fully opaque. Otherwise defer rendering to a later time.
-    if(isPickingPass() || !primitive.transparencies() || isTransparencyPass()) {
+    if(isPickingPass() || isTransparencyPass() != (!primitive.transparencies())) {
         renderParticlesImplementation(primitive, pickingGroup);
         return false;
     }
     else {
-        if(orderIndependentTransparency()) {
+        if(orderIndependentTransparency() && primitive.transparencies()) {
             // The order-independent transparency method does not support fully opaque geometry (transparency=0) very well.
             // Any such geometry still appears translucent and does not fully occlude the objects behind it. To mitigate the problem,
             // we render the fully opaque geometry already during the first rendering pass to fill the z-buffer.
@@ -579,7 +579,7 @@ bool OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive, Fr
 bool OpenGLSceneRenderer::renderCylinders(const CylinderPrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup)
 {
     // Render primitives immediately if they are all fully opaque. Otherwise defer rendering to a later time.
-    if(isPickingPass() || !primitive.transparencies() || isTransparencyPass()) {
+    if(isPickingPass() || isTransparencyPass() != (!primitive.transparencies())) {
         renderCylindersImplementation(primitive, pickingGroup);
         return false;
     }
@@ -592,7 +592,7 @@ bool OpenGLSceneRenderer::renderCylinders(const CylinderPrimitive& primitive, Fr
 bool OpenGLSceneRenderer::renderMesh(const MeshPrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup)
 {
     // Render mesh immediately if it is fully opaque. Otherwise defer rendering to a later time.
-    if(isPickingPass() || isTransparencyPass() || primitive.isFullyOpaque()) {
+    if(isPickingPass() || isTransparencyPass() != primitive.isFullyOpaque()) {
         renderMeshImplementation(primitive, pickingGroup);
         return false;
     }

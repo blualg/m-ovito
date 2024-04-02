@@ -27,6 +27,7 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/table/DataTable.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/DataSet.h>
@@ -96,165 +97,92 @@ void GrainSegmentationModifier::propertyChanged(const PropertyFieldDescriptor* f
 }
 
 /******************************************************************************
-* Creates a computation engine that will compute the modifier's results.
-******************************************************************************/
-Future<ModifierEnginePtr> GrainSegmentationModifier::createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
+ * Is called by the pipeline system before a new modifier evaluation begins.
+ ******************************************************************************/
+void GrainSegmentationModifier::preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const
 {
-    // If pipeline is in interactive mode, skip the long-running computation step.
+    // Indicate that we will do different computations depending on whether the pipeline is evaluated in interactive mode or not.
     if(request.interactiveMode())
-        return {};
-
-    // Get modifier input.
-    const Particles* particles = input.expectObject<Particles>();
-    particles->verifyIntegrity();
-    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
-
-    // Make sure the PTM modifier has been executed first and its output is available.
-    const Property* structureProperty = particles->getProperty(Particles::StructureTypeProperty);
-    if(!structureProperty)
-        throw Exception(tr("Grain segmentation requires Polyhedral Template Matching (PTM) output. Please insert the PTM modifier into the pipeline first."));
-    const Property* orientationProperty = particles->getProperty(Particles::OrientationProperty);
-    if(!orientationProperty)
-        throw Exception(tr("Grain segmentation requires lattice orientation information. Please activate the 'Lattice orientations' option of the PTM modifier."));
-    const Property* correspondenceProperty = particles->expectProperty("Correspondences", Property::Int64);
-
-    const SimulationCell* simCell = input.expectObject<SimulationCell>();
-    if(simCell->is2D())
-        throw Exception(tr("The grain segmentation modifier does not support 2d simulation cells."));
-
-    // Initialize PTM library.
-    ptm_initialize_global();
-
-    // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
-    return std::make_shared<GrainSegmentationEngine1>(
-            request,
-            particles,
-            posProperty,
-            structureProperty,
-            orientationProperty,
-            correspondenceProperty,
-            simCell,
-            mergeAlgorithm(),
-            handleCoherentInterfaces(),
-            outputBonds());
+        evaluationTypes = PipelineEvaluationResult::EvaluationType::Interactive;
+    else
+        evaluationTypes = PipelineEvaluationResult::EvaluationType::Noninteractive;
 }
 
 /******************************************************************************
-* Injects the computed results of the engine into the data pipeline.
+* Modifies the input data.
 ******************************************************************************/
-void GrainSegmentationEngine1::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
+Future<PipelineFlowState> GrainSegmentationModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
-    ModifierEngine::applyResults(request, state);
-
-    GrainSegmentationModifier* modifier = static_object_cast<GrainSegmentationModifier>(request.modifier());
-    OVITO_ASSERT(modifier);
-
-    Particles* particles = state.expectMutableObject<Particles>();
-    particles->verifyIntegrity();
-
-    if(_inputFingerprint.hasChanged(particles))
-        throw Exception(GrainSegmentationModifier::tr("Cached modifier results are obsolete, because the number or the storage order of input particles has changed."));
-
-    // Output the edges of the neighbor graph.
-    if(_outputBondsToPipeline && modifier->outputBonds()) {
-
-        std::vector<Bond> bonds;
-        std::vector<FloatType> disorientations;
-        BufferReadAccess<Point3> positionsArray(particles->expectProperty(Particles::PositionProperty));
-
-        for (auto edge: neighborBonds()) {
-            if (isCrystallineBond(edge)) {
-                Bond bond;
-                bond.index1 = edge.a;
-                bond.index2 = edge.b;
-                disorientations.push_back(edge.disorientation);
-
-                // Determine PBC bond shift using minimum image convention.
-                Vector3 delta = positionsArray[bond.index1] - positionsArray[bond.index2];
-                for(size_t dim = 0; dim < 3; dim++) {
-                    if(cell() && cell()->pbcFlags()[dim])
-                        bond.pbcShift[dim] = (int)std::floor(cell()->inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
-                    else
-                        bond.pbcShift[dim] = 0;
-                }
-
-                bonds.push_back(bond);
-            }
+    // In interactive mode, do not perform a real computation. Instead, reuse an old result from the cached state if available.
+    if(request.interactiveMode()) {
+        if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
+//            Particles* particles = state.expectMutableObject<Particles>();
+//            particles->verifyIntegrity();
+//            reuseCachedState(request, particles, state, cachedState);
         }
-
-        // Output disorientation angles as a bond property.
-        PropertyPtr neighborDisorientationAngles = Bonds::OOClass().createUserProperty(DataBuffer::Uninitialized, bonds.size(), DataBuffer::FloatDefault, 1, QStringLiteral("Disorientation"));
-        BufferWriteAccess<FloatType, access_mode::discard_write> disorientationAnglesAccess(neighborDisorientationAngles);
-        for(size_t i = 0; i < disorientations.size(); i++) {
-            disorientationAnglesAccess[i] = disorientations[i];
-        }
-        disorientationAnglesAccess.reset();
-
-        particles->addBonds(bonds, modifier->bondsVis(), { std::move(neighborDisorientationAngles) });
+        return std::move(state);
     }
 
-    // Output a data plot with the dendrogram points.
-    if(mergeSize() && mergeDistance())
-        state.createObject<DataTable>(QStringLiteral("grains-merge"), request.modificationNode(), DataTable::Scatter, GrainSegmentationModifier::tr("Merge size vs. distance"), mergeSize(), mergeDistance());
+    // Phase I:
+    auto engin1Future = request.modificationNode()->partialResultsCache().getOrCompute(state.data(), [&]() {
 
-    // Output a data plot with the log-log dendrogram points.
-    if(logMergeSize() && logMergeDistance())
-        state.createObject<DataTable>(QStringLiteral("grains-log"), request.modificationNode(), DataTable::Scatter, GrainSegmentationModifier::tr("Log distance vs. log merge size"), logMergeDistance(), logMergeSize());
+        // Get modifier input.
+        const Particles* particles = state.expectObject<Particles>();
+        particles->verifyIntegrity();
+        const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
 
-    if(modifier->mergeAlgorithm() == GrainSegmentationModifier::GraphClusteringAutomatic)
-        state.addAttribute(QStringLiteral("GrainSegmentation.auto_merge_threshold"), QVariant::fromValue(suggestedMergingThreshold()), request.modificationNode());
-}
+        // Make sure the PTM modifier has been executed first and its output is available.
+        const Property* structureProperty = particles->getProperty(Particles::StructureTypeProperty);
+        if(!structureProperty)
+            throw Exception(tr("Grain segmentation requires Polyhedral Template Matching (PTM) output. Please insert the PTM modifier into the pipeline first."));
+        const Property* orientationProperty = particles->getProperty(Particles::OrientationProperty);
+        if(!orientationProperty)
+            throw Exception(tr("Grain segmentation requires lattice orientation information. Please activate the 'Lattice orientations' option of the PTM modifier."));
+        const Property* correspondenceProperty = particles->expectProperty("Correspondences", Property::Int64);
 
-/******************************************************************************
-* Injects the computed results of the engine into the data pipeline.
-******************************************************************************/
-void GrainSegmentationEngine2::applyResults(const ModifierEvaluationRequest& request, PipelineFlowState& state)
-{
-    ModifierEngine::applyResults(request, state);
+        const SimulationCell* simCell = state.expectObject<SimulationCell>();
+        if(simCell->is2D())
+            throw Exception(tr("The grain segmentation modifier does not support 2d simulation cells."));
 
-    // Output the results from the 1st algorithm stage.
-    _engine1->applyResults(request, state);
+        // Initialize PTM library.
+        ptm_initialize_global();
 
-    GrainSegmentationModifier* modifier = static_object_cast<GrainSegmentationModifier>(request.modifier());
-    OVITO_ASSERT(modifier);
+        // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
+        auto engine1 = std::make_shared<GrainSegmentationEngine1>(
+                posProperty,
+                structureProperty,
+                orientationProperty,
+                correspondenceProperty,
+                simCell,
+                mergeAlgorithm(),
+                handleCoherentInterfaces(),
+                outputBonds());
 
-    Particles* particles = state.expectMutableObject<Particles>();
+        // Perform the computation in a separate thread.
+        return AsynchronousTask<std::shared_ptr<GrainSegmentationEngine1>>::runAsync([engine1 = std::move(engine1)]() mutable {
+            engine1->perform();
+            return std::move(engine1);
+        }, true);
+    });
 
-    // Output per-particle properties.
-    if(atomClusters()) {
-        particles->createProperty(atomClusters());
+    // Phase II:
+    return engin1Future.then(*this, [this, state = std::move(state), createdByNode = request.modificationNode()](std::shared_ptr<const GrainSegmentationEngine1> engine1) {
 
-        if(modifier->colorParticlesByGrain()) {
+        auto engine2 = std::make_shared<GrainSegmentationEngine2>(
+            std::move(engine1),
+            mergingThreshold(),
+            orphanAdoption(),
+            minGrainAtomCount(),
+            colorParticlesByGrain()
+        );
 
-            // Assign colors to particles according to the grains they belong to.
-            BufferReadAccess<ColorG> grainColorsArray(_grainColors);
-            BufferWriteAccess<ColorG, access_mode::discard_write> particleColorsArray = particles->createProperty(Particles::ColorProperty);
-            boost::transform(BufferReadAccess<int64_t>(atomClusters()), particleColorsArray.begin(), [&](int64_t cluster) {
-                if(cluster != 0)
-                    return grainColorsArray[cluster - 1];
-                else
-                    return ColorG(0.8f, 0.8f, 0.8f); // Special color for non-crystalline particles not part of any grain.
-            });
-        }
-    }
-
-    // Output a data table with the list of grains.
-    // The X-column consists of the grain IDs, the Y-column contains the grain sizes.
-    DataTable* grainTable = state.createObject<DataTable>(QStringLiteral("grains"), request.modificationNode(), DataTable::Scatter, GrainSegmentationModifier::tr("Grain list"), _grainSizes, _grainIds);
-    // Add extra columns to the table containing other per-grain data.
-    grainTable->createProperty(_grainColors);
-    grainTable->createProperty(_grainStructureTypes);
-    grainTable->createProperty(_grainOrientations);
-
-    size_t numGrains = 0;
-    if(atomClusters()->size() != 0)
-        numGrains = *boost::max_element(BufferReadAccess<int64_t>(atomClusters()));
-
-    state.addAttribute(QStringLiteral("GrainSegmentation.grain_count"), QVariant::fromValue(numGrains), request.modificationNode());
-
-    state.setStatus(PipelineStatus(
-        GrainSegmentationModifier::tr("Found %1 grains").arg(numGrains),
-        GrainSegmentationModifier::tr("%1 grains").arg(numGrains)));
+        // Perform the computation in a separate thread.
+        return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), engine2 = std::move(engine2), createdByNode = std::move(createdByNode), bondsVis = OORef<BondsVis>(bondsVis())]() mutable {
+            engine2->perform();
+            engine2->applyResults(state, createdByNode, bondsVis);
+            return std::move(state);
+        }, true);
+    });
 }
 
 }   // End of namespace

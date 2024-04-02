@@ -170,10 +170,10 @@ void GrainSegmentationModifierEditor::plotMerges()
         _logRangeIndicator->show();
     }
     else {
-        _mergePlotWidget->reset();
+        _mergePlotWidget->setTable({});
         _mergeRangeIndicator->hide();
 
-        _logPlotWidget->reset();
+        _logPlotWidget->setTable({});
         _logRangeIndicator->hide();
     }
 }

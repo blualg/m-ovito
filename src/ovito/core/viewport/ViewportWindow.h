@@ -145,13 +145,13 @@ public:
     virtual std::optional<PickResult> pick(const QPointF& pos) = 0;
 
     /// Returns the list of gizmos to render in the viewport.
-    virtual std::vector<ViewportGizmo*> viewportGizmos() = 0;
+    virtual std::vector<ViewportGizmo*> viewportGizmos() { return {};}
 
     /// Sets the mouse cursor shape for the window.
     virtual void setCursor(const QCursor& cursor) {}
 
     /// Returns the current position of the mouse cursor relative to the viewport window.
-    virtual QPoint getCurrentMousePos() = 0;
+    virtual QPoint getCurrentMousePos() const { return QPoint(); }
 
     /// \brief Computes a point in the given coordinate system based on the given screen position and the current snapping settings.
     /// \param[in] screenPoint A point relative to the upper left corner of the viewport window.

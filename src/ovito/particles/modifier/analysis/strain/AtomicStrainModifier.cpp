@@ -145,7 +145,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform(PipelineFlowState& state)
     const auto refCellPbcFlags = refCell()->pbcFlagsCorrected();
     const auto refCellMatrix = refCell()->matrix();
     const auto refCellInverseMatrix = refCell()->inverseMatrix();
-    const auto cellInverseMatrix = cell()->matrix();
+    const auto cellInverseMatrix = cell()->inverseMatrix();
     parallelFor(displacements()->size(), 1024, [&](size_t i) {
         auto index = refToCurrentIndexMap()[i];
         if(index == std::numeric_limits<size_t>::max()) {

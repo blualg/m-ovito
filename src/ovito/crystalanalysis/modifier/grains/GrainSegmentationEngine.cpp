@@ -26,6 +26,7 @@
 #include <ovito/particles/util/NearestNeighborFinder.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
+#include <ovito/core/utilities/concurrent/EnumerableThreadSpecific.h>
 #include <ovito/particles/util/PTMNeighborFinder.h>
 #include "GrainSegmentationEngine.h"
 #include "GrainSegmentationModifier.h"
@@ -46,8 +47,6 @@ namespace Ovito {
 * Constructor.
 ******************************************************************************/
 GrainSegmentationEngine1::GrainSegmentationEngine1(
-            const ModifierEvaluationRequest& request,
-            ElementOrderingFingerprint fingerprint,
             ConstPropertyPtr positions,
             ConstPropertyPtr structureProperty,
             ConstPropertyPtr orientationProperty,
@@ -56,8 +55,6 @@ GrainSegmentationEngine1::GrainSegmentationEngine1(
             GrainSegmentationModifier::MergeAlgorithm algorithmType,
             bool handleCoherentInterfaces,
             bool outputBonds) :
-    ModifierEngine(request),
-    _inputFingerprint(std::move(fingerprint)),
     _positions(std::move(positions)),
     _simCell(simCell),
     _algorithmType(algorithmType),
@@ -76,10 +73,14 @@ GrainSegmentationEngine1::GrainSegmentationEngine1(
 void GrainSegmentationEngine1::perform()
 {
     // First phase of grain segmentation algorithm:
-    if(!createNeighborBonds()) return;
-    if(!rotateInterfaceAtoms()) return;
-    if(!computeDisorientationAngles()) return;
-    if(!determineMergeSequence()) return;
+    createNeighborBonds();
+    this_task::throwIfCanceled();
+    rotateInterfaceAtoms();
+    this_task::throwIfCanceled();
+    computeDisorientationAngles();
+    this_task::throwIfCanceled();
+    determineMergeSequence();
+    this_task::throwIfCanceled();
 
     // Release data that is no longer needed.
     _positions.reset();
@@ -92,38 +93,25 @@ void GrainSegmentationEngine1::perform()
 /******************************************************************************
 * Creates neighbor bonds from stored PTM data.
 ******************************************************************************/
-bool GrainSegmentationEngine1::createNeighborBonds()
+void GrainSegmentationEngine1::createNeighborBonds()
 {
+    this_task::setProgressText(GrainSegmentationModifier::tr("Grain segmentation - building neighbor lists"));
+
     PTMNeighborFinder neighFinder(false);
-    if(!neighFinder.prepare(positions(), cell(), nullptr, structureTypes(), orientations(), correspondences()))
-        return false;
-
-    setProgressMaximum(_numParticles);
-    setProgressText(GrainSegmentationModifier::tr("Grain segmentation - building neighbor lists"));
-
-    // Mutex is needed to synchronize access to bonds list in parallelized loop.
-    std::mutex bondsMutex;
+    neighFinder.prepare(positions(), cell(), nullptr, structureTypes(), orientations(), correspondences());
 
     // Perform analysis on each particle.
-    parallelForChunksWithProgress(_numParticles, [&](size_t startIndex, size_t count, ProgressingTask& operation) {
+    EnumerableThreadSpecific<PTMNeighborFinder::Query> neighQueries;
+    EnumerableThreadSpecific<std::vector<NeighborBond>> neighborBonds;
+    parallelForInnerOuter(_numParticles, 1024, [&](auto&& iterate) {
 
         // Construct thread-local neighbor finder.
-        PTMNeighborFinder::Query neighQuery(neighFinder);
+        PTMNeighborFinder::Query& neighQuery = neighQueries.create(neighFinder);
 
         // Thread-local list of generated bonds connecting neighboring lattice atoms.
-        std::vector<NeighborBond> threadlocalNeighborBonds;
+        std::vector<NeighborBond>& threadlocalNeighborBonds = neighborBonds.create();
 
-        // Loop over a range of input particles.
-        for(size_t index = startIndex, endIndex = startIndex + count; index < endIndex; index++) {
-
-            // Update progress indicator (only occasionally).
-            if((index % 256) == 0)
-                operation.incrementProgressValue(256);
-
-            // Break out of loop when computation was canceled.
-            if(operation.isCanceled())
-                break;
-
+        iterate([&](size_t index) {
             // Get PTM information.
             neighQuery.findNeighbors(index);
             auto structureType = neighQuery.structureType();
@@ -155,16 +143,13 @@ bool GrainSegmentationEngine1::createNeighborBonds()
                     }
                 }
             }
-        }
-
-        // Append thread-local bonds to global bonds list.
-        std::lock_guard<std::mutex> lock(bondsMutex);
-        _neighborBonds.insert(_neighborBonds.end(), threadlocalNeighborBonds.cbegin(), threadlocalNeighborBonds.cend());
+        });
     });
-    if(isCanceled())
-        return false;
 
-    return !isCanceled();
+    // Concatenate thread-local bonds to global bonds list.
+    neighborBonds.visitEach([&](const std::vector<NeighborBond>& r) {
+        _neighborBonds.insert(_neighborBonds.end(), r.cbegin(), r.cend());
+    });
 }
 
 bool GrainSegmentationEngine1::interface_cubic_hex(NeighborBond& bond, InterfaceHandler& interfaceHandler,
@@ -188,7 +173,7 @@ bool GrainSegmentationEngine1::interface_cubic_hex(NeighborBond& bond, Interface
 /******************************************************************************
 * Rotates defect phase atoms to an equivalent parent-phase orientation.
 ******************************************************************************/
-bool GrainSegmentationEngine1::rotateInterfaceAtoms()
+void GrainSegmentationEngine1::rotateInterfaceAtoms()
 {
     // Make a copy of structure types and orientations.
     BufferReadAccess<PTMAlgorithm::StructureType> structuresArray(structureTypes());
@@ -197,16 +182,14 @@ bool GrainSegmentationEngine1::rotateInterfaceAtoms()
     boost::transform(BufferReadAccess<QuaternionG>(orientations()), _adjustedOrientations.begin(), [](const QuaternionG& q) { return q.toDataType<FloatType>(); });
 
     // Only rotate hexagonal atoms if handling of coherent interfaces is enabled
-    if (!_handleBoundaries)
-        return true;
+    if(!_handleBoundaries)
+        return;
 
-    setProgressText(GrainSegmentationModifier::tr("Grain segmentation - rotating minority atoms"));
-
+    this_task::setProgressText(GrainSegmentationModifier::tr("Grain segmentation - rotating minority atoms"));
 
     // Construct local neighbor list builder.
     PTMNeighborFinder neighFinder(false);
-    if(!neighFinder.prepare(positions(), cell(), nullptr, structureTypes(), orientations(), correspondences()))
-        return false;
+    neighFinder.prepare(positions(), cell(), nullptr, structureTypes(), orientations(), correspondences());
     PTMNeighborFinder::Query neighQuery(neighFinder);
 
     // TODO: replace comparator with a lambda function
@@ -216,17 +199,18 @@ bool GrainSegmentationEngine1::rotateInterfaceAtoms()
     auto interfaceHandler = InterfaceHandler(structuresArray);
 
     // Populate priority queue with bonds at an cubic-hexagonal interface
-    for (auto bond : _neighborBonds) {
-        if (interface_cubic_hex(bond, interfaceHandler, rotated)) {
+    for(auto bond : _neighborBonds) {
+        if(interface_cubic_hex(bond, interfaceHandler, rotated)) {
             pq.push({bond.a, bond.b, bond.disorientation});
         }
     }
+    this_task::throwIfCanceled();
 
-    while (pq.size()) {
+    while(pq.size()) {
         auto bond = *pq.begin();
         pq.pop();
 
-        if (!interface_cubic_hex(bond, interfaceHandler, rotated)) {
+        if(!interface_cubic_hex(bond, interfaceHandler, rotated)) {
             continue;
         }
 
@@ -243,38 +227,33 @@ bool GrainSegmentationEngine1::rotateInterfaceAtoms()
             size_t neighborIndex = neighQuery.neighbors()[j].index;
             bond.a = index;
             bond.b = neighborIndex;
-            if (interface_cubic_hex(bond, interfaceHandler, rotated)) {
+            if(interface_cubic_hex(bond, interfaceHandler, rotated)) {
                 pq.push({bond.a, bond.b, bond.disorientation});
             }
         }
     }
-
-    return !isCanceled();
 }
 
 /******************************************************************************
 * Calculates the disorientation angle for each graph edge (i.e. bond).
 ******************************************************************************/
-bool GrainSegmentationEngine1::computeDisorientationAngles()
+void GrainSegmentationEngine1::computeDisorientationAngles()
 {
     // Compute disorientation angles associated with the neighbor graph edges.
-    setProgressText(GrainSegmentationModifier::tr("Grain segmentation - misorientation calculation"));
+    this_task::setProgressText(GrainSegmentationModifier::tr("Grain segmentation - misorientation calculation"));
 
-    parallelForWithProgress(_neighborBonds.size(), [&](size_t bondIndex) {
+    parallelFor(_neighborBonds.size(), 1024, [&](size_t bondIndex) {
         NeighborBond& bond = _neighborBonds[bondIndex];
         bond.disorientation = PTMAlgorithm::calculate_disorientation(_adjustedStructureTypes[bond.a],
                                                                      _adjustedStructureTypes[bond.b],
                                                                      _adjustedOrientations[bond.a],
                                                                      _adjustedOrientations[bond.b]);
     });
-    if(isCanceled()) return false;
 
     // Sort graph edges by disorientation.
     boost::sort(_neighborBonds, [](const NeighborBond& a, const NeighborBond& b) {
         return a.disorientation < b.disorientation;
     });
-
-    return !isCanceled();
 }
 
 /******************************************************************************
@@ -320,8 +299,7 @@ FloatType GrainSegmentationEngine1::calculate_disorientation(int structureType, 
 /******************************************************************************
 * Clustering using minimum spanning tree algorithm.
 ******************************************************************************/
-bool GrainSegmentationEngine1::minimum_spanning_tree_clustering(
-        std::vector<Quaternion>& qsum, DisjointSet& uf)
+void GrainSegmentationEngine1::minimum_spanning_tree_clustering(std::vector<Quaternion>& qsum, DisjointSet& uf)
 {
     size_t progress = 0;
     for(const NeighborBond& edge : _neighborBonds) {
@@ -340,18 +318,15 @@ bool GrainSegmentationEngine1::minimum_spanning_tree_clustering(
 
         // Update progress indicator.
         if((progress++ % 1024) == 0) {
-            if(!incrementProgressValue(1024))
-                return false;
+            this_task::incrementProgressValue(1024);
         }
     }
-
-    return !isCanceled();
 }
 
 /******************************************************************************
 * Builds grains by iterative region merging
 ******************************************************************************/
-bool GrainSegmentationEngine1::determineMergeSequence()
+void GrainSegmentationEngine1::determineMergeSequence()
 {
     // The graph used for the Node Pair Sampling methods
     Graph graph(_numParticles, neighborBonds().size());
@@ -359,8 +334,8 @@ bool GrainSegmentationEngine1::determineMergeSequence()
     // Build graph.
     if(_algorithmType == GrainSegmentationModifier::GraphClusteringAutomatic || _algorithmType == GrainSegmentationModifier::GraphClusteringManual) {
 
-        setProgressText(GrainSegmentationModifier::tr("Grain segmentation - building graph"));
-        setProgressMaximum(neighborBonds().size());
+        this_task::setProgressText(GrainSegmentationModifier::tr("Grain segmentation - building graph"));
+        this_task::setProgressMaximum(neighborBonds().size());
 
         size_t progress = 0;
         for (auto edge: neighborBonds()) {
@@ -370,8 +345,7 @@ bool GrainSegmentationEngine1::determineMergeSequence()
             }
 
             if((progress++ % 1024) == 0) {
-                if(!incrementProgressValue(1024))
-                    return false;
+                this_task::incrementProgressValue(1024);
             }
         }
     }
@@ -381,8 +355,8 @@ bool GrainSegmentationEngine1::determineMergeSequence()
     DisjointSet uf(_numParticles);
     _dendrogram.resize(0);
 
-    setProgressText(GrainSegmentationModifier::tr("Grain segmentation - region merging"));
-    setProgressMaximum(_numParticles);  //TODO: make this num. crystalline particles
+    this_task::setProgressText(GrainSegmentationModifier::tr("Grain segmentation - region merging"));
+    this_task::setProgressMaximum(_numParticles);  //TODO: make this num. crystalline particles
 
     if(_algorithmType == GrainSegmentationModifier::GraphClusteringAutomatic || _algorithmType == GrainSegmentationModifier::GraphClusteringManual) {
         node_pair_sampling_clustering(graph, qsum);
@@ -390,14 +364,12 @@ bool GrainSegmentationEngine1::determineMergeSequence()
     else {
         minimum_spanning_tree_clustering(qsum, uf);
     }
-    if(isCanceled())
-        return false;
+    this_task::throwIfCanceled();
 
     // Sort dendrogram entries by distance.
     boost::sort(_dendrogram, [](const DendrogramNode& a, const DendrogramNode& b) { return a.distance < b.distance; });
 
-    if(isCanceled())
-        return false;
+    this_task::throwIfCanceled();
 
 #if DEBUG_OUTPUT
 char filename[128];
@@ -471,7 +443,6 @@ fclose(fout);
                 *logMergeDistanceIter++ = regressor.ys[i];
             }
         }
-
     }
     else {
         // Create PropertyStorage objects for the output plot.
@@ -488,27 +459,7 @@ fclose(fout);
             }
         }
     }
-
-    return !isCanceled();
 }
-
-#if 0 // TODO: newly implement this
-/******************************************************************************
-* Creates another engine that performs the next stage of the computation.
-******************************************************************************/
-std::shared_ptr<ModifierEngine> GrainSegmentationEngine1::createContinuationEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input)
-{
-    GrainSegmentationModifier* modifier = static_object_cast<GrainSegmentationModifier>(request.modifier());
-
-    return std::make_shared<GrainSegmentationEngine2>(
-        request,
-        static_pointer_cast<GrainSegmentationEngine1>(shared_from_this()),
-        modifier->mergingThreshold(),
-        modifier->orphanAdoption(),
-        modifier->minGrainAtomCount()
-    );
-}
-#endif
 
 /******************************************************************************
 * The grain segmentation algorithm.
@@ -516,7 +467,7 @@ std::shared_ptr<ModifierEngine> GrainSegmentationEngine1::createContinuationEngi
 void GrainSegmentationEngine2::perform()
 {
     // Second phase: Execute merge steps up to the threshold set by the user or the adaptively determined threshold.
-    setProgressText(GrainSegmentationModifier::tr("Grain segmentation - merging clusters"));
+    this_task::setProgressText(GrainSegmentationModifier::tr("Grain segmentation - merging clusters"));
 
     // Either use user-defined merge threshold or automatically computed threshold.
     FloatType mergingThreshold = _mergingThreshold;
@@ -536,8 +487,7 @@ void GrainSegmentationEngine2::perform()
     // Iterate through merge list until distance cutoff is met.
     DisjointSet uf(_numParticles);
     for(auto node = dendrogram.cbegin(); node != dendrogram.cend(); ++node) {
-        if(isCanceled())
-            return;
+        this_task::throwIfCanceled();
 
         if(std::log(node->distance) > mergingThreshold)
             break;
@@ -570,14 +520,12 @@ void GrainSegmentationEngine2::perform()
             }
         }
     }
-    if(isCanceled())
-        return;
+    this_task::throwIfCanceled();
 
     // Allocate and fill output array storing the grain IDs (1-based identifiers).
     _grainIds =  DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, _numClusters - 1, Property::IntIdentifier, 1, QStringLiteral("Grain Identifier"));
     boost::algorithm::iota_n(BufferWriteAccess<IdentifierIntType, access_mode::discard_write>(_grainIds).begin(), IdentifierIntType{1}, _grainIds->size());
-    if(isCanceled())
-        return;
+    this_task::throwIfCanceled();
 
     // Allocate output array storing the grain sizes.
     _grainSizes = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, _numClusters - 1, DataBuffer::Int64, 1, QStringLiteral("Grain Size"));
@@ -590,8 +538,7 @@ void GrainSegmentationEngine2::perform()
         if(type->enabled())
             _grainStructureTypes->addElementType(type);
     }
-    if(isCanceled())
-        return;
+    this_task::throwIfCanceled();
 
     // Allocate output array with each grain's unique color.
     // Fill it with random color values (using constant random seed to keep it reproducible).
@@ -599,8 +546,7 @@ void GrainSegmentationEngine2::perform()
     std::default_random_engine rng(1);
     std::uniform_real_distribution<FloatType> uniform_dist(0, 1);
     boost::generate(BufferWriteAccess<ColorG, access_mode::discard_write>(_grainColors), [&]() { return ColorG::fromHSV(static_cast<GraphicsFloatType>(uniform_dist(rng)), 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.8f, 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.5f); });
-    if(isCanceled())
-        return;
+    this_task::throwIfCanceled();
 
     // Allocate output array storing the mean lattice orientation of grains (represented by a quaternion).
     _grainOrientations = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, _numClusters - 1, DataBuffer::FloatDefault, 4, QStringLiteral("Orientation"), 0, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z") << QStringLiteral("W"));
@@ -610,8 +556,7 @@ void GrainSegmentationEngine2::perform()
     // Determine new IDs for non-root clusters.
     for(size_t particleIndex = 0; particleIndex < _numParticles; particleIndex++)
         clusterRemapping[particleIndex] = clusterRemapping[uf.find(particleIndex)];
-    if(isCanceled())
-        return;
+    this_task::throwIfCanceled();
 
     // Relabel atoms after cluster IDs have changed.
     // Also count the number of atoms in each cluster.
@@ -625,8 +570,7 @@ void GrainSegmentationEngine2::perform()
                 grainSizeArray[gid - 1]++;
         }
     }
-    if(isCanceled())
-        return;
+    this_task::throwIfCanceled();
 
     // Reorder grains by size (large to small).
     if(_numClusters > 1) {
@@ -637,15 +581,13 @@ void GrainSegmentationEngine2::perform()
         std::sort(mapping.begin(), mapping.end(), [grainSizeArray = BufferReadAccess<int64_t>(_grainSizes)](size_t a, size_t b) {
             return grainSizeArray[a] > grainSizeArray[b];
         });
-        if(isCanceled())
-            return;
+        this_task::throwIfCanceled();
 
         // Use index map to reorder grain data arrays.
         _grainSizes->reorderElements(mapping);
         _grainStructureTypes->reorderElements(mapping);
         _grainOrientations->reorderElements(mapping);
-        if(isCanceled())
-            return;
+        this_task::throwIfCanceled();
 
         // Invert the grain index map.
 
@@ -658,8 +600,7 @@ void GrainSegmentationEngine2::perform()
 
         for(auto& id : BufferWriteAccess<int64_t, access_mode::read_write>(atomClusters()))
             id = inverseMapping[id];
-        if(isCanceled())
-            return;
+        this_task::throwIfCanceled();
 
         // Adopt orphan atoms.
         if(_adoptOrphanAtoms)
@@ -670,10 +611,10 @@ void GrainSegmentationEngine2::perform()
 /******************************************************************************
 * Merges any orphan atoms into the closest cluster.
 ******************************************************************************/
-bool GrainSegmentationEngine2::mergeOrphanAtoms()
+void GrainSegmentationEngine2::mergeOrphanAtoms()
 {
-    setProgressText(GrainSegmentationModifier::tr("Grain segmentation - merging orphan atoms"));
-    setProgressValue(0);
+    this_task::setProgressText(GrainSegmentationModifier::tr("Grain segmentation - merging orphan atoms"));
+    this_task::setProgressValue(0);
 
     BufferWriteAccess<int64_t, access_mode::read_write> atomClustersArray(atomClusters());
     BufferWriteAccess<int64_t, access_mode::read_write> grainSizeArray(_grainSizes);
@@ -689,8 +630,7 @@ bool GrainSegmentationEngine2::mergeOrphanAtoms()
             noncrystallineBonds.push_back(nb);
         }
     }
-    if(isCanceled())
-        return false;
+    this_task::throwIfCanceled();
 
     boost::sort(noncrystallineBonds,
                  [](const GrainSegmentationEngine1::NeighborBond& a, const GrainSegmentationEngine1::NeighborBond& b)
@@ -737,8 +677,111 @@ bool GrainSegmentationEngine2::mergeOrphanAtoms()
             pq.push({node.cluster, neighborIndex, node.length + bond.length});
         }
     }
+}
 
-    return !isCanceled();
+/******************************************************************************
+* Injects the computed results of the engine into the data pipeline.
+******************************************************************************/
+void GrainSegmentationEngine1::applyResults(PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, BondsVis* bondsVis) const
+{
+    Particles* particles = state.expectMutableObject<Particles>();
+    particles->verifyIntegrity();
+
+    // Output the edges of the neighbor graph.
+    if(_outputBondsToPipeline) {
+
+        std::vector<Bond> bonds;
+        std::vector<FloatType> disorientations;
+        BufferReadAccess<Point3> positionsArray(particles->expectProperty(Particles::PositionProperty));
+
+        for(auto edge : neighborBonds()) {
+            if(isCrystallineBond(edge)) {
+                Bond bond;
+                bond.index1 = edge.a;
+                bond.index2 = edge.b;
+                disorientations.push_back(edge.disorientation);
+
+                // Determine PBC bond shift using minimum image convention.
+                Vector3 delta = positionsArray[bond.index1] - positionsArray[bond.index2];
+                for(size_t dim = 0; dim < 3; dim++) {
+                    if(cell() && cell()->pbcFlags()[dim])
+                        bond.pbcShift[dim] = (int)std::floor(cell()->inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
+                    else
+                        bond.pbcShift[dim] = 0;
+                }
+
+                bonds.push_back(bond);
+            }
+        }
+
+        // Output disorientation angles as a bond property.
+        PropertyPtr neighborDisorientationAngles = Bonds::OOClass().createUserProperty(DataBuffer::Uninitialized, bonds.size(), DataBuffer::FloatDefault, 1, QStringLiteral("Disorientation"));
+        BufferWriteAccess<FloatType, access_mode::discard_write> disorientationAnglesAccess(neighborDisorientationAngles);
+        for(size_t i = 0; i < disorientations.size(); i++) {
+            disorientationAnglesAccess[i] = disorientations[i];
+        }
+        disorientationAnglesAccess.reset();
+
+        particles->addBonds(bonds, bondsVis, { std::move(neighborDisorientationAngles) });
+    }
+
+    // Output a data plot with the dendrogram points.
+    if(mergeSize() && mergeDistance())
+        state.createObject<DataTable>(QStringLiteral("grains-merge"), createdByNode, DataTable::Scatter, GrainSegmentationModifier::tr("Merge size vs. distance"), mergeSize(), mergeDistance());
+
+    // Output a data plot with the log-log dendrogram points.
+    if(logMergeSize() && logMergeDistance())
+        state.createObject<DataTable>(QStringLiteral("grains-log"), createdByNode, DataTable::Scatter, GrainSegmentationModifier::tr("Log distance vs. log merge size"), logMergeDistance(), logMergeSize());
+
+    if(_algorithmType == GrainSegmentationModifier::GraphClusteringAutomatic)
+        state.addAttribute(QStringLiteral("GrainSegmentation.auto_merge_threshold"), QVariant::fromValue(suggestedMergingThreshold()), createdByNode);
+}
+
+/******************************************************************************
+* Injects the computed results of the engine into the data pipeline.
+******************************************************************************/
+void GrainSegmentationEngine2::applyResults(PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, BondsVis* bondsVis) const
+{
+    // Output the results from the 1st algorithm stage.
+    _engine1->applyResults(state, createdByNode, bondsVis);
+
+    Particles* particles = state.expectMutableObject<Particles>();
+
+    // Output per-particle properties.
+    if(atomClusters()) {
+        particles->createProperty(atomClusters());
+
+        if(_colorParticlesByGrain) {
+
+            // Assign colors to particles according to the grains they belong to.
+            BufferReadAccess<ColorG> grainColorsArray(_grainColors);
+            BufferWriteAccess<ColorG, access_mode::discard_write> particleColorsArray = particles->createProperty(Particles::ColorProperty);
+            boost::transform(BufferReadAccess<int64_t>(atomClusters()), particleColorsArray.begin(), [&](int64_t cluster) {
+                if(cluster != 0)
+                    return grainColorsArray[cluster - 1];
+                else
+                    return ColorG(0.8f, 0.8f, 0.8f); // Special color for non-crystalline particles not part of any grain.
+            });
+        }
+    }
+
+    // Output a data table with the list of grains.
+    // The X-column consists of the grain IDs, the Y-column contains the grain sizes.
+    DataTable* grainTable = state.createObject<DataTable>(QStringLiteral("grains"), createdByNode, DataTable::Scatter, GrainSegmentationModifier::tr("Grain list"), _grainSizes, _grainIds);
+    // Add extra columns to the table containing other per-grain data.
+    grainTable->createProperty(_grainColors);
+    grainTable->createProperty(_grainStructureTypes);
+    grainTable->createProperty(_grainOrientations);
+
+    size_t numGrains = 0;
+    if(atomClusters()->size() != 0)
+        numGrains = *boost::max_element(BufferReadAccess<int64_t>(atomClusters()));
+
+    state.addAttribute(QStringLiteral("GrainSegmentation.grain_count"), QVariant::fromValue(numGrains), createdByNode);
+
+    state.setStatus(PipelineStatus(
+        GrainSegmentationModifier::tr("Found %1 grains").arg(numGrains),
+        GrainSegmentationModifier::tr("%1 grains").arg(numGrains)));
 }
 
 }   // End of namespace

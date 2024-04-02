@@ -58,7 +58,7 @@ public:
     }
 
     /// Returns the current position of the mouse cursor relative to the viewport window.
-    virtual QPoint getCurrentMousePos() override {
+    virtual QPoint getCurrentMousePos() const override {
         return widget()->mapFromGlobal(QCursor::pos());
     }
 

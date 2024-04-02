@@ -65,13 +65,31 @@ public:
     /// Constructor.
     explicit GrainSegmentationModifier(ObjectInitializationFlags flags);
 
+    /// Is called by the pipeline system before a new modifier evaluation begins.
+    virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
+
+    /// Modifies the input data.
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
+
+    /// Indicates that a preliminary viewport update will be performed immediately after this modifier
+	/// has computed new results.
+    virtual bool shouldRefreshViewportsAfterEvaluation() override { return true; }
+
+    /// Indicates whether the modifier wants to keep its partial compute results after one of its parameters has been changed.
+    virtual bool shouldKeepPartialResultsAfterChange(const PropertyFieldEvent& event) override {
+        // Avoid a full recomputation if one of these parameters changes.
+        if(event.field() == PROPERTY_FIELD(colorParticlesByGrain)
+                || event.field() == PROPERTY_FIELD(mergingThreshold)
+                || event.field() == PROPERTY_FIELD(minGrainAtomCount)
+                || event.field() == PROPERTY_FIELD(orphanAdoption))
+            return true;
+        return Modifier::shouldKeepPartialResultsAfterChange(event);
+    }
+
 protected:
 
     /// Is called when the value of a property of this object has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
-
-    /// Creates a computation engine that will compute the modifier's results.
-    virtual Future<ModifierEnginePtr> createEngine(const ModifierEvaluationRequest& request, const PipelineFlowState& input) override;
 
 private:
 

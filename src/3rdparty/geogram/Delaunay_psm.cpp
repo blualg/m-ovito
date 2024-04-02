@@ -7574,15 +7574,15 @@ namespace GEO {
 
         bool os_enable_cancel(bool flag) {
             if(flag) {
-                signal(SIGINT, sigint_handler);
+//                signal(SIGINT, sigint_handler);
             } else {
-                signal(SIGINT, SIG_DFL);
+//                signal(SIGINT, SIG_DFL);
             }
             return true;
         }
 
         void os_install_signal_handlers() {
-
+#if 0
             // Install signal handlers
             signal(SIGSEGV, signal_handler);
             signal(SIGILL, signal_handler);
@@ -7601,6 +7601,7 @@ namespace GEO {
 
             // Install memory allocation handler
             std::set_new_handler(memory_exhausted_handler);
+#endif
         }
 
 
@@ -8143,9 +8144,9 @@ namespace GEO {
         bool os_enable_cancel(bool flag) {
 #ifdef GEO_COMPILER_MSVC
             if(flag) {
-                signal(SIGINT, sigint_handler);
+//                signal(SIGINT, sigint_handler);
             } else {
-                signal(SIGINT, SIG_DFL);
+//                signal(SIGINT, SIG_DFL);
             }
             return true;
 #else

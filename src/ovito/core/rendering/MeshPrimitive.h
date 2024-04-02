@@ -153,8 +153,21 @@ public:
 
 	/// Computes the 3d bounding box of the primitive in local coordinate space.
 	virtual Box3 computeBoundingBox(const RendererResourceCache::ResourceFrame& visCache) const override {
-        OVITO_ASSERT(!useInstancedRendering());
-        return mesh() ? mesh()->boundingBox() : Box3();
+        if(!mesh())
+            return {};
+        Box3 bb = mesh()->boundingBox();
+        if(useInstancedRendering()) {
+            perInstanceTMs()->forTypes<DataBuffer::Float32, DataBuffer::Float64>([&](auto _) {
+                using T = decltype(_);
+                Box_3<T> meshBox = bb.toDataType<T>();
+                Box_3<T> coordsBox;
+                for(const auto& tm : BufferReadAccess<AffineTransformationT<T>>(perInstanceTMs())) {
+                    coordsBox.addBox(meshBox.transformed(tm));
+                }
+                bb = coordsBox.template toDataType<FloatType>();
+            });
+        }
+        return bb;
     }
 
 private:

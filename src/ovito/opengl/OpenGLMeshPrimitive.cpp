@@ -97,7 +97,8 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 
     // Are we rendering a semi-transparent mesh?
     bool useBlending = !isPickingPass() && !primitive.isFullyOpaque() && !orderIndependentTransparency();
-    if(useBlending) shader.enableBlending();
+    if(useBlending)
+        shader.enableBlending();
 
     // Turn back-face culling off if requested.
     if(!primitive.cullFaces()) {
