@@ -104,6 +104,7 @@ bool PDBImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
     CompressedTextReader stream(file);
 
     // Read up to 60 lines from the beginning of the file.
+    bool isPDB = false;
     for(int i = 0; i < 60 && !stream.eof(); i++) {
         stream.readLine(122);
         if(qstrlen(stream.line()) > 120 && !stream.lineStartsWithToken("TITLE"))
@@ -111,10 +112,10 @@ bool PDBImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
         if(qstrlen(stream.line()) >= 7 && stream.line()[6] != ' ' && std::find(stream.line(), stream.line()+6, ' ') != stream.line()+6)
             return false;
         if(stream.lineStartsWithToken("HEADER") || stream.lineStartsWithToken("ATOM") || stream.lineStartsWith("HETATM"))
-            return true;
+            isPDB = true;
     }
 
-    return false;
+    return isPDB;
 }
 
 /******************************************************************************
