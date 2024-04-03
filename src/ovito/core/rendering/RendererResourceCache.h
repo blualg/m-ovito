@@ -25,7 +25,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/MoveOnlyAny.h>
-#include <ovito/core/utilities/concurrent/ExecutionContext.h>
 
 namespace Ovito {
 
@@ -106,6 +105,7 @@ public:
 #ifdef OVITO_DEBUG
     /// Destructor.
     ~RendererResourceCache() {
+        OVITO_ASSERT(QThread::currentThread() == _owningThread);
         // The cache should be completely empty at the time it is destroyed.
         OVITO_ASSERT(_activeResourceFrames.empty());
         OVITO_ASSERT(empty());
@@ -122,7 +122,7 @@ public:
     /// Creates a new cache entry with a default-initialized value if the key doesn't exist.
     template<typename Value, typename Key>
     Value& lookup(Key&& key, ResourceFrameHandle resourceFrame) {
-        OVITO_ASSERT(ExecutionContext::isMainThread());
+        OVITO_ASSERT(QThread::currentThread() == _owningThread);
         OVITO_ASSERT(std::find(_activeResourceFrames.begin(), _activeResourceFrames.end(), resourceFrame) != _activeResourceFrames.end());
 
         // Check if the key exists in the cache.
@@ -152,7 +152,7 @@ public:
 
     /// Informs the resource manager that a new frame is going to be rendered.
     ResourceFrame acquireResourceFrame() {
-        OVITO_ASSERT(ExecutionContext::isMainThread());
+        OVITO_ASSERT(QThread::currentThread() == _owningThread);
 
         // On the first frame, the cache should be empty.
         OVITO_ASSERT(!_activeResourceFrames.empty() || _entries.empty());
@@ -172,7 +172,7 @@ private:
 
     /// Informs the resource manager that a frame has completely finished rendering and all resources associated with that frame may be released.
     void releaseResourceFrame(ResourceFrameHandle frame) {
-        OVITO_ASSERT(ExecutionContext::isMainThread());
+        OVITO_ASSERT(QThread::currentThread() == _owningThread);
         OVITO_ASSERT(frame > 0);
 
         // Remove frame from the list of active frames.
@@ -234,8 +234,14 @@ private:
     /// List of frames that are currently being rendered (by the CPU and/or the GPU).
     std::vector<ResourceFrameHandle> _activeResourceFrames;
 
-    /// Counter that keeps track of how many resource frames have been acquired.
+    /// Counter that keeps track of how many resource frames have been acquired in total.
     ResourceFrameHandle _nextResourceFrame = 0;
+
+#ifdef OVITO_DEBUG
+    /// Keep track of the thread that owns the resource cache.
+    /// Resource caches are not thread-safe and may only be used from a single thread.
+    QThread* _owningThread = QThread::currentThread();
+#endif
 };
 
 }   // End of namespace

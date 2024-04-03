@@ -132,7 +132,7 @@ public:
 		/// Constructor.
 		explicit ObjectPickingGroup(const Pipeline* pipeline, OORef<ObjectPickInfo> pickInfo) :
 			_pipeline(const_cast<Pipeline*>(pipeline)),
-			_pickInfo(std::move(pickInfo)) { OVITO_ASSERT(pipeline);}
+			_pickInfo(std::move(pickInfo)) {}
 
 		/// Returns the base object ID at which the rendering primitives of this group start.
 		quint32 baseObjectID() const { return _baseObjectID; }
@@ -159,7 +159,7 @@ public:
 		}
 
 		/// Returns the scene node associated with this group.
-		const OORef<Pipeline>& pipeline() const { return _pipeline; }
+		const OORef<Pipeline>& pipeline() const { OVITO_ASSERT(_pipeline); return _pipeline; }
 
 		/// Returns the option picking info object, which determines the part of the dataset that was picked.
 		const OORef<ObjectPickInfo>& pickInfo() const { return _pickInfo; }
@@ -167,6 +167,7 @@ public:
 	private:
 
 		/// The scene pipeline being rendered.
+		/// Note: may be null in rare cases, e.g., when the AmbientOcclusionModifier renders particles using false colors.
 		OORef<Pipeline> _pipeline;
 
 		/// An additional picking info object, which determines the part of the dataset being rendered.

@@ -130,7 +130,7 @@ ENDIF()
 # Define the plugin module.
 OVITO_STANDARD_PLUGIN(Particles
     SOURCES ${SourceFiles}
-    PLUGIN_DEPENDENCIES Mesh Grid StdObj Delaunay
+    PLUGIN_DEPENDENCIES Mesh Grid StdObj Delaunay OpenGLRenderer
     PRIVATE_LIB_DEPENDENCIES VoroPlusPlus PolyhedralTemplateMatching MinimumWeightMatchingCentrosymmetry xdrfile gsd
     OPTIONAL_PLUGIN_DEPENDENCIES StdMod
     PRECOMPILED_HEADERS Particles.h

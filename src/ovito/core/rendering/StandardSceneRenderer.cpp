@@ -66,8 +66,9 @@ void StandardSceneRenderer::startRender(const QSize& frameBufferSize)
     // Instantiate the renderer implementation.
     if(!rendererClass)
         throw Exception(tr("The OffscreenOpenGLSceneRenderer class is not available. Please make sure the OpenGLRenderer plugin is installed correctly."));
-    OVITO_ASSERT(!_internalRenderer);
-    _internalRenderer = static_object_cast<SceneRenderer>(rendererClass->createInstance());
+    if(!_internalRenderer || &_internalRenderer->getOOClass() != rendererClass) {
+        _internalRenderer = static_object_cast<SceneRenderer>(rendererClass->createInstance());
+    }
 
     // Pass supersampling level requested by the user to the renderer implementation.
     _internalRenderer->setMultisamplingLevel(std::max(1, antialiasingLevel()));
@@ -92,8 +93,6 @@ void StandardSceneRenderer::endRender()
     if(_internalRenderer) {
         // Call implementation class.
         _internalRenderer->endRender();
-        // Release implementation.
-        _internalRenderer.reset();
     }
     SceneRenderer::endRender();
 }

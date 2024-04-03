@@ -139,6 +139,12 @@ public:
 	/// Returns the best format for QImage to be used when creating an ImagePrimitive.
 	virtual QImage::Format preferredImageFormat() const override { return QImage::QImage::Format_RGBA8888; }
 
+    /// Indicates that we are currently rendering a false-color image for object picking.
+    bool isPickingPass() const { return _isPickingPass; }
+
+    /// Activates picking render mode.
+    void setPickingPass(bool enable) { _isPickingPass = enable; }
+
     /// Returns the vendor name of the OpenGL implementation in use.
     static const QByteArray& openGLVendor() { return _openGLVendor; }
 
@@ -178,12 +184,6 @@ protected:
     void loadShader(QOpenGLShaderProgram* program, QOpenGLShader::ShaderType shaderType, const QString& filename, bool isWBOITPass);
 
 private:
-
-    /// Indicates that we are currently rendering a false-color image for object picking.
-    bool isPickingPass() const { return _isPickingPass; }
-
-    /// Activates picking render mode.
-    void setPickingPass(bool enable) { _isPickingPass = enable; }
 
     /// Returns whether we are currently rendering semi-transparent geometry.
     bool isTransparencyPass() const { return _isTransparencyPass; }
@@ -339,8 +339,7 @@ private:
     /// Indicates whether the OpenGL implementation supports geometry shaders.
     static bool _openGLSupportsGeometryShaders;
 
-    friend class OpenGLShaderHelper; // Using isPickingPass()
-    friend class OpenGLViewportWindow; // Using setPickingPass()
+    friend class OpenGLShaderHelper;
 };
 
 }   // End of namespace

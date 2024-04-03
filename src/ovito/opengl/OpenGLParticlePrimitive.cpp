@@ -220,7 +220,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
 
     // Pass picking base ID to shader.
     if(isPickingPass()) {
-        shader.setPickingBaseId(allocateObjectPickingIDs(pickingGroup, primitive.positions()->size()/*, primitive.indices()*/));
+        shader.setPickingBaseId(allocateObjectPickingIDs(pickingGroup, primitive.positions()->size()));
     }
     OVITO_REPORT_OPENGL_ERRORS(this);
 

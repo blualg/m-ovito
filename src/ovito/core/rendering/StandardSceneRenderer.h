@@ -53,13 +53,13 @@ public:
     virtual void endRender() override;
 
 	/// Returns the best format for QImage to be used when creating an ImagePrimitive.
-	virtual QImage::Format preferredImageFormat() const override { return _internalRenderer->preferredImageFormat(); }
+	virtual QImage::Format preferredImageFormat() const override { OVITO_ASSERT(_internalRenderer); return _internalRenderer->preferredImageFormat(); }
 
 	/// Returns the multisampling level currently used by the internal renderer.
-	virtual int multisamplingLevel() const override { return _internalRenderer->multisamplingLevel(); }
+	virtual int multisamplingLevel() const override { OVITO_ASSERT(_internalRenderer); return _internalRenderer->multisamplingLevel(); }
 
     /// Lets the renderer perform post-processing of a newly generated frame graph.
-    virtual void postprocessFrameGraph(FrameGraph& frameGraph) override { _internalRenderer->postprocessFrameGraph(frameGraph); }
+    virtual void postprocessFrameGraph(FrameGraph& frameGraph) override { OVITO_ASSERT(_internalRenderer); _internalRenderer->postprocessFrameGraph(frameGraph); }
 
 private:
 

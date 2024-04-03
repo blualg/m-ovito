@@ -23,7 +23,6 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/ParticlesVis.h>
 #include <ovito/particles/objects/Particles.h>
-#include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
@@ -31,6 +30,7 @@
 #include <ovito/core/rendering/FrameBuffer.h>
 #include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/rendering/SceneRenderer.h>
+#include <ovito/opengl/OffscreenOpenGLSceneRenderer.h>
 #include "AmbientOcclusionModifier.h"
 
 namespace Ovito {
@@ -81,19 +81,15 @@ void AmbientOcclusionModifier::preevaluateModifier(const ModifierEvaluationReque
 ******************************************************************************/
 Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
-    throw Exception(tr("This modifier is not yet implemented for the new pipeline system."));
-
     // In interactive mode, do not perform a real computation. Instead, reuse an old result from the cached state if available.
     if(request.interactiveMode()) {
         if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
             Particles* particles = state.expectMutableObject<Particles>();
             particles->verifyIntegrity();
             if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
-                if(cachedParticles->elementCount() == particles->elementCount()) {
-                    if(const Property* cachedColors = cachedParticles->getProperty(Particles::ColorProperty)) {
-                        state.expectMutableObject<Particles>()->createProperty(cachedColors);
-                    }
-                }
+                particles->tryToAdoptProperties(cachedParticles, {
+                    cachedParticles->getProperty(Particles::ColorProperty)
+                }, {particles});
             }
         }
         return std::move(state);
@@ -110,11 +106,8 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
     // Phase I: Perform the particle occlusion calculation. The results are cached in the node's partial cache.
     auto brightnessFuture = request.modificationNode()->partialResultsCache().getOrCompute(state.data(), [&]() {
 
-        // Create the offscreen renderer implementation.
-        OvitoClassPtr rendererClass = PluginManager::instance().findClass("OpenGLRenderer", "OffscreenOpenGLSceneRenderer");
-        if(!rendererClass)
-            throw Exception(tr("The OffscreenOpenGLSceneRenderer class is not available. Please make sure the OpenGLRenderer plugin is installed correctly."));
-        OORef<SceneRenderer> renderer = static_object_cast<SceneRenderer>(rendererClass->createInstance());
+        // Create the OpenGL offscreen renderer.
+        OORef<OffscreenOpenGLSceneRenderer> renderer = OORef<OffscreenOpenGLSceneRenderer>::create();
 
         // Perform the AO computation in a separate thread.
         return AsynchronousTask<ConstDataBufferPtr>::runAsync([
@@ -124,15 +117,15 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
                 particles = DataOORef<const Particles>(particles)]() mutable
         {
             this_task::setProgressText(tr("Ambient occlusion"));
-            const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
 
             // Get particle radii.
             ConstPropertyPtr radii = particles->inputParticleRadii();
             this_task::throwIfCanceled();
 
-            // Compute bounding box of input particles (including particle radii).
+            // Compute bounding box of input particles (and include particle radii).
+            const Property* positions = particles->expectProperty(Particles::PositionProperty);
             Box3 boundingBox;
-            boundingBox.addPoints(BufferReadAccess<Point3>(posProperty));
+            boundingBox.addPoints(BufferReadAccess<Point3>(positions));
             OVITO_ASSERT(!boundingBox.isEmpty());
             boundingBox = boundingBox.padBox(std::max(FloatType(0), radii->minMax().second));
             this_task::throwIfCanceled();
@@ -149,14 +142,34 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             QRect frameBufferRect(QPoint(0,0), frameBuffer.size());
 
             // Create a local vis cache, because we are not in the main thread.
-            // But we assume that this cache is not being used much anyway.
+            // But we expect that this cache won't be used much anyway.
             auto visCache = std::make_shared<RendererResourceCache>();
 
+            // Create a frame graph.
+            std::unique_ptr<FrameGraph> frameGraph = std::make_unique<FrameGraph>(
+                visCache->acquireResourceFrame(),
+                AnimationTime(0), ViewProjectionParameters{}, frameBufferRect.size(), false, false, false,
+                renderer->preferredImageFormat(), 1.0);
+            frameGraph->setClearColor(ColorA(0,0,0,0));
+            this_task::throwIfCanceled();
+
+            // Add the particles to the frame graph.
+            std::unique_ptr<ParticlePrimitive> particleBuffer = std::make_unique<ParticlePrimitive>();
+            particleBuffer->setShadingMode(ParticlePrimitive::FlatShading);
+            particleBuffer->setRenderingQuality(ParticlePrimitive::LowQuality);
+            particleBuffer->setPositions(positions);
+            particleBuffer->setRadii(radii);
+            auto pickingGroup = frameGraph->addPickingGroup(nullptr);
+            OVITO_ASSERT(pickingGroup == 1);
+            frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::SceneLayer);
+            frameGraph->addPrimitive(std::move(particleBuffer), AffineTransformation::Identity(), pickingGroup, boundingBox);
+            renderer->postprocessFrameGraph(*frameGraph);
+
             // Initialize the renderer.
+            renderer->setVisCache(visCache);
+            renderer->setPickingPass(true);
             renderer->startRender(frameBufferRect.size());
             try {
-                // The buffered particle geometry used for rendering the particles.
-                ParticlePrimitive particleBuffer;
 
                 this_task::setProgressMaximum(samplingCount);
                 for(int sample = 0; sample < samplingCount; sample++) {
@@ -189,40 +202,15 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
                                         projParams.znear, projParams.zfar);
                     projParams.inverseProjectionMatrix = projParams.projectionMatrix.inverse();
                     projParams.validityInterval = TimeInterval::infinite();
+                    frameGraph->setProjectionParams(projParams);
 
                     // Discard the existing image in the frame buffer so that
                     // OffscreenOpenGLSceneRenderer::endFrame() can just return the unmodified
                     // frame buffer contents.
                     frameBuffer.image() = QImage();
 
-                    // Create a frame graph.
-                    std::unique_ptr<FrameGraph> frameGraph = std::make_unique<FrameGraph>(
-                        visCache->acquireResourceFrame(),
-                        AnimationTime(0), projParams, frameBufferRect.size(), true, false, false,
-                        renderer->preferredImageFormat(), 1.0);
-
-#if 0 // TODO
-                    _renderer->beginFrame(AnimationTime(0), nullptr, projParams, nullptr, frameBufferRect, &frameBuffer);
-                    _renderer->setWorldTransform(AffineTransformation::Identity());
-                    _renderer->resetPickingBuffer();
-                    try {
-                        // Create particle buffer.
-                        if(!particleBuffer.positions()) {
-                            particleBuffer.setShadingMode(ParticlePrimitive::FlatShading);
-                            particleBuffer.setRenderingQuality(ParticlePrimitive::LowQuality);
-                            particleBuffer.setPositions(positions());
-                            particleBuffer.setRadii(particleRadii());
-                        }
-                        _renderer->renderParticles(particleBuffer);
-                    }
-                    catch(...) {
-                        _renderer->endFrame(false, frameBufferRect);
-                        throw;
-                    }
-
-                    // Retrieve the frame buffer contents.
-                    _renderer->endFrame(true, frameBufferRect);
-#endif
+                    // Render the current view to offscreen frame buffer.
+                    renderer->renderFrame(*frameGraph, frameBufferRect, &frameBuffer);
 
                     // Extract brightness values from rendered image.
                     const QImage& image = frameBuffer.image();
@@ -248,11 +236,18 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             }
             catch(...) {
                 renderer->endRender();
+                // Make sure OpenGL renderer resources get release now (in this thread) and not later in some other thread.
+                renderer->setVisCache({});
+                renderer.reset();
+                frameGraph.reset();
                 throw;
             }
             renderer->endRender();
 
             // The vis cache should remain unused when rendering just a bunch of spherical particles.
+            // Make sure OpenGL renderer resources get release now (in this thread) and not later in some other thread.
+            frameGraph.reset();
+            renderer->setVisCache({});
             OVITO_ASSERT(visCache->empty());
 
             this_task::setProgressValue(samplingCount);
@@ -279,12 +274,13 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             // Release data that is no longer needed to reduce memory footprint.
             brightnessValues.reset();
             renderer.reset();
+            particles.reset();
 
             return std::move(brightness);
         }, true);
     });
 
-    // Phase II: Module input particle colors with the computed brightness values.
+    // Phase II: Modulate input particle colors with the computed brightness values.
     return brightnessFuture.then(*this, [this, state = std::move(state)](ConstDataBufferPtr brightness) {
 
         // Perform work in a separate thread.
@@ -298,11 +294,10 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             BufferReadAccess<FloatType> brightnessAcc(brightness);
             BufferWriteAccess<ColorG, access_mode::read_write> colorAcc = particles->createProperty(DataBuffer::Initialized, Particles::ColorProperty, {particles});
 
-            const FloatType* b = brightnessAcc.cbegin();
+            const FloatType* __restrict b = brightnessAcc.cbegin();
             for(ColorG& c : colorAcc) {
-                GraphicsFloatType factor = GraphicsFloatType(1) - effIntensity + static_cast<GraphicsFloatType>(*b);
-                if(factor < GraphicsFloatType(1))
-                    c = c * factor;
+                GraphicsFloatType factor = std::min(GraphicsFloatType(1) - effIntensity + static_cast<GraphicsFloatType>(*b), GraphicsFloatType(1));
+                c = c * factor;
                 ++b;
             }
 

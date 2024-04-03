@@ -53,6 +53,12 @@ public:
     /// Is called after rendering has finished.
     virtual void endRender() override;
 
+    /// Returns the vis cache used for managing OpenGL resources.
+    const std::shared_ptr<RendererResourceCache>& visCache() const { return _visCache; }
+
+    /// Sets the vis cache used for managing OpenGL resources.
+    void setVisCache(std::shared_ptr<RendererResourceCache> visCache) { _visCache = std::move(visCache); }
+
 private:
 
     /// Creates the QOffscreenSurface in the main thread.
@@ -64,13 +70,16 @@ private:
     std::optional<QOffscreenSurface> _offscreenSurface;
 
     /// The temporary OpenGL rendering context.
-    std::unique_ptr<QOpenGLContext> _offscreenContext;
+    std::optional<QOpenGLContext> _offscreenContext;
 
     /// The OpenGL framebuffer.
-    std::unique_ptr<QOpenGLFramebufferObject> _framebufferObject;
+    std::optional<QOpenGLFramebufferObject> _framebufferObject;
 
     /// The resolution of the offscreen framebuffer.
     QSize _framebufferSize;
+
+    /// The vis cache used for managing OpenGL resources.
+    std::shared_ptr<RendererResourceCache> _visCache;
 };
 
 }   // End of namespace
