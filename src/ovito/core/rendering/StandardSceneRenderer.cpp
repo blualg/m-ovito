@@ -31,15 +31,28 @@ namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(StandardSceneRenderer);
 DEFINE_PROPERTY_FIELD(StandardSceneRenderer, antialiasingLevel);
+DEFINE_PROPERTY_FIELD(StandardSceneRenderer, orderIndependentTransparency);
 SET_PROPERTY_FIELD_LABEL(StandardSceneRenderer, antialiasingLevel, "Antialiasing level");
+SET_PROPERTY_FIELD_LABEL(StandardSceneRenderer, orderIndependentTransparency, "Order-independent transparency");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(StandardSceneRenderer, antialiasingLevel, IntegerParameterUnit, 1, 6);
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
 StandardSceneRenderer::StandardSceneRenderer(ObjectInitializationFlags flags) : SceneRenderer(flags),
-    _antialiasingLevel(3)
+    _antialiasingLevel(3),
+    _orderIndependentTransparency(false)
 {
+    if(ExecutionContext::isInteractive()) {
+        // Check which transparency rendering method has been selected by the user in the application settings dialog.
+#ifndef OVITO_DISABLE_QSETTINGS
+        QSettings applicationSettings;
+        if(applicationSettings.value("rendering/transparency_method").toInt() == 2) {
+            // Activate the Weighted Blended Order-Independent Transparency method.
+            setOrderIndependentTransparency(true);
+        }
+#endif
+    }
 }
 
 /******************************************************************************
@@ -77,6 +90,7 @@ bool StandardSceneRenderer::startRender(const RenderSettings* settings, const QS
 
     // Pass supersampling level requested by the user to the renderer implementation.
     _internalRenderer->setAntialiasingHint(std::max(1, antialiasingLevel()));
+    _internalRenderer->setOrderIndependentTransparencyHint(orderIndependentTransparency());
 
     if(!_internalRenderer->startRender(settings, frameBufferSize, visCache))
         return false;

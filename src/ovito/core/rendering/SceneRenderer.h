@@ -92,6 +92,9 @@ public:
 	/// This may be called on a renderer before startRender() to control its supersampling level.
 	virtual void setAntialiasingHint(int antialiasingLevel) {}
 
+	/// This may be called on a renderer before startRender() to control the rendering method for semi-transparent objects.
+	virtual void setOrderIndependentTransparencyHint(bool orderIndependent) {}
+
 	/// Prepares the renderer for rendering and sets the dataset to be rendered.
 	virtual bool startRender(const RenderSettings* settings, const QSize& frameBufferSize, MixedKeyCache& visCache);
 

@@ -10,7 +10,7 @@ OpenGL renderer
 This is the default built-in :ref:`rendering engine <usage.rendering>`,
 which is also used by OVITO for rendering the interactive viewports.
 
-The "More Options" (vertical ellipsis) button next to each nummerical parameter opens a context menu with 
+The "More Options" (vertical ellipsis) button next to each nummerical parameter opens a context menu with
 the option to reset each paramter to its default value.
 
 Parameters
@@ -20,6 +20,11 @@ Anti-aliasing level
   To reduce `aliasing effects <http://en.wikipedia.org/wiki/Aliasing>`__, the output image is usually rendered at a higher resolution
   than the final image (*supersampling*). This factor controls how much larger this
   resolution is. A factor of 1 turns anti-aliasing off. Higher values lead to better quality.
+
+Transparency rendering method
+  Selects the method for rendering semi-transparent objects when they overlap with each other.
+  See the :ref:`viewport settings <application_settings.viewports.graphics_implementation>` for more information
+  on the available options.
 
 .. seealso::
 

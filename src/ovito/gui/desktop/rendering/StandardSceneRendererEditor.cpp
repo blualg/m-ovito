@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
+#include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/core/rendering/StandardSceneRenderer.h>
 #include "StandardSceneRendererEditor.h"
 
@@ -38,17 +39,33 @@ void StandardSceneRendererEditor::createUI(const RolloutInsertionParameters& rol
     // Create the rollout.
     QWidget* rollout = createRollout(tr("OpenGL renderer settings"), rolloutParams, "manual:rendering.opengl_renderer");
 
-    QGridLayout* layout = new QGridLayout(rollout);
-    layout->setContentsMargins(4,4,4,4);
+    // Create the rollout contents.
+    QVBoxLayout* rootLayout = new QVBoxLayout(rollout);
+    rootLayout->setContentsMargins(4,4,4,4);
+
+    QGroupBox* qualityBox = new QGroupBox(tr("Quality"), rollout);
+    rootLayout->addWidget(qualityBox);
+    QGridLayout* gridLayout = new QGridLayout(qualityBox);
+    gridLayout->setContentsMargins(4,4,4,4);
 #ifndef Q_OS_MACOS
-    layout->setSpacing(2);
+    gridLayout->setSpacing(2);
 #endif
-    layout->setColumnStretch(1, 1);
+    gridLayout->setColumnStretch(1, 1);
 
     // Antialiasing level
     IntegerParameterUI* antialiasingLevelUI = new IntegerParameterUI(this, PROPERTY_FIELD(StandardSceneRenderer::antialiasingLevel));
-    layout->addWidget(antialiasingLevelUI->label(), 0, 0);
-    layout->addLayout(antialiasingLevelUI->createFieldLayout(), 0, 1);
+    gridLayout->addWidget(antialiasingLevelUI->label(), 0, 0);
+    gridLayout->addLayout(antialiasingLevelUI->createFieldLayout(), 0, 1);
+
+    QGroupBox* transparencyBox = new QGroupBox(tr("Transparency rendering method"), rollout);
+    rootLayout->addWidget(transparencyBox);
+    QHBoxLayout* boxLayout = new QHBoxLayout(transparencyBox);
+    boxLayout->setContentsMargins(4,4,4,4);
+
+    VariantComboBoxParameterUI* transparencyMethodUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(StandardSceneRenderer::orderIndependentTransparency));
+    transparencyMethodUI->comboBox()->addItem(tr("Back-to-Front Ordered (default)"), QVariant::fromValue(false));
+    transparencyMethodUI->comboBox()->addItem(tr("Weighted Blended Order-Independent"), QVariant::fromValue(true));
+    boxLayout->addWidget(transparencyMethodUI->comboBox());
 }
 
 }   // End of namespace

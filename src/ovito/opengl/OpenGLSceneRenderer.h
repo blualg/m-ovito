@@ -69,6 +69,9 @@ public:
     /// This may be called on a renderer before startRender() to control its supersampling level.
     virtual void setAntialiasingHint(int antialiasingLevel) override { _antialiasingLevel = antialiasingLevel; }
 
+	/// This may be called on a renderer before startRender() to control the rendering method for semi-transparent objects.
+	virtual void setOrderIndependentTransparencyHint(bool orderIndependent) override { _orderIndependentTransparency = orderIndependent; }
+
     /// Returns the device pixel ratio of the output device we are rendering to.
     virtual qreal devicePixelRatio() const override { return antialiasingLevel() * SceneRenderer::devicePixelRatio(); }
 
