@@ -195,6 +195,8 @@ struct DCDHeader
 
         // Read in the number of atoms
         read_int(device, natoms, reverseEndian);
+        if(natoms < 0 || natoms > 100'000'000)
+            throw Exception(DCDImporter::tr("File I/O error: not a valid DCD file"));
 
         // Read in an integer '4'
         read_int(device, input_integer, reverseEndian);

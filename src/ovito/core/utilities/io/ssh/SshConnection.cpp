@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/app/Application.h>
 #include "SshConnection.h"
 
 namespace Ovito {
@@ -30,24 +31,37 @@ namespace Ovito {
 ******************************************************************************/
 SshConnection::SshImplementation SshConnection::getSshImplementation()
 {
+    // User can override selected method via environment variable since OVITO 3.10.5:
+    QString selectedSshMethod = QString::fromLocal8Bit(qgetenv("OVITO_SSH_METHOD")).toLower();
 #if defined(OVITO_BUILD_PROFESSIONAL) || defined(OVITO_BUILD_PYPI)
     #ifdef OVITO_SSH_CLIENT
-        QString selectedSshMethod = QString::fromLocal8Bit(qgetenv("OVITO_SSH_METHOD")).toLower();
         if(selectedSshMethod.isEmpty()) {
-            QSettings settings;
-            selectedSshMethod = settings.value("ssh/connection_method", QStringLiteral("libssh")).toString();
+            if(Application::instance()->guiMode()) {
+                QSettings settings;
+                selectedSshMethod = settings.value("ssh/connection_method", QStringLiteral("libssh")).toString();
+            }
         }
         if(selectedSshMethod == QStringLiteral("openssh"))
             return Openssh;
-        else
+        else if(selectedSshMethod.isEmpty() || selectedSshMethod == QStringLiteral("libssh"))
             return Libssh;
+        else {
+            qWarning("Warning: Invalid value for OVITO_SSH_METHOD environment variable. Using default SSH implementation.");
+            return Libssh;
+        }
     #else
+        if(!selectedSshMethod.isEmpty() && selectedSshMethod != QStringLiteral("openssh"))
+            qWarning("This version of OVITO was built without integrated SSH support. The OVITO_SSH_METHOD environment variable will be ignored.");
         return Openssh;
     #endif
 #else
     #ifdef OVITO_SSH_CLIENT
+        if(!selectedSshMethod.isEmpty() && selectedSshMethod != QStringLiteral("openssh"))
+            qWarning("This version of OVITO was built only with integrated SSH support. The OVITO_SSH_METHOD environment variable will be ignored.");
         return Libssh;
     #else
+        if(!selectedSshMethod.isEmpty())
+            qWarning("This version of OVITO was built without SSH support. The OVITO_SSH_METHOD environment variable will be ignored.");
         return None;
     #endif
 #endif
