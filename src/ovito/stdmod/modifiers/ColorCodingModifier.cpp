@@ -29,6 +29,7 @@
 #include <ovito/core/dataset/data/AttributeDataObject.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/utilities/concurrent/AsynchronousTask.h>
+#include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/app/PluginManager.h>
 #include "ColorCodingModifier.h"
 
@@ -340,35 +341,38 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
         BufferWriteAccess<ColorG, access_mode::write> colorAcc(colors, selection ? DataBuffer::Initialized : DataBuffer::Uninitialized);
         BufferReadAccess<SelectionIntType> selectionAcc(selection);
 
-        bool result = property->forEach(vectorComponent, [&](size_t i, auto value) {
-            if(selectionAcc && !selectionAcc[i])
-                return;
+        property->forAnyType([&](auto _) {
+            using T = decltype(_);
+            BufferReadAccess<T*> valueAcc(property);
+            parallelFor(colors->size(), 4096, [&](size_t i) {
+                if(selectionAcc && !selectionAcc[i])
+                    return;
+                auto value = valueAcc.get(i, vectorComponent);
 
-            // Map input value to [0,1] range.
-            GraphicsFloatType t;
-            if(intervalRange != 0) {
-                t = static_cast<GraphicsFloatType>((value - startValue) / intervalRange);
-            }
-            else {
-                if(value == startValue) t = GraphicsFloatType(0.5);
-                else if(value > startValue) t = 1;
-                else t = 0;
-            }
+                // Map input value to [0,1] range.
+                GraphicsFloatType t;
+                if(intervalRange != 0) {
+                    t = static_cast<GraphicsFloatType>((value - startValue) / intervalRange);
+                }
+                else {
+                    if(value == startValue) t = GraphicsFloatType(0.5);
+                    else if(value > startValue) t = 1;
+                    else t = 0;
+                }
 
-            // Clamp value.
-            if(std::isnan(t)) t = 0;
-            else if(t ==  std::numeric_limits<GraphicsFloatType>::infinity()) t = 1;
-            else if(t == -std::numeric_limits<GraphicsFloatType>::infinity()) t = 0;
-            else if(t < 0) t = 0;
-            else if(t > 1) t = 1;
+                // Clamp value.
+                if(std::isnan(t)) t = 0;
+                else if(t ==  std::numeric_limits<GraphicsFloatType>::infinity()) t = 1;
+                else if(t == -std::numeric_limits<GraphicsFloatType>::infinity()) t = 0;
+                else if(t < 0) t = 0;
+                else if(t > 1) t = 1;
 
-            // Map scalar to RGB color.
-            colorAcc[i] = gradient->valueToColor(t);
+                // Map scalar to RGB color.
+                colorAcc[i] = gradient->valueToColor(t);
+            });
         });
         colorAcc.reset();
         selectionAcc.reset();
-        if(!result)
-            throw Exception(tr("The property '%1' has an invalid or non-numeric data type.").arg(property->name()));
 #endif
 
         return std::move(state);

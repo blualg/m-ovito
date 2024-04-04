@@ -190,19 +190,19 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
         neighborFinder.prepare(cutoff, particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
 
         // Convert set of type IDs into a SYCL-compatible data structure.
-        SyclFlatSet uniqueTypeIds{this->uniqueTypeIds()};
+        SyclFlatSet uniqueTypeIdsFlat{uniqueTypeIds};
 
         // Temporary buffer for computing the non-normalized RDF histogram, i.e., counting the number of pairs at each distance.
         DataBufferPtr rdfHistogram = DataBufferPtr::create(DataBuffer::Initialized, binCount, DataBuffer::Int64, rdfCount);
 
         // Calculate coordination numbers and RDF histogram.
         syclParallelForWithProgress(particleCount, [&](sycl::handler& cgh, auto&& parallel_kernel) {
-            SyclBufferAccess<int32_t, access_mode::discard_write> coordinationAcc(coordinationNumbers(), cgh);
-            SyclBufferAccess<int32_t, access_mode::read> particleTypeAcc(particleTypes(), cgh);
-            SyclBufferAccess<SelectionIntType, access_mode::read> selectionAcc(selection(), cgh);
+            SyclBufferAccess<int32_t, access_mode::discard_write> coordinationAcc(coordinationNumbers, cgh);
+            SyclBufferAccess<int32_t, access_mode::read> particleTypeAcc(particleTypes, cgh);
+            SyclBufferAccess<SelectionIntType, access_mode::read> selectionAcc(selection, cgh);
             SyclBufferAccess<int64_t*, access_mode::read_write> rdfAcc(rdfHistogram, cgh);
             SyclCutoffNeighborFinder::Accessor neighborAcc(neighborFinder, cgh);
-            auto uniqueTypeIdsAcc = uniqueTypeIds.get_access(cgh);
+            auto uniqueTypeIdsAcc = uniqueTypeIdsFlat.get_access(cgh);
             sycl::local_accessor<int, 2> localHistogram{sycl::range<2>{binCount, rdfCount}, cgh};
             parallel_kernel([=](sycl::nd_item<1> idx, size_t local_problem_size, size_t global_index_offset, auto&& was_canceled) {
 
@@ -337,7 +337,7 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
 #ifdef OVITO_USE_SYCL
             ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                 SyclBufferAccess<int64_t*, access_mode::read> histogramAcc(rdfHistogram, cgh);
-                SyclBufferAccess<FloatType*, access_mode::discard_write> rdfAcc(rdfY(), cgh);
+                SyclBufferAccess<FloatType*, access_mode::discard_write> rdfAcc(rdfY, cgh);
                 OVITO_SYCL_PARALLEL_FOR(cgh, normalizeRDF_kernel)(sycl::range(rdfAcc.size()), [=](size_t i) {
                     FloatType r1 = i * rdfBinSize;
                     FloatType r2 = r1 + rdfBinSize;

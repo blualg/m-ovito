@@ -820,7 +820,7 @@ void DataBuffer::reorderElements(const std::vector<size_t>& mapping)
     DataBuffer::Byte* __restrict dst = newBuffer.get();
 #else
     sycl::host_accessor readAccessor(*_data, sycl::read_only);
-    sycl::host_accessor writeAccessor(*newBuffer, sycl::write_only, sycl::no_init);
+    sycl::host_accessor writeAccessor(newBuffer, sycl::write_only, sycl::no_init);
     const DataBuffer::Byte* __restrict src = readAccessor.get_pointer();
     DataBuffer::Byte* __restrict dst = writeAccessor.get_pointer();
 #endif
@@ -831,7 +831,7 @@ void DataBuffer::reorderElements(const std::vector<size_t>& mapping)
         dst += stride;
     }
 
-    newBuffer.swap(_data);
+    _data = std::move(newBuffer);
 }
 
 /******************************************************************************
