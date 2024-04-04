@@ -227,8 +227,8 @@ void RemoteFileJob::authenticationFailed()
 ******************************************************************************/
 void RemoteFileJob::connectionCanceled()
 {
-    // If user has canceled the connection, cancel the file retrieval operation as well.
-    _promise.cancel();
+    // If user has canceled the connection, abort the file retrieval operation as well.
+    _promise.setException(std::make_exception_ptr(Exception(tr("SSH connection was canceled by the user"))));
     shutdown(false);
 }
 
@@ -301,7 +301,7 @@ void DownloadRemoteFileJob::connectionEstablished()
         downloadRequest->submit();
         return;
     }
-    _promise.cancel();
+    _promise.setException(std::make_exception_ptr(Exception(tr("No SSH client implementation available."))));
     shutdown(false);
 }
 
@@ -466,7 +466,7 @@ void ListRemoteDirectoryJob::connectionEstablished()
         listingRequest->submit();
         return;
     }
-    _promise.cancel();
+    _promise.setException(std::make_exception_ptr(Exception(tr("No SSH client implementation available."))));
     shutdown(false);
 }
 
