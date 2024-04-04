@@ -30,10 +30,14 @@ namespace Ovito {
 ******************************************************************************/
 SshConnection::SshImplementation SshConnection::getSshImplementation()
 {
-#ifdef OVITO_BUILD_PROFESSIONAL
+#if defined(OVITO_BUILD_PROFESSIONAL) || defined(OVITO_BUILD_PYPI)
     #ifdef OVITO_SSH_CLIENT
-        QSettings settings;
-        if(settings.value("ssh/connection_method", QStringLiteral("libssh")).toString() == QStringLiteral("openssh"))
+        QString selectedSshMethod = QString::fromLocal8Bit(qgetenv("OVITO_SSH_METHOD")).toLower();
+        if(selectedSshMethod.isEmpty()) {
+            QSettings settings;
+            selectedSshMethod = settings.value("ssh/connection_method", QStringLiteral("libssh")).toString();
+        }
+        if(selectedSshMethod == QStringLiteral("openssh"))
             return Openssh;
         else
             return Libssh;
