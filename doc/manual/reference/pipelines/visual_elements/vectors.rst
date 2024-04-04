@@ -47,7 +47,7 @@ Transparency
 
   .. hint::
 
-    This parameter specifies a uniform transparency applied to all arrows. You control the transparency of individual arrows
+    This parameter specifies a uniform transparency being applied to all arrows. Alternatively, you can control the transparency of individual arrows
     by setting the ``Vector Transparency`` property of the corresponding particles, e.g., using the :ref:`particles.modifiers.compute_property`
     modifier.
 
