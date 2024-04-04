@@ -8,9 +8,9 @@ Vectors
   :align: right
 
 This :ref:`visual element <visual_elements>` shows arrow glyphs to visualize a local vectorial property associated with each particle or other type of data element.
-For example, the vectors visual element for the particle property ``Displacement``, which is computed by the :ref:`particles.modifiers.displacement_vectors` modifier, 
+For example, the vectors visual element for the particle property ``Displacement``, which is computed by the :ref:`particles.modifiers.displacement_vectors` modifier,
 can be found under the "Visual elements" section of the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` (see screenshot).
-It provides controls for the appearance of the arrow glyphs. 
+It provides controls for the appearance of the arrow glyphs.
 
 Parameters
 """"""""""
@@ -36,17 +36,23 @@ Coloring
   OVITO shows a separate panel letting you pick the source property for the pseudo-coloring
   and configure the color transfer function.
 
-  .. hint:: 
-  
+  .. hint::
+
     A third method of coloring the arrows is to assign explicit RGB color values to the ``Vector Color`` property of the particles.
     This approach gives you full control over the color of each individual arrow. You can set the ``Vector Color`` property
     using the :ref:`particles.modifiers.compute_property` or :ref:`particles.modifiers.color_coding` modifiers, for example.
 
 Transparency
-  The degree of semi-transparency of the arrows. 
-  
+  The degree of semi-transparency of the arrows.
+
+  .. hint::
+
+    This parameter specifies a uniform transparency applied to all arrows. You control the transparency of individual arrows
+    by setting the ``Vector Transparency`` property of the corresponding particles, e.g., using the :ref:`particles.modifiers.compute_property`
+    modifier.
+
 Offset (XYZ)
-  An optional three-dimensional offset vector by which all arrow glyphs are displaced. The offset can be used to move the 
+  An optional three-dimensional offset vector by which all arrow glyphs are displaced. The offset can be used to move the
   arrows fully in front of the particles and avoid undesirable occlusions.
 
   .. image:: /images/visual_elements/vector_offset_example.png

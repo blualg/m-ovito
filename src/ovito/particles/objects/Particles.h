@@ -128,7 +128,8 @@ public:
         DNAStrandProperty,
         NucleotideAxisProperty,
         NucleotideNormalProperty,
-        SuperquadricRoundnessProperty
+        SuperquadricRoundnessProperty,
+        VectorTransparencyProperty
     };
 
     /// \brief Constructor.

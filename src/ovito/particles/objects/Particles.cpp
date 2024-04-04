@@ -587,6 +587,7 @@ PropertyPtr Particles::OOMetaClass::createStandardPropertyInternal(DataBuffer::B
         break;
     case RadiusProperty:
     case TransparencyProperty:
+    case VectorTransparencyProperty:
         dataType = Property::FloatGraphics;
         componentCount = 1;
         break;
@@ -791,6 +792,7 @@ void Particles::OOMetaClass::initialize()
     registerStandardProperty(NucleotideAxisProperty, tr("Nucleotide Axis"), Property::FloatDefault, xyzList);
     registerStandardProperty(NucleotideNormalProperty, tr("Nucleotide Normal"), Property::FloatDefault, xyzList);
     registerStandardProperty(SuperquadricRoundnessProperty, tr("Superquadric Roundness"), Property::FloatGraphics, QStringList() << "Phi" << "Theta");
+    registerStandardProperty(VectorTransparencyProperty, tr("Vector Transparency"), Property::FloatGraphics, emptyList);
 }
 
 /******************************************************************************

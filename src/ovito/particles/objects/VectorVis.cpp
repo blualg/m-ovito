@@ -222,8 +222,11 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
         vectorProperty.reset();
 
     const Property* vectorColorProperty = nullptr;
-    if(const Particles* particles = dynamic_object_cast<Particles>(container))
+    const Property* vectorTransparencyProperty = nullptr;
+    if(const Particles* particles = dynamic_object_cast<Particles>(container)) {
         vectorColorProperty = particles->getProperty(Particles::VectorColorProperty);
+        vectorTransparencyProperty = particles->getProperty(Particles::VectorTransparencyProperty);
+    }
 
     // Make sure we don't exceed our internal limits.
     if(vectorProperty && vectorProperty->size() > (size_t)std::numeric_limits<int>::max()) {
@@ -261,6 +264,7 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
         bool,                   // Reverse arrow direction
         ArrowPosition,          // Arrow position
         ConstDataObjectRef,     // Vector color property
+        ConstDataObjectRef,     // Vector transparency property
         ConstDataObjectRef,     // Pseudo-color property
         int,                    // Pseudo-color vector component
         PseudoColorMapping      // Pseudo-color mapping
@@ -284,6 +288,7 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
             reverseArrowDirection(),
             arrowPosition(),
             vectorColorProperty,
+            vectorTransparencyProperty,
             pseudoColorProperty,
             pseudoColorPropertyComponent,
             pseudoColorMapping));
@@ -314,6 +319,7 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
         BufferFactory<Point3G> arrowBasePositions(vectorCount);
         BufferFactory<Point3G> arrowHeadPositions(vectorCount);
         BufferFactory<ColorG> arrowColors = (vectorColorProperty || pseudoColorProperty) ? BufferFactory<ColorG>(vectorCount) : BufferFactory<ColorG>{};
+        BufferFactory<GraphicsFloatType> arrowTransparencies = vectorTransparencyProperty ? BufferFactory<GraphicsFloatType>(vectorCount) : BufferFactory<GraphicsFloatType>{};
 
         // Fill data buffers.
         if(vectorCount) {
@@ -322,6 +328,7 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
                 scalingFac = -scalingFac;
             BufferReadAccess<Point3> basePositionData(basePositions);
             BufferReadAccess<ColorG> vectorColorData(vectorColorProperty);
+            BufferReadAccess<GraphicsFloatType> vectorTransparencyData(vectorTransparencyProperty);
             RawBufferReadAccess vectorPseudoColorData(pseudoColorProperty);
             size_t inIndex = 0;
             size_t outIndex = 0;
@@ -341,6 +348,8 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
                         arrowColors[outIndex] = vectorColorData[inIndex];
                     else if(pseudoColorProperty)
                         arrowColors[outIndex] = pseudoColorMapping.valueToColor(vectorPseudoColorData.get<GraphicsFloatType>(inIndex, pseudoColorPropertyComponent));
+                    if(vectorTransparencyProperty)
+                        arrowTransparencies[outIndex] = vectorTransparencyData[inIndex];
                     outIndex++;
                 }
             }
@@ -354,7 +363,10 @@ PipelineStatus VectorVis::render(AnimationTime time, const ConstDataObjectPath& 
         arrows.setUniformColor(arrowColor());
         arrows.setPositions(arrowBasePositions.take(), arrowHeadPositions.take());
         arrows.setColors(arrowColors.take());
-        if(transparency > 0) {
+        if(arrowTransparencies) {
+            arrows.setTransparencies(arrowTransparencies.take());
+        }
+        else if(transparency > 0) {
             DataBufferPtr transparencyBuffer = DataBufferPtr::create(vectorCount, DataBuffer::FloatGraphics);
             transparencyBuffer->fill<GraphicsFloatType>(transparency);
             arrows.setTransparencies(std::move(transparencyBuffer));
