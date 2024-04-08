@@ -284,44 +284,51 @@ bool Task::waitFor(detail::TaskReference awaitedTask, bool throwOnError)
         // Are we really in a worker thread?
         OVITO_ASSERT(!ExecutionContext::isMainThread());
 
-        QWaitCondition wc;
-        QMutex waitMutex;
-        std::atomic_bool alreadyDone{false};
-
-        // Register a callback function with the waiting task, which sets the wait condition in case the waiting task gets canceled.
-        detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&](int state) {
-            if(state & (Task::Canceled | Task::Finished)) {
-                // When the parent task gets canceled, discard the reference which keeps the awaited task running.
-                awaitedTask.reset();
-                QMutexLocker locker(&waitMutex);
-                alreadyDone.store(true);
-                wc.wakeAll();
-            }
-            return true;
-        });
-
-        // Register a callback function with the awaited task, which sets the wait condition when the task gets canceled or finishes.
-        detail::FunctionTaskCallback awaitedTaskCallback(awaitedTaskPtr.get(), [&](int state) {
-            if(state & Task::Finished) {
-                QMutexLocker locker(&waitMutex);
-                alreadyDone.store(true);
-                wc.wakeAll();
-            }
-            return true;
-        });
-
-        // TODO: Implement work-stealing mechanism to avoid deadlock when running out of threads in the thread pool.
-
-        waitMutex.lock();
-        // Last minute check if the awaited task has already completed:
-        if(!alreadyDone.load()) {
-            // Wait now until one of the tasks are done.
-            wc.wait(&waitMutex);
+        // Work-stealing mechanism to avoid deadlock when running out of threads in this thread pool.
+        AsynchronousTaskBase* asyncTask = awaitedTask->isAsynchronousTask() ? static_cast<AsynchronousTaskBase*>(awaitedTask.get().get()) : nullptr;
+        if(asyncTask && asyncTask->threadPool() == static_cast<AsynchronousTaskBase*>(waitingTask)->threadPool() && asyncTask->threadPool()->tryTake(asyncTask)) {
+            // The task was taken from the pool. Run it right away in the current thread.
+            asyncTask->run();
         }
-        waitMutex.unlock();
+        else {
+            // The task is already running in a thread pool. Wait for it to finish.
+            QWaitCondition wc;
+            QMutex waitMutex;
+            std::atomic_bool alreadyDone{false};
 
-        waitingTaskCallback.unregisterCallback();
-        awaitedTaskCallback.unregisterCallback();
+            // Register a callback function with the waiting task, which sets the wait condition in case the waiting task gets canceled.
+            detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&](int state) {
+                if(state & (Task::Canceled | Task::Finished)) {
+                    // When the parent task gets canceled, discard the reference which keeps the awaited task running.
+                    awaitedTask.reset();
+                    QMutexLocker locker(&waitMutex);
+                    alreadyDone.store(true);
+                    wc.wakeAll();
+                }
+                return true;
+            });
+
+            // Register a callback function with the awaited task, which sets the wait condition when the task gets canceled or finishes.
+            detail::FunctionTaskCallback awaitedTaskCallback(awaitedTaskPtr.get(), [&](int state) {
+                if(state & Task::Finished) {
+                    QMutexLocker locker(&waitMutex);
+                    alreadyDone.store(true);
+                    wc.wakeAll();
+                }
+                return true;
+            });
+
+            waitMutex.lock();
+            // Last minute check if the awaited task has already completed:
+            if(!alreadyDone.load()) {
+                // Wait now until one of the tasks are done.
+                wc.wait(&waitMutex);
+            }
+            waitMutex.unlock();
+
+            waitingTaskCallback.unregisterCallback();
+            awaitedTaskCallback.unregisterCallback();
+        }
     }
     else {
         // Process all pending work items while waiting for the task to finish.

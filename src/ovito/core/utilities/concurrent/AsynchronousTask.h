@@ -52,7 +52,7 @@ private:
     virtual void run() final override;
 
     /// Submits the task for execution to a thread pool.
-    void startInThreadPool(QThreadPool* pool, bool showInUserInterface);
+    void startInThreadPool(bool showInUserInterface);
 
     /// Runs the task's work function immediately in the current thread.
     void startInThisThread(bool showInUserInterface);
@@ -80,24 +80,17 @@ public:
     Future<R...> runAsync(bool showInUserInterface) {
 #ifndef OVITO_DISABLE_THREADING
         // Submit the task for execution in a worker thread.
-        return runAsync(QThreadPool::globalInstance(), showInUserInterface);
+        this->startInThreadPool(showInUserInterface);
+        return Future<R...>::createFromTask(this->shared_from_this());
 #else
         // If multi-threading is not available, run the task immediately.
         return runImmediately();
 #endif
     }
 
-#ifndef OVITO_DISABLE_THREADING
-    /// Submits the task to a thread pool for execution and returns a future for the task's results.
-    Future<R...> runAsync(QThreadPool* pool, bool showInUserInterface) {
-        this->startInThreadPool(pool, showInUserInterface);
-        return Future<R...>::createFromTask(this->shared_from_this());
-    }
-#endif
-
     /// Schedules the given function for execution in a worker thread.
     template<typename Function>
-    static Future<R...> runAsync(int priority, Function&& f, bool showInUserInterface = false) {
+    static Future<R...> runAsync(Task::AsynchronousTaskType asyncTaskType, Function&& f, bool showInUserInterface = false) {
         class FuncAsyncTask : public AsynchronousTask {
         public:
             FuncAsyncTask(Function&& f) : _func(std::forward<Function>(f)) {}
@@ -111,15 +104,55 @@ public:
             std::decay_t<Function> _func;
         };
         auto task = std::make_shared<FuncAsyncTask>(std::forward<Function>(f));
-        task->setPriority(priority);
+        task->setAsyncTaskType(asyncTaskType);
         return task->runAsync(showInUserInterface);
     }
 
     /// Schedules the given function for execution in a worker thread.
     template<typename Function>
     static Future<R...> runAsync(Function&& f, bool showInUserInterface = false) {
-        int priority = this_task::get() ? this_task::get()->priority() : 0;
-        return runAsync(priority, std::forward<Function>(f), showInUserInterface);
+        Task::AsynchronousTaskType asyncTaskType = this_task::get() ? this_task::get()->asyncTaskType() : Task::AsynchronousTaskType::DefaultAsyncTask;
+        return runAsync(asyncTaskType, std::forward<Function>(f), showInUserInterface);
+    }
+
+    /// Executes the given function in a worker thread and waits for the result.
+    /// This function is blocking and should be used when the lambda function captures some
+    /// local variables by reference.
+    template<typename Function>
+    static auto runAsyncAndJoin(Function&& f, bool showInUserInterface = false) {
+        std::latch latch(1);
+        Future<R...> future = runAsync([&latch, f = std::forward<Function>(f)]() mutable {
+            try {
+                if constexpr(sizeof...(R) != 0) {
+                    auto result = std::move(f)();
+                    latch.count_down();
+                    return result;
+                }
+                else {
+                    std::move(f)();
+                    latch.count_down();
+                }
+            }
+            catch(...) {
+                latch.count_down();
+                throw;
+            }
+        }, showInUserInterface);
+        try {
+            if constexpr(sizeof...(R) == 1) {
+                auto result = future.result();
+                latch.wait();
+                return result;
+            }
+            else {
+                future.waitForFinished();
+                latch.wait();
+            }
+        }
+        catch(...) {
+            latch.wait();
+            throw;
+        }
     }
 
     /// Runs the task in place and returns a future for the task's results.

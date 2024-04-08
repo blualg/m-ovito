@@ -24,7 +24,7 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/app/Application.h>
+#include <ovito/core/utilities/concurrent/TaskManager.h>
 #include "ProgressingTask.h"
 
 namespace Ovito {
@@ -50,7 +50,8 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
     size_t workerCount = std::min({maxWorkers, builtinMaxWorkers, (size_t)std::latch::max()});
 
     // If the application is running in single-threaded mode, we don't use additional worker threads.
-    if(Application::instance()->idealThreadCount() == 1)
+    QThreadPool* pool = ExecutionContext::current().ui().taskManager().chooseThreadPool(*this_task::get());
+    if(pool->maxThreadCount() == 1)
         workerCount = 1;
 
     // Run caller-provided setup function in the master thread.
@@ -95,9 +96,6 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
             }
         };
 
-        QThreadPool* pool = QThreadPool::globalInstance();
-        int priority = this_task::get()->priority();
-
         std::vector<Runner> workers;
         workers.reserve(workerCount);
 
@@ -113,7 +111,7 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
                 workerCount
             );
             runner.setAutoDelete(false);
-            pool->start(&runner, priority);
+            pool->start(&runner);
         }
 
         // Simultaneously execute workers in the current thread.

@@ -74,12 +74,6 @@ public:
     /// Returns the global FileManager class instance.
     FileManager& fileManager() { return _fileManager; }
 
-    /// Returns the number of parallel threads to be used by the application when doing computations.
-    int idealThreadCount() const { return _idealThreadCount; }
-
-    /// Sets the number of parallel threads to be used by the application when doing computations.
-    void setIdealThreadCount(int count) { _idealThreadCount = std::max(1, count); }
-
     /// Similar to QCoreApplication::applicationDirPath() but doesn't require a Qt application.
     QString applicationDirPath() const;
 
@@ -127,9 +121,6 @@ protected:
 
     /// Indicates that the application is running in console mode.
     bool _consoleMode = true;
-
-    /// The number of parallel threads to be used by the application when doing computations.
-    int _idealThreadCount = 1;
 
     /// The global file manager instance.
     FileManager& _fileManager;

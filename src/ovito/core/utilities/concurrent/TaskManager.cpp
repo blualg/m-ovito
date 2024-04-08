@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/concurrent/TaskWatcher.h>
 #include <ovito/core/oo/ObjectExecutor.h>
@@ -37,6 +38,23 @@ TaskManager::TaskManager(UserInterface* ui) : _ui(ui)
 #endif
 {
     qRegisterMetaType<TaskPtr>("TaskPtr");
+
+    // Run regular work tasks with reduced priority to avoid slowing down the user interface.
+    _threadPool.setThreadPriority(QThread::LowPriority);
+
+    // This thread pool is used for tasks that cannot run concurrently.
+    _threadPoolSerial.setMaxThreadCount(1);
+
+    if(Application::instance()) {
+        // Inherit max thread count from root TaskManager.
+        setMaxThreadCount(Application::instance()->taskManager().maxThreadCount());
+    }
+    else {
+        // Use all available processor cores by default -- or the user-specified
+        // number given by the OVITO_THREAD_COUNT environment variable.
+        if(qEnvironmentVariableIsSet("OVITO_THREAD_COUNT"))
+            setMaxThreadCount(std::max(1, qgetenv("OVITO_THREAD_COUNT").toInt()));
+    }
 
     // Execute pending work in the main thread when control returns to the Qt event loop.
     connect(this, &TaskManager::pendingWorkArrived, this, &TaskManager::executePendingWork, Qt::QueuedConnection);
@@ -110,12 +128,12 @@ void TaskManager::registerTask(Task& task)
 }
 
 /******************************************************************************
-* Cancels all running tasks and waits for them to finish.
+* Request the TaskManager to shut down all ongoing work, which means canceling
+* all running tasks and no longer accepting new tasks.
 ******************************************************************************/
-void TaskManager::shutdown()
+void TaskManager::requestShutdown()
 {
     OVITO_ASSERT(ExecutionContext::isMainThread());
-    OVITO_ASSERT(ExecutionContext::current().isValid());
 
     // To prevent queuing up more work while we are shutting down.
     std::unique_lock<std::mutex> lock(_mutex);
@@ -133,16 +151,37 @@ void TaskManager::shutdown()
         if(TaskPtr task = weakPtr.lock())
             task->cancel();
     }
-    lock.lock();
 
-    // Process all remaining work items from the queue.
-    executePendingWorkLocked(lock);
+    // Exit local event loop if it is running.
+    if(requestInterruption()) {
+        // If a local event loop is currently running, defer shutdown process until after we have exited all nested loops.
+        return;
+    }
+
+    // Wait for all ramining tasks to finish and proceed with shutdown process as soon as control has returned to main event loop.
+    if(QCoreApplication::instance() && QThread::currentThread()->loopLevel() != 0)
+        Q_EMIT pendingWorkArrived();
+    else
+        executePendingWork();
+}
+
+/******************************************************************************
+* Cancels all running tasks and waits for them to finish.
+******************************************************************************/
+void TaskManager::shutdownImplementation(std::unique_lock<std::mutex>& lock)
+{
+    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(isShuttingDown());
+    OVITO_ASSERT(!_localEventLoop);
+    OVITO_ASSERT(!_isWaitingForTask);
+
+    // Work item queue must be empty by now.
     OVITO_ASSERT(_pendingWork.empty());
     OVITO_ASSERT(_registeredTasks.empty());
 
     // Wait until all threads did terminate. That's because canceled asynchronous tasks
     // may still be running in threads until they notice they have been canceled.
-    bool result = QThreadPool::globalInstance()->waitForDone();
+    bool result = _threadPool.waitForDone() && _threadPoolUI.waitForDone() && _threadPoolSerial.waitForDone();
     OVITO_ASSERT(result);
 
     // Shuts down the SYCL queue.
@@ -155,6 +194,12 @@ void TaskManager::shutdown()
     // Wait for completion of all enqueued tasks in the SYCL queue.
     _syclQueue.wait();
 #endif
+    lock.unlock();
+
+    // Notify abstract user interface.
+    _ui->shutdownComplete();
+
+    lock.lock();
 }
 
 /******************************************************************************
@@ -216,6 +261,12 @@ void TaskManager::executePendingWorkLocked(std::unique_lock<std::mutex>& lock)
 
         // Continue by grabbing the next work item from the queue.
         lock.lock();
+    }
+
+    if(isShuttingDown() && !_isWaitingForTask) {
+        // If shutdown has been requested before, and we now have left all nested loops,
+        // cancel all remaining tasks and wait for them to finish.
+        shutdownImplementation(lock);
     }
 }
 
@@ -313,6 +364,15 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskReferen
     _interruptProcessingLoop = false;
     _isWaitingForTask = wasWaitingForTask;
 
+    // If shutdown has been requested before, and we now have left all nested loops,
+    // wait for all ramining tasks to finish and proceed with shutdown process as soon as control has returned to main event loop.
+    if(isShuttingDown() && !_isWaitingForTask) {
+        if(QCoreApplication::instance() && QThread::currentThread()->loopLevel() != 0)
+            Q_EMIT pendingWorkArrived();
+        else
+            executePendingWorkLocked(lock);
+    }
+
     // Cancel the awaited task (unless it has already finished successfully).
     lock.unlock();
     awaitedTaskPtr->cancel();
@@ -338,7 +398,7 @@ void TaskManager::quitWorkProcessingLoop(bool& quitFlag)
 /******************************************************************************
 * Tells the task manager to interrupt the task it is currently waiting for.
 ******************************************************************************/
-void TaskManager::requestInterruption()
+bool TaskManager::requestInterruption()
 {
     std::lock_guard<std::mutex> lock(_mutex);
     if(_isWaitingForTask) {
@@ -349,6 +409,26 @@ void TaskManager::requestInterruption()
         else {
             _pendingWorkCondition.notify_all();
         }
+        return true;
+    }
+    return false;
+}
+
+/******************************************************************************
+* Determines the thread pool for executing the given asynchronous task.
+******************************************************************************/
+QThreadPool* TaskManager::chooseThreadPool(Task& task)
+{
+    switch(task.asyncTaskType()) {
+    case Task::AsynchronousTaskType::DefaultAsyncTask:
+        return &_threadPool;
+    case Task::AsynchronousTaskType::InteractiveAsyncTask:
+        return &_threadPoolUI;
+    case Task::AsynchronousTaskType::SerialAsyncTask:
+        return &_threadPoolSerial;
+    default:
+        OVITO_ASSERT(false);
+        return &_threadPool;
     }
 }
 

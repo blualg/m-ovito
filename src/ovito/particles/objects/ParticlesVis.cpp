@@ -24,6 +24,7 @@
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
@@ -451,32 +452,36 @@ ParticlePrimitive::ParticleShape ParticlesVis::effectiveParticleShape(ParticleSh
 ******************************************************************************/
 PipelineStatus ParticlesVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
-    // Get input particle data.
-    const Particles* particles = path.lastAs<Particles>();
-    if(!particles)
+    // Perform rendering in a background thread to not block the GUI for too long.
+    return AsynchronousTask<PipelineStatus>::runAsyncAndJoin([&]() -> PipelineStatus {
+
+        // Get input particle data.
+        const Particles* particles = path.lastAs<Particles>();
+        if(!particles)
+            return {};
+        particles->verifyIntegrity();
+
+        // Make sure the 'Position' property is present.
+        if(!particles->getProperty(Particles::PositionProperty))
+            throw Exception(tr("Cannot display particles because the 'Position' property is not present."));
+
+        // Make sure we don't exceed the internal limits. Rendering of more than 2 billion particles is not yet supported by OVITO.
+        size_t particleCount = particles->elementCount();
+        if(particleCount > (size_t)std::numeric_limits<int>::max()) {
+            throw Exception(tr("This version of OVITO doesn't support rendering of more than %1 particles.").arg(std::numeric_limits<int>::max()));
+        }
+
+        // Render all mesh-based particle types.
+        renderMeshBasedParticles(particles, frameGraph, pipeline);
+
+        // Render all primitive particle types.
+        renderPrimitiveParticles(particles, frameGraph, pipeline);
+
+        // Render all (sphero-)cylindric particle types.
+        renderCylindricParticles(particles, frameGraph, pipeline);
+
         return {};
-    particles->verifyIntegrity();
-
-    // Make sure the 'Position' property is present.
-    if(!particles->getProperty(Particles::PositionProperty))
-        throw Exception(tr("Cannot display particles, because the 'Position' property is not present."));
-
-    // Make sure we don't exceed the internal limits. Rendering of more than 2 billion particles is not yet supported by OVITO.
-    size_t particleCount = particles->elementCount();
-    if(particleCount > (size_t)std::numeric_limits<int>::max()) {
-        throw Exception(tr("This version of OVITO doesn't support rendering of more than %1 particles.").arg(std::numeric_limits<int>::max()));
-    }
-
-    // Render all mesh-based particle types.
-    renderMeshBasedParticles(particles, frameGraph, pipeline);
-
-    // Render all primitive particle types.
-    renderPrimitiveParticles(particles, frameGraph, pipeline);
-
-    // Render all (sphero-)cylindric particle types.
-    renderCylindricParticles(particles, frameGraph, pipeline);
-
-    return {};
+    });
 }
 
 /******************************************************************************
@@ -691,10 +696,10 @@ void ParticlesVis::renderPrimitiveParticles(const Particles* particles, FrameGra
             ConstDataObjectRef,     // Aspherical shape property
             FloatType               // Scaling factor
         >;
-        // Look up the scaled aspherical shape array in the vis cache, which have been multipled with the uniform scaling factor.
+        // Look up the scaled aspherical shape array in the vis cache, which have been multiplied with the uniform scaling factor.
         ConstDataBufferPtr& scaledShapes = frameGraph.visCache().lookup<ConstDataBufferPtr>(ParticleShapeCacheKey(asphericalShapeProperty, radiusScaleFactor()));
         if(!scaledShapes) {
-            // Make a copy of the original aspherical shape array and multiple all vectors with the scaling factor.
+            // Make a copy of the original aspherical shape array and multiply all vectors with the scaling factor.
             BufferWriteAccessAndRef<Vector3G, access_mode::read_write> values = ConstDataBufferPtr::makeCopy(asphericalShapeProperty);
             for(Vector3G& s : values)
                 s *= radiusScaleFactor();

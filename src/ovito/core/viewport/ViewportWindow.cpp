@@ -151,8 +151,8 @@ void ViewportWindow::handleUpdateRequest()
     // Graceful exception handling.
     bool success = userInterface().handleExceptions([&]() {
 
-        // Interactive rendering is performed with a high priority.
-        this_task::get()->setPriority(1);
+        // Interactive viewport rendering is performed with a higher priority than other tasks.
+        this_task::get()->setAsyncTaskType(Task::AsynchronousTaskType::InteractiveAsyncTask);
 
         // Set up preliminary projection without knowing the scene bounding box yet.
         AnimationTime time = viewport()->scene()->animationSettings()->currentTime();

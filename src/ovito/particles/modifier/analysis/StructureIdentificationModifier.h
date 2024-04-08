@@ -140,7 +140,7 @@ protected:
     virtual std::shared_ptr<Algorithm> createAlgorithm(const ModifierEvaluationRequest& request, const PipelineFlowState& input, PropertyPtr structures) = 0;
 
     /// Adopts existing computation results for an interactive pipeline evaluation.
-    virtual void reuseCachedState(const ModifierEvaluationRequest& request, Particles* particles, PipelineFlowState& output, const PipelineFlowState& cachedState);
+    virtual Future<PipelineFlowState> reuseCachedState(const ModifierEvaluationRequest& request, Particles* particles, PipelineFlowState&& output, const PipelineFlowState& cachedState);
 
     /// Saves the class' contents to the given stream.
     virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;

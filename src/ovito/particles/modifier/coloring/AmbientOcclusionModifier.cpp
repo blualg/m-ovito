@@ -84,12 +84,14 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
     // In interactive mode, do not perform a real computation. Instead, reuse an old result from the cached state if available.
     if(request.interactiveMode()) {
         if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
-            Particles* particles = state.expectMutableObject<Particles>();
-            particles->verifyIntegrity();
-            if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
-                particles->tryToAdoptProperties(cachedParticles, {
-                    cachedParticles->getProperty(Particles::ColorProperty)
-                }, {particles});
+            if(DataOORef<const Particles> cachedParticles = cachedState.getObject<Particles>()) {
+                Particles* particles = state.expectMutableObject<Particles>();
+                particles->verifyIntegrity();
+                const Property* cachedColors = cachedParticles->getProperty(Particles::ColorProperty);
+                return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), particles, cachedColors, cachedParticles = std::move(cachedParticles)]() mutable {
+                    particles->tryToAdoptProperties(cachedParticles, {cachedColors}, {particles});
+                    return std::move(state);
+                });
             }
         }
         return std::move(state);
@@ -110,8 +112,9 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
         OORef<OffscreenOpenGLSceneRenderer> renderer = OORef<OffscreenOpenGLSceneRenderer>::create();
 
         // Perform the AO computation in a separate thread.
-        return AsynchronousTask<ConstDataBufferPtr>::runAsync([
-                renderer = std::move(renderer),
+        return AsynchronousTask<ConstDataBufferPtr>::runAsync(
+                Task::AsynchronousTaskType::SerialAsyncTask,  // Execute this in the serial task queue to avoid overloading the OpenGL graphics system with too many concurrent rendering tasks.
+                [renderer = std::move(renderer),
                 bufferResolution = bufferResolution(),
                 samplingCount = std::max(1, samplingCount()),
                 particles = DataOORef<const Particles>(particles)]() mutable
@@ -164,6 +167,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::SceneLayer);
             frameGraph->addPrimitive(std::move(particleBuffer), AffineTransformation::Identity(), pickingGroup, boundingBox);
             renderer->postprocessFrameGraph(*frameGraph);
+            this_task::throwIfCanceled();
 
             // Initialize the renderer.
             renderer->setVisCache(visCache);

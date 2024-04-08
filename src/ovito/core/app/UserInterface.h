@@ -89,7 +89,7 @@ public:
     /// Indicates that exitWithFatalError() has been called and the application is shutting down.
     bool exitingWithFatalError() const { return _exitingWithFatalError; }
 
-    /// Closes the user interface immediately (without asking user to save changes).
+    /// Aborts all running tasks and closes the user interface as soon as possible (without asking user to save changes).
     void shutdown();
 
     /// Indicates whether the session is in the process of being closed and all ongoing tasks should be canceled.
@@ -141,7 +141,7 @@ public:
     /// Suspends updates of the viewports whenever preliminary data pipeline results are available.
     void suspendPreliminaryViewportUpdates() { _preliminaryViewportUpdatesSuspendCount++; }
 
-    /// \brief Resumes updates of the viewports whenever preliminary data pipeline results are available.
+    /// Resumes updates of the viewports whenever preliminary data pipeline results are available.
     void resumePreliminaryViewportUpdates() {
         OVITO_ASSERT_MSG(_preliminaryViewportUpdatesSuspendCount > 0, "UserInterface::resumePreliminaryViewportUpdates()", "resumePreliminaryViewportUpdates() has been called more often than suspendPreliminaryViewportUpdates().");
         _preliminaryViewportUpdatesSuspendCount--;
@@ -196,6 +196,9 @@ protected:
     /// Assigns an UndoStack.
     void setUndoStack(UndoStack* undoStack) { _undoStack = undoStack; }
 
+    /// Is called by the TaskManager class after all tasks have been terminated and all nested event loops have been exited.
+    void shutdownComplete();
+
 protected:
 
     /// Hosts the dataset that is currently being edited in this user interface.
@@ -230,6 +233,8 @@ protected:
 
     /// This keeps the UI object itself alive until shutdown() is called.
     OORef<UserInterface> _selfGuard;
+
+    friend class TaskManager; // TaskManager needs to call shutdownComplete()
 };
 
 }   // End of namespace

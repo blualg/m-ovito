@@ -96,13 +96,16 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
     // In interactive mode, do not perform a real computation. Instead, reuse old results if available in the pipeline cache.
     if(request.interactiveMode()) {
         if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
-            if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
-                particles->tryToAdoptProperties(cachedParticles, {
-                    cachedParticles->getProperty(Particles::CoordinationProperty)
-                }, {particles});
-            }
-            if(const DataTable* cachedTable = cachedState.getObjectBy<DataTable>(request.modificationNode(), QStringLiteral("coordination-rdf"))) {
-                state.addObject(cachedTable);
+            if(DataOORef<const Particles> cachedParticles = cachedState.getObject<Particles>()) {
+                if(const Property* cachedCoordination = cachedParticles->getProperty(Particles::CoordinationProperty)) {
+                    if(const DataTable* cachedTable = cachedState.getObjectBy<DataTable>(request.modificationNode(), QStringLiteral("coordination-rdf"))) {
+                        state.addObject(cachedTable);
+                    }
+                    return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), particles, cachedCoordination, cachedParticles = std::move(cachedParticles)]() mutable {
+                        particles->tryToAdoptProperties(cachedParticles, {cachedCoordination}, {particles});
+                        return std::move(state);
+                    });
+                }
             }
         }
         return std::move(state);

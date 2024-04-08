@@ -297,7 +297,7 @@ bool StandaloneApplication::processCommandLineParameters()
         int nthreads = cmdLineParser().value("nthreads").toInt(&ok);
         if(!ok || nthreads <= 0)
             throw Exception(tr("Invalid thread count specified on command line."));
-        setIdealThreadCount(nthreads);
+        taskManager().setMaxThreadCount(nthreads);
     }
 
     return true;

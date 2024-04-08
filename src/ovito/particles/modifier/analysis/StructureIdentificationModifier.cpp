@@ -115,7 +115,7 @@ Future<PipelineFlowState> StructureIdentificationModifier::evaluateModifier(cons
         if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
             Particles* particles = state.expectMutableObject<Particles>();
             particles->verifyIntegrity();
-            reuseCachedState(request, particles, state, cachedState);
+            return reuseCachedState(request, particles, std::move(state), cachedState);
         }
         return std::move(state);
     }
@@ -247,16 +247,8 @@ std::vector<int64_t> StructureIdentificationModifier::Algorithm::computeStructur
 /******************************************************************************
 * Adopts existing computation results for an interactive pipeline evaluation.
 ******************************************************************************/
-void StructureIdentificationModifier::reuseCachedState(const ModifierEvaluationRequest& request, Particles* particles, PipelineFlowState& output, const PipelineFlowState& cachedState)
+Future<PipelineFlowState> StructureIdentificationModifier::reuseCachedState(const ModifierEvaluationRequest& request, Particles* particles, PipelineFlowState&& output, const PipelineFlowState& cachedState)
 {
-    // Adopt the structure property from the cached state.
-    if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
-        particles->tryToAdoptProperties(cachedParticles, {
-            cachedParticles->getProperty(Particles::StructureTypeProperty),
-            colorByType() ? cachedParticles->getProperty(Particles::ColorProperty) : nullptr
-        }, {particles});
-    }
-
     // Adopt the structure count data table from the cached state.
     if(const DataTable* cachedTable = cachedState.getObjectBy<DataTable>(request.modificationNode(), QStringLiteral("structures"))) {
         output.addObject(cachedTable);
@@ -264,6 +256,18 @@ void StructureIdentificationModifier::reuseCachedState(const ModifierEvaluationR
 
     // Adopt all global attributes computed by the modifier from the cached state.
     output.adoptAttributesFrom(cachedState, request.modificationNode());
+
+    // Adopt the structure property from the cached state.
+    if(DataOORef<const Particles> cachedParticles = cachedState.getObject<Particles>()) {
+        const Property* cachedStructures = cachedParticles->getProperty(Particles::StructureTypeProperty);
+        const Property* cachedColors = colorByType() ? cachedParticles->getProperty(Particles::ColorProperty) : nullptr;
+        return AsynchronousTask<PipelineFlowState>::runAsync([output = std::move(output), particles, cachedStructures, cachedColors, cachedParticles = std::move(cachedParticles)]() mutable {
+            particles->tryToAdoptProperties(cachedParticles, {cachedStructures, cachedColors}, {particles});
+            return std::move(output);
+        });
+    }
+
+    return std::move(output);
 }
 
 }   // End of namespace

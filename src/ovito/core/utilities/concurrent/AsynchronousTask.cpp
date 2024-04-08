@@ -49,20 +49,21 @@ AsynchronousTaskBase::~AsynchronousTaskBase()
 /******************************************************************************
 * Submits the task for execution to a thread pool.
 ******************************************************************************/
-void AsynchronousTaskBase::startInThreadPool(QThreadPool* pool, bool showInUserInterface)
+void AsynchronousTaskBase::startInThreadPool(bool showInUserInterface)
 {
-    OVITO_ASSERT(pool);
     OVITO_ASSERT(!this->_thisTask);
     OVITO_ASSERT(!this->_submittedToPool);
     OVITO_ASSERT(!this->isStarted());
 
-    // Store a shared_ptr to this task to keep it alive while running.
-    this->_thisTask = this->shared_from_this();
-    this->_submittedToPool = pool;
-
     // Inherit execution context from parent task.
     _executionContext = ExecutionContext::current();
     OVITO_ASSERT(_executionContext.isValid());
+
+    // Store a shared_ptr to this task to keep it alive while running.
+    _thisTask = this->shared_from_this();
+
+    // Determine the thread pool to use for this task.
+    _submittedToPool = _executionContext.ui().taskManager().chooseThreadPool(*this);
 
     // Register task with UI task manager if requested.
     if(showInUserInterface) {
@@ -73,7 +74,7 @@ void AsynchronousTaskBase::startInThreadPool(QThreadPool* pool, bool showInUserI
     this->setStarted();
 
     // Submit to thread pool.
-    pool->start(this, this->priority());
+    _submittedToPool->start(this);
 }
 
 /******************************************************************************

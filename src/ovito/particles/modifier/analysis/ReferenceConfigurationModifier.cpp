@@ -163,7 +163,7 @@ Future<PipelineFlowState> ReferenceConfigurationModifier::evaluateModifier(const
         if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
             Particles* particles = state.expectMutableObject<Particles>();
             particles->verifyIntegrity();
-            reuseCachedState(request, particles, state, cachedState);
+            return reuseCachedState(request, particles, std::move(state), cachedState);
         }
         return std::move(state);
     }

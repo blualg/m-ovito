@@ -73,8 +73,8 @@ public:
     sycl::queue& syclQueue() { return _syclQueue; }
 #endif
 
-    /// Cancels all running tasks and waits for them to finish.
-    void shutdown();
+    /// Request the TaskManager to shut down all ongoing work, which means canceling all running tasks and no longer accepting new tasks.
+    void requestShutdown();
 
     /// Executes the given function at some later time unless the given object is destroyed in the meantime or the task manager is shut down.
     void submitWork(const OvitoObject* contextObject, fu2::unique_function<void() noexcept> function, bool isScriptingContext);
@@ -89,6 +89,18 @@ public:
         }
     }
 
+    /// Determines the thread pool for executing the given asynchronous task.
+    QThreadPool* chooseThreadPool(Task& task);
+
+    /// Changes the maximum number of threads used by the task manager's thread pools.
+    void setMaxThreadCount(int maxThreadCount) {
+        _threadPool.setMaxThreadCount(maxThreadCount);
+        _threadPoolUI.setMaxThreadCount(maxThreadCount);
+    }
+
+    /// Returns the maximum number of threads used by the task manager's thread pools.
+    int maxThreadCount() const { return _threadPool.maxThreadCount(); }
+
 public Q_SLOTS:
 
     /// Executes pending work items waiting in the deferred execution queue.
@@ -98,7 +110,7 @@ public Q_SLOTS:
     }
 
     /// Tells the task manager to interrupt the task it is currently waiting for.
-    void requestInterruption();
+    bool requestInterruption();
 
 Q_SIGNALS:
 
@@ -118,6 +130,9 @@ private:
 
     /// Stops executing pending work items and makes processWorkWhileWaiting() return.
     void quitWorkProcessingLoop(bool& quitFlag);
+
+    /// Cancels all running tasks and waits for them to finish.
+    void shutdownImplementation(std::unique_lock<std::mutex>& lock);
 
 private:
 
@@ -177,6 +192,15 @@ private:
 
     /// The current local event loop started by processWorkWhileWaiting();
     QEventLoop* _localEventLoop = nullptr;
+
+    /// Pool of threads for executing worker tasks.
+    QThreadPool _threadPool;
+
+    /// Pool of threads for executing UI-related tasks, which require a higher priority.
+    QThreadPool _threadPoolUI;
+
+    /// Single-thread pool for executing worker tasks that cannot run concurrently.
+    QThreadPool _threadPoolSerial;
 
     friend class RegisteredBufferAccess;
     friend class Task;

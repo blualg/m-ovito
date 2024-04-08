@@ -122,8 +122,12 @@ public:
     /// Creates a new cache entry with a default-initialized value if the key doesn't exist.
     template<typename Value, typename Key>
     Value& lookup(Key&& key, ResourceFrameHandle resourceFrame) {
-        OVITO_ASSERT(QThread::currentThread() == _owningThread);
         OVITO_ASSERT(std::find(_activeResourceFrames.begin(), _activeResourceFrames.end(), resourceFrame) != _activeResourceFrames.end());
+
+        // Note: The following check has been disabled, because we now allow lookups to be made from worker threads.
+        // The user is reponsible for ensuring that no two threads access the cache concurrently.
+
+        // OVITO_ASSERT(QThread::currentThread() == _owningThread);
 
         // Check if the key exists in the cache.
         for(CacheEntry& entry : _entries) {

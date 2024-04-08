@@ -26,6 +26,7 @@
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
+#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ptm/ptm_polar.h>
 #include "AtomicStrainModifier.h"
 
@@ -65,25 +66,31 @@ AtomicStrainModifier::AtomicStrainModifier(ObjectInitializationFlags flags) : Re
 /******************************************************************************
 * Adopts existing computation results for an interactive pipeline evaluation.
 ******************************************************************************/
-void AtomicStrainModifier::reuseCachedState(const ModifierEvaluationRequest& request, Particles* particles, PipelineFlowState& output, const PipelineFlowState& cachedState)
+Future<PipelineFlowState> AtomicStrainModifier::reuseCachedState(const ModifierEvaluationRequest& request, Particles* particles, PipelineFlowState&& output, const PipelineFlowState& cachedState)
 {
     // Adopt the atomic strain values from the cached state.
-    if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
-        if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
-            particles->tryToAdoptProperties(cachedParticles, {
-                cachedParticles->getProperty(QStringLiteral("Shear Strain")),
-                cachedParticles->getProperty(QStringLiteral("Volumetric Strain")),
-                calculateStrainTensors() ? cachedParticles->getProperty(Particles::StrainTensorProperty) : nullptr,
-                calculateDeformationGradients() ? cachedParticles->getProperty(Particles::DeformationGradientProperty) : nullptr,
-                calculateNonaffineSquaredDisplacements() ? cachedParticles->getProperty(QStringLiteral("Nonaffine Squared Displacement")) : nullptr,
-                selectInvalidParticles() ? cachedParticles->getProperty(Particles::SelectionProperty) : nullptr,
-                calculateRotations() ? cachedParticles->getProperty(Particles::RotationProperty) : nullptr,
-                calculateStretchTensors() ? cachedParticles->getProperty(Particles::StretchTensorProperty) : nullptr
-            }, {particles});
-        }
+    if(DataOORef<const Particles> cachedParticles = cachedState.getObject<Particles>()) {
         // Adopt all global attributes computed by the modifier from the cached state.
         output.adoptAttributesFrom(cachedState, request.modificationNode());
+
+        std::vector<const Property*> cachedProperties = {
+            cachedParticles->getProperty(QStringLiteral("Shear Strain")),
+            cachedParticles->getProperty(QStringLiteral("Volumetric Strain")),
+            calculateStrainTensors() ? cachedParticles->getProperty(Particles::StrainTensorProperty) : nullptr,
+            calculateDeformationGradients() ? cachedParticles->getProperty(Particles::DeformationGradientProperty) : nullptr,
+            calculateNonaffineSquaredDisplacements() ? cachedParticles->getProperty(QStringLiteral("Nonaffine Squared Displacement")) : nullptr,
+            selectInvalidParticles() ? cachedParticles->getProperty(Particles::SelectionProperty) : nullptr,
+            calculateRotations() ? cachedParticles->getProperty(Particles::RotationProperty) : nullptr,
+            calculateStretchTensors() ? cachedParticles->getProperty(Particles::StretchTensorProperty) : nullptr
+        };
+
+        return AsynchronousTask<PipelineFlowState>::runAsync([output = std::move(output), particles, cachedProperties = std::move(cachedProperties), cachedParticles = std::move(cachedParticles)]() mutable {
+            particles->tryToAdoptProperties(cachedParticles, cachedProperties, {particles});
+            return std::move(output);
+        });
     }
+
+    return std::move(output);
 }
 
 /******************************************************************************

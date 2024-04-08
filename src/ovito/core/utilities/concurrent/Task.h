@@ -61,6 +61,13 @@ public:
         YieldUI        = (1<<6), // The task runs in the main thread should yield control to the event loop when its progress functions are called.
     };
 
+    /// The types of asynchronous tasks.
+    enum AsynchronousTaskType {
+        DefaultAsyncTask = 0,       //< A regular compute task that gets executed with default priority.
+        InteractiveAsyncTask = 1,   //< A compute task that gets executed with higher priority to keep the UI responsive.
+        SerialAsyncTask = -1,       //< A tasks that gets executed in the serial task queue, because it cannot run concurrently with tasks of the same type.
+    };
+
     /// Constructor.
     explicit Task(State initialState = NoState, void* resultsStorage = nullptr) noexcept : _state(initialState), _resultsStorage(resultsStorage) {
 #ifdef OVITO_DEBUG
@@ -189,21 +196,20 @@ public:
         }
     }
 
-    /// \brief Re-throws the exception stored in this task state if an exception was previously set via setException().
-    /// \throw The exception stored in the Task (if any).
+    /// Re-throws the exception stored in this task state if an exception was previously set via setException().
     void throwPossibleException() {
         if(exceptionStore())
             std::rethrow_exception(exceptionStore());
     }
 
-    /// \brief Returns the internal exception store, which contains an exception object in case the task has failed.
+    /// Returns the internal exception store, which contains an exception object in case the task has failed.
     const std::exception_ptr& exceptionStore() const noexcept { return _exceptionStore; }
 
-    /// Returns the priority of this task.
-    int priority() const { return _priority; }
+    /// Returns the type of this task if it is an asynchronous task running in a worker thread.
+    AsynchronousTaskType asyncTaskType() const { return _asyncTaskType; }
 
-    /// Sets the priority of this task.
-    void setPriority(int priority) { _priority = priority; }
+    /// Sets the type of this task if it is an asynchronous task running in a worker thread.
+    void setAsyncTaskType(AsynchronousTaskType asyncTaskType) { _asyncTaskType = asyncTaskType; }
 
 protected:
 
@@ -316,8 +322,8 @@ protected:
     /// Used for managing concurrent access to this task.
     mutable QMutex _mutex;
 
-    /// The priority of this task.
-    int _priority = 0;
+    /// The type of this task if it is an asynchronous task running in a worker thread.
+    AsynchronousTaskType _asyncTaskType = DefaultAsyncTask;
 
     /// List of continuation functions that will be called when this task enters the 'finished' or the 'canceled' state.
     QVarLengthArray<fu2::unique_function<void() noexcept>, 2> _continuations;

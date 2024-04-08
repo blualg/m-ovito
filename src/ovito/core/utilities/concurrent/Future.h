@@ -300,7 +300,7 @@ Future<R...>::then(Executor&& executor, Function&& f)
 
     // Inherit the priority from the task that invoked then(). If then() was not invoked from a task, inherit the
     // priority from future's task.
-    continuationTask->setPriority(this_task::get() ? this_task::get()->priority() : this->task()->priority());
+    continuationTask->setAsyncTaskType(this_task::get() ? this_task::get()->asyncTaskType() : this->task()->asyncTaskType());
 
     // Run the following function once the existing task finishes. We'll then invoke the user's continuation function.
     continuationTask->whenTaskFinishes(

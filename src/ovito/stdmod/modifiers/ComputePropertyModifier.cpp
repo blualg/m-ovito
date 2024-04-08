@@ -219,10 +219,13 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::apply(const ModifierE
         if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
             ConstDataObjectPath containerPathCached = cachedState.getObject(inputContainerRef());
             if(!containerPathCached.empty()) {
-                const PropertyContainer* containerCached = static_object_cast<PropertyContainer>(containerPathCached.back());
-                container->tryToAdoptProperties(containerCached, {
-                    modifier->outputProperty().findInContainer(containerCached)
-                }, containerPath);
+                DataOORef<const PropertyContainer> containerCached = static_object_cast<PropertyContainer>(containerPathCached.back());
+                if(const Property* propertyCached = modifier->outputProperty().findInContainer(containerCached)) {
+                    return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), container, containerPath = std::move(containerPath), propertyCached, containerCached = std::move(containerCached)]() mutable {
+                        container->tryToAdoptProperties(containerCached, {propertyCached}, containerPath);
+                        return std::move(state);
+                    });
+                }
             }
         }
         return std::move(state);

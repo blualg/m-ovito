@@ -70,13 +70,28 @@ void OffscreenOpenGLSceneRenderer::createOffscreenSurface()
 
     // Create the QOffscreenSurface.
     if(!_offscreenSurface) {
-        _offscreenSurface.emplace();
+        _offscreenSurface = std::make_unique<QOffscreenSurface>();
         if(QOpenGLContext::globalShareContext())
             _offscreenSurface->setFormat(QOpenGLContext::globalShareContext()->format());
         else
             _offscreenSurface->setFormat(QSurfaceFormat::defaultFormat());
         _offscreenSurface->create();
     }
+}
+
+/******************************************************************************
+* Called when this renderer is being destroyed.
+******************************************************************************/
+void OffscreenOpenGLSceneRenderer::aboutToBeDeleted()
+{
+    // Release the offscreen surface.
+    if(_offscreenSurface) {
+        if(ExecutionContext::isMainThread())
+            _offscreenSurface.reset();
+        else
+            _offscreenSurface.release()->deleteLater();
+    }
+    OpenGLSceneRenderer::aboutToBeDeleted();
 }
 
 /******************************************************************************
@@ -105,7 +120,7 @@ void OffscreenOpenGLSceneRenderer::startRender(const QSize& frameBufferSize)
         throw RendererException(tr("Failed to create offscreen rendering surface."));
 
     // Make the context current.
-    if(!_offscreenContext->makeCurrent(&_offscreenSurface.value()))
+    if(!_offscreenContext->makeCurrent(_offscreenSurface.get()))
         throw RendererException(tr("Failed to make OpenGL context current."));
 
     QSurfaceFormat format = _offscreenContext->format();
@@ -165,7 +180,7 @@ void OffscreenOpenGLSceneRenderer::renderFrame(FrameGraph& frameGraph, const QRe
     OVITO_ASSERT(visCache());
 
     // Make GL context current.
-    if(!_offscreenContext || !_offscreenContext->makeCurrent(&_offscreenSurface.value()))
+    if(!_offscreenContext || !_offscreenContext->makeCurrent(_offscreenSurface.get()))
         throw RendererException(tr("Failed to make OpenGL context current."));
 
     // Open a new cache frame for the OpenGL resource managament.
@@ -183,7 +198,7 @@ void OffscreenOpenGLSceneRenderer::renderFrame(FrameGraph& frameGraph, const QRe
     // Transfer the rendered image from the OpenGL framebuffer to the output frame buffer.
     if(frameBuffer) {
         // Flush the contents to the FBO before extracting image.
-        _offscreenContext->swapBuffers(&_offscreenSurface.value());
+        _offscreenContext->swapBuffers(_offscreenSurface.get());
 
         // Clear destination area in the framebuffer (only necessary if OpenGL image is not fully opaque).
         if(frameGraph.clearColor().a() != 1 && !frameBuffer->image().isNull())
@@ -218,18 +233,20 @@ void OffscreenOpenGLSceneRenderer::endRender()
 
     // Release OpenGL resources. This requires an active GL context.
     if(_offscreenContext) {
-        bool success = _offscreenContext->makeCurrent(&_offscreenSurface.value());
+        bool success = _offscreenContext->makeCurrent(_offscreenSurface.get());
         OVITO_ASSERT(success);
     }
     setCurrentResourceFrame({});
     QOpenGLFramebufferObject::bindDefault();
     _framebufferObject.reset();
-    if(_offscreenContext)
+    if(_offscreenContext) {
         _offscreenContext->doneCurrent();
+        _offscreenContext.reset();
+    }
 
     setPrimaryFramebuffer(0);
 
-    // Note: Keeping offscreen surface and GL context alive and re-use them in subsequent render passes until the renderer is deleted.
+    // Note: Keeping offscreen surface alive and re-use them in subsequent render passes until the renderer is deleted.
 }
 
 }   // End of namespace

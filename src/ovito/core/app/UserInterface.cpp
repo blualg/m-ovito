@@ -71,26 +71,39 @@ void UserInterface::exitWithFatalError(const Exception& ex)
 }
 
 /******************************************************************************
-* Closes the user interface immediately (without asking user to save changes).
+* Aborts all running tasks and closes the user interface as soon as possible
+* (without asking user to save changes).
 ******************************************************************************/
 void UserInterface::shutdown()
 {
-    if(isShuttingDown())
-        return;
+    // Terminate all running tasks, empty the deferred work queue, and leave all nested event loops.
+    // Once this is done, shutdownComplete() will be invoked to finalize the shutdown process.
+    taskManager().requestShutdown();
+}
 
-    // Set up a local execution context (needed for the use of ObjectExecutor below).
-    ExecutionContext::Scope execScope(ExecutionContext::Type::Scripting, shared_from_this());
+/******************************************************************************
+* Is called by the TaskManager class after all tasks have been terminated and
+* all nested event loops have been exited.
+******************************************************************************/
+void UserInterface::shutdownComplete()
+{
+    try {
+        // Set up a local execution context.
+        ExecutionContext::Scope execScope(ExecutionContext::Type::Scripting, shared_from_this());
 
-    // Close the dataset container. This should release all objects in the current dataset.
-    datasetContainer().clearAllReferences();
+        // Close the dataset container. This should release all objects in the current dataset.
+        datasetContainer().clearAllReferences();
+    }
+    catch(const Exception& ex) {
+        qWarning() << "Warning: Exception caught during user interface shutdown";
+        reportError(ex, true);
+    }
 
-    // Terminate all running tasks and empty the deferred work queue.
-    taskManager().shutdown();
-
-    // Release this UI instance as soon as control returns to the event loop.
+    // Self-destruction.
     if(_selfGuard) {
         if(QThread::currentThread()->loopLevel() != 0) {
-            // Move the self-guard into a lambda function, which gets processed by the work queue later.
+            // Move the self-guard into a lambda function, which gets processed when controls returns to the Qt event loop.
+            OVITO_ASSERT(Application::instance()->isShuttingDown() == false);
             Application::instance()->taskManager().submitWork(Application::instance(), [s = std::move(_selfGuard)]() noexcept {}, true);
         }
         else {

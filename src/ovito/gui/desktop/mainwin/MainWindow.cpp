@@ -479,7 +479,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
         // Don't allow user to interact with the window anymore.
         setEnabled(false);
 
-        // Stop all running tasks in this window and free session objects.
+        // Stop all running tasks in this window and release program session objects.
         shutdown();
 
         // Save window geometry and layout in user settings file.

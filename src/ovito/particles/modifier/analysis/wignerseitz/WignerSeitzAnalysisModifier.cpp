@@ -49,7 +49,7 @@ WignerSeitzAnalysisModifier::WignerSeitzAnalysisModifier(ObjectInitializationFla
 /******************************************************************************
 * Adopts existing computation results for an interactive pipeline evaluation.
 ******************************************************************************/
-void WignerSeitzAnalysisModifier::reuseCachedState(const ModifierEvaluationRequest& request, Particles* particles, PipelineFlowState& output, const PipelineFlowState& cachedState)
+Future<PipelineFlowState> WignerSeitzAnalysisModifier::reuseCachedState(const ModifierEvaluationRequest& request, Particles* particles, PipelineFlowState&& output, const PipelineFlowState& cachedState)
 {
     // Adopt the WS analysis results from the cached state.
     if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
@@ -74,6 +74,8 @@ void WignerSeitzAnalysisModifier::reuseCachedState(const ModifierEvaluationReque
 
     // Adopt all global attributes computed by the modifier from the cached state.
     output.adoptAttributesFrom(cachedState, request.modificationNode());
+
+    return std::move(output);
 }
 
 /******************************************************************************

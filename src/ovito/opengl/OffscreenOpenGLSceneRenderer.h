@@ -44,6 +44,9 @@ public:
     /// Constructor.
     explicit OffscreenOpenGLSceneRenderer(ObjectInitializationFlags flags);
 
+    /// Called when this renderer is being destroyed.
+    virtual void aboutToBeDeleted() override;
+
 	/// Prepares the renderer for rendering one or more frames.
 	virtual void startRender(const QSize& frameBufferSize) override;
 
@@ -67,7 +70,7 @@ private:
 private:
 
     /// The offscreen surface used to render into an image buffer using OpenGL.
-    std::optional<QOffscreenSurface> _offscreenSurface;
+    std::unique_ptr<QOffscreenSurface> _offscreenSurface;
 
     /// The temporary OpenGL rendering context.
     std::optional<QOpenGLContext> _offscreenContext;
