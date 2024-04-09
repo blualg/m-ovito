@@ -83,8 +83,11 @@ protected:
     /// Is called when the value of a reference field of this RefMaker changes.
     virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
+    /// Handles timer events for this object.
+    virtual void timerEvent(QTimerEvent* event) override;
+
     /// Requests the (re-)evaluation of all data pipelines next time execution returns to the event loop.
-    void restartPreparation();
+    void restartPreparation(bool restartImmediately = false);
 
 private Q_SLOTS:
 
@@ -137,7 +140,10 @@ private:
     /// A shared future which reaches the completed state once the scene is ready.
     SharedFuture<> _future;
 
-    /// Indicates that a restart of the preparation has already been scheduled.
+    /// Used to throttle the number of pipeline evaluation requests.
+    QBasicTimer _restartTimer;
+
+    /// Indicates that a restart of the preparation has been scheduled.
     bool _isRestartScheduled = false;
 
     /// Enables automatical restarting of the scene preparation after the scene has been changed.

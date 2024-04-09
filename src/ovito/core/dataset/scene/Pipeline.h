@@ -73,10 +73,6 @@ public:
     /// \brief Returns the title of this object.
     virtual QString objectTitle() const override;
 
-    /// \brief Returns the bounding box of the scene node.
-    /// \return An world axis-aligned box.
-    virtual Box3 localBoundingBox(AnimationTime time, TimeInterval& validity) const override;
-
     /// \brief Deletes this node from the scene.
     virtual void deleteSceneNode() override;
 
@@ -119,6 +115,9 @@ protected:
 
     /// This method is called once for this object after it has been completely loaded from a stream.
     virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
+
+    /// Computes the scene node's local bounding box.
+    virtual Box3 localBoundingBoxInternal(AnimationTime time, TimeInterval& validity) const override;
 
 private:
 

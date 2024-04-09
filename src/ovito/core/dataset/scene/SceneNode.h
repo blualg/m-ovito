@@ -190,7 +190,7 @@ public:
     /// \return An axis-aligned box in the node's local coordinate system that contains
     ///         the whole node geometry.
     /// \note The returned box does not contains the bounding boxes of the child nodes.
-    virtual Box3 localBoundingBox(AnimationTime time, TimeInterval& validity) const = 0;
+    Box3 localBoundingBox(AnimationTime time) const;
 
     /// \brief Returns the bounding box of the scene node in world coordinates.
     /// \param time The animation time at which to compute the bounding box.
@@ -261,6 +261,12 @@ protected:
     /// This method marks the cached world bounding box as invalid,
     /// so it will be rebuilt during the next call to worldBoundingBox().
     virtual void invalidateBoundingBox();
+
+    /// \brief Computes the bounding box of the scene node in local coordinates.
+    /// \param time The animation time at which to compute the bounding box.
+    /// \return An axis-aligned box in the node's local coordinate system that contains
+    ///         the whole node geometry.
+    virtual Box3 localBoundingBoxInternal(AnimationTime time, TimeInterval& validity) const = 0;
 
     /// Is called whenever one of the child nodes in the tree has generated a AnimationFramesChanged event.
     virtual void onAnimationFramesChanged();

@@ -71,6 +71,7 @@ SharedFuture<> ScenePreparation::future()
 void ScenePreparation::makeReady(bool forceReevaluation)
 {
     _isRestartScheduled = false;
+    _restartTimer.stop();
 
     // Create a promise, which remains in the unfinished state as long as we are preparing the scene.
     if(!_promise.isValid() || _promise.isCanceled()) {
@@ -247,7 +248,7 @@ bool ScenePreparation::referenceEvent(RefTarget* source, const ReferenceEvent& e
 void ScenePreparation::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
     if(field == PROPERTY_FIELD(scene)) {
-        restartPreparation();
+        restartPreparation(true);
         _selectionSet.set(this, PROPERTY_FIELD(selectionSet), scene() ? scene()->selection() : nullptr);
     }
     RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
@@ -266,7 +267,7 @@ void ScenePreparation::renderSettingsReplaced(RenderSettings* newRenderSettings)
 /******************************************************************************
 * Requests the (re-)evaluation of all data pipelines next time execution returns to the event loop.
 ******************************************************************************/
-void ScenePreparation::restartPreparation()
+void ScenePreparation::restartPreparation(bool restartImmediately)
 {
     // Reset the promise if it was already in the completed state before.
     if(_promise.isValid() && _promise.isFinished()) {
@@ -278,15 +279,38 @@ void ScenePreparation::restartPreparation()
     _currentPipeline.reset();
     _completedScene = nullptr;
     if(autoRestart()) {
-        if(!_isRestartScheduled) {
-            _isRestartScheduled = true;
-            QMetaObject::invokeMethod(this, "makeReady", Qt::QueuedConnection, Q_ARG(bool, true));
+        if(scene() && _pipelineEvaluationFuture.isValid() && _currentTime != scene()->animationSettings()->currentTime()) {
+            // Force an immediate restart if the animation time has changed.
+            restartImmediately = true;
+        }
+        if(!restartImmediately) {
+            if(!_isRestartScheduled) {
+                _isRestartScheduled = true;
+                // Restart pipeline evaluation after a short delay if an evaluation is already in flight to avoid excessive requests.
+                if(_pipelineEvaluationFuture.isValid() && !_restartTimer.isActive())
+                    _restartTimer.start(100, Qt::CoarseTimer, this);
+                else
+                    QMetaObject::invokeMethod(this, "makeReady", Qt::QueuedConnection, Q_ARG(bool, true));
+            }
+        }
+        else {
+            makeReady(true);
         }
     }
     else {
         _pipelineEvaluationFuture.reset();
         _future.reset();
         _promise.reset();
+    }
+}
+
+/******************************************************************************
+* Handles timer events for this object.
+******************************************************************************/
+void ScenePreparation::timerEvent(QTimerEvent* event)
+{
+    if(event->timerId() == _restartTimer.timerId()) {
+        makeReady(true);
     }
 }
 

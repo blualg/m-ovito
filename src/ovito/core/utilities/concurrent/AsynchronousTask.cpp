@@ -24,7 +24,7 @@
 #include <ovito/core/app/UserInterface.h>
 #include "AsynchronousTask.h"
 
-#if defined(Q_CC_MSVC) || defined(Q_CC_CLANG) || defined(OVITO_BUILD_MONOLITHIC)
+#if defined(Q_OS_WIN) && (defined(Q_CC_MSVC) || defined(Q_CC_CLANG) || defined(OVITO_BUILD_MONOLITHIC))
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #endif
 
@@ -131,7 +131,7 @@ void AsynchronousTaskBase::run()
 }
 
 // Instantiate class template to export it from the core DLL.
-#if defined(Q_CC_MSVC) || defined(Q_CC_CLANG) || defined(OVITO_BUILD_MONOLITHIC)
+#if defined(Q_OS_WIN) && (defined(Q_CC_MSVC) || defined(Q_CC_CLANG) || defined(OVITO_BUILD_MONOLITHIC))
     template class OVITO_CORE_EXPORT AsynchronousTask<PipelineFlowState>;
 #endif
 

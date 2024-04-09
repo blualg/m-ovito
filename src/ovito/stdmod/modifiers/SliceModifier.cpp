@@ -219,9 +219,7 @@ std::tuple<Plane3, FloatType> SliceModifier::slicingPlane(AnimationTime time, Ti
 void SliceModifier::renderModifierVisual(const ModifierEvaluationRequest& request, Pipeline* pipeline, FrameGraph& frameGraph)
 {
     if(isBeingEdited()) {
-        TimeInterval interval;
-
-        Box3 bb = pipeline->localBoundingBox(frameGraph.time(), interval);
+        Box3 bb = pipeline->localBoundingBox(frameGraph.time());
         if(bb.isEmpty())
             return;
 
@@ -229,6 +227,7 @@ void SliceModifier::renderModifierVisual(const ModifierEvaluationRequest& reques
         const PipelineFlowState& state = request.modificationNode()->evaluateInput(request).result();
         Plane3 plane;
         FloatType slabWidth;
+        TimeInterval interval;
         std::tie(plane, slabWidth) = slicingPlane(frameGraph.time(), interval, state);
         if(plane.normal.isZero())
             return;

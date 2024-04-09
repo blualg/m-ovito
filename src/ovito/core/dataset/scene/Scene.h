@@ -62,11 +62,6 @@ public:
     /// \return The generated unique name.
     QString makeNameUnique(QString baseName) const;
 
-    /// \brief Returns the bounding box of the scene.
-    /// \param time The time at which the bounding box should be computed.
-    /// \return An world axis-aligned box that contains the bounding boxes of all child nodes.
-    virtual Box3 localBoundingBox(AnimationTime time, TimeInterval& validity) const override { return Box3(); }
-
     /// \brief Returns whether this is the root scene node.
     virtual bool isRootNode() const override { return true; }
 
@@ -83,6 +78,9 @@ protected:
 
     /// Is called whenever one of the child nodes in the tree has generated a AnimationFramesChanged event.
     virtual void onAnimationFramesChanged() override;
+
+    /// Computes the scene node's local bounding box.
+    virtual Box3 localBoundingBoxInternal(AnimationTime time, TimeInterval& validity) const override { return Box3(); }
 
 private:
 

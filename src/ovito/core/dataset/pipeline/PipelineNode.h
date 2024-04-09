@@ -100,6 +100,10 @@ public:
     /// Returns the internal output data cache of this pipeline node.
     PipelineCache& pipelineCache() { return _pipelineCache; }
 
+    /// Decides whether a preliminary viewport update is performed after this pipeline object has been
+    /// evaluated but before the rest of the pipeline is complete.
+    virtual bool shouldRefreshViewportsAfterEvaluation() { return false; }
+
 protected:
 
     /// Is called when the value of a non-animatable property field of this RefMaker has changed.
@@ -116,10 +120,6 @@ protected:
 
     /// Gets called by the PipelineCache whenever it returns a pipeline state from the cache.
     virtual PipelineEvaluationResult postprocessCachedState(const PipelineEvaluationRequest& request, const PipelineFlowState& state) { return state; }
-
-    /// Decides whether a preliminary viewport update is performed after this pipeline object has been
-    /// evaluated but before the rest of the pipeline is complete.
-    virtual bool shouldRefreshViewportsAfterEvaluation() { return false; }
 
 private:
 

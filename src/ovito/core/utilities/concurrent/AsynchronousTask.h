@@ -172,7 +172,7 @@ public:
 }   // End of namespace
 
 
-#ifndef OVITO_BUILD_MONOLITHIC
+#if !defined(OVITO_BUILD_MONOLITHIC) && defined(Q_OS_WIN)
 
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 

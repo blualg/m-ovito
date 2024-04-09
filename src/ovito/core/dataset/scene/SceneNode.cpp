@@ -443,6 +443,18 @@ OORef<RefTarget> SceneNode::clone(bool deepCopy, CloneHelper& cloneHelper) const
 }
 
 /******************************************************************************
+* Computes the bounding box of the scene node in local coordinates.
+******************************************************************************/
+Box3 SceneNode::localBoundingBox(AnimationTime time) const
+{
+    if(!_boundingBoxValidity.contains(time)) {
+        _boundingBoxValidity.setInfinite();
+        _localBoundingBox = localBoundingBoxInternal(time, _boundingBoxValidity);
+    }
+    return _localBoundingBox;
+}
+
+/******************************************************************************
 * Returns the bounding box of the scene node in world coordinates.
 *    time - The time at which the bounding box should be returned.
 ******************************************************************************/
@@ -450,13 +462,9 @@ Box3 SceneNode::worldBoundingBox(AnimationTime time, Viewport* vp) const
 {
     if(vp && isHiddenInViewport(vp, true))
         return Box3();
-    if(!_boundingBoxValidity.contains(time)) {
-        _boundingBoxValidity.setInfinite();
-        _localBoundingBox = localBoundingBox(time, _boundingBoxValidity);
-    }
     TimeInterval iv;
     const AffineTransformation& tm = getWorldTransform(time, iv);
-    Box3 worldBoundingBox = _localBoundingBox.transformed(tm);
+    Box3 worldBoundingBox = localBoundingBox(time).transformed(tm);
     for(SceneNode* child : children()) {
         worldBoundingBox.addBox(child->worldBoundingBox(time, vp));
     }

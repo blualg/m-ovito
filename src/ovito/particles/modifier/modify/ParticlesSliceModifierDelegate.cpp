@@ -135,6 +135,7 @@ Future<PipelineFlowState> ParticlesSliceModifierDelegate::apply(const ModifierEv
             if(selAcc) {
                 const auto* s = selAcc.cbegin();
                 for(const Point3& p : posAcc) {
+                    this_task::throwIfCanceled();
                     if(*s++ && plane.pointDistance(p) > 0) {
                         *m = 1;
                         numMarked++;
@@ -145,6 +146,7 @@ Future<PipelineFlowState> ParticlesSliceModifierDelegate::apply(const ModifierEv
             }
             else {
                 for(const Point3& p : posAcc) {
+                    this_task::throwIfCanceled();
                     if(plane.pointDistance(p) > 0) {
                         *m = 1;
                         numMarked++;
@@ -158,6 +160,7 @@ Future<PipelineFlowState> ParticlesSliceModifierDelegate::apply(const ModifierEv
             if(selAcc) {
                 const auto* s = selAcc.cbegin();
                 for(const Point3& p : posAcc) {
+                    this_task::throwIfCanceled();
                     if(*s++ && invert == (plane.classifyPoint(p, sliceWidth) == 0)) {
                         *m = 1;
                         numMarked++;
@@ -168,6 +171,7 @@ Future<PipelineFlowState> ParticlesSliceModifierDelegate::apply(const ModifierEv
             }
             else {
                 for(const Point3& p : posAcc) {
+                    this_task::throwIfCanceled();
                     if(invert == (plane.classifyPoint(p, sliceWidth) == 0)) {
                         *m = 1;
                         numMarked++;

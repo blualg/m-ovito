@@ -190,7 +190,7 @@ bool Pipeline::referenceEvent(RefTarget* source, const ReferenceEvent& event)
                 // Do not forward this signal to ScenePreparation objects if it comes from the final pipeline stage.
                 // That's to avoid refreshing the viewports twice - once for the preliminary update and once for the final update
                 // when the pipeline evaluation is completed.
-                if(event.sender() == head())
+                if(event.sender() == head() && head()->shouldRefreshViewportsAfterEvaluation())
                     return false;
             }
             else {
@@ -358,7 +358,7 @@ void Pipeline::setSource(PipelineNode* sourceObject)
 /******************************************************************************
 * Computes the bounding box of the scene node in local coordinates.
 ******************************************************************************/
-Box3 Pipeline::localBoundingBox(AnimationTime time, TimeInterval& validity) const
+Box3 Pipeline::localBoundingBoxInternal(AnimationTime time, TimeInterval& validity) const
 {
     const PipelineFlowState& state = getCachedPipelineOutput(time);
 
