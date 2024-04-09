@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include "detail/TaskWithStorage.h"
+#include "detail/Latch.h"
 #include "Future.h"
 #include "TaskManager.h"
 
@@ -120,7 +121,7 @@ public:
     /// local variables by reference.
     template<typename Function>
     static auto runAsyncAndJoin(Function&& f, bool showInUserInterface = false) {
-        std::latch latch(1);
+        detail::Latch latch(1);
         Future<R...> future = runAsync([&latch, f = std::forward<Function>(f)]() mutable {
             try {
                 if constexpr(sizeof...(R) != 0) {

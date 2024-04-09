@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
+#include "detail/Latch.h"
 #include "ProgressingTask.h"
 
 namespace Ovito {
@@ -47,7 +48,7 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
     static constexpr size_t builtinMaxWorkers = 128;
 
     // Determine the number of workers to use.
-    size_t workerCount = std::min({maxWorkers, builtinMaxWorkers, (size_t)std::latch::max()});
+    size_t workerCount = std::min({maxWorkers, builtinMaxWorkers, (size_t)detail::Latch::max()});
 
     // If the application is running in single-threaded mode, we don't use additional worker threads.
     QThreadPool* pool = ExecutionContext::current().ui().taskManager().chooseThreadPool(*this_task::get());
@@ -62,14 +63,14 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
         struct Runner : public QRunnable
         {
             Kernel* kernel;
-            std::latch* latch;
+            detail::Latch* latch;
             ExecutionContext context;
             Task* task;
             size_t workerIndex;
             size_t workerCount;
             std::exception_ptr exception;
 
-            Runner(Kernel* kernel, std::latch* latch, ExecutionContext context, Task* task, size_t workerIndex, size_t workerCount) noexcept
+            Runner(Kernel* kernel, detail::Latch* latch, ExecutionContext context, Task* task, size_t workerIndex, size_t workerCount) noexcept
                 : kernel(kernel), latch(latch), context(std::move(context)), task(task), workerIndex(workerIndex), workerCount(workerCount) {}
 
             // Move constructor - needed for std::vector requirement 'MoveInsertable'.
@@ -100,7 +101,7 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
         workers.reserve(workerCount);
 
         // Create workers and submit them to the thread pool.
-        std::latch latch(workerCount);
+        detail::Latch latch(workerCount);
         for(size_t t = 0; t < workerCount; t++) {
             Runner& runner = workers.emplace_back(
                 &kernel,
