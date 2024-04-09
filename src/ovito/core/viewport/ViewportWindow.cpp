@@ -84,7 +84,10 @@ void ViewportWindow::processViewportUpdate()
 {
     if(_updateRequested && _updateTimer.isActive()) {
         _updateTimer.stop();
-        handleUpdateRequest();
+        // Calling handleUpdateRequest() asynchronously because it is a long-running
+        // operation that may start a local event loop. We can't allow user changes to the
+        // list of viewports while processViewportUpdate() is being executed.
+        QMetaObject::invokeMethod(this, "handleUpdateRequest", Qt::QueuedConnection);
     }
 }
 
@@ -147,6 +150,9 @@ void ViewportWindow::handleUpdateRequest()
 
     // Inform the UI that rendering of an interactive viewport is in progress.
     userInterface().interactiveViewportRenderingStarted();
+
+    // Keep this window alive while rendering is in progress.
+    OORef<ViewportWindow> self = this;
 
     // Graceful exception handling.
     bool success = userInterface().handleExceptions([&]() {
