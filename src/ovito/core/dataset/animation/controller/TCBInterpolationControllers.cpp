@@ -27,6 +27,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(FloatTCBAnimationKey);
+OVITO_CLASSINFO(FloatTCBAnimationKey, "ClassNameAlias", "TCBAnimationKey<FloatAnimationKey>");  // For backward compatibility with OVITO 3.10
 DEFINE_PROPERTY_FIELD(FloatTCBAnimationKey, easeTo);
 DEFINE_PROPERTY_FIELD(FloatTCBAnimationKey, easeFrom);
 DEFINE_PROPERTY_FIELD(FloatTCBAnimationKey, tension);
@@ -44,6 +45,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(FloatTCBAnimationKey, continuity, FloatParame
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(FloatTCBAnimationKey, bias, FloatParameterUnit, -1, 1);
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(PositionTCBAnimationKey);
+OVITO_CLASSINFO(PositionTCBAnimationKey, "ClassNameAlias", "TCBAnimationKey<PositionAnimationKey>");  // For backward compatibility with OVITO 3.10
 DEFINE_PROPERTY_FIELD(PositionTCBAnimationKey, easeTo);
 DEFINE_PROPERTY_FIELD(PositionTCBAnimationKey, easeFrom);
 DEFINE_PROPERTY_FIELD(PositionTCBAnimationKey, tension);
