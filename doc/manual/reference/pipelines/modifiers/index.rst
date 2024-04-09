@@ -165,7 +165,6 @@ combine several modifiers to accomplish more complex tasks.
   histogram
   identify_diamond
   identify_fcc_planar_faults
-  interactive_molecular_dynamics
   invert_selection
   load_trajectory
   manual_selection
