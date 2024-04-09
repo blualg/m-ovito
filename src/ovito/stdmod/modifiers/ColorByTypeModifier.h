@@ -37,14 +37,6 @@ class OVITO_STDMOD_EXPORT ColorByTypeModifier : public GenericPropertyModifier
 {
     OVITO_CLASS(ColorByTypeModifier)
 
-#ifndef OVITO_BUILD_BASIC
-    OVITO_CLASSINFO("DisplayName", "Color by type");
-#else
-    OVITO_CLASSINFO("DisplayName", "Color by type (Pro)");
-#endif
-    OVITO_CLASSINFO("Description", "Color data elements according to a typed property.");
-    OVITO_CLASSINFO("ModifierCategory", "Coloring");
-
 public:
 
     /// Constructor.

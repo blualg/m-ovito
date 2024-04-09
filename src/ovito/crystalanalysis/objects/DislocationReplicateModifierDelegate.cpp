@@ -31,6 +31,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(DislocationReplicateModifierDelegate);
+OVITO_CLASSINFO(DislocationReplicateModifierDelegate, "DisplayName", "Dislocations");
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

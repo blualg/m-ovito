@@ -38,7 +38,6 @@ namespace Ovito {
 class OVITO_CORE_EXPORT TextLabelOverlay : public ViewportOverlay
 {
     OVITO_CLASS(TextLabelOverlay)
-    OVITO_CLASSINFO("DisplayName", "Text label")
 
 public:
 

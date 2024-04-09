@@ -36,10 +36,6 @@ class OVITO_STDMOD_EXPORT SelectTypeModifier : public GenericPropertyModifier
 {
     OVITO_CLASS(SelectTypeModifier)
 
-    OVITO_CLASSINFO("DisplayName", "Select type");
-    OVITO_CLASSINFO("Description", "Select particles based on chemical species, or bonds based on bond type.");
-    OVITO_CLASSINFO("ModifierCategory", "Selection");
-
 public:
 
     /// Constructor.

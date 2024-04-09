@@ -32,6 +32,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(DislocationInspectionApplet);
+OVITO_CLASSINFO(DislocationInspectionApplet, "DisplayName", "Dislocations");
 
 /******************************************************************************
 * Determines whether the given pipeline dataset contains data that can be
@@ -66,13 +67,13 @@ QWidget* DislocationInspectionApplet::createWidget()
     layout->addWidget(toolbar, 0, 0);
 
     QWidget* pickModeButton = toolbar->widgetForAction(pickModeAction);
-    connect(_pickingMode, &ViewportInputMode::statusChanged, pickModeButton, [pickModeButton,this](bool active) {
+    connect(_pickingMode, &ViewportInputMode::statusChanged, pickModeButton, [pickModeButton](bool active) {
         if(active) {
             QToolTip::showText(pickModeButton->mapToGlobal(pickModeButton->rect().bottomRight()),
 #ifndef Q_OS_MACOS
-                tr("Pick a dislocation in the viewports. Hold down the CONTROL key to select multiple dislocations."),
+                DislocationInspectionApplet::tr("Pick a dislocation in the viewports. Hold down the CONTROL key to select multiple dislocations."),
 #else
-                tr("Pick a dislocation in the viewports. Hold down the COMMAND key to select multiple dislocations."),
+                DislocationInspectionApplet::tr("Pick a dislocation in the viewports. Hold down the COMMAND key to select multiple dislocations."),
 #endif
                 pickModeButton, QRect(), 2000);
         }

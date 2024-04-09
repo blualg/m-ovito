@@ -52,7 +52,6 @@ class ParticlesExpressionSelectionModifierDelegate : public ExpressionSelectionM
     };
 
     OVITO_CLASS_META(ParticlesExpressionSelectionModifierDelegate, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Particles");
 
 public:
 
@@ -87,7 +86,6 @@ class BondsExpressionSelectionModifierDelegate : public ExpressionSelectionModif
     };
 
     OVITO_CLASS_META(BondsExpressionSelectionModifierDelegate, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Bonds");
 
 public:
 

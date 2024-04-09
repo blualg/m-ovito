@@ -34,6 +34,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(CoordinationPolyhedraModifier);
+OVITO_CLASSINFO(CoordinationPolyhedraModifier, "DisplayName", "Coordination polyhedra");
+OVITO_CLASSINFO(CoordinationPolyhedraModifier, "Description", "Visualize atomic coordination polyhedra.");
+OVITO_CLASSINFO(CoordinationPolyhedraModifier, "ModifierCategory", "Visualization");
 DEFINE_REFERENCE_FIELD(CoordinationPolyhedraModifier, surfaceMeshVis);
 DEFINE_PROPERTY_FIELD(CoordinationPolyhedraModifier, transferParticleProperties);
 SET_PROPERTY_FIELD_LABEL(CoordinationPolyhedraModifier, transferParticleProperties, "Transfer particle properties to mesh");

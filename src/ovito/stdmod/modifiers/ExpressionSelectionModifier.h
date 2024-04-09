@@ -88,9 +88,6 @@ class OVITO_STDMOD_EXPORT ExpressionSelectionModifier : public DelegatingModifie
     };
 
     OVITO_CLASS_META(ExpressionSelectionModifier, ExpressionSelectionModifierClass)
-    OVITO_CLASSINFO("DisplayName", "Expression selection");
-    OVITO_CLASSINFO("Description", "Select particles or other elements using a user-defined criterion.");
-    OVITO_CLASSINFO("ModifierCategory", "Selection");
 
 public:
 

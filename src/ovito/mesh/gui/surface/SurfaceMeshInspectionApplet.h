@@ -112,7 +112,6 @@ private:
 class SurfaceMeshInspectionApplet : public DataInspectionApplet
 {
     OVITO_CLASS(SurfaceMeshInspectionApplet)
-    OVITO_CLASSINFO("DisplayName", "Surfaces");
     Q_OBJECT
 
 public:

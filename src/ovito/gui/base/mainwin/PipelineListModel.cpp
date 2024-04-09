@@ -724,7 +724,7 @@ bool PipelineListModel::setData(const QModelIndex& index, const QVariant& value,
             return true;
         }
         else if(ModificationNode* node = dynamic_object_cast<ModificationNode>(item->object())) {
-            _userInterface.performTransaction((value.toInt() != Qt::Unchecked) ? tr("Enable modifier") : tr("Disable modifier"), [node, &value, index, role, this]() {
+            _userInterface.performTransaction((value.toInt() != Qt::Unchecked) ? tr("Enable modifier") : tr("Disable modifier"), [node, &value]() {
                 if(node->modifier())
                     node->modifier()->setEnabled(value.toInt() != Qt::Unchecked);
             });
@@ -1453,7 +1453,6 @@ PipelineNode* PipelineListModel::makeElementIndependentImpl(PipelineNode* pipeli
     // When arriving at the selected ModificationNode, duplicate the modifier too
     // in case it is being shared by multiple pipelines.
     while(currentNode) {
-        PipelineNode* nextNode = nullptr;
         if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(currentNode)) {
 
             // Clone all modification nodes along the way if they are shared by multiple pipeline branches.

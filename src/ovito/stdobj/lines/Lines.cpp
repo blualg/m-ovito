@@ -28,6 +28,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(Lines);
+OVITO_CLASSINFO(Lines, "DisplayName", "Lines");
+OVITO_CLASSINFO(Lines, "ClassNameAlias", "TrajectoryLines");   // For backward compatibility with OVITO 3.9.2
+OVITO_CLASSINFO(Lines, "ClassNameAlias", "TrajectoryObject");  // For backward compatibility with OVITO 3.9.2
 DEFINE_PROPERTY_FIELD(Lines, cuttingPlanes);
 SET_PROPERTY_FIELD_LABEL(Lines, cuttingPlanes, "Cutting planes");
 

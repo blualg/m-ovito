@@ -188,12 +188,12 @@ public:
 		_visCache(std::move(visCache)),
 		_time(time),
 		_projectionParams(projectionParams),
-		_viewportDeviceIndependentSize(viewportDeviceIndependentSize),
 		_isInteractive(isInteractive),
 		_isPreviewMode(isPreviewMode),
 		_stopOnPipelineError(stopOnPipelineError),
 		_preferredImageFormat(preferredImageFormat),
-		_devicePixelRatio(devicePixelRatio) {}
+		_devicePixelRatio(devicePixelRatio),
+		_viewportDeviceIndependentSize(viewportDeviceIndependentSize) {}
 
 	/// Returns the data cache to be used by visualization elements.
 	const RendererResourceCache::ResourceFrame& visCache() const { return _visCache; }

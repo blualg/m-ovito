@@ -34,9 +34,6 @@ namespace Ovito {
 class OVITO_STDMOD_EXPORT ClearSelectionModifier : public GenericPropertyModifier
 {
     OVITO_CLASS(ClearSelectionModifier)
-    OVITO_CLASSINFO("DisplayName", "Clear selection");
-    OVITO_CLASSINFO("Description", "Reset the selection state of all elements.");
-    OVITO_CLASSINFO("ModifierCategory", "Selection");
 
 public:
 

@@ -31,7 +31,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ParticlesDeleteSelectedModifierDelegate);
+OVITO_CLASSINFO(ParticlesDeleteSelectedModifierDelegate, "DisplayName", "Particles");
 IMPLEMENT_CREATABLE_OVITO_CLASS(BondsDeleteSelectedModifierDelegate);
+OVITO_CLASSINFO(BondsDeleteSelectedModifierDelegate, "DisplayName", "Bonds");
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

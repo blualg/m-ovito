@@ -26,6 +26,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ClusterGraphObject);
+OVITO_CLASSINFO(ClusterGraphObject, "DisplayName", "Clusters");
 DEFINE_RUNTIME_PROPERTY_FIELD(ClusterGraphObject, storage);
 
 }   // End of namespace

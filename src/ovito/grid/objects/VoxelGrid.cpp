@@ -27,6 +27,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(VoxelGrid);
+OVITO_CLASSINFO(VoxelGrid, "DisplayName", "Voxel grid");
 DEFINE_RUNTIME_PROPERTY_FIELD(VoxelGrid, shape);
 DEFINE_PROPERTY_FIELD(VoxelGrid, gridType);
 DEFINE_SHADOW_PROPERTY_FIELD(VoxelGrid, gridType);

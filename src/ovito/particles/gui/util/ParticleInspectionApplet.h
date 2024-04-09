@@ -40,7 +40,6 @@ namespace Ovito {
 class ParticleInspectionApplet : public PropertyInspectionApplet
 {
     OVITO_CLASS(ParticleInspectionApplet)
-    OVITO_CLASSINFO("DisplayName", "Particles")
     Q_OBJECT
 
 public:

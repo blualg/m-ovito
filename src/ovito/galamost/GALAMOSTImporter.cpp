@@ -33,6 +33,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(GALAMOSTImporter);
+OVITO_CLASSINFO(GALAMOSTImporter, "DisplayName", "GALAMOST");
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

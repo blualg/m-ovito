@@ -69,7 +69,7 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     toolbar->addAction(QIcon::fromTheme("file_import_object_reload"), tr("Reload file"), this, SLOT(onReloadFrame()));
     toolbar->addAction(QIcon::fromTheme("file_import_object_refresh_animation"), tr("Update trajectory frames"), this, SLOT(onReloadAnimation()));
     QAction* preloadTrajAction = toolbar->addAction(QIcon::fromTheme("file_cache_pipeline_output"), tr("Load entire trajectory into memory"));
-    BooleanActionParameterUI* preloadTrajectoryUI = new BooleanActionParameterUI(this, PROPERTY_FIELD(FileSource::pipelineTrajectoryCachingEnabled), preloadTrajAction);
+    (void)new BooleanActionParameterUI(this, PROPERTY_FIELD(FileSource::pipelineTrajectoryCachingEnabled), preloadTrajAction);
 
     QGroupBox* sourceBox = new QGroupBox(tr("Data source"), rollout);
     layout->addWidget(sourceBox);

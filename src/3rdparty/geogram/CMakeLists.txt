@@ -52,6 +52,13 @@ IF(MSVC)
     TARGET_COMPILE_DEFINITIONS(geogram PUBLIC "_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING=")
 ENDIF()
 
+IF(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+    # Silence Intel DPC++ compiler warning: "unused function"
+    TARGET_COMPILE_OPTIONS(geogram PRIVATE "-Wno-unused-function")
+    # Silence Intel DPC++ compiler warning: "function declared 'noreturn' should not return"
+    TARGET_COMPILE_OPTIONS(geogram PRIVATE "-Wno-invalid-noreturn")
+ENDIF()
+
 IF(BUILD_SHARED_LIBS)
     # Build shared library version of Geogram lib.
     TARGET_COMPILE_DEFINITIONS(geogram PRIVATE "geogram_EXPORTS")

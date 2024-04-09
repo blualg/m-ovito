@@ -31,6 +31,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(LinesInspectionApplet);
+OVITO_CLASSINFO(LinesInspectionApplet, "DisplayName", "Lines");
 
 /******************************************************************************
  * Lets the applet create the UI widget that is to be placed into the data

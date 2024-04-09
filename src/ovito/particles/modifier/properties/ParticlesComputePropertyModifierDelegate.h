@@ -54,7 +54,6 @@ class OVITO_PARTICLES_EXPORT ParticlesComputePropertyModifierDelegate : public C
     };
 
     OVITO_CLASS_META(ParticlesComputePropertyModifierDelegate, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Particles");
 
 public:
 

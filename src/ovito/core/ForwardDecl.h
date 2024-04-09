@@ -88,7 +88,7 @@ namespace Ovito
     class DataObjectReference;
     template<class T> class DataOORef;
     using ConstDataObjectRef = DataOORef<const DataObject>;
-    template<typename DataObjectPtr> class DataObjectPathTemplate;
+    template<typename DataObjectPtr> class OVITO_CORE_EXPORT DataObjectPathTemplate;
     using DataObjectPath = DataObjectPathTemplate<DataObject*>;
     using ConstDataObjectPath = DataObjectPathTemplate<const DataObject*>;
     using ConstDataObjectRefPath = DataObjectPathTemplate<ConstDataObjectRef>;

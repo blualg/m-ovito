@@ -35,6 +35,8 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(Bonds);
+OVITO_CLASSINFO(Bonds, "DisplayName", "Bonds");
+OVITO_CLASSINFO(Bonds, "ClassNameAlias", "BondsObject");  // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
 * Constructor.
@@ -544,7 +546,6 @@ ConstPropertyPtr Bonds::OOMetaClass::viewportFenceSelection(const QVector<Point2
                             break;
 
                         // Perform point-in-polygon test.
-                        int intersectionsLeft = 0;
                         int intersectionsRight = 0;
                         for(auto p2 = fence.constBegin(), p1 = p2 + (fence.size()-1); p2 != fence.constEnd(); p1 = p2++) {
                             if(p1->y() == p2->y())
@@ -556,8 +557,6 @@ ConstPropertyPtr Bonds::OOMetaClass::viewportFenceSelection(const QVector<Point2
                             FloatType xint = (projPos.y() - p2->y()) / (p1->y() - p2->y()) * (p1->x() - p2->x()) + p2->x();
                             if(xint >= projPos.x())
                                 intersectionsRight++;
-                            else
-                                intersectionsLeft++;
                         }
                         if(intersectionsRight & 1)
                             insideCount++;

@@ -27,5 +27,8 @@ namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(DeleteSelectedModifierDelegate);
 IMPLEMENT_CREATABLE_OVITO_CLASS(DeleteSelectedModifier);
+OVITO_CLASSINFO(DeleteSelectedModifier, "DisplayName", "Delete selected");
+OVITO_CLASSINFO(DeleteSelectedModifier, "Description", "Remove all currently selected elements.");
+OVITO_CLASSINFO(DeleteSelectedModifier, "ModifierCategory", "Modification");
 
 }   // End of namespace

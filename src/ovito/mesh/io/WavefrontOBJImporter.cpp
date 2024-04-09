@@ -28,6 +28,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(WavefrontOBJImporter);
+OVITO_CLASSINFO(WavefrontOBJImporter, "DisplayName", "OBJ");
 
 /******************************************************************************
 * Returns whether this importer class supports importing data of the given type.

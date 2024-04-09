@@ -85,9 +85,6 @@ public:
     };
 
     OVITO_CLASS_META(AssignColorModifier, AssignColorModifierClass)
-    OVITO_CLASSINFO("DisplayName", "Assign color");
-    OVITO_CLASSINFO("Description", "Assign a color to the currently selected elements.");
-    OVITO_CLASSINFO("ModifierCategory", "Coloring");
 
 public:
 

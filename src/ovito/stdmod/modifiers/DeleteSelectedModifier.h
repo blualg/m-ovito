@@ -59,9 +59,6 @@ class OVITO_STDMOD_EXPORT DeleteSelectedModifier : public MultiDelegatingModifie
     };
 
     OVITO_CLASS_META(DeleteSelectedModifier, DeleteSelectedModifierClass)
-    OVITO_CLASSINFO("DisplayName", "Delete selected");
-    OVITO_CLASSINFO("Description", "Remove all currently selected elements.");
-    OVITO_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 

@@ -36,6 +36,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(AmbientOcclusionModifier);
+OVITO_CLASSINFO(AmbientOcclusionModifier, "DisplayName", "Ambient occlusion");
+OVITO_CLASSINFO(AmbientOcclusionModifier, "Description", "Perform an ambient occlusion calculation to shade particles.");
+OVITO_CLASSINFO(AmbientOcclusionModifier, "ModifierCategory", "Coloring");
 DEFINE_PROPERTY_FIELD(AmbientOcclusionModifier, intensity);
 DEFINE_PROPERTY_FIELD(AmbientOcclusionModifier, samplingCount);
 DEFINE_PROPERTY_FIELD(AmbientOcclusionModifier, bufferResolution);
@@ -280,7 +283,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             renderer.reset();
             particles.reset();
 
-            return std::move(brightness);
+            return brightness;
         }, true);
     });
 

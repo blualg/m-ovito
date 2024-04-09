@@ -33,8 +33,8 @@ OVITO_STATIC_ASSERT((std::is_same_v<ZlibByte, unsigned char>));
 /// Constructor
 GzipIODevice::GzipIODevice(QIODevice* device, int bufferSize, int compressionLevel) :
     _device(device),
-    _bufferSize(bufferSize),
-    _compressionLevel(compressionLevel)
+    _compressionLevel(compressionLevel),
+    _bufferSize(bufferSize)
 {
     std::memset(&_zlibStream, 0, sizeof(_zlibStream));
 }

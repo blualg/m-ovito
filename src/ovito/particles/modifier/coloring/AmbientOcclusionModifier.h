@@ -47,10 +47,6 @@ class OVITO_PARTICLES_EXPORT AmbientOcclusionModifier : public Modifier
 
     OVITO_CLASS_META(AmbientOcclusionModifier, AmbientOcclusionModifierClass)
 
-    OVITO_CLASSINFO("DisplayName", "Ambient occlusion");
-    OVITO_CLASSINFO("Description", "Perform an ambient occlusion calculation to shade particles.");
-    OVITO_CLASSINFO("ModifierCategory", "Coloring");
-
 public:
 
     enum { MAX_AO_RENDER_BUFFER_RESOLUTION = 4 };

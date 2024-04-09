@@ -24,69 +24,9 @@
 
 #include <ovito/core/Core.h>
 #include "DataObject.h"
+#include "DataObjectPath.h"
 
 namespace Ovito {
-
-/**
- * \brief Utility class that is used to reference a particular data object in a DataCollection
- *        as a path through the hierarchy of nested data objects.
- */
-template<typename DataObjectPtr>
-class OVITO_CORE_EXPORT DataObjectPathTemplate : public QVarLengthArray<DataObjectPtr, 3>
-{
-public:
-
-    /// Size data type
-    using typename QVarLengthArray<DataObjectPtr, 3>::size_type;
-
-    /// Inherit constructors from base class.
-    using QVarLengthArray<DataObjectPtr, 3>::QVarLengthArray;
-
-    /// Converts the path to a string representation.
-    QString toString() const {
-        QString s;
-        for(const auto& o : *this) {
-            if(!s.isEmpty()) s += QChar('/');
-            s += o->identifier();
-        }
-        return s;
-    }
-
-    /// Returns a string representation of the object path that is suitable for display in the user interface.
-    template<typename T = DataObjectPtr>
-    std::enable_if_t<std::is_same_v<T, const DataObject*>, QString> toUIString() const {
-        if(this->empty()) return {};
-        return this->back()->getOOMetaClass().formatDataObjectPath(*this);
-    }
-
-    /// Implicit conversion from DataObjectPath to ConstDataObjectPath.
-    template<typename T = DataObjectPtr>
-    operator std::enable_if_t<std::is_same_v<T, DataObject*>, const ConstDataObjectPath&>() const {
-        return *reinterpret_cast<const ConstDataObjectPath*>(this);
-    }
-
-    /// Returns a data object path that includes all but the last data object from this path.
-    DataObjectPathTemplate parentPath() const {
-        return this->empty() ? DataObjectPathTemplate{} : DataObjectPathTemplate{this->begin(), std::prev(this->end())};
-    }
-
-    /// Returns the n-th to last data object in the path - or null if the path is shorter than requested.
-    auto last(size_type n = 0) const {
-        return this->size() <= n ? nullptr : to_address((*this)[this->size() - n - 1]);
-    }
-
-    /// Returns the n-th to last data object in the path if it's a specific kind of object - or null if the path is shorter than requested.
-    template<class DataObjectType>
-    auto lastAs(size_type n = 0) const {
-        return this->size() <= n ? nullptr : dynamic_object_cast<DataObjectType>(to_address((*this)[this->size() - n - 1]));
-    }
-
-private:
-
-    /// Obtains the object address represented by a fancy pointer.
-    template<class U> static constexpr U* to_address(U* p) noexcept { return p; }
-    template<class U> static constexpr auto to_address(const U& p) noexcept { return p.get(); }
-};
 
 /**
  * \brief A reference to a DataObject in a PipelineFlowState.

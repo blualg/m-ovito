@@ -32,6 +32,8 @@
 namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(PipelineNode);
+OVITO_CLASSINFO(PipelineNode, "ClassNameAlias", "PipelineObject");         // For backward compatibility with OVITO 3.9.2
+OVITO_CLASSINFO(PipelineNode, "ClassNameAlias", "CachingPipelineObject");  // For backward compatibility with OVITO 3.9.2
 DEFINE_PROPERTY_FIELD(PipelineNode, pipelineTrajectoryCachingEnabled);
 SET_PROPERTY_FIELD_LABEL(PipelineNode, pipelineTrajectoryCachingEnabled, "Precompute all trajectory frames");
 

@@ -34,6 +34,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(LAMMPSBinaryDumpImporter);
+OVITO_CLASSINFO(LAMMPSBinaryDumpImporter, "DisplayName", "LAMMPS Binary Dump");
 DEFINE_PROPERTY_FIELD(LAMMPSBinaryDumpImporter, columnMapping);
 SET_PROPERTY_FIELD_LABEL(LAMMPSBinaryDumpImporter, columnMapping, "File column mapping");
 

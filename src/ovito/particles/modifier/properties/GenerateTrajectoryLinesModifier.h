@@ -50,9 +50,6 @@ class OVITO_PARTICLES_EXPORT GenerateTrajectoryLinesModifier : public Modifier
     };
 
     OVITO_CLASS_META(GenerateTrajectoryLinesModifier, GenerateTrajectoryLinesModifierClass)
-    OVITO_CLASSINFO("DisplayName", "Generate trajectory lines");
-    OVITO_CLASSINFO("Description", "Visualize trajectory lines of moving particles.");
-    OVITO_CLASSINFO("ModifierCategory", "Visualization");
 
 public:
 
@@ -113,7 +110,6 @@ private:
 class OVITO_PARTICLES_EXPORT GenerateTrajectoryLinesModificationNode : public ModificationNode
 {
     OVITO_CLASS(GenerateTrajectoryLinesModificationNode)
-    OVITO_CLASSINFO("ClassNameAlias", "GenerateTrajectoryLinesModifierApplication");  // For backward compatibility with OVITO 3.9.2
 
 public:
 

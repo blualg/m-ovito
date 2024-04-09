@@ -52,7 +52,6 @@ class OVITO_PARTICLES_EXPORT CIFImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(CIFImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "CIF");
 
 public:
 

@@ -49,7 +49,6 @@ class ParticlesDeleteSelectedModifierDelegate : public DeleteSelectedModifierDel
     };
 
     OVITO_CLASS_META(ParticlesDeleteSelectedModifierDelegate, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Particles");
 
 public:
 
@@ -81,7 +80,6 @@ class BondsDeleteSelectedModifierDelegate : public DeleteSelectedModifierDelegat
     };
 
     OVITO_CLASS_META(BondsDeleteSelectedModifierDelegate, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Bonds");
 
 public:
 

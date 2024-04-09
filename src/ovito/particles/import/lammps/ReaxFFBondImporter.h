@@ -53,7 +53,6 @@ class OVITO_PARTICLES_EXPORT ReaxFFBondImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(ReaxFFBondImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "ReaxFF Bonds");
 
 public:
 

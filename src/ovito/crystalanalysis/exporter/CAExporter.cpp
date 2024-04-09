@@ -200,7 +200,6 @@ void CAExporter::exportFrame(int frameNumber, const QString& filePath)
 
         // Write dislocation connectivity information.
         textStream() << "DISLOCATION_JUNCTIONS\n";
-        int index = 0;
         for(const DislocationSegment* segment : dislocations->segments()) {
             OVITO_ASSERT(segment->forwardNode().junctionRing->segment->id < dislocations->segments().size());
             OVITO_ASSERT(segment->backwardNode().junctionRing->segment->id < dislocations->segments().size());
@@ -209,7 +208,6 @@ void CAExporter::exportFrame(int frameNumber, const QString& filePath)
                 const DislocationNode* otherNode = segment->nodes[nodeIndex]->junctionRing;
                 textStream() << (int)otherNode->isForwardNode() << " " << otherNode->segment->id << "\n";
             }
-            index++;
         }
     }
 

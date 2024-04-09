@@ -87,8 +87,6 @@ private:
 class OVITO_STDOBJ_EXPORT LinesVis : public DataVis
 {
     OVITO_CLASS(LinesVis)
-    OVITO_CLASSINFO("DisplayName", "Lines");
-    OVITO_CLASSINFO("ClassNameAlias", "TrajectoryVis");  // For backward compatibility with OVITO 3.9.2
 
 public:
     /// The shading modes supported by the lines vis element.

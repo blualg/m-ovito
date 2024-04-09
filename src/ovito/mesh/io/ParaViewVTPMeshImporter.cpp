@@ -29,6 +29,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ParaViewVTPMeshImporter);
+OVITO_CLASSINFO(ParaViewVTPMeshImporter, "DisplayName", "VTP");
 IMPLEMENT_CREATABLE_OVITO_CLASS(MeshParaViewVTMFileFilter);
 
 /******************************************************************************
@@ -339,18 +340,11 @@ PropertyPtr ParaViewVTPMeshImporter::FrameLoader::parseDataArray(QXmlStreamReade
 
     // Check value of the 'format' attribute.
     QString format = xml.attributes().value("format").toString();
-    bool isBinary;
     if(format.isEmpty()) {
         xml.raiseError(tr("Expected 'format' attribute in <%1> element.").arg(xml.name().toString()));
         return {};
     }
-    else if(format == "binary") {
-        isBinary = true;
-    }
-    else if(format == "ascii") {
-        isBinary = false;
-    }
-    else {
+    else if(format != "binary" && format != "ascii") {
         xml.raiseError(tr("Invalid value of 'format' attribute in <%1> element: %2").arg(xml.name().toString()).arg(format));
         return {};
     }
@@ -389,7 +383,6 @@ static inline void tokenizeString(const QString& str, F&& f)
     QStringView textView(str);
     auto start = textView.cbegin();
     auto eos = textView.cend();
-    size_t valueCount = 0;
     while(start != eos) {
         // Skip whitespace characters.
         while(start != eos && start->isSpace())

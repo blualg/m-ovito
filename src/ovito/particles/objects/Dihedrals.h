@@ -54,8 +54,6 @@ class OVITO_PARTICLES_EXPORT Dihedrals : public PropertyContainer
     };
 
     OVITO_CLASS_META(Dihedrals, OOMetaClass);
-    OVITO_CLASSINFO("DisplayName", "Dihedrals");
-    OVITO_CLASSINFO("ClassNameAlias", "DihedralsObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
 

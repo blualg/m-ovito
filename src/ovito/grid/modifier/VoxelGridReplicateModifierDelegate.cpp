@@ -30,6 +30,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(VoxelGridReplicateModifierDelegate);
+OVITO_CLASSINFO(VoxelGridReplicateModifierDelegate, "DisplayName", "Voxel grids");
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

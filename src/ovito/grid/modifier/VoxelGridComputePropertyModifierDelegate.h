@@ -54,8 +54,6 @@ class OVITO_GRID_EXPORT VoxelGridComputePropertyModifierDelegate : public Comput
 
     OVITO_CLASS_META(VoxelGridComputePropertyModifierDelegate, OOMetaClass)
 
-    OVITO_CLASSINFO("DisplayName", "Voxel grids");
-
 public:
 
     /// Constructor.

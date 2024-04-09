@@ -28,6 +28,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(DihedralInspectionApplet);
+OVITO_CLASSINFO(DihedralInspectionApplet, "DisplayName", "Dihedrals");
 
 /******************************************************************************
 * Lets the applet create the UI widget that is to be placed into the data

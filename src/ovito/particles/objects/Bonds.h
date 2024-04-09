@@ -112,8 +112,6 @@ class OVITO_PARTICLES_EXPORT Bonds : public PropertyContainer
     };
 
     OVITO_CLASS_META(Bonds, OOMetaClass);
-    OVITO_CLASSINFO("DisplayName", "Bonds");
-    OVITO_CLASSINFO("ClassNameAlias", "BondsObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
 

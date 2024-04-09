@@ -313,7 +313,7 @@ PipelineEvaluationResult PipelineCache::evaluatePipelineImpl(const PipelineEvalu
         }
 
         // Return state to the caller.
-        return std::move(state);
+        return state;
     });
 
     // Keep a weak reference to the future associated with this pipeline evaluation.

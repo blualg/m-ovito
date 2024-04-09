@@ -29,66 +29,43 @@
 namespace Ovito {
 
 /**
- * \brief Base template class for animation keys used by Tension-Continuity-Bias interpolation controllers.
+ * \brief Template class definition for animation keys used by Tension-Continuity-Bias interpolation controllers.
  */
-template<class BaseKeyClass>
-class OVITO_CORE_EXPORT TCBAnimationKey : public BaseKeyClass
-{
-    OVITO_CLASS_TEMPLATE(TCBAnimationKey, BaseKeyClass)
-
-public:
-
-    using typename BaseKeyClass::value_type;
-
-    /// Constructor.
-    explicit TCBAnimationKey(ObjectInitializationFlags flags, AnimationTime time, const value_type& value)
-        : BaseKeyClass(flags, time, value), _easeTo(0), _easeFrom(0), _tension(0), _continuity(0), _bias(0) {}
-
-public:
-
-    /// Slows the velocity of the animation curve as it approaches the key.
-    DECLARE_PROPERTY_FIELD(FloatType, easeTo);
-
-    /// Slows the velocity of the animation curve as it leaves the key.
-    DECLARE_PROPERTY_FIELD(FloatType, easeFrom);
-
-    /// Controls the amount of curvature in the animation curve.
-    DECLARE_PROPERTY_FIELD(FloatType, tension);
-
-    /// Controls the tangential property of the curve at the key.
-    DECLARE_PROPERTY_FIELD(FloatType, continuity);
-
-    /// Controls where the animation curve occurs with respect to the key.
-    DECLARE_PROPERTY_FIELD(FloatType, bias);
+#define DEFINE_TCB_ANIMATION_KEY_TYPE(classname, BaseKeyClass) \
+class OVITO_CORE_EXPORT classname : public BaseKeyClass \
+{ \
+    OVITO_CLASS(classname) \
+\
+public: \
+\
+    using BaseKeyClass::value_type; \
+    using BaseKeyClass::nullvalue_type; \
+\
+    explicit classname(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const value_type& value = nullvalue_type{}) \
+        : BaseKeyClass(flags, time, value), _easeTo(0), _easeFrom(0), _tension(0), _continuity(0), _bias(0) {} \
+\
+public: \
+\
+    DECLARE_PROPERTY_FIELD(FloatType, easeTo); \
+\
+    DECLARE_PROPERTY_FIELD(FloatType, easeFrom); \
+\
+    DECLARE_PROPERTY_FIELD(FloatType, tension); \
+\
+    DECLARE_PROPERTY_FIELD(FloatType, continuity); \
+\
+    DECLARE_PROPERTY_FIELD(FloatType, bias); \
 };
 
 /**
  * \brief Animation key class for TCB interpolation of float values.
  */
-class OVITO_CORE_EXPORT FloatTCBAnimationKey : public TCBAnimationKey<FloatAnimationKey>
-{
-    OVITO_CLASS(FloatTCBAnimationKey)
-
-public:
-
-    /// Constructor.
-    explicit FloatTCBAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), FloatType value = 0)
-        : TCBAnimationKey<FloatAnimationKey>(flags, time, value) {}
-};
+DEFINE_TCB_ANIMATION_KEY_TYPE(FloatTCBAnimationKey, FloatAnimationKey)
 
 /**
  * \brief Animation key class for TCB interpolation of position values.
  */
-class OVITO_CORE_EXPORT PositionTCBAnimationKey : public TCBAnimationKey<PositionAnimationKey>
-{
-    OVITO_CLASS(PositionTCBAnimationKey)
-
-public:
-
-    /// Constructor.
-    explicit PositionTCBAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero())
-        : TCBAnimationKey<PositionAnimationKey>(flags, time, value) {}
-};
+DEFINE_TCB_ANIMATION_KEY_TYPE(PositionTCBAnimationKey, PositionAnimationKey)
 
 /**
  * \brief Implementation of the key interpolator concept that performs TCB interpolation.

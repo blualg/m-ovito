@@ -39,6 +39,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ClusterAnalysisModifier);
+OVITO_CLASSINFO(ClusterAnalysisModifier, "DisplayName", "Cluster analysis");
+OVITO_CLASSINFO(ClusterAnalysisModifier, "Description", "Decompose a particle-based structure into disconnected clusters.");
+OVITO_CLASSINFO(ClusterAnalysisModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(ClusterAnalysisModifier, neighborMode);
 DEFINE_PROPERTY_FIELD(ClusterAnalysisModifier, cutoff);
 DEFINE_PROPERTY_FIELD(ClusterAnalysisModifier, onlySelectedParticles);

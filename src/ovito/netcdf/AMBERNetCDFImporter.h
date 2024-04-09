@@ -53,7 +53,6 @@ class OVITO_NETCDFPLUGIN_EXPORT AMBERNetCDFImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(AMBERNetCDFImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "NetCDF");
 
 public:
 

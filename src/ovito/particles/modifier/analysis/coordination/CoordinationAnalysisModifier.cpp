@@ -42,6 +42,10 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(CoordinationAnalysisModifier);
+OVITO_CLASSINFO(CoordinationAnalysisModifier, "ClassNameAlias", "CoordinationNumberModifier");
+OVITO_CLASSINFO(CoordinationAnalysisModifier, "Description", "Determine number of neighbors and compute the radial distribution function (RDF).");
+OVITO_CLASSINFO(CoordinationAnalysisModifier, "DisplayName", "Coordination analysis");
+OVITO_CLASSINFO(CoordinationAnalysisModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(CoordinationAnalysisModifier, cutoff);
 DEFINE_PROPERTY_FIELD(CoordinationAnalysisModifier, numberOfBins);
 DEFINE_PROPERTY_FIELD(CoordinationAnalysisModifier, computePartialRDF);

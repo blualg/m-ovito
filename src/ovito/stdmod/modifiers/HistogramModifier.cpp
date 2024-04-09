@@ -34,6 +34,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(HistogramModifier);
+OVITO_CLASSINFO(HistogramModifier, "DisplayName", "Histogram");
+OVITO_CLASSINFO(HistogramModifier, "Description", "Compute the histogram or distribution of some quantity.");
+OVITO_CLASSINFO(HistogramModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(HistogramModifier, numberOfBins);
 DEFINE_PROPERTY_FIELD(HistogramModifier, selectInRange);
 DEFINE_PROPERTY_FIELD(HistogramModifier, selectionRangeStart);
@@ -193,7 +196,6 @@ Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEval
             createdByNode = request.modificationNode()]() mutable
     {
         size_t numSelected = 0;
-        size_t vecComponentCount = property->componentCount();
 
         // Allocate output array for histogram.
         table->setElementCount(numberOfBins);

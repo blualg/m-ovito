@@ -29,12 +29,14 @@
 namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(ModifierDelegate);
+OVITO_CLASSINFO(ModifierDelegate, "ClassNameAlias", "AsynchronousModifierDelegate");  // For backward compatibility with OVITO 3.2.1
 DEFINE_PROPERTY_FIELD(ModifierDelegate, isEnabled);
 DEFINE_PROPERTY_FIELD(ModifierDelegate, inputDataObject);
 SET_PROPERTY_FIELD_LABEL(ModifierDelegate, isEnabled, "Enabled");
 SET_PROPERTY_FIELD_LABEL(ModifierDelegate, inputDataObject, "Data object");
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(DelegatingModifier);
+OVITO_CLASSINFO(DelegatingModifier, "ClassNameAlias", "AsynchronousDelegatingModifier");  // For backward compatibility with OVITO 3.10.2
 DEFINE_REFERENCE_FIELD(DelegatingModifier, delegate);
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(MultiDelegatingModifier);

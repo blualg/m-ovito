@@ -54,7 +54,6 @@ class OVITO_MESH_EXPORT SurfaceMeshVertices : public PropertyContainer
     };
 
     OVITO_CLASS_META(SurfaceMeshVertices, OOMetaClass);
-    OVITO_CLASSINFO("DisplayName", "Mesh Vertices");
 
 public:
 

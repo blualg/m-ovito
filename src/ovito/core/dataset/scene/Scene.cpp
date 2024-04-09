@@ -29,6 +29,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(Scene);
+OVITO_CLASSINFO(Scene, "ClassNameAlias", "RootSceneNode"); // For backward compatibility with OVITO 3.7.11.
 DEFINE_REFERENCE_FIELD(Scene, animationSettings);
 DEFINE_REFERENCE_FIELD(Scene, selection);
 DEFINE_PROPERTY_FIELD(Scene, orbitCenterMode);

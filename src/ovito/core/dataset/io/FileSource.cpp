@@ -38,6 +38,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(FileSource);
+OVITO_CLASSINFO(FileSource, "DisplayName", "External file source");
 DEFINE_REFERENCE_FIELD(FileSource, importer);
 DEFINE_PROPERTY_FIELD(FileSource, sourceUrls);
 DEFINE_PROPERTY_FIELD(FileSource, playbackSpeedNumerator);
@@ -618,8 +619,6 @@ void FileSource::propertyChanged(const PropertyFieldDescriptor* field)
         _frameLabels.clear();
 
         // Invalidate cached frames, because their validity intervals have changed.
-        int unchangedFromFrame = std::min(playbackStartTime(), 0);
-        int unchangedToFrame = std::max(playbackStartTime(), 0);
         TimeInterval unchangedInterval = (field == PROPERTY_FIELD(playbackStartTime)) ?
             TimeInterval::empty() :
             TimeInterval(sourceFrameToAnimationTime(playbackStartTime()));

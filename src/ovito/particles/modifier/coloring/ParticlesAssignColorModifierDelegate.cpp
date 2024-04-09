@@ -28,8 +28,11 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ParticlesAssignColorModifierDelegate);
+OVITO_CLASSINFO(ParticlesAssignColorModifierDelegate, "DisplayName", "Particles");
 IMPLEMENT_CREATABLE_OVITO_CLASS(ParticleVectorsAssignColorModifierDelegate);
+OVITO_CLASSINFO(ParticleVectorsAssignColorModifierDelegate, "DisplayName", "Particle vectors");
 IMPLEMENT_CREATABLE_OVITO_CLASS(BondsAssignColorModifierDelegate);
+OVITO_CLASSINFO(BondsAssignColorModifierDelegate, "DisplayName", "Bonds");
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

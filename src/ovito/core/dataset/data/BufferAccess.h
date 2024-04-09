@@ -432,8 +432,8 @@ public:
             auto end() const noexcept { return _accessor.begin() + _endIndex; }
         private:
             const BufferAccessTyped<T, BufferType, StrongReference, accessmode> _accessor;
-            const size_type _beginIndex;
-            const size_type _endIndex;
+            const size_type _beginIndex = 0;
+            const size_type _endIndex = 0;
         };
         OVITO_ASSERT(beginIndex <= endIndex);
         OVITO_ASSERT(endIndex <= this->size());

@@ -52,7 +52,6 @@ class SurfaceMeshRegionsExpressionSelectionModifierDelegate : public ExpressionS
     };
 
     OVITO_CLASS_META(SurfaceMeshRegionsExpressionSelectionModifierDelegate, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Mesh Regions");
 
 public:
 

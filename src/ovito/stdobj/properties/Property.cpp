@@ -28,6 +28,8 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(Property);
+OVITO_CLASSINFO(Property, "DisplayName", "Property");
+OVITO_CLASSINFO(Property, "ClassNameAlias", "PropertyObject");  // For backward compatibility with OVITO 3.9.2
 DEFINE_VECTOR_REFERENCE_FIELD(Property, elementTypes);
 DEFINE_PROPERTY_FIELD(Property, title);
 SET_PROPERTY_FIELD_LABEL(Property, elementTypes, "Element types");

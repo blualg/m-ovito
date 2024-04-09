@@ -94,6 +94,7 @@ inline size_t copy_line_from_stream<Ovito::CompressedTextReader&>(char* line, in
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(PDBImporter);
+OVITO_CLASSINFO(PDBImporter, "DisplayName", "PDB");
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

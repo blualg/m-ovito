@@ -35,6 +35,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(GlobalAttributesInspectionApplet);
+OVITO_CLASSINFO(GlobalAttributesInspectionApplet, "DisplayName", "Global Attributes");
 
 /******************************************************************************
 * Determines whether the given pipeline dataset contains data that can be

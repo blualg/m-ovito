@@ -35,7 +35,6 @@ namespace Ovito {
 class VoxelGridInspectionApplet : public PropertyInspectionApplet
 {
     OVITO_CLASS(VoxelGridInspectionApplet)
-    OVITO_CLASSINFO("DisplayName", "Voxel Grids")
     Q_OBJECT
 
 public:

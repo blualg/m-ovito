@@ -47,9 +47,6 @@ class OVITO_PARTICLES_EXPORT LoadTrajectoryModifier : public Modifier
     };
 
     OVITO_CLASS_META(LoadTrajectoryModifier, LoadTrajectoryModifierClass)
-    OVITO_CLASSINFO("DisplayName", "Load trajectory");
-    OVITO_CLASSINFO("Description", "Load atomic trajectories or dynamic bonds from a trajectory file.");
-    OVITO_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 
@@ -81,7 +78,7 @@ public:
     virtual QMap<int, QString> animationFrameLabels(QMap<int, QString> inputLabels) const override {
         if(trajectorySource())
             inputLabels.insert(trajectorySource()->animationFrameLabels());
-        return std::move(inputLabels);
+        return inputLabels;
     }
 
 protected:

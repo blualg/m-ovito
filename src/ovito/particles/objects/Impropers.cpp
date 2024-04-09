@@ -26,6 +26,8 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(Impropers);
+OVITO_CLASSINFO(Impropers, "DisplayName", "Impropers");
+OVITO_CLASSINFO(Impropers, "ClassNameAlias", "ImpropersObject");  // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
 * Constructor.

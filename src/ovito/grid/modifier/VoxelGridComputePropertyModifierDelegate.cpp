@@ -26,6 +26,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(VoxelGridComputePropertyModifierDelegate);
+OVITO_CLASSINFO(VoxelGridComputePropertyModifierDelegate, "DisplayName", "Voxel grids");
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

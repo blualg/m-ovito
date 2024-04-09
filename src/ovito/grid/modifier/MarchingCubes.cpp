@@ -163,50 +163,52 @@ bool MarchingCubes::testFace(signed char face)
     FloatType A, B, C, D;
 
     switch(face) {
-        case -1:
-        case 1:
-            A = _cube[0];
-            B = _cube[4];
-            C = _cube[5];
-            D = _cube[1];
-            break;
-        case -2:
-        case 2:
-            A = _cube[1];
-            B = _cube[5];
-            C = _cube[6];
-            D = _cube[2];
-            break;
-        case -3:
-        case 3:
-            A = _cube[2];
-            B = _cube[6];
-            C = _cube[7];
-            D = _cube[3];
-            break;
-        case -4:
-        case 4:
-            A = _cube[3];
-            B = _cube[7];
-            C = _cube[4];
-            D = _cube[0];
-            break;
-        case -5:
-        case 5:
-            A = _cube[0];
-            B = _cube[3];
-            C = _cube[2];
-            D = _cube[1];
-            break;
-        case -6:
-        case 6:
-            A = _cube[4];
-            B = _cube[7];
-            C = _cube[6];
-            D = _cube[5];
-            break;
-        default: OVITO_ASSERT_MSG(false, "Marching cubes", "Invalid face code");
-    };
+    case -1:
+    case 1:
+        A = _cube[0];
+        B = _cube[4];
+        C = _cube[5];
+        D = _cube[1];
+        break;
+    case -2:
+    case 2:
+        A = _cube[1];
+        B = _cube[5];
+        C = _cube[6];
+        D = _cube[2];
+        break;
+    case -3:
+    case 3:
+        A = _cube[2];
+        B = _cube[6];
+        C = _cube[7];
+        D = _cube[3];
+        break;
+    case -4:
+    case 4:
+        A = _cube[3];
+        B = _cube[7];
+        C = _cube[4];
+        D = _cube[0];
+        break;
+    case -5:
+    case 5:
+        A = _cube[0];
+        B = _cube[3];
+        C = _cube[2];
+        D = _cube[1];
+        break;
+    case -6:
+    case 6:
+        A = _cube[4];
+        B = _cube[7];
+        C = _cube[6];
+        D = _cube[5];
+        break;
+    default: 
+        OVITO_ASSERT_MSG(false, "Marching cubes", "Invalid face code");
+        return false;
+    }
 
     if(std::abs(A * C - B * D) < _epsilon) return face >= 0;
     return face * A * (A * C - B * D) >= 0;  // face and A invert signs

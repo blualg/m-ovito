@@ -169,3 +169,21 @@ public:
 };
 
 }   // End of namespace
+
+
+#ifndef OVITO_BUILD_MONOLITHIC
+
+#include <ovito/core/dataset/pipeline/PipelineFlowState.h>
+
+namespace Ovito {
+
+// Instantiate class template to export it from the core DLL.
+#if !defined(Core_EXPORTS)
+    extern template class OVITO_CORE_EXPORT AsynchronousTask<PipelineFlowState>;
+#elif !defined(Q_CC_MSVC) && !defined(Q_CC_CLANG)
+    template class OVITO_CORE_EXPORT AsynchronousTask<PipelineFlowState>;
+#endif
+
+}   // End of namespace
+
+#endif

@@ -115,12 +115,12 @@ public:
     /// Computes the axis-aligned bounding rectangle of the text in the canvas coordinate system.
     /// This method takes into account text alignment, offset position, rotation, and outline width.
     /// This overload uses the pre-computed size of the text in the local coordinate system.
-    QRectF computeBoundingBox(const QSizeF textSize, qreal devicePixelRatio) const;
+    QRectF computeBounds(const QSizeF textSize, qreal devicePixelRatio) const;
 
     /// Computes the axis-aligned bounding rectangle of the text in the canvas coordinate system.
     /// This method takes into account text alignment, offset position, rotation, and outline width.
-    QRectF computeBoundingBox(qreal devicePixelRatio) const {
-        return computeBoundingBox(queryLocalBounds(devicePixelRatio).size(), devicePixelRatio);
+    QRectF computeBounds(qreal devicePixelRatio) const {
+        return computeBounds(queryLocalBounds(devicePixelRatio).size(), devicePixelRatio);
     }
 
     /// Draws the text (and the optional outline) using a QPainter.

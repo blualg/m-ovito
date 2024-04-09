@@ -37,6 +37,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(Pipeline);
+OVITO_CLASSINFO(Pipeline, "ClassNameAlias", "PipelineSceneNode");  // For backward compatibility with OVITO 3.9.2
 DEFINE_REFERENCE_FIELD(Pipeline, head);
 DEFINE_VECTOR_REFERENCE_FIELD(Pipeline, visElements);
 DEFINE_VECTOR_REFERENCE_FIELD(Pipeline, replacedVisElements);

@@ -29,6 +29,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(TriangleMesh);
+OVITO_CLASSINFO(TriangleMesh, "ClassNameAlias", "TriMeshObject");  // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
 * Constructor.
@@ -247,7 +248,6 @@ void TriangleMesh::flipFaces()
 bool TriangleMesh::intersectRay(const Ray3& ray, FloatType& t, Vector3& normal, int& faceIndex, bool backfaceCull) const
 {
     FloatType bestT = FLOATTYPE_MAX;
-    int index = 0;
     for(auto face = faces().constBegin(); face != faces().constEnd(); ++face) {
 
         Point3 v0 = vertex(face->vertex(0));

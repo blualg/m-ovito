@@ -56,7 +56,6 @@ class OVITO_MESH_EXPORT ParaViewPVDImporter : public FileSourceImporter
     };
 
     OVITO_CLASS_META(ParaViewPVDImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "PVD");
 
 public:
 

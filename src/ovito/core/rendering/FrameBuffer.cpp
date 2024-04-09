@@ -215,7 +215,7 @@ void FrameBuffer::renderTextPrimitive(const TextPrimitive& primitive, const QRec
     painter.end();
 
     if(update) {
-        QRectF boundingBox = primitive.computeBoundingBox(textBounds.size(), 1.0);
+        QRectF boundingBox = primitive.computeBounds(textBounds.size(), 1.0);
         this->update(boundingBox.toAlignedRect());
     }
 }

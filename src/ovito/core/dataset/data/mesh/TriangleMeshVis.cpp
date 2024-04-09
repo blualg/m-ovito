@@ -31,6 +31,8 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(TriangleMeshVis);
+OVITO_CLASSINFO(TriangleMeshVis, "DisplayName", "Triangle mesh");
+OVITO_CLASSINFO(TriangleMeshVis, "ClassNameAlias", "TriMeshVis");  // For backward compatibility with OVITO 3.9.2
 DEFINE_PROPERTY_FIELD(TriangleMeshVis, color);
 DEFINE_REFERENCE_FIELD(TriangleMeshVis, transparencyController);
 DEFINE_PROPERTY_FIELD(TriangleMeshVis, highlightEdges);

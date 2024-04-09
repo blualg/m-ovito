@@ -37,7 +37,6 @@ namespace Ovito {
 class OVITO_STDMOD_EXPORT ColorLegendOverlay : public ViewportOverlay
 {
     OVITO_CLASS(ColorLegendOverlay)
-    OVITO_CLASSINFO("DisplayName", "Color legend");
 
 public:
 

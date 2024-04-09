@@ -30,6 +30,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(PropertyColorMapping);
+OVITO_CLASSINFO(PropertyColorMapping, "DisplayName", "Color mapping");
 DEFINE_REFERENCE_FIELD(PropertyColorMapping, colorGradient);
 DEFINE_PROPERTY_FIELD(PropertyColorMapping, startValue);
 DEFINE_PROPERTY_FIELD(PropertyColorMapping, endValue);

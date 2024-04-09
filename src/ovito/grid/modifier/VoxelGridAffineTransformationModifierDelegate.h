@@ -50,8 +50,6 @@ class VoxelGridAffineTransformationModifierDelegate : public AffineTransformatio
 
     OVITO_CLASS_META(VoxelGridAffineTransformationModifierDelegate, OOMetaClass)
 
-    OVITO_CLASSINFO("DisplayName", "Voxel grids");
-
 public:
 
     /// Constructor.

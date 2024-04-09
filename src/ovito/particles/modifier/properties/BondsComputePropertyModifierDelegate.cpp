@@ -34,6 +34,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(BondsComputePropertyModifierDelegate);
+OVITO_CLASSINFO(BondsComputePropertyModifierDelegate, "DisplayName", "Bonds");
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

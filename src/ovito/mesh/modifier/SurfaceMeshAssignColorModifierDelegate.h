@@ -54,8 +54,6 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshVerticesAssignColorModifierDelegate : publ
 
     OVITO_CLASS_META(SurfaceMeshVerticesAssignColorModifierDelegate, OOMetaClass)
 
-    OVITO_CLASSINFO("DisplayName", "Mesh Vertices");
-
 public:
 
     /// Constructor.
@@ -92,8 +90,6 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshFacesAssignColorModifierDelegate : public 
 
     OVITO_CLASS_META(SurfaceMeshFacesAssignColorModifierDelegate, OOMetaClass)
 
-    OVITO_CLASSINFO("DisplayName", "Mesh Faces");
-
 public:
 
     /// Constructor.
@@ -129,8 +125,6 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshRegionsAssignColorModifierDelegate : publi
     };
 
     OVITO_CLASS_META(SurfaceMeshRegionsAssignColorModifierDelegate, OOMetaClass)
-
-    OVITO_CLASSINFO("DisplayName", "Mesh Regions");
 
 public:
 

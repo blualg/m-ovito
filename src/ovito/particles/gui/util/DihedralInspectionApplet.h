@@ -36,7 +36,6 @@ namespace Ovito {
 class DihedralInspectionApplet : public PropertyInspectionApplet
 {
     OVITO_CLASS(DihedralInspectionApplet)
-    OVITO_CLASSINFO("DisplayName", "Dihedrals")
     Q_OBJECT
 
 public:

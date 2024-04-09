@@ -100,7 +100,7 @@ void FreezePropertyModifierEditor::onSourcePropertyChanged()
     FreezePropertyModifier* mod = static_object_cast<FreezePropertyModifier>(editObject());
     if(!mod) return;
 
-    performTransaction(tr("Freeze property"), [this,mod]() {
+    performTransaction(tr("Freeze property"), [mod]() {
         // When the user selects a different source property, adjust the destination property automatically.
         mod->setDestinationProperty(mod->sourceProperty());
     });

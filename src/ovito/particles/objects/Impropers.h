@@ -54,8 +54,6 @@ class OVITO_PARTICLES_EXPORT Impropers : public PropertyContainer
     };
 
     OVITO_CLASS_META(Impropers, OOMetaClass);
-    OVITO_CLASSINFO("DisplayName", "Impropers");
-    OVITO_CLASSINFO("ClassNameAlias", "ImpropersObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
 

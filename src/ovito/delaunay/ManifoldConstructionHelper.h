@@ -144,7 +144,6 @@ public:
             // Found a first seed face. Start a new mesh component.
             faceRegion = _filledRegionCount + (_emptyRegionCount++);
             faceRegions[face] = faceRegion;
-            size_t faceCount = 1;
 
             facesToProcess.push_back(face);
             do {
@@ -185,7 +184,6 @@ public:
                         faceRegions[neighborFace] = faceRegion;
                         // Put on recursive stack.
                         facesToProcess.push_back(neighborFace);
-                        faceCount++;
                     }
 
                     edge = _mesh.nextFaceEdge(edge);

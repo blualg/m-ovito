@@ -34,6 +34,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(DataTableInspectionApplet);
+OVITO_CLASSINFO(DataTableInspectionApplet, "DisplayName", "Data Tables");
 
 /******************************************************************************
 * Lets the applet create the UI widget that is to be placed into the data

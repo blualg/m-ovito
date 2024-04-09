@@ -52,7 +52,6 @@ class OVITO_PARTICLES_EXPORT FHIAimsImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(FHIAimsImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "FHI-aims");
 
 public:
 

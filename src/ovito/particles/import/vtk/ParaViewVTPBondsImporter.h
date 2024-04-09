@@ -48,7 +48,6 @@ class OVITO_PARTICLES_EXPORT ParaViewVTPBondsImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(ParaViewVTPBondsImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "VTP");
 
 public:
 

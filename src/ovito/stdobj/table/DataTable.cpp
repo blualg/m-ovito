@@ -26,6 +26,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(DataTable);
+OVITO_CLASSINFO(DataTable, "DisplayName", "Data table");
 DEFINE_PROPERTY_FIELD(DataTable, intervalStart);
 DEFINE_PROPERTY_FIELD(DataTable, intervalEnd);
 DEFINE_PROPERTY_FIELD(DataTable, axisLabelX);
@@ -106,7 +107,6 @@ ConstPropertyPtr DataTable::getXValues() const
         return xProperty;
     }
     else if(y() && elementCount() != 0 && (intervalStart() != 0 || intervalEnd() != 0)) {
-        const Property* yProperty = y();
         PropertyFactory<FloatType> xdata(OOClass(), elementCount(), axisLabelX());
         FloatType binSize = (intervalEnd() - intervalStart()) / elementCount();
         FloatType x = intervalStart() + binSize * FloatType(0.5);

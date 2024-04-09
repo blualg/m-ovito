@@ -41,7 +41,6 @@ namespace Ovito {
 class OVITO_PARTICLES_EXPORT VectorVis : public DataVis
 {
     OVITO_CLASS(VectorVis)
-    OVITO_CLASSINFO("DisplayName", "Vectors");
 
 public:
 

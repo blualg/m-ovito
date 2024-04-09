@@ -40,9 +40,6 @@ namespace Ovito::VoroTop {
 class OVITO_VOROTOP_EXPORT VoroTopModifier : public StructureIdentificationModifier
 {
     OVITO_CLASS(VoroTopModifier)
-    OVITO_CLASSINFO("DisplayName", "VoroTop analysis");
-    OVITO_CLASSINFO("Description", "Identify local structures based on Voronoi polyhedron topology.");
-    OVITO_CLASSINFO("ModifierCategory", "Structure identification");
 
 public:
 

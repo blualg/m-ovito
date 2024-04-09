@@ -31,6 +31,8 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ElasticStrainModifier);
+OVITO_CLASSINFO(ElasticStrainModifier, "DisplayName", "Elastic strain calculation");
+OVITO_CLASSINFO(ElasticStrainModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(ElasticStrainModifier, inputCrystalStructure);
 DEFINE_PROPERTY_FIELD(ElasticStrainModifier, calculateDeformationGradients);
 DEFINE_PROPERTY_FIELD(ElasticStrainModifier, calculateStrainTensors);
@@ -87,7 +89,6 @@ std::shared_ptr<StructureIdentificationModifier::Algorithm> ElasticStrainModifie
     // Get modifier inputs.
     const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
-    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
     const SimulationCell* simCell = input.expectObject<SimulationCell>();
     if(simCell->is2D())
         throw Exception(tr("The elastic strain calculation modifier does not support 2d simulation cells."));

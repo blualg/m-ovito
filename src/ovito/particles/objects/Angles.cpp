@@ -26,6 +26,8 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(Angles);
+OVITO_CLASSINFO(Angles, "DisplayName", "Angles");
+OVITO_CLASSINFO(Angles, "ClassNameAlias", "AnglesObject");  // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
 * Constructor.

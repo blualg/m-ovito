@@ -34,6 +34,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(SelectTypeModifier);
+OVITO_CLASSINFO(SelectTypeModifier, "DisplayName", "Select type");
+OVITO_CLASSINFO(SelectTypeModifier, "Description", "Select particles based on chemical species, or bonds based on bond type.");
+OVITO_CLASSINFO(SelectTypeModifier, "ModifierCategory", "Selection");
 DEFINE_PROPERTY_FIELD(SelectTypeModifier, sourceProperty);
 DEFINE_PROPERTY_FIELD(SelectTypeModifier, selectedTypeIDs);
 DEFINE_PROPERTY_FIELD(SelectTypeModifier, selectedTypeNames);

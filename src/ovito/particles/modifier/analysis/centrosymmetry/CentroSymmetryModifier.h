@@ -47,10 +47,6 @@ class OVITO_PARTICLES_EXPORT CentroSymmetryModifier : public Modifier
 
     OVITO_CLASS_META(CentroSymmetryModifier, CentroSymmetryModifierClass)
 
-    OVITO_CLASSINFO("DisplayName", "Centrosymmetry parameter");
-    OVITO_CLASSINFO("Description", "Calculate the lattice centrosymmetry parameter for each particle.");
-    OVITO_CLASSINFO("ModifierCategory", "Structure identification");
-
 public:
 
     enum CSPMode {

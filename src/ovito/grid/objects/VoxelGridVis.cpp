@@ -31,6 +31,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(VoxelGridVis);
+OVITO_CLASSINFO(VoxelGridVis, "DisplayName", "Voxel grid");
 DEFINE_REFERENCE_FIELD(VoxelGridVis, transparencyController);
 DEFINE_PROPERTY_FIELD(VoxelGridVis, highlightGridLines);
 DEFINE_PROPERTY_FIELD(VoxelGridVis, interpolateColors);

@@ -54,8 +54,6 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshReplicateModifierDelegate : public Replica
 
     OVITO_CLASS_META(SurfaceMeshReplicateModifierDelegate, OOMetaClass)
 
-    OVITO_CLASSINFO("DisplayName", "Surfaces");
-
 public:
 
     /// Constructor.

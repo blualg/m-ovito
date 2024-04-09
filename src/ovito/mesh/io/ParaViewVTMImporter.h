@@ -96,7 +96,6 @@ class OVITO_MESH_EXPORT ParaViewVTMImporter : public FileSourceImporter
     };
 
     OVITO_CLASS_META(ParaViewVTMImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "VTM");
 
 public:
 

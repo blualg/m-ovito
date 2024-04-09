@@ -38,8 +38,7 @@ namespace Ovito {
 class OVITO_STDOBJ_EXPORT SimulationCell : public DataObject
 {
     OVITO_CLASS(SimulationCell)
-    OVITO_CLASSINFO("ClassNameAlias", "SimulationCellObject");  // For backward compatibility with OVITO 3.9.2
-
+ 
 public:
 
     /// \brief Constructor. Creates an empty simulation cell.

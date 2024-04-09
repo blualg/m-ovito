@@ -58,7 +58,6 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshAffineTransformationModifierDelegate : pub
     };
 
     OVITO_CLASS_META(SurfaceMeshAffineTransformationModifierDelegate, SurfaceMeshAffineTransformationModifierDelegateClass)
-    OVITO_CLASSINFO("DisplayName", "Surfaces");
 
 public:
 

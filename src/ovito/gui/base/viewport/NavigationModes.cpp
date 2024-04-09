@@ -352,12 +352,7 @@ void OrbitMode::modifyView(ViewportWindow* vpwin, Viewport* vp, QPointF delta, b
         const Matrix3& coordSys = ViewportSettings::getSettings().coordinateSystemOrientation();
         Vector3 v = _oldViewMatrix * coordSys.column(2);
 
-        FloatType theta, phi;
-        if(v.x() == 0 && v.y() == 0)
-            theta = FLOATTYPE_PI;
-        else
-            theta = atan2(v.x(), v.y());
-        phi = atan2(sqrt(v.x() * v.x() + v.y() * v.y()), v.z());
+        FloatType phi = std::atan2(sqrt(v.x() * v.x() + v.y() * v.y()), v.z());
 
         // Restrict rotation to keep the major axis pointing upward (prevent camera from becoming upside down).
         if(phi + deltaPhi < FLOATTYPE_EPSILON)

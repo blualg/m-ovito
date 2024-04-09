@@ -37,6 +37,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(LAMMPSDumpYAMLImporter);
+OVITO_CLASSINFO(LAMMPSDumpYAMLImporter, "DisplayName", "LAMMPS Dump YAML");
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.
@@ -69,7 +70,6 @@ void LAMMPSDumpYAMLImporter::FrameFinder::discoverFramesInFile(QVector<FileSourc
     setProgressMaximum(stream.underlyingSize());
 
     unsigned long long timestep = 0;
-    size_t numElements = 0;
     Frame frame(fileHandle());
 
     while(!stream.eof() && !isCanceled()) {

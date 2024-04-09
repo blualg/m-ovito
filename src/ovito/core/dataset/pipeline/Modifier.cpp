@@ -29,6 +29,7 @@
 namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(Modifier);
+OVITO_CLASSINFO(Modifier, "ClassNameAlias", "AsynchronousModifier");  // For backward compatibility with OVITO 3.10.2
 DEFINE_PROPERTY_FIELD(Modifier, isEnabled);
 DEFINE_PROPERTY_FIELD(Modifier, title);
 SET_PROPERTY_FIELD_LABEL(Modifier, isEnabled, "Enabled");

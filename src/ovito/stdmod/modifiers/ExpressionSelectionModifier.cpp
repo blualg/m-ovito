@@ -38,6 +38,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ExpressionSelectionModifier);
+OVITO_CLASSINFO(ExpressionSelectionModifier, "DisplayName", "Expression selection");
+OVITO_CLASSINFO(ExpressionSelectionModifier, "Description", "Select particles or other elements using a user-defined criterion.");
+OVITO_CLASSINFO(ExpressionSelectionModifier, "ModifierCategory", "Selection");
 DEFINE_PROPERTY_FIELD(ExpressionSelectionModifier, expression);
 SET_PROPERTY_FIELD_LABEL(ExpressionSelectionModifier, expression, "Boolean expression");
 

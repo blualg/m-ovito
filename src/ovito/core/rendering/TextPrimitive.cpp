@@ -113,7 +113,7 @@ QRectF TextPrimitive::queryLocalBounds(qreal devicePixelRatio, Qt::TextFormat te
 * This method takes into account text alignment, offset position, rotation, and outline width.
 * This overload uses the pre-computed size of the text in the local coordinate system.
 ******************************************************************************/
-QRectF TextPrimitive::computeBoundingBox(const QSizeF textSize, qreal devicePixelRatio) const
+QRectF TextPrimitive::computeBounds(const QSizeF textSize, qreal devicePixelRatio) const
 {
     QRectF boundingRect(QPointF(0,0), textSize);
 

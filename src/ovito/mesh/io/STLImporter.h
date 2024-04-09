@@ -55,7 +55,6 @@ class OVITO_MESH_EXPORT STLImporter : public FileSourceImporter
     };
 
     OVITO_CLASS_META(STLImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "STL");
 
 public:
 

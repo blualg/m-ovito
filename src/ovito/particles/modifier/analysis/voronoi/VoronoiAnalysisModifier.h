@@ -52,10 +52,6 @@ class OVITO_PARTICLES_EXPORT VoronoiAnalysisModifier : public Modifier
 
     OVITO_CLASS_META(VoronoiAnalysisModifier, VoronoiAnalysisModifierClass)
 
-    OVITO_CLASSINFO("DisplayName", "Voronoi analysis");
-    OVITO_CLASSINFO("Description", "Determine nearest particle neighbors, atomic volume and Voronoi indices.");
-    OVITO_CLASSINFO("ModifierCategory", "Analysis");
-
 public:
 
     /// Constructor.

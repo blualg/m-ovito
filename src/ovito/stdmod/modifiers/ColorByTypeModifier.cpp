@@ -34,6 +34,13 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ColorByTypeModifier);
+#ifndef OVITO_BUILD_BASIC
+    OVITO_CLASSINFO(ColorByTypeModifier, "DisplayName", "Color by type");
+#else
+    OVITO_CLASSINFO(ColorByTypeModifier, "DisplayName", "Color by type (Pro)");
+#endif
+OVITO_CLASSINFO(ColorByTypeModifier, "Description", "Color data elements according to a typed property.");
+OVITO_CLASSINFO(ColorByTypeModifier, "ModifierCategory", "Coloring");
 DEFINE_PROPERTY_FIELD(ColorByTypeModifier, sourceProperty);
 DEFINE_PROPERTY_FIELD(ColorByTypeModifier, colorOnlySelected);
 DEFINE_PROPERTY_FIELD(ColorByTypeModifier, clearSelection);

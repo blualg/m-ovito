@@ -218,14 +218,13 @@ void FrameGraph::renderTextAsImagePrimitives()
 
                 if(image.isNull()) {
                     Qt::TextFormat resolvedTextFormat = primitive->resolvedTextFormat();
-                    qreal outlineWidth = primitive->effectiveOutlineWidth(devicePixelRatio());
 
                     // Measure text size in local text coordinate system (does NOT include alignment/offset/rotation/outline).
                     // Bounds are calculated as if text was drawn at base coordinates (0,0).
                     QRectF textBounds = primitive->queryLocalBounds(devicePixelRatio(), resolvedTextFormat);
 
                     // Compute axis-aligned bounding box in absolute window coordinate system.
-                    QRectF boundingBox = primitive->computeBoundingBox(textBounds.size(), devicePixelRatio());
+                    QRectF boundingBox = primitive->computeBounds(textBounds.size(), devicePixelRatio());
 
                     // Generate texture image.
                     QRect pixelBounds = boundingBox.toAlignedRect();

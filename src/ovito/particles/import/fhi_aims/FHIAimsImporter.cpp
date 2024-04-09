@@ -32,6 +32,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(FHIAimsImporter);
+OVITO_CLASSINFO(FHIAimsImporter, "DisplayName", "FHI-aims");
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

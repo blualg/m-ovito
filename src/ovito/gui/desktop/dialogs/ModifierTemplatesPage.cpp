@@ -178,7 +178,7 @@ void ModifierTemplatesPage::onCreateTemplate()
 
         mainLayout->addSpacing(12);
         QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel | QDialogButtonBox::Help);
-        connect(buttonBox, &QDialogButtonBox::accepted, [this, &dlg, nameBox, &itemList]() {
+        connect(buttonBox, &QDialogButtonBox::accepted, [&dlg, nameBox, &itemList]() {
             QString name = nameBox->currentText().trimmed();
             if(name.isEmpty()) {
                 MessageDialog::critical(&dlg, tr("Create modifier template"), tr("Please enter a name for the new modifier template."));

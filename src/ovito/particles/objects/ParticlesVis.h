@@ -38,7 +38,6 @@ namespace Ovito {
 class OVITO_PARTICLES_EXPORT ParticlesVis : public DataVis
 {
     OVITO_CLASS(ParticlesVis)
-    OVITO_CLASSINFO("DisplayName", "Particles");
 
 public:
 

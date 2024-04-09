@@ -30,6 +30,8 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(StandardSceneRenderer);
+OVITO_CLASSINFO(StandardSceneRenderer, "DisplayName", "OpenGL");
+OVITO_CLASSINFO(StandardSceneRenderer, "Description", "Hardware-accelerated rendering engine, also used by OVITO's interactive viewports. The OpenGL renderer is fast and has the smallest memory footprint.");
 DEFINE_PROPERTY_FIELD(StandardSceneRenderer, antialiasingLevel);
 SET_PROPERTY_FIELD_LABEL(StandardSceneRenderer, antialiasingLevel, "Antialiasing level");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(StandardSceneRenderer, antialiasingLevel, IntegerParameterUnit, 1, 6);

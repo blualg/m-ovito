@@ -48,10 +48,6 @@ class OVITO_PARTICLES_EXPORT SmoothTrajectoryModifier : public Modifier
     };
 
     OVITO_CLASS_META(SmoothTrajectoryModifier, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Smooth trajectory");
-    OVITO_CLASSINFO("ClassNameAlias", "InterpolateTrajectoryModifier");
-    OVITO_CLASSINFO("Description", "Time-averaged particle positions using a sliding time window.");
-    OVITO_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 

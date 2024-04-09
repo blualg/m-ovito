@@ -51,8 +51,6 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshRegionsDeleteSelectedModifierDelegate : pu
 
     OVITO_CLASS_META(SurfaceMeshRegionsDeleteSelectedModifierDelegate, OOMetaClass)
 
-    OVITO_CLASSINFO("DisplayName", "Mesh Regions");
-
 public:
 
     /// Constructor.

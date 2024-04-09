@@ -40,6 +40,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(GSDImporter);
+OVITO_CLASSINFO(GSDImporter, "DisplayName", "GSD");
 DEFINE_PROPERTY_FIELD(GSDImporter, roundingResolution);
 SET_PROPERTY_FIELD_LABEL(GSDImporter, roundingResolution, "Shape rounding resolution");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(GSDImporter, roundingResolution, IntegerParameterUnit, 1, 6);
@@ -155,9 +156,6 @@ void GSDImporter::FrameLoader::loadFile()
     // Check schema name.
     if(qstrcmp(gsd.schemaName(), "hoomd") != 0)
         throw Exception(tr("Failed to open GSD file for reading. File schema must be 'hoomd', but found '%1'.").arg(gsd.schemaName()));
-
-    // Parse number of frames in file.
-    uint64_t nFrames = gsd.numerOfFrames();
 
     // The animation frame to read from the GSD file.
     uint64_t frameNumber = frame().byteOffset;
@@ -816,7 +814,7 @@ static void tessellateCornerFacet(SurfaceMesh::face_index seedFace, int recursiv
             midpoint += vertexGrower.vertexPosition(mesh.vertex2(edge)) - Point3::Origin();
             Vector3 normal = (midpoint * FloatType(0.5)) - center;
             normal.normalizeSafely();
-            SurfaceMesh::vertex_index new_v = mesh.splitEdge(edge, center + normal * roundingRadius, vertexGrower);
+            mesh.splitEdge(edge, center + normal * roundingRadius, vertexGrower);
             vertexNormals.push_back(normal);
         }
         edgeList.clear();
@@ -960,7 +958,7 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObjec
                     SurfaceMesh::face_index new_f = roundedMeshFaceGrower.createFace();
                     SurfaceMesh::edge_index edge = e;
                     do {
-                        SurfaceMesh::edge_index new_e = roundedMesh.createOppositeEdge(edge, new_f);
+                        roundedMesh.createOppositeEdge(edge, new_f);
                         edge = roundedMesh.prevFaceEdge(roundedMesh.oppositeEdge(roundedMesh.prevFaceEdge(roundedMesh.oppositeEdge(roundedMesh.prevFaceEdge(edge)))));
                     }
                     while(edge != e);

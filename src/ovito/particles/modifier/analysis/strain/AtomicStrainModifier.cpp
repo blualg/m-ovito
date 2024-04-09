@@ -33,6 +33,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(AtomicStrainModifier);
+OVITO_CLASSINFO(AtomicStrainModifier, "DisplayName", "Atomic strain");
+OVITO_CLASSINFO(AtomicStrainModifier, "Description", "Calculate local strain and deformation gradient tensors.");
+OVITO_CLASSINFO(AtomicStrainModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(AtomicStrainModifier, cutoff);
 DEFINE_PROPERTY_FIELD(AtomicStrainModifier, calculateDeformationGradients);
 DEFINE_PROPERTY_FIELD(AtomicStrainModifier, calculateStrainTensors);

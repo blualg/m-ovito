@@ -71,7 +71,6 @@ void DislocationTracer::traceDislocationSegments()
 
     // Incrementally extend search radius for new Burgers circuits and extend existing segments by enlarging
     // the maximum circuit size until segments meet at a junction.
-    size_t numJunctions = 0;
     for(int circuitLength = 3; circuitLength <= _maxExtendedBurgersCircuitSize; circuitLength++) {
 
         // Extend existing segments with dangling ends.
@@ -90,7 +89,7 @@ void DislocationTracer::traceDislocationSegments()
         }
 
         // Join segments forming dislocation junctions.
-        numJunctions += joinSegments(circuitLength);
+        joinSegments(circuitLength);
 
         // Store circuits of dangling ends.
         if(circuitLength >= _maxBurgersCircuitSize) {
@@ -535,9 +534,7 @@ BurgersCircuit* DislocationTracer::buildReverseCircuit(BurgersCircuit* forwardCi
         OVITO_ASSERT((edge2->clusterVector + oppositeEdge2->clusterTransition->tm * oppositeEdge2->clusterVector).isZero(CA_LATTICE_VECTOR_EPSILON));
 
         if(facet1 != facet2) {
-            InterfaceMesh::Edge* outerEdge1 = oppositeEdge1->nextFaceEdge()->oppositeEdge();
             InterfaceMesh::Edge* innerEdge1 = oppositeEdge1->prevFaceEdge()->oppositeEdge();
-            InterfaceMesh::Edge* outerEdge2 = oppositeEdge2->prevFaceEdge()->oppositeEdge();
             InterfaceMesh::Edge* innerEdge2 = oppositeEdge2->nextFaceEdge()->oppositeEdge();
             OVITO_ASSERT(innerEdge1 != nullptr && innerEdge2 != nullptr);
             OVITO_ASSERT(innerEdge1->vertex1() == edge1->vertex2());
@@ -1231,7 +1228,6 @@ void DislocationTracer::createSecondarySegment(InterfaceMesh::Edge* firstEdge, B
         for(;;) {
             OVITO_ASSERT(edge->circuit == nullptr);
             InterfaceMesh::Edge* oppositeEdge = edge->oppositeEdge();
-            InterfaceMesh::Face* oppositeFacet = oppositeEdge->face();
             InterfaceMesh::Edge* nextEdge = oppositeEdge->prevFaceEdge();
             OVITO_ASSERT(nextEdge->vertex2() == oppositeEdge->vertex1());
             OVITO_ASSERT(nextEdge->vertex2() == edge->vertex2());

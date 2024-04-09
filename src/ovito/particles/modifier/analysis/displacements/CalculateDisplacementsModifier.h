@@ -38,10 +38,6 @@ class OVITO_PARTICLES_EXPORT CalculateDisplacementsModifier : public ReferenceCo
 {
     OVITO_CLASS(CalculateDisplacementsModifier)
 
-    OVITO_CLASSINFO("DisplayName", "Displacement vectors");
-    OVITO_CLASSINFO("Description", "Calculate the displacements of particles based on two input configurations.");
-    OVITO_CLASSINFO("ModifierCategory", "Analysis");
-
 public:
 
     /// Constructor.

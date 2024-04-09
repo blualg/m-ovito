@@ -26,6 +26,11 @@
 
 namespace Ovito {
 
+// Explicit class template instantiations to be exported by the core module:
+template class DataObjectPathTemplate<DataObject*>; // a.k.a. DataObjectPath 
+template class DataObjectPathTemplate<const DataObject*>; // a.k.a. ConstDataObjectPath
+template class DataObjectPathTemplate<ConstDataObjectRef>; // a.k.a. ConstDataObjectRefPath
+
 IMPLEMENT_ABSTRACT_OVITO_CLASS(DataObject);
 DEFINE_PROPERTY_FIELD(DataObject, identifier);
 DEFINE_RUNTIME_PROPERTY_FIELD(DataObject, createdByNode);

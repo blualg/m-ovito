@@ -50,9 +50,6 @@ class OVITO_PARTICLES_EXPORT ExpandSelectionModifier : public Modifier
     };
 
     OVITO_CLASS_META(ExpandSelectionModifier, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Expand selection");
-    OVITO_CLASSINFO("Description", "Select particles that are neighbors of already selected particles.");
-    OVITO_CLASSINFO("ModifierCategory", "Selection");
 
 public:
 

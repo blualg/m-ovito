@@ -51,7 +51,6 @@ class OVITO_PARTICLES_EXPORT LAMMPSDumpYAMLImporter : public LAMMPSTextDumpImpor
     };
 
     OVITO_CLASS_META(LAMMPSDumpYAMLImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "LAMMPS Dump YAML");
 
 public:
 

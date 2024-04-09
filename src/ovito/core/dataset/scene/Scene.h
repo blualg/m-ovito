@@ -37,7 +37,6 @@ namespace Ovito {
 class OVITO_CORE_EXPORT Scene : public SceneNode
 {
     OVITO_CLASS(Scene)
-    OVITO_CLASSINFO("ClassNameAlias", "RootSceneNode"); // For backward compatibility with OVITO 3.7.11.
 
 public:
 

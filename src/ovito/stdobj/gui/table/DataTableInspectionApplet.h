@@ -36,7 +36,6 @@ namespace Ovito {
 class OVITO_STDOBJGUI_EXPORT DataTableInspectionApplet : public PropertyInspectionApplet
 {
     OVITO_CLASS(DataTableInspectionApplet)
-    OVITO_CLASSINFO("DisplayName", "Data Tables");
 
 public:
 

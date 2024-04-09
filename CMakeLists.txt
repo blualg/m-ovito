@@ -134,6 +134,12 @@ ENDIF()
 IF(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
     # Silence Intel DPC++ compiler warning: "explicit comparison with NaN in fast floating point mode" on every use of std::isnan()
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-tautological-constant-compare")
+    # Silence Intel DPC++ compiler warning: "field XXX will be initialized after field YYY"
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-reorder-ctor")
+    # Silence Intel DPC++ compiler warning: "destructor called on non-final XXX that has virtual functions but non-virtual destructor"
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-delete-non-abstract-non-virtual-dtor")
+    # Silence Intel DPC++ compiler warning: "known but unsupported action 'shared' for '#pragma section' - ignored"
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-ignored-pragmas")
     # Silence Intel DPC++ compiler remark: "Note that use of '-g' without any optimization-level option will turn off most compiler optimizations similar to use of '-O0'"
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Rno-debug-disables-optimization")
     SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Rno-debug-disables-optimization")

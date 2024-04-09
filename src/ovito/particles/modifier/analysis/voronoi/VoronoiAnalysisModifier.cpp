@@ -36,6 +36,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(VoronoiAnalysisModifier);
+OVITO_CLASSINFO(VoronoiAnalysisModifier, "DisplayName", "Voronoi analysis");
+OVITO_CLASSINFO(VoronoiAnalysisModifier, "Description", "Determine nearest particle neighbors, atomic volume and Voronoi indices.");
+OVITO_CLASSINFO(VoronoiAnalysisModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(VoronoiAnalysisModifier, onlySelected);
 DEFINE_PROPERTY_FIELD(VoronoiAnalysisModifier, useRadii);
 DEFINE_PROPERTY_FIELD(VoronoiAnalysisModifier, computeIndices);
@@ -859,7 +862,6 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
             SurfaceMesh::edge_index first_edge = polyhedraMesh.firstFaceEdge(face);
             SurfaceMesh::vertex_index vertex1 = polyhedraMesh.vertex1(first_edge);
-            SurfaceMesh::vertex_index vertex2 = polyhedraMesh.vertex2(first_edge);
 
             // Iterate over all edges/faces adjacent to one of the vertices.
             for(SurfaceMesh::edge_index edge = polyhedraMesh.firstVertexEdge(vertex1); edge != SurfaceMesh::InvalidIndex; edge = polyhedraMesh.nextVertexEdge(edge)) {

@@ -52,10 +52,6 @@ class OVITO_PARTICLES_EXPORT ClusterAnalysisModifier : public Modifier
 
     OVITO_CLASS_META(ClusterAnalysisModifier, ClusterAnalysisModifierClass)
 
-    OVITO_CLASSINFO("DisplayName", "Cluster analysis");
-    OVITO_CLASSINFO("Description", "Decompose a particle-based structure into disconnected clusters.");
-    OVITO_CLASSINFO("ModifierCategory", "Analysis");
-
 public:
 
     enum NeighborMode {

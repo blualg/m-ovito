@@ -35,7 +35,6 @@ namespace Ovito {
 class OVITO_CORE_EXPORT AttributeDataObject : public DataObject
 {
     OVITO_CLASS(AttributeDataObject)
-    OVITO_CLASSINFO("DisplayName", "Attribute");
 
 public:
 

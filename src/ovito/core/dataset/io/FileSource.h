@@ -39,7 +39,6 @@ namespace Ovito {
 class OVITO_CORE_EXPORT FileSource : public BasePipelineSource
 {
 	OVITO_CLASS(FileSource)
-	OVITO_CLASSINFO("DisplayName", "External file source");
 
 public:
 

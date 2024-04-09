@@ -26,6 +26,8 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(Dihedrals);
+OVITO_CLASSINFO(Dihedrals, "DisplayName", "Dihedrals");
+OVITO_CLASSINFO(Dihedrals, "ClassNameAlias", "DihedralsObject");  // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
 * Constructor.

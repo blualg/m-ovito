@@ -38,6 +38,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshVis);
+OVITO_CLASSINFO(SurfaceMeshVis, "DisplayName", "Surface mesh");
 DEFINE_PROPERTY_FIELD(SurfaceMeshVis, surfaceColor);
 DEFINE_PROPERTY_FIELD(SurfaceMeshVis, capColor);
 DEFINE_PROPERTY_FIELD(SurfaceMeshVis, showCap);

@@ -24,6 +24,10 @@
 #include <ovito/core/app/UserInterface.h>
 #include "AsynchronousTask.h"
 
+#if defined(Q_CC_MSVC) || defined(Q_CC_CLANG) || defined(OVITO_BUILD_MONOLITHIC)
+#include <ovito/core/dataset/pipeline/PipelineFlowState.h>
+#endif
+
 namespace Ovito {
 
 /******************************************************************************
@@ -125,5 +129,10 @@ void AsynchronousTaskBase::run()
     setFinished();
     _thisTask.reset(); // No need to keep the task object alive any longer.
 }
+
+// Instantiate class template to export it from the core DLL.
+#if defined(Q_CC_MSVC) || defined(Q_CC_CLANG) || defined(OVITO_BUILD_MONOLITHIC)
+    template class OVITO_CORE_EXPORT AsynchronousTask<PipelineFlowState>;
+#endif
 
 }   // End of namespace

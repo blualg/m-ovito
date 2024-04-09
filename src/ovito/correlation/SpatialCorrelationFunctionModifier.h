@@ -54,9 +54,6 @@ class OVITO_CORRELATIONFUNCTIONPLUGIN_EXPORT SpatialCorrelationFunctionModifier 
     };
 
     OVITO_CLASS_META(SpatialCorrelationFunctionModifier, OOMetaClass)
-    OVITO_CLASSINFO("ClassNameAlias", "CorrelationFunctionModifier");
-    OVITO_CLASSINFO("DisplayName", "Spatial correlation function");
-    OVITO_CLASSINFO("ModifierCategory", "Analysis");
 
 public:
 

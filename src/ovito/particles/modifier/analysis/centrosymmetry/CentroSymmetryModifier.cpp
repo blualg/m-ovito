@@ -36,6 +36,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(CentroSymmetryModifier);
+OVITO_CLASSINFO(CentroSymmetryModifier, "DisplayName", "Centrosymmetry parameter");
+OVITO_CLASSINFO(CentroSymmetryModifier, "Description", "Calculate the lattice centrosymmetry parameter for each particle.");
+OVITO_CLASSINFO(CentroSymmetryModifier, "ModifierCategory", "Structure identification");
 DEFINE_PROPERTY_FIELD(CentroSymmetryModifier, numNeighbors);
 DEFINE_PROPERTY_FIELD(CentroSymmetryModifier, mode);
 DEFINE_PROPERTY_FIELD(CentroSymmetryModifier, onlySelectedParticles);

@@ -34,7 +34,6 @@ namespace Ovito {
 class OVITO_OXDNA_EXPORT NucleotidesVis : public ParticlesVis
 {
     OVITO_CLASS(NucleotidesVis)
-    OVITO_CLASSINFO("DisplayName", "Nucleotides");
 
 public:
 

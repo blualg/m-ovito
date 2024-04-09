@@ -55,7 +55,6 @@ class OVITO_MESH_EXPORT VTKFileImporter : public FileSourceImporter
     };
 
     OVITO_CLASS_META(VTKFileImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "VTK");
 
 public:
 

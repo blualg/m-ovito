@@ -27,8 +27,11 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshVerticesColorCodingModifierDelegate);
+OVITO_CLASSINFO(SurfaceMeshVerticesColorCodingModifierDelegate, "DisplayName", "Mesh Vertices");
 IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshFacesColorCodingModifierDelegate);
+OVITO_CLASSINFO(SurfaceMeshFacesColorCodingModifierDelegate, "DisplayName", "Mesh Faces");
 IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshRegionsColorCodingModifierDelegate);
+OVITO_CLASSINFO(SurfaceMeshRegionsColorCodingModifierDelegate, "DisplayName", "Mesh Regions");
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

@@ -54,7 +54,6 @@ class OVITO_MESH_EXPORT SurfaceMeshRegions : public PropertyContainer
     };
 
     OVITO_CLASS_META(SurfaceMeshRegions, OOMetaClass);
-    OVITO_CLASSINFO("DisplayName", "Mesh Regions");
 
 public:
 

@@ -32,6 +32,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(CastepMDImporter);
+OVITO_CLASSINFO(CastepMDImporter, "DisplayName", "CASTEP");
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

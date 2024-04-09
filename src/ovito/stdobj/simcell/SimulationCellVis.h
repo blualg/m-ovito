@@ -34,7 +34,6 @@ namespace Ovito {
 class OVITO_STDOBJ_EXPORT SimulationCellVis : public DataVis
 {
     OVITO_CLASS(SimulationCellVis)
-    OVITO_CLASSINFO("DisplayName", "Simulation cell");
 
 public:
 

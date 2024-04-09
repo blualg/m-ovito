@@ -57,7 +57,6 @@ class OVITO_PARTICLES_EXPORT GSDImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(GSDImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "GSD");
 
 public:
 

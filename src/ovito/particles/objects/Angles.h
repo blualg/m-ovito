@@ -54,8 +54,6 @@ class OVITO_PARTICLES_EXPORT Angles : public PropertyContainer
     };
 
     OVITO_CLASS_META(Angles, OOMetaClass);
-    OVITO_CLASSINFO("DisplayName", "Angles");
-    OVITO_CLASSINFO("ClassNameAlias", "AnglesObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
 

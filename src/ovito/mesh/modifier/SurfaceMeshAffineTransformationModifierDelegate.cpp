@@ -30,6 +30,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshAffineTransformationModifierDelegate);
+OVITO_CLASSINFO(SurfaceMeshAffineTransformationModifierDelegate, "DisplayName", "Surfaces");
 
 /******************************************************************************
  * Applies this modifier delegate to the data.

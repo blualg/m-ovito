@@ -37,10 +37,6 @@ class OVITO_STDMOD_EXPORT ManualSelectionModifier : public GenericPropertyModifi
 {
     OVITO_CLASS(ManualSelectionModifier)
 
-    OVITO_CLASSINFO("DisplayName", "Manual selection");
-    OVITO_CLASSINFO("Description", "Select individual particles or bonds using the mouse.");
-    OVITO_CLASSINFO("ModifierCategory", "Selection");
-
 public:
 
     /// Constructor.
@@ -86,7 +82,6 @@ protected:
 class OVITO_STDMOD_EXPORT ManualSelectionModificationNode : public ModificationNode
 {
     OVITO_CLASS(ManualSelectionModificationNode)
-    OVITO_CLASSINFO("ClassNameAlias", "ManualSelectionModifierApplication");  // For backward compatibility with OVITO 3.9.2
 
 public:
 

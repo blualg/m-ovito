@@ -36,6 +36,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(CreateIsosurfaceModifier);
+OVITO_CLASSINFO(CreateIsosurfaceModifier, "DisplayName", "Create isosurface");
+OVITO_CLASSINFO(CreateIsosurfaceModifier, "Description", "Compute the isosurface of a scalar value field.");
+OVITO_CLASSINFO(CreateIsosurfaceModifier, "ModifierCategory", "Visualization");
 DEFINE_PROPERTY_FIELD(CreateIsosurfaceModifier, subject);
 DEFINE_PROPERTY_FIELD(CreateIsosurfaceModifier, sourceProperty);
 DEFINE_PROPERTY_FIELD(CreateIsosurfaceModifier, transferFieldValues);

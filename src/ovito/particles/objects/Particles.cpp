@@ -36,6 +36,8 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(Particles);
+OVITO_CLASSINFO(Particles, "DisplayName", "Particles");
+OVITO_CLASSINFO(Particles, "ClassNameAlias", "ParticlesObject");  // For backward compatibility with OVITO 3.9.2
 DEFINE_REFERENCE_FIELD(Particles, bonds);
 DEFINE_REFERENCE_FIELD(Particles, angles);
 DEFINE_REFERENCE_FIELD(Particles, dihedrals);
@@ -136,7 +138,6 @@ size_t Particles::deleteElements(ConstDataBufferPtr selection, size_t selectionC
     size_t deleteParticleCount = PropertyContainer::deleteElements(selection, selectionCount);
     if(deleteParticleCount == 0)
         return 0;   // Nothing to do.
-    size_t newParticleCount = elementCount();
 
     // Remapping of old particle indices to new ones.
     std::vector<size_t> particleIndexMap;
@@ -1052,7 +1053,6 @@ ConstPropertyPtr Particles::OOMetaClass::viewportFenceSelection(const QVector<Po
                 return;
 
             // Perform point-in-polygon test.
-            int intersectionsLeft = 0;
             int intersectionsRight = 0;
             for(auto p2 = fence.constBegin(), p1 = std::prev(fence.constEnd()); p2 != fence.constEnd(); p1 = p2++) {
                 if(p1->y() == p2->y())
@@ -1064,8 +1064,6 @@ ConstPropertyPtr Particles::OOMetaClass::viewportFenceSelection(const QVector<Po
                 FloatType xint = (projPos.y() - p2->y()) / (p1->y() - p2->y()) * (p1->x() - p2->x()) + p2->x();
                 if(xint >= projPos.x())
                     intersectionsRight++;
-                else
-                    intersectionsLeft++;
             }
             if(intersectionsRight & 1) {
                 selectionAcc[index] = 1;

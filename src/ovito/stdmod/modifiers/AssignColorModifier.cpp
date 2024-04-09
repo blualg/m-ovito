@@ -35,6 +35,9 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(AssignColorModifierDelegate);
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(AssignColorModifier);
+OVITO_CLASSINFO(AssignColorModifier, "DisplayName", "Assign color");
+OVITO_CLASSINFO(AssignColorModifier, "Description", "Assign a color to the currently selected elements.");
+OVITO_CLASSINFO(AssignColorModifier, "ModifierCategory", "Coloring");
 DEFINE_REFERENCE_FIELD(AssignColorModifier, colorController);
 DEFINE_PROPERTY_FIELD(AssignColorModifier, keepSelection);
 SET_PROPERTY_FIELD_LABEL(AssignColorModifier, colorController, "Color");

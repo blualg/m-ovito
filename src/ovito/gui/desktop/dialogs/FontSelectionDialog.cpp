@@ -34,7 +34,7 @@ FontSelectionDialog::FontSelectionDialog(QWidget* parent) :
 {
     setWindowTitle(tr("Select font"));
 
-    QVBoxLayout* mainLayout = new QVBoxLayout(this);
+    (void)new QVBoxLayout(this);
 }
 
 /******************************************************************************

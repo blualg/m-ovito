@@ -49,7 +49,6 @@ class OVITO_CRYSTALANALYSIS_EXPORT DislocationSliceModifierDelegate : public Sli
     };
 
     OVITO_CLASS_META(DislocationSliceModifierDelegate, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Dislocation lines");
 
 public:
 

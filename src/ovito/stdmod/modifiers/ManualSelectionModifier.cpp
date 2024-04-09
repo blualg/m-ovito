@@ -31,8 +31,12 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ManualSelectionModifier);
+OVITO_CLASSINFO(ManualSelectionModifier, "DisplayName", "Manual selection");
+OVITO_CLASSINFO(ManualSelectionModifier, "Description", "Select individual particles or bonds using the mouse.");
+OVITO_CLASSINFO(ManualSelectionModifier, "ModifierCategory", "Selection");
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ManualSelectionModificationNode);
+OVITO_CLASSINFO(ManualSelectionModificationNode, "ClassNameAlias", "ManualSelectionModifierApplication");  // For backward compatibility with OVITO 3.9.2
 SET_MODIFICATION_NODE_TYPE(ManualSelectionModifier, ManualSelectionModificationNode);
 DEFINE_REFERENCE_FIELD(ManualSelectionModificationNode, selectionSet);
 SET_PROPERTY_FIELD_LABEL(ManualSelectionModificationNode, selectionSet, "Element selection set");

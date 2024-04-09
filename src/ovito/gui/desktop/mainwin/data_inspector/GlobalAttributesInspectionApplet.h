@@ -37,8 +37,6 @@ class GlobalAttributesInspectionApplet : public DataInspectionApplet
     OVITO_CLASS(GlobalAttributesInspectionApplet)
     Q_OBJECT
 
-    OVITO_CLASSINFO("DisplayName", "Global Attributes");
-
 public:
 
     /// Constructor.

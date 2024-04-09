@@ -32,6 +32,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(WignerSeitzAnalysisModifier);
+OVITO_CLASSINFO(WignerSeitzAnalysisModifier, "DisplayName", "Wigner-Seitz defect analysis");
+OVITO_CLASSINFO(WignerSeitzAnalysisModifier, "Description", "Identify point defects (vacancies and interstitials) in crystals.");
+OVITO_CLASSINFO(WignerSeitzAnalysisModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(WignerSeitzAnalysisModifier, perTypeOccupancy);
 DEFINE_PROPERTY_FIELD(WignerSeitzAnalysisModifier, outputCurrentConfig);
 SET_PROPERTY_FIELD_LABEL(WignerSeitzAnalysisModifier, perTypeOccupancy, "Compute per-type occupancies");
@@ -158,7 +161,6 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform(PipelineFlo
     if(affineMapping() == TO_CURRENT_CELL)
         throw Exception(tr("Remapping coordinates to the current cell is not supported by the Wigner-Seitz analysis routine. Only remapping to the reference cell or no mapping at all are supported options."));
 
-    size_t particleCount = positions()->size();
     if(refPositions()->size() == 0)
         throw Exception(tr("Reference configuration for Wigner-Seitz analysis contains no atomic sites."));
 
@@ -298,7 +300,6 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform(PipelineFlo
     Particles* particles = state.expectMutableObject<Particles>();
     if(occupancyNumbers()->size() != particles->elementCount())
         throw Exception(tr("Cached modifier results are obsolete, because the number of input particles has changed."));
-    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
 
     particles->createProperty(occupancyNumbers());
     if(siteTypes()) {

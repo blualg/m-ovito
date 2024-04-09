@@ -34,6 +34,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(AffineTransformationModifier);
+OVITO_CLASSINFO(AffineTransformationModifier, "DisplayName", "Affine transformation");
+OVITO_CLASSINFO(AffineTransformationModifier, "Description", "Apply an affine transformation to the dataset.");
+OVITO_CLASSINFO(AffineTransformationModifier, "ModifierCategory", "Modification");
 DEFINE_PROPERTY_FIELD(AffineTransformationModifier, transformationTM);
 DEFINE_PROPERTY_FIELD(AffineTransformationModifier, selectionOnly);
 DEFINE_PROPERTY_FIELD(AffineTransformationModifier, targetCell);
@@ -47,7 +50,9 @@ SET_PROPERTY_FIELD_LABEL(AffineTransformationModifier, translationReducedCoordin
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(AffineTransformationModifierDelegate);
 IMPLEMENT_CREATABLE_OVITO_CLASS(LinesAffineTransformationModifierDelegate);
+OVITO_CLASSINFO(LinesAffineTransformationModifierDelegate, "DisplayName", "Lines");
 IMPLEMENT_CREATABLE_OVITO_CLASS(SimulationCellAffineTransformationModifierDelegate);
+OVITO_CLASSINFO(SimulationCellAffineTransformationModifierDelegate, "DisplayName", "Simulation cell");
 
 /******************************************************************************
 * Constructs the modifier object.

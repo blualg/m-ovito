@@ -55,7 +55,6 @@ class OVITO_MESH_EXPORT WavefrontOBJImporter : public FileSourceImporter
     };
 
     OVITO_CLASS_META(WavefrontOBJImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "OBJ");
 
 public:
 

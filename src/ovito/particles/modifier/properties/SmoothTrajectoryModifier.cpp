@@ -33,6 +33,10 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(SmoothTrajectoryModifier);
+OVITO_CLASSINFO(SmoothTrajectoryModifier, "DisplayName", "Smooth trajectory");
+OVITO_CLASSINFO(SmoothTrajectoryModifier, "ClassNameAlias", "InterpolateTrajectoryModifier");
+OVITO_CLASSINFO(SmoothTrajectoryModifier, "Description", "Time-averaged particle positions using a sliding time window.");
+OVITO_CLASSINFO(SmoothTrajectoryModifier, "ModifierCategory", "Modification");
 DEFINE_PROPERTY_FIELD(SmoothTrajectoryModifier, useMinimumImageConvention);
 DEFINE_PROPERTY_FIELD(SmoothTrajectoryModifier, smoothingWindowSize);
 SET_PROPERTY_FIELD_LABEL(SmoothTrajectoryModifier, useMinimumImageConvention, "Use minimum image convention");

@@ -49,10 +49,6 @@ class OVITO_GRID_EXPORT CreateIsosurfaceModifier : public Modifier
 
     OVITO_CLASS_META(CreateIsosurfaceModifier, CreateIsosurfaceModifierClass)
 
-    OVITO_CLASSINFO("DisplayName", "Create isosurface");
-    OVITO_CLASSINFO("Description", "Compute the isosurface of a scalar value field.");
-    OVITO_CLASSINFO("ModifierCategory", "Visualization");
-
 public:
 
     /// Constructor.

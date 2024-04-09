@@ -29,6 +29,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(VoxelGridAffineTransformationModifierDelegate);
+OVITO_CLASSINFO(VoxelGridAffineTransformationModifierDelegate, "DisplayName", "Voxel grids");
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

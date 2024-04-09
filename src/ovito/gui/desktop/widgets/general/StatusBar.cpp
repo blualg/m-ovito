@@ -80,7 +80,7 @@ void StatusBar::showMessage(const QString& message, int timeout)
     plainText.remove(sectionBeginMarker);
     plainText.remove(sectionEndMarker);
     plainText.remove(valueBeginMarker);
-    auto orgLength = plainText.length();
+//    auto orgLength = plainText.length();
     plainText.remove(valueEndMarker);
 
     int availableSpace = contentsRect().width() - 2 * margin();

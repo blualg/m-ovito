@@ -83,7 +83,6 @@ private:
 class OVITO_CRYSTALANALYSIS_EXPORT DislocationVis : public DataVis
 {
     OVITO_CLASS(DislocationVis)
-    OVITO_CLASSINFO("DisplayName", "Dislocations");
 
 public:
 

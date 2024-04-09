@@ -31,6 +31,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ReaxFFBondImporter);
+OVITO_CLASSINFO(ReaxFFBondImporter, "DisplayName", "ReaxFF Bonds");
 
 /******************************************************************************
 * Checks if the given file has a format that can be read by this importer.
@@ -118,7 +119,6 @@ void ReaxFFBondImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImp
 
     Frame frame(fileHandle());
     QString filename = fileHandle().sourceUrl().fileName();
-    int frameNumber = 0;
 
     bool inCommentSection = true;
     while(!stream.eof() && !isCanceled()) {

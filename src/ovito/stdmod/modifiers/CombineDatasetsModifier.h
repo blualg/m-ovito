@@ -64,10 +64,6 @@ class OVITO_STDMOD_EXPORT CombineDatasetsModifier : public MultiDelegatingModifi
 
     OVITO_CLASS_META(CombineDatasetsModifier, CombineDatasetsModifierClass)
 
-    OVITO_CLASSINFO("DisplayName", "Combine datasets");
-    OVITO_CLASSINFO("Description", "Merge particles and bonds from two separate input files into one dataset.");
-    OVITO_CLASSINFO("ModifierCategory", "Modification");
-
 public:
 
     /// Constructor.
@@ -86,7 +82,7 @@ public:
     virtual QMap<int, QString> animationFrameLabels(QMap<int, QString> inputLabels) const override {
         if(secondaryDataSource())
             inputLabels.insert(secondaryDataSource()->animationFrameLabels());
-        return std::move(inputLabels);
+        return inputLabels;
     }
 
 protected:

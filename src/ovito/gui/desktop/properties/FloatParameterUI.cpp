@@ -47,7 +47,7 @@ void FloatParameterUI::updatePropertyValue()
     if(editObject() && spinner()) {
         if(isReferenceFieldUI()) {
             if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-                OVITO_CHECK_OBJECT_POINTER(ctrl);
+                OVITO_CHECK_OBJECT_POINTER(ctrl);;
                 ctrl->setFloatValue(currentAnimationTime().value_or(AnimationTime(0)), spinner()->floatValue());
             }
         }

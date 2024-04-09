@@ -28,6 +28,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshFaces);
+OVITO_CLASSINFO(SurfaceMeshFaces, "DisplayName", "Mesh Faces");
 
 /******************************************************************************
 * Creates a storage object for standard face properties.

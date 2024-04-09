@@ -40,6 +40,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(CommonNeighborAnalysisModifier);
+OVITO_CLASSINFO(CommonNeighborAnalysisModifier, "DisplayName", "Common neighbor analysis");
+OVITO_CLASSINFO(CommonNeighborAnalysisModifier, "Description", "Perform the CNA to identify simple crystal structures.");
+OVITO_CLASSINFO(CommonNeighborAnalysisModifier, "ModifierCategory", "Structure identification");
 DEFINE_PROPERTY_FIELD(CommonNeighborAnalysisModifier, cutoff);
 DEFINE_PROPERTY_FIELD(CommonNeighborAnalysisModifier, mode);
 SET_PROPERTY_FIELD_LABEL(CommonNeighborAnalysisModifier, cutoff, "Cutoff radius");

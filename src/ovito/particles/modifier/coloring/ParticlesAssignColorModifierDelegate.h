@@ -54,7 +54,6 @@ class ParticlesAssignColorModifierDelegate : public AssignColorModifierDelegate
     };
 
     OVITO_CLASS_META(ParticlesAssignColorModifierDelegate, ParticlesAssignColorModifierDelegateClass)
-    OVITO_CLASSINFO("DisplayName", "Particles");
 
 public:
 
@@ -91,7 +90,6 @@ class ParticleVectorsAssignColorModifierDelegate : public AssignColorModifierDel
     };
 
     OVITO_CLASS_META(ParticleVectorsAssignColorModifierDelegate, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Particle vectors");
 
 public:
 
@@ -128,7 +126,6 @@ class BondsAssignColorModifierDelegate : public AssignColorModifierDelegate
     };
 
     OVITO_CLASS_META(BondsAssignColorModifierDelegate, BondsAssignColorModifierDelegateClass)
-    OVITO_CLASSINFO("DisplayName", "Bonds");
 
 public:
 

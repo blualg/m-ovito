@@ -36,9 +36,6 @@ namespace Ovito {
 class OVITO_STDMOD_EXPORT HistogramModifier : public GenericPropertyModifier
 {
     OVITO_CLASS(HistogramModifier)
-    OVITO_CLASSINFO("DisplayName", "Histogram");
-    OVITO_CLASSINFO("Description", "Compute the histogram or distribution of some quantity.");
-    OVITO_CLASSINFO("ModifierCategory", "Analysis");
 
 public:
 

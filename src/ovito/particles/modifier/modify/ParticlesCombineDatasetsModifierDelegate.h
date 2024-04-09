@@ -49,7 +49,6 @@ class OVITO_PARTICLES_EXPORT ParticlesCombineDatasetsModifierDelegate : public C
     };
 
     OVITO_CLASS_META(ParticlesCombineDatasetsModifierDelegate, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Particles");
 
 public:
 

@@ -49,7 +49,6 @@ class ParticlesReplicateModifierDelegate : public ReplicateModifierDelegate
     };
 
     OVITO_CLASS_META(ParticlesReplicateModifierDelegate, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Particles & bonds");
 
 public:
 

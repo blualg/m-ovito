@@ -34,6 +34,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(LoadTrajectoryModifier);
+OVITO_CLASSINFO(LoadTrajectoryModifier, "DisplayName", "Load trajectory");
+OVITO_CLASSINFO(LoadTrajectoryModifier, "Description", "Load atomic trajectories or dynamic bonds from a trajectory file.");
+OVITO_CLASSINFO(LoadTrajectoryModifier, "ModifierCategory", "Modification");
 DEFINE_REFERENCE_FIELD(LoadTrajectoryModifier, trajectorySource);
 SET_PROPERTY_FIELD_LABEL(LoadTrajectoryModifier, trajectorySource, "Trajectory source");
 

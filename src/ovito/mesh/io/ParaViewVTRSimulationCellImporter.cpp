@@ -30,6 +30,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ParaViewVTRSimulationCellImporter);
+OVITO_CLASSINFO(ParaViewVTRSimulationCellImporter, "DisplayName", "VTR");
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

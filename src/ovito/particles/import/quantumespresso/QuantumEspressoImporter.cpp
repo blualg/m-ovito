@@ -32,6 +32,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(QuantumEspressoImporter);
+OVITO_CLASSINFO(QuantumEspressoImporter, "DisplayName", "QE");
 
 /******************************************************************************
 * Determines if a character is a normal letter.

@@ -66,9 +66,6 @@ class OVITO_PARTICLES_EXPORT CreateBondsModifier : public Modifier
     };
 
     OVITO_CLASS_META(CreateBondsModifier, CreateBondsModifierClass)
-    OVITO_CLASSINFO("DisplayName", "Create bonds");
-    OVITO_CLASSINFO("Description", "Creates bonds between particles.");
-    OVITO_CLASSINFO("ModifierCategory", "Visualization");
 
 public:
 

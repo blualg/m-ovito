@@ -53,7 +53,6 @@ class OVITO_PARTICLES_EXPORT BondsComputePropertyModifierDelegate : public Compu
     };
 
     OVITO_CLASS_META(BondsComputePropertyModifierDelegate, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Bonds");
 
 public:
 

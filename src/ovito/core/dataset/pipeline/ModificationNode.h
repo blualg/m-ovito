@@ -42,9 +42,6 @@ namespace Ovito {
 class OVITO_CORE_EXPORT ModificationNode : public PipelineNode
 {
     OVITO_CLASS(ModificationNode)
-    OVITO_CLASSINFO("ClassNameAlias", "ModifierApplication");  // For backward compatibility with OVITO 3.9.2
-    OVITO_CLASSINFO("ClassNameAlias", "AsynchronousModifierApplication");  // For backward compatibility with OVITO 3.9.2
-    OVITO_CLASSINFO("ClassNameAlias", "AsynchronousModificationNode");  // For backward compatibility with OVITO 3.10.2
 
 public:
 

@@ -27,6 +27,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshInspectionApplet);
+OVITO_CLASSINFO(SurfaceMeshInspectionApplet, "DisplayName", "Surfaces");
 IMPLEMENT_ABSTRACT_OVITO_CLASS(SurfaceMeshVertexInspectionApplet);
 IMPLEMENT_ABSTRACT_OVITO_CLASS(SurfaceMeshFaceInspectionApplet);
 IMPLEMENT_ABSTRACT_OVITO_CLASS(SurfaceMeshRegionInspectionApplet);

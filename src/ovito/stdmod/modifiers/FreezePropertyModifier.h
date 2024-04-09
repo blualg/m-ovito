@@ -39,9 +39,6 @@ class FreezePropertyModificationNode;  // defined below
 class OVITO_STDMOD_EXPORT FreezePropertyModifier : public GenericPropertyModifier
 {
     OVITO_CLASS(FreezePropertyModifier)
-    OVITO_CLASSINFO("DisplayName", "Freeze property");
-    OVITO_CLASSINFO("Description", "Copy the values of a varying property from one trajectory frame to all others.");
-    OVITO_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 
@@ -86,7 +83,6 @@ private:
 class OVITO_STDMOD_EXPORT FreezePropertyModificationNode : public ModificationNode
 {
     OVITO_CLASS(FreezePropertyModificationNode)
-    OVITO_CLASSINFO("ClassNameAlias", "FreezePropertyModifierApplication");  // For backward compatibility with OVITO 3.9.2
 
 public:
 

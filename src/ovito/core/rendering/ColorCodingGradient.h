@@ -71,7 +71,6 @@ private:
 class OVITO_CORE_EXPORT ColorCodingHSVGradient : public ColorCodingGradient
 {
     OVITO_CLASS(ColorCodingHSVGradient)
-    OVITO_CLASSINFO("DisplayName", "Rainbow");
 
 public:
 
@@ -101,7 +100,6 @@ public:
 class OVITO_CORE_EXPORT ColorCodingGrayscaleGradient : public ColorCodingGradient
 {
     OVITO_CLASS(ColorCodingGrayscaleGradient)
-    OVITO_CLASSINFO("DisplayName", "Grayscale");
 
 public:
 
@@ -131,7 +129,6 @@ public:
 class OVITO_CORE_EXPORT ColorCodingHotGradient : public ColorCodingGradient
 {
     OVITO_CLASS(ColorCodingHotGradient)
-    OVITO_CLASSINFO("DisplayName", "Hot");
 
 public:
 
@@ -163,7 +160,6 @@ public:
 class OVITO_CORE_EXPORT ColorCodingJetGradient : public ColorCodingGradient
 {
     OVITO_CLASS(ColorCodingJetGradient)
-    OVITO_CLASSINFO("DisplayName", "Jet");
 
 public:
 
@@ -201,7 +197,6 @@ public:
 class OVITO_CORE_EXPORT ColorCodingBlueWhiteRedGradient : public ColorCodingGradient
 {
     OVITO_CLASS(ColorCodingBlueWhiteRedGradient)
-    OVITO_CLASSINFO("DisplayName", "Blue-White-Red");
 
 public:
 
@@ -237,7 +232,6 @@ public:
 class OVITO_CORE_EXPORT ColorCodingViridisGradient : public ColorCodingGradient
 {
     OVITO_CLASS(ColorCodingViridisGradient)
-    OVITO_CLASSINFO("DisplayName", "Viridis");
 
 public:
 
@@ -270,7 +264,6 @@ public:
 class OVITO_CORE_EXPORT ColorCodingMagmaGradient : public ColorCodingGradient
 {
     OVITO_CLASS(ColorCodingMagmaGradient)
-    OVITO_CLASSINFO("DisplayName", "Magma");
 
 public:
 
@@ -303,7 +296,6 @@ public:
 class OVITO_CORE_EXPORT ColorCodingTableGradient : public ColorCodingGradient
 {
     OVITO_CLASS(ColorCodingTableGradient)
-    OVITO_CLASSINFO("DisplayName", "User table");
 
 public:
 
@@ -334,7 +326,6 @@ private:
 class OVITO_CORE_EXPORT ColorCodingImageGradient : public ColorCodingGradient
 {
     OVITO_CLASS(ColorCodingImageGradient)
-    OVITO_CLASSINFO("DisplayName", "User image");
 
 public:
 

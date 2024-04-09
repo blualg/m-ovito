@@ -26,14 +26,12 @@
 
 namespace Ovito {
 
-IMPLEMENT_OVITO_CLASS_TEMPLATE(TCBAnimationKey<FloatAnimationKey>);
-template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<FloatAnimationKey>, easeTo);
-template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<FloatAnimationKey>, easeFrom);
-template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<FloatAnimationKey>, tension);
-template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<FloatAnimationKey>, continuity);
-template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<FloatAnimationKey>, bias);
-
 IMPLEMENT_CREATABLE_OVITO_CLASS(FloatTCBAnimationKey);
+DEFINE_PROPERTY_FIELD(FloatTCBAnimationKey, easeTo);
+DEFINE_PROPERTY_FIELD(FloatTCBAnimationKey, easeFrom);
+DEFINE_PROPERTY_FIELD(FloatTCBAnimationKey, tension);
+DEFINE_PROPERTY_FIELD(FloatTCBAnimationKey, continuity);
+DEFINE_PROPERTY_FIELD(FloatTCBAnimationKey, bias);
 SET_PROPERTY_FIELD_LABEL(FloatTCBAnimationKey, easeTo, "Ease to");
 SET_PROPERTY_FIELD_LABEL(FloatTCBAnimationKey, easeFrom, "Ease from");
 SET_PROPERTY_FIELD_LABEL(FloatTCBAnimationKey, tension, "Tension");
@@ -45,14 +43,12 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(FloatTCBAnimationKey, tension, FloatParameter
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(FloatTCBAnimationKey, continuity, FloatParameterUnit, -1, 1);
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(FloatTCBAnimationKey, bias, FloatParameterUnit, -1, 1);
 
-IMPLEMENT_OVITO_CLASS_TEMPLATE(TCBAnimationKey<PositionAnimationKey>);
-template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<PositionAnimationKey>, easeTo);
-template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<PositionAnimationKey>, easeFrom);
-template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<PositionAnimationKey>, tension);
-template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<PositionAnimationKey>, continuity);
-template<> OVITO_CORE_EXPORT DEFINE_PROPERTY_FIELD(TCBAnimationKey<PositionAnimationKey>, bias);
-
 IMPLEMENT_CREATABLE_OVITO_CLASS(PositionTCBAnimationKey);
+DEFINE_PROPERTY_FIELD(PositionTCBAnimationKey, easeTo);
+DEFINE_PROPERTY_FIELD(PositionTCBAnimationKey, easeFrom);
+DEFINE_PROPERTY_FIELD(PositionTCBAnimationKey, tension);
+DEFINE_PROPERTY_FIELD(PositionTCBAnimationKey, continuity);
+DEFINE_PROPERTY_FIELD(PositionTCBAnimationKey, bias);
 SET_PROPERTY_FIELD_LABEL(PositionTCBAnimationKey, easeTo, "Ease to");
 SET_PROPERTY_FIELD_LABEL(PositionTCBAnimationKey, easeFrom, "Ease from");
 SET_PROPERTY_FIELD_LABEL(PositionTCBAnimationKey, tension, "Tension");

@@ -36,6 +36,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(GenerateTrajectoryLinesModifier);
+OVITO_CLASSINFO(GenerateTrajectoryLinesModifier, "DisplayName", "Generate trajectory lines");
+OVITO_CLASSINFO(GenerateTrajectoryLinesModifier, "Description", "Visualize trajectory lines of moving particles.");
+OVITO_CLASSINFO(GenerateTrajectoryLinesModifier, "ModifierCategory", "Visualization");
 DEFINE_PROPERTY_FIELD(GenerateTrajectoryLinesModifier, onlySelectedParticles);
 DEFINE_PROPERTY_FIELD(GenerateTrajectoryLinesModifier, useCustomInterval);
 DEFINE_PROPERTY_FIELD(GenerateTrajectoryLinesModifier, customIntervalStart);
@@ -56,6 +59,7 @@ SET_PROPERTY_FIELD_LABEL(GenerateTrajectoryLinesModifier, particleProperty, "Par
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(GenerateTrajectoryLinesModifier, everyNthFrame, IntegerParameterUnit, 1);
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(GenerateTrajectoryLinesModificationNode);
+OVITO_CLASSINFO(GenerateTrajectoryLinesModificationNode, "ClassNameAlias", "GenerateTrajectoryLinesModifierApplication");  // For backward compatibility with OVITO 3.9.2
 SET_MODIFICATION_NODE_TYPE(GenerateTrajectoryLinesModifier, GenerateTrajectoryLinesModificationNode);
 
 /******************************************************************************
@@ -428,7 +432,6 @@ Future<PipelineFlowState> GenerateTrajectoryLinesModifier::evaluateModifier(cons
         int endFrame = useCustomInterval() ? (customIntervalEnd() + 1) : modNode->numberOfSourceFrames();
         if(endFrame <= startFrame || everyNthFrame() < 1)
             throw Exception(tr("Trajectory range contains zero frames. Cannot generate trajectory lines over this time interval."));
-        int frameCount = std::max(1, (endFrame - startFrame) / everyNthFrame());
 
         // Loop over all input animation frames and gather particle position data.
         Future<std::shared_ptr<TrajectoryGenerator>> future = for_each_sequential(

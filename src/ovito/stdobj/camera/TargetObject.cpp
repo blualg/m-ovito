@@ -30,7 +30,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(TargetObject);
+OVITO_CLASSINFO(TargetObject, "DisplayName", "Target");
 IMPLEMENT_CREATABLE_OVITO_CLASS(TargetVis);
+OVITO_CLASSINFO(TargetVis, "DisplayName", "Target icon");
 
 /******************************************************************************
 * Constructs a target object.

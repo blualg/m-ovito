@@ -31,6 +31,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(DislocationAffineTransformationModifierDelegate);
+OVITO_CLASSINFO(DislocationAffineTransformationModifierDelegate, "DisplayName", "Dislocations");
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

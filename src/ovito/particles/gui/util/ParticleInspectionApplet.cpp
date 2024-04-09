@@ -34,6 +34,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ParticleInspectionApplet);
+OVITO_CLASSINFO(ParticleInspectionApplet, "DisplayName", "Particles");
 
 /******************************************************************************
 * Lets the applet create the UI widget that is to be placed into the data
@@ -66,13 +67,13 @@ QWidget* ParticleInspectionApplet::createWidget()
     layout->addWidget(toolbar, 0, 0);
 
     QWidget* pickModeButton = toolbar->widgetForAction(pickModeAction);
-    connect(_pickingMode, &ViewportInputMode::statusChanged, pickModeButton, [pickModeButton,this](bool active) {
+    connect(_pickingMode, &ViewportInputMode::statusChanged, pickModeButton, [pickModeButton](bool active) {
         if(active) {
             QToolTip::showText(pickModeButton->mapToGlobal(pickModeButton->rect().bottomRight()),
 #ifndef Q_OS_MACOS
-                tr("Pick a particle in the viewports. Hold down the CONTROL key to select multiple particles."),
+                ParticleInspectionApplet::tr("Pick a particle in the viewports. Hold down the CONTROL key to select multiple particles."),
 #else
-                tr("Pick a particle in the viewports. Hold down the COMMAND key to select multiple particles."),
+                ParticleInspectionApplet::tr("Pick a particle in the viewports. Hold down the COMMAND key to select multiple particles."),
 #endif
                 pickModeButton, QRect(), 2000);
         }

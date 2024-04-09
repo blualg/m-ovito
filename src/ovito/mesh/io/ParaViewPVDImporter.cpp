@@ -31,6 +31,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ParaViewPVDImporter);
+OVITO_CLASSINFO(ParaViewPVDImporter, "DisplayName", "PVD");
 DEFINE_REFERENCE_FIELD(ParaViewPVDImporter, childImporter);
 
 /******************************************************************************

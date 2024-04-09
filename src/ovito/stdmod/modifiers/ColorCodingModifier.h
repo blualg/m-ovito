@@ -90,9 +90,6 @@ class LinesColorCodingModifierDelegate : public ColorCodingModifierDelegate
 
     OVITO_CLASS_META(LinesColorCodingModifierDelegate, OOMetaClass)
 
-    OVITO_CLASSINFO("DisplayName", "Lines");
-    OVITO_CLASSINFO("ClassNameAlias", "TrajectoryColorCodingModifierDelegate");  // For backward compatibility with OVITO 3.9.2
-
 public:
 
     /// Constructor.
@@ -119,10 +116,7 @@ public:
     };
 
     OVITO_CLASS_META(ColorCodingModifier, ColorCodingModifierClass)
-    OVITO_CLASSINFO("DisplayName", "Color coding");
-    OVITO_CLASSINFO("Description", "Colors elements based on property values.");
-    OVITO_CLASSINFO("ModifierCategory", "Coloring");
-
+    
 public:
 
     /// Constructor.

@@ -36,6 +36,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ExpandSelectionModifier);
+OVITO_CLASSINFO(ExpandSelectionModifier, "DisplayName", "Expand selection");
+OVITO_CLASSINFO(ExpandSelectionModifier, "Description", "Select particles that are neighbors of already selected particles.");
+OVITO_CLASSINFO(ExpandSelectionModifier, "ModifierCategory", "Selection");
 DEFINE_PROPERTY_FIELD(ExpandSelectionModifier, mode);
 DEFINE_PROPERTY_FIELD(ExpandSelectionModifier, cutoffRange);
 DEFINE_PROPERTY_FIELD(ExpandSelectionModifier, numNearestNeighbors);

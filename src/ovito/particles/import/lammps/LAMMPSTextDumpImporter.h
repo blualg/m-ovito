@@ -56,7 +56,6 @@ protected:
     };
 
     OVITO_CLASS_META(LAMMPSTextDumpImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "LAMMPS Dump");
 
 public:
 

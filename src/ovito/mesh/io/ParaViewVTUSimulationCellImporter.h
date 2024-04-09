@@ -49,7 +49,6 @@ class OVITO_MESH_EXPORT ParaViewVTUSimulationCellImporter : public FileSourceImp
     };
 
     OVITO_CLASS_META(ParaViewVTUSimulationCellImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "VTU");
 
 public:
 

@@ -144,7 +144,7 @@ std::tuple<int,int,int> AnimationTimeSlider::tickRange(int tickWidth)
         int numFrames = lastFrame - firstFrame + 1;
         int nticks = std::min(clientWidth / tickWidth, numFrames);
         int ticksevery = numFrames / std::max(nticks, 1);
-        if(ticksevery <= 1) ticksevery = ticksevery;
+        if(ticksevery <= 1) (void)ticksevery;
         else if(ticksevery <= 5) ticksevery = 5;
         else if(ticksevery <= 10) ticksevery = 10;
         else if(ticksevery <= 20) ticksevery = 20;

@@ -36,8 +36,7 @@ namespace Ovito {
 class OVITO_STDOBJ_EXPORT PropertyColorMapping : public RefTarget
 {
     OVITO_CLASS(PropertyColorMapping)
-    OVITO_CLASSINFO("DisplayName", "Color mapping");
-
+ 
 public:
 
     /// Constructor.

@@ -36,7 +36,6 @@ namespace Ovito {
 class ImproperInspectionApplet : public PropertyInspectionApplet
 {
     OVITO_CLASS(ImproperInspectionApplet)
-    OVITO_CLASSINFO("DisplayName", "Impropers")
     Q_OBJECT
 
 public:

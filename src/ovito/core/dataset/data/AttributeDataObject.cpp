@@ -26,6 +26,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(AttributeDataObject);
+OVITO_CLASSINFO(AttributeDataObject, "DisplayName", "Attribute");
 DEFINE_RUNTIME_PROPERTY_FIELD(AttributeDataObject, value);
 SET_PROPERTY_FIELD_LABEL(AttributeDataObject, value, "Value");
 

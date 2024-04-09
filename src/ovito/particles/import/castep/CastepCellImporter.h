@@ -51,7 +51,6 @@ class OVITO_PARTICLES_EXPORT CastepCellImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(CastepCellImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "CASTEP");
 
 public:
 

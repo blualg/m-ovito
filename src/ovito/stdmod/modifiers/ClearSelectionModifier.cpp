@@ -28,6 +28,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ClearSelectionModifier);
+OVITO_CLASSINFO(ClearSelectionModifier, "DisplayName", "Clear selection");
+OVITO_CLASSINFO(ClearSelectionModifier, "Description", "Reset the selection state of all elements.");
+OVITO_CLASSINFO(ClearSelectionModifier, "ModifierCategory", "Selection");
 
 /******************************************************************************
 * Constructs the modifier object.

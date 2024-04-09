@@ -29,6 +29,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ParcasFileImporter);
+OVITO_CLASSINFO(ParcasFileImporter, "DisplayName", "Parcas");
 
 // Byte-swaps a 32 bit word.
 #define SWAP32(x) (((uint32_t)(x) >> 24) |          \

@@ -31,6 +31,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(CFGImporter);
+OVITO_CLASSINFO(CFGImporter, "DisplayName", "CFG");
 
 struct CFGHeader {
 
@@ -85,7 +86,6 @@ void CFGHeader::parse(CompressedTextReader& stream)
     rateScale = 1;
     isExtendedFormat = false;
     containsVelocities = true;
-    int entry_count = 0;
 
     while(!stream.eof()) {
 
@@ -145,7 +145,7 @@ void CFGHeader::parse(CompressedTextReader& stream)
         else if(key == "eta(3,3)") {}
         else if(key == "R") rateScale = atof(value.c_str());
         else if(key == "entry_count") {
-            entry_count = atoi(value.c_str());
+            //entry_count = atoi(value.c_str());
             isExtendedFormat = true;
         }
         else if(key.compare(0, 10, "auxiliary[") == 0) {

@@ -31,6 +31,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshReplicateModifierDelegate);
+OVITO_CLASSINFO(SurfaceMeshReplicateModifierDelegate, "DisplayName", "Surfaces");
 
 /******************************************************************************
  * Applies this modifier delegate to the data.

@@ -38,6 +38,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(StandardCameraSource);
+OVITO_CLASSINFO(StandardCameraSource, "DisplayName", "Camera");
 DEFINE_PROPERTY_FIELD(StandardCameraSource, isPerspective);
 DEFINE_REFERENCE_FIELD(StandardCameraSource, fovController);
 DEFINE_REFERENCE_FIELD(StandardCameraSource, zoomController);

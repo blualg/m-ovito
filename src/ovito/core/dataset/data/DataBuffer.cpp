@@ -28,6 +28,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(DataBuffer);
+OVITO_CLASSINFO(DataBuffer, "DisplayName", "Data buffer");
 
 #ifdef OVITO_USE_SYCL
 

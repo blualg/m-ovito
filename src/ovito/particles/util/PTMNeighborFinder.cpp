@@ -86,7 +86,6 @@ void PTMNeighborFinder::Query::findNeighbors(size_t particleIndex, std::optional
                             _orientation.x(),
                             _orientation.y(),
                             _orientation.z()};
-        double dummy = 0;
         _templateIndex = ptm_remap_template(ptm_type, _templateIndex,
                                             qtarget, qptm,
                                             remap_permutation);

@@ -29,6 +29,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ParaViewVTPBondsImporter);
+OVITO_CLASSINFO(ParaViewVTPBondsImporter, "DisplayName", "VTP");
 IMPLEMENT_CREATABLE_OVITO_CLASS(BondsParaViewVTMFileFilter);
 
 /******************************************************************************

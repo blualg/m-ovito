@@ -32,6 +32,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(NucleotidesVis);
+OVITO_CLASSINFO(NucleotidesVis, "DisplayName", "Nucleotides");
 DEFINE_PROPERTY_FIELD(NucleotidesVis, cylinderRadius);
 SET_PROPERTY_FIELD_LABEL(NucleotidesVis, cylinderRadius, "Cylinder radius");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(NucleotidesVis, cylinderRadius, WorldParameterUnit, 0);
@@ -175,7 +176,6 @@ PipelineStatus NucleotidesVis::render(const ConstDataObjectPath& path, const Pip
     if(!positionProperty)
         return {};
     const Property* colorProperty = particles->getProperty(Particles::ColorProperty);
-    const Property* baseProperty = particles->getProperty(Particles::NucleobaseTypeProperty);
     const Property* strandProperty = particles->getProperty(Particles::DNAStrandProperty);
     const Property* selectionProperty = frameGraph.isInteractive() ? particles->getProperty(Particles::SelectionProperty) : nullptr;
     const Property* transparencyProperty = particles->getProperty(Particles::TransparencyProperty);

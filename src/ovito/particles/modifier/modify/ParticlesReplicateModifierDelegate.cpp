@@ -32,6 +32,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ParticlesReplicateModifierDelegate);
+OVITO_CLASSINFO(ParticlesReplicateModifierDelegate, "DisplayName", "Particles & bonds");
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier
@@ -50,9 +51,6 @@ QVector<DataObjectReference> ParticlesReplicateModifierDelegate::OOMetaClass::ge
 Future<PipelineFlowState> ParticlesReplicateModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     ReplicateModifier* modifier = static_object_cast<ReplicateModifier>(request.modifier());
-
-    // Get range of new images
-    const Box3I& newImages = modifier->replicaRange();
 
     // The actual work can be performed in a separate thread.
     return AsynchronousTask<PipelineFlowState>::runAsync([

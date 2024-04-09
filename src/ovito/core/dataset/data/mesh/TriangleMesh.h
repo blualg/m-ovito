@@ -167,7 +167,6 @@ Q_DECLARE_OPERATORS_FOR_FLAGS(TriMeshFace::MeshFaceFlags);
 class OVITO_CORE_EXPORT TriangleMesh : public DataObject
 {
     OVITO_CLASS(TriangleMesh)
-    OVITO_CLASSINFO("ClassNameAlias", "TriMeshObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
 

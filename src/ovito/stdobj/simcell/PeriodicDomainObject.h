@@ -35,7 +35,6 @@ namespace Ovito {
 class OVITO_STDOBJ_EXPORT PeriodicDomainObject : public DataObject
 {
     OVITO_CLASS(PeriodicDomainObject)
-    OVITO_CLASSINFO("ClassNameAlias", "PeriodicDomainDataObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
 

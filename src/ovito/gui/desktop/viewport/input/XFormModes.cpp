@@ -279,9 +279,6 @@ void MoveMode::applyXForm(AnimationTime time, const QVector<SceneNode*>& nodeSet
         OVITO_CHECK_OBJECT_POINTER(node);
         OVITO_CHECK_OBJECT_POINTER(node->transformationController());
 
-        // Get node's transformation system.
-        AffineTransformation transformSystem = _translationSystem;
-
         // Get parent's system.
         TimeInterval iv;
         const AffineTransformation& translationSys = node->parentNode()->getWorldTransform(time, iv);
@@ -362,7 +359,6 @@ void RotateMode::startXForm()
 void RotateMode::doXForm()
 {
     FloatType angle1 = (FloatType)(_currentPoint.y() - _startPoint.y()) / 100;
-    FloatType angle2 = (FloatType)(_currentPoint.x() - _startPoint.x()) / 100;
 
     // Constrain rotation to z-axis.
     _rotation = Rotation(Vector3(0,0,1), angle1);
@@ -425,7 +421,6 @@ void RotateMode::onCoordinateValueEntered(int component, FloatType value)
     if(selectedNode()) {
         if(Controller* ctrl = selectedNode()->transformationController()) {
             if(MainWindow* mainWindow = dynamic_cast<MainWindow*>(&inputManager()->userInterface())) {
-                TimeInterval iv;
                 CoordinateDisplayWidget* coordDisplay = mainWindow->coordinateDisplay();
                 Vector3 euler = coordDisplay->getValues();
                 Rotation rotation = Rotation::fromEuler(Vector3(euler[2], euler[1], euler[0]), Matrix3::szyx);

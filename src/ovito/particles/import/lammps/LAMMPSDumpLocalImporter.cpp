@@ -31,6 +31,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(LAMMPSDumpLocalImporter);
+OVITO_CLASSINFO(LAMMPSDumpLocalImporter, "DisplayName", "LAMMPS Dump Local");
 DEFINE_PROPERTY_FIELD(LAMMPSDumpLocalImporter, columnMapping);
 SET_PROPERTY_FIELD_LABEL(LAMMPSDumpLocalImporter, columnMapping, "File column mapping");
 

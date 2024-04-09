@@ -42,6 +42,9 @@ namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(SliceModifierDelegate);
 IMPLEMENT_CREATABLE_OVITO_CLASS(SliceModifier);
+OVITO_CLASSINFO(SliceModifier, "DisplayName", "Slice");
+OVITO_CLASSINFO(SliceModifier, "Description", "Cut away some part of the dataset using a 3d plane.");
+OVITO_CLASSINFO(SliceModifier, "ModifierCategory", "Modification");
 DEFINE_REFERENCE_FIELD(SliceModifier, normalController);
 DEFINE_REFERENCE_FIELD(SliceModifier, distanceController);
 DEFINE_REFERENCE_FIELD(SliceModifier, widthController);
@@ -65,6 +68,7 @@ SET_PROPERTY_FIELD_UNITS(SliceModifier, distanceController, WorldParameterUnit);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SliceModifier, widthController, WorldParameterUnit, 0);
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(LinesSliceModifierDelegate);
+OVITO_CLASSINFO(LinesSliceModifierDelegate, "DisplayName", "Lines");
 
 /******************************************************************************
  * Asks the metaclass which data objects in the given input data collection the
@@ -93,7 +97,6 @@ Future<PipelineFlowState> LinesSliceModifierDelegate::apply(const ModifierEvalua
     FloatType sliceWidth;
     std::tie(plane, sliceWidth) = mod->slicingPlane(request.time(), state.mutableStateValidity(), state);
     sliceWidth /= 2;
-    bool invert = mod->inverse();
 
     // Loop over all lines objects in data collection
     for(const DataObject* obj : originalState.data()->objects()) {

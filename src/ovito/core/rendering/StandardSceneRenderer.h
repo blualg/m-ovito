@@ -34,9 +34,6 @@ namespace Ovito {
 class OVITO_CORE_EXPORT StandardSceneRenderer : public SceneRenderer
 {
     OVITO_CLASS(StandardSceneRenderer)
-    OVITO_CLASSINFO("DisplayName", "OpenGL");
-    OVITO_CLASSINFO("Description", "Hardware-accelerated rendering engine, also used by OVITO's interactive viewports. "
-                               "The OpenGL renderer is fast and has the smallest memory footprint.");
 
 public:
 

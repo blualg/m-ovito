@@ -33,6 +33,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(GaussianCubeImporter);
+OVITO_CLASSINFO(GaussianCubeImporter, "DisplayName", "Cube");
 DEFINE_PROPERTY_FIELD(GaussianCubeImporter, gridType);
 SET_PROPERTY_FIELD_LABEL(GaussianCubeImporter, gridType, "Grid type");
 

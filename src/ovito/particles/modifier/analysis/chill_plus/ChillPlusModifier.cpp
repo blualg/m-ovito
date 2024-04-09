@@ -32,6 +32,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ChillPlusModifier);
+OVITO_CLASSINFO(ChillPlusModifier, "DisplayName", "Chill+");
+OVITO_CLASSINFO(ChillPlusModifier, "Description", "Identify hexagonal ice, cubic ice, hydrate and other arrangements of water molecules.");
+OVITO_CLASSINFO(ChillPlusModifier, "ModifierCategory", "Structure identification");
 DEFINE_PROPERTY_FIELD(ChillPlusModifier, cutoff);
 SET_PROPERTY_FIELD_LABEL(ChillPlusModifier, cutoff, "Cutoff radius");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ChillPlusModifier, cutoff, WorldParameterUnit, 0);

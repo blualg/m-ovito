@@ -169,7 +169,7 @@ void ClonePipelineDialog::initializeGraphicsScene()
 
     QGraphicsSimpleTextItem* textItem;
 
-    auto addShadowEffect = [this](QGraphicsItem* item) {
+    auto addShadowEffect = [](QGraphicsItem* item) {
 #if 0   // Shadows diabled to work around Qt bug https://bugreports.qt.io/browse/QTBUG-65035
         QGraphicsDropShadowEffect* effect = new QGraphicsDropShadowEffect(this);
         effect->setOffset(3);

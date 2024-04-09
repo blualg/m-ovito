@@ -29,6 +29,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshRegionsDeleteSelectedModifierDelegate);
+OVITO_CLASSINFO(SurfaceMeshRegionsDeleteSelectedModifierDelegate, "DisplayName", "Mesh Regions");
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

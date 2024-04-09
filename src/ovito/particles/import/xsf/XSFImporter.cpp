@@ -36,6 +36,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(XSFImporter);
+OVITO_CLASSINFO(XSFImporter, "DisplayName", "XSF");
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

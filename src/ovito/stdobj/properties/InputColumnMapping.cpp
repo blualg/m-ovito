@@ -470,7 +470,7 @@ void InputColumnReader::readElement(size_t elementIndex, const double* values, i
     auto prec = _properties.cbegin();
     const double* token = values;
 
-    for(int columnIndex = 0; prec != _properties.cend(); ++columnIndex, ++token, ++prec) {
+    for(; prec != _properties.cend(); ++token, ++prec) {
         if(!prec->property) continue;
 
         if(elementIndex >= prec->count)

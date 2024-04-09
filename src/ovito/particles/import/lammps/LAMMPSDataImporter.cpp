@@ -36,6 +36,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(LAMMPSDataImporter);
+OVITO_CLASSINFO(LAMMPSDataImporter, "DisplayName", "LAMMPS Data");
 DEFINE_PROPERTY_FIELD(LAMMPSDataImporter, atomStyle);
 DEFINE_PROPERTY_FIELD(LAMMPSDataImporter, atomSubStyles);
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataImporter, atomStyle, "LAMMPS atom style");

@@ -36,7 +36,6 @@ namespace Ovito {
 class AngleInspectionApplet : public PropertyInspectionApplet
 {
     OVITO_CLASS(AngleInspectionApplet)
-    OVITO_CLASSINFO("DisplayName", "Angles")
     Q_OBJECT
 
 public:

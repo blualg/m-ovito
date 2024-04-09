@@ -50,8 +50,6 @@ class OVITO_CRYSTALANALYSIS_EXPORT GrainSegmentationModifier : public Modifier
     };
 
     OVITO_CLASS_META(GrainSegmentationModifier, GrainSegmentationModifierClass)
-    OVITO_CLASSINFO("DisplayName", "Grain segmentation");
-    OVITO_CLASSINFO("ModifierCategory", "Analysis");
 
 public:
 

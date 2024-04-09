@@ -52,10 +52,6 @@ class OVITO_PARTICLES_EXPORT ConstructSurfaceModifier : public Modifier
 
     OVITO_CLASS_META(ConstructSurfaceModifier, OOMetaClass)
 
-    OVITO_CLASSINFO("DisplayName", "Construct surface mesh");
-    OVITO_CLASSINFO("Description", "Build triangle mesh represention and compute volume and surface area of voids.");
-    OVITO_CLASSINFO("ModifierCategory", "Visualization");
-
 public:
 
     /// The different methods supported by this modifier for constructing the surface.

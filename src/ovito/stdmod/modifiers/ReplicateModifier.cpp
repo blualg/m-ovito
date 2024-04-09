@@ -32,6 +32,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ReplicateModifier);
+OVITO_CLASSINFO(ReplicateModifier, "DisplayName", "Replicate");
+OVITO_CLASSINFO(ReplicateModifier, "Description", "Duplicate the dataset to visualize periodic images of the system.");
+OVITO_CLASSINFO(ReplicateModifier, "ModifierCategory", "Modification");
 DEFINE_PROPERTY_FIELD(ReplicateModifier, numImagesX);
 DEFINE_PROPERTY_FIELD(ReplicateModifier, numImagesY);
 DEFINE_PROPERTY_FIELD(ReplicateModifier, numImagesZ);
@@ -49,6 +52,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ReplicateModifier, numImagesZ, IntegerParam
 IMPLEMENT_ABSTRACT_OVITO_CLASS(ReplicateModifierDelegate);
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(LinesReplicateModifierDelegate);
+OVITO_CLASSINFO(LinesReplicateModifierDelegate, "DisplayName", "Lines");
 
 /******************************************************************************
  * Indicates which data objects in the given input data collection the modifier
@@ -126,7 +130,6 @@ Future<PipelineFlowState> LinesReplicateModifierDelegate::apply(const ModifierEv
                     }
                     else if(property->type() == Lines::SectionProperty) {
                         BufferWriteAccess<int64_t, access_mode::read_write> sectionsArray(property);
-                        int64_t* s = sectionsArray.begin();
                         auto minmax = std::minmax_element(sectionsArray.cbegin(), sectionsArray.cbegin() + oldVertexCount);
                         auto minSec = *minmax.first;
                         auto maxSec = *minmax.second;
@@ -230,7 +233,7 @@ Future<PipelineFlowState> ReplicateModifier::evaluateModifier(const ModifierEval
             simCell.column(1) *= (newImages.sizeY() + 1);
             simCell.column(2) *= (newImages.sizeZ() + 1);
             cellObj->setCellMatrix(simCell);
-            return std::move(state);
+            return state;
         });
     }
 

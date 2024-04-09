@@ -41,6 +41,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ConstructSurfaceModifier);
+OVITO_CLASSINFO(ConstructSurfaceModifier, "DisplayName", "Construct surface mesh");
+OVITO_CLASSINFO(ConstructSurfaceModifier, "Description", "Build triangle mesh represention and compute volume and surface area of voids.");
+OVITO_CLASSINFO(ConstructSurfaceModifier, "ModifierCategory", "Visualization");
 DEFINE_REFERENCE_FIELD(ConstructSurfaceModifier, surfaceMeshVis);
 DEFINE_PROPERTY_FIELD(ConstructSurfaceModifier, smoothingLevel);
 DEFINE_PROPERTY_FIELD(ConstructSurfaceModifier, probeSphereRadius);
@@ -445,7 +448,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
     this_task::nextProgressSubStep();
 
     // Make sure every mesh vertex is only part of one surface manifold.
-    SurfaceMesh::size_type duplicatedVertices = meshBuilder.makeManifold();
+    meshBuilder.makeManifold();
     this_task::throwIfCanceled();
     this_task::nextProgressSubStep();
 

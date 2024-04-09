@@ -36,6 +36,9 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(ComputePropertyModifierDelegate);
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ComputePropertyModifier);
+OVITO_CLASSINFO(ComputePropertyModifier, "DisplayName", "Compute property");
+OVITO_CLASSINFO(ComputePropertyModifier, "Description", "Enter a user-defined formula to set properties of particles, bonds and other elements.");
+OVITO_CLASSINFO(ComputePropertyModifier, "ModifierCategory", "Modification");
 DEFINE_PROPERTY_FIELD(ComputePropertyModifier, expressions);
 DEFINE_PROPERTY_FIELD(ComputePropertyModifier, outputProperty);
 DEFINE_PROPERTY_FIELD(ComputePropertyModifier, onlySelectedElements);
@@ -51,6 +54,7 @@ DEFINE_RUNTIME_PROPERTY_FIELD(ComputePropertyModificationNode, inputVariableName
 DEFINE_RUNTIME_PROPERTY_FIELD(ComputePropertyModificationNode, delegateInputVariableNames);
 DEFINE_RUNTIME_PROPERTY_FIELD(ComputePropertyModificationNode, inputVariableTable);
 SET_MODIFICATION_NODE_TYPE(ComputePropertyModifier, ComputePropertyModificationNode);
+OVITO_CLASSINFO(ComputePropertyModificationNode, "ClassNameAlias", "ComputePropertyModifierApplication");  // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
 * Constructs a new instance of this class.
@@ -202,9 +206,6 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::apply(const ModifierE
 
     // Make sure input data structure is ok.
     container->verifyIntegrity();
-
-    // Get the number of input elements.
-    size_t nelements = container->elementCount();
 
     // Get input selection property if computation is restricted to selected elements.
     ConstPropertyPtr selectionProperty;

@@ -435,7 +435,6 @@ void StructureAnalysis::initializeListOfStructures()
                     }
                 }
                 OVITO_ASSERT(latticeStruct->permutations[s1].product.size() == s2 + 1);
-                Matrix3 inverseProduct = latticeStruct->permutations[s2].transformation.inverse() * latticeStruct->permutations[s1].transformation;
                 for(int i = 0; i < latticeStruct->permutations.size(); i++) {
                     if(latticeStruct->permutations[i].transformation.equals(product)) {
                         latticeStruct->permutations[s1].inverseProduct.push_back(i);

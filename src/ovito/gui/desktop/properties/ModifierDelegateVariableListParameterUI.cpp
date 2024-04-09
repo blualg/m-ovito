@@ -189,7 +189,6 @@ void ModifierDelegateVariableListParameterUI::referenceRemoved(const PropertyFie
 void ModifierDelegateVariableListParameterUI::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
     if(field == PROPERTY_FIELD(delegates) && containerWidget()) {
-        QVBoxLayout* layout = static_cast<QVBoxLayout*>(containerWidget()->layout());
         QComboBox* comboBox = _delegateBoxes[listIndex];
         ModifierDelegateParameterUI::populateComboBox(comboBox, editor(), static_object_cast<MultiDelegatingModifier>(editObject()), newTarget,
             newTarget ? static_object_cast<ModifierDelegate>(newTarget)->inputDataObject() : DataObjectReference(), _delegateType);

@@ -50,8 +50,6 @@ class OVITO_STDOBJ_EXPORT StandardCameraObject : public AbstractCameraObject
     };
 
     OVITO_CLASS_META(StandardCameraObject, StandardCameraObjectClass)
-    OVITO_CLASSINFO("DisplayName", "Camera");
-    OVITO_CLASSINFO("ClassNameAlias", "CameraObject");  // For backward compatibility with OVITO 3.3.
 
 public:
 
@@ -96,7 +94,6 @@ private:
 class OVITO_STDOBJ_EXPORT CameraVis : public DataVis
 {
     OVITO_CLASS(CameraVis)
-    OVITO_CLASSINFO("DisplayName", "Camera icon");
 
 public:
 

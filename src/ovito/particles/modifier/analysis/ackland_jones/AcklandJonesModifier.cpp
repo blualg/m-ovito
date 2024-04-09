@@ -31,6 +31,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(AcklandJonesModifier);
+OVITO_CLASSINFO(AcklandJonesModifier, "DisplayName", "Ackland-Jones analysis");
+OVITO_CLASSINFO(AcklandJonesModifier, "Description", "Identify common crystalline structures based on local bond angles.");
+OVITO_CLASSINFO(AcklandJonesModifier, "ModifierCategory", "Structure identification");
 
 /******************************************************************************
 * Constructor.

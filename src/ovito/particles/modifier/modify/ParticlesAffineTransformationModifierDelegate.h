@@ -49,7 +49,6 @@ class ParticlesAffineTransformationModifierDelegate : public AffineTransformatio
     };
 
     OVITO_CLASS_META(ParticlesAffineTransformationModifierDelegate, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Particles");
 
 public:
 
@@ -81,7 +80,6 @@ class VectorParticlePropertiesAffineTransformationModifierDelegate : public Affi
     };
 
     OVITO_CLASS_META(VectorParticlePropertiesAffineTransformationModifierDelegate, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Vector properties");
 
 public:
 

@@ -52,7 +52,6 @@ class OVITO_PARTICLES_EXPORT IMDImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(IMDImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "IMD");
 
 public:
 

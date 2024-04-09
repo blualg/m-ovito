@@ -192,10 +192,10 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     hLayout->addStretch(1);
     gridLayout->addLayout(hLayout, 1, 0, 1, 4);
 
-    connect(_constrainRotationBtn, &QRadioButton::clicked, this, [this](bool checked) {
+    connect(_constrainRotationBtn, &QRadioButton::clicked, this, [](bool checked) {
         ViewportSettings::getSettings().setConstrainCameraRotation(checked);
     });
-    connect(_rollAngleBtn, &QRadioButton::clicked, this, [this](bool checked) {
+    connect(_rollAngleBtn, &QRadioButton::clicked, this, [](bool checked) {
         ViewportSettings::getSettings().setConstrainCameraRotation(!checked);
     });
     connect(_rollAngleSpinner, &SpinnerWidget::spinnerValueChanged, this, &AdjustViewDialog::onAdjustCamera);

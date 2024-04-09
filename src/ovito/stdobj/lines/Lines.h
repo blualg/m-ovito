@@ -51,9 +51,6 @@ public:
     };
 
     OVITO_CLASS_META(Lines, OOMetaClass);
-    OVITO_CLASSINFO("DisplayName", "Lines");
-    OVITO_CLASSINFO("ClassNameAlias", "TrajectoryLines");   // For backward compatibility with OVITO 3.9.2
-    OVITO_CLASSINFO("ClassNameAlias", "TrajectoryObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
     /// \brief The list of standard properties.

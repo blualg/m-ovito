@@ -92,6 +92,9 @@ ActionManager::ActionManager(QObject* parent, UserInterface& userInterface) : QA
 #ifndef OVITO_BUILD_PROFESSIONAL
     createNewPipelineAcion->setText(createNewPipelineAcion->text() + QStringLiteral(" (Pro)"));
     clonePipelineAction->setText(clonePipelineAction->text() + QStringLiteral(" (Pro)"));
+#else
+    (void)createNewPipelineAcion;
+    (void)clonePipelineAction;
 #endif
     createCommandAction(ACTION_EDIT_RENAME_PIPELINE, tr("Rename Pipeline..."), "edit_rename_pipeline", tr("Assign a new name to the selected pipeline."));
     createCommandAction(ACTION_EDIT_DELETE, tr("Delete Pipeline"), "edit_delete_pipeline", tr("Delete the selected object from the scene."));

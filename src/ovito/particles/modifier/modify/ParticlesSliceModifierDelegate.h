@@ -50,7 +50,6 @@ class ParticlesSliceModifierDelegate : public SliceModifierDelegate
     };
 
     OVITO_CLASS_META(ParticlesSliceModifierDelegate, ParticlesSliceModifierDelegateClass)
-    OVITO_CLASSINFO("DisplayName", "Particles");
 
 public:
 

@@ -31,6 +31,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(IdentifyDiamondModifier);
+OVITO_CLASSINFO(IdentifyDiamondModifier, "DisplayName", "Identify diamond structure");
+OVITO_CLASSINFO(IdentifyDiamondModifier, "Description", "Identify particles arranged in cubic and hexagonal diamond structures.");
+OVITO_CLASSINFO(IdentifyDiamondModifier, "ModifierCategory", "Structure identification");
 
 /******************************************************************************
  * Constructs the modifier object.

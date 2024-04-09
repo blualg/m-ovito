@@ -34,6 +34,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(CAImporter);
+OVITO_CLASSINFO(CAImporter, "DisplayName", "CA File");
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

@@ -42,7 +42,6 @@ namespace Ovito {
 class OVITO_CORE_EXPORT Modifier : public RefTarget
 {
     OVITO_CLASS_META(Modifier, ModifierClass)
-    OVITO_CLASSINFO("ClassNameAlias", "AsynchronousModifier");  // For backward compatibility with OVITO 3.10.2
 
 public:
 

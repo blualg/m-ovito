@@ -34,6 +34,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(OXDNAImporter);
+OVITO_CLASSINFO(OXDNAImporter, "DisplayName", "oxDNA");
 DEFINE_PROPERTY_FIELD(OXDNAImporter, topologyFileUrl);
 SET_PROPERTY_FIELD_LABEL(OXDNAImporter, topologyFileUrl, "Topology file");
 

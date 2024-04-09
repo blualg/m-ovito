@@ -35,6 +35,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(CombineDatasetsModifier);
+OVITO_CLASSINFO(CombineDatasetsModifier, "DisplayName", "Combine datasets");
+OVITO_CLASSINFO(CombineDatasetsModifier, "Description", "Merge particles and bonds from two separate input files into one dataset.");
+OVITO_CLASSINFO(CombineDatasetsModifier, "ModifierCategory", "Modification");
 DEFINE_REFERENCE_FIELD(CombineDatasetsModifier, secondaryDataSource);
 SET_PROPERTY_FIELD_LABEL(CombineDatasetsModifier, secondaryDataSource, "Secondary source");
 

@@ -35,6 +35,7 @@ namespace Ovito {
 namespace cif = gemmi::cif;
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(mmCIFImporter);
+OVITO_CLASSINFO(mmCIFImporter, "DisplayName", "PDBx/mmCIF");
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

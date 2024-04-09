@@ -28,6 +28,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(VTKFileImporter);
+OVITO_CLASSINFO(VTKFileImporter, "DisplayName", "VTK");
 
 /******************************************************************************
 * Returns whether this importer class supports importing data of the given type.

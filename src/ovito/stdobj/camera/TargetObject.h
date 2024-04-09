@@ -36,7 +36,6 @@ namespace Ovito {
 class OVITO_STDOBJ_EXPORT TargetObject : public DataObject
 {
     OVITO_CLASS(TargetObject)
-    OVITO_CLASSINFO("DisplayName", "Target");
 
 public:
 
@@ -50,8 +49,7 @@ public:
 class OVITO_STDOBJ_EXPORT TargetVis : public DataVis
 {
     OVITO_CLASS(TargetVis)
-    OVITO_CLASSINFO("DisplayName", "Target icon");
-
+ 
 public:
 
     /// Constructor.

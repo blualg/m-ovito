@@ -31,6 +31,8 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(LinesVis);
+OVITO_CLASSINFO(LinesVis, "DisplayName", "Lines");
+OVITO_CLASSINFO(LinesVis, "ClassNameAlias", "TrajectoryVis");  // For backward compatibility with OVITO 3.9.2
 IMPLEMENT_ABSTRACT_OVITO_CLASS(LinesPickInfo);
 DEFINE_PROPERTY_FIELD(LinesVis, lineWidth);
 DEFINE_PROPERTY_FIELD(LinesVis, lineColor);

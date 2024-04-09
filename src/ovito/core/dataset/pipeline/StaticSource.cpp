@@ -28,6 +28,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(StaticSource);
+OVITO_CLASSINFO(StaticSource, "DisplayName", "Pipeline source");
 DEFINE_REFERENCE_FIELD(StaticSource, dataCollection);
 SET_PROPERTY_FIELD_LABEL(StaticSource, dataCollection, "Data");
 

@@ -35,6 +35,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(PolyhedralTemplateMatchingModifier);
+OVITO_CLASSINFO(PolyhedralTemplateMatchingModifier, "DisplayName", "Polyhedral template matching");
+OVITO_CLASSINFO(PolyhedralTemplateMatchingModifier, "Description", "Identify structures using the PTM method and local crystal orientations.");
+OVITO_CLASSINFO(PolyhedralTemplateMatchingModifier, "ModifierCategory", "Structure identification");
 DEFINE_PROPERTY_FIELD(PolyhedralTemplateMatchingModifier, rmsdCutoff);
 DEFINE_PROPERTY_FIELD(PolyhedralTemplateMatchingModifier, outputRmsd);
 DEFINE_PROPERTY_FIELD(PolyhedralTemplateMatchingModifier, outputInteratomicDistance);

@@ -31,6 +31,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(STLImporter);
+OVITO_CLASSINFO(STLImporter, "DisplayName", "STL");
 
 /******************************************************************************
 * Returns whether this importer class supports importing data of the given type.

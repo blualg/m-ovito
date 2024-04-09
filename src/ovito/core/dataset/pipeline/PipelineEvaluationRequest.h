@@ -41,9 +41,9 @@ public:
     /// Constructs a request object for evaluating the pipeline at a certain animation time.
     PipelineEvaluationRequest(AnimationTime time = AnimationTime::fromFrame(0), bool throwOnError = false, bool interactiveMode = false) :
         _time(time),
-        _cachingIntervals(time),
         _throwOnError(throwOnError),
-        _interactiveMode(interactiveMode) {}
+        _interactiveMode(interactiveMode),
+        _cachingIntervals(time) {}
 
     /// Constructs a request object for evaluating the pipeline at the current animation time.
     PipelineEvaluationRequest(AnimationSettings* animationSettings) : PipelineEvaluationRequest(animationSettings->currentTime()) {}

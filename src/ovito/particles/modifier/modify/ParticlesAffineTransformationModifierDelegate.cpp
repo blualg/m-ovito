@@ -33,7 +33,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ParticlesAffineTransformationModifierDelegate);
+OVITO_CLASSINFO(ParticlesAffineTransformationModifierDelegate, "DisplayName", "Particles");
 IMPLEMENT_CREATABLE_OVITO_CLASS(VectorParticlePropertiesAffineTransformationModifierDelegate);
+OVITO_CLASSINFO(VectorParticlePropertiesAffineTransformationModifierDelegate, "DisplayName", "Vector properties");
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

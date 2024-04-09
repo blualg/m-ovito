@@ -38,6 +38,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(SpatialCorrelationFunctionModifier);
+OVITO_CLASSINFO(SpatialCorrelationFunctionModifier, "ClassNameAlias", "CorrelationFunctionModifier");
+OVITO_CLASSINFO(SpatialCorrelationFunctionModifier, "DisplayName", "Spatial correlation function");
+OVITO_CLASSINFO(SpatialCorrelationFunctionModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(SpatialCorrelationFunctionModifier, sourceProperty1);
 DEFINE_PROPERTY_FIELD(SpatialCorrelationFunctionModifier, sourceProperty2);
 DEFINE_PROPERTY_FIELD(SpatialCorrelationFunctionModifier, averagingDirection);
@@ -274,7 +277,6 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
                                                                               bool applyWindow)
 {
     size_t vecComponent = std::max(size_t(0), propertyVectorComponent);
-    size_t vecComponentCount = property ? property->componentCount() : 0;
     int numberOfGridPoints = nX * nY * nZ;
     bool is2D = cell()->is2D();
 
@@ -315,25 +317,29 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
                 BufferReadAccess<T*> propertyArray(property);
                 const Point3* pos = positionsArray.cbegin();
                 for(T v : propertyArray.componentRange(vecComponent)) {
-                    if(std::numeric_limits<T>::is_integer || !std::isnan(v)) {
-                        Point3 fractionalPos = reciprocalCellMatrix * (*pos);
-                        int binIndexX = int( fractionalPos.x() * nX );
-                        int binIndexY = int( fractionalPos.y() * nY );
-                        int binIndexZ = int( fractionalPos.z() * nZ );
-                        FloatType window = 1;
-                        if(pbc[0]) binIndexX = SimulationCell::modulo(binIndexX, nX);
-                        else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.x()));
-                        if(pbc[1]) binIndexY = SimulationCell::modulo(binIndexY, nY);
-                        else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.y()));
-                        if(is2D) binIndexZ = 0;
-                        else if(pbc[2]) binIndexZ = SimulationCell::modulo(binIndexZ, nZ);
-                        else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.z()));
-                        if(!applyWindow) window = 1;
-                        if(binIndexX >= 0 && binIndexX < nX && binIndexY >= 0 && binIndexY < nY && binIndexZ >= 0 && binIndexZ < nZ) {
-                            // Store in row-major format.
-                            size_t binIndex = binIndexZ+nZ*(binIndexY+nY*binIndexX);
-                            gridData[binIndex] += window * v;
+                    if constexpr(!std::numeric_limits<T>::is_integer) {
+                        if(std::isnan(v)) {
+                            ++pos;
+                            continue;
                         }
+                    }
+                    Point3 fractionalPos = reciprocalCellMatrix * (*pos);
+                    int binIndexX = int( fractionalPos.x() * nX );
+                    int binIndexY = int( fractionalPos.y() * nY );
+                    int binIndexZ = int( fractionalPos.z() * nZ );
+                    FloatType window = 1;
+                    if(pbc[0]) binIndexX = SimulationCell::modulo(binIndexX, nX);
+                    else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.x()));
+                    if(pbc[1]) binIndexY = SimulationCell::modulo(binIndexY, nY);
+                    else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.y()));
+                    if(is2D) binIndexZ = 0;
+                    else if(pbc[2]) binIndexZ = SimulationCell::modulo(binIndexZ, nZ);
+                    else window *= std::sqrt(FloatType(2./3))*(FloatType(1)-std::cos(2*FLOATTYPE_PI*fractionalPos.z()));
+                    if(!applyWindow) window = 1;
+                    if(binIndexX >= 0 && binIndexX < nX && binIndexY >= 0 && binIndexY < nY && binIndexZ >= 0 && binIndexZ < nZ) {
+                        // Store in row-major format.
+                        size_t binIndex = binIndexZ+nZ*(binIndexY+nY*binIndexX);
+                        gridData[binIndex] += window * v;
                     }
                     ++pos;
                 }

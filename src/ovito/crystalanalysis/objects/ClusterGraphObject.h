@@ -35,7 +35,6 @@ namespace Ovito {
 class OVITO_CRYSTALANALYSIS_EXPORT ClusterGraphObject : public DataObject
 {
     OVITO_CLASS(ClusterGraphObject)
-    OVITO_CLASSINFO("DisplayName", "Clusters");
 
 public:
 

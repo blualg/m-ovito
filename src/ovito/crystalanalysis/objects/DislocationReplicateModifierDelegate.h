@@ -49,7 +49,6 @@ class DislocationReplicateModifierDelegate : public ReplicateModifierDelegate
     };
 
     OVITO_CLASS_META(DislocationReplicateModifierDelegate, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Dislocations");
 
 public:
 

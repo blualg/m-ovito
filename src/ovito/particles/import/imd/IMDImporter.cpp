@@ -30,6 +30,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(IMDImporter);
+OVITO_CLASSINFO(IMDImporter, "DisplayName", "IMD");
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

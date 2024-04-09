@@ -34,7 +34,6 @@ namespace Ovito {
 class OVITO_STDOBJGUI_EXPORT LinesInspectionApplet : public PropertyInspectionApplet
 {
     OVITO_CLASS(LinesInspectionApplet)
-    OVITO_CLASSINFO("DisplayName", "Lines");
 
 public:
 

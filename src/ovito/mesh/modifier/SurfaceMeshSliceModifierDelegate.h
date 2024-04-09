@@ -54,7 +54,6 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshSliceModifierDelegate : public SliceModifi
     };
 
     OVITO_CLASS_META(SurfaceMeshSliceModifierDelegate, SurfaceMeshSliceModifierDelegateClass)
-    OVITO_CLASSINFO("DisplayName", "Surfaces");
 
 public:
 

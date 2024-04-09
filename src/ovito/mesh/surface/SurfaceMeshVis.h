@@ -43,7 +43,6 @@ namespace Ovito {
 class OVITO_MESH_EXPORT SurfaceMeshVis : public DataVis
 {
     OVITO_CLASS(SurfaceMeshVis)
-    OVITO_CLASSINFO("DisplayName", "Surface mesh");
 
 public:
 

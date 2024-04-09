@@ -30,6 +30,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(InvertSelectionModifier);
+OVITO_CLASSINFO(InvertSelectionModifier, "DisplayName", "Invert selection");
+OVITO_CLASSINFO(InvertSelectionModifier, "Description", "Invert the current selection state of each element.");
+OVITO_CLASSINFO(InvertSelectionModifier, "ModifierCategory", "Selection");
 
 /******************************************************************************
 * Constructs the modifier object.

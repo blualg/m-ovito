@@ -36,6 +36,8 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(StandardCameraObject);
+OVITO_CLASSINFO(StandardCameraObject, "DisplayName", "Camera");
+OVITO_CLASSINFO(StandardCameraObject, "ClassNameAlias", "CameraObject");  // For backward compatibility with OVITO 3.3.
 DEFINE_PROPERTY_FIELD(StandardCameraObject, isPerspective);
 DEFINE_PROPERTY_FIELD(StandardCameraObject, fov);
 DEFINE_PROPERTY_FIELD(StandardCameraObject, zoom);
@@ -46,6 +48,7 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(StandardCameraObject, fov, AngleParameterUnit
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(StandardCameraObject, zoom, WorldParameterUnit, 0);
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(CameraVis);
+OVITO_CLASSINFO(CameraVis, "DisplayName", "Camera icon");
 
 /******************************************************************************
 * Constructs a camera object.

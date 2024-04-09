@@ -53,7 +53,6 @@ class OVITO_PARTICLES_EXPORT XTCImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(XTCImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "XTC");
 
 public:
 

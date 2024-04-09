@@ -39,7 +39,6 @@ namespace Ovito {
 class DislocationInspectionApplet : public DataInspectionApplet
 {
     OVITO_CLASS(DislocationInspectionApplet)
-    OVITO_CLASSINFO("DisplayName", "Dislocations")
     Q_OBJECT
 
 public:

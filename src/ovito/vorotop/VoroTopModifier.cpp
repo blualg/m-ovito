@@ -37,6 +37,9 @@
 namespace Ovito::VoroTop {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(VoroTopModifier);
+OVITO_CLASSINFO(VoroTopModifier, "DisplayName", "VoroTop analysis");
+OVITO_CLASSINFO(VoroTopModifier, "Description", "Identify local structures based on Voronoi polyhedron topology.");
+OVITO_CLASSINFO(VoroTopModifier, "ModifierCategory", "Structure identification");
 DEFINE_PROPERTY_FIELD(VoroTopModifier, useRadii);
 DEFINE_PROPERTY_FIELD(VoroTopModifier, filterFile);
 SET_PROPERTY_FIELD_LABEL(VoroTopModifier, useRadii, "Use particle radii");

@@ -54,7 +54,6 @@ class OVITO_MESH_EXPORT SurfaceMeshFaces : public PropertyContainer
     };
 
     OVITO_CLASS_META(SurfaceMeshFaces, OOMetaClass);
-    OVITO_CLASSINFO("DisplayName", "Mesh Faces");
 
 public:
 

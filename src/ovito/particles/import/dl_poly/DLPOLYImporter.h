@@ -52,7 +52,6 @@ class OVITO_PARTICLES_EXPORT DLPOLYImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(DLPOLYImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "DL_POLY");
 
 public:
 

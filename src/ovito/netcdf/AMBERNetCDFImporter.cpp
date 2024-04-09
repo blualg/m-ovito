@@ -57,6 +57,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(AMBERNetCDFImporter);
+OVITO_CLASSINFO(AMBERNetCDFImporter, "DisplayName", "NetCDF");
 DEFINE_PROPERTY_FIELD(AMBERNetCDFImporter, useCustomColumnMapping);
 DEFINE_PROPERTY_FIELD(AMBERNetCDFImporter, customColumnMapping);
 SET_PROPERTY_FIELD_LABEL(AMBERNetCDFImporter, useCustomColumnMapping, "Custom file column mapping");
@@ -97,7 +98,7 @@ bool AMBERNetCDFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) c
         // Particle data may be stored in a subgroup named "AMBER" instead of the root group.
         int amber_ncid = tmp_ncid;
         if(nc_inq_ncid(tmp_ncid, "AMBER", &amber_ncid) == NC_NOERR) {
-            amber_ncid = amber_ncid;
+            (void)amber_ncid;
         }
 
         // Make sure we have the right file conventions.

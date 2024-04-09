@@ -33,6 +33,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(FreezePropertyModifier);
+OVITO_CLASSINFO(FreezePropertyModifier, "DisplayName", "Freeze property");
+OVITO_CLASSINFO(FreezePropertyModifier, "Description", "Copy the values of a varying property from one trajectory frame to all others.");
+OVITO_CLASSINFO(FreezePropertyModifier, "ModifierCategory", "Modification");
 DEFINE_PROPERTY_FIELD(FreezePropertyModifier, sourceProperty);
 DEFINE_PROPERTY_FIELD(FreezePropertyModifier, destinationProperty);
 DEFINE_PROPERTY_FIELD(FreezePropertyModifier, freezeTime);
@@ -41,6 +44,7 @@ SET_PROPERTY_FIELD_LABEL(FreezePropertyModifier, destinationProperty, "Destinati
 SET_PROPERTY_FIELD_LABEL(FreezePropertyModifier, freezeTime, "Freeze at frame");
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(FreezePropertyModificationNode);
+OVITO_CLASSINFO(FreezePropertyModificationNode, "ClassNameAlias", "FreezePropertyModifierApplication");  // For backward compatibility with OVITO 3.9.2
 DEFINE_REFERENCE_FIELD(FreezePropertyModificationNode, property);
 DEFINE_REFERENCE_FIELD(FreezePropertyModificationNode, identifiers);
 DEFINE_VECTOR_REFERENCE_FIELD(FreezePropertyModificationNode, cachedVisElements);
@@ -158,7 +162,7 @@ PipelineFlowState FreezePropertyModifier::transferFrozenProperty(FreezePropertyM
 
     if(sourceProperty().isNull()) {
         state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("No source property selected.")));
-        return std::move(state);
+        return state;
     }
     if(destinationProperty().isNull())
         throw Exception(tr("No output property selected."));
@@ -250,7 +254,7 @@ PipelineFlowState FreezePropertyModifier::transferFrozenProperty(FreezePropertyM
     outputProperty->setVisElements(currentVisElements);
     modNode->setCachedVisElements(std::move(currentVisElements));
 
-    return std::move(state);
+    return state;
 }
 
 /******************************************************************************

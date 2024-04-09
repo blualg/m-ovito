@@ -50,6 +50,11 @@ IF(MSVC)
     TARGET_COMPILE_OPTIONS(xdrfile PRIVATE "/wd4018")
 ENDIF()
 
+IF(CMAKE_C_COMPILER_ID STREQUAL "IntelLLVM")
+    # Silence Intel DPC++ compiler warning: "variable XXX set but not used"
+    TARGET_COMPILE_OPTIONS(xdrfile PRIVATE "-Wno-unused-but-set-variable")
+ENDIF()
+
 IF(NOT BUILD_SHARED_LIBS AND OVITO_BUILD_PYPI)
     # Since we will link this library into the dynamically loaded Python extension module, we need to use the fPIC flag.
     SET_PROPERTY(TARGET xdrfile PROPERTY POSITION_INDEPENDENT_CODE ON)

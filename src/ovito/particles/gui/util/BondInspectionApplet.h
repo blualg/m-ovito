@@ -41,7 +41,6 @@ namespace Ovito {
 class BondInspectionApplet : public PropertyInspectionApplet
 {
     OVITO_CLASS(BondInspectionApplet)
-    OVITO_CLASSINFO("DisplayName", "Bonds")
     Q_OBJECT
 
 public:

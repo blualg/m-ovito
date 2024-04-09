@@ -34,6 +34,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(BondsVis);
+OVITO_CLASSINFO(BondsVis, "DisplayName", "Bonds");
 IMPLEMENT_ABSTRACT_OVITO_CLASS(BondPickInfo);
 DEFINE_PROPERTY_FIELD(BondsVis, bondWidth);
 DEFINE_PROPERTY_FIELD(BondsVis, bondColor);
@@ -376,12 +377,6 @@ std::vector<ColorG> BondsVis::halfBondColors(const Particles* particles, bool hi
 
     // Get particle-related properties and the vis element.
     const ParticlesVis* particleVis = particles->visElement<ParticlesVis>();
-    BufferReadAccess<ColorG> particleColorProperty;
-    const Property* particleTypeProperty = nullptr;
-    if(coloringMode == ParticleBasedColoring && particleVis) {
-        particleColorProperty = particles->getProperty(Particles::ColorProperty);
-        particleTypeProperty = particleVis->getParticleTypeColorProperty(particles);
-    }
 
     std::vector<ColorG> output(bonds->elementCount() * 2);
     const ColorG defaultColor = bondColor().toDataType<GraphicsFloatType>();

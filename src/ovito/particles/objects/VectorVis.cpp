@@ -34,6 +34,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(VectorVis);
+OVITO_CLASSINFO(VectorVis, "DisplayName", "Vectors");
 IMPLEMENT_ABSTRACT_OVITO_CLASS(VectorPickInfo);
 DEFINE_PROPERTY_FIELD(VectorVis, reverseArrowDirection);
 DEFINE_PROPERTY_FIELD(VectorVis, arrowPosition);
@@ -299,7 +300,6 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
             BufferReadAccess<Point3> basePositionData(basePositions);
             BufferReadAccess<ColorG> vectorColorData(vectorColorProperty);
             RawBufferReadAccess vectorPseudoColorData(pseudoColorProperty);
-            size_t inIndex = 0;
             size_t outIndex = 0;
             const auto arrowPosition = this->arrowPosition();
             for(size_t inIndex = 0; inIndex < basePositionData.size(); inIndex++) {

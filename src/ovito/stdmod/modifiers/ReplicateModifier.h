@@ -62,8 +62,6 @@ class OVITO_STDMOD_EXPORT LinesReplicateModifierDelegate : public ReplicateModif
 
     OVITO_CLASS_META(LinesReplicateModifierDelegate, OOMetaClass)
 
-    OVITO_CLASSINFO("DisplayName", "Lines");
-
 public:
 
     /// Constructor.
@@ -97,9 +95,6 @@ public:
     };
 
     OVITO_CLASS_META(ReplicateModifier, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Replicate");
-    OVITO_CLASSINFO("Description", "Duplicate the dataset to visualize periodic images of the system.");
-    OVITO_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 

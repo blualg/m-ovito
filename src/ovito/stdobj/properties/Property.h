@@ -50,8 +50,6 @@ public:
     };
 
     OVITO_CLASS_META(Property, OOMetaClass);
-    OVITO_CLASSINFO("DisplayName", "Property");
-    OVITO_CLASSINFO("ClassNameAlias", "PropertyObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
 

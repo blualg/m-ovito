@@ -39,7 +39,6 @@ namespace Ovito {
 class OVITO_MESH_EXPORT SurfaceMesh : public PeriodicDomainObject
 {
     OVITO_CLASS(SurfaceMesh)
-    OVITO_CLASSINFO("DisplayName", "Surface mesh");
 
 public:
 

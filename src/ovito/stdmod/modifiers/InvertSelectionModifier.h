@@ -34,9 +34,6 @@ namespace Ovito {
 class OVITO_STDMOD_EXPORT InvertSelectionModifier : public GenericPropertyModifier
 {
     OVITO_CLASS(InvertSelectionModifier)
-    OVITO_CLASSINFO("DisplayName", "Invert selection");
-    OVITO_CLASSINFO("Description", "Invert the current selection state of each element.");
-    OVITO_CLASSINFO("ModifierCategory", "Selection");
 
 public:
 

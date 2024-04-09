@@ -31,6 +31,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(DLPOLYImporter);
+OVITO_CLASSINFO(DLPOLYImporter, "DisplayName", "DL_POLY");
 
 /******************************************************************************
 * Checks if the given file has format that can be read by this importer.

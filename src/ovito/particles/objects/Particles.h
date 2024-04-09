@@ -76,8 +76,6 @@ class OVITO_PARTICLES_EXPORT Particles : public PropertyContainer
     };
 
     OVITO_CLASS_META(Particles, OOMetaClass);
-    OVITO_CLASSINFO("DisplayName", "Particles");
-    OVITO_CLASSINFO("ClassNameAlias", "ParticlesObject");  // For backward compatibility with OVITO 3.9.2
 
 public:
 

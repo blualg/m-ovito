@@ -34,6 +34,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ParticlesVis);
+OVITO_CLASSINFO(ParticlesVis, "DisplayName", "Particles");
 IMPLEMENT_ABSTRACT_OVITO_CLASS(ParticlePickInfo);
 DEFINE_PROPERTY_FIELD(ParticlesVis, defaultParticleRadius);
 DEFINE_PROPERTY_FIELD(ParticlesVis, radiusScaleFactor);
@@ -661,7 +662,6 @@ void ParticlesVis::renderPrimitiveParticles(const Particles* particles, FrameGra
     const Property* positionProperty = particles->getProperty(Particles::PositionProperty);
     const Property* radiusProperty = particles->getProperty(Particles::RadiusProperty);
     const Property* colorProperty = particles->getProperty(Particles::ColorProperty);
-    const Property* typeColorProperty = getParticleTypeColorProperty(particles);
     const Property* typeRadiusProperty = getParticleTypeRadiusProperty(particles);
     const Property* selectionProperty = frameGraph.isInteractive() ? particles->getProperty(Particles::SelectionProperty) : nullptr;
     const Property* transparencyProperty = particles->getProperty(Particles::TransparencyProperty);

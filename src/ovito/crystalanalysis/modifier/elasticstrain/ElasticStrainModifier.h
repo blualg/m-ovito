@@ -36,9 +36,6 @@ class OVITO_CRYSTALANALYSIS_EXPORT ElasticStrainModifier : public StructureIdent
 {
     OVITO_CLASS(ElasticStrainModifier)
 
-    OVITO_CLASSINFO("DisplayName", "Elastic strain calculation");
-    OVITO_CLASSINFO("ModifierCategory", "Analysis");
-
 public:
 
     /// Constructor.

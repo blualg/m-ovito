@@ -63,7 +63,6 @@ class OVITO_STDMOD_EXPORT LinesSliceModifierDelegate : public SliceModifierDeleg
     };
 
     OVITO_CLASS_META(LinesSliceModifierDelegate, LinesSliceModifierDelegateClass)
-    OVITO_CLASSINFO("DisplayName", "Lines");
 
 public:
 
@@ -92,10 +91,6 @@ class OVITO_STDMOD_EXPORT SliceModifier : public MultiDelegatingModifier
     };
 
     OVITO_CLASS_META(SliceModifier, SliceModifierClass)
-
-    OVITO_CLASSINFO("DisplayName", "Slice");
-    OVITO_CLASSINFO("Description", "Cut away some part of the dataset using a 3d plane.");
-    OVITO_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 

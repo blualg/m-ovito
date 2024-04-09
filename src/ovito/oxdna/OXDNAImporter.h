@@ -56,7 +56,6 @@ class OVITO_OXDNA_EXPORT OXDNAImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(OXDNAImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "oxDNA");
 
 public:
 

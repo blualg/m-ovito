@@ -38,10 +38,6 @@ class OVITO_PARTICLES_EXPORT CommonNeighborAnalysisModifier : public StructureId
 {
     OVITO_CLASS(CommonNeighborAnalysisModifier)
 
-    OVITO_CLASSINFO("DisplayName", "Common neighbor analysis");
-    OVITO_CLASSINFO("Description", "Perform the CNA to identify simple crystal structures.");
-    OVITO_CLASSINFO("ModifierCategory", "Structure identification");
-
 public:
 
     enum CNAMode {

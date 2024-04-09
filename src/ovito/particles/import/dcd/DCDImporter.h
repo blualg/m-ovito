@@ -53,7 +53,6 @@ class OVITO_PARTICLES_EXPORT DCDImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(DCDImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "DCD");
 
 public:
 

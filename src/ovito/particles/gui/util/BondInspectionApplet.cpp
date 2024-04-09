@@ -31,6 +31,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(BondInspectionApplet);
+OVITO_CLASSINFO(BondInspectionApplet, "DisplayName", "Bonds");
 
 /******************************************************************************
 * Lets the applet create the UI widget that is to be placed into the data
@@ -63,13 +64,13 @@ QWidget* BondInspectionApplet::createWidget()
     layout->setRowStretch(1, 1);
 
     QWidget* pickModeButton = toolbar->widgetForAction(pickModeAction);
-    connect(_pickingMode, &ViewportInputMode::statusChanged, pickModeButton, [pickModeButton,this](bool active) {
+    connect(_pickingMode, &ViewportInputMode::statusChanged, pickModeButton, [pickModeButton](bool active) {
         if(active) {
             QToolTip::showText(pickModeButton->mapToGlobal(pickModeButton->rect().bottomRight()),
 #ifndef Q_OS_MACOS
-                tr("Pick a bond in the viewports. Hold down the CONTROL key to select multiple bonds."),
+                BondInspectionApplet::tr("Pick a bond in the viewports. Hold down the CONTROL key to select multiple bonds."),
 #else
-                tr("Pick a bond in the viewports. Hold down the COMMAND key to select multiple bonds."),
+                BondInspectionApplet::tr("Pick a bond in the viewports. Hold down the COMMAND key to select multiple bonds."),
 #endif
                 pickModeButton, QRect(), 2000);
         }

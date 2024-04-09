@@ -30,6 +30,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(CalculateDisplacementsModifier);
+OVITO_CLASSINFO(CalculateDisplacementsModifier, "DisplayName", "Displacement vectors");
+OVITO_CLASSINFO(CalculateDisplacementsModifier, "Description", "Calculate the displacements of particles based on two input configurations.");
+OVITO_CLASSINFO(CalculateDisplacementsModifier, "ModifierCategory", "Analysis");
 DEFINE_REFERENCE_FIELD(CalculateDisplacementsModifier, vectorVis);
 
 /******************************************************************************

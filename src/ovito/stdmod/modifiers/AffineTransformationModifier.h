@@ -62,7 +62,6 @@ class OVITO_STDMOD_EXPORT SimulationCellAffineTransformationModifierDelegate : p
     };
 
     OVITO_CLASS_META(SimulationCellAffineTransformationModifierDelegate, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Simulation cell");
 
 public:
 
@@ -93,7 +92,6 @@ class OVITO_STDMOD_EXPORT LinesAffineTransformationModifierDelegate : public Aff
     };
 
     OVITO_CLASS_META(LinesAffineTransformationModifierDelegate, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Lines");
 
 public:
 
@@ -127,9 +125,6 @@ public:
     };
 
     OVITO_CLASS_META(AffineTransformationModifier, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Affine transformation");
-    OVITO_CLASSINFO("Description", "Apply an affine transformation to the dataset.");
-    OVITO_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 

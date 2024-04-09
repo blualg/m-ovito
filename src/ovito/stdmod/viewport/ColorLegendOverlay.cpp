@@ -34,6 +34,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ColorLegendOverlay);
+OVITO_CLASSINFO(ColorLegendOverlay, "DisplayName", "Color legend");
 DEFINE_PROPERTY_FIELD(ColorLegendOverlay, alignment);
 DEFINE_PROPERTY_FIELD(ColorLegendOverlay, orientation);
 DEFINE_PROPERTY_FIELD(ColorLegendOverlay, legendSize);
@@ -646,7 +647,7 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QR
     label1Primitive->setTextFormat(Qt::AutoText);
     if(outlineEnabled())
         label1Primitive->setOutlineColor(outlineColor());
-    QRectF topLabelBoundingBox = label1Primitive->computeBoundingBox(devicePixelRatio);
+    QRectF topLabelBoundingBox = label1Primitive->computeBounds(devicePixelRatio);
     boundingBox |= topLabelBoundingBox;
 
     label2Primitive->setText(bottomLabel);
@@ -656,7 +657,7 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QR
     label2Primitive->setTextFormat(Qt::AutoText);
     if(outlineEnabled())
         label2Primitive->setOutlineColor(outlineColor());
-    boundingBox |= label2Primitive->computeBoundingBox(devicePixelRatio);
+    boundingBox |= label2Primitive->computeBounds(devicePixelRatio);
 
     // Place the title label at the correct location based on color bar direction and position.
     int titleFlags = Qt::AlignBottom;
@@ -709,7 +710,7 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QR
     titlePrimitive->setTextFormat(Qt::AutoText);
     if(titleRotationEnabled() && orientation() == Qt::Vertical)
         titlePrimitive->setRotation(qDegreesToRadians(270));
-    boundingBox |= titlePrimitive->computeBoundingBox(devicePixelRatio);
+    boundingBox |= titlePrimitive->computeBounds(devicePixelRatio);
 
     std::vector<Box2> tickRects;
     std::vector<std::unique_ptr<TextPrimitive>> tickLabels;
@@ -798,7 +799,7 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QR
                 labelPrimitive.setText(QString::asprintf(format.constData(), tick_value));
                 label_pos.x() = colorBarImageRect.left() + colorBarImageRect.width() * tick_position;
                 labelPrimitive.setPositionWindow(label_pos);
-                boundingBox |= labelPrimitive.computeBoundingBox(devicePixelRatio);
+                boundingBox |= labelPrimitive.computeBounds(devicePixelRatio);
                 tickLabels.push_back(std::make_unique<TextPrimitive>(labelPrimitive));
 
                 // Tick.
@@ -849,7 +850,7 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QR
                     (label_pos.y() < (colorBarImageRect.top() + tickOverlappFactor * fontMetrics.height()))))
                     continue;
                 labelPrimitive.setPositionWindow(label_pos);
-                boundingBox |= labelPrimitive.computeBoundingBox(devicePixelRatio);
+                boundingBox |= labelPrimitive.computeBounds(devicePixelRatio);
                 tickLabels.push_back(std::make_unique<TextPrimitive>(labelPrimitive));
 
                 // Tick
@@ -1043,7 +1044,7 @@ void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, const QRec
     titlePrimitive->setTextFormat(Qt::AutoText);
     if(titleRotationEnabled() && orientation() == Qt::Vertical)
         titlePrimitive->setRotation(qDegreesToRadians(270));
-    boundingBox |= titlePrimitive->computeBoundingBox(devicePixelRatio);
+    boundingBox |= titlePrimitive->computeBounds(devicePixelRatio);
 
     // Prepare type name labels.
     if(numTypes == 0)
@@ -1093,7 +1094,7 @@ void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, const QRec
 
         labelPrimitive.setText(type->objectTitle());
         labelPrimitive.setPositionWindow(labelPos);
-        boundingBox |= labelPrimitive.computeBoundingBox(devicePixelRatio);
+        boundingBox |= labelPrimitive.computeBounds(devicePixelRatio);
         labels.push_back(std::make_unique<TextPrimitive>(labelPrimitive));
 
         if(orientation() == Qt::Vertical)

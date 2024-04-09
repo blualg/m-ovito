@@ -36,7 +36,6 @@ namespace Ovito {
 class OVITO_STDOBJ_EXPORT StandardCameraSource : public AbstractCameraSource
 {
     OVITO_CLASS(StandardCameraSource)
-    OVITO_CLASSINFO("DisplayName", "Camera");
 
 public:
 

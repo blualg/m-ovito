@@ -49,9 +49,6 @@ class OVITO_PARTICLES_EXPORT UnwrapTrajectoriesModifier : public Modifier
     };
 
     OVITO_CLASS_META(UnwrapTrajectoriesModifier, UnwrapTrajectoriesModifierClass)
-    OVITO_CLASSINFO("DisplayName", "Unwrap trajectories");
-    OVITO_CLASSINFO("Description", "Unwrap particle coordinates at periodic cell boundaries and generate continuous trajectories.");
-    OVITO_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 
@@ -71,7 +68,6 @@ public:
 class OVITO_PARTICLES_EXPORT UnwrapTrajectoriesModificationNode : public ModificationNode
 {
     OVITO_CLASS(UnwrapTrajectoriesModificationNode)
-    OVITO_CLASSINFO("ClassNameAlias", "UnwrapTrajectoriesModifierApplication");  // For backward compatibility with OVITO 3.9.2
 
 public:
 

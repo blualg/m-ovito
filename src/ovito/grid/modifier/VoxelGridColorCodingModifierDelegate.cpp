@@ -27,6 +27,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(VoxelGridColorCodingModifierDelegate);
+OVITO_CLASSINFO(VoxelGridColorCodingModifierDelegate, "DisplayName", "Voxel grids");
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

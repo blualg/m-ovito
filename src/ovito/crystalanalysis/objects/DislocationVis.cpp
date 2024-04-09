@@ -33,6 +33,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(DislocationVis);
+OVITO_CLASSINFO(DislocationVis, "DisplayName", "Dislocations");
 DEFINE_PROPERTY_FIELD(DislocationVis, lineWidth);
 DEFINE_PROPERTY_FIELD(DislocationVis, shadingMode);
 DEFINE_PROPERTY_FIELD(DislocationVis, burgersVectorWidth);

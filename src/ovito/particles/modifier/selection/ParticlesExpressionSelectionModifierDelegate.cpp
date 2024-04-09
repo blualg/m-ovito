@@ -29,7 +29,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ParticlesExpressionSelectionModifierDelegate);
+OVITO_CLASSINFO(ParticlesExpressionSelectionModifierDelegate, "DisplayName", "Particles");
 IMPLEMENT_CREATABLE_OVITO_CLASS(BondsExpressionSelectionModifierDelegate);
+OVITO_CLASSINFO(BondsExpressionSelectionModifierDelegate, "DisplayName", "Bonds");
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

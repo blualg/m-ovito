@@ -49,7 +49,6 @@ class DislocationAffineTransformationModifierDelegate : public AffineTransformat
     };
 
     OVITO_CLASS_META(DislocationAffineTransformationModifierDelegate, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "Dislocations");
 
 public:
 

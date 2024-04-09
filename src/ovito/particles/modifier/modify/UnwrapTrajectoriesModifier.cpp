@@ -33,7 +33,11 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(UnwrapTrajectoriesModifier);
+OVITO_CLASSINFO(UnwrapTrajectoriesModifier, "DisplayName", "Unwrap trajectories");
+OVITO_CLASSINFO(UnwrapTrajectoriesModifier, "Description", "Unwrap particle coordinates at periodic cell boundaries and generate continuous trajectories.");
+OVITO_CLASSINFO(UnwrapTrajectoriesModifier, "ModifierCategory", "Modification");
 IMPLEMENT_CREATABLE_OVITO_CLASS(UnwrapTrajectoriesModificationNode);
+OVITO_CLASSINFO(UnwrapTrajectoriesModificationNode, "ClassNameAlias", "UnwrapTrajectoriesModifierApplication");  // For backward compatibility with OVITO 3.9.2
 SET_MODIFICATION_NODE_TYPE(UnwrapTrajectoriesModifier, UnwrapTrajectoriesModificationNode);
 
 /******************************************************************************

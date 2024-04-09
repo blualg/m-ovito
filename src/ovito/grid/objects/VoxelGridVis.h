@@ -39,7 +39,6 @@ namespace Ovito {
 class OVITO_GRID_EXPORT VoxelGridVis : public DataVis
 {
     OVITO_CLASS(VoxelGridVis)
-    OVITO_CLASSINFO("DisplayName", "Voxel grid");
 
 public:
 

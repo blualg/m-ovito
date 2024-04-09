@@ -52,7 +52,6 @@ class OVITO_STDOBJ_EXPORT DataTable : public PropertyContainer
     };
 
     OVITO_CLASS_META(DataTable, OOMetaClass);
-    OVITO_CLASSINFO("DisplayName", "Data table");
 
 public:
 

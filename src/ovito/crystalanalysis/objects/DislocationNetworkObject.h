@@ -37,7 +37,6 @@ namespace Ovito {
 class OVITO_CRYSTALANALYSIS_EXPORT DislocationNetworkObject : public PeriodicDomainObject
 {
     OVITO_CLASS(DislocationNetworkObject)
-    OVITO_CLASSINFO("DisplayName", "Dislocations");
 
 public:
 

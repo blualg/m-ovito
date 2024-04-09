@@ -53,7 +53,6 @@ class OVITO_GALAMOST_EXPORT GALAMOSTImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(GALAMOSTImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "GALAMOST");
 
 public:
 

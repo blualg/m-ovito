@@ -54,7 +54,6 @@ class OVITO_GRID_EXPORT VoxelGridSliceModifierDelegate : public SliceModifierDel
     };
 
     OVITO_CLASS_META(VoxelGridSliceModifierDelegate, VoxelGridSliceModifierDelegateClass)
-    OVITO_CLASSINFO("DisplayName", "Voxel grids");
 
 public:
 

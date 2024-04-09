@@ -52,7 +52,6 @@ class OVITO_PARTICLES_EXPORT XSFImporter : public ParticleImporter
     };
 
     OVITO_CLASS_META(XSFImporter, OOMetaClass)
-    OVITO_CLASSINFO("DisplayName", "XSF");
 
 public:
 

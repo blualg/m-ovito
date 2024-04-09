@@ -32,6 +32,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ScatterPlotModifier);
+OVITO_CLASSINFO(ScatterPlotModifier, "DisplayName", "Scatter plot");
+OVITO_CLASSINFO(ScatterPlotModifier, "Description", "Generate a scatter plot from the values of two properties.");
+OVITO_CLASSINFO(ScatterPlotModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(ScatterPlotModifier, selectXAxisInRange);
 DEFINE_PROPERTY_FIELD(ScatterPlotModifier, selectionXAxisRangeStart);
 DEFINE_PROPERTY_FIELD(ScatterPlotModifier, selectionXAxisRangeEnd);
@@ -183,9 +186,7 @@ Future<PipelineFlowState> ScatterPlotModifier::evaluateModifier(const ModifierEv
         throw Exception(tr("The selected input property '%1' is not present.").arg(yAxisProperty().name()));
 
     size_t xVecComponent = std::max(0, xAxisProperty().vectorComponent());
-    size_t xVecComponentCount = xProperty->componentCount();
     size_t yVecComponent = std::max(0, yAxisProperty().vectorComponent());
-    size_t yVecComponentCount = yProperty->componentCount();
     if(xVecComponent >= xProperty->componentCount())
         throw Exception(tr("The selected vector component is out of range. The property '%1' has only %2 components per element.").arg(xProperty->name()).arg(xProperty->componentCount()));
     if(yVecComponent >= yProperty->componentCount())

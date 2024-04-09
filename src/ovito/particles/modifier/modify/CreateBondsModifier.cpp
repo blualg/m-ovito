@@ -37,6 +37,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(CreateBondsModifier);
+OVITO_CLASSINFO(CreateBondsModifier, "DisplayName", "Create bonds");
+OVITO_CLASSINFO(CreateBondsModifier, "Description", "Creates bonds between particles.");
+OVITO_CLASSINFO(CreateBondsModifier, "ModifierCategory", "Visualization");
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, cutoffMode);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, uniformCutoff);
 DEFINE_PROPERTY_FIELD(CreateBondsModifier, pairwiseCutoffs);

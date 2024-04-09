@@ -36,6 +36,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(XYZImporter);
+OVITO_CLASSINFO(XYZImporter, "DisplayName", "XYZ");
 DEFINE_PROPERTY_FIELD(XYZImporter, autoRescaleCoordinates);
 DEFINE_PROPERTY_FIELD(XYZImporter, columnMapping);
 SET_PROPERTY_FIELD_LABEL(XYZImporter, autoRescaleCoordinates, "Detect reduced coordinates");
@@ -245,7 +246,6 @@ void XYZImporter::FrameLoader::loadFile()
     // Extract some useful information from the comment line.
     const char* commentLine_cstr = stream.readLine();
     bool hasSimulationCell = false;
-    int movieMode = -1;
 
     // Detect .exyz file format written by OpenBabel.
     bool isOpenBabelEXYZ = (std::strstr(commentLine_cstr, "%PBC") != nullptr);

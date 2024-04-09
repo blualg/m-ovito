@@ -29,6 +29,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMesh);
+OVITO_CLASSINFO(SurfaceMesh, "DisplayName", "Surface mesh");
 DEFINE_PROPERTY_FIELD(SurfaceMesh, spaceFillingRegion);
 DEFINE_REFERENCE_FIELD(SurfaceMesh, topology);
 DEFINE_REFERENCE_FIELD(SurfaceMesh, vertices);

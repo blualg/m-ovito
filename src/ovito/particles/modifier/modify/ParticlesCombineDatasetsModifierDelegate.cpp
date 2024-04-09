@@ -33,6 +33,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ParticlesCombineDatasetsModifierDelegate);
+OVITO_CLASSINFO(ParticlesCombineDatasetsModifierDelegate, "DisplayName", "Particles");
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier
@@ -54,12 +55,11 @@ Future<PipelineFlowState> ParticlesCombineDatasetsModifierDelegate::apply(const 
         return std::move(state);
     const PipelineFlowState& secondaryState = additionalInputs.front();
 
-    // Get the particles from secondary dataset.
+    // Get the secondary dataset.
     const Particles* secondaryParticles = secondaryState.getObject<Particles>();
     if(!secondaryParticles)
         return std::move(state);
-    const Property* secondaryPosProperty = secondaryParticles->expectProperty(Particles::PositionProperty);
-
+    
     // Get the positions from the primary dataset.
     const Particles* primaryParticles = state.getObject<Particles>();
     // If primary dataset does not contain particles yet, simply copy the particles from the secondary dataset over to the first.

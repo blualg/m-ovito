@@ -30,6 +30,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ParticlesSliceModifierDelegate);
+OVITO_CLASSINFO(ParticlesSliceModifierDelegate, "DisplayName", "Particles");
 
 /******************************************************************************
 * Indicates which data objects in the given input data collection the modifier

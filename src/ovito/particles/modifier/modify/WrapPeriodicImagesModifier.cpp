@@ -31,6 +31,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(WrapPeriodicImagesModifier);
+OVITO_CLASSINFO(WrapPeriodicImagesModifier, "DisplayName", "Wrap at periodic boundaries");
+OVITO_CLASSINFO(WrapPeriodicImagesModifier, "Description", "Fold particle coordinates back into the periodic simulation box.");
+OVITO_CLASSINFO(WrapPeriodicImagesModifier, "ModifierCategory", "Modification");
 
 /******************************************************************************
 * Asks the modifier whether it can be applied to the given input data.

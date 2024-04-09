@@ -28,6 +28,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(SurfaceMeshTopology);
+OVITO_CLASSINFO(SurfaceMeshTopology, "DisplayName", "Surface mesh topology");
 
 constexpr SurfaceMeshTopology::size_type SurfaceMeshTopology::InvalidIndex;
 

@@ -97,10 +97,6 @@ class OVITO_STDMOD_EXPORT ComputePropertyModifier : public DelegatingModifier
 
     OVITO_CLASS_META(ComputePropertyModifier, ComputePropertyModifierClass)
 
-    OVITO_CLASSINFO("DisplayName", "Compute property");
-    OVITO_CLASSINFO("Description", "Enter a user-defined formula to set properties of particles, bonds and other elements.");
-    OVITO_CLASSINFO("ModifierCategory", "Modification");
-
 public:
 
     /// Constructor.
@@ -180,7 +176,6 @@ private:
 class OVITO_STDMOD_EXPORT ComputePropertyModificationNode : public ModificationNode
 {
     OVITO_CLASS(ComputePropertyModificationNode)
-    OVITO_CLASSINFO("ClassNameAlias", "ComputePropertyModifierApplication");  // For backward compatibility with OVITO 3.9.2
 
 public:
 

@@ -39,8 +39,6 @@ namespace Ovito {
 class OVITO_CRYSTALANALYSIS_EXPORT DislocationAnalysisModifier : public StructureIdentificationModifier
 {
     OVITO_CLASS(DislocationAnalysisModifier)
-    OVITO_CLASSINFO("DisplayName", "Dislocation analysis (DXA)");
-    OVITO_CLASSINFO("ModifierCategory", "Analysis");
 
 public:
 

@@ -36,6 +36,8 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(LinesColorCodingModifierDelegate);
+OVITO_CLASSINFO(LinesColorCodingModifierDelegate, "DisplayName", "Lines");
+OVITO_CLASSINFO(LinesColorCodingModifierDelegate, "ClassNameAlias", "TrajectoryColorCodingModifierDelegate");  // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
  * Indicates which data objects in the given input data collection the modifier
@@ -54,6 +56,9 @@ QVector<DataObjectReference> LinesColorCodingModifierDelegate::OOMetaClass::getA
 IMPLEMENT_ABSTRACT_OVITO_CLASS(ColorCodingModifierDelegate);
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingModifier);
+OVITO_CLASSINFO(ColorCodingModifier, "DisplayName", "Color coding");
+OVITO_CLASSINFO(ColorCodingModifier, "Description", "Colors elements based on property values.");
+OVITO_CLASSINFO(ColorCodingModifier, "ModifierCategory", "Coloring");
 DEFINE_REFERENCE_FIELD(ColorCodingModifier, startValueController);
 DEFINE_REFERENCE_FIELD(ColorCodingModifier, endValueController);
 DEFINE_REFERENCE_FIELD(ColorCodingModifier, colorGradient);

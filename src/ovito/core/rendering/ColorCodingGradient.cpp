@@ -28,14 +28,23 @@ namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(ColorCodingGradient);
 IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingHSVGradient);
+OVITO_CLASSINFO(ColorCodingHSVGradient, "DisplayName", "Rainbow");
 IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingGrayscaleGradient);
+OVITO_CLASSINFO(ColorCodingGrayscaleGradient, "DisplayName", "Grayscale");
 IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingHotGradient);
+OVITO_CLASSINFO(ColorCodingHotGradient, "DisplayName", "Hot");
 IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingJetGradient);
+OVITO_CLASSINFO(ColorCodingJetGradient, "DisplayName", "Jet");
 IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingBlueWhiteRedGradient);
+OVITO_CLASSINFO(ColorCodingBlueWhiteRedGradient, "DisplayName", "Blue-White-Red");
 IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingViridisGradient);
+OVITO_CLASSINFO(ColorCodingViridisGradient, "DisplayName", "Viridis");
 IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingMagmaGradient);
+OVITO_CLASSINFO(ColorCodingMagmaGradient, "DisplayName", "Magma");
 IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingTableGradient);
+OVITO_CLASSINFO(ColorCodingTableGradient, "DisplayName", "User table");
 IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingImageGradient);
+OVITO_CLASSINFO(ColorCodingImageGradient, "DisplayName", "User image");
 
 DEFINE_PROPERTY_FIELD(ColorCodingImageGradient, image);
 DEFINE_PROPERTY_FIELD(ColorCodingImageGradient, imagePath);

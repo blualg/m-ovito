@@ -47,9 +47,6 @@ class OVITO_PARTICLES_EXPORT WrapPeriodicImagesModifier : public Modifier
     };
 
     OVITO_CLASS_META(WrapPeriodicImagesModifier, WrapPeriodicImagesModifierClass)
-    OVITO_CLASSINFO("DisplayName", "Wrap at periodic boundaries");
-    OVITO_CLASSINFO("Description", "Fold particle coordinates back into the periodic simulation box.");
-    OVITO_CLASSINFO("ModifierCategory", "Modification");
 
 public:
 

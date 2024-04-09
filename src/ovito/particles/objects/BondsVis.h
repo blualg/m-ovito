@@ -40,9 +40,6 @@ namespace Ovito {
 class OVITO_PARTICLES_EXPORT BondsVis : public DataVis
 {
     OVITO_CLASS(BondsVis)
-    OVITO_CLASSINFO("DisplayName", "Bonds");
-
-    Q_PROPERTY(Ovito::BondsVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
 
 public:
 

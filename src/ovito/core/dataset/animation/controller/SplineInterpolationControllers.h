@@ -25,69 +25,47 @@
 
 #include <ovito/core/Core.h>
 #include "KeyframeController.h"
+#include "AnimationKeys.h"
 
 namespace Ovito {
 
 /**
- * \brief Base template class for animation keys used by spline interpolation controllers.
+ * \brief Template class definition for animation keys used by spline interpolation controllers.
  */
-template<class BaseKeyClass>
-class OVITO_CORE_EXPORT SplineAnimationKey : public BaseKeyClass
-{
-    OVITO_CLASS_TEMPLATE(SplineAnimationKey, BaseKeyClass)
-
-public:
-
-    using typename BaseKeyClass::value_type;
-    using typename BaseKeyClass::nullvalue_type;
-    using typename BaseKeyClass::tangent_type;
-
-    /// Constructor.
-    explicit SplineAnimationKey(ObjectInitializationFlags flags, AnimationTime time, const value_type& value)
-        : BaseKeyClass(flags, time, value), _inTangent(nullvalue_type()), _outTangent(nullvalue_type()) {}
-
-    /// \brief Returns the point that defines the incoming tangent.
-    value_type inPoint() const { return this->value() + inTangent(); }
-
-    /// \brief Returns the point that defines the outgoing direction.
-    value_type outPoint() const { return this->value() + outTangent(); }
-
-public:
-
-    /// The tangent that defines the left derivative at the key point.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(tangent_type, inTangent, setInTangent);
-
-    /// The tangent that defines the right derivative at the key point.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(tangent_type, outTangent, setOutTangent);
+#define DEFINE_SPLINE_ANIMATION_KEY_TYPE(classname, BaseKeyClass) \
+class OVITO_CORE_EXPORT classname : public BaseKeyClass \
+{ \
+    OVITO_CLASS(classname) \
+\
+public: \
+\
+    using BaseKeyClass::value_type; \
+    using BaseKeyClass::nullvalue_type; \
+    using BaseKeyClass::tangent_type; \
+\
+    explicit classname(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const value_type& value = nullvalue_type{}) \
+        : BaseKeyClass(flags, time, value), _inTangent(nullvalue_type{}), _outTangent(nullvalue_type{}) {} \
+\
+    value_type inPoint() const { return this->value() + inTangent(); } \
+\
+    value_type outPoint() const { return this->value() + outTangent(); } \
+\
+public: \
+\
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(tangent_type, inTangent, setInTangent); \
+\
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(tangent_type, outTangent, setOutTangent); \
 };
 
 /**
  * \brief Animation key class for spline interpolation of float values.
  */
-class OVITO_CORE_EXPORT FloatSplineAnimationKey : public SplineAnimationKey<FloatAnimationKey>
-{
-    OVITO_CLASS(FloatSplineAnimationKey)
-
-public:
-
-    /// Constructor.
-    explicit FloatSplineAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), FloatType value = 0) :
-        SplineAnimationKey<FloatAnimationKey>(flags, time, value) {}
-};
+DEFINE_SPLINE_ANIMATION_KEY_TYPE(FloatSplineAnimationKey, FloatAnimationKey)
 
 /**
  * \brief Animation key class for spline interpolation of position values.
  */
-class OVITO_CORE_EXPORT PositionSplineAnimationKey : public SplineAnimationKey<PositionAnimationKey>
-{
-    OVITO_CLASS(PositionSplineAnimationKey)
-
-public:
-
-    /// Constructor.
-    explicit PositionSplineAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero()) :
-        SplineAnimationKey<PositionAnimationKey>(flags, time, value) {}
-};
+DEFINE_SPLINE_ANIMATION_KEY_TYPE(PositionSplineAnimationKey, PositionAnimationKey)
 
 /**
  * \brief Implementation of the key interpolator concept that performs cubic spline interpolation.

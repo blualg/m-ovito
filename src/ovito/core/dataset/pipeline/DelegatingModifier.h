@@ -72,7 +72,6 @@ public:
     };
 
     OVITO_CLASS_META(ModifierDelegate, ModifierDelegateClass)
-    OVITO_CLASSINFO("ClassNameAlias", "AsynchronousModifierDelegate");  // For backward compatibility with OVITO 3.2.1
 
 public:
 
@@ -128,7 +127,6 @@ public:
     };
 
     OVITO_CLASS_META(DelegatingModifier, DelegatingModifierClass)
-    OVITO_CLASSINFO("ClassNameAlias", "AsynchronousDelegatingModifier");  // For backward compatibility with OVITO 3.10.2
 
 public:
 

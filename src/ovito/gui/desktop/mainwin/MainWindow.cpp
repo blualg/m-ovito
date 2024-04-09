@@ -1054,7 +1054,6 @@ void MainWindow::importFiles(const std::vector<QUrl>& urls, const FileImporterCl
     // Determine how the file's data should be inserted into the current scene.
     FileImporter::ImportMode importMode = FileImporter::ResetScene;
 
-    const QUrl& url = urlImporters.front().first;
     OORef<FileImporter> importer = urlImporters.front().second;
     if(importer->isReplaceExistingPossible(scene, urls)) {
         // Ask user if the existing pipeline should be preserved or reset.
@@ -1072,10 +1071,12 @@ void MainWindow::importFiles(const std::vector<QUrl>& urls, const FileImporterCl
             "<p>Select <b>No</b> to keep modifiers in the current pipeline and replace the input data with the selected file.</p>"
             "<p>Select <b>Add to scene</b> to create an additional pipeline and visualize multiple datasets (requires <a href=\"https://www.ovito.org/about/ovito-pro/\">OVITO Pro</a>).</p>"));
 #endif
-        QPushButton* noButton = msgBox.addButton(tr("No"), QMessageBox::NoRole);
+        msgBox.addButton(tr("No"), QMessageBox::NoRole);
         QPushButton* addToSceneButton = msgBox.addButton(tr("Add to scene"), QMessageBox::NoRole);
 #ifndef OVITO_BUILD_PROFESSIONAL
         addToSceneButton->setEnabled(false);
+#else
+        (void)addToSceneButton;
 #endif
         msgBox.setDefaultButton(QMessageBox::Yes);
         msgBox.setEscapeButton(QMessageBox::Cancel);

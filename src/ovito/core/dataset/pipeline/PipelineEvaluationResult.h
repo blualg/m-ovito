@@ -78,11 +78,11 @@ public:
 
 private:
 
-    /// The animation time interval over which the pipeline result remains valid (during which it doesn't change).
-    TimeInterval _validityInterval = TimeInterval::infinite();
-
     /// The type(s) of pipeline evaluation this result is from.
     EvaluationTypes _evaluationTypes = EvaluationType::Both;
+
+    /// The animation time interval over which the pipeline result remains valid (during which it doesn't change).
+    TimeInterval _validityInterval = TimeInterval::infinite();
 };
 
 }   // End of namespace

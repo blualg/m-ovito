@@ -32,6 +32,9 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ModificationNode);
+OVITO_CLASSINFO(ModificationNode, "ClassNameAlias", "ModifierApplication");  // For backward compatibility with OVITO 3.9.2
+OVITO_CLASSINFO(ModificationNode, "ClassNameAlias", "AsynchronousModifierApplication");  // For backward compatibility with OVITO 3.9.2
+OVITO_CLASSINFO(ModificationNode, "ClassNameAlias", "AsynchronousModificationNode");  // For backward compatibility with OVITO 3.10.2
 DEFINE_REFERENCE_FIELD(ModificationNode, modifier);
 DEFINE_REFERENCE_FIELD(ModificationNode, input);
 DEFINE_REFERENCE_FIELD(ModificationNode, modifierGroup);
@@ -160,8 +163,9 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
                 partialResultsCache().reset();
 
             // Refresh interactive viewports if requested by the modifier.
-            if(modifier()->shouldRefreshViewportsAfterChange())
+            if(modifier()->shouldRefreshViewportsAfterChange()) {
                 notifyDependents(ReferenceEvent::InteractiveStateAvailable);
+            }
         }
 
         return false;

@@ -34,6 +34,8 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(DislocationAnalysisModifier);
+OVITO_CLASSINFO(DislocationAnalysisModifier, "DisplayName", "Dislocation analysis (DXA)");
+OVITO_CLASSINFO(DislocationAnalysisModifier, "ModifierCategory", "Analysis");
 DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, inputCrystalStructure);
 DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, maxTrialCircuitSize);
 DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, circuitStretchability);
@@ -174,7 +176,6 @@ std::shared_ptr<StructureIdentificationModifier::Algorithm> DislocationAnalysisM
     const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
 
-    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
     const SimulationCell* simCell = input.expectObject<SimulationCell>();
     if(simCell->is2D())
         throw Exception(tr("The DXA modifier does not support 2d simulation cells."));

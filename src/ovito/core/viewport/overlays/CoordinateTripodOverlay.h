@@ -35,7 +35,6 @@ namespace Ovito {
 class OVITO_CORE_EXPORT CoordinateTripodOverlay : public ViewportOverlay
 {
     OVITO_CLASS(CoordinateTripodOverlay)
-    OVITO_CLASSINFO("DisplayName", "Coordinate tripod");
 
 public:
 
