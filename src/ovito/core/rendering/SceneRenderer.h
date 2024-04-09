@@ -73,6 +73,9 @@ public:
 	/// Returns the multisampling level currently used by the renderer.
 	virtual int multisamplingLevel() const { return 1; }
 
+	/// This may be called on a renderer before startRender() to control the rendering method for semi-transparent objects.
+	virtual void setOrderIndependentTransparencyHint(bool orderIndependent) {}
+
 	/// Returns the best format for QImage to be used when creating an ImagePrimitive.
 	virtual QImage::Format preferredImageFormat() const { return QImage::Format_ARGB32_Premultiplied; }
 

@@ -199,8 +199,11 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
         vectorProperty.reset();
 
     const Property* vectorColorProperty = nullptr;
-    if(const Particles* particles = dynamic_object_cast<Particles>(container))
+    const Property* vectorTransparencyProperty = nullptr;
+    if(const Particles* particles = dynamic_object_cast<Particles>(container)) {
         vectorColorProperty = particles->getProperty(Particles::VectorColorProperty);
+        vectorTransparencyProperty = particles->getProperty(Particles::VectorTransparencyProperty);
+    }
 
     // Make sure we don't exceed our internal limits.
     if(vectorProperty && vectorProperty->size() > (size_t)std::numeric_limits<int>::max()) {
@@ -238,6 +241,7 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
         bool,                   // Reverse arrow direction
         ArrowPosition,          // Arrow position
         ConstDataObjectRef,     // Vector color property
+        ConstDataObjectRef,     // Vector transparency property
         ConstDataObjectRef,     // Pseudo-color property
         int,                    // Pseudo-color vector component
         PseudoColorMapping      // Pseudo-color mapping
@@ -261,6 +265,7 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
             reverseArrowDirection(),
             arrowPosition(),
             vectorColorProperty,
+            vectorTransparencyProperty,
             pseudoColorProperty,
             pseudoColorPropertyComponent,
             pseudoColorMapping));
@@ -291,6 +296,7 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
         BufferFactory<Point3G> arrowBasePositions(vectorCount);
         BufferFactory<Point3G> arrowHeadPositions(vectorCount);
         BufferFactory<ColorG> arrowColors = (vectorColorProperty || pseudoColorProperty) ? BufferFactory<ColorG>(vectorCount) : BufferFactory<ColorG>{};
+        BufferFactory<GraphicsFloatType> arrowTransparencies = vectorTransparencyProperty ? BufferFactory<GraphicsFloatType>(vectorCount) : BufferFactory<GraphicsFloatType>{};
 
         // Fill data buffers.
         if(vectorCount) {
@@ -299,6 +305,7 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
                 scalingFac = -scalingFac;
             BufferReadAccess<Point3> basePositionData(basePositions);
             BufferReadAccess<ColorG> vectorColorData(vectorColorProperty);
+            BufferReadAccess<GraphicsFloatType> vectorTransparencyData(vectorTransparencyProperty);
             RawBufferReadAccess vectorPseudoColorData(pseudoColorProperty);
             size_t outIndex = 0;
             const auto arrowPosition = this->arrowPosition();
@@ -317,6 +324,8 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
                         arrowColors[outIndex] = vectorColorData[inIndex];
                     else if(pseudoColorProperty)
                         arrowColors[outIndex] = pseudoColorMapping.valueToColor(vectorPseudoColorData.get<GraphicsFloatType>(inIndex, pseudoColorPropertyComponent));
+                    if(vectorTransparencyProperty)
+                        arrowTransparencies[outIndex] = vectorTransparencyData[inIndex];
                     outIndex++;
                 }
             }
@@ -330,7 +339,10 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
         arrows.setUniformColor(arrowColor());
         arrows.setPositions(arrowBasePositions.take(), arrowHeadPositions.take());
         arrows.setColors(arrowColors.take());
-        if(transparency > 0) {
+        if(arrowTransparencies) {
+            arrows.setTransparencies(arrowTransparencies.take());
+        }
+        else if(transparency > 0) {
             DataBufferPtr transparencyBuffer = DataBufferPtr::create(vectorCount, DataBuffer::FloatGraphics);
             transparencyBuffer->fill<GraphicsFloatType>(transparency);
             arrows.setTransparencies(std::move(transparencyBuffer));

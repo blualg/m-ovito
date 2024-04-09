@@ -20,6 +20,20 @@ Version 3.11.0 (xx-xxx-2024)
 
 .. sidebar::
 
+  * `Download <https://www.ovito.org/download_history/#3.10.5>`__
+
+----------------------------
+Version 3.10.5 (06-Apr-2024)
+----------------------------
+
+- Added new :ref:`standard particle property <particle-properties-list>` ``Vector Transparency``, which allows controlling the :ref:`transparency of vector glyphs <visual_elements.vectors>` on a per-particle basis
+- Fixed endless loop when trying to cancel SSH authentification dialog after opening an existing session state file
+- |ovito-python| Added option :py:attr:`OpenGLRenderer.order_independent_transparency <ovito.vis.OpenGLRenderer.order_independent_transparency>`
+- |ovito-python| Documented the capability of :py:func:`ovito.io.import_file` to load files from remote SSH and HTTPS servers
+- |ovito-pro| Corrected sun-sky light brightness scale of :ref:`rendering.ospray_renderer` to match old behavior (v3.10.0 regression)
+
+.. sidebar::
+
   * `Download <https://www.ovito.org/download_history/#3.10.4>`__
 
 ----------------------------

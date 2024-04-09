@@ -63,6 +63,9 @@ private:
     /// Controls the number of sub-pixels to render.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, antialiasingLevel, setAntialiasingLevel, PROPERTY_FIELD_RESETTABLE);
 
+    /// Activates the order-independent rendering method for semi-transparent objects (implemented by the OpenGL renderer).
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, orderIndependentTransparency, setOrderIndependentTransparency, PROPERTY_FIELD_RESETTABLE);
+
     /// The active renderer implementation.
     OORef<SceneRenderer> _internalRenderer;
 };

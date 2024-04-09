@@ -79,6 +79,9 @@ public:
 	/// Returns the multisampling level currently used by the renderer.
 	virtual int multisamplingLevel() const override final { return _multisamplingLevel; }
 
+	/// This may be called on a renderer before startRender() to control the rendering method for semi-transparent objects.
+	virtual void setOrderIndependentTransparencyHint(bool orderIndependent) override { _orderIndependentTransparency = orderIndependent; }
+
     /// Returns the OpenGL context this renderer uses.
     QOpenGLContext* glcontext() const { return _glcontext; }
 

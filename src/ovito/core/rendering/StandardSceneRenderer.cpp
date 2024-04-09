@@ -33,15 +33,28 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(StandardSceneRenderer);
 OVITO_CLASSINFO(StandardSceneRenderer, "DisplayName", "OpenGL");
 OVITO_CLASSINFO(StandardSceneRenderer, "Description", "Hardware-accelerated rendering engine, also used by OVITO's interactive viewports. The OpenGL renderer is fast and has the smallest memory footprint.");
 DEFINE_PROPERTY_FIELD(StandardSceneRenderer, antialiasingLevel);
+DEFINE_PROPERTY_FIELD(StandardSceneRenderer, orderIndependentTransparency);
 SET_PROPERTY_FIELD_LABEL(StandardSceneRenderer, antialiasingLevel, "Antialiasing level");
+SET_PROPERTY_FIELD_LABEL(StandardSceneRenderer, orderIndependentTransparency, "Order-independent transparency");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(StandardSceneRenderer, antialiasingLevel, IntegerParameterUnit, 1, 6);
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
 StandardSceneRenderer::StandardSceneRenderer(ObjectInitializationFlags flags) : SceneRenderer(flags),
-    _antialiasingLevel(3)
+    _antialiasingLevel(3),
+    _orderIndependentTransparency(false)
 {
+    if(ExecutionContext::isInteractive()) {
+        // Check which transparency rendering method has been selected by the user in the application settings dialog.
+#ifndef OVITO_DISABLE_QSETTINGS
+        QSettings applicationSettings;
+        if(applicationSettings.value("rendering/transparency_method").toInt() == 2) {
+            // Activate the Weighted Blended Order-Independent Transparency method.
+            setOrderIndependentTransparency(true);
+        }
+#endif
+    }
 }
 
 /******************************************************************************
@@ -74,6 +87,7 @@ void StandardSceneRenderer::startRender(const QSize& frameBufferSize)
 
     // Pass supersampling level requested by the user to the renderer implementation.
     _internalRenderer->setMultisamplingLevel(std::max(1, antialiasingLevel()));
+    _internalRenderer->setOrderIndependentTransparencyHint(orderIndependentTransparency());
 
     _internalRenderer->startRender(frameBufferSize);
 }

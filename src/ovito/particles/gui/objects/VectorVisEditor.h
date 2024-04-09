@@ -56,6 +56,7 @@ private:
     IntegerRadioButtonParameterUI* _coloringModeUI;
     ColorParameterUI* _arrowColorUI;
     SubObjectParameterUI* _colorMappingParamUI;
+    FloatParameterUI* _transparencyUI;
 };
 
 }   // End of namespace

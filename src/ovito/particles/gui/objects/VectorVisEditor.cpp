@@ -95,9 +95,9 @@ void VectorVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     layout->setRowMinimumHeight(row++, 6);
 
     // Transparency.
-    FloatParameterUI* transparencyUI = new FloatParameterUI(this, PROPERTY_FIELD(VectorVis::transparencyController));
-    layout->addWidget(transparencyUI->label(), row, 0, 1, 2);
-    layout->addLayout(transparencyUI->createFieldLayout(), row++, 2);
+    _transparencyUI = new FloatParameterUI(this, PROPERTY_FIELD(VectorVis::transparencyController));
+    layout->addWidget(_transparencyUI->label(), row, 0, 1, 2);
+    layout->addLayout(_transparencyUI->createFieldLayout(), row++, 2);
 
     layout->setRowMinimumHeight(row++, 6);
 
@@ -135,9 +135,12 @@ void VectorVisEditor::updateColoringOptions()
     DataOORef<const PropertyContainer> container = path.size() >= 2 ? dynamic_object_cast<const PropertyContainer>(std::move(path[path.size() - 2])) : nullptr;
 
     // Do the vector arrows, which are associated with the particles, have explicit RGB colors assigned ("Vector Color" property exists)?
-    bool hasExplicitColors = false;
-    if(const Particles* particles = dynamic_object_cast<Particles>(container.get()))
+    // Do the vector arrows, which are associated with the particles, have explicit transparency values assigned ("Vector Transparency" property exists)?
+    bool hasExplicitColors = false, hasExplicitTransparencies = false;
+    if(const Particles* particles = dynamic_object_cast<Particles>(container.get())) {
         hasExplicitColors = particles->getProperty(Particles::VectorColorProperty) != nullptr;
+        hasExplicitTransparencies = particles->getProperty(Particles::VectorTransparencyProperty) != nullptr;
+    }
 
     VectorVis::ColoringMode coloringMode = editObject() ? static_object_cast<VectorVis>(editObject())->coloringMode() : VectorVis::UniformColoring;
     if(container && coloringMode == VectorVis::PseudoColoring && !hasExplicitColors) {
@@ -153,6 +156,8 @@ void VectorVisEditor::updateColoringOptions()
 
     _coloringModeUI->buttonGroup()->button(VectorVis::PseudoColoring)->setEnabled(container && !container->properties().isEmpty() && !hasExplicitColors);
     _coloringModeUI->buttonGroup()->button(VectorVis::UniformColoring)->setEnabled(editObject() && !hasExplicitColors);
+
+    _transparencyUI->setEnabled(!hasExplicitTransparencies);
 }
 
 }   // End of namespace
