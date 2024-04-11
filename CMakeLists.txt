@@ -140,6 +140,8 @@ IF(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-delete-non-abstract-non-virtual-dtor")
     # Silence Intel DPC++ compiler warning: "known but unsupported action 'shared' for '#pragma section' - ignored"
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-ignored-pragmas")
+    # Silence Intel DPC++ compiler warning: "warning: 'QImage::setPixelColor' redeclared inline; 'dllimport' attribute ignored"
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-ignored-attributes")
     # Silence Intel DPC++ compiler remark: "Note that use of '-g' without any optimization-level option will turn off most compiler optimizations similar to use of '-O0'"
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Rno-debug-disables-optimization")
     SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Rno-debug-disables-optimization")

@@ -156,7 +156,7 @@ public:
                 }
             }
 
-            FloatType check = dmin * wnode[a];
+            Q_DECL_UNUSED FloatType check = dmin * wnode[a];
             OVITO_ASSERT(!std::isnan(check));
 
             return std::make_tuple(dmin * wnode[a], vmin);

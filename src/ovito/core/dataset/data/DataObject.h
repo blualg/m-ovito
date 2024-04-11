@@ -242,7 +242,7 @@ private:
         }
         _dataReferenceCount.fetch_sub(1, std::memory_order_release);
 #else
-        auto oldVal = _dataReferenceCount.fetch_sub(1, std::memory_order_release);
+        Q_DECL_UNUSED auto oldVal = _dataReferenceCount.fetch_sub(1, std::memory_order_release);
         OVITO_ASSERT(oldVal > 0);
 #endif
     }

@@ -572,7 +572,7 @@ private:
                 while(!toProcess.empty());
 
                 // Create a spatial region in the output mesh.
-                SurfaceMesh::region_index regionId = regionVolumes.size();
+                Q_DECL_UNUSED SurfaceMesh::region_index regionId = regionVolumes.size();
                 regionVolumes.push_back(regionVolume);
                 OVITO_ASSERT(regionId + 1 == currentRegionId);
             }

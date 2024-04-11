@@ -69,7 +69,7 @@ Future<PipelineFlowState> ParticlesReplicateModifierDelegate::apply(const Modifi
 
         // Extend particle property arrays.
         size_t oldParticleCount = inputParticles->elementCount();
-        size_t newParticleCount = oldParticleCount * numCopies;
+        Q_DECL_UNUSED size_t newParticleCount = oldParticleCount * numCopies;
 
         // Get the (input) simulation cell.
         const SimulationCell* cell = state.expectObject<SimulationCell>();
@@ -129,7 +129,7 @@ Future<PipelineFlowState> ParticlesReplicateModifierDelegate::apply(const Modifi
         // Replicate bonds.
         if(outputParticles->bonds()) {
             size_t oldBondCount = outputParticles->bonds()->elementCount();
-            size_t newBondCount = oldBondCount * numCopies;
+            Q_DECL_UNUSED size_t newBondCount = oldBondCount * numCopies;
 
             BufferReadAccessAndRef<Vector3I> oldPeriodicImages = outputParticles->bonds()->getProperty(Bonds::PeriodicImageProperty);
 

@@ -173,7 +173,7 @@ private:
 
 /// This macro registers some ModificationNode-derived class as the pipeline node type of some Modifier-derived class.
 #define SET_MODIFICATION_NODE_TYPE(ModifierClass, ModificationNodeClass) \
-    static const int __modnodeSetter##ModifierClass = (Ovito::ModificationNode::registry().registerModificationNodeType(&ModifierClass::OOClass(), &ModificationNodeClass::OOClass()), 0);
+    Q_DECL_UNUSED static const int __modnodeSetter##ModifierClass = (Ovito::ModificationNode::registry().registerModificationNodeType(&ModifierClass::OOClass(), &ModificationNodeClass::OOClass()), 0);
 
 }   // End of namespace
 

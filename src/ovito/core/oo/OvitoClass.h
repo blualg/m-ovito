@@ -272,7 +272,7 @@ private: \
 
 /// Adds a static key-value pair to a class' metadata table, similar to Qt's Q_CLASSINFO macro.
 #define OVITO_CLASSINFO(classname, key, value_str) \
-    static const Ovito::OvitoClass::MetadataItem OVITO_CLASSINFO_JOIN(__metadata_, __LINE__){key, value_str, &classname::__OOClass_metadata_head};
+    Q_DECL_UNUSED static const Ovito::OvitoClass::MetadataItem OVITO_CLASSINFO_JOIN(__metadata_, __LINE__){key, value_str, &classname::__OOClass_metadata_head};
 
 }   // End of namespace
 

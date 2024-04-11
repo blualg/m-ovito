@@ -187,7 +187,7 @@ void GzipIODevice::close()
     // Flush and close the zlib stream.
     if(openMode() & ReadOnly) {
         _state = NotReadFirstByte;
-        int status = ::inflateEnd(&_zlibStream);
+        Q_DECL_UNUSED int status = ::inflateEnd(&_zlibStream);
         OVITO_ASSERT(status == Z_OK);
     }
     else {
@@ -195,7 +195,7 @@ void GzipIODevice::close()
             _state = NoBytesWritten;
             flushZlib(Z_FINISH);
         }
-        int status = ::deflateEnd(&_zlibStream);
+        Q_DECL_UNUSED int status = ::deflateEnd(&_zlibStream);
         OVITO_ASSERT(status == Z_OK);
     }
 

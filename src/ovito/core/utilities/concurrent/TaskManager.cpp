@@ -181,8 +181,8 @@ void TaskManager::shutdownImplementation(std::unique_lock<std::mutex>& lock)
 
     // Wait until all threads did terminate. That's because canceled asynchronous tasks
     // may still be running in threads until they notice they have been canceled.
-    bool result = _threadPool.waitForDone() && _threadPoolUI.waitForDone() && _threadPoolSerial.waitForDone();
-    OVITO_ASSERT(result);
+    Q_DECL_UNUSED bool result = _threadPool.waitForDone() && _threadPoolUI.waitForDone() && _threadPoolSerial.waitForDone();
+    OVITO_ASSERT(result); 
 
     // Shuts down the SYCL queue.
 #ifdef OVITO_USE_SYCL

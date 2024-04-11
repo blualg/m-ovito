@@ -194,7 +194,7 @@ void SyclCutoffNeighborFinder::prepare(FloatType cutoffRadius, const Property* p
                 Point3 rp = reciprocalBinCell * wp;
                 Vector3I pbcShift = Vector3I::Zero();
                 for(size_t k = 0; k < 3; k++) {
-                    binLocation[k] = (int)std::floor(rp[k]);
+                    binLocation[k] = (int)sycl::floor(rp[k]);
                     if(pbcFlags[k]) {
                         if(binLocation[k] < 0 || binLocation[k] >= binDim[k]) {
                             int shift;

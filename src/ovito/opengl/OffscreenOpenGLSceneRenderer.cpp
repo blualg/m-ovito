@@ -233,7 +233,7 @@ void OffscreenOpenGLSceneRenderer::endRender()
 
     // Release OpenGL resources. This requires an active GL context.
     if(_offscreenContext) {
-        bool success = _offscreenContext->makeCurrent(_offscreenSurface.get());
+        Q_DECL_UNUSED bool success = _offscreenContext->makeCurrent(_offscreenSurface.get());
         OVITO_ASSERT(success);
     }
     setCurrentResourceFrame({});

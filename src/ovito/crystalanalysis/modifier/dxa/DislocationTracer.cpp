@@ -239,7 +239,7 @@ void DislocationTracer::findPrimarySegments(int maxBurgersCircuitSize)
 
         // This is the cluster we work in.
         OVITO_ASSERT(startNode.edges()->clusterTransition);
-        Cluster* cluster = startNode.edges()->clusterTransition->cluster1;
+        Q_DECL_UNUSED Cluster* cluster = startNode.edges()->clusterTransition->cluster1;
         OVITO_ASSERT(cluster && cluster->id != 0);
 
         bool foundBurgersCircuit = false;

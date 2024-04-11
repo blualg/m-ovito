@@ -27,6 +27,7 @@
 #include <ovito/core/utilities/concurrent/Task.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/concurrent/detail/TaskCallback.h>
+#include <ovito/core/app/Application.h>
 
 namespace Ovito {
 

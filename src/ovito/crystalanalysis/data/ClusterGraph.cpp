@@ -60,7 +60,7 @@ Cluster* ClusterGraph::createCluster(int structureType, int id)
     _clusters.push_back(cluster);
 
     // Register cluster in ID lookup map.
-    bool isUniqueId = _clusterMap.insert(std::make_pair(id, cluster)).second;
+    Q_DECL_UNUSED bool isUniqueId = _clusterMap.insert(std::make_pair(id, cluster)).second;
     OVITO_ASSERT(isUniqueId);
 
     return cluster;

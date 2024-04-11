@@ -266,8 +266,8 @@ void FileManager::releaseSshConnection(SshConnection* connection)
 {
     OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
 
-    bool wasAquired = _acquiredConnections.removeOne(connection);
-    OVITO_ASSERT(wasAquired);
+    Q_DECL_UNUSED bool wasAcquired = _acquiredConnections.removeOne(connection);
+    OVITO_ASSERT(wasAcquired); 
     if(_acquiredConnections.contains(connection))
         return;
 

@@ -409,9 +409,11 @@ void StructureAnalysis::initializeListOfStructures()
             }
             if(invalidFrom == coordStruct.numNeighbors) {
                 std::copy(permutation.begin(), permutation.begin() + coordStruct.numNeighbors, symmetryPermutation.permutation.begin());
+#ifdef OVITO_DEBUG
                 for(const auto& entry : latticeStruct->permutations) {
                     OVITO_ASSERT(!entry.transformation.equals(symmetryPermutation.transformation));
                 }
+#endif
                 latticeStruct->permutations.push_back(symmetryPermutation);
             }
             else {

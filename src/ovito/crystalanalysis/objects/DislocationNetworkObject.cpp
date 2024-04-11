@@ -99,9 +99,11 @@ void DislocationNetworkObject::updateEditableProxies(PipelineFlowState& state, C
         // Add microstructure phases that are non-existing in the actual data object.
         // Note: Currently this should never happen, because file parser never
         // remove element types.
+#ifdef OVITO_DEBUG
         for(const MicrostructurePhase* proxyPhase : proxy->crystalStructures()) {
             OVITO_ASSERT(std::any_of(self->crystalStructures().begin(), self->crystalStructures().end(), [proxyPhase](const MicrostructurePhase* phase) { return phase->editableProxy() == proxyPhase; }));
         }
+#endif
     }
     else {
         // Create and initialize a new proxy object.

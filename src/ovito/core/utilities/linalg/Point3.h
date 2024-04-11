@@ -262,9 +262,9 @@ public:
 #ifdef OVITO_USE_SYCL
     // Workaround for missing swap() method in SYCL's marray class template.
     friend void swap(Point_3& a, Point_3& b) noexcept {
-        using namespace std;
-        for(size_type i = 0; i < 3; i++)
-            swap(a[i], b[i]);
+        for(size_type i = 0; i < 3; i++) {
+            T tmp = a[i]; a[i] = b[i]; b[i] = tmp;
+        }
     }
 #endif
 };

@@ -387,7 +387,7 @@ int CommonNeighborAnalysisModifier::calcMaxChainLength(CNAPairBond* neighborBond
         unsigned int atomsProcessed = 0;
         int clusterSize = 1;
         do {
-#ifndef Q_CC_MSVC
+#if !defined(Q_CC_MSVC) || defined(OVITO_USE_SYCL)
             // Determine the number of trailing 0-bits in atomsToProcess, starting at the least significant bit position.
             int nextAtomIndex = __builtin_ctz(atomsToProcess);
 #else

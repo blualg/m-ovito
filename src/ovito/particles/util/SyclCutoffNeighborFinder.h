@@ -144,7 +144,7 @@ public:
             for(size_t k = 0; k < 3; k++) {
                 FloatType rc = _reciprocalBinCell.prodrow(center, k);
                 OVITO_ASSERT(!_pbcFlags[k] || (rc >= -FLOATTYPE_EPSILON && rc <= _binDim[k]+FLOATTYPE_EPSILON));
-                centerBin[k] = std::clamp((int)std::floor(rc), 0, _binDim[k] - 1);
+                centerBin[k] = std::clamp((int)sycl::floor(rc), 0, _binDim[k] - 1);
             }
 
             // Visit all adjacent cell as given by the precomputed stencil.

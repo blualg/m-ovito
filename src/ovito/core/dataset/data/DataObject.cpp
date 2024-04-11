@@ -255,8 +255,8 @@ void DataObject::updateEditableProxies(PipelineFlowState& state, ConstDataObject
     // have already replaced it with a mutable copy.
 
     const DataObject* self = dataPath.back();
-    const OvitoClass& selfClass = self->getOOClass();
-    OVITO_ASSERT(selfClass == this->getOOClass());
+    Q_DECL_UNUSED const OvitoClass& selfClass = self->getOOClass();
+    OVITO_ASSERT(selfClass == this->getOOClass()); 
     OVITO_ASSERT(!self->isUndoRecording());
 
     // Visit all sub-objects recursively.

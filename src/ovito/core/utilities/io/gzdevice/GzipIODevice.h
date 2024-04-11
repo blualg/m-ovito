@@ -56,7 +56,7 @@ public:
     ~GzipIndex() {
         for(Entry& entry : _entries) {
             int status = ::inflateEnd(&entry.zlibStream);
-            OVITO_ASSERT(status == Z_OK);
+            OVITO_ASSERT(status == Z_OK); Q_UNUSED(status);
         }
     }
 

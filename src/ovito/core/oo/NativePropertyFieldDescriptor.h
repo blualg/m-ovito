@@ -216,31 +216,32 @@ public:
 /// Assigns a unit class to an animation controller reference or numeric property field.
 /// The unit class will automatically be assigned to the numeric input field for this parameter in the user interface.
 #define SET_PROPERTY_FIELD_UNITS(DefiningClass, name, ParameterUnitClass)                               \
-    static Ovito::NativePropertyFieldDescriptor::PropertyFieldUnitsSetter __unitsSetter##DefiningClass##name(PROPERTY_FIELD(DefiningClass::name), &ParameterUnitClass::staticMetaObject);
+    Q_DECL_UNUSED static Ovito::NativePropertyFieldDescriptor::PropertyFieldUnitsSetter __unitsSetter##DefiningClass##name(PROPERTY_FIELD(DefiningClass::name), &ParameterUnitClass::staticMetaObject);
 
 /// Assigns a unit class and a minimum value limit to an animation controller reference or numeric property field.
 /// The unit class and the value limit will automatically be assigned to the numeric input field for this parameter in the user interface.
 #define SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(DefiningClass, name, ParameterUnitClass, minValue) \
-    static Ovito::NativePropertyFieldDescriptor::PropertyFieldUnitsSetter __unitsSetter##DefiningClass##name(PROPERTY_FIELD(DefiningClass::name), &ParameterUnitClass::staticMetaObject, minValue);
+    Q_DECL_UNUSED static Ovito::NativePropertyFieldDescriptor::PropertyFieldUnitsSetter __unitsSetter##DefiningClass##name(PROPERTY_FIELD(DefiningClass::name), &ParameterUnitClass::staticMetaObject, minValue);
 
 /// Assigns a unit class and a minimum and maximum value limit to an animation controller reference or numeric property field.
 /// The unit class and the value limits will automatically be assigned to the numeric input field for this parameter in the user interface.
 #define SET_PROPERTY_FIELD_UNITS_AND_RANGE(DefiningClass, name, ParameterUnitClass, minValue, maxValue) \
-    static Ovito::NativePropertyFieldDescriptor::PropertyFieldUnitsSetter __unitsSetter##DefiningClass##name(PROPERTY_FIELD(DefiningClass::name), &ParameterUnitClass::staticMetaObject, minValue, maxValue);
+    Q_DECL_UNUSED static Ovito::NativePropertyFieldDescriptor::PropertyFieldUnitsSetter __unitsSetter##DefiningClass##name(PROPERTY_FIELD(DefiningClass::name), &ParameterUnitClass::staticMetaObject, minValue, maxValue);
 
 /// Assigns a label string to the given reference or property field.
 /// This string will be used in the user interface.
 #define SET_PROPERTY_FIELD_LABEL(DefiningClass, name, labelText)                                        \
-    static Ovito::NativePropertyFieldDescriptor::PropertyFieldDisplayNameSetter __displayNameSetter##DefiningClass##name(PROPERTY_FIELD(DefiningClass::name), labelText);
+    Q_DECL_UNUSED static Ovito::NativePropertyFieldDescriptor::PropertyFieldDisplayNameSetter __displayNameSetter##DefiningClass##name(PROPERTY_FIELD(DefiningClass::name), labelText);
 
 /// Use this macro to let the system automatically generate an event of the
 /// given type every time the given property field changes its value.
 #define SET_PROPERTY_FIELD_CHANGE_EVENT(DefiningClass, name, eventType)                                     \
-    static Ovito::NativePropertyFieldDescriptor::PropertyFieldChangeEventSetter __changeEventSetter##DefiningClass##name(PROPERTY_FIELD(DefiningClass::name), eventType);
+    Q_DECL_UNUSED static Ovito::NativePropertyFieldDescriptor::PropertyFieldChangeEventSetter __changeEventSetter##DefiningClass##name(PROPERTY_FIELD(DefiningClass::name), eventType);
 
 /// Use this macro to give a property field an alias identifier.
 #define SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(DefiningClass, name, aliasName)                                     \
-    static Ovito::NativePropertyFieldDescriptor::PropertyFieldAliasIdentifierSetter __aliasSetter##DefiningClass##name(PROPERTY_FIELD(DefiningClass::name), aliasName);
+    Q_DECL_UNUSED static Ovito::NativePropertyFieldDescriptor::PropertyFieldAliasIdentifierSetter __aliasSetter##DefiningClass##name(PROPERTY_FIELD(DefiningClass::name), aliasName); \
+
 
 /// Adds a property field to a class definition.
 /// The first parameter specifies the data type of the property field.
