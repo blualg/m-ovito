@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/MarkerPrimitive.h>
 #include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
-#include "OpenGLSceneRenderer.h"
+#include "OpenGLRenderer.h"
 #include "OpenGLShaderHelper.h"
 
 namespace Ovito {
@@ -31,7 +31,7 @@ namespace Ovito {
 /******************************************************************************
 * Renders a set of markers.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderMarkersImplementation(const MarkerPrimitive& primitive, int pickingGroupID)
+void OpenGLRenderer::renderMarkersImplementation(const MarkerPrimitive& primitive, int pickingGroupID)
 {
     // Step out early if there is nothing to render.
     if(!primitive.positions() || primitive.positions()->size() == 0)

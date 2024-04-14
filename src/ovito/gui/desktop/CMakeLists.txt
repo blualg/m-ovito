@@ -121,7 +121,6 @@ OVITO_STANDARD_PLUGIN(Gui
         properties/OpenDataInspectorButton.cpp
         properties/ModifierGroupEditor.cpp
         rendering/RenderSettingsEditor.cpp
-        rendering/StandardSceneRendererEditor.cpp
         viewport/ViewportMenu.cpp
         viewport/WidgetViewportWindow.cpp
         viewport/input/XFormModes.cpp

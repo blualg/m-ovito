@@ -25,7 +25,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/viewport/WidgetViewportWindow.h>
-#include <ovito/opengl/OpenGLSceneRenderer.h>
+#include <ovito/opengl/OpenGLRenderer.h>
 #include "OpenGLPickingBuffer.h"
 
 #include <QOpenGLWidget>
@@ -52,7 +52,7 @@ public:
     virtual void releaseResources() override;
 
     /// Returns the OpenGL renderer associated with this viewport window.
-    OpenGLSceneRenderer* openglRenderer() const { return static_object_cast<OpenGLSceneRenderer>(renderer()); }
+    OpenGLRenderer* openglRenderer() const { return static_object_cast<OpenGLRenderer>(renderer()); }
 
 protected:
 

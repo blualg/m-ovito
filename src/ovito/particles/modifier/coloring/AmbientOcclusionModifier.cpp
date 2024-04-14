@@ -31,7 +31,7 @@
 #include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
-#include <ovito/opengl/OffscreenOpenGLSceneRenderer.h>
+#include <ovito/opengl/OffscreenOpenGLRenderer.h>
 #include "AmbientOcclusionModifier.h"
 
 namespace Ovito {
@@ -113,7 +113,8 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
     auto brightnessFuture = request.modificationNode()->partialResultsCache().getOrCompute(state.data(), [&]() {
 
         // Create the OpenGL offscreen renderer.
-        OORef<OffscreenOpenGLSceneRenderer> renderer = OORef<OffscreenOpenGLSceneRenderer>::create();
+        OORef<OffscreenOpenGLRenderer> renderer = OORef<OffscreenOpenGLRenderer>::create();
+        renderer->setAntialiasingLevel(1);
 
         // Perform the AO computation in a separate thread.
         return AsynchronousTask<ConstDataBufferPtr>::runAsync(
@@ -215,7 +216,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
                     frameGraph->setProjectionParams(projParams);
 
                     // Discard the existing image in the frame buffer so that
-                    // OffscreenOpenGLSceneRenderer::renderFrame() can just return the unmodified
+                    // OffscreenOpenGLRenderer::renderFrame() can just return the unmodified
                     // frame buffer contents.
                     frameBuffer->image() = QImage();
 

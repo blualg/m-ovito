@@ -25,7 +25,7 @@
 #include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
 #include <ovito/core/utilities/SortZipped.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
-#include "OpenGLSceneRenderer.h"
+#include "OpenGLRenderer.h"
 #include "OpenGLShaderHelper.h"
 
 namespace Ovito {
@@ -33,7 +33,7 @@ namespace Ovito {
 /******************************************************************************
 * Renders a set of particles.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive& primitive, int pickingGroupID)
+void OpenGLRenderer::renderParticlesImplementation(const ParticlePrimitive& primitive, int pickingGroupID)
 {
     // Make sure there is something to be rendered. Otherwise, step out early.
     if(!primitive.positions() || primitive.positions()->size() == 0)

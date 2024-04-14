@@ -24,7 +24,7 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/opengl/OpenGLSceneRenderer.h>
+#include <ovito/opengl/OpenGLRenderer.h>
 #include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
 
 namespace Ovito {

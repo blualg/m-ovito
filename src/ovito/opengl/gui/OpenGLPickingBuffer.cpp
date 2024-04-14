@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/opengl/OpenGLSceneRenderer.h>
+#include <ovito/opengl/OpenGLRenderer.h>
 #include "OpenGLPickingBuffer.h"
 
 namespace Ovito {

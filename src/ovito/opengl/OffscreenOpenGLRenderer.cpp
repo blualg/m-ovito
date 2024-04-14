@@ -27,17 +27,39 @@
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/app/Application.h>
-#include "OffscreenOpenGLSceneRenderer.h"
+#include <ovito/core/utilities/units/UnitsManager.h>
+#include "OffscreenOpenGLRenderer.h"
 
 namespace Ovito {
 
-IMPLEMENT_CREATABLE_OVITO_CLASS(OffscreenOpenGLSceneRenderer);
+IMPLEMENT_CREATABLE_OVITO_CLASS(OffscreenOpenGLRenderer);
+OVITO_CLASSINFO(OffscreenOpenGLRenderer, "ClassNameAlias", "StandardSceneRenderer");  // For backward compatibility with OVITO 3.10
+OVITO_CLASSINFO(OffscreenOpenGLRenderer, "DisplayName", "OpenGL");
+OVITO_CLASSINFO(OffscreenOpenGLRenderer, "Description", "Hardware-accelerated rendering engine, also used by OVITO's interactive viewports. The OpenGL renderer is fast and has the smallest memory footprint.");
+DEFINE_PROPERTY_FIELD(OffscreenOpenGLRenderer, antialiasingLevel);
+DEFINE_PROPERTY_FIELD(OffscreenOpenGLRenderer, orderIndependentTransparency);
+SET_PROPERTY_FIELD_LABEL(OffscreenOpenGLRenderer, antialiasingLevel, "Antialiasing level");
+SET_PROPERTY_FIELD_LABEL(OffscreenOpenGLRenderer, orderIndependentTransparency, "Order-independent transparency");
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(OffscreenOpenGLRenderer, antialiasingLevel, IntegerParameterUnit, 1, 6);
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OffscreenOpenGLSceneRenderer::OffscreenOpenGLSceneRenderer(ObjectInitializationFlags flags) : OpenGLSceneRenderer(flags)
+OffscreenOpenGLRenderer::OffscreenOpenGLRenderer(ObjectInitializationFlags flags) : OpenGLRenderer(flags),
+    _antialiasingLevel(3),
+    _orderIndependentTransparency(false)
 {
+    if(ExecutionContext::isInteractive()) {
+        // Check which transparency rendering method has been selected by the user in the application settings dialog.
+#ifndef OVITO_DISABLE_QSETTINGS
+        QSettings applicationSettings;
+        if(applicationSettings.value("rendering/transparency_method").toInt() == 2) {
+            // Activate the Weighted Blended Order-Independent Transparency method.
+            setOrderIndependentTransparency(true);
+        }
+#endif
+    }
+
     // Create the offscreen surface.
     // This must happen in the main thread.
     createOffscreenSurface();
@@ -45,13 +67,13 @@ OffscreenOpenGLSceneRenderer::OffscreenOpenGLSceneRenderer(ObjectInitializationF
     // Initialize OpenGL in main thread if it hasn't already been initialized.
     // This call is a workaround for an access vialotion that otherwise occurs on Windows
     // when creating the first OpenGL context from a worker thread when running in headless mode.
-    OpenGLSceneRenderer::determineOpenGLInfo();
+    OpenGLRenderer::determineOpenGLInfo();
 }
 
 /******************************************************************************
 * Creates the QOffscreenSurface in the main thread.
 ******************************************************************************/
-void OffscreenOpenGLSceneRenderer::createOffscreenSurface()
+void OffscreenOpenGLRenderer::createOffscreenSurface()
 {
     // Surface creation can only be performed in the main thread.
     OVITO_ASSERT(ExecutionContext::isMainThread());
@@ -82,7 +104,7 @@ void OffscreenOpenGLSceneRenderer::createOffscreenSurface()
 /******************************************************************************
 * Called when this renderer is being destroyed.
 ******************************************************************************/
-void OffscreenOpenGLSceneRenderer::aboutToBeDeleted()
+void OffscreenOpenGLRenderer::aboutToBeDeleted()
 {
     // Release the offscreen surface.
     if(_offscreenSurface) {
@@ -91,15 +113,19 @@ void OffscreenOpenGLSceneRenderer::aboutToBeDeleted()
         else
             _offscreenSurface.release()->deleteLater();
     }
-    OpenGLSceneRenderer::aboutToBeDeleted();
+    OpenGLRenderer::aboutToBeDeleted();
 }
 
 /******************************************************************************
 * Prepares the renderer for rendering one or more frames.
 ******************************************************************************/
-void OffscreenOpenGLSceneRenderer::startRender(const QSize& frameBufferSize)
+void OffscreenOpenGLRenderer::startRender(const QSize& frameBufferSize)
 {
-    OpenGLSceneRenderer::startRender(frameBufferSize);
+    // Pass supersampling level requested by the user to the base class.
+    setMultisamplingLevel(std::max(1, antialiasingLevel()));
+    setOrderIndependentTransparencyHint(orderIndependentTransparency());
+
+    OpenGLRenderer::startRender(frameBufferSize);
 
     // Use the global vis cache from the DataSetContainer by default.
     if(!visCache())
@@ -126,7 +152,7 @@ void OffscreenOpenGLSceneRenderer::startRender(const QSize& frameBufferSize)
     QSurfaceFormat format = _offscreenContext->format();
     // OpenGL in a VirtualBox machine Windows guest reports "2.1 Chromium 1.9" as version string, which is
     // not correctly parsed by Qt. We have to workaround this.
-    if(OpenGLSceneRenderer::openGLVersion().startsWith("2.1 ")) {
+    if(OpenGLRenderer::openGLVersion().startsWith("2.1 ")) {
         format.setMajorVersion(2);
         format.setMinorVersion(1);
     }
@@ -140,11 +166,11 @@ void OffscreenOpenGLSceneRenderer::startRender(const QSize& frameBufferSize)
                     "OpenGL renderer: %2\n"
                     "OpenGL version: %3.%4 (%5)\n\n"
                     "Ovito requires at least OpenGL version %6.%7.")
-                    .arg(QString(OpenGLSceneRenderer::openGLVendor()))
-                    .arg(QString(OpenGLSceneRenderer::openGLRenderer()))
+                    .arg(QString(OpenGLRenderer::openGLVendor()))
+                    .arg(QString(OpenGLRenderer::openGLRenderer()))
                     .arg(format.majorVersion())
                     .arg(format.minorVersion())
-                    .arg(QString(OpenGLSceneRenderer::openGLVersion()))
+                    .arg(QString(OpenGLRenderer::openGLVersion()))
                     .arg(OVITO_OPENGL_MINIMUM_VERSION_MAJOR)
                     .arg(OVITO_OPENGL_MINIMUM_VERSION_MINOR)
                 );
@@ -175,7 +201,7 @@ void OffscreenOpenGLSceneRenderer::startRender(const QSize& frameBufferSize)
 /******************************************************************************
 * Renders a single frame.
 ******************************************************************************/
-void OffscreenOpenGLSceneRenderer::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, const QRect& viewportRect, std::shared_ptr<FrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingIdentifierMap)
+void OffscreenOpenGLRenderer::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, const QRect& viewportRect, std::shared_ptr<FrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingIdentifierMap)
 {
     OVITO_ASSERT(visCache());
 
@@ -193,7 +219,7 @@ void OffscreenOpenGLSceneRenderer::renderFrame(std::shared_ptr<const FrameGraph>
     shiftedViewportRect.moveTo(0,0);
 
     // Let the base class do the main rendering work.
-    OpenGLSceneRenderer::renderFrame(frameGraph, shiftedViewportRect, {}, std::move(pickingIdentifierMap));
+    OpenGLRenderer::renderFrame(frameGraph, shiftedViewportRect, {}, std::move(pickingIdentifierMap));
 
     // Transfer the rendered image from the OpenGL framebuffer to the output frame buffer.
     if(frameBuffer) {
@@ -227,9 +253,9 @@ void OffscreenOpenGLSceneRenderer::renderFrame(std::shared_ptr<const FrameGraph>
 /******************************************************************************
 * Is called after rendering has finished.
 ******************************************************************************/
-void OffscreenOpenGLSceneRenderer::endRender()
+void OffscreenOpenGLRenderer::endRender()
 {
-    OpenGLSceneRenderer::endRender();
+    OpenGLRenderer::endRender();
 
     // Release OpenGL resources. This requires an active GL context.
     if(_offscreenContext) {

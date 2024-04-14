@@ -28,6 +28,7 @@ OVITO_STANDARD_PLUGIN(OpenGLRendererGui
     SOURCES
         OpenGLViewportWindow.cpp
         OpenGLPickingBuffer.cpp
+        OffscreenOpenGLRendererEditor.cpp
     PLUGIN_DEPENDENCIES
         OpenGLRenderer
     LIB_DEPENDENCIES

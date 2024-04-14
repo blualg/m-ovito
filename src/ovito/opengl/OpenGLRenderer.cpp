@@ -32,7 +32,7 @@
 #include <ovito/core/rendering/ColorCodingGradient.h>
 #include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
-#include "OpenGLSceneRenderer.h"
+#include "OpenGLRenderer.h"
 #include "OpenGLHelpers.h"
 #include "OpenGLShaderHelper.h"
 #include "OpenGLTexture.h"
@@ -60,56 +60,57 @@ static void registerQtResources()
 
 namespace Ovito {
 
-IMPLEMENT_ABSTRACT_OVITO_CLASS(OpenGLSceneRenderer);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(OpenGLRenderer);
+OVITO_CLASSINFO(OpenGLRenderer, "ClassNameAlias", "OpenGLSceneRenderer");  // For backward compatibility with OVITO 3.10
 
 /// The vendor of the OpenGL implementation in use.
-QByteArray OpenGLSceneRenderer::_openGLVendor;
+QByteArray OpenGLRenderer::_openGLVendor;
 
 /// The renderer name of the OpenGL implementation in use.
-QByteArray OpenGLSceneRenderer::_openGLRenderer;
+QByteArray OpenGLRenderer::_openGLRenderer;
 
 /// The version string of the OpenGL implementation in use.
-QByteArray OpenGLSceneRenderer::_openGLVersion;
+QByteArray OpenGLRenderer::_openGLVersion;
 
 /// The version of the OpenGL shading language supported by the system.
-QByteArray OpenGLSceneRenderer::_openGLSLVersion;
+QByteArray OpenGLRenderer::_openGLSLVersion;
 
 /// The current surface format used by the OpenGL implementation.
-QSurfaceFormat OpenGLSceneRenderer::_openglSurfaceFormat;
+QSurfaceFormat OpenGLRenderer::_openglSurfaceFormat;
 
 /// The list of extensions supported by the OpenGL implementation.
-QSet<QByteArray> OpenGLSceneRenderer::_openglExtensions;
+QSet<QByteArray> OpenGLRenderer::_openglExtensions;
 
 /// Indicates whether the OpenGL implementation supports geometry shaders.
-bool OpenGLSceneRenderer::_openGLSupportsGeometryShaders = false;
+bool OpenGLRenderer::_openGLSupportsGeometryShaders = false;
 
 /******************************************************************************
 * Is called by OVITO to query the class for any information that should be
 * included in the application's system report.
 ******************************************************************************/
-void OpenGLSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& stream, UserInterface& userInterface) const
+void OpenGLRenderer::OOMetaClass::querySystemInformation(QTextStream& stream, UserInterface& userInterface) const
 {
-    if(this == &OpenGLSceneRenderer::OOClass()) {
-        OpenGLSceneRenderer::determineOpenGLInfo();
+    if(this == &OpenGLRenderer::OOClass()) {
+        OpenGLRenderer::determineOpenGLInfo();
 
         stream << "======= OpenGL info =======" << "\n";
-        const QSurfaceFormat& format = OpenGLSceneRenderer::openglSurfaceFormat();
-        stream << "Vendor: " << OpenGLSceneRenderer::openGLVendor() << "\n";
-        stream << "Renderer: " << OpenGLSceneRenderer::openGLRenderer() << "\n";
+        const QSurfaceFormat& format = OpenGLRenderer::openglSurfaceFormat();
+        stream << "Vendor: " << OpenGLRenderer::openGLVendor() << "\n";
+        stream << "Renderer: " << OpenGLRenderer::openGLRenderer() << "\n";
         stream << "Version number: " << format.majorVersion() << QStringLiteral(".") << format.minorVersion() << "\n";
-        stream << "Version string: " << OpenGLSceneRenderer::openGLVersion() << "\n";
+        stream << "Version string: " << OpenGLRenderer::openGLVersion() << "\n";
         stream << "Profile: " << (format.profile() == QSurfaceFormat::CoreProfile ? "core" : (format.profile() == QSurfaceFormat::CompatibilityProfile ? "compatibility" : "none")) << "\n";
         stream << "Swap behavior: " << (format.swapBehavior() == QSurfaceFormat::SingleBuffer ? QStringLiteral("single buffer") : (format.swapBehavior() == QSurfaceFormat::DoubleBuffer ? QStringLiteral("double buffer") : (format.swapBehavior() == QSurfaceFormat::TripleBuffer ? QStringLiteral("triple buffer") : QStringLiteral("other")))) << "\n";
         stream << "Depth buffer size: " << format.depthBufferSize() << "\n";
         stream << "Stencil buffer size: " << format.stencilBufferSize() << "\n";
-        stream << "Shading language: " << OpenGLSceneRenderer::openGLSLVersion() << "\n";
+        stream << "Shading language: " << OpenGLRenderer::openGLSLVersion() << "\n";
         stream << "Deprecated functions: " << (format.testOption(QSurfaceFormat::DeprecatedFunctions) ? "yes" : "no") << "\n";
-        stream << "Geometry shader support: " << (OpenGLSceneRenderer::openGLSupportsGeometryShaders() ? "yes" : "no") << "\n";
+        stream << "Geometry shader support: " << (OpenGLRenderer::openGLSupportsGeometryShaders() ? "yes" : "no") << "\n";
         stream << "Alpha: " << format.hasAlpha() << "\n";
 #if 0
         stream << "Supported extensions:\n";
         QStringList extensionList;
-        for(const QByteArray& extension : OpenGLSceneRenderer::openglExtensions())
+        for(const QByteArray& extension : OpenGLRenderer::openglExtensions())
             extensionList << extension;
         extensionList.sort();
         for(const QString& extension : extensionList)
@@ -121,7 +122,7 @@ void OpenGLSceneRenderer::OOMetaClass::querySystemInformation(QTextStream& strea
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OpenGLSceneRenderer::OpenGLSceneRenderer(ObjectInitializationFlags flags) : SceneRenderer(flags)
+OpenGLRenderer::OpenGLRenderer(ObjectInitializationFlags flags) : SceneRenderer(flags)
 {
     registerQtResources();
 
@@ -139,7 +140,7 @@ OpenGLSceneRenderer::OpenGLSceneRenderer(ObjectInitializationFlags flags) : Scen
 /******************************************************************************
 * Determines the capabilities of the current OpenGL implementation.
 ******************************************************************************/
-void OpenGLSceneRenderer::determineOpenGLInfo()
+void OpenGLRenderer::determineOpenGLInfo()
 {
     if(!_openGLVendor.isEmpty())
         return;     // Already done.
@@ -188,14 +189,14 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 /******************************************************************************
 * Renders a single frame.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, const QRect& viewportRect, std::shared_ptr<FrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingIdentifierMap)
+void OpenGLRenderer::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, const QRect& viewportRect, std::shared_ptr<FrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingIdentifierMap)
 {
     // Make sure we have a valid cache frame set for the resource manager during this render pass.
     OVITO_ASSERT(hasCurrentResourceFrame());
 
     // The OpenGL renderer can only render to a GL framebuffer.
     if(frameBuffer)
-        throw RendererException(tr("The OpenGLSceneRenderer cannot directly render into a FrameBuffer."));
+        throw RendererException(tr("The OpenGLRenderer cannot directly render into a FrameBuffer."));
 
     // Store a pointer internally.
     _frameGraph = frameGraph.get();
@@ -231,9 +232,9 @@ void OpenGLSceneRenderer::renderFrame(std::shared_ptr<const FrameGraph> frameGra
                 "OpenGL Renderer: %2\n"
                 "OpenGL Version: %3\n\n"
                 "Ovito requires OpenGL version %4.%5 or higher.")
-                .arg(QString(OpenGLSceneRenderer::openGLVendor()))
-                .arg(QString(OpenGLSceneRenderer::openGLRenderer()))
-                .arg(QString(OpenGLSceneRenderer::openGLVersion()))
+                .arg(QString(OpenGLRenderer::openGLVendor()))
+                .arg(QString(OpenGLRenderer::openGLRenderer()))
+                .arg(QString(OpenGLRenderer::openGLVersion()))
                 .arg(OVITO_OPENGL_MINIMUM_VERSION_MAJOR)
                 .arg(OVITO_OPENGL_MINIMUM_VERSION_MINOR));
     }
@@ -346,7 +347,7 @@ void OpenGLSceneRenderer::renderFrame(std::shared_ptr<const FrameGraph> frameGra
 /******************************************************************************
 * Renders all semi-transparent geometry in a second rendering pass.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderTransparentGeometry(const FrameGraph& frameGraph)
+void OpenGLRenderer::renderTransparentGeometry(const FrameGraph& frameGraph)
 {
     // Semi-transparent geomertry should never get rendered in a picking render pass.
     OVITO_ASSERT(!isPickingPass());
@@ -447,7 +448,7 @@ void OpenGLSceneRenderer::renderTransparentGeometry(const FrameGraph& frameGraph
 /******************************************************************************
 * Executes the rendering commands stored in the given frame graph.
 ******************************************************************************/
-bool OpenGLSceneRenderer::renderFrameGraph(const FrameGraph& frameGraph, FrameGraph::RenderLayer renderLayer)
+bool OpenGLRenderer::renderFrameGraph(const FrameGraph& frameGraph, FrameGraph::RenderLayer renderLayer)
 {
     bool hasTransparentGeometry = false;
 
@@ -513,7 +514,7 @@ bool OpenGLSceneRenderer::renderFrameGraph(const FrameGraph& frameGraph, FrameGr
 /******************************************************************************
 * Renders a particles primitive.
 ******************************************************************************/
-bool OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive, int pickingGroupID)
+bool OpenGLRenderer::renderParticles(const ParticlePrimitive& primitive, int pickingGroupID)
 {
     // Render particles immediately if they are all fully opaque. Otherwise defer rendering to a later time.
     if(isPickingPass() || isTransparencyPass() != (!primitive.transparencies())) {
@@ -566,7 +567,7 @@ bool OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive, in
 /******************************************************************************
 * Renders a cylinders primitive.
 ******************************************************************************/
-bool OpenGLSceneRenderer::renderCylinders(const CylinderPrimitive& primitive, int pickingGroupID)
+bool OpenGLRenderer::renderCylinders(const CylinderPrimitive& primitive, int pickingGroupID)
 {
     // Render primitives immediately if they are all fully opaque. Otherwise defer rendering to a later time.
     if(isPickingPass() || isTransparencyPass() != (!primitive.transparencies())) {
@@ -579,7 +580,7 @@ bool OpenGLSceneRenderer::renderCylinders(const CylinderPrimitive& primitive, in
 /******************************************************************************
 * Renders a triangle mesh primitive.
 ******************************************************************************/
-bool OpenGLSceneRenderer::renderMesh(const MeshPrimitive& primitive, int pickingGroupID)
+bool OpenGLRenderer::renderMesh(const MeshPrimitive& primitive, int pickingGroupID)
 {
     // Render mesh immediately if it is fully opaque. Otherwise defer rendering to a later time.
     if(isPickingPass() || isTransparencyPass() != primitive.isFullyOpaque()) {
@@ -592,7 +593,7 @@ bool OpenGLSceneRenderer::renderMesh(const MeshPrimitive& primitive, int picking
 /******************************************************************************
 * Loads an OpenGL shader program.
 ******************************************************************************/
-QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile)
+QOpenGLShaderProgram* OpenGLRenderer::loadShaderProgram(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile)
 {
     QOpenGLContextGroup* contextGroup = QOpenGLContextGroup::currentContextGroup();
     OVITO_ASSERT(contextGroup);
@@ -650,7 +651,7 @@ QOpenGLShaderProgram* OpenGLSceneRenderer::loadShaderProgram(const QString& id, 
 /******************************************************************************
 * Loads and compiles a GLSL shader and adds it to the given program object.
 ******************************************************************************/
-void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShader::ShaderType shaderType, const QString& filename, bool isWBOITPass)
+void OpenGLRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShader::ShaderType shaderType, const QString& filename, bool isWBOITPass)
 {
     QByteArray shaderSource;
     bool isGLES = QOpenGLContext::currentContext()->isOpenGLES();
@@ -977,7 +978,7 @@ void OpenGLSceneRenderer::loadShader(QOpenGLShaderProgram* program, QOpenGLShade
 /******************************************************************************
 * Activates the special highlight rendering mode.
 ******************************************************************************/
-void OpenGLSceneRenderer::setHighlightMode(int pass)
+void OpenGLRenderer::setHighlightMode(int pass)
 {
     if(pass == 1) {
         this->glEnable(GL_DEPTH_TEST);
@@ -1032,7 +1033,7 @@ static const char* openglErrorString(GLenum errorCode)
 /******************************************************************************
 * Reports OpenGL error status codes.
 ******************************************************************************/
-void OpenGLSceneRenderer::checkOpenGLErrorStatus(const char* command, const char* sourceFile, int sourceLine)
+void OpenGLRenderer::checkOpenGLErrorStatus(const char* command, const char* sourceFile, int sourceLine)
 {
     GLenum error;
     while((error = this->glGetError()) != GL_NO_ERROR) {
@@ -1045,7 +1046,7 @@ void OpenGLSceneRenderer::checkOpenGLErrorStatus(const char* command, const char
 /******************************************************************************
 * Create an OpenGL texture object for a QImage.
 ******************************************************************************/
-QOpenGLTexture* OpenGLSceneRenderer::uploadImage(const QImage& image, QOpenGLTexture::MipMapGeneration genMipMaps)
+QOpenGLTexture* OpenGLRenderer::uploadImage(const QImage& image, QOpenGLTexture::MipMapGeneration genMipMaps)
 {
     OVITO_ASSERT(!image.isNull());
 
@@ -1067,7 +1068,7 @@ QOpenGLTexture* OpenGLSceneRenderer::uploadImage(const QImage& image, QOpenGLTex
 /******************************************************************************
 * Creates a 1-D OpenGL texture object for a ColorCodingGradient.
 ******************************************************************************/
-QOpenGLTexture* OpenGLSceneRenderer::uploadColorMap(ColorCodingGradient* gradient)
+QOpenGLTexture* OpenGLRenderer::uploadColorMap(ColorCodingGradient* gradient)
 {
     // Check if this color map has already been uploaded to the GPU.
     RendererResourceKey<struct ColorMapCache, OORef<ColorCodingGradient>, QOpenGLContextGroup*> cacheKey{ gradient, QOpenGLContextGroup::currentContextGroup() };

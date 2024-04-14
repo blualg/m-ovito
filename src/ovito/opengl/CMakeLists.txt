@@ -33,8 +33,8 @@ OVITO_STANDARD_PLUGIN(OpenGLRenderer
         OpenGLMeshPrimitive.cpp
         OpenGLMarkerPrimitive.cpp
         OpenGLShaderHelper.cpp
-        OpenGLSceneRenderer.cpp
-        OffscreenOpenGLSceneRenderer.cpp
+        OpenGLRenderer.cpp
+        OffscreenOpenGLRenderer.cpp
         resources/opengl.qrc
     LIB_DEPENDENCIES
         Qt6::OpenGL

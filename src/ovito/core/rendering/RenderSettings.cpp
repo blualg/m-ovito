@@ -22,7 +22,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/SceneRenderer.h>
-#include <ovito/core/rendering/StandardSceneRenderer.h>
 #include <ovito/core/rendering/FrameBuffer.h>
 #include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
@@ -30,6 +29,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/app/PluginManager.h>
 #include <ovito/core/app/UserInterface.h>
 #include "RenderSettings.h"
 
@@ -113,7 +113,10 @@ RenderSettings::RenderSettings(ObjectInitializationFlags flags) : RefTarget(flag
         setBackgroundColor(Color(1,1,1));
 
         // Create an instance of the default renderer class.
-        setRenderer(OORef<StandardSceneRenderer>::create(flags));
+        // Use the OpenGL renderer as the default implementation.
+        if(OvitoClassPtr rendererClass = PluginManager::instance().findClass("OpenGLRenderer", "OffscreenOpenGLRenderer")) {
+            setRenderer(static_object_cast<SceneRenderer>(rendererClass->createInstance()));
+        }
     }
 }
 

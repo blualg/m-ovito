@@ -30,16 +30,16 @@
 namespace Ovito {
 
 /******************************************************************************
-* The editor component for the StandardSceneRenderer class.
+* The editor component for the OffscreenOpenGLRenderer class.
 ******************************************************************************/
-class StandardSceneRendererEditor : public PropertiesEditor
+class OffscreenOpenGLRendererEditor : public PropertiesEditor
 {
-    OVITO_CLASS(StandardSceneRendererEditor)
+    OVITO_CLASS(OffscreenOpenGLRendererEditor)
 
 public:
 
     /// Constructor.
-    explicit StandardSceneRendererEditor() {}
+    explicit OffscreenOpenGLRendererEditor() {}
 
 protected:
 

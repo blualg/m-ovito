@@ -132,7 +132,6 @@ SET(SourceFiles
     rendering/TextPrimitive.cpp
     rendering/RenderSettings.cpp
     rendering/FrameBuffer.cpp
-    rendering/StandardSceneRenderer.cpp
     rendering/ColorCodingGradient.cpp
     rendering/ObjectPickingIdentifierMap.cpp
     viewport/Viewport.cpp

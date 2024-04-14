@@ -22,7 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/ImagePrimitive.h>
-#include "OpenGLSceneRenderer.h"
+#include "OpenGLRenderer.h"
 #include "OpenGLShaderHelper.h"
 
 namespace Ovito {
@@ -30,7 +30,7 @@ namespace Ovito {
 /******************************************************************************
 * Renders an image into a target rectangle given in device pixel coordinates.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderImageImplementation(const ImagePrimitive& primitive)
+void OpenGLRenderer::renderImageImplementation(const ImagePrimitive& primitive)
 {
     if(isPickingPass() || primitive.image().isNull() || primitive.windowRect().isEmpty())
         return;

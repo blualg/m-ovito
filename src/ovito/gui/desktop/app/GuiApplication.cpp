@@ -102,7 +102,7 @@ bool GuiApplication::processCommandLineParameters()
 ******************************************************************************/
 QCoreApplication* GuiApplication::createQtApplicationImpl(bool supportGui, int& argc, char** argv)
 {
-    // Verify that the OpenGLSceneRenderer class has registered the right default surface format.
+    // Verify that the OpenGLRenderer class has registered the right default surface format.
     OVITO_ASSERT(QSurfaceFormat::defaultFormat().depthBufferSize() == 24 && QSurfaceFormat::defaultFormat().stencilBufferSize() == 1);
 
     QCoreApplication* qtApp = nullptr;

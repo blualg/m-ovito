@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
 #include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
-#include "OpenGLSceneRenderer.h"
+#include "OpenGLRenderer.h"
 #include "OpenGLShaderHelper.h"
 
 namespace Ovito {
@@ -31,7 +31,7 @@ namespace Ovito {
 /******************************************************************************
 * Renders a set of cylinders or arrow glyphs.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive& primitive, int pickingGroupID)
+void OpenGLRenderer::renderCylindersImplementation(const CylinderPrimitive& primitive, int pickingGroupID)
 {
     // Make sure there is something to be rendered. Otherwise, step out early.
     if(!primitive.basePositions() || !primitive.headPositions() || primitive.basePositions()->size() == 0)

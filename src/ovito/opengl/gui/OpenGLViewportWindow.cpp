@@ -24,7 +24,7 @@
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/opengl/OpenGLSceneRenderer.h>
+#include <ovito/opengl/OpenGLRenderer.h>
 #include "OpenGLViewportWindow.h"
 
 namespace Ovito {
@@ -37,7 +37,7 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(OpenGLViewportWindow);
 OpenGLViewportWindow::OpenGLViewportWindow()
 {
     // Create the window's viewport renderer.
-    setRenderer(OORef<OpenGLSceneRenderer>::create());
+    setRenderer(OORef<OpenGLRenderer>::create());
 }
 
 /******************************************************************************
@@ -57,7 +57,7 @@ QWidget* OpenGLViewportWindow::createWidget(QWidget* parent)
         virtual void initializeGL() override {
             // Determine OpenGL vendor string so other parts of the code can decide
             // which OpenGL features are safe to use.
-            OpenGLSceneRenderer::determineOpenGLInfo();
+            OpenGLRenderer::determineOpenGLInfo();
 
             // Release OpenGL resources before the widget's QOpenGLContext gets destroyed.
             connect(context(), &QOpenGLContext::aboutToBeDestroyed, _owner, &OpenGLViewportWindow::releaseResources);
@@ -116,7 +116,7 @@ void OpenGLViewportWindow::paint()
     // OpenGL in a VirtualBox machine Windows guest reports "2.1 Chromium 1.9" as version string, which is
     // not correctly parsed by Qt. We have to work around this.
     QSurfaceFormat format = widget()->context()->format();
-    if(OpenGLSceneRenderer::openGLVersion().startsWith("2.1 ")) {
+    if(OpenGLRenderer::openGLVersion().startsWith("2.1 ")) {
         format.setMajorVersion(2);
         format.setMinorVersion(1);
     }
@@ -134,11 +134,11 @@ void OpenGLViewportWindow::paint()
                 "OpenGL renderer: %2\n"
                 "OpenGL version: %3.%4 (%5)\n\n"
                 "Ovito requires at least OpenGL version %6.%7.")
-                .arg(QString(OpenGLSceneRenderer::openGLVendor()))
-                .arg(QString(OpenGLSceneRenderer::openGLRenderer()))
+                .arg(QString(OpenGLRenderer::openGLVendor()))
+                .arg(QString(OpenGLRenderer::openGLRenderer()))
                 .arg(format.majorVersion())
                 .arg(format.minorVersion())
-                .arg(QString(OpenGLSceneRenderer::openGLVersion()))
+                .arg(QString(OpenGLRenderer::openGLVersion()))
                 .arg(OVITO_OPENGL_MINIMUM_VERSION_MAJOR)
                 .arg(OVITO_OPENGL_MINIMUM_VERSION_MINOR)
             ));
@@ -146,7 +146,7 @@ void OpenGLViewportWindow::paint()
     }
 
 #ifdef Q_OS_WIN
-    if(OpenGLSceneRenderer::openGLRenderer() == "Intel(R) HD Graphics" || OpenGLSceneRenderer::openGLRenderer() == "Intel(R) HD Graphics 2000" || OpenGLSceneRenderer::openGLRenderer() == "Intel(R) HD Graphics 3000" || OpenGLSceneRenderer::openGLRenderer() == "Intel(R) HD Graphics 4400") {
+    if(OpenGLRenderer::openGLRenderer() == "Intel(R) HD Graphics" || OpenGLRenderer::openGLRenderer() == "Intel(R) HD Graphics 2000" || OpenGLRenderer::openGLRenderer() == "Intel(R) HD Graphics 3000" || OpenGLRenderer::openGLRenderer() == "Intel(R) HD Graphics 4400") {
         userInterface().exitWithFatalError(Exception(tr(
                 "The graphics chip installed in this system is not compatible with OVITO, unfortunately.\n\n"
                 "Intel(R) HD Graphics, an integrated graphics chip released in the years 2010/2011/2012, does not support the specific OpenGL functions required by OVITO. "
@@ -155,11 +155,11 @@ void OpenGLViewportWindow::paint()
                 "OpenGL vendor: %1\n"
                 "OpenGL renderer: %2\n"
                 "OpenGL version: %3.%4 (%5)")
-                .arg(QString(OpenGLSceneRenderer::openGLVendor()))
-                .arg(QString(OpenGLSceneRenderer::openGLRenderer()))
+                .arg(QString(OpenGLRenderer::openGLVendor()))
+                .arg(QString(OpenGLRenderer::openGLRenderer()))
                 .arg(format.majorVersion())
                 .arg(format.minorVersion())
-                .arg(QString(OpenGLSceneRenderer::openGLVersion()))
+                .arg(QString(OpenGLRenderer::openGLVersion()))
             ));
         return;
     }
@@ -197,10 +197,10 @@ void OpenGLViewportWindow::paint()
         QTextStream stream(&openGLReport, QIODevice::WriteOnly | QIODevice::Text);
         stream << "OpenGL version: " << format.majorVersion() << QStringLiteral(".") << format.minorVersion() << "\n";
         stream << "OpenGL profile: " << (format.profile() == QSurfaceFormat::CoreProfile ? "core" : (format.profile() == QSurfaceFormat::CompatibilityProfile ? "compatibility" : "none")) << "\n";
-        stream << "OpenGL vendor: " << QString(OpenGLSceneRenderer::openGLVendor()) << "\n";
-        stream << "OpenGL renderer: " << QString(OpenGLSceneRenderer::openGLRenderer()) << "\n";
-        stream << "OpenGL version string: " << QString(OpenGLSceneRenderer::openGLVersion()) << "\n";
-        stream << "OpenGL shading language: " << QString(OpenGLSceneRenderer::openGLSLVersion()) << "\n";
+        stream << "OpenGL vendor: " << QString(OpenGLRenderer::openGLVendor()) << "\n";
+        stream << "OpenGL renderer: " << QString(OpenGLRenderer::openGLRenderer()) << "\n";
+        stream << "OpenGL version string: " << QString(OpenGLRenderer::openGLVersion()) << "\n";
+        stream << "OpenGL shading language: " << QString(OpenGLRenderer::openGLSLVersion()) << "\n";
         stream << "OpenGL shader programs: " << QOpenGLShaderProgram::hasOpenGLShaderPrograms() << "\n";
         ex.appendDetailMessage(openGLReport);
         setFrameGraph({});

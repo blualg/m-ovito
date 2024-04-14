@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/LinePrimitive.h>
 #include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
-#include "OpenGLSceneRenderer.h"
+#include "OpenGLRenderer.h"
 #include "OpenGLShaderHelper.h"
 
 namespace Ovito {
@@ -31,7 +31,7 @@ namespace Ovito {
 /******************************************************************************
 * Renders a set of lines.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderLinesImplementation(const LinePrimitive& primitive, int pickingGroupID)
+void OpenGLRenderer::renderLinesImplementation(const LinePrimitive& primitive, int pickingGroupID)
 {
     FloatType lineWidth = !isPickingPass() ? primitive.lineWidth() : primitive.pickingLineWidth();
     OVITO_ASSERT(lineWidth > 0);
@@ -49,7 +49,7 @@ void OpenGLSceneRenderer::renderLinesImplementation(const LinePrimitive& primiti
 /******************************************************************************
 * Renders a set of lines using GL_LINES mode.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderThinLinesImplementation(const LinePrimitive& primitive, int pickingGroupID)
+void OpenGLRenderer::renderThinLinesImplementation(const LinePrimitive& primitive, int pickingGroupID)
 {
     // Activate the right OpenGL shader program.
     OpenGLShaderHelper shader(this);
@@ -97,7 +97,7 @@ void OpenGLSceneRenderer::renderThinLinesImplementation(const LinePrimitive& pri
 /******************************************************************************
 * Renders a set of lines using triangle strips.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderThickLinesImplementation(const LinePrimitive& primitive, int pickingGroupID)
+void OpenGLRenderer::renderThickLinesImplementation(const LinePrimitive& primitive, int pickingGroupID)
 {
     FloatType lineWidth = !isPickingPass() ? primitive.lineWidth() : primitive.pickingLineWidth();
 

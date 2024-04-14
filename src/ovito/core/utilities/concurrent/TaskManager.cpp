@@ -144,7 +144,8 @@ void TaskManager::requestShutdown()
     std::unique_lock<std::mutex> lock(_mutex);
 
     // Set flag to indicate we are shutting down.
-    OVITO_ASSERT(!isShuttingDown());
+    if(isShuttingDown())
+        return;
     _isShuttingDown = true;
 
     // Cancel all registered tasks.

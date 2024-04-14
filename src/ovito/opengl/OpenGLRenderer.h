@@ -45,7 +45,7 @@ class OpenGLShaderHelper; // defined in OpenGLShaderHelper.h
  * \brief An OpenGL-based scene renderer. This serves as base class for both the interactive renderer used
  *        by the viewports and the standard output renderer.
  */
-class OVITO_OPENGLRENDERER_EXPORT OpenGLSceneRenderer : public SceneRenderer, public QOpenGLExtraFunctions
+class OVITO_OPENGLRENDERER_EXPORT OpenGLRenderer : public SceneRenderer, public QOpenGLExtraFunctions
 {
 public:
 
@@ -60,12 +60,12 @@ public:
         virtual void querySystemInformation(QTextStream& stream, UserInterface& userInterface) const override;
     };
 
-    OVITO_CLASS_META(OpenGLSceneRenderer, OOMetaClass)
+    OVITO_CLASS_META(OpenGLRenderer, OOMetaClass)
 
 public:
 
     /// Constructor.
-    explicit OpenGLSceneRenderer(ObjectInitializationFlags flags);
+    explicit OpenGLRenderer(ObjectInitializationFlags flags);
 
     /// Renders a single frame.
     virtual void renderFrame(std::shared_ptr<const FrameGraph> frameGraph, const QRect& viewportRect, std::shared_ptr<FrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingIdentifierMap = {}) override;

@@ -24,39 +24,48 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/rendering/SceneRenderer.h>
+#include "OpenGLRenderer.h"
+
+#include <QOffscreenSurface>
+#include <QOpenGLContext>
+#include <QOpenGLFramebufferObject>
 
 namespace Ovito {
 
 /**
- * \brief This is the default scene renderer used for high-quality image output.
+ * \brief OpenGL renderer that renders into an offscreen framebuffer instead of the interactive viewports.
  */
-class OVITO_CORE_EXPORT StandardSceneRenderer : public SceneRenderer
+class OVITO_OPENGLRENDERER_EXPORT OffscreenOpenGLRenderer : public OpenGLRenderer
 {
-    OVITO_CLASS(StandardSceneRenderer)
+    OVITO_CLASS(OffscreenOpenGLRenderer)
 
 public:
 
     /// Constructor.
-    explicit StandardSceneRenderer(ObjectInitializationFlags flags);
+    explicit OffscreenOpenGLRenderer(ObjectInitializationFlags flags);
 
-    /// Prepares the renderer for rendering one or more frames.
-    virtual void startRender(const QSize& frameBufferSize) override;
+    /// Called when this renderer is being destroyed.
+    virtual void aboutToBeDeleted() override;
 
-    /// Renders a single frame into the frame buffer.
+	/// Prepares the renderer for rendering one or more frames.
+	virtual void startRender(const QSize& frameBufferSize) override;
+
+    /// Renders a single frame.
     virtual void renderFrame(std::shared_ptr<const FrameGraph> frameGraph, const QRect& viewportRect, std::shared_ptr<FrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingIdentifierMap = {}) override;
 
-    /// Is called after rendering of one or more frames has finished.
+    /// Is called after rendering has finished.
     virtual void endRender() override;
 
-	/// Returns the best format for QImage to be used when creating an ImagePrimitive.
-	virtual QImage::Format preferredImageFormat() const override { OVITO_ASSERT(_internalRenderer); return _internalRenderer->preferredImageFormat(); }
+    /// Returns the vis cache used for managing OpenGL resources.
+    const std::shared_ptr<RendererResourceCache>& visCache() const { return _visCache; }
 
-	/// Returns the multisampling level currently used by the internal renderer.
-	virtual int multisamplingLevel() const override { OVITO_ASSERT(_internalRenderer); return _internalRenderer->multisamplingLevel(); }
+    /// Sets the vis cache used for managing OpenGL resources.
+    void setVisCache(std::shared_ptr<RendererResourceCache> visCache) { _visCache = std::move(visCache); }
 
-    /// Lets the renderer perform post-processing of a newly generated frame graph.
-    virtual void postprocessFrameGraph(FrameGraph& frameGraph) override { OVITO_ASSERT(_internalRenderer); _internalRenderer->postprocessFrameGraph(frameGraph); }
+private:
+
+    /// Creates the QOffscreenSurface in the main thread.
+    void createOffscreenSurface();
 
 private:
 
@@ -66,8 +75,20 @@ private:
     /// Activates the order-independent rendering method for semi-transparent objects (implemented by the OpenGL renderer).
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, orderIndependentTransparency, setOrderIndependentTransparency, PROPERTY_FIELD_RESETTABLE);
 
-    /// The active renderer implementation.
-    OORef<SceneRenderer> _internalRenderer;
+    /// The offscreen surface used to render into an image buffer using OpenGL.
+    std::unique_ptr<QOffscreenSurface> _offscreenSurface;
+
+    /// The temporary OpenGL rendering context.
+    std::optional<QOpenGLContext> _offscreenContext;
+
+    /// The OpenGL framebuffer.
+    std::optional<QOpenGLFramebufferObject> _framebufferObject;
+
+    /// The resolution of the offscreen framebuffer.
+    QSize _framebufferSize;
+
+    /// The vis cache used for managing OpenGL resources.
+    std::shared_ptr<RendererResourceCache> _visCache;
 };
 
 }   // End of namespace

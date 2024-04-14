@@ -26,7 +26,7 @@
 #include <ovito/core/rendering/MeshPrimitive.h>
 #include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
 #include <ovito/core/utilities/SortZipped.h>
-#include "OpenGLSceneRenderer.h"
+#include "OpenGLRenderer.h"
 #include "OpenGLShaderHelper.h"
 
 namespace Ovito {
@@ -34,7 +34,7 @@ namespace Ovito {
 /******************************************************************************
 * Renders a triangle mesh.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitive, int pickingGroupID)
+void OpenGLRenderer::renderMeshImplementation(const MeshPrimitive& primitive, int pickingGroupID)
 {
     QOpenGLTexture* colorMapTexture = nullptr;
 
@@ -332,7 +332,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 * Prepares the OpenGL buffer with the per-instance transformation matrices for
 * rendering a set of meshes.
 ******************************************************************************/
-QOpenGLBuffer OpenGLSceneRenderer::getMeshInstanceTMBuffer(const MeshPrimitive& primitive, OpenGLShaderHelper& shader)
+QOpenGLBuffer OpenGLRenderer::getMeshInstanceTMBuffer(const MeshPrimitive& primitive, OpenGLShaderHelper& shader)
 {
     OVITO_ASSERT(primitive.useInstancedRendering());
     OVITO_ASSERT(primitive.perInstanceTMs());
@@ -364,7 +364,7 @@ QOpenGLBuffer OpenGLSceneRenderer::getMeshInstanceTMBuffer(const MeshPrimitive& 
 /******************************************************************************
 * Generates the wireframe line elements for the visible edges of a mesh.
 ******************************************************************************/
-ConstDataBufferPtr OpenGLSceneRenderer::generateMeshWireframeLines(const MeshPrimitive& primitive)
+ConstDataBufferPtr OpenGLRenderer::generateMeshWireframeLines(const MeshPrimitive& primitive)
 {
     OVITO_ASSERT(primitive.emphasizeEdges());
     OVITO_ASSERT(primitive.mesh());
@@ -383,7 +383,7 @@ ConstDataBufferPtr OpenGLSceneRenderer::generateMeshWireframeLines(const MeshPri
 /******************************************************************************
 * Renders just the edges of a triangle mesh as a wireframe model.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderMeshWireframeImplementation(const MeshPrimitive& primitive)
+void OpenGLRenderer::renderMeshWireframeImplementation(const MeshPrimitive& primitive)
 {
     OVITO_ASSERT(!isPickingPass());
 
