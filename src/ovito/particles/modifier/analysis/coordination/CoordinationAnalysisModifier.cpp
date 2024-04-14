@@ -159,7 +159,7 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
             rdfSampleCount,
             computePartialRDF = computePartialRDF(),
             uniqueTypes = std::move(uniqueTypes),
-            createdByNode = request.modificationNode()]() mutable
+            createdByNode = request.modificationNodeWeak()]() mutable
     {
         this_task::setProgressText(tr("Coordination analysis"));
 

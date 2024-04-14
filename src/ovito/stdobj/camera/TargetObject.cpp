@@ -77,7 +77,7 @@ PipelineStatus TargetVis::render(const ConstDataObjectPath& path, const Pipeline
             { 1, -1,  1}, { 1, 1, 1},
             {-1, -1,  1}, {-1, 1, 1}
         };
-        BufferFactory<Point3G> vertices(sizeof(linePoints) / sizeof(Point3G));
+        BufferFactory<Point3G> vertices(std::size(linePoints));
         boost::copy(linePoints, vertices.begin());
         vertexPositions = vertices.take();
     }

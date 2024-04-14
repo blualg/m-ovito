@@ -62,7 +62,7 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
         std::shared_ptr<FrameBuffer> frameBuffer = mainWindow().createAndShowFrameBuffer(renderSettings->outputImageWidth(), renderSettings->outputImageHeight());
 
         // Call high-level rendering function, which will take care of the rest.
-        renderSettings->render(*viewportConfig, *frameBuffer);
+        renderSettings->render(*viewportConfig, frameBuffer);
     });
 }
 

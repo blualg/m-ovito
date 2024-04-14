@@ -48,7 +48,7 @@ private:
     /// Returns the mutex to be used for thread-safe access to the list.
     inline std::mutex& mutex() const {
         static std::mutex _mutexPool[131];
-        return _mutexPool[reinterpret_cast<quintptr>(this) % (sizeof(_mutexPool)/sizeof(std::mutex))];
+        return _mutexPool[reinterpret_cast<quintptr>(this) % std::size(_mutexPool)];
     }
 
 public:

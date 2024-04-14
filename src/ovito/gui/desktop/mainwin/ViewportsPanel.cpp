@@ -183,7 +183,10 @@ void ViewportsPanel::onViewportConfigurationReplaced(ViewportConfiguration* newV
 ******************************************************************************/
 void ViewportsPanel::recreateViewportWindows()
 {
-    // Delete all existing viewport windows.
+    // Delete all widgets of the existing viewport windows immediately.
+    for(auto& window : _viewportWindows)
+        delete window->widget();
+    // Release all viewport windows.
     _viewportWindows.clear();
 
     // Now all child widgets should be gone.

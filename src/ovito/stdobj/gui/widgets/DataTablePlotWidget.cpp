@@ -225,7 +225,7 @@ void DataTablePlotWidget::updateDataPlot()
         while(_curves.size() < y->componentCount()) {
             QwtPlotCurve* curve = new QwtPlotCurve();
             curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
-            curve->setPen(curveColors[_curves.size() % (sizeof(curveColors)/sizeof(curveColors[0]))], 1);
+            curve->setPen(curveColors[_curves.size() % std::size(curveColors)], 1);
             curve->setZ(0);
             curve->attach(this);
             _curves.push_back(curve);

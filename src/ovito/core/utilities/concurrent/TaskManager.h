@@ -101,6 +101,15 @@ public:
     /// Returns the maximum number of threads used by the task manager's thread pools.
     int maxThreadCount() const { return _threadPool.maxThreadCount(); }
 
+#ifdef Q_OS_MACOS
+    /// Tells the task manager that a native UI dialog (e.g. a QFileDialog) is currently open.
+    /// During this time, the task manager will not start a local event loop with
+    /// user input event processing, because this would close the native dialog.
+    static void setNativeDialogActive(bool active) { _nativeDialogActive = active; }
+#else
+    static void setNativeDialogActive(bool) {}
+#endif
+
 public Q_SLOTS:
 
     /// Executes pending work items waiting in the deferred execution queue.
@@ -201,6 +210,14 @@ private:
 
     /// Single-thread pool for executing worker tasks that cannot run concurrently.
     QThreadPool _threadPoolSerial;
+
+#ifdef Q_OS_MACOS
+    /// Indicates that a native UI dialog (e.g. a QFileDialog) is currently open.
+    /// During this time, the task manager should not enter a local event loop with
+    /// user input event processing, because this would close the native dialog.
+    /// This behavior may be a bug, which has been observed on the macOS platform.
+    static bool _nativeDialogActive;
+#endif
 
     friend class RegisteredBufferAccess;
     friend class Task;

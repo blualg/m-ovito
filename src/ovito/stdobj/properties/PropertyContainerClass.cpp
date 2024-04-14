@@ -105,7 +105,7 @@ Color PropertyContainerClass::getElementTypeDefaultColor(const PropertyReference
         Color(0.7,  0.0,  1.0), // 7
         Color(0.2,  1.0,  1.0), // 8
     };
-    return defaultTypeColors[std::abs(numericTypeId) % (sizeof(defaultTypeColors) / sizeof(defaultTypeColors[0]))];
+    return defaultTypeColors[std::abs(numericTypeId) % std::size(defaultTypeColors)];
 }
 
 }   // End of namespace

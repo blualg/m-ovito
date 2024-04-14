@@ -133,7 +133,7 @@ void RenderSettings::setImageFilename(const QString& filename)
 * This is the high-level rendering function, which invokes the renderer to
 * generate one or more output images of the scene.
 ******************************************************************************/
-void RenderSettings::render(const ViewportConfiguration& viewportConfiguration, FrameBuffer& frameBuffer)
+void RenderSettings::render(const ViewportConfiguration& viewportConfiguration, const std::shared_ptr<FrameBuffer>& frameBuffer)
 {
     std::vector<std::pair<Viewport*, QRectF>> viewportLayout;
     if(renderAllViewports()) {
@@ -165,7 +165,7 @@ void RenderSettings::render(const ViewportConfiguration& viewportConfiguration, 
 * This is the high-level rendering function, which invokes the renderer to
 * generate one or more output images of the scene.
 ******************************************************************************/
-void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, AnimationSettings* animationSettings, FrameBuffer& frameBuffer)
+void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, AnimationSettings* animationSettings, const std::shared_ptr<FrameBuffer>& frameBuffer)
 {
     // Get the selected scene renderer.
     // Note: Using ref-counted pointer here, because the renderer may potentially be deleted before the current function returns.
@@ -178,9 +178,9 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
     OORef<RenderSettings> self(this);
 
     // Resize output frame buffer.
-    if(frameBuffer.size() != QSize(outputImageWidth(), outputImageHeight())) {
-        frameBuffer.setSize(QSize(outputImageWidth(), outputImageHeight()));
-        frameBuffer.clear();
+    if(frameBuffer->size() != QSize(outputImageWidth(), outputImageHeight())) {
+        frameBuffer->setSize(QSize(outputImageWidth(), outputImageHeight()));
+        frameBuffer->clear();
     }
 
     // Don't render interactive viewports while rendering an offscreen image.
@@ -190,7 +190,7 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
     QSize largestViewportRectSize(0,0);
     for(const std::pair<Viewport*, QRectF>& rect : viewportLayout) {
         // Convert viewport layout rect from relative coordinates to frame buffer pixel coordinates and round to nearest integers.
-        QRectF pixelRect(rect.second.x() * frameBuffer.width(), rect.second.y() * frameBuffer.height(), rect.second.width() * frameBuffer.width(), rect.second.height() * frameBuffer.height());
+        QRectF pixelRect(rect.second.x() * frameBuffer->width(), rect.second.y() * frameBuffer->height(), rect.second.width() * frameBuffer->width(), rect.second.height() * frameBuffer->height());
         largestViewportRectSize = largestViewportRectSize.expandedTo(pixelRect.toRect().size());
     }
     if(largestViewportRectSize.isEmpty())
@@ -296,7 +296,7 @@ RendererResourceCache::ResourceFrame RenderSettings::renderFrame(
         int frameNumber,
         RendererResourceCache::ResourceFrame visCache,
         SceneRenderer& renderer,
-        FrameBuffer& frameBuffer,
+        const std::shared_ptr<FrameBuffer>& frameBuffer,
         const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout,
         VideoEncoder* videoEncoder)
 {
@@ -321,7 +321,7 @@ RendererResourceCache::ResourceFrame RenderSettings::renderFrame(
     // Compute relative weights of the viewport rectangles for the progress display.
     std::vector<int> progressWeights(viewportLayout.size());
     std::transform(viewportLayout.cbegin(), viewportLayout.cend(), progressWeights.begin(), [&](const auto& r) {
-        return r.second.width() * r.second.height() * frameBuffer.width() * frameBuffer.height();
+        return r.second.width() * r.second.height() * frameBuffer->width() * frameBuffer->height();
     });
     this_task::beginProgressSubStepsWithWeights(std::move(progressWeights));
 
@@ -332,7 +332,7 @@ RendererResourceCache::ResourceFrame RenderSettings::renderFrame(
         Viewport* viewport = viewportRect.first;
 
         // Convert viewport layout rect from relative coordinates to frame buffer pixel coordinates and round to nearest integers.
-        QRectF pixelRect(viewportRect.second.x() * frameBuffer.width(), viewportRect.second.y() * frameBuffer.height(), viewportRect.second.width() * frameBuffer.width(), viewportRect.second.height() * frameBuffer.height());
+        QRectF pixelRect(viewportRect.second.x() * frameBuffer->width(), viewportRect.second.y() * frameBuffer->height(), viewportRect.second.width() * frameBuffer->width(), viewportRect.second.height() * frameBuffer->height());
         QRect destinationRect = pixelRect.toRect();
 
         if(!destinationRect.isEmpty()) {
@@ -347,7 +347,7 @@ RendererResourceCache::ResourceFrame RenderSettings::renderFrame(
             int multisamplingLevel = renderer.multisamplingLevel();
 
             // Create a new frame graph.
-            std::unique_ptr<FrameGraph> frameGraph = std::make_unique<FrameGraph>(
+            std::shared_ptr<FrameGraph> frameGraph = std::make_shared<FrameGraph>(
                 std::move(visCache),
                 renderTime, projParams, destinationRect.size(), false, false, stopOnPipelineError(),
                 renderer.preferredImageFormat(), multisamplingLevel);
@@ -378,10 +378,10 @@ RendererResourceCache::ResourceFrame RenderSettings::renderFrame(
             frameGraph->setProjectionParams(viewport->computeProjectionParameters(renderTime, viewportAspectRatio, frameGraph->sceneBoundingBox()));
 
             // Pass the frame graph to the scene renderer to produce the rendering in the framebuffer.
-            frameBuffer.discardChanges();
-            renderer.renderFrame(*frameGraph, destinationRect, &frameBuffer);
+            frameBuffer->discardChanges();
+            renderer.renderFrame(frameGraph, destinationRect, frameBuffer);
             this_task::throwIfCanceled();
-            frameBuffer.commitChanges();
+            frameBuffer->commitChanges();
 
             // Get the cache frame back from the frame graph to keep resources alive until we start the next frame.
             visCache = std::move(*frameGraph).takeVisCache();
@@ -400,12 +400,12 @@ RendererResourceCache::ResourceFrame RenderSettings::renderFrame(
             Application::instance()->createQtApplication(false);
 
             // Use the QImage.save() function to save the rendered image to disk.
-            if(!frameBuffer.image().save(outputFilename, imageInfo().format()))
+            if(!frameBuffer->image().save(outputFilename, imageInfo().format()))
                 throw Exception(tr("Failed to save rendered image to output file '%1'.").arg(outputFilename));
         }
         else {
 #ifdef OVITO_VIDEO_OUTPUT_SUPPORT
-            videoEncoder->writeFrame(frameBuffer.image());
+            videoEncoder->writeFrame(frameBuffer->image());
 #endif
         }
     }

@@ -193,7 +193,7 @@ Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEval
             fixXAxisRange = fixXAxisRange(),
             numberOfBins = std::max(1, numberOfBins()),
             table,
-            createdByNode = request.modificationNode()]() mutable
+            createdByNode = request.modificationNodeWeak()]() mutable
     {
         size_t numSelected = 0;
 

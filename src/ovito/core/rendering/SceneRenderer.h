@@ -62,7 +62,7 @@ public:
 	virtual void startRender(const QSize& frameBufferSize) {}
 
 	/// Renders a single frame into the frame buffer.
-	virtual void renderFrame(FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer) = 0;
+	virtual void renderFrame(std::shared_ptr<const FrameGraph> frameGraph, const QRect& viewportRect, std::shared_ptr<FrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingIdentifierMap = {}) = 0;
 
 	/// Is called after rendering of one or more frames has finished.
 	virtual void endRender() {}
@@ -87,7 +87,7 @@ public:
 protected:
 
 	/// Renders the 2d graphics of a render layer into the frame buffer.
-	void render2DPrimitives(FrameGraph::RenderLayer renderLayer, FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer) const;
+	void render2DPrimitives(FrameGraph::RenderLayer renderLayer, const FrameGraph& frameGraph, const QRect& viewportRect, const std::shared_ptr<FrameBuffer>& frameBuffer) const;
 };
 
 }	// End of namespace

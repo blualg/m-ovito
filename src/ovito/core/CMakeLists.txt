@@ -134,6 +134,7 @@ SET(SourceFiles
     rendering/FrameBuffer.cpp
     rendering/StandardSceneRenderer.cpp
     rendering/ColorCodingGradient.cpp
+    rendering/ObjectPickingIdentifierMap.cpp
     viewport/Viewport.cpp
     viewport/ViewportWindow.cpp
     viewport/ViewportConfiguration.cpp

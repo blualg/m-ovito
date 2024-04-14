@@ -107,7 +107,7 @@ DislocationAnalysisModifier::DislocationAnalysisModifier(ObjectInitializationFla
                 ParticleType::PredefinedStructureType::CUBIC_DIAMOND,
                 ParticleType::PredefinedStructureType::HEX_DIAMOND
         };
-        OVITO_STATIC_ASSERT(sizeof(predefTypes)/sizeof(predefTypes[0]) == StructureAnalysis::NUM_LATTICE_TYPES);
+        OVITO_STATIC_ASSERT(std::size(predefTypes) == StructureAnalysis::NUM_LATTICE_TYPES);
         for(int id = 0; id < StructureAnalysis::NUM_LATTICE_TYPES; id++) {
             DataOORef<MicrostructurePhase> stype = DataOORef<MicrostructurePhase>::create(flags);
             stype->setNumericId(id);

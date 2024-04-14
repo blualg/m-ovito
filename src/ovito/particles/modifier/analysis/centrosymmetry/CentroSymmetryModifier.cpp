@@ -120,7 +120,7 @@ Future<PipelineFlowState> CentroSymmetryModifier::evaluateModifier(const Modifie
             selection,
             mode = mode(),
             nneighbors = numNeighbors(),
-            createdByNode = request.modificationNode()]() mutable
+            createdByNode = request.modificationNodeWeak()]() mutable
     {
         this_task::setProgressText(tr("Computing centrosymmetry parameters"));
 

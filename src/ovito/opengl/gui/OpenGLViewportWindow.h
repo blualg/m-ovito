@@ -60,7 +60,7 @@ protected:
     virtual QWidget* createWidget(QWidget* parent) override;
 
     /// This is called after the frame graph has been updated to render the viewport contents on screen.
-    virtual void refreshDisplay() override;
+    virtual void rerender() override;
 
     /// Returns the QOpenGLWidget that is associated with this viewport window.
     QOpenGLWidget* widget() const { return static_cast<QOpenGLWidget*>(WidgetViewportWindow::widget()); }
@@ -68,13 +68,10 @@ protected:
     /// Is called whenever the widget needs to be painted.
     void paint();
 
-    /// Computes the 3d world-space location corresponding to the given 2d window position.
-    Point3 worldPositionFromLocation(const QPoint& pos) const;
-
 private:
 
     /// The image read from the OpenGL framebuffer.
-    OpenGLPickingBuffer _pickingBuffer;
+    std::shared_ptr<OpenGLPickingBuffer> _pickingBuffer = std::make_shared<OpenGLPickingBuffer>();
 };
 
 }   // End of namespace

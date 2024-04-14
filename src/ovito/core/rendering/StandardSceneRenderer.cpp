@@ -95,10 +95,10 @@ void StandardSceneRenderer::startRender(const QSize& frameBufferSize)
 /******************************************************************************
 * Renders the current animation frame.
 ******************************************************************************/
-void StandardSceneRenderer::renderFrame(FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer)
+void StandardSceneRenderer::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, const QRect& viewportRect, std::shared_ptr<FrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingIdentifierMap)
 {
     // Delegate rendering work to implementation class.
-    _internalRenderer->renderFrame(frameGraph, viewportRect, frameBuffer);
+    _internalRenderer->renderFrame(std::move(frameGraph), viewportRect, std::move(frameBuffer), std::move(pickingIdentifierMap));
 }
 
 /******************************************************************************

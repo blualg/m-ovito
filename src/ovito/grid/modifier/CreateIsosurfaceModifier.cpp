@@ -232,7 +232,7 @@ Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const Modif
             smoothingLevel = smoothingLevel(),
             auxiliaryProperties = std::move(auxiliaryProperties),
             histogram = std::move(histogram),
-            createdByNode = request.modificationNode()]() mutable
+            createdByNode = request.modificationNodeWeak()]() mutable
     {
         this_task::setProgressText(tr("Constructing isosurface"));
 

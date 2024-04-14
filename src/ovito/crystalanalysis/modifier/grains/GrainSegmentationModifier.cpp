@@ -168,7 +168,7 @@ Future<PipelineFlowState> GrainSegmentationModifier::evaluateModifier(const Modi
     });
 
     // Phase II:
-    return engin1Future.then(*this, [this, state = std::move(state), createdByNode = request.modificationNode()](std::shared_ptr<const GrainSegmentationEngine1> engine1) {
+    return engin1Future.then(*this, [this, state = std::move(state), createdByNode = request.modificationNodeWeak()](std::shared_ptr<const GrainSegmentationEngine1> engine1) {
 
         auto engine2 = std::make_shared<GrainSegmentationEngine2>(
             std::move(engine1),

@@ -270,8 +270,10 @@ void ModifierTemplatesPage::onExportTemplates()
         if(ModifierTemplates::get()->templateList().empty())
             throw Exception(tr("There are no modifier templates to export."));
 
+        TaskManager::setNativeDialogActive(true);
         QString filename = QFileDialog::getSaveFileName(settingsDialog(),
             tr("Export Modifier Templates"), QString(), tr("OVITO Modifier Templates (*.ovmod)"));
+        TaskManager::setNativeDialogActive(false);
         if(filename.isEmpty())
             return;
 
@@ -291,8 +293,10 @@ void ModifierTemplatesPage::onExportTemplates()
 void ModifierTemplatesPage::onImportTemplates()
 {
     mainWindow().handleExceptions([&] {
+        TaskManager::setNativeDialogActive(true);
         QString filename = QFileDialog::getOpenFileName(settingsDialog(),
             tr("Import Modifier Templates"), QString(), tr("OVITO Modifier Templates (*.ovmod)"));
+        TaskManager::setNativeDialogActive(false);
         if(filename.isEmpty())
             return;
 

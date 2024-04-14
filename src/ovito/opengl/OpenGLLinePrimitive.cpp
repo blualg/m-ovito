@@ -22,6 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/LinePrimitive.h>
+#include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
 #include "OpenGLSceneRenderer.h"
 #include "OpenGLShaderHelper.h"
 
@@ -30,7 +31,7 @@ namespace Ovito {
 /******************************************************************************
 * Renders a set of lines.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderLinesImplementation(const LinePrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup)
+void OpenGLSceneRenderer::renderLinesImplementation(const LinePrimitive& primitive, int pickingGroupID)
 {
     FloatType lineWidth = !isPickingPass() ? primitive.lineWidth() : primitive.pickingLineWidth();
     OVITO_ASSERT(lineWidth > 0);
@@ -40,15 +41,15 @@ void OpenGLSceneRenderer::renderLinesImplementation(const LinePrimitive& primiti
         return;
 
     if(lineWidth == 1)
-        renderThinLinesImplementation(primitive, pickingGroup);
+        renderThinLinesImplementation(primitive, pickingGroupID);
     else
-        renderThickLinesImplementation(primitive, pickingGroup);
+        renderThickLinesImplementation(primitive, pickingGroupID);
 }
 
 /******************************************************************************
 * Renders a set of lines using GL_LINES mode.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderThinLinesImplementation(const LinePrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup)
+void OpenGLSceneRenderer::renderThinLinesImplementation(const LinePrimitive& primitive, int pickingGroupID)
 {
     // Activate the right OpenGL shader program.
     OpenGLShaderHelper shader(this);
@@ -86,7 +87,7 @@ void OpenGLSceneRenderer::renderThinLinesImplementation(const LinePrimitive& pri
     }
     else {
         // Pass picking base ID to shader.
-        shader.setPickingBaseId(allocateObjectPickingIDs(pickingGroup, primitive.positions()->size() / 2));
+        shader.setPickingBaseId(objectPickingIdentifierMap()->allocateObjectPickingIDs(pickingGroupID, primitive.positions()->size() / 2));
     }
 
     // Issue line drawing command.
@@ -96,7 +97,7 @@ void OpenGLSceneRenderer::renderThinLinesImplementation(const LinePrimitive& pri
 /******************************************************************************
 * Renders a set of lines using triangle strips.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderThickLinesImplementation(const LinePrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup)
+void OpenGLSceneRenderer::renderThickLinesImplementation(const LinePrimitive& primitive, int pickingGroupID)
 {
     FloatType lineWidth = !isPickingPass() ? primitive.lineWidth() : primitive.pickingLineWidth();
 
@@ -138,7 +139,7 @@ void OpenGLSceneRenderer::renderThickLinesImplementation(const LinePrimitive& pr
     }
     else {
         // Pass picking base ID to shader.
-        shader.setPickingBaseId(allocateObjectPickingIDs(pickingGroup, primitive.positions()->size() / 2));
+        shader.setPickingBaseId(objectPickingIdentifierMap()->allocateObjectPickingIDs(pickingGroupID, primitive.positions()->size() / 2));
     }
 
     // Compute line width in viewport space.

@@ -73,7 +73,7 @@ Future<PipelineFlowState> VoxelGridSliceModifierDelegate::apply(const ModifierEv
     return AsynchronousTask<PipelineFlowState>::runAsync([
             state = std::move(state),
             plane,
-            createdByNode = request.modificationNode(),
+            createdByNode = request.modificationNodeWeak(),
             surfaceMeshVis = OORef<SurfaceMeshVis>(surfaceMeshVis())]() mutable {
 
         for(const DataObject* obj : state.data()->objects()) {

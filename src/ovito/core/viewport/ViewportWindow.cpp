@@ -180,7 +180,7 @@ void ViewportWindow::handleUpdateRequest()
         }
 
         // Create a new fresh frame graph.
-        std::unique_ptr<FrameGraph> frameGraph = std::make_unique<FrameGraph>(
+        std::shared_ptr<FrameGraph> frameGraph = std::make_shared<FrameGraph>(
             userInterface().datasetContainer().visCache()->acquireResourceFrame(),
             time, _projParams, viewportWindowDeviceIndependentSize(), isInteractive, isPreviewMode, stopOnPipelineError,
             renderer()->preferredImageFormat(), devicePixelRatio());
@@ -262,7 +262,6 @@ void ViewportWindow::handleUpdateRequest()
         // Adjust projection if render frame is enabled.
         if(isPreviewMode)
             adjustProjectionForRenderFrame(dataset, _projParams, windowSize);
-
         frameGraph->setProjectionParams(_projParams);
 
         // Adopt newly generated frame graph.
@@ -272,9 +271,9 @@ void ViewportWindow::handleUpdateRequest()
     // Inform the user interface that rendering of an interactive viewport has finished.
     userInterface().interactiveViewportRenderingFinished();
 
-    // After the frame graph has been updated, show the new viewport contents on screen.
-    if(success)
-        refreshDisplay();
+    // After the frame graph has been updated, rerender the on-screen display.
+    if(success && viewport())
+        rerender();
 }
 
 /******************************************************************************
@@ -695,7 +694,7 @@ std::tuple<FloatType, Box2I> ViewportWindow::determineConstructionGridRange()
     // Compute intersection points of test rays with grid plane.
     Box2 visibleGridRect;
     size_t numberOfIntersections = 0;
-    for(size_t i = 0; i < sizeof(testPoints)/sizeof(testPoints[0]); i++) {
+    for(size_t i = 0; i < std::size(testPoints); i++) {
         Point3 p;
         if(computeConstructionPlaneIntersection(testPoints[i], p, 0.1f)) {
             numberOfIntersections++;

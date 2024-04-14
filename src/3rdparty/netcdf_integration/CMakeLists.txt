@@ -40,15 +40,12 @@ IF(TARGET netcdf OR TARGET netCDF::netcdf)
 
     # Determine the type of library target to build.
     SET(plugin_library_type "")
-    IF(OVITO_BUILD_MONOLITHIC)
-        # When building a static executable, create a CMake object library for each plugin.
-        SET(plugin_library_type "OBJECT")
-    ELSEIF(BUILD_SHARED_LIBS)
-        # Define the library as a module if it doesn't export any symbols.
-        SET(plugin_library_type "MODULE")
-    ELSEIF(NOT BUILD_SHARED_LIBS AND EMSCRIPTEN)
-        # When building a static executable for WASM, create a CMake object library for each plugin.
-        SET(plugin_library_type "OBJECT")
+    IF(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+        IF(OVITO_BUILD_MONOLITHIC)
+            SET(plugin_library_type "OBJECT")
+        ELSEIF(BUILD_SHARED_LIBS)
+            SET(plugin_library_type "MODULE")
+        ENDIF()
     ENDIF()
 
     # Build library.
@@ -74,7 +71,7 @@ IF(TARGET netcdf OR TARGET netCDF::netcdf)
     SET_TARGET_PROPERTIES(NetCDFIntegration PROPERTIES AUTOMOC ON)
     # Tell CMake to run the Qt resource compiler on all .qrc files added to a target.
     SET_TARGET_PROPERTIES(NetCDFIntegration PROPERTIES AUTORCC ON)
-    
+
     # Define macro for symbol export from the shared library.
     IF(BUILD_SHARED_LIBS)
         TARGET_COMPILE_DEFINITIONS(NetCDFIntegration PRIVATE "OVITO_NETCDF_INTEGRATION_EXPORT=Q_DECL_EXPORT")

@@ -30,6 +30,7 @@
 #include <ovito/core/rendering/FrameBuffer.h>
 #include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/rendering/SceneRenderer.h>
+#include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
 #include <ovito/opengl/OffscreenOpenGLSceneRenderer.h>
 #include "AmbientOcclusionModifier.h"
 
@@ -144,15 +145,15 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             DataBufferPtr brightness = DataBufferPtr::create(DataBuffer::Initialized, particles->elementCount(), Property::FloatDefault, 1);
 
             // Create the rendering frame buffer that receives the rendered image of the particles.
-            FrameBuffer frameBuffer(resolution, resolution);
-            QRect frameBufferRect(QPoint(0,0), frameBuffer.size());
+            std::shared_ptr<FrameBuffer> frameBuffer = std::make_shared<FrameBuffer>(resolution, resolution);
+            QRect frameBufferRect(QPoint(0,0), frameBuffer->size());
 
             // Create a local vis cache, because we are not in the main thread.
             // But we expect that this cache won't be used much anyway.
             auto visCache = std::make_shared<RendererResourceCache>();
 
             // Create a frame graph.
-            std::unique_ptr<FrameGraph> frameGraph = std::make_unique<FrameGraph>(
+            std::shared_ptr<FrameGraph> frameGraph = std::make_shared<FrameGraph>(
                 visCache->acquireResourceFrame(),
                 AnimationTime(0), ViewProjectionParameters{}, frameBufferRect.size(), false, false, false,
                 renderer->preferredImageFormat(), 1.0);
@@ -172,9 +173,11 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             renderer->postprocessFrameGraph(*frameGraph);
             this_task::throwIfCanceled();
 
+            // Create a special object picking map to extract the particle indices from the frame buffer.
+            std::shared_ptr<ObjectPickingIdentifierMap> objectIdentifierMap = std::make_shared<ObjectPickingIdentifierMap>();
+
             // Initialize the renderer.
             renderer->setVisCache(visCache);
-            renderer->setPickingPass(true);
             renderer->startRender(frameBufferRect.size());
             try {
 
@@ -212,15 +215,15 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
                     frameGraph->setProjectionParams(projParams);
 
                     // Discard the existing image in the frame buffer so that
-                    // OffscreenOpenGLSceneRenderer::endFrame() can just return the unmodified
+                    // OffscreenOpenGLSceneRenderer::renderFrame() can just return the unmodified
                     // frame buffer contents.
-                    frameBuffer.image() = QImage();
+                    frameBuffer->image() = QImage();
 
                     // Render the current view to offscreen frame buffer.
-                    renderer->renderFrame(*frameGraph, frameBufferRect, &frameBuffer);
+                    renderer->renderFrame(frameGraph, frameBufferRect, frameBuffer, objectIdentifierMap);
 
                     // Extract brightness values from rendered image.
-                    const QImage& image = frameBuffer.image();
+                    const QImage& image = frameBuffer->image();
                     OVITO_ASSERT(!image.isNull());
                     BufferWriteAccess<FloatType, access_mode::read_write> brightnessValues(brightness);
                     for(int y = 0; y < resolution; y++) {
@@ -233,8 +236,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
                             quint32 id = red + (green << 8) + (blue << 16) + (alpha << 24);
                             if(id == 0)
                                 continue;
-                            // Subtracting base 1 from ID, because that's how SceneRenderer::registerSubObjectIDs() is implemented.
-                            quint32 particleIndex = id - 1;
+                            quint32 particleIndex = id - 1; // Note: frame buffer object IDs start at 1.
                             OVITO_ASSERT(particleIndex < brightnessValues.size());
                             brightnessValues[particleIndex] += 1;
                         }

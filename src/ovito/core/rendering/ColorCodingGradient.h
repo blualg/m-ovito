@@ -250,7 +250,7 @@ public:
     /// \return The color that visualizes the given scalar value.
     virtual ColorT<float> valueToColor(float t) override {
         OVITO_ASSERT(t >= 0.0f && t <= 1.0f);
-        t *= (sizeof(colormap_viridis_data) / sizeof(colormap_viridis_data[0]) - 1);
+        t *= (std::size(colormap_viridis_data) - 1);
         auto t0 = std::floor(t);
         auto c1 = colormap_viridis_data[(size_t)t0];
         auto c2 = colormap_viridis_data[(size_t)std::ceil(t)];
@@ -282,7 +282,7 @@ public:
     /// \return The color that visualizes the given scalar value.
     virtual ColorT<float> valueToColor(float t) override {
         OVITO_ASSERT(t >= 0.0f && t <= 1.0f);
-        t *= (sizeof(colormap_magma_data) / sizeof(colormap_magma_data[0]) - 1);
+        t *= (std::size(colormap_magma_data) - 1);
         auto t0 = std::floor(t);
         auto c1 = colormap_magma_data[(size_t)t0];
         auto c2 = colormap_magma_data[(size_t)std::ceil(t)];

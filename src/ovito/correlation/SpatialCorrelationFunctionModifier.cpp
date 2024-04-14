@@ -260,7 +260,7 @@ Future<PipelineFlowState> SpatialCorrelationFunctionModifier::evaluateModifier(c
                                                     averagingDirection());
 
     // Perform the main calculation in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), engine = std::move(engine), createdByNode = request.modificationNode()]() mutable {
+    return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), engine = std::move(engine), createdByNode = request.modificationNodeWeak()]() mutable {
         engine->perform();
         engine->applyResults(state, createdByNode);
         return std::move(state);

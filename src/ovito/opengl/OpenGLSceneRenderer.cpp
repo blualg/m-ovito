@@ -31,6 +31,7 @@
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/rendering/ColorCodingGradient.h>
 #include <ovito/core/rendering/FrameGraph.h>
+#include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
 #include "OpenGLSceneRenderer.h"
 #include "OpenGLHelpers.h"
 #include "OpenGLShaderHelper.h"
@@ -187,16 +188,23 @@ void OpenGLSceneRenderer::determineOpenGLInfo()
 /******************************************************************************
 * Renders a single frame.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderFrame(FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer)
+void OpenGLSceneRenderer::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, const QRect& viewportRect, std::shared_ptr<FrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingIdentifierMap)
 {
     // Make sure we have a valid cache frame set for the resource manager during this render pass.
     OVITO_ASSERT(hasCurrentResourceFrame());
+
+    // The OpenGL renderer can only render to a GL framebuffer.
+    if(frameBuffer)
+        throw RendererException(tr("The OpenGLSceneRenderer cannot directly render into a FrameBuffer."));
+
+    // Store a pointer internally.
+    _objectPickingIdentifierMap = pickingIdentifierMap.get();
 
     // Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
     _viewportRect = QRect(viewportRect.x() * multisamplingLevel(), viewportRect.y() * multisamplingLevel(), viewportRect.width() * multisamplingLevel(), viewportRect.height() * multisamplingLevel());
 
     // Adopt viewport projection parameters.
-    _projParams = frameGraph.projectionParams();
+    _projParams = frameGraph->projectionParams();
 
     // OpenGL rendering requires a Qt GUI application.
     if(!qobject_cast<QGuiApplication*>(QCoreApplication::instance())) {
@@ -207,8 +215,7 @@ void OpenGLSceneRenderer::renderFrame(FrameGraph& frameGraph, const QRect& viewp
     }
 
     // Are we rendering the contents of an interactive viewport window?
-    _isInteractive = frameGraph.isInteractive();
-    OVITO_ASSERT(_isInteractive == (frameBuffer == nullptr));
+    _isInteractive = frameGraph->isInteractive();
 
     // Get the GL context being used for the current rendering pass.
     _glcontext = QOpenGLContext::currentContext();
@@ -299,36 +306,36 @@ void OpenGLSceneRenderer::renderFrame(FrameGraph& frameGraph, const QRect& viewp
 
     // Clear frame buffer.
     if(!isPickingPass()) {
-        OVITO_CHECK_OPENGL(this, this->glClearColor(frameGraph.clearColor().r(), frameGraph.clearColor().g(), frameGraph.clearColor().b(), frameGraph.clearColor().a()));
+        OVITO_CHECK_OPENGL(this, this->glClearColor(frameGraph->clearColor().r(), frameGraph->clearColor().g(), frameGraph->clearColor().b(), frameGraph->clearColor().a()));
     }
     else {
         OVITO_CHECK_OPENGL(this, this->glClearColor(0, 0, 0, 0));
 #if 1
         // Object IDs start at 1 when rendering for object picking.
-        _nextAvailablePickingID = 1;
+        constexpr quint32 startObjectID = 1;
 #else
         // This can be enabled during debugging to avoid alpha!=1 pixels in the picking render buffer.
-        _nextAvailablePickingID = 0xEF000000;
+        constexpr quint32 startObjectID = 0xEF000000;
 #endif
         // Reset the object IDs assigned to the object picking groups.
-        frameGraph.resetPickingGroupObjectIDs();
+        objectPickingIdentifierMap()->prepare(*frameGraph, startObjectID);
     }
     OVITO_CHECK_OPENGL(this, this->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT));
     OVITO_REPORT_OPENGL_ERRORS(this);
 
     // Render 2d background graphics.
     _isTransparencyPass = false;
-    renderFrameGraph(frameGraph, FrameGraph::RenderLayer::UnderLayer);
+    renderFrameGraph(*frameGraph, FrameGraph::RenderLayer::UnderLayer);
 
     // Render opaque 3d geometry.
-    if(renderFrameGraph(frameGraph, FrameGraph::RenderLayer::SceneLayer)) {
+    if(renderFrameGraph(*frameGraph, FrameGraph::RenderLayer::SceneLayer)) {
 
         // Render translucent 3d geometry in a second pass.
-        renderTransparentGeometry(frameGraph);
+        renderTransparentGeometry(*frameGraph);
     }
 
     // Render foreground graphics.
-    renderFrameGraph(frameGraph, FrameGraph::RenderLayer::OverLayer);
+    renderFrameGraph(*frameGraph, FrameGraph::RenderLayer::OverLayer);
 
 #ifdef OVITO_DEBUG
     // Stop debug logger.
@@ -344,7 +351,7 @@ void OpenGLSceneRenderer::renderFrame(FrameGraph& frameGraph, const QRect& viewp
 /******************************************************************************
 * Renders all semi-transparent geometry in a second rendering pass.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderTransparentGeometry(FrameGraph& frameGraph)
+void OpenGLSceneRenderer::renderTransparentGeometry(const FrameGraph& frameGraph)
 {
     // Semi-transparent geomertry should never get rendered in a picking render pass.
     OVITO_ASSERT(!isPickingPass());
@@ -445,7 +452,7 @@ void OpenGLSceneRenderer::renderTransparentGeometry(FrameGraph& frameGraph)
 /******************************************************************************
 * Executes the rendering commands stored in the given frame graph.
 ******************************************************************************/
-bool OpenGLSceneRenderer::renderFrameGraph(FrameGraph& frameGraph, FrameGraph::RenderLayer renderLayer)
+bool OpenGLSceneRenderer::renderFrameGraph(const FrameGraph& frameGraph, FrameGraph::RenderLayer renderLayer)
 {
     bool hasTransparentGeometry = false;
 
@@ -483,36 +490,24 @@ bool OpenGLSceneRenderer::renderFrameGraph(FrameGraph& frameGraph, FrameGraph::R
             _modelViewTM.setZero();
         }
 
-        // Get the object picking group the current primitive belongs to.
-        // Assign a unique base object ID to the picking group if this is the first primitive from the group.
-        FrameGraph::ObjectPickingGroup* pickingGroup = nullptr;
-        if(isPickingPass()) {
-            OVITO_ASSERT(command.pickingGroupId() != 0);
-            pickingGroup = frameGraph.pickingGroup(command.pickingGroupId());
-            OVITO_ASSERT(pickingGroup);
-            if(pickingGroup->baseObjectID() == 0) {
-                pickingGroup->setBaseObjectID(_nextAvailablePickingID);
-            }
-        }
-
         if(const ParticlePrimitive* primitive = dynamic_cast<const ParticlePrimitive*>(command.primitive())) {
-            hasTransparentGeometry |= renderParticles(*primitive, pickingGroup);
+            hasTransparentGeometry |= renderParticles(*primitive, command.pickingGroupId());
         }
         else if(const CylinderPrimitive* primitive = dynamic_cast<const CylinderPrimitive*>(command.primitive())) {
-            hasTransparentGeometry |= renderCylinders(*primitive, pickingGroup);
+            hasTransparentGeometry |= renderCylinders(*primitive, command.pickingGroupId());
         }
         else if(const MeshPrimitive* primitive = dynamic_cast<const MeshPrimitive*>(command.primitive())) {
-            hasTransparentGeometry |= renderMesh(*primitive, pickingGroup);
+            hasTransparentGeometry |= renderMesh(*primitive, command.pickingGroupId());
         }
         else if(!isTransparencyPass()) {
             if(const LinePrimitive* primitive = dynamic_cast<const LinePrimitive*>(command.primitive())) {
-                renderLinesImplementation(*primitive, pickingGroup);
+                renderLinesImplementation(*primitive, command.pickingGroupId());
             }
             else if(const ImagePrimitive* primitive = dynamic_cast<const ImagePrimitive*>(command.primitive())) {
                 renderImageImplementation(*primitive);
             }
             else if(const MarkerPrimitive* primitive = dynamic_cast<const MarkerPrimitive*>(command.primitive())) {
-                renderMarkersImplementation(*primitive, pickingGroup);
+                renderMarkersImplementation(*primitive, command.pickingGroupId());
             }
         }
         OVITO_REPORT_OPENGL_ERRORS(this);
@@ -523,11 +518,11 @@ bool OpenGLSceneRenderer::renderFrameGraph(FrameGraph& frameGraph, FrameGraph::R
 /******************************************************************************
 * Renders a particles primitive.
 ******************************************************************************/
-bool OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup)
+bool OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive, int pickingGroupID)
 {
     // Render particles immediately if they are all fully opaque. Otherwise defer rendering to a later time.
     if(isPickingPass() || isTransparencyPass() != (!primitive.transparencies())) {
-        renderParticlesImplementation(primitive, pickingGroup);
+        renderParticlesImplementation(primitive, pickingGroupID);
         return false;
     }
     else {
@@ -566,7 +561,7 @@ bool OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive, Fr
                 ParticlePrimitive opaqueParticles = primitive;
                 opaqueParticles.setTransparencies({});
                 opaqueParticles.setIndices(cache.opaqueIndices);
-                renderParticlesImplementation(opaqueParticles, pickingGroup);
+                renderParticlesImplementation(opaqueParticles, pickingGroupID);
             }
         }
         return true;
@@ -576,11 +571,11 @@ bool OpenGLSceneRenderer::renderParticles(const ParticlePrimitive& primitive, Fr
 /******************************************************************************
 * Renders a cylinders primitive.
 ******************************************************************************/
-bool OpenGLSceneRenderer::renderCylinders(const CylinderPrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup)
+bool OpenGLSceneRenderer::renderCylinders(const CylinderPrimitive& primitive, int pickingGroupID)
 {
     // Render primitives immediately if they are all fully opaque. Otherwise defer rendering to a later time.
     if(isPickingPass() || isTransparencyPass() != (!primitive.transparencies())) {
-        renderCylindersImplementation(primitive, pickingGroup);
+        renderCylindersImplementation(primitive, pickingGroupID);
         return false;
     }
     return true;
@@ -589,11 +584,11 @@ bool OpenGLSceneRenderer::renderCylinders(const CylinderPrimitive& primitive, Fr
 /******************************************************************************
 * Renders a triangle mesh primitive.
 ******************************************************************************/
-bool OpenGLSceneRenderer::renderMesh(const MeshPrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup)
+bool OpenGLSceneRenderer::renderMesh(const MeshPrimitive& primitive, int pickingGroupID)
 {
     // Render mesh immediately if it is fully opaque. Otherwise defer rendering to a later time.
     if(isPickingPass() || isTransparencyPass() != primitive.isFullyOpaque()) {
-        renderMeshImplementation(primitive, pickingGroup);
+        renderMeshImplementation(primitive, pickingGroupID);
         return false;
     }
     return true;
@@ -1114,20 +1109,6 @@ QOpenGLTexture* OpenGLSceneRenderer::uploadColorMap(ColorCodingGradient* gradien
     }
 
     return texture.get();
-}
-
-/******************************************************************************
-* Registers a range of unique IDs for the current object picking group being rendered.
-******************************************************************************/
-quint32 OpenGLSceneRenderer::allocateObjectPickingIDs(FrameGraph::ObjectPickingGroup* pickingGroup, quint32 objectCount, const ConstDataBufferPtr& indices)
-{
-    quint32 baseObjectID = _nextAvailablePickingID;
-    if(pickingGroup) {
-        if(indices)
-            pickingGroup->addIndexedRange(indices, _nextAvailablePickingID - pickingGroup->baseObjectID());
-    }
-    _nextAvailablePickingID += objectCount;
-    return baseObjectID;
 }
 
 }   // End of namespace

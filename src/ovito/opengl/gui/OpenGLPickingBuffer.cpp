@@ -70,9 +70,9 @@ void OpenGLPickingBuffer::acquire(const QSize& size, QOpenGLFunctions* glfuncs)
 }
 
 /******************************************************************************
-* Returns the object ID at the given window position.
+* Returns the frame buffer object ID at the given frame buffer location.
 ******************************************************************************/
-quint32 OpenGLPickingBuffer::objectAt(const QPoint& pos) const
+quint32 OpenGLPickingBuffer::objectIdentifierAt(const QPoint& pos) const
 {
     if(!_image.isNull()) {
         if(pos.x() >= 0 && pos.x() < _image.width() && pos.y() >= 0 && pos.y() < _image.height()) {
@@ -92,28 +92,28 @@ quint32 OpenGLPickingBuffer::objectAt(const QPoint& pos) const
 /******************************************************************************
 * Returns the z-value at the given window position.
 ******************************************************************************/
-FloatType OpenGLPickingBuffer::depthAt(const QPoint& pos) const
+FloatType OpenGLPickingBuffer::depthAt(const QPoint& frameBufferLocation) const
 {
     if(!_image.isNull() && _depthBuffer) {
         int w = _image.width();
         int h = _image.height();
-        if(pos.x() >= 0 && pos.x() < w && pos.y() >= 0 && pos.y() < h) {
-            QPoint mirroredPos(pos.x(), _image.height() - 1 - pos.y());
+        if(frameBufferLocation.x() >= 0 && frameBufferLocation.x() < w && frameBufferLocation.y() >= 0 && frameBufferLocation.y() < h) {
+            QPoint mirroredPos(frameBufferLocation.x(), _image.height() - 1 - frameBufferLocation.y());
             if(_image.pixel(mirroredPos) != 0) {
                 if(_numDepthBufferBits == 16) {
-                    GLushort bval = reinterpret_cast<const GLushort*>(_depthBuffer.get())[(mirroredPos.y()) * w + pos.x()];
+                    GLushort bval = reinterpret_cast<const GLushort*>(_depthBuffer.get())[(mirroredPos.y()) * w + frameBufferLocation.x()];
                     return (FloatType)bval / FloatType(65535.0);
                 }
                 else if(_numDepthBufferBits == 24) {
-                    GLuint bval = reinterpret_cast<const GLuint*>(_depthBuffer.get())[(mirroredPos.y()) * w + pos.x()];
+                    GLuint bval = reinterpret_cast<const GLuint*>(_depthBuffer.get())[(mirroredPos.y()) * w + frameBufferLocation.x()];
                     return (FloatType)((bval >> 8) & 0x00FFFFFF) / FloatType(16777215.0);
                 }
                 else if(_numDepthBufferBits == 32) {
-                    GLuint bval = reinterpret_cast<const GLuint*>(_depthBuffer.get())[(mirroredPos.y()) * w + pos.x()];
+                    GLuint bval = reinterpret_cast<const GLuint*>(_depthBuffer.get())[(mirroredPos.y()) * w + frameBufferLocation.x()];
                     return (FloatType)bval / FloatType(4294967295.0);
                 }
                 else if(_numDepthBufferBits == 0) {
-                    return reinterpret_cast<const GLfloat*>(_depthBuffer.get())[(mirroredPos.y()) * w + pos.x()];
+                    return reinterpret_cast<const GLfloat*>(_depthBuffer.get())[(mirroredPos.y()) * w + frameBufferLocation.x()];
                 }
             }
         }

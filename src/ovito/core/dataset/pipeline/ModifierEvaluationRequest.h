@@ -46,6 +46,9 @@ public:
     /// Returns the modification node being evaluated.
     const OORef<ModificationNode>& modificationNode() const { return _modificationNode; }
 
+    /// Returns a weak reference to the modification node being evaluated.
+    OOWeakRef<const PipelineNode> modificationNodeWeak() const { return _modificationNode; }
+
     /// Returns the modifier being evaluated.
     Modifier* modifier() const;
 

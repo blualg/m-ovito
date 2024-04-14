@@ -38,7 +38,7 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(SceneRenderer);
 /******************************************************************************
  * Renders the 2d graphics of a render layer into the frame buffer.
  ******************************************************************************/
-void SceneRenderer::render2DPrimitives(FrameGraph::RenderLayer renderLayer, FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer) const
+void SceneRenderer::render2DPrimitives(FrameGraph::RenderLayer renderLayer, const FrameGraph& frameGraph, const QRect& viewportRect, const std::shared_ptr<FrameBuffer>& frameBuffer) const
 {
     if(!frameBuffer)
         return;

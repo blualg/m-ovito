@@ -234,7 +234,7 @@ Future<PipelineFlowState> ScatterPlotModifier::evaluateModifier(const ModifierEv
             selectionYAxisRangeEnd,
             table,
             elementDescriptionName = container->getOOMetaClass().elementDescriptionName(),
-            createdByNode = request.modificationNode()]() mutable
+            createdByNode = request.modificationNodeWeak()]() mutable
     {
         table->setElementCount(xProperty->size());
 

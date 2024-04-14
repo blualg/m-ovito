@@ -316,33 +316,4 @@ FloatType FrameGraph::defaultLinePickingWidth() const
     return FloatType(6) * devicePixelRatio();
 }
 
-/******************************************************************************
-* Given an object ID from the picking render buffer, looks up the corresponding picking group.
-******************************************************************************/
-const FrameGraph::ObjectPickingGroup* FrameGraph::lookupPickingGroupFromObjectId(quint32 objectID) const
-{
-    if(objectID == 0 || _pickingGroups.empty())
-        return nullptr;
-
-    // Make sure the groups are sorted by base object ID.
-    OVITO_ASSERT(std::is_sorted(_pickingGroups.begin(), _pickingGroups.end(), [](const ObjectPickingGroup& a, const ObjectPickingGroup& b) { return a.baseObjectID() < b.baseObjectID(); }));
-
-    // Find the group that succeeds the one containing the given object ID.
-    auto iter = std::upper_bound(_pickingGroups.begin(), _pickingGroups.end(), objectID,
-        [](quint32 id, const ObjectPickingGroup& group) { return id < group.baseObjectID(); });
-
-    if(iter == _pickingGroups.begin())
-        return nullptr;
-
-    if(iter != _pickingGroups.end()) {
-        OVITO_ASSERT(iter->baseObjectID() > objectID);
-        OVITO_ASSERT(objectID >= std::prev(iter)->baseObjectID());
-        return &*std::prev(iter);
-    }
-    else {
-        OVITO_ASSERT(objectID >= _pickingGroups.back().baseObjectID());
-        return &_pickingGroups.back();
-    }
-}
-
 }   // End of namespace

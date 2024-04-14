@@ -22,6 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
+#include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
 #include <ovito/core/utilities/SortZipped.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "OpenGLSceneRenderer.h"
@@ -32,7 +33,7 @@ namespace Ovito {
 /******************************************************************************
 * Renders a set of particles.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup)
+void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive& primitive, int pickingGroupID)
 {
     // Make sure there is something to be rendered. Otherwise, step out early.
     if(!primitive.positions() || primitive.positions()->size() == 0)
@@ -220,7 +221,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
 
     // Pass picking base ID to shader.
     if(isPickingPass()) {
-        shader.setPickingBaseId(allocateObjectPickingIDs(pickingGroup, primitive.positions()->size()));
+        shader.setPickingBaseId(objectPickingIdentifierMap()->allocateObjectPickingIDs(pickingGroupID, primitive.positions()->size()));
     }
     OVITO_REPORT_OPENGL_ERRORS(this);
 

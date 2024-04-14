@@ -29,6 +29,11 @@
 
 namespace Ovito {
 
+#ifdef Q_OS_MACOS
+/// Indicates that a native UI dialog (e.g. a QFileDialog) is currently open.
+bool TaskManager::_nativeDialogActive = false;
+#endif
+
 /******************************************************************************
 * Initializes the task manager.
 ******************************************************************************/
@@ -182,7 +187,7 @@ void TaskManager::shutdownImplementation(std::unique_lock<std::mutex>& lock)
     // Wait until all threads did terminate. That's because canceled asynchronous tasks
     // may still be running in threads until they notice they have been canceled.
     Q_DECL_UNUSED bool result = _threadPool.waitForDone() && _threadPoolUI.waitForDone() && _threadPoolSerial.waitForDone();
-    OVITO_ASSERT(result); 
+    OVITO_ASSERT(result);
 
     // Shuts down the SYCL queue.
 #ifdef OVITO_USE_SYCL
@@ -338,7 +343,14 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskReferen
 
             // Enter the local Qt event loop.
             lock.unlock();
+#ifndef Q_OS_MACOS
             eventLoop->exec();
+#else
+            /// If a native UI dialog (e.g. a QFileDialog) is currently open,
+            /// do not start a local event loop with user input event processing.
+            /// For unknown reasons, this closes the native dialog upon loop exit.
+            eventLoop->exec(_nativeDialogActive ? QEventLoop::ExcludeUserInputEvents : QEventLoop::AllEvents);
+#endif
             lock.lock();
             break;
         }

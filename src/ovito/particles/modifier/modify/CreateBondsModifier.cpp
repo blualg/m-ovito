@@ -306,7 +306,7 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
             vdwPrefactor = vdwPrefactor(),
             isHydrogenType = std::move(isHydrogenType),
             autoDisableBondDisplay = autoDisableBondDisplay(),
-            createdByNode = request.modificationNode()]() mutable
+            createdByNode = request.modificationNodeWeak()]() mutable
     {
         this_task::setProgressText(tr("Generating bonds"));
 

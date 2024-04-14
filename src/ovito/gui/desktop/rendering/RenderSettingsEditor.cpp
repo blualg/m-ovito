@@ -144,7 +144,7 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
         _sizePresetsBox = new QComboBox(groupBox);
         _sizePresetsBox->addItem(tr("Presets..."));
         _sizePresetsBox->insertSeparator(1);
-        for(int i = 0; i < sizeof(imageSizePresets)/sizeof(imageSizePresets[0]); i++)
+        for(size_t i = 0; i < std::size(imageSizePresets); i++)
             _sizePresetsBox->addItem(tr("%1 x %2").arg(imageSizePresets[i][0]).arg(imageSizePresets[i][1]));
         connect(_sizePresetsBox, qOverload<int>(&QComboBox::activated), this, &RenderSettingsEditor::onSizePresetActivated);
         layout2->addWidget(_sizePresetsBox, 0, 2);
@@ -275,7 +275,7 @@ void RenderSettingsEditor::onChooseImageFilename()
 void RenderSettingsEditor::onSizePresetActivated(int index)
 {
     RenderSettings* settings = static_object_cast<RenderSettings>(editObject());
-    if(settings && index >= 2 && index < 2+sizeof(imageSizePresets)/sizeof(imageSizePresets[0])) {
+    if(settings && index >= 2 && index < 2 + std::size(imageSizePresets)) {
         performTransaction(tr("Change output dimensions"), [settings, index]() {
             settings->setOutputImageWidth(imageSizePresets[index-2][0]);
             settings->setOutputImageHeight(imageSizePresets[index-2][1]);

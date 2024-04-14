@@ -64,8 +64,8 @@ void RefTarget::aboutToBeDeleted()
     UndoSuspender noUndo;
 
     if(ExecutionContext::isMainThread()) {
-        // Strong references to this target should not exist at this point.
-        // But this will also remove all remaining weak references to this target object.
+        // No strong references to this target should exist at this point.
+        // But we still need to get rid of all remaining weak references to this target object.
         ReferenceEvent deleteEvent(ReferenceEvent::TargetDeleted, this);
         _dependents.visit([&](RefMaker* dependent) {
             dependent->handleReferenceEvent(this, deleteEvent);
@@ -73,8 +73,18 @@ void RefTarget::aboutToBeDeleted()
     }
 
     // No dependents should be left at this point.
-    // Note: Objects being deleted from a non-main thread should not be targets of RefMaker weak references.
-    OVITO_ASSERT(_dependents.empty());
+    // Note: Objects being deleted from a worker thread should not be weakly referenced by some RefMaker in the main thread.
+    // Make sure to pass only weak reference to the worker thread in such cases, or use some other approach
+    // to make sure the object does not get deleted in the worker thread.
+#ifdef OVITO_DEBUG
+    if(!_dependents.empty()) {
+        qDebug() << "The" << this << "being deleted still has dependents:";
+        _dependents.visit([&](RefMaker* dependent) {
+            qDebug() << " -" << dependent;
+        });
+        OVITO_ASSERT(false);
+    }
+#endif
 
     // Delete object from memory.
     RefMaker::aboutToBeDeleted();

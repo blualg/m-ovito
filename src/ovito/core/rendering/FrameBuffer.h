@@ -118,7 +118,10 @@ public:
     explicit FrameBuffer(QObject* parent = nullptr) : QObject(parent) {}
 
     /// Constructor.
-    FrameBuffer(int width, int height, QObject* parent = nullptr);
+    explicit FrameBuffer(int width, int height, QObject* parent = nullptr);
+
+    /// Constructor.
+    explicit FrameBuffer(const QSize& size, QObject* parent = nullptr) : FrameBuffer(size.width(), size.height(), parent) {}
 
     /// Returns the internal QImage that is used to store the pixel data.
     QImage& image() {

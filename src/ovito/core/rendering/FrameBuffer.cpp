@@ -161,12 +161,13 @@ void FrameBuffer::renderImagePrimitive(const ImagePrimitive& primitive, const QR
     if(!viewportRect.isNull() && viewportRect != image().rect())
         painter.setClipRect(viewportRect);
     painter.translate(viewportRect.left(), viewportRect.top());
-    QRect rect(primitive.windowRect().minc.x(), primitive.windowRect().minc.y(), primitive.windowRect().width(), primitive.windowRect().height());
+    qreal dpr = image().devicePixelRatioF();
+    QRectF rect(primitive.windowRect().minc.x() / dpr, primitive.windowRect().minc.y() / dpr, primitive.windowRect().width() / dpr, primitive.windowRect().height() / dpr);
     painter.drawImage(rect, primitive.image());
     painter.end();
 
     if(update)
-        this->update(rect);
+        this->update(rect.toAlignedRect());
 }
 
 /******************************************************************************
@@ -190,7 +191,8 @@ void FrameBuffer::renderTextPrimitive(const TextPrimitive& primitive, const QRec
     QRectF textBounds = primitive.queryLocalBounds(1.0, resolvedTextFormat);
 
     painter.translate(viewportRect.left(), viewportRect.top());
-    painter.translate(primitive.position().x(), primitive.position().y());
+    qreal dpr = image().devicePixelRatioF();
+    painter.translate(primitive.position().x() / dpr, primitive.position().y() / dpr);
     if(primitive.rotation() != 0)
         painter.rotate(qRadiansToDegrees(primitive.rotation()));
 

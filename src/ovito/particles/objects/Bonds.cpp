@@ -391,7 +391,7 @@ Color Bonds::OOMetaClass::getElementTypeDefaultColor(const PropertyReference& pr
             Color(1.0,  1.0,  0.7), // 7
             Color(0.97, 0.97, 0.97) // 8
         };
-        return defaultTypeColors[std::abs(numericTypeId) % (sizeof(defaultTypeColors) / sizeof(defaultTypeColors[0]))];
+        return defaultTypeColors[std::abs(numericTypeId) % std::size(defaultTypeColors)];
     }
 
     return PropertyContainerClass::getElementTypeDefaultColor(property, typeName, numericTypeId, loadUserDefaults);

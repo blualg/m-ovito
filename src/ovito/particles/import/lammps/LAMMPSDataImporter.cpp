@@ -942,7 +942,7 @@ QString LAMMPSDataImporter::atomStyleName(LAMMPSAtomStyle atomStyle)
         QStringLiteral("wavepacket"),
         QStringLiteral("hybrid")
     };
-    OVITO_STATIC_ASSERT(AtomStyle_COUNT == sizeof(styleNames) / sizeof(styleNames[0]));
+    OVITO_STATIC_ASSERT(AtomStyle_COUNT == std::size(styleNames));
     OVITO_ASSERT((int)atomStyle < AtomStyle_COUNT);
     return styleNames[atomStyle];
 }

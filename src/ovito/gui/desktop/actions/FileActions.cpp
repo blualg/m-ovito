@@ -139,7 +139,7 @@ void WidgetActionManager::on_FileOpen_triggered()
         // Go to the last directory used.
         QString defaultPath;
         OORef<DataSet> dataSet = mainWindow().datasetContainer().currentSet();
-        if(dataSet == NULL || dataSet->filePath().isEmpty()) {
+        if(!dataSet || dataSet->filePath().isEmpty()) {
             if(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled()) {
                 defaultPath = settings.value("last_directory").toString();
             }
@@ -148,8 +148,10 @@ void WidgetActionManager::on_FileOpen_triggered()
             defaultPath = dataSet->filePath();
         }
 
+        TaskManager::setNativeDialogActive(true);
         QString filename = QFileDialog::getOpenFileName(&mainWindow(), tr("Load Session State"),
                 defaultPath, tr("OVITO State Files (*.ovito);;All Files (*)"));
+        TaskManager::setNativeDialogActive(false);
         if(filename.isEmpty())
             this_task::cancelAndThrow();
 

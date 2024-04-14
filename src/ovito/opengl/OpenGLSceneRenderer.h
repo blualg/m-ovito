@@ -68,7 +68,7 @@ public:
     explicit OpenGLSceneRenderer(ObjectInitializationFlags flags);
 
     /// Renders a single frame.
-    virtual void renderFrame(FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
+    virtual void renderFrame(std::shared_ptr<const FrameGraph> frameGraph, const QRect& viewportRect, std::shared_ptr<FrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingIdentifierMap = {}) override;
 
     /// Indicates whether we are rendering the contents of an interactive viewport window.
     bool isInteractive() const { return _isInteractive; }
@@ -142,12 +142,6 @@ public:
 	/// Returns the best format for QImage to be used when creating an ImagePrimitive.
 	virtual QImage::Format preferredImageFormat() const override { return QImage::QImage::Format_RGBA8888; }
 
-    /// Indicates that we are currently rendering a false-color image for object picking.
-    bool isPickingPass() const { return _isPickingPass; }
-
-    /// Activates picking render mode.
-    void setPickingPass(bool enable) { _isPickingPass = enable; }
-
     /// Returns the vendor name of the OpenGL implementation in use.
     static const QByteArray& openGLVendor() { return _openGLVendor; }
 
@@ -192,25 +186,25 @@ private:
     bool isTransparencyPass() const { return _isTransparencyPass; }
 
     /// Executes the rendering commands stored in the given frame graph.
-    bool renderFrameGraph(FrameGraph& frameGraph, FrameGraph::RenderLayer renderLayer);
+    bool renderFrameGraph(const FrameGraph& frameGraph, FrameGraph::RenderLayer renderLayer);
 
     /// Render all semi-transparent geometry in a second rendering pass.
-    void renderTransparentGeometry(FrameGraph& frameGraph);
+    void renderTransparentGeometry(const FrameGraph& frameGraph);
 
     /// Renders a particles primitive.
-    bool renderParticles(const ParticlePrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup);
+    bool renderParticles(const ParticlePrimitive& primitive, int pickingGroupID);
 
     /// Renders a cylinders primitive.
-    bool renderCylinders(const CylinderPrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup);
+    bool renderCylinders(const CylinderPrimitive& primitive, int pickingGroupID);
 
     /// Renders a triangle mesh primitive.
-    bool renderMesh(const MeshPrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup);
+    bool renderMesh(const MeshPrimitive& primitive, int pickingGroupID);
 
     /// Renders a set of particles.
-    void renderParticlesImplementation(const ParticlePrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup);
+    void renderParticlesImplementation(const ParticlePrimitive& primitive, int pickingGroupID);
 
     /// Renders a triangle mesh.
-    void renderMeshImplementation(const MeshPrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup);
+    void renderMeshImplementation(const MeshPrimitive& primitive, int pickingGroupID);
 
     /// Renders just the edges of a triangle mesh as a wireframe model.
     void renderMeshWireframeImplementation(const MeshPrimitive& primitive);
@@ -223,19 +217,19 @@ private:
     QOpenGLBuffer getMeshInstanceTMBuffer(const MeshPrimitive& primitive, OpenGLShaderHelper& shader);
 
     /// Renders a set of markers.
-    void renderMarkersImplementation(const MarkerPrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup);
+    void renderMarkersImplementation(const MarkerPrimitive& primitive, int pickingGroupID);
 
     /// Renders a set of lines.
-    void renderLinesImplementation(const LinePrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup);
+    void renderLinesImplementation(const LinePrimitive& primitive, int pickingGroupID);
 
     /// Renders a set of lines using GL_LINES mode.
-    void renderThinLinesImplementation(const LinePrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup);
+    void renderThinLinesImplementation(const LinePrimitive& primitive, int pickingGroupID);
 
     /// Renders a set of lines using triangle strips.
-    void renderThickLinesImplementation(const LinePrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup);
+    void renderThickLinesImplementation(const LinePrimitive& primitive, int pickingGroupID);
 
     /// Renders a set of cylinders or arrow glyphs.
-    void renderCylindersImplementation(const CylinderPrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup);
+    void renderCylindersImplementation(const CylinderPrimitive& primitive, int pickingGroupID);
 
     /// Renders a 2d pixel image into the output framebuffer.
     void renderImageImplementation(const ImagePrimitive& primitive);
@@ -243,8 +237,11 @@ private:
     /// Returns whether the renderer is using a two-pass OIT method.
     bool orderIndependentTransparency() const { return _orderIndependentTransparency; }
 
-	/// Registers a range of unique IDs for the current object picking group being rendered.
-	quint32 allocateObjectPickingIDs(FrameGraph::ObjectPickingGroup* pickingGroup, quint32 objectCount, const ConstDataBufferPtr& indices = {});
+    /// Returns the mapping of frame buffer object IDs to object picking groups.
+    ObjectPickingIdentifierMap* objectPickingIdentifierMap() const { return _objectPickingIdentifierMap; }
+
+    /// Indicates that we are currently rendering a false-color image for object picking.
+    bool isPickingPass() const { return objectPickingIdentifierMap() != nullptr; }
 
 private:
 
@@ -275,8 +272,8 @@ private:
     /// Controls whether the renderer is using a two-pass OIT method.
     bool _orderIndependentTransparency = false;
 
-    /// Indicates whether we are currently rendering a false-color image for object picking.
-    bool _isPickingPass = false;
+    /// The mapping of frame buffer object IDs to object picking groups.
+    ObjectPickingIdentifierMap* _objectPickingIdentifierMap = nullptr;
 
     /// Indicates whether we are currently rendering semi-transparent geometry.
     bool _isTransparencyPass = false;
@@ -317,9 +314,6 @@ private:
 
     /// Indicates that the current primitive being rendered is using preprojected NDC coordinates.
     bool _preprojectedCoordinates = false;
-
-	/// The next available object ID to be used for object picking.
-	quint32 _nextAvailablePickingID;
 
     /// The vendor of the OpenGL implementation in use.
     static QByteArray _openGLVendor;

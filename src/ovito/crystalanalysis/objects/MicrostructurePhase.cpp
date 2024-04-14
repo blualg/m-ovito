@@ -85,8 +85,8 @@ Color MicrostructurePhase::getBurgersVectorColor(ParticleType::PredefinedStructu
                 { FloatType(0.0), FloatType(1.0), FloatType(0.0) },
                 { FloatType(0.0), FloatType(0.0), FloatType(1.0) }
         };
-        OVITO_STATIC_ASSERT(sizeof(burgersVectors)/sizeof(burgersVectors[0]) == sizeof(predefinedLineColors)/sizeof(predefinedLineColors[0]));
-        for(size_t i = 0; i < sizeof(burgersVectors)/sizeof(burgersVectors[0]); i++) {
+        OVITO_STATIC_ASSERT(std::size(burgersVectors) == std::size(predefinedLineColors));
+        for(size_t i = 0; i < std::size(burgersVectors); i++) {
             if(b.equals(burgersVectors[i], FloatType(1e-6)) || b.equals(-burgersVectors[i], FloatType(1e-6)))
                 return predefinedLineColors[i];
         }
@@ -134,8 +134,8 @@ Color MicrostructurePhase::getBurgersVectorColor(ParticleType::PredefinedStructu
                 { FloatType(1.0/6.0), FloatType(1.0/6.0), 0 },
                 { FloatType(1.0/6.0), FloatType(-1.0/6.0), 0 },
         };
-        OVITO_STATIC_ASSERT(sizeof(burgersVectors)/sizeof(burgersVectors[0]) == sizeof(predefinedLineColors)/sizeof(predefinedLineColors[0]));
-        for(size_t i = 0; i < sizeof(burgersVectors)/sizeof(burgersVectors[0]); i++) {
+        OVITO_STATIC_ASSERT(std::size(burgersVectors) == std::size(predefinedLineColors));
+        for(size_t i = 0; i < std::size(burgersVectors); i++) {
             if(b.equals(burgersVectors[i], FloatType(1e-6)) || b.equals(-burgersVectors[i], FloatType(1e-6)))
                 return predefinedLineColors[i];
         }

@@ -36,7 +36,7 @@ class OVITO_GUI_EXPORT HistoryFileDialog : public QFileDialog
 
 public:
 
-    /// \brief Constructs the dialog window.
+    /// Constructs the dialog window.
     HistoryFileDialog(const QString& dialogClass, QWidget* parent = nullptr, const QString& caption = QString(), const QString& directory = QString(), const QString& filter = QString());
 
     /// Returns whether the user has activated the program option to maintain separate
@@ -50,6 +50,13 @@ public:
         QSettings settings;
         if(!on) settings.setValue("file/keep_dir_history", false);
         else settings.remove("file/keep_dir_history");
+    }
+
+    virtual int exec() override {
+        TaskManager::setNativeDialogActive(true);
+        auto dlgResult = QFileDialog::exec();
+        TaskManager::setNativeDialogActive(false);
+        return dlgResult;
     }
 
 private Q_SLOTS:

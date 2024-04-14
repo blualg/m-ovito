@@ -28,25 +28,6 @@
 
 namespace Ovito {
 
-class OVITO_PARTICLESGUI_EXPORT ChemicalElement
-{
-public:
-
-    enum CrystalStructure {
-        Unknown, SimpleCubic, FaceCenteredCubic, BodyCenteredCubic,
-        HexagonalClosePacked, Tetragonal, Diatom, Diamond, Orthorhombic,
-        Cubic, Monoclinic, Atom, Rhombohedral
-    };
-
-    CrystalStructure structure;
-    FloatType latticeParameter;
-
-    const char* elementName;
-};
-
-extern ChemicalElement ChemicalElements[];
-extern const size_t NumberOfChemicalElements;
-
 class OVITO_PARTICLESGUI_EXPORT CutoffRadiusPresetsUI : public PropertyParameterUI
 {
     OVITO_CLASS(CutoffRadiusPresetsUI)

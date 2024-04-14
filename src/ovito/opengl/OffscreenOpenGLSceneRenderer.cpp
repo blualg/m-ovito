@@ -175,7 +175,7 @@ void OffscreenOpenGLSceneRenderer::startRender(const QSize& frameBufferSize)
 /******************************************************************************
 * Renders a single frame.
 ******************************************************************************/
-void OffscreenOpenGLSceneRenderer::renderFrame(FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer)
+void OffscreenOpenGLSceneRenderer::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, const QRect& viewportRect, std::shared_ptr<FrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingIdentifierMap)
 {
     OVITO_ASSERT(visCache());
 
@@ -193,7 +193,7 @@ void OffscreenOpenGLSceneRenderer::renderFrame(FrameGraph& frameGraph, const QRe
     shiftedViewportRect.moveTo(0,0);
 
     // Let the base class do the main rendering work.
-    OpenGLSceneRenderer::renderFrame(frameGraph, shiftedViewportRect, frameBuffer);
+    OpenGLSceneRenderer::renderFrame(frameGraph, shiftedViewportRect, {}, std::move(pickingIdentifierMap));
 
     // Transfer the rendered image from the OpenGL framebuffer to the output frame buffer.
     if(frameBuffer) {
@@ -201,8 +201,8 @@ void OffscreenOpenGLSceneRenderer::renderFrame(FrameGraph& frameGraph, const QRe
         _offscreenContext->swapBuffers(_offscreenSurface.get());
 
         // Clear destination area in the framebuffer (only necessary if OpenGL image is not fully opaque).
-        if(frameGraph.clearColor().a() != 1 && !frameBuffer->image().isNull())
-            frameBuffer->clear(frameGraph.clearColor(), viewportRect);
+        if(frameGraph->clearColor().a() != 1 && !frameBuffer->image().isNull())
+            frameBuffer->clear(frameGraph->clearColor(), viewportRect);
 
         // Fetch rendered image from OpenGL framebuffer.
         QImage renderedImage = _framebufferObject->toImage();

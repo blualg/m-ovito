@@ -89,13 +89,16 @@ void OpenGLViewportWindow::releaseResources()
         widget()->doneCurrent();
     }
 
+    // Release picking buffer data.
+    _pickingBuffer->reset();
+
     WidgetViewportWindow::releaseResources();
 }
 
 /******************************************************************************
 * This is called after the frame graph has been updated to render the viewport contents on screen.
 ******************************************************************************/
-void OpenGLViewportWindow::refreshDisplay()
+void OpenGLViewportWindow::rerender()
 {
     if(widget())
         widget()->update();
@@ -119,7 +122,7 @@ void OpenGLViewportWindow::paint()
     }
 
     // Invalidate current picking buffer whenever the visible contents of the viewport change.
-    _pickingBuffer.reset();
+    _pickingBuffer->reset();
 
     if(format.majorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MAJOR || (format.majorVersion() == OVITO_OPENGL_MINIMUM_VERSION_MAJOR && format.minorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MINOR)) {
         userInterface().exitWithFatalError(Exception(tr(
@@ -162,9 +165,7 @@ void OpenGLViewportWindow::paint()
     }
 #endif
 
-    // Take the current frame graph from the window (we'll give it back later).
-    std::unique_ptr<FrameGraph> frameGraph = setFrameGraph({});
-    if(!frameGraph)
+    if(!frameGraph())
         return;
 
     MainThreadOperation operation(ExecutionContext::Type::Interactive, userInterface());
@@ -181,7 +182,7 @@ void OpenGLViewportWindow::paint()
 
         // Wrap the following in a try-catch block to ensure endRender() is called.
         try {
-            openglRenderer()->renderFrame(*frameGraph, QRect(QPoint(0,0), viewportWindowDeviceSize()), nullptr);
+            openglRenderer()->renderFrame(frameGraph(), QRect(QPoint(0,0), viewportWindowDeviceSize()), nullptr);
             openglRenderer()->endRender();
         }
         catch(...) {
@@ -202,12 +203,10 @@ void OpenGLViewportWindow::paint()
         stream << "OpenGL shading language: " << QString(OpenGLSceneRenderer::openGLSLVersion()) << "\n";
         stream << "OpenGL shader programs: " << QOpenGLShaderProgram::hasOpenGLShaderPrograms() << "\n";
         ex.appendDetailMessage(openGLReport);
+        setFrameGraph({});
 
         userInterface().exitWithFatalError(ex);
     }
-
-    // Return the frame graph back to the window.
-    setFrameGraph(std::move(frameGraph));
 }
 
 /******************************************************************************
@@ -215,106 +214,66 @@ void OpenGLViewportWindow::paint()
 ******************************************************************************/
 std::optional<ViewportWindow::PickResult> OpenGLViewportWindow::pick(const QPointF& pos)
 {
-    std::optional<PickResult> pickResult;
-
     // Cannot perform picking while viewport is not visible or when updates are disabled.
     if(isVisible() && !userInterface().exitingWithFatalError() && !userInterface().areViewportUpdatesSuspended() && openglRenderer() && openglRenderer()->hasCurrentResourceFrame() && widget()->isValid() && widget()->defaultFramebufferObject() != 0) {
 
         // Is the picking buffer still valid? If not, we need to render a new frame.
-        if(!_pickingBuffer.isValid()) {
+        if(!_pickingBuffer->isValid() && frameGraph()) {
 
-            // Take the current frame graph from the window (we'll give it back later).
-            if(std::unique_ptr<FrameGraph> frameGraph = setFrameGraph({})) {
+            // We need an active OpenGL context to render the picking buffer.
+            widget()->makeCurrent();
 
-                // We need an active OpenGL context to render the picking buffer.
-                widget()->makeCurrent();
+            // Gracefully handle any exceptions that occur during rendering.
+            userInterface().handleExceptions([&]() {
 
-                // Put the renderer into picking mode.
-                openglRenderer()->setPickingPass(true);
+                // Create an offscreen OpenGL framebuffer.
+                QSize windowSize = viewportWindowDeviceSize();
+                QOpenGLFramebufferObjectFormat framebufferFormat;
+                framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
+                QOpenGLFramebufferObject framebufferObject(windowSize, framebufferFormat);
+                if(!framebufferObject.isValid())
+                    throw Exception(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
 
-                // Gracefully handle any exceptions that occur during rendering.
-                userInterface().handleExceptions([&]() {
+                // Bind OpenGL framebuffer.
+                if(!framebufferObject.bind())
+                    throw Exception(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
 
-                    // Create an offscreen OpenGL framebuffer.
-                    QSize windowSize = viewportWindowDeviceSize();
-                    QOpenGLFramebufferObjectFormat framebufferFormat;
-                    framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
-                    QOpenGLFramebufferObject framebufferObject(windowSize, framebufferFormat);
-                    if(!framebufferObject.isValid())
-                        throw Exception(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
+                // Tell the OpenGL renderer to render into the offscreen framebuffer.
+                openglRenderer()->setPrimaryFramebuffer(framebufferObject.handle());
 
-                    // Bind OpenGL framebuffer.
-                    if(!framebufferObject.bind())
-                        throw Exception(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
+                // Set up the renderer.
+                openglRenderer()->startRender(viewportWindowDeviceSize());
 
-                    // Tell the OpenGL renderer to render into the offscreen framebuffer.
-                    openglRenderer()->setPrimaryFramebuffer(framebufferObject.handle());
+                // Wrap the following in a try-catch block to ensure endRender() is called.
+                try {
+                    openglRenderer()->renderFrame(frameGraph(), QRect(QPoint(0,0), windowSize), nullptr, _pickingBuffer);
 
-                    // Set up the renderer.
-                    openglRenderer()->startRender(viewportWindowDeviceSize());
+                    // Read out the contents of the OpenGL framebuffer.
+                    _pickingBuffer->acquire(windowSize, openglRenderer());
 
-                    // Wrap the following in a try-catch block to ensure endRender() is called.
-                    try {
-                        openglRenderer()->renderFrame(*frameGraph, QRect(QPoint(0,0), windowSize), nullptr);
+                    openglRenderer()->endRender();
+                }
+                catch(...) {
+                    openglRenderer()->endRender();
+                    throw;
+                }
+            });
 
-                        // Read out the contents of the OpenGL framebuffer.
-                        _pickingBuffer.acquire(windowSize, openglRenderer());
+            // Tell the OpenGL renderer to render into the widget's framebuffer again.
+            openglRenderer()->setPrimaryFramebuffer(widget()->defaultFramebufferObject());
 
-                        openglRenderer()->endRender();
-                    }
-                    catch(...) {
-                        openglRenderer()->endRender();
-                        throw;
-                    }
-                });
-
-                // Put the renderer back into visual rendering mode.
-                openglRenderer()->setPickingPass(false);
-
-                // Tell the OpenGL renderer to render into the widget's framebuffer again.
-                openglRenderer()->setPrimaryFramebuffer(widget()->defaultFramebufferObject());
-
-                // Done with the OpenGL context.
-                widget()->doneCurrent();
-
-                // Return the frame graph back to the window.
-                setFrameGraph(std::move(frameGraph));
-            }
+            // Done with the OpenGL context.
+            widget()->doneCurrent();
         }
 
         // Query which object is at the given window location.
-        if(_pickingBuffer.isValid()) {
+        if(_pickingBuffer->isValid() && frameGraph()) {
             const QPoint devicePixelPos = (pos * devicePixelRatio()).toPoint();
-            if(quint32 objectID = _pickingBuffer.objectAt(devicePixelPos)) {
-                if(const FrameGraph::ObjectPickingGroup* pickingGroup = frameGraph()->lookupPickingGroupFromObjectId(objectID)) {
-                    pickResult.emplace(
-                        pickingGroup->pipeline(),
-                        pickingGroup->pickInfo(),
-                        worldPositionFromLocation(devicePixelPos),
-                        pickingGroup->resolveObjectID(objectID));
-                }
-            }
+            return _pickingBuffer->pickAt(devicePixelPos, frameGraph()->projectionParams(), viewportWindowDeviceSize());
         }
     }
 
-    return pickResult;
-}
-
-/******************************************************************************
-* Computes the 3d world-space location corresponding to the given 2d window position.
-******************************************************************************/
-Point3 OpenGLViewportWindow::worldPositionFromLocation(const QPoint& pos) const
-{
-    FloatType zvalue = _pickingBuffer.depthAt(pos);
-    if(zvalue != 0) {
-        const QSize windowSize = viewportWindowDeviceSize();
-        Point3 ndc(
-                (FloatType)pos.x() / windowSize.width() * 2 - 1,
-                1 - (FloatType)pos.y() / windowSize.height() * 2,
-                zvalue * 2 - 1);
-        return projectionParams().inverseViewMatrix * (projectionParams().inverseProjectionMatrix * ndc);
-    }
-    return Point3::Origin();
+    return std::nullopt;
 }
 
 }   // End of namespace

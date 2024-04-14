@@ -25,21 +25,23 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/opengl/OpenGLSceneRenderer.h>
+#include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
 
 namespace Ovito {
 
 /**
  * \brief Stores the result of an object picking render pass.
  */
-class OpenGLPickingBuffer
+class OpenGLPickingBuffer : public ObjectPickingIdentifierMap
 {
 public:
 
     /// Returns whether the picking buffer contains valid data.
     bool isValid() const { return !_image.isNull(); }
 
-    /// Discards the contents of the picking buffer.
-    void reset() {
+	/// Releases all data held by the object.
+	virtual void reset() override {
+		ObjectPickingIdentifierMap::reset();
         _image = {};
         _depthBuffer.reset();
         _numDepthBufferBits = 0;
@@ -48,11 +50,11 @@ public:
     /// Reads out the contents of the OpenGL framebuffer.
     void acquire(const QSize& size, QOpenGLFunctions* glfuncs);
 
-    /// Returns the object ID at the given window position.
-    quint32 objectAt(const QPoint& pos) const;
+    /// Returns the frame buffer object ID at the given frame buffer location.
+    virtual quint32 objectIdentifierAt(const QPoint& pos) const override;
 
-    /// Returns the z-value at the given window position.
-    FloatType depthAt(const QPoint& pos) const;
+    /// Returns the z-value at the given frame buffer location.
+    virtual FloatType depthAt(const QPoint& frameBufferLocation) const override;
 
 private:
 

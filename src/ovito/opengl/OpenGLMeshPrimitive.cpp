@@ -24,6 +24,7 @@
 #include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
+#include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
 #include <ovito/core/utilities/SortZipped.h>
 #include "OpenGLSceneRenderer.h"
 #include "OpenGLShaderHelper.h"
@@ -33,7 +34,7 @@ namespace Ovito {
 /******************************************************************************
 * Renders a triangle mesh.
 ******************************************************************************/
-void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitive, FrameGraph::ObjectPickingGroup* pickingGroup)
+void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitive, int pickingGroupID)
 {
     QOpenGLTexture* colorMapTexture = nullptr;
 
@@ -113,7 +114,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
 
     // Pass picking base ID to shader.
     if(isPickingPass()) {
-        shader.setPickingBaseId(allocateObjectPickingIDs(pickingGroup, primitive.useInstancedRendering() ? primitive.perInstanceTMs()->size() : mesh.faceCount()));
+        shader.setPickingBaseId(objectPickingIdentifierMap()->allocateObjectPickingIDs(pickingGroupID, primitive.useInstancedRendering() ? primitive.perInstanceTMs()->size() : mesh.faceCount()));
     }
 
     // The lookup key for the buffer cache.

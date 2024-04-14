@@ -25,7 +25,20 @@
 
 namespace Ovito {
 
-ChemicalElement ChemicalElements[] = {
+struct ChemicalElement
+{
+    enum CrystalStructure {
+        Unknown, SimpleCubic, FaceCenteredCubic, BodyCenteredCubic,
+        HexagonalClosePacked, Tetragonal, Diatom, Diamond, Orthorhombic,
+        Cubic, Monoclinic, Atom, Rhombohedral
+    };
+
+    CrystalStructure structure;
+    FloatType latticeParameter;
+    const char* elementName;
+};
+
+static ChemicalElement ChemicalElements[] = {
     { ChemicalElement::Unknown, 0, NULL}, // X
     { ChemicalElement::Diatom, 0, "H"}, // H
     { ChemicalElement::Atom, 0, "He"}, // He
@@ -123,7 +136,7 @@ ChemicalElement ChemicalElements[] = {
     { ChemicalElement::Monoclinic, 0, "Pu"}, // Pu
 };
 
-const size_t NumberOfChemicalElements = (sizeof(ChemicalElements) / sizeof(ChemicalElements[0]));
+static constexpr size_t NumberOfChemicalElements = std::size(ChemicalElements);
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(CutoffRadiusPresetsUI);
 

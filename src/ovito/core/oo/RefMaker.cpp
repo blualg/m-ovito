@@ -358,7 +358,8 @@ void RefMaker::clearReferencesTo(const RefTarget* target)
 
     // Iterate over all reference fields in the class hierarchy.
     for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
-        if(!field->isReferenceField()) continue;
+        if(!field->isReferenceField())
+            continue;
         if(!field->isVector()) {
             if(field->_singleReferenceReadFunc(this) == target)
                 setReferenceFieldTarget(field, nullptr);

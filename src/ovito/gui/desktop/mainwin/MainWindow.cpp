@@ -934,7 +934,11 @@ bool MainWindow::fileSaveAs(const QString& filename)
 #endif
         }
 
-        if(!dialog.exec())
+        TaskManager::setNativeDialogActive(true);
+        auto dlgResult = dialog.exec();
+        TaskManager::setNativeDialogActive(false);
+
+        if(dlgResult != QDialog::Accepted)
             return false;
 
         QStringList files = dialog.selectedFiles();

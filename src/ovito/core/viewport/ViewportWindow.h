@@ -43,8 +43,7 @@ class OVITO_CORE_EXPORT ViewportWindow : public QObject, public RefMaker
 public:
 
     /// Data structure returned by the ViewportWindow::pick() method,
-    /// holding information about the object that was picked in a viewport at
-    /// the current cursor location.
+    /// holding information on the object that has been picked in a viewport window.
     class OVITO_CORE_EXPORT PickResult
     {
     public:
@@ -95,13 +94,10 @@ public:
     ScenePreparation& scenePreparation() { OVITO_ASSERT(_scenePreparation); return *_scenePreparation; }
 
     /// Returns the current frame graph displayed in the viewport window.
-    const FrameGraph* frameGraph() const { return _frameGraph.get(); }
+    const std::shared_ptr<FrameGraph>& frameGraph() const { return _frameGraph; }
 
-    /// Sets the frame graph to be displayed in the viewport window and returns the old frame graph.
-    std::unique_ptr<FrameGraph> setFrameGraph(std::unique_ptr<FrameGraph> frameGraph) {
-        _frameGraph.swap(frameGraph);
-        return frameGraph;
-    }
+    /// Sets the frame graph to be displayed in the viewport window.
+    void setFrameGraph(std::shared_ptr<FrameGraph> frameGraph) { _frameGraph = std::move(frameGraph); }
 
     /// Asks the window to handle any pending update request now after viewport updates were temporarily suspended.
     void resumeViewportUpdates();
@@ -218,7 +214,7 @@ protected:
     virtual void timerEvent(QTimerEvent* event) override;
 
     /// This is called after the frame graph has been updated to render the viewport contents on screen.
-    virtual void refreshDisplay() = 0;
+    virtual void rerender() = 0;
 
     /// Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
@@ -282,7 +278,7 @@ private:
     bool _cursorInContextMenuArea = false;
 
     /// The current frame graph displayed in the viewport window.
-    std::unique_ptr<FrameGraph> _frameGraph;
+    std::shared_ptr<FrameGraph> _frameGraph;
 
     /// Describes the current 3D projection used to render the contents of the viewport window.
     ViewProjectionParameters _projParams;

@@ -51,7 +51,7 @@ public:
 	virtual void startRender(const QSize& frameBufferSize) override;
 
     /// Renders a single frame.
-    virtual void renderFrame(FrameGraph& frameGraph, const QRect& viewportRect, FrameBuffer* frameBuffer) override;
+    virtual void renderFrame(std::shared_ptr<const FrameGraph> frameGraph, const QRect& viewportRect, std::shared_ptr<FrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingIdentifierMap = {}) override;
 
     /// Is called after rendering has finished.
     virtual void endRender() override;

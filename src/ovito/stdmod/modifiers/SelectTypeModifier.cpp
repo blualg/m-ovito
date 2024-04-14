@@ -151,7 +151,7 @@ Future<PipelineFlowState> SelectTypeModifier::evaluateModifier(const ModifierEva
             container,
             typePropertyObject,
             idsToSelect = std::move(idsToSelect),
-            createdByNode = request.modificationNode()]() mutable
+            createdByNode = request.modificationNodeWeak()]() mutable
     {
         // Counts the number of selected elements.
         size_t nSelected = 0;

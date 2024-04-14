@@ -77,22 +77,11 @@ public:
     /// Sets whether errors that occur within a data pipeline lead to an abortion of the rendering process.
     void setStopOnPipelineError(bool stopOnPipelineError) { _stopOnPipelineError = stopOnPipelineError; }
 
-    /// \brief This is the high-level rendering function, which invokes the renderer to generate one or more
-    ///        output images of the scene.
-    /// \param viewportConfiguration The viewport configuration to render.
-    /// \param frameBuffer The frame buffer that will receive the rendered image. When rendering an animation
-    ///        sequence, the buffer will contain only the last rendered frame when the function returns.
-    /// \return true on success; false if operation has been canceled by the user.
-    /// \throw Exception on error.
-    void render(const ViewportConfiguration& viewportConfiguration, FrameBuffer& frameBuffer);
+    /// High-level rendering function that invokes the renderer to generate one or more output images of the scene.
+    void render(const ViewportConfiguration& viewportConfiguration, const std::shared_ptr<FrameBuffer>& frameBuffer);
 
-    /// \brief This is the high-level rendering function, which invokes the renderer to generate one or more
-    ///        output images of the scene.
-    /// \param viewportLayout The viewport layout.
-    /// \param frameBuffer The frame buffer that will receive the rendered image.
-    /// \return true on success; false if operation has been canceled by the user.
-    /// \throw Exception on error.
-    void render(const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, AnimationSettings* animationSettings, FrameBuffer& frameBuffer);
+    /// High-level rendering function that invokes the renderer to generate one or more output images of the scene.
+    void render(const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, AnimationSettings* animationSettings, const std::shared_ptr<FrameBuffer>& frameBuffer);
 
     /// Computes a viewport's area in the rendered output image.
     QRect viewportFramebufferArea(const Viewport* viewport, const ViewportConfiguration* viewportConfig) const;
@@ -104,7 +93,7 @@ private:
         int frameNumber,
         RendererResourceCache::ResourceFrame visCache,
         SceneRenderer& renderer,
-        FrameBuffer& frameBuffer,
+        const std::shared_ptr<FrameBuffer>& frameBuffer,
         const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout,
         VideoEncoder* videoEncoder);
 

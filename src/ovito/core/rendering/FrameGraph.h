@@ -130,36 +130,12 @@ public:
 	public:
 
 		/// Constructor.
-		explicit ObjectPickingGroup(const Pipeline* pipeline, OORef<ObjectPickInfo> pickInfo) :
-			_pipeline(const_cast<Pipeline*>(pipeline)),
+		ObjectPickingGroup(OORef<Pipeline> pipeline, OORef<ObjectPickInfo> pickInfo) :
+			_pipeline(std::move(pipeline)),
 			_pickInfo(std::move(pickInfo)) {}
 
-		/// Returns the base object ID at which the rendering primitives of this group start.
-		quint32 baseObjectID() const { return _baseObjectID; }
-
-		/// Sets the base object ID at which the rendering primitives of this group start.
-		void setBaseObjectID(quint32 id) { _baseObjectID = id; }
-
-		/// Registers a range of indexed rendering primitives.
-		void addIndexedRange(const ConstDataBufferPtr& buffer, quint32 baseIndex) {
-			_indexedRanges.emplace_back(buffer, baseIndex);
-		}
-
-		/// If the global object ID is within the range of this picking group, resolve it to the local object ID.
-		quint32 resolveObjectID(quint32 objectID) const {
-			OVITO_ASSERT(objectID >= baseObjectID());
-			quint32 localID = objectID - baseObjectID();
-			for(const auto& range : _indexedRanges) {
-				if(localID >= range.second && localID < range.second + range.first->size()) {
-					localID = range.second + BufferReadAccess<int32_t>(range.first).get(localID - range.second);
-					break;
-				}
-			}
-			return localID;
-		}
-
 		/// Returns the scene node associated with this group.
-		const OORef<Pipeline>& pipeline() const { OVITO_ASSERT(_pipeline); return _pipeline; }
+		const OORef<Pipeline>& pipeline() const { return _pipeline; }
 
 		/// Returns the option picking info object, which determines the part of the dataset that was picked.
 		const OORef<ObjectPickInfo>& pickInfo() const { return _pickInfo; }
@@ -172,13 +148,6 @@ public:
 
 		/// An additional picking info object, which determines the part of the dataset being rendered.
 		OORef<ObjectPickInfo> _pickInfo;
-
-		/// If the renderer uses an indexed drawing command, this information allows mapping the rendered primitive indices
-		/// back to the original indices of the data object.
-		QVarLengthArray<std::pair<ConstDataBufferPtr, quint32>, 1> _indexedRanges;
-
-		/// The base object ID at which the rendering primitives of this group start.
-		quint32 _baseObjectID = 0;
 	};
 
 public:
@@ -246,10 +215,15 @@ public:
 	/// Returns the sequence of recorded rendering commands.
 	const std::vector<RenderingCommand>& commands() const { return _commands; }
 
+	/// Returns the list of defined object picking groups.
+	const std::vector<ObjectPickingGroup>& pickingGroups() const { return _pickingGroups; }
+
 	/// Appends a rendering command to the frame graph.
 	template<typename... Args>
 	void addCommand(Args&&... args) {
 		_commands.emplace_back(_currentRenderLayer, std::forward<Args>(args)...);
+		// Make sure that the picking groups are numbered and used correctly.
+		OVITO_ASSERT(_commands.back().skipInPickingPass() || _commands.back().pickingGroupId() == _pickingGroups.size());
 	}
 
 	/// Add a 3d graphics primitive to the frame graph.
@@ -278,24 +252,9 @@ public:
 
 	/// Creates a new object picking group.
 	int addPickingGroup(const Pipeline* pipeline, OORef<ObjectPickInfo> pickInfo = {}) {
-		_pickingGroups.emplace_back(pipeline, std::move(pickInfo));
+		_pickingGroups.emplace_back(const_cast<Pipeline*>(pipeline), std::move(pickInfo));
 		return _pickingGroups.size(); // Return 1-based group ID.
 	}
-
-	/// Returns a pointer to the object picking group with the given group ID.
-	ObjectPickingGroup* pickingGroup(int groupID) {
-		OVITO_ASSERT(groupID > 0 && groupID <= _pickingGroups.size());
-		return &_pickingGroups[groupID - 1]; // Convert 1-based group ID to 0-based index.
-	}
-
-	/// Resets the object IDs of all picking groups.
-	void resetPickingGroupObjectIDs() {
-		for(auto& group : _pickingGroups)
-			group.setBaseObjectID(0);
-	}
-
-	/// Given an object ID, looks up the corresponding picking group.
-	const ObjectPickingGroup* lookupPickingGroupFromObjectId(quint32 objectID) const;
 
 	/// Generates the visual representation of a scene node (and all its children).
 	void renderSceneNode(OORef<SceneNode> node, OORef<Viewport> viewport);
