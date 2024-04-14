@@ -198,13 +198,11 @@ void OpenGLSceneRenderer::renderFrame(std::shared_ptr<const FrameGraph> frameGra
         throw RendererException(tr("The OpenGLSceneRenderer cannot directly render into a FrameBuffer."));
 
     // Store a pointer internally.
+    _frameGraph = frameGraph.get();
     _objectPickingIdentifierMap = pickingIdentifierMap.get();
 
     // Convert viewport rect from logical device coordinates to OpenGL framebuffer coordinates.
     _viewportRect = QRect(viewportRect.x() * multisamplingLevel(), viewportRect.y() * multisamplingLevel(), viewportRect.width() * multisamplingLevel(), viewportRect.height() * multisamplingLevel());
-
-    // Adopt viewport projection parameters.
-    _projParams = frameGraph->projectionParams();
 
     // OpenGL rendering requires a Qt GUI application.
     if(!qobject_cast<QGuiApplication*>(QCoreApplication::instance())) {
@@ -213,9 +211,6 @@ void OpenGLSceneRenderer::renderFrame(std::shared_ptr<const FrameGraph> frameGra
                 "Please use a different rendering backend or see https://docs.ovito.org/python/modules/ovito_vis.html#ovito.vis.OpenGLRenderer for instructions "
                 "on how to enable OpenGL rendering in Python script environments."));
     }
-
-    // Are we rendering the contents of an interactive viewport window?
-    _isInteractive = frameGraph->isInteractive();
 
     // Get the GL context being used for the current rendering pass.
     _glcontext = QOpenGLContext::currentContext();
@@ -483,7 +478,7 @@ bool OpenGLSceneRenderer::renderFrameGraph(const FrameGraph& frameGraph, FrameGr
         // Set up the model-view transformation matrix.
         if(command.modelWorldTM() != AffineTransformation::Zero()) {
             _preprojectedCoordinates = false;
-            _modelViewTM = projParams().viewMatrix * command.modelWorldTM();
+            _modelViewTM = frameGraph.projectionParams().viewMatrix * command.modelWorldTM();
         }
         else {
             _preprojectedCoordinates = true;

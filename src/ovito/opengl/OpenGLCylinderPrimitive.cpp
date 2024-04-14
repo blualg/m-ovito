@@ -121,7 +121,7 @@ void OpenGLSceneRenderer::renderCylindersImplementation(const CylinderPrimitive&
     // Pass camera viewing direction (parallel) or camera position (perspective) in object space to vertex shader.
     if(primitive.shadingMode() == CylinderPrimitive::FlatShading) {
         Vector3 view_dir_eye_pos;
-        if(projParams().isPerspective)
+        if(frameGraph()->projectionParams().isPerspective)
             view_dir_eye_pos = modelViewTM().inverse().column(3); // Camera position in object space
         else
             view_dir_eye_pos = modelViewTM().inverse().column(2); // Camera viewing direction in object space.

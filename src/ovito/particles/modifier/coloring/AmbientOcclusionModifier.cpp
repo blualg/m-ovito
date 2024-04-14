@@ -219,7 +219,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
                     // frame buffer contents.
                     frameBuffer->image() = QImage();
 
-                    // Render the current view to offscreen frame buffer.
+                    // Render the current view to the frame buffer.
                     renderer->renderFrame(frameGraph, frameBufferRect, frameBuffer, objectIdentifierMap);
 
                     // Extract brightness values from rendered image.

@@ -322,7 +322,7 @@ void OpenGLSceneRenderer::renderParticlesImplementation(const ParticlePrimitive&
         // Coarsen the direction vector's precision for real-time rendering to reduce the frequency at
         // which the particles must be reordered when moving the camera.
         Vector3 coarseDirection = direction;
-        if(isInteractive()) {
+        if(frameGraph()->isInteractive()) {
             for(size_t dim = 0; dim < 3; dim++)
                 coarseDirection[dim] = std::round(2 * direction[dim]);
         }

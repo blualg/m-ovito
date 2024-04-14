@@ -128,7 +128,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
     // Upload vertex buffer to GPU memory.
     QOpenGLBuffer meshBuffer = shader.createCachedBuffer(std::move(meshCacheKey), sizeof(MeshPrimitive::RenderVertex), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer, BufferReadAccess<int32_t> subset) {
         OVITO_ASSERT(!subset);
-        bool highlightSelectedFaces = isInteractive() && !isPickingPass();
+        bool highlightSelectedFaces = frameGraph()->isInteractive() && !isPickingPass();
         primitive.generateRenderableVertices(reinterpret_cast<MeshPrimitive::RenderVertex*>(buffer), highlightSelectedFaces, renderWithPseudoColorMapping);
     });
 
@@ -216,7 +216,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         // Coarsen the direction vector's precision for real-time rendering to reduce the frequency at
         // which the particles must be reordered when moving the camera.
         Vector3 coarseDirection = direction;
-        if(isInteractive()) {
+        if(frameGraph()->isInteractive()) {
             for(size_t dim = 0; dim < 3; dim++)
                 coarseDirection[dim] = std::round(2 * direction[dim]);
         }
@@ -284,7 +284,7 @@ void OpenGLSceneRenderer::renderMeshImplementation(const MeshPrimitive& primitiv
         // Coarsen the direction vector's precision for real-time rendering to reduce the frequency at
         // which the particles must be reordered when moving the camera.
         Vector3 coarseDirection = direction;
-        if(isInteractive()) {
+        if(frameGraph()->isInteractive()) {
             for(size_t dim = 0; dim < 3; dim++)
                 coarseDirection[dim] = std::round(2 * direction[dim]);
         }

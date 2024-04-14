@@ -70,9 +70,6 @@ public:
     /// Renders a single frame.
     virtual void renderFrame(std::shared_ptr<const FrameGraph> frameGraph, const QRect& viewportRect, std::shared_ptr<FrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingIdentifierMap = {}) override;
 
-    /// Indicates whether we are rendering the contents of an interactive viewport window.
-    bool isInteractive() const { return _isInteractive; }
-
     /// This may be called on a renderer before startRender() to control its supersampling level.
     virtual void setMultisamplingLevel(int multisamplingLevel) override { _multisamplingLevel = multisamplingLevel; }
 
@@ -174,13 +171,13 @@ protected:
 	/// Returns the rectangular region of the framebuffer we are rendering into (in device coordinates).
 	const QRect& viewportRect() const { return _viewportRect; }
 
-    /// Returns the current viewport projection parameter.
-    const ViewProjectionParameters& projParams() const { return _projParams; }
-
     /// Loads and compiles a GLSL shader and adds it to the given program object.
     void loadShader(QOpenGLShaderProgram* program, QOpenGLShader::ShaderType shaderType, const QString& filename, bool isWBOITPass);
 
 private:
+
+    /// Returns the frame graph we are currently rendering.
+    const FrameGraph* frameGraph() const { OVITO_ASSERT(_frameGraph); return _frameGraph; }
 
     /// Returns whether we are currently rendering semi-transparent geometry.
     bool isTransparencyPass() const { return _isTransparencyPass; }
@@ -300,17 +297,14 @@ private:
     /// this purpose. The renderer needs to have control of when resources get released.
     RendererResourceCache::ResourceFrame _currentResourceFrame;
 
-    /// Indicates whether we are rendering the contents of an interactive viewport window.
-    bool _isInteractive = false;
+    /// The frame graph we are currently rendering.
+    const FrameGraph* _frameGraph = nullptr;
 
     /// The model-view transformation matrix for the current graphics primitive being rendered.
     AffineTransformation _modelViewTM = AffineTransformation::Identity();
 
 	/// The rectangular region of the framebuffer we are rendering into (in device coordinates).
 	QRect _viewportRect;
-
-    /// The current viewport projection.
-    ViewProjectionParameters _projParams;
 
     /// Indicates that the current primitive being rendered is using preprojected NDC coordinates.
     bool _preprojectedCoordinates = false;

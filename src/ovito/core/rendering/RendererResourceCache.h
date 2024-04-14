@@ -154,7 +154,7 @@ public:
     /// Returns the current number of cache entries.
     size_t size() const { return _entries.size(); }
 
-    /// Informs the resource manager that a new frame is going to be rendered.
+    /// Opens a new frame with the resource manager.
     ResourceFrame acquireResourceFrame() {
         OVITO_ASSERT(QThread::currentThread() == _owningThread);
 
@@ -174,7 +174,7 @@ public:
 
 private:
 
-    /// Informs the resource manager that a frame has completely finished rendering and all resources associated with that frame may be released.
+    /// Informs the resource manager that the resources associated with the given frame can be released.
     void releaseResourceFrame(ResourceFrameHandle frame) {
         OVITO_ASSERT(QThread::currentThread() == _owningThread);
         OVITO_ASSERT(frame > 0);
@@ -230,9 +230,8 @@ private:
     };
 
     /// Stores all key-value pairs of the cache.
-    /// Note we are using std::deque instead of std::vector here, because we require stability of pointers.
-    /// lookup() returns references to elements in the cache, which must remain valid even when new objects are added
-    /// to the cache.
+    /// Note we are using std::deque instead of std::vector here, because we require stability of object addresses.
+    /// lookup() returns references to elements stored in the cache, which must remain valid even when new objects are added.
     std::deque<CacheEntry> _entries;
 
     /// List of frames that are currently being rendered (by the CPU and/or the GPU).

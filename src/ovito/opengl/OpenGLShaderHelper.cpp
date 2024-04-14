@@ -54,9 +54,10 @@ void OpenGLShaderHelper::load(const QString& id, const QString& vertexShaderFile
 
     // Set shader uniforms.
     if(!_renderer->_preprojectedCoordinates) {
-        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("modelview_projection_matrix", static_cast<QMatrix4x4>(_renderer->projParams().projectionMatrix * _renderer->modelViewTM())));
-        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("projection_matrix", static_cast<QMatrix4x4>(_renderer->projParams().projectionMatrix)));
-        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("inverse_projection_matrix", static_cast<QMatrix4x4>(_renderer->projParams().inverseProjectionMatrix)));
+        const ViewProjectionParameters& projParams = _renderer->frameGraph()->projectionParams();
+        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("modelview_projection_matrix", static_cast<QMatrix4x4>(projParams.projectionMatrix * _renderer->modelViewTM())));
+        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("projection_matrix", static_cast<QMatrix4x4>(projParams.projectionMatrix)));
+        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("inverse_projection_matrix", static_cast<QMatrix4x4>(projParams.inverseProjectionMatrix)));
         OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("modelview_matrix", static_cast<QMatrix4x4>(Matrix4(_renderer->modelViewTM()))));
         Matrix3 normalTM;
         if(!_renderer->modelViewTM().linear().inverse(normalTM))
