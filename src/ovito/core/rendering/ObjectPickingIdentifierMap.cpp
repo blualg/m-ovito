@@ -59,6 +59,15 @@ quint32 ObjectPickingIdentifierMap::allocateObjectPickingIDs(int pickingGroupID,
 }
 
 /******************************************************************************
+* Post-processes the mapping after acquisition.
+******************************************************************************/
+void ObjectPickingIdentifierMap::postprocess()
+{
+    // Discard all groups that have not been rendered.
+    std::erase_if(_pickingGroups, [](const MappedObjectGroup& group) { return group.baseObjectID() == 0; });
+}
+
+/******************************************************************************
 * Finds the picked object at the given frame buffer pixel position.
 ******************************************************************************/
 std::optional<ViewportWindow::PickResult> ObjectPickingIdentifierMap::pickAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const

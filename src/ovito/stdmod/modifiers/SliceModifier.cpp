@@ -365,7 +365,7 @@ Future<PipelineFlowState> SliceModifier::evaluateModifier(const ModifierEvaluati
 
             // Compute intersection lines of slicing plane and simulation cell.
             auto createIntersectionPolygon = [&](const Plane3& plane) {
-                QVector<Point3> vertices;
+                std::vector<Point3> vertices;
                 auto planeEdgeIntersection = [&](const Vector3& b, const Vector3& d) {
                     Ray3 edge(Point3::Origin() + b, d);
                     FloatType t = plane.intersectionT(edge, FLOATTYPE_EPSILON);

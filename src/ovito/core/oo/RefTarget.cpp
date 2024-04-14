@@ -24,9 +24,10 @@
 #include <ovito/core/oo/CloneHelper.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/app/PluginManager.h>
+#include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/app/Application.h>
+#include <ovito/core/utilities/concurrent/detail/Latch.h>
 #include "RefTarget.h"
 
 namespace Ovito {
@@ -71,11 +72,28 @@ void RefTarget::aboutToBeDeleted()
             dependent->handleReferenceEvent(this, deleteEvent);
         });
     }
+    else if(!_dependents.empty()) {
+        // In a worker thread, we cannot directly notify the reamining weak dependents about the deletion of this object.
+        // We have to do it asynchronously in the main thread and block until the main thread has processed the notification calls.
+        detail::Latch latch(1);
+        struct Helper {
+            RefTarget* self;
+            detail::Latch& latch;
+            ~Helper() noexcept {
+                latch.count_down();
+            }
+            void operator()() noexcept {
+                ReferenceEvent deleteEvent(ReferenceEvent::TargetDeleted, self);
+                self->_dependents.visit([&](RefMaker* dependent) {
+                    dependent->handleReferenceEvent(self, deleteEvent);
+                });
+            }
+        };
+        Application::instance()->taskManager().submitWork(Application::instance(), Helper{this, latch}, true);
+        latch.wait();
+    }
 
     // No dependents should be left at this point.
-    // Note: Objects being deleted from a worker thread should not be weakly referenced by some RefMaker in the main thread.
-    // Make sure to pass only weak reference to the worker thread in such cases, or use some other approach
-    // to make sure the object does not get deleted in the worker thread.
 #ifdef OVITO_DEBUG
     if(!_dependents.empty()) {
         qDebug() << "The" << this << "being deleted still has dependents:";

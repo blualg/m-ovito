@@ -39,6 +39,9 @@ public:
 	/// Prepares the mapping.
 	void prepare(const FrameGraph& frameGraph, quint32 startObjectID = 1);
 
+	/// Post-processes the mapping after acquisition.
+	void postprocess();
+
 	/// Releases all data held by the object.
 	virtual void reset() {
 		_pickingGroups.clear();

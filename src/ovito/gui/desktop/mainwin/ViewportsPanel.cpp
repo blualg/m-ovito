@@ -316,9 +316,9 @@ void ViewportsPanel::layoutViewports()
     const auto& viewports = _viewportConfig->viewports();
 
     // Delete stale viewport windows belonging to removed viewports.
-    _viewportWindows.erase(std::remove_if(_viewportWindows.begin(), _viewportWindows.end(), [&](const auto& window) {
+    std::erase_if(_viewportWindows, [&](const auto& window) {
         return boost::algorithm::none_of(viewports, [&](Viewport* vp) { return window->viewport() == vp; });
-    }), _viewportWindows.end());
+    });
 
     // Create new viewport windows for viewports that don't have one yet.
     for(Viewport* viewport : viewports) {

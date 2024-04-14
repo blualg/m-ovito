@@ -224,9 +224,7 @@ void ReaxFFBondImporter::FrameLoader::loadFile()
             throw Exception(tr("Invalid atom information in line %1 of ReaxFF bond file.").arg(stream.lineNumber()));
 
         // Remove every other half-bond from the list.
-        reaxBonds.erase(std::remove_if(reaxBonds.begin(), reaxBonds.end(),
-            [](const ReaxFFBond& bond) { return bond.atoms[0] >= bond.atoms[1]; }),
-            reaxBonds.end());
+        std::erase_if(reaxBonds, [](const ReaxFFBond& bond) { return bond.atoms[0] >= bond.atoms[1]; });
 
         reaxAtoms.push_back(reaxAtom);
     }

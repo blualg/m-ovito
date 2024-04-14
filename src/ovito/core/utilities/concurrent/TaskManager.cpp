@@ -104,9 +104,9 @@ void TaskManager::registerTask(Task& task)
     std::lock_guard<std::mutex> lock(_mutex);
 
     // Remove dead task pointers from the list.
-    _registeredTasks.erase(std::remove_if(_registeredTasks.begin(), _registeredTasks.end(), [](const std::weak_ptr<Task>& weakPtr) {
+    std::erase_if(_registeredTasks, [](const std::weak_ptr<Task>& weakPtr) {
         return weakPtr.expired();
-    }), _registeredTasks.end());
+    });
 
 #ifdef OVITO_DEBUG
     // Make sure we don't register the same task twice.
@@ -184,6 +184,8 @@ void TaskManager::shutdownImplementation(std::unique_lock<std::mutex>& lock)
     OVITO_ASSERT(_pendingWork.empty());
     OVITO_ASSERT(_registeredTasks.empty());
 
+    lock.unlock();
+
     // Wait until all threads did terminate. That's because canceled asynchronous tasks
     // may still be running in threads until they notice they have been canceled.
     Q_DECL_UNUSED bool result = _threadPool.waitForDone() && _threadPoolUI.waitForDone() && _threadPoolSerial.waitForDone();
@@ -199,7 +201,14 @@ void TaskManager::shutdownImplementation(std::unique_lock<std::mutex>& lock)
     // Wait for completion of all enqueued tasks in the SYCL queue.
     _syclQueue.wait();
 #endif
+
+#ifdef OVITO_DEBUG
+    lock.lock();
+    OVITO_ASSERT(_threadPool.activeThreadCount() == 0);
+    OVITO_ASSERT(_threadPoolUI.activeThreadCount() == 0);
+    OVITO_ASSERT(_threadPoolSerial.activeThreadCount() == 0);
     lock.unlock();
+#endif
 
     // Notify abstract user interface.
     _ui->shutdownComplete();

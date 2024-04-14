@@ -77,19 +77,24 @@ bool WidgetViewportWindow::eventFilter(QObject* obj, QEvent* event)
         leaveEvent(event);
         break;
     case QEvent::MouseButtonDblClick:
-        mouseDoubleClickEvent(static_cast<QMouseEvent*>(event));
+        if(widget()->isEnabled())
+            mouseDoubleClickEvent(static_cast<QMouseEvent*>(event));
         break;
     case QEvent::MouseButtonPress:
-        mousePressEvent(static_cast<QMouseEvent*>(event));
+        if(widget()->isEnabled())
+            mousePressEvent(static_cast<QMouseEvent*>(event));
         break;
     case QEvent::MouseButtonRelease:
-        mouseReleaseEvent(static_cast<QMouseEvent*>(event));
+        if(widget()->isEnabled())
+            mouseReleaseEvent(static_cast<QMouseEvent*>(event));
         break;
     case QEvent::MouseMove:
-        mouseMoveEvent(static_cast<QMouseEvent*>(event));
+        if(widget()->isEnabled())
+            mouseMoveEvent(static_cast<QMouseEvent*>(event));
         break;
     case QEvent::Wheel:
-        wheelEvent(static_cast<QWheelEvent*>(event));
+        if(widget()->isEnabled())
+            wheelEvent(static_cast<QWheelEvent*>(event));
         break;
     case QEvent::FocusOut:
         focusOutEvent(static_cast<QFocusEvent*>(event));
@@ -98,7 +103,8 @@ bool WidgetViewportWindow::eventFilter(QObject* obj, QEvent* event)
         resizeEvent(static_cast<QResizeEvent*>(event));
         break;
     case QEvent::KeyPress:
-        keyPressEvent(static_cast<QKeyEvent*>(event));
+        if(widget()->isEnabled())
+            keyPressEvent(static_cast<QKeyEvent*>(event));
         break;
     default:
         // Pass the event on to the base class.
