@@ -125,6 +125,7 @@ Property* PropertyContainer::makePropertyMutable(const Property* property, DataB
                 clone->setElementTypes(property->elementTypes());
                 clone->setTitle(property->title());
                 clone->setCreatedByNode(property->createdByNode());
+                clone->setEditableProxy(property->editableProxy());
             }
         }
         replaceReferencesTo(property, clone);
@@ -161,6 +162,7 @@ Property* PropertyContainer::makePropertyMutableUnallocated(const Property* prop
             clone->setElementTypes(property->elementTypes());
             clone->setTitle(property->title());
             clone->setCreatedByNode(property->createdByNode());
+            clone->setEditableProxy(property->editableProxy());
         }
         replaceReferencesTo(property, clone);
         OVITO_ASSERT(hasReferenceTo(clone));
