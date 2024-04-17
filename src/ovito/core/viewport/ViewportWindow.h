@@ -28,6 +28,7 @@
 #include <ovito/core/rendering/LinePrimitive.h>
 #include <ovito/core/rendering/TextPrimitive.h>
 #include <ovito/core/rendering/FrameGraph.h>
+#include <ovito/core/rendering/RenderingJob.h>
 #include <ovito/core/dataset/scene/ScenePreparation.h>
 
 namespace Ovito {
@@ -98,6 +99,13 @@ public:
 
     /// Sets the frame graph to be displayed in the viewport window.
     void setFrameGraph(std::shared_ptr<FrameGraph> frameGraph) { _frameGraph = std::move(frameGraph); }
+
+    /// Creates and returns the rendering job that renders the contents of the viewport window.
+    const OORef<RenderingJob>& renderingJob() {
+        if(!_renderingJob)
+            setRenderingJob(createRenderingJob());
+        return _renderingJob;
+    }
 
     /// Asks the window to handle any pending update request now after viewport updates were temporarily suspended.
     void resumeViewportUpdates();
@@ -213,11 +221,17 @@ protected:
     /// Handles timer events for this object.
     virtual void timerEvent(QTimerEvent* event) override;
 
+    /// Creates the rendering job that renders the contents of the viewport window.
+    virtual OORef<RenderingJob> createRenderingJob() = 0;
+
     /// This is called after the frame graph has been updated to render the viewport contents on screen.
     virtual void rerender() = 0;
 
     /// Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+
+    /// Replaces the rendering job used by this window to render its contents.
+    void setRenderingJob(OORef<RenderingJob> job) { _renderingJob = std::move(job); }
 
     /// Modifies the projection such that the render frame painted over the 3d scene exactly matches the true visible area.
     void adjustProjectionForRenderFrame(DataSet* dataset, ViewProjectionParameters& params, const QSize& windowSize);
@@ -246,9 +260,6 @@ private:
     /// The viewport associated with this window.
     DECLARE_REFERENCE_FIELD_FLAGS(Viewport*, viewport, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_UNDO);
 
-    /// The renderer used by this window.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SceneRenderer>, renderer, setRenderer, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_NO_UNDO);
-
     /// The abstract user interface hosting this viewport window.
     UserInterface* _userInterface = nullptr;
 
@@ -256,6 +267,9 @@ private:
     /// Counts how often this viewport has been rendered during the current program session.
     int _renderDebugCounter = 0;
 #endif
+
+    /// The rendering job that renders the display of the viewport window.
+    OORef<RenderingJob> _renderingJob;
 
     /// Object responsible for evaluating all pipelines in the scene to prepare interactive rendering.
     OORef<ScenePreparation> _scenePreparation;
@@ -287,4 +301,3 @@ private:
 }   // End of namespace
 
 #include <ovito/core/viewport/Viewport.h>
-#include <ovito/core/rendering/SceneRenderer.h>

@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/LinePrimitive.h>
 #include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
-#include "OpenGLRenderer.h"
+#include "OpenGLRenderingJob.h"
 #include "OpenGLShaderHelper.h"
 
 namespace Ovito {
@@ -31,7 +31,7 @@ namespace Ovito {
 /******************************************************************************
 * Renders a set of lines.
 ******************************************************************************/
-void OpenGLRenderer::renderLinesImplementation(const LinePrimitive& primitive, int pickingGroupID)
+void OpenGLRenderingJob::renderLinesImplementation(const LinePrimitive& primitive, int pickingGroupID)
 {
     FloatType lineWidth = !isPickingPass() ? primitive.lineWidth() : primitive.pickingLineWidth();
     OVITO_ASSERT(lineWidth > 0);
@@ -49,7 +49,7 @@ void OpenGLRenderer::renderLinesImplementation(const LinePrimitive& primitive, i
 /******************************************************************************
 * Renders a set of lines using GL_LINES mode.
 ******************************************************************************/
-void OpenGLRenderer::renderThinLinesImplementation(const LinePrimitive& primitive, int pickingGroupID)
+void OpenGLRenderingJob::renderThinLinesImplementation(const LinePrimitive& primitive, int pickingGroupID)
 {
     // Activate the right OpenGL shader program.
     OpenGLShaderHelper shader(this);
@@ -97,7 +97,7 @@ void OpenGLRenderer::renderThinLinesImplementation(const LinePrimitive& primitiv
 /******************************************************************************
 * Renders a set of lines using triangle strips.
 ******************************************************************************/
-void OpenGLRenderer::renderThickLinesImplementation(const LinePrimitive& primitive, int pickingGroupID)
+void OpenGLRenderingJob::renderThickLinesImplementation(const LinePrimitive& primitive, int pickingGroupID)
 {
     FloatType lineWidth = !isPickingPass() ? primitive.lineWidth() : primitive.pickingLineWidth();
 
@@ -143,7 +143,7 @@ void OpenGLRenderer::renderThickLinesImplementation(const LinePrimitive& primiti
     }
 
     // Compute line width in viewport space.
-    shader.setUniformValue("line_thickness", lineWidth / viewportRect().height());
+    shader.setUniformValue("line_thickness", lineWidth / viewportSize().height());
 
     // Issue instanced drawing command.
     shader.draw(GL_TRIANGLE_STRIP);

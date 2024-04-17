@@ -46,9 +46,19 @@ SET_PROPERTY_FIELD_LABEL(DataSet, filePath, "File path");
 ******************************************************************************/
 DataSet::DataSet(ObjectInitializationFlags flags) : RefTarget(flags)
 {
-    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
+}
+
+/******************************************************************************
+* Is called by OORef<T>::create() right after the object's constructor is finished.
+* This is the second stage of the object's two-phase construction process.
+******************************************************************************/
+void DataSet::completeObjectConstruction(ObjectInitializationFlags initFlags)
+{
+    RefTarget::completeObjectConstruction(initFlags);
+
+    if(!initFlags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setViewportConfig(createDefaultViewportConfiguration());
-        setRenderSettings(OORef<RenderSettings>::create(flags));
+        setRenderSettings(OORef<RenderSettings>::create(initFlags));
     }
 }
 

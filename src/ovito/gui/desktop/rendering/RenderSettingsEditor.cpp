@@ -303,7 +303,7 @@ void RenderSettingsEditor::onSwitchRenderer()
 
     // Preferred ordering of renderers:
     const QStringList displayOrdering = {
-        "OffscreenOpenGLRenderer",
+        "OpenGLRenderer",
         "TachyonRenderer",
         "OSPRayRenderer",
         "OffscreenAnariRenderer"

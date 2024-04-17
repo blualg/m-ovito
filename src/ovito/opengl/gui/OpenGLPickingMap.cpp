@@ -22,15 +22,28 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/opengl/OpenGLRenderer.h>
-#include "OpenGLPickingBuffer.h"
+#include <ovito/opengl/OpenGLRenderingFrameBuffer.h>
+#include "OpenGLPickingMap.h"
 
 namespace Ovito {
 
 /******************************************************************************
 * Reads out the contents of the OpenGL framebuffer.
 ******************************************************************************/
-void OpenGLPickingBuffer::acquire(const QSize& size, QOpenGLFunctions* glfuncs)
+void OpenGLPickingMap::acquire(const OORef<AbstractRenderingFrameBuffer>& frameBuffer)
 {
+    OORef<OpenGLRenderingFrameBuffer> glFrameBuffer = static_object_cast<OpenGLRenderingFrameBuffer>(frameBuffer);
+    OVITO_ASSERT(glFrameBuffer->framebufferObject());
+    const QSize& size = glFrameBuffer->viewportRect().size();
+
+    // The following requires an active GL context.
+    OpenGLContextRestore contextRestore = glFrameBuffer->renderingJob()->activateContext();
+    QOpenGLContext* glcontext = QOpenGLContext::currentContext();
+    QOpenGLFunctions* glfuncs = glcontext->functions();
+
+    if(!glFrameBuffer->framebufferObject()->bind())
+        throw RendererException(QStringLiteral("Failed to bind OpenGL framebuffer object."));
+
     // Read out the color buffer.
     // Try GL_BGRA pixel format first. If not supported, use GL_RGBA instead and convert back to GL_BGRA.
     _image = QImage(size, QImage::Format_ARGB32);
@@ -42,8 +55,7 @@ void OpenGLPickingBuffer::acquire(const QSize& size, QOpenGLFunctions* glfuncs)
 
     // Acquire OpenGL depth buffer data.
     // The depth information is used to compute the XYZ coordinate of the point under the mouse cursor.
-
-    _numDepthBufferBits = QOpenGLContext::currentContext()->format().depthBufferSize();
+    _numDepthBufferBits = glcontext->format().depthBufferSize();
 
     if(_numDepthBufferBits == 16) {
         _depthBuffer = std::make_unique<quint8[]>(size.width() * size.height() * sizeof(GLushort));
@@ -74,7 +86,7 @@ void OpenGLPickingBuffer::acquire(const QSize& size, QOpenGLFunctions* glfuncs)
 /******************************************************************************
 * Returns the frame buffer object ID at the given frame buffer location.
 ******************************************************************************/
-quint32 OpenGLPickingBuffer::objectIdentifierAt(const QPoint& pos) const
+quint32 OpenGLPickingMap::objectIdentifierAt(const QPoint& pos) const
 {
     if(!_image.isNull()) {
         if(pos.x() >= 0 && pos.x() < _image.width() && pos.y() >= 0 && pos.y() < _image.height()) {
@@ -94,7 +106,7 @@ quint32 OpenGLPickingBuffer::objectIdentifierAt(const QPoint& pos) const
 /******************************************************************************
 * Returns the z-value at the given window position.
 ******************************************************************************/
-FloatType OpenGLPickingBuffer::depthAt(const QPoint& frameBufferLocation) const
+FloatType OpenGLPickingMap::depthAt(const QPoint& frameBufferLocation) const
 {
     if(!_image.isNull() && _depthBuffer) {
         int w = _image.width();

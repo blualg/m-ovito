@@ -61,6 +61,10 @@ public:
     /// Constructor.
     explicit DataSet(ObjectInitializationFlags flags);
 
+    /// Is called by OORef<T>::create() right after the object's constructor is finished.
+    /// This is the second stage of the object's two-phase construction process.
+    void completeObjectConstruction(ObjectInitializationFlags initFlags);
+
 #ifdef OVITO_DEBUG
     /// Destructor.
     virtual ~DataSet();

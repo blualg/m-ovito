@@ -54,8 +54,11 @@ public:
 public:
 
     /// Constructor.
-    /// Creates an instance of the default renderer class which can be accessed via the renderer() method.
     explicit RenderSettings(ObjectInitializationFlags flags);
+
+    /// Is called by OORef<T>::create() right after the object's constructor is finished.
+    /// This is the second stage of the object's two-phase construction process.
+    void completeObjectConstruction(ObjectInitializationFlags initFlags);
 
     /// Returns the aspect ratio (height/width) of the rendered image.
     FloatType outputImageAspectRatio() const { return (FloatType)outputImageHeight() / (FloatType)outputImageWidth(); }
@@ -78,24 +81,13 @@ public:
     void setStopOnPipelineError(bool stopOnPipelineError) { _stopOnPipelineError = stopOnPipelineError; }
 
     /// High-level rendering function that invokes the renderer to generate one or more output images of the scene.
-    void render(const ViewportConfiguration& viewportConfiguration, const std::shared_ptr<FrameBuffer>& frameBuffer);
+    void render(const ViewportConfiguration& viewportConfiguration, const std::shared_ptr<FrameBuffer>& outputFrameBuffer);
 
     /// High-level rendering function that invokes the renderer to generate one or more output images of the scene.
-    void render(const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, AnimationSettings* animationSettings, const std::shared_ptr<FrameBuffer>& frameBuffer);
+    void render(const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, AnimationSettings* animationSettings, const std::shared_ptr<FrameBuffer>& outputFrameBuffer);
 
     /// Computes a viewport's area in the rendered output image.
     QRect viewportFramebufferArea(const Viewport* viewport, const ViewportConfiguration* viewportConfig) const;
-
-private:
-
-    /// Renders a single frame and saves the output file. This is part of the implementation of the render() method.
-    RendererResourceCache::ResourceFrame renderFrame(
-        int frameNumber,
-        RendererResourceCache::ResourceFrame visCache,
-        SceneRenderer& renderer,
-        const std::shared_ptr<FrameBuffer>& frameBuffer,
-        const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout,
-        VideoEncoder* videoEncoder);
 
 private:
 

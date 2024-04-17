@@ -26,7 +26,8 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/viewport/WidgetViewportWindow.h>
 #include <ovito/opengl/OpenGLRenderer.h>
-#include "OpenGLPickingBuffer.h"
+#include <ovito/opengl/OpenGLRenderingFrameBuffer.h>
+#include "OpenGLPickingMap.h"
 
 #include <QOpenGLWidget>
 
@@ -43,7 +44,7 @@ class OVITO_OPENGLRENDERERGUI_EXPORT OpenGLViewportWindow : public WidgetViewpor
 public:
 
     /// Constructor.
-    OpenGLViewportWindow();
+    using WidgetViewportWindow::WidgetViewportWindow;
 
     /// Determines the object that is located under the given mouse cursor position.
     virtual std::optional<PickResult> pick(const QPointF& pos) override;
@@ -51,13 +52,13 @@ public:
     /// Releases the renderer resources held by the viewport's surface and picking renderers.
     virtual void releaseResources() override;
 
-    /// Returns the OpenGL renderer associated with this viewport window.
-    OpenGLRenderer* openglRenderer() const { return static_object_cast<OpenGLRenderer>(renderer()); }
-
 protected:
 
     /// Creates the UI widget that is associated with this viewport window.
     virtual QWidget* createWidget(QWidget* parent) override;
+
+    /// Creates the rendering job that renders the contents of the viewport window.
+    OORef<RenderingJob> createRenderingJob() override;
 
     /// This is called after the frame graph has been updated to render the viewport contents on screen.
     virtual void rerender() override;
@@ -70,8 +71,14 @@ protected:
 
 private:
 
-    /// The image read from the OpenGL framebuffer.
-    std::shared_ptr<OpenGLPickingBuffer> _pickingBuffer = std::make_shared<OpenGLPickingBuffer>();
+    /// The abstract frame buffer for on-screen rendering into the QOpenGLWidget.
+    OORef<AbstractRenderingFrameBuffer> _widgetFrameBuffer;
+
+    /// The abstract frame buffer for off-screen rendering into the object picking buffer.
+    OORef<AbstractRenderingFrameBuffer> _pickingFrameBuffer;
+
+    /// Manages the information obtained from an object picking render pass.
+    std::shared_ptr<OpenGLPickingMap> _objectPickingMap = std::make_shared<OpenGLPickingMap>();
 };
 
 }   // End of namespace

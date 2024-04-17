@@ -22,7 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/ImagePrimitive.h>
-#include "OpenGLRenderer.h"
+#include "OpenGLRenderingJob.h"
 #include "OpenGLShaderHelper.h"
 
 namespace Ovito {
@@ -30,7 +30,7 @@ namespace Ovito {
 /******************************************************************************
 * Renders an image into a target rectangle given in device pixel coordinates.
 ******************************************************************************/
-void OpenGLRenderer::renderImageImplementation(const ImagePrimitive& primitive)
+void OpenGLRenderingJob::renderImageImplementation(const ImagePrimitive& primitive)
 {
     if(isPickingPass() || primitive.image().isNull() || primitive.windowRect().isEmpty())
         return;
@@ -55,12 +55,12 @@ void OpenGLRenderer::renderImageImplementation(const ImagePrimitive& primitive)
         b.maxc.x() = (int)(b.maxc.x() / aaLevel) * aaLevel;
         b.maxc.y() = (int)(b.maxc.y() / aaLevel) * aaLevel;
     }
-    const QRect& vpRect = viewportRect();
+    const QSize& vpSize = viewportSize();
     Vector4 image_rect(
-        b.minc.x() / vpRect.width() * 2.0 - 1.0,
-        1.0 - b.maxc.y() / vpRect.height() * 2.0,
-        b.maxc.x() / vpRect.width() * 2.0 - 1.0,
-        1.0 - b.minc.y() / vpRect.height() * 2.0);
+        b.minc.x() / vpSize.width() * 2.0 - 1.0,
+        1.0 - b.maxc.y() / vpSize.height() * 2.0,
+        b.maxc.x() / vpSize.width() * 2.0 - 1.0,
+        1.0 - b.minc.y() / vpSize.height() * 2.0);
 
     // Pass the image rectangle to the shader as a uniform.
     shader.setUniformValue("image_rect", image_rect);

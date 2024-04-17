@@ -123,6 +123,11 @@ public:
 
 protected:
 
+    /// This method gets called by OORef<T>::create() right after the object's constructor is finished.
+    /// It clears the BeingConstructed flag of the object and performs any initialization work that may
+    /// raise an exception.
+    inline void completeObjectConstruction(ObjectInitializationFlags initFlags) { _flags.setFlag(BeingConstructed, false); }
+
     /// \brief Saves the internal data of this object to an output stream.
     /// \param stream The destination data stream.
     /// \param excludeRecomputableData Controls whether the object should not store data that can be recomputed at runtime.
@@ -181,9 +186,6 @@ private:
     /// Returns the idenitifier of the plugin module this object belongs to.
     /// This method is an implementation detail required by the Q_PROPERTY macro above.
     QString pluginId() const { return QString::fromLatin1(getOOClass().pluginId()); }
-
-    /// Helper method to clear the BeingConstructed flag. It is called by OORef<T>::create() after the object's constructor has finished.
-    inline void ooConstructionComplete() { _flags.setFlag(BeingConstructed, false); }
 
     /// Bit-wise flags.
     ObjectFlags _flags = BeingConstructed;

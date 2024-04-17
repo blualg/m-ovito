@@ -52,6 +52,8 @@ void BaseViewportWindow::releaseResources()
 {
     // Drop current frame graph.
     setFrameGraph({});
+    // Drop the current rendering job.
+    setRenderingJob({});
 }
 
 /******************************************************************************

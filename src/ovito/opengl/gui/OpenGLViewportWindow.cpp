@@ -26,19 +26,11 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/opengl/OpenGLRenderer.h>
 #include "OpenGLViewportWindow.h"
+#include "WidgetOpenGLRenderingJob.h"
 
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(OpenGLViewportWindow);
-
-/******************************************************************************
-* Constructor.
-******************************************************************************/
-OpenGLViewportWindow::OpenGLViewportWindow()
-{
-    // Create the window's viewport renderer.
-    setRenderer(OORef<OpenGLRenderer>::create());
-}
 
 /******************************************************************************
 * Creates the UI widget that is associated with this viewport window.
@@ -59,7 +51,7 @@ QWidget* OpenGLViewportWindow::createWidget(QWidget* parent)
             // which OpenGL features are safe to use.
             OpenGLRenderer::determineOpenGLInfo();
 
-            // Release OpenGL resources before the widget's QOpenGLContext gets destroyed.
+            // Release any OpenGL resources before the widget's QOpenGLContext gets destroyed.
             connect(context(), &QOpenGLContext::aboutToBeDestroyed, _owner, &OpenGLViewportWindow::releaseResources);
         }
 
@@ -72,7 +64,29 @@ QWidget* OpenGLViewportWindow::createWidget(QWidget* parent)
         OpenGLViewportWindow* _owner;
     };
 
+    // Create the QOpenGLWidget.
     return new OpenGLViewportWidget(parent, this);
+}
+
+/******************************************************************************
+* Creates the rendering job that renders the contents of the viewport window.
+******************************************************************************/
+OORef<RenderingJob> OpenGLViewportWindow::createRenderingJob()
+{
+    // Check which transparency rendering method has been selected by the user in the application settings dialog.
+    bool useOrderIndependentTransparency = false;
+#ifndef OVITO_DISABLE_QSETTINGS
+    QSettings applicationSettings;
+    if(applicationSettings.value("rendering/transparency_method").toInt() == 2)
+        useOrderIndependentTransparency = true;
+#endif
+
+    // Create the window's viewport renderer implementation.
+    return OORef<WidgetOpenGLRenderingJob>::create(
+        widget(),
+        userInterface().datasetContainer().visCache(), // Note: It's valid to use the global vis cache here, because the OpenGL renderer runs in the main thread.
+        1, // multi-sampling level
+        useOrderIndependentTransparency);
 }
 
 /******************************************************************************
@@ -80,18 +94,14 @@ QWidget* OpenGLViewportWindow::createWidget(QWidget* parent)
 ******************************************************************************/
 void OpenGLViewportWindow::releaseResources()
 {
-    OVITO_ASSERT(openglRenderer());
+    // Release any OpenGL resources associated with the window's framebuffers.
+    _widgetFrameBuffer.reset();
+    _pickingFrameBuffer.reset();
 
-    // Release any OpenGL resources held by the viewport renderer.
-    if(openglRenderer() && openglRenderer()->hasCurrentResourceFrame() && widget()) {
-        widget()->makeCurrent();
-        openglRenderer()->setCurrentResourceFrame({});
-        widget()->doneCurrent();
-    }
+    // Release picking data.
+    _objectPickingMap->reset();
 
-    // Release picking buffer data.
-    _pickingBuffer->reset();
-
+    // This also releases the rendering job and the OpenGL resources it holds.
     WidgetViewportWindow::releaseResources();
 }
 
@@ -109,98 +119,37 @@ void OpenGLViewportWindow::rerender()
 ******************************************************************************/
 void OpenGLViewportWindow::paint()
 {
-    // Do nothing if window has been detached from its viewport or renderer.
-    if(!viewport() || !openglRenderer())
+    // Do nothing if window has been detached from its viewport.
+    if(!viewport())
         return;
 
-    // OpenGL in a VirtualBox machine Windows guest reports "2.1 Chromium 1.9" as version string, which is
-    // not correctly parsed by Qt. We have to work around this.
-    QSurfaceFormat format = widget()->context()->format();
-    if(OpenGLRenderer::openGLVersion().startsWith("2.1 ")) {
-        format.setMajorVersion(2);
-        format.setMinorVersion(1);
-    }
-
-    // Invalidate current picking buffer whenever the visible contents of the viewport change.
-    _pickingBuffer->reset();
-
-    if(format.majorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MAJOR || (format.majorVersion() == OVITO_OPENGL_MINIMUM_VERSION_MAJOR && format.minorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MINOR)) {
-        userInterface().exitWithFatalError(Exception(tr(
-                "The OpenGL graphics driver installed on this system does not support OpenGL version %6.%7 or newer.\n\n"
-                "Ovito requires modern graphics hardware and up-to-date graphics drivers to display 3D content. Your current system configuration is not compatible with Ovito and the application will quit now.\n\n"
-                "To avoid this error, please install the newest graphics driver of the hardware vendor or, if necessary, consider replacing your graphics card with a newer model.\n\n"
-                "The installed OpenGL graphics driver reports the following information:\n\n"
-                "OpenGL vendor: %1\n"
-                "OpenGL renderer: %2\n"
-                "OpenGL version: %3.%4 (%5)\n\n"
-                "Ovito requires at least OpenGL version %6.%7.")
-                .arg(QString(OpenGLRenderer::openGLVendor()))
-                .arg(QString(OpenGLRenderer::openGLRenderer()))
-                .arg(format.majorVersion())
-                .arg(format.minorVersion())
-                .arg(QString(OpenGLRenderer::openGLVersion()))
-                .arg(OVITO_OPENGL_MINIMUM_VERSION_MAJOR)
-                .arg(OVITO_OPENGL_MINIMUM_VERSION_MINOR)
-            ));
-        return;
-    }
-
-#ifdef Q_OS_WIN
-    if(OpenGLRenderer::openGLRenderer() == "Intel(R) HD Graphics" || OpenGLRenderer::openGLRenderer() == "Intel(R) HD Graphics 2000" || OpenGLRenderer::openGLRenderer() == "Intel(R) HD Graphics 3000" || OpenGLRenderer::openGLRenderer() == "Intel(R) HD Graphics 4400") {
-        userInterface().exitWithFatalError(Exception(tr(
-                "The graphics chip installed in this system is not compatible with OVITO, unfortunately.\n\n"
-                "Intel(R) HD Graphics, an integrated graphics chip released in the years 2010/2011/2012, does not support the specific OpenGL functions required by OVITO. "
-                "There is no known workaround to make OVITO work on systems with this particular graphics unit. Please use OVITO on a computer with a more modern graphics processor.\n\n"
-                "Detected graphics interface:\n\n"
-                "OpenGL vendor: %1\n"
-                "OpenGL renderer: %2\n"
-                "OpenGL version: %3.%4 (%5)")
-                .arg(QString(OpenGLRenderer::openGLVendor()))
-                .arg(QString(OpenGLRenderer::openGLRenderer()))
-                .arg(format.majorVersion())
-                .arg(format.minorVersion())
-                .arg(QString(OpenGLRenderer::openGLVersion()))
-            ));
-        return;
-    }
-#endif
+    // Invalidate current picking information whenever the visible contents of the viewport change.
+    _objectPickingMap->reset();
 
     if(!frameGraph())
         return;
 
     MainThreadOperation operation(ExecutionContext::Type::Interactive, userInterface());
     try {
-        // Create a new OpenGL resource management frame. Keep the previous frame around until the new frame is rendered to re-use existing OpenGL resources.
-        DataSetContainer& datasetContainer = userInterface().datasetContainer();
-        RendererResourceCache::ResourceFrame previousResourceFrame = openglRenderer()->setCurrentResourceFrame(datasetContainer.visCache()->acquireResourceFrame());
+        // Recreate/resize abstract frame buffer for rendering into the widget if necessary.
+        const QRect viewportRect(QPoint(0,0), viewportWindowDeviceSize());
+        if(!_widgetFrameBuffer || _widgetFrameBuffer->viewportRect() != viewportRect)
+            _widgetFrameBuffer = OORef<OpenGLRenderingFrameBuffer>::create(static_object_cast<OpenGLRenderingJob>(renderingJob()), viewportRect, widget()->defaultFramebufferObject());
 
-        // Tell the OpenGL renderer to render into the widget's framebuffer.
-        openglRenderer()->setPrimaryFramebuffer(widget()->defaultFramebufferObject());
-
-        // Set up the renderer.
-        openglRenderer()->startRender(viewportWindowDeviceSize());
-
-        // Wrap the following in a try-catch block to ensure endRender() is called.
-        try {
-            openglRenderer()->renderFrame(frameGraph(), QRect(QPoint(0,0), viewportWindowDeviceSize()), nullptr);
-            openglRenderer()->endRender();
-        }
-        catch(...) {
-            openglRenderer()->endRender();
-            throw;
-        }
+        // Render the viewport contents. This requires an active GL context.
+        renderingJob()->renderFrame(frameGraph(), _widgetFrameBuffer);
     }
     catch(Exception& ex) {
         ex.prependGeneralMessage(tr("An unexpected error occurred while rendering the viewport contents. The program will quit."));
 
         QString openGLReport;
         QTextStream stream(&openGLReport, QIODevice::WriteOnly | QIODevice::Text);
-        stream << "OpenGL version: " << format.majorVersion() << QStringLiteral(".") << format.minorVersion() << "\n";
-        stream << "OpenGL profile: " << (format.profile() == QSurfaceFormat::CoreProfile ? "core" : (format.profile() == QSurfaceFormat::CompatibilityProfile ? "compatibility" : "none")) << "\n";
-        stream << "OpenGL vendor: " << QString(OpenGLRenderer::openGLVendor()) << "\n";
-        stream << "OpenGL renderer: " << QString(OpenGLRenderer::openGLRenderer()) << "\n";
-        stream << "OpenGL version string: " << QString(OpenGLRenderer::openGLVersion()) << "\n";
-        stream << "OpenGL shading language: " << QString(OpenGLRenderer::openGLSLVersion()) << "\n";
+        stream << "OpenGL version: " << OpenGLRenderer::openglSurfaceFormat().majorVersion() << QStringLiteral(".") << OpenGLRenderer::openglSurfaceFormat().minorVersion() << "\n";
+        stream << "OpenGL profile: " << (OpenGLRenderer::openglSurfaceFormat().profile() == QSurfaceFormat::CoreProfile ? "core" : (OpenGLRenderer::openglSurfaceFormat().profile() == QSurfaceFormat::CompatibilityProfile ? "compatibility" : "none")) << "\n";
+        stream << "OpenGL vendor: " << QString::fromUtf8(OpenGLRenderer::openGLVendor()) << "\n";
+        stream << "OpenGL renderer: " << QString::fromUtf8(OpenGLRenderer::openGLRenderer()) << "\n";
+        stream << "OpenGL version string: " << QString::fromUtf8(OpenGLRenderer::openGLVersion()) << "\n";
+        stream << "OpenGL shading language: " << QString::fromUtf8(OpenGLRenderer::openGLSLVersion()) << "\n";
         stream << "OpenGL shader programs: " << QOpenGLShaderProgram::hasOpenGLShaderPrograms() << "\n";
         ex.appendDetailMessage(openGLReport);
         setFrameGraph({});
@@ -215,64 +164,33 @@ void OpenGLViewportWindow::paint()
 std::optional<ViewportWindow::PickResult> OpenGLViewportWindow::pick(const QPointF& pos)
 {
     // Cannot perform picking while viewport is not visible or when updates are disabled.
-    if(isVisible() && !userInterface().exitingWithFatalError() && !userInterface().areViewportUpdatesSuspended() && openglRenderer() && openglRenderer()->hasCurrentResourceFrame() && widget()->isValid() && widget()->defaultFramebufferObject() != 0) {
+    if(isVisible() && !userInterface().exitingWithFatalError() && !userInterface().areViewportUpdatesSuspended() && widget()->isValid() && widget()->defaultFramebufferObject() != 0) {
 
         // Is the picking buffer still valid? If not, we need to render a new frame.
-        if(!_pickingBuffer->isValid() && frameGraph()) {
-
-            // We need an active OpenGL context to render the picking buffer.
-            widget()->makeCurrent();
+        if(!_objectPickingMap->isValid() && frameGraph()) {
 
             // Gracefully handle any exceptions that occur during rendering.
             userInterface().handleExceptions([&]() {
 
-                // Create an offscreen OpenGL framebuffer.
-                QSize windowSize = viewportWindowDeviceSize();
-                QOpenGLFramebufferObjectFormat framebufferFormat;
-                framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
-                QOpenGLFramebufferObject framebufferObject(windowSize, framebufferFormat);
-                if(!framebufferObject.isValid())
-                    throw Exception(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
+                // Recreate/resize offscreen OpenGL framebuffer.
+                const QRect viewportRect(QPoint(0,0), viewportWindowDeviceSize());
+                if(!_pickingFrameBuffer || _pickingFrameBuffer->viewportRect() != viewportRect)
+                    _pickingFrameBuffer = renderingJob()->createOffscreenFrameBuffer(viewportRect, {});
 
-                // Bind OpenGL framebuffer.
-                if(!framebufferObject.bind())
-                    throw Exception(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
+                // Render into the OpenGL framebuffer.
+                renderingJob()->renderFrame(frameGraph(), _pickingFrameBuffer, _objectPickingMap);
 
-                // Tell the OpenGL renderer to render into the offscreen framebuffer.
-                openglRenderer()->setPrimaryFramebuffer(framebufferObject.handle());
-
-                // Set up the renderer.
-                openglRenderer()->startRender(viewportWindowDeviceSize());
-
-                // Wrap the following in a try-catch block to ensure endRender() is called.
-                try {
-                    openglRenderer()->renderFrame(frameGraph(), QRect(QPoint(0,0), windowSize), nullptr, _pickingBuffer);
-
-                    // Read out the contents of the OpenGL framebuffer.
-                    _pickingBuffer->acquire(windowSize, openglRenderer());
-
-                    openglRenderer()->endRender();
-                }
-                catch(...) {
-                    openglRenderer()->endRender();
-                    throw;
-                }
+                // Read out the contents of the OpenGL framebuffer.
+                _objectPickingMap->acquire(_pickingFrameBuffer);
             });
-
-            // Tell the OpenGL renderer to render into the widget's framebuffer again.
-            openglRenderer()->setPrimaryFramebuffer(widget()->defaultFramebufferObject());
-
-            // Done with the OpenGL context.
-            widget()->doneCurrent();
         }
 
         // Query which object is at the given window location.
-        if(_pickingBuffer->isValid() && frameGraph()) {
+        if(_objectPickingMap->isValid() && frameGraph()) {
             const QPoint devicePixelPos = (pos * devicePixelRatio()).toPoint();
-            return _pickingBuffer->pickAt(devicePixelPos, frameGraph()->projectionParams(), viewportWindowDeviceSize());
+            return _objectPickingMap->pickAt(devicePixelPos, frameGraph()->projectionParams(), viewportWindowDeviceSize());
         }
     }
-
     return std::nullopt;
 }
 

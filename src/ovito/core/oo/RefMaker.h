@@ -285,7 +285,7 @@ public:
     ///
     /// This method is automatically called right after creation of a new object instance by the OORef<>::create() function.
     /// It loads the initial values for property fields with user-defined default settings (those having the PROPERTY_FIELD_MEMORIZE flag set).
-    void initializeParametersToUserDefaults();
+    void initializeParametersToUserDefaultsNonrecursive();
 
     /// \brief Initializes a new instance and all its children as part of two-phase object initialization.
     void initializeParametersToUserDefaultsRecursive();

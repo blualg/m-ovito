@@ -106,7 +106,7 @@ public:
     OORef(std::nullptr_t) noexcept : base_type{nullptr} {}
 
     /// Construction from raw pointer to an OvitoObject (may be null).
-    template<typename U>
+    template<typename U, class = std::enable_if_t<std::is_convertible_v<const U*, const T*>>>
     OORef(const U* p) noexcept : base_type{p ? std::static_pointer_cast<T>(const_cast<U*>(p)->shared_from_this()) : base_type{}} {
         OVITO_ASSERT(!p || !p->isBeingConstructed());
     }
@@ -178,10 +178,10 @@ public:
 
         // Initialize the object's parameters to their user-defined default values (only when the creation happens in the interactive UI).
         if(ExecutionContext::isInteractive())
-            obj->initializeParametersToUserDefaults();
+            obj->initializeParametersToUserDefaultsNonrecursive();
 
         // Clear the BeingConstructed flag after the object's constructor has run.
-        obj->ooConstructionComplete();
+        obj->completeObjectConstruction(flags);
 
         // Finally, move the shared_ptr into an OORef.
         return OORef<OType>(std::move(obj));
@@ -204,13 +204,13 @@ public:
         else {
             // Objects not derived from RefTarget do not expect initialization flags.
 
-            // Intantiate the object on the heap.
+            // Instantiate the object on the heap.
             // We are using our custom allocator here, which ensures that OvitoObject::deleteObjectInternal() is called
             // just before object destruction.
             auto obj = std::allocate_shared<OType>(OOAllocator<OType>{}, std::forward<Args>(args)...);
 
             // Clear the BeingConstructed flag after the object's constructor has run.
-            obj->ooConstructionComplete();
+            obj->completeObjectConstruction(ObjectInitializationFlag::NoFlags);
 
             // Finally, move the shared_ptr into an OORef.
             return OORef<OType>(std::move(obj));
@@ -257,11 +257,13 @@ public:
 
 template<class T, class U> OORef<T> static_pointer_cast(const OORef<U>& p) noexcept
 {
+    static_assert(std::is_convertible_v<const U*, const T*> || std::is_base_of_v<U, T>);
     return std::static_pointer_cast<T, U>(p);
 }
 
 template<class T, class U> OORef<T> static_pointer_cast(OORef<U>&& p) noexcept
 {
+    static_assert(std::is_convertible_v<const U*, const T*> || std::is_base_of_v<U, T>);
 #if !defined(_LIBCPP_VERSION) || _LIBCPP_VERSION >= 170000
     return std::static_pointer_cast<T, U>(std::move(p));
 #else
@@ -275,11 +277,13 @@ template<class T, class U> OORef<T> static_pointer_cast(OORef<U>&& p) noexcept
 
 template<class T, class U> OORef<T> const_pointer_cast(const OORef<U>& p) noexcept
 {
+    static_assert(std::is_convertible_v<const U*, const T*>);
     return std::const_pointer_cast<T, U>(p);
 }
 
 template<class T, class U> OORef<T> const_pointer_cast(OORef<U>&& p) noexcept
 {
+    static_assert(std::is_convertible_v<const U*, const T*>);
 #if !defined(_LIBCPP_VERSION) || _LIBCPP_VERSION >= 170000
     return std::const_pointer_cast<T, U>(std::move(p));
 #else

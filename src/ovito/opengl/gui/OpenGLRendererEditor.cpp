@@ -23,18 +23,18 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
-#include <ovito/opengl/OffscreenOpenGLRenderer.h>
-#include "OffscreenOpenGLRendererEditor.h"
+#include <ovito/opengl/OpenGLRenderer.h>
+#include "OpenGLRendererEditor.h"
 
 namespace Ovito {
 
-IMPLEMENT_CREATABLE_OVITO_CLASS(OffscreenOpenGLRendererEditor);
-SET_OVITO_OBJECT_EDITOR(OffscreenOpenGLRenderer, OffscreenOpenGLRendererEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(OpenGLRendererEditor);
+SET_OVITO_OBJECT_EDITOR(OpenGLRenderer, OpenGLRendererEditor);
 
 /******************************************************************************
 * Constructor that creates the UI controls for the editor.
 ******************************************************************************/
-void OffscreenOpenGLRendererEditor::createUI(const RolloutInsertionParameters& rolloutParams)
+void OpenGLRendererEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
     // Create the rollout.
     QWidget* rollout = createRollout(tr("OpenGL renderer settings"), rolloutParams, "manual:rendering.opengl_renderer");
@@ -53,7 +53,7 @@ void OffscreenOpenGLRendererEditor::createUI(const RolloutInsertionParameters& r
     gridLayout->setColumnStretch(1, 1);
 
     // Antialiasing level
-    IntegerParameterUI* antialiasingLevelUI = new IntegerParameterUI(this, PROPERTY_FIELD(OffscreenOpenGLRenderer::antialiasingLevel));
+    IntegerParameterUI* antialiasingLevelUI = new IntegerParameterUI(this, PROPERTY_FIELD(OpenGLRenderer::antialiasingLevel));
     gridLayout->addWidget(antialiasingLevelUI->label(), 0, 0);
     gridLayout->addLayout(antialiasingLevelUI->createFieldLayout(), 0, 1);
 
@@ -62,7 +62,7 @@ void OffscreenOpenGLRendererEditor::createUI(const RolloutInsertionParameters& r
     QHBoxLayout* boxLayout = new QHBoxLayout(transparencyBox);
     boxLayout->setContentsMargins(4,4,4,4);
 
-    VariantComboBoxParameterUI* transparencyMethodUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(OffscreenOpenGLRenderer::orderIndependentTransparency));
+    VariantComboBoxParameterUI* transparencyMethodUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(OpenGLRenderer::orderIndependentTransparency));
     transparencyMethodUI->comboBox()->addItem(tr("Back-to-Front Ordered (default)"), QVariant::fromValue(false));
     transparencyMethodUI->comboBox()->addItem(tr("Weighted Blended Order-Independent"), QVariant::fromValue(true));
     boxLayout->addWidget(transparencyMethodUI->comboBox());

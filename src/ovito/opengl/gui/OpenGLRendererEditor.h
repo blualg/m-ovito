@@ -20,11 +20,31 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/core/Core.h>
-#include <ovito/core/rendering/SceneRenderer.h>
+#pragma once
+
+
+#include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
+#include <ovito/core/oo/RefTarget.h>
 
 namespace Ovito {
 
-IMPLEMENT_ABSTRACT_OVITO_CLASS(SceneRenderer);
+/******************************************************************************
+* The editor component for the OpenGLRenderer class.
+******************************************************************************/
+class OpenGLRendererEditor : public PropertiesEditor
+{
+    OVITO_CLASS(OpenGLRendererEditor)
+
+public:
+
+    /// Constructor.
+    explicit OpenGLRendererEditor() {}
+
+protected:
+
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+};
 
 }   // End of namespace

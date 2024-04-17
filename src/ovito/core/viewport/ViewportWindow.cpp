@@ -44,7 +44,6 @@ namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(ViewportWindow);
 DEFINE_REFERENCE_FIELD(ViewportWindow, viewport);
-DEFINE_REFERENCE_FIELD(ViewportWindow, renderer);
 
 /******************************************************************************
 * Associates this window with a viewport.
@@ -124,7 +123,7 @@ void ViewportWindow::handleUpdateRequest()
     OVITO_ASSERT(viewport());
 
     // Skip if the viewport is currently hidden but keep the update request pending.
-    if(!isVisible() || !viewport() || !renderer())
+    if(!isVisible() || !viewport())
         return;
 
     // Do nothing if viewport updates are currently disabled.
@@ -183,7 +182,7 @@ void ViewportWindow::handleUpdateRequest()
         std::shared_ptr<FrameGraph> frameGraph = std::make_shared<FrameGraph>(
             userInterface().datasetContainer().visCache()->acquireResourceFrame(),
             time, _projParams, viewportWindowDeviceIndependentSize(), isInteractive, isPreviewMode, stopOnPipelineError,
-            renderer()->preferredImageFormat(), devicePixelRatio());
+            renderingJob()->preferredImageFormat(), devicePixelRatio());
 
         // Set background color.
         if(!viewport()->renderPreviewMode())
@@ -254,7 +253,7 @@ void ViewportWindow::handleUpdateRequest()
             _contextMenuArea = QRectF();
 
         // Let the renderer implementation post-process the frame graph.
-        renderer()->postprocessFrameGraph(*frameGraph);
+        renderingJob()->postprocessFrameGraph(*frameGraph);
 
         // Compute final projection based on the now known bounding box.
         _projParams = viewport()->computeProjectionParameters(time, aspectRatio, frameGraph->sceneBoundingBox());

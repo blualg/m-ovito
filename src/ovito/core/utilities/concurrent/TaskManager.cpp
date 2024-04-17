@@ -164,7 +164,7 @@ void TaskManager::requestShutdown()
         return;
     }
 
-    // Wait for all ramining tasks to finish and proceed with shutdown process as soon as control has returned to main event loop.
+    // Wait for all remaining tasks to finish and proceed with shutdown process as soon as control has returned to main event loop.
     if(QCoreApplication::instance() && QThread::currentThread()->loopLevel() != 0)
         Q_EMIT pendingWorkArrived();
     else

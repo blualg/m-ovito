@@ -25,7 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
-#include "OpenGLRenderer.h"
+#include "OpenGLRenderingJob.h"
 
 #ifndef Q_OS_WASM
     #ifndef QT_OPENGL_4
@@ -49,7 +49,7 @@ public:
     };
 
     /// Constructor.
-    OpenGLShaderHelper(OpenGLRenderer* renderer) : _renderer(renderer) {}
+    OpenGLShaderHelper(OpenGLRenderingJob* renderer) : _renderer(renderer) {}
 
     /// Returns the internal OpenGL shader object.
     QOpenGLShaderProgram& shaderObject() const { return *_shader; }
@@ -310,8 +310,8 @@ private:
     /// The GLSL shader object.
     QOpenGLShaderProgram* _shader = nullptr;
 
-    /// The renderer object.
-    OpenGLRenderer* _renderer;
+    /// The rendering job.
+    OpenGLRenderingJob* _renderer;
 
     /// List of shader vertex attributes that have been marked as per-instance attributes.
     QVarLengthArray<GLuint, 4> _instanceAttributes;

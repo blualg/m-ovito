@@ -633,7 +633,7 @@ void RefMaker::walkNode(QSet<RefTarget*>& nodes, const RefMaker* node)
 * by the OORef<>::create() function. It loads the initial values for property fields
 * with user-defined default settings (those having the PROPERTY_FIELD_MEMORIZE flag set).
 ******************************************************************************/
-void RefMaker::initializeParametersToUserDefaults()
+void RefMaker::initializeParametersToUserDefaultsNonrecursive()
 {
     // Iterate over all property fields in the class hierarchy.
     for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
@@ -673,7 +673,7 @@ void RefMaker::initializeParametersToUserDefaults()
 ******************************************************************************/
 void RefMaker::initializeParametersToUserDefaultsRecursive()
 {
-    initializeParametersToUserDefaults();
+    initializeParametersToUserDefaultsNonrecursive();
 
     // Iterate over all reference fields in the class hierarchy.
     for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {

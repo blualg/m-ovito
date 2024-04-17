@@ -73,8 +73,8 @@ void RefTarget::aboutToBeDeleted()
         });
     }
     else if(!_dependents.empty()) {
-        // In a worker thread, we cannot directly notify the reamining weak dependents about the deletion of this object.
-        // We have to do it asynchronously in the main thread and block until the main thread has processed the notification calls.
+        // From a worker thread, we cannot directly notify the remaining weak dependents about the deletion of this object.
+        // We have to do it from the main thread and block here until the main thread has performed the notification calls.
         detail::Latch latch(1);
         struct Helper {
             RefTarget* self;

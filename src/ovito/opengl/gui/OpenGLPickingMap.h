@@ -24,7 +24,6 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/opengl/OpenGLRenderer.h>
 #include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
 
 namespace Ovito {
@@ -32,7 +31,7 @@ namespace Ovito {
 /**
  * \brief Stores the result of an object picking render pass.
  */
-class OpenGLPickingBuffer : public ObjectPickingIdentifierMap
+class OVITO_OPENGLRENDERERGUI_EXPORT OpenGLPickingMap : public ObjectPickingIdentifierMap
 {
 public:
 
@@ -48,7 +47,7 @@ public:
     }
 
     /// Reads out the contents of the OpenGL framebuffer.
-    void acquire(const QSize& size, QOpenGLFunctions* glfuncs);
+    void acquire(const OORef<AbstractRenderingFrameBuffer>& frameBuffer);
 
     /// Returns the frame buffer object ID at the given frame buffer location.
     virtual quint32 objectIdentifierAt(const QPoint& pos) const override;

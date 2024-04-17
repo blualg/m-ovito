@@ -24,6 +24,7 @@
 #include <ovito/particles/objects/ParticlesVis.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/core/dataset/DataSet.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/AsynchronousTask.h>
@@ -31,7 +32,7 @@
 #include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
-#include <ovito/opengl/OffscreenOpenGLRenderer.h>
+#include <ovito/opengl/OffscreenOpenGLRenderingJob.h>
 #include "AmbientOcclusionModifier.h"
 
 namespace Ovito {
@@ -113,13 +114,12 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
     auto brightnessFuture = request.modificationNode()->partialResultsCache().getOrCompute(state.data(), [&]() {
 
         // Create the OpenGL offscreen renderer.
-        OORef<OffscreenOpenGLRenderer> renderer = OORef<OffscreenOpenGLRenderer>::create();
-        renderer->setAntialiasingLevel(1);
+        OORef<OffscreenOpenGLRenderingJob> renderingJob = OORef<OffscreenOpenGLRenderingJob>::create(ExecutionContext::current().ui().datasetContainer().visCache(), 1, false);
 
         // Perform the AO computation in a separate thread.
         return AsynchronousTask<ConstDataBufferPtr>::runAsync(
                 Task::AsynchronousTaskType::SerialAsyncTask,  // Execute this in the serial task queue to avoid overloading the OpenGL graphics system with too many concurrent rendering tasks.
-                [renderer = std::move(renderer),
+                [renderingJob = std::move(renderingJob),
                 bufferResolution = bufferResolution(),
                 samplingCount = std::max(1, samplingCount()),
                 particles = DataOORef<const Particles>(particles)]() mutable
@@ -149,15 +149,11 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             std::shared_ptr<FrameBuffer> frameBuffer = std::make_shared<FrameBuffer>(resolution, resolution);
             QRect frameBufferRect(QPoint(0,0), frameBuffer->size());
 
-            // Create a local vis cache, because we are not in the main thread.
-            // But we expect that this cache won't be used much anyway.
-            auto visCache = std::make_shared<RendererResourceCache>();
-
             // Create a frame graph.
             std::shared_ptr<FrameGraph> frameGraph = std::make_shared<FrameGraph>(
-                visCache->acquireResourceFrame(),
+                std::make_shared<RendererResourceCache>()->acquireResourceFrame(),
                 AnimationTime(0), ViewProjectionParameters{}, frameBufferRect.size(), false, false, false,
-                renderer->preferredImageFormat(), 1.0);
+                renderingJob->preferredImageFormat(), 1.0);
             frameGraph->setClearColor(ColorA(0,0,0,0));
             this_task::throwIfCanceled();
 
@@ -171,12 +167,13 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             OVITO_ASSERT(pickingGroup == 1);
             frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::SceneLayer);
             frameGraph->addPrimitive(std::move(particleBuffer), AffineTransformation::Identity(), pickingGroup, boundingBox);
-            renderer->postprocessFrameGraph(*frameGraph);
+            renderingJob->postprocessFrameGraph(*frameGraph);
             this_task::throwIfCanceled();
 
             // Create a special object picking map to extract the particle indices from the frame buffer.
             std::shared_ptr<ObjectPickingIdentifierMap> objectIdentifierMap = std::make_shared<ObjectPickingIdentifierMap>();
 
+#if 0
             // Initialize the renderer.
             renderer->setVisCache(visCache);
             renderer->startRender(frameBufferRect.size());
@@ -259,7 +256,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             frameGraph.reset();
             renderer->setVisCache({});
             OVITO_ASSERT(visCache->empty());
-
+#endif
             this_task::setProgressValue(samplingCount);
 
             // Normalize brightness values by particle area.
@@ -283,7 +280,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
 
             // Release data that is no longer needed to reduce memory footprint.
             brightnessValues.reset();
-            renderer.reset();
+ //           renderer.reset();
             particles.reset();
 
             return brightness;

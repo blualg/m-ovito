@@ -68,7 +68,7 @@ private:
     MainWindow& _mainWindow;
 
     /// The viewport window this menu belongs to.
-    ViewportWindow* _viewportWindow;
+    OORef<ViewportWindow> _viewportWindow;
 
     /// The viewport widget this menu is shown in.
     QWidget* _viewportWidget;

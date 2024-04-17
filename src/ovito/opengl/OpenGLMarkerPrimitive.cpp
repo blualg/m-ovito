@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/MarkerPrimitive.h>
 #include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
-#include "OpenGLRenderer.h"
+#include "OpenGLRenderingJob.h"
 #include "OpenGLShaderHelper.h"
 
 namespace Ovito {
@@ -31,7 +31,7 @@ namespace Ovito {
 /******************************************************************************
 * Renders a set of markers.
 ******************************************************************************/
-void OpenGLRenderer::renderMarkersImplementation(const MarkerPrimitive& primitive, int pickingGroupID)
+void OpenGLRenderingJob::renderMarkersImplementation(const MarkerPrimitive& primitive, int pickingGroupID)
 {
     // Step out early if there is nothing to render.
     if(!primitive.positions() || primitive.positions()->size() == 0)
@@ -68,7 +68,7 @@ void OpenGLRenderer::renderMarkersImplementation(const MarkerPrimitive& primitiv
     }
 
     // Marker sclaing factor:
-    shader.setUniformValue("marker_size", 4.0 / viewportRect().height());
+    shader.setUniformValue("marker_size", 4.0 / viewportSize().height());
 
     // Upload marker positions.
     QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(primitive.positions(), OpenGLShaderHelper::PerInstance);

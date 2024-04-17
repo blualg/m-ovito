@@ -20,11 +20,41 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#pragma once
+
+
 #include <ovito/core/Core.h>
-#include <ovito/core/rendering/SceneRenderer.h>
+#include <ovito/opengl/OpenGLRenderingJob.h>
+
+#include <QOpenGLWidget>
 
 namespace Ovito {
 
-IMPLEMENT_ABSTRACT_OVITO_CLASS(SceneRenderer);
+/**
+ * \brief A rendering job that uses OpenGL to render into an QOpenGLWidget.
+ */
+class OVITO_OPENGLRENDERERGUI_EXPORT WidgetOpenGLRenderingJob : public OpenGLRenderingJob
+{
+    OVITO_CLASS(WidgetOpenGLRenderingJob)
+
+public:
+
+    /// Constructor.
+    explicit WidgetOpenGLRenderingJob(ObjectInitializationFlags flags, QOpenGLWidget* widget, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency);
+
+    /// Requests the rendering job to make its OpenGL context current, e.g. for releasing OpenGL resources that require an active context.
+    [[nodiscard]] virtual OpenGLContextRestore activateContext() override {
+        OpenGLContextRestore restore;
+        OVITO_ASSERT(_widget);
+        if(_widget)
+            _widget->makeCurrent();
+        return restore;
+    }
+
+private:
+
+    /// The widget we are rendering into.
+    QPointer<QOpenGLWidget> _widget;
+};
 
 }   // End of namespace

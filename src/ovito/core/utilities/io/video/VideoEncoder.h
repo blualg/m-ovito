@@ -66,7 +66,16 @@ public:
     VideoEncoder(QObject* parent = nullptr);
 
     /// Destructor.
-    virtual ~VideoEncoder() { closeFile(); }
+    virtual ~VideoEncoder() {
+        try {
+            closeFile();
+        }
+        catch(const Exception& ex) {
+            // Swallow exceptions in destructor
+            qWarning() << "Warning: Unexpected exception in VideoEncoder destructor:";
+            ex.logError();
+        }
+    }
 
     /// Opens a video file for writing.
     void openFile(const QString& filename, int width, int height, float framesPerSecond, VideoEncoder::Format* format = nullptr);

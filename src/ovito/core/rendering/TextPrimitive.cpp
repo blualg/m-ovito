@@ -23,7 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/app/Application.h>
 #include "TextPrimitive.h"
-#include "SceneRenderer.h"
+#include "RenderingJob.h"
 
 #include <QTextDocument>
 #include <QTextFrame>
@@ -38,7 +38,7 @@ static void ensureFontRenderingCapability()
         Application::instance()->createQtApplication(false);
     }
     catch(const Exception& ex) {
-        SceneRenderer::RendererException rendererEx(ex.messages());
+        RendererException rendererEx(ex.messages());
         throw rendererEx.prependGeneralMessage(QStringLiteral("Qt font rendering function is not available in this environment."));
     }
 }

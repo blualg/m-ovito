@@ -125,7 +125,7 @@ public:
         OVITO_ASSERT(std::find(_activeResourceFrames.begin(), _activeResourceFrames.end(), resourceFrame) != _activeResourceFrames.end());
 
         // Note: The following check has been disabled, because we now allow lookups to be made from worker threads.
-        // The user is reponsible for ensuring that no two threads access the cache concurrently.
+        // The user is responsible for ensuring that no two threads access the cache concurrently.
 
         // OVITO_ASSERT(QThread::currentThread() == _owningThread);
 

@@ -20,31 +20,19 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-
-#include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/properties/PropertiesEditor.h>
-#include <ovito/core/oo/RefTarget.h>
+#include <ovito/core/Core.h>
+#include "WidgetOpenGLRenderingJob.h"
 
 namespace Ovito {
 
+IMPLEMENT_ABSTRACT_OVITO_CLASS(WidgetOpenGLRenderingJob);
+
 /******************************************************************************
-* The editor component for the OffscreenOpenGLRenderer class.
+* Constructor.
 ******************************************************************************/
-class OffscreenOpenGLRendererEditor : public PropertiesEditor
+WidgetOpenGLRenderingJob::WidgetOpenGLRenderingJob(ObjectInitializationFlags flags, QOpenGLWidget* widget, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency)
+    : OpenGLRenderingJob(flags, std::move(visCache), multisamplingLevel, orderIndependentTransparency), _widget(widget)
 {
-    OVITO_CLASS(OffscreenOpenGLRendererEditor)
-
-public:
-
-    /// Constructor.
-    explicit OffscreenOpenGLRendererEditor() {}
-
-protected:
-
-    /// Creates the user interface controls for the editor.
-    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
-};
+}
 
 }   // End of namespace
