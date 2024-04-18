@@ -222,6 +222,7 @@ PropertyPtr Property::cloneWithoutData(size_t newSize) const
     clone->setElementTypes(this->elementTypes());
     clone->setTitle(this->title());
     clone->setCreatedByNode(this->createdByNode());
+    clone->setEditableProxy(this->editableProxy());
 
     return clone;
 }

@@ -55,7 +55,7 @@ SET_PROPERTY_FIELD_LABEL(CoordinationAnalysisModifier, numberOfBins, "Number of 
 SET_PROPERTY_FIELD_LABEL(CoordinationAnalysisModifier, computePartialRDF, "Compute partial RDFs");
 SET_PROPERTY_FIELD_LABEL(CoordinationAnalysisModifier, onlySelected, "Use only selected particles");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CoordinationAnalysisModifier, cutoff, WorldParameterUnit, 0);
-SET_PROPERTY_FIELD_UNITS_AND_RANGE(CoordinationAnalysisModifier, numberOfBins, IntegerParameterUnit, 4, 100000);
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CoordinationAnalysisModifier, numberOfBins, IntegerParameterUnit, 4);
 
 /******************************************************************************
 * Constructs the modifier object.
@@ -120,8 +120,6 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
 
     // The number of sampling intervals for the radial distribution function.
     int rdfSampleCount = std::max(numberOfBins(), 4);
-    if(rdfSampleCount > 100000)
-        throw Exception(tr("Requested number of histogram bins is too large. The limit is a maximum of 100,000 histogram bins."));
 
     if(cutoff() <= 0)
         throw Exception(tr("Invalid cutoff range value. Cutoff must be positive."));
