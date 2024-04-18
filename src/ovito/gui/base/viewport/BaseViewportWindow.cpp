@@ -42,6 +42,9 @@ void BaseViewportWindow::aboutToBeDeleted()
     // Release all renderer resources when the viewport window is deleted.
     releaseResources();
 
+    // Emit signal.
+    Q_EMIT viewportWindowHidden();
+
     ViewportWindow::aboutToBeDeleted();
 }
 
@@ -104,6 +107,9 @@ void BaseViewportWindow::hideEvent(QHideEvent* event)
 
     // Release all renderer resources when the window becomes hidden.
     releaseResources();
+
+    // Emit signal.
+    Q_EMIT viewportWindowHidden();
 }
 
 /******************************************************************************

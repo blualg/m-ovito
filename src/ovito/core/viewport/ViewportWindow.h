@@ -216,6 +216,15 @@ private Q_SLOTS:
     /// Is called when the viewport's scene has changed and a rerendering is required.
     void handleUpdateRequest();
 
+Q_SIGNALS:
+
+    /// Is emitted by the window when it gets hidden (e.g. minimized) or completely closed.
+    void viewportWindowHidden();
+
+    /// Is emitted when a rendering of the complete scene (all fully evaluated pipelines)
+    /// has been finished and was displayed to the user.
+    void frameRenderComplete();
+
 protected:
 
     /// Handles timer events for this object.

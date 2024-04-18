@@ -49,11 +49,17 @@ public:
     /// Called when this frame buffer is being destroyed.
     virtual void aboutToBeDeleted() override;
 
+	/// Returns the target area in the internal rendering framebuffer (e.g. OpenGL framebuffer).
+	virtual QRect renderingViewportRect() const override { return QRect(QPoint(0, 0), _framebufferSize); }
+
     /// Returns the rendering job this frame buffer belongs to.
     const OORef<OpenGLRenderingJob>& renderingJob() const { return _renderingJob; }
 
     /// Returns the offscreen OpenGL framebuffer.
     std::optional<QOpenGLFramebufferObject>& framebufferObject() { return _framebufferObject; }
+
+    /// Returns the physical resolution of the offscreen OpenGL framebuffer, which includes the multisampling factor.
+    const QSize& framebufferSize() const { return _framebufferSize; }
 
     /// Keeps alive the OpenGL resources that got created during the last rendered frame.
     void storePreviousResourceFrame(RendererResourceCache::ResourceFrame&& previousResourceFrame) { _previousResourceFrame = std::move(previousResourceFrame); }
@@ -80,7 +86,7 @@ private:
     /// The OpenGL framebuffer to be rendered into.
     GLuint _framebufferObjectId = 0;
 
-    /// The phsyical resolution of the offscreen OpenGL framebuffer.
+    /// The physical resolution of the offscreen OpenGL framebuffer.
     /// This includes the multisampling factor.
     QSize _framebufferSize;
 

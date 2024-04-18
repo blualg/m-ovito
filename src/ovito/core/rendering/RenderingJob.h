@@ -50,21 +50,21 @@ class OVITO_CORE_EXPORT AbstractRenderingFrameBuffer : public RefTarget
 public:
 
     /// Constructor.
-    explicit AbstractRenderingFrameBuffer(ObjectInitializationFlags flags, const QRect& viewportRect, std::shared_ptr<FrameBuffer> outputFrameBuffer) : RefTarget(flags), _viewportRect(viewportRect), _outputFrameBuffer(std::move(outputFrameBuffer)) {}
+    explicit AbstractRenderingFrameBuffer(ObjectInitializationFlags flags, const QRect& outputViewportRect, std::shared_ptr<FrameBuffer> outputFrameBuffer) : RefTarget(flags), _outputViewportRect(outputViewportRect), _outputFrameBuffer(std::move(outputFrameBuffer)) {}
 
-	/// Returns the output area in the final FrameBuffer (in device pixels).
-	const QRect& viewportRect() const { return _viewportRect; }
+	/// Returns the target area in the output FrameBuffer.
+	const QRect& outputViewportRect() const { return _outputViewportRect; }
 
-	/// Returns the device pixel ratio to be used when building the frame graph.
-	virtual qreal devicePixelRatio() const { return 1.0; }
+	/// Returns the target area in the internal rendering framebuffer (e.g. OpenGL framebuffer).
+	virtual QRect renderingViewportRect() const { return _outputViewportRect; }
 
 	/// Returns the output FrameBuffer where the rendered pixels will be copied to (may be null).
 	const std::shared_ptr<FrameBuffer>& outputFrameBuffer() const { return _outputFrameBuffer; }
 
 private:
 
-	/// The output area in the FrameBuffer (in device pixels).
-	const QRect _viewportRect;
+	/// The target area in the output FrameBuffer.
+	const QRect _outputViewportRect;
 
 	/// The output FrameBuffer where the rendered pixels will be copied to (may be null).
 	const std::shared_ptr<FrameBuffer> _outputFrameBuffer;
@@ -85,8 +85,11 @@ public:
     /// Returns the cache managing rendering resources.
     const std::shared_ptr<RendererResourceCache>& visCache() const { return _visCache; }
 
-	/// Creates a new abstract target frame buffer for rendering into.
+	/// Creates a new abstract target frame buffer to render into.
 	virtual OORef<AbstractRenderingFrameBuffer> createOffscreenFrameBuffer(const QRect& viewportRect, const std::shared_ptr<FrameBuffer>& frameBuffer) = 0;
+
+	/// Returns the device pixel ratio to be used when building the frame graph for offscreen rendering.
+	virtual int multisamplingLevel() const { return 1; }
 
 	/// Renders an image of the given frame graph into the given target frame buffer.
 	virtual Future<> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingMap = {}) = 0;

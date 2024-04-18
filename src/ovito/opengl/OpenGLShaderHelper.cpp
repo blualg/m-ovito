@@ -149,7 +149,7 @@ void OpenGLShaderHelper::load(const QString& id, const QString& vertexShaderFile
     }
 
     // Get current viewport rectangle.
-    const QSize& vpSize = _renderer->viewportSize();
+    const QSize& vpSize = _renderer->framebufferSize();
     OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("viewport_origin", 0.0f, 0.0f));
     OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue("inverse_viewport_size", 2.0f / vpSize.width(), 2.0f / vpSize.height()));
 

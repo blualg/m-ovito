@@ -64,6 +64,7 @@ OpenGLRenderingFrameBuffer::OpenGLRenderingFrameBuffer(ObjectInitializationFlags
     _framebufferObjectId(framebufferObjectId),
     _framebufferSize(viewportRect.size())
 {
+    OVITO_ASSERT(_renderingJob->multisamplingLevel() == 1);
 }
 
 /******************************************************************************
@@ -130,7 +131,7 @@ void OpenGLRenderingFrameBuffer::beginOITRendering()
 
     // Blit depth buffer from primary FBO to transparency FBO.
     OVITO_CHECK_OPENGL(renderingJob(), renderingJob()->glBindFramebuffer(GL_READ_FRAMEBUFFER, _framebufferObjectId));
-    OVITO_CHECK_OPENGL(renderingJob(), renderingJob()->glBlitFramebuffer(0, 0, _oitFramebuffer->width(), _oitFramebuffer->height(), 0, 0, _oitFramebuffer->width(), _oitFramebuffer->height(), GL_DEPTH_BUFFER_BIT, GL_NEAREST));
+    OVITO_CHECK_OPENGL(renderingJob(), renderingJob()->glBlitFramebuffer(0, 0, _framebufferSize.width(), _framebufferSize.height(), 0, 0, _framebufferSize.width(), _framebufferSize.height(), GL_DEPTH_BUFFER_BIT, GL_NEAREST));
     OVITO_CHECK_OPENGL(renderingJob(), renderingJob()->glBindFramebuffer(GL_READ_FRAMEBUFFER, 0));
 
     // Disable writing to the depth buffer.

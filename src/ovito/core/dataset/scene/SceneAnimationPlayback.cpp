@@ -25,6 +25,8 @@
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/scene/ScenePreparation.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
+#include <ovito/core/viewport/Viewport.h>
+#include <ovito/core/viewport/ViewportWindow.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/UserInterface.h>
 #include "SceneAnimationPlayback.h"
@@ -104,28 +106,52 @@ void SceneAnimationPlayback::continuePlaybackAtFrame(int frame)
             // Take time as we start to prepare and render the current frame.
             _frameRenderingTimer.start();
 
-            // Wait for the scene to be fully prepared, then schedule the next animation frame.
-            _numPendingPreparations = 1;
+            // Wait for the scene to be fully prepared and rendered in all viewports, then schedule the next animation frame.
+            _numPendingViewportWindows = 0;
+
+            // Visit all viewports that display the current scene.
             scene()->visitDependents([&](RefMaker* dependent) {
-                if(ScenePreparation* preparation = dynamic_object_cast<ScenePreparation>(dependent)) {
-                    if(preparation->autoRestart()) {
-                        _numPendingPreparations++;
-                        preparation->future().finally([self = OOWeakRef<SceneAnimationPlayback>(this)](Task&) noexcept {
-                            if(OORef<SceneAnimationPlayback> playback = self.lock()) {
-                                if(--playback->_numPendingPreparations == 0)
-                                    QMetaObject::invokeMethod(playback.get(), "scheduleNextAnimationFrame", Qt::QueuedConnection);
+                if(Viewport* viewport = dynamic_object_cast<Viewport>(dependent)) {
+                    // Visit all windows that are associated with the viewport.
+                    viewport->visitDependents([&](RefMaker* dependent) {
+                        if(ViewportWindow* window = dynamic_object_cast<ViewportWindow>(dependent)) {
+                            if(window->viewport() == viewport && window->isVisible()) {
+                                _numPendingViewportWindows++;
+                                connect(window, &ViewportWindow::frameRenderComplete, this, &SceneAnimationPlayback::viewportWindowComplete);
+                                connect(window, &ViewportWindow::viewportWindowHidden, this, &SceneAnimationPlayback::viewportWindowComplete);
                             }
-                        });
-                    }
+                        }
+                    });
                 }
             });
-            if(--_numPendingPreparations == 0)
-                QMetaObject::invokeMethod(this, "scheduleNextAnimationFrame", Qt::QueuedConnection);
+
+            // Just in case there are zero viewport windows to wait for.
+            if(_numPendingViewportWindows == 0)
+                scheduleNextAnimationFrame();
         }
     })) {
         // Stop playback on error during time change.
         stopAnimationPlayback();
     }
+}
+
+/******************************************************************************
+* Receives notification from a ViewportWindow that scene rendering is complete.
+******************************************************************************/
+void SceneAnimationPlayback::viewportWindowComplete()
+{
+    // Stop receiving further notifications from this window.
+    ViewportWindow* window = qobject_cast<ViewportWindow*>(sender());
+    OVITO_ASSERT(window);
+    window->disconnect(this);
+
+    // We have may stopped waiting for the viewports in the meantime.
+    if(_numPendingViewportWindows == 0)
+        return;
+
+    // Check if the last viewport window we have been waiting for.
+    if(--_numPendingViewportWindows == 0)
+        scheduleNextAnimationFrame();
 }
 
 /******************************************************************************
@@ -140,10 +166,6 @@ void SceneAnimationPlayback::scheduleNextAnimationFrame()
         stopAnimationPlayback();
         return;
     }
-
-    // Force immediate viewport update.
-    userInterface().updateViewports();
-    userInterface().processViewportUpdateRequests();
 
     if(!_nextFrameTimer.isActive()) {
         int playbackSpeed = scene()->animationSettings()->playbackSpeed();

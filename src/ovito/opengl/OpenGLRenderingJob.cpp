@@ -110,8 +110,8 @@ Future<> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frame
     if(glFrameBuffer->framebufferObject() && !glFrameBuffer->framebufferObject()->bind())
         throw RendererException(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
 
-    // Store physical viewport size.
-    _viewportSize = glFrameBuffer->viewportRect().size();
+    // Store physical framebuffer size.
+    _framebufferSize = glFrameBuffer->framebufferSize();
 
     // Store a pointer internally.
     _frameGraph = frameGraph.get();
@@ -222,7 +222,7 @@ Future<> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frame
     OVITO_CHECK_OPENGL(this, this->glDisable(GL_SCISSOR_TEST));
 
     // Set up OpenGL render viewport.
-    OVITO_CHECK_OPENGL(this, this->glViewport(0, 0, _viewportSize.width(), _viewportSize.height()));
+    OVITO_CHECK_OPENGL(this, this->glViewport(0, 0, framebufferSize().width(), framebufferSize().height()));
 
     // Clear frame buffer.
     if(!isPickingPass()) {
@@ -268,22 +268,22 @@ Future<> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frame
 
     // Read the rendered image from the OpenGL framebuffer and paint it into to the output frame buffer.
     if(glFrameBuffer->outputFrameBuffer() && glFrameBuffer->framebufferObject()) {
+        const QRect& viewportRect = glFrameBuffer->outputViewportRect();
 
         // Clear destination area in the framebuffer (only necessary if OpenGL image is not fully opaque).
         FrameBuffer& outputFrameBuffer = *glFrameBuffer->outputFrameBuffer();
         if(frameGraph->clearColor().a() != 1 && !outputFrameBuffer.image().isNull())
-            outputFrameBuffer.clear(frameGraph->clearColor(), glFrameBuffer->viewportRect());
+            outputFrameBuffer.clear(frameGraph->clearColor(), viewportRect);
 
         // Fetch rendered image from OpenGL framebuffer.
         QImage renderedImage = glFrameBuffer->framebufferObject()->toImage();
+        OVITO_ASSERT(renderedImage.size() == framebufferSize());
         // We need it in ARGB32 format for best results.
         renderedImage.reinterpretAsFormat(QImage::Format_ARGB32);
-        // Rescale supersampled image.
-        QSize originalSize(renderedImage.width() / multisamplingLevel(), renderedImage.height() / multisamplingLevel());
-        QImage scaledImage = renderedImage.scaled(originalSize, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        // Rescale supersampled image to output size.
+        QImage scaledImage = renderedImage.scaled(viewportRect.size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
         // Transfer OpenGL image to the output frame buffer.
-        const QRect& viewportRect = glFrameBuffer->viewportRect();
         if(!outputFrameBuffer.image().isNull()) {
             QPainter painter(&outputFrameBuffer.image());
             painter.drawImage(viewportRect, scaledImage, QRect(0, scaledImage.height() - viewportRect.height(), viewportRect.width(), viewportRect.height()));
@@ -292,6 +292,7 @@ Future<> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frame
             outputFrameBuffer.image() = scaledImage;
         }
         outputFrameBuffer.update(viewportRect);
+        outputFrameBuffer.commitChanges();
     }
 
 #ifdef OVITO_DEBUG

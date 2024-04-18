@@ -143,7 +143,7 @@ void OpenGLRenderingJob::renderThickLinesImplementation(const LinePrimitive& pri
     }
 
     // Compute line width in viewport space.
-    shader.setUniformValue("line_thickness", lineWidth / viewportSize().height());
+    shader.setUniformValue("line_thickness", lineWidth / framebufferSize().height());
 
     // Issue instanced drawing command.
     shader.draw(GL_TRIANGLE_STRIP);

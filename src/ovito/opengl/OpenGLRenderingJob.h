@@ -92,8 +92,8 @@ public:
 	/// Renders an image of the given frame graph into the given target frame buffer.
 	virtual Future<> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingMap = {}) override;
 
-	/// Returns the multisampling level used to reduce anti-aliasing artifacts.
-	int multisamplingLevel() const { return _multisamplingLevel; }
+	/// Returns the multisampling level used to reduce anti-aliasing artifacts during offscreen rendering.
+	virtual int multisamplingLevel() const override { return _multisamplingLevel; }
 
     /// Performs post-processing of a newly generated frame graph to be rendered by this implementation.
     virtual void postprocessFrameGraph(FrameGraph& frameGraph) override {
@@ -214,8 +214,8 @@ private:
     /// Returns the model-view transformation matrix for the current graphics primitive being rendered.
     const AffineTransformation& modelViewTM() const { return _modelViewTM; }
 
-	/// Returns the output area in the FrameBuffer (in device pixels).
-	const QSize& viewportSize() const { return _viewportSize; }
+	/// Returns the output area in the OpenGL framebuffer (in device pixels).
+	const QSize& framebufferSize() const { return _framebufferSize; }
 
 private:
 
@@ -270,8 +270,8 @@ private:
     /// Indicates that the current primitive being rendered is using preprojected NDC coordinates.
     bool _preprojectedCoordinates = false;
 
-	/// The output area in the FrameBuffer (in device pixels).
-	QSize _viewportSize;
+	/// The output area in the OpenGL framebuffer (in device pixels).
+	QSize _framebufferSize;
 
     friend class OpenGLShaderHelper;
     friend class OpenGLRenderingFrameBuffer;

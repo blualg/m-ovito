@@ -55,7 +55,7 @@ void OpenGLRenderingJob::renderImageImplementation(const ImagePrimitive& primiti
         b.maxc.x() = (int)(b.maxc.x() / aaLevel) * aaLevel;
         b.maxc.y() = (int)(b.maxc.y() / aaLevel) * aaLevel;
     }
-    const QSize& vpSize = viewportSize();
+    const QSize& vpSize = framebufferSize();
     Vector4 image_rect(
         b.minc.x() / vpSize.width() * 2.0 - 1.0,
         1.0 - b.maxc.y() / vpSize.height() * 2.0,

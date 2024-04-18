@@ -68,8 +68,15 @@ public:
         bool containsEmptySlots = false;
         for(size_type i = 0; i < _entries.size(); i++) {
             if(RefMaker* d = _entries[i]) {
+                // Keep object alive during the visitation process when calling the callback function.
+                // Creating a strong object reference is only possible if the dependent is already fully
+                // constructed and not about to be deleted (otherwise std::shared_ptr throws an exception).
+                OORef<RefMaker> ref(!d->isBeingConstructed() && !d->isBeingDeleted() ? d : nullptr);
                 lock.unlock();
                 fn(d);
+                // Release the dependent. This might delete the dependent and can cause further actions to take place.
+                // That's why we have to do it before re-acquiring the lock.
+                ref.reset();
                 lock.lock();
             }
             else {

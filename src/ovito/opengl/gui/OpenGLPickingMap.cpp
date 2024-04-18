@@ -34,7 +34,7 @@ void OpenGLPickingMap::acquire(const OORef<AbstractRenderingFrameBuffer>& frameB
 {
     OORef<OpenGLRenderingFrameBuffer> glFrameBuffer = static_object_cast<OpenGLRenderingFrameBuffer>(frameBuffer);
     OVITO_ASSERT(glFrameBuffer->framebufferObject());
-    const QSize& size = glFrameBuffer->viewportRect().size();
+    const QSize& size = glFrameBuffer->framebufferSize();
 
     // The following requires an active GL context.
     OpenGLContextRestore contextRestore = glFrameBuffer->renderingJob()->activateContext();

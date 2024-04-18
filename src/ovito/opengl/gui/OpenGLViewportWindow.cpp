@@ -133,11 +133,15 @@ void OpenGLViewportWindow::paint()
     try {
         // Recreate/resize abstract frame buffer for rendering into the widget if necessary.
         const QRect viewportRect(QPoint(0,0), viewportWindowDeviceSize());
-        if(!_widgetFrameBuffer || _widgetFrameBuffer->viewportRect() != viewportRect)
+        if(!_widgetFrameBuffer || _widgetFrameBuffer->outputViewportRect() != viewportRect)
             _widgetFrameBuffer = OORef<OpenGLRenderingFrameBuffer>::create(static_object_cast<OpenGLRenderingJob>(renderingJob()), viewportRect, widget()->defaultFramebufferObject());
 
         // Render the viewport contents. This requires an active GL context.
-        renderingJob()->renderFrame(frameGraph(), _widgetFrameBuffer);
+        renderingJob()->renderFrame(frameGraph(), _widgetFrameBuffer).waitForFinished();
+
+        // Emit signal to inform listeners (e.g. SceneAnimationPlayback) that a full frame has been rendered.
+        if(frameGraph()->isPreliminaryState() == false)
+            Q_EMIT frameRenderComplete();
     }
     catch(Exception& ex) {
         ex.prependGeneralMessage(tr("An unexpected error occurred while rendering the viewport contents. The program will quit."));
@@ -174,11 +178,11 @@ std::optional<ViewportWindow::PickResult> OpenGLViewportWindow::pick(const QPoin
 
                 // Recreate/resize offscreen OpenGL framebuffer.
                 const QRect viewportRect(QPoint(0,0), viewportWindowDeviceSize());
-                if(!_pickingFrameBuffer || _pickingFrameBuffer->viewportRect() != viewportRect)
+                if(!_pickingFrameBuffer || _pickingFrameBuffer->outputViewportRect() != viewportRect)
                     _pickingFrameBuffer = renderingJob()->createOffscreenFrameBuffer(viewportRect, {});
 
                 // Render into the OpenGL framebuffer.
-                renderingJob()->renderFrame(frameGraph(), _pickingFrameBuffer, _objectPickingMap);
+                renderingJob()->renderFrame(frameGraph(), _pickingFrameBuffer, _objectPickingMap).waitForFinished();
 
                 // Read out the contents of the OpenGL framebuffer.
                 _objectPickingMap->acquire(_pickingFrameBuffer);

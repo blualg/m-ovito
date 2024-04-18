@@ -76,6 +76,7 @@ void FrameGraph::renderSceneNode(OORef<SceneNode> node, OORef<Viewport> viewport
         // Do not render node if it is the view node of the viewport or
         // if it is the target of the view node.
         if(!viewport || !viewport->viewNode() || (viewport->viewNode() != node && viewport->viewNode()->lookatTargetNode() != node)) {
+
             // Evaluate pipeline and render the resulting data objects.
             PipelineEvaluationResult pipelineResult = pipeline->evaluatePipeline(PipelineEvaluationRequest(time(), stopOnPipelineError(), isInteractive()));
             if(const PipelineFlowState& state = pipelineResult.result()) {
@@ -84,6 +85,10 @@ void FrameGraph::renderSceneNode(OORef<SceneNode> node, OORef<Viewport> viewport
                 renderDataObject(state.data(), pipeline, state, dataObjectPath);
                 OVITO_ASSERT(dataObjectPath.empty());
             }
+
+            // Flag the entire frame graph as preliminary if the obtained pipeline output is preliminary.
+            if(pipelineResult.evaluationTypes().testFlag(PipelineEvaluationResult::EvaluationType::Noninteractive) == false)
+                _isPreliminaryState = true;
         }
     }
 

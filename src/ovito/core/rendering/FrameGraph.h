@@ -165,13 +165,10 @@ public:
 		_viewportDeviceIndependentSize(viewportDeviceIndependentSize) {}
 
 	/// Returns the data cache to be used by visualization elements.
-	const RendererResourceCache::ResourceFrame& visCache() const { return _visCache; }
+	const RendererResourceCache::ResourceFrame& visCache() const { OVITO_ASSERT(_visCache); return _visCache; }
 
 	/// Releases the data cache of the frame graph after use.
-	RendererResourceCache::ResourceFrame takeVisCache() && {
-		_commands.clear();
-		return std::move(_visCache);
-	}
+	RendererResourceCache::ResourceFrame takeVisCache() { return std::move(_visCache); }
 
 	/// Returns the animation time being rendered.
 	AnimationTime time() const { return _time; }
@@ -184,6 +181,10 @@ public:
 
 	/// Returns whether the rendering should be stopped when an error occurs in a data pipeline.
 	bool stopOnPipelineError() const { return _stopOnPipelineError; }
+
+	/// Returns whether the rendered scene represents a preliminary pipeline state, i.e., a partial output
+	/// of pipelines that have not been fully evaluated yet.
+	bool isPreliminaryState() const { return _isPreliminaryState; }
 
 	/// Returns the best format for QImage to be used when creating an ImagePrimitive.
 	QImage::Format preferredImageFormat() const { return _preferredImageFormat; }
@@ -322,6 +323,9 @@ private:
 
 	/// The current layer rendering primitives should be added to.
 	RenderLayer _currentRenderLayer = SceneLayer;
+
+	/// Indicates whether the rendered scene represents a preliminary or the fully evaluated pipeline state.
+	bool _isPreliminaryState = false;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(FrameGraph::RenderingCommand::Flags);

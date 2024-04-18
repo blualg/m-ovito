@@ -63,6 +63,9 @@ Q_SIGNALS:
 
 private Q_SLOTS:
 
+    /// Receives notification from a ViewportWindow that scene rendering is complete.
+    void viewportWindowComplete();
+
     /// Starts a timer to show the next animation frame.
     void scheduleNextAnimationFrame();
 
@@ -91,8 +94,8 @@ private:
     /// Timer for scheduling the next animation frame.
     QBasicTimer _nextFrameTimer;
 
-    /// Number of ScenePreparation signals we are waiting for until the current animation frame is complete.
-    int _numPendingPreparations;
+    /// Number of viewport windows we are waiting for to be rendered until the animation frame is complete.
+    int _numPendingViewportWindows = 0;
 };
 
 }   // End of namespace
