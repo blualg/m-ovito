@@ -103,7 +103,7 @@ public:
 protected:
 
 	/// Renders the 2d graphics of a frame graph render layer into the frame buffer.
-	static void render2DPrimitives(FrameGraph::RenderLayer renderLayer, const FrameGraph& frameGraph, const QRect& viewportRect, const std::shared_ptr<FrameBuffer>& frameBuffer);
+	static void render2DPrimitives(FrameGraph::RenderLayer renderLayer, const FrameGraph& frameGraph, AbstractRenderingFrameBuffer& frameBuffer);
 
 #ifdef OVITO_BUILD_BASIC
 	/// Creates an image serving as watermark for demo versions of scene renderers.

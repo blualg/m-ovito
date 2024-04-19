@@ -230,7 +230,6 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
     }
 
     // Initialize the rendering job.
-    this_task::setProgressText(tr("Initializing renderer"));
     OORef<RenderingJob> renderingJob = renderer->createOffscreenRenderingJob();
     this_task::throwIfCanceled();
 

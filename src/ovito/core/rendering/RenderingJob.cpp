@@ -32,9 +32,9 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(AbstractRenderingFrameBuffer);
 /******************************************************************************
  * Renders the 2d graphics of a frame graph render layer into the frame buffer.
  ******************************************************************************/
-void RenderingJob::render2DPrimitives(FrameGraph::RenderLayer renderLayer, const FrameGraph& frameGraph, const QRect& viewportRect, const std::shared_ptr<FrameBuffer>& frameBuffer)
+void RenderingJob::render2DPrimitives(FrameGraph::RenderLayer renderLayer, const FrameGraph& frameGraph, AbstractRenderingFrameBuffer& frameBuffer)
 {
-    if(!frameBuffer)
+    if(!frameBuffer.outputFrameBuffer())
         return;
 
     for(const FrameGraph::RenderingCommand& command : frameGraph.commands()) {
@@ -44,10 +44,10 @@ void RenderingJob::render2DPrimitives(FrameGraph::RenderLayer renderLayer, const
             continue;
 
         if(const ImagePrimitive* primitive = dynamic_cast<const ImagePrimitive*>(command.primitive())) {
-            frameBuffer->renderImagePrimitive(*primitive, viewportRect);
+            frameBuffer.outputFrameBuffer()->renderImagePrimitive(*primitive, frameBuffer.outputViewportRect());
         }
         else if(const TextPrimitive* primitive = dynamic_cast<const TextPrimitive*>(command.primitive())) {
-            frameBuffer->renderTextPrimitive(*primitive, viewportRect);
+            frameBuffer.outputFrameBuffer()->renderTextPrimitive(*primitive, frameBuffer.outputViewportRect());
         }
     }
 }
