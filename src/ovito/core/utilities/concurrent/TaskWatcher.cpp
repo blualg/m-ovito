@@ -48,6 +48,7 @@ void TaskWatcher::watch(Task* task, bool pendingAssignment)
     }
     if(task) {
         _task = task->shared_from_this();
+        Q_EMIT started();
         registerCallback(_task.get(), true); // Request replay of state changes of the running task.
     }
     else _task.reset();
@@ -62,8 +63,6 @@ void TaskWatcher::cancel()
 
 bool TaskWatcher::taskStateChangedCallback(int state)
 {
-    if(state & Task::Started)
-        QMetaObject::invokeMethod(this, "taskStarted", Qt::QueuedConnection);
     if(state & Task::Canceled)
         QMetaObject::invokeMethod(this, "taskCanceled", Qt::QueuedConnection);
     if(state & Task::Finished)
@@ -93,14 +92,6 @@ void TaskWatcher::taskCanceled()
 {
     if(isWatching()) {
         Q_EMIT canceled();
-    }
-}
-
-void TaskWatcher::taskStarted()
-{
-    if(isWatching()) {
-        _finished = false; // Need to reset interal finished flag, in case task is run a second time.
-        Q_EMIT started();
     }
 }
 

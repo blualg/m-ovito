@@ -57,7 +57,6 @@ void AsynchronousTaskBase::runInThreadPool(bool showInUserInterface)
 {
     OVITO_ASSERT(!this->_thisTask);
     OVITO_ASSERT(!this->_threadPool);
-    OVITO_ASSERT(!this->isStarted());
 
     // Inherit execution context from parent task.
     _executionContext = ExecutionContext::current();
@@ -73,9 +72,6 @@ void AsynchronousTaskBase::runInThreadPool(bool showInUserInterface)
     if(showInUserInterface)
         _executionContext.ui().taskManager().registerTask(*this);
 
-    // Mark this task as started.
-    this->setStarted();
-
     // Submit to thread pool.
     _threadPool->start(this);
 }
@@ -87,7 +83,6 @@ void AsynchronousTaskBase::runInThisThread(bool showInUserInterface)
 {
     OVITO_ASSERT(!this->_thisTask);
     OVITO_ASSERT(!this->_threadPool);
-    OVITO_ASSERT(!this->isStarted());
 
     // Inherit execution context from parent task.
     _executionContext = ExecutionContext::current();
@@ -98,9 +93,6 @@ void AsynchronousTaskBase::runInThisThread(bool showInUserInterface)
         _executionContext.ui().taskManager().registerTask(*this);
     }
 
-    // Mark this task as started.
-    this->setStarted();
-
     // Execute it now.
     this->run();
 }
@@ -110,7 +102,6 @@ void AsynchronousTaskBase::runInThisThread(bool showInUserInterface)
 ******************************************************************************/
 void AsynchronousTaskBase::run()
 {
-    OVITO_ASSERT(isStarted());
     OVITO_ASSERT(_executionContext.isValid());
 
     // Execute the work function in the original execution context.

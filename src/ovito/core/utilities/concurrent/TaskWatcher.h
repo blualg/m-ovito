@@ -39,7 +39,7 @@ public:
 
     /// Constructor that creates a watcher that is not associated with
     /// any future/promise yet.
-    explicit TaskWatcher(QObject* parent = nullptr) : QObject(parent) {}
+    using QObject::QObject;
 
     /// Destructor.
     virtual ~TaskWatcher() {
@@ -96,7 +96,6 @@ Q_SIGNALS:
 
 private Q_SLOTS:
 
-    void taskStarted();
     void taskCanceled();
     void taskFinished();
     void taskProgressChanged(qlonglong progress, qlonglong maximum);

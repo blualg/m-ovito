@@ -36,7 +36,7 @@ class MainThreadTask : public ProgressingTask, public detail::TaskCallback<MainT
 {
 public:
 
-    MainThreadTask(Task* parentTask) noexcept : ProgressingTask(Task::State(Task::Started | Task::YieldUI)) {
+    MainThreadTask(Task* parentTask) noexcept : ProgressingTask(Task::YieldUI) {
         if(parentTask) {
             // Inherit the priority status from the parent task.
             if(parentTask->isHighPriorityTask())
@@ -90,7 +90,6 @@ MainThreadOperation::~MainThreadOperation()
 {
     if(TaskPtr task = std::move(_task)) {
         OVITO_ASSERT(this_task::get() == task.get());
-        OVITO_ASSERT(task->isStarted());
         task->setFinished();
     }
 }

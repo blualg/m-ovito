@@ -59,33 +59,6 @@ Task::~Task()
 #endif
 
 /******************************************************************************
-* Switches the task into the 'started' state.
-******************************************************************************/
-bool Task::setStarted() noexcept
-{
-    const MutexLocker locker(&_mutex);
-    return startLocked();
-}
-
-/******************************************************************************
-* Puts this taskinto the 'started' state (without locking access to the object).
-******************************************************************************/
-bool Task::startLocked() noexcept
-{
-    // Check if already started.
-    auto state = _state.load(std::memory_order_relaxed);
-    if(state & (Started | Finished))
-        return false;
-
-    _state.fetch_or(Started, std::memory_order_relaxed);
-
-    // Inform the registered task watchers.
-    callCallbacks(Started);
-
-    return true;
-}
-
-/******************************************************************************
 * Switches the task into the 'finished' state.
 ******************************************************************************/
 void Task::setFinished() noexcept
@@ -101,7 +74,6 @@ void Task::setFinished() noexcept
 void Task::finishLocked(MutexLocker& locker) noexcept
 {
     OVITO_ASSERT(!isFinished());
-    OVITO_ASSERT(isStarted());
 
     // Put this task into the 'finished' state.
     _state.fetch_or(Finished, std::memory_order_relaxed);

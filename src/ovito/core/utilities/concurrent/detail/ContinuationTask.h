@@ -86,7 +86,6 @@ public:
     template<typename Function, typename FutureType>
     void fulfillWith(PromiseBase&& promise, Function&& f, FutureType&& future) noexcept {
         OVITO_ASSERT(!_awaitedTask);
-        OVITO_ASSERT(this->isStarted());
         OVITO_ASSERT(!this->isFinished());
         OVITO_ASSERT(promise.task().get() == this);
         OVITO_ASSERT(future.isValid() && future.isFinished());

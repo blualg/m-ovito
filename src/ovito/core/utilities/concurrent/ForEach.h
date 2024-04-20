@@ -81,7 +81,7 @@ auto for_each_sequential(
             StartIterFunc&& startFunc,
             CompleteIterFunc&& completeFunc,
             ResultType&&... initialResult) :
-                detail::ContinuationTask<task_result_type, task_base_class>(Task::Started, std::forward<ResultType>(initialResult)...),
+                detail::ContinuationTask<task_result_type, task_base_class>(Task::NoState, std::forward<ResultType>(initialResult)...),
                 _range(std::forward<InputRange>(inputRange)),
                 _executor(std::forward<Executor>(executor)),
                 _startFunc(std::forward<StartIterFunc>(startFunc)),

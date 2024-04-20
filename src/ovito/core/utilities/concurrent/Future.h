@@ -312,9 +312,6 @@ Future<R>::then(Executor&& executor, Function&& f)
         OVITO_ASSERT(!continuationTask->isFinished());
         OVITO_ASSERT(!continuationTask->isCanceled());
 
-        // Put the continuation task into the 'started' state.
-        continuationTask->startLocked();
-
         // Don't execute continuation function in case an error occurred in the preceding task and unless the continuation function takes a Future.
         // Forward any preceding exception state directly to the continuation task.
         if constexpr(!std::is_invocable_v<Function, Future<R>>) {

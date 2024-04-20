@@ -52,14 +52,13 @@ public:
     /// The different states a task can be in.
     enum State {
         NoState        = 0,
-        Started        = (1<<0),
-        Finished       = (1<<1),
-        Canceled       = (1<<2),
-        IsProgressing  = (1<<3), // The task is derived from ProgressingTask and can report its progress
-        IsAsynchronous = (1<<4), // The task is derived from AsynchronousTaskBase and runs in a worker thread.
-        LoggingEnabled = (1<<5), // The task's progress messages are printed to the console.
-        YieldUI        = (1<<6), // The task runs in the main thread should yield control to the event loop when its progress functions are called.
-        HighPriority   = (1<<7), // The task should be executed with higher priority, because it is responsible for GUI updates.
+        Finished       = (1<<0),
+        Canceled       = (1<<1),
+        IsProgressing  = (1<<2), // The task is derived from ProgressingTask and can report its progress
+        IsAsynchronous = (1<<3), // The task is derived from AsynchronousTaskBase and runs in a worker thread.
+        LoggingEnabled = (1<<4), // The task's progress messages are printed to the console.
+        YieldUI        = (1<<5), // The task runs in the main thread should yield control to the event loop when its progress functions are called.
+        HighPriority   = (1<<6), // The task should be executed with higher priority, because it is responsible for GUI updates.
     };
 
     /// Constructor.
@@ -82,9 +81,6 @@ public:
     /// Returns whether this shared state has been canceled by a previous call to cancel().
     bool isCanceled() const { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & Canceled); }
 
-    /// Returns true if the promise is in the 'started' state.
-    bool isStarted() const { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & Started); }
-
     /// Returns true if the promise is in the 'finished' state.
     bool isFinished() const { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & Finished); }
 
@@ -105,10 +101,6 @@ public:
 
     /// \brief Requests cancellation of the task.
     void cancel() noexcept;
-
-    /// \brief Switches the task into the 'started' state.
-    /// \return false if the task was already in the 'started' state before.
-    bool setStarted() noexcept;
 
     /// \brief Switches the task into the 'finished' state.
     void setFinished() noexcept;
@@ -266,9 +258,6 @@ protected:
         _continuations.push_back(fu2::unique_function<void() noexcept>{std::forward<Function>(f)});
 #endif
     }
-
-    /// Puts this task into the 'started' state (without newly locking the task).
-    bool startLocked() noexcept;
 
     /// Puts this task into the 'canceled' state (without newly locking the task).
     void exceptionLocked(std::exception_ptr ex) noexcept;

@@ -54,19 +54,13 @@ public:
     /// If the promise wasn't already finished when this function is called, it is automatically canceled.
     void reset() {
         if(TaskPtr task = std::move(_task)) {
-            if(!task->isFinished()) {
-                QMutexLocker locker(&task->taskMutex());
-                task->startLocked(); // Just in case the task hasn't been started yet.
-                task->cancelAndFinishLocked(locker);
-            }
+            if(!task->isFinished())
+                task->cancel();
         }
     }
 
     /// Returns whether this promise has been canceled by a previous call to cancel().
     bool isCanceled() const { return task()->isCanceled(); }
-
-    /// Returns true if the promise is in the 'started' state.
-    bool isStarted() const { return task()->isStarted(); }
 
     /// Returns true if the promise is in the 'finished' state.
     bool isFinished() const { return task()->isFinished(); }
@@ -144,10 +138,6 @@ public:
     /// Cancels this promise.
     void cancel() const { task()->cancel(); }
 
-    /// This must be called after creating a promise to put it into the 'started' state.
-    /// Returns false if the promise is or was already in the 'started' state.
-    bool setStarted() const { return task()->setStarted(); }
-
     /// This must be called after the promise has been fulfilled (even if an exception occurred).
     void setFinished() const { task()->setFinished(); }
 
@@ -217,8 +207,8 @@ public:
 
     /// Creates a promise together with a new task.
     template<typename task_type>
-    static Promise create(bool stateStarted) {
-        return Promise(std::make_shared<detail::TaskWithStorage<R, task_type>>(Task::State(stateStarted ? Task::Started : Task::NoState), std::nullopt));
+    static Promise create() {
+        return Promise(std::make_shared<detail::TaskWithStorage<R, task_type>>(Task::NoState, std::nullopt));
     }
 
     /// Returns a Future that is associated with the same shared state as this promise.
@@ -245,15 +235,14 @@ protected:
 
     /// Create a promise that is ready and provides immediate default-constructed results.
     static Promise createImmediateEmpty() {
-        return Promise(std::make_shared<detail::TaskWithStorage<R, Task>>(
-            Task::State(Task::Started | Task::Finished)));
+        return Promise(std::make_shared<detail::TaskWithStorage<R, Task>>(Task::Finished));
     }
 
     /// Create a promise that is ready and provides an immediate result.
     template<typename R2>
     static Promise createImmediate(R2&& value) {
         return Promise(std::make_shared<detail::TaskWithStorage<R, Task>>(
-            Task::State(Task::Started | Task::Finished),
+            Task::Finished,
             std::forward<R2>(value)));
     }
 
@@ -261,34 +250,34 @@ protected:
     template<typename... Args>
     static Promise createImmediateEmplace(Args&&... args) {
         return Promise(std::make_shared<detail::TaskWithStorage<R, Task>>(
-            Task::State(Task::Started | Task::Finished),
+            Task::Finished,
             std::forward<Args>(args)...));
     }
 
     /// Creates a promise that is in the 'exception' state.
     static Promise createFailed(const Exception& ex) {
-        Promise promise(std::make_shared<Task>(Task::State(Task::Started | Task::Finished)));
+        Promise promise(std::make_shared<Task>(Task::Finished));
         promise.task()->_exceptionStore = std::make_exception_ptr(ex);
         return promise;
     }
 
     /// Creates a promise that is in the 'exception' state.
     static Promise createFailed(Exception&& ex) {
-        Promise promise(std::make_shared<Task>(Task::State(Task::Started | Task::Finished)));
+        Promise promise(std::make_shared<Task>(Task::Finished));
         promise.task()->_exceptionStore = std::make_exception_ptr(std::move(ex));
         return promise;
     }
 
     /// Creates a promise that is in the 'exception' state.
     static Promise createFailed(std::exception_ptr ex_ptr) {
-        Promise promise(std::make_shared<Task>(Task::State(Task::Started | Task::Finished)));
+        Promise promise(std::make_shared<Task>(Task::Finished));
         promise.task()->_exceptionStore = std::move(ex_ptr);
         return promise;
     }
 
     /// Creates a promise without results that is in the canceled state.
     static Promise createCanceled() {
-        return Promise(std::make_shared<Task>(Task::State(Task::Started | Task::Canceled | Task::Finished)));
+        return Promise(std::make_shared<Task>(Task::State(Task::Canceled | Task::Finished)));
     }
 
     /// Constructor

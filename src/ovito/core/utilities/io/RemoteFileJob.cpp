@@ -94,9 +94,6 @@ void RemoteFileJob::start()
         }
     }
 
-    // This background task started to run.
-    _promise.setStarted();
-
     // Check if process has already been canceled.
     if(_promise.isCanceled()) {
         shutdown(false);
@@ -191,7 +188,6 @@ void RemoteFileJob::shutdown(bool success)
         }
         else {
             // Skip canceled jobs.
-            waitingJob->_promise.setStarted();
             waitingJob->shutdown(false);
         }
     }

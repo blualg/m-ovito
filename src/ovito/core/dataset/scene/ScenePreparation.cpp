@@ -75,7 +75,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
 
     // Create a promise, which remains in the unfinished state as long as we are preparing the scene.
     if(!_promise.isValid() || _promise.isCanceled()) {
-        _promise = Promise<void>::create<Task>(true);
+        _promise = Promise<void>::create<Task>();
         _future = _promise.sharedFuture();
         _completedScene = scene();
         if(scene()) {

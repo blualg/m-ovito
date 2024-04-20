@@ -166,9 +166,6 @@ SharedFuture<R>::then(Executor&& executor, Function&& f)
         OVITO_ASSERT(!continuationTask->isFinished());
         OVITO_ASSERT(!continuationTask->isCanceled());
 
-        // Put the continuation task into the 'started' state.
-        continuationTask->startLocked();
-
         // Don't execute continuation function in case an error occurred in the preceding task.
         // In such a case, copy the exception state to the continuation promise.
         if constexpr(!std::is_invocable_v<Function, SharedFuture<R>>) {
