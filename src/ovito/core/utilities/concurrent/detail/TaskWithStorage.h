@@ -29,30 +29,17 @@
 namespace Ovito::detail {
 
 /**
- * \brief Composite class template that packages a Task together with the storage for the task's results tuple.
- *
- * \tparam Tuple The std::tuple<...> type of the results storage.
- *
- * The task gets automatically configured to use the internal results storage provided by this class.
+ * \brief Composite class template that packages a Task together with the storage for the task's results.
  */
-template<class Tuple, class TaskBase>
-#ifndef Q_CC_MSVC
-class TaskWithStorage : public TaskBase, private Tuple
-#else
+template<class R, class TaskBase>
 class TaskWithStorage : public TaskBase
-#endif
 {
 public:
 
-    /// \brief Constructor assigning the task's results storage and forwarding any extra arguments to the task class constructor.
-    /// \param initialResult The value to assign to the results storage tuple.
-    template<typename InitialValue>
-    explicit TaskWithStorage(Task::State initialState, InitialValue&& initialResult) :
-#ifndef Q_CC_MSVC
-    TaskBase(initialState, static_cast<Tuple*>(this)), Tuple(std::forward<InitialValue>(initialResult))
-#else
-    TaskBase(initialState, &_tuple), _tuple(std::forward<InitialValue>(initialResult))
-#endif
+    /// \brief Constructor assigning the task's results storage.
+    template<typename... Args>
+    explicit TaskWithStorage(Task::State initialState, Args&&... args)
+        : TaskBase(initialState, &_result), _result{std::forward<Args>(args)...}
     {
 #ifdef OVITO_DEBUG
         // This is used in debug builds to detect programming errors and explicitly keep track of whether a result has been assigned to the task.
@@ -61,35 +48,31 @@ public:
     }
 
     /// \brief Constructor which leaves results storage uninitialized.
-    explicit TaskWithStorage(Task::State initialState = Task::NoState) noexcept :
-#ifndef Q_CC_MSVC
-    TaskBase(initialState, std::tuple_size_v<Tuple> != 0 ? static_cast<Tuple*>(this) : nullptr) {}
-#else
-    TaskBase(initialState, std::tuple_size_v<Tuple> != 0 ? &_tuple : nullptr) {}
-#endif
+    explicit TaskWithStorage(Task::State initialState, std::nullopt_t) : TaskBase(initialState, &_result) {}
 
 protected:
 
-    /// Provides direct read/write access to the internal results tuple.
-    Tuple& resultsTupleStorage() {
-#ifndef Q_CC_MSVC
-        return static_cast<Tuple&>(*this);
-#else
-        return _tuple;
-#endif
-    }
-
-    /// Provides direct read/write access to the first tuple element of the internal results storage.
-    decltype(auto) resultsStorage() {
-        if constexpr(std::tuple_size_v<Tuple> != 0)
-            return std::get<0>(resultsTupleStorage());
-    }
+    /// Provides direct read/write access to the internal results.
+    R& resultStorage() { return _result; }
 
 private:
 
-#ifdef Q_CC_MSVC
-    Tuple _tuple;
-#endif
+    R _result;
+};
+
+/**
+ * \brief Composite class template that packages a Task together with the storage for the task's results.
+ */
+template<class TaskBase>
+class TaskWithStorage<void, TaskBase> : public TaskBase
+{
+public:
+
+    /// \brief Constructor which leaves results storage uninitialized.
+    explicit TaskWithStorage(Task::State initialState) : TaskBase(initialState, nullptr) {}
+
+    /// \brief Constructor which leaves results storage uninitialized.
+    explicit TaskWithStorage(Task::State initialState, std::nullopt_t) : TaskBase(initialState, nullptr) {}
 };
 
 }   // End of namespace

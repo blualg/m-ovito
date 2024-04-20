@@ -34,7 +34,7 @@ namespace detail {
     class TaskReference; // Forward declaration
     class TaskCallbackBase;
     template<typename Derived> class TaskCallback;
-    template<typename tuple_type, typename task_type> class ContinuationTask;
+    template<typename R, typename task_type> class ContinuationTask;
 }
 
 /// Exception type thrown by a task in case it got canceled.
@@ -147,53 +147,50 @@ public:
     }
 
     /// Runs the given continuation function once this task has reached either the 'finished' or the 'canceled' state.
+    /// The function can optionally take a reference to this task object as an argument.
     /// Note that the continuation function will always be executed, even if this task was canceled or set to an error state.
     template<typename Executor, typename Function>
     void finally(Executor&& executor, Function&& f) {
-        // Must store a shared_ptr to this task in the lambda in order to keep it alive until the user
-        // function gets invoked. That's because it might happen at a much later time if the executor uses deferred scheduling.
-        addContinuation(std::forward<Executor>(executor),
-            [f = std::forward<Function>(f), self = shared_from_this()]() mutable noexcept { std::forward<Function>(f)(*self); });
+        if constexpr(std::is_invocable_v<Function, Task&>)
+            // Must store a shared_ptr to this task in the lambda in order to keep it alive until the user
+            // function gets invoked. That's because it might happen at a much later time if the executor uses deferred scheduling.
+            addContinuation(std::forward<Executor>(executor),
+                [f = std::forward<Function>(f), self = shared_from_this()]() mutable noexcept {
+                    std::invoke(std::forward<Function>(f), *self);
+                });
+        else
+            addContinuation(std::forward<Executor>(executor), std::forward<Function>(f));
     }
 
     /// Runs the given continuation function once this task has reached either the 'finished' or the 'canceled' state.
+    /// The function can optionally take a reference to this task object as an argument.
     /// Note that the continuation function will always be executed, even if this task was canceled or set to an error state.
-    template<typename Function, typename Executor = InlineExecutor>
+    template<typename Function>
     void finally(Function&& f) {
-        addContinuation(Executor{}, std::bind_front(std::forward<Function>(f), std::ref(*this)));
+        if constexpr(std::is_invocable_v<Function, Task&>)
+            addContinuation(std::bind_front(std::forward<Function>(f), std::ref(*this)));
+        else
+            addContinuation(std::forward<Function>(f));
     }
 
-    /// Accessor function for the internal results storage.
-    /// This overload is used for tasks with a non-empty results tuple.
-    template<typename tuple_type>
-    const std::enable_if_t<std::tuple_size<tuple_type>::value != 0, tuple_type>& getResults() const {
+    /// Accessor function for the internal result storage.
+    template<typename R>
+    const R& getResult() const {
         OVITO_ASSERT(_resultsStorage != nullptr);
 #ifdef OVITO_DEBUG
         OVITO_ASSERT(_hasResultsStored.load());
 #endif
-        return *static_cast<const tuple_type*>(_resultsStorage);
+        return *static_cast<const R*>(_resultsStorage);
     }
 
-    /// Accessor function for the internal results storage.
-    /// This overload is used for tasks with an empty results tuple (returning void).
-    template<typename tuple_type>
-    std::enable_if_t<std::tuple_size<tuple_type>::value == 0, tuple_type> getResults() const {
-        return {};
-    }
-
-    /// Accessor function for the internal results storage.
-    template<typename tuple_type>
-    tuple_type takeResults() {
-        if constexpr(std::tuple_size<tuple_type>::value != 0) {
+    /// Accessor function for the internal result storage.
+    template<typename R>
+    R takeResult() {
 #ifdef OVITO_DEBUG
-            OVITO_ASSERT(_hasResultsStored.exchange(false) == true);
+        OVITO_ASSERT(_hasResultsStored.exchange(false) == true);
 #endif
-            OVITO_ASSERT(_resultsStorage != nullptr);
-            return std::move(*static_cast<tuple_type*>(_resultsStorage));
-        }
-        else {
-            return {};
-        }
+        OVITO_ASSERT(_resultsStorage != nullptr);
+        return std::move(*static_cast<R*>(_resultsStorage));
     }
 
     /// Re-throws the exception stored in this task state if an exception was previously set via setException().
@@ -213,29 +210,14 @@ public:
 
 protected:
 
-    /// Assigns a tuple of values to the internal results storage of the task.
-    template<typename tuple_type, typename... R>
-    void setResults(std::tuple<R...>&& value) {
-        static_assert(std::tuple_size_v<tuple_type> == std::tuple_size_v<std::tuple<R...>>, "Must assign a compatible tuple");
+    /// Assigns a tuple of values to the internal result storage of the task.
+    template<typename R, typename R2>
+    void setResult(R2&& value) {
 #ifdef OVITO_DEBUG
         OVITO_ASSERT(_hasResultsStored.exchange(true) == false);
 #endif
-        if constexpr(std::tuple_size_v<tuple_type> != 0) {
-            OVITO_ASSERT(_resultsStorage != nullptr);
-            *static_cast<tuple_type*>(_resultsStorage) = std::move(value);
-        }
-    }
-
-    /// Assigns a single value to the internal results storage of the task.
-    template<typename tuple_type, typename value_type>
-    void setResults(value_type&& result) {
-        setResults<tuple_type>(std::forward_as_tuple(std::forward<value_type>(result)));
-    }
-
-    /// Assigns a void value to the internal results storage of the task.
-    template<typename tuple_type>
-    void setResults() {
-        setResults<tuple_type>(std::tuple<>{});
+        OVITO_ASSERT(_resultsStorage != nullptr);
+        *static_cast<R*>(_resultsStorage) = std::forward<R2>(value);
     }
 
     /// Adds a callback to this task's list, which will get notified during state changes.
@@ -258,6 +240,23 @@ protected:
         else {
             // Otherwise, insert into list to run continuation function later.
             registerContinuation(std::forward<Executor>(executor).schedule(std::forward<Function>(f)));
+        }
+    }
+
+    /// Registers a callback function that will be run when this task reaches the 'finished' state.
+    /// If the task is already in one of these states, the continuation function is invoked immediately.
+    template<typename Function>
+    void addContinuation(Function&& f) {
+        MutexLocker locker(&taskMutex());
+        // Check if task is already finished.
+        if(isFinished()) {
+            // Run continuation function immediately.
+            locker.unlock();
+            std::invoke(std::forward<Function>(f));
+        }
+        else {
+            // Otherwise, insert into list to run continuation function later.
+            registerContinuation(std::forward<Function>(f));
         }
     }
 
@@ -353,9 +352,9 @@ protected:
     friend class detail::TaskCallbackBase;
     template<typename Derived> friend class detail::TaskCallback;
     template<typename tuple_type, typename task_type> friend class detail::ContinuationTask;
-    template<typename... R2> friend class Future;
-    template<typename... R2> friend class SharedFuture;
-    template<typename... R2> friend class Promise;
+    template<typename R2> friend class Future;
+    template<typename R2> friend class SharedFuture;
+    template<typename R2> friend class Promise;
 };
 
 namespace this_task

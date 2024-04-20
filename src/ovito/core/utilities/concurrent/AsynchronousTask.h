@@ -69,20 +69,23 @@ private:
     ExecutionContext _executionContext;
 
     friend class Task;
-    template<typename... R> friend class AsynchronousTask;
+    template<typename R> friend class AsynchronousTask;
 };
 
-template<typename... R>
-class AsynchronousTask : public detail::TaskWithStorage<std::tuple<R...>, AsynchronousTaskBase>
+template<typename R>
+class AsynchronousTask : public detail::TaskWithStorage<R, AsynchronousTaskBase>
 {
 public:
 
+    /// Constructor.
+    AsynchronousTask() : detail::TaskWithStorage<R, AsynchronousTaskBase>(Task::NoState, std::nullopt) {}
+
     /// Schedules the task for execution in the global thread pool and returns a future for the task's results.
-    Future<R...> runAsync(bool showInUserInterface) {
+    Future<R> runAsync(bool showInUserInterface) {
 #ifndef OVITO_DISABLE_THREADING
         // Submit the task for execution in a worker thread.
         this->startInThreadPool(showInUserInterface);
-        return Future<R...>::createFromTask(this->shared_from_this());
+        return Future<R>::createFromTask(this->shared_from_this());
 #else
         // If multi-threading is not available, run the task immediately.
         return runImmediately();
@@ -91,12 +94,12 @@ public:
 
     /// Schedules the given function for execution in a worker thread.
     template<typename Function>
-    static Future<R...> runAsync(Task::AsynchronousTaskType asyncTaskType, Function&& f, bool showInUserInterface = false) {
+    static Future<R> runAsync(Task::AsynchronousTaskType asyncTaskType, Function&& f, bool showInUserInterface = false) {
         class FuncAsyncTask : public AsynchronousTask {
         public:
             FuncAsyncTask(Function&& f) : _func(std::forward<Function>(f)) {}
             virtual void perform() override {
-                if constexpr(std::tuple_size_v<typename Future<R...>::tuple_type> != 0)
+                if constexpr(!std::is_void_v<R>)
                     setResult(std::move(_func)());
                 else
                     std::move(_func)();
@@ -111,7 +114,7 @@ public:
 
     /// Schedules the given function for execution in a worker thread.
     template<typename Function>
-    static Future<R...> runAsync(Function&& f, bool showInUserInterface = false) {
+    static Future<R> runAsync(Function&& f, bool showInUserInterface = false) {
         Task::AsynchronousTaskType asyncTaskType = this_task::get() ? this_task::get()->asyncTaskType() : Task::AsynchronousTaskType::DefaultAsyncTask;
         return runAsync(asyncTaskType, std::forward<Function>(f), showInUserInterface);
     }
@@ -122,9 +125,9 @@ public:
     template<typename Function>
     static auto runAsyncAndJoin(Function&& f, bool showInUserInterface = false) {
         detail::Latch latch(1);
-        Future<R...> future = runAsync([&latch, f = std::forward<Function>(f)]() mutable {
+        Future<R> future = runAsync([&latch, f = std::forward<Function>(f)]() mutable {
             try {
-                if constexpr(sizeof...(R) != 0) {
+                if constexpr(!std::is_void_v<R>) {
                     auto result = std::move(f)();
                     latch.count_down();
                     return result;
@@ -140,7 +143,7 @@ public:
             }
         }, showInUserInterface);
         try {
-            if constexpr(sizeof...(R) == 1) {
+            if constexpr(!std::is_void_v<R>) {
                 auto result = future.result();
                 latch.wait();
                 return result;
@@ -157,15 +160,15 @@ public:
     }
 
     /// Runs the task in place and returns a future for the task's results.
-    Future<R...> runImmediately(bool showInUserInterface) {
+    Future<R> runImmediately(bool showInUserInterface) {
         this->startInThisThread(showInUserInterface);
-        return Future<R...>::createFromTask(this->shared_from_this());
+        return Future<R>::createFromTask(this->shared_from_this());
     }
 
     /// Sets the result value of the task.
-    template<typename... R2>
-    void setResult(R2&&... result) {
-        this->template setResults<std::tuple<R...>>(std::forward_as_tuple(std::forward<R2>(result)...));
+    template<typename R2>
+    void setResult(R2&& result) {
+        Task::setResult<R>(std::forward<R2>(result));
     }
 };
 

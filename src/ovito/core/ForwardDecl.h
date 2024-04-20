@@ -43,10 +43,10 @@ namespace Ovito
     class Task;
     class TaskManager;
     class TaskWatcher;
-    template<typename... R> class Future;
-    template<typename... R> class SharedFuture;
-    template<typename... R> class Promise;
-    template<class Tuple> class TaskWithStorage;
+    template<typename R> class Future;
+    template<typename R> class SharedFuture;
+    template<typename R> class Promise;
+    template<class R, class TaskBase> class TaskWithStorage;
     using TaskPtr = std::shared_ptr<Task>;
     struct InlineExecutor;
     class MainThreadOperation;

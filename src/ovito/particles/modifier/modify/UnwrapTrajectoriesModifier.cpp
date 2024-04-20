@@ -114,7 +114,7 @@ Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluateModifier(const Mod
 * Processes all frames of the input trajectory to detect periodic crossings
 * of the particles.
 ******************************************************************************/
-SharedFuture<> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(const ModifierEvaluationRequest& request)
+SharedFuture<void> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(const ModifierEvaluationRequest& request)
 {
     OVITO_ASSERT(request.modificationNode() == this);
 

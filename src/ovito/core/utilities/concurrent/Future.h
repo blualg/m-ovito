@@ -85,7 +85,7 @@ public:
     /// Note that the continuation function will always be executed, even if this future was canceled or set to an error state.
     /// The callable must accept one parameter: a reference to the underlying Task object.
     template<typename Executor, typename Function>
-    void finally(Executor&& executor, Function&& f) noexcept {
+    void finally(Executor&& executor, Function&& f) const noexcept {
         OVITO_ASSERT_MSG(isValid(), "FutureBase::finally()", "Future must be valid.");
         task()->finally(std::forward<Executor>(executor), std::forward<Function>(f));
     }
@@ -94,7 +94,7 @@ public:
     /// Note that the continuation function will always be executed, even if this future was canceled or set to an error state.
     /// The callable must accept one parameter: a reference to the underlying Task object.
     template<typename Function>
-    void finally(Function&& f) noexcept {
+    void finally(Function&& f) const noexcept {
         OVITO_ASSERT_MSG(isValid(), "FutureBase::finally()", "Future must be valid.");
         task()->finally(std::forward<Function>(f));
     }
@@ -135,14 +135,14 @@ private:
 /**
  * \brief A typed future, which provides access to the results of an asynchronous task.
  */
-template<typename... R>
+template<typename R>
 class Future : public FutureBase
 {
 public:
 
-    using this_type = Future<R...>;
-    using tuple_type = std::tuple<R...>;
-    using promise_type = Promise<R...>;
+    using this_type = Future<R>;
+    using result_type = R;
+    using promise_type = Promise<R>;
 
     /// Default constructor that constructs an invalid Future that is not associated with any shared state.
     Future() noexcept = default;
@@ -153,18 +153,18 @@ public:
     /// A future is move-constructible.
     Future(Future&& other) noexcept = default;
 
-    /// Constructor that constructs a Future that is associated with the given shared state.
+    /// Constructs a Future that is associated with the given shared state. This is mostly for internal use.
     explicit Future(TaskPtr p) noexcept : FutureBase(std::move(p)) {}
 
-    /// Constructor that constructs a Future from an existing task reference.
+    /// Constructs a Future from an existing task reference. This is mostly for internal use.
     explicit Future(detail::TaskReference&& p) noexcept : FutureBase(std::move(p)) {}
 
-    /// A future may directly be initialized from r-values.
-    template<typename... R2, size_t C = sizeof...(R),
-        typename = std::enable_if_t<C != 0
-            && !std::is_same<std::tuple<std::decay_t<R2>...>, std::tuple<Future<R...>>>::value
-            && !std::is_same<std::tuple<std::decay_t<R2>...>, std::tuple<TaskPtr>>::value>>
-    Future(R2&&... val) noexcept : FutureBase(std::move(promise_type::createImmediate(std::forward<R2>(val)...)._task)) {}
+    /// A future may directly be initialized from a value.
+    template<typename R2 = R,
+        typename = std::enable_if_t<!std::is_void_v<R2>
+            && !std::is_same_v<std::decay_t<R2>, Future<R>>
+            && !std::is_same_v<std::decay_t<R2>, TaskPtr>>>
+    Future(R2&& val) : FutureBase(std::move(promise_type::createImmediate(std::forward<R2>(val))._task)) {}
 
     /// A future is moveable.
     Future& operator=(Future&& other) noexcept = default;
@@ -177,18 +177,18 @@ public:
         return promise_type::createCanceled();
     }
 
-    /// Create a future that is ready and provides an immediate default-constructed result.
+    /// Create a future that is in the 'fulfilled' state and holds an immediate default-constructed result.
     static Future createImmediateEmpty() {
         return promise_type::createImmediateEmpty();
     }
 
-    /// Create a future that is ready and provides an immediate result.
-    template<typename... V>
-    static Future createImmediate(V&&... result) {
-        return promise_type::createImmediate(std::forward<V>(result)...);
+    /// Create a future that is in the 'fulfilled' state and holds an immediate result.
+    template<typename V>
+    static Future createImmediate(V&& result) {
+        return promise_type::createImmediate(std::forward<V>(result));
     }
 
-    /// Create a future that is ready and provides an immediate result.
+    /// Create a future that is in the 'fulfilled' state and holds an immediate result.
     template<typename... Args>
     static Future createImmediateEmplace(Args&&... args) {
         return promise_type::createImmediateEmplace(std::forward<Args>(args)...);
@@ -212,48 +212,35 @@ public:
     /// Create a new Future that is associated with the given task object.
     static Future createFromTask(TaskPtr task) {
         OVITO_ASSERT(task);
-        OVITO_ASSERT(task->_resultsStorage != nullptr || sizeof...(R) == 0);
+        OVITO_ASSERT(task->_resultsStorage != nullptr || (std::is_void_v<R>));
         return Future(std::move(task));
     }
 
     /// Returns the results computed by the associated Promise.
     /// The function blocks until the result become available.
-    tuple_type results() {
+    template<typename R2 = R>
+    std::enable_if_t<!std::is_void_v<R2>, R> result() {
         OVITO_ASSERT_MSG(isValid(), "Future::results()", "Future must be valid.");
         waitForFinished();
         OVITO_ASSERT_MSG(isFinished(), "Future::results()", "Future must be in fulfilled state.");
         OVITO_ASSERT_MSG(!isCanceled(), "Future::results()", "Future must not be canceled.");
-        tuple_type result = task()->template takeResults<tuple_type>();
-        reset();
-        return result;
-    }
-
-    /// Returns the results computed by the associated task.
-    /// The function blocks until the result become available.
-    auto result() {
-        if constexpr(sizeof...(R) == 1) {
-            return std::get<0>(results());
-        }
-        else {
-            OVITO_ASSERT_MSG(isValid(), "Future::results()", "Future must be valid.");
-            waitForFinished();
-            OVITO_ASSERT_MSG(isFinished(), "Future::results()", "Future must be in fulfilled state.");
-            OVITO_ASSERT_MSG(!isCanceled(), "Future::results()", "Future must not be canceled.");
-            reset();
-        }
+        return takeTaskReference()->template takeResult<R>();
     }
 
     /// Returns a new future that, upon the fulfillment of this future, will be fulfilled by running the given continuation function.
     /// The provided continuation function must accept the results of this future or the future itself as an input parameter.
     template<typename Executor, typename Function>
-    detail::continuation_future_type<Function,Future>
+    detail::continuation_future_type<Function, Future>
     then(Executor&& executor, Function&& f);
 
     /// Overload of the function above using the default inline executor.
     template<typename Function>
     decltype(auto) then(Function&& f) { return then(InlineExecutor{}, std::forward<Function>(f)); }
 
-    /// Applies a post-processing function to the future's results.
+    /// Applies a post-processing function to the future's results, which must returns the same type of value
+    /// as the original future. The post-processing function is executed once the future is fulfilled.
+    /// Calling postprocess() is equivalent to calling then() and then replacing the parent future with the
+    /// continuation future.
     template<typename Executor, typename Function>
     void postprocess(Executor&& executor, Function&& f) {
         *this = then(std::forward<Executor>(executor), std::forward<Function>(f));
@@ -263,7 +250,7 @@ public:
 protected:
 #else
 // This is a workaround for what is likely a bug in the GCC compiler, which doesn't respect the
-// template friend class declarations made below. The AsynchronousTask<> template specialization
+// template friend class declarations made below. The AsynchronousTask<void> template specialization
 // doesn't seem to get access to the Future constructor.
 public:
 #endif
@@ -271,24 +258,24 @@ public:
     /// Move constructor taking the promise state pointer from a r-value Promise.
     Future(promise_type&& promise) : FutureBase(std::move(promise._task)) {}
 
-    template<typename... R2> friend class Future;
-    template<typename... R2> friend class Promise;
-    template<typename... R2> friend class SharedFuture;
-    template<typename... R2> friend class AsynchronousTask;
+    template<typename R2> friend class Future;
+    template<typename R2> friend class Promise;
+    template<typename R2> friend class SharedFuture;
+    template<typename R2> friend class AsynchronousTask;
     friend class AsynchronousTaskBase;
 };
 
 /// Returns a new future that, upon the fulfillment of this future, will be fulfilled by running the given continuation function.
 /// The provided continuation function must accept the results of this future as an input parameter.
-template<typename... R>
+template<typename R>
 template<typename Executor, typename Function>
-detail::continuation_future_type<Function, Future<R...>>
-Future<R...>::then(Executor&& executor, Function&& f)
+detail::continuation_future_type<Function, Future<R>>
+Future<R>::then(Executor&& executor, Function&& f)
 {
     // Infer the exact future/promise/task types to create.
-    using result_future_type = detail::continuation_future_type<Function,Future<R...>>;
+    using result_future_type = detail::continuation_future_type<Function, Future<R>>;
     using result_promise_type = typename result_future_type::promise_type;
-    using continuation_task_type = detail::ContinuationTask<typename result_promise_type::tuple_type, Task>;
+    using continuation_task_type = detail::ContinuationTask<typename result_promise_type::result_type, Task>;
 
     // This future must be valid for then() to work.
     OVITO_ASSERT_MSG(isValid(), "Future::then()", "Future must be valid.");
@@ -331,7 +318,7 @@ Future<R...>::then(Executor&& executor, Function&& f)
 
         // Don't execute continuation function in case an error occurred in the preceding task and unless the continuation function takes a Future.
         // Forward any preceding exception state directly to the continuation task.
-        if constexpr(!std::is_invocable_v<Function, Future<R...>>) {
+        if constexpr(!std::is_invocable_v<Function, Future<R>>) {
             if(finishedTask->exceptionStore()) {
                 continuationTask->exceptionLocked(finishedTask->exceptionStore());
                 continuationTask->finishLocked(locker);
@@ -342,7 +329,7 @@ Future<R...>::then(Executor&& executor, Function&& f)
 
         // Now it's time to execute the continuation function supplied by the user.
         // Assign the function's return value as result of the continuation task.
-        continuationTask->fulfillWith(std::move(promise), std::forward<Function>(f), Future<R...>(std::move(finishedTask)));
+        continuationTask->fulfillWith(std::move(promise), std::forward<Function>(f), Future<R>(std::move(finishedTask)));
     });
 
     return future;

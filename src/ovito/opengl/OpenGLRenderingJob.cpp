@@ -85,7 +85,7 @@ OORef<AbstractRenderingFrameBuffer> OpenGLRenderingJob::createOffscreenFrameBuff
 /******************************************************************************
 * Renders an image of the given frame graph into the given target frame buffer.
 ******************************************************************************/
-Future<> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingMap)
+Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingMap)
 {
     // OpenGL rendering requires a Qt GUI application.
     if(!qobject_cast<QGuiApplication*>(QCoreApplication::instance())) {
@@ -303,7 +303,7 @@ Future<> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frame
 #endif
     _glcontext = nullptr;
 
-    return Future<>::createImmediateEmpty();
+    return Future<void>::createImmediateEmpty();
 }
 
 /******************************************************************************

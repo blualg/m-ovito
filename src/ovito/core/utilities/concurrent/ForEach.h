@@ -39,6 +39,15 @@ R return_type_deducer(R(T::*)(Args...));
 template <typename T>
 using return_type = decltype(return_type_deducer(std::declval<decltype(&T::operator())>()));
 
+// Extracts the first type from a parameter pack.
+// Primary template with a typename T and a variadic template typename Pack
+template<typename Tuple>
+struct first_type { using type = std::tuple_element_t<0, Tuple>; };
+
+// Partial specialization for when Pack is empty, fallback to void
+template<>
+struct first_type<std::tuple<>> { using type = void; };
+
 template<typename InputRange, class Executor, typename StartIterFunc, typename CompleteIterFunc, typename... ResultType>
 auto for_each_sequential(
     InputRange&& inputRange,
@@ -47,8 +56,8 @@ auto for_each_sequential(
     CompleteIterFunc&& completeFunc,
     ResultType&&... initialResult)
 {
-    // The final output tuple produced by the loop task.
-    using task_tuple_type = std::tuple<std::decay_t<ResultType>...>;
+    // The final output produced by the loop task.
+    using task_result_type = typename first_type<std::tuple<ResultType...>>::type;
 
     // The type of future returned by the start function.
     using output_future_type = return_type<std::decay_t<StartIterFunc>>;
@@ -58,12 +67,12 @@ auto for_each_sequential(
 
     using task_base_class = std::conditional_t<is_with_progress, ProgressingTask, Task>;
 
-    class ForEachTask : public detail::ContinuationTask<task_tuple_type, task_base_class>
+    class ForEachTask : public detail::ContinuationTask<task_result_type, task_base_class>
     {
     public:
 
         /// The type of future associated with this task type. This is used by the launchTask() function.
-        using future_type = Future<std::decay_t<ResultType>...>;
+        using future_type = Future<task_result_type>;
 
         /// Constructor.
         ForEachTask(
@@ -72,7 +81,7 @@ auto for_each_sequential(
             StartIterFunc&& startFunc,
             CompleteIterFunc&& completeFunc,
             ResultType&&... initialResult) :
-                detail::ContinuationTask<task_tuple_type, task_base_class>(Task::Started, std::forward_as_tuple(std::forward<ResultType>(initialResult)...)),
+                detail::ContinuationTask<task_result_type, task_base_class>(Task::Started, std::forward<ResultType>(initialResult)...),
                 _range(std::forward<InputRange>(inputRange)),
                 _executor(std::forward<Executor>(executor)),
                 _startFunc(std::forward<StartIterFunc>(startFunc)),
@@ -97,9 +106,6 @@ auto for_each_sequential(
             }
         }
 
-        /// Inherit method that provides public read/write access to the internal results storage of this task.
-        using detail::ContinuationTask<task_tuple_type, task_base_class>::resultsStorage;
-
         /// Performs the next iteration of the mapping process.
         void iteration_begin() noexcept {
             // Report the number of iterations we have performed so far.
@@ -112,8 +118,12 @@ auto for_each_sequential(
                 try {
                     Task::Scope taskScope(this);
                     // Call the user-provided function with the current loop value and, optionally, the task's result storage
-                    if constexpr(std::is_invocable_v<std::decay_t<StartIterFunc>, decltype(*std::begin(inputRange)), std::decay_t<ResultType>&...> && std::tuple_size_v<task_tuple_type> == 1)
-                        future = std::invoke(_startFunc, *_iterator, this->resultsStorage());
+                    if constexpr(!std::is_void_v<task_result_type>) {
+                        if constexpr(std::is_invocable_v<std::decay_t<StartIterFunc>, decltype(*std::begin(inputRange)), task_result_type&>)
+                            future = std::invoke(_startFunc, *_iterator, detail::ContinuationTask<task_result_type, task_base_class>::resultStorage());
+                        else
+                            future = std::invoke(_startFunc, *_iterator);
+                    }
                     else
                         future = std::invoke(_startFunc, *_iterator);
                 }
@@ -157,13 +167,21 @@ auto for_each_sequential(
             try {
                 Task::Scope taskScope(this);
                 // Invoke the user function that completes this iteration by processing the results returned by the future.
-                if constexpr(std::tuple_size_v<typename output_future_type::tuple_type> == 1) {
-                    if constexpr(std::is_invocable_v<CompleteIterFunc, decltype(*_iterator), decltype(std::move(future).result()), std::decay_t<ResultType>&...> && std::tuple_size_v<task_tuple_type> == 1)
-                        std::invoke(_completeFunc, *_iterator, std::move(future).result(), resultsStorage());
-                    else if constexpr(std::is_invocable_v<CompleteIterFunc, decltype(*_iterator), decltype(std::move(future).result())>)
-                        std::invoke(_completeFunc, *_iterator, std::move(future).result());
-                    else
-                        std::invoke(_completeFunc, *_iterator);
+                if constexpr(!std::is_void_v<typename output_future_type::result_type>) {
+                    if constexpr(!std::is_void_v<task_result_type>) {
+                        if constexpr(std::is_invocable_v<CompleteIterFunc, decltype(*_iterator), decltype(std::move(future).result()), task_result_type&>)
+                            std::invoke(_completeFunc, *_iterator, std::move(future).result(), detail::ContinuationTask<task_result_type, task_base_class>::resultStorage());
+                        else if constexpr(std::is_invocable_v<CompleteIterFunc, decltype(*_iterator), decltype(std::move(future).result())>)
+                            std::invoke(_completeFunc, *_iterator, std::move(future).result());
+                        else
+                            std::invoke(_completeFunc, *_iterator);
+                    }
+                    else {
+                        if constexpr(std::is_invocable_v<CompleteIterFunc, decltype(*_iterator), decltype(std::move(future).result())>)
+                            std::invoke(_completeFunc, *_iterator, std::move(future).result());
+                        else
+                            std::invoke(_completeFunc, *_iterator);
+                    }
                 }
                 else
                     std::invoke(_completeFunc, *_iterator);

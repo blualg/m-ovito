@@ -90,7 +90,7 @@ public:
 	virtual OORef<AbstractRenderingFrameBuffer> createOffscreenFrameBuffer(const QRect& viewportRect, const std::shared_ptr<FrameBuffer>& frameBuffer) override;
 
 	/// Renders an image of the given frame graph into the given target frame buffer.
-	virtual Future<> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingMap = {}) override;
+	virtual Future<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingMap = {}) override;
 
 	/// Returns the multisampling level used to reduce anti-aliasing artifacts during offscreen rendering.
 	virtual int multisamplingLevel() const override { return _multisamplingLevel; }

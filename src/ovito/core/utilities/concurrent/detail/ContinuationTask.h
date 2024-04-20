@@ -28,27 +28,26 @@
 #include "TaskReference.h"
 #include "TaskCallback.h"
 #include "../ExecutionContext.h"
-#include "../InlineExecutor.h"
 
 namespace Ovito::detail {
 
 /**
  * \brief The type of task that is returned by the Future::then() method.
  */
-template<typename tuple_type, typename task_type>
-class ContinuationTask : public TaskWithStorage<tuple_type, task_type>
+template<typename R, typename task_type>
+class ContinuationTask : public TaskWithStorage<R, task_type>
 {
 public:
 
     /// Constructor.
-    explicit ContinuationTask(Task::State initialState = Task::NoState) noexcept : TaskWithStorage<tuple_type, task_type>(initialState) {
+    explicit ContinuationTask(Task::State initialState = Task::NoState) noexcept : TaskWithStorage<R, task_type>(initialState, std::nullopt) {
         OVITO_ASSERT(!(initialState & Task::Canceled));
         registerFinallyFunction();
     }
 
     /// Constructor initializing the results storage.
     template<typename InitialValue>
-    explicit ContinuationTask(Task::State initialState, InitialValue&& initialResult) noexcept : TaskWithStorage<tuple_type, task_type>(initialState, std::forward<InitialValue>(initialResult)) {
+    explicit ContinuationTask(Task::State initialState, InitialValue&& initialResult) noexcept : TaskWithStorage<R, task_type>(initialState, std::forward<InitialValue>(initialResult)) {
         OVITO_ASSERT(!(initialState & Task::Canceled));
         registerFinallyFunction();
     }
@@ -102,12 +101,17 @@ public:
                 if constexpr(!detail::returns_void_v<Function, FutureType>) {
                     // Function returns non-void results.
                     if constexpr(!std::is_invocable_v<Function, FutureType>)
-                        if constexpr(is_shared_future_v<FutureType>)
-                            this->template setResults<tuple_type>(std::apply(std::forward<Function>(f), future.task()->template getResults<typename FutureType::tuple_type>()));
-                        else
-                            this->template setResults<tuple_type>(std::apply(std::forward<Function>(f), future.task()->template takeResults<typename FutureType::tuple_type>()));
+                        if constexpr(!std::is_void_v<typename FutureType::result_type>) {
+                            if constexpr(is_shared_future_v<FutureType>)
+                                this->template setResult<R>(std::invoke(std::forward<Function>(f), future.task()->template getResult<typename FutureType::result_type>()));
+                            else
+                                this->template setResult<R>(std::invoke(std::forward<Function>(f), future.task()->template takeResult<typename FutureType::result_type>()));
+                        }
+                        else {
+                            this->template setResult<R>(std::invoke(std::forward<Function>(f)));
+                        }
                     else
-                        this->template setResults<tuple_type>(std::invoke(std::forward<Function>(f), std::forward<FutureType>(future)));
+                        this->template setResult<R>(std::invoke(std::forward<Function>(f), std::forward<FutureType>(future)));
                 }
                 else {
                     // Function returns void.
@@ -115,7 +119,6 @@ public:
                         std::invoke(std::forward<Function>(f));
                     else
                         std::invoke(std::forward<Function>(f), std::forward<FutureType>(future));
-                    this->template setResults<tuple_type>();
                 }
             }
             catch(...) {
@@ -129,7 +132,7 @@ public:
             try {
                 // Call the continuation function with the results of the finished task or the finished future itself.
                 if constexpr(!std::is_invocable_v<Function, FutureType>)
-                    nextFuture = std::apply(std::forward<Function>(f), std::forward<FutureType>(future).results());
+                    nextFuture = std::invoke(std::forward<Function>(f), std::forward<FutureType>(future).result());
                 else
                     nextFuture = std::invoke(std::forward<Function>(f), std::forward<FutureType>(future));
             }
@@ -149,7 +152,7 @@ public:
             locker.unlock();
 
             // Get results from the future's task once it completes and use it as the results of this continuation task.
-            nextFuture.task()->addContinuation(InlineExecutor{}, [promise = std::move(promise)]() mutable noexcept {
+            nextFuture.task()->addContinuation([promise = std::move(promise)]() mutable noexcept {
 
                 // Thread-safe access to the ContinuationTask.
                 ContinuationTask* thisTask = static_cast<ContinuationTask*>(promise.task().get());
@@ -176,10 +179,12 @@ public:
                 }
                 else {
                     // Adopt result value from the completed future.
-                    if constexpr(is_shared_future_v<decltype(nextFuture)>)
-                        thisTask->template setResults<tuple_type>(finishedTask->template getResults<tuple_type>());
-                    else
-                        thisTask->template setResults<tuple_type>(finishedTask->template takeResults<tuple_type>());
+                    if constexpr(!std::is_void_v<R>) {
+                        if constexpr(is_shared_future_v<decltype(nextFuture)>)
+                            thisTask->template setResult<R>(finishedTask->template getResult<R>());
+                        else
+                            thisTask->template setResult<R>(finishedTask->template takeResult<R>());
+                    }
                 }
 
                 thisTask->finishLocked(locker);

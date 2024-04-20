@@ -92,7 +92,7 @@ public:
     const UnflipData& unflipRecords() const { return _unflipRecords; }
 
     /// Processes all frames of the input trajectory to detect periodic crossings of the particles.
-    SharedFuture<> detectPeriodicCrossings(const ModifierEvaluationRequest& request);
+    SharedFuture<void> detectPeriodicCrossings(const ModifierEvaluationRequest& request);
 
     /// Unwraps the current particle coordinates.
     void unwrapParticleCoordinates(const ModifierEvaluationRequest& request, PipelineFlowState& state);
@@ -121,7 +121,7 @@ protected:
 private:
 
     /// The operation that processes all trajectory frames in the background to detect periodic crossings of particles.
-    SharedFuture<> _unwrapOperation;
+    SharedFuture<void> _unwrapOperation;
 
     /// The animation time up to which trajectories have already been unwrapped so far.
     AnimationTime _unwrappedUpToTime = AnimationTime::negativeInfinity();

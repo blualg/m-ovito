@@ -340,7 +340,7 @@ void DownloadRemoteFileJob::shutdown(bool success)
 
     if(_localFile && success) {
         _localFile->flush();
-        _promise.setResults(FileHandle(url(), _localFile->fileName()));
+        _promise.setResult(FileHandle(url(), _localFile->fileName()));
     }
     else {
         _localFile.reset();
@@ -518,7 +518,7 @@ void ListRemoteDirectoryJob::receivedDirectoryComplete(const QStringList& listin
         return;
     }
 
-    _promise.setResults(listing);
+    _promise.setResult(listing);
     shutdown(true);
 }
 

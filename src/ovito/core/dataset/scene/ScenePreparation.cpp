@@ -59,7 +59,7 @@ ScenePreparation::ScenePreparation(UserInterface& userInterface, Scene* scene, b
 * Returns a future that gets fulfilled once all data pipelines in the scene
 * have been completely evaluated at the current animation time.
 ******************************************************************************/
-SharedFuture<> ScenePreparation::future()
+SharedFuture<void> ScenePreparation::future()
 {
     makeReady(false);
     return _future;
@@ -75,7 +75,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
 
     // Create a promise, which remains in the unfinished state as long as we are preparing the scene.
     if(!_promise.isValid() || _promise.isCanceled()) {
-        _promise = Promise<>::create<Task>(true);
+        _promise = Promise<void>::create<Task>(true);
         _future = _promise.sharedFuture();
         _completedScene = scene();
         if(scene()) {

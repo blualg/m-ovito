@@ -280,7 +280,7 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
     // The visualization data cache used for building the frame graph.
     std::shared_ptr<RendererResourceCache> visCache = ExecutionContext::current().ui().datasetContainer().visCache();
 
-    Future<> renderFuture;
+    Future<void> renderFuture;
     QString lastOutputFilename;
     auto finishRenderingAndSaveToFile = [&](bool frameCompleted) {
         // Before rendering the next frame, wait for the previous one to complete.

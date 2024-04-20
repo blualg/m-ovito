@@ -199,18 +199,18 @@ protected:
     /// Pointer to the state, which is shared with futures.
     TaskPtr _task;
 
-    template<typename... R2> friend class Future;
-    template<typename... R2> friend class SharedFuture;
+    template<typename R2> friend class Future;
+    template<typename R2> friend class SharedFuture;
 };
 
-template<typename... R>
+template<typename R>
 class Promise : public PromiseBase
 {
 public:
 
-    using tuple_type = std::tuple<R...>;
-    using future_type = Future<R...>;
-    using shared_future_type = SharedFuture<R...>;
+    using future_type = Future<R>;
+    using result_type = R;
+    using shared_future_type = SharedFuture<R>;
 
     /// Default constructor.
     Promise() noexcept = default;
@@ -218,7 +218,7 @@ public:
     /// Creates a promise together with a new task.
     template<typename task_type>
     static Promise create(bool stateStarted) {
-        return Promise(std::make_shared<detail::TaskWithStorage<tuple_type, task_type>>(Task::State(stateStarted ? Task::Started : Task::NoState)));
+        return Promise(std::make_shared<detail::TaskWithStorage<R, task_type>>(Task::State(stateStarted ? Task::Started : Task::NoState), std::nullopt));
     }
 
     /// Returns a Future that is associated with the same shared state as this promise.
@@ -236,34 +236,33 @@ public:
     }
 
     /// Sets the result value of the promise.
-    template<typename... R2>
-    void setResults(R2&&... result) {
-        task()->template setResults<tuple_type>(std::forward_as_tuple(std::forward<R2>(result)...));
+    template<typename R2>
+    void setResult(R2&& value) {
+        task()->template setResult<R>(std::forward<R2>(value));
     }
 
 protected:
 
     /// Create a promise that is ready and provides immediate default-constructed results.
     static Promise createImmediateEmpty() {
-        return Promise(std::make_shared<detail::TaskWithStorage<tuple_type, Task>>(
-            Task::State(Task::Started | Task::Finished), tuple_type{}));
+        return Promise(std::make_shared<detail::TaskWithStorage<R, Task>>(
+            Task::State(Task::Started | Task::Finished)));
     }
 
     /// Create a promise that is ready and provides an immediate result.
-    template<typename... R2>
-    static Promise createImmediate(R2&&... result) {
-        return Promise(std::make_shared<detail::TaskWithStorage<tuple_type, Task>>(
+    template<typename R2>
+    static Promise createImmediate(R2&& value) {
+        return Promise(std::make_shared<detail::TaskWithStorage<R, Task>>(
             Task::State(Task::Started | Task::Finished),
-            std::forward_as_tuple(std::forward<R2>(result)...)));
+            std::forward<R2>(value)));
     }
 
     /// Create a promise that is ready and provides an immediate result.
     template<typename... Args>
     static Promise createImmediateEmplace(Args&&... args) {
-        using first_type = typename std::tuple_element<0, tuple_type>::type;
-        return Promise(std::make_shared<detail::TaskWithStorage<tuple_type, Task>>(
+        return Promise(std::make_shared<detail::TaskWithStorage<R, Task>>(
             Task::State(Task::Started | Task::Finished),
-            std::forward_as_tuple(first_type(std::forward<Args>(args)...))));
+            std::forward<Args>(args)...));
     }
 
     /// Creates a promise that is in the 'exception' state.
@@ -295,27 +294,12 @@ protected:
     /// Constructor
     Promise(TaskPtr p) noexcept : PromiseBase(std::move(p)) {}
 
-    // Assigns a result to this promise.
-    template<typename source_tuple_type>
-    auto setResultsDirect(source_tuple_type&& results) -> std::enable_if_t<std::tuple_size_v<source_tuple_type> != 0> {
-        static_assert(std::tuple_size_v<tuple_type> != 0, "Must not be an empty tuple");
-        static_assert(std::is_same_v<tuple_type, std::decay_t<source_tuple_type>>, "Must assign a compatible tuple");
-        task()->template setResults<tuple_type>(std::forward<source_tuple_type>(results));
-    }
-
-    // Assigns a result to this promise.
-    template<typename value_type>
-    void setResultsDirect(value_type&& result) {
-        static_assert(std::tuple_size_v<tuple_type> == 1, "Must be a tuple of size 1");
-        task()->template setResults<tuple_type>(std::forward_as_tuple(std::forward<value_type>(result)));
-    }
-
 #ifdef OVITO_DEBUG
     bool _futureCreated = false;
 #endif
 
-    template<typename... R2> friend class Future;
-    template<typename... R2> friend class SharedFuture;
+    template<typename R2> friend class Future;
+    template<typename R2> friend class SharedFuture;
 };
 
 }   // End of namespace

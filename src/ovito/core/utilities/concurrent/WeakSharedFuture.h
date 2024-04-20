@@ -31,7 +31,7 @@ namespace Ovito {
 /******************************************************************************
 * A weak reference to a SharedFuture
 ******************************************************************************/
-template<typename... R>
+template<typename R>
 class WeakSharedFuture : private std::weak_ptr<Task>
 {
 public:
@@ -42,14 +42,14 @@ public:
     constexpr WeakSharedFuture() noexcept : std::weak_ptr<Task>() {}
 #endif
 
-    WeakSharedFuture(const SharedFuture<R...>& future) noexcept : std::weak_ptr<Task>(future.task()) {}
+    WeakSharedFuture(const SharedFuture<R>& future) noexcept : std::weak_ptr<Task>(future.task()) {}
 
-    WeakSharedFuture& operator=(const Future<R...>& f) noexcept {
+    WeakSharedFuture& operator=(const Future<R>& f) noexcept {
         std::weak_ptr<Task>::operator=(f.task());
         return *this;
     }
 
-    WeakSharedFuture& operator=(const SharedFuture<R...>& f) noexcept {
+    WeakSharedFuture& operator=(const SharedFuture<R>& f) noexcept {
         std::weak_ptr<Task>::operator=(f.task());
         return *this;
     }
@@ -58,8 +58,8 @@ public:
         std::weak_ptr<Task>::reset();
     }
 
-    SharedFuture<R...> lock() const noexcept {
-        return SharedFuture<R...>(std::weak_ptr<Task>::lock());
+    SharedFuture<R> lock() const noexcept {
+        return SharedFuture<R>(std::weak_ptr<Task>::lock());
     }
 
     bool expired() const noexcept {

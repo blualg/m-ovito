@@ -71,7 +71,7 @@ public:
 * Constructor.
 ******************************************************************************/
 MainThreadOperation::MainThreadOperation(ExecutionContext::Type contextType, UserInterface& userInterface) :
-    Promise<>(std::make_shared<MainThreadTask>(this_task::get())),
+    Promise<void>(std::make_shared<MainThreadTask>(this_task::get())),
     ExecutionContext::Scope(contextType, userInterface.shared_from_this()),
     Task::Scope(task())
 {

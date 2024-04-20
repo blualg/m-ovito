@@ -30,7 +30,7 @@
 namespace Ovito {
 
 /**
- * \brief An executor that can be used with Future<>::then(), which runs the closure
+ * \brief An executor that can be used with Future::then(), which runs the closure
  *        routine in the context (and in the thread) of some OvitoObject.
  */
 class OVITO_CORE_EXPORT ObjectExecutor

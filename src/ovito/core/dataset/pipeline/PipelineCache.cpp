@@ -504,7 +504,7 @@ void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& re
     // Start the animation frame precomputation process if it has been activated.
     if(_precomputeAllFrames && !_precomputeFramesOperation.isValid() && !_allFramesPrecomputed) {
         // Create the async operation object that manages the frame precomputation.
-        _precomputeFramesOperation = Promise<>::create<ProgressingTask>(true);
+        _precomputeFramesOperation = Promise<void>::create<ProgressingTask>(true);
 
         // Show progress of the operation in the user interface by registering the asynchronous task.
         ExecutionContext::current().ui().taskManager().registerPromise(_precomputeFramesOperation);
@@ -518,7 +518,7 @@ void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& re
 
         // Automatically reset the async operation object and the current frame precomputation when the
         // task gets canceled by the system.
-        _precomputeFramesOperation.finally(*ownerObject(), [this](Task&) noexcept {
+        _precomputeFramesOperation.finally(*ownerObject(), [this]() noexcept {
             _precomputeFrameFuture.reset();
             _precomputeFramesOperation.reset();
         });

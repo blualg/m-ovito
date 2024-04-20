@@ -152,7 +152,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
         }
 
         // Complete the startup process by calling postStartupInitialization() once the main event loop is running.
-        ExecutionContext::current().runDeferred(this, [this, promise=Promise<>(std::move(operation))]() noexcept {
+        ExecutionContext::current().runDeferred(this, [this, promise=Promise<void>(std::move(operation))]() noexcept {
             Task::Scope taskScope(promise.task());
             try {
                 try {

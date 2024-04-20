@@ -51,7 +51,7 @@ public:
     UserInterface& userInterface() const { return _userInterface; }
 
     /// Returns a future that gets fulfilled once the scene is ready.
-    SharedFuture<> future();
+    SharedFuture<void> future();
 
     /// Returns whether automatic restarting of the scene preparation is enabled after the scene has been changed.
     bool autoRestart() const { return _autoRestart; }
@@ -135,10 +135,10 @@ private:
     TaskWatcher _pipelineEvaluationWatcher;
 
     /// The promise that is fulfilled once the scene is ready.
-    Promise<> _promise;
+    Promise<void> _promise;
 
     /// A shared future which reaches the completed state once the scene is ready.
-    SharedFuture<> _future;
+    SharedFuture<void> _future;
 
     /// Used to throttle the number of pipeline evaluation requests.
     QBasicTimer _restartTimer;

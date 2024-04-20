@@ -31,17 +31,17 @@
 
 namespace Ovito {
 
-/******************************************************************************
-* A future that provides access to the value computed by a Promise.
-******************************************************************************/
-template<typename... R>
+/**
+ * A future that provides access to the value computed by a Promise.
+ */
+template<typename R>
 class SharedFuture : public FutureBase
 {
 public:
 
-    using this_type = SharedFuture<R...>;
-    using tuple_type = typename Future<R...>::tuple_type;
-    using promise_type = typename Future<R...>::promise_type;
+    using this_type = SharedFuture<R>;
+    using result_type = R;
+    using promise_type = typename Future<R>::promise_type;
 
     /// Default constructor that constructs an invalid SharedFuture that is not associated with any shared state.
     SharedFuture() noexcept = default;
@@ -53,7 +53,7 @@ public:
     SharedFuture(const SharedFuture& other) noexcept = default;
 
     /// Constructor that constructs a shared future from a normal future.
-    SharedFuture(Future<R...>&& other) noexcept : FutureBase(std::move(other)) {}
+    SharedFuture(Future<R>&& other) noexcept : FutureBase(std::move(other)) {}
 
     /// Constructor that constructs a SharedFuture that is associated with the given shared state.
     explicit SharedFuture(TaskPtr p) noexcept : FutureBase(std::move(p)) {}
@@ -61,13 +61,13 @@ public:
     /// Constructor that constructs a Future from an existing task dependency.
     explicit SharedFuture(detail::TaskReference&& p) noexcept : FutureBase(std::move(p)) {}
 
-    /// A future may directly be initialized from r-values.
-    template<typename... R2, size_t C = sizeof...(R),
-        typename = std::enable_if_t<C != 0
-            && !std::is_same<std::tuple<std::decay_t<R2>...>, std::tuple<SharedFuture<R...>>>::value
-            && !std::is_same<std::tuple<std::decay_t<R2>...>, std::tuple<Future<R...>>>::value
-            && !std::is_same<std::tuple<std::decay_t<R2>...>, std::tuple<TaskPtr>>::value>>
-    SharedFuture(R2&&... val) noexcept : FutureBase(std::move(promise_type::createImmediate(std::forward<R2>(val)...)._task)) {}
+    /// A future may directly be initialized from a value.
+    template<typename R2 = R,
+        typename = std::enable_if_t<!std::is_void_v<R2>
+            && !std::is_same_v<std::decay_t<R2>, SharedFuture<R>>
+            && !std::is_same_v<std::decay_t<R2>, Future<R>>
+            && !std::is_same_v<std::decay_t<R2>, TaskPtr>>>
+    SharedFuture(R2&& val) : FutureBase(std::move(promise_type::createImmediate(std::forward<R2>(val))._task)) {}
 
     /// Move assignment operator.
     SharedFuture& operator=(SharedFuture&& other) noexcept = default;
@@ -75,56 +75,38 @@ public:
     /// Copy assignment operator.
     SharedFuture& operator=(const SharedFuture& other) noexcept = default;
 
-    /// Returns the results computed by the associated Promise.
+    /// Returns a const reference to the results computed by the associated Promise.
     /// The function blocks until the result become available.
-    const std::tuple<R...>& results() const {
+    template<typename R2 = R>
+    std::enable_if_t<!std::is_void_v<R2>, std::add_lvalue_reference_t<std::add_const_t<R>>> result() const& {
         OVITO_ASSERT_MSG(isValid(), "SharedFuture::results()", "Future must be valid.");
         waitForFinished();
         OVITO_ASSERT_MSG(isFinished(), "SharedFuture::results()", "Future must be in fulfilled state.");
         OVITO_ASSERT_MSG(!isCanceled(), "SharedFuture::results()", "Future must not be canceled.");
-        OVITO_ASSERT_MSG(std::tuple_size_v<tuple_type> != 0, "SharedFuture::results()", "Future must not be of type <void>.");
-        return task()->template getResults<tuple_type>();
-    }
-
-    /// Returns a const reference to the results computed by the associated Promise.
-    /// The function blocks until the result become available.
-    decltype(auto) result() const& {
-        if constexpr(sizeof...(R) == 1) {
-            return std::get<0>(results());
-        }
-        else {
-            OVITO_ASSERT_MSG(isValid(), "SharedFuture::results()", "Future must be valid.");
-            waitForFinished();
-            OVITO_ASSERT_MSG(isFinished(), "SharedFuture::results()", "Future must be in fulfilled state.");
-            OVITO_ASSERT_MSG(!isCanceled(), "SharedFuture::results()", "Future must not be canceled.");
-        }
+        return task()->template getResult<R>();
     }
 
     /// Returns a copy to the results computed by the associated Promise.
     /// The function blocks until the result become available.
-    auto result() && {
-        if constexpr(sizeof...(R) == 1) {
-            return std::get<0>(results());
-        }
-        else {
-            OVITO_ASSERT_MSG(isValid(), "SharedFuture::results()", "Future must be valid.");
-            waitForFinished();
-            OVITO_ASSERT_MSG(isFinished(), "SharedFuture::results()", "Future must be in fulfilled state.");
-            OVITO_ASSERT_MSG(!isCanceled(), "SharedFuture::results()", "Future must not be canceled.");
-        }
+    template<typename R2 = R>
+    std::enable_if_t<!std::is_void_v<R2>, R> result() && {
+        return result();
     }
 
     /// Returns a new future that, upon the fulfillment of this future, will be fulfilled by running the given continuation function.
     /// The provided continuation function must accept the results of this future as an input parameter.
     template<typename Executor, typename Function>
-    detail::continuation_future_type<Function,SharedFuture>
+    detail::continuation_future_type<Function, SharedFuture>
     then(Executor&& executor, Function&& f);
 
     /// Overload of the function above using the default inline executor.
     template<typename Function>
     decltype(auto) then(Function&& f) { return then(InlineExecutor{}, std::forward<Function>(f)); }
 
-    /// Applies a post-processing function to the future's results.
+    /// Applies a post-processing function to the future's results, which must returns the same type of value
+    /// as the original future. The post-processing function is executed once the future is fulfilled.
+    /// Calling postprocess() is equivalent to calling then() and then replacing the parent future with the
+    /// continuation future.
     template<typename Executor, typename Function>
     void postprocess(Executor&& executor, Function&& f) {
         *this = then(std::forward<Executor>(executor), std::forward<Function>(f));
@@ -132,21 +114,21 @@ public:
 
 protected:
 
-    template<typename... R2> friend class Promise;
-    template<typename... R2> friend class WeakSharedFuture;
+    template<typename R2> friend class Promise;
+    template<typename R2> friend class WeakSharedFuture;
 };
 
 /// Returns a new future that, upon the fulfillment of this future, will be fulfilled by running the given continuation function.
 /// The provided continuation function must accept the results of this future as an input parameter.
-template<typename... R>
+template<typename R>
 template<typename Executor, typename Function>
-detail::continuation_future_type<Function, SharedFuture<R...>>
-SharedFuture<R...>::then(Executor&& executor, Function&& f)
+detail::continuation_future_type<Function, SharedFuture<R>>
+SharedFuture<R>::then(Executor&& executor, Function&& f)
 {
     // Infer the exact future/promise/task types to create.
-    using result_future_type = detail::continuation_future_type<Function,SharedFuture<R...>>;
+    using result_future_type = detail::continuation_future_type<Function,SharedFuture<R>>;
     using result_promise_type = typename result_future_type::promise_type;
-    using continuation_task_type = detail::ContinuationTask<typename result_promise_type::tuple_type, Task>;
+    using continuation_task_type = detail::ContinuationTask<typename result_promise_type::result_type, Task>;
 
     // This future must be valid for then() to work.
     OVITO_ASSERT_MSG(isValid(), "SharedFuture::then()", "Future must be valid.");
@@ -189,7 +171,7 @@ SharedFuture<R...>::then(Executor&& executor, Function&& f)
 
         // Don't execute continuation function in case an error occurred in the preceding task.
         // In such a case, copy the exception state to the continuation promise.
-        if constexpr(!std::is_invocable_v<Function, SharedFuture<R...>>) {
+        if constexpr(!std::is_invocable_v<Function, SharedFuture<R>>) {
             if(finishedTask->exceptionStore()) {
                 continuationTask->exceptionLocked(finishedTask->exceptionStore());
                 continuationTask->finishLocked(locker);
@@ -200,7 +182,7 @@ SharedFuture<R...>::then(Executor&& executor, Function&& f)
 
         // Now it's time to execute the continuation function.
         // Assign the function's return value as result of the continuation task.
-        continuationTask->fulfillWith(std::move(promise), std::forward<Function>(f), SharedFuture<R...>(std::move(finishedTask)));
+        continuationTask->fulfillWith(std::move(promise), std::forward<Function>(f), SharedFuture<R>(std::move(finishedTask)));
     });
 
     return future;

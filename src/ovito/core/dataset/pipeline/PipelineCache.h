@@ -129,7 +129,7 @@ private:
     bool _allFramesPrecomputed = false;
 
     /// The asynchronous task that precomputes the pipeline output for all animation frames.
-    Promise<> _precomputeFramesOperation;
+    Promise<void> _precomputeFramesOperation;
 
     /// The future for the next precompute frame.
     SharedFuture<PipelineFlowState> _precomputeFrameFuture;

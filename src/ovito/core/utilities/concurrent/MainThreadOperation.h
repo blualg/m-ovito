@@ -34,7 +34,7 @@ namespace Ovito {
  *
  * The operation is automatically put into the 'finished' state by the class' destructor.
  */
-class OVITO_CORE_EXPORT MainThreadOperation : public Promise<>, ExecutionContext::Scope, Task::Scope
+class OVITO_CORE_EXPORT MainThreadOperation : public Promise<void>, ExecutionContext::Scope, Task::Scope
 {
 public:
 
