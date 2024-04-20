@@ -40,7 +40,7 @@ class ContinuationTask : public TaskWithStorage<R, task_type>
 public:
 
     /// Constructor.
-    explicit ContinuationTask(Task::State initialState = Task::NoState) noexcept : TaskWithStorage<R, task_type>(initialState, std::nullopt) {
+    explicit ContinuationTask(Task::State initialState) noexcept : TaskWithStorage<R, task_type>(initialState, std::nullopt) {
         OVITO_ASSERT(!(initialState & Task::Canceled));
         registerFinallyFunction();
     }

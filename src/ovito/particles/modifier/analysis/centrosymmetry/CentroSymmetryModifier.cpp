@@ -26,7 +26,6 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "CentroSymmetryModifier.h"
@@ -114,7 +113,7 @@ Future<PipelineFlowState> CentroSymmetryModifier::evaluateModifier(const Modifie
     const Property* selection = onlySelectedParticles() ? particles->expectProperty(Particles::SelectionProperty) : nullptr;
 
     // Perform the calculation in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             particles,
             selection,

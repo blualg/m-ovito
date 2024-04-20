@@ -256,7 +256,7 @@ protected:
     QRectF renderViewportTitle(FrameGraph& frameGraph);
 
 	/// Renders the visual representation of the modifiers in a pipeline.
-	void renderPipelineModifiers(Scene* scene, Pipeline* pipeline, FrameGraph& frameGraph);
+	void renderPipelineModifiers(Pipeline* pipeline, FrameGraph& frameGraph);
 
 	/// Determines the range of the construction grid to display.
 	std::tuple<FloatType, Box2I> determineConstructionGridRange();

@@ -418,7 +418,7 @@ Future<std::shared_ptr<RenderableSurfaceMesh>> SurfaceMeshVis::transformSurfaceM
     surfaceMesh->verifyMeshIntegrity();
 
     // The actual work can be performed in a separate thread.
-    return AsynchronousTask<std::shared_ptr<RenderableSurfaceMesh>>::runAsync([
+    return asyncLaunch([
             builder = createRenderableSurfaceBuilder(surfaceMesh),
             surfaceIsClosed = surfaceIsClosed()]()
     {

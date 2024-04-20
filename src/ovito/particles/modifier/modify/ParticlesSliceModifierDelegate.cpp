@@ -24,7 +24,6 @@
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "ParticlesSliceModifierDelegate.h"
 
 namespace Ovito {
@@ -64,7 +63,7 @@ Future<PipelineFlowState> ParticlesSliceModifierDelegate::apply(const ModifierEv
     sliceWidth /= 2;
 
     // The actual work can be performed in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             plane,
             sliceWidth,

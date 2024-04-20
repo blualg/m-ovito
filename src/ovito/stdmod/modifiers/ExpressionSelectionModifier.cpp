@@ -30,7 +30,6 @@
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/viewport/Viewport.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/utilities/concurrent/EnumerableThreadSpecific.h>
 #include "ExpressionSelectionModifier.h"
@@ -133,7 +132,7 @@ Future<PipelineFlowState> ExpressionSelectionModifierDelegate::apply(const Modif
     PropertyPtr selection = container->createProperty(DataBuffer::Uninitialized, Property::GenericSelectionProperty);
 
     // The actual computation can be performed in a separate worker thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             selection = std::move(selection),
             evaluator = std::move(evaluator),

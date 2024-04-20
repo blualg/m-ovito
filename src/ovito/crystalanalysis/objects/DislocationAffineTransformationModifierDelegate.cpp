@@ -25,7 +25,6 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "DislocationAffineTransformationModifierDelegate.h"
 
 namespace Ovito {
@@ -55,7 +54,7 @@ Future<PipelineFlowState> DislocationAffineTransformationModifierDelegate::apply
         return std::move(state);
 
     // The actual work can be performed in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             tm = modifier->effectiveAffineTransformation(originalState)]() mutable {
 

@@ -28,7 +28,6 @@
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/data/AttributeDataObject.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/app/PluginManager.h>
 #include "ColorCodingModifier.h"
@@ -243,7 +242,7 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
     }
 
     // The actual computation can be performed in a separate worker thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             request,
             state = std::move(state),
             containerPath = std::move(containerPath),

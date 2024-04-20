@@ -225,7 +225,7 @@ Future<PipelineFlowState> ClusterAnalysisModifier::evaluateModifier(const Modifi
     }
 
     // Perform the calculation in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             engine = std::move(engine)]() mutable
     {

@@ -28,7 +28,6 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "CreateBondsModifier.h"
 
@@ -293,7 +292,7 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
     }
 
     // Perform the main work in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             particles,
             maxCutoff,

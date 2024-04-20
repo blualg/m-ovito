@@ -70,7 +70,7 @@ Future<PipelineFlowState> VoxelGridSliceModifierDelegate::apply(const ModifierEv
     std::tie(plane, sliceWidth) = modifier->slicingPlane(request.time(), state.mutableStateValidity(), state);
 
     // The actual work can be performed in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             plane,
             createdByNode = request.modificationNodeWeak(),

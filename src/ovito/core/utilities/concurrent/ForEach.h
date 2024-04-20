@@ -91,6 +91,10 @@ auto for_each_sequential(
             // Determine the number of iterations we are going to perform.
             if constexpr(is_with_progress)
                 this->setProgressMaximum(std::distance(_iterator, std::end(_range)));
+
+            // Inherit the priority status from the parent task.
+            if(this_task::get()->isHighPriorityTask())
+                this->setHighPriorityTask();
         }
 
         /// Starts execution of the task.

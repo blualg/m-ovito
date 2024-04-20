@@ -31,7 +31,6 @@
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/utilities/concurrent/EnumerableThreadSpecific.h>
 #ifdef OVITO_USE_SYCL
     #include <ovito/core/utilities/concurrent/SyclParallelFor.h>
@@ -105,7 +104,7 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
                     if(const DataTable* cachedTable = cachedState.getObjectBy<DataTable>(request.modificationNode(), QStringLiteral("coordination-rdf"))) {
                         state.addObject(cachedTable);
                     }
-                    return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), particles, cachedCoordination, cachedParticles = std::move(cachedParticles)]() mutable {
+                    return asyncLaunch([state = std::move(state), particles, cachedCoordination, cachedParticles = std::move(cachedParticles)]() mutable {
                         particles->tryToAdoptProperties(cachedParticles, {cachedCoordination}, {particles});
                         return std::move(state);
                     });
@@ -148,7 +147,7 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
     }
 
     // Perform the calculation in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             particles,
             particleTypes,

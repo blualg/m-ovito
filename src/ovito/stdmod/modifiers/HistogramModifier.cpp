@@ -28,7 +28,6 @@
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "HistogramModifier.h"
 
 namespace Ovito {
@@ -180,7 +179,7 @@ Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEval
     table->setAxisLabelX(sourceProperty().nameWithComponent());
 
     // The actual computation can be performed in a separate worker thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             property = std::move(property),
             inputSelection = std::move(inputSelection),

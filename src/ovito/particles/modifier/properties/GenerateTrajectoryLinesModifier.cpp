@@ -460,7 +460,7 @@ Future<PipelineFlowState> GenerateTrajectoryLinesModifier::evaluateModifier(cons
 
         // After each frame of the input trajectory has been processed, build the final lines.
         samplingOperation = std::move(future).then([](std::shared_ptr<TrajectoryGenerator>&& generator) {
-            return std::move(generator)->runAsync(true);
+            return std::move(generator)->launch(true);
         });
 
         // Let the modification node indicate its activity in the UI.

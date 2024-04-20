@@ -26,7 +26,6 @@
 #include <ovito/core/dataset/data/SyclFlatMap.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "ColorByTypeModifier.h"
@@ -143,7 +142,7 @@ Future<PipelineFlowState> ColorByTypeModifier::evaluateModifier(const ModifierEv
     }
 
     // The actual computation can be performed in a separate worker thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             container,
             objectPath = std::move(objectPath),

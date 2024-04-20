@@ -27,7 +27,6 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/utilities/concurrent/EnumerableThreadSpecific.h>
 #include "ComputePropertyModifier.h"
 
@@ -222,7 +221,7 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::apply(const ModifierE
             if(!containerPathCached.empty()) {
                 DataOORef<const PropertyContainer> containerCached = static_object_cast<PropertyContainer>(containerPathCached.back());
                 if(const Property* propertyCached = modifier->outputProperty().findInContainer(containerCached)) {
-                    return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), container, containerPath = std::move(containerPath), propertyCached, containerCached = std::move(containerCached)]() mutable {
+                    return asyncLaunch([state = std::move(state), container, containerPath = std::move(containerPath), propertyCached, containerCached = std::move(containerCached)]() mutable {
                         container->tryToAdoptProperties(containerCached, {propertyCached}, containerPath);
                         return std::move(state);
                     });
@@ -296,7 +295,7 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::performComputation(
     modNode->notifyDependents(ReferenceEvent::ObjectStatusChanged);
 
     // The actual computation can be performed in a separate worker thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             outputProperty = std::move(outputProperty),
             selectionProperty = std::move(selectionProperty),

@@ -25,7 +25,6 @@
 #include <ovito/particles/objects/Bonds.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "ParticlesDeleteSelectedModifierDelegate.h"
 
 namespace Ovito {
@@ -52,7 +51,7 @@ QVector<DataObjectReference> ParticlesDeleteSelectedModifierDelegate::OOMetaClas
 Future<PipelineFlowState> ParticlesDeleteSelectedModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     // The actual computation can be performed in a separate worker thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state)]() mutable {
+    return asyncLaunch([state = std::move(state)]() mutable {
 
         size_t numParticles = 0;
         size_t numSelected = 0;
@@ -128,7 +127,7 @@ QVector<DataObjectReference> BondsDeleteSelectedModifierDelegate::OOMetaClass::g
 Future<PipelineFlowState> BondsDeleteSelectedModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     // The actual computation can be performed in a separate worker thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state)]() mutable {
+    return asyncLaunch([state = std::move(state)]() mutable {
 
         size_t numBonds = 0;
         size_t numSelected = 0;

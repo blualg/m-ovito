@@ -26,7 +26,6 @@
 #include <ovito/core/rendering/ParticlePrimitive.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
 #include <ovito/core/rendering/SceneRenderer.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "DislocationVis.h"
 #include "RenderableDislocationLines.h"
 
@@ -76,7 +75,7 @@ DislocationVis::DislocationVis(ObjectInitializationFlags flags) : DataVis(flags)
 Future<std::shared_ptr<RenderableDislocationLines>> DislocationVis::transformDislocations(const DislocationNetworkObject* dislocationsObj)
 {
     // The actual work can be performed in a separate thread.
-    return AsynchronousTask<std::shared_ptr<RenderableDislocationLines>>::runAsync([dislocationsObj = DataOORef<const DislocationNetworkObject>(dislocationsObj)]() {
+    return asyncLaunch([dislocationsObj = DataOORef<const DislocationNetworkObject>(dislocationsObj)]() {
 
         // Get the simulation cell (must be 3D).
         const SimulationCell* cellObject = dislocationsObj->domain();

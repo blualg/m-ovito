@@ -28,7 +28,6 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/data/AttributeDataObject.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "StructureIdentificationModifier.h"
 
 namespace Ovito {
@@ -149,7 +148,7 @@ Future<PipelineFlowState> StructureIdentificationModifier::evaluateModifier(cons
         DataOORef<const SimulationCell> simulationCell = state.getObject<SimulationCell>();
 
         // Perform the structure identification in a separate thread.
-        return AsynchronousTask<std::shared_ptr<Algorithm>>::runAsync([
+        return asyncLaunch([
                 algorithm = std::move(algorithm),
                 particles = std::move(particles),
                 simulationCell = std::move(simulationCell),
@@ -166,7 +165,7 @@ Future<PipelineFlowState> StructureIdentificationModifier::evaluateModifier(cons
                                              createdByNode = request.modificationNodeWeak()](std::shared_ptr<const Algorithm> algorithm) {
         auto modifierParameters = algorithm->getModifierParameters(this);
         // Perform the structure identification in a separate thread.
-        return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), modifierParameters = std::move(modifierParameters),
+        return asyncLaunch([state = std::move(state), modifierParameters = std::move(modifierParameters),
                                                               algorithm = std::move(algorithm), colorByType = colorByType(),
                                                               createdByNode = std::move(createdByNode)]() mutable {
             // Post-process computed structure classifications.
@@ -261,7 +260,7 @@ Future<PipelineFlowState> StructureIdentificationModifier::reuseCachedState(cons
     if(DataOORef<const Particles> cachedParticles = cachedState.getObject<Particles>()) {
         const Property* cachedStructures = cachedParticles->getProperty(Particles::StructureTypeProperty);
         const Property* cachedColors = colorByType() ? cachedParticles->getProperty(Particles::ColorProperty) : nullptr;
-        return AsynchronousTask<PipelineFlowState>::runAsync([output = std::move(output), particles, cachedStructures, cachedColors, cachedParticles = std::move(cachedParticles)]() mutable {
+        return asyncLaunch([output = std::move(output), particles, cachedStructures, cachedColors, cachedParticles = std::move(cachedParticles)]() mutable {
             particles->tryToAdoptProperties(cachedParticles, {cachedStructures, cachedColors}, {particles});
             return std::move(output);
         });

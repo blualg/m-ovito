@@ -45,9 +45,6 @@ public:
         _interactiveMode(interactiveMode),
         _cachingIntervals(time) {}
 
-    /// Constructs a request object for evaluating the pipeline at the current animation time.
-    PipelineEvaluationRequest(AnimationSettings* animationSettings) : PipelineEvaluationRequest(animationSettings->currentTime()) {}
-
     /// Constructs a request object for evaluating the pipeline using a prescribed caching pattern.
     explicit PipelineEvaluationRequest(const TimeIntervalUnion& cachingIntervals) : _cachingIntervals(cachingIntervals) {}
 

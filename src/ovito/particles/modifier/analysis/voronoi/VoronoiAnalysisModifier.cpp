@@ -26,7 +26,6 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/mesh/surface/SurfaceMeshBuilder.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "VoronoiAnalysisModifier.h"
@@ -219,7 +218,7 @@ Future<PipelineFlowState> VoronoiAnalysisModifier::evaluateModifier(const Modifi
             bondsVis());
 
     // Perform the calculation in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             engine = std::move(engine)]() mutable
     {

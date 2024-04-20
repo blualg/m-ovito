@@ -131,7 +131,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
     _pipelineEvaluationWatcher.reset();
     _completedFrame = scene()->animationSettings()->currentFrame();
     _completedScene = scene();
-    PipelineEvaluationRequest request(scene()->animationSettings());
+    PipelineEvaluationRequest request(scene()->animationSettings()->currentTime());
 
     // Pipeline evaluation must be done in a valid execution context and with an active task object.
     MainThreadOperation operation(ExecutionContext::Type::Interactive, userInterface());

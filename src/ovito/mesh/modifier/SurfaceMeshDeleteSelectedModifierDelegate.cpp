@@ -23,7 +23,6 @@
 #include <ovito/mesh/Mesh.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshBuilder.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "SurfaceMeshDeleteSelectedModifierDelegate.h"
 
 namespace Ovito {
@@ -51,7 +50,7 @@ QVector<DataObjectReference> SurfaceMeshRegionsDeleteSelectedModifierDelegate::O
 Future<PipelineFlowState> SurfaceMeshRegionsDeleteSelectedModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
     // The actual work can be performed in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state)]() mutable {
+    return asyncLaunch([state = std::move(state)]() mutable {
 
         size_t numRegions = 0;
         size_t numDeleted = 0;

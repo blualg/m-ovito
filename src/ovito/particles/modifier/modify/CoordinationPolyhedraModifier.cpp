@@ -28,7 +28,6 @@
 #include <ovito/particles/objects/ParticleBondMap.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "CoordinationPolyhedraModifier.h"
 
 namespace Ovito {
@@ -109,7 +108,7 @@ Future<PipelineFlowState> CoordinationPolyhedraModifier::evaluateModifier(const 
     mesh->setDomain(simCell);
 
     // Perform the main work in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             positions,
             selection,

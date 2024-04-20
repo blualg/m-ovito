@@ -157,7 +157,7 @@ void ViewportWindow::handleUpdateRequest()
     bool success = userInterface().handleExceptions([&]() {
 
         // Interactive viewport rendering is performed with a higher priority than other tasks.
-        this_task::get()->setAsyncTaskType(Task::AsynchronousTaskType::InteractiveAsyncTask);
+        this_task::get()->setHighPriorityTask();
 
         // Set up preliminary projection without knowing the scene bounding box yet.
         AnimationTime time = viewport()->scene()->animationSettings()->currentTime();
@@ -214,7 +214,7 @@ void ViewportWindow::handleUpdateRequest()
 
         // Render visual representations of the modifiers.
         viewport()->scene()->visitPipelines([&](Pipeline* pipeline) {
-            renderPipelineModifiers(viewport()->scene(), pipeline, *frameGraph);
+            renderPipelineModifiers(pipeline, *frameGraph);
             return true;
         });
 
@@ -658,16 +658,14 @@ void ViewportWindow::setCursorInContextMenuArea(bool flag)
 /******************************************************************************
 * Renders the visual representation of the modifiers in a pipeline.
 ******************************************************************************/
-void ViewportWindow::renderPipelineModifiers(Scene* scene, Pipeline* pipeline, FrameGraph& frameGraph)
+void ViewportWindow::renderPipelineModifiers(Pipeline* pipeline, FrameGraph& frameGraph)
 {
-    ModificationNode* node = dynamic_object_cast<ModificationNode>(pipeline->head());
+    OORef<ModificationNode> node = dynamic_object_cast<ModificationNode>(pipeline->head());
     while(node) {
-        Modifier* mod = node->modifier();
-
         try {
             // Render modifier.
-            if(mod)
-                mod->renderModifierVisual(ModifierEvaluationRequest(scene->animationSettings(), node), pipeline, frameGraph);
+            if(OORef<Modifier> mod = node->modifier())
+                mod->renderModifierVisual(node, pipeline, frameGraph);
         }
         catch(const Exception& ex) {
             // Swallow exceptions, because we are in interactive rendering mode.

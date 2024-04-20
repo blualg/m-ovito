@@ -26,7 +26,6 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "ParticlesReplicateModifierDelegate.h"
 
 namespace Ovito {
@@ -53,7 +52,7 @@ Future<PipelineFlowState> ParticlesReplicateModifierDelegate::apply(const Modifi
     ReplicateModifier* modifier = static_object_cast<ReplicateModifier>(request.modifier());
 
     // The actual work can be performed in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             newImages = modifier->replicaRange(),
             adjustBoxSize = modifier->adjustBoxSize(),

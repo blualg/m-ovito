@@ -27,7 +27,6 @@
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/concurrent/ForEach.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "UnwrapTrajectoriesModifier.h"
 
 namespace Ovito {
@@ -75,7 +74,7 @@ Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluateModifier(const Mod
     // If the periodic image flags property is present, use it to unwrap particle positions.
     if(state.expectObject<Particles>()->getProperty(Particles::PeriodicImageProperty)) {
         // The actual work can be performed in a separate thread.
-        return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state)]() mutable {
+        return asyncLaunch([state = std::move(state)]() mutable {
 
             // Simulation cell is needed for this.
             const SimulationCell* cell = state.expectObject<SimulationCell>();

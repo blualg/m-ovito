@@ -27,7 +27,6 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/table/DataTable.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/DataSet.h>
@@ -161,7 +160,7 @@ Future<PipelineFlowState> GrainSegmentationModifier::evaluateModifier(const Modi
                 outputBonds());
 
         // Perform the computation in a separate thread.
-        return AsynchronousTask<std::shared_ptr<GrainSegmentationEngine1>>::runAsync([engine1 = std::move(engine1)]() mutable {
+        return asyncLaunch([engine1 = std::move(engine1)]() mutable {
             engine1->perform();
             return std::move(engine1);
         }, true);
@@ -179,7 +178,7 @@ Future<PipelineFlowState> GrainSegmentationModifier::evaluateModifier(const Modi
         );
 
         // Perform the computation in a separate thread.
-        return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), engine2 = std::move(engine2), createdByNode = std::move(createdByNode), bondsVis = OORef<BondsVis>(bondsVis())]() mutable {
+        return asyncLaunch([state = std::move(state), engine2 = std::move(engine2), createdByNode = std::move(createdByNode), bondsVis = OORef<BondsVis>(bondsVis())]() mutable {
             engine2->perform();
             engine2->applyResults(state, createdByNode, bondsVis);
             return std::move(state);

@@ -216,7 +216,7 @@ std::tuple<Plane3, FloatType> SliceModifier::slicingPlane(AnimationTime time, Ti
 /******************************************************************************
 * Lets the modifier render itself in an interactive viewport.
 ******************************************************************************/
-void SliceModifier::renderModifierVisual(const ModifierEvaluationRequest& request, Pipeline* pipeline, FrameGraph& frameGraph)
+void SliceModifier::renderModifierVisual(ModificationNode* modNode, Pipeline* pipeline, FrameGraph& frameGraph)
 {
     if(isBeingEdited()) {
         Box3 bb = pipeline->localBoundingBox(frameGraph.time());
@@ -224,7 +224,8 @@ void SliceModifier::renderModifierVisual(const ModifierEvaluationRequest& reques
             return;
 
         // Obtain modifier parameter values.
-        const PipelineFlowState& state = request.modificationNode()->evaluateInput(request).result();
+        PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
+        const PipelineFlowState& state = modNode->evaluateInput(request).result();
         Plane3 plane;
         FloatType slabWidth;
         TimeInterval interval;

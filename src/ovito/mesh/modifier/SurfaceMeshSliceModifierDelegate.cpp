@@ -24,7 +24,6 @@
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/app/Application.h>
 #include "SurfaceMeshSliceModifierDelegate.h"
 
@@ -47,7 +46,7 @@ Future<PipelineFlowState> SurfaceMeshSliceModifierDelegate::apply(const Modifier
     sliceWidth /= 2;
 
     // The actual work can be performed in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             plane, sliceWidth,
             invert = modifier->inverse(),

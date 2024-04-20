@@ -217,7 +217,7 @@ Future<PipelineFlowState> ScatterPlotModifier::evaluateModifier(const ModifierEv
     OVITO_ASSERT(table == state.getObjectBy<DataTable>(request.modificationNode(), QStringLiteral("scatter")));
 
     // The actual computation can be performed in a separate worker thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             xProperty = std::move(xProperty),
             yProperty = std::move(yProperty),

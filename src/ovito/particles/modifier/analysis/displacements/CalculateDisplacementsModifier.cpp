@@ -24,7 +24,6 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "CalculateDisplacementsModifier.h"
 
 namespace Ovito {
@@ -69,7 +68,7 @@ Future<PipelineFlowState> CalculateDisplacementsModifier::reuseCachedState(const
     if(DataOORef<const Particles> cachedParticles = cachedState.getObject<Particles>()) {
         const Property* cachedDisplacements = cachedParticles->getProperty(Particles::DisplacementProperty);
         const Property* cachedDisplacementMags = cachedParticles->getProperty(Particles::DisplacementMagnitudeProperty);
-        return AsynchronousTask<PipelineFlowState>::runAsync([output = std::move(output), particles, cachedDisplacements, cachedDisplacementMags, cachedParticles = std::move(cachedParticles)]() mutable {
+        return asyncLaunch([output = std::move(output), particles, cachedDisplacements, cachedDisplacementMags, cachedParticles = std::move(cachedParticles)]() mutable {
             particles->tryToAdoptProperties(cachedParticles, {cachedDisplacements, cachedDisplacementMags}, {particles});
             return std::move(output);
         });

@@ -28,7 +28,6 @@
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/data/AttributeDataObject.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "LoadTrajectoryModifier.h"
 
 namespace Ovito {
@@ -110,7 +109,7 @@ Future<PipelineFlowState> LoadTrajectoryModifier::evaluateModifier(const Modifie
             }
             else {
                 // Perform the heavy work in a separate thread.
-                return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), trajState = std::move(trajState)]() mutable {
+                return asyncLaunch([state = std::move(state), trajState = std::move(trajState)]() mutable {
                     LoadTrajectoryModifier::applyTrajectoryState(state, trajState);
                     return std::move(state);
                 });

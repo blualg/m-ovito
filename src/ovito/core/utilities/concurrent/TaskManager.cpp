@@ -441,17 +441,7 @@ bool TaskManager::requestInterruption()
 ******************************************************************************/
 QThreadPool* TaskManager::chooseThreadPool(Task& task)
 {
-    switch(task.asyncTaskType()) {
-    case Task::AsynchronousTaskType::DefaultAsyncTask:
-        return &_threadPool;
-    case Task::AsynchronousTaskType::InteractiveAsyncTask:
-        return &_threadPoolUI;
-    case Task::AsynchronousTaskType::SerialAsyncTask:
-        return &_threadPoolSerial;
-    default:
-        OVITO_ASSERT(false);
-        return &_threadPool;
-    }
+    return task.isHighPriorityTask() ? &_threadPoolUI : &_threadPool;
 }
 
 }   // End of namespace

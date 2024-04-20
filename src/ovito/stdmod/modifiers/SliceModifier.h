@@ -108,7 +108,7 @@ public:
     virtual bool shouldRefreshViewportsAfterChange() override { return true; }
 
     /// Lets the modifier render itself in an interactive viewport.
-    virtual void renderModifierVisual(const ModifierEvaluationRequest& request, Pipeline* pipeline, FrameGraph& frameGraph) override;
+    virtual void renderModifierVisual(ModificationNode* modNode, Pipeline* pipeline, FrameGraph& frameGraph) override;
 
     // Property access functions:
 

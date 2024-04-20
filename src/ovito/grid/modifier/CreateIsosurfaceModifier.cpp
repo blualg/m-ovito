@@ -220,7 +220,7 @@ Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const Modif
     histogram->setAxisLabelX(sourceProperty().nameWithComponent());
 
     // The actual computation can be performed in a separate worker thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             gridShape = voxelGrid->shape(),
             gridType = voxelGrid->gridType(),

@@ -26,7 +26,6 @@
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/data/SyclFlatSet.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "SelectTypeModifier.h"
@@ -146,7 +145,7 @@ Future<PipelineFlowState> SelectTypeModifier::evaluateModifier(const ModifierEva
     }
 
     // The actual computation can be performed in a separate worker thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             container,
             typePropertyObject,

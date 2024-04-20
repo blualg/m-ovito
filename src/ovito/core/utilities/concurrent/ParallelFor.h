@@ -64,24 +64,24 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
         {
             Kernel* kernel;
             detail::Latch* latch;
-            ExecutionContext context;
+            ExecutionContext* context;
             Task* task;
             size_t workerIndex;
             size_t workerCount;
             std::exception_ptr exception;
 
-            Runner(Kernel* kernel, detail::Latch* latch, ExecutionContext context, Task* task, size_t workerIndex, size_t workerCount) noexcept
-                : kernel(kernel), latch(latch), context(std::move(context)), task(task), workerIndex(workerIndex), workerCount(workerCount) {}
+            Runner(Kernel* kernel, detail::Latch* latch, ExecutionContext* context, Task* task, size_t workerIndex, size_t workerCount) noexcept
+                : kernel(kernel), latch(latch), context(context), task(task), workerIndex(workerIndex), workerCount(workerCount) {}
 
             // Move constructor - needed for std::vector requirement 'MoveInsertable'.
             Runner(Runner&& other) noexcept
-                : kernel(other.kernel), latch(other.latch), context(std::move(other.context)), task(other.task), workerIndex(other.workerIndex), workerCount(other.workerCount), exception(std::move(other.exception)) {}
+                : kernel(other.kernel), latch(other.latch), context(other.context), task(other.task), workerIndex(other.workerIndex), workerCount(other.workerCount), exception(std::move(other.exception)) {}
 
             virtual void run() final override {
                 try {
                     if(!task->isCanceled()) {
                         // Execute the work function in the scope of this task object.
-                        ExecutionContext::Scope execScope(std::move(context));
+                        ExecutionContext::Scope execScope(*context);
                         Task::Scope taskScope(task);
                         (*kernel)(workerIndex, workerCount);
                     }
@@ -102,12 +102,14 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
 
         // Create workers and submit them to the thread pool.
         detail::Latch latch(workerCount);
+        ExecutionContext* context = &ExecutionContext::current();
+        Task* thisTask = this_task::get();
         for(size_t t = 0; t < workerCount; t++) {
             Runner& runner = workers.emplace_back(
                 &kernel,
                 &latch,
-                ExecutionContext::current(),
-                this_task::get(),
+                context,
+                thisTask,
                 t,
                 workerCount
             );
@@ -115,7 +117,7 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
             pool->start(&runner);
         }
 
-        // Simultaneously execute workers in the current thread.
+        // Simultaneously execute as many workers as possible in the current thread.
         for(auto worker = workers.rbegin(); worker != workers.rend(); ++worker) {
             if(pool->tryTake(&*worker))
                 worker->run();

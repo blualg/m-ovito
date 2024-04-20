@@ -25,7 +25,6 @@
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/utilities/concurrent/EnumerableThreadSpecific.h>
 #include <ovito/core/dataset/DataSet.h>
 #include "ParticlesComputePropertyModifierDelegate.h"
@@ -181,7 +180,7 @@ Future<PipelineFlowState> ParticlesComputePropertyModifierDelegate::performCompu
     ConstPropertyPtr positions = particles->expectProperty(Particles::PositionProperty);
 
     // The actual computation can be performed in a separate worker thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             outputProperty = std::move(outputProperty),
             selectionProperty = std::move(selectionProperty),

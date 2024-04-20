@@ -26,7 +26,6 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "ReplicateModifier.h"
 
 namespace Ovito {
@@ -79,7 +78,7 @@ Future<PipelineFlowState> LinesReplicateModifierDelegate::apply(const ModifierEv
     const Box3I& newImages = modifier->replicaRange();
 
     // The actual work can be performed in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), newImages]() mutable {
+    return asyncLaunch([state = std::move(state), newImages]() mutable {
 
         size_t numCopies = (newImages.sizeX() + 1) * (newImages.sizeY() + 1) * (newImages.sizeZ() + 1);
 

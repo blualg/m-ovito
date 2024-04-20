@@ -24,7 +24,6 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "SurfaceMeshAffineTransformationModifierDelegate.h"
 
 namespace Ovito {
@@ -40,7 +39,7 @@ Future<PipelineFlowState> SurfaceMeshAffineTransformationModifierDelegate::apply
     AffineTransformationModifier* modifier = static_object_cast<AffineTransformationModifier>(request.modifier());
 
     // The actual work can be performed in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             tm = modifier->effectiveAffineTransformation(originalState),
             selectionOnly = modifier->selectionOnly()]() mutable {

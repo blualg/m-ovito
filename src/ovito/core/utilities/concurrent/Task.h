@@ -59,13 +59,7 @@ public:
         IsAsynchronous = (1<<4), // The task is derived from AsynchronousTaskBase and runs in a worker thread.
         LoggingEnabled = (1<<5), // The task's progress messages are printed to the console.
         YieldUI        = (1<<6), // The task runs in the main thread should yield control to the event loop when its progress functions are called.
-    };
-
-    /// The types of asynchronous tasks.
-    enum AsynchronousTaskType {
-        DefaultAsyncTask = 0,       //< A regular compute task that gets executed with default priority.
-        InteractiveAsyncTask = 1,   //< A compute task that gets executed with higher priority to keep the UI responsive.
-        SerialAsyncTask = -1,       //< A tasks that gets executed in the serial task queue, because it cannot run concurrently with tasks of the same type.
+        HighPriority   = (1<<7), // The task should be executed with higher priority, because it is responsible for GUI updates.
     };
 
     /// Constructor.
@@ -86,22 +80,28 @@ public:
     class Scope;
 
     /// Returns whether this shared state has been canceled by a previous call to cancel().
-    bool isCanceled() const { return (_state.load(std::memory_order_relaxed) & Canceled); }
+    bool isCanceled() const { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & Canceled); }
 
     /// Returns true if the promise is in the 'started' state.
-    bool isStarted() const { return (_state.load(std::memory_order_relaxed) & Started); }
+    bool isStarted() const { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & Started); }
 
     /// Returns true if the promise is in the 'finished' state.
-    bool isFinished() const { return (_state.load(std::memory_order_relaxed) & Finished); }
+    bool isFinished() const { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & Finished); }
 
     /// Indicates whether this task's class is derived from the ProgressingTask base class.
-    bool isProgressingTask() const { return (_state.load(std::memory_order_relaxed) & IsProgressing); }
+    bool isProgressingTask() const { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & IsProgressing); }
 
     /// Indicates whether this task's class is derived from the AsynchronousTaskBase class.
-    bool isAsynchronousTask() const { return (_state.load(std::memory_order_relaxed) & IsAsynchronous); }
+    bool isAsynchronousTask() const { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & IsAsynchronous); }
+
+    /// Indicates whether this task runs with high priority, because it is responsible for GUI updates.
+    bool isHighPriorityTask() const { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & HighPriority); }
 
     /// Enables logging of status messages for this task.
     void setLoggingEnabled() { _state.fetch_or(LoggingEnabled, std::memory_order_relaxed); }
+
+    /// Makes this task run with high priority, because it is responsible for GUI updates.
+    void setHighPriorityTask() { _state.fetch_or(HighPriority, std::memory_order_relaxed); }
 
     /// \brief Requests cancellation of the task.
     void cancel() noexcept;
@@ -201,12 +201,6 @@ public:
 
     /// Returns the internal exception store, which contains an exception object in case the task has failed.
     const std::exception_ptr& exceptionStore() const noexcept { return _exceptionStore; }
-
-    /// Returns the type of this task if it is an asynchronous task running in a worker thread.
-    AsynchronousTaskType asyncTaskType() const { return _asyncTaskType; }
-
-    /// Sets the type of this task if it is an asynchronous task running in a worker thread.
-    void setAsyncTaskType(AsynchronousTaskType asyncTaskType) { _asyncTaskType = asyncTaskType; }
 
 protected:
 
@@ -320,9 +314,6 @@ protected:
 
     /// Used for managing concurrent access to this task.
     mutable QMutex _mutex;
-
-    /// The type of this task if it is an asynchronous task running in a worker thread.
-    AsynchronousTaskType _asyncTaskType = DefaultAsyncTask;
 
     /// List of continuation functions that will be called when this task enters the 'finished' or the 'canceled' state.
     QVarLengthArray<fu2::unique_function<void() noexcept>, 2> _continuations;

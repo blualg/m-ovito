@@ -38,8 +38,9 @@ public:
 
     MainThreadTask(Task* parentTask) noexcept : ProgressingTask(Task::State(Task::Started | Task::YieldUI)) {
         if(parentTask) {
-            // Inherit async type from the parent task.
-            setAsyncTaskType(parentTask->asyncTaskType());
+            // Inherit the priority status from the parent task.
+            if(parentTask->isHighPriorityTask())
+                this->setHighPriorityTask();
 
             // When this sub-task gets canceled, we cancel the parent task too.
             this->registerContinuation([this]() noexcept {

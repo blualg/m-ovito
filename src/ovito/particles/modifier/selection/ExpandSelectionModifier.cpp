@@ -27,7 +27,6 @@
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/data/AttributeDataObject.h>
@@ -131,7 +130,7 @@ Future<PipelineFlowState> ExpandSelectionModifier::evaluateModifier(const Modifi
     }
 
     // Perform the calculation in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             engine = std::move(engine)]() mutable
     {

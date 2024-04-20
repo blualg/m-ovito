@@ -27,7 +27,6 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/data/SyclBufferAccess.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "ParticlesAffineTransformationModifierDelegate.h"
 
 namespace Ovito {
@@ -56,7 +55,7 @@ Future<PipelineFlowState> ParticlesAffineTransformationModifierDelegate::apply(c
     AffineTransformationModifier* modifier = static_object_cast<AffineTransformationModifier>(request.modifier());
 
     // The actual work can be performed in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             tm = modifier->effectiveAffineTransformation(originalState),
             selectionOnly = modifier->selectionOnly()]() mutable {
@@ -115,7 +114,7 @@ Future<PipelineFlowState> VectorParticlePropertiesAffineTransformationModifierDe
     AffineTransformationModifier* modifier = static_object_cast<AffineTransformationModifier>(request.modifier());
 
     // The actual work can be performed in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             tm = modifier->effectiveAffineTransformation(originalState),
             selectionOnly = modifier->selectionOnly()]() mutable {

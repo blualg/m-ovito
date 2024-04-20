@@ -133,14 +133,14 @@ SharedFuture<R>::then(Executor&& executor, Function&& f)
     // This future must be valid for then() to work.
     OVITO_ASSERT_MSG(isValid(), "SharedFuture::then()", "Future must be valid.");
 
+    // Inherit the priority flag from the task adding the continuation.
+    bool isHighPriority = this_task::get()->isHighPriorityTask();
+
     // Create a task, promise and future for the continuation.
-    result_promise_type promise{std::make_shared<continuation_task_type>()};
+    // Inherit the priority flag from the parent task.
+    result_promise_type promise{std::make_shared<continuation_task_type>(isHighPriority ? Task::HighPriority : Task::NoState)};
     result_future_type future = promise.future();
     continuation_task_type* continuationTask = static_cast<continuation_task_type*>(promise.task().get());
-
-    // Inherit the priority from the task that invoked then(). If then() was not invoked from a task, inherit the
-    // priority from future's task.
-    continuationTask->setAsyncTaskType(this_task::get() ? this_task::get()->asyncTaskType() : this->task()->asyncTaskType());
 
     // Run the following function once the existing task finishes. We'll then invoke the user's continuation function.
     continuationTask->whenTaskFinishes(

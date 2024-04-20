@@ -26,7 +26,6 @@
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ptm/ptm_polar.h>
 #include "AtomicStrainModifier.h"
 
@@ -87,7 +86,7 @@ Future<PipelineFlowState> AtomicStrainModifier::reuseCachedState(const ModifierE
             calculateStretchTensors() ? cachedParticles->getProperty(Particles::StretchTensorProperty) : nullptr
         };
 
-        return AsynchronousTask<PipelineFlowState>::runAsync([output = std::move(output), particles, cachedProperties = std::move(cachedProperties), cachedParticles = std::move(cachedParticles)]() mutable {
+        return asyncLaunch([output = std::move(output), particles, cachedProperties = std::move(cachedProperties), cachedParticles = std::move(cachedParticles)]() mutable {
             particles->tryToAdoptProperties(cachedParticles, cachedProperties, {particles});
             return std::move(output);
         });

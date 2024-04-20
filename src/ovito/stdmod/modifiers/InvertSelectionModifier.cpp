@@ -24,7 +24,6 @@
 #include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "InvertSelectionModifier.h"
 
 namespace Ovito {
@@ -59,7 +58,7 @@ Future<PipelineFlowState> InvertSelectionModifier::evaluateModifier(const Modifi
     PropertyPtr outputSelection = container->createProperty(DataBuffer::Uninitialized, Property::GenericSelectionProperty);
 
     // The actual computation can be performed in a separate worker thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             inputSelection = std::move(inputSelection),
             outputSelection = std::move(outputSelection)]() mutable

@@ -74,7 +74,7 @@ public:
     virtual bool shouldKeepPartialResultsAfterChange(const PropertyFieldEvent& event) { return false; }
 
     /// \brief Lets the modifier render itself in an interactive viewport.
-    virtual void renderModifierVisual(const ModifierEvaluationRequest& request, Pipeline* pipeline, FrameGraph& frameGraph) {}
+    virtual void renderModifierVisual(ModificationNode* modNode, Pipeline* pipeline, FrameGraph& frameGraph) {}
 
     /// \brief Returns the list of pipeline nodes that reference this modifier.
     /// \return The list of ModificationNode objects, each describing a particular use of this Modifier in a pipeline.

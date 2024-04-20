@@ -27,7 +27,6 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/rendering/FrameBuffer.h>
 #include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/rendering/SceneRenderer.h>
@@ -93,7 +92,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
                 Particles* particles = state.expectMutableObject<Particles>();
                 particles->verifyIntegrity();
                 const Property* cachedColors = cachedParticles->getProperty(Particles::ColorProperty);
-                return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), particles, cachedColors, cachedParticles = std::move(cachedParticles)]() mutable {
+                return asyncLaunch([state = std::move(state), particles, cachedColors, cachedParticles = std::move(cachedParticles)]() mutable {
                     particles->tryToAdoptProperties(cachedParticles, {cachedColors}, {particles});
                     return std::move(state);
                 });
@@ -117,8 +116,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
         OORef<OffscreenOpenGLRenderingJob> renderingJob = OORef<OffscreenOpenGLRenderingJob>::create(ExecutionContext::current().ui().datasetContainer().visCache(), 1, false);
 
         // Perform the AO computation in a separate thread.
-        return AsynchronousTask<ConstDataBufferPtr>::runAsync(
-                Task::AsynchronousTaskType::SerialAsyncTask,  // Execute this in the serial task queue to avoid overloading the OpenGL graphics system with too many concurrent rendering tasks.
+        return asyncLaunch(
                 [renderingJob = std::move(renderingJob),
                 bufferResolution = bufferResolution(),
                 samplingCount = std::max(1, samplingCount()),
@@ -291,7 +289,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
     return brightnessFuture.then(*this, [this, state = std::move(state)](ConstDataBufferPtr brightness) {
 
         // Perform work in a separate thread.
-        return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), brightness = std::move(brightness), intensity = intensity()]() mutable {
+        return asyncLaunch([state = std::move(state), brightness = std::move(brightness), intensity = intensity()]() mutable {
 
             Particles* particles = state.expectMutableObject<Particles>();
             OVITO_ASSERT(brightness && particles->elementCount() == brightness->size());

@@ -33,7 +33,6 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "ConstructSurfaceModifier.h"
 
 #include <boost/range/numeric.hpp>
@@ -211,7 +210,7 @@ Future<PipelineFlowState> ConstructSurfaceModifier::evaluateModifier(const Modif
     }
 
     // Perform the calculation in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([
+    return asyncLaunch([
             state = std::move(state),
             engine = std::move(engine)]() mutable
     {

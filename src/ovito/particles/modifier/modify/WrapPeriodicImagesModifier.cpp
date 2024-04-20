@@ -25,7 +25,6 @@
 #include <ovito/particles/objects/Bonds.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "WrapPeriodicImagesModifier.h"
 
 namespace Ovito {
@@ -56,7 +55,7 @@ Future<PipelineFlowState> WrapPeriodicImagesModifier::evaluateModifier(const Mod
     }
 
     // The actual work can be performed in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), simCell]() mutable
+    return asyncLaunch([state = std::move(state), simCell]() mutable
     {
         // Make a modifiable copy of the particles object.
         Particles* outputParticles = state.expectMutableObject<Particles>();

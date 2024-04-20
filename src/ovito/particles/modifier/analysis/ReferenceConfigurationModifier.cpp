@@ -26,7 +26,6 @@
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "ReferenceConfigurationModifier.h"
 
 namespace Ovito {
@@ -243,7 +242,7 @@ Future<PipelineFlowState> ReferenceConfigurationModifier::evaluateModifier(const
         std::unique_ptr<Engine> engine = createEngine(request, state, referenceInput);
 
         // Perform the actual calculation in a separate thread.
-        return AsynchronousTask<PipelineFlowState>::runAsync([
+        return asyncLaunch([
                 state = std::move(state),
                 engine = std::move(engine)]() mutable
         {

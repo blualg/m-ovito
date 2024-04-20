@@ -25,7 +25,6 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "DislocationReplicateModifierDelegate.h"
 
 namespace Ovito {
@@ -54,7 +53,7 @@ Future<PipelineFlowState> DislocationReplicateModifierDelegate::apply(const Modi
     const Box3I& newImages = modifier->replicaRange();
 
     // The actual work can be performed in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), newImages]() mutable {
+    return asyncLaunch([state = std::move(state), newImages]() mutable {
 
         int nPBC[3] = { newImages.sizeX() + 1, newImages.sizeY() + 1, newImages.sizeZ() + 1};
         size_t numCopies = (size_t)nPBC[0] * (size_t)nPBC[1] * (size_t)nPBC[2];

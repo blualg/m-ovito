@@ -24,7 +24,6 @@
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
@@ -454,7 +453,7 @@ ParticlePrimitive::ParticleShape ParticlesVis::effectiveParticleShape(ParticleSh
 PipelineStatus ParticlesVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     // Perform rendering in a background thread to not block the GUI for too long.
-    return AsynchronousTask<PipelineStatus>::runAsyncAndJoin([&]() -> PipelineStatus {
+    return asyncLaunchAndJoin([&]() -> PipelineStatus {
 
         // Get input particle data.
         const Particles* particles = path.lastAs<Particles>();

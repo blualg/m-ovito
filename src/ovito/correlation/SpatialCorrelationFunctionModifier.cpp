@@ -29,7 +29,6 @@
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/utilities/concurrent/EnumerableThreadSpecific.h>
 #include "SpatialCorrelationFunctionModifier.h"
 
@@ -260,7 +259,7 @@ Future<PipelineFlowState> SpatialCorrelationFunctionModifier::evaluateModifier(c
                                                     averagingDirection());
 
     // Perform the main calculation in a separate thread.
-    return AsynchronousTask<PipelineFlowState>::runAsync([state = std::move(state), engine = std::move(engine), createdByNode = request.modificationNodeWeak()]() mutable {
+    return asyncLaunch([state = std::move(state), engine = std::move(engine), createdByNode = request.modificationNodeWeak()]() mutable {
         engine->perform();
         engine->applyResults(state, createdByNode);
         return std::move(state);

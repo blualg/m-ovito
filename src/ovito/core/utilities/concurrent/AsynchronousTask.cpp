@@ -53,10 +53,10 @@ AsynchronousTaskBase::~AsynchronousTaskBase()
 /******************************************************************************
 * Submits the task for execution to a thread pool.
 ******************************************************************************/
-void AsynchronousTaskBase::startInThreadPool(bool showInUserInterface)
+void AsynchronousTaskBase::runInThreadPool(bool showInUserInterface)
 {
     OVITO_ASSERT(!this->_thisTask);
-    OVITO_ASSERT(!this->_submittedToPool);
+    OVITO_ASSERT(!this->_threadPool);
     OVITO_ASSERT(!this->isStarted());
 
     // Inherit execution context from parent task.
@@ -67,27 +67,26 @@ void AsynchronousTaskBase::startInThreadPool(bool showInUserInterface)
     _thisTask = this->shared_from_this();
 
     // Determine the thread pool to use for this task.
-    _submittedToPool = _executionContext.ui().taskManager().chooseThreadPool(*this);
+    _threadPool = _executionContext.ui().taskManager().chooseThreadPool(*this);
 
     // Register task with UI task manager if requested.
-    if(showInUserInterface) {
+    if(showInUserInterface)
         _executionContext.ui().taskManager().registerTask(*this);
-    }
 
     // Mark this task as started.
     this->setStarted();
 
     // Submit to thread pool.
-    _submittedToPool->start(this);
+    _threadPool->start(this);
 }
 
 /******************************************************************************
 * Runs the task's work function immediately in the current thread.
 ******************************************************************************/
-void AsynchronousTaskBase::startInThisThread(bool showInUserInterface)
+void AsynchronousTaskBase::runInThisThread(bool showInUserInterface)
 {
     OVITO_ASSERT(!this->_thisTask);
-    OVITO_ASSERT(!this->_submittedToPool);
+    OVITO_ASSERT(!this->_threadPool);
     OVITO_ASSERT(!this->isStarted());
 
     // Inherit execution context from parent task.
