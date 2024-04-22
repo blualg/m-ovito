@@ -30,6 +30,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/utilities/io/FileManager.h>
+#include <ovito/core/utilities/concurrent/Launch.h>
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/app/Application.h>
 #include "FileSourceImporter.h"
@@ -407,7 +408,7 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 
     // Scan file.
     if(FrameFinderPtr frameFinder = createFrameFinder(fileHandle))
-        return frameFinder->launch(true);
+        return launchTask(std::move(frameFinder));
     else
         return QVector<Frame>{{ Frame(fileHandle) }};
 }
@@ -428,7 +429,7 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationReque
     OVITO_ASSERT(frameLoader);
 
     // Execute the loader in a background thread.
-    Future<PipelineFlowState> future = frameLoader->launch(true);
+    Future<PipelineFlowState> future = launchTask(std::move(frameLoader));
 
     // If the parser has detects additional frames following the first frame in the
     // input file being loaded, automatically turn on scanning of the input file.

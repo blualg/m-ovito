@@ -75,26 +75,6 @@ TaskManager::~TaskManager()
 #endif
 
 /******************************************************************************
-* Registers a future's promise with the progress manager, which will display
-* the progress of the background task in the main window.
-******************************************************************************/
-void TaskManager::registerFuture(const FutureBase& future)
-{
-    OVITO_ASSERT(future.isValid());
-    registerTask(*future.task());
-}
-
-/******************************************************************************
-* Registers a promise with the progress manager, which will display
-* the progress of the background task in the main window.
-******************************************************************************/
-void TaskManager::registerPromise(const PromiseBase& promise)
-{
-    OVITO_ASSERT(promise.isValid());
-    registerTask(*promise.task());
-}
-
-/******************************************************************************
 * Registers an asynchronous task with the task manager.
 ******************************************************************************/
 void TaskManager::registerTask(Task& task)

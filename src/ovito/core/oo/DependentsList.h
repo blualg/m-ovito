@@ -128,7 +128,6 @@ public:
         OVITO_ASSERT(!_entries.contains(dependent));
     }
 
-#ifdef OVITO_DEBUG
     /// Checks if the list currently contains no RefMakers.
     inline bool empty() const {
         std::lock_guard<std::mutex> lock(mutex());
@@ -138,7 +137,6 @@ public:
         }
         return true;
     }
-#endif
 };
 
 }   // End of namespace

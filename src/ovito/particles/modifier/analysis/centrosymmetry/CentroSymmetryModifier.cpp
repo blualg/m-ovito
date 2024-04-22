@@ -166,7 +166,7 @@ Future<PipelineFlowState> CentroSymmetryModifier::evaluateModifier(const Modifie
         histogram->setIntervalEnd(cspHistogramBinSize * numHistogramBins);
 
         return std::move(state);
-    }, true);
+    });
 }
 
 /******************************************************************************

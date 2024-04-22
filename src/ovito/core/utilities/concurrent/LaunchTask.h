@@ -30,10 +30,10 @@ namespace Ovito {
 
 /**
  * Helper function which launches a task by invoking the task's call operator.
- * It returns a future to the task's results.
+ * It returns a future for the task's results.
  *
  * The task class must define a type named 'future_type',
- * which specifies the type of Future to be returned
+ * which specifies the type of Future<T> or SharedFuture<T> to be returned
  * by the function.
 */
 template<class TaskType, typename... Args>
@@ -41,6 +41,10 @@ auto launchTask(std::shared_ptr<TaskType> task, Args&&... args)
 {
     // The task class must define a type named 'future_type', which specifies what kind of return value the task produces.
     using future_type = typename TaskType::future_type;
+
+    // Inherit the priority status from the parent task.
+    if(this_task::get() && this_task::get()->isHighPriorityTask())
+        task->setHighPriorityTask();
 
     // Make the task the active one.
     Task::Scope taskScope(task);

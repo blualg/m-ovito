@@ -104,7 +104,7 @@ Future<PipelineFlowState> BondsComputePropertyModifierDelegate::performComputati
             });
         });
         return std::move(state);
-    }, true);
+    });
 }
 
 }   // End of namespace

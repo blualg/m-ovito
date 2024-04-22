@@ -161,10 +161,10 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
                 "OpenGL version: %3.%4 (%5)")
                 .arg(QString::fromUtf8(reinterpret_cast<const char*>(glGetString(GL_VENDOR))))
                 .arg(QString::fromUtf8(openGLRendererString))
-                .arg(format.majorVersion())
-                .arg(format.minorVersion())
+                .arg(glformat().majorVersion())
+                .arg(glformat().minorVersion())
                 .arg(QString::fromUtf8(openGLVersionString))
-            ));
+            );
     }
 #endif
 

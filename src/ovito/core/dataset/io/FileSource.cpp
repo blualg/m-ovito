@@ -200,9 +200,6 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::updateListOfFrames(
         catch(...) {}
     });
 
-    // Show progress of the scan operation in the status bar.
-    ExecutionContext::current().ui().taskManager().registerFuture(framesFuture);
-
     return framesFuture;
 }
 

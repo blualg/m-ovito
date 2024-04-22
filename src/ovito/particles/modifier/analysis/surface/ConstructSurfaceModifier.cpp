@@ -218,7 +218,7 @@ Future<PipelineFlowState> ConstructSurfaceModifier::evaluateModifier(const Modif
         this_task::throwIfCanceled();
         engine->applyResults(state);
         return std::move(state);
-    }, true);
+    });
 }
 
 /******************************************************************************

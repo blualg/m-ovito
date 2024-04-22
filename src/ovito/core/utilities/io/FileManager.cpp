@@ -56,7 +56,7 @@ std::unique_ptr<QIODevice> FileHandle::createIODevice() const
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-FileManager::FileManager(TaskManager& taskManager) : _taskManager(taskManager)
+FileManager::FileManager()
 {
 }
 
@@ -109,7 +109,6 @@ SharedFuture<FileHandle> FileManager::fetchUrl(const QUrl& url)
 
         // Start the background download job.
         auto future = launchTask(std::make_shared<DownloadRemoteFileJob>(url));
-        _taskManager.registerFuture(future);
         _pendingFiles.emplace(normalizedUrl, future);
         return future;
     }
@@ -126,9 +125,7 @@ Future<QStringList> FileManager::listDirectoryContents(const QUrl& url)
     OVITO_ASSERT(ExecutionContext::current().isValid());
 
     if(url.scheme() == QStringLiteral("sftp")) {
-        auto future = launchTask(std::make_shared<ListRemoteDirectoryJob>(url));
-        _taskManager.registerFuture(future);
-        return future;
+        return launchTask(std::make_shared<ListRemoteDirectoryJob>(url));
     }
     else if(url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https")) {
 #ifndef Q_OS_WASM

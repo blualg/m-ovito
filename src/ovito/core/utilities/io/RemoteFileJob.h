@@ -53,7 +53,7 @@ public:
     }
 #endif
 
-    /// Starts execution of the task.
+    /// Begins execution of the task. This function gets invoked by the launchTask() helper.
     void operator()();
 
     /// Returns the URL being accessed.
@@ -62,7 +62,7 @@ public:
 protected:
 
     /// Opens the network connection.
-    Q_INVOKABLE void start();
+    void start();
 
     /// Closes the network connection.
     virtual void shutdown(bool success);

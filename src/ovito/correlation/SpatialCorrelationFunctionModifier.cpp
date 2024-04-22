@@ -263,7 +263,7 @@ Future<PipelineFlowState> SpatialCorrelationFunctionModifier::evaluateModifier(c
         engine->perform();
         engine->applyResults(state, createdByNode);
         return std::move(state);
-    }, true);
+    });
 }
 
 /******************************************************************************

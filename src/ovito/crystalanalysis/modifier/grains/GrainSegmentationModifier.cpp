@@ -163,7 +163,7 @@ Future<PipelineFlowState> GrainSegmentationModifier::evaluateModifier(const Modi
         return asyncLaunch([engine1 = std::move(engine1)]() mutable {
             engine1->perform();
             return std::move(engine1);
-        }, true);
+        });
     });
 
     // Phase II:
@@ -182,7 +182,7 @@ Future<PipelineFlowState> GrainSegmentationModifier::evaluateModifier(const Modi
             engine2->perform();
             engine2->applyResults(state, createdByNode, bondsVis);
             return std::move(state);
-        }, true);
+        });
     });
 }
 

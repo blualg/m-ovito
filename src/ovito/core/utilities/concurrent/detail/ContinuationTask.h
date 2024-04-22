@@ -102,15 +102,15 @@ public:
                     if constexpr(!std::is_invocable_v<Function, FutureType>)
                         if constexpr(!std::is_void_v<typename FutureType::result_type>) {
                             if constexpr(is_shared_future_v<FutureType>)
-                                this->template setResult<R>(std::invoke(std::forward<Function>(f), future.task()->template getResult<typename FutureType::result_type>()));
+                                this->setResult(std::invoke(std::forward<Function>(f), future.task()->template getResult<typename FutureType::result_type>()));
                             else
-                                this->template setResult<R>(std::invoke(std::forward<Function>(f), future.task()->template takeResult<typename FutureType::result_type>()));
+                                this->setResult(std::invoke(std::forward<Function>(f), future.task()->template takeResult<typename FutureType::result_type>()));
                         }
                         else {
-                            this->template setResult<R>(std::invoke(std::forward<Function>(f)));
+                            this->setResult(std::invoke(std::forward<Function>(f)));
                         }
                     else
-                        this->template setResult<R>(std::invoke(std::forward<Function>(f), std::forward<FutureType>(future)));
+                        this->setResult(std::invoke(std::forward<Function>(f), std::forward<FutureType>(future)));
                 }
                 else {
                     // Function returns void.
@@ -180,9 +180,9 @@ public:
                     // Adopt result value from the completed future.
                     if constexpr(!std::is_void_v<R>) {
                         if constexpr(is_shared_future_v<decltype(nextFuture)>)
-                            thisTask->template setResult<R>(finishedTask->template getResult<R>());
+                            thisTask->setResult(finishedTask->template getResult<R>());
                         else
-                            thisTask->template setResult<R>(finishedTask->template takeResult<R>());
+                            thisTask->setResult(finishedTask->template takeResult<R>());
                     }
                 }
 

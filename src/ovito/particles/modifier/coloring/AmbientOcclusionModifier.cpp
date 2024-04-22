@@ -282,7 +282,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             particles.reset();
 
             return brightness;
-        }, true);
+        });
     });
 
     // Phase II: Modulate input particle colors with the computed brightness values.

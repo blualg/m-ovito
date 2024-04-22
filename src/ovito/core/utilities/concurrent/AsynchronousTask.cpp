@@ -51,9 +51,23 @@ AsynchronousTaskBase::~AsynchronousTaskBase()
 }
 
 /******************************************************************************
+* Schedules the asynchronous task. This call function is used by the launchTask() helper.
+******************************************************************************/
+void AsynchronousTaskBase::operator()()
+{
+#ifndef OVITO_DISABLE_THREADING
+    // Submit the task for execution in a worker thread.
+    this->runInThreadPool();
+#else
+    // If multi-threading is not available, run the task immediately.
+    this->runInThisThread();
+#endif
+}
+
+/******************************************************************************
 * Submits the task for execution to a thread pool.
 ******************************************************************************/
-void AsynchronousTaskBase::runInThreadPool(bool showInUserInterface)
+void AsynchronousTaskBase::runInThreadPool()
 {
     OVITO_ASSERT(!this->_thisTask);
     OVITO_ASSERT(!this->_threadPool);
@@ -68,10 +82,6 @@ void AsynchronousTaskBase::runInThreadPool(bool showInUserInterface)
     // Determine the thread pool to use for this task.
     _threadPool = _executionContext.ui().taskManager().chooseThreadPool(*this);
 
-    // Register task with UI task manager if requested.
-    if(showInUserInterface)
-        _executionContext.ui().taskManager().registerTask(*this);
-
     // Submit to thread pool.
     _threadPool->start(this);
 }
@@ -79,7 +89,7 @@ void AsynchronousTaskBase::runInThreadPool(bool showInUserInterface)
 /******************************************************************************
 * Runs the task's work function immediately in the current thread.
 ******************************************************************************/
-void AsynchronousTaskBase::runInThisThread(bool showInUserInterface)
+void AsynchronousTaskBase::runInThisThread()
 {
     OVITO_ASSERT(!this->_thisTask);
     OVITO_ASSERT(!this->_threadPool);
@@ -87,11 +97,6 @@ void AsynchronousTaskBase::runInThisThread(bool showInUserInterface)
     // Inherit execution context from parent task.
     _executionContext = ExecutionContext::current();
     OVITO_ASSERT(_executionContext.isValid());
-
-    // Register task with UI task manager if requested.
-    if(showInUserInterface) {
-        _executionContext.ui().taskManager().registerTask(*this);
-    }
 
     // Execute it now.
     this->run();

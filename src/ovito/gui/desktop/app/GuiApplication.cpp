@@ -52,7 +52,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-GuiApplication::GuiApplication() : StandaloneApplication(_fileManager), _fileManager(StandaloneApplication::taskManager())
+GuiApplication::GuiApplication() : StandaloneApplication(_fileManager)
 {
     // Register Qt resources.
     ::registerQtResources();

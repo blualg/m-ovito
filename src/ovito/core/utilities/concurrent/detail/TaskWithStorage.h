@@ -50,6 +50,12 @@ public:
     /// \brief Constructor which leaves results storage uninitialized.
     explicit TaskWithStorage(Task::State initialState, std::nullopt_t) : TaskBase(initialState, &_result) {}
 
+    /// Assigns a value to the internal result storage of the task.
+    template<typename R2>
+    void setResult(R2&& value) {
+        TaskBase::template setResult<R>(std::forward<R2>(value));
+    }
+
 protected:
 
     /// Provides direct read/write access to the internal results.

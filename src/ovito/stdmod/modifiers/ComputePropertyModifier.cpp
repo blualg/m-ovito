@@ -328,7 +328,7 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::performComputation(
         });
 
         return std::move(state);
-    }, true);
+    });
 }
 
 }   // End of namespace

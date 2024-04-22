@@ -225,7 +225,7 @@ Future<PipelineFlowState> VoronoiAnalysisModifier::evaluateModifier(const Modifi
         engine->perform();
         engine->applyResults(state);
         return std::move(state);
-    }, true);
+    });
 }
 
 /******************************************************************************

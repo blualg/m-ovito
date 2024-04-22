@@ -157,7 +157,7 @@ Future<PipelineFlowState> StructureIdentificationModifier::evaluateModifier(cons
             // Run the algorithm.
             algorithm->identifyStructures(particles, simulationCell, selection);
             return std::move(algorithm);
-        }, true);
+        });
     });
 
     // Phase II: Compute structure statistics.

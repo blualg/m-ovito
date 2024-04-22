@@ -90,7 +90,7 @@ class OVITO_CORE_EXPORT FileManager : public QObject
 public:
 
     /// Constructor.
-    FileManager(TaskManager& taskManager);
+    FileManager();
 
     /// Destructor.
     ~FileManager();
@@ -201,9 +201,6 @@ private:
     /// Cached open gzipped files to speed up read access to subsequent frames in trajectory files.
     std::map<QString, std::pair<std::unique_ptr<GzipIODevice>, std::unique_ptr<QIODevice>>> _gzipOpenFileCache;
 #endif
-
-    /// The manager of tasks associated with file I/O.
-    TaskManager& _taskManager;
 
     /// The mutex to synchronize access to above data structures.
     QRecursiveMutex _mutex;

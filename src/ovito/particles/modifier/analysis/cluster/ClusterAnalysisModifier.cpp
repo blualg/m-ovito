@@ -234,7 +234,7 @@ Future<PipelineFlowState> ClusterAnalysisModifier::evaluateModifier(const Modifi
         this_task::throwIfCanceled();
         engine->applyResults(state);
         return std::move(state);
-    }, true);
+    });
 }
 
 /******************************************************************************

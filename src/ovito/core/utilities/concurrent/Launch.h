@@ -27,18 +27,23 @@
 #include "AsynchronousTask.h"
 #include "detail/Latch.h"
 #include "Future.h"
+#include "LaunchTask.h"
 
 namespace Ovito {
 
 /// Schedules the given function for execution in a worker thread.
 template<typename Function>
-inline auto asyncLaunch(Function&& f, bool showInUserInterface = false)
+inline auto asyncLaunch(Function&& f)
 {
     using R = std::invoke_result_t<Function>;
     class PackagedTask : public AsynchronousTask<R>
     {
     public:
+        /// The type of future associated with this task type. This typedef is used by the launchTask() function.
+        using future_type = Future<R>;
+        /// Constructor.
         PackagedTask(Function&& f) noexcept : _func(std::forward<Function>(f)) {}
+        /// Worker thread entry point.
         virtual void perform() override {
             if constexpr(!std::is_void_v<R>)
                 this->setResult(std::invoke(std::move(_func)));
@@ -48,15 +53,14 @@ inline auto asyncLaunch(Function&& f, bool showInUserInterface = false)
     private:
         std::decay_t<Function> _func;
     };
-    auto task = std::make_shared<PackagedTask>(std::forward<Function>(f));
-    return task->launch(showInUserInterface);
+    return launchTask(std::make_shared<PackagedTask>(std::forward<Function>(f)));
 }
 
 /// Executes the given function in a worker thread and waits for the result.
 /// This function blocks and should be used whenever the lambda function captures some
 /// local variables by reference.
 template<typename Function>
-inline auto asyncLaunchAndJoin(Function&& f, bool showInUserInterface = false) {
+inline auto asyncLaunchAndJoin(Function&& f) {
     detail::Latch latch(1);
     auto future = asyncLaunch([&latch, f = std::forward<Function>(f)]() mutable {
         try {
@@ -74,7 +78,7 @@ inline auto asyncLaunchAndJoin(Function&& f, bool showInUserInterface = false) {
             latch.count_down();
             throw;
         }
-    }, showInUserInterface);
+    });
     try {
         if constexpr(!std::is_void_v<std::invoke_result_t<Function>>) {
             auto result = future.result();

@@ -139,9 +139,7 @@ SharedFuture<void> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(c
             WorkingData{this});
 
         // Display progress in the UI.
-        OVITO_ASSERT(_unwrapOperation.task()->isProgressingTask());
-        static_cast<ProgressingTask*>(_unwrapOperation.task().get())->setProgressText(tr("Unwrapping particle trajectories"));
-        ExecutionContext::current().ui().taskManager().registerFuture(_unwrapOperation);
+        _unwrapOperation.task()->setProgressText(tr("Unwrapping particle trajectories"));
     }
     return _unwrapOperation;
 }

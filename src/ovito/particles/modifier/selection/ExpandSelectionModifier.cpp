@@ -155,7 +155,7 @@ Future<PipelineFlowState> ExpandSelectionModifier::evaluateModifier(const Modifi
                         .arg(engine->numSelectedParticlesOutput()));
 
         return std::move(state);
-    }, true);
+    });
 }
 
 /******************************************************************************

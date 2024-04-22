@@ -81,9 +81,6 @@ MainThreadOperation::MainThreadOperation(ExecutionContext::Type contextType, Use
 {
     // Usage of MainThreadOperation is only permitted in the main thread.
     OVITO_ASSERT_MSG(ExecutionContext::isMainThread(), "MainThreadOperation", "MainThreadOperation may only be created in the main thread.");
-
-    // Register the container MainThreadOperation with the TaskManager to display its progress in the UI.
-    userInterface.taskManager().registerTask(*task());
 }
 
 /******************************************************************************

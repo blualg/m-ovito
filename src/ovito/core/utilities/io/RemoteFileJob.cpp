@@ -59,11 +59,12 @@ RemoteFileJob::RemoteFileJob(QUrl url, Task& task) : _url(std::move(url)), _task
 }
 
 /******************************************************************************
-* Starts execution of the task.
+* Begins execution of the task. This function gets invoked by the launchTask() helper.
 ******************************************************************************/
 void RemoteFileJob::operator()()
 {
-    // Start download process in the main thread.
+    // We may not be in the main thread at this point.
+    // Make sure to start the download process in the main thread.
     ExecutionContext::current().ui().execute([self = QPointer<RemoteFileJob>(this)]() noexcept {
         if(self)
             self->start();
@@ -176,6 +177,7 @@ void RemoteFileJob::shutdown(bool success)
         _networkReply = nullptr;
     }
 #endif
+    TaskPtr self = _task.shared_from_this(); // Extend lifetime to the end of this function. Otherwise, task may be destroyed by the setFinished() call.
     _task.setFinished();
 
     // Update the counter of active jobs.
@@ -333,11 +335,13 @@ void DownloadRemoteFileJob::shutdown(bool success)
 
     if(_localFile && success) {
         _localFile->flush();
-        setResult<FileHandle>(FileHandle(url(), _localFile->fileName()));
+        setResult(FileHandle(url(), _localFile->fileName()));
     }
     else {
         _localFile.reset();
     }
+
+    TaskPtr self = shared_from_this(); // Keep alive until the end of this function. Otherwise, task may be destroyed by the shutdown() call.
 
     // Close network connection.
     RemoteFileJob::shutdown(success);
@@ -511,7 +515,7 @@ void ListRemoteDirectoryJob::receivedDirectoryComplete(const QStringList& listin
         return;
     }
 
-    setResult<QStringList>(listing);
+    setResult(listing);
     shutdown(true);
 }
 

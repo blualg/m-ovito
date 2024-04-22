@@ -249,7 +249,7 @@ Future<PipelineFlowState> ReferenceConfigurationModifier::evaluateModifier(const
             // Run the algorithm.
             engine->perform(state);
             return std::move(state);
-        }, true);
+        });
     });
 }
 

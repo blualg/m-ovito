@@ -408,7 +408,7 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
         }
 
         return std::move(state);
-    }, true);
+    });
 }
 
 }   // End of namespace

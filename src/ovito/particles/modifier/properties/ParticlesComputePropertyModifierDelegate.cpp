@@ -271,7 +271,7 @@ Future<PipelineFlowState> ParticlesComputePropertyModifierDelegate::performCompu
         });
 
         return std::move(state);
-    }, true);
+    });
 }
 
 }   // End of namespace

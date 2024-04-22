@@ -26,7 +26,6 @@
 #include <ovito/core/Core.h>
 #include "detail/TaskWithStorage.h"
 #include "Future.h"
-#include "TaskManager.h"
 
 namespace Ovito {
 
@@ -46,16 +45,19 @@ public:
     /// This virtual function is responsible for computing the results of the task.
     virtual void perform() = 0;
 
+    /// Schedules the asynchronous task. This call function is used by the launchTask() helper.
+    void operator()();
+
 private:
 
     /// Implementation of QRunnable.
     virtual void run() final override;
 
     /// Submits the task for execution to a thread pool.
-    void runInThreadPool(bool showInUserInterface);
+    void runInThreadPool();
 
     /// Runs the task's work function immediately in the current thread.
-    void runInThisThread(bool showInUserInterface);
+    void runInThisThread();
 
     /// A shared pointer to the task itself, which is used to keep the C++ object alive
     /// while the task is transferred to and executed in a thread pool.
@@ -76,27 +78,11 @@ class AsynchronousTask : public detail::TaskWithStorage<R, AsynchronousTaskBase>
 {
 public:
 
+    /// The type of future associated with this task type. This typedef is used by the launchTask() function.
+    using future_type = Future<R>;
+
     /// Constructor
     AsynchronousTask() : detail::TaskWithStorage<R, AsynchronousTaskBase>(this_task::get()->isHighPriorityTask() ? Task::HighPriority : Task::NoState, std::nullopt) {}
-
-    /// Schedules the task for execution in a thread pool and returns a future for the task's results.
-    Future<R> launch(bool showInUserInterface) {
-#ifndef OVITO_DISABLE_THREADING
-        // Submit the task for execution in a worker thread.
-        this->runInThreadPool(showInUserInterface);
-        return Future<R>::createFromTask(this->shared_from_this());
-#else
-        // If multi-threading is not available, run the task immediately.
-        this->runInThisThread(showInUserInterface);
-        return Future<R>::createFromTask(this->shared_from_this());
-#endif
-    }
-
-    /// Sets the result value of the task.
-    template<typename R2>
-    void setResult(R2&& result) {
-        Task::setResult<R>(std::forward<R2>(result));
-    }
 };
 
 }   // End of namespace

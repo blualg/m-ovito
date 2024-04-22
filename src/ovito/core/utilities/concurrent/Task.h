@@ -201,7 +201,7 @@ public:
 
 protected:
 
-    /// Assigns a tuple of values to the internal result storage of the task.
+    /// Assigns a value to the internal result storage of the task.
     template<typename R, typename R2>
     void setResult(R2&& value) {
 #ifdef OVITO_DEBUG

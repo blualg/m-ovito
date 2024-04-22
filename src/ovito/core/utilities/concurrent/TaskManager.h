@@ -45,16 +45,6 @@ public:
     virtual ~TaskManager();
 #endif
 
-    /// \brief Registers a future with the TaskManager, which will subsequently track the progress of the associated operation.
-    /// \param future The Future whose shared state should be registered.
-    /// \note This function is thread-safe.
-    void registerFuture(const FutureBase& future);
-
-    /// \brief Registers a promise with the TaskManager, which will subsequently track the progress of the associated operation.
-    /// \param promise The Promise whose shared state should be registered.
-    /// \note This function is thread-safe.
-    void registerPromise(const PromiseBase& promise);
-
     /// Registers a Task with the TaskManager, which will subsequently track the progress of the associated operation.
     /// \note This function is thread-safe.
     void registerTask(Task& task);

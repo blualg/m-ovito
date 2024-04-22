@@ -506,9 +506,6 @@ void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& re
         // Create the async operation object that manages the frame precomputation.
         _precomputeFramesOperation = Promise<void>::create<ProgressingTask>();
 
-        // Show progress of the operation in the user interface by registering the asynchronous task.
-        ExecutionContext::current().ui().taskManager().registerPromise(_precomputeFramesOperation);
-
         // Determine the number of frames that need to be precomputed.
         PipelineNode* pipelineNode = dynamic_object_cast<PipelineNode>(ownerObject());
         if(!pipelineNode)

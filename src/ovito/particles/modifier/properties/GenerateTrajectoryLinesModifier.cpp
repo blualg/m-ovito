@@ -455,12 +455,9 @@ Future<PipelineFlowState> GenerateTrajectoryLinesModifier::evaluateModifier(cons
                 modNode
             ));
 
-        // Display progress of the sampling operation in the UI.
-        ExecutionContext::current().ui().taskManager().registerFuture(future);
-
         // After each frame of the input trajectory has been processed, build the final lines.
         samplingOperation = std::move(future).then([](std::shared_ptr<TrajectoryGenerator>&& generator) {
-            return std::move(generator)->launch(true);
+            return launchTask(std::move(generator));
         });
 
         // Let the modification node indicate its activity in the UI.

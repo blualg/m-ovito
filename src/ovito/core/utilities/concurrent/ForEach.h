@@ -88,13 +88,6 @@ auto for_each_sequential(
                 _completeFunc(std::forward<CompleteIterFunc>(completeFunc)),
                 _iterator(std::begin(_range))
         {
-            // Determine the number of iterations we are going to perform.
-            if constexpr(is_with_progress)
-                this->setProgressMaximum(std::distance(_iterator, std::end(_range)));
-
-            // Inherit the priority status from the parent task.
-            if(this_task::get()->isHighPriorityTask())
-                this->setHighPriorityTask();
         }
 
         /// Starts execution of the task.
@@ -102,6 +95,11 @@ auto for_each_sequential(
             OVITO_ASSERT(_iterator == std::begin(_range));
             // Begin execution of first iteration.
             if(_iterator != std::end(_range)) {
+
+                // Determine the number of iterations we are going to perform.
+                if constexpr(is_with_progress)
+                    this->setProgressMaximum(std::distance(_iterator, std::end(_range)));
+
                 _executor.execute(std::bind_front(&ForEachTask::iteration_begin, static_pointer_cast<ForEachTask>(this->shared_from_this())));
                 OVITO_ASSERT_MSG(_iterator == std::begin(_range), "for_each_sequential()", "An executor that performs deferred execution is required.");
             }

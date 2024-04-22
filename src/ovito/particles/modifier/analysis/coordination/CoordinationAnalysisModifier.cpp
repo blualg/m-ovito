@@ -400,7 +400,7 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
         table->setAxisLabelX(tr("Pair separation distance"));
 
         return std::move(state);
-    }, true);
+    });
 }
 
 }   // End of namespace

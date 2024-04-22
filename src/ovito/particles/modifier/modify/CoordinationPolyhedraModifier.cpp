@@ -267,7 +267,7 @@ Future<PipelineFlowState> CoordinationPolyhedraModifier::evaluateModifier(const 
         std::copy(regionToParticleMap.cbegin(), regionToParticleMap.cend(), BufferWriteAccess<int64_t, access_mode::discard_write>(particleIndexProperty).begin());
 
         return std::move(state);
-    }, true);
+    });
 }
 
 }   // End of namespace
