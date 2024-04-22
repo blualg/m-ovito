@@ -25,7 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include "TaskWithStorage.h"
-#include "TaskReference.h"
+#include "TaskDependency.h"
 #include "TaskCallback.h"
 #include "../ExecutionContext.h"
 
@@ -54,17 +54,17 @@ public:
 
     /// Moves the dependency on the preceding task out of this task object.
     /// Note: Make sure this task's mutex is locked when calling this function.
-    TaskReference takeAwaitedTask() noexcept {
+    TaskDependency takeAwaitedTask() noexcept {
         return std::move(_awaitedTask);
     }
 
     /// Runs the given continuation function once the given task reaches the 'finished' state.
     template<typename Executor, typename Function>
-    void whenTaskFinishes(TaskReference awaitedTask, Executor&& executor, Function&& f) noexcept {
+    void whenTaskFinishes(TaskDependency awaitedTask, Executor&& executor, Function&& f) noexcept {
         OVITO_ASSERT(awaitedTask);
 
         // Attach to the task to be waited on.
-        QMutexLocker locker(&this->taskMutex());
+        Task::MutexLocker locker(*this);
         OVITO_ASSERT(!_awaitedTask);
         if(this->isCanceled()) {
             locker.unlock();
@@ -142,7 +142,7 @@ public:
             OVITO_ASSERT(nextFuture.isValid());
 
             // The new future's task now becomes the one we wait for.
-            QMutexLocker locker(&this->taskMutex());
+            Task::MutexLocker locker(*this);
             // This continuation task might have been canceled. In this case, there is no need to attach to the new future.
             if(this->isFinished()) {
                 return;
@@ -155,10 +155,10 @@ public:
 
                 // Thread-safe access to the ContinuationTask.
                 ContinuationTask* thisTask = static_cast<ContinuationTask*>(promise.task().get());
-                QMutexLocker locker(&thisTask->taskMutex());
+                Task::MutexLocker locker(*thisTask);
 
                 // Get the task that did just finish.
-                TaskReference finishedTask = thisTask->takeAwaitedTask();
+                TaskDependency finishedTask = thisTask->takeAwaitedTask();
 
                 // Bail out if the preceding task has been canceled, or if the continuation has been canceled.
                 if(!finishedTask || finishedTask->isCanceled()) {
@@ -197,7 +197,7 @@ private:
     void registerFinallyFunction() {
         // When this task gets canceled, we should discard the reference to the task we are waiting for in order to cancel it as well.
         this->registerContinuation([this]() noexcept {
-            QMutexLocker locker(&this->taskMutex());
+            Task::MutexLocker locker(*this);
             // Move the dependency on the preceding task out of this object. This may implicitly cancel the
             // awaited task when the reference goes out of scope.
             auto awaitedTask = this->takeAwaitedTask();
@@ -207,7 +207,7 @@ private:
     }
 
     /// The task that must finish first before this task can continue.
-    TaskReference _awaitedTask;
+    TaskDependency _awaitedTask;
 };
 
 } // End of namespace

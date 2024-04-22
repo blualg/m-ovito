@@ -43,7 +43,7 @@ Task::~Task()
 
     // Check if the mutex is currently locked.
     // This should never be the case while destroying the promise state.
-    OVITO_ASSERT(_mutex.tryLock());
+    OVITO_ASSERT(_mutex.try_lock());
     _mutex.unlock();
 
     // At the end of their lifetime, tasks must always end up in the finished state.
@@ -63,7 +63,7 @@ Task::~Task()
 ******************************************************************************/
 void Task::setFinished() noexcept
 {
-    MutexLocker locker(&taskMutex());
+    MutexLocker locker(*this);
     if(!isFinished())
         finishLocked(locker);
 }
@@ -101,7 +101,7 @@ void Task::finishLocked(MutexLocker& locker) noexcept
 ******************************************************************************/
 void Task::cancel() noexcept
 {
-    MutexLocker locker(&taskMutex());
+    MutexLocker locker(*this);
     cancelAndFinishLocked(locker);
 }
 
@@ -153,7 +153,7 @@ void Task::addCallback(detail::TaskCallbackBase* cb, bool replayStateChanges) no
 {
     OVITO_ASSERT(cb != nullptr);
 
-    const MutexLocker locker(&_mutex);
+    const MutexLocker locker(*this);
 
     // Insert into linked list of callbacks.
     cb->_nextInList = _callbacks;
@@ -188,7 +188,7 @@ void Task::callCallbacks(int state)
 ******************************************************************************/
 void Task::removeCallback(detail::TaskCallbackBase* cb) noexcept
 {
-    const MutexLocker locker(&_mutex);
+    const MutexLocker locker(*this);
 
     // Remove from linked list of callbacks.
     if(_callbacks == cb) {
@@ -205,10 +205,43 @@ void Task::removeCallback(detail::TaskCallbackBase* cb) noexcept
     }
 }
 
+/*******************************************************x***********************
+* Changes the UI description string of the current operation.
+******************************************************************************/
+void Task::setProgressText(const QString& progressText)
+{
+#if 0
+    // When in the main thread, temporarily yield control back to the event loop to process UI events and
+    // keep the UI responsive during long-running tasks.
+    auto flags = _state.load(std::memory_order_relaxed);
+    if((flags & YieldUI) && !(flags & IsAsynchronous) && ExecutionContext::isMainThread()) {
+        const ExecutionContext& context = ExecutionContext::current();
+        if(context.isValid() && context.ui().processUIEvents()) {
+            cancel();
+        }
+    }
+
+    const MutexLocker locker(*this);
+
+    auto state = _state.load(std::memory_order_relaxed);
+    if(state & (Finished | Canceled))
+        return;
+
+    _progressText = progressText;
+
+    // Print task messages to the console if logging is enabled.
+    if((state & LoggingEnabled) && !progressText.isEmpty())
+        qInfo().noquote() << "OVITO:" << progressText;
+
+    for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
+        cb->callTextChanged();
+#endif
+}
+
 /******************************************************************************
 * Blocks execution until another task finishes.
 ******************************************************************************/
-bool Task::waitFor(detail::TaskReference awaitedTask, bool throwOnError)
+bool Task::waitFor(detail::TaskDependency awaitedTask, bool throwOnError)
 {
     OVITO_ASSERT(awaitedTask);
     OVITO_ASSERT(ExecutionContext::current().isValid());
@@ -218,7 +251,7 @@ bool Task::waitFor(detail::TaskReference awaitedTask, bool throwOnError)
     OVITO_ASSERT_MSG(waitingTask != nullptr, "Task::waitFor()", "No active task. This function may only be called from a task worker function or some other context with an active task.");
 
     // Lock access to the waiting task (this function was called from).
-    QMutexLocker waitingTaskLocker(&waitingTask->taskMutex());
+    MutexLocker waitingTaskLocker(*waitingTask);
 
     // No need to wait for the other task if the waiting task was already canceled.
     if(waitingTask->isCanceled())
@@ -228,7 +261,7 @@ bool Task::waitFor(detail::TaskReference awaitedTask, bool throwOnError)
     OVITO_ASSERT(!waitingTask->isFinished());
 
     // Quick check if the awaited task has already finished.
-    QMutexLocker awaitedTaskLocker(&awaitedTask->taskMutex());
+    MutexLocker awaitedTaskLocker(*awaitedTask);
     if(awaitedTask->isFinished()) {
         if(awaitedTask->isCanceled()) {
             // If the awaited was canceled, cancel the waiting task as well.
@@ -308,12 +341,12 @@ bool Task::waitFor(detail::TaskReference awaitedTask, bool throwOnError)
     }
 
     // Check if the waiting task has been canceled.
-    waitingTaskLocker.relock();
+    waitingTaskLocker.lock();
     if(waitingTask->isCanceled())
         return false;
 
     // Now check if the awaited task has been canceled.
-    awaitedTaskLocker.relock();
+    awaitedTaskLocker.lock();
 
     // When the waiting loop was interrupted because the application is shutting down, cancel
     // all tasks immediately.
@@ -345,18 +378,6 @@ Task*& get() noexcept
     static thread_local Task* _current = nullptr;
 
     return _current;
-}
-
-/*******************************************************x***********************
-* Changes the description string of the active task.
-******************************************************************************/
-void setProgressText(const QString& progressText)
-{
-    Task* task = get();
-    OVITO_ASSERT(task != nullptr);
-    if(task->isProgressingTask()) {
-        static_cast<ProgressingTask*>(task)->setProgressText(progressText);
-    }
 }
 
 /*******************************************************x***********************

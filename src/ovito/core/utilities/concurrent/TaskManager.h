@@ -79,16 +79,6 @@ public:
     /// Executes the given function at some later time unless the given object is destroyed in the meantime or the task manager is shut down.
     void submitWork(const OvitoObject* contextObject, fu2::unique_function<void() noexcept> function, bool isScriptingContext);
 
-    /// Calls the given function object for each registered task.
-    template<typename Function>
-    void visitRegisteredTasks(Function&& func) {
-        std::unique_lock<std::mutex> lock{_mutex};
-        for(const std::weak_ptr<Task>& weakPtr : _registeredTasks) {
-            if(auto task = weakPtr.lock())
-                func(task);
-        }
-    }
-
     /// Determines the thread pool for executing the given asynchronous task.
     QThreadPool* chooseThreadPool(Task& task);
 
@@ -135,7 +125,7 @@ private:
     void executePendingWorkLocked(std::unique_lock<std::mutex>& lock);
 
     /// Keeps executing pending work items until quitWorkProcessingLoop() is called or the awaited task has finished.
-    void processWorkWhileWaiting(Task* waitingTask, detail::TaskReference& awaitedTask);
+    void processWorkWhileWaiting(Task* waitingTask, detail::TaskDependency& awaitedTask);
 
     /// Stops executing pending work items and makes processWorkWhileWaiting() return.
     void quitWorkProcessingLoop(bool& quitFlag);
@@ -192,9 +182,6 @@ private:
 
     /// Indicates that the work processing loop should be interrupted.
     bool _interruptProcessingLoop = false;
-
-    /// The list of registered task objects.
-    std::vector<std::weak_ptr<Task>> _registeredTasks;
 
     /// Manages thread-safe concurrent access to the work queue and task list.
     std::mutex _mutex;

@@ -23,7 +23,6 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
-#include <ovito/core/utilities/concurrent/TaskWatcher.h>
 #include <ovito/core/oo/ObjectExecutor.h>
 #include <ovito/core/dataset/data/RegisteredBufferAccess.h>
 
@@ -72,7 +71,6 @@ TaskManager::TaskManager(UserInterface* ui) : _ui(ui)
 TaskManager::~TaskManager()
 {
     OVITO_ASSERT(isShuttingDown());
-    OVITO_ASSERT(_registeredTasks.empty());
 }
 #endif
 
@@ -101,29 +99,6 @@ void TaskManager::registerPromise(const PromiseBase& promise)
 ******************************************************************************/
 void TaskManager::registerTask(Task& task)
 {
-    std::lock_guard<std::mutex> lock(_mutex);
-
-    // Remove dead task pointers from the list.
-    std::erase_if(_registeredTasks, [](const std::weak_ptr<Task>& weakPtr) {
-        return weakPtr.expired();
-    });
-
-#ifdef OVITO_DEBUG
-    // Make sure we don't register the same task twice.
-    for(const std::weak_ptr<Task>& weakPtr : _registeredTasks) {
-        OVITO_ASSERT(weakPtr.lock().get() != &task);
-    }
-#endif
-
-    // Abort and reject any new tasks when application is shutting down.
-    if(isShuttingDown()) {
-        task.cancel();
-        return;
-    }
-
-    // Append the new task to the list.
-    _registeredTasks.push_back(task.weak_from_this());
-
     // Enable logging for the task if requested.
     if(consoleLoggingEnabled())
         task.setLoggingEnabled();
@@ -140,23 +115,13 @@ void TaskManager::requestShutdown()
 {
     OVITO_ASSERT(ExecutionContext::isMainThread());
 
-    // To prevent queuing up more work while we are shutting down.
-    std::unique_lock<std::mutex> lock(_mutex);
-
     // Set flag to indicate we are shutting down.
+    // This is to prevent queuing up more work while we are shutting down.
+    std::unique_lock<std::mutex> lock(_mutex);
     if(isShuttingDown())
         return;
     _isShuttingDown = true;
-
-    // Cancel all registered tasks.
-    // Need to temporarily release the task manager's mutex to avoid deadlock, because canceling
-    // a task may trigger submission of further work to the task manager's queue.
-    std::vector<std::weak_ptr<Task>> registeredTasks = std::move(_registeredTasks);
     lock.unlock();
-    for(const std::weak_ptr<Task>& weakPtr : registeredTasks) {
-        if(TaskPtr task = weakPtr.lock())
-            task->cancel();
-    }
 
     // Exit local event loop if it is running.
     if(requestInterruption()) {
@@ -183,7 +148,6 @@ void TaskManager::shutdownImplementation(std::unique_lock<std::mutex>& lock)
 
     // Work item queue must be empty by now.
     OVITO_ASSERT(_pendingWork.empty());
-    OVITO_ASSERT(_registeredTasks.empty());
 
     lock.unlock();
 
@@ -289,7 +253,7 @@ void TaskManager::executePendingWorkLocked(std::unique_lock<std::mutex>& lock)
 * Keeps executing pending work items until quitWorkProcessingLoop() is called
 * or the awaited task has finished.
 ******************************************************************************/
-void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskReference& awaitedTask)
+void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDependency& awaitedTask)
 {
     // This method must only be used in the main thread.
     OVITO_ASSERT(ExecutionContext::isMainThread());

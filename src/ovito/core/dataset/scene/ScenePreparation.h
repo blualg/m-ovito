@@ -27,7 +27,6 @@
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/dataset/scene/Scene.h>
-#include <ovito/core/utilities/concurrent/TaskWatcher.h>
 #include <ovito/core/utilities/concurrent/MainThreadOperation.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include "SceneNode.h"
@@ -130,9 +129,6 @@ private:
 
     /// The animation time at which the current pipeline is being evaluated.
     AnimationTime _currentTime;
-
-    /// To get notified when the evaluation of the current data pipeline finishes.
-    TaskWatcher _pipelineEvaluationWatcher;
 
     /// The promise that is fulfilled once the scene is ready.
     Promise<void> _promise;

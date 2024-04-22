@@ -37,7 +37,7 @@ void ProgressingTask::setProgressMaximum(qlonglong maximum, bool autoReset)
     if(!autoReset && _progressMaximum == maximum)
         return;
 
-    const QMutexLocker locker(&taskMutex());
+    const MutexLocker locker(*this);
 
     _progressMaximum = maximum;
     _progressValue = 0;
@@ -63,7 +63,7 @@ void ProgressingTask::setProgressValue(qlonglong value)
         }
     }
 
-    const QMutexLocker locker(&taskMutex());
+    const MutexLocker locker(*this);
 
     auto state = _state.load(std::memory_order_relaxed);
     if(state & Canceled)
@@ -101,7 +101,7 @@ void ProgressingTask::incrementProgressValue(qlonglong increment)
         }
     }
 
-    const QMutexLocker locker(&taskMutex());
+    const MutexLocker locker(*this);
 
     auto state = _state.load(std::memory_order_relaxed);
     if(state & Canceled)
@@ -139,42 +139,11 @@ void ProgressingTask::setProgressValueIntermittent(qlonglong progressValue, int 
 }
 
 /******************************************************************************
-* Changes the description of this task to be displayed in the GUI.
-******************************************************************************/
-void ProgressingTask::setProgressText(const QString& progressText)
-{
-    // When in the main thread, temporarily yield control back to the event loop to process UI events and
-    // keep the UI responsive during long-running tasks.
-    auto flags = _state.load(std::memory_order_relaxed);
-    if((flags & YieldUI) && !(flags & IsAsynchronous) && ExecutionContext::isMainThread()) {
-        const ExecutionContext& context = ExecutionContext::current();
-        if(context.isValid() && context.ui().processUIEvents()) {
-            cancel();
-        }
-    }
-
-    const QMutexLocker locker(&taskMutex());
-
-    auto state = _state.load(std::memory_order_relaxed);
-    if(state & (Finished | Canceled))
-        return;
-
-    _progressText = progressText;
-
-    // Print task messages to the console if logging is enabled.
-    if((state & LoggingEnabled) && !progressText.isEmpty())
-        qInfo().noquote() << "OVITO:" << progressText;
-
-    for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
-        cb->callTextChanged();
-}
-
-/******************************************************************************
 * Recomputes the total progress made so far based on the progress of the current sub-task.
 ******************************************************************************/
 void ProgressingTask::updateTotalProgress()
 {
-    if(_subTaskProgressStack.empty()) {
+    if(_subProgressStack.empty()) {
         _totalProgressMaximum = _progressMaximum;
         _totalProgressValue = _progressValue;
     }
@@ -184,7 +153,7 @@ void ProgressingTask::updateTotalProgress()
             percentage = (double)_progressValue / _progressMaximum;
         else
             percentage = 0;
-        for(auto level = _subTaskProgressStack.crbegin(); level != _subTaskProgressStack.crend(); ++level) {
+        for(auto level = _subProgressStack.crbegin(); level != _subProgressStack.crend(); ++level) {
             OVITO_ASSERT(level->first >= 0 && level->first <= level->second.size());
             int weightSum1 = std::accumulate(level->second.cbegin(), level->second.cbegin() + level->first, 0);
             int weightSum2 = std::accumulate(level->second.cbegin() + level->first, level->second.cend(), 0);
@@ -202,7 +171,7 @@ void ProgressingTask::beginProgressSubStepsWithWeights(std::vector<int> weights)
 {
     OVITO_ASSERT(std::accumulate(weights.cbegin(), weights.cend(), 0) > 0);
 
-    _subTaskProgressStack.emplace_back(0, std::move(weights));
+    _subProgressStack.emplace_back(0, std::move(weights));
     _progressMaximum = 0;
     _progressValue = 0;
 }
@@ -213,14 +182,14 @@ void ProgressingTask::beginProgressSubStepsWithWeights(std::vector<int> weights)
 ******************************************************************************/
 void ProgressingTask::nextProgressSubStep()
 {
-    const QMutexLocker locker(&taskMutex());
+    const MutexLocker locker(*this);
 
     if(auto state = _state.load(std::memory_order_relaxed); state & (Canceled | Finished))
         return;
 
-    OVITO_ASSERT(!_subTaskProgressStack.empty());
-    OVITO_ASSERT(_subTaskProgressStack.back().first < _subTaskProgressStack.back().second.size());
-    _subTaskProgressStack.back().first++;
+    OVITO_ASSERT(!_subProgressStack.empty());
+    OVITO_ASSERT(_subProgressStack.back().first < _subProgressStack.back().second.size());
+    _subProgressStack.back().first++;
 
     _progressMaximum = 0;
     _progressValue = 0;
@@ -236,8 +205,8 @@ void ProgressingTask::nextProgressSubStep()
 ******************************************************************************/
 void ProgressingTask::endProgressSubSteps()
 {
-    OVITO_ASSERT(!_subTaskProgressStack.empty());
-    _subTaskProgressStack.pop_back();
+    OVITO_ASSERT(!_subProgressStack.empty());
+    _subProgressStack.pop_back();
     _progressMaximum = 0;
     _progressValue = 0;
 }

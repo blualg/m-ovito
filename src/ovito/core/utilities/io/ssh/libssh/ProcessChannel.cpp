@@ -82,6 +82,7 @@ void ProcessChannel::openChannel()
 ******************************************************************************/
 void ProcessChannel::closeChannel()
 {
+    _isConnectDelayed = false;
     if(_timerId) {
         killTimer(_timerId);
         _timerId = 0;
@@ -172,19 +173,24 @@ void ProcessChannel::processState()
     case StateClosing:
     case StateError:
     case StateSessionError:
+        _isConnectDelayed = false;
         return;
 
     case StateWaitSession:
         if(connection()->isConnected()) {
             if(!connection()->_timeSinceLastChannelClosed.isValid() || connection()->_timeSinceLastChannelClosed.elapsed() >= SSH_CHANNEL_GRACE_PERIOD) {
+                _isConnectDelayed = false;
+                connection()->_timeSinceLastChannelClosed.start();
                 setState(StateOpening, true);
             }
             else if(!_isConnectDelayed) {
                 _isConnectDelayed = true;
                 int delay = std::max(0, SSH_CHANNEL_GRACE_PERIOD - (int)connection()->_timeSinceLastChannelClosed.elapsed());
                 QTimer::singleShot(delay, this, [this]() {
-                    _isConnectDelayed = false;
-                    processState();
+                    if(_isConnectDelayed) {
+                        _isConnectDelayed = false;
+                        processState();
+                    }
                 });
             }
         }
@@ -234,7 +240,7 @@ void ProcessChannel::processState()
 
 #if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0,7,0)
             // Register callback functions for libssh channel:
-            memset(&_channelCallbacks, 0, sizeof(_channelCallbacks));
+            std::memset(&_channelCallbacks, 0, sizeof(_channelCallbacks));
             _channelCallbacks.userdata = this;
             _channelCallbacks.channel_data_function = &ProcessChannel::channelDataCallback;
             ssh_callbacks_init(&_channelCallbacks);

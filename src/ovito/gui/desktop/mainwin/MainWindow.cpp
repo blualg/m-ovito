@@ -479,6 +479,13 @@ void MainWindow::closeEvent(QCloseEvent* event)
         // Don't allow user to interact with the window anymore.
         setEnabled(false);
 
+#ifdef OVITO_DEBUG
+        // Check that the shutdown task does not get canceled (just for correctness).
+        this_task::get()->finally([](Task& task) noexcept {
+            OVITO_ASSERT(!task.isCanceled());
+        });
+#endif
+
         // Stop all running tasks in this window and release program session objects.
         shutdown();
 
@@ -487,15 +494,13 @@ void MainWindow::closeEvent(QCloseEvent* event)
             saveMainWindowGeometry();
             saveLayout();
         }
-
-        // Closes the GUI window (but does not destroy this UserInterface C++ object yet, which is kept alive by a shared_ptr).
-        event->accept();
     });
 
     // Swallow close event if the user chose to cancel the shutdown.
-    if(!isShuttingDown()) {
+    if(isShuttingDown())
+        event->accept();
+    else
         event->ignore();
-    }
 }
 
 /******************************************************************************

@@ -31,7 +31,7 @@
 namespace Ovito {
 
 namespace detail {
-    class TaskReference; // Forward declaration
+    class TaskDependency; // Forward declaration
     class TaskCallbackBase;
     template<typename Derived> class TaskCallback;
     template<typename R, typename task_type> class ContinuationTask;
@@ -47,7 +47,8 @@ class OVITO_CORE_EXPORT Task : public std::enable_shared_from_this<Task>
 {
 public:
 
-    using MutexLocker = QMutexLocker<QMutex>;
+    using Mutex = std::mutex;
+    using MutexLocker = std::unique_lock<Mutex>;
 
     /// The different states a task can be in.
     enum State {
@@ -114,7 +115,7 @@ public:
     /// \brief Switches the task into the 'exception' state to signal that an exception has occurred.
     /// \param ex The exception to store into the task object.
     void setException(std::exception_ptr ex) {
-        const MutexLocker locker(&taskMutex());
+        const MutexLocker locker(*this);
 
         // Check if task is already canceled or finished.
         if(_state.load() & (Canceled | Finished))
@@ -128,7 +129,7 @@ public:
     /// This method should be called from within an exception handler. It saves a copy of the current exception
     /// being handled into the task object.
     void captureExceptionAndFinish() {
-        MutexLocker locker(&taskMutex());
+        MutexLocker locker(*this);
 
         // Check if task is already canceled or finished.
         if(_state.load() & (Canceled | Finished))
@@ -194,6 +195,10 @@ public:
     /// Returns the internal exception store, which contains an exception object in case the task has failed.
     const std::exception_ptr& exceptionStore() const noexcept { return _exceptionStore; }
 
+    /// \brief Sets the description of this task's work to be displayed in the GUI.
+    /// \param progressText The text string that will be displayed in the user interface to describe the current operation performed by task.
+    void setProgressText(const QString& progressText);
+
 protected:
 
     /// Assigns a tuple of values to the internal result storage of the task.
@@ -216,7 +221,7 @@ protected:
     /// If the task is already in one of these states, the continuation function is invoked immediately.
     template<typename Executor, typename Function>
     void addContinuation(Executor&& executor, Function&& f) {
-        MutexLocker locker(&taskMutex());
+        MutexLocker locker(*this);
         // Check if task is already finished.
         if(isFinished()) {
             // Run continuation function immediately.
@@ -233,7 +238,7 @@ protected:
     /// If the task is already in one of these states, the continuation function is invoked immediately.
     template<typename Function>
     void addContinuation(Function&& f) {
-        MutexLocker locker(&taskMutex());
+        MutexLocker locker(*this);
         // Check if task is already finished.
         if(isFinished()) {
             // Run continuation function immediately.
@@ -271,40 +276,30 @@ protected:
     /// Puts this task into the 'canceled' and 'finished' states (without newly locking the task).
     void cancelAndFinishLocked(MutexLocker& locker) noexcept;
 
-    /// Increments the counter of futures or parent tasks currently waiting for this task to complete.
-    void incrementDependentsCount() noexcept { _dependentsCount.ref(); }
-
-    /// Decrements the counter of futures or parent tasks currently waiting for this task to complete.
-    /// If this counter reaches zero, the task gets canceled.
-    void decrementDependentsCount() noexcept {
-        // Automatically cancel this task when there are no one left who depends on it.
-        if(!_dependentsCount.deref())
-            cancel();
-    }
-
     /// Invokes the registered callback functions.
     void callCallbacks(int state);
 
     /// Returns the mutex that is used to manage concurrent access to this task.
-    QMutex& taskMutex() const { return _mutex; }
+    operator Mutex&() const { return _mutex; }
 
     /// \brief Suspends execution until the given task has reached the 'finished' state.
     ///        If the awaited task gets canceled while waiting, the task waiting for it gets canceled too.
     /// \param task The task to wait for.
     /// \param throwOnError If the awaited task finished with an error state, throw it as an exception.
     /// \return false if either \a task or this operation have been canceled.
-    [[nodiscard]] static bool waitFor(detail::TaskReference awaitedTask, bool throwOnError);
+    [[nodiscard]] static bool waitFor(detail::TaskDependency awaitedTask, bool throwOnError);
 
     /// The current state this task is in.
     std::atomic_int _state;
 
-    /// The number of other parties currently waiting for this task to complete.
-    QAtomicInt _dependentsCount{0};
+    /// The number of TaskDependency instances currently referring to this task.
+    /// When this count drops to zero, the task gets automatically canceled.
+    std::atomic_int _dependentsCount{0};
 
-    /// Used for managing concurrent access to this task.
-    mutable QMutex _mutex;
+    /// For managing concurrent access to this task's state.
+    mutable Mutex _mutex;
 
-    /// List of continuation functions that will be called when this task enters the 'finished' or the 'canceled' state.
+    /// List of continuation functions that will be invoked when this task finishes, fails, or is canceled.
     QVarLengthArray<fu2::unique_function<void() noexcept>, 2> _continuations;
 
     /// Holds the exception object when this shared state is in the failed state.
@@ -313,7 +308,7 @@ protected:
     /// Head of linked list of callback functions currently registered to this task.
     detail::TaskCallbackBase* _callbacks = nullptr;
 
-    /// Pointer to a std::tuple<...> storing the result value(s) of this task.
+    /// Pointer to the storage for the task's results.
     void* _resultsStorage = nullptr;
 
 #ifdef OVITO_DEBUG
@@ -328,7 +323,7 @@ protected:
     friend class PromiseBase;
     friend class MainThreadOperation;
     friend class AsynchronousTaskBase;
-    friend class detail::TaskReference;
+    friend class detail::TaskDependency;
     friend class detail::TaskCallbackBase;
     template<typename Derived> friend class detail::TaskCallback;
     template<typename tuple_type, typename task_type> friend class detail::ContinuationTask;
@@ -343,8 +338,11 @@ namespace this_task
 /// Returns the task object that is currently active in the current thread.
 OVITO_CORE_EXPORT Task*& get() noexcept;
 
-/// Changes the description string of the active task.
-OVITO_CORE_EXPORT void setProgressText(const QString& progressText);
+/// Changes the UI description string of the current operation.
+OVITO_CORE_EXPORT inline void setProgressText(const QString& progressText) {
+    OVITO_ASSERT(get() != nullptr);
+    get()->setProgressText(progressText);
+}
 
 /// Sets the maximum value of the current task.
 OVITO_CORE_EXPORT void setProgressMaximum(qlonglong maximum, bool autoReset = true);

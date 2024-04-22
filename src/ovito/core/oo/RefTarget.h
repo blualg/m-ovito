@@ -230,39 +230,6 @@ public:
     /// The default implementation does nothing.
     virtual void rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval) {}
 
-    ///////////////////////////////// Executor interface //////////////////////////////////////
-
-    /// Creates some work that can be submitted for execution later and which will be executed in the context of this object (typically in the main thread).
-    /// If the object gets destroyed before the work is executed, the scheduled work will be discarded.
-    template<typename Function>
-    auto schedule(Function&& f) const {
-        OVITO_CHECK_OBJECT_POINTER(this);
-        OVITO_ASSERT(ExecutionContext::current().isValid());
-        return [weakRef = weak_from_this(), context = ExecutionContext::current(), f = std::forward<Function>(f)]() mutable noexcept {
-            if(auto self = weakRef.lock()) {
-                ExecutionContext::Scope execScope(std::move(context));
-                static_cast<const RefTarget*>(self.get())->execute(std::move(f));
-            }
-        };
-    }
-
-    /// Executes some work in the context of this object (typically the main thread).
-    template<typename Function>
-    void execute(Function&& f) const {
-        OVITO_CHECK_OBJECT_POINTER(this);
-        OVITO_ASSERT(ExecutionContext::current().isValid());
-        // If we are in the main thread already, we can immediately execute the work.
-        // Otherwise, schedule its execution in the main thread.
-        if(ExecutionContext::isMainThread()) {
-            // Temporarily suspend undo recording, because deferred operations never get recorded by convention.
-            UndoSuspender noUndo;
-            std::invoke(std::forward<Function>(f));
-        }
-        else {
-            ExecutionContext::current().runDeferred(this, std::forward<Function>(f));
-        }
-    }
-
 private:
 
     /// Registers a RefMaker as a dependent of this RefTarget, subscribing it to notifications.

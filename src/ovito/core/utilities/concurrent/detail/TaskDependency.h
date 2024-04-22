@@ -29,81 +29,88 @@
 namespace Ovito::detail {
 
 /**
- * \brief A smart-pointer referencing a shared Task object, which expresses a dependency on the Task's results.
+ * \brief This class represents a dependency on a task's results.
  *
- * This is used by the classes Future and SharedFuture to express their dependency on a Task.
- * If the number of dependents of the Task reaches zero, the Task is automatically canceled.
+ * It is used by the classes Future and SharedFuture to express their dependency on some task.
+ * It is also used by the Future::then() method to represent the dependency of the continuation task on the preceding task.
+ *
+ * A task is kept going as long as at least one dependency on it exists.
+ * If the number of dependents reaches zero, the task gets automatically canceled.
  */
-class OVITO_CORE_EXPORT TaskReference
+class OVITO_CORE_EXPORT TaskDependency
 {
 public:
 
     /// Default constructor, initializing the smart pointer to null.
-    TaskReference() noexcept = default;
+    TaskDependency() noexcept = default;
 
     /// Initialization constructor.
-    TaskReference(TaskPtr ptr) noexcept : _ptr(std::move(ptr)) {
-        if(_ptr) _ptr->incrementDependentsCount();
+    TaskDependency(TaskPtr task) noexcept : _task(std::move(task)) {
+        if(_task) _task->_dependentsCount.fetch_add(1);
     }
 
     /// Copy constructor.
-    TaskReference(const TaskReference& other) noexcept : _ptr(other._ptr) {
-        if(_ptr) _ptr->incrementDependentsCount();
+    TaskDependency(const TaskDependency& other) noexcept : _task(other._task) {
+        if(_task) _task->_dependentsCount.fetch_add(1);
     }
 
     /// Move constructor.
-    TaskReference(TaskReference&& rhs) noexcept : _ptr(std::move(rhs._ptr)) {}
+    TaskDependency(TaskDependency&& rhs) noexcept : _task(std::move(rhs._task)) {}
 
     /// Destructor.
-    ~TaskReference() noexcept {
-        if(_ptr) _ptr->decrementDependentsCount();
+    ~TaskDependency() noexcept {
+        if(_task) {
+            // Automatically cancel the task when there are no one left depending on its results.
+            if(_task->_dependentsCount.fetch_sub(1) == 1)
+                _task->cancel();
+        }
     }
 
     // Copy assignment.
-    TaskReference& operator=(const TaskReference& rhs) noexcept {
-        TaskReference(rhs).swap(*this);
+    TaskDependency& operator=(const TaskDependency& rhs) noexcept {
+        TaskDependency(rhs).swap(*this);
         return *this;
     }
 
     // Move assignment.
-    TaskReference& operator=(TaskReference&& rhs) noexcept {
-        TaskReference(std::move(rhs)).swap(*this);
+    TaskDependency& operator=(TaskDependency&& rhs) noexcept {
+        TaskDependency(std::move(rhs)).swap(*this);
         return *this;
     }
 
     // Access to pointer value.
     const TaskPtr& get() const noexcept {
-        return _ptr;
+        return _task;
     }
 
     void reset() noexcept {
-        TaskReference().swap(*this);
+        TaskDependency().swap(*this);
     }
 
     void reset(TaskPtr rhs) noexcept {
-        TaskReference(std::move(rhs)).swap(*this);
+        TaskDependency(std::move(rhs)).swap(*this);
     }
 
-    inline void swap(TaskReference& rhs) noexcept {
-        _ptr.swap(rhs._ptr);
+    inline void swap(TaskDependency& rhs) noexcept {
+        _task.swap(rhs._task);
     }
 
     inline Task& operator*() const noexcept {
-        OVITO_ASSERT(_ptr);
-        return *_ptr.get();
+        OVITO_ASSERT(_task);
+        return *_task.get();
     }
 
     inline Task* operator->() const noexcept {
-        OVITO_ASSERT(_ptr);
-        return _ptr.get();
+        OVITO_ASSERT(_task);
+        return _task.get();
     }
 
-    explicit operator bool() const { return (bool)_ptr; }
+    explicit operator bool() const { return (bool)_task; }
 
 private:
 
-    /// A shared_ptr to the Task object, which keeps the C++ object alive.
-    TaskPtr _ptr;
+    /// A std::shared_task to the Task object, which keeps the C++ object alive.
+    TaskPtr _task;
 };
 
 }   // End of namespace

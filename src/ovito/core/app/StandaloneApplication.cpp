@@ -135,7 +135,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
             }
         }
 
-        // Prepares the application to start running. Creates the global Qt application object.
+        // Prepares the application to start running.
         MainThreadOperation operation = startupApplication();
         if(!operation.isValid())
             return false;

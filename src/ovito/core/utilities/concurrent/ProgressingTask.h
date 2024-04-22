@@ -40,22 +40,15 @@ public:
 
     /// Returns the maximum value for progress reporting.
     qlonglong progressMaximum() const {
-        const QMutexLocker lock(&taskMutex());
+        const MutexLocker lock(*this);
         return _totalProgressMaximum;
     }
 
     /// \brief Returns the current progress of the task.
     /// \return A value in the range 0 to progressMaximum().
     qlonglong progressValue() const {
-        const QMutexLocker lock(&taskMutex());
+        const MutexLocker lock(*this);
         return _totalProgressValue;
-    }
-
-    /// \brief Returns the current status text of this task.
-    /// \return A string describing the ongoing operation, which is displayed in the user interface.
-    QString progressText() const {
-        const QMutexLocker lock(&taskMutex());
-        return _progressText;
     }
 
     /// \brief Sets the current maximum value for progress reporting. The current progress value is reset to zero unless autoReset is false.
@@ -73,10 +66,6 @@ public:
     /// \param progressValue The new value, which must be in the range 0 to progressMaximum().
     /// \param updateEvery Generate an update event only after the method has been called this many times.
     void setProgressValueIntermittent(qlonglong progressValue, int updateEvery = 2000);
-
-    /// \brief Changes the description of this task to be displayed in the GUI.
-    /// \param progressText The text string that will be displayed in the user interface to describe the operation in progress.
-    void setProgressText(const QString& progressText);
 
     /// \brief Starts a sequence of sub-steps in the progress range of this task.
     ///
@@ -117,11 +106,8 @@ protected:
     /// The maximum progress value of the task.
     qlonglong _totalProgressMaximum = 0;
 
-    /// A description of what this task is currently doing, to be displayed in the GUI.
-    QString _progressText;
-
-    /// Keeps track of nested sub-tasks and their current progress.
-    std::vector<std::pair<int, std::vector<int>>> _subTaskProgressStack;
+    /// Keeps track of nested sub-progress ranges.
+    std::vector<std::pair<int, std::vector<int>>> _subProgressStack;
 
     int _intermittentUpdateCounter = 0;
 

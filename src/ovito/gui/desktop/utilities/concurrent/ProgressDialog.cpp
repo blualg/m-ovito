@@ -108,9 +108,9 @@ ProgressDialog::ProgressDialog(QWidget* parent, TaskPtr task, const QString& dia
 
     // Create UI for every already running task.
     TaskManager& taskManager = ExecutionContext::current().ui().taskManager();
-    taskManager.visitRegisteredTasks([&](const TaskPtr& task) {
-        createUIForTask(task);
-    });
+//    taskManager.visitRegisteredTasks([&](const TaskPtr& task) {
+//        createUIForTask(task);
+//    });
 
     // Expand dialog window to minimum width.
     QRect g = geometry();

@@ -23,6 +23,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/concurrent/Future.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
+#include <ovito/core/utilities/concurrent/LaunchTask.h>
 #include <ovito/core/utilities/io/ssh/SshConnection.h>
 #include <ovito/core/utilities/io/ssh/openssh/OpensshConnection.h>
 #ifdef OVITO_SSH_CLIENT
@@ -107,9 +108,7 @@ SharedFuture<FileHandle> FileManager::fetchUrl(const QUrl& url)
         }
 
         // Start the background download job.
-        DownloadRemoteFileJob* job = new DownloadRemoteFileJob(url);
-        auto future = job->sharedFuture();
-        // Show task progress in the GUI.
+        auto future = launchTask(std::make_shared<DownloadRemoteFileJob>(url));
         _taskManager.registerFuture(future);
         _pendingFiles.emplace(normalizedUrl, future);
         return future;
@@ -127,9 +126,9 @@ Future<QStringList> FileManager::listDirectoryContents(const QUrl& url)
     OVITO_ASSERT(ExecutionContext::current().isValid());
 
     if(url.scheme() == QStringLiteral("sftp")) {
-        ListRemoteDirectoryJob* job = new ListRemoteDirectoryJob(url);
-        ExecutionContext::current().ui().taskManager().registerPromise(job->promise());
-        return job->future();
+        auto future = launchTask(std::make_shared<ListRemoteDirectoryJob>(url));
+        _taskManager.registerFuture(future);
+        return future;
     }
     else if(url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https")) {
 #ifndef Q_OS_WASM
@@ -212,7 +211,7 @@ QUrl FileManager::urlFromUserInput(const QString& path)
 ******************************************************************************/
 SshConnection* FileManager::acquireSshConnection(const SshConnectionParameters& sshParams)
 {
-    OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
+    OVITO_ASSERT(ExecutionContext::isMainThread());
 
     // Determine the kind of ssh connection method to use.
     SshConnection::SshImplementation sshImpl = SshConnection::getSshImplementation();
@@ -264,10 +263,10 @@ SshConnection* FileManager::acquireSshConnection(const SshConnectionParameters& 
 ******************************************************************************/
 void FileManager::releaseSshConnection(SshConnection* connection)
 {
-    OVITO_ASSERT(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread());
+    OVITO_ASSERT(ExecutionContext::isMainThread());
 
     Q_DECL_UNUSED bool wasAcquired = _acquiredConnections.removeOne(connection);
-    OVITO_ASSERT(wasAcquired); 
+    OVITO_ASSERT(wasAcquired);
     if(_acquiredConnections.contains(connection))
         return;
 

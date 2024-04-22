@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/concurrent/Future.h>
+#include <ovito/core/utilities/concurrent/detail/TaskWithStorage.h>
 
 #include <QQueue>
 
@@ -34,7 +35,7 @@ namespace Ovito {
 class SshConnection;
 
 /**
- * \brief Base class for background jobs that access remote files and directories via SSH.
+ * \brief Base class for asynchronous tasks that fetch remote files and directory contents via SSH or HTTPS.
  */
 class RemoteFileJob : public QObject
 {
@@ -43,13 +44,20 @@ class RemoteFileJob : public QObject
 public:
 
     /// Constructor.
-    RemoteFileJob(QUrl url, PromiseBase& promise);
+    RemoteFileJob(QUrl url, Task& task);
+
+#ifdef OVITO_DEBUG
+    ~RemoteFileJob() {
+        OVITO_ASSERT(_isActive == false);
+        OVITO_ASSERT(_connection == nullptr);
+    }
+#endif
+
+    /// Starts execution of the task.
+    void operator()();
 
     /// Returns the URL being accessed.
     const QUrl& url() const { return _url; }
-
-    /// The associated asynchronous task of the job.
-    const PromiseBase& promise() const { return _promise; }
 
 protected:
 
@@ -92,10 +100,10 @@ protected:
     QNetworkReply* _networkReply = nullptr;
 #endif
 
-    /// The associated asynchronous task of the job.
-    PromiseBase& _promise;
+    /// The task object belonging to this job.
+    Task& _task;
 
-    /// Indicates whether this job is currently active.
+    /// Indicates whether this job is currently active or pending to be processed later.
     bool _isActive = false;
 
     /// Queue of jobs that are waiting to be executed.
@@ -106,23 +114,21 @@ protected:
 };
 
 /**
- * \brief A background jobs that downloads a file stored on a remote host to the local computer.
+ * \brief An asynchronous task that downloads a file stored on a remote host to the local computer.
  */
-class DownloadRemoteFileJob : public RemoteFileJob
+class DownloadRemoteFileJob : public RemoteFileJob, public detail::TaskWithStorage<FileHandle, ProgressingTask>
 {
     Q_OBJECT
 
 public:
 
+    /// The type of future associated with this task type. This typedef is used by the launchTask() function.
+    using future_type = SharedFuture<FileHandle>;
+
     /// Constructor.
     DownloadRemoteFileJob(QUrl url) :
-        RemoteFileJob(std::move(url), _promise),
-        _promise(Promise<FileHandle>::create<ProgressingTask>()) {}
-
-    /// Returns a future yielding the file downloaded by this job.
-    SharedFuture<FileHandle> sharedFuture() {
-        return _promise.sharedFuture();
-    }
+        RemoteFileJob(std::move(url), *this),
+        TaskWithStorage<FileHandle, ProgressingTask>(ProgressingTask::NoState, std::nullopt) {}
 
 protected:
 
@@ -159,29 +165,24 @@ private:
 
     /// The local copy of the file.
     std::unique_ptr<QTemporaryFile> _localFile;
-
-    /// The promise through which the result of this download job is returned.
-    Promise<FileHandle> _promise;
 };
 
 /**
- * \brief A background jobs that lists the files in a directory on a remote host.
+ * \brief An asynchronous task that lists the files in a directory on a remote host.
  */
-class ListRemoteDirectoryJob : public RemoteFileJob
+class ListRemoteDirectoryJob : public RemoteFileJob, public detail::TaskWithStorage<QStringList, ProgressingTask>
 {
     Q_OBJECT
 
 public:
 
+    /// The type of future associated with this task type. This typedef is used by the launchTask() function.
+    using future_type = Future<QStringList>;
+
     /// Constructor.
     ListRemoteDirectoryJob(QUrl url) :
-        RemoteFileJob(std::move(url), _promise),
-        _promise(Promise<QStringList>::create<ProgressingTask>()) {}
-
-    /// Returns a future yielding the file list downloaded by this job.
-    Future<QStringList> future() {
-        return _promise.future();
-    }
+        RemoteFileJob(std::move(url), *this),
+        TaskWithStorage<QStringList, ProgressingTask>(ProgressingTask::NoState, std::nullopt) {}
 
 protected:
 
@@ -201,11 +202,6 @@ protected Q_SLOTS:
 
     /// Handles closing of the SSH channel.
     void channelClosed();
-
-private:
-
-    /// The promise through which the result of this job is returned.
-    Promise<QStringList> _promise;
 };
 
 }   // End of namespace

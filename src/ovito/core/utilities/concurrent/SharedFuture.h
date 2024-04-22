@@ -26,7 +26,7 @@
 #include <ovito/core/Core.h>
 #include "Future.h"
 #include "detail/FutureDetail.h"
-#include "detail/TaskReference.h"
+#include "detail/TaskDependency.h"
 #include "InlineExecutor.h"
 
 namespace Ovito {
@@ -59,7 +59,7 @@ public:
     explicit SharedFuture(TaskPtr p) noexcept : FutureBase(std::move(p)) {}
 
     /// Constructor that constructs a Future from an existing task dependency.
-    explicit SharedFuture(detail::TaskReference&& p) noexcept : FutureBase(std::move(p)) {}
+    explicit SharedFuture(detail::TaskDependency&& p) noexcept : FutureBase(std::move(p)) {}
 
     /// A future may directly be initialized from a value.
     template<typename R2 = R,
@@ -68,6 +68,13 @@ public:
             && !std::is_same_v<std::decay_t<R2>, Future<R>>
             && !std::is_same_v<std::decay_t<R2>, TaskPtr>>>
     SharedFuture(R2&& val) : FutureBase(std::move(promise_type::createImmediate(std::forward<R2>(val))._task)) {}
+
+    /// Create a new SharedFuture that is associated with the given task object.
+    static SharedFuture createFromTask(TaskPtr task) {
+        OVITO_ASSERT(task);
+        OVITO_ASSERT(task->_resultsStorage != nullptr || (std::is_void_v<R>));
+        return SharedFuture(std::move(task));
+    }
 
     /// Move assignment operator.
     SharedFuture& operator=(SharedFuture&& other) noexcept = default;
@@ -152,10 +159,10 @@ SharedFuture<R>::then(Executor&& executor, Function&& f)
         continuation_task_type* continuationTask = static_cast<continuation_task_type*>(promise.task().get());
 
         // Manage access to the task that represents the continuation.
-        QMutexLocker locker(&continuationTask->taskMutex());
+        Task::MutexLocker locker(*continuationTask);
 
         // Get the task that did just finish.
-        detail::TaskReference finishedTask = continuationTask->takeAwaitedTask();
+        detail::TaskDependency finishedTask = continuationTask->takeAwaitedTask();
 
         // Don't need to run continuation function if the continuation task has been canceled in the meantime.
         // Also don't run continuation function if the preceding task was canceled.

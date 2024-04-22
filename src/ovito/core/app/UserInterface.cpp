@@ -76,6 +76,18 @@ void UserInterface::exitWithFatalError(const Exception& ex)
 ******************************************************************************/
 void UserInterface::shutdown()
 {
+    // Close the dataset container. This should release all objects in the current dataset and stop all associated background tasks.
+    try {
+        // Set up a local execution context in case we don't have one.
+        // The shutdown() method may be called from anywhere.
+        ExecutionContext::Scope execScope(ExecutionContext::Type::Scripting, shared_from_this());
+        datasetContainer().clearAllReferences();
+    }
+    catch(const Exception& ex) {
+        qWarning() << "Warning: Exception caught during shutdown";
+        reportError(ex, true);
+    }
+
     // Terminate all running tasks, empty the deferred work queue, and leave all nested event loops.
     // Once this is done, shutdownComplete() will be invoked to finalize the shutdown process.
     taskManager().requestShutdown();
@@ -87,18 +99,6 @@ void UserInterface::shutdown()
 ******************************************************************************/
 void UserInterface::shutdownComplete()
 {
-    try {
-        // Set up a local execution context.
-        ExecutionContext::Scope execScope(ExecutionContext::Type::Scripting, shared_from_this());
-
-        // Close the dataset container. This should release all objects in the current dataset.
-        datasetContainer().clearAllReferences();
-    }
-    catch(const Exception& ex) {
-        qWarning() << "Warning: Exception caught during user interface shutdown";
-        reportError(ex, true);
-    }
-
     // Self-destruction.
     if(_selfGuard) {
         if(QThread::currentThread()->loopLevel() != 0) {

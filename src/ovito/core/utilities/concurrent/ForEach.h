@@ -137,7 +137,7 @@ auto for_each_sequential(
                 }
                 OVITO_ASSERT(future.isValid());
                 // Schedule next iteration upon completion of the future returned by the user function.
-                this->whenTaskFinishes(future.takeTaskReference(), _executor, std::bind_front(&ForEachTask::iteration_complete, static_pointer_cast<ForEachTask>(this->shared_from_this())));
+                this->whenTaskFinishes(future.takeTaskDependency(), _executor, std::bind_front(&ForEachTask::iteration_complete, static_pointer_cast<ForEachTask>(this->shared_from_this())));
             }
             else {
                 // Inform caller that the task has finished and the result is available.
@@ -148,7 +148,7 @@ auto for_each_sequential(
         // Is called at the end of each iteration, when user function has finished performing its work.
         void iteration_complete() noexcept {
             // Lock access to this task object.
-            QMutexLocker locker(&this->taskMutex());
+            Task::MutexLocker locker(*this);
 
             // Get the task that did just finish and wrap it in a future of the original type.
             output_future_type future(this->takeAwaitedTask());

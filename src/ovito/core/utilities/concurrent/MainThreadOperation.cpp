@@ -38,6 +38,9 @@ public:
 
     MainThreadTask(Task* parentTask) noexcept : ProgressingTask(Task::YieldUI) {
         if(parentTask) {
+            // Sanity check: The parent cannot be in the finished state yet when the child task is being created.
+            OVITO_ASSERT(!parentTask->isFinished() || parentTask->isCanceled());
+
             // Inherit the priority status from the parent task.
             if(parentTask->isHighPriorityTask())
                 this->setHighPriorityTask();
@@ -71,8 +74,8 @@ public:
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-MainThreadOperation::MainThreadOperation(ExecutionContext::Type contextType, UserInterface& userInterface) :
-    Promise<void>(std::make_shared<MainThreadTask>(this_task::get())),
+MainThreadOperation::MainThreadOperation(ExecutionContext::Type contextType, UserInterface& userInterface, Kind kind) :
+    Promise<void>(std::make_shared<MainThreadTask>(kind == Bound ? this_task::get() : nullptr)),
     ExecutionContext::Scope(contextType, userInterface.shared_from_this()),
     Task::Scope(task())
 {

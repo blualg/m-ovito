@@ -44,11 +44,6 @@ public:
 
     WeakSharedFuture(const SharedFuture<R>& future) noexcept : std::weak_ptr<Task>(future.task()) {}
 
-    WeakSharedFuture& operator=(const Future<R>& f) noexcept {
-        std::weak_ptr<Task>::operator=(f.task());
-        return *this;
-    }
-
     WeakSharedFuture& operator=(const SharedFuture<R>& f) noexcept {
         std::weak_ptr<Task>::operator=(f.task());
         return *this;

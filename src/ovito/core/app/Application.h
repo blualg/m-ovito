@@ -103,11 +103,6 @@ public:
     /// Create the global Qt application object.
     void createQtApplication(bool supportGui);
 
-public Q_SLOTS:
-
-    /// Closes the application immediately (without asking user to save changes).
-    void shutdown() { UserInterface::shutdown(); }
-
 protected:
 
     /// Creates the global instance of the right QCoreApplication derived class.

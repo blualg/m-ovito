@@ -103,8 +103,8 @@ void TaskWatcher::taskProgressChanged(qlonglong progress, qlonglong maximum)
 
 void TaskWatcher::taskTextChanged()
 {
-    if(isWatching() && !task()->isCanceled())
-        Q_EMIT progressTextChanged(static_cast<ProgressingTask*>(task().get())->progressText());
+//    if(isWatching() && !task()->isCanceled())
+//        Q_EMIT progressTextChanged(static_cast<ProgressingTask*>(task().get())->progressText());
 }
 
 bool TaskWatcher::isCanceled() const
@@ -129,7 +129,8 @@ qlonglong TaskWatcher::progressValue() const
 
 QString TaskWatcher::progressText() const
 {
-    return (isWatching() && task()->isProgressingTask()) ? static_cast<ProgressingTask*>(task().get())->progressText() : QString();
+//    return (isWatching() && task()->isProgressingTask()) ? static_cast<ProgressingTask*>(task().get())->progressText() : QString();
+    return {};
 }
 
 }   // End of namespace

@@ -44,9 +44,6 @@ ScenePreparation::ScenePreparation(UserInterface& userInterface, Scene* scene, b
     // This facility requires a Qt event loop.
     Application::instance()->createQtApplication(false);
 
-    // Get notified when an ongoing pipeline evaluation task finishes.
-    connect(&_pipelineEvaluationWatcher, &TaskWatcher::finished, this, &ScenePreparation::pipelineEvaluationFinished);
-
     // Activate the initial scene provided to the constructor.
     setScene(scene);
 
@@ -128,13 +125,12 @@ void ScenePreparation::makeReady(bool forceReevaluation)
     // wait until its evaulation completes.
     _currentPipeline.reset();
     _pipelineEvaluationFuture.reset();
-    _pipelineEvaluationWatcher.reset();
     _completedFrame = scene()->animationSettings()->currentFrame();
     _completedScene = scene();
     PipelineEvaluationRequest request(scene()->animationSettings()->currentTime());
 
     // Pipeline evaluation must be done in a valid execution context and with an active task object.
-    MainThreadOperation operation(ExecutionContext::Type::Interactive, userInterface());
+    MainThreadOperation operation(ExecutionContext::Type::Interactive, userInterface(), MainThreadOperation::Isolated);
 
     // Go through all pipelines of the scene until we find one
     // that is not completely evaluated yet.
@@ -164,22 +160,29 @@ void ScenePreparation::makeReady(bool forceReevaluation)
     oldEvaluation.reset();
 
     if(!_pipelineEvaluationFuture.isValid()) {
-        // If all pipelines are in the complete state, we are done. The scene is prepared for rendering.
+        // If all pipelines are in the ready state, we are done. The scene is prepared for rendering.
 
-        // Set the promise to the fulfilled state.
+        // Set the promise to the fulfilled state to signal that the scene is prepared.
         _promise.setFinished();
 
         // Update the viewports to reflect the final pipeline state.
         Q_EMIT viewportUpdateRequest();
 
-        // Emit signal to indicate we've finished preparing the scene.
+        // Also amit a Qt signal to indicate we've finished preparing the scene.
         // Note: This must come AFTER refreshing the viewports to make animation playback work correctly.
         Q_EMIT scenePreparationFinished();
     }
     else {
         OVITO_ASSERT(_currentPipeline);
+
         // If one of the pipelines is not complete yet, wait until it is.
-        _pipelineEvaluationWatcher.watch(_pipelineEvaluationFuture.task());
+        // Then start over to see if there are more pipelines that need to be evaluated.
+        _pipelineEvaluationFuture.finally(*this, [this](Task& task) noexcept {
+            // Make sure we are still waiting for the same future that just reached the completed state.
+            if(_pipelineEvaluationFuture.isValid() && _pipelineEvaluationFuture.task().get() == &task && _currentPipeline) {
+                pipelineEvaluationFinished();
+            }
+        });
     }
 }
 
@@ -205,7 +208,6 @@ void ScenePreparation::pipelineEvaluationFinished()
 
     _currentPipeline.reset();
     _pipelineEvaluationFuture.reset();
-    _pipelineEvaluationWatcher.reset();
 
     // One of the pipelines in the scene became ready.
     // Check if there are more pending pipelines in the scene.
@@ -274,7 +276,6 @@ void ScenePreparation::restartPreparation(bool restartImmediately)
         _promise.reset();
         _future.reset();
     }
-    _pipelineEvaluationWatcher.reset();
     // Note: Not resetting pipelineEvaluationFuture here, because we want to keep the in-flight evaluation request going until a new request has been made.
     _currentPipeline.reset();
     _completedScene = nullptr;

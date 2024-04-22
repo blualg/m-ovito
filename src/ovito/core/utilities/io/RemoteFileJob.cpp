@@ -22,7 +22,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/concurrent/Future.h>
-#include <ovito/core/utilities/concurrent/TaskWatcher.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/app/Application.h>
 #ifdef OVITO_SSH_CLIENT
@@ -53,17 +52,22 @@ constexpr int MaximumNumberOfSimultaneousJobs = 2;
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-RemoteFileJob::RemoteFileJob(QUrl url, PromiseBase& promise) :
-        _url(std::move(url)), _promise(promise)
+RemoteFileJob::RemoteFileJob(QUrl url, Task& task) : _url(std::move(url)), _task(task)
 {
-    // Run all event handlers of this class in the main thread.
+    // Run all signal handlers of this class in the main thread.
     moveToThread(Application::instance()->thread());
+}
 
+/******************************************************************************
+* Starts execution of the task.
+******************************************************************************/
+void RemoteFileJob::operator()()
+{
     // Start download process in the main thread.
-    if(QCoreApplication::instance())
-        QMetaObject::invokeMethod(this, "start", Qt::QueuedConnection);
-    else
-        ExecutionContext::current().runDeferred(Application::instance(), [this]() noexcept { start(); });
+    ExecutionContext::current().ui().execute([self = QPointer<RemoteFileJob>(this)]() noexcept {
+        if(self)
+            self->start();
+    });
 }
 
 /******************************************************************************
@@ -71,39 +75,40 @@ RemoteFileJob::RemoteFileJob(QUrl url, PromiseBase& promise) :
 ******************************************************************************/
 void RemoteFileJob::start()
 {
-    // We need a Qt application object to access the network.
+    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(!_isActive);
+
+    // Check if job has been canceled in the meantime.
+    if(_task.isCanceled()) {
+        shutdown(false);
+        return;
+    }
+
+    // We'll need a Qt application object to access the network and perform signal/slot handling.
     try {
         Application::instance()->createQtApplication(false);
     }
-    catch(const Exception&) {
-        _promise.captureException();
-        shutdown(false);
+    catch(Exception& ex) {
+        ex.prependGeneralMessage(tr("Network file access is not possible in this environment. A Qt application object could not be created."));
+        _task.captureExceptionAndFinish();
         return;
     }
 
-    if(!_isActive) {
-        // Keep a counter of active jobs.
-        // If there are too many jobs active simultaneously, queue them to be executed later.
-        if(_numActiveJobs >= MaximumNumberOfSimultaneousJobs) {
-            _queuedJobs.enqueue(this);
-            return;
-        }
-        else {
-            _numActiveJobs++;
-            _isActive = true;
-        }
-    }
-
-    // Check if process has already been canceled.
-    if(_promise.isCanceled()) {
-        shutdown(false);
+    // Keep a counter of active jobs.
+    // If there are too many jobs active simultaneously, queue them to be executed later.
+    if(_numActiveJobs >= MaximumNumberOfSimultaneousJobs) {
+        _queuedJobs.enqueue(this);
         return;
     }
+    else {
+        _numActiveJobs++;
+        _isActive = true;
+    }
 
-    // When the user cancels the task, cancel the remote connection.
-    _promise.finally([this](Task& task) noexcept {
+    // Handle cancelation of this task.
+    _task.finally(ExecutionContext::current().ui(), [this](Task& task) noexcept {
         if(task.isCanceled())
-            QMetaObject::invokeMethod(this, "connectionCanceled");
+            shutdown(false);
     });
 
     if(_url.scheme() == QStringLiteral("sftp")) {
@@ -114,12 +119,12 @@ void RemoteFileJob::start()
         connectionParams.userName = _url.userName();
         connectionParams.password = _url.password();
         connectionParams.port = _url.port(0);
-        _promise.setProgressText(tr("Connecting to remote host %1").arg(connectionParams.host));
+        _task.setProgressText(tr("Connecting to remote host %1").arg(connectionParams.host));
 
         // Open connection.
         _connection = Application::instance()->fileManager().acquireSshConnection(connectionParams);
         if(!_connection) {
-            _promise.setException(std::make_exception_ptr(Exception(tr("This particular build of OVITO has no SSH connection support. Please use a different distribution of OVITO to access remote files via SSH."))));
+            _task.setException(std::make_exception_ptr(Exception(tr("This particular build of OVITO has no SSH connection support. Please use a different distribution of OVITO to access remote files via SSH."))));
             shutdown(false);
             return;
         }
@@ -141,7 +146,7 @@ void RemoteFileJob::start()
     else {
         // Handle http(s) URLs.
 #ifndef Q_OS_WASM
-        _promise.setProgressText(tr("Downloading file %1 from %2").arg(_url.fileName()).arg(_url.host()));
+        _task.setProgressText(tr("Downloading file %1 from %2").arg(_url.fileName()).arg(_url.host()));
         QNetworkAccessManager* networkAccessManager = Application::instance()->networkAccessManager();
         _networkReply = networkAccessManager->get(QNetworkRequest(_url));
 
@@ -156,6 +161,8 @@ void RemoteFileJob::start()
 ******************************************************************************/
 void RemoteFileJob::shutdown(bool success)
 {
+    OVITO_ASSERT(ExecutionContext::isMainThread());
+
     if(_connection) {
         disconnect(_connection, nullptr, this, nullptr);
         Application::instance()->fileManager().releaseSshConnection(_connection);
@@ -169,26 +176,16 @@ void RemoteFileJob::shutdown(bool success)
         _networkReply = nullptr;
     }
 #endif
-    _promise.setFinished();
+    _task.setFinished();
 
     // Update the counter of active jobs.
     if(_isActive) {
         _numActiveJobs--;
         _isActive = false;
-    }
 
-    // Schedule this object for deletion.
-    deleteLater();
-
-    // If there jobs waiting in the queue, execute next job.
-    if(!_queuedJobs.isEmpty() && _numActiveJobs < MaximumNumberOfSimultaneousJobs) {
-        RemoteFileJob* waitingJob = _queuedJobs.dequeue();
-        if(!waitingJob->_promise.isCanceled()) {
-            waitingJob->start();
-        }
-        else {
-            // Skip canceled jobs.
-            waitingJob->shutdown(false);
+        // If there jobs waiting in the queue, execute next job.
+        if(!_queuedJobs.isEmpty() && _numActiveJobs < MaximumNumberOfSimultaneousJobs) {
+            _queuedJobs.dequeue()->start();
         }
     }
 }
@@ -213,7 +210,7 @@ void RemoteFileJob::connectionError()
         }
     }
 
-    _promise.setException(std::make_exception_ptr(Exception(std::move(errorMessages))));
+    _task.setException(std::make_exception_ptr(Exception(std::move(errorMessages))));
 
     shutdown(false);
 }
@@ -223,7 +220,7 @@ void RemoteFileJob::connectionError()
 ******************************************************************************/
 void RemoteFileJob::authenticationFailed()
 {
-    _promise.setException(std::make_exception_ptr(
+    _task.setException(std::make_exception_ptr(
         Exception(tr("Cannot access URL\n\n%1\n\nSSH authentication failed").arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded)))));
 
     shutdown(false);
@@ -235,7 +232,7 @@ void RemoteFileJob::authenticationFailed()
 void RemoteFileJob::connectionCanceled()
 {
     // If user has canceled the connection, abort the file retrieval operation as well.
-    _promise.setException(std::make_exception_ptr(Exception(tr("SSH connection was canceled by the user"))));
+    _task.setException(std::make_exception_ptr(Exception(tr("SSH connection was canceled by the user"))));
     shutdown(false);
 }
 
@@ -249,7 +246,7 @@ void RemoteFileJob::networkReplyFinished()
         shutdown(true);
     }
     else {
-        _promise.setException(std::make_exception_ptr(
+        _task.setException(std::make_exception_ptr(
             Exception(tr("Cannot access URL\n\n%1\n\n%2").arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded)).
                 arg(_networkReply->errorString()))));
 
@@ -263,8 +260,8 @@ void RemoteFileJob::networkReplyFinished()
 ******************************************************************************/
 void DownloadRemoteFileJob::channelClosed()
 {
-    if(!_promise.isFinished()) {
-        _promise.setException(std::make_exception_ptr(
+    if(!_task.isFinished()) {
+        _task.setException(std::make_exception_ptr(
             Exception(tr("Failed to download URL\n\n%1\n\nSSH channel was closed unexpectedly.")
                 .arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded)))));
     }
@@ -277,14 +274,14 @@ void DownloadRemoteFileJob::channelClosed()
 ******************************************************************************/
 void DownloadRemoteFileJob::connectionEstablished()
 {
-    if(_promise.isCanceled()) {
+    if(isCanceled()) {
         shutdown(false);
         return;
     }
 
 #ifdef OVITO_SSH_CLIENT
     if(LibsshConnection* libsshConnection = qobject_cast<LibsshConnection*>(_connection)) {
-        _promise.setProgressText(tr("Opening SCP channel to remote host %1").arg(libsshConnection->hostname()));
+        setProgressText(tr("Opening SCP channel to remote host %1").arg(libsshConnection->hostname()));
         ScpChannel* scpChannel = new ScpChannel(libsshConnection, _url.path());
         connect(scpChannel, &ScpChannel::receivingFile, this, &DownloadRemoteFileJob::receivingFile);
         connect(scpChannel, &ScpChannel::receivedData, this, &DownloadRemoteFileJob::receivedData);
@@ -297,7 +294,7 @@ void DownloadRemoteFileJob::connectionEstablished()
     }
 #endif
     if(OpensshConnection* opensshConnection = qobject_cast<OpensshConnection*>(_connection)) {
-        _promise.setProgressText(tr("Opening download channel to remote host %1").arg(opensshConnection->hostname()));
+        setProgressText(tr("Opening download channel to remote host %1").arg(opensshConnection->hostname()));
         DownloadRequest* downloadRequest = new DownloadRequest(opensshConnection, _url.path());
         connect(downloadRequest, &DownloadRequest::receivingFile, this, &DownloadRemoteFileJob::receivingFile);
         connect(downloadRequest, &DownloadRequest::receivedData, this, &DownloadRemoteFileJob::receivedData);
@@ -308,7 +305,7 @@ void DownloadRemoteFileJob::connectionEstablished()
         downloadRequest->submit();
         return;
     }
-    _promise.setException(std::make_exception_ptr(Exception(tr("No SSH client implementation available."))));
+    setException(std::make_exception_ptr(Exception(tr("No SSH client implementation available."))));
     shutdown(false);
 }
 
@@ -317,7 +314,7 @@ void DownloadRemoteFileJob::connectionEstablished()
 ******************************************************************************/
 void DownloadRemoteFileJob::channelError(const QString& errorMessage)
 {
-    _promise.setException(std::make_exception_ptr(
+    setException(std::make_exception_ptr(
         Exception(tr("Cannot access remote URL\n\n%1\n\n%2")
             .arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded))
             .arg(errorMessage))));
@@ -336,7 +333,7 @@ void DownloadRemoteFileJob::shutdown(bool success)
 
     if(_localFile && success) {
         _localFile->flush();
-        _promise.setResult(FileHandle(url(), _localFile->fileName()));
+        setResult<FileHandle>(FileHandle(url(), _localFile->fileName()));
     }
     else {
         _localFile.reset();
@@ -354,12 +351,12 @@ void DownloadRemoteFileJob::shutdown(bool success)
 ******************************************************************************/
 void DownloadRemoteFileJob::receivingFile(qint64 fileSize)
 {
-    if(_promise.isCanceled()) {
+    if(isCanceled()) {
         shutdown(false);
         return;
     }
-    _promise.setProgressMaximum(fileSize);
-    _promise.setProgressText(tr("Fetching remote file %1").arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded)));
+    setProgressMaximum(fileSize);
+    setProgressText(tr("Fetching remote file %1").arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded)));
 }
 
 /******************************************************************************
@@ -367,7 +364,7 @@ void DownloadRemoteFileJob::receivingFile(qint64 fileSize)
 ******************************************************************************/
 void DownloadRemoteFileJob::receivedFileComplete(std::unique_ptr<QTemporaryFile>* localFile)
 {
-    if(_promise.isCanceled()) {
+    if(isCanceled()) {
         shutdown(false);
         return;
     }
@@ -380,11 +377,11 @@ void DownloadRemoteFileJob::receivedFileComplete(std::unique_ptr<QTemporaryFile>
 ******************************************************************************/
 void DownloadRemoteFileJob::receivedData(qint64 totalReceivedBytes)
 {
-    if(_promise.isCanceled()) {
+    if(isCanceled()) {
         shutdown(false);
         return;
     }
-    _promise.setProgressValue(totalReceivedBytes);
+    setProgressValue(totalReceivedBytes);
 }
 
 /******************************************************************************
@@ -392,13 +389,13 @@ void DownloadRemoteFileJob::receivedData(qint64 totalReceivedBytes)
 ******************************************************************************/
 void DownloadRemoteFileJob::networkReplyDownloadProgress(qint64 bytesReceived, qint64 bytesTotal)
 {
-    if(_promise.isCanceled()) {
+    if(isCanceled()) {
         shutdown(false);
         return;
     }
     if(bytesTotal > 0) {
-        _promise.setProgressMaximum(bytesTotal);
-        _promise.setProgressValue(bytesReceived);
+        setProgressMaximum(bytesTotal);
+        setProgressValue(bytesReceived);
     }
     storeReceivedData();
 }
@@ -432,7 +429,7 @@ void DownloadRemoteFileJob::storeReceivedData()
             throw Exception(tr("Failed to write received data to temporary local file '%1': %2").arg(_localFile->fileName()).arg(_localFile->errorString()));
     }
     catch(Exception&) {
-        _promise.captureException();
+        captureException();
         shutdown(false);
     }
 #endif
@@ -443,7 +440,7 @@ void DownloadRemoteFileJob::storeReceivedData()
 ******************************************************************************/
 void ListRemoteDirectoryJob::connectionEstablished()
 {
-    if(_promise.isCanceled()) {
+    if(isCanceled()) {
         shutdown(false);
         return;
     }
@@ -451,7 +448,7 @@ void ListRemoteDirectoryJob::connectionEstablished()
 #ifdef OVITO_SSH_CLIENT
     if(LibsshConnection* libsshConnection = qobject_cast<LibsshConnection*>(_connection)) {
         // Open the LS channel.
-        _promise.setProgressText(tr("Opening channel to remote host %1").arg(libsshConnection->hostname()));
+        setProgressText(tr("Opening channel to remote host %1").arg(libsshConnection->hostname()));
         LsChannel* lsChannel = new LsChannel(libsshConnection, _url.path());
         connect(lsChannel, &LsChannel::error, this, &ListRemoteDirectoryJob::channelError);
         connect(lsChannel, &LsChannel::receivingDirectory, this, &ListRemoteDirectoryJob::receivingDirectory);
@@ -463,7 +460,7 @@ void ListRemoteDirectoryJob::connectionEstablished()
     }
 #endif
     if(OpensshConnection* opensshConnection = qobject_cast<OpensshConnection*>(_connection)) {
-        _promise.setProgressText(tr("Opening channel to remote host %1").arg(opensshConnection->hostname()));
+        setProgressText(tr("Opening channel to remote host %1").arg(opensshConnection->hostname()));
         FileListingRequest* listingRequest = new FileListingRequest(opensshConnection, _url.path());
         connect(listingRequest, &FileListingRequest::error, this, &ListRemoteDirectoryJob::channelError);
         connect(listingRequest, &FileListingRequest::receivingDirectory, this, &ListRemoteDirectoryJob::receivingDirectory);
@@ -473,7 +470,7 @@ void ListRemoteDirectoryJob::connectionEstablished()
         listingRequest->submit();
         return;
     }
-    _promise.setException(std::make_exception_ptr(Exception(tr("No SSH client implementation available."))));
+    setException(std::make_exception_ptr(Exception(tr("No SSH client implementation available."))));
     shutdown(false);
 }
 
@@ -482,13 +479,13 @@ void ListRemoteDirectoryJob::connectionEstablished()
 ******************************************************************************/
 void ListRemoteDirectoryJob::receivingDirectory()
 {
-    if(_promise.isCanceled()) {
+    if(isCanceled()) {
         shutdown(false);
         return;
     }
 
     // Set progress text.
-    _promise.setProgressText(tr("Listing remote directory %1").arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded)));
+    setProgressText(tr("Listing remote directory %1").arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded)));
 }
 
 /******************************************************************************
@@ -496,7 +493,7 @@ void ListRemoteDirectoryJob::receivingDirectory()
 ******************************************************************************/
 void ListRemoteDirectoryJob::channelError(const QString& errorMessage)
 {
-    _promise.setException(std::make_exception_ptr(
+    setException(std::make_exception_ptr(
         Exception(tr("Cannot access remote location:\n\n%1\n\n%2")
             .arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded))
             .arg(errorMessage))));
@@ -509,12 +506,12 @@ void ListRemoteDirectoryJob::channelError(const QString& errorMessage)
 ******************************************************************************/
 void ListRemoteDirectoryJob::receivedDirectoryComplete(const QStringList& listing)
 {
-    if(_promise.isCanceled()) {
+    if(isCanceled()) {
         shutdown(false);
         return;
     }
 
-    _promise.setResult(listing);
+    setResult<QStringList>(listing);
     shutdown(true);
 }
 
@@ -523,8 +520,8 @@ void ListRemoteDirectoryJob::receivedDirectoryComplete(const QStringList& listin
 ******************************************************************************/
 void ListRemoteDirectoryJob::channelClosed()
 {
-    if(!_promise.isFinished()) {
-        _promise.setException(std::make_exception_ptr(
+    if(!isFinished()) {
+        setException(std::make_exception_ptr(
             Exception(tr("Failed to list contents of:\n\n%1\n\nSSH channel was closed unexpectedly.")
                 .arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded)))));
     }

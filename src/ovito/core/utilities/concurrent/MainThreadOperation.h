@@ -38,8 +38,16 @@ class OVITO_CORE_EXPORT MainThreadOperation : public Promise<void>, ExecutionCon
 {
 public:
 
+    enum Kind {
+        Isolated, ///< When passed to the constructor, the created task has no parent parent.
+        Bound,    ///< When passed to the constructor, the created task becomes a child of the current task (if any).
+    };
+
     /// Constructor.
-    explicit MainThreadOperation(ExecutionContext::Type contextType = ExecutionContext::current().type(), UserInterface& userInterface = ExecutionContext::current().ui());
+    explicit MainThreadOperation(
+        ExecutionContext::Type contextType = ExecutionContext::current().type(),
+        UserInterface& userInterface = ExecutionContext::current().ui(),
+        Kind kind = Bound);
 
     /// Destructor.
     ~MainThreadOperation();

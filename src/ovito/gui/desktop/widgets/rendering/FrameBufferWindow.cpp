@@ -162,9 +162,9 @@ void FrameBufferWindow::showRenderingProgress()
     connect(_renderingWatcher, &TaskWatcher::finished, this, &FrameBufferWindow::onRenderingFinished);
 
     // Create UI for every already running task.
-    ExecutionContext::current().ui().taskManager().visitRegisteredTasks([&](const TaskPtr& task) {
-        createTaskProgressWidgets(task);
-    });
+//    ExecutionContext::current().ui().taskManager().visitRegisteredTasks([&](const TaskPtr& task) {
+//        createTaskProgressWidgets(task);
+//    });
 
     // Create a separate progress bar for every newly created task.
     _taskRegisteredConnection = connect(&ExecutionContext::current().ui().taskManager(), &TaskManager::taskRegistered, this, &FrameBufferWindow::createTaskProgressWidgets, Qt::QueuedConnection);

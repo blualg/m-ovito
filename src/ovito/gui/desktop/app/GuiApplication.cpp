@@ -188,6 +188,8 @@ static void activateThemeColors(bool dark)
 ******************************************************************************/
 MainThreadOperation GuiApplication::startupApplication()
 {
+    OVITO_ASSERT(!this_task::get());
+
     if(guiMode()) {
         // Setup graphical user interface.
         createQtApplication(true);

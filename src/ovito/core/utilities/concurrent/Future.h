@@ -26,7 +26,7 @@
 #include <ovito/core/Core.h>
 #include "Promise.h"
 #include "detail/FutureDetail.h"
-#include "detail/TaskReference.h"
+#include "detail/TaskDependency.h"
 #include "detail/ContinuationTask.h"
 #include "InlineExecutor.h"
 
@@ -57,17 +57,17 @@ public:
     }
 
     /// Returns the shared state associated with this Future.
-    /// Make sure it has one before calling this function.
+    /// Use isValid() to make sure it has one before calling this function.
     const TaskPtr& task() const {
         OVITO_ASSERT(isValid());
         return _task.get();
     }
 
-    /// Moves the task reference out of this future, which invalidates the future.
-    detail::TaskReference takeTaskReference() noexcept { return std::move(_task); }
+    /// Moves the task dependency out of this future, which invalidates the future.
+    detail::TaskDependency takeTaskDependency() noexcept { return std::move(_task); }
 
-    /// Moves the task reference out of this future, which invalidates the future.
-    operator detail::TaskReference() && noexcept { return takeTaskReference(); }
+    /// Moves the task dependency out of this future, which invalidates the future.
+    operator detail::TaskDependency() && noexcept { return takeTaskDependency(); }
 
     /// Move constructor.
     FutureBase(FutureBase&& other) noexcept = default;
@@ -103,7 +103,7 @@ public:
     /// Throws an OperationCanceled exception if the future or the task awaiting it got canceled.
     /// Throws an exception if the awaited task has failed to complete.
     void waitForFinished() const & {
-        if(!Task::waitFor(this->task(), true))
+        if(!Task::waitFor(task(), true))
             throw OperationCanceled();
     }
 
@@ -111,7 +111,7 @@ public:
     /// Throws an OperationCanceled exception if the future or the task awaiting it got canceled.
     /// Throws an exception if the awaited task has failed to complete.
     void waitForFinished() && {
-        if(!Task::waitFor(std::move(this->_task), true))
+        if(!Task::waitFor(takeTaskDependency(), true))
             throw OperationCanceled();
     }
 
@@ -124,12 +124,12 @@ protected:
     explicit FutureBase(TaskPtr&& p) noexcept : _task(std::move(p)) {}
 
     /// Constructor that creates a Future from an existing task reference.
-    explicit FutureBase(detail::TaskReference&& p) noexcept : _task(std::move(p)) {}
+    explicit FutureBase(detail::TaskDependency&& p) noexcept : _task(std::move(p)) {}
 
 private:
 
-    /// The shared state associated with this Future.
-    detail::TaskReference _task;
+    /// Reference to the shared state, which also expresses the strong dependency on this task's results.
+    detail::TaskDependency _task;
 };
 
 /**
@@ -157,7 +157,7 @@ public:
     explicit Future(TaskPtr p) noexcept : FutureBase(std::move(p)) {}
 
     /// Constructs a Future from an existing task reference. This is mostly for internal use.
-    explicit Future(detail::TaskReference&& p) noexcept : FutureBase(std::move(p)) {}
+    explicit Future(detail::TaskDependency&& p) noexcept : FutureBase(std::move(p)) {}
 
     /// A future may directly be initialized from a value.
     template<typename R2 = R,
@@ -224,7 +224,7 @@ public:
         waitForFinished();
         OVITO_ASSERT_MSG(isFinished(), "Future::results()", "Future must be in fulfilled state.");
         OVITO_ASSERT_MSG(!isCanceled(), "Future::results()", "Future must not be canceled.");
-        return takeTaskReference()->template takeResult<R>();
+        return takeTaskDependency()->template takeResult<R>();
     }
 
     /// Returns a new future that, upon the fulfillment of this future, will be fulfilled by running the given continuation function.
@@ -290,7 +290,7 @@ Future<R>::then(Executor&& executor, Function&& f)
 
     // Run the following function once the existing task finishes. We'll then invoke the user's continuation function.
     continuationTask->whenTaskFinishes(
-            this->takeTaskReference(), // The reference to the existing task is moved from this future into the continuation task.
+            this->takeTaskDependency(), // The reference to the existing task is moved from this future into the continuation task.
             std::forward<Executor>(executor),
             [f = std::forward<Function>(f), promise = std::move(promise)]() mutable noexcept {
 
@@ -298,10 +298,10 @@ Future<R>::then(Executor&& executor, Function&& f)
         continuation_task_type* continuationTask = static_cast<continuation_task_type*>(promise.task().get());
 
         // Manage access to the task that represents the continuation.
-        QMutexLocker locker(&continuationTask->taskMutex());
+        Task::MutexLocker locker(*continuationTask);
 
         // Get the task that did just finish.
-        detail::TaskReference finishedTask = continuationTask->takeAwaitedTask();
+        detail::TaskDependency finishedTask = continuationTask->takeAwaitedTask();
 
         // Don't need to run continuation function if the continuation task has been canceled in the meantime.
         // Also don't run continuation function if the preceding task was canceled.
