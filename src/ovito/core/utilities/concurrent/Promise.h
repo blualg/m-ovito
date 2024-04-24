@@ -25,7 +25,6 @@
 
 #include <ovito/core/Core.h>
 #include "Task.h"
-#include "ProgressingTask.h"
 #include "detail/FutureDetail.h"
 #include "detail/TaskWithStorage.h"
 
@@ -65,40 +64,24 @@ public:
     /// Returns true if the promise is in the 'finished' state.
     bool isFinished() const { return task()->isFinished(); }
 
-    /// Returns the maximum value for progress reporting.
-    qlonglong progressMaximum() const {
-        OVITO_ASSERT(task()->isProgressingTask());
-        return static_cast<ProgressingTask*>(task().get())->progressMaximum();
-    }
-
     /// Sets the current maximum value for progress reporting.
     void setProgressMaximum(qlonglong maximum, bool autoReset = true) const {
-        OVITO_ASSERT(task()->isProgressingTask());
-        static_cast<ProgressingTask*>(task().get())->setProgressMaximum(maximum, autoReset);
-    }
-
-    /// Returns the current progress value (in the range 0 to progressMaximum()).
-    qlonglong progressValue() const {
-        OVITO_ASSERT(task()->isProgressingTask());
-        return static_cast<ProgressingTask*>(task().get())->progressValue();
+        task()->setProgressMaximum(maximum, autoReset);
     }
 
     /// Sets the current progress value (must be in the range 0 to progressMaximum()).
     void setProgressValue(qlonglong progressValue) const {
-        OVITO_ASSERT(task()->isProgressingTask());
-        static_cast<ProgressingTask*>(task().get())->setProgressValue(progressValue);
+        task()->setProgressValue(progressValue);
     }
 
     /// Increments the progress value by 1.
     void incrementProgressValue(qlonglong increment = 1) const {
-        OVITO_ASSERT(task()->isProgressingTask());
-        static_cast<ProgressingTask*>(task().get())->incrementProgressValue(increment);
+        task()->incrementProgressValue(increment);
     }
 
     /// Sets the progress value of the promise but generates an update event only occasionally.
     void setProgressValueIntermittent(qlonglong progressValue, int updateEvery = 2000) const {
-        OVITO_ASSERT(task()->isProgressingTask());
-        static_cast<ProgressingTask*>(task().get())->setProgressValueIntermittent(progressValue, updateEvery);
+        task()->setProgressValueIntermittent(progressValue, updateEvery);
     }
 
     // Progress reporting for tasks with sub-steps:
@@ -107,32 +90,27 @@ public:
     /// This is used for long and complex computations, which consist of several logical sub-steps, each with
     /// a separate progress range.
     void beginProgressSubStepsWithWeights(std::vector<int> weights) const {
-        OVITO_ASSERT(task()->isProgressingTask());
-        static_cast<ProgressingTask*>(task().get())->beginProgressSubStepsWithWeights(std::move(weights));
+        task()->beginProgressSubStepsWithWeights(std::move(weights));
     }
 
     /// Convenience version of the function above, which creates N substeps, all with the same weight.
     void beginProgressSubSteps(int nsteps) const {
-        OVITO_ASSERT(task()->isProgressingTask());
-        static_cast<ProgressingTask*>(task().get())->beginProgressSubSteps(nsteps);
+        task()->beginProgressSubSteps(nsteps);
     }
 
     /// Changes to the next sub-step in the sequence started with beginProgressSubSteps().
     void nextProgressSubStep() const {
-        OVITO_ASSERT(task()->isProgressingTask());
-        static_cast<ProgressingTask*>(task().get())->nextProgressSubStep();
+        task()->nextProgressSubStep();
     }
 
     /// Must be called at the end of a sub-step sequence started with beginProgressSubSteps().
     void endProgressSubSteps() const {
-        OVITO_ASSERT(task()->isProgressingTask());
-        static_cast<ProgressingTask*>(task().get())->endProgressSubSteps();
+        task()->endProgressSubSteps();
     }
 
     /// Changes the status text of this promise.
     void setProgressText(const QString& progressText) const {
-        OVITO_ASSERT(task()->isProgressingTask());
-        static_cast<ProgressingTask*>(task().get())->setProgressText(progressText);
+        task()->setProgressText(progressText);
     }
 
     /// Cancels this promise.
@@ -206,7 +184,7 @@ public:
     Promise() noexcept = default;
 
     /// Creates a promise together with a new task.
-    template<typename task_type>
+    template<typename task_type = Task>
     static Promise create() {
         return Promise(std::make_shared<detail::TaskWithStorage<R, task_type>>(Task::NoState, std::nullopt));
     }
@@ -235,13 +213,13 @@ protected:
 
     /// Create a promise that is ready and provides immediate default-constructed results.
     static Promise createImmediateEmpty() {
-        return Promise(std::make_shared<detail::TaskWithStorage<R, Task>>(Task::Finished));
+        return Promise(std::make_shared<detail::TaskWithStorage<R>>(Task::Finished));
     }
 
     /// Create a promise that is ready and provides an immediate result.
     template<typename R2>
     static Promise createImmediate(R2&& value) {
-        return Promise(std::make_shared<detail::TaskWithStorage<R, Task>>(
+        return Promise(std::make_shared<detail::TaskWithStorage<R>>(
             Task::Finished,
             std::forward<R2>(value)));
     }
@@ -249,7 +227,7 @@ protected:
     /// Create a promise that is ready and provides an immediate result.
     template<typename... Args>
     static Promise createImmediateEmplace(Args&&... args) {
-        return Promise(std::make_shared<detail::TaskWithStorage<R, Task>>(
+        return Promise(std::make_shared<detail::TaskWithStorage<R>>(
             Task::Finished,
             std::forward<Args>(args)...));
     }

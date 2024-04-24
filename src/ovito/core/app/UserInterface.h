@@ -199,6 +199,27 @@ protected:
     /// Is called by the TaskManager class after all tasks have been terminated and all nested event loops have been exited.
     void shutdownComplete();
 
+    /// Gets called by a running task to report its progress status (from any thread).
+    virtual void taskProgressText(Task& task, const QString& text);
+
+    /// Gets called by a running task to report its progress status (from any thread).
+    virtual void taskProgressMaximum(Task& task, qlonglong maximum, bool autoReset) {}
+
+    /// Gets called by a running task to report its progress status (from any thread).
+    virtual void taskProgressValue(Task& task, qlonglong value) {}
+
+    /// Gets called by a running task to report its progress status (from any thread).
+    virtual void taskProgressIncrementValue(Task& task, qlonglong increment) {}
+
+    /// Gets called by a running task to report its progress status (from any thread).
+    virtual void taskProgressBeginSubStepsWithWeights(Task& task, std::vector<int>&& weights) {}
+
+    /// Gets called by a running task to report its progress status (from any thread).
+    virtual void taskProgressNextSubStep(Task& task) {}
+
+    /// Gets called by a running task to report its progress status (from any thread).
+    virtual void taskProgressEndSubSteps(Task& task) {}
+
 protected:
 
     /// Hosts the dataset that is currently being edited in this user interface.
@@ -235,6 +256,7 @@ protected:
     OORef<UserInterface> _selfGuard;
 
     friend class TaskManager; // TaskManager needs to call shutdownComplete()
+    friend class Task; // Tasks need to call taskProgressText() etc.
 };
 
 }   // End of namespace

@@ -22,7 +22,6 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/core/utilities/concurrent/TaskWatcher.h>
 #include "ProgressDialog.h"
 
 namespace Ovito {
@@ -30,12 +29,24 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the dialog window.
 ******************************************************************************/
-ProgressDialog::ProgressDialog(QWidget* parent, TaskPtr task, const QString& dialogTitle) : QDialog(parent), _task(std::move(task))
+ProgressDialog::ProgressDialog(MainWindow& mainWindow, QWidget* parent, TaskPtr task, const QString& dialogTitle) : QDialog(parent), _mainWindow(mainWindow), _task(std::move(task))
 {
     OVITO_ASSERT(_task);
 
     setWindowModality(Qt::WindowModal);
     setWindowTitle(dialogTitle);
+
+    // Show the dialog with a short delay.
+    // This prevents the dialog from showing up for short tasks that terminate very quickly.
+    QTimer::singleShot(200, this, &QDialog::open);
+}
+
+/******************************************************************************
+* Is called when the dialog is shown.
+******************************************************************************/
+void ProgressDialog::showEvent(QShowEvent* event)
+{
+    QDialog::showEvent(event);
 
     QVBoxLayout* layout = new QVBoxLayout(this);
 
@@ -43,8 +54,8 @@ ProgressDialog::ProgressDialog(QWidget* parent, TaskPtr task, const QString& dia
 #ifdef Q_OS_MACOS
     // On macOS, the progress dialog has no title bar (it's a Qt::Sheet).
     // Insert our own header text label into the dialog.
-    if(parent && !dialogTitle.isEmpty()) {
-        QLabel* titleLabel = new QLabel(dialogTitle);
+    if(parentWidget() && !windowTitle().isEmpty()) {
+        QLabel* titleLabel = new QLabel(windowTitle());
         QFont boldFont;
         boldFont.setWeight(QFont::Bold);
         titleLabel->setFont(std::move(boldFont));
@@ -64,53 +75,11 @@ ProgressDialog::ProgressDialog(QWidget* parent, TaskPtr task, const QString& dia
     // Cancel the running task when user presses the cancel button.
     connect(buttonBox, &QDialogButtonBox::rejected, this, &ProgressDialog::reject);
 
-    // Helper function that sets up the UI widgets in the dialog for a newly started task.
-    auto createUIForTask = [this, layout](const TaskPtr& task) {
-        // Don't display the task if it is already finished.
-        if(task->isFinished())
-            return;
-        // Create a TaskWatcher object that tracks the progress of the task.
-        TaskWatcher* taskWatcher = new TaskWatcher(this);
-        // Self-destruction after task has finished.
-        connect(taskWatcher, &TaskWatcher::finished, taskWatcher, &QObject::deleteLater);
+    // Update the list of tasks if their status or number changes.
+    connect(&_mainWindow, &MainWindow::taskProgressUpdate, this, &ProgressDialog::updateTaskList);
 
-        QLabel* statusLabel = new QLabel();
-        statusLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
-        QProgressBar* progressBar = new QProgressBar();
-        layout->insertWidget(layout->count() - 2, statusLabel);
-        layout->insertWidget(layout->count() - 2, progressBar);
-        connect(taskWatcher, &TaskWatcher::progressChanged, progressBar, [progressBar](qlonglong progress, qlonglong maximum) {
-            progressBar->setMaximum(maximum);
-            progressBar->setValue(progress);
-        });
-        connect(taskWatcher, &TaskWatcher::progressTextChanged, statusLabel, &QLabel::setText);
-        connect(taskWatcher, &TaskWatcher::progressTextChanged, statusLabel, [statusLabel, progressBar](const QString& text) {
-            statusLabel->setVisible(!text.isEmpty());
-            progressBar->setVisible(!text.isEmpty());
-        });
-
-        // Remove progress display when this task finished.
-        connect(taskWatcher, &TaskWatcher::finished, progressBar, &QObject::deleteLater);
-        connect(taskWatcher, &TaskWatcher::finished, statusLabel, &QObject::deleteLater);
-
-        // Begin watching the task.
-        taskWatcher->watch(task);
-
-        // Initial update of the progress display.
-        statusLabel->setText(taskWatcher->progressText());
-        progressBar->setMaximum(taskWatcher->progressMaximum());
-        progressBar->setValue(taskWatcher->progressValue());
-        if(statusLabel->text().isEmpty()) {
-            statusLabel->hide();
-            progressBar->hide();
-        }
-    };
-
-    // Create UI for every already running task.
-    TaskManager& taskManager = ExecutionContext::current().ui().taskManager();
-//    taskManager.visitRegisteredTasks([&](const TaskPtr& task) {
-//        createUIForTask(task);
-//    });
+    // Build the initial list of tasks.
+    updateTaskList();
 
     // Expand dialog window to minimum width.
     QRect g = geometry();
@@ -120,21 +89,53 @@ ProgressDialog::ProgressDialog(QWidget* parent, TaskPtr task, const QString& dia
     }
 
     // Center dialog in parent window.
-    if(parent) {
+    if(parentWidget()) {
         QSize s = frameGeometry().size();
-        QPoint position = parent->geometry().center() - QPoint(s.width() / 2, s.height() / 2);
+        QPoint position = parentWidget()->geometry().center() - QPoint(s.width() / 2, s.height() / 2);
         // Make sure the window's title bar doesn't move outside the screen area:
         if(position.x() < 0) position.setX(0);
         if(position.y() < 0) position.setY(0);
         move(position);
     }
+}
 
-    // Create a separate progress bar for every new active task.
-    connect(&taskManager, &TaskManager::taskRegistered, this, std::move(createUIForTask), Qt::QueuedConnection);
+/******************************************************************************
+* Updates the displayed list of running tasks in the dialog.
+******************************************************************************/
+void ProgressDialog::updateTaskList()
+{
+    size_t index = 0;
+    QVBoxLayout* layout = qobject_cast<QVBoxLayout*>(this->layout());
 
-    // Show the dialog with a short delay.
-    // This prevents the dialog from showing up for short tasks that terminate very quickly.
-    QTimer::singleShot(200, this, &QDialog::open);
+    _mainWindow.visitRunningTasks([&](Task& task, const QString& text, int progressValue, int progressMaximum) {
+        if(text.isEmpty())
+            return;
+        QLabel* statusLabel;
+        QProgressBar* progressBar;
+        if(index == _taskWidgets.size()) {
+            statusLabel = new QLabel();
+            progressBar = new QProgressBar();
+            statusLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+            layout->insertWidget(layout->count() - 2, statusLabel);
+            layout->insertWidget(layout->count() - 2, progressBar);
+            _taskWidgets.emplace_back(statusLabel, progressBar);
+        }
+        else {
+            std::tie(statusLabel, progressBar) = _taskWidgets[index];
+        }
+        statusLabel->setText(text);
+        progressBar->setMaximum(progressMaximum);
+        progressBar->setValue(progressValue);
+        index++;
+    });
+
+    // Hide any remaining task widgets that are no longer needed.
+    while(index < _taskWidgets.size()) {
+        auto [statusLabel, progressBar] = _taskWidgets.back();
+        delete statusLabel;
+        delete progressBar;
+        _taskWidgets.pop_back();
+    }
 }
 
 /******************************************************************************

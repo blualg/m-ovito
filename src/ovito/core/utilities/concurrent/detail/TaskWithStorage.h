@@ -31,7 +31,7 @@ namespace Ovito::detail {
 /**
  * \brief Composite class template that packages a Task together with the storage for the task's results.
  */
-template<class R, class TaskBase>
+template<class R, class TaskBase = Task>
 class TaskWithStorage : public TaskBase
 {
 public:

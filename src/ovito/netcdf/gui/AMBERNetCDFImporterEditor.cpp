@@ -64,7 +64,7 @@ void AMBERNetCDFImporterEditor::showEditColumnMappingDialog(AMBERNetCDFImporter*
 
     {
         // Block UI until reading is done.
-        ProgressDialog progressDialog(parentWindow(), inspectFuture, tr("Inspecting file header"));
+        ProgressDialog progressDialog(mainWindow(), parentWindow(), inspectFuture, tr("Inspecting file header"));
         inspectFuture.waitForFinished();
     }
 

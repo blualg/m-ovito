@@ -385,7 +385,7 @@ void ColorCodingModifierEditor::onAdjustRange()
     OVITO_CHECK_OBJECT_POINTER(mod);
 
     performTransaction(tr("Adjust range"), [&]() {
-        ProgressDialog progressDialog(container(), tr("Determining property value range"));
+        ProgressDialog progressDialog(mainWindow(), container(), tr("Determining property value range"));
         mod->adjustRange(currentAnimationTime());
     });
 }
@@ -401,7 +401,7 @@ void ColorCodingModifierEditor::onAdjustRangeGlobal()
     if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings()) {
         performTransaction(tr("Adjust range"), [this, mod, firstFrame=anim->firstFrame(), lastFrame=anim->lastFrame()]() {
             ViewportSuspender noVPUpdates;
-            ProgressDialog progressDialog(container(), tr("Determining property value range"));
+            ProgressDialog progressDialog(mainWindow(), container(), tr("Determining property value range"));
             mod->adjustRangeGlobal(firstFrame, lastFrame);
         });
     }

@@ -34,20 +34,20 @@ namespace Ovito::detail {
 /**
  * \brief The type of task that is returned by the Future::then() method.
  */
-template<typename R, typename task_type>
-class ContinuationTask : public TaskWithStorage<R, task_type>
+template<typename R>
+class ContinuationTask : public TaskWithStorage<R>
 {
 public:
 
     /// Constructor.
-    explicit ContinuationTask(Task::State initialState) noexcept : TaskWithStorage<R, task_type>(initialState, std::nullopt) {
+    explicit ContinuationTask(Task::State initialState) noexcept : TaskWithStorage<R>(initialState, std::nullopt) {
         OVITO_ASSERT(!(initialState & Task::Canceled));
         registerFinallyFunction();
     }
 
     /// Constructor initializing the results storage.
     template<typename InitialValue>
-    explicit ContinuationTask(Task::State initialState, InitialValue&& initialResult) noexcept : TaskWithStorage<R, task_type>(initialState, std::forward<InitialValue>(initialResult)) {
+    explicit ContinuationTask(Task::State initialState, InitialValue&& initialResult) noexcept : TaskWithStorage<R>(initialState, std::forward<InitialValue>(initialResult)) {
         OVITO_ASSERT(!(initialState & Task::Canceled));
         registerFinallyFunction();
     }

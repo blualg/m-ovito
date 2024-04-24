@@ -29,7 +29,7 @@
 
 namespace Ovito {
 
-class OVITO_CORE_EXPORT AsynchronousTaskBase : public ProgressingTask, public QRunnable
+class OVITO_CORE_EXPORT AsynchronousTaskBase : public Task, public QRunnable
 {
 public:
 
@@ -69,8 +69,7 @@ private:
     /// The execution context that this task inherits from its parent task.
     ExecutionContext _executionContext;
 
-    friend class Task;
-    template<typename R> friend class AsynchronousTask;
+    friend class Task; // Allow Task::waitFor() to invoke the run() method directly (as part of the work-stealing mechanism).
 };
 
 template<typename R>

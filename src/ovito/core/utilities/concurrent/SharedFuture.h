@@ -135,7 +135,7 @@ SharedFuture<R>::then(Executor&& executor, Function&& f)
     // Infer the exact future/promise/task types to create.
     using result_future_type = detail::continuation_future_type<Function,SharedFuture<R>>;
     using result_promise_type = typename result_future_type::promise_type;
-    using continuation_task_type = detail::ContinuationTask<typename result_promise_type::result_type, Task>;
+    using continuation_task_type = detail::ContinuationTask<typename result_promise_type::result_type>;
 
     // This future must be valid for then() to work.
     OVITO_ASSERT_MSG(isValid(), "SharedFuture::then()", "Future must be valid.");

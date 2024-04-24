@@ -147,9 +147,10 @@ void GaussianCubeImporter::FrameLoader::loadFile()
     BufferWriteAccess<int32_t, access_mode::discard_read_write> typePropertyAccess(typeProperty);
     auto* a = typePropertyAccess.begin();
     setProgressMaximum(numAtoms + gridSize[0]*gridSize[1]*gridSize[2]);
+    qlonglong progressValue = 0;
     for(qlonglong i = 0; i < numAtoms; i++, ++p, ++a) {
         // Update progress bar and check for user cancellation.
-        setProgressValueIntermittent(i);
+        setProgressValueIntermittent(progressValue++);
         FloatType secondColumn;
         if(sscanf(stream.readLine(), "%i " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
                 a, &secondColumn, &p->x(), &p->y(), &p->z()) != 5)
@@ -248,7 +249,7 @@ void GaussianCubeImporter::FrameLoader::loadFile()
                         s++;
                 }
                 // Update progress bar and check for user cancellation.
-                setProgressValueIntermittent(progressValue() + 1);
+                setProgressValueIntermittent(progressValue);
             }
         }
     }

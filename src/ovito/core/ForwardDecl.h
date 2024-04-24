@@ -42,7 +42,6 @@ namespace Ovito
     class FutureBase;
     class Task;
     class TaskManager;
-    class TaskWatcher;
     template<typename R> class Future;
     template<typename R> class SharedFuture;
     template<typename R> class Promise;

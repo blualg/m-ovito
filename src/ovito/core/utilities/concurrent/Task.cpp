@@ -210,32 +210,132 @@ void Task::removeCallback(detail::TaskCallbackBase* cb) noexcept
 ******************************************************************************/
 void Task::setProgressText(const QString& progressText)
 {
-#if 0
+    UserInterface& ui = ExecutionContext::current().ui();
+
+    MutexLocker locker(*this);
+    auto flags = _state.load(std::memory_order_relaxed);
+    if(!(flags & (Finished | Canceled))) {
+        // Notify UI about progress status change.
+        ui.taskProgressText(*this, progressText);
+    }
+
     // When in the main thread, temporarily yield control back to the event loop to process UI events and
     // keep the UI responsive during long-running tasks.
-    auto flags = _state.load(std::memory_order_relaxed);
     if((flags & YieldUI) && !(flags & IsAsynchronous) && ExecutionContext::isMainThread()) {
-        const ExecutionContext& context = ExecutionContext::current();
-        if(context.isValid() && context.ui().processUIEvents()) {
+        locker.unlock();
+        if(ui.processUIEvents()) {
             cancel();
         }
     }
+}
 
-    const MutexLocker locker(*this);
+/******************************************************************************
+* Sets the current maximum value for progress reporting.
+* The current progress value is reset to zero unless autoReset is false.
+******************************************************************************/
+void Task::setProgressMaximum(qlonglong maximum, bool autoReset)
+{
+    MutexLocker locker(*this);
+    if(!isFinished()) {
+        // Notify UI about progress status change.
+        UserInterface& ui = ExecutionContext::current().ui();
+        ui.taskProgressMaximum(*this, maximum, autoReset);
+    }
+}
 
-    auto state = _state.load(std::memory_order_relaxed);
-    if(state & (Finished | Canceled))
-        return;
+/******************************************************************************
+* Sets the current progress value of the task.
+******************************************************************************/
+void Task::setProgressValue(qlonglong value)
+{
+    UserInterface& ui = ExecutionContext::current().ui();
 
-    _progressText = progressText;
+    MutexLocker locker(*this);
+    auto flags = _state.load(std::memory_order_relaxed);
+    if(!(flags & (Finished | Canceled))) {
+        // Notify UI about progress status change.
+        ui.taskProgressValue(*this, value);
+    }
+    if(flags & Canceled)
+        throw OperationCanceled();
 
-    // Print task messages to the console if logging is enabled.
-    if((state & LoggingEnabled) && !progressText.isEmpty())
-        qInfo().noquote() << "OVITO:" << progressText;
+    // When in the main thread, temporarily yield control back to the event loop to process UI events and
+    // keep the UI responsive during long-running tasks.
+    if((flags & YieldUI) && !(flags & IsAsynchronous) && ExecutionContext::isMainThread()) {
+        locker.unlock();
+        if(ui.processUIEvents()) {
+            cancel();
+        }
+    }
+}
 
-    for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList)
-        cb->callTextChanged();
-#endif
+/******************************************************************************
+* Increments the progress value of the task.
+******************************************************************************/
+void Task::incrementProgressValue(qlonglong increment)
+{
+    MutexLocker locker(*this);
+    if(!isFinished()) {
+        // Notify UI about progress status change.
+        UserInterface& ui = ExecutionContext::current().ui();
+        ui.taskProgressIncrementValue(*this, increment);
+    }
+    if(isCanceled())
+        throw OperationCanceled();
+}
+
+/******************************************************************************
+* Sets the current progress value of the task, generating update events only occasionally.
+******************************************************************************/
+void Task::setProgressValueIntermittent(qlonglong progressValue, int updateEvery)
+{
+    if(Q_UNLIKELY((progressValue % updateEvery) == 0))
+        setProgressValue(progressValue);
+    else if(isCanceled())
+        throw OperationCanceled();
+}
+
+/******************************************************************************
+* Starts a sequence of sub-steps in the progress range of this task.
+******************************************************************************/
+void Task::beginProgressSubStepsWithWeights(std::vector<int> weights)
+{
+    OVITO_ASSERT(std::accumulate(weights.cbegin(), weights.cend(), 0) > 0);
+
+    MutexLocker locker(*this);
+    if(!isFinished()) {
+        // Notify UI about progress status change.
+        UserInterface& ui = ExecutionContext::current().ui();
+        ui.taskProgressBeginSubStepsWithWeights(*this, std::move(weights));
+    }
+}
+
+/******************************************************************************
+* Completes the current sub-step in the sequence started with beginProgressSubSteps()
+* or beginProgressSubStepsWithWeights() and moves to the next one.
+******************************************************************************/
+void Task::nextProgressSubStep()
+{
+    MutexLocker locker(*this);
+    if(!isFinished()) {
+        // Notify UI about progress status change.
+        UserInterface& ui = ExecutionContext::current().ui();
+        ui.taskProgressNextSubStep(*this);
+    }
+}
+
+/******************************************************************************
+* Completes a sub-step sequence started with beginProgressSubSteps() or
+* beginProgressSubStepsWithWeights().
+******************************************************************************/
+void Task::endProgressSubSteps()
+{
+    MutexLocker locker(*this);
+    if(!isFinished()) {
+        // Notify UI about progress status change.
+        UserInterface& ui = ExecutionContext::current().ui();
+        ui.taskProgressEndSubSteps(*this);
+    }
 }
 
 /******************************************************************************
@@ -378,103 +478,6 @@ Task*& get() noexcept
     static thread_local Task* _current = nullptr;
 
     return _current;
-}
-
-/*******************************************************x***********************
-* Sets the current maximum value for progress reporting.
-******************************************************************************/
-void setProgressMaximum(qlonglong maximum, bool autoReset)
-{
-    Task* task = get();
-    OVITO_ASSERT(task != nullptr);
-    if(task->isProgressingTask()) {
-        static_cast<ProgressingTask*>(task)->setProgressMaximum(maximum, autoReset);
-    }
-}
-
-/*******************************************************x***********************
-* Sets the current progress value of the task.
-******************************************************************************/
-void setProgressValue(qlonglong progressValue)
-{
-    Task* task = get();
-    OVITO_ASSERT(task != nullptr);
-    if(task->isProgressingTask()) {
-        static_cast<ProgressingTask*>(task)->setProgressValue(progressValue);
-    }
-    else {
-        if(task->isCanceled())
-            throw OperationCanceled();
-    }
-}
-
-/*******************************************************x***********************
-* Increments the progress value of the task.
-******************************************************************************/
-void incrementProgressValue(qlonglong increment)
-{
-    Task* task = get();
-    OVITO_ASSERT(task != nullptr);
-    if(task->isProgressingTask()) {
-        static_cast<ProgressingTask*>(task)->incrementProgressValue(increment);
-    }
-    else {
-        if(task->isCanceled())
-            throw OperationCanceled();
-    }
-}
-
-/*******************************************************x***********************
-* Sets the current progress value of the task, generating update events only occasionally.
-******************************************************************************/
-void setProgressValueIntermittent(qlonglong progressValue, int updateEvery)
-{
-    Task* task = get();
-    OVITO_ASSERT(task != nullptr);
-    if(task->isProgressingTask()) {
-        static_cast<ProgressingTask*>(task)->setProgressValueIntermittent(progressValue, updateEvery);
-    }
-    else {
-        if(task->isCanceled())
-            throw OperationCanceled();
-    }
-}
-
-/*******************************************************x***********************
-* Starts a sequence of sub-steps in the progress range of this task.
-******************************************************************************/
-void beginProgressSubStepsWithWeights(std::vector<int> weights)
-{
-    Task* task = get();
-    OVITO_ASSERT(task != nullptr);
-    if(task->isProgressingTask()) {
-        static_cast<ProgressingTask*>(task)->beginProgressSubStepsWithWeights(std::move(weights));
-    }
-}
-
-/*******************************************************x***********************
-* Completes the current sub-step in the sequence started with beginProgressSubSteps() or
-* beginProgressSubStepsWithWeights() and moves to the next one.
-******************************************************************************/
-void nextProgressSubStep()
-{
-    Task* task = get();
-    OVITO_ASSERT(task != nullptr);
-    if(task->isProgressingTask()) {
-        static_cast<ProgressingTask*>(task)->nextProgressSubStep();
-    }
-}
-
-/*******************************************************x***********************
-* Completes a sub-step sequence started with beginProgressSubSteps() or beginProgressSubStepsWithWeights().
-******************************************************************************/
-void endProgressSubSteps()
-{
-    Task* task = get();
-    OVITO_ASSERT(task != nullptr);
-    if(task->isProgressingTask()) {
-        static_cast<ProgressingTask*>(task)->endProgressSubSteps();
-    }
 }
 
 } // End of namespace

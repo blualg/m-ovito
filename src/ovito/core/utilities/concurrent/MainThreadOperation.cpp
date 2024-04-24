@@ -32,11 +32,11 @@ namespace Ovito {
 /**
  * Task type which is created by the MainThreadOperation class.
 */
-class MainThreadTask : public ProgressingTask, public detail::TaskCallback<MainThreadTask>
+class MainThreadTask : public Task, public detail::TaskCallback<MainThreadTask>
 {
 public:
 
-    MainThreadTask(Task* parentTask) noexcept : ProgressingTask(Task::YieldUI) {
+    MainThreadTask(Task* parentTask) noexcept : Task(Task::YieldUI) {
         if(parentTask) {
             // Sanity check: The parent cannot be in the finished state yet when the child task is being created.
             OVITO_ASSERT(!parentTask->isFinished() || parentTask->isCanceled());

@@ -95,6 +95,9 @@ protected:
     /// The SSH connection.
     Ovito::SshConnection* _connection = nullptr;
 
+    /// The local execution context.
+    ExecutionContext _executionContext;
+
 #ifndef Q_OS_WASM
     /// The Qt network request reply.
     QNetworkReply* _networkReply = nullptr;
@@ -116,7 +119,7 @@ protected:
 /**
  * \brief An asynchronous task that downloads a file stored on a remote host to the local computer.
  */
-class DownloadRemoteFileJob : public RemoteFileJob, public detail::TaskWithStorage<FileHandle, ProgressingTask>
+class DownloadRemoteFileJob : public RemoteFileJob, public detail::TaskWithStorage<FileHandle>
 {
     Q_OBJECT
 
@@ -128,7 +131,7 @@ public:
     /// Constructor.
     DownloadRemoteFileJob(QUrl url) :
         RemoteFileJob(std::move(url), *this),
-        TaskWithStorage<FileHandle, ProgressingTask>(ProgressingTask::NoState, std::nullopt) {}
+        TaskWithStorage<FileHandle>(Task::NoState, std::nullopt) {}
 
 protected:
 
@@ -170,7 +173,7 @@ private:
 /**
  * \brief An asynchronous task that lists the files in a directory on a remote host.
  */
-class ListRemoteDirectoryJob : public RemoteFileJob, public detail::TaskWithStorage<QStringList, ProgressingTask>
+class ListRemoteDirectoryJob : public RemoteFileJob, public detail::TaskWithStorage<QStringList>
 {
     Q_OBJECT
 
@@ -182,7 +185,7 @@ public:
     /// Constructor.
     ListRemoteDirectoryJob(QUrl url) :
         RemoteFileJob(std::move(url), *this),
-        TaskWithStorage<QStringList, ProgressingTask>(ProgressingTask::NoState, std::nullopt) {}
+        TaskWithStorage<QStringList>(Task::NoState, std::nullopt) {}
 
 protected:
 

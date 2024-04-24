@@ -65,9 +65,7 @@ auto for_each_sequential(
     // Can we report progress because the total number of required iterations is known?
     constexpr bool is_with_progress = std::is_same_v<typename std::iterator_traits<typename std::decay_t<InputRange>::iterator>::iterator_category, std::random_access_iterator_tag>;
 
-    using task_base_class = std::conditional_t<is_with_progress, ProgressingTask, Task>;
-
-    class ForEachTask : public detail::ContinuationTask<task_result_type, task_base_class>
+    class ForEachTask : public detail::ContinuationTask<task_result_type>
     {
     public:
 
@@ -81,7 +79,7 @@ auto for_each_sequential(
             StartIterFunc&& startFunc,
             CompleteIterFunc&& completeFunc,
             ResultType&&... initialResult) :
-                detail::ContinuationTask<task_result_type, task_base_class>(Task::NoState, std::forward<ResultType>(initialResult)...),
+                detail::ContinuationTask<task_result_type>(Task::NoState, std::forward<ResultType>(initialResult)...),
                 _range(std::forward<InputRange>(inputRange)),
                 _executor(std::forward<Executor>(executor)),
                 _startFunc(std::forward<StartIterFunc>(startFunc)),
@@ -122,7 +120,7 @@ auto for_each_sequential(
                     // Call the user-provided function with the current loop value and, optionally, the task's result storage
                     if constexpr(!std::is_void_v<task_result_type>) {
                         if constexpr(std::is_invocable_v<std::decay_t<StartIterFunc>, decltype(*std::begin(inputRange)), task_result_type&>)
-                            future = std::invoke(_startFunc, *_iterator, detail::ContinuationTask<task_result_type, task_base_class>::resultStorage());
+                            future = std::invoke(_startFunc, *_iterator, detail::ContinuationTask<task_result_type>::resultStorage());
                         else
                             future = std::invoke(_startFunc, *_iterator);
                     }
@@ -172,7 +170,7 @@ auto for_each_sequential(
                 if constexpr(!std::is_void_v<typename output_future_type::result_type>) {
                     if constexpr(!std::is_void_v<task_result_type>) {
                         if constexpr(std::is_invocable_v<CompleteIterFunc, decltype(*_iterator), decltype(std::move(future).result()), task_result_type&>)
-                            std::invoke(_completeFunc, *_iterator, std::move(future).result(), detail::ContinuationTask<task_result_type, task_base_class>::resultStorage());
+                            std::invoke(_completeFunc, *_iterator, std::move(future).result(), detail::ContinuationTask<task_result_type>::resultStorage());
                         else if constexpr(std::is_invocable_v<CompleteIterFunc, decltype(*_iterator), decltype(std::move(future).result())>)
                             std::invoke(_completeFunc, *_iterator, std::move(future).result());
                         else

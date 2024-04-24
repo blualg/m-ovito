@@ -47,7 +47,7 @@ void LAMMPSDataImporterEditor::inspectNewFile(FileImporter* importer, const QUrl
 
     {
         // Block UI until reading is done.
-        ProgressDialog progressDialog(&mainWindow, inspectFuture, tr("Inspecting file header"));
+        ProgressDialog progressDialog(mainWindow, &mainWindow, inspectFuture, tr("Inspecting file header"));
         inspectFuture.waitForFinished();
     }
 

@@ -24,7 +24,6 @@
 
 #include <ovito/grid/Grid.h>
 #include <ovito/mesh/surface/SurfaceMeshBuilder.h>
-#include <ovito/core/utilities/concurrent/ProgressingTask.h>
 
 namespace Ovito {
 

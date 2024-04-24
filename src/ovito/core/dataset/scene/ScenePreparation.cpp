@@ -41,15 +41,26 @@ DEFINE_REFERENCE_FIELD(ScenePreparation, selectionSet);
 ******************************************************************************/
 ScenePreparation::ScenePreparation(UserInterface& userInterface, Scene* scene, bool autoRestart) : _userInterface(userInterface), _autoRestart(autoRestart)
 {
-    // This facility requires a Qt event loop.
-    Application::instance()->createQtApplication(false);
-
     // Activate the initial scene provided to the constructor.
     setScene(scene);
 
     // Get notified when a different rendering settings object becomes active.
     connect(&userInterface.datasetContainer(), &DataSetContainer::renderSettingsReplaced, this, &ScenePreparation::renderSettingsReplaced);
     renderSettingsReplaced(userInterface.datasetContainer().currentSet() ? userInterface.datasetContainer().currentSet()->renderSettings() : nullptr);
+}
+
+/******************************************************************************
+* This method gets called by OORef<T>::create() right after the object's constructor is finished.
+******************************************************************************/
+void ScenePreparation::completeObjectConstruction(ObjectInitializationFlags initFlags)
+{
+    RefMaker::completeObjectConstruction(initFlags);
+
+    // This facility requires a Qt event loop.
+    Application::instance()->createQtApplication(false);
+
+    // Start preparing the scene.
+    restartPreparation();
 }
 
 /******************************************************************************
@@ -72,7 +83,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
 
     // Create a promise, which remains in the unfinished state as long as we are preparing the scene.
     if(!_promise.isValid() || _promise.isCanceled()) {
-        _promise = Promise<void>::create<Task>();
+        _promise = Promise<void>::create();
         _future = _promise.sharedFuture();
         _completedScene = scene();
         if(scene()) {
@@ -279,7 +290,7 @@ void ScenePreparation::restartPreparation(bool restartImmediately)
     // Note: Not resetting pipelineEvaluationFuture here, because we want to keep the in-flight evaluation request going until a new request has been made.
     _currentPipeline.reset();
     _completedScene = nullptr;
-    if(autoRestart()) {
+    if(autoRestart() && !isBeingConstructed() && !isBeingDeleted()) {
         if(scene() && _pipelineEvaluationFuture.isValid() && _currentTime != scene()->animationSettings()->currentTime()) {
             // Force an immediate restart if the animation time has changed.
             restartImmediately = true;

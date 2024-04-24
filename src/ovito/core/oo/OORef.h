@@ -253,6 +253,12 @@ public:
         const OORef<U> ref(rhs);
         return !this->owner_before(ref) && !ref.owner_before(*this); // In C++26: implement this using owner_equal()
     }
+
+    /// Returns true of this weak reference has been initialized with an explicit null object pointer.
+    /// Note: This is different from the case where the referenced object has expired.
+    bool empty() const {
+        return !this->owner_before(std::weak_ptr<T>{}) && !std::weak_ptr<T>{}.owner_before(*this);
+    }
 };
 
 template<class T, class U> OORef<T> static_pointer_cast(const OORef<U>& p) noexcept

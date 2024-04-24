@@ -504,7 +504,7 @@ void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& re
     // Start the animation frame precomputation process if it has been activated.
     if(_precomputeAllFrames && !_precomputeFramesOperation.isValid() && !_allFramesPrecomputed) {
         // Create the async operation object that manages the frame precomputation.
-        _precomputeFramesOperation = Promise<void>::create<ProgressingTask>();
+        _precomputeFramesOperation = Promise<void>::create();
 
         // Determine the number of frames that need to be precomputed.
         PipelineNode* pipelineNode = dynamic_object_cast<PipelineNode>(ownerObject());

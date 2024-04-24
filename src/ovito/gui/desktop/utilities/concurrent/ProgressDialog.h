@@ -24,6 +24,7 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 
 namespace Ovito {
@@ -33,17 +34,24 @@ class OVITO_GUI_EXPORT ProgressDialog : public QDialog
 public:
 
     /// Constructor.
-    explicit ProgressDialog(QWidget* parent, TaskPtr task, const QString& dialogTitle = QString());
+    explicit ProgressDialog(MainWindow& mainWindow, QWidget* parent, TaskPtr task, const QString& dialogTitle = QString());
 
     /// Constructor.
-    explicit ProgressDialog(QWidget* parent, const QString& dialogTitle = QString()) :
-        ProgressDialog(parent, this_task::get()->shared_from_this(), dialogTitle) {}
+    explicit ProgressDialog(MainWindow& mainWindow, const QString& dialogTitle = QString()) :
+        ProgressDialog(mainWindow, &mainWindow, dialogTitle) {}
 
     /// Constructor.
-    explicit ProgressDialog(QWidget* parent, const FutureBase& future, const QString& dialogTitle = QString()) :
-        ProgressDialog(parent, future.task(), dialogTitle) {}
+    explicit ProgressDialog(MainWindow& mainWindow, QWidget* parent, const QString& dialogTitle = QString()) :
+        ProgressDialog(mainWindow, parent, this_task::get()->shared_from_this(), dialogTitle) {}
+
+    /// Constructor.
+    explicit ProgressDialog(MainWindow& mainWindow, QWidget* parent, const FutureBase& future, const QString& dialogTitle = QString()) :
+        ProgressDialog(mainWindow, parent, future.task(), dialogTitle) {}
 
 protected:
+
+    /// Is called when the dialog is shown.
+    virtual void showEvent(QShowEvent* event) override;
 
     /// Is called when the user tries to close the dialog.
     virtual void closeEvent(QCloseEvent* event) override;
@@ -51,10 +59,21 @@ protected:
     /// Is called when the user tries to close the dialog.
     virtual void reject() override;
 
+private Q_SLOTS:
+
+    /// Updates the displayed list of running tasks in the dialog.
+    void updateTaskList();
+
 private:
 
-    /// The task shown in this dialog.
+    /// The window this display widget is associated with.
+    MainWindow& _mainWindow;
+
+    /// The running task displayed in this dialog.
     TaskPtr _task;
+
+    /// List of per-task display widgets.
+    std::vector<std::pair<QLabel*, QProgressBar*>> _taskWidgets;
 };
 
 }   // End of namespace

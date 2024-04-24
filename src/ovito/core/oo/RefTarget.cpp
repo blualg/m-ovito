@@ -60,6 +60,7 @@ void RefTarget::aboutToBeDeleted()
 {
     OVITO_CHECK_OBJECT_POINTER(this);
     OVITO_ASSERT(this->__isObjectAlive());
+    OVITO_ASSERT(isBeingDeleted());
 
     // Make sure undo recording is not active while deleting the object from memory.
     UndoSuspender noUndo;
@@ -76,20 +77,14 @@ void RefTarget::aboutToBeDeleted()
         // From a worker thread, we cannot directly notify the remaining weak dependents about the deletion of this object.
         // We have to do it from the main thread and block here until the main thread has performed the notification calls.
         detail::Latch latch(1);
-        struct Helper {
-            RefTarget* self;
-            detail::Latch& latch;
-            ~Helper() noexcept {
-                latch.count_down();
-            }
-            void operator()() noexcept {
-                ReferenceEvent deleteEvent(ReferenceEvent::TargetDeleted, self);
-                self->_dependents.visit([&](RefMaker* dependent) {
-                    dependent->handleReferenceEvent(self, deleteEvent);
-                });
-            }
-        };
-        Application::instance()->taskManager().submitWork(Application::instance(), Helper{this, latch}, true);
+        OVITO_ASSERT(!ExecutionContext::current().ui().taskManager().isShuttingDown()); // Note: During late-phase shutdown the main thread may not be able to process tasks.
+        ExecutionContext::current().runDeferred(nullptr, [this, &latch]() noexcept {
+            ReferenceEvent deleteEvent(ReferenceEvent::TargetDeleted, this);
+            _dependents.visit([&](RefMaker* dependent) {
+                dependent->handleReferenceEvent(this, deleteEvent);
+            });
+            latch.count_down();
+        });
         latch.wait();
     }
 
@@ -104,7 +99,7 @@ void RefTarget::aboutToBeDeleted()
     }
 #endif
 
-    // Delete object from memory.
+    // Clears all references this RefMake has to other objects.
     RefMaker::aboutToBeDeleted();
 }
 

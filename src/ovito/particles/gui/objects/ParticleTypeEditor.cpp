@@ -211,7 +211,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
                 }
 
                 // Load the geometry from the selected file.
-                ProgressDialog progressDialog(container(), tr("Loading geometry file"));
+                ProgressDialog progressDialog(mainWindow(), container(), tr("Loading geometry file"));
                 ptype->loadShapeMesh(selectedFile, fileImporterClass, fileImporterFormat);
             });
         }

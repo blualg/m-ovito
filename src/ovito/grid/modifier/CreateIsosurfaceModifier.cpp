@@ -419,7 +419,7 @@ Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const Modif
 ******************************************************************************/
 void CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshBuilder& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, const SimulationCell& gridDomain, VoxelGrid::GridDimensions gridShape, VoxelGrid::GridType gridType)
 {
-    OVITO_ASSERT(this_task::get() && this_task::get()->isProgressingTask());
+    OVITO_ASSERT(this_task::get());
 
     // Create destination properties for transferring voxel values to the surface vertices.
     std::vector<std::pair<RawBufferReadAccess, RawBufferAccess<access_mode::discard_write>>> propertyMapping;

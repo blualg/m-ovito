@@ -259,6 +259,7 @@ MainWindow::~MainWindow()
 {
     OVITO_ASSERT(isShuttingDown()); // Make sure this UserInterface was properly shutdown before being deleted.
     OVITO_ASSERT(datasetContainer().currentSet() == nullptr);
+    OVITO_ASSERT(_progressTaskList.empty());
 }
 
 /******************************************************************************
@@ -465,7 +466,7 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
 }
 
 /******************************************************************************
-* Is called when the user closes the window.
+* Is called by the system when the user tries to close the window.
 ******************************************************************************/
 void MainWindow::closeEvent(QCloseEvent* event)
 {
@@ -1136,6 +1137,188 @@ void MainWindow::importFiles(const std::vector<QUrl>& urls, const FileImporterCl
             dataset->setFilePath({});
         }
     }
+}
+
+/******************************************************************************
+* Registers a new task for progress display in the UI.
+******************************************************************************/
+MainWindow::ProgressTaskInfo* MainWindow::registerProgressTask(Task& task)
+{
+    OVITO_ASSERT(!task.isFinished());
+
+    // Check if this task is already in our list of in-progress tasks.
+    for(ProgressTaskInfo& info : _progressTaskList) {
+        if(info.task == &task)
+            return &info;
+    }
+
+    // Add the task to our list of in-progress tasks.
+    ProgressTaskInfo& info = _progressTaskList.emplace_back();
+    info.task = &task;
+
+    // Remove the task from the list again when it is done.
+    // Note: Task::registerContinuation() requires the task's mutex to be locked.
+    // This should have been done in the Task method that called us.
+    task.registerContinuation([self = weak_from_this(), &task]() noexcept {
+        if(auto mainWindow = static_object_cast<MainWindow>(self.lock()))
+            mainWindow->unregisterProgressTask(task);
+    });
+
+    return &info;
+}
+
+/******************************************************************************
+* Removes a registered task from the list again.
+******************************************************************************/
+void MainWindow::unregisterProgressTask(Task& task)
+{
+    std::lock_guard<std::mutex> lock(_progressTaskListMutex);
+    Q_DECL_UNUSED auto r = std::erase_if(_progressTaskList, [&](const ProgressTaskInfo& info) {
+        return info.task == &task;
+    });
+    OVITO_ASSERT(r == 1);
+    notifyProgressTasksChanged();
+}
+
+/******************************************************************************
+* Notifies all registered listeners that the progress state of the registered tasks has changed.
+******************************************************************************/
+void MainWindow::notifyProgressTasksChanged()
+{
+    // The following timer code ensures that the GUI task display is updated only once every 100 ms.
+    // It also ensures that the UI update is done in the main thread and that short-lived
+    // tasks doen't show up in the GUI at all.
+    if(!_progressUpdateScheduled) {
+        _progressUpdateScheduled = true;
+        QTimer::singleShot(100, this, [this]() {
+            {
+                std::lock_guard<std::mutex> lock(_progressTaskListMutex);
+                _progressUpdateScheduled = false;
+            }
+            Q_EMIT taskProgressUpdate();
+        });
+    }
+}
+
+/******************************************************************************
+* Lets the caller visit all registered worker tasks that are in progress.
+******************************************************************************/
+void MainWindow::visitRunningTasks(std::function<void(Task&,const QString&,int,int)> visitor)
+{
+    std::lock_guard<std::mutex> lock(_progressTaskListMutex);
+    for(ProgressTaskInfo& info : _progressTaskList) {
+
+        // Compute overall progress, taking into account nested sub-steps of the task.
+        float percentage;
+        if(info.progressMaximum > 0)
+            percentage = (float)info.progressValue / info.progressMaximum;
+        else
+            percentage = 0;
+        for(auto level = info.subProgressStack.crbegin(); level != info.subProgressStack.crend(); ++level) {
+            OVITO_ASSERT(level->first >= 0 && level->first <= level->second.size());
+            int weightSum1 = std::accumulate(level->second.cbegin(), level->second.cbegin() + level->first, 0);
+            int weightSum2 = std::accumulate(level->second.cbegin() + level->first, level->second.cend(), 0);
+            percentage = ((float)weightSum1 + percentage * (level->first < level->second.size() ? level->second[level->first] : 0)) / (weightSum1 + weightSum2);
+        }
+        int totalProgressMaximum = 1000;
+        int totalProgressValue = static_cast<int>(percentage * 1000.0f);
+
+        // Call visitor function.
+        visitor(*info.task, info.text, totalProgressValue, totalProgressMaximum);
+    }
+}
+
+/******************************************************************************
+* Gets called by a running task to report its progress status (from any thread).
+******************************************************************************/
+void MainWindow::taskProgressText(Task& task, const QString& text)
+{
+    UserInterface::taskProgressText(task, text);
+
+    std::lock_guard<std::mutex> lock(_progressTaskListMutex);
+    ProgressTaskInfo* taskInfo = registerProgressTask(task);
+    taskInfo->text = text;
+    notifyProgressTasksChanged();
+}
+
+/******************************************************************************
+* Gets called by a running task to report its progress status (from any thread).
+******************************************************************************/
+void MainWindow::taskProgressMaximum(Task& task, qlonglong maximum, bool autoReset)
+{
+    std::lock_guard<std::mutex> lock(_progressTaskListMutex);
+    ProgressTaskInfo* taskInfo = registerProgressTask(task);
+    if(autoReset || taskInfo->progressMaximum != maximum) {
+        taskInfo->progressMaximum = maximum;
+        taskInfo->progressValue = 0;
+        notifyProgressTasksChanged();
+    }
+}
+
+/******************************************************************************
+* Gets called by a running task to report its progress status (from any thread).
+******************************************************************************/
+void MainWindow::taskProgressValue(Task& task, qlonglong value)
+{
+    std::lock_guard<std::mutex> lock(_progressTaskListMutex);
+    ProgressTaskInfo* taskInfo = registerProgressTask(task);
+    if(taskInfo->progressValue != value) {
+        taskInfo->progressValue = value;
+        notifyProgressTasksChanged();
+    }
+}
+
+/******************************************************************************
+* Gets called by a running task to report its progress status (from any thread).
+******************************************************************************/
+void MainWindow::taskProgressIncrementValue(Task& task, qlonglong increment)
+{
+    std::lock_guard<std::mutex> lock(_progressTaskListMutex);
+    ProgressTaskInfo* taskInfo = registerProgressTask(task);
+    taskInfo->progressValue += increment;
+    notifyProgressTasksChanged();
+}
+
+/******************************************************************************
+* Gets called by a running task to report its progress status (from any thread).
+******************************************************************************/
+void MainWindow::taskProgressBeginSubStepsWithWeights(Task& task, std::vector<int>&& weights)
+{
+    std::lock_guard<std::mutex> lock(_progressTaskListMutex);
+    ProgressTaskInfo* taskInfo = registerProgressTask(task);
+    taskInfo->subProgressStack.emplace_back(0, std::move(weights));
+    taskInfo->progressMaximum = 0;
+    taskInfo->progressValue = 0;
+    notifyProgressTasksChanged();
+}
+
+/******************************************************************************
+* Gets called by a running task to report its progress status (from any thread).
+******************************************************************************/
+void MainWindow::taskProgressNextSubStep(Task& task)
+{
+    std::lock_guard<std::mutex> lock(_progressTaskListMutex);
+    ProgressTaskInfo* taskInfo = registerProgressTask(task);
+    OVITO_ASSERT(!taskInfo->subProgressStack.empty());
+    OVITO_ASSERT(taskInfo->subProgressStack.back().first < taskInfo->subProgressStack.back().second.size());
+    taskInfo->subProgressStack.back().first++;
+    taskInfo->progressMaximum = 0;
+    taskInfo->progressValue = 0;
+    notifyProgressTasksChanged();
+}
+
+/******************************************************************************
+* Gets called by a running task to report its progress status (from any thread).
+******************************************************************************/
+void MainWindow::taskProgressEndSubSteps(Task& task)
+{
+    std::lock_guard<std::mutex> lock(_progressTaskListMutex);
+    ProgressTaskInfo* taskInfo = registerProgressTask(task);
+    OVITO_ASSERT(!taskInfo->subProgressStack.empty());
+    taskInfo->subProgressStack.pop_back();
+    taskInfo->progressMaximum = 0;
+    taskInfo->progressValue = 0;
+    notifyProgressTasksChanged();
 }
 
 }   // End of namespace

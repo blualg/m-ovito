@@ -71,6 +71,12 @@ public:
     /// \brief Switches between graphical and console mode.
     void setGuiMode(bool enableGui) { _consoleMode = !enableGui; }
 
+    /// \brief Returns whether printing of task status messages to the console is currently enabled.
+    bool taskConsoleLoggingEnabled() const { return _taskConsoleLoggingEnabled; }
+
+    /// \brief Enables or disables printing of task status messages to the console.
+    void setTaskConsoleLoggingEnabled(bool enabled) { _taskConsoleLoggingEnabled = enabled; }
+
     /// Returns the global FileManager class instance.
     FileManager& fileManager() { return _fileManager; }
 
@@ -116,6 +122,9 @@ protected:
 
     /// Indicates that the application is running in console mode.
     bool _consoleMode = true;
+
+    /// Enables printing of task status messages to the console.
+    bool _taskConsoleLoggingEnabled = false;
 
     /// The global file manager instance.
     FileManager& _fileManager;

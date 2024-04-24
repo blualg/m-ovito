@@ -75,19 +75,6 @@ TaskManager::~TaskManager()
 #endif
 
 /******************************************************************************
-* Registers an asynchronous task with the task manager.
-******************************************************************************/
-void TaskManager::registerTask(Task& task)
-{
-    // Enable logging for the task if requested.
-    if(consoleLoggingEnabled())
-        task.setLoggingEnabled();
-
-    // Inform listeners about the new task.
-    Q_EMIT taskRegistered(task.shared_from_this());
-}
-
-/******************************************************************************
 * Request the TaskManager to shut down all ongoing work, which means canceling
 * all running tasks and no longer accepting new tasks.
 ******************************************************************************/
@@ -167,17 +154,21 @@ void TaskManager::shutdownImplementation(std::unique_lock<std::mutex>& lock)
 ******************************************************************************/
 void TaskManager::submitWork(const OvitoObject* contextObject, fu2::unique_function<void() noexcept> function, bool isScriptingContext)
 {
-    OVITO_ASSERT(contextObject);
-    std::lock_guard<std::mutex> lock(_mutex);
+    // Note: contextObject may be null for work not associated with any particular object.
 
-    if(isShuttingDown())
-        return;
+    OVITO_ASSERT(!contextObject || !contextObject->isBeingConstructed()); // Note: Cannot create a OOWeakRef<> if the object is not fully constructed yet.
+    OVITO_ASSERT(!contextObject || !contextObject->isBeingDeleted()); // Note: Cannot create a OOWeakRef<> while the object is being destructed.
 
     // Place work item into the queue.
-    _pendingWork.emplace(contextObject, std::move(function), isScriptingContext);
+    size_t numPendingWork;
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        _pendingWork.emplace(contextObject, std::move(function), isScriptingContext);
+        numPendingWork = _pendingWork.size();
+    }
 
     // If the queue became non-empty, notify listeners that work is waiting.
-    if(_pendingWork.size() == 1) {
+    if(numPendingWork == 1) {
         _pendingWorkCondition.notify_one();
 
         if(QCoreApplication::instance())
@@ -199,23 +190,26 @@ void TaskManager::executePendingWorkLocked(std::unique_lock<std::mutex>& lock)
         _pendingWork.pop();
         lock.unlock();
 
-        // Execute work item only if the context object still exists and the user interface is not shutting down.
+        // Execute work item only if the context object still exists.
         // Otherwise, silently cancel the work (which still runs the destructor of the work object).
-        if(!isShuttingDown()) {
-            if(auto contextObject = work.obj.lock()) {
-                // Establish the execution context in which the work was submitted.
-                ExecutionContext::Scope execScope(work.isScriptingContext ? ExecutionContext::Type::Scripting : ExecutionContext::Type::Interactive, _ui->shared_from_this());
+        auto contextObject = work.obj.lock();
 
-                // No active task while executing the work.
-                Task::Scope taskScope(nullptr);
+        // An exception is a null context object, i.e. work that is not associated with a specific object.
+        // In this case the work is always executed.
+        if(contextObject || work.obj.empty()) {
 
-                // Undo recording may still be active if the GUI is currently performing an extended user operation (e.g. Animation Settings dialog may be open).
-                // While the asynchronous work is being performed, undo recording should be suspended.
-                UndoSuspender noUndo;
+            // Establish the execution context in which the work was submitted.
+            ExecutionContext::Scope execScope(work.isScriptingContext ? ExecutionContext::Type::Scripting : ExecutionContext::Type::Interactive, _ui->shared_from_this());
 
-                // Execute the work function.
-                std::move(work.function)();
-            }
+            // No active task while executing the work.
+            Task::Scope taskScope(nullptr);
+
+            // Undo recording may still be active if the GUI is currently performing an extended user operation (e.g. Animation Settings dialog may be open).
+            // While the asynchronous work is being performed, undo recording should be suspended.
+            UndoSuspender noUndo;
+
+            // Execute the work function.
+            std::invoke(std::move(work.function));
         }
 
         // Continue by grabbing the next work item from the queue.
@@ -224,7 +218,7 @@ void TaskManager::executePendingWorkLocked(std::unique_lock<std::mutex>& lock)
 
     if(isShuttingDown() && !_isWaitingForTask) {
         // If shutdown has been requested before, and we now have left all nested loops,
-        // cancel all remaining tasks and wait for them to finish.
+        // wait for all remaining tasks (in other threads) to finish.
         shutdownImplementation(lock);
     }
 }
@@ -266,14 +260,6 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDepende
     QEventLoop* previousEventLoop = _localEventLoop;
 
     for(;;) {
-        // Time to quit the loop because the application is shutting down?
-        if(isShuttingDown()) {
-            // Cancel the waiting task. This will also (likely) cancel the awaited task.
-            lock.unlock();
-            waitingTask->cancel();
-            lock.lock();
-            break;
-        }
 
         // Time to quit the loop because an interrupt was requested?
         if(quitFlag || _interruptProcessingLoop)
@@ -311,7 +297,7 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDepende
         else {
             // Block until new work arrives in the queue or quitWorkProcessingLoop() is called.
             _pendingWorkCondition.wait(lock, [&]{
-                return !_pendingWork.empty() || quitFlag || _interruptProcessingLoop || isShuttingDown();
+                return !_pendingWork.empty() || quitFlag || _interruptProcessingLoop;
             });
 
             // Time to quit the loop because we are done?

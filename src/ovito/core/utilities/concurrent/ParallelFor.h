@@ -26,17 +26,18 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include "detail/Latch.h"
-#include "ProgressingTask.h"
+#include "Task.h"
 
 namespace Ovito {
 
 template<typename Setup, typename Kernel>
 void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
 {
-    OVITO_ASSERT(this_task::get());
-    OVITO_ASSERT(this_task::get()->isProgressingTask());
+    Task* task = this_task::get();
+    OVITO_ASSERT(task);
+    if(task->isCanceled())
+        throw OperationCanceled();
 
-    this_task::throwIfCanceled();
     if(maxWorkers == 0) {
         setup(0);
         return;
@@ -51,7 +52,7 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
     size_t workerCount = std::min({maxWorkers, builtinMaxWorkers, (size_t)detail::Latch::max()});
 
     // If the application is running in single-threaded mode, we don't use additional worker threads.
-    QThreadPool* pool = ExecutionContext::current().ui().taskManager().chooseThreadPool(*this_task::get());
+    QThreadPool* pool = ExecutionContext::current().ui().taskManager().chooseThreadPool(*task);
     if(pool->maxThreadCount() == 1)
         workerCount = 1;
 
@@ -103,13 +104,12 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
         // Create workers and submit them to the thread pool.
         detail::Latch latch(workerCount);
         ExecutionContext* context = &ExecutionContext::current();
-        Task* thisTask = this_task::get();
         for(size_t t = 0; t < workerCount; t++) {
             Runner& runner = workers.emplace_back(
                 &kernel,
                 &latch,
                 context,
-                thisTask,
+                task,
                 t,
                 workerCount
             );
@@ -141,7 +141,8 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
     kernel(0, 1);
 #endif
 
-    this_task::throwIfCanceled();
+    if(task->isCanceled())
+        throw OperationCanceled();
 }
 
 template<typename Setup, typename Kernel>
@@ -182,9 +183,9 @@ template<typename Setup, typename OuterKernel>
 void parallelForInnerOuter(size_t loopCount, size_t minimumChunkSize, Setup&& setup, OuterKernel&& outerKernel)
 {
     OVITO_ASSERT(minimumChunkSize != 0);
-    OVITO_ASSERT(this_task::get());
-    OVITO_ASSERT(this_task::get()->isProgressingTask());
-    ProgressingTask* task = static_cast<ProgressingTask*>(this_task::get());
+
+    Task* task = this_task::get();
+    OVITO_ASSERT(task);
     task->setProgressMaximum(loopCount);
 
     parallelForChunks(loopCount, minimumChunkSize, std::forward<Setup>(setup), [outerKernel = std::forward<OuterKernel>(outerKernel), minimumChunkSize, task](size_t workerIndex, size_t fromIndex, size_t toIndex) {
@@ -204,9 +205,9 @@ template<typename OuterKernel>
 void parallelForInnerOuter(size_t loopCount, size_t minimumChunkSize, OuterKernel&& outerKernel)
 {
     OVITO_ASSERT(minimumChunkSize != 0);
-    OVITO_ASSERT(this_task::get());
-    OVITO_ASSERT(this_task::get()->isProgressingTask());
-    ProgressingTask* task = static_cast<ProgressingTask*>(this_task::get());
+
+    Task* task = this_task::get();
+    OVITO_ASSERT(task);
     task->setProgressMaximum(loopCount);
 
     parallelForChunks(loopCount, minimumChunkSize, [outerKernel = std::forward<OuterKernel>(outerKernel), minimumChunkSize, task](size_t fromIndex, size_t toIndex) {

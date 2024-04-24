@@ -47,7 +47,7 @@ void LAMMPSBinaryDumpImporterEditor::inspectNewFile(FileImporter* importer, cons
 
     {
         // Block UI until reading is done.
-        ProgressDialog progressDialog(&mainWindow, tr("Inspecting file header"));
+        ProgressDialog progressDialog(mainWindow, &mainWindow, inspectFuture, tr("Inspecting file header"));
         inspectFuture.waitForFinished();
     }
 
@@ -107,7 +107,7 @@ void LAMMPSBinaryDumpImporterEditor::showEditColumnMappingDialog(LAMMPSBinaryDum
 
     {
         // Block UI until reading is done.
-        ProgressDialog progressDialog(parentWindow(), inspectFuture, tr("Inspecting file header"));
+        ProgressDialog progressDialog(mainWindow(), parentWindow(), inspectFuture, tr("Inspecting file header"));
         inspectFuture.waitForFinished();
     }
 

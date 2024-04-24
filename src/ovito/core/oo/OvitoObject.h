@@ -129,6 +129,8 @@ public:
     auto schedule(Function&& f) const {
         OVITO_CHECK_OBJECT_POINTER(this);
         OVITO_ASSERT(ExecutionContext::current().isValid());
+        OVITO_ASSERT(!isBeingConstructed()); // Note: Cannot create a OOWeakRef<> if the object is not fully constructed yet.
+        OVITO_ASSERT(!isBeingDeleted());     // Note: Cannot create a OOWeakRefr<> if the object is already being destructed.
         return [weakRef = weak_from_this(), context = ExecutionContext::current(), f = std::forward<Function>(f)]() mutable noexcept {
             if(auto self = weakRef.lock()) {
                 ExecutionContext::Scope execScope(std::move(context));
@@ -142,6 +144,8 @@ public:
     void execute(Function&& f) const {
         OVITO_CHECK_OBJECT_POINTER(this);
         OVITO_ASSERT(ExecutionContext::current().isValid());
+        OVITO_ASSERT(!isBeingConstructed()); // Note: Cannot create a OOWeakRef<> if the object is not fully constructed yet.
+        OVITO_ASSERT(!isBeingDeleted());     // Note: Cannot create a OOWeakRefr<> if the object is already being destructed.
         // If we are in the main thread already, we can immediately execute the work.
         // Otherwise, schedule its execution in the main thread.
         if(ExecutionContext::isMainThread()) {

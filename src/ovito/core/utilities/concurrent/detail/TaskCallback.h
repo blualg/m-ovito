@@ -38,52 +38,21 @@ private:
         return this->_stateChanged(this, state);
     }
 
-    /// Invokes the registered callback function. Delegates the call to the function pointer provided by a derived class.
-    void callProgressChanged(qlonglong progress, qlonglong maximum) noexcept {
-        if(this->_progressChanged)
-            this->_progressChanged(this, progress, maximum);
-    }
-
-    /// Invokes the registered callback function. Delegates the call to the function pointer provided by a derived class.
-    void callTextChanged() noexcept {
-        if(this->_textChanged)
-            this->_textChanged(this);
-    }
-
 protected:
 
     /// The type of function pointer provided by the derived class.
     using state_changed_fn = bool(TaskCallbackBase* f, int state) noexcept;
 
-    /// The type of function pointer provided by the derived class.
-    using progress_changed_fn = void(TaskCallbackBase* f, qlonglong progress, qlonglong maximum) noexcept;
-
-    /// The type of function pointer provided by the derived class.
-    using text_changed_fn = void(TaskCallbackBase* f) noexcept;
-
     /// Constructor to be called by the derived class.
-    explicit TaskCallbackBase(
-        state_changed_fn* stateChanged,
-        progress_changed_fn* progressChanged = nullptr,
-        text_changed_fn* textChanged = nullptr) noexcept :
-            _stateChanged(stateChanged),
-            _progressChanged(progressChanged),
-            _textChanged(textChanged) {}
+    explicit TaskCallbackBase(state_changed_fn* stateChanged) noexcept : _stateChanged(stateChanged) {}
 
     /// The callback function provided by the derived class.
     state_changed_fn* _stateChanged;
-
-    /// The callback function provided by the derived class.
-    progress_changed_fn* _progressChanged;
-
-    /// The callback function provided by the derived class.
-    text_changed_fn* _textChanged;
 
     /// Linked list of callbacks (pointer to next callback object).
     TaskCallbackBase* _nextInList = nullptr;
 
     friend class Ovito::Task;
-    friend class Ovito::ProgressingTask;
 };
 
 template<typename Derived>
@@ -128,31 +97,6 @@ private:
 
     /// The task being monitored.
     Task* _task = nullptr;
-};
-
-template<typename Derived>
-class ProgressTaskCallback : protected TaskCallback<Derived>
-{
-public:
-
-    explicit ProgressTaskCallback() noexcept {
-        this->_progressChanged = &ProgressTaskCallback::progressChangedImpl;
-        this->_textChanged = &ProgressTaskCallback::textChangedImpl;
-    }
-
-private:
-
-    /// The static function to be registered as callback with the base class.
-    static void progressChangedImpl(TaskCallbackBase* cb, qlonglong progress, qlonglong maximum) noexcept {
-        auto& self = *static_cast<Derived*>(cb);
-        self.taskProgressChangedCallback(progress, maximum);
-    }
-
-    /// The static function to be registered as callback with the base class.
-    static void textChangedImpl(TaskCallbackBase* cb) noexcept {
-        auto& self = *static_cast<Derived*>(cb);
-        self.taskTextChangedCallback();
-    }
 };
 
 template<typename F>

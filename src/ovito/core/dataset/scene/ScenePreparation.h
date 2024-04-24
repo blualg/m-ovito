@@ -46,6 +46,9 @@ public:
     /// Constructor.
     explicit ScenePreparation(UserInterface& userInterface, Scene* scene = nullptr, bool autoRestart = true);
 
+    /// This method gets called by OORef<T>::create() right after the object's constructor is finished.
+    void completeObjectConstruction(ObjectInitializationFlags initFlags);
+
     /// Returns the abstract user interface in which this object operates.
     UserInterface& userInterface() const { return _userInterface; }
 

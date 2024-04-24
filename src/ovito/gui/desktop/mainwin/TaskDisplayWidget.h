@@ -44,28 +44,6 @@ private Q_SLOTS:
     /// \brief Updates the displayed information in the indicator widget.
     void updateIndicator();
 
-    /// \brief Is called when a new task has been registered with the TaskManager.
-    void taskRegistered(const TaskPtr& task);
-
-    /// \brief Is called when a task has started to run.
-    void taskStarted();
-
-    /// \brief Is called when a task has finished.
-    void taskFinished();
-
-    /// \brief Is called when the progress or status of a task has changed.
-    void taskProgressChanged();
-
-protected:
-
-    /// Handles timer events for this object.
-    virtual void timerEvent(QTimerEvent* event) override;
-
-private:
-
-    /// From all currently running tasks, picks which one should be displayed in the status bar.
-    TaskWatcher* pickVisibleTask() const;
-
 private:
 
     /// The window this display widget is associated with.
@@ -76,9 +54,6 @@ private:
 
     /// The label that displays the current progress text.
     QLabel* _progressTextDisplay;
-
-    /// This timer is used to show the progress bar with some delay.
-    QBasicTimer _delayTimer;
 };
 
 }   // End of namespace

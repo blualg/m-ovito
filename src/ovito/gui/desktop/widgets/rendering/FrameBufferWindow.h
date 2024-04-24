@@ -78,16 +78,13 @@ public Q_SLOTS:
     /// Stops the rendering operation that is currently in progress.
     void cancelRendering();
 
-    /// Creates the UI widgets for displaying the progress of one asynchronous task.
-    void createTaskProgressWidgets(const TaskPtr& task);
-
 protected Q_SLOTS:
-
-    /// Is called when the rendering process begins.
-    void onRenderingStarted();
 
     /// Is called when the rendering process ended.
     void onRenderingFinished();
+
+    /// Is called during rendering whenever progress is made.
+    void onTaskProgressUpdate();
 
 protected:
 
@@ -108,17 +105,20 @@ private:
     QAction* _autoCropAction;
     QAction* _cancelRenderingAction;
 
-    /// The rendering operation that is currently in progress.
-    QPointer<TaskWatcher> _renderingWatcher;
-
     /// Layout manager of the central container widget.
     QStackedLayout* _centralLayout;
+
+    /// The rendering task.
+    TaskPtr _renderingTask;
 
     /// Layout component for displaying the progress of rendering operations.
     QVBoxLayout* _progressLayout;
 
-    /// Connection to the task manager's taskRegistered() signal.
-    QMetaObject::Connection _taskRegisteredConnection;
+    /// List of per-task display widgets.
+    std::vector<std::pair<QLabel*, QProgressBar*>> _taskWidgets;
+
+    /// Connection to the main window's taskProgressUpdate() signal.
+    QMetaObject::Connection _taskProgressUpdateConnection;
 };
 
 }   // End of namespace

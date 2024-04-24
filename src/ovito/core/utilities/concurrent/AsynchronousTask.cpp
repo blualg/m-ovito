@@ -33,7 +33,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AsynchronousTaskBase::AsynchronousTaskBase(State initialState, void* resultsStorage) noexcept : ProgressingTask(State(initialState | Task::IsAsynchronous), resultsStorage)
+AsynchronousTaskBase::AsynchronousTaskBase(State initialState, void* resultsStorage) noexcept : Task(State(initialState | Task::IsAsynchronous), resultsStorage)
 {
     QRunnable::setAutoDelete(false);
 }

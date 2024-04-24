@@ -79,6 +79,10 @@ void RemoteFileJob::start()
     OVITO_ASSERT(ExecutionContext::isMainThread());
     OVITO_ASSERT(!_isActive);
 
+    // Inherit the current execution context.
+    _executionContext = ExecutionContext::current();
+    OVITO_ASSERT(_executionContext.isValid());
+
     // Check if job has been canceled in the meantime.
     if(_task.isCanceled()) {
         shutdown(false);
@@ -281,6 +285,8 @@ void DownloadRemoteFileJob::connectionEstablished()
         return;
     }
 
+    ExecutionContext::Scope execScope(_executionContext);
+
 #ifdef OVITO_SSH_CLIENT
     if(LibsshConnection* libsshConnection = qobject_cast<LibsshConnection*>(_connection)) {
         setProgressText(tr("Opening SCP channel to remote host %1").arg(libsshConnection->hostname()));
@@ -359,6 +365,7 @@ void DownloadRemoteFileJob::receivingFile(qint64 fileSize)
         shutdown(false);
         return;
     }
+    ExecutionContext::Scope execScope(_executionContext);
     setProgressMaximum(fileSize);
     setProgressText(tr("Fetching remote file %1").arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded)));
 }
@@ -385,6 +392,7 @@ void DownloadRemoteFileJob::receivedData(qint64 totalReceivedBytes)
         shutdown(false);
         return;
     }
+    ExecutionContext::Scope execScope(_executionContext);
     setProgressValue(totalReceivedBytes);
 }
 
@@ -398,6 +406,7 @@ void DownloadRemoteFileJob::networkReplyDownloadProgress(qint64 bytesReceived, q
         return;
     }
     if(bytesTotal > 0) {
+        ExecutionContext::Scope execScope(_executionContext);
         setProgressMaximum(bytesTotal);
         setProgressValue(bytesReceived);
     }
@@ -449,6 +458,8 @@ void ListRemoteDirectoryJob::connectionEstablished()
         return;
     }
 
+    ExecutionContext::Scope execScope(_executionContext);
+
 #ifdef OVITO_SSH_CLIENT
     if(LibsshConnection* libsshConnection = qobject_cast<LibsshConnection*>(_connection)) {
         // Open the LS channel.
@@ -488,7 +499,7 @@ void ListRemoteDirectoryJob::receivingDirectory()
         return;
     }
 
-    // Set progress text.
+    ExecutionContext::Scope execScope(_executionContext);
     setProgressText(tr("Listing remote directory %1").arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded)));
 }
 

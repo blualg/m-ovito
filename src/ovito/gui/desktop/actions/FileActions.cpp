@@ -350,7 +350,7 @@ void WidgetActionManager::on_FileExport_triggered()
     settings.setValue("last_export_filter", dialog.selectedNameFilter());
 
     // Export to selected file.
-    mainWindow().handleExceptions([&]() {
+    bool val = mainWindow().handleExceptions([&]() {
         int exportFilterIndex = filterStrings.indexOf(dialog.selectedNameFilter());
         OVITO_ASSERT(exportFilterIndex >= 0 && exportFilterIndex < exporterTypes.size());
 
@@ -362,7 +362,7 @@ void WidgetActionManager::on_FileExport_triggered()
 
         // Block until all output data is available for the exporter to inspect it and pick a good default export set.
         {
-            ProgressDialog progressDialog(&mainWindow(), tr("Waiting for pipeline computations to complete"));
+            ProgressDialog progressDialog(mainWindow(), tr("Waiting for pipeline computations to complete"));
             OORef<ScenePreparation>::create(mainWindow(), scene)->future().waitForFinished();
         }
 
@@ -375,7 +375,7 @@ void WidgetActionManager::on_FileExport_triggered()
             return;
 
         // Show progress dialog.
-        ProgressDialog progressDialog(&mainWindow(), tr("Exporting to file"));
+        ProgressDialog progressDialog(mainWindow(), tr("Exporting to file"));
 
         // Let the exporter do its work.
         exporter->doExport();

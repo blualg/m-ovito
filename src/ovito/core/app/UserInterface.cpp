@@ -207,6 +207,18 @@ void UserInterface::zoomToSceneExtentsWhenReady()
 }
 
 /******************************************************************************
+* Gets called by a running task to report its progress status (from any thread).
+******************************************************************************/
+void UserInterface::taskProgressText(Task& task, const QString& text)
+{
+    OVITO_ASSERT(!task.isFinished());
+
+    // Print task messages to the console if task logging is enabled (via Python method ovito.enable_logging()).
+    if(Application::instance()->taskConsoleLoggingEnabled() && !text.isEmpty())
+        qInfo().noquote() << "OVITO:" << text;
+}
+
+/******************************************************************************
 * Queries the system's information and graphics capabilities.
 ******************************************************************************/
 QString UserInterface::generateSystemReport()
