@@ -40,7 +40,7 @@
 #include <QOpenGLVersionFunctionsFactory>
 #include <QOpenGLTexture>
 #ifdef OVITO_DEBUG
-    #include <QOpenGLDebugLogger>
+#include <QOpenGLDebugLogger>
 #endif
 
 namespace Ovito {
@@ -48,17 +48,19 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(OpenGLRenderingJob);
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-OpenGLRenderingJob::OpenGLRenderingJob(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency) : RenderingJob(flags, std::move(visCache)),
-    _multisamplingLevel(multisamplingLevel),
-    _orderIndependentTransparency(orderIndependentTransparency)
+ * Constructor.
+ ******************************************************************************/
+OpenGLRenderingJob::OpenGLRenderingJob(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache,
+                                       int multisamplingLevel, bool orderIndependentTransparency)
+    : RenderingJob(flags, std::move(visCache)),
+      _multisamplingLevel(multisamplingLevel),
+      _orderIndependentTransparency(orderIndependentTransparency)
 {
 }
 
 /******************************************************************************
-* Called when this object is being destroyed.
-******************************************************************************/
+ * Called when this object is being destroyed.
+ ******************************************************************************/
 void OpenGLRenderingJob::aboutToBeDeleted()
 {
     RenderingJob::aboutToBeDeleted();
@@ -72,9 +74,10 @@ void OpenGLRenderingJob::aboutToBeDeleted()
 }
 
 /******************************************************************************
-* Creates a new abstract target frame buffer for rendering into.
-******************************************************************************/
-OORef<AbstractRenderingFrameBuffer> OpenGLRenderingJob::createOffscreenFrameBuffer(const QRect& viewportRect, const std::shared_ptr<FrameBuffer>& frameBuffer)
+ * Creates a new abstract target frame buffer for rendering into.
+ ******************************************************************************/
+OORef<AbstractRenderingFrameBuffer> OpenGLRenderingJob::createOffscreenFrameBuffer(const QRect& viewportRect,
+                                                                                   const std::shared_ptr<FrameBuffer>& frameBuffer)
 {
     // Creating an OpenGL framebuffer requires an active OpenGL context.
     OpenGLContextRestore contextRestore = activateContext();
@@ -83,23 +86,25 @@ OORef<AbstractRenderingFrameBuffer> OpenGLRenderingJob::createOffscreenFrameBuff
 }
 
 /******************************************************************************
-* Renders an image of the given frame graph into the given target frame buffer.
-******************************************************************************/
-Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingMap)
+ * Renders an image of the given frame graph into the given target frame buffer.
+ ******************************************************************************/
+Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer,
+                                             std::shared_ptr<ObjectPickingIdentifierMap> pickingMap)
 {
     // OpenGL rendering requires a Qt GUI application.
     if(!qobject_cast<QGuiApplication*>(QCoreApplication::instance())) {
-        throw RendererException(tr(
-                "OVITO's OpenGLRenderer cannot be used in headless mode, that is if the application is running without access to a graphics environment. "
-                "Please use a different rendering backend or see https://docs.ovito.org/python/modules/ovito_vis.html#ovito.vis.OpenGLRenderer for instructions "
-                "on how to enable OpenGL rendering in Python script environments."));
+        throw RendererException(
+            tr("OVITO's OpenGLRenderer cannot be used in headless mode, that is if the application is running without access to a graphics "
+               "environment. "
+               "Please use a different rendering backend or see "
+               "https://docs.ovito.org/python/modules/ovito_vis.html#ovito.vis.OpenGLRenderer for instructions "
+               "on how to enable OpenGL rendering in Python script environments."));
     }
 
     // Rendering requires an active GL context.
     OpenGLContextRestore contextRestore = activateContext();
     _glcontext = QOpenGLContext::currentContext();
-    if(!_glcontext)
-        throw RendererException(tr("Cannot render scene: There is no active OpenGL context"));
+    if(!_glcontext) throw RendererException(tr("Cannot render scene: There is no active OpenGL context"));
 
     // Prepare a functions table allowing us to call OpenGL functions in a platform-independent way.
     initializeOpenGLFunctions();
@@ -129,42 +134,44 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
         _glformat.setMajorVersion(2);
         _glformat.setMinorVersion(1);
     }
-    if(glformat().majorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MAJOR || (glformat().majorVersion() == OVITO_OPENGL_MINIMUM_VERSION_MAJOR && glformat().minorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MINOR)) {
-        throw RendererException(tr(
-                    "The OpenGL graphics driver installed on this system does not support OpenGL version %6.%7 or newer.\n\n"
-                    "Ovito requires modern graphics hardware and up-to-date graphics drivers to render 3D graphics. Your current system configuration is not compatible with Ovito.\n\n"
-                    "To avoid this error, please install the newest graphics driver of the hardware vendor or, if necessary, consider replacing your graphics card with a newer model.\n\n"
-                    "The installed OpenGL graphics driver reports the following information:\n\n"
-                    "OpenGL vendor: %1\n"
-                    "OpenGL renderer: %2\n"
-                    "OpenGL version: %3.%4 (%5)\n\n"
-                    "Ovito requires at least OpenGL version %6.%7.")
-                    .arg(QString::fromUtf8(reinterpret_cast<const char*>(glGetString(GL_VENDOR))))
-                    .arg(QString::fromUtf8(openGLRendererString))
-                    .arg(glformat().majorVersion())
-                    .arg(glformat().minorVersion())
-                    .arg(QString::fromUtf8(openGLVersionString))
-                    .arg(OVITO_OPENGL_MINIMUM_VERSION_MAJOR)
-                    .arg(OVITO_OPENGL_MINIMUM_VERSION_MINOR)
-                );
+    if(glformat().majorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MAJOR || (glformat().majorVersion() == OVITO_OPENGL_MINIMUM_VERSION_MAJOR &&
+                                                                          glformat().minorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MINOR)) {
+        throw RendererException(tr("The OpenGL graphics driver installed on this system does not support OpenGL version %6.%7 or newer.\n\n"
+                                   "Ovito requires modern graphics hardware and up-to-date graphics drivers to render 3D graphics. Your "
+                                   "current system configuration is not compatible with Ovito.\n\n"
+                                   "To avoid this error, please install the newest graphics driver of the hardware vendor or, if "
+                                   "necessary, consider replacing your graphics card with a newer model.\n\n"
+                                   "The installed OpenGL graphics driver reports the following information:\n\n"
+                                   "OpenGL vendor: %1\n"
+                                   "OpenGL renderer: %2\n"
+                                   "OpenGL version: %3.%4 (%5)\n\n"
+                                   "Ovito requires at least OpenGL version %6.%7.")
+                                    .arg(QString::fromUtf8(reinterpret_cast<const char*>(glGetString(GL_VENDOR))))
+                                    .arg(QString::fromUtf8(openGLRendererString))
+                                    .arg(glformat().majorVersion())
+                                    .arg(glformat().minorVersion())
+                                    .arg(QString::fromUtf8(openGLVersionString))
+                                    .arg(OVITO_OPENGL_MINIMUM_VERSION_MAJOR)
+                                    .arg(OVITO_OPENGL_MINIMUM_VERSION_MINOR));
     }
 
 #ifdef Q_OS_WIN
-    if(openGLRendererString == "Intel(R) HD Graphics" || openGLRendererString == "Intel(R) HD Graphics 2000" || openGLRendererString == "Intel(R) HD Graphics 3000" || openGLRendererString == "Intel(R) HD Graphics 4400") {
-        throw RendererException(tr(
-                "The graphics chip installed in this system is not compatible with OVITO, unfortunately.\n\n"
-                "Intel(R) HD Graphics, an integrated graphics chip released in the years 2010/2011/2012, does not support the specific OpenGL functions required by OVITO. "
-                "There is no known workaround to make OVITO work on systems with this particular graphics unit. Please use OVITO on a computer with a more modern graphics processor.\n\n"
-                "Detected graphics interface:\n\n"
-                "OpenGL vendor: %1\n"
-                "OpenGL renderer: %2\n"
-                "OpenGL version: %3.%4 (%5)")
-                .arg(QString::fromUtf8(reinterpret_cast<const char*>(glGetString(GL_VENDOR))))
-                .arg(QString::fromUtf8(openGLRendererString))
-                .arg(glformat().majorVersion())
-                .arg(glformat().minorVersion())
-                .arg(QString::fromUtf8(openGLVersionString))
-            );
+    if(openGLRendererString == "Intel(R) HD Graphics" || openGLRendererString == "Intel(R) HD Graphics 2000" ||
+       openGLRendererString == "Intel(R) HD Graphics 3000" || openGLRendererString == "Intel(R) HD Graphics 4400") {
+        throw RendererException(tr("The graphics chip installed in this system is not compatible with OVITO, unfortunately.\n\n"
+                                   "Intel(R) HD Graphics, an integrated graphics chip released in the years 2010/2011/2012, does not "
+                                   "support the specific OpenGL functions required by OVITO. "
+                                   "There is no known workaround to make OVITO work on systems with this particular graphics unit. Please "
+                                   "use OVITO on a computer with a more modern graphics processor.\n\n"
+                                   "Detected graphics interface:\n\n"
+                                   "OpenGL vendor: %1\n"
+                                   "OpenGL renderer: %2\n"
+                                   "OpenGL version: %3.%4 (%5)")
+                                    .arg(QString::fromUtf8(reinterpret_cast<const char*>(glGetString(GL_VENDOR))))
+                                    .arg(QString::fromUtf8(openGLRendererString))
+                                    .arg(glformat().majorVersion())
+                                    .arg(glformat().minorVersion())
+                                    .arg(QString::fromUtf8(openGLVersionString)));
     }
 #endif
 
@@ -175,19 +182,18 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     _glversion = QT_VERSION_CHECK(glformat().majorVersion(), glformat().minorVersion(), 0);
 
 #ifdef OVITO_DEBUG
-//  _glversion = QT_VERSION_CHECK(4, 1, 0);
-//  _glversion = QT_VERSION_CHECK(3, 2, 0);
-//  _glversion = QT_VERSION_CHECK(3, 1, 0);
-//  _glversion = QT_VERSION_CHECK(2, 1, 0);
+    //  _glversion = QT_VERSION_CHECK(4, 1, 0);
+    //  _glversion = QT_VERSION_CHECK(3, 2, 0);
+    //  _glversion = QT_VERSION_CHECK(3, 1, 0);
+    //  _glversion = QT_VERSION_CHECK(2, 1, 0);
 
     // Initialize debug logger.
     if(glformat().testOption(QSurfaceFormat::DebugContext)) {
         QOpenGLDebugLogger* logger = glcontext()->findChild<QOpenGLDebugLogger*>();
         if(!logger) {
             logger = new QOpenGLDebugLogger(glcontext());
-            QObject::connect(logger, &QOpenGLDebugLogger::messageLogged, [](const QOpenGLDebugMessage& debugMessage) {
-                qDebug() << debugMessage;
-            });
+            QObject::connect(logger, &QOpenGLDebugLogger::messageLogged,
+                             [](const QOpenGLDebugMessage& debugMessage) { qDebug() << debugMessage; });
         }
         logger->initialize();
         logger->startLogging(QOpenGLDebugLogger::SynchronousLogging);
@@ -196,10 +202,12 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
 #endif
 
     // Get optional function pointers.
-    glMultiDrawArrays = reinterpret_cast<void (QOPENGLF_APIENTRY *)(GLenum, const GLint*, const GLsizei*, GLsizei)>(glcontext()->getProcAddress("glMultiDrawArrays"));
-    glMultiDrawArraysIndirect = reinterpret_cast<void (QOPENGLF_APIENTRY *)(GLenum, const void*, GLsizei, GLsizei)>(glcontext()->getProcAddress("glMultiDrawArraysIndirect"));
+    glMultiDrawArrays = reinterpret_cast<void(QOPENGLF_APIENTRY*)(GLenum, const GLint*, const GLsizei*, GLsizei)>(
+        glcontext()->getProcAddress("glMultiDrawArrays"));
+    glMultiDrawArraysIndirect = reinterpret_cast<void(QOPENGLF_APIENTRY*)(GLenum, const void*, GLsizei, GLsizei)>(
+        glcontext()->getProcAddress("glMultiDrawArraysIndirect"));
 #ifndef Q_OS_WASM
-    OVITO_ASSERT(glMultiDrawArrays); // glMultiDrawArrays() should always be available in desktop OpenGL 2.0+.
+    OVITO_ASSERT(glMultiDrawArrays);  // glMultiDrawArrays() should always be available in desktop OpenGL 2.0+.
 #endif
 
     // Set up a vertex array object (VAO). An active VAO is required during rendering according to the OpenGL 3.2 core profile.
@@ -226,7 +234,8 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
 
     // Clear frame buffer.
     if(!isPickingPass()) {
-        OVITO_CHECK_OPENGL(this, this->glClearColor(frameGraph->clearColor().r(), frameGraph->clearColor().g(), frameGraph->clearColor().b(), frameGraph->clearColor().a()));
+        OVITO_CHECK_OPENGL(this, this->glClearColor(frameGraph->clearColor().r(), frameGraph->clearColor().g(),
+                                                    frameGraph->clearColor().b(), frameGraph->clearColor().a()));
     }
     else {
         OVITO_CHECK_OPENGL(this, this->glClearColor(0, 0, 0, 0));
@@ -249,7 +258,6 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
 
     // Render opaque 3d geometry.
     if(renderFrameGraph(*frameGraph, FrameGraph::RenderLayer::SceneLayer)) {
-
         // Render translucent 3d geometry in a second pass.
         renderTransparentGeometry(*frameGraph, *glFrameBuffer);
     }
@@ -286,7 +294,8 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
         // Transfer OpenGL image to the output frame buffer.
         if(!outputFrameBuffer.image().isNull()) {
             QPainter painter(&outputFrameBuffer.image());
-            painter.drawImage(viewportRect, scaledImage, QRect(0, scaledImage.height() - viewportRect.height(), viewportRect.width(), viewportRect.height()));
+            painter.drawImage(viewportRect, scaledImage,
+                              QRect(0, scaledImage.height() - viewportRect.height(), viewportRect.width(), viewportRect.height()));
         }
         else {
             outputFrameBuffer.image() = scaledImage;
@@ -307,47 +316,41 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
 }
 
 /******************************************************************************
-* Renders all semi-transparent geometry in a second rendering pass.
-******************************************************************************/
+ * Renders all semi-transparent geometry in a second rendering pass.
+ ******************************************************************************/
 void OpenGLRenderingJob::renderTransparentGeometry(const FrameGraph& frameGraph, OpenGLRenderingFrameBuffer& frameBuffer)
 {
     // Semi-transparent geometry should never get rendered in a picking render pass.
     OVITO_ASSERT(!isPickingPass());
 
     // Implementation of the "Weighted Blended Order-Independent Transparency" method.
-    if(orderIndependentTransparency())
-        frameBuffer.beginOITRendering();
+    if(orderIndependentTransparency()) frameBuffer.beginOITRendering();
 
     _isTransparencyPass = true;
     renderFrameGraph(frameGraph, FrameGraph::RenderLayer::SceneLayer);
     _isTransparencyPass = false;
 
     // Second phase of the "Weighted Blended Order-Independent Transparency" method.
-    if(orderIndependentTransparency())
-        frameBuffer.endOITRendering();
+    if(orderIndependentTransparency()) frameBuffer.endOITRendering();
 }
 
 /******************************************************************************
-* Executes the rendering commands stored in the given frame graph.
-******************************************************************************/
+ * Executes the rendering commands stored in the given frame graph.
+ ******************************************************************************/
 bool OpenGLRenderingJob::renderFrameGraph(const FrameGraph& frameGraph, FrameGraph::RenderLayer renderLayer)
 {
     bool hasTransparentGeometry = false;
 
     for(const FrameGraph::RenderingCommand& command : frameGraph.commands()) {
-
         // Skip commands that are not part of the current render layer.
-        if(command.renderLayer() != renderLayer)
-            continue;
+        if(command.renderLayer() != renderLayer) continue;
 
         // Skip commands that are not relevant for the current rendering pass.
         if(isPickingPass()) {
-            if(command.skipInPickingPass())
-                continue;
+            if(command.skipInPickingPass()) continue;
         }
         else {
-            if(command.skipInVisualPass())
-                continue;
+            if(command.skipInVisualPass()) continue;
         }
 
         // Enable/disable depth testing as needed.
@@ -394,8 +397,8 @@ bool OpenGLRenderingJob::renderFrameGraph(const FrameGraph& frameGraph, FrameGra
 }
 
 /******************************************************************************
-* Renders a particles primitive.
-******************************************************************************/
+ * Renders a particles primitive.
+ ******************************************************************************/
 bool OpenGLRenderingJob::renderParticles(const ParticlePrimitive& primitive, int pickingGroupID)
 {
     // Render particles immediately if they are all fully opaque. Otherwise defer rendering to a later time.
@@ -413,7 +416,8 @@ bool OpenGLRenderingJob::renderParticles(const ParticlePrimitive& primitive, int
                 bool initialized = false;
             };
             auto& cache = currentResourceFrame().lookup<OpaqueParticlesCache>(
-                RendererResourceKey<struct OpaqueParticlesCacheKey, ConstDataBufferPtr, ConstDataBufferPtr>(primitive.transparencies(), primitive.indices()));
+                RendererResourceKey<struct OpaqueParticlesCacheKey, ConstDataBufferPtr, ConstDataBufferPtr>(primitive.transparencies(),
+                                                                                                            primitive.indices()));
             if(!cache.initialized) {
                 cache.initialized = true;
                 // Are there any particles having a non-positive transparency value?
@@ -447,8 +451,8 @@ bool OpenGLRenderingJob::renderParticles(const ParticlePrimitive& primitive, int
 }
 
 /******************************************************************************
-* Renders a cylinders primitive.
-******************************************************************************/
+ * Renders a cylinders primitive.
+ ******************************************************************************/
 bool OpenGLRenderingJob::renderCylinders(const CylinderPrimitive& primitive, int pickingGroupID)
 {
     // Render primitives immediately if they are all fully opaque. Otherwise defer rendering to a later time.
@@ -460,8 +464,8 @@ bool OpenGLRenderingJob::renderCylinders(const CylinderPrimitive& primitive, int
 }
 
 /******************************************************************************
-* Renders a triangle mesh primitive.
-******************************************************************************/
+ * Renders a triangle mesh primitive.
+ ******************************************************************************/
 bool OpenGLRenderingJob::renderMesh(const MeshPrimitive& primitive, int pickingGroupID)
 {
     // Render mesh immediately if it is fully opaque. Otherwise defer rendering to a later time.
@@ -473,9 +477,10 @@ bool OpenGLRenderingJob::renderMesh(const MeshPrimitive& primitive, int pickingG
 }
 
 /******************************************************************************
-* Loads an OpenGL shader program.
-******************************************************************************/
-QOpenGLShaderProgram* OpenGLRenderingJob::loadShaderProgram(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile)
+ * Loads an OpenGL shader program.
+ ******************************************************************************/
+QOpenGLShaderProgram* OpenGLRenderingJob::loadShaderProgram(const QString& id, const QString& vertexShaderFile,
+                                                            const QString& fragmentShaderFile, const QString& geometryShaderFile)
 {
     QOpenGLContextGroup* contextGroup = QOpenGLContextGroup::currentContextGroup();
     OVITO_ASSERT(contextGroup);
@@ -491,13 +496,11 @@ QOpenGLShaderProgram* OpenGLRenderingJob::loadShaderProgram(const QString& id, c
     // Compile a modified version of each shader for the transparency pass.
     // This is accomplished by giving the shader a unique identifier.
     QString mangledId = id;
-    if(isWBOITPass)
-        mangledId += QStringLiteral(".wboi_transparency");
+    if(isWBOITPass) mangledId += QStringLiteral(".wboi_transparency");
 
     // Each OpenGL shader is only created once per OpenGL context group.
     std::unique_ptr<QOpenGLShaderProgram> program(contextGroup->findChild<QOpenGLShaderProgram*>(mangledId));
-    if(program)
-        return program.release();
+    if(program) return program.release();
 
     // The program's source code hasn't been compiled so far. Do it now and cache the shader program.
     program = std::make_unique<QOpenGLShaderProgram>();
@@ -531,9 +534,10 @@ QOpenGLShaderProgram* OpenGLRenderingJob::loadShaderProgram(const QString& id, c
 }
 
 /******************************************************************************
-* Loads and compiles a GLSL shader and adds it to the given program object.
-******************************************************************************/
-void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader::ShaderType shaderType, const QString& filename, bool isWBOITPass)
+ * Loads and compiles a GLSL shader and adds it to the given program object.
+ ******************************************************************************/
+void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader::ShaderType shaderType, const QString& filename,
+                                    bool isWBOITPass)
 {
     QByteArray shaderSource;
     bool isGLES = QOpenGLContext::currentContext()->isOpenGLES();
@@ -637,7 +641,8 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
                         OVITO_CHECK_OPENGL(this, glfunc30->glBindFragDataLocation(program->programId(), 0, "fragAccumulation"));
                         OVITO_CHECK_OPENGL(this, glfunc30->glBindFragDataLocation(program->programId(), 1, "fragRevealage"));
                     }
-                    else qWarning() << "WARNING: Could not resolve OpenGL 3.0 API functions.";
+                    else
+                        qWarning() << "WARNING: Could not resolve OpenGL 3.0 API functions.";
                 }
             }
         }
@@ -648,9 +653,12 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
         if(_glversion < QT_VERSION_CHECK(3, 0, 0)) {
             // Automatically back-port shader source code to make it compatible with OpenGL 2.1 (GLSL 1.20):
             if(shaderType == QOpenGLShader::Vertex) {
-                if(line.startsWith("in ")) line = QByteArrayLiteral("attribute") + line.mid(2);
-                else if(line.startsWith("out ")) line = QByteArrayLiteral("varying") + line.mid(3);
-                else if(line.startsWith("flat out ")) line = QByteArrayLiteral("varying") + line.mid(8);
+                if(line.startsWith("in "))
+                    line = QByteArrayLiteral("attribute") + line.mid(2);
+                else if(line.startsWith("out "))
+                    line = QByteArrayLiteral("varying") + line.mid(3);
+                else if(line.startsWith("flat out "))
+                    line = QByteArrayLiteral("varying") + line.mid(8);
                 else {
                     if(!isGLES) {
                         line.replace("float(objectID & 0xFF)", "floor(mod(objectID, 256.0))");
@@ -667,9 +675,12 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
                 }
             }
             else if(shaderType == QOpenGLShader::Fragment) {
-                if(line.startsWith("in ")) line = QByteArrayLiteral("varying") + line.mid(2);
-                else if(line.startsWith("flat in ")) line = QByteArrayLiteral("varying") + line.mid(7);
-                else if(line.startsWith("out ")) return;
+                if(line.startsWith("in "))
+                    line = QByteArrayLiteral("varying") + line.mid(2);
+                else if(line.startsWith("flat in "))
+                    line = QByteArrayLiteral("varying") + line.mid(7);
+                else if(line.startsWith("out "))
+                    return;
             }
         }
 
@@ -695,7 +706,7 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
         // Writing to the fragment depth output variable.
         if(_glversion >= QT_VERSION_CHECK(3, 0, 0) || isGLES == false)
             line.replace("<fragDepth>", "gl_FragDepth");
-        else if(line.contains("<fragDepth>")) { // For GLES2:
+        else if(line.contains("<fragDepth>")) {  // For GLES2:
             line.replace("<fragDepth>", "gl_FragDepthEXT");
             line.prepend(QByteArrayLiteral("#if defined(GL_EXT_frag_depth)\n"));
             line.append(QByteArrayLiteral("#endif\n"));
@@ -704,25 +715,28 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
         // Old GLSL versions do not provide an inverse() function for mat3 matrices.
         // Replace calls to the inverse() function with a custom implementation.
         if(_glversion < QT_VERSION_CHECK(3, 3, 0))
-            line.replace("<inverse_mat3>", "inverse_mat3"); //  Emulate inverse(mat3) with own function.
+            line.replace("<inverse_mat3>", "inverse_mat3");  //  Emulate inverse(mat3) with own function.
         else
-            line.replace("<inverse_mat3>", "inverse"); // inverse(mat3) is natively supported.
+            line.replace("<inverse_mat3>", "inverse");  // inverse(mat3) is natively supported.
 
         // The per-instance vertex ID.
         if(_glversion < QT_VERSION_CHECK(3, 0, 0))
-            line.replace("<VertexID>", "int(mod(vertexID + 0.5, float(vertices_per_instance)))"); // gl_VertexID is not available, requires a VBO with explicit vertex IDs
+            line.replace("<VertexID>", "int(mod(vertexID + 0.5, float(vertices_per_instance)))");  // gl_VertexID is not available, requires
+                                                                                                   // a VBO with explicit vertex IDs
         else if(!useInstancedArrays())
-            line.replace("<VertexID>", "(gl_VertexID % vertices_per_instance)"); // gl_VertexID is available but no instanced arrays.
+            line.replace("<VertexID>", "(gl_VertexID % vertices_per_instance)");  // gl_VertexID is available but no instanced arrays.
         else
-            line.replace("<VertexID>", "gl_VertexID"); // gl_VertexID is fully supported.
+            line.replace("<VertexID>", "gl_VertexID");  // gl_VertexID is fully supported.
 
         // The instance ID.
         if(_glversion < QT_VERSION_CHECK(3, 0, 0))
-            line.replace("<InstanceID>", "(int(vertexID) / vertices_per_instance)"); // Compute the instance ID from the running vertex index, which is read from a VBO array.
+            line.replace("<InstanceID>", "(int(vertexID) / vertices_per_instance)");  // Compute the instance ID from the running vertex
+                                                                                      // index, which is read from a VBO array.
         else if(!useInstancedArrays())
-            line.replace("<InstanceID>", "(gl_VertexID / vertices_per_instance)"); // Compute the instance ID from the running vertex index.
+            line.replace("<InstanceID>",
+                         "(gl_VertexID / vertices_per_instance)");  // Compute the instance ID from the running vertex index.
         else
-            line.replace("<InstanceID>", "gl_InstanceID"); // gl_InstanceID is fully supported.
+            line.replace("<InstanceID>", "gl_InstanceID");  // gl_InstanceID is fully supported.
 
         // 1-D texture sampler.
         if(_glversion < QT_VERSION_CHECK(3, 0, 0))
@@ -741,7 +755,8 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
             if(_glversion >= QT_VERSION_CHECK(3, 0, 0))
                 line.replace("<calculate_view_ray_through_vertex>", "calculate_view_ray_through_vertex()");
             else
-                return; // Skip view ray calculation in vertex/geometry shader and let the fragement shader do the full calculation for each fragment.
+                return;  // Skip view ray calculation in vertex/geometry shader and let the fragement shader do the full calculation for
+                         // each fragment.
         }
 
         // View ray calculation in fragment shaders.
@@ -753,36 +768,37 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
             else {
                 // Perform full view ray computation in the fragment shader's main function.
                 line.replace("<calculate_view_ray_through_fragment>",
-                    "vec2 viewport_position = ((gl_FragCoord.xy - viewport_origin) * inverse_viewport_size) - 1.0;\n"
-                    "vec4 _near = inverse_projection_matrix * vec4(viewport_position, -1.0, 1.0);\n"
-                    "vec4 _far = _near + inverse_projection_matrix[2];\n"
-                    "vec3 ray_origin = _near.xyz / _near.w;\n"
-                    "vec3 ray_dir_norm = normalize(_far.xyz / _far.w - ray_origin);\n");
+                             "vec2 viewport_position = ((gl_FragCoord.xy - viewport_origin) * inverse_viewport_size) - 1.0;\n"
+                             "vec4 _near = inverse_projection_matrix * vec4(viewport_position, -1.0, 1.0);\n"
+                             "vec4 _far = _near + inverse_projection_matrix[2];\n"
+                             "vec3 ray_origin = _near.xyz / _near.w;\n"
+                             "vec3 ray_dir_norm = normalize(_far.xyz / _far.w - ray_origin);\n");
             }
         }
 
         // Flat surface normal calculation in vertex and geometry shaders.
         if(line.contains("<flat_normal.output>")) {
             if(_glversion >= QT_VERSION_CHECK(3, 0, 0)) {
-                line.replace("<flat_normal.output>", "flat_normal_fs"); // Note: "flat_normal_fs" is defined in "flat_normal.vert".
+                line.replace("<flat_normal.output>", "flat_normal_fs");  // Note: "flat_normal_fs" is defined in "flat_normal.vert".
             }
             else {
                 // Pass view-space coordinates of vertex to fragment shader as texture coordintes.
-                if(!isGLES) line = "gl_TexCoord[1] = inverse_projection_matrix * gl_Position;\n";
-                else line = "tex_coords = (inverse_projection_matrix * gl_Position).xyz;\n";
+                if(!isGLES)
+                    line = "gl_TexCoord[1] = inverse_projection_matrix * gl_Position;\n";
+                else
+                    line = "tex_coords = (inverse_projection_matrix * gl_Position).xyz;\n";
             }
         }
 
         // Flat surface normal calculation in fragment shaders.
         if(line.contains("<flat_normal.input>")) {
             if(_glversion >= QT_VERSION_CHECK(3, 0, 0)) {
-                line.replace("<flat_normal.input>", "flat_normal_fs"); // Note: "flat_normal_fs" is defined in "flat_normal.frag".
+                line.replace("<flat_normal.input>", "flat_normal_fs");  // Note: "flat_normal_fs" is defined in "flat_normal.frag".
             }
             else {
                 // Calculate surface normal from cross product of UV tangents.
-                line.replace("<flat_normal.input>",
-                    !isGLES ? "normalize(cross(dFdx(gl_TexCoord[1].xyz), dFdy(gl_TexCoord[1].xyz))"
-                        : "normalize(cross(dFdx(tex_coords), dFdy(tex_coords))");
+                line.replace("<flat_normal.input>", !isGLES ? "normalize(cross(dFdx(gl_TexCoord[1].xyz), dFdy(gl_TexCoord[1].xyz))"
+                                                            : "normalize(cross(dFdx(tex_coords), dFdy(tex_coords))");
             }
         }
 
@@ -791,8 +807,7 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
 
     // Load actual shader source code.
     QFile shaderSourceFile(filename);
-    if(!shaderSourceFile.open(QFile::ReadOnly))
-        throw RendererException(QString("Unable to open shader source file %1.").arg(filename));
+    if(!shaderSourceFile.open(QFile::ReadOnly)) throw RendererException(QString("Unable to open shader source file %1.").arg(filename));
 
     // Parse each line of the shader file and process #include directives.
     while(!shaderSourceFile.atEnd()) {
@@ -802,26 +817,38 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
 
             // Special include statement which require preprocessing.
             if(line.contains("<shading.frag>")) {
-                if(!isWBOITPass) includeFilePath = QStringLiteral(":/openglrenderer/glsl/shading.frag");
-                else includeFilePath = QStringLiteral(":/openglrenderer/glsl/shading_transparency.frag");
+                if(!isWBOITPass)
+                    includeFilePath = QStringLiteral(":/openglrenderer/glsl/shading.frag");
+                else
+                    includeFilePath = QStringLiteral(":/openglrenderer/glsl/shading_transparency.frag");
             }
             else if(line.contains("<view_ray.vert>")) {
-                if(_glversion < QT_VERSION_CHECK(3, 0, 0)) continue; // Skip this include file, because view ray calculation is performed by the fragment shaders in old GLSL versions.
+                if(_glversion < QT_VERSION_CHECK(3, 0, 0))
+                    continue;  // Skip this include file, because view ray calculation is performed by the fragment shaders in old GLSL
+                               // versions.
                 includeFilePath = QStringLiteral(":/openglrenderer/glsl/view_ray.vert");
             }
             else if(line.contains("<view_ray.frag>")) {
-                if(_glversion < QT_VERSION_CHECK(3, 0, 0)) continue; // Skip this include file, because view ray calculation is performed by the fragment shaders in old GLSL versions.
+                if(_glversion < QT_VERSION_CHECK(3, 0, 0))
+                    continue;  // Skip this include file, because view ray calculation is performed by the fragment shaders in old GLSL
+                               // versions.
                 includeFilePath = QStringLiteral(":/openglrenderer/glsl/view_ray.frag");
             }
             else if(line.contains("<flat_normal.vert>")) {
-                if(_glversion >= QT_VERSION_CHECK(3, 0, 0)) includeFilePath = QStringLiteral(":/openglrenderer/glsl/flat_normal.vert");
-                else if(isGLES) includeFilePath = QStringLiteral(":/openglrenderer/glsl/flat_normal.GLES.vert");
-                else continue;
+                if(_glversion >= QT_VERSION_CHECK(3, 0, 0))
+                    includeFilePath = QStringLiteral(":/openglrenderer/glsl/flat_normal.vert");
+                else if(isGLES)
+                    includeFilePath = QStringLiteral(":/openglrenderer/glsl/flat_normal.GLES.vert");
+                else
+                    continue;
             }
             else if(line.contains("<flat_normal.frag>")) {
-                if(_glversion >= QT_VERSION_CHECK(3, 0, 0)) includeFilePath = QStringLiteral(":/openglrenderer/glsl/flat_normal.frag");
-                else if(isGLES) includeFilePath = QStringLiteral(":/openglrenderer/glsl/flat_normal.GLES.frag");
-                else continue;
+                if(_glversion >= QT_VERSION_CHECK(3, 0, 0))
+                    includeFilePath = QStringLiteral(":/openglrenderer/glsl/flat_normal.frag");
+                else if(isGLES)
+                    includeFilePath = QStringLiteral(":/openglrenderer/glsl/flat_normal.GLES.frag");
+                else
+                    continue;
             }
             else {
                 // Resolve relative file paths.
@@ -832,7 +859,9 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
             // Load the secondary shader file and insert it into the source of the primary shader.
             QFile secondarySourceFile(includeFilePath);
             if(!secondarySourceFile.open(QFile::ReadOnly))
-                throw RendererException(QString("Unable to open shader source file %1 referenced by include directive in shader file %2.").arg(includeFilePath).arg(filename));
+                throw RendererException(QString("Unable to open shader source file %1 referenced by include directive in shader file %2.")
+                                            .arg(includeFilePath)
+                                            .arg(filename));
             while(!secondarySourceFile.atEnd()) {
                 line = secondarySourceFile.readLine();
                 preprocessShaderLine(line);
@@ -856,7 +885,7 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
     OVITO_REPORT_OPENGL_ERRORS(this);
 }
 
-#if 0 // TODO
+#if 0  // TODO
 /******************************************************************************
 * Activates the special highlight rendering mode.
 ******************************************************************************/
@@ -893,46 +922,50 @@ void OpenGLRenderingJob::setHighlightMode(int pass)
 #endif
 
 /******************************************************************************
-* Translates an OpenGL error code to a human-readable message string.
-******************************************************************************/
+ * Translates an OpenGL error code to a human-readable message string.
+ ******************************************************************************/
 static const char* openglErrorString(GLenum errorCode)
 {
     switch(errorCode) {
-    case GL_NO_ERROR: return "GL_NO_ERROR - No error has been recorded.";
-    case GL_INVALID_ENUM: return "GL_INVALID_ENUM - An unacceptable value is specified for an enumerated argument.";
-    case GL_INVALID_VALUE: return "GL_INVALID_VALUE - A numeric argument is out of range.";
-    case GL_INVALID_OPERATION: return "GL_INVALID_OPERATION - The specified operation is not allowed in the current state.";
-    case 0x0503 /*GL_STACK_OVERFLOW*/: return "GL_STACK_OVERFLOW - This command would cause a stack overflow.";
-    case 0x0504 /*GL_STACK_UNDERFLOW*/: return "GL_STACK_UNDERFLOW - This command would cause a stack underflow.";
-    case GL_OUT_OF_MEMORY: return "GL_OUT_OF_MEMORY - There is not enough memory left to execute the command.";
-    case 0x8031 /*GL_TABLE_TOO_LARGE*/: return "GL_TABLE_TOO_LARGE - The specified table exceeds the implementation's maximum supported table size.";
-    case 0x0506 /*GL_INVALID_FRAMEBUFFER_OPERATION*/: return "GL_INVALID_FRAMEBUFFER_OPERATION - The read and draw framebuffers are not framebuffer complete.";
-    default: return "Unknown OpenGL error code.";
+        case GL_NO_ERROR: return "GL_NO_ERROR - No error has been recorded.";
+        case GL_INVALID_ENUM: return "GL_INVALID_ENUM - An unacceptable value is specified for an enumerated argument.";
+        case GL_INVALID_VALUE: return "GL_INVALID_VALUE - A numeric argument is out of range.";
+        case GL_INVALID_OPERATION: return "GL_INVALID_OPERATION - The specified operation is not allowed in the current state.";
+        case 0x0503 /*GL_STACK_OVERFLOW*/: return "GL_STACK_OVERFLOW - This command would cause a stack overflow.";
+        case 0x0504 /*GL_STACK_UNDERFLOW*/: return "GL_STACK_UNDERFLOW - This command would cause a stack underflow.";
+        case GL_OUT_OF_MEMORY: return "GL_OUT_OF_MEMORY - There is not enough memory left to execute the command.";
+        case 0x8031 /*GL_TABLE_TOO_LARGE*/:
+            return "GL_TABLE_TOO_LARGE - The specified table exceeds the implementation's maximum supported table size.";
+        case 0x0506 /*GL_INVALID_FRAMEBUFFER_OPERATION*/:
+            return "GL_INVALID_FRAMEBUFFER_OPERATION - The read and draw framebuffers are not framebuffer complete.";
+        default: return "Unknown OpenGL error code.";
     }
 }
 
 /******************************************************************************
-* Reports OpenGL error status codes.
-******************************************************************************/
+ * Reports OpenGL error status codes.
+ ******************************************************************************/
 void OpenGLRenderingJob::checkOpenGLErrorStatus(const char* command, const char* sourceFile, int sourceLine)
 {
     GLenum error;
     while((error = this->glGetError()) != GL_NO_ERROR) {
-        qDebug() << "WARNING: OpenGL call" << command << "failed "
-                "in line" << sourceLine << "of file" << sourceFile
-                << "with error" << openglErrorString(error);
+        qDebug() << "WARNING: OpenGL call" << command
+                 << "failed "
+                    "in line"
+                 << sourceLine << "of file" << sourceFile << "with error" << openglErrorString(error);
     }
 }
 
 /******************************************************************************
-* Create an OpenGL texture object for a QImage.
-******************************************************************************/
+ * Create an OpenGL texture object for a QImage.
+ ******************************************************************************/
 QOpenGLTexture* OpenGLRenderingJob::uploadImage(const QImage& image, QOpenGLTexture::MipMapGeneration genMipMaps)
 {
     OVITO_ASSERT(!image.isNull());
 
     // Check if this image has already been uploaded to the GPU.
-    RendererResourceKey<struct ImageCache, quint64, QOpenGLContextGroup*> cacheKey{ image.cacheKey(), QOpenGLContextGroup::currentContextGroup() };
+    RendererResourceKey<struct ImageCache, quint64, QOpenGLContextGroup*> cacheKey{image.cacheKey(),
+                                                                                   QOpenGLContextGroup::currentContextGroup()};
     std::unique_ptr<OpenGLTexture>& texture = currentResourceFrame().lookup<std::unique_ptr<OpenGLTexture>>(cacheKey);
 
     // Create the texture object.
@@ -947,12 +980,13 @@ QOpenGLTexture* OpenGLRenderingJob::uploadImage(const QImage& image, QOpenGLText
 }
 
 /******************************************************************************
-* Creates a 1-D OpenGL texture object for a ColorCodingGradient.
-******************************************************************************/
+ * Creates a 1-D OpenGL texture object for a ColorCodingGradient.
+ ******************************************************************************/
 QOpenGLTexture* OpenGLRenderingJob::uploadColorMap(ColorCodingGradient* gradient)
 {
     // Check if this color map has already been uploaded to the GPU.
-    RendererResourceKey<struct ColorMapCache, OORef<ColorCodingGradient>, QOpenGLContextGroup*> cacheKey{ gradient, QOpenGLContextGroup::currentContextGroup() };
+    RendererResourceKey<struct ColorMapCache, OORef<ColorCodingGradient>, QOpenGLContextGroup*> cacheKey{
+        gradient, QOpenGLContextGroup::currentContextGroup()};
     std::unique_ptr<OpenGLTexture>& texture = currentResourceFrame().lookup<std::unique_ptr<OpenGLTexture>>(cacheKey);
 
     if(!texture || !texture->isCreated()) {
@@ -988,4 +1022,4 @@ QOpenGLTexture* OpenGLRenderingJob::uploadColorMap(ColorCodingGradient* gradient
     return texture.get();
 }
 
-}   // End of namespace
+}  // namespace Ovito

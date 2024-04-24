@@ -321,7 +321,8 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
                             }
 
                             // Clamp value.
-                            if(std::isnan(t)) t = 0;
+                            if(sycl::isnan(t))
+                                t = 0;
                             else if(t ==  std::numeric_limits<GraphicsFloatType>::infinity()) t = 1;
                             else if(t == -std::numeric_limits<GraphicsFloatType>::infinity()) t = 0;
                             else if(t < 0) t = 0;

@@ -81,7 +81,9 @@ IF(OVITO_USE_SYCL STREQUAL DPC++)
     ENDIF()
     # This imports the heterogeneous compilation configuration package (IntelSYCLConfig.cmake), which is shipped with the compiler.
     # The package directory is found in the parent directory of the icx bin directory.
-    FIND_PACKAGE(IntelSYCL REQUIRED)
+    IF(NOT WIN32)
+        FIND_PACKAGE(IntelSYCL REQUIRED)
+    ENDIF()
 ENDIF()
 
 # Define user options that control the building of OVITO's standard plugins.
@@ -125,6 +127,12 @@ IF(WIN32 OR APPLE) # On Linux, LTO currently breaks the executable due to missin
         ENDIF()
     ENDIF()
 ENDIF()
+# Disable link-time optimization (LTO) on Windows when using SYCL.
+# Handles "lld-link: error: ... unknown file type"
+IF(WIN32 AND OVITO_USE_SYCL)
+    SET(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
+ENDIF()
+
 
 IF(CYGWIN AND CMAKE_COMPILER_IS_GNUCXX)
     # Linking fails without -O3
