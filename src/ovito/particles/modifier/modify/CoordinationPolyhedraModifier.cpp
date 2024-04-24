@@ -185,6 +185,7 @@ Future<PipelineFlowState> CoordinationPolyhedraModifier::evaluateModifier(const 
                 // Find each input point among the newly added vertices of the mesh.
                 // This will help us later to transfer the particle properties to the corresponding mesh vertices.
                 BufferReadAccess<Point3> vertexPositions = meshBuilder.expectVertexProperty(SurfaceMeshVertices::PositionProperty);
+#ifndef OVITO_USE_SYCL
                 for(const Point3& vpos : std::move(vertexPositions).subrange(oldVertexCount)) {
                     auto idx = neighborIndices.cbegin();
                     for(const Point3& p : neighborPositions) {
@@ -196,6 +197,9 @@ Future<PipelineFlowState> CoordinationPolyhedraModifier::evaluateModifier(const 
                         ++idx;
                     }
                 }
+#else
+                OVITO_ASSERT(false);  // This code path is not supported in the SYCL version of OVITO.
+#endif
                 OVITO_ASSERT(vertexToParticleMap.size() == meshBuilder.vertexCount());
                 oldVertexCount = meshBuilder.vertexCount();
             }

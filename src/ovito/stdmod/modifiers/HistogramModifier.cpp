@@ -243,7 +243,8 @@ Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEval
                             if(v >= intervalStart && v <= intervalEnd) {
                                 size_t binIndex = static_cast<size_t>(histogramAcc.size() * (static_cast<FloatType>(v - intervalStart) / (intervalEnd - intervalStart)));
                                 sycl::atomic_ref<int64_t, sycl::memory_order::relaxed, sycl::memory_scope::device>(
-                                    histogramAcc[std::max((size_t)0, std::min(binIndex, histogramSizeMin1))]).fetch_add((int64_t)1);
+                                    histogramAcc[sycl::max((size_t)0, sycl::min(binIndex, histogramSizeMin1))])
+                                    .fetch_add((int64_t)1);
                             }
                         }
                     });

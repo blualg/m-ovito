@@ -152,11 +152,14 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                         OvitoClassPtr elementTypeClass = Particles::OOClass().typedPropertyElementClass(property->type());
                         if(!elementTypeClass && property->name() == QStringLiteral("Material Type")) elementTypeClass = &ElementType::OOClass();
                         if(elementTypeClass) {
+#ifndef OVITO_USE_SYCL
                             for(int t : BufferReadAccess<int32_t>(property).subrange(baseParticleIndex)) {
                                 if(!property->elementType(t)) {
-                                    DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance());
+                                    DataOORef<ElementType> elementType =
+                                        static_object_cast<ElementType>(elementTypeClass->createInstance());
                                     elementType->setNumericId(t);
-                                    elementType->initializeType(PropertyReference(&Particles::OOClass(), property), ExecutionContext::isInteractive());
+                                    elementType->initializeType(PropertyReference(&Particles::OOClass(), property),
+                                                                ExecutionContext::isInteractive());
                                     if(elementTypeClass == &ParticleType::OOClass()) {
                                         // Load mesh-based shape of the particle type as specified in the VTM container file.
                                         loadParticleShape(static_object_cast<ParticleType>(elementType.get()));
@@ -164,6 +167,9 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                                     property->addElementType(std::move(elementType));
                                 }
                             }
+#else
+                            OVITO_ASSERT(false);  // This code path is not supported in the SYCL version of OVITO.
+#endif
                         }
                     }
                     if(xml.tokenType() != QXmlStreamReader::EndElement)
@@ -193,7 +199,9 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
     // Convert superquadric 'Blockiness' values from the Aspherix simulation to 'Roundness' values used by OVITO particle visualization.
     bool transposeOrientations = false;
     if(Property* roundnessProperty = particles()->getMutableProperty(Particles::SuperquadricRoundnessProperty)) {
-        for(auto& v : BufferWriteAccess<Vector_2<GraphicsFloatType>, access_mode::read_write>(roundnessProperty).subrange(baseParticleIndex)) {
+#ifndef OVITO_USE_SYCL
+        for(auto& v :
+            BufferWriteAccess<Vector_2<GraphicsFloatType>, access_mode::read_write>(roundnessProperty).subrange(baseParticleIndex)) {
             // Blockiness1: "north-south" blockiness
             // Blockiness2: "east-west" blockiness
             // Roundness.x: "east-west" roundness
@@ -203,6 +211,9 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
             if(v.x() != 0) v.x() = GraphicsFloatType(2) / v.x();
             if(v.y() != 0) v.y() = GraphicsFloatType(2) / v.y();
         }
+#else
+        OVITO_ASSERT(false);  // This code path is not supported in the SYCL version of OVITO.
+#endif
         transposeOrientations = true;
         this_task::throwIfCanceled();
     }
@@ -214,12 +225,17 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                 particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Particles::OrientationProperty),
                 preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized);
             auto* q = orientations.begin() + baseParticleIndex;
+#ifndef OVITO_USE_SYCL
             for(const Matrix3& tensor : BufferReadAccess<Matrix3>(tensorProperty).subrange(baseParticleIndex)) {
                 if(!tensor.isZero())
-                    *q++ = Quaternion(transposeOrientations ? tensor.transposed() : tensor, FloatType(1e-6)).toDataType<GraphicsFloatType>();
+                    *q++ =
+                        Quaternion(transposeOrientations ? tensor.transposed() : tensor, FloatType(1e-6)).toDataType<GraphicsFloatType>();
                 else
                     *q++ = QuaternionG::Identity();
             }
+#else
+            OVITO_ASSERT(false);  // This code path is not supported in the SYCL version of OVITO.
+#endif
             this_task::throwIfCanceled();
         }
     }
@@ -240,11 +256,14 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
         else if(!typesWithMeshShape.empty()) {
             if(BufferWriteAccess<GraphicsFloatType, access_mode::write> radiusArray = particles()->getMutableProperty(Particles::RadiusProperty)) {
                 auto* radius = radiusArray.begin() + baseParticleIndex;
+#ifndef OVITO_USE_SYCL
                 for(auto t : BufferReadAccess<int32_t>(typeProperty).subrange(baseParticleIndex)) {
-                    if(std::find(typesWithMeshShape.cbegin(), typesWithMeshShape.cend(), t) != typesWithMeshShape.cend())
-                        *radius = 0;
+                    if(std::find(typesWithMeshShape.cbegin(), typesWithMeshShape.cend(), t) != typesWithMeshShape.cend()) *radius = 0;
                     ++radius;
                 }
+#else
+                OVITO_ASSERT(false);  // This code path is not supported in the SYCL version of OVITO.
+#endif
             }
         }
     }

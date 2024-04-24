@@ -234,7 +234,7 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
                         if(typeIndex1 < typeCount) {
                             neighborAcc.visitNeighbors(i, [&](const SyclCutoffNeighborFinder::Neighbor& neighbor) {
                                 coordination++;
-                                size_t rdfBin = std::min(static_cast<size_t>(neighbor.distance() / rdfBinSize), binCount - 1);
+                                size_t rdfBin = sycl::min(static_cast<size_t>(neighbor.distance() / rdfBinSize), binCount - 1);
 
                                 // Calculating complete or partial RDF?
                                 if(!uniqueTypeIdsAcc) {
@@ -244,7 +244,8 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
                                 else {
                                     size_t typeIndex2 = uniqueTypeIdsAcc.index_of(particleTypeAcc[neighbor.neighborIndex()]);
                                     if(typeIndex2 < typeCount) {
-                                        auto [lowerIndex, upperIndex] = std::minmax(typeIndex1, typeIndex2);
+                                        size_t lowerIndex = sycl::min(typeIndex1, typeIndex2);
+                                        size_t upperIndex = sycl::max(typeIndex1, typeIndex2);
                                         size_t rdfIndex = (typeCount * lowerIndex) - ((lowerIndex - 1) * lowerIndex) / 2 + upperIndex - lowerIndex;
                                         sycl::atomic_ref<int, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::local_space>(
                                             localHistogram[rdfBin][rdfIndex]).fetch_add(1);
