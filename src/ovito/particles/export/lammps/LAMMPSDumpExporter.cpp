@@ -150,7 +150,7 @@ bool LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNum
             else columnName = pref.nameWithComponent();
             break;
         default:
-            columnName = columnWriter.isVectorProperty(i) ? pref.nameWithComponent() : pref.name();
+            columnName = columnWriter.columnName(i);
             columnName.remove(QRegularExpression(QStringLiteral("[^A-Za-z\\d_]")));
         }
         textStream() << ' ' << columnName;

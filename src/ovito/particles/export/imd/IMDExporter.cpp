@@ -135,8 +135,7 @@ bool IMDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
         if(i < (size_t)columnNames.size())
             columnName = columnNames[i];
         else {
-            const PropertyReference& pref = columnWriter.propertyRef(i);
-            columnName = columnWriter.isVectorProperty(i) ? pref.nameWithComponent() : pref.name();
+            columnName = columnWriter.columnName(i);
             columnName.remove(QRegularExpression(QStringLiteral("[^A-Za-z\\d_.]")));
         }
         textStream() << " " << columnName;
