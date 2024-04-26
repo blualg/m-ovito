@@ -76,12 +76,12 @@ void ModificationNode::requestObjectDeletion()
  * Throws an exception if the pipeline stage cannot be evaluated at this time.
  * This is called by the system to catch user mistakes that would lead to infinite recursion.
  ******************************************************************************/
-void ModificationNode::preEvaluationCheck() const
+void ModificationNode::preEvaluationCheck(const PipelineEvaluationRequest& request) const
 {
     if(modifier())
-        modifier()->preEvaluationCheck();
+        modifier()->preEvaluationCheck(request);
     if(input())
-        input()->preEvaluationCheck();
+        input()->preEvaluationCheck(request);
 }
 
 /******************************************************************************
@@ -342,17 +342,17 @@ SharedFuture<PipelineFlowState> ModificationNode::evaluateInternal(const Pipelin
         modifier()->inputCachingHints(modifierRequest);
 
     // Obtain input data at the current frame from the upstream pipeline.
-    SharedFuture<PipelineFlowState> input = static_cast<SharedFuture<PipelineFlowState>&&>(evaluateInput(modifierRequest));
+    SharedFuture<PipelineFlowState> stateFuture = static_cast<SharedFuture<PipelineFlowState>&&>(evaluateInput(modifierRequest));
 
     // If the modifier is currently disabled, we can skip it and simply forward the unmodified results from the upstream pipeline.
     if(!modifierAndGroupEnabled())
-        return input;
+        return stateFuture;
 
-    // Make a copy of the (future) upstream pipeline results. We may need them later in case this modifier fails.
-    SharedFuture<PipelineFlowState> output = input;
+    // Keep a weak copy of the (future) upstream pipeline results. We might need them later in case this modifier fails.
+    TaskPtr upstreamTask = !request.throwOnError() ? stateFuture.task() : nullptr;
 
     // Pass the input data on to the modifier function.
-    output.postprocess(*this, [this, request = std::move(modifierRequest)](PipelineFlowState state) -> Future<PipelineFlowState> {
+    stateFuture.postprocess(*this, [this, request = std::move(modifierRequest)](PipelineFlowState state) -> Future<PipelineFlowState> {
         // Clear the status of the input unless it is an error state, which must be retained.
         state.mutableStatus().resetShortInfo();
         if(state.status().type() != PipelineStatus::Error) {
@@ -384,9 +384,8 @@ SharedFuture<PipelineFlowState> ModificationNode::evaluateInternal(const Pipelin
     // Post-process the modifier results before returning them to the caller.
     // Turn any exception thrown during modifier evaluation into a
     // valid pipeline state with an error code (unless throwOnError is set).
-    output.postprocess(*this, [this, input = std::move(input), throwOnError = request.throwOnError(), interactiveMode = request.interactiveMode()](SharedFuture<PipelineFlowState> future) mutable {
+    stateFuture.postprocess(*this, [this, upstreamTask = std::move(upstreamTask), throwOnError = request.throwOnError(), interactiveMode = request.interactiveMode()](SharedFuture<PipelineFlowState> future) mutable {
         OVITO_ASSERT(future.isFinished() && !future.isCanceled());
-        OVITO_ASSERT(input.isFinished() && !input.isCanceled());
         try {
             try {
                 const PipelineFlowState& state = future.result();
@@ -423,9 +422,12 @@ SharedFuture<PipelineFlowState> ModificationNode::evaluateInternal(const Pipelin
             ex.prependToMessage(tr("Modifier '%1' reported: ").arg(modifier()->objectTitle()));
 
             // Fall back to the results produced by the upstream pipeline.
-            // Note: This should never throw an exception, because the input pipeline results have already been access successfully.
+            // Note: This should never throw an exception, because the input pipeline results have already been accessed successfully.
+            OVITO_ASSERT(upstreamTask);
+            OVITO_ASSERT(upstreamTask->isFinished() && !upstreamTask->isCanceled() && !upstreamTask->exceptionStore());
             try {
-                PipelineFlowState state = input.result();
+                upstreamTask->throwPossibleException();
+                PipelineFlowState state = upstreamTask->getResult<PipelineFlowState>();
                 state.setStatus(PipelineStatus(ex, QStringLiteral(" ")));
                 return state;
             }
@@ -436,7 +438,7 @@ SharedFuture<PipelineFlowState> ModificationNode::evaluateInternal(const Pipelin
         }
     });
 
-    return output;
+    return stateFuture;
 }
 
 /******************************************************************************

@@ -50,7 +50,7 @@ public:
 
     /// Throws an exception if the pipeline stage cannot be evaluated at this time.
     /// This is called by the system to catch user mistakes that would lead to infinite recursion.
-    void preEvaluationCheck() const;
+    void preEvaluationCheck(const PipelineEvaluationRequest& request) const;
 
     /// Performs an asynchronous evaluation of the data pipeline.
     PipelineEvaluationResult evaluatePipeline(const PipelineEvaluationRequest& request) {

@@ -65,7 +65,7 @@ public:
     explicit ReferenceConfigurationModifier(ObjectInitializationFlags flags);
 
     /// Throws an exception if the pipeline stage cannot be evaluated at this time. This is called by the system to catch user mistakes that would lead to infinite recursion.
-    virtual void preEvaluationCheck() const override;
+    virtual void preEvaluationCheck(const PipelineEvaluationRequest& request) const override;
 
     /// Is called by the pipeline system before a new modifier evaluation begins.
     virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;

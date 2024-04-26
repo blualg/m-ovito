@@ -102,16 +102,16 @@ public:
     /// \brief Blocks execution until this future is fulfilled.
     /// Throws an OperationCanceled exception if the future or the task awaiting it got canceled.
     /// Throws an exception if the awaited task has failed to complete.
-    void waitForFinished() const & {
-        if(!Task::waitFor(task(), true))
+    void waitForFinished(bool returnEarlyIfCanceled = true) const & {
+        if(!Task::waitFor(task(), true, returnEarlyIfCanceled))
             throw OperationCanceled();
     }
 
     /// \brief Blocks execution until this future is fulfilled.
     /// Throws an OperationCanceled exception if the future or the task awaiting it got canceled.
     /// Throws an exception if the awaited task has failed to complete.
-    void waitForFinished() && {
-        if(!Task::waitFor(takeTaskDependency(), true))
+    void waitForFinished(bool returnEarlyIfCanceled = true) && {
+        if(!Task::waitFor(takeTaskDependency(), true, returnEarlyIfCanceled))
             throw OperationCanceled();
     }
 
@@ -298,7 +298,7 @@ Future<R>::then(Executor&& executor, Function&& f)
         continuation_task_type* continuationTask = static_cast<continuation_task_type*>(promise.task().get());
 
         // Manage access to the task that represents the continuation.
-        Task::MutexLocker locker(*continuationTask);
+        Task::MutexLock lock(*continuationTask);
 
         // Get the task that did just finish.
         detail::TaskDependency finishedTask = continuationTask->takeAwaitedTask();
@@ -317,11 +317,11 @@ Future<R>::then(Executor&& executor, Function&& f)
         if constexpr(!std::is_invocable_v<Function, Future<R>>) {
             if(finishedTask->exceptionStore()) {
                 continuationTask->exceptionLocked(finishedTask->exceptionStore());
-                continuationTask->finishLocked(locker);
+                continuationTask->finishLocked(lock);
                 return;
             }
         }
-        locker.unlock();
+        lock.unlock();
 
         // Now it's time to execute the continuation function supplied by the user.
         // Assign the function's return value as result of the continuation task.

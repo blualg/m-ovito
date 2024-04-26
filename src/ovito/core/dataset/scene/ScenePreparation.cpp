@@ -188,7 +188,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
 
         // If one of the pipelines is not complete yet, wait until it is.
         // Then start over to see if there are more pipelines that need to be evaluated.
-        _pipelineEvaluationFuture.finally(*this, [this](Task& task) noexcept {
+        _pipelineEvaluationFuture.finally(ObjectExecutor(this, true), [this](Task& task) noexcept {
             // Make sure we are still waiting for the same future that just reached the completed state.
             if(_pipelineEvaluationFuture.isValid() && _pipelineEvaluationFuture.task().get() == &task && _currentPipeline) {
                 pipelineEvaluationFinished();
@@ -290,8 +290,8 @@ void ScenePreparation::restartPreparation(bool restartImmediately)
     // Note: Not resetting pipelineEvaluationFuture here, because we want to keep the in-flight evaluation request going until a new request has been made.
     _currentPipeline.reset();
     _completedScene = nullptr;
-    if(autoRestart() && !isBeingConstructed() && !isBeingDeleted()) {
-        if(scene() && _pipelineEvaluationFuture.isValid() && _currentTime != scene()->animationSettings()->currentTime()) {
+    if(scene() && autoRestart() && !isBeingConstructed() && !isBeingDeleted()) {
+        if(_pipelineEvaluationFuture.isValid() && _currentTime != scene()->animationSettings()->currentTime()) {
             // Force an immediate restart if the animation time has changed.
             restartImmediately = true;
         }

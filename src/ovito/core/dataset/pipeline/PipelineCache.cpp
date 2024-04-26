@@ -117,9 +117,9 @@ PipelineEvaluationResult PipelineCache::evaluatePipeline(const PipelineEvaluatio
     try {
         // Walks up the pipeline recursively and asks each step if the evaluation is allowed at this time.
         if(pipelineNode)
-            pipelineNode->preEvaluationCheck();
+            pipelineNode->preEvaluationCheck(request);
         else
-            static_object_cast<Pipeline>(ownerObject())->preEvaluationCheck();
+            static_object_cast<Pipeline>(ownerObject())->preEvaluationCheck(request);
     }
     catch(...) {
         return std::current_exception();

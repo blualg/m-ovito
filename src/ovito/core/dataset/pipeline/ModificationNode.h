@@ -68,7 +68,7 @@ public:
     using PipelineNode::PipelineNode;
 
     /// Throws an exception if the pipeline stage cannot be evaluated at this time. This is called by the system to catch user mistakes that would lead to infinite recursion.
-    virtual void preEvaluationCheck() const override;
+    virtual void preEvaluationCheck(const PipelineEvaluationRequest& request) const override;
 
     /// Asks the object for the result of the upstream data pipeline.
     PipelineEvaluationResult evaluateInput(const PipelineEvaluationRequest& request) const;

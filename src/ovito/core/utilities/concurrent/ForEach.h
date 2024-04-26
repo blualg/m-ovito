@@ -49,7 +49,7 @@ template<>
 struct first_type<std::tuple<>> { using type = void; };
 
 template<typename InputRange, class Executor, typename StartIterFunc, typename CompleteIterFunc, typename... ResultType>
-auto for_each_sequential(
+[[nodiscard]] auto for_each_sequential(
     InputRange&& inputRange,
     Executor&& executor,
     StartIterFunc&& startFunc,
@@ -98,7 +98,9 @@ auto for_each_sequential(
                 if constexpr(is_with_progress)
                     this->setProgressMaximum(std::distance(_iterator, std::end(_range)));
 
-                _executor.execute(std::bind_front(&ForEachTask::iteration_begin, static_pointer_cast<ForEachTask>(this->shared_from_this())));
+                _executor.execute([promise = Promise<task_result_type>(this->shared_from_this())]() mutable noexcept {
+                    static_cast<ForEachTask*>(promise.task().get())->iteration_begin(std::move(promise));
+                });
                 OVITO_ASSERT_MSG(_iterator == std::begin(_range), "for_each_sequential()", "An executor that performs deferred execution is required.");
             }
             else {
@@ -107,7 +109,7 @@ auto for_each_sequential(
         }
 
         /// Performs the next iteration of the mapping process.
-        void iteration_begin() noexcept {
+        void iteration_begin(Promise<task_result_type> promise) noexcept {
             // Report the number of iterations we have performed so far.
             if constexpr(is_with_progress)
                 this->setProgressValue(std::distance(std::begin(_range), _iterator));
@@ -133,7 +135,9 @@ auto for_each_sequential(
                 }
                 OVITO_ASSERT(future.isValid());
                 // Schedule next iteration upon completion of the future returned by the user function.
-                this->whenTaskFinishes(future.takeTaskDependency(), _executor, std::bind_front(&ForEachTask::iteration_complete, static_pointer_cast<ForEachTask>(this->shared_from_this())));
+                this->whenTaskFinishes(future.takeTaskDependency(), _executor, [promise = std::move(promise)]() mutable noexcept {
+                    static_cast<ForEachTask*>(promise.task().get())->iteration_complete(std::move(promise));
+                });
             }
             else {
                 // Inform caller that the task has finished and the result is available.
@@ -142,27 +146,28 @@ auto for_each_sequential(
         }
 
         // Is called at the end of each iteration, when user function has finished performing its work.
-        void iteration_complete() noexcept {
+        void iteration_complete(Promise<task_result_type> promise) noexcept {
             // Lock access to this task object.
-            Task::MutexLocker locker(*this);
+            Task::MutexLock lock(*this);
 
             // Get the task that did just finish and wrap it in a future of the original type.
             output_future_type future(this->takeAwaitedTask());
 
             // Stop if the awaited future was canceled.
             if(!future.isValid() || future.isCanceled()) {
-                this->cancelAndFinishLocked(locker);
+                this->cancelLocked(lock);
+                this->finishLocked(lock);
                 return;
             }
 
             // Check if the awaited future completed with an error.
             if(future.task()->exceptionStore()) {
                 this->exceptionLocked(future.task()->exceptionStore());
-                this->finishLocked(locker);
+                this->finishLocked(lock);
                 return;
             }
 
-            locker.unlock();
+            lock.unlock();
 
             try {
                 Task::Scope taskScope(this);
@@ -193,7 +198,7 @@ auto for_each_sequential(
 
             // Continue with next iteration.
             ++_iterator;
-            iteration_begin();
+            iteration_begin(std::move(promise));
         }
 
     private:

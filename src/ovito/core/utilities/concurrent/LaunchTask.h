@@ -37,7 +37,7 @@ namespace Ovito {
  * by the function.
 */
 template<class TaskType, typename... Args>
-auto launchTask(std::shared_ptr<TaskType> task, Args&&... args)
+[[nodiscard]] auto launchTask(std::shared_ptr<TaskType> task, Args&&... args)
 {
     // The task class must define a type named 'future_type', which specifies what kind of return value the task produces.
     using future_type = typename TaskType::future_type;

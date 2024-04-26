@@ -35,21 +35,24 @@ namespace Ovito::detail {
  * \brief The type of task that is returned by the Future::then() method.
  */
 template<typename R>
-class ContinuationTask : public TaskWithStorage<R>
+class ContinuationTask : public TaskWithStorage<R>, private TaskCallbackBase
 {
 public:
 
-    /// Constructor.
-    explicit ContinuationTask(Task::State initialState) noexcept : TaskWithStorage<R>(initialState, std::nullopt) {
-        OVITO_ASSERT(!(initialState & Task::Canceled));
-        registerFinallyFunction();
-    }
+    /// Delegating constructor.
+    explicit ContinuationTask(Task::State initialState) noexcept : ContinuationTask(initialState, std::nullopt) {}
 
     /// Constructor initializing the results storage.
     template<typename InitialValue>
-    explicit ContinuationTask(Task::State initialState, InitialValue&& initialResult) noexcept : TaskWithStorage<R>(initialState, std::forward<InitialValue>(initialResult)) {
-        OVITO_ASSERT(!(initialState & Task::Canceled));
-        registerFinallyFunction();
+    explicit ContinuationTask(Task::State initialState, InitialValue&& initialResult) noexcept :
+            TaskWithStorage<R>(initialState, std::forward<InitialValue>(initialResult)),
+            TaskCallbackBase(&taskStateChangedCallback)
+    {
+        OVITO_ASSERT(!(initialState & (Task::Canceled | Task::Finished)));
+
+        // Insert into own linked list of callbacks.
+        _nextInList = TaskWithStorage<R>::_callbacks;
+        TaskWithStorage<R>::_callbacks = this;
     }
 
     /// Moves the dependency on the preceding task out of this task object.
@@ -64,10 +67,10 @@ public:
         OVITO_ASSERT(awaitedTask);
 
         // Attach to the task to be waited on.
-        Task::MutexLocker locker(*this);
+        Task::MutexLock lock(*this);
         OVITO_ASSERT(!_awaitedTask);
         if(this->isCanceled()) {
-            locker.unlock();
+            lock.unlock();
             // Bail out and do not attach to the input task if this continuation task is already canceled.
             // Still run continuation function, because the caller may depend on it.
             std::forward<Executor>(executor).execute(std::forward<Function>(f));
@@ -76,7 +79,7 @@ public:
         OVITO_ASSERT(!this->isFinished());
         _awaitedTask = std::move(awaitedTask);
         TaskPtr t = _awaitedTask.get();
-        locker.unlock();
+        lock.unlock();
 
         // Run the work function once the task finishes.
         t->addContinuation(std::forward<Executor>(executor), std::forward<Function>(f));
@@ -89,6 +92,7 @@ public:
         OVITO_ASSERT(!this->isFinished());
         OVITO_ASSERT(promise.task().get() == this);
         OVITO_ASSERT(future.isValid() && future.isFinished());
+        OVITO_ASSERT(!this->isFinished());
 
         // Execute the continuation function in the scope of this task object.
         Task::Scope taskScope(this);
@@ -119,21 +123,31 @@ public:
                     else
                         std::invoke(std::forward<Function>(f), std::forward<FutureType>(future));
                 }
+
+                OVITO_ASSERT(!this->isFinished());
+                this->setFinished();
             }
             catch(...) {
-                this->captureException();
+                this->captureExceptionAndFinish();
             }
-            this->setFinished();
         }
         else {
             // The continuation function returns a new future, whose result will be used to fulfill this task.
             std::decay_t<callable_result_t<Function, FutureType>> nextFuture;
             try {
                 // Call the continuation function with the results of the finished task or the finished future itself.
-                if constexpr(!std::is_invocable_v<Function, FutureType>)
-                    nextFuture = std::invoke(std::forward<Function>(f), std::forward<FutureType>(future).result());
-                else
+                if constexpr(!std::is_invocable_v<Function, FutureType>) {
+                    if constexpr(!std::is_void_v<typename FutureType::result_type>) {
+                        nextFuture = std::invoke(std::forward<Function>(f), std::forward<FutureType>(future).result());
+                    }
+                    else {
+                        std::forward<FutureType>(future).waitForFinished();
+                        nextFuture = std::invoke(std::forward<Function>(f));
+                    }
+                }
+                else {
                     nextFuture = std::invoke(std::forward<Function>(f), std::forward<FutureType>(future));
+                }
             }
             catch(...) {
                 this->captureExceptionAndFinish();
@@ -142,20 +156,21 @@ public:
             OVITO_ASSERT(nextFuture.isValid());
 
             // The new future's task now becomes the one we wait for.
-            Task::MutexLocker locker(*this);
+            Task::MutexLock lock(*this);
             // This continuation task might have been canceled. In this case, there is no need to attach to the new future.
-            if(this->isFinished()) {
+            if(this->isCanceled()) {
+                this->finishLocked(lock);
                 return;
             }
             _awaitedTask = nextFuture.task();
-            locker.unlock();
+            lock.unlock();
 
             // Get results from the future's task once it completes and use it as the results of this continuation task.
             nextFuture.task()->addContinuation([promise = std::move(promise)]() mutable noexcept {
 
                 // Thread-safe access to the ContinuationTask.
                 ContinuationTask* thisTask = static_cast<ContinuationTask*>(promise.task().get());
-                Task::MutexLocker locker(*thisTask);
+                Task::MutexLock lock(*thisTask);
 
                 // Get the task that did just finish.
                 TaskDependency finishedTask = thisTask->takeAwaitedTask();
@@ -186,24 +201,38 @@ public:
                     }
                 }
 
-                thisTask->finishLocked(locker);
+                thisTask->finishLocked(lock);
             });
         }
     }
 
 private:
 
-    /// Register a callback function with this task, which gets invoked when the task gets canceled.
-    void registerFinallyFunction() {
-        // When this task gets canceled, we should discard the reference to the task we are waiting for in order to cancel it as well.
-        this->registerContinuation([this]() noexcept {
-            Task::MutexLocker locker(*this);
-            // Move the dependency on the preceding task out of this object. This may implicitly cancel the
-            // awaited task when the reference goes out of scope.
-            auto awaitedTask = this->takeAwaitedTask();
+    /// This function gets invoked when the state of this task changes.
+    static bool taskStateChangedCallback(TaskCallbackBase* f, int state, Task::MutexLock& lock) noexcept {
+        // Canceled either gets canceled or finished. Other state changes are not possible.
+        OVITO_ASSERT(state & (Task::Finished | Task::Canceled));
+
+        // When this task gets canceled, we discard the reference to the
+        // task we are waiting for in order to cancel that one as well.
+        ContinuationTask* self = static_cast<ContinuationTask*>(f);
+
+        // Move the dependency on the preceding task out of this object. This may implicitly cancel the
+        // awaited task when the reference goes out of scope.
+        if(auto awaitedTask = self->takeAwaitedTask()) {
             // Note: It's critical to first unlock the mutex before releasing the reference to the awaited task.
-            locker.unlock();
-        });
+            lock.unlock();
+            awaitedTask.reset();
+            lock.lock();
+        }
+
+        // When this task finishes, we should detach our callback function immediately,
+        // because a task object may not have callbacks registered at the end of its lifetime.
+        if(state & Task::Finished) {
+            OVITO_ASSERT(self->isFinished());
+            return false; // Returning false indicates that the callback wishes to be unregistered.
+        }
+        return true;
     }
 
     /// The task that must finish first before this task can continue.

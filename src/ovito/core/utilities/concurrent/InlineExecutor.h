@@ -35,11 +35,13 @@ struct InlineExecutor
 {
     template<typename Function>
     static constexpr void execute(Function&& f) noexcept {
+        static_assert(std::is_nothrow_invocable_r_v<void, Function>, "The function must be noexcept.");
         std::invoke(std::forward<Function>(f));
     }
 
     template<typename Function>
-    static constexpr auto schedule(Function&& f) noexcept {
+    [[nodiscard]] static constexpr auto schedule(Function&& f) noexcept {
+        static_assert(std::is_nothrow_invocable_r_v<void, Function>, "The function must be noexcept.");
         return [f = std::forward<Function>(f), context = ExecutionContext::current()]() mutable noexcept {
             ExecutionContext::Scope execScope(std::move(context));
             std::invoke(std::move(f));

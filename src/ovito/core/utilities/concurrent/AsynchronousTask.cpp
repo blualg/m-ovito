@@ -44,10 +44,7 @@ AsynchronousTaskBase::AsynchronousTaskBase(State initialState, void* resultsStor
 AsynchronousTaskBase::~AsynchronousTaskBase()
 {
     // If task was never submitted for execution, cancel and finish it.
-    if(!isFinished()) {
-        cancel();
-        setFinished();
-    }
+    cancelAndFinish();
 }
 
 /******************************************************************************
@@ -117,11 +114,13 @@ void AsynchronousTaskBase::run()
         Task::Scope taskScope(this);
 
         perform();
+
+        OVITO_ASSERT(!isFinished());
+        setFinished();
     }
     catch(...) {
-        captureException();
+        captureExceptionAndFinish();
     }
-    setFinished();
     _thisTask.reset(); // No need to keep the task object alive any longer.
 }
 

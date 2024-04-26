@@ -29,7 +29,8 @@
 namespace Ovito {
 
 /**
- * \brief Manages running asynchronous tasks and a queue of pending work items that need to be executed in the main thread.
+ * \brief Manages execution of asynchronous tasks in a thread pool and
+ *        a queue of pending work items to be executed in the main thread.
  */
 class OVITO_CORE_EXPORT TaskManager : public QObject
 {
@@ -45,7 +46,7 @@ public:
     virtual ~TaskManager();
 #endif
 
-    /// Indicates whether the session is in the processing of shutting down.
+    /// Indicates whether the program session is in the process of shutting down.
     bool isShuttingDown() const { return _isShuttingDown; }
 
 #ifdef OVITO_USE_SYCL
@@ -53,7 +54,7 @@ public:
     sycl::queue& syclQueue() { return _syclQueue; }
 #endif
 
-    /// Request the TaskManager to shut down all ongoing work, which means canceling all running tasks and no longer accepting new tasks.
+    /// Tells the TaskManager to wait for all in-flight tasks to complete, then shutdown.
     void requestShutdown();
 
     /// Executes the given function at some later time unless the given object is destroyed in the meantime or the task manager is shut down.
@@ -72,9 +73,9 @@ public:
     int maxThreadCount() const { return _threadPool.maxThreadCount(); }
 
 #ifdef Q_OS_MACOS
-    /// Tells the task manager that a native UI dialog (e.g. a QFileDialog) is currently open.
-    /// During this time, the task manager will not start a local event loop with
-    /// user input event processing, because this would close the native dialog.
+    /// Informs the task manager that a native UI dialog (e.g. a QFileDialog) is currently open.
+    /// During this time the task manager will not enter a local event loop with
+    /// user input event processing, because this would close the native dialog (for unknown reasons / may be a Qt bug?).
     static void setNativeDialogActive(bool active) { _nativeDialogActive = active; }
 #else
     static void setNativeDialogActive(bool) {}
@@ -102,12 +103,12 @@ private:
     void executePendingWorkLocked(std::unique_lock<std::mutex>& lock);
 
     /// Keeps executing pending work items until quitWorkProcessingLoop() is called or the awaited task has finished.
-    void processWorkWhileWaiting(Task* waitingTask, detail::TaskDependency& awaitedTask);
+    void processWorkWhileWaiting(Task* waitingTask, detail::TaskDependency& awaitedTask, bool returnEarlyIfCanceled);
 
     /// Stops executing pending work items and makes processWorkWhileWaiting() return.
     void quitWorkProcessingLoop(bool& quitFlag);
 
-    /// Cancels all running tasks and waits for them to finish.
+    /// Waits for all work queues to become empty.
     void shutdownImplementation(std::unique_lock<std::mutex>& lock);
 
 private:
@@ -115,7 +116,7 @@ private:
     /// The abstract user interface object this task manager belongs to.
     UserInterface* _ui;
 
-    /// Indicates whether the session is in the processing of shutting down.
+    /// Indicates whether the session is in the process of shutting down.
     bool _isShuttingDown = false;
 
 #ifdef OVITO_USE_SYCL

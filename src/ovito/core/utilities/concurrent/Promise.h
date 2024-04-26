@@ -53,8 +53,7 @@ public:
     /// If the promise wasn't already finished when this function is called, it is automatically canceled.
     void reset() {
         if(TaskPtr task = std::move(_task)) {
-            if(!task->isFinished())
-                task->cancel();
+            task->cancelAndFinish();
         }
     }
 
@@ -162,7 +161,7 @@ public:
 protected:
 
     /// Constructor.
-    PromiseBase(TaskPtr&& p) noexcept : _task(std::move(p)) {}
+    PromiseBase(TaskPtr p) noexcept : _task(std::move(p)) {}
 
     /// Pointer to the state, which is shared with futures.
     TaskPtr _task;
@@ -182,6 +181,9 @@ public:
 
     /// Default constructor.
     Promise() noexcept = default;
+
+    /// Constructor that takes ownership of a shared state.
+    Promise(TaskPtr p) noexcept : PromiseBase(std::move(p)) {}
 
     /// Creates a promise together with a new task.
     template<typename task_type = Task>
@@ -257,9 +259,6 @@ protected:
     static Promise createCanceled() {
         return Promise(std::make_shared<Task>(Task::State(Task::Canceled | Task::Finished)));
     }
-
-    /// Constructor
-    Promise(TaskPtr p) noexcept : PromiseBase(std::move(p)) {}
 
 #ifdef OVITO_DEBUG
     bool _futureCreated = false;

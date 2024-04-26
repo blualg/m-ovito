@@ -46,7 +46,7 @@ class FutureCache
 public:
 
     template<typename F>
-    auto getOrCompute(const Key& key, F&& f) {
+    [[nodiscard]] auto getOrCompute(const Key& key, F&& f) {
 
         using FutureType = decltype(f());
         using SharedFutureType = typename FutureType::promise_type::shared_future_type;

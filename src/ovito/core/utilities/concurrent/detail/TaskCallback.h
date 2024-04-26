@@ -33,15 +33,15 @@ class OVITO_CORE_EXPORT TaskCallbackBase
 private:
 
     /// Invokes the registered callback function. Delegates the call to the function pointer provided by a derived class.
-    bool callStateChanged(int state) noexcept {
+    bool callStateChanged(int state, Task::MutexLock& lock) noexcept {
         OVITO_ASSERT(this->_stateChanged);
-        return this->_stateChanged(this, state);
+        return this->_stateChanged(this, state, lock);
     }
 
 protected:
 
     /// The type of function pointer provided by the derived class.
-    using state_changed_fn = bool(TaskCallbackBase* f, int state) noexcept;
+    using state_changed_fn = bool(TaskCallbackBase* f, int state, Task::MutexLock& lock) noexcept;
 
     /// Constructor to be called by the derived class.
     explicit TaskCallbackBase(state_changed_fn* stateChanged) noexcept : _stateChanged(stateChanged) {}
@@ -87,9 +87,9 @@ public:
 private:
 
     /// The static function to be registered as callback with the base class.
-    static bool stateChangedImpl(TaskCallbackBase* cb, int state) noexcept {
+    static bool stateChangedImpl(TaskCallbackBase* cb, int state, Task::MutexLock& lock) noexcept {
         auto& self = *static_cast<Derived*>(cb);
-        bool retval = self.taskStateChangedCallback(state);
+        bool retval = self.taskStateChangedCallback(state, lock);
         if(!retval)
             self._task = nullptr;
         return retval;
@@ -111,7 +111,7 @@ public:
 
 private:
 
-    bool taskStateChangedCallback(int state) noexcept {
+    bool taskStateChangedCallback(int state, Task::MutexLock& lock) noexcept {
         return _func(state);
     }
 

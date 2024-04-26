@@ -48,7 +48,7 @@ class OVITO_CORE_EXPORT Task : public std::enable_shared_from_this<Task>
 public:
 
     using Mutex = std::mutex;
-    using MutexLocker = std::unique_lock<Mutex>;
+    using MutexLock = std::unique_lock<Mutex>;
 
     /// The different states a task can be in.
     enum State {
@@ -107,7 +107,7 @@ public:
     /// \brief Switches the task into the 'exception' state to signal that an exception has occurred.
     /// \param ex The exception to store into the task object.
     void setException(std::exception_ptr ex) {
-        const MutexLocker locker(*this);
+        const MutexLock lock(*this);
 
         // Check if task is already canceled or finished.
         if(_state.load() & (Canceled | Finished))
@@ -121,14 +121,14 @@ public:
     /// This method should be called from within an exception handler. It saves a copy of the current exception
     /// being handled into the task object.
     void captureExceptionAndFinish() {
-        MutexLocker locker(*this);
+        MutexLock lock(*this);
 
         // Check if task is already canceled or finished.
         if(_state.load() & (Canceled | Finished))
             return;
 
         exceptionLocked(std::current_exception());
-        finishLocked(locker);
+        finishLocked(lock);
     }
 
     /// Runs the given continuation function once this task has reached either the 'finished' or the 'canceled' state.
@@ -251,11 +251,11 @@ protected:
     /// If the task is already in one of these states, the continuation function is invoked immediately.
     template<typename Executor, typename Function>
     void addContinuation(Executor&& executor, Function&& f) {
-        MutexLocker locker(*this);
+        MutexLock lock(*this);
         // Check if task is already finished.
         if(isFinished()) {
             // Run continuation function immediately.
-            locker.unlock();
+            lock.unlock();
             std::forward<Executor>(executor).execute(std::forward<Function>(f));
         }
         else {
@@ -268,11 +268,11 @@ protected:
     /// If the task is already in one of these states, the continuation function is invoked immediately.
     template<typename Function>
     void addContinuation(Function&& f) {
-        MutexLocker locker(*this);
+        MutexLock lock(*this);
         // Check if task is already finished.
         if(isFinished()) {
             // Run continuation function immediately.
-            locker.unlock();
+            lock.unlock();
             std::invoke(std::forward<Function>(f));
         }
         else {
@@ -298,26 +298,27 @@ protected:
     void exceptionLocked(std::exception_ptr ex) noexcept;
 
     /// Puts this task into the 'canceled' state (without newly locking the task).
-    void cancelLocked(MutexLocker& locker) noexcept;
+    /// The task may simultaneously be put into the 'finished' state as well.
+    void cancelLocked(MutexLock& lock) noexcept;
 
     /// Puts this task into the 'finished' state (without newly locking the task).
-    void finishLocked(MutexLocker& locker) noexcept;
+    void finishLocked(MutexLock& lock) noexcept;
 
-    /// Puts this task into the 'canceled' and 'finished' states (without newly locking the task).
-    void cancelAndFinishLocked(MutexLocker& locker) noexcept;
+    /// If the task is not finished yet, cancel and finish it.
+    void cancelAndFinish() noexcept;
 
     /// Invokes the registered callback functions.
-    void callCallbacks(int state);
+    void callCallbacks(int state, MutexLock& lock) noexcept;
 
     /// Returns the mutex that is used to manage concurrent access to this task.
     operator Mutex&() const { return _mutex; }
 
-    /// \brief Suspends execution until the given task has reached the 'finished' state.
+    /// \brief Suspends execution until the given task has reached the 'finished' or 'canceled' state.
     ///        If the awaited task gets canceled while waiting, the task waiting for it gets canceled too.
     /// \param task The task to wait for.
     /// \param throwOnError If the awaited task finished with an error state, throw it as an exception.
     /// \return false if either \a task or this operation have been canceled.
-    [[nodiscard]] static bool waitFor(detail::TaskDependency awaitedTask, bool throwOnError);
+    [[nodiscard]] static bool waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool returnEarlyIfCanceled);
 
     /// The current state this task is in.
     std::atomic_int _state;

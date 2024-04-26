@@ -44,7 +44,8 @@ public:
 
     /// Creates some work that can be submitted for execution later.
     template<typename Function>
-    auto schedule(Function&& f) {
+    [[nodiscard]] auto schedule(Function&& f) {
+        static_assert(std::is_nothrow_invocable_r_v<void, Function>, "The function must be noexcept.");
         OVITO_ASSERT(ExecutionContext::current().isValid());
         // Note: Avoiding the use of C++17 capture this-by-copy here, because it is not fully supported by the MSVC 2017 compiler.
         return [f = std::forward<Function>(f), executor = *this, context = ExecutionContext::current()]() mutable noexcept {
@@ -72,6 +73,7 @@ public:
     /// Executes work.
     template<typename Function>
     void execute(Function&& f) {
+        static_assert(std::is_nothrow_invocable_r_v<void, Function>, "The function must be noexcept.");
         OVITO_ASSERT(ExecutionContext::current().isValid());
         if(OORef<const OvitoObject> target = contextObject().lock()) {
             // If the work was explicitly marked for deferred execution or if we are not running in the

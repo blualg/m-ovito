@@ -126,7 +126,7 @@ public:
     /// Creates some work that can be submitted for execution later and which will be executed in the context of this object (typically in the main thread).
     /// If the object gets destroyed before the work is executed, the scheduled work will be discarded.
     template<typename Function>
-    auto schedule(Function&& f) const {
+    [[nodiscard]] auto schedule(Function&& f) const {
         OVITO_CHECK_OBJECT_POINTER(this);
         OVITO_ASSERT(ExecutionContext::current().isValid());
         OVITO_ASSERT(!isBeingConstructed()); // Note: Cannot create a OOWeakRef<> if the object is not fully constructed yet.

@@ -159,7 +159,7 @@ SharedFuture<R>::then(Executor&& executor, Function&& f)
         continuation_task_type* continuationTask = static_cast<continuation_task_type*>(promise.task().get());
 
         // Manage access to the task that represents the continuation.
-        Task::MutexLocker locker(*continuationTask);
+        Task::MutexLock lock(*continuationTask);
 
         // Get the task that did just finish.
         detail::TaskDependency finishedTask = continuationTask->takeAwaitedTask();
@@ -178,11 +178,11 @@ SharedFuture<R>::then(Executor&& executor, Function&& f)
         if constexpr(!std::is_invocable_v<Function, SharedFuture<R>>) {
             if(finishedTask->exceptionStore()) {
                 continuationTask->exceptionLocked(finishedTask->exceptionStore());
-                continuationTask->finishLocked(locker);
+                continuationTask->finishLocked(lock);
                 return;
             }
         }
-        locker.unlock();
+        lock.unlock();
 
         // Now it's time to execute the continuation function.
         // Assign the function's return value as result of the continuation task.

@@ -137,7 +137,8 @@ void OpenGLViewportWindow::paint()
             _widgetFrameBuffer = OORef<OpenGLRenderingFrameBuffer>::create(static_object_cast<OpenGLRenderingJob>(renderingJob()), viewportRect, widget()->defaultFramebufferObject());
 
         // Render the viewport contents. This requires an active GL context.
-        renderingJob()->renderFrame(frameGraph(), _widgetFrameBuffer).waitForFinished();
+        auto future = renderingJob()->renderFrame(frameGraph(), _widgetFrameBuffer);
+        OVITO_ASSERT(future.isValid() && future.isFinished() && !future.isCanceled());
 
         // Emit signal to inform listeners (e.g. SceneAnimationPlayback) that a full frame has been rendered.
         if(frameGraph()->isPreliminaryState() == false)

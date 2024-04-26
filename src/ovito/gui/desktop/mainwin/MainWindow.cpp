@@ -495,6 +495,9 @@ void MainWindow::closeEvent(QCloseEvent* event)
             saveMainWindowGeometry();
             saveLayout();
         }
+
+        if(_frameBufferWindow)
+            _frameBufferWindow->close();
     });
 
     // Swallow close event if the user chose to cancel the shutdown.

@@ -39,7 +39,7 @@ public:
     MainThreadTask(Task* parentTask) noexcept : Task(Task::YieldUI) {
         if(parentTask) {
             // Sanity check: The parent cannot be in the finished state yet when the child task is being created.
-            OVITO_ASSERT(!parentTask->isFinished() || parentTask->isCanceled());
+            OVITO_ASSERT(!parentTask->isFinished());
 
             // Inherit the priority status from the parent task.
             if(parentTask->isHighPriorityTask())
@@ -58,9 +58,9 @@ public:
     }
 
     /// Callback function, which is invoked whenever the state of the parent task changes.
-    bool taskStateChangedCallback(int state) noexcept {
+    bool taskStateChangedCallback(int state, MutexLock& lock) noexcept {
         if(state & Canceled)
-            this->cancel();
+            this->cancelLocked(lock);
         // When the parent task finishes, we should detach our callback function immediately,
         // because a task object may not have callbacks registered at the end of its lifetime.
         if(state & Finished) {

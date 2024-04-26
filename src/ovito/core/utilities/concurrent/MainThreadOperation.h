@@ -44,7 +44,7 @@ public:
     };
 
     /// Constructor.
-    explicit MainThreadOperation(
+    [[nodiscard]] explicit MainThreadOperation(
         ExecutionContext::Type contextType = ExecutionContext::current().type(),
         UserInterface& userInterface = ExecutionContext::current().ui(),
         Kind kind = Bound);

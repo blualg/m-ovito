@@ -88,13 +88,13 @@ void UserInterface::shutdown()
         reportError(ex, true);
     }
 
-    // Terminate all running tasks, empty the deferred work queue, and leave all nested event loops.
+    // Wait for all running tasks to stop, empty the deferred work queue, and leave all nested event loops.
     // Once this is done, shutdownComplete() will be invoked to finalize the shutdown process.
     taskManager().requestShutdown();
 }
 
 /******************************************************************************
-* Is called by the TaskManager class after all tasks have been terminated and
+* Is called by the TaskManager class after all tasks have terminated and
 * all nested event loops have been exited.
 ******************************************************************************/
 void UserInterface::shutdownComplete()

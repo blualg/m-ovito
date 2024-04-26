@@ -29,7 +29,7 @@
 namespace Ovito {
 
 template<typename ResultType, typename InputRange, class Executor, typename Function>
-auto reduce_sequential(ResultType&& initialResultValue, InputRange&& inputRange, Executor&& executor, Function&& f)
+[[nodiscard]] auto reduce_sequential(ResultType&& initialResultValue, InputRange&& inputRange, Executor&& executor, Function&& f)
 {
     return for_each_sequential(
         std::forward<InputRange>(inputRange),

@@ -43,7 +43,7 @@ public:
     explicit PipelineNode(ObjectInitializationFlags flags, bool enableCaching = true);
 
     /// Throws an exception if the pipeline stage cannot be evaluated at this time. This is called by the system to catch user mistakes that would lead to infinite recursion.
-    virtual void preEvaluationCheck() const {}
+    virtual void preEvaluationCheck(const PipelineEvaluationRequest& request) const {}
 
     /// Is called by the pipeline system before a new evaluation begins to query the validity interval and evaluation result type of this pipeline stage.
     virtual void preevaluate(const PipelineEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) {

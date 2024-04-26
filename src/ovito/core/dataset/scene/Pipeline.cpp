@@ -73,10 +73,10 @@ Pipeline::~Pipeline() // NOLINT
 * Throws an exception if the pipeline stage cannot be evaluated at this time.
 * This is called by the system to catch user mistakes that would lead to infinite recursion.
 ******************************************************************************/
-void Pipeline::preEvaluationCheck() const
+void Pipeline::preEvaluationCheck(const PipelineEvaluationRequest& request) const
 {
     if(head())
-        head()->preEvaluationCheck();
+        head()->preEvaluationCheck(request);
 }
 
 /******************************************************************************

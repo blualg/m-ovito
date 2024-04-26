@@ -72,11 +72,11 @@ bool ReferenceConfigurationModifier::OOMetaClass::isApplicableTo(const DataColle
 * Throws an exception if the pipeline stage cannot be evaluated at this time.
 * This is called by the system to catch user mistakes that would lead to infinite recursion.
 ******************************************************************************/
-void ReferenceConfigurationModifier::preEvaluationCheck() const
+void ReferenceConfigurationModifier::preEvaluationCheck(const PipelineEvaluationRequest& request) const
 {
     // Walk up the reference config pipeline and ask each step if evaluation is allowed at this time.
     if(referenceConfiguration())
-        referenceConfiguration()->preEvaluationCheck();
+        referenceConfiguration()->preEvaluationCheck(request);
 }
 
 /******************************************************************************
