@@ -27,6 +27,7 @@
 #include <ovito/core/utilities/Exception.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/MixedKeyCache.h>
+#include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
 namespace Ovito {
@@ -44,7 +45,7 @@ public:
     static Application* instance() { return _instance; }
 
     /// \brief Constructor.
-    explicit Application(FileManager& fileManager);
+    explicit Application();
 
     /// \brief Destructor.
     virtual ~Application();
@@ -134,7 +135,7 @@ protected:
     int _idealThreadCount = 1;
 
     /// The global file manager instance.
-    FileManager& _fileManager;
+    FileManager _fileManager;
 
     /// The global dataset container (only used in non-GUI mode).
     DataSetContainer _globalDatasetContainer;

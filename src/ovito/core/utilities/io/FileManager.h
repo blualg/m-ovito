@@ -97,14 +97,14 @@ public:
 
     /// \brief Makes a file available locally.
     /// \return A Future that will provide access to the file contents after it has been fetched from the remote location.
-    virtual SharedFuture<FileHandle> fetchUrl(const QUrl& url);
+    SharedFuture<FileHandle> fetchUrl(const QUrl& url);
 
     /// \brief Removes a cached remote file so that it will be downloaded again next time it is requested.
     void removeFromCache(const QUrl& url);
 
     /// \brief Lists all files in a remote directory.
     /// \return A Future that will provide the list of file names.
-    virtual Future<QStringList> listDirectoryContents(const QUrl& url);
+    Future<QStringList> listDirectoryContents(const QUrl& url);
 
     /// \brief Constructs a URL from a path entered by the user.
     static QUrl urlFromUserInput(const QString& path);
@@ -126,6 +126,20 @@ public:
     void returnGzipOpenFile(std::unique_ptr<GzipIODevice> uncompressor, std::unique_ptr<QIODevice> underlyingDevice);
 #endif
 
+#ifdef OVITO_SSH_CLIENT
+    /// Registers an application-function that is used by the FileManager to ask the user for the login password for a SSH server.
+    template<typename Function> void registerAskUserForPasswordImpl(Function&& f) { OVITO_ASSERT(!_askUserForPasswordImpl); _askUserForPasswordImpl = std::forward<Function>(f); }
+
+    /// Registers an application-function that is used by the FileManager to ask the user for the passphrase for a private SSH key.
+    template<typename Function> void registerAskUserForKeyPassphraseImpl(Function&& f) { OVITO_ASSERT(!_askUserForKeyPassphraseImpl); _askUserForKeyPassphraseImpl = std::forward<Function>(f); }
+
+    /// Registers an application-function that is used by the FileManager to ask the user for the login password for a SSH server.
+    template<typename Function> void registerAskUserForKbiResponseImpl(Function&& f) { OVITO_ASSERT(!_askUserForKbiResponseImpl); _askUserForKbiResponseImpl = std::forward<Function>(f); }
+
+    /// Registers an application-function that is used by the FileManager to inform the user about an unknown SSH host.
+    template<typename Function> void registerDetectedUnknownSshServerImpl(Function&& f) { OVITO_ASSERT(!_detectedUnknownSshServerImpl); _detectedUnknownSshServerImpl = std::forward<Function>(f); }
+#endif
+
 protected:
 
     /// Returns the mutex used internally to synchronize concurrent access to the data structures of this FileManager.
@@ -141,18 +155,18 @@ protected:
 #ifdef OVITO_SSH_CLIENT
     /// \brief Asks the user for the login password for a SSH server.
     /// \return True on success, false if user has canceled the operation.
-    virtual bool askUserForPassword(const QString& hostname, const QString& username, QString& password);
+    bool askUserForPassword(const QString& hostname, const QString& username, QString& password);
 
     /// \brief Asks the user for the passphrase for a private SSH key.
     /// \return True on success, false if user has canceled the operation.
-    virtual bool askUserForKeyPassphrase(const QString& hostname, const QString& prompt, QString& passphrase);
+    bool askUserForKeyPassphrase(const QString& hostname, const QString& prompt, QString& passphrase);
 
     /// \brief Asks the user for the answer to a keyboard-interactive question sent by the SSH server.
     /// \return True on success, false if user has canceled the operation.
-    virtual bool askUserForKbiResponse(const QString& hostname, const QString& username, const QString& instruction, const QString& question, bool showAnswer, QString& answer);
+    bool askUserForKbiResponse(const QString& hostname, const QString& username, const QString& instruction, const QString& question, bool showAnswer, QString& answer);
 
     /// \brief Informs the user about an unknown SSH host.
-    virtual bool detectedUnknownSshServer(const QString& hostname, const QString& unknownHostMessage, const QString& hostPublicKeyHash);
+    bool detectedUnknownSshServer(const QString& hostname, const QString& unknownHostMessage, const QString& hostPublicKeyHash);
 #endif
 
 private Q_SLOTS:
@@ -213,6 +227,20 @@ private:
 
     /// Holds SSH connections, which are still open but not in use.
     QList<SshConnection*> _unacquiredConnections;
+
+#ifdef OVITO_SSH_CLIENT
+    /// Function that asks the user for the login password for a SSH server.
+    fu2::unique_function<bool(const QString&, const QString&, QString&)> _askUserForPasswordImpl;
+
+    /// Function that asks the user for the passphrase for a private SSH key.
+    fu2::unique_function<bool(const QString&, const QString&, QString&)> _askUserForKeyPassphraseImpl;
+
+    /// Function that asks the user for the answer to a keyboard-interactive question sent by the SSH server.
+    fu2::unique_function<bool(const QString&, const QString&, const QString&, const QString&, bool, QString&)> _askUserForKbiResponseImpl;
+
+    /// Function that informs the user about an unknown SSH host.
+    fu2::unique_function<bool(const QString&, const QString&, const QString&)> _detectedUnknownSshServerImpl;
+#endif
 
     friend class DownloadRemoteFileJob;
 };

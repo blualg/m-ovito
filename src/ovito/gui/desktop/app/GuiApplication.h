@@ -24,7 +24,6 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/utilities/io/GuiFileManager.h>
 #include <ovito/core/utilities/Exception.h>
 #include <ovito/core/app/StandaloneApplication.h>
 
@@ -57,7 +56,7 @@ public:
     /// Initializes an abstract user interface (e.g. a MainWindow).
     static void initializeUserInterface(UserInterface& userInterface, const QStringList& arguments);
 
-    /// Returns whether app's UI should automatically follow the system color scheme. 
+    /// Returns whether app's UI should automatically follow the system color scheme.
     static bool automaticallyEnableDarkMode();
 
 protected:
@@ -77,15 +76,29 @@ protected:
     /// Handles events sent to the Qt application object.
     virtual bool eventFilter(QObject* watched, QEvent* event) override;
 
+#ifdef OVITO_SSH_CLIENT
+    /// \brief Asks the user for the login password for a SSH server.
+    /// \return True on success, false if user has canceled the operation.
+    static bool askUserForPassword(const QString& hostname, const QString& username, QString& password);
+
+    /// \brief Asks the user for the answer to a keyboard-interactive question sent by the SSH server.
+    /// \return True on success, false if user has canceled the operation.
+    static bool askUserForKbiResponse(const QString& hostname, const QString& username, const QString& instruction, const QString& question, bool showAnswer, QString& answer);
+
+    /// \brief Asks the user for the passphrase for a private SSH key.
+    /// \return True on success, false if user has canceled the operation.
+    static bool askUserForKeyPassphrase(const QString& hostname, const QString& prompt, QString& passphrase);
+
+    /// \brief Informs the user about an unknown SSH host.
+    static bool detectedUnknownSshServer(const QString& hostname, const QString& unknownHostMessage, const QString& hostPublicKeyHash);
+#endif
+
 private:
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
     /// Queries the system to determine whether the desktop currently uses a dark desktop theme.
     bool detectDarkTheme() const;
 #endif
-
-    /// The global file manager.
-    GuiFileManager _fileManager;
 
 #if defined(Q_OS_LINUX) && QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
     /// Cached results of detectDarkTheme().

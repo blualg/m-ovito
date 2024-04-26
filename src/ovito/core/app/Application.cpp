@@ -93,9 +93,9 @@ static void qtMessageLogFile(QtMsgType type, const QMessageLogContext& context, 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-Application::Application(FileManager& fileManager) :
+Application::Application() :
     UserInterface(_globalDatasetContainer),
-    _fileManager(fileManager),
+    _fileManager(taskManager()),
     _globalDatasetContainer(UserInterface::taskManager(), *this)
 {
     // Set global application pointer.
