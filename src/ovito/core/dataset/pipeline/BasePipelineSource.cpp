@@ -71,7 +71,7 @@ void BasePipelineSource::postprocessDataCollection(Future<PipelineFlowState>& st
             if(state.data() && state.status().type() != PipelineStatus::Error) {
 
                 // In GUI mode, create editable proxy objects for the data objects in the generated collection.
-                if(Application::instance()->guiMode()) {
+                if(Application::guiMode()) {
                     _updatingEditableProxies = true;
                     ConstDataObjectPath dataPath = { state.data() };
                     state.data()->updateEditableProxies(state, dataPath);
@@ -125,7 +125,7 @@ PipelineEvaluationResult BasePipelineSource::postprocessCachedState(const Pipeli
     if(state.data() && state.status().type() != PipelineStatus::Error) {
 
         // In GUI mode, create editable proxy objects for the data objects in the generated collection.
-        if(Application::instance()->guiMode()) {
+        if(Application::guiMode()) {
             UndoSuspender noUndo;
             _updatingEditableProxies = true;
             ConstDataObjectPath dataPath = { state.data() };

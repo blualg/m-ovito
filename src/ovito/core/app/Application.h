@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/Exception.h>
+#include <ovito/core/utilities/io/FileManager.h>
 
 namespace Ovito {
 
@@ -41,7 +42,7 @@ public:
     static Application* instance() { return _instance; }
 
     /// \brief Constructor.
-    explicit Application(FileManager& fileManager);
+    explicit Application();
 
     /// \brief Destructor.
     virtual ~Application();
@@ -58,18 +59,13 @@ public:
     /// This can be used to set a debugger breakpoint for the OVITO_ASSERT macros.
     static void qtMessageOutput(QtMsgType type, const QMessageLogContext& context, const QString& msg);
 
-    /// \brief Returns whether the application has been started in graphical mode.
-    /// \return \c true if the application should use a graphical user interface;
-    ///         \c false if the application has been started in the non-graphical console mode.
-    bool guiMode() const { return !_consoleMode; }
+    /// \brief Returns whether the application is running with a graphical user interface or in the terminal (e.g. in a Python interpreter).
+    /// \return \c true if the application shows a graphical user interface;
+    ///         \c false if the application has been started in terminal mode.
+    static bool guiMode() { return _guiMode; }
 
-    /// \brief Returns whether the application has been started in console mode.
-    /// \return \c true if the application has been started in the non-graphical console mode;
-    ///         \c false if the application should use a graphical user interface.
-    bool consoleMode() const { return _consoleMode; }
-
-    /// \brief Switches between graphical and console mode.
-    void setGuiMode(bool enableGui) { _consoleMode = !enableGui; }
+    /// \brief Switches between graphical and terminal mode.
+    static void setGuiMode(bool enabled) { _guiMode = enabled; }
 
     /// \brief Returns whether printing of task status messages to the console is currently enabled.
     bool taskConsoleLoggingEnabled() const { return _taskConsoleLoggingEnabled; }
@@ -120,14 +116,11 @@ protected:
     /// The original command line arguments.
     char** _argv;
 
-    /// Indicates that the application is running in console mode.
-    bool _consoleMode = true;
-
     /// Enables printing of task status messages to the console.
     bool _taskConsoleLoggingEnabled = false;
 
     /// The global file manager instance.
-    FileManager& _fileManager;
+    FileManager _fileManager;
 
 #ifndef Q_OS_WASM
     /// The application-wide network manager object.
@@ -139,6 +132,9 @@ protected:
 
     /// The one and only instance of this class.
     static Application* _instance;
+
+    /// Indicates that the application is running with a graphical user interface.
+    static bool _guiMode;
 };
 
 }   // End of namespace

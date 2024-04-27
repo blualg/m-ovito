@@ -104,6 +104,9 @@ static QString ovitoAppFileName()
 /// The one and only instance of this class.
 Application* Application::_instance = nullptr;
 
+/// Indicates that the application is running with a graphical user interface.
+bool Application::_guiMode = false;
+
 /// Stores a pointer to the original Qt message handler function, which has been replaced with our own handler.
 QtMessageHandler Application::defaultQtMessageHandler = nullptr;
 
@@ -152,7 +155,7 @@ static void qtMessageLogFile(QtMsgType type, const QMessageLogContext& context, 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-Application::Application(FileManager& fileManager) : _fileManager(fileManager)
+Application::Application()
 {
     // Set global application pointer.
     OVITO_ASSERT(_instance == nullptr); // Only allowed to create one Application class instance.

@@ -141,7 +141,7 @@ public:
             // function gets invoked. That's because it might happen at a much later time if the executor uses deferred scheduling.
             addContinuation(std::forward<Executor>(executor),
                 [f = std::forward<Function>(f), self = shared_from_this()]() mutable noexcept {
-                    std::invoke(std::forward<Function>(f), *self);
+                    std::invoke(std::move(f), *self);
                 });
         else
             addContinuation(std::forward<Executor>(executor), std::forward<Function>(f));

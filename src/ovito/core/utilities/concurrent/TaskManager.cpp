@@ -71,6 +71,11 @@ TaskManager::TaskManager(UserInterface* ui) : _ui(ui)
 TaskManager::~TaskManager()
 {
     OVITO_ASSERT(isShuttingDown());
+
+    // Check if the mutex is currently locked.
+    // This should never be the case while destroying the TaskManager.
+    OVITO_ASSERT(_mutex.try_lock());
+    _mutex.unlock();
 }
 #endif
 

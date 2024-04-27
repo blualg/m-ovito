@@ -294,7 +294,7 @@ void ColorLegendOverlay::render(FrameGraph& frameGraph, const QRect& logicalView
             setStatus(PipelineStatus(PipelineStatus::Warning, tr("The property '%1' is not available in the pipeline output.").arg(sourceProperty().dataTitleOrString())));
 
             // Escalate to an error state if in console mode.
-            if(Application::instance()->consoleMode())
+            if(!Application::guiMode())
                 throw Exception(tr("The property '%1' set as source of the color legend is not present in the data pipeline output.").arg(sourceProperty().dataTitleOrString()));
             else
                 return;
@@ -304,7 +304,7 @@ void ColorLegendOverlay::render(FrameGraph& frameGraph, const QRect& logicalView
             setStatus(PipelineStatus(PipelineStatus::Warning, tr("The property '%1' is not a typed property.").arg(sourceProperty().dataTitleOrString())));
 
             // Escalate to an error state if in console mode.
-            if(Application::instance()->consoleMode())
+            if(!Application::guiMode())
                 throw Exception(tr("The property '%1' set as source of the color legend is not a typed property, i.e., it has no ElementType(s) attached.").arg(sourceProperty().dataTitleOrString()));
             else
                 return;
@@ -318,7 +318,7 @@ void ColorLegendOverlay::render(FrameGraph& frameGraph, const QRect& logicalView
         setStatus(PipelineStatus(PipelineStatus::Warning, tr("No data source has been specified for the color legend.")));
 
         // Escalate to an error state if in console mode.
-        if(Application::instance()->consoleMode()) {
+        if(!Application::guiMode()) {
             throw Exception(tr("You are rendering a Viewport with a ColorLegendOverlay that is not associated with any "
                                "data source. Did you forget to specify a data source for the color legend?"));
         }
@@ -757,7 +757,7 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QR
                                                                 .arg(max_ticks)));
 
                 // Escalate to an error state if in terminal mode.
-                if(Application::instance()->consoleMode())
+                if(!Application::guiMode())
                     throw Exception(tr("Tried to generate %1 tick marks. Currently, no more than %2 "
                                        "ticks may be generated. Please increase the tick spacing.")
                                         .arg(num_ticks)

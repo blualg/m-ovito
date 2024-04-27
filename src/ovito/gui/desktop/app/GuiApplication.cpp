@@ -52,7 +52,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-GuiApplication::GuiApplication() : StandaloneApplication(_fileManager)
+GuiApplication::GuiApplication()
 {
     // Register Qt resources.
     ::registerQtResources();
@@ -140,6 +140,15 @@ QCoreApplication* GuiApplication::createQtApplicationImpl(bool supportGui, int& 
 
         // Verify that a global sharing OpenGL context has been created by the Qt application as requested.
         OVITO_ASSERT(QOpenGLContext::globalShareContext() != nullptr);
+
+#ifdef OVITO_SSH_CLIENT
+        if(guiMode()) {
+            fileManager().registerAskUserForPasswordImpl(&GuiApplication::askUserForPassword);
+            fileManager().registerAskUserForKbiResponseImpl(&GuiApplication::askUserForKbiResponse);
+            fileManager().registerAskUserForKeyPassphraseImpl(&GuiApplication::askUserForKeyPassphrase);
+            fileManager().registerDetectedUnknownSshServerImpl(&GuiApplication::detectedUnknownSshServer);
+        }
+#endif
     }
 
     // Process events sent to the Qt application by the OS.
@@ -310,7 +319,7 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
 
     // If no .ovito state file was specified on the command line, load
     // the user's default state from the standard location.
-    if(datasetContainer.currentSet() == nullptr && Application::instance()->guiMode()) {
+    if(datasetContainer.currentSet() == nullptr && Application::guiMode()) {
         QString defaultsFilePath = QStandardPaths::locate(QStandardPaths::AppDataLocation, QStringLiteral("defaults.ovito"));
         if(!defaultsFilePath.isEmpty()) {
             try {
@@ -526,6 +535,57 @@ bool GuiApplication::detectDarkTheme() const
     return false;
 #endif
 }
+#endif
+
+#ifdef OVITO_SSH_CLIENT
+
+/******************************************************************************
+* Asks the user for the login password for a SSH server.
+******************************************************************************/
+bool GuiApplication::askUserForPassword(const QString& hostname, const QString& username, QString& password)
+{
+    bool ok;
+    password = QInputDialog::getText(nullptr, tr("SSH Password Authentication"),
+        tr("<p>OVITO is connecting to remote host <b>%1</b> via SSH.</p></p>Please enter the password for user <b>%2</b>:</p>").arg(hostname.toHtmlEscaped()).arg(username.toHtmlEscaped()),
+        QLineEdit::Password, password, &ok);
+    return ok;
+}
+
+/******************************************************************************
+* Asks the user for the passphrase for a private SSH key.
+******************************************************************************/
+bool GuiApplication::askUserForKeyPassphrase(const QString& hostname, const QString& prompt, QString& passphrase)
+{
+    bool ok;
+    passphrase = QInputDialog::getText(nullptr, tr("SSH Remote Connection"),
+        tr("<p>OVITO is connecting to remote host <b>%1</b> via SSH.</p><p>%2</p>").arg(hostname.toHtmlEscaped()).arg(prompt.toHtmlEscaped()),
+        QLineEdit::Password, passphrase, &ok);
+    return ok;
+}
+
+/******************************************************************************
+* Asks the user for the answer to a keyboard-interactive question sent by the SSH server.
+******************************************************************************/
+bool GuiApplication::askUserForKbiResponse(const QString& hostname, const QString& username, const QString& instruction, const QString& question, bool showAnswer, QString& answer)
+{
+    bool ok;
+    answer = QInputDialog::getText(nullptr, tr("SSH Keyboard-Interactive Authentication"),
+        tr("<p>OVITO is connecting to remote host <b>%1</b> via SSH.</p></p>Please enter your response to the following question sent by the SSH server:</p><p>%2 <b>%3</b></p>").arg(hostname.toHtmlEscaped()).arg(instruction.toHtmlEscaped()).arg(question.toHtmlEscaped()),
+        showAnswer ? QLineEdit::Normal : QLineEdit::Password, QString(), &ok);
+    return ok;
+}
+
+/******************************************************************************
+* Informs the user about an unknown SSH host.
+******************************************************************************/
+bool GuiApplication::detectedUnknownSshServer(const QString& hostname, const QString& unknownHostMessage, const QString& hostPublicKeyHash)
+{
+    return MessageDialog::question(nullptr, tr("SSH Unknown Remote Host"),
+        tr("<p>OVITO is connecting to unknown remote host <b>%1</b> via SSH.</p><p>%2</p><p>Host key fingerprint is %3</p><p>Are you sure you want to continue connecting?</p>")
+        .arg(hostname.toHtmlEscaped()).arg(unknownHostMessage.toHtmlEscaped()).arg(hostPublicKeyHash),
+        QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes;
+}
+
 #endif
 
 }   // End of namespace

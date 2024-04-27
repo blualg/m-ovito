@@ -79,13 +79,13 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
     // Output program version if requested.
     if(cmdLineParser().isSet("version")) {
         std::cout << qPrintable(Application::applicationName()) << " " << qPrintable(Application::applicationVersionString()) << std::endl;
-        _consoleMode = true;
+        setGuiMode(false);
         return true;
     }
 
     // Help command line option implicitly activates console mode.
     if(_cmdLineParser.isSet("help")) {
-        _consoleMode = true;
+        setGuiMode(false);
     }
 
     try {
@@ -114,7 +114,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
         // Parse the command line parameters again after the plugins have registered their options.
         if(!_cmdLineParser.parse(arguments)) {
             qInfo().noquote() << "Error:" << _cmdLineParser.errorText();
-            _consoleMode = true;
+            setGuiMode(false);
             return false;
         }
 
@@ -182,10 +182,10 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
             }
             catch(const Exception& ex) {
                 // Shutdown with error exit code when running in scripting mode.
-                if(consoleMode())
-                    ExecutionContext::current().ui().exitWithFatalError(ex);
-                else
+                if(guiMode())
                     reportError(ex);
+                else
+                    ExecutionContext::current().ui().exitWithFatalError(ex);
             }
         });
 

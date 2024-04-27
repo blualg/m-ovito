@@ -126,7 +126,7 @@ void FrameGraph::renderDataObject(const DataObject* dataObj, const Pipeline* pip
                 if(status.type() == PipelineStatus::Error)
                     throw Exception(status.text());
                 // In console mode, print warning messages to the terminal.
-                if(status.type() == PipelineStatus::Warning && !status.text().isEmpty() && Application::instance()->consoleMode()) {
+                if(status.type() == PipelineStatus::Warning && !status.text().isEmpty() && !Application::guiMode()) {
                     qWarning() << "WARNING: Visual element" << vis->objectTitle() << "reported:" << status.text();
                 }
             }

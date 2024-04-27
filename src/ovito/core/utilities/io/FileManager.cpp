@@ -314,13 +314,18 @@ void FileManager::unknownSshServer()
 ******************************************************************************/
 bool FileManager::detectedUnknownSshServer(const QString& hostname, const QString& unknownHostMessage, const QString& hostPublicKeyHash)
 {
-    std::cout << "OVITO is connecting to remote host '" << qPrintable(hostname) << "' via SSH." << std::endl;
-    std::cout << qPrintable(unknownHostMessage) << std::endl;
-    std::cout << "Host key fingerprint is " << qPrintable(hostPublicKeyHash) << std::endl;
-    std::cout << "Are you sure you want to continue connecting (yes/no)? " << std::flush;
-    std::string reply;
-    std::cin >> reply;
-    return reply == "yes";
+    if(_detectedUnknownSshServerImpl) {
+        return _detectedUnknownSshServerImpl(hostname, unknownHostMessage, hostPublicKeyHash);
+    }
+    else {
+        std::cout << "OVITO is connecting to remote host '" << qPrintable(hostname) << "' via SSH." << std::endl;
+        std::cout << qPrintable(unknownHostMessage) << std::endl;
+        std::cout << "Host key fingerprint is " << qPrintable(hostPublicKeyHash) << std::endl;
+        std::cout << "Are you sure you want to continue connecting (yes/no)? " << std::flush;
+        std::string reply;
+        std::cin >> reply;
+        return reply == "yes";
+    }
 }
 
 /******************************************************************************
@@ -387,12 +392,17 @@ void FileManager::needKbiAnswers()
 ******************************************************************************/
 bool FileManager::askUserForPassword(const QString& hostname, const QString& username, QString& password)
 {
-    std::string pw;
-    std::cout << "Please enter the password for user '" << qPrintable(username) << "' ";
-    std::cout << "on SSH remote host '" << qPrintable(hostname) << "' (set echo off beforehand!): " << std::flush;
-    std::cin >> pw;
-    password = QString::fromStdString(pw);
-    return true;
+    if(_askUserForPasswordImpl) {
+        return _askUserForPasswordImpl(hostname, username, password);
+    }
+    else {
+        std::string pw;
+        std::cout << "Please enter the password for user '" << qPrintable(username) << "' ";
+        std::cout << "on SSH remote host '" << qPrintable(hostname) << "' (set echo off beforehand!): " << std::flush;
+        std::cin >> pw;
+        password = QString::fromStdString(pw);
+        return true;
+    }
 }
 
 /******************************************************************************
@@ -400,14 +410,19 @@ bool FileManager::askUserForPassword(const QString& hostname, const QString& use
 ******************************************************************************/
 bool FileManager::askUserForKbiResponse(const QString& hostname, const QString& username, const QString& instruction, const QString& question, bool showAnswer, QString& answer)
 {
-    std::cout << "SSH keyboard interactive authentication";
-    if(!showAnswer)
-        std::cout << " (set echo off beforehand!)";
-    std::cout << " - " << qPrintable(question) << std::flush;
-    std::string pw;
-    std::cin >> pw;
-    answer = QString::fromStdString(pw);
-    return true;
+    if(_askUserForKbiResponseImpl) {
+        return _askUserForKbiResponseImpl(hostname, username, instruction, question, showAnswer, answer);
+    }
+    else {
+        std::cout << "SSH keyboard interactive authentication";
+        if(!showAnswer)
+            std::cout << " (set echo off beforehand!)";
+        std::cout << " - " << qPrintable(question) << std::flush;
+        std::string pw;
+        std::cin >> pw;
+        answer = QString::fromStdString(pw);
+        return true;
+    }
 }
 
 /******************************************************************************
@@ -430,11 +445,16 @@ void FileManager::needSshPassphrase(const QString& prompt)
 ******************************************************************************/
 bool FileManager::askUserForKeyPassphrase(const QString& hostname, const QString& prompt, QString& passphrase)
 {
-    std::string pp;
-    std::cout << qPrintable(prompt) << std::flush;
-    std::cin >> pp;
-    passphrase = QString::fromStdString(pp);
-    return true;
+    if(_askUserForKeyPassphraseImpl) {
+        return _askUserForKeyPassphraseImpl(hostname, prompt, passphrase);
+    }
+    else {
+        std::string pp;
+        std::cout << qPrintable(prompt) << std::flush;
+        std::cin >> pp;
+        passphrase = QString::fromStdString(pp);
+        return true;
+    }
 }
 #endif
 

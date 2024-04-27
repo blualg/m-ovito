@@ -148,6 +148,14 @@ public:
         return property(columnIndex)->componentCount() > 1 || !property(columnIndex)->componentNames().empty();
     }
 
+    // Returns the full name of the i-th output column (including vector component if any).
+    QString columnName(size_t columnIndex) const {
+        if(const Property* prop = property(columnIndex))
+            return prop->nameWithComponent(vectorComponent(columnIndex));
+        else
+            return propertyRef(columnIndex).name();
+    }
+
 private:
 
     /// The property container;
