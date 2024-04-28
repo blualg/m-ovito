@@ -187,11 +187,14 @@ Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const Modif
     OVITO_ASSERT(voxelGrid->domain());
     if(voxelGrid->domain()->is2D())
         throw Exception(tr("Cannot generate isosurface for a two-dimensional voxel grid. Input must be a 3d grid."));
-    ConstPropertyPtr property = sourceProperty().findInContainer(voxelGrid);
+
+    // Look up input voxel property.
+    ConstPropertyPtr property;
+    int vectorComponent;
+    QString errorDescription;
+    std::tie(property, vectorComponent) = sourceProperty().findInContainerWithComponent(voxelGrid, errorDescription);
     if(!property)
-        throw Exception(tr("The selected voxel property with the name '%1' does not exist.").arg(sourceProperty().name()));
-    if(sourceProperty().vectorComponent() >= (int)property->componentCount())
-        throw Exception(tr("The selected vector component is out of range. The property '%1' contains only %2 values per voxel.").arg(sourceProperty().name()).arg(property->componentCount()));
+        throw Exception(std::move(errorDescription));
     if(property->dataType() != Property::FloatDefault)
         throw Exception(tr("Wrong data type. Can construct isosurface only for standard-precision floating-point values."));
 
@@ -225,7 +228,7 @@ Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const Modif
             gridShape = voxelGrid->shape(),
             gridType = voxelGrid->gridType(),
             property = std::move(property),
-            vectorComponent = std::max(0, (int)sourceProperty().vectorComponent()),
+            vectorComponent,
             mesh = std::move(mesh),
             isolevel,
             identifyRegions = identifyRegions(),
@@ -425,9 +428,9 @@ void CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshBuild
     std::vector<std::pair<RawBufferReadAccess, RawBufferAccess<access_mode::discard_write>>> propertyMapping;
     for(const ConstPropertyPtr& fieldProperty : fieldProperties) {
         Property* vertexProperty;
-        if(fieldProperty->type() < Property::FirstSpecificProperty && SurfaceMeshVertices::OOClass().isValidStandardPropertyId(fieldProperty->type())) {
+        if(fieldProperty->typeId() < Property::FirstSpecificProperty && SurfaceMeshVertices::OOClass().isValidStandardPropertyId(fieldProperty->typeId())) {
             // Input voxel property is also a standard property for mesh vertices.
-            vertexProperty = mesh.createVertexProperty(DataBuffer::Initialized, static_cast<SurfaceMeshVertices::Type>(fieldProperty->type()));
+            vertexProperty = mesh.createVertexProperty(DataBuffer::Initialized, static_cast<SurfaceMeshVertices::Type>(fieldProperty->typeId()));
             OVITO_ASSERT(vertexProperty->dataType() == fieldProperty->dataType());
             OVITO_ASSERT(vertexProperty->stride() == fieldProperty->stride());
         }

@@ -34,14 +34,6 @@ namespace Ovito {
 
 static void ensureFontRenderingCapability()
 {
-    if(!ExecutionContext::isMainThread()) {
-        // The Qt application must have been created from the main thread already.
-        OVITO_ASSERT(QCoreApplication::instance());
-        if(!QCoreApplication::instance())
-            throw RendererException(QStringLiteral("Qt font rendering function is not available."));
-        return;
-    }
-
     try {
         Application::instance()->createQtApplication(false);
     }

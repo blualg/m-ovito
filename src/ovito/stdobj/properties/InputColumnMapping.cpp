@@ -32,7 +32,7 @@ namespace Ovito {
  * Maps a file column to a standard property unless there is already another
  * column mapped to the same property.
  *****************************************************************************/
-bool InputColumnMapping::mapStandardColumn(int column, int typeId, int vectorComponent)
+bool InputColumnMapping::mapColumnToStandardProperty(int column, int typeId, int vectorComponent)
 {
     OVITO_ASSERT(column >= 0 && column < this->size());
     OVITO_ASSERT(typeId != Property::GenericUserProperty);
@@ -40,12 +40,12 @@ bool InputColumnMapping::mapStandardColumn(int column, int typeId, int vectorCom
 
     // Check if there is another file column already mapped to the same target property.
     for(const InputColumnInfo& columnInfo : *this) {
-        if(columnInfo.property.type() == typeId && columnInfo.property.vectorComponent() == vectorComponent)
+        if(columnInfo.property.typeId() == typeId && columnInfo.property.vectorComponentIndex() == vectorComponent)
             return false;
     }
 
     // If not, record the mapping.
-    (*this)[column].mapStandardColumn(containerClass(), typeId, vectorComponent);
+    (*this)[column].mapToStandardProperty(containerClass(), typeId, vectorComponent);
     return true;
 }
 
@@ -53,19 +53,19 @@ bool InputColumnMapping::mapStandardColumn(int column, int typeId, int vectorCom
  * Maps this column to a user-defined property unless there is already another
  * column mapped to the same property.
  *****************************************************************************/
-bool InputColumnMapping::mapCustomColumn(int column, const QString& propertyName, int dataType, int vectorComponent)
+bool InputColumnMapping::mapColumnToUserProperty(int column, const QString& propertyName, int dataType, int vectorComponent)
 {
     OVITO_ASSERT(column >= 0 && column < this->size());
     OVITO_ASSERT(containerClass());
 
     // Check if there is another file column already mapped to the same target property.
     for(const InputColumnInfo& columnInfo : *this) {
-        if(columnInfo.property.type() == Property::GenericUserProperty && columnInfo.property.name() == propertyName && columnInfo.property.vectorComponent() == vectorComponent)
+        if(columnInfo.property.typeId() == Property::GenericUserProperty && columnInfo.property.name() == propertyName && columnInfo.property.vectorComponentIndex() == vectorComponent)
             return false;
     }
 
     // If not, record the mapping.
-    (*this)[column].mapCustomColumn(containerClass(), propertyName, dataType, vectorComponent);
+    (*this)[column].mapToUserProperty(containerClass(), propertyName, dataType, vectorComponent);
     return true;
 }
 
@@ -173,7 +173,7 @@ void InputColumnMapping::validate(const QString& fileFormatName) const
             continue;
 
         // Validate property names.
-        if(m1->property.type() == Property::GenericUserProperty)
+        if(m1->property.typeId() == Property::GenericUserProperty)
             Property::throwIfInvalidPropertyName(m1->property.name());
 
         numMapped++;
@@ -210,7 +210,7 @@ InputColumnReader::InputColumnReader(StandardFrameLoader& frameLoader, const Inp
 
         const PropertyReference& pref = mapping[i].property;
 
-        int vectorComponent = std::max(0, pref.vectorComponent());
+        int vectorComponent = std::max(0, pref.vectorComponentIndex());
         int dataType = mapping[i].dataType;
 
         TargetPropertyRecord rec;
@@ -221,25 +221,25 @@ InputColumnReader::InputColumnReader(StandardFrameLoader& frameLoader, const Inp
                 throw Exception(tr("Invalid user-defined target property (data type %1) for input file column %2").arg(dataType).arg(i+1));
 
             Property* property;
-            if(pref.type() != Property::GenericUserProperty) {
+            if(pref.typeId() != Property::GenericUserProperty) {
                 // Create standard property.
-                property = container->createProperty(DataBuffer::Initialized, pref.type());
+                property = container->createProperty(DataBuffer::Initialized, pref.typeId());
                 // File reader may want to override the property's name.
                 property->setName(pref.name());
                 // If this is a typed property, determine the kind of ElementType objects to create for it.
-                rec.elementTypeClass = container->getOOMetaClass().typedPropertyElementClass(pref.type());
+                rec.elementTypeClass = container->getOOMetaClass().typedPropertyElementClass(pref.typeId());
             }
             else {
                 // Determine the number of vector components we need for this user-defined property.
                 int componentCount = vectorComponent + 1;
                 for(const InputColumnInfo& col : mapping)
-                    if(col.property.type() == Property::GenericUserProperty && col.property.name() == pref.name())
-                        componentCount = std::max(componentCount, col.property.vectorComponent() + 1);
+                    if(col.property.typeId() == Property::GenericUserProperty && col.property.name() == pref.name())
+                        componentCount = std::max(componentCount, col.property.vectorComponentIndex() + 1);
 
                 // Look for existing user-defined property with the same name.
                 if(const Property* existingProperty = container->getProperty(pref.name())) {
                     // If the existing property is incompatible, remove it from the container and create a new one.
-                    if(existingProperty->type() != pref.type() || existingProperty->componentCount() != componentCount || existingProperty->dataType() != dataType)
+                    if(existingProperty->typeId() != pref.typeId() || existingProperty->componentCount() != componentCount || existingProperty->dataType() != dataType)
                         container->removeProperty(existingProperty);
                 }
 

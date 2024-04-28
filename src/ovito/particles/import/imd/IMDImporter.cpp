@@ -82,16 +82,16 @@ void IMDImporter::FrameLoader::loadFile()
                 const QString& token = tokens[t];
                 int columnIndex = t - 1;
                 columnMapping[columnIndex].columnName = token;
-                if(token == "mass") columnMapping.mapStandardColumn(columnIndex, Particles::MassProperty);
-                else if(token == "type") columnMapping.mapStandardColumn(columnIndex, Particles::TypeProperty);
-                else if(token == "number") columnMapping.mapStandardColumn(columnIndex, Particles::IdentifierProperty);
-                else if(token == "x") columnMapping.mapStandardColumn(columnIndex, Particles::PositionProperty, 0);
-                else if(token == "y") columnMapping.mapStandardColumn(columnIndex, Particles::PositionProperty, 1);
-                else if(token == "z") columnMapping.mapStandardColumn(columnIndex, Particles::PositionProperty, 2);
-                else if(token == "vx") columnMapping.mapStandardColumn(columnIndex, Particles::VelocityProperty, 0);
-                else if(token == "vy") columnMapping.mapStandardColumn(columnIndex, Particles::VelocityProperty, 1);
-                else if(token == "vz") columnMapping.mapStandardColumn(columnIndex, Particles::VelocityProperty, 2);
-                else if(token == "Epot") columnMapping.mapStandardColumn(columnIndex, Particles::PotentialEnergyProperty);
+                if(token == "mass") columnMapping.mapColumnToStandardProperty(columnIndex, Particles::MassProperty);
+                else if(token == "type") columnMapping.mapColumnToStandardProperty(columnIndex, Particles::TypeProperty);
+                else if(token == "number") columnMapping.mapColumnToStandardProperty(columnIndex, Particles::IdentifierProperty);
+                else if(token == "x") columnMapping.mapColumnToStandardProperty(columnIndex, Particles::PositionProperty, 0);
+                else if(token == "y") columnMapping.mapColumnToStandardProperty(columnIndex, Particles::PositionProperty, 1);
+                else if(token == "z") columnMapping.mapColumnToStandardProperty(columnIndex, Particles::PositionProperty, 2);
+                else if(token == "vx") columnMapping.mapColumnToStandardProperty(columnIndex, Particles::VelocityProperty, 0);
+                else if(token == "vy") columnMapping.mapColumnToStandardProperty(columnIndex, Particles::VelocityProperty, 1);
+                else if(token == "vz") columnMapping.mapColumnToStandardProperty(columnIndex, Particles::VelocityProperty, 2);
+                else if(token == "Epot") columnMapping.mapColumnToStandardProperty(columnIndex, Particles::PotentialEnergyProperty);
                 else {
                     bool isStandardProperty = false;
                     const auto& standardPropertyList = Particles::OOClass().standardPropertyIds();
@@ -108,7 +108,7 @@ void IMDImporter::FrameLoader::loadFile()
                                 columnName += componentName;
                             }
                             if(columnName == token) {
-                                columnMapping.mapStandardColumn(columnIndex, (Particles::Type)id, component);
+                                columnMapping.mapColumnToStandardProperty(columnIndex, (Particles::Type)id, component);
                                 isStandardProperty = true;
                                 break;
                             }
@@ -116,7 +116,7 @@ void IMDImporter::FrameLoader::loadFile()
                         if(isStandardProperty) break;
                     }
                     if(!isStandardProperty) {
-                        columnMapping.mapCustomColumn(columnIndex, Property::makePropertyNameValid(token), Property::FloatDefault);
+                        columnMapping.mapColumnToUserProperty(columnIndex, Property::makePropertyNameValid(token), Property::FloatDefault);
                     }
                 }
             }

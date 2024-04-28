@@ -108,7 +108,7 @@ Future<PipelineFlowState> LinesReplicateModifierDelegate::apply(const ModifierEv
                     OVITO_ASSERT(property->size() == newVertexCount);
 
                     // Shift vertex positions by the periodicity vector.
-                    if(property->type() == Lines::PositionProperty) {
+                    if(property->typeId() == Lines::PositionProperty) {
                         BufferWriteAccess<Point3, access_mode::read_write> positionArray(property);
                         Point3* p = positionArray.begin();
                         for(int imageX = newImages.minc.x(); imageX <= newImages.maxc.x(); imageX++) {
@@ -127,7 +127,7 @@ Future<PipelineFlowState> LinesReplicateModifierDelegate::apply(const ModifierEv
                             }
                         }
                     }
-                    else if(property->type() == Lines::SectionProperty) {
+                    else if(property->typeId() == Lines::SectionProperty) {
                         BufferWriteAccess<int64_t, access_mode::read_write> sectionsArray(property);
                         auto minmax = std::minmax_element(sectionsArray.cbegin(), sectionsArray.cbegin() + oldVertexCount);
                         auto minSec = *minmax.first;

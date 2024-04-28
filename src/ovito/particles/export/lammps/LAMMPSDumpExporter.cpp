@@ -102,29 +102,29 @@ void LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNum
     for(size_t i = 0; i < columnWriter.columnCount(); i++) {
         const PropertyReference& pref = columnWriter.propertyRef(i);
         QString columnName;
-        switch(pref.type()) {
+        switch(pref.typeId()) {
         case Particles::PositionProperty:
-            if(pref.vectorComponent() == 0) columnName = QStringLiteral("x");
-            else if(pref.vectorComponent() == 1) columnName = QStringLiteral("y");
-            else if(pref.vectorComponent() == 2) columnName = QStringLiteral("z");
+            if(pref.vectorComponentIndex() == 0) columnName = QStringLiteral("x");
+            else if(pref.vectorComponentIndex() == 1) columnName = QStringLiteral("y");
+            else if(pref.vectorComponentIndex() == 2) columnName = QStringLiteral("z");
             else columnName = pref.nameWithComponent();
             break;
         case Particles::VelocityProperty:
-            if(pref.vectorComponent() == 0) columnName = QStringLiteral("vx");
-            else if(pref.vectorComponent() == 1) columnName = QStringLiteral("vy");
-            else if(pref.vectorComponent() == 2) columnName = QStringLiteral("vz");
+            if(pref.vectorComponentIndex() == 0) columnName = QStringLiteral("vx");
+            else if(pref.vectorComponentIndex() == 1) columnName = QStringLiteral("vy");
+            else if(pref.vectorComponentIndex() == 2) columnName = QStringLiteral("vz");
             else columnName = pref.nameWithComponent();
             break;
         case Particles::ForceProperty:
-            if(pref.vectorComponent() == 0) columnName = QStringLiteral("fx");
-            else if(pref.vectorComponent() == 1) columnName = QStringLiteral("fy");
-            else if(pref.vectorComponent() == 2) columnName = QStringLiteral("fz");
+            if(pref.vectorComponentIndex() == 0) columnName = QStringLiteral("fx");
+            else if(pref.vectorComponentIndex() == 1) columnName = QStringLiteral("fy");
+            else if(pref.vectorComponentIndex() == 2) columnName = QStringLiteral("fz");
             else columnName = pref.nameWithComponent();
             break;
         case Particles::PeriodicImageProperty:
-            if(pref.vectorComponent() == 0) columnName = QStringLiteral("ix");
-            else if(pref.vectorComponent() == 1) columnName = QStringLiteral("iy");
-            else if(pref.vectorComponent() == 2) columnName = QStringLiteral("iz");
+            if(pref.vectorComponentIndex() == 0) columnName = QStringLiteral("ix");
+            else if(pref.vectorComponentIndex() == 1) columnName = QStringLiteral("iy");
+            else if(pref.vectorComponentIndex() == 2) columnName = QStringLiteral("iz");
             else columnName = pref.nameWithComponent();
             break;
         case Particles::IdentifierProperty: columnName = QStringLiteral("id"); break;
@@ -137,16 +137,16 @@ void LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNum
         case Particles::PotentialEnergyProperty: columnName = QStringLiteral("c_epot"); break;
         case Particles::KineticEnergyProperty: columnName = QStringLiteral("c_kpot"); break;
         case Particles::OrientationProperty:
-            if(pref.vectorComponent() == 0) columnName = QStringLiteral("quati");
-            else if(pref.vectorComponent() == 1) columnName = QStringLiteral("quatj");
-            else if(pref.vectorComponent() == 2) columnName = QStringLiteral("quatk");
-            else if(pref.vectorComponent() == 3) columnName = QStringLiteral("quatw");
+            if(pref.vectorComponentIndex() == 0) columnName = QStringLiteral("quati");
+            else if(pref.vectorComponentIndex() == 1) columnName = QStringLiteral("quatj");
+            else if(pref.vectorComponentIndex() == 2) columnName = QStringLiteral("quatk");
+            else if(pref.vectorComponentIndex() == 3) columnName = QStringLiteral("quatw");
             else columnName = pref.nameWithComponent();
             break;
         case Particles::AsphericalShapeProperty:
-            if(pref.vectorComponent() == 0) columnName = QStringLiteral("c_shape[1]");
-            else if(pref.vectorComponent() == 1) columnName = QStringLiteral("c_shape[2]");
-            else if(pref.vectorComponent() == 2) columnName = QStringLiteral("c_shape[3]");
+            if(pref.vectorComponentIndex() == 0) columnName = QStringLiteral("c_shape[1]");
+            else if(pref.vectorComponentIndex() == 1) columnName = QStringLiteral("c_shape[2]");
+            else if(pref.vectorComponentIndex() == 2) columnName = QStringLiteral("c_shape[3]");
             else columnName = pref.nameWithComponent();
             break;
         default:

@@ -272,7 +272,7 @@ void LAMMPSGridDumpImporter::FrameLoader::loadFile()
                             gridIdentifier = tokens[1];
                     }
 
-                    columnMapping.mapCustomColumn(i, Property::makePropertyNameValid(propertyName), dataType, vectorComponent);
+                    columnMapping.mapColumnToUserProperty(i, Property::makePropertyNameValid(propertyName), dataType, vectorComponent);
                     columnMapping[i].columnName = fileColumnNames[i];
                 }
 

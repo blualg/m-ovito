@@ -196,8 +196,8 @@ void ComputePropertyModifierEditor::updateExpressionFields()
     }
 
     QStringList standardPropertyComponentNames;
-    if(!mod->outputProperty().isNull() && mod->outputProperty().type() != Property::GenericUserProperty) {
-        standardPropertyComponentNames = mod->outputProperty().containerClass()->standardPropertyComponentNames(mod->outputProperty().type());
+    if(!mod->outputProperty().isNull() && mod->outputProperty().isStandardProperty()) {
+        standardPropertyComponentNames = mod->outputProperty().containerClass()->standardPropertyComponentNames(mod->outputProperty().typeId());
     }
 
     for(int i = 0; i < expr.size(); i++) {

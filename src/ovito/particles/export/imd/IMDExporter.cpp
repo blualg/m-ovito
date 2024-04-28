@@ -54,20 +54,20 @@ void IMDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     const Property* velocityProperty = nullptr;
     const Property* massProperty = nullptr;
     for(const ParticlePropertyReference& pref : columnMapping()) {
-        if(pref.type() == Particles::PositionProperty) {
+        if(pref.typeId() == Particles::PositionProperty) {
             posProperty = particles->expectProperty(Particles::PositionProperty);
         }
-        else if(pref.type() == Particles::TypeProperty) {
+        else if(pref.typeId() == Particles::TypeProperty) {
             typeProperty = particles->expectProperty(Particles::TypeProperty);
         }
-        else if(pref.type() == Particles::IdentifierProperty) {
+        else if(pref.typeId() == Particles::IdentifierProperty) {
             identifierProperty = particles->getProperty(Particles::IdentifierProperty);
             exportIdentifiers = true;
         }
-        else if(pref.type() == Particles::VelocityProperty) {
+        else if(pref.typeId() == Particles::VelocityProperty) {
             velocityProperty = particles->expectProperty(Particles::VelocityProperty);
         }
-        else if(pref.type() == Particles::MassProperty) {
+        else if(pref.typeId() == Particles::MassProperty) {
             massProperty = particles->expectProperty(Particles::MassProperty);
         }
         else filteredMapping.push_back(pref);

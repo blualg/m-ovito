@@ -135,9 +135,9 @@ size_t Bonds::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, co
         for(const auto& bprop : bondProperties) {
             OVITO_ASSERT(bprop);
             OVITO_ASSERT(bprop->size() == newBonds.size());
-            OVITO_ASSERT(bprop->type() != Bonds::TopologyProperty);
-            OVITO_ASSERT(bprop->type() != Bonds::PeriodicImageProperty);
-            OVITO_ASSERT(!bondTypeProperty || bprop->type() != Bonds::TypeProperty);
+            OVITO_ASSERT(bprop->typeId() != Bonds::TopologyProperty);
+            OVITO_ASSERT(bprop->typeId() != Bonds::PeriodicImageProperty);
+            OVITO_ASSERT(!bondTypeProperty || bprop->typeId() != Bonds::TypeProperty);
             createProperty(bprop);
         }
 
@@ -200,7 +200,7 @@ size_t Bonds::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, co
 
         // Initialize property values of existing properties for new bonds.
         for(Property* bondProperty : makePropertiesMutable()) {
-            if(bondProperty->type() == Bonds::ColorProperty) {
+            if(bondProperty->typeId() == Bonds::ColorProperty) {
                 if(particles) {
                     ConstPropertyPtr bondColors;
                     if(particles->bonds() != this) {
@@ -221,13 +221,13 @@ size_t Bonds::addBonds(const std::vector<Bond>& newBonds, BondsVis* bondsVis, co
         for(const auto& bprop : bondProperties) {
             OVITO_ASSERT(bprop);
             OVITO_ASSERT(bprop->size() == newBonds.size());
-            OVITO_ASSERT(bprop->type() != Bonds::TopologyProperty);
-            OVITO_ASSERT(bprop->type() != Bonds::PeriodicImageProperty);
-            OVITO_ASSERT(!bondType || bprop->type() != Bonds::TypeProperty);
+            OVITO_ASSERT(bprop->typeId() != Bonds::TopologyProperty);
+            OVITO_ASSERT(bprop->typeId() != Bonds::PeriodicImageProperty);
+            OVITO_ASSERT(!bondType || bprop->typeId() != Bonds::TypeProperty);
 
             Property* property;
-            if(bprop->type() != Bonds::UserProperty) {
-                property = createProperty(DataBuffer::Initialized, bprop->type());
+            if(bprop->isStandardProperty()) {
+                property = createProperty(DataBuffer::Initialized, bprop->typeId());
             }
             else {
                 property = createProperty(DataBuffer::Initialized, bprop->name(), bprop->dataType(), bprop->componentCount());
@@ -270,7 +270,7 @@ PropertyPtr Bonds::OOMetaClass::createStandardPropertyInternal(DataBuffer::Buffe
         if(type == ColorProperty) {
             if(const Particles* particles = dynamic_object_cast<Particles>(containerPath[containerPath.size()-2])) {
                 ConstPropertyPtr property = particles->inputBondColors();
-                OVITO_ASSERT(property && property->size() == elementCount && property->type() == ColorProperty);
+                OVITO_ASSERT(property && property->size() == elementCount && property->typeId() == ColorProperty);
                 return std::move(property).makeMutable();
             }
         }
@@ -280,7 +280,7 @@ PropertyPtr Bonds::OOMetaClass::createStandardPropertyInternal(DataBuffer::Buffe
                 ConstPropertyPtr property = bonds->inputBondWidths();
                 OVITO_ASSERT(property);
                 OVITO_ASSERT(property->size() == elementCount);
-                OVITO_ASSERT(property->type() == WidthProperty);
+                OVITO_ASSERT(property->typeId() == WidthProperty);
                 return std::move(property).makeMutable();
             }
         }
@@ -377,7 +377,7 @@ void Bonds::OOMetaClass::initialize()
 ******************************************************************************/
 Color Bonds::OOMetaClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const
 {
-    if(property.type() == Bonds::TypeProperty) {
+    if(property.typeId() == Bonds::TypeProperty) {
 
         // Initial standard colors assigned to new bond types:
         static const Color defaultTypeColors[] = {

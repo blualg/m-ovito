@@ -214,12 +214,13 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
     // Make sure input data structure is ok.
     container->verifyIntegrity();
 
-    ConstPropertyPtr property = sourceProperty.findInContainer(container);
+    // Look up input property in container.
+    ConstPropertyPtr property;
+    int vectorComponent;
+    QString errorDescription;
+    std::tie(property, vectorComponent) = sourceProperty.findInContainerWithComponent(container, errorDescription);
     if(!property)
-        throw Exception(tr("The property with the name '%1' does not exist.").arg(sourceProperty.name()));
-    if(sourceProperty.vectorComponent() >= (int)property->componentCount())
-        throw Exception(tr("The vector component is out of range. The property '%1' has only %2 values per data element.").arg(sourceProperty.name()).arg(property->componentCount()));
-    int vectorComponent = std::max(0, sourceProperty.vectorComponent());
+        throw Exception(std::move(errorDescription));
 
     // Get the selection property if enabled by the user.
     ConstPropertyPtr selection;
@@ -399,16 +400,14 @@ bool ColorCodingModifier::determinePropertyValueRange(const PipelineFlowState& s
     const PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());
 
     // Look up the selected property.
-    const Property* property = sourceProperty().findInContainer(container);
+    QString errorDescription;
+    auto [property, vecComponent] = sourceProperty().findInContainerWithComponent(container, errorDescription);
     if(!property)
         return false;
 
     // Verify input property.
-    if(sourceProperty().vectorComponent() >= (int)property->componentCount())
-        return false;
     if(property->size() == 0)
         return false;
-    int vecComponent = std::max(0, sourceProperty().vectorComponent());
 
     // Get the input selection property if coloring is restricted to the currently selected elements.
     ConstPropertyPtr selection = (colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty))

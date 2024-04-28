@@ -59,7 +59,7 @@ Future<PipelineFlowState> ParticlesCombineDatasetsModifierDelegate::apply(const 
     const Particles* secondaryParticles = secondaryState.getObject<Particles>();
     if(!secondaryParticles)
         return std::move(state);
-    
+
     // Get the positions from the primary dataset.
     const Particles* primaryParticles = state.getObject<Particles>();
     // If primary dataset does not contain particles yet, simply copy the particles from the secondary dataset over to the first.
@@ -82,17 +82,13 @@ Future<PipelineFlowState> ParticlesCombineDatasetsModifierDelegate::apply(const 
             OVITO_ASSERT(prop->size() == totalParticleCount);
 
             // Find corresponding property in second dataset.
-            const Property* secondProp;
-            if(prop->type() != Particles::UserProperty)
-                secondProp = secondaryParticles->getProperty(prop->type());
-            else
-                secondProp = secondaryParticles->getProperty(prop->name());
-            if(secondProp && secondProp->size() == secondaryParticleCount && secondProp->componentCount() == prop->componentCount() && secondProp->dataType() == prop->dataType()) {
+            const Property* secondProp = secondaryParticles->getPropertyLike(prop);
+            if(secondProp && secondProp->size() == secondaryParticleCount) {
                 prop->copyRangeFrom(*secondProp, 0, primaryParticleCount, secondaryParticleCount);
             }
-            else if(prop->type() != Particles::UserProperty) {
+            else if(prop->isStandardProperty()) {
                 ConstDataObjectPath containerPath = { secondaryParticles };
-                PropertyPtr temporaryProp = Particles::OOClass().createStandardProperty(DataBuffer::Initialized, secondaryParticles->elementCount(), prop->type(), containerPath);
+                PropertyPtr temporaryProp = Particles::OOClass().createStandardProperty(DataBuffer::Initialized, secondaryParticles->elementCount(), prop->typeId(), containerPath);
                 prop->copyRangeFrom(*temporaryProp, 0, primaryParticleCount, secondaryParticleCount);
             }
 
@@ -100,7 +96,7 @@ Future<PipelineFlowState> ParticlesCombineDatasetsModifierDelegate::apply(const 
             mergeElementTypes(prop, secondProp, cloneHelper);
 
             // Assign unique particle and molecule IDs.
-            if(prop->type() == Particles::IdentifierProperty && primaryParticleCount != 0) {
+            if(prop->typeId() == Particles::IdentifierProperty && primaryParticleCount != 0) {
                 // First, compute maximum range of existing particle IDs.
                 // Then, generate unique consecutive IDs for the new particles (offset by 1).
 #ifdef OVITO_USE_SYCL
@@ -112,7 +108,7 @@ Future<PipelineFlowState> ParticlesCombineDatasetsModifierDelegate::apply(const 
                 std::iota(identifiers.begin() + primaryParticleCount, identifiers.end(), maxId + 1);
 #endif
             }
-            else if(prop->type() == Particles::MoleculeProperty && primaryParticleCount != 0) {
+            else if(prop->typeId() == Particles::MoleculeProperty && primaryParticleCount != 0) {
                 // First, compute maximum range of existing molecule IDs in first dataset.
                 // Then, shift molecule IDs of second dataset to avoid collisions.
 #ifdef OVITO_USE_SYCL
@@ -133,8 +129,8 @@ Future<PipelineFlowState> ParticlesCombineDatasetsModifierDelegate::apply(const 
         if(prop->size() != secondaryParticleCount) continue;
 
         // Check if the property already exists in the output container.
-        if(prop->type() != Particles::UserProperty) {
-            if(particles->getProperty(prop->type()))
+        if(prop->isStandardProperty()) {
+            if(particles->getProperty(prop->typeId()))
                 continue;
         }
         else {
@@ -172,18 +168,14 @@ Future<PipelineFlowState> ParticlesCombineDatasetsModifierDelegate::apply(const 
                 OVITO_ASSERT(prop->size() == totalElementCount);
 
                 // Find corresponding property in second dataset.
-                const Property* secondProp;
-                if(prop->type() != Property::GenericUserProperty)
-                    secondProp = secondaryElements->getProperty(prop->type());
-                else
-                    secondProp = secondaryElements->getProperty(prop->name());
-                if(secondProp && secondProp->size() == secondaryElementCount && secondProp->componentCount() == prop->componentCount() && secondProp->dataType() == prop->dataType()) {
+                const Property* secondProp = secondaryElements->getPropertyLike(prop);
+                if(secondProp && secondProp->size() == secondaryElementCount) {
                     OVITO_ASSERT(prop->stride() == secondProp->stride());
                     prop->copyRangeFrom(*secondProp, 0, primaryElementCount, secondaryElementCount);
                 }
-                else if(prop->type() != Property::GenericUserProperty) {
+                else if(prop->isStandardProperty()) {
                     ConstDataObjectPath containerPath = { secondaryParticles, secondaryElements };
-                    PropertyPtr temporaryProp = secondaryElements->getOOMetaClass().createStandardProperty(DataBuffer::Initialized, secondaryElementCount, prop->type(), containerPath);
+                    PropertyPtr temporaryProp = secondaryElements->getOOMetaClass().createStandardProperty(DataBuffer::Initialized, secondaryElementCount, prop->typeId(), containerPath);
                     prop->copyRangeFrom(*temporaryProp, 0, primaryElementCount, secondaryElementCount);
                 }
 
@@ -199,8 +191,8 @@ Future<PipelineFlowState> ParticlesCombineDatasetsModifierDelegate::apply(const 
                 if(prop->size() != secondaryElementCount) continue;
 
                 // Check if the property already exists in the output.
-                if(prop->type() != Property::GenericUserProperty) {
-                    if(primaryMutableElements->getProperty(prop->type()))
+                if(prop->isStandardProperty()) {
+                    if(primaryMutableElements->getProperty(prop->typeId()))
                         continue;
                 }
                 else {

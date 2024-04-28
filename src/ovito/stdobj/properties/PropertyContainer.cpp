@@ -326,7 +326,7 @@ const Property* PropertyContainer::createProperty(const Property* property)
 {
     OVITO_CHECK_POINTER(property);
     OVITO_ASSERT(isSafeToModify());
-    OVITO_ASSERT(property->type() == 0 || getOOMetaClass().isValidStandardPropertyId(property->type()));
+    OVITO_ASSERT(!property->isStandardProperty() || getOOMetaClass().isValidStandardPropertyId(property->typeId()));
 
     // Length of first property array determines number of data elements in the container.
     if(properties().empty() && elementCount() == 0)
@@ -342,13 +342,13 @@ const Property* PropertyContainer::createProperty(const Property* property)
 
     // Check if the same property already exists in the container.
     const Property* existingProperty;
-    if(property->type() != 0) {
-        existingProperty = getProperty(property->type());
+    if(property->isStandardProperty()) {
+        existingProperty = getProperty(property->typeId());
     }
     else {
         existingProperty = nullptr;
         for(const Property* p : properties()) {
-            if(p->type() == 0 && p->name() == property->name()) {
+            if(!p->isStandardProperty() && p->name() == property->name()) {
                 existingProperty = p;
                 break;
             }
@@ -489,8 +489,8 @@ void PropertyContainer::tryToAdoptProperties(const PropertyContainer* sourceCont
 
                     // Create destination property array. Initialize it with default values.
                     Property* destProperty;
-                    if(sourceProperty->type() != Property::GenericUserProperty)
-                        destProperty = this->createProperty(DataBuffer::Initialized, sourceProperty->type(), containerPath);
+                    if(sourceProperty->isStandardProperty())
+                        destProperty = this->createProperty(DataBuffer::Initialized, sourceProperty->typeId(), containerPath);
                     else
                         destProperty = this->createProperty(DataBuffer::Initialized, sourceProperty->name(), sourceProperty->dataType(), sourceProperty->componentCount(), sourceProperty->componentNames());
                     destProperty->setVisElements(sourceProperty->visElements());
@@ -615,8 +615,8 @@ void PropertyContainer::loadFromStreamComplete(ObjectLoadStream& stream)
     // Perform data type conversion if necessary.
     if(stream.formatVersion() < 30010) {
         for(const Property* property : properties()) {
-            if(property->type() != 0) {
-                int expectedDataType = getOOMetaClass().standardPropertyDataType(property->type());
+            if(property->isStandardProperty()) {
+                int expectedDataType = getOOMetaClass().standardPropertyDataType(property->typeId());
                 if(property->dataType() != expectedDataType)
                     makeMutable(property)->convertToDataType(expectedDataType);
             }
@@ -632,8 +632,8 @@ QString PropertyContainer::elementInfoString(size_t elementIndex, const ConstDat
     QString str;
     for(const Property* property : properties()) {
         if(property->size() <= elementIndex) continue;
-        if(property->type() == Property::GenericSelectionProperty) continue;
-        if(property->type() == Property::GenericColorProperty) continue;
+        if(property->typeId() == Property::GenericSelectionProperty) continue;
+        if(property->typeId() == Property::GenericColorProperty) continue;
         if(!str.isEmpty()) str += QStringLiteral("<sep>");
         str += QStringLiteral("<key>");
         str += property->name().toHtmlEscaped();

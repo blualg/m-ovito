@@ -662,7 +662,7 @@ PropertyPtr Particles::OOMetaClass::createStandardPropertyInternal(DataBuffer::B
                 ConstPropertyPtr property = particles->inputParticleColors();
                 OVITO_ASSERT(property);
                 OVITO_ASSERT(property->size() == elementCount);
-                OVITO_ASSERT(property->type() == ColorProperty);
+                OVITO_ASSERT(property->typeId() == ColorProperty);
                 return std::move(property).makeMutable();
             }
         }
@@ -672,7 +672,7 @@ PropertyPtr Particles::OOMetaClass::createStandardPropertyInternal(DataBuffer::B
                 ConstPropertyPtr property = particles->inputParticleRadii();
                 OVITO_ASSERT(property);
                 OVITO_ASSERT(property->size() == elementCount);
-                OVITO_ASSERT(property->type() == RadiusProperty);
+                OVITO_ASSERT(property->typeId() == RadiusProperty);
                 return std::move(property).makeMutable();
             }
         }
@@ -950,7 +950,7 @@ void Particles::OOMetaClass::initialize()
 ******************************************************************************/
 Color Particles::OOMetaClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const
 {
-    if(property.type() == Particles::TypeProperty) {
+    if(property.typeId() == Particles::TypeProperty) {
         for(int predefType = 0; predefType < ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES; predefType++) {
             if(ParticleType::getPredefinedParticleTypeName(static_cast<ParticleType::PredefinedParticleType>(predefType)) == typeName)
                 return ParticleType::getPredefinedParticleTypeColor(static_cast<ParticleType::PredefinedParticleType>(predefType));
@@ -961,14 +961,14 @@ Color Particles::OOMetaClass::getElementTypeDefaultColor(const PropertyReference
             return ElementType::getDefaultColor(property, typeName.left(typeName.length() - 1), numericTypeId, loadUserDefaults);
         }
     }
-    else if(property.type() == Particles::StructureTypeProperty) {
+    else if(property.typeId() == Particles::StructureTypeProperty) {
         for(int predefType = 0; predefType < ParticleType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES; predefType++) {
             if(ParticleType::getPredefinedStructureTypeName(static_cast<ParticleType::PredefinedStructureType>(predefType)) == typeName)
                 return ParticleType::getPredefinedStructureTypeColor(static_cast<ParticleType::PredefinedStructureType>(predefType));
         }
         return Color(1,1,1);
     }
-    else if(property.type() == Particles::NucleobaseTypeProperty) {
+    else if(property.typeId() == Particles::NucleobaseTypeProperty) {
         // Color scheme adopted from oxdna-viewer:
         if(typeName == "A") return Color(0.3, 0.3, 1.0);
         else if(typeName == "C") return Color(0.3, 1.0, 0.3);

@@ -94,7 +94,7 @@ Future<PipelineFlowState> ParticlesReplicateModifierDelegate::apply(const Modifi
             OVITO_ASSERT(property->size() == newParticleCount);
 
             // Shift particle positions by the periodicity vector.
-            if(property->type() == Particles::PositionProperty) {
+            if(property->typeId() == Particles::PositionProperty) {
                 BufferWriteAccess<Point3, access_mode::read_write> positionArray(property);
                 Point3* p = positionArray.begin();
                 for(int imageX = newImages.minc.x(); imageX <= newImages.maxc.x(); imageX++) {
@@ -114,7 +114,7 @@ Future<PipelineFlowState> ParticlesReplicateModifierDelegate::apply(const Modifi
             }
 
             // Assign unique particle and molecule IDs to the duplicated particles.
-            if(uniqueIdentifiers && (property->type() == Particles::IdentifierProperty || property->type() == Particles::MoleculeProperty)) {
+            if(uniqueIdentifiers && (property->typeId() == Particles::IdentifierProperty || property->typeId() == Particles::MoleculeProperty)) {
                 BufferWriteAccess<IdentifierIntType, access_mode::read_write> propertyData(property);
                 auto [min_id, max_id] = std::minmax_element(propertyData.cbegin(), propertyData.cbegin() + oldParticleCount);
                 for(size_t c = 1; c < numCopies; c++) {
@@ -142,10 +142,10 @@ Future<PipelineFlowState> ParticlesReplicateModifierDelegate::apply(const Modifi
                 Point3I image;
 
                 // TODO: Special handling of the particle identifiers property.
-                OVITO_ASSERT(property->type() != Bonds::ParticleIdentifiersProperty);
+                OVITO_ASSERT(property->typeId() != Bonds::ParticleIdentifiersProperty);
 
                 // Special handling for the topology property.
-                if(property->type() == Bonds::TopologyProperty) {
+                if(property->typeId() == Bonds::TopologyProperty) {
                     BufferWriteAccess<ParticleIndexPair, access_mode::read_write> topologyArray(property);
                     for(image[0] = newImages.minc.x(); image[0] <= newImages.maxc.x(); image[0]++) {
                         for(image[1] = newImages.minc.y(); image[1] <= newImages.maxc.y(); image[1]++) {
@@ -174,7 +174,7 @@ Future<PipelineFlowState> ParticlesReplicateModifierDelegate::apply(const Modifi
                         }
                     }
                 }
-                else if(property->type() == Bonds::PeriodicImageProperty) {
+                else if(property->typeId() == Bonds::PeriodicImageProperty) {
                     // Special handling for the PBC shift vector property.
                     OVITO_ASSERT(oldPeriodicImages);
                     BufferWriteAccess<Vector3I, access_mode::read_write> pbcImagesArray(property);
@@ -210,7 +210,7 @@ Future<PipelineFlowState> ParticlesReplicateModifierDelegate::apply(const Modifi
                 Point3I image;
 
                 // Special handling for the topology property.
-                if(property->type() == Angles::TopologyProperty) {
+                if(property->typeId() == Angles::TopologyProperty) {
                     BufferWriteAccess<ParticleIndexTriplet, access_mode::read_write> topologyArray(property);
                     BufferReadAccess<Point3> positionArray(inputParticles->expectProperty(Particles::PositionProperty));
                     for(image[0] = newImages.minc.x(); image[0] <= newImages.maxc.x(); image[0]++) {
@@ -256,7 +256,7 @@ Future<PipelineFlowState> ParticlesReplicateModifierDelegate::apply(const Modifi
                 Point3I image;
 
                 // Special handling for the topology property.
-                if(property->type() == Dihedrals::TopologyProperty) {
+                if(property->typeId() == Dihedrals::TopologyProperty) {
                     BufferWriteAccess<ParticleIndexQuadruplet, access_mode::read_write> topologyArray(property);
                     BufferReadAccess<Point3> positionArray(inputParticles->expectProperty(Particles::PositionProperty));
                     for(image[0] = newImages.minc.x(); image[0] <= newImages.maxc.x(); image[0]++) {
@@ -302,7 +302,7 @@ Future<PipelineFlowState> ParticlesReplicateModifierDelegate::apply(const Modifi
                 Point3I image;
 
                 // Special handling for the topology property.
-                if(property->type() == Impropers::TopologyProperty) {
+                if(property->typeId() == Impropers::TopologyProperty) {
                     BufferWriteAccess<ParticleIndexQuadruplet, access_mode::read_write> topologyArray(property);
                     BufferReadAccess<Point3> positionArray(inputParticles->expectProperty(Particles::PositionProperty));
                     for(image[0] = newImages.minc.x(); image[0] <= newImages.maxc.x(); image[0]++) {

@@ -178,19 +178,13 @@ Future<PipelineFlowState> ScatterPlotModifier::evaluateModifier(const ModifierEv
     container->verifyIntegrity();
 
     // Get the input properties.
-    ConstPropertyPtr xProperty = xAxisProperty().findInContainer(container);
+    QString errorDescription;
+    auto [xProperty, xVecComponent] = xAxisProperty().findInContainerWithComponent(container, errorDescription);
     if(!xProperty)
-        throw Exception(tr("The selected input property '%1' is not present.").arg(xAxisProperty().name()));
-    ConstPropertyPtr yProperty = yAxisProperty().findInContainer(container);
+        throw Exception(std::move(errorDescription));
+    auto [yProperty, yVecComponent] = yAxisProperty().findInContainerWithComponent(container, errorDescription);
     if(!yProperty)
-        throw Exception(tr("The selected input property '%1' is not present.").arg(yAxisProperty().name()));
-
-    size_t xVecComponent = std::max(0, xAxisProperty().vectorComponent());
-    size_t yVecComponent = std::max(0, yAxisProperty().vectorComponent());
-    if(xVecComponent >= xProperty->componentCount())
-        throw Exception(tr("The selected vector component is out of range. The property '%1' has only %2 components per element.").arg(xProperty->name()).arg(xProperty->componentCount()));
-    if(yVecComponent >= yProperty->componentCount())
-        throw Exception(tr("The selected vector component is out of range. The property '%1' has only %2 components per element.").arg(yProperty->name()).arg(yProperty->componentCount()));
+        throw Exception(std::move(errorDescription));
 
     // Get selection ranges.
     FloatType selectionXAxisRangeStart = this->selectionXAxisRangeStart();
@@ -219,8 +213,8 @@ Future<PipelineFlowState> ScatterPlotModifier::evaluateModifier(const ModifierEv
     // The actual computation can be performed in a separate worker thread.
     return asyncLaunch([
             state = std::move(state),
-            xProperty = std::move(xProperty),
-            yProperty = std::move(yProperty),
+            xProperty = ConstPropertyPtr(xProperty),
+            yProperty = ConstPropertyPtr(yProperty),
             xVecComponent,
             yVecComponent,
             xPropertyName = xAxisProperty().nameWithComponent(),

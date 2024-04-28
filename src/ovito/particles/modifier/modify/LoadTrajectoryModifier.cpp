@@ -252,15 +252,15 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 
         // Transfer particle properties from the trajectory file.
         for(const Property* property : trajectoryParticles->properties()) {
-            if(property->type() == Particles::IdentifierProperty)
+            if(property->typeId() == Particles::IdentifierProperty)
                 continue;
 
             // Get or create the output particle property.
             Property* outputProperty;
             bool replacingProperty;
-            if(property->type() != Particles::UserProperty) {
-                replacingProperty = (particles->getProperty(property->type()) != nullptr);
-                outputProperty = particles->createProperty(DataBuffer::Initialized, property->type());
+            if(property->isStandardProperty()) {
+                replacingProperty = (particles->getPropertyLike(property) != nullptr);
+                outputProperty = particles->createProperty(DataBuffer::Initialized, property->typeId());
                 if(outputProperty->dataType() != property->dataType()
                     || outputProperty->componentCount() != property->componentCount())
                     continue; // Types of source property and output property are not compatible.
@@ -280,7 +280,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
                 outputProperty->setVisElements(property->visElements());
             }
 
-            if(property->type() == Particles::PositionProperty) {
+            if(property->typeId() == Particles::PositionProperty) {
                 qDebug() << "Creating new output position property at frame" << trajState.getAttributeValue("SourceFrame");
             }
         }
@@ -439,7 +439,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 
                 // Add the properties to the existing bonds, overwriting existing values if necessary.
                 for(const Property* newProperty : trajectoryBonds->properties()) {
-                    const Property* existingPropertyObj = (newProperty->type() != 0) ? bonds->getProperty(newProperty->type()) : bonds->getProperty(newProperty->name());
+                    const Property* existingPropertyObj = bonds->getPropertyLike(newProperty);
                     if(existingPropertyObj) {
                         bonds->makeMutable(existingPropertyObj)->copyFrom(*newProperty);
                     }

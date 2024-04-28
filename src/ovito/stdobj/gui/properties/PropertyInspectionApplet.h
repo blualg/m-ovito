@@ -81,7 +81,7 @@ protected:
 
     /// Determines whether the given property represents a color.
     virtual bool isColorProperty(const Property* property) const {
-        return property->type() == Property::GenericColorProperty;
+        return property->typeId() == Property::GenericColorProperty;
     }
 
     /// Creates an optional ad-hoc property that serves as header column for the table.

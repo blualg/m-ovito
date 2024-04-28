@@ -297,19 +297,19 @@ public:
 
     /// Attaches an existing property object to the vertices of the mesh.
     void addVertexProperty(const Property* property) {
-        OVITO_ASSERT(property->type() == 0 || vertices()->getProperty(property->type()) == nullptr);
+        OVITO_ASSERT(!property->isStandardProperty() || vertices()->getProperty(property->typeId()) == nullptr);
         mutableVertices()->addProperty(property);
     }
 
     /// Attaches an existing property object to the faces of the mesh.
     void addFaceProperty(const Property* property) {
-        OVITO_ASSERT(property->type() == 0 || faces()->getProperty(property->type()) == nullptr);
+        OVITO_ASSERT(!property->isStandardProperty() || faces()->getProperty(property->typeId()) == nullptr);
         mutableFaces()->addProperty(property);
     }
 
     /// Attaches an existing property object to the regions of the mesh.
     void addRegionProperty(const Property* property) {
-        OVITO_ASSERT(property->type() == 0 || regions()->getProperty(property->type()) == nullptr);
+        OVITO_ASSERT(!property->isStandardProperty() || regions()->getProperty(property->typeId()) == nullptr);
         mutableRegions()->addProperty(property);
     }
 

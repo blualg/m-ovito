@@ -46,10 +46,10 @@ Property::Property(ObjectInitializationFlags flags) : DataBuffer(flags)
 /******************************************************************************
 * Constructor allocating a property array with given size and data layout.
 ******************************************************************************/
-Property::Property(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QString& name, int type, QStringList componentNames) :
+Property::Property(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QString& name, int typeId, QStringList componentNames) :
     DataBuffer(flags, init, elementCount, dataType, componentCount, std::move(componentNames)),
     _name(name),
-    _type(type)
+    _typeId(typeId)
 {
     setIdentifier(name);
 }
@@ -75,7 +75,7 @@ OORef<RefTarget> Property::clone(bool deepCopy, CloneHelper& cloneHelper) const
 
     // Copy internal data.
     prepareReadAccess();
-    clone->_type = _type;
+    clone->_typeId = _typeId;
     clone->_name = _name;
     OVITO_ASSERT(clone->identifier() == clone->name());
     finishReadAccess();
@@ -142,7 +142,7 @@ void Property::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableDa
     try {
         stream.beginChunk(0x100);
         stream << _name;
-        stream << _type;
+        stream << _typeId;
         stream.endChunk();
         finishReadAccess();
     }
@@ -163,7 +163,7 @@ void Property::loadFromStream(ObjectLoadStream& stream)
         // Current file format:
         stream.expectChunk(0x100);
         stream >> _name;
-        stream >> _type;
+        stream >> _typeId;
         stream.closeChunk();
     }
     else {
@@ -174,7 +174,7 @@ void Property::loadFromStream(ObjectLoadStream& stream)
         stream.expectChunk(0x01);
         stream.expectChunk(0x02);
         stream >> _name;
-        stream >> _type;
+        stream >> _typeId;
         DataBuffer::loadFromStream(stream);
         stream.closeChunk();
     }
@@ -192,8 +192,8 @@ bool Property::equals(const Property& other) const
     other.prepareReadAccess();
 
     bool result = [&]() {
-        if(this->type() != other.type()) return false;
-        if(this->type() == GenericUserProperty && this->name() != other.name()) return false;
+        if(this->typeId() != other.typeId()) return false;
+        if(this->typeId() == GenericUserProperty && this->name() != other.name()) return false;
         return true;
     }();
 
@@ -216,7 +216,7 @@ PropertyPtr Property::cloneWithoutData(size_t newSize) const
 
     PropertyPtr clone = PropertyPtr::create(
             ObjectInitializationFlag::DontInitializeObject, DataBuffer::Uninitialized, newSize, this->dataType(),
-            this->componentCount(), this->name(), this->type(), this->componentNames());
+            this->componentCount(), this->name(), this->typeId(), this->componentNames());
 
     clone->setVisElements(this->visElements());
     clone->setElementTypes(this->elementTypes());
@@ -350,7 +350,7 @@ void Property::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPa
 
     if(Property* proxy = static_object_cast<Property>(self->editableProxy())) {
         // Synchronize the actual data object with the editable proxy object.
-        OVITO_ASSERT(proxy->type() == self->type());
+        OVITO_ASSERT(proxy->typeId() == self->typeId());
         OVITO_ASSERT(proxy->dataType() == self->dataType());
         OVITO_ASSERT(proxy->title() == self->title());
 
@@ -365,7 +365,7 @@ void Property::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPa
     else if(!self->elementTypes().empty()) {
         // Create and initialize a new proxy property object.
         // Note: We avoid copying the property data here by constructing the proxy Property from scratch instead of cloning the original data object.
-        OORef<Property> newProxy = OORef<Property>::create(ObjectInitializationFlag::DontCreateVisElement, DataBuffer::Uninitialized, 0, self->dataType(), self->componentCount(), self->name(), self->type(), self->componentNames());
+        OORef<Property> newProxy = OORef<Property>::create(ObjectInitializationFlag::DontCreateVisElement, DataBuffer::Uninitialized, 0, self->dataType(), self->componentCount(), self->name(), self->typeId(), self->componentNames());
         newProxy->setTitle(self->title());
 
         // Adopt the proxy objects corresponding to the element types, which have already been created by
@@ -393,7 +393,7 @@ const ElementType* Property::addNumericType(const PropertyContainerClass& contai
     // If the caller did not specify an element type class, let the PropertyConatiner class
     // determine the right element type class for the given property.
     if(elementTypeClass == nullptr) {
-        elementTypeClass = containerClass.typedPropertyElementClass(type());
+        elementTypeClass = containerClass.typedPropertyElementClass(typeId());
         if(elementTypeClass == nullptr)
             elementTypeClass = &ElementType::OOClass();
     }

@@ -69,7 +69,7 @@ protected:
     /// Determines whether the given property represents a color.
     virtual bool isColorProperty(const Property* property) const override {
         return PropertyInspectionApplet::isColorProperty(property)
-                || property->type() == Particles::VectorColorProperty;
+                || property->typeId() == Particles::VectorColorProperty;
     }
 
 private Q_SLOTS:

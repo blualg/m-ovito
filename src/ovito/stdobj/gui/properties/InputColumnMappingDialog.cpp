@@ -177,7 +177,7 @@ void InputColumnMappingDialog::setMapping(const InputColumnMapping& mapping)
         _vectorComponentBoxes.push_back(vectorComponentItem);
         updateVectorComponentList(i);
         if(vectorComponentItem->count() != 0)
-            vectorComponentItem->setCurrentIndex(std::max(0,mapping[i].property.vectorComponent()));
+            vectorComponentItem->setCurrentIndex(std::max(0, mapping[i].property.vectorComponentIndex()));
 
         connect(fileColumnItem, &QCheckBox::clicked, nameItem, &QComboBox::setEnabled);
         _vectorCmpntSignalMapper->setMapping(fileColumnItem, i);
@@ -240,10 +240,10 @@ InputColumnMapping InputColumnMappingDialog::mapping() const
             int typeId = _containerClass->standardPropertyIds().value(propertyName);
             if(typeId != Property::GenericUserProperty) {
                 int vectorCompnt = std::max(0, _vectorComponentBoxes[index]->currentIndex());
-                mapping[index].mapStandardColumn(_containerClass, typeId, vectorCompnt);
+                mapping[index].mapToStandardProperty(_containerClass, typeId, vectorCompnt);
             }
             else if(!propertyName.isEmpty()) {
-                mapping[index].mapCustomColumn(_containerClass, propertyName, _propertyDataTypes[index]);
+                mapping[index].mapToUserProperty(_containerClass, propertyName, _propertyDataTypes[index]);
             }
         }
     }
@@ -349,7 +349,7 @@ void InputColumnMappingDialog::onLoadPreset()
             _propertyBoxes[index]->setEnabled(mapping[index].isMapped());
             updateVectorComponentList(index);
             if(_vectorComponentBoxes[index]->count() != 0)
-                _vectorComponentBoxes[index]->setCurrentIndex(std::max(0,mapping[index].property.vectorComponent()));
+                _vectorComponentBoxes[index]->setCurrentIndex(std::max(0, mapping[index].property.vectorComponentIndex()));
         }
         for(int index = mapping.size(); index < _tableWidget->rowCount(); index++) {
             _fileColumnBoxes[index]->setChecked(false);

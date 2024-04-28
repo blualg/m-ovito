@@ -527,7 +527,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
             continue;
 
         // Create property to load this information into.
-        Particles::Type propertyType = (Particles::Type)column.property.type();
+        Particles::Type propertyType = (Particles::Type)column.property.typeId();
         if(propertyType != Particles::UserProperty) {
             // Create standard property.
             property = particles()->createProperty(DataBuffer::Initialized, propertyType);
@@ -592,7 +592,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
                 return;
 
             // Create particles types if this is the typed property.
-            if(OvitoClassPtr elementTypeClass = Particles::OOClass().typedPropertyElementClass(property->type())) {
+            if(OvitoClassPtr elementTypeClass = Particles::OOClass().typedPropertyElementClass(property->typeId())) {
 
                 // Create particle types.
                 for(int ptype : BufferReadAccess<int32_t>(property)) {
@@ -695,12 +695,12 @@ InputColumnInfo AMBERNetCDFImporter::mapVariableToColumn(const QString& name, in
     // Only map to standard property if data layout matches.
     if(standardType != Particles::UserProperty) {
         if(componentCount == Particles::OOClass().standardPropertyComponentCount(standardType)) {
-            column.mapStandardColumn(&Particles::OOClass(), standardType);
+            column.mapToStandardProperty(&Particles::OOClass(), standardType);
             return column;
         }
     }
 
-    column.mapCustomColumn(&Particles::OOClass(), Property::makePropertyNameValid(name), dataType);
+    column.mapToUserProperty(&Particles::OOClass(), Property::makePropertyNameValid(name), dataType);
     return column;
 }
 

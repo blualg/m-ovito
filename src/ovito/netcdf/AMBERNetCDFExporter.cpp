@@ -196,7 +196,7 @@ void AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
         for(auto c = columnMapping().begin(); c != columnMapping().end(); ++c) {
 
             // Skip the particle position property. It has already been emitted above.
-            if(c->type() == Particles::PositionProperty)
+            if(c->typeId() == Particles::PositionProperty)
                 continue;
 
             // We can export a particle property only as a whole to a NetCDF file, not individual components.
@@ -207,30 +207,30 @@ void AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
             const Property* prop = c->findInContainer(particles);
             if(!prop) {
                 // Skip the identifier property if it doesn't exist.
-                if(c->type() == Particles::IdentifierProperty)
+                if(c->typeId() == Particles::IdentifierProperty)
                     continue;
                 throw Exception(tr("Invalid list of particle properties to be exported. The property '%1' does not exist.").arg(c->name()));
             }
-            if((int)prop->componentCount() <= std::max(0, c->vectorComponent()))
+            if((int)prop->componentCount() <= std::max(0, c->vectorComponentIndex()))
                 throw Exception(tr("The output vector component selected for column %1 is out of range. The particle property '%2' has only %3 component(s).").arg(c - columnMapping().begin() + 1).arg(c->name()).arg(prop->componentCount()));
 
             // For certain standard properties we need to use NetCDF variables according to the AMBER convention.
             // All other properties are output as NetCDF variables under their normal name.
             const char* mangledName = nullptr;
             dims[2] = 0;
-            if(prop->type() != Particles::UserProperty) {
-                if(prop->type() == Particles::ForceProperty) {
+            if(prop->isStandardProperty()) {
+                if(prop->typeId() == Particles::ForceProperty) {
                     mangledName = "forces";
                     dims[2] = _spatial_dim;
                 }
-                else if(prop->type() == Particles::VelocityProperty) {
+                else if(prop->typeId() == Particles::VelocityProperty) {
                     mangledName = "velocities";
                     dims[2] = _spatial_dim;
                 }
-                else if(prop->type() == Particles::TypeProperty) {
+                else if(prop->typeId() == Particles::TypeProperty) {
                     mangledName = "atom_types";
                 }
-                else if(prop->type() == Particles::IdentifierProperty) {
+                else if(prop->typeId() == Particles::IdentifierProperty) {
                     mangledName = "identifier";
                 }
             }

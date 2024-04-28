@@ -115,19 +115,19 @@ Color ElementType::getDefaultColor(const PropertyReference& property, const QStr
         // default colors in a different branch of the settings registry.
         if(property.containerClass()->name() == QStringLiteral("Particles")) {
             // Load particle type colors.
-            QVariant v = QSettings().value(QStringLiteral("particles/defaults/color/%1/%2").arg(property.type()).arg(typeName));
+            QVariant v = QSettings().value(QStringLiteral("particles/defaults/color/%1/%2").arg(property.typeId()).arg(typeName));
             if(v.isValid() && v.typeId() == QMetaType::QColor)
                 return v.value<Color>();
         }
         else if(property.containerClass()->name() == QStringLiteral("Bonds")) {
             // Load bond type colors.
-            QVariant v = QSettings().value(QStringLiteral("bonds/defaults/color/%1/%2").arg(property.type()).arg(typeName));
+            QVariant v = QSettings().value(QStringLiteral("bonds/defaults/color/%1/%2").arg(property.typeId()).arg(typeName));
             if(v.isValid() && v.typeId() == QMetaType::QColor)
                 return v.value<Color>();
         }
         else {
             // Load generic element type colors.
-            QVariant v = QSettings().value(QStringLiteral("defaults/color/%1/%2").arg(property.type()).arg(typeName));
+            QVariant v = QSettings().value(QStringLiteral("defaults/color/%1/%2").arg(property.typeId()).arg(typeName));
             if(v.isValid() && v.typeId() == QMetaType::QColor)
                 return v.value<Color>();
         }

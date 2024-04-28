@@ -103,12 +103,12 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
 
         // Create workers and submit them to the thread pool.
         detail::Latch latch(workerCount);
-        ExecutionContext* context = &ExecutionContext::current();
+        ExecutionContext context = ExecutionContext::current();
         for(size_t t = 0; t < workerCount; t++) {
             Runner& runner = workers.emplace_back(
                 &kernel,
                 &latch,
-                context,
+                &context,
                 task,
                 t,
                 workerCount

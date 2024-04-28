@@ -81,7 +81,7 @@ Box3 ParticlesVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjec
 ******************************************************************************/
 Box3 ParticlesVis::particleBoundingBox(BufferReadAccess<Point3> positionProperty, const Property* typeProperty, BufferReadAccess<GraphicsFloatType> radiusProperty, BufferReadAccess<Vector3G> shapeProperty, bool includeParticleRadius) const
 {
-    OVITO_ASSERT(typeProperty == nullptr || typeProperty->type() == Particles::TypeProperty);
+    OVITO_ASSERT(typeProperty == nullptr || typeProperty->typeId() == Particles::TypeProperty);
     if(particleShape() != Sphere && particleShape() != Box && particleShape() != Cylinder && particleShape() != Spherocylinder)
         shapeProperty.reset();
 
@@ -356,7 +356,7 @@ ConstPropertyPtr ParticlesVis::particleRadii(const Particles* particles, bool in
 ******************************************************************************/
 GraphicsFloatType ParticlesVis::particleRadius(size_t particleIndex, BufferReadAccess<GraphicsFloatType> radiusProperty, const Property* typeProperty) const
 {
-    OVITO_ASSERT(typeProperty == nullptr || typeProperty->type() == Particles::TypeProperty);
+    OVITO_ASSERT(typeProperty == nullptr || typeProperty->typeId() == Particles::TypeProperty);
 
     if(radiusProperty && radiusProperty.size() > particleIndex) {
         // Take particle radius directly from the radius property.

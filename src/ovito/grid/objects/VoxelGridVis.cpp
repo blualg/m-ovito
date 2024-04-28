@@ -116,16 +116,10 @@ PipelineStatus VoxelGridVis::render(const ConstDataObjectPath& path, const Pipel
     const Property* pseudoColorProperty = nullptr;
     int pseudoColorPropertyComponent = 0;
     if(!colorProperty && colorMapping() && colorMapping()->sourceProperty()) {
-        pseudoColorProperty = colorMapping()->sourceProperty().findInContainer(gridObj);
+        QString errorDescription;
+        std::tie(pseudoColorProperty, pseudoColorPropertyComponent) = colorMapping()->sourceProperty().findInContainerWithComponent(gridObj, errorDescription);
         if(!pseudoColorProperty) {
-            status = PipelineStatus(PipelineStatus::Error, tr("The property with the name '%1' does not exist.").arg(colorMapping()->sourceProperty().name()));
-        }
-        else {
-            if(colorMapping()->sourceProperty().vectorComponent() >= (int)pseudoColorProperty->componentCount()) {
-                status = PipelineStatus(PipelineStatus::Error, tr("The vector component is out of range. The property '%1' has only %2 values per data element.").arg(colorMapping()->sourceProperty().name()).arg(pseudoColorProperty->componentCount()));
-                pseudoColorProperty = nullptr;
-            }
-            pseudoColorPropertyComponent = std::max(0, colorMapping()->sourceProperty().vectorComponent());
+            status = PipelineStatus(PipelineStatus::Error, std::move(errorDescription));
         }
     }
     RawBufferReadAccess pseudoColorArray(pseudoColorProperty);

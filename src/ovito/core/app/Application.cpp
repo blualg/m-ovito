@@ -314,9 +314,6 @@ bool Application::initialize(int& argc, char** argv)
 ******************************************************************************/
 void Application::createQtApplication(bool supportGui)
 {
-    // This must only be used in the main thread.
-    OVITO_ASSERT(ExecutionContext::isMainThread());
-
     // Let the user override the application type with the OVITO_GUI_MODE environment variable.
     if(qEnvironmentVariableIsSet("OVITO_GUI_MODE")) {
         if(qgetenv("OVITO_GUI_MODE") != "0") {
@@ -341,15 +338,32 @@ void Application::createQtApplication(bool supportGui)
         return;
     }
 
-    // Let the derived class create the right QCoreApplication object.
-    QCoreApplication* qtApp = createQtApplicationImpl(supportGui, *_argc, _argv);
+    // The Qt application must be created in the main thread.
+    if(ExecutionContext::isMainThread()) {
+        // Let the derived class create the right QCoreApplication object.
+        QCoreApplication* qtApp = createQtApplicationImpl(supportGui, *_argc, _argv);
 
-    // Make the Qt application a child of OVITO's Application object to destroy it on shutdown.
-    if(!qtApp->parent())
-        qtApp->setParent(this);
+        // Make the Qt application a child of OVITO's Application object to destroy it on shutdown.
+        if(!qtApp->parent())
+            qtApp->setParent(this);
 
-    // Restore default "C" locale, which, in the meantime, may have been changed by QCoreApplication.
-    std::setlocale(LC_NUMERIC, "C");
+        // Restore default "C" locale, which, in the meantime, may have been changed by QCoreApplication.
+        std::setlocale(LC_NUMERIC, "C");
+    }
+    else {
+        // If called from a worker thread, we need to perform the creation of the Qt app in the mean thread
+        // and block the worker thread until the Qt app has been created.
+        detail::Latch latch(1);
+        std::exception_ptr exception;
+        ExecutionContext::current().runDeferred(nullptr, [supportGui, &exception, &latch]() noexcept {
+            try { Application::instance()->createQtApplication(supportGui); }
+            catch(...) { exception = std::current_exception(); }
+            latch.count_down();
+        });
+        latch.wait();
+        if(exception)
+            std::rethrow_exception(exception);
+    }
 }
 
 #ifndef Q_OS_WASM

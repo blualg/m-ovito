@@ -149,7 +149,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                             break;
 
                         // Create particle types if this is a typed property.
-                        OvitoClassPtr elementTypeClass = Particles::OOClass().typedPropertyElementClass(property->type());
+                        OvitoClassPtr elementTypeClass = Particles::OOClass().typedPropertyElementClass(property->typeId());
                         if(!elementTypeClass && property->name() == QStringLiteral("Material Type")) elementTypeClass = &ElementType::OOClass();
                         if(elementTypeClass) {
 #ifndef OVITO_USE_SYCL

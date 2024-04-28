@@ -37,7 +37,7 @@ void ParticleExpressionEvaluator::createInputVariables(const std::vector<ConstPr
     if(simCell) {
         // Look for the 'Position' particle property in the inputs.
         auto iter = boost::find_if(inputProperties, [](const ConstPropertyPtr& property) {
-            return property->type() == Particles::PositionProperty;
+            return property->typeId() == Particles::PositionProperty;
         });
         if(iter != inputProperties.end()) {
             BufferReadAccessAndRef<Point3> posProperty = *iter;

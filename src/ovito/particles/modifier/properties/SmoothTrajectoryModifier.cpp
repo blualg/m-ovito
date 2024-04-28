@@ -283,8 +283,7 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
     // Interpolate all scalar and continuous particle properties.
     for(const Property* property1 : particles1->properties()) {
         if(property1->dataType() == Property::Float32 && property1->componentCount() == 1) {
-            const Property* property2 = (property1->type() != 0) ? particles2->getProperty(property1->type()) : particles2->getProperty(property1->name());
-            if(property2 && property2->dataType() == property1->dataType() && property2->componentCount() == property1->componentCount()) {
+            if(const Property* property2 = particles2->getPropertyLike(property1)) {
                 BufferWriteAccess<float, access_mode::read_write> data1 = outputParticles->makeMutable(property1);
                 BufferReadAccess<float> data2(property2);
                 if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
@@ -307,8 +306,7 @@ void SmoothTrajectoryModifier::interpolateState(PipelineFlowState& state1, const
             }
         }
         else if(property1->dataType() == Property::Float64 && property1->componentCount() == 1) {
-            const Property* property2 = (property1->type() != 0) ? particles2->getProperty(property1->type()) : particles2->getProperty(property1->name());
-            if(property2 && property2->dataType() == property1->dataType() && property2->componentCount() == property1->componentCount()) {
+            if(const Property* property2 = particles2->getPropertyLike(property1)) {
                 BufferWriteAccess<double, access_mode::read_write> data1 = outputParticles->makeMutable(property1);
                 BufferReadAccess<double> data2(property2);
                 if(idProperty1 && idProperty2 && !boost::equal(idProperty1, idProperty2)) {
@@ -467,8 +465,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
             // Average all scalar continuous properties.
             for(auto& accessor1 : outputScalarProperties32) {
                 Property* property1 = static_object_cast<Property>(accessor1.buffer());
-                const Property* property2 = (property1->type() != 0) ? particles2->getProperty(property1->type()) : particles2->getProperty(property1->name());
-                if(property2 && property2->dataType() == accessor1.dataType() && property2->componentCount() == accessor1.componentCount()) {
+                if(const Property* property2 = particles2->getPropertyLike(property1)) {
                     BufferReadAccess<float> accessor2(property2);
                     auto id = idProperty1.cbegin();
                     for(auto& v : accessor1) {
@@ -481,8 +478,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
             }
             for(auto& accessor1 : outputScalarProperties64) {
                 Property* property1 = static_object_cast<Property>(accessor1.buffer());
-                const Property* property2 = (property1->type() != 0) ? particles2->getProperty(property1->type()) : particles2->getProperty(property1->name());
-                if(property2 && property2->dataType() == accessor1.dataType() && property2->componentCount() == accessor1.componentCount()) {
+                if(const Property* property2 = particles2->getPropertyLike(property1)) {
                     BufferReadAccess<double> accessor2(property2);
                     auto id = idProperty1.cbegin();
                     for(auto& v : accessor1) {
@@ -530,8 +526,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
             // Average all scalar continuous properties.
             for(auto& accessor1 : outputScalarProperties32) {
                 Property* property1 = static_object_cast<Property>(accessor1.buffer());
-                const Property* property2 = (property1->type() != 0) ? particles2->getProperty(property1->type()) : particles2->getProperty(property1->name());
-                if(property2 && property2->dataType() == accessor1.dataType() && property2->componentCount() == accessor1.componentCount()) {
+                if(const Property* property2 = particles2->getPropertyLike(property1)) {
                     BufferReadAccess<float> accessor2(property2);
                     const auto* v2 = accessor2.cbegin();
                     for(auto* vout = accessor1.begin(), *vend = vout + std::min(accessor1.size(), accessor2.size()); vout != vend; ++vout, ++v2) {
@@ -541,8 +536,7 @@ void SmoothTrajectoryModifier::averageState(PipelineFlowState& state1, const std
             }
             for(auto& accessor1 : outputScalarProperties64) {
                 Property* property1 = static_object_cast<Property>(accessor1.buffer());
-                const Property* property2 = (property1->type() != 0) ? particles2->getProperty(property1->type()) : particles2->getProperty(property1->name());
-                if(property2 && property2->dataType() == accessor1.dataType() && property2->componentCount() == accessor1.componentCount()) {
+                if(const Property* property2 = particles2->getPropertyLike(property1)) {
                     BufferReadAccess<double> accessor2(property2);
                     const auto* v2 = accessor2.cbegin();
                     for(auto* vout = accessor1.begin(), *vend = vout + std::min(accessor1.size(), accessor2.size()); vout != vend; ++vout, ++v2) {

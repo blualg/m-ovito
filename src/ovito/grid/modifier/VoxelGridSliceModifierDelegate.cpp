@@ -181,9 +181,9 @@ Future<PipelineFlowState> VoxelGridSliceModifierDelegate::apply(const ModifierEv
                     // Copy field values from voxel grid to surface mesh faces.
                     for(const ConstPropertyPtr& fieldProperty : fieldProperties) {
                         Property* faceProperty;
-                        if(SurfaceMeshFaces::OOClass().isValidStandardPropertyId(fieldProperty->type())) {
+                        if(SurfaceMeshFaces::OOClass().isValidStandardPropertyId(fieldProperty->typeId())) {
                             // Input voxel property is also a standard property for mesh faces.
-                            faceProperty = mesh.createFaceProperty(DataBuffer::Uninitialized, static_cast<SurfaceMeshFaces::Type>(fieldProperty->type()));
+                            faceProperty = mesh.createFaceProperty(DataBuffer::Uninitialized, static_cast<SurfaceMeshFaces::Type>(fieldProperty->typeId()));
                             OVITO_ASSERT(faceProperty->dataType() == fieldProperty->dataType());
                             OVITO_ASSERT(faceProperty->stride() == fieldProperty->stride());
                         }

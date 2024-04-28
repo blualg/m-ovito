@@ -245,21 +245,21 @@ void OXDNAImporter::FrameLoader::loadFile()
     // Define the column data layout in the input file to be parsed.
     ParticleInputColumnMapping columnMapping;
     columnMapping.resize(15);
-    columnMapping.mapStandardColumn(0, Particles::PositionProperty, 0);
-    columnMapping.mapStandardColumn(1, Particles::PositionProperty, 1);
-    columnMapping.mapStandardColumn(2, Particles::PositionProperty, 2);
-    columnMapping.mapStandardColumn(3, Particles::NucleotideAxisProperty, 0);
-    columnMapping.mapStandardColumn(4, Particles::NucleotideAxisProperty, 1);
-    columnMapping.mapStandardColumn(5, Particles::NucleotideAxisProperty, 2);
-    columnMapping.mapStandardColumn(6, Particles::NucleotideNormalProperty, 0);
-    columnMapping.mapStandardColumn(7, Particles::NucleotideNormalProperty, 1);
-    columnMapping.mapStandardColumn(8, Particles::NucleotideNormalProperty, 2);
-    columnMapping.mapStandardColumn(9, Particles::VelocityProperty, 0);
-    columnMapping.mapStandardColumn(10, Particles::VelocityProperty, 1);
-    columnMapping.mapStandardColumn(11, Particles::VelocityProperty, 2);
-    columnMapping.mapStandardColumn(12, Particles::AngularVelocityProperty, 0);
-    columnMapping.mapStandardColumn(13, Particles::AngularVelocityProperty, 1);
-    columnMapping.mapStandardColumn(14, Particles::AngularVelocityProperty, 2);
+    columnMapping.mapColumnToStandardProperty(0, Particles::PositionProperty, 0);
+    columnMapping.mapColumnToStandardProperty(1, Particles::PositionProperty, 1);
+    columnMapping.mapColumnToStandardProperty(2, Particles::PositionProperty, 2);
+    columnMapping.mapColumnToStandardProperty(3, Particles::NucleotideAxisProperty, 0);
+    columnMapping.mapColumnToStandardProperty(4, Particles::NucleotideAxisProperty, 1);
+    columnMapping.mapColumnToStandardProperty(5, Particles::NucleotideAxisProperty, 2);
+    columnMapping.mapColumnToStandardProperty(6, Particles::NucleotideNormalProperty, 0);
+    columnMapping.mapColumnToStandardProperty(7, Particles::NucleotideNormalProperty, 1);
+    columnMapping.mapColumnToStandardProperty(8, Particles::NucleotideNormalProperty, 2);
+    columnMapping.mapColumnToStandardProperty(9, Particles::VelocityProperty, 0);
+    columnMapping.mapColumnToStandardProperty(10, Particles::VelocityProperty, 1);
+    columnMapping.mapColumnToStandardProperty(11, Particles::VelocityProperty, 2);
+    columnMapping.mapColumnToStandardProperty(12, Particles::AngularVelocityProperty, 0);
+    columnMapping.mapColumnToStandardProperty(13, Particles::AngularVelocityProperty, 1);
+    columnMapping.mapColumnToStandardProperty(14, Particles::AngularVelocityProperty, 2);
 
     // Parse data table.
     InputColumnReader columnParser(*this, columnMapping, particles(), false);

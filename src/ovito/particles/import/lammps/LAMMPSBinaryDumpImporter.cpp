@@ -453,7 +453,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
         // the type of particle coordinates. Reduced coordinates are found in columns
         // "xs, ys, zs" or "xsu, ysu, zsu".
         for(int i = 0; i < (int)_columnMapping.size() && i < fileColumnNames.size(); i++) {
-            if(_columnMapping[i].property.type() == Particles::PositionProperty) {
+            if(_columnMapping[i].property.typeId() == Particles::PositionProperty) {
                 reducedCoordinates = (
                         fileColumnNames[i] == "xs" || fileColumnNames[i] == "xsu" ||
                         fileColumnNames[i] == "ys" || fileColumnNames[i] == "ysu" ||
@@ -492,7 +492,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
         // If a "diameter" column was loaded and stored in the "Radius" particle property,
         // we need to divide values by two.
         for(int i = 0; i < (int)_columnMapping.size() && i < fileColumnNames.size(); i++) {
-            if(_columnMapping[i].property.type() == Particles::RadiusProperty && fileColumnNames[i] == "diameter") {
+            if(_columnMapping[i].property.typeId() == Particles::RadiusProperty && fileColumnNames[i] == "diameter") {
                 if(BufferWriteAccess<GraphicsFloatType, access_mode::read_write> radiusProperty = particles()->getMutableProperty(Particles::RadiusProperty)) {
                     for(auto& r : radiusProperty)
                         r *= 0.5f;
@@ -503,7 +503,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
 
         // Same for the "c_diameter[1..3]" columns being mapped to the "Aspherical Shape" property.
         for(int i = 0; i < (int)_columnMapping.size() && i < fileColumnNames.size(); i++) {
-            if(_columnMapping[i].property.type() == Particles::AsphericalShapeProperty && (fileColumnNames[i] == "c_diameter[1]" || fileColumnNames[i] == "c_diameter[2]" || fileColumnNames[i] == "c_diameter[3]")) {
+            if(_columnMapping[i].property.typeId() == Particles::AsphericalShapeProperty && (fileColumnNames[i] == "c_diameter[1]" || fileColumnNames[i] == "c_diameter[2]" || fileColumnNames[i] == "c_diameter[3]")) {
                 if(BufferWriteAccess<Vector3G, access_mode::read_write> shapeProperty = particles()->getMutableProperty(Particles::AsphericalShapeProperty)) {
                     for(auto& s : shapeProperty) {
                         s.x() *= 0.5f;
@@ -518,9 +518,9 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
 
     // Detect dimensionality of system. It's a 2D system if no file column has been mapped to the Position.Z particle property.
     if(std::none_of(_columnMapping.begin(), _columnMapping.end(), [](const InputColumnInfo& column) {
-        return column.property.type() == Particles::PositionProperty && column.property.vectorComponent() == 2;
+        return column.property.typeId() == Particles::PositionProperty && column.property.vectorComponentIndex() == 2;
     }) && std::any_of(_columnMapping.begin(), _columnMapping.end(), [](const InputColumnInfo& column) {
-        return column.property.type() == Particles::PositionProperty && column.property.vectorComponent() != 2;
+        return column.property.typeId() == Particles::PositionProperty && column.property.vectorComponentIndex() != 2;
     })) {
         simulationCell()->setIs2D(true);
     }

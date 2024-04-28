@@ -96,8 +96,8 @@ void ComputePropertyModifier::setPropertyComponentCount(int newComponentCount)
 ******************************************************************************/
 void ComputePropertyModifier::adjustPropertyComponentCount()
 {
-    if(delegate() && outputProperty().type() != Property::GenericUserProperty)
-        setPropertyComponentCount(delegate()->inputContainerClass()->standardPropertyComponentCount(outputProperty().type()));
+    if(delegate() && outputProperty().isStandardProperty())
+        setPropertyComponentCount(delegate()->inputContainerClass()->standardPropertyComponentCount(outputProperty().typeId()));
     else
         setPropertyComponentCount(1);
 }
@@ -107,8 +107,8 @@ void ComputePropertyModifier::adjustPropertyComponentCount()
 ******************************************************************************/
 QStringList ComputePropertyModifier::propertyComponentNames() const
 {
-    if(!outputProperty().isNull() && outputProperty().type() != Property::GenericUserProperty) {
-        return outputProperty().containerClass()->standardPropertyComponentNames(outputProperty().type());
+    if(!outputProperty().isNull() && outputProperty().isStandardProperty()) {
+        return outputProperty().containerClass()->standardPropertyComponentNames(outputProperty().typeId());
     }
     return {};
 }
@@ -240,8 +240,8 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::apply(const ModifierE
     }
     else {
         // Allocate new data array.
-        if(modifier->outputProperty().type() != Property::GenericUserProperty) {
-            outputProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, modifier->outputProperty().type(), containerPath);
+        if(modifier->outputProperty().isStandardProperty()) {
+            outputProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, modifier->outputProperty().typeId(), containerPath);
         }
         else if(!modifier->outputProperty().name().isEmpty() && modifier->propertyComponentCount() > 0) {
             outputProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, modifier->outputProperty().name(), Property::FloatDefault, modifier->propertyComponentCount());

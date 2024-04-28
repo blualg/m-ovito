@@ -363,7 +363,7 @@ Future<BondInputColumnMapping> LAMMPSDumpLocalImporter::inspectFileHeader(const 
                                         propertyName += componentNames[component];
                                     }
                                     if(propertyName.compare(name, Qt::CaseInsensitive) == 0 || propertyName2.compare(name, Qt::CaseInsensitive) == 0) {
-                                        detectedColumnMapping.mapStandardColumn(i, (Bonds::Type)entry.value(), component);
+                                        detectedColumnMapping.mapColumnToStandardProperty(i, (Bonds::Type)entry.value(), component);
                                         isStandardProperty = true;
                                         break;
                                     }

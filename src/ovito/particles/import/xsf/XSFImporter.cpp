@@ -235,14 +235,14 @@ void XSFImporter::FrameLoader::loadFile()
             // Prepare the file column to particle property mapping.
             ParticleInputColumnMapping columnMapping;
             columnMapping.resize(nfields + 1);
-            columnMapping.mapStandardColumn(0, Particles::TypeProperty);
-            columnMapping.mapStandardColumn(1, Particles::PositionProperty, 0);
-            columnMapping.mapStandardColumn(2, Particles::PositionProperty, 1);
-            columnMapping.mapStandardColumn(3, Particles::PositionProperty, 2);
+            columnMapping.mapColumnToStandardProperty(0, Particles::TypeProperty);
+            columnMapping.mapColumnToStandardProperty(1, Particles::PositionProperty, 0);
+            columnMapping.mapColumnToStandardProperty(2, Particles::PositionProperty, 1);
+            columnMapping.mapColumnToStandardProperty(3, Particles::PositionProperty, 2);
             if(nfields == 6) {
-                columnMapping.mapStandardColumn(4, Particles::ForceProperty, 0);
-                columnMapping.mapStandardColumn(5, Particles::ForceProperty, 1);
-                columnMapping.mapStandardColumn(6, Particles::ForceProperty, 2);
+                columnMapping.mapColumnToStandardProperty(4, Particles::ForceProperty, 0);
+                columnMapping.mapColumnToStandardProperty(5, Particles::ForceProperty, 1);
+                columnMapping.mapColumnToStandardProperty(6, Particles::ForceProperty, 2);
             }
 
             // Jump back to start of atoms list.

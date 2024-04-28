@@ -87,7 +87,7 @@ void XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, co
             // Convert from OVITO property type and name to extended XYZ property name
             // Naming conventions followed are those of the QUIP code
             QString columnName;
-            switch(pref.type()) {
+            switch(pref.typeId()) {
             case Particles::TypeProperty: columnName = QStringLiteral("species"); break;
             case Particles::PositionProperty: columnName = QStringLiteral("pos"); break;
             case Particles::SelectionProperty: columnName = QStringLiteral("selection"); break;
@@ -131,14 +131,14 @@ void XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, co
 
             // Find matching property
             const Property* property = pref.findInContainer(particles);
-            if(property == nullptr && pref.type() != Particles::IdentifierProperty)
+            if(property == nullptr && pref.typeId() != Particles::IdentifierProperty)
                 throw Exception(tr("Particle property '%1' cannot be exported because it does not exist.").arg(pref.name()));
 
             // Count the number of consecutive columns with the same property.
             int nCols = 1;
             while(++i < (int)columnWriter.columnCount()) {
                 const ParticlePropertyReference& nextpref = columnWriter.propertyRef(i);
-                if(pref.name() != nextpref.name() || pref.type() != nextpref.type())
+                if(pref.name() != nextpref.name() || pref.typeId() != nextpref.typeId())
                     break;
                 nCols++;
             }
@@ -148,7 +148,7 @@ void XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, co
             QString dataTypeStr;
             if(dataType == Property::Float32 || dataType == Property::Float64)
                 dataTypeStr = QStringLiteral("R");
-            else if(pref.type() == Particles::TypeProperty)
+            else if(pref.typeId() == Particles::TypeProperty)
                 dataTypeStr = QStringLiteral("S");
             else if(dataType == Property::Int8 || dataType == Property::Int32 || dataType == Property::Int64)
                 dataTypeStr = QStringLiteral("I");

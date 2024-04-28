@@ -76,7 +76,7 @@ QString LinesPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
         str += QStringLiteral("</val>");
 
         for(const Property* property : linesObj()->properties()) {
-            if(property->type() == Property::GenericColorProperty) continue;
+            if(property->typeId() == Property::GenericColorProperty) continue;
 
             if(!str.isEmpty()) str += QStringLiteral("<sep>");
 
@@ -201,23 +201,11 @@ PipelineStatus LinesVis::render(const ConstDataObjectPath& path, const PipelineF
     // Look for selected pseudo-coloring property.
     const Property* pseudoColorProperty = nullptr;
     int pseudoColorPropertyComponent = 0;
-    if(coloringMode() == PseudoColoring && colorMapping() && colorMapping()->sourceProperty() &&
-       !lines->getProperty(Lines::ColorProperty)) {
-        pseudoColorProperty = colorMapping()->sourceProperty().findInContainer(lines);
-        if(!pseudoColorProperty) {
-            status = PipelineStatus(PipelineStatus::Error,
-                                    tr("The property with the name '%1' does not exist.").arg(colorMapping()->sourceProperty().name()));
-        }
-        else {
-            if(colorMapping()->sourceProperty().vectorComponent() >= (int)pseudoColorProperty->componentCount()) {
-                status = PipelineStatus(PipelineStatus::Error,
-                                        tr("The vector component is out of range. The property '%1' has only %2 values per data element.")
-                                            .arg(colorMapping()->sourceProperty().name())
-                                            .arg(pseudoColorProperty->componentCount()));
-                pseudoColorProperty = nullptr;
-            }
-            pseudoColorPropertyComponent = std::max(0, colorMapping()->sourceProperty().vectorComponent());
-        }
+    if(coloringMode() == PseudoColoring && colorMapping() && colorMapping()->sourceProperty() && !lines->getProperty(Lines::ColorProperty)) {
+        QString errorDescr;
+        std::tie(pseudoColorProperty, pseudoColorPropertyComponent) = colorMapping()->sourceProperty().findInContainerWithComponent(lines, errorDescr);
+        if(!pseudoColorProperty)
+            status = PipelineStatus(PipelineStatus::Error, std::move(errorDescr));
     }
 
     // The key type used for caching the rendering primitive:

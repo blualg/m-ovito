@@ -143,13 +143,12 @@ Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEval
     container->verifyIntegrity();
 
     // Get the input property.
-    ConstPropertyPtr property = sourceProperty().findInContainer(container);
+    QString errorDescription;
+    ConstPropertyPtr property;
+    int vecComponent;
+    std::tie(property, vecComponent) = sourceProperty().findInContainerWithComponent(container, errorDescription);
     if(!property)
-        throw Exception(tr("The selected input property '%1' is not present.").arg(sourceProperty().name()));
-
-    size_t vecComponent = std::max(0, sourceProperty().vectorComponent());
-    if(vecComponent >= property->componentCount())
-        throw Exception(tr("The selected vector component is out of range. The property '%1' has only %2 components per element.").arg(property->name()).arg(property->componentCount()));
+        throw Exception(std::move(errorDescription));
 
     // Get the input selection if filtering was enabled by the user.
     ConstPropertyPtr inputSelection;

@@ -79,24 +79,24 @@ void ParticleType::initializeType(const PropertyReference& property, bool loadUs
 
     // Load standard display radius.
     // First load the hardcoded default radius and freeze it, then load the user-defined default radius.
-    setRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.type()), nameOrNumericId(), numericId(), false, DisplayRadius));
+    setRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), nameOrNumericId(), numericId(), false, DisplayRadius));
     freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::radius)});
     if(loadUserDefaults)
-        setRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.type()), nameOrNumericId(), numericId(), true, DisplayRadius));
+        setRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), nameOrNumericId(), numericId(), true, DisplayRadius));
 
     // Load standard van der Waals radius.
     // First load the hardcoded default radius and freeze it, then load the user-defined default radius.
-    setVdwRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.type()), nameOrNumericId(), numericId(), false, VanDerWaalsRadius));
+    setVdwRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), nameOrNumericId(), numericId(), false, VanDerWaalsRadius));
     freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::vdwRadius)});
     if(loadUserDefaults)
-        setVdwRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.type()), nameOrNumericId(), numericId(), true, VanDerWaalsRadius));
+        setVdwRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), nameOrNumericId(), numericId(), true, VanDerWaalsRadius));
 
     // Load standard mass.
     // First load the hardcoded default mass and freeze it, then load the user-defined default mass.
-    setMass(getDefaultParticleMass(static_cast<Particles::Type>(property.type()), nameOrNumericId(), numericId(), false));
+    setMass(getDefaultParticleMass(static_cast<Particles::Type>(property.typeId()), nameOrNumericId(), numericId(), false));
     freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::mass)});
     if(loadUserDefaults)
-        setMass(getDefaultParticleMass(static_cast<Particles::Type>(property.type()), nameOrNumericId(), numericId(), true));
+        setMass(getDefaultParticleMass(static_cast<Particles::Type>(property.typeId()), nameOrNumericId(), numericId(), true));
 }
 
 /******************************************************************************

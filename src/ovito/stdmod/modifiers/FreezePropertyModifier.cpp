@@ -177,8 +177,8 @@ PipelineFlowState FreezePropertyModifier::transferFrozenProperty(FreezePropertyM
 
     // Get the property that will be overwritten by the stored one.
     Property* outputProperty;
-    if(destinationProperty().type() != Property::GenericUserProperty) {
-        outputProperty = container->createProperty(DataBuffer::Initialized, destinationProperty().type());
+    if(destinationProperty().isStandardProperty()) {
+        outputProperty = container->createProperty(DataBuffer::Initialized, destinationProperty().typeId());
         if(outputProperty->dataType() != modNode->property()->dataType()
             || outputProperty->componentCount() != modNode->property()->componentCount()
             || outputProperty->stride() != modNode->property()->stride())

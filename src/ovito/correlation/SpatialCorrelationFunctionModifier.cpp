@@ -230,13 +230,14 @@ Future<PipelineFlowState> SpatialCorrelationFunctionModifier::evaluateModifier(c
     particles->verifyIntegrity();
     const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
 
-    // Get the current selected properties.
-    const Property* property1 = sourceProperty1().findInContainer(particles);
-    const Property* property2 = sourceProperty2().findInContainer(particles);
+    // Look up the selected input properties in the particles container.
+    QString errorDescription;
+    auto [property1, vectorComponent1] = sourceProperty1().findInContainerWithComponent(particles, errorDescription);
     if(!property1)
-        throw Exception(tr("The selected input particle property with the name '%1' does not exist.").arg(sourceProperty1().name()));
+        throw Exception(std::move(errorDescription));
+    auto [property2, vectorComponent2] = sourceProperty2().findInContainerWithComponent(particles, errorDescription);
     if(!property2)
-        throw Exception(tr("The selected input particle property with the name '%1' does not exist.").arg(sourceProperty2().name()));
+        throw Exception(std::move(errorDescription));
 
     // Get simulation cell.
     const SimulationCell* inputCell = state.expectObject<SimulationCell>();
@@ -247,9 +248,9 @@ Future<PipelineFlowState> SpatialCorrelationFunctionModifier::evaluateModifier(c
     auto engine = std::make_shared<CorrelationAnalysisEngine>(
                                                     posProperty,
                                                     property1,
-                                                    std::max(0, sourceProperty1().vectorComponent()),
+                                                    vectorComponent1,
                                                     property2,
-                                                    std::max(0, sourceProperty2().vectorComponent()),
+                                                    vectorComponent2,
                                                     inputCell,
                                                     fftGridSpacing(),
                                                     applyWindow(),

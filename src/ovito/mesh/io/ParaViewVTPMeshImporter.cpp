@@ -272,8 +272,8 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
                 meshBuilder.addFaceProperty(std::move(property));
             }
             else {
-                Property* existingProperty = property->type() != SurfaceMeshFaces::UserProperty
-                    ? meshBuilder.mutableFaceProperty(static_cast<SurfaceMeshFaces::Type>(property->type()))
+                Property* existingProperty = property->isStandardProperty()
+                    ? meshBuilder.mutableFaceProperty(static_cast<SurfaceMeshFaces::Type>(property->typeId()))
                     : meshBuilder.mutableFaceProperty(property->name());
                 if(existingProperty && existingProperty->dataType() == property->dataType() && existingProperty->componentCount() == property->componentCount()) {
                     existingProperty->copyRangeFrom(*property, 0, faceBaseIndex, property->size());
@@ -296,8 +296,8 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             meshBuilder.addVertexProperty(std::move(property));
         }
         else {
-            Property* existingProperty = property->type() != SurfaceMeshVertices::UserProperty
-                ? meshBuilder.mutableVertexProperty(static_cast<SurfaceMeshVertices::Type>(property->type()))
+            Property* existingProperty = property->isStandardProperty()
+                ? meshBuilder.mutableVertexProperty(static_cast<SurfaceMeshVertices::Type>(property->typeId()))
                 : meshBuilder.mutableVertexProperty(property->name());
             if(existingProperty && existingProperty->dataType() == property->dataType() && existingProperty->componentCount() == property->componentCount()) {
                 existingProperty->copyRangeFrom(*property, 0, vertexBaseIndex, property->size());

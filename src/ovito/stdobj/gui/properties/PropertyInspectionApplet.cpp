@@ -130,7 +130,7 @@ void PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyCon
     // Try to preserve the columns of the model as far as possible.
     auto iter_pair = std::mismatch(_properties.begin(), _properties.end(), newProperties.begin(), newProperties.end(),
         [](const Property* prop1, const Property* prop2) {
-            return prop1->type() == prop2->type() && prop1->name() == prop2->name();
+            return prop1->typeId() == prop2->typeId() && prop1->name() == prop2->name();
         });
 
     if(iter_pair.first != _properties.end()) {

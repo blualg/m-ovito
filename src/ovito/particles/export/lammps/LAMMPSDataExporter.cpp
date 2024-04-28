@@ -100,33 +100,33 @@ void LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     TypedOutputColumnMapping<Particles> atomsOutputColumnMapping;
     for(const InputColumnInfo& col : LAMMPSDataImporter::createAtomsColumnMapping(atomStyle(), atomSubStyles())) {
         atomsOutputColumnMapping.push_back(col.property);
-        OVITO_ASSERT(col.property.type() != Particles::UserProperty || col.property.vectorComponent() == 0);
+        OVITO_ASSERT(col.property.isStandardProperty() || (col.property.vectorComponentIndex() == 0 && col.property.vectorComponentName().isEmpty()));
         const Property* property = col.property.findInContainer(particles);
         if(!property) {
             // If the property does not exist, implicitly create it and fill it with default values.
-            if(col.property.type() != Particles::IdentifierProperty) {
-                if(col.property.type() == Particles::RadiusProperty) {
+            if(col.property.typeId() != Particles::IdentifierProperty) {
+                if(col.property.typeId() == Particles::RadiusProperty) {
                     particles->createProperty(particles->inputParticleRadii());
                 }
-                else if(col.property.type() == Particles::MassProperty) {
+                else if(col.property.typeId() == Particles::MassProperty) {
                     particles->createProperty(particles->inputParticleMasses());
                 }
                 else {
                     Property* newProperty = nullptr;
-                    if(col.property.type() != Particles::UserProperty)
-                        newProperty = particles->createProperty(DataBuffer::Initialized, col.property.type());
+                    if(col.property.isStandardProperty())
+                        newProperty = particles->createProperty(DataBuffer::Initialized, col.property.typeId());
                     else
                         newProperty = particles->createProperty(DataBuffer::Initialized, col.property.name(), Property::FloatDefault);
                     OVITO_ASSERT(col.property.findInContainer(particles) == newProperty);
-                    if(newProperty->type() == Particles::TypeProperty) {
+                    if(newProperty->typeId() == Particles::TypeProperty) {
                         // Assume particle type 1 by default.
                         newProperty->fill<int32_t>(1);
                     }
-                    else if(newProperty->type() == Particles::MoleculeProperty) {
+                    else if(newProperty->typeId() == Particles::MoleculeProperty) {
                         // Assume molecule identifier 1 by default.
                         newProperty->fill<int64_t>(1);
                     }
-                    else if(newProperty->type() == Particles::UserProperty && newProperty->name() == QStringLiteral("Density")) {
+                    else if(newProperty->typeId() == Particles::UserProperty && newProperty->name() == QStringLiteral("Density")) {
                         OVITO_ASSERT(col.columnName == "density");
                         // When exporting the "Density" property, compute its values from the particles masses and radii.
                         BufferReadAccessAndRef<GraphicsFloatType> radii = particles->inputParticleRadii();
@@ -145,7 +145,7 @@ void LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
             }
         }
         else {
-            if(property->type() == Particles::RadiusProperty) {
+            if(property->typeId() == Particles::RadiusProperty) {
                 OVITO_ASSERT(col.columnName == "diameter");
                 // Write particle diameters instead of radii to the output file.
                 for(auto& r : BufferWriteAccess<GraphicsFloatType, access_mode::read_write>(particles->makeMutable(property)))
@@ -439,14 +439,14 @@ void LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
         TypedOutputColumnMapping<Particles> velocitiesOutputColumnMapping;
         for(const InputColumnInfo& col : LAMMPSDataImporter::createVelocitiesColumnMapping(atomStyle(), atomSubStyles())) {
             velocitiesOutputColumnMapping.push_back(col.property);
-            OVITO_ASSERT(col.property.type() != Particles::UserProperty || col.property.vectorComponent() == 0);
+            OVITO_ASSERT(col.property.isStandardProperty() || (col.property.vectorComponentIndex() == 0 && col.property.vectorComponentName().isEmpty()));
             const Property* property = col.property.findInContainer(particles);
             if(!property) {
                 // If the property does not exist, implicitly create it and fill it with default values.
-                if(col.property.type() != Particles::IdentifierProperty) {
+                if(col.property.typeId() != Particles::IdentifierProperty) {
                     Property* newProperty = nullptr;
-                    if(col.property.type() != Particles::UserProperty)
-                        newProperty = particles->createProperty(DataBuffer::Initialized, col.property.type());
+                    if(col.property.isStandardProperty())
+                        newProperty = particles->createProperty(DataBuffer::Initialized, col.property.typeId());
                     else
                         newProperty = particles->createProperty(DataBuffer::Initialized, col.property.name(), Property::FloatDefault);
                     OVITO_ASSERT(col.property.findInContainer(particles) == newProperty);

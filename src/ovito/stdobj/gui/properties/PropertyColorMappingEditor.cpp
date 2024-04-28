@@ -209,18 +209,19 @@ std::optional<std::pair<FloatType, FloatType>> PropertyColorMappingEditor::deter
 {
     // Get the color mapping object.
     PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(editObject());
-    if(!mapping) return {};
+    if(!mapping)
+        return {};
 
     // Get the property container.
     const PropertyContainer* container = _sourcePropertyUI->container();
-    if(!container) return {};
+    if(!container)
+        return {};
 
     // Look up the selected property.
-    const Property* pseudoColorProperty = mapping->sourceProperty().findInContainer(container);
-    if(!pseudoColorProperty) return {};
-
-    if(mapping->sourceProperty().vectorComponent() >= (int)pseudoColorProperty->componentCount()) return {};
-    int pseudoColorPropertyComponent = std::max(0, mapping->sourceProperty().vectorComponent());
+    QString errorDescr;
+    auto [pseudoColorProperty, pseudoColorPropertyComponent] = mapping->sourceProperty().findInContainerWithComponent(container, errorDescr);
+    if(!pseudoColorProperty)
+        return {};
 
     // Determine min/max value range.
     return mapping->determineValueRange(pseudoColorProperty, pseudoColorPropertyComponent);

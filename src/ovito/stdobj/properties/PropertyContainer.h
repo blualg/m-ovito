@@ -84,7 +84,7 @@ public:
         OVITO_ASSERT(typeId != 0);
         OVITO_ASSERT(getOOMetaClass().isValidStandardPropertyId(typeId));
         for(const Property* property : properties()) {
-            if(property->type() == typeId)
+            if(property->typeId() == typeId)
                 return property;
         }
         return nullptr;
@@ -103,6 +103,18 @@ public:
         return nullptr;
     }
 
+    /// Looks up a property with the same type identifier, name, data type and component count as the given property.
+    const Property* getPropertyLike(const Property* property) const {
+        OVITO_ASSERT(property);
+        if(property->isStandardProperty())
+            return getProperty(property->typeId());
+        for(const Property* p : properties()) {
+            if(!p->isStandardProperty() && p->name() == property->name() && p->dataType() == property->dataType() && p->componentCount() == property->componentCount())
+                return p;
+        }
+        return nullptr;
+    }
+
     /// Looks up the standard property with the given ID, removes it from this container and returns it to the caller.
     ConstPropertyPtr takeProperty(int typeId) {
         OVITO_ASSERT(typeId != 0);
@@ -110,7 +122,7 @@ public:
         OVITO_ASSERT(isSafeToModify());
         for(int index = 0; index < properties().size(); index++) {
             const Property* property = properties()[index];
-            if(property->type() == typeId) {
+            if(property->typeId() == typeId) {
                 return _properties.remove(this, PROPERTY_FIELD(properties), index);
             }
         }
@@ -268,8 +280,8 @@ public:
             // Grow property arrays.
             for(const Property* prop : _container->properties()) {
                 OVITO_ASSERT(prop->size() == _elementCount);
-                bool b = const_cast<Property*>(prop)->grow(numAdditionalElements, prop->type() == alreadyLockedPropertyType);
-                if(b && prop->type() == alreadyLockedPropertyType)
+                bool b = const_cast<Property*>(prop)->grow(numAdditionalElements, prop->typeId() == alreadyLockedPropertyType);
+                if(b && prop->typeId() == alreadyLockedPropertyType)
                     wasReallocated = true;
             }
             // Update only our internal element count. Container will be updated by destructor.
@@ -284,7 +296,7 @@ public:
             // Truncate each property array.
             for(const Property* prop : _container->properties()) {
                 OVITO_ASSERT(prop->size() == _elementCount);
-                const_cast<Property*>(prop)->truncate(numElementsToTruncate, prop->type() == alreadyLockedPropertyType);
+                const_cast<Property*>(prop)->truncate(numElementsToTruncate, prop->typeId() == alreadyLockedPropertyType);
             }
 
             // Update only our internal element count. Container will be updated by destructor.
@@ -297,15 +309,15 @@ public:
             OVITO_ASSERT(toIndex < _elementCount);
             for(const Property* prop : _container->properties()) {
                 OVITO_ASSERT(prop->size() == _elementCount);
-                const_cast<Property*>(prop)->moveElement(fromIndex, toIndex, prop->type() == alreadyLockedPropertyType);
+                const_cast<Property*>(prop)->moveElement(fromIndex, toIndex, prop->typeId() == alreadyLockedPropertyType);
             }
         }
 
-        Property* mutableProperty(int type) const {
+        Property* mutableProperty(int typeId) const {
             OVITO_ASSERT(_container->isSafeToModify());
             for(const Property* prop : _container->properties()) {
                 OVITO_ASSERT(_container->isSafeToModifySubObject(prop));
-                if(prop->type() == type) {
+                if(prop->typeId() == typeId) {
                     return const_cast<Property*>(prop);
                 }
             }

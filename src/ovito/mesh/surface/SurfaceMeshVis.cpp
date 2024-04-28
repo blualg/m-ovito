@@ -291,9 +291,9 @@ QString SurfaceMeshPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
     if(surfaceMesh()->faces() && facetIndex >= 0 && facetIndex < surfaceMesh()->faces()->elementCount()) {
         for(const Property* property : surfaceMesh()->faces()->properties()) {
             if(facetIndex >= property->size()) continue;
-            if(property->type() == SurfaceMeshFaces::SelectionProperty) continue;
-            if(property->type() == SurfaceMeshFaces::ColorProperty) continue;
-            if(property->type() == SurfaceMeshFaces::RegionProperty) continue;
+            if(property->typeId() == SurfaceMeshFaces::SelectionProperty) continue;
+            if(property->typeId() == SurfaceMeshFaces::ColorProperty) continue;
+            if(property->typeId() == SurfaceMeshFaces::RegionProperty) continue;
             if(!str.isEmpty()) str += QStringLiteral("<sep>");
             str += QStringLiteral("<key>");
             str += property->name();
@@ -352,8 +352,8 @@ QString SurfaceMeshPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
                 str += QStringLiteral("<key>Region:</key> %1").arg(regionIndex);
                 for(const Property* property : surfaceMesh()->regions()->properties()) {
                     if(regionIndex < 0 || regionIndex >= property->size()) continue;
-                    if(property->type() == SurfaceMeshRegions::SelectionProperty) continue;
-                    if(property->type() == SurfaceMeshRegions::ColorProperty) continue;
+                    if(property->typeId() == SurfaceMeshRegions::SelectionProperty) continue;
+                    if(property->typeId() == SurfaceMeshRegions::ColorProperty) continue;
                     str += QStringLiteral("<sep><key>");
                     str += property->name();
                     str += QStringLiteral(":</key> ");
@@ -511,48 +511,40 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::determineFaceColors()
         }
     }
     else if(_colorMappingMode == FacePseudoColoring && _pseudoColorPropertyRef && inputMesh()->faces()) {
-        if(const Property* pseudoColorProperty = _pseudoColorPropertyRef.findInContainer(inputMesh()->faces())) {
-            if(_pseudoColorPropertyRef.vectorComponent() < (int)pseudoColorProperty->componentCount()) {
-                outputMesh()->setHasFacePseudoColors(true);
-                RawBufferReadAccess pseudoColorArray(pseudoColorProperty);
-                size_t vecComponent = std::max(0, _pseudoColorPropertyRef.vectorComponent());
-                auto meshFacePseudoColor = outputMesh()->facePseudoColors().begin();
-                for(size_t originalFace : _originalFaceMap) {
-                    *meshFacePseudoColor++ = pseudoColorArray.get<FloatType>(originalFace, vecComponent);
-                }
-            }
-            else {
-                _status = PipelineStatus(PipelineStatus::Error, tr("The vector component is out of range. The property '%1' has only %2 values per data element.").arg(_pseudoColorPropertyRef.name()).arg(pseudoColorProperty->componentCount()));
+        QString errorDescr;
+        auto [pseudoColorProperty, pseudoColorPropertyComponent] = _pseudoColorPropertyRef.findInContainerWithComponent(inputMesh()->faces(), errorDescr);
+        if(pseudoColorProperty) {
+            outputMesh()->setHasFacePseudoColors(true);
+            RawBufferReadAccess pseudoColorArray(pseudoColorProperty);
+            auto meshFacePseudoColor = outputMesh()->facePseudoColors().begin();
+            for(size_t originalFace : _originalFaceMap) {
+                *meshFacePseudoColor++ = pseudoColorArray.get<FloatType>(originalFace, pseudoColorPropertyComponent);
             }
         }
         else {
-            _status = PipelineStatus(PipelineStatus::Error, tr("The face property with the name '%1' does not exist.").arg(_pseudoColorPropertyRef.name()));
+            _status = PipelineStatus(PipelineStatus::Error, std::move(errorDescr));
         }
     }
     else if(_colorMappingMode == RegionPseudoColoring && _pseudoColorPropertyRef && inputMesh()->regions()) {
-        if(const Property* pseudoColorProperty = _pseudoColorPropertyRef.findInContainer(inputMesh()->regions())) {
-            if(_pseudoColorPropertyRef.vectorComponent() < (int)pseudoColorProperty->componentCount()) {
-                if(BufferReadAccess<int32_t> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
-                    outputMesh()->setHasFacePseudoColors(true);
-                    RawBufferReadAccess pseudoColorArray(pseudoColorProperty);
-                    size_t vecComponent = std::max(0, _pseudoColorPropertyRef.vectorComponent());
-                    size_t regionCount = pseudoColorProperty->size();
-                    auto meshFacePseudoColor = outputMesh()->facePseudoColors().begin();
-                    for(size_t originalFace : _originalFaceMap) {
-                        SurfaceMesh::region_index regionIndex = regionProperty[originalFace];
-                        if(regionIndex >= 0 && regionIndex < regionCount)
-                            *meshFacePseudoColor++ = pseudoColorArray.get<FloatType>(regionIndex, vecComponent);
-                        else
-                            *meshFacePseudoColor++ = 0;
-                    }
+        QString errorDescr;
+        auto [pseudoColorProperty, pseudoColorPropertyComponent] = _pseudoColorPropertyRef.findInContainerWithComponent(inputMesh()->regions(), errorDescr);
+        if(pseudoColorProperty) {
+            if(BufferReadAccess<int32_t> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
+                outputMesh()->setHasFacePseudoColors(true);
+                RawBufferReadAccess pseudoColorArray(pseudoColorProperty);
+                size_t regionCount = pseudoColorProperty->size();
+                auto meshFacePseudoColor = outputMesh()->facePseudoColors().begin();
+                for(size_t originalFace : _originalFaceMap) {
+                    SurfaceMesh::region_index regionIndex = regionProperty[originalFace];
+                    if(regionIndex >= 0 && regionIndex < regionCount)
+                        *meshFacePseudoColor++ = pseudoColorArray.get<FloatType>(regionIndex, pseudoColorPropertyComponent);
+                    else
+                        *meshFacePseudoColor++ = 0;
                 }
-            }
-            else {
-                _status = PipelineStatus(PipelineStatus::Error, tr("The vector component is out of range. The property '%1' has only %2 values per data element.").arg(_pseudoColorPropertyRef.name()).arg(pseudoColorProperty->componentCount()));
             }
         }
         else {
-            _status = PipelineStatus(PipelineStatus::Error, tr("The region property with the name '%1' does not exist.").arg(_pseudoColorPropertyRef.name()));
+            _status = PipelineStatus(PipelineStatus::Error, std::move(errorDescr));
         }
     }
 
@@ -593,18 +585,15 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::determineVertexColors()
         }
     }
     else if(_colorMappingMode == VertexPseudoColoring && _pseudoColorPropertyRef) {
-        if(const Property* pseudoColorProperty = _pseudoColorPropertyRef.findInContainer(inputMesh()->vertices())) {
+        QString errorDescr;
+        auto [pseudoColorProperty, pseudoColorPropertyComponent] = _pseudoColorPropertyRef.findInContainerWithComponent(inputMesh()->vertices(), errorDescr);
+        if(pseudoColorProperty) {
             OVITO_ASSERT(pseudoColorProperty->size() == outputMesh()->vertexCount());
-            if(_pseudoColorPropertyRef.vectorComponent() < (int)pseudoColorProperty->componentCount()) {
-                outputMesh()->setHasVertexPseudoColors(true);
-                pseudoColorProperty->copyComponentTo(outputMesh()->vertexPseudoColors().begin(), std::max(0, _pseudoColorPropertyRef.vectorComponent()));
-            }
-            else {
-                _status = PipelineStatus(PipelineStatus::Error, tr("The vector component is out of range. The property '%1' has only %2 values per data element.").arg(_pseudoColorPropertyRef.name()).arg(pseudoColorProperty->componentCount()));
-            }
+            outputMesh()->setHasVertexPseudoColors(true);
+            pseudoColorProperty->copyComponentTo(outputMesh()->vertexPseudoColors().begin(), pseudoColorPropertyComponent);
         }
         else {
-            _status = PipelineStatus(PipelineStatus::Error, tr("The vertex property with the name '%1' does not exist.").arg(_pseudoColorPropertyRef.name()));
+            _status = PipelineStatus(PipelineStatus::Error, std::move(errorDescr));
         }
     }
 }

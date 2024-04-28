@@ -75,7 +75,7 @@ void ColorByTypeModifier::initializeModifier(const ModifierInitializationRequest
             PropertyReference bestProperty;
             for(const Property* property : container->properties()) {
                 if(property->isTypedProperty()) {
-                    if(ExecutionContext::isInteractive() || property->type() == Property::GenericTypeProperty) {
+                    if(ExecutionContext::isInteractive() || property->typeId() == Property::GenericTypeProperty) {
                         bestProperty = PropertyReference(subject().dataClass(), property);
                     }
                 }

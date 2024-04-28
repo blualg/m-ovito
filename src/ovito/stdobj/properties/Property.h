@@ -53,7 +53,7 @@ public:
 
 public:
 
-    /// \brief The standard property types defined by all property classes.
+    /// \brief The standard property type identifiers used by all property container classes.
     enum GenericStandardType {
         GenericUserProperty = 0,    //< This is reserved for user-defined properties.
         GenericSelectionProperty = 1,
@@ -61,7 +61,7 @@ public:
         GenericTypeProperty = 3,
         GenericIdentifierProperty = 4,
 
-        // This is value at which type IDs of specific standard properties start:
+        // This is the value at which type identifiers of specific property container classes start:
         FirstSpecificProperty = 1000
     };
 
@@ -71,15 +71,15 @@ public:
     explicit Property(ObjectInitializationFlags flags);
 
     /// \brief Constructor creating a new property array.
-    Property(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QString& name, int type = 0, QStringList componentNames = QStringList());
+    Property(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QString& name, int typeId = 0, QStringList componentNames = QStringList());
 
     /// \brief Constructor creating a new property array.
-    Property(ObjectInitializationFlags flags, size_t elementCount, int dataType, size_t componentCount, const QString& name, int type = 0, QStringList componentNames = QStringList()) :
-        Property(flags, BufferInitialization::Uninitialized, elementCount, dataType, componentCount, name, type, std::move(componentNames)) {}
+    Property(ObjectInitializationFlags flags, size_t elementCount, int dataType, size_t componentCount, const QString& name, int typeId = 0, QStringList componentNames = QStringList()) :
+        Property(flags, BufferInitialization::Uninitialized, elementCount, dataType, componentCount, name, typeId, std::move(componentNames)) {}
 
 #ifdef OVITO_DEBUG
     /// \brief Destructor.
-    virtual ~Property();
+    ~Property();
 #endif
 
     /// \brief Gets the property's name.
@@ -90,12 +90,15 @@ public:
     /// \param name The new name string.
     void setName(const QString& name);
 
-    /// \brief Returns the type of this property.
-    int type() const { return _type; }
+    /// \brief Returns the kind of this property (standard or user-defined).
+    int typeId() const { return _typeId; }
 
-    /// \brief Changes the type of this property. Note that this method is only for internal use.
-    ///        Normally, you should not change the type of a property once it was created.
-    void setType(int newType) { _type = newType; }
+    /// \brief Changes the type identifier of this property. Note that this method is only for internal use.
+    ///        Normally, you should not change the type ID of a property after it has been created.
+    void setTypeId(int newTypeId) { _typeId = newTypeId; }
+
+    /// \brief Indicates whether this property is a standard property (and not a user-defined property).
+    bool isStandardProperty() const { return typeId() != 0; }
 
     /// \brief Returns the display name of the property including the name of the given
     ///        vector component.
@@ -263,9 +266,9 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
 
     /// The kind of this property (non-zero = predefined standard property; zero = a user-defined property).
-    int _type = 0;
+    int _typeId = 0;
 
-    /// The name of the property (must be unique within the PropertyContainer).
+    /// The human-readable name of the property (must be unique within a PropertyContainer).
     QString _name;
 
     /// Pointer to the access guard object while the Python side accesses this property's memory buffer.
@@ -274,13 +277,13 @@ private:
     friend class BufferPythonAccessGuard;
 };
 
-/// Smart-pointer to a Property.
+/// Smart-pointer to a mutable Property.
 using PropertyPtr = DataOORef<Property>;
 
-/// Smart-pointer to a Property providing read-only access to the property data.
+/// Smart-pointer to a read-only Property.
 using ConstPropertyPtr = DataOORef<const Property>;
 
-/// Encapsulates a complete data object reference to a Property in a data collection.
+/// A data object reference to a Property in a data collection.
 using PropertyDataObjectReference = TypedDataObjectReference<Property>;
 
 }   // End of namespace

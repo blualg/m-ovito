@@ -128,7 +128,7 @@ void FileColumnParticleExporterEditor::updateParticlePropertiesList()
             for(const Property* property : particles->properties()) {
                 if(property->componentCount() == 1) {
                     insertPropertyItem(ParticlePropertyReference(property), property->name(), exporter->columnMapping());
-                    if(property->type() == Particles::IdentifierProperty)
+                    if(property->typeId() == Particles::IdentifierProperty)
                         hasParticleIdentifiers = true;
                 }
                 else {

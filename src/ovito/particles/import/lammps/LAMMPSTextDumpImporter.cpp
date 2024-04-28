@@ -332,7 +332,7 @@ void LAMMPSTextDumpImporter::FrameLoader::postprocessParticleProperties(const QS
         // the type of particle coordinates. Reduced coordinates are found in columns
         // "xs, ys, zs" or "xsu, ysu, zsu".
         for(int i = 0; i < (int)columnMapping.size() && i < fileColumnNames.size(); i++) {
-            if(columnMapping[i].property.type() == Particles::PositionProperty) {
+            if(columnMapping[i].property.typeId() == Particles::PositionProperty) {
                 reducedCoordinates = (
                         fileColumnNames[i] == "xs" || fileColumnNames[i] == "xsu" ||
                         fileColumnNames[i] == "ys" || fileColumnNames[i] == "ysu" ||
@@ -377,7 +377,7 @@ void LAMMPSTextDumpImporter::FrameLoader::postprocessParticleProperties(const QS
         // If a "diameter" column was loaded and stored in the "Radius" particle property,
         // we need to divide values by two.
         for(int i = 0; i < (int)columnMapping.size() && i < fileColumnNames.size(); i++) {
-            if(columnMapping[i].property.type() == Particles::RadiusProperty && fileColumnNames[i] == "diameter") {
+            if(columnMapping[i].property.typeId() == Particles::RadiusProperty && fileColumnNames[i] == "diameter") {
                 if(Property* radii = particles()->getMutableProperty(Particles::RadiusProperty)) {
 #ifdef OVITO_USE_SYCL
                     SyclBufferAccess<GraphicsFloatType, access_mode::read_write>{radii}.for_each([](GraphicsFloatType& r) {
@@ -394,7 +394,7 @@ void LAMMPSTextDumpImporter::FrameLoader::postprocessParticleProperties(const QS
 
         // Same for the "c_diameter[1..3]" columns or "shapex/shapey/shapez" columns being mapped to the "Aspherical Shape" property.
         for(int i = 0; i < (int)columnMapping.size() && i < fileColumnNames.size(); i++) {
-            if(columnMapping[i].property.type() == Particles::AsphericalShapeProperty &&
+            if(columnMapping[i].property.typeId() == Particles::AsphericalShapeProperty &&
                 (fileColumnNames[i] == "c_diameter[1]" || fileColumnNames[i] == "c_diameter[2]" || fileColumnNames[i] == "c_diameter[3]" ||
                     fileColumnNames[i] == "shapex" || fileColumnNames[i] == "shapey" || fileColumnNames[i] == "shapez")) {
                 if(Property* shapeProperty = particles()->getMutableProperty(Particles::AsphericalShapeProperty)) {
@@ -415,9 +415,9 @@ void LAMMPSTextDumpImporter::FrameLoader::postprocessParticleProperties(const QS
 
     // Detect dimensionality of system. It's a 2D system if no file column has been mapped to the Position.Z particle property (but Position.X/Y are present).
     if(std::none_of(columnMapping.begin(), columnMapping.end(), [](const InputColumnInfo& column) {
-        return column.property.type() == Particles::PositionProperty && column.property.vectorComponent() == 2;
+        return column.property.typeId() == Particles::PositionProperty && column.property.vectorComponentIndex() == 2;
     }) && std::any_of(columnMapping.begin(), columnMapping.end(), [](const InputColumnInfo& column) {
-        return column.property.type() == Particles::PositionProperty && column.property.vectorComponent() != 2;
+        return column.property.typeId() == Particles::PositionProperty && column.property.vectorComponentIndex() != 2;
     })) {
         simulationCell()->setIs2D(true);
     }
@@ -438,67 +438,67 @@ ParticleInputColumnMapping LAMMPSTextDumpImporter::generateAutomaticColumnMappin
     for(int i = 0; i < columnNames.size(); i++) {
         QString name = columnNames[i].toLower();
         columnMapping[i].columnName = columnNames[i];
-        if(name == "x" || name == "xu" || name == "coordinates") columnMapping.mapStandardColumn(i, Particles::PositionProperty, 0);
-        else if(name == "y" || name == "yu") columnMapping.mapStandardColumn(i, Particles::PositionProperty, 1);
-        else if(name == "z" || name == "zu") columnMapping.mapStandardColumn(i, Particles::PositionProperty, 2);
-        else if(name == "xs" || name == "xsu") { columnMapping.mapStandardColumn(i, Particles::PositionProperty, 0); }
-        else if(name == "ys" || name == "ysu") { columnMapping.mapStandardColumn(i, Particles::PositionProperty, 1); }
-        else if(name == "zs" || name == "zsu") { columnMapping.mapStandardColumn(i, Particles::PositionProperty, 2); }
-        else if(name == "vx" || name == "velocities") columnMapping.mapStandardColumn(i, Particles::VelocityProperty, 0);
-        else if(name == "vy") columnMapping.mapStandardColumn(i, Particles::VelocityProperty, 1);
-        else if(name == "vz") columnMapping.mapStandardColumn(i, Particles::VelocityProperty, 2);
-        else if(name == "id") columnMapping.mapStandardColumn(i, Particles::IdentifierProperty);
-        else if(name == "element") columnMapping.mapStandardColumn(i, Particles::TypeProperty);
+        if(name == "x" || name == "xu" || name == "coordinates") columnMapping.mapColumnToStandardProperty(i, Particles::PositionProperty, 0);
+        else if(name == "y" || name == "yu") columnMapping.mapColumnToStandardProperty(i, Particles::PositionProperty, 1);
+        else if(name == "z" || name == "zu") columnMapping.mapColumnToStandardProperty(i, Particles::PositionProperty, 2);
+        else if(name == "xs" || name == "xsu") { columnMapping.mapColumnToStandardProperty(i, Particles::PositionProperty, 0); }
+        else if(name == "ys" || name == "ysu") { columnMapping.mapColumnToStandardProperty(i, Particles::PositionProperty, 1); }
+        else if(name == "zs" || name == "zsu") { columnMapping.mapColumnToStandardProperty(i, Particles::PositionProperty, 2); }
+        else if(name == "vx" || name == "velocities") columnMapping.mapColumnToStandardProperty(i, Particles::VelocityProperty, 0);
+        else if(name == "vy") columnMapping.mapColumnToStandardProperty(i, Particles::VelocityProperty, 1);
+        else if(name == "vz") columnMapping.mapColumnToStandardProperty(i, Particles::VelocityProperty, 2);
+        else if(name == "id") columnMapping.mapColumnToStandardProperty(i, Particles::IdentifierProperty);
+        else if(name == "element") columnMapping.mapColumnToStandardProperty(i, Particles::TypeProperty);
         else if(name == "type") {
-            if(!columnMapping.mapStandardColumn(i, Particles::TypeProperty)) {
+            if(!columnMapping.mapColumnToStandardProperty(i, Particles::TypeProperty)) {
                 // Give precedence of the 'type' column over the 'element' column.
                 for(int j = 0; j < i; j++) {
                     if(columnNames[j].compare(QStringLiteral("element"), Qt::CaseInsensitive) == 0) {
                         columnMapping[j].unmap();
-                        columnMapping.mapStandardColumn(i, Particles::TypeProperty);
+                        columnMapping.mapColumnToStandardProperty(i, Particles::TypeProperty);
                         break;
                     }
                 }
             }
         }
-        else if(name == "radius" || name == "diameter") columnMapping.mapStandardColumn(i, Particles::RadiusProperty);
-        else if(name == "mol") columnMapping.mapStandardColumn(i, Particles::MoleculeProperty);
-        else if(name == "q") columnMapping.mapStandardColumn(i, Particles::ChargeProperty);
-        else if(name == "ix") columnMapping.mapStandardColumn(i, Particles::PeriodicImageProperty, 0);
-        else if(name == "iy") columnMapping.mapStandardColumn(i, Particles::PeriodicImageProperty, 1);
-        else if(name == "iz") columnMapping.mapStandardColumn(i, Particles::PeriodicImageProperty, 2);
-        else if(name == "fx" || name == "forces") columnMapping.mapStandardColumn(i, Particles::ForceProperty, 0);
-        else if(name == "fy") columnMapping.mapStandardColumn(i, Particles::ForceProperty, 1);
-        else if(name == "fz") columnMapping.mapStandardColumn(i, Particles::ForceProperty, 2);
-        else if(name == "mux") columnMapping.mapStandardColumn(i, Particles::DipoleOrientationProperty, 0);
-        else if(name == "muy") columnMapping.mapStandardColumn(i, Particles::DipoleOrientationProperty, 1);
-        else if(name == "muz") columnMapping.mapStandardColumn(i, Particles::DipoleOrientationProperty, 2);
-        else if(name == "mu") columnMapping.mapStandardColumn(i, Particles::DipoleMagnitudeProperty);
-        else if(name == "omegax") columnMapping.mapStandardColumn(i, Particles::AngularVelocityProperty, 0);
-        else if(name == "omegay") columnMapping.mapStandardColumn(i, Particles::AngularVelocityProperty, 1);
-        else if(name == "omegaz") columnMapping.mapStandardColumn(i, Particles::AngularVelocityProperty, 2);
-        else if(name == "angmomx") columnMapping.mapStandardColumn(i, Particles::AngularMomentumProperty, 0);
-        else if(name == "angmomy") columnMapping.mapStandardColumn(i, Particles::AngularMomentumProperty, 1);
-        else if(name == "angmomz") columnMapping.mapStandardColumn(i, Particles::AngularMomentumProperty, 2);
-        else if(name == "tqx") columnMapping.mapStandardColumn(i, Particles::TorqueProperty, 0);
-        else if(name == "tqy") columnMapping.mapStandardColumn(i, Particles::TorqueProperty, 1);
-        else if(name == "tqz") columnMapping.mapStandardColumn(i, Particles::TorqueProperty, 2);
-        else if(name == "c_cna" || name == "pattern") columnMapping.mapStandardColumn(i, Particles::StructureTypeProperty);
-        else if(name == "c_epot") columnMapping.mapStandardColumn(i, Particles::PotentialEnergyProperty);
-        else if(name == "c_kpot") columnMapping.mapStandardColumn(i, Particles::KineticEnergyProperty);
-        else if(name == "c_stress[1]") columnMapping.mapStandardColumn(i, Particles::StressTensorProperty, 0);
-        else if(name == "c_stress[2]") columnMapping.mapStandardColumn(i, Particles::StressTensorProperty, 1);
-        else if(name == "c_stress[3]") columnMapping.mapStandardColumn(i, Particles::StressTensorProperty, 2);
-        else if(name == "c_stress[4]") columnMapping.mapStandardColumn(i, Particles::StressTensorProperty, 3);
-        else if(name == "c_stress[5]") columnMapping.mapStandardColumn(i, Particles::StressTensorProperty, 4);
-        else if(name == "c_stress[6]") columnMapping.mapStandardColumn(i, Particles::StressTensorProperty, 5);
-        else if(name == "c_orient[1]" || name == "quati") columnMapping.mapStandardColumn(i, Particles::OrientationProperty, 0);
-        else if(name == "c_orient[2]" || name == "quatj") columnMapping.mapStandardColumn(i, Particles::OrientationProperty, 1);
-        else if(name == "c_orient[3]" || name == "quatk") columnMapping.mapStandardColumn(i, Particles::OrientationProperty, 2);
-        else if(name == "c_orient[4]" || name == "quatw") columnMapping.mapStandardColumn(i, Particles::OrientationProperty, 3);
-        else if(name == "c_shape[1]" || name == "c_diameter[1]" || name == "shapex") columnMapping.mapStandardColumn(i, Particles::AsphericalShapeProperty, 0);
-        else if(name == "c_shape[2]" || name == "c_diameter[2]" || name == "shapey") columnMapping.mapStandardColumn(i, Particles::AsphericalShapeProperty, 1);
-        else if(name == "c_shape[3]" || name == "c_diameter[3]" || name == "shapez") columnMapping.mapStandardColumn(i, Particles::AsphericalShapeProperty, 2);
+        else if(name == "radius" || name == "diameter") columnMapping.mapColumnToStandardProperty(i, Particles::RadiusProperty);
+        else if(name == "mol") columnMapping.mapColumnToStandardProperty(i, Particles::MoleculeProperty);
+        else if(name == "q") columnMapping.mapColumnToStandardProperty(i, Particles::ChargeProperty);
+        else if(name == "ix") columnMapping.mapColumnToStandardProperty(i, Particles::PeriodicImageProperty, 0);
+        else if(name == "iy") columnMapping.mapColumnToStandardProperty(i, Particles::PeriodicImageProperty, 1);
+        else if(name == "iz") columnMapping.mapColumnToStandardProperty(i, Particles::PeriodicImageProperty, 2);
+        else if(name == "fx" || name == "forces") columnMapping.mapColumnToStandardProperty(i, Particles::ForceProperty, 0);
+        else if(name == "fy") columnMapping.mapColumnToStandardProperty(i, Particles::ForceProperty, 1);
+        else if(name == "fz") columnMapping.mapColumnToStandardProperty(i, Particles::ForceProperty, 2);
+        else if(name == "mux") columnMapping.mapColumnToStandardProperty(i, Particles::DipoleOrientationProperty, 0);
+        else if(name == "muy") columnMapping.mapColumnToStandardProperty(i, Particles::DipoleOrientationProperty, 1);
+        else if(name == "muz") columnMapping.mapColumnToStandardProperty(i, Particles::DipoleOrientationProperty, 2);
+        else if(name == "mu") columnMapping.mapColumnToStandardProperty(i, Particles::DipoleMagnitudeProperty);
+        else if(name == "omegax") columnMapping.mapColumnToStandardProperty(i, Particles::AngularVelocityProperty, 0);
+        else if(name == "omegay") columnMapping.mapColumnToStandardProperty(i, Particles::AngularVelocityProperty, 1);
+        else if(name == "omegaz") columnMapping.mapColumnToStandardProperty(i, Particles::AngularVelocityProperty, 2);
+        else if(name == "angmomx") columnMapping.mapColumnToStandardProperty(i, Particles::AngularMomentumProperty, 0);
+        else if(name == "angmomy") columnMapping.mapColumnToStandardProperty(i, Particles::AngularMomentumProperty, 1);
+        else if(name == "angmomz") columnMapping.mapColumnToStandardProperty(i, Particles::AngularMomentumProperty, 2);
+        else if(name == "tqx") columnMapping.mapColumnToStandardProperty(i, Particles::TorqueProperty, 0);
+        else if(name == "tqy") columnMapping.mapColumnToStandardProperty(i, Particles::TorqueProperty, 1);
+        else if(name == "tqz") columnMapping.mapColumnToStandardProperty(i, Particles::TorqueProperty, 2);
+        else if(name == "c_cna" || name == "pattern") columnMapping.mapColumnToStandardProperty(i, Particles::StructureTypeProperty);
+        else if(name == "c_epot") columnMapping.mapColumnToStandardProperty(i, Particles::PotentialEnergyProperty);
+        else if(name == "c_kpot") columnMapping.mapColumnToStandardProperty(i, Particles::KineticEnergyProperty);
+        else if(name == "c_stress[1]") columnMapping.mapColumnToStandardProperty(i, Particles::StressTensorProperty, 0);
+        else if(name == "c_stress[2]") columnMapping.mapColumnToStandardProperty(i, Particles::StressTensorProperty, 1);
+        else if(name == "c_stress[3]") columnMapping.mapColumnToStandardProperty(i, Particles::StressTensorProperty, 2);
+        else if(name == "c_stress[4]") columnMapping.mapColumnToStandardProperty(i, Particles::StressTensorProperty, 3);
+        else if(name == "c_stress[5]") columnMapping.mapColumnToStandardProperty(i, Particles::StressTensorProperty, 4);
+        else if(name == "c_stress[6]") columnMapping.mapColumnToStandardProperty(i, Particles::StressTensorProperty, 5);
+        else if(name == "c_orient[1]" || name == "quati") columnMapping.mapColumnToStandardProperty(i, Particles::OrientationProperty, 0);
+        else if(name == "c_orient[2]" || name == "quatj") columnMapping.mapColumnToStandardProperty(i, Particles::OrientationProperty, 1);
+        else if(name == "c_orient[3]" || name == "quatk") columnMapping.mapColumnToStandardProperty(i, Particles::OrientationProperty, 2);
+        else if(name == "c_orient[4]" || name == "quatw") columnMapping.mapColumnToStandardProperty(i, Particles::OrientationProperty, 3);
+        else if(name == "c_shape[1]" || name == "c_diameter[1]" || name == "shapex") columnMapping.mapColumnToStandardProperty(i, Particles::AsphericalShapeProperty, 0);
+        else if(name == "c_shape[2]" || name == "c_diameter[2]" || name == "shapey") columnMapping.mapColumnToStandardProperty(i, Particles::AsphericalShapeProperty, 1);
+        else if(name == "c_shape[3]" || name == "c_diameter[3]" || name == "shapez") columnMapping.mapColumnToStandardProperty(i, Particles::AsphericalShapeProperty, 2);
         else {
             // Automatically map columns to standard OVITO particle properties.
             bool isStandardProperty = false;
@@ -517,7 +517,7 @@ ParticleInputColumnMapping LAMMPSTextDumpImporter::generateAutomaticColumnMappin
                         propertyName += componentNames[component];
                     }
                     if(propertyName.compare(name, Qt::CaseInsensitive) == 0 || propertyName2.compare(name, Qt::CaseInsensitive) == 0) {
-                        columnMapping.mapStandardColumn(i, (Particles::Type)entry.value(), component);
+                        columnMapping.mapColumnToStandardProperty(i, (Particles::Type)entry.value(), component);
                         isStandardProperty = true;
                         break;
                     }
@@ -527,7 +527,7 @@ ParticleInputColumnMapping LAMMPSTextDumpImporter::generateAutomaticColumnMappin
             }
             // If automatic mapping to one of the standard properties was unsuccessful, read the file column as a user-defined property.
             if(!isStandardProperty)
-                columnMapping.mapCustomColumn(i, Property::makePropertyNameValid(name), Property::FloatDefault);
+                columnMapping.mapColumnToUserProperty(i, Property::makePropertyNameValid(name), Property::FloatDefault);
         }
     }
     return columnMapping;

@@ -215,16 +215,12 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
     int pseudoColorPropertyComponent = 0;
     PseudoColorMapping pseudoColorMapping;
     if(coloringMode() == PseudoColoring && colorMapping() && colorMapping()->sourceProperty() && !vectorColorProperty) {
-        pseudoColorProperty = colorMapping()->sourceProperty().findInContainer(container);
+        QString errorDescription;
+        std::tie(pseudoColorProperty, pseudoColorPropertyComponent) = colorMapping()->sourceProperty().findInContainerWithComponent(container, errorDescription);
         if(!pseudoColorProperty) {
-            status = PipelineStatus(PipelineStatus::Error, tr("The particle property with the name '%1' does not exist.").arg(colorMapping()->sourceProperty().name()));
+            status = PipelineStatus(PipelineStatus::Error, std::move(errorDescription));
         }
         else {
-            if(colorMapping()->sourceProperty().vectorComponent() >= (int)pseudoColorProperty->componentCount()) {
-                status = PipelineStatus(PipelineStatus::Error, tr("The vector component is out of range. The particle property '%1' has only %2 values per data element.").arg(colorMapping()->sourceProperty().name()).arg(pseudoColorProperty->componentCount()));
-                pseudoColorProperty = nullptr;
-            }
-            pseudoColorPropertyComponent = std::max(0, colorMapping()->sourceProperty().vectorComponent());
             pseudoColorMapping = colorMapping()->pseudoColorMapping();
         }
     }

@@ -93,12 +93,12 @@ Future<PipelineFlowState> CoordinationPolyhedraModifier::evaluateModifier(const 
     if(transferParticleProperties()) {
         for(const Property* property : particles->properties()) {
             // Certain properties should never be transferred to the mesh vertices.
-            if(property->type() == Particles::SelectionProperty) continue;
-            if(property->type() == Particles::PositionProperty) continue;
-            if(property->type() == Particles::ColorProperty) continue;
-            if(property->type() == Particles::VectorColorProperty) continue;
-            if(property->type() == Particles::PeriodicImageProperty) continue;
-            if(property->type() == Particles::TransparencyProperty) continue;
+            if(property->typeId() == Particles::SelectionProperty) continue;
+            if(property->typeId() == Particles::PositionProperty) continue;
+            if(property->typeId() == Particles::ColorProperty) continue;
+            if(property->typeId() == Particles::VectorColorProperty) continue;
+            if(property->typeId() == Particles::PeriodicImageProperty) continue;
+            if(property->typeId() == Particles::TransparencyProperty) continue;
             particleProperties.push_back(property);
         }
     }
@@ -220,9 +220,9 @@ Future<PipelineFlowState> CoordinationPolyhedraModifier::evaluateModifier(const 
 
                 // Create the corresponding output mesh vertex property.
                 PropertyPtr vertexProperty;
-                if(particleProperty->type() < Property::FirstSpecificProperty && SurfaceMeshVertices::OOClass().isValidStandardPropertyId(particleProperty->type())) {
+                if(particleProperty->typeId() < Property::FirstSpecificProperty && SurfaceMeshVertices::OOClass().isValidStandardPropertyId(particleProperty->typeId())) {
                     // Input property is also a standard property for mesh vertices.
-                    vertexProperty = meshBuilder.createVertexProperty(DataBuffer::Uninitialized, static_cast<SurfaceMeshVertices::Type>(particleProperty->type()));
+                    vertexProperty = meshBuilder.createVertexProperty(DataBuffer::Uninitialized, static_cast<SurfaceMeshVertices::Type>(particleProperty->typeId()));
                     OVITO_ASSERT(vertexProperty->dataType() == particleProperty->dataType());
                     OVITO_ASSERT(vertexProperty->stride() == particleProperty->stride());
                 }
@@ -243,9 +243,9 @@ Future<PipelineFlowState> CoordinationPolyhedraModifier::evaluateModifier(const 
 
                 // Create the corresponding output mesh region property.
                 PropertyPtr regionProperty;
-                if(particleProperty->type() < Property::FirstSpecificProperty && SurfaceMeshRegions::OOClass().isValidStandardPropertyId(particleProperty->type())) {
+                if(particleProperty->typeId() < Property::FirstSpecificProperty && SurfaceMeshRegions::OOClass().isValidStandardPropertyId(particleProperty->typeId())) {
                     // Input property is also a standard property for mesh regions.
-                    regionProperty = meshBuilder.createRegionProperty(DataBuffer::Uninitialized, static_cast<SurfaceMeshRegions::Type>(particleProperty->type()));
+                    regionProperty = meshBuilder.createRegionProperty(DataBuffer::Uninitialized, static_cast<SurfaceMeshRegions::Type>(particleProperty->typeId()));
                     OVITO_ASSERT(regionProperty->dataType() == particleProperty->dataType());
                     OVITO_ASSERT(regionProperty->stride() == particleProperty->stride());
                 }

@@ -292,7 +292,7 @@ public:
         }
 
         // Create the trajectory line property receiving the sampled particle property values.
-        if(_transferParticleProperties && _particleProperty && _particleProperty.type() != Particles::PositionProperty) {
+        if(_transferParticleProperties && _particleProperty && _particleProperty.typeId() != Particles::PositionProperty) {
             if(const Property* inputProperty = _particleProperty.findInContainer(_firstState.expectObject<Particles>())) {
                 OVITO_ASSERT(_samplingPropertyData.size() == inputProperty->stride() * trajectoryLines->elementCount());
                 if(_samplingPropertyData.size() != inputProperty->stride() * trajectoryLines->elementCount())
@@ -300,9 +300,9 @@ public:
 
                 // Create a corresponding output property of the trajectory lines.
                 RawBufferAccess<access_mode::discard_write> samplingProperty;
-                if(inputProperty->type() < Property::FirstSpecificProperty && Lines::OOClass().isValidStandardPropertyId(inputProperty->type())) {
+                if(inputProperty->typeId() < Property::FirstSpecificProperty && Lines::OOClass().isValidStandardPropertyId(inputProperty->typeId())) {
                     // Input particle property is also a standard property for trajectory lines.
-                    samplingProperty = trajectoryLines->createProperty(inputProperty->type());
+                    samplingProperty = trajectoryLines->createProperty(inputProperty->typeId());
                     OVITO_ASSERT(samplingProperty.dataType() == inputProperty->dataType());
                     OVITO_ASSERT(samplingProperty.stride() == inputProperty->stride());
                 }
