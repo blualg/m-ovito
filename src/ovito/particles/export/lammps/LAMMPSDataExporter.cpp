@@ -45,7 +45,7 @@ SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, omitMassesSection, "Omit 'Masses' s
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, ignoreParticleIdentifiers, "Ignore particle identifiers");
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, exportTypeNames, "Export type names");
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, generateConsecutiveTypeIds, "Generate consecutive type IDs");
-SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, restrictedTriclinic, "Use the (legacy) restricted triclinic format");
+SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, restrictedTriclinic, "Export in restricted triclinic format");
 
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.

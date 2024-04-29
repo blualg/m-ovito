@@ -29,7 +29,7 @@ namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSDumpExporter);
 DEFINE_PROPERTY_FIELD(LAMMPSDumpExporter, restrictedTriclinic);
-SET_PROPERTY_FIELD_LABEL(LAMMPSDumpExporter, restrictedTriclinic, "Use the (legacy) restricted triclinic format");
+SET_PROPERTY_FIELD_LABEL(LAMMPSDumpExporter, restrictedTriclinic, "Export in restricted triclinic format");
 
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.
