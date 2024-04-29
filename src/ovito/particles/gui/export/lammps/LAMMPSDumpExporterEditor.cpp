@@ -23,6 +23,7 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/export/lammps/LAMMPSDumpExporter.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
+#include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include "LAMMPSDumpExporterEditor.h"
 
 namespace Ovito {
@@ -47,6 +48,9 @@ void LAMMPSDumpExporterEditor::createUI(const RolloutInsertionParameters& rollou
     IntegerParameterUI* precisionUI = new IntegerParameterUI(this, PROPERTY_FIELD(FileExporter::floatOutputPrecision));
     layout->addWidget(precisionUI->label(), 0, 0);
     layout->addLayout(precisionUI->createFieldLayout(), 0, 1);
+
+    BooleanParameterUI* restrictedTriclinicUI = new BooleanParameterUI(this, PROPERTY_FIELD(LAMMPSDumpExporter::restrictedTriclinic));
+    layout->addWidget(restrictedTriclinicUI->checkBox(), 1, 0);
 
     FileColumnParticleExporterEditor::createUI(rolloutParams.before(rollout));
 }

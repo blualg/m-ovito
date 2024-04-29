@@ -164,6 +164,7 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     }
 
     // Transform triclinic cell to LAMMPS canonical format.
+    // Only for legacy restricted format
     FloatType xlo, ylo, zlo, xhi, yhi, zhi, xy, xz, yz;
     if(restrictedTriclinic()) {
         Vector3 a, b, c;

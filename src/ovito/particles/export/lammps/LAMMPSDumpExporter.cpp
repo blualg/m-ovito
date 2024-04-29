@@ -28,6 +28,8 @@
 namespace Ovito {
 
 IMPLEMENT_OVITO_CLASS(LAMMPSDumpExporter);
+DEFINE_PROPERTY_FIELD(LAMMPSDumpExporter, restrictedTriclinic);
+SET_PROPERTY_FIELD_LABEL(LAMMPSDumpExporter, restrictedTriclinic, "Use the (legacy) restricted triclinic format");
 
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.
@@ -46,48 +48,68 @@ bool LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNum
     const AffineTransformation& simCell = simulationCell->cellMatrix();
     size_t atomsCount = particles->elementCount();
 
-    FloatType xlo = simCell.translation().x();
-    FloatType ylo = simCell.translation().y();
-    FloatType zlo = simCell.translation().z();
-    FloatType xhi = simCell.column(0).x() + xlo;
-    FloatType yhi = simCell.column(1).y() + ylo;
-    FloatType zhi = simCell.column(2).z() + zlo;
-    FloatType xy = simCell.column(1).x();
-    FloatType xz = simCell.column(2).x();
-    FloatType yz = simCell.column(2).y();
-
-    if(simCell.column(0).y() != 0 || simCell.column(0).z() != 0 || simCell.column(1).z() != 0)
-        throw Exception(tr("Cannot save simulation cell to a LAMMPS dump file. This type of non-orthogonal "
-                "cell is not supported by LAMMPS and its file format. See the documentation of LAMMPS for details."));
-
-    xlo += std::min((FloatType)0, std::min(xy, std::min(xz, xy+xz)));
-    xhi += std::max((FloatType)0, std::max(xy, std::max(xz, xy+xz)));
-    ylo += std::min((FloatType)0, yz);
-    yhi += std::max((FloatType)0, yz);
-
     textStream() << "ITEM: TIMESTEP\n";
     textStream() << state.getAttributeValue(QStringLiteral("Timestep"), frameNumber).toInt() << '\n';
     textStream() << "ITEM: NUMBER OF ATOMS\n";
     textStream() << atomsCount << '\n';
-    if(xy != 0 || xz != 0 || yz != 0) {
-        textStream() << "ITEM: BOX BOUNDS xy xz yz";
-        textStream() << (simulationCell->pbcX() ? " pp" : " ff");
-        textStream() << (simulationCell->pbcY() ? " pp" : " ff");
-        textStream() << (simulationCell->pbcZ() ? " pp" : " ff");
-        textStream() << '\n';
-        textStream() << xlo << ' ' << xhi << ' ' << xy << '\n';
-        textStream() << ylo << ' ' << yhi << ' ' << xz << '\n';
-        textStream() << zlo << ' ' << zhi << ' ' << yz << '\n';
+
+    if(restrictedTriclinic()) {
+        // Transform triclinic cell to LAMMPS canonical format.
+        // Only for legacy restricted format
+        FloatType xlo = simCell.translation().x();
+        FloatType ylo = simCell.translation().y();
+        FloatType zlo = simCell.translation().z();
+        FloatType xhi = simCell.column(0).x() + xlo;
+        FloatType yhi = simCell.column(1).y() + ylo;
+        FloatType zhi = simCell.column(2).z() + zlo;
+        FloatType xy = simCell.column(1).x();
+        FloatType xz = simCell.column(2).x();
+        FloatType yz = simCell.column(2).y();
+
+        if(simCell.column(0).y() != 0 || simCell.column(0).z() != 0 || simCell.column(1).z() != 0)
+            throw Exception(
+                tr("Cannot save simulation cell to a LAMMPS dump file. This type of non-orthogonal "
+                   "cell is not supported by LAMMPS and its file format. See the documentation of LAMMPS for details."));
+
+        xlo += std::min((FloatType)0, std::min(xy, std::min(xz, xy + xz)));
+        xhi += std::max((FloatType)0, std::max(xy, std::max(xz, xy + xz)));
+        ylo += std::min((FloatType)0, yz);
+        yhi += std::max((FloatType)0, yz);
+
+        if(xy != 0 || xz != 0 || yz != 0) {
+            textStream() << "ITEM: BOX BOUNDS xy xz yz";
+            textStream() << (simulationCell->pbcX() ? " pp" : " ff");
+            textStream() << (simulationCell->pbcY() ? " pp" : " ff");
+            textStream() << (simulationCell->pbcZ() ? " pp" : " ff");
+            textStream() << '\n';
+            textStream() << xlo << ' ' << xhi << ' ' << xy << '\n';
+            textStream() << ylo << ' ' << yhi << ' ' << xz << '\n';
+            textStream() << zlo << ' ' << zhi << ' ' << yz << '\n';
+        }
+        else {
+            textStream() << "ITEM: BOX BOUNDS";
+            textStream() << (simulationCell->pbcX() ? " pp" : " ff");
+            textStream() << (simulationCell->pbcY() ? " pp" : " ff");
+            textStream() << (simulationCell->pbcZ() ? " pp" : " ff");
+            textStream() << '\n';
+            textStream() << xlo << ' ' << xhi << '\n';
+            textStream() << ylo << ' ' << yhi << '\n';
+            textStream() << zlo << ' ' << zhi << '\n';
+        }
     }
     else {
-        textStream() << "ITEM: BOX BOUNDS";
+        // new format avec, bvec, cvec, origin
+        textStream() << "ITEM: BOX BOUNDS abc origin";
         textStream() << (simulationCell->pbcX() ? " pp" : " ff");
         textStream() << (simulationCell->pbcY() ? " pp" : " ff");
         textStream() << (simulationCell->pbcZ() ? " pp" : " ff");
         textStream() << '\n';
-        textStream() << xlo << ' ' << xhi << '\n';
-        textStream() << ylo << ' ' << yhi << '\n';
-        textStream() << zlo << ' ' << zhi << '\n';
+        textStream() << simulationCell->cellVector1()[0] << " " << simulationCell->cellVector1()[1] << " "
+                     << simulationCell->cellVector1()[2] << simulationCell->cellOrigin()[0] << "\n";
+        textStream() << simulationCell->cellVector2()[0] << " " << simulationCell->cellVector2()[1] << " "
+                     << simulationCell->cellVector2()[2] << simulationCell->cellOrigin()[1] << "\n";
+        textStream() << simulationCell->cellVector3()[0] << " " << simulationCell->cellVector3()[1] << " "
+                     << simulationCell->cellVector3()[2] << simulationCell->cellOrigin()[2] << "\n";
     }
     textStream() << "ITEM: ATOMS";
 
