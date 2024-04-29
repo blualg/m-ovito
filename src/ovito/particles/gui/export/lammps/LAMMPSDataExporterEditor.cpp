@@ -91,6 +91,9 @@ void LAMMPSDataExporterEditor::createUI(const RolloutInsertionParameters& rollou
     BooleanParameterUI* exportTypeNamesUI = new BooleanParameterUI(this, PROPERTY_FIELD(LAMMPSDataExporter::exportTypeNames));
     layout->addWidget(exportTypeNamesUI->checkBox(), 6, 0, 1, 2);
 
+    BooleanParameterUI* restrictedTriclinicUI = new BooleanParameterUI(this, PROPERTY_FIELD(LAMMPSDataExporter::restrictedTriclinic));
+    layout->addWidget(restrictedTriclinicUI->checkBox(), 7, 0, 1, 2);
+
     connect(this, &PropertiesEditor::contentsChanged, this, &LAMMPSDataExporterEditor::updateUI);
 }
 

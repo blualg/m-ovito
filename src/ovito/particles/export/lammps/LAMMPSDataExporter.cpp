@@ -38,12 +38,14 @@ DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, omitMassesSection);
 DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, ignoreParticleIdentifiers);
 DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, exportTypeNames);
 DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, generateConsecutiveTypeIds);
+DEFINE_PROPERTY_FIELD(LAMMPSDataExporter, restrictedTriclinic);
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, atomStyle, "Atom style");
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, atomSubStyles, "Atom sub-styles");
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, omitMassesSection, "Omit 'Masses' section");
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, ignoreParticleIdentifiers, "Ignore particle identifiers");
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, exportTypeNames, "Export type names");
 SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, generateConsecutiveTypeIds, "Generate consecutive type IDs");
+SET_PROPERTY_FIELD_LABEL(LAMMPSDataExporter, restrictedTriclinic, "Use the (legacy) restricted triclinic format");
 
 /******************************************************************************
 * Writes the particles of one animation frame to the current output file.
@@ -162,46 +164,51 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     }
 
     // Transform triclinic cell to LAMMPS canonical format.
-    Vector3 a,b,c;
-    if(simCell.column(0).x() < 0 || simCell.column(0).y() != 0 || simCell.column(0).z() != 0 ||
-            simCell.column(1).y() < 0 || simCell.column(1).z() != 0 || simCell.column(2).z() < 0) {
-        a.x() = simCell.column(0).length();
-        a.y() = a.z() = 0;
-        b.x() = simCell.column(1).dot(simCell.column(0)) / a.x();
-        b.y() = std::sqrt(simCell.column(1).squaredLength() - b.x()*b.x());
-        b.z() = 0;
-        c.x() = simCell.column(2).dot(simCell.column(0)) / a.x();
-        c.y() = (simCell.column(1).dot(simCell.column(2)) - b.x()*c.x()) / b.y();
-        c.z() = std::sqrt(simCell.column(2).squaredLength() - c.x()*c.x() - c.y()*c.y());
-        const AffineTransformation transformation = AffineTransformation(a,b,c,simCell.translation()) * simCell.inverse();
+    FloatType xlo, ylo, zlo, xhi, yhi, zhi, xy, xz, yz;
+    if(restrictedTriclinic()) {
+        Vector3 a, b, c;
+        if(simCell.column(0).x() < 0 || simCell.column(0).y() != 0 || simCell.column(0).z() != 0 || simCell.column(1).y() < 0 ||
+           simCell.column(1).z() != 0 || simCell.column(2).z() < 0) {
+            a.x() = simCell.column(0).length();
+            a.y() = a.z() = 0;
+            b.x() = simCell.column(1).dot(simCell.column(0)) / a.x();
+            b.y() = std::sqrt(simCell.column(1).squaredLength() - b.x() * b.x());
+            b.z() = 0;
+            c.x() = simCell.column(2).dot(simCell.column(0)) / a.x();
+            c.y() = (simCell.column(1).dot(simCell.column(2)) - b.x() * c.x()) / b.y();
+            c.z() = std::sqrt(simCell.column(2).squaredLength() - c.x() * c.x() - c.y() * c.y());
+            const AffineTransformation transformation = AffineTransformation(a, b, c, simCell.translation()) * simCell.inverse();
 
-        // Apply the transformation to the particle coordinates.
-        for(Point3& p : BufferWriteAccess<Point3, access_mode::read_write>(particles->expectMutableProperty(Particles::PositionProperty))) {
-            p = transformation * p;
-        }
+            // Apply the transformation to the particle coordinates.
+            for(Point3& p :
+                BufferWriteAccess<Point3, access_mode::read_write>(particles->expectMutableProperty(Particles::PositionProperty))) {
+                p = transformation * p;
+            }
 
-        // Apply the transformation to the particle velocity vectors.
-        if(BufferWriteAccess<Vector3, access_mode::read_write> velocities = particles->getMutableProperty(Particles::VelocityProperty)) {
-            for(Vector3& v : velocities) {
-                v = transformation * v;
+            // Apply the transformation to the particle velocity vectors.
+            if(BufferWriteAccess<Vector3, access_mode::read_write> velocities =
+                   particles->getMutableProperty(Particles::VelocityProperty)) {
+                for(Vector3& v : velocities) {
+                    v = transformation * v;
+                }
             }
         }
-    }
-    else {
-        a = simCell.column(0);
-        b = simCell.column(1);
-        c = simCell.column(2);
-    }
+        else {
+            a = simCell.column(0);
+            b = simCell.column(1);
+            c = simCell.column(2);
+        }
 
-    FloatType xlo = simCell.translation().x();
-    FloatType ylo = simCell.translation().y();
-    FloatType zlo = simCell.translation().z();
-    FloatType xhi = a.x() + xlo;
-    FloatType yhi = b.y() + ylo;
-    FloatType zhi = c.z() + zlo;
-    FloatType xy = b.x();
-    FloatType xz = c.x();
-    FloatType yz = c.y();
+        xlo = simCell.translation().x();
+        ylo = simCell.translation().y();
+        zlo = simCell.translation().z();
+        xhi = a.x() + xlo;
+        yhi = b.y() + ylo;
+        zhi = c.z() + zlo;
+        xy = b.x();
+        xz = c.x();
+        yz = c.y();
+    }
 
     // Decide whether to export bonds/angles/dihedrals/impropers.
     bool writeBonds     = bondTopologyProperty && (atomStyle() != LAMMPSDataImporter::AtomStyle_Atomic);
@@ -311,11 +318,25 @@ bool LAMMPSDataExporter::exportData(const PipelineFlowState& state, int frameNum
     }
 
     textStream() << "\n";
-    textStream() << xlo << ' ' << xhi << " xlo xhi\n";
-    textStream() << ylo << ' ' << yhi << " ylo yhi\n";
-    textStream() << zlo << ' ' << zhi << " zlo zhi\n";
-    if(xy != 0 || xz != 0 || yz != 0) {
-        textStream() << xy << ' ' << xz << ' ' << yz << " xy xz yz\n";
+    if(restrictedTriclinic()) {
+        // legacy format: xlo xhi ylo yhi zlo zhi xy xz yz
+        textStream() << xlo << ' ' << xhi << " xlo xhi\n";
+        textStream() << ylo << ' ' << yhi << " ylo yhi\n";
+        textStream() << zlo << ' ' << zhi << " zlo zhi\n";
+        if(xy != 0 || xz != 0 || yz != 0) {
+            textStream() << xy << ' ' << xz << ' ' << yz << " xy xz yz\n";
+        }
+    }
+    else {
+        // new format avec, bvec, cvec, origin
+        textStream() << simulationCell->cellVector1()[0] << " " << simulationCell->cellVector1()[1] << " "
+                     << simulationCell->cellVector1()[2] << " avec\n";
+        textStream() << simulationCell->cellVector2()[0] << " " << simulationCell->cellVector2()[1] << " "
+                     << simulationCell->cellVector2()[2] << " bvec\n";
+        textStream() << simulationCell->cellVector3()[0] << " " << simulationCell->cellVector3()[1] << " "
+                     << simulationCell->cellVector3()[2] << " cvec\n";
+        textStream() << simulationCell->cellOrigin()[0] << " " << simulationCell->cellOrigin()[1] << " "
+                     << simulationCell->cellOrigin()[2] << " abc origin\n";
     }
     textStream() << "\n";
 
