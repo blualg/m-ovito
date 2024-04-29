@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2023 OVITO GmbH, Germany
+//  Copyright 2024 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -182,31 +182,55 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
                 break;
             }
             else if(stream.lineStartsWith("ITEM: BOX BOUNDS xy xz yz")) {
-
                 // Parse optional boundary condition flags.
                 QStringList tokens = FileImporter::splitString(stream.lineString().mid(qstrlen("ITEM: BOX BOUNDS xy xz yz")));
-                if(tokens.size() >= 3)
-                    simulationCell()->setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
+                if(tokens.size() >= 3) simulationCell()->setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
 
                 // Parse triclinic simulation box.
                 FloatType tiltFactors[3];
                 Box3 simBox;
                 for(int k = 0; k < 3; k++) {
-                    if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &simBox.minc[k], &simBox.maxc[k], &tiltFactors[k]) != 3)
-                        throw Exception(tr("Invalid box size in line %1 of LAMMPS dump file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+                    if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
+                              &simBox.minc[k], &simBox.maxc[k], &tiltFactors[k]) != 3)
+                        throw Exception(
+                            tr("Invalid box size in line %1 of LAMMPS dump file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
                 }
 
                 // LAMMPS only stores the outer bounding box of the simulation cell in the dump file.
                 // We have to determine the size of the actual triclinic cell.
-                simBox.minc.x() -= std::min(std::min(std::min(tiltFactors[0], tiltFactors[1]), tiltFactors[0]+tiltFactors[1]), (FloatType)0);
-                simBox.maxc.x() -= std::max(std::max(std::max(tiltFactors[0], tiltFactors[1]), tiltFactors[0]+tiltFactors[1]), (FloatType)0);
+                simBox.minc.x() -=
+                    std::min(std::min(std::min(tiltFactors[0], tiltFactors[1]), tiltFactors[0] + tiltFactors[1]), (FloatType)0);
+                simBox.maxc.x() -=
+                    std::max(std::max(std::max(tiltFactors[0], tiltFactors[1]), tiltFactors[0] + tiltFactors[1]), (FloatType)0);
                 simBox.minc.y() -= std::min(tiltFactors[2], (FloatType)0);
                 simBox.maxc.y() -= std::max(tiltFactors[2], (FloatType)0);
-                simulationCell()->setCellMatrix(AffineTransformation(
-                        Vector3(simBox.sizeX(), 0, 0),
-                        Vector3(tiltFactors[0], simBox.sizeY(), 0),
-                        Vector3(tiltFactors[1], tiltFactors[2], simBox.sizeZ()),
-                        simBox.minc - Point3::Origin()));
+                simulationCell()->setCellMatrix(
+                    AffineTransformation(Vector3(simBox.sizeX(), 0, 0), Vector3(tiltFactors[0], simBox.sizeY(), 0),
+                                         Vector3(tiltFactors[1], tiltFactors[2], simBox.sizeZ()), simBox.minc - Point3::Origin()));
+                break;
+            }
+            else if(stream.lineStartsWith("ITEM: BOX BOUNDS abc origin")) {
+                // Parse optional boundary condition flags.
+                QStringList tokens = FileImporter::splitString(stream.lineString().sliced(qstrlen("ITEM: BOX BOUNDS abc origin")));
+                if(tokens.size() >= 3) {
+                    simulationCell()->setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
+                }
+                // Parse triclinic simulation box.
+                // Format:
+                // ITEM: BOX BOUNDS abc origin boundary-string
+                // avec[0] avec[1] avec[2] origin[0]
+                // bvec[0] bvec[1] bvec[2] origin[1]
+                // cvec[0] cvec[1] cvec[2] origin[2]
+                AffineTransformation simCell;
+                for(int k = 0; k < 3; k++) {
+                    if(sscanf(stream.readLine(),
+                              FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
+                              &simCell[k][0], &simCell[k][1], &simCell[k][2], &simCell[3][k]) != 4)
+                        throw Exception(tr("Invalid cell vectors in line %1 of LAMMPS dump file: %2")
+                                            .arg(stream.lineNumber())
+                                            .arg(stream.lineString()));
+                }
+                simulationCell()->setCellMatrix(simCell);
                 break;
             }
             else if(stream.lineStartsWith("ITEM: BOX BOUNDS")) {
