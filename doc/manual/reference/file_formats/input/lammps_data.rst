@@ -30,6 +30,8 @@ during the simulation.
 If an ordered atoms list is desired, the data file reader provides a user option making it sort the atoms by ID during import
 (``sort_particles=True`` keyword parameter in Python, see below).
 
+Data files written with the `triclinic/general` flag are supported.
+
 .. _file_formats.input.lammps_data.atom_style:
 
 LAMMPS atom style
