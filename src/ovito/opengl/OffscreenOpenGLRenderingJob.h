@@ -40,28 +40,22 @@ class OVITO_OPENGLRENDERER_EXPORT OffscreenOpenGLRenderingJob : public OpenGLRen
 
 public:
 
-    /// Constructor.
+    /// Constructor creating a new QOffscreenSurface.
     explicit OffscreenOpenGLRenderingJob(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency);
 
     /// Called when this renderer is being destroyed.
     virtual void aboutToBeDeleted() override;
 
     /// Requests the rendering job to make its OpenGL context current, e.g. for releasing OpenGL resources that require an active context.
-    [[nodiscard]] virtual OpenGLContextRestore activateContext() override {
-        OpenGLContextRestore restore;
-        OVITO_ASSERT(_offscreenContext);
-        OVITO_ASSERT(_offscreenSurface);
-        if(_offscreenContext) {
-            Q_DECL_UNUSED bool success = _offscreenContext->makeCurrent(_offscreenSurface.get());
-            OVITO_ASSERT(success);
-        }
-        return restore;
-    }
+    [[nodiscard]] virtual OpenGLContextRestore activateContext() override;
 
 private:
 
     /// Creates the QOffscreenSurface in the main thread.
     void createOffscreenSurface();
+
+    /// Creates the QOpenGLContext for offscreen rendering (in any thread).
+    QOpenGLContext& createOffscreenContext();
 
 private:
 

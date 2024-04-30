@@ -112,17 +112,21 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
     // Phase I: Perform the particle occlusion calculation. The results are cached in the node's partial cache.
     auto brightnessFuture = request.modificationNode()->partialResultsCache().getOrCompute(state.data(), [&]() {
 
-        // Create the OpenGL offscreen renderer.
-        OORef<OffscreenOpenGLRenderingJob> renderingJob = OORef<OffscreenOpenGLRenderingJob>::create(ExecutionContext::current().ui().datasetContainer().visCache(), 1, false);
+        // Create the OpenGL offscreen rendering job. This needs to be done in the main thread.
+        OORef<OffscreenOpenGLRenderingJob> renderingJob = OORef<OffscreenOpenGLRenderingJob>::create(std::make_shared<RendererResourceCache>(), 1, false);
 
         // Perform the AO computation in a separate thread.
         return asyncLaunch(
-                [renderingJob = std::move(renderingJob),
+                [renderingJobTemp = std::move(renderingJob),
                 bufferResolution = bufferResolution(),
                 samplingCount = std::max(1, samplingCount()),
                 particles = DataOORef<const Particles>(particles)]() mutable
         {
             this_task::setProgressText(tr("Ambient occlusion"));
+
+            // Move this object into a function scope variable to make sure it gets destroyed in the current thread.
+            // That's because the QOpenGLContext and other resources managed by the rendering job is tied to a specific thread.
+            auto renderingJob = std::move(renderingJobTemp);
 
             // Get particle radii.
             ConstPropertyPtr radii = particles->inputParticleRadii();
@@ -171,90 +175,72 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             // Create a special object picking map to extract the particle indices from the frame buffer.
             std::shared_ptr<ObjectPickingIdentifierMap> objectIdentifierMap = std::make_shared<ObjectPickingIdentifierMap>();
 
-#if 0
-            // Initialize the renderer.
-            renderer->setVisCache(visCache);
-            renderer->startRender(frameBufferRect.size());
-            try {
+            // Create an offscreen framebuffer for rendering.
+            OORef<AbstractRenderingFrameBuffer> renderBuffer = renderingJob->createOffscreenFrameBuffer(frameBufferRect, frameBuffer);
 
-                this_task::setProgressMaximum(samplingCount);
-                for(int sample = 0; sample < samplingCount; sample++) {
-                    this_task::setProgressValue(sample);
+            this_task::setProgressMaximum(samplingCount);
+            for(int sample = 0; sample < samplingCount; sample++) {
+                this_task::setProgressValue(sample);
 
-                    // Generate lighting direction on unit sphere using "Fibonacci sphere algorithm".
-                    // https://stackoverflow.com/a/26127012
-                    FloatType y = FloatType(1) - (sample / FloatType(samplingCount - 1)) * 2; // y goes from 1 to -1
-                    FloatType r = std::sqrt(FloatType(1) - y * y); // radius at y
-                    FloatType phi = (FloatType)sample * FLOATTYPE_PI * (FloatType(3) - sqrt(FloatType(5)));
-                    Vector3 dir(std::cos(phi)*r, y, std::sin(phi)*r);
-                    OVITO_ASSERT(std::abs(dir.length() - 1.0) < FLOATTYPE_EPSILON);
+                // Generate lighting direction on unit sphere using "Fibonacci sphere algorithm".
+                // https://stackoverflow.com/a/26127012
+                FloatType y = FloatType(1) - (sample / FloatType(samplingCount - 1)) * 2; // y goes from 1 to -1
+                FloatType r = std::sqrt(FloatType(1) - y * y); // radius at y
+                FloatType phi = (FloatType)sample * FLOATTYPE_PI * (FloatType(3) - sqrt(FloatType(5)));
+                Vector3 dir(std::cos(phi)*r, y, std::sin(phi)*r);
+                OVITO_ASSERT(std::abs(dir.length() - 1.0) < FLOATTYPE_EPSILON);
 
-                    // Set up view projection.
-                    ViewProjectionParameters projParams;
-                    projParams.viewMatrix = AffineTransformation::lookAlong(boundingBox.center(), dir, Vector3(0,0,1));
+                // Set up view projection.
+                ViewProjectionParameters projParams;
+                projParams.viewMatrix = AffineTransformation::lookAlong(boundingBox.center(), dir, Vector3(0,0,1));
 
-                    // Transform bounding box to camera space.
-                    Box3 bb = boundingBox.transformed(projParams.viewMatrix).centerScale(FloatType(1.01));
+                // Transform bounding box to camera space.
+                Box3 bb = boundingBox.transformed(projParams.viewMatrix).centerScale(FloatType(1.01));
 
-                    // Complete projection parameters.
-                    projParams.aspectRatio = 1;
-                    projParams.isPerspective = false;
-                    projParams.inverseViewMatrix = projParams.viewMatrix.inverse();
-                    projParams.fieldOfView = FloatType(0.5) * boundingBox.size().length();
-                    projParams.znear = -bb.maxc.z();
-                    projParams.zfar  = std::max(-bb.minc.z(), projParams.znear + FloatType(1));
-                    projParams.projectionMatrix = Matrix4::ortho(-projParams.fieldOfView, projParams.fieldOfView,
-                                        -projParams.fieldOfView, projParams.fieldOfView,
-                                        projParams.znear, projParams.zfar);
-                    projParams.inverseProjectionMatrix = projParams.projectionMatrix.inverse();
-                    projParams.validityInterval = TimeInterval::infinite();
-                    frameGraph->setProjectionParams(projParams);
+                // Complete projection parameters.
+                projParams.aspectRatio = 1;
+                projParams.isPerspective = false;
+                projParams.inverseViewMatrix = projParams.viewMatrix.inverse();
+                projParams.fieldOfView = FloatType(0.5) * boundingBox.size().length();
+                projParams.znear = -bb.maxc.z();
+                projParams.zfar  = std::max(-bb.minc.z(), projParams.znear + FloatType(1));
+                projParams.projectionMatrix = Matrix4::ortho(-projParams.fieldOfView, projParams.fieldOfView,
+                                    -projParams.fieldOfView, projParams.fieldOfView,
+                                    projParams.znear, projParams.zfar);
+                projParams.inverseProjectionMatrix = projParams.projectionMatrix.inverse();
+                projParams.validityInterval = TimeInterval::infinite();
+                frameGraph->setProjectionParams(projParams);
 
-                    // Discard the existing image in the frame buffer so that
-                    // OffscreenOpenGLRenderer::renderFrame() can just return the unmodified
-                    // frame buffer contents.
-                    frameBuffer->image() = QImage();
+                // Discard the existing image in the frame buffer so that
+                // OffscreenOpenGLRenderer::renderFrame() can just return the unmodified
+                // frame buffer contents.
+                frameBuffer->image() = QImage();
 
-                    // Render the current view to the frame buffer.
-                    renderer->renderFrame(frameGraph, frameBufferRect, frameBuffer, objectIdentifierMap);
+                // Render the current view to the frame buffer
+                auto future = renderingJob->renderFrame(frameGraph, renderBuffer, objectIdentifierMap);
+                OVITO_ASSERT(future.isValid() && future.isFinished() && !future.isCanceled());
 
-                    // Extract brightness values from rendered image.
-                    const QImage& image = frameBuffer->image();
-                    OVITO_ASSERT(!image.isNull());
-                    BufferWriteAccess<FloatType, access_mode::read_write> brightnessValues(brightness);
-                    for(int y = 0; y < resolution; y++) {
-                        const QRgb* pixel = reinterpret_cast<const QRgb*>(image.scanLine(y));
-                        for(int x = 0; x < resolution; x++, ++pixel) {
-                            quint32 red = qRed(*pixel);
-                            quint32 green = qGreen(*pixel);
-                            quint32 blue = qBlue(*pixel);
-                            quint32 alpha = qAlpha(*pixel);
-                            quint32 id = red + (green << 8) + (blue << 16) + (alpha << 24);
-                            if(id == 0)
-                                continue;
-                            quint32 particleIndex = id - 1; // Note: frame buffer object IDs start at 1.
-                            OVITO_ASSERT(particleIndex < brightnessValues.size());
-                            brightnessValues[particleIndex] += 1;
-                        }
+                // Extract brightness values from rendered image.
+                const QImage& image = frameBuffer->image();
+                OVITO_ASSERT(!image.isNull());
+                BufferWriteAccess<FloatType, access_mode::read_write> brightnessValues(brightness);
+                for(int y = 0; y < resolution; y++) {
+                    const QRgb* pixel = reinterpret_cast<const QRgb*>(image.scanLine(y));
+                    for(int x = 0; x < resolution; x++, ++pixel) {
+                        quint32 red = qRed(*pixel);
+                        quint32 green = qGreen(*pixel);
+                        quint32 blue = qBlue(*pixel);
+                        quint32 alpha = qAlpha(*pixel);
+                        quint32 id = red + (green << 8) + (blue << 16) + (alpha << 24);
+                        if(id == 0)
+                            continue;
+                        quint32 particleIndex = id - 1; // Note: frame buffer object IDs start at 1.
+                        OVITO_ASSERT(particleIndex < brightnessValues.size());
+                        brightnessValues[particleIndex] += 1;
                     }
                 }
             }
-            catch(...) {
-                renderer->endRender();
-                // Make sure OpenGL renderer resources get release now (in this thread) and not later in some other thread.
-                renderer->setVisCache({});
-                renderer.reset();
-                frameGraph.reset();
-                throw;
-            }
-            renderer->endRender();
 
-            // The vis cache should remain unused when rendering just a bunch of spherical particles.
-            // Make sure OpenGL renderer resources get release now (in this thread) and not later in some other thread.
-            frameGraph.reset();
-            renderer->setVisCache({});
-            OVITO_ASSERT(visCache->empty());
-#endif
             this_task::setProgressValue(samplingCount);
 
             // Normalize brightness values by particle area.
@@ -277,8 +263,6 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             }
 
             // Release data that is no longer needed to reduce memory footprint.
-            brightnessValues.reset();
- //           renderer.reset();
             particles.reset();
 
             return brightness;

@@ -485,7 +485,6 @@ QOpenGLShaderProgram* OpenGLRenderingJob::loadShaderProgram(const QString& id, c
     QOpenGLContextGroup* contextGroup = QOpenGLContextGroup::currentContextGroup();
     OVITO_ASSERT(contextGroup);
 
-    OVITO_ASSERT(QThread::currentThread() == contextGroup->thread());
     OVITO_ASSERT(QOpenGLShaderProgram::hasOpenGLShaderPrograms());
     OVITO_ASSERT(QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Vertex));
     OVITO_ASSERT(QOpenGLShader::hasOpenGLShaders(QOpenGLShader::Fragment));
@@ -497,6 +496,10 @@ QOpenGLShaderProgram* OpenGLRenderingJob::loadShaderProgram(const QString& id, c
     // This is accomplished by giving the shader a unique identifier.
     QString mangledId = id;
     if(isWBOITPass) mangledId += QStringLiteral(".wboi_transparency");
+
+    // Guard concurrent access to the shared shader cache.
+    static std::mutex sharedShaderMutex;
+    std::lock_guard<std::mutex> lock(sharedShaderMutex);
 
     // Each OpenGL shader is only created once per OpenGL context group.
     std::unique_ptr<QOpenGLShaderProgram> program(contextGroup->findChild<QOpenGLShaderProgram*>(mangledId));
@@ -518,6 +521,7 @@ QOpenGLShaderProgram* OpenGLRenderingJob::loadShaderProgram(const QString& id, c
     }
 
     // Make the shader program a child object of the GL context group.
+    program->moveToThread(contextGroup->thread());
     program->setParent(contextGroup);
     OVITO_ASSERT(contextGroup->findChild<QOpenGLShaderProgram*>(mangledId));
 

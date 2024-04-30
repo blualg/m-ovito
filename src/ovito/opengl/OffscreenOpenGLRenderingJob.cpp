@@ -32,7 +32,7 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(OffscreenOpenGLRenderingJob);
 
 /******************************************************************************
-* Constructor.
+* Constructor creating a new QOffscreenSurface.
 ******************************************************************************/
 OffscreenOpenGLRenderingJob::OffscreenOpenGLRenderingJob(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency)
     : OpenGLRenderingJob(flags, std::move(visCache), multisamplingLevel, orderIndependentTransparency)
@@ -45,17 +45,6 @@ OffscreenOpenGLRenderingJob::OffscreenOpenGLRenderingJob(ObjectInitializationFla
     // This call is a workaround for an access vialotion that otherwise occurs on Windows
     // when creating the first OpenGL context from a worker thread when running in headless mode.
     OpenGLRenderer::determineOpenGLInfo();
-
-    // Create an OpenGL context for rendering to the offscreen buffer.
-    _offscreenContext.emplace();
-    // The context should share its resources with interactive viewport renderers.
-    _offscreenContext->setShareContext(QOpenGLContext::globalShareContext());
-    if(!_offscreenContext->create())
-        throw RendererException(tr("Failed to create OpenGL context for offscreen rendering."));
-
-    // Make the context current.
-    if(!_offscreenContext->makeCurrent(_offscreenSurface.get()))
-        throw RendererException(tr("Failed to make OpenGL context current for offscreen rndering."));
 }
 
 /******************************************************************************
@@ -89,6 +78,35 @@ void OffscreenOpenGLRenderingJob::createOffscreenSurface()
     // Check offscreen surface (creation must have happened in createOffscreenSurface()).
     if(!_offscreenSurface->isValid())
         throw RendererException(tr("Failed to create offscreen surface for OpenGL rendering."));
+}
+
+/******************************************************************************
+* Creates the QOpenGLContext for offscreen rendering (in any thread).
+******************************************************************************/
+QOpenGLContext& OffscreenOpenGLRenderingJob::createOffscreenContext()
+{
+    if(!_offscreenContext.has_value()) {
+        // Create an OpenGL context for rendering into the offscreen buffer.
+        _offscreenContext.emplace();
+        // The context should share its resources with interactive viewport renderers.
+        _offscreenContext->setShareContext(QOpenGLContext::globalShareContext());
+        if(!_offscreenContext->create())
+            throw RendererException(tr("Failed to create OpenGL context for offscreen rendering."));
+    }
+    return _offscreenContext.value();
+}
+
+/******************************************************************************
+* Requests the rendering job to make its OpenGL context current, e.g. for
+* releasing OpenGL resources that require an active context.
+******************************************************************************/
+OpenGLContextRestore OffscreenOpenGLRenderingJob::activateContext()
+{
+    OpenGLContextRestore restore;
+    OVITO_ASSERT(_offscreenSurface);
+    Q_DECL_UNUSED bool success = createOffscreenContext().makeCurrent(_offscreenSurface.get());
+    OVITO_ASSERT(success);
+    return restore;
 }
 
 /******************************************************************************

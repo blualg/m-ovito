@@ -105,7 +105,7 @@ public:
 #ifdef OVITO_DEBUG
     /// Destructor.
     ~RendererResourceCache() {
-        OVITO_ASSERT(QThread::currentThread() == _owningThread);
+        OVITO_ASSERT(!_owningThread || QThread::currentThread() == _owningThread);
         // The cache should be completely empty at the time it is destroyed.
         OVITO_ASSERT(_activeResourceFrames.empty());
         OVITO_ASSERT(empty());
@@ -127,7 +127,7 @@ public:
         // Note: The following check has been disabled, because we now allow lookups to be made from worker threads.
         // The user is responsible for ensuring that no two threads access the cache concurrently.
 
-        // OVITO_ASSERT(QThread::currentThread() == _owningThread);
+        // OVITO_ASSERT(!_owningThread || QThread::currentThread() == _owningThread);
 
         // Check if the key exists in the cache.
         for(CacheEntry& entry : _entries) {
@@ -156,7 +156,11 @@ public:
 
     /// Opens a new frame with the resource manager.
     ResourceFrame acquireResourceFrame() {
+#ifdef OVITO_DEBUG
+        if(!_owningThread)
+            _owningThread = QThread::currentThread();
         OVITO_ASSERT(QThread::currentThread() == _owningThread);
+#endif
 
         // On the first frame, the cache should be empty.
         OVITO_ASSERT(!_activeResourceFrames.empty() || _entries.empty());
@@ -243,7 +247,7 @@ private:
 #ifdef OVITO_DEBUG
     /// Keep track of the thread that owns the resource cache.
     /// Resource caches are not thread-safe and may only be used from a single thread.
-    QThread* _owningThread = QThread::currentThread();
+    QThread* _owningThread = nullptr;
 #endif
 };
 
