@@ -103,15 +103,8 @@ void ParticlePickingHelper::renderSelectionMarker(Viewport* vp, FrameGraph& fram
     if(!particleVis)
         return;
 
-#if 0 // TODO
-    // Set up transformation.
-    TimeInterval iv;
-    const AffineTransformation& nodeTM = pickRecord.pipeline->getWorldTransform(frameGraph.time(), iv);
-    renderer->setWorldTransform(nodeTM);
-
     // Render highlight marker.
-    particleVis->highlightParticle(particleIndex, particles, frameGraph);
-#endif
+    particleVis->highlightParticle(particleIndex, particles, frameGraph, pickRecord.pipeline);
 }
 
 }   // End of namespace

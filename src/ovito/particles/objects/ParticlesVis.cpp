@@ -1041,9 +1041,8 @@ void ParticlesVis::renderCylindricParticles(const Particles* particles, FrameGra
 /******************************************************************************
 * Render a marker around a particle to highlight it in the viewports.
 ******************************************************************************/
-void ParticlesVis::highlightParticle(size_t particleIndex, const Particles* particles, FrameGraph& frameGraph) const
+void ParticlesVis::highlightParticle(size_t particleIndex, const Particles* particles, FrameGraph& frameGraph, const Pipeline* pipeline) const
 {
-#if 0 // TODO
     // Fetch properties of selected particle which are needed to render the overlay.
     const Property* posProperty = nullptr;
     const Property* radiusProperty = nullptr;
@@ -1054,21 +1053,21 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const Particles* part
     const Property* roundnessProperty = nullptr;
     const Property* typeProperty = nullptr;
     for(const Property* property : particles->properties()) {
-        if(property->type() == Particles::PositionProperty && property->size() >= particleIndex)
+        if(property->typeId() == Particles::PositionProperty && property->size() >= particleIndex)
             posProperty = property;
-        else if(property->type() == Particles::RadiusProperty && property->size() >= particleIndex)
+        else if(property->typeId() == Particles::RadiusProperty && property->size() >= particleIndex)
             radiusProperty = property;
-        else if(property->type() == Particles::TypeProperty && property->size() >= particleIndex)
+        else if(property->typeId() == Particles::TypeProperty && property->size() >= particleIndex)
             typeProperty = property;
-        else if(property->type() == Particles::ColorProperty && property->size() >= particleIndex)
+        else if(property->typeId() == Particles::ColorProperty && property->size() >= particleIndex)
             colorProperty = property;
-        else if(property->type() == Particles::SelectionProperty && property->size() >= particleIndex)
+        else if(property->typeId() == Particles::SelectionProperty && property->size() >= particleIndex)
             selectionProperty = property;
-        else if(property->type() == Particles::AsphericalShapeProperty && property->size() >= particleIndex)
+        else if(property->typeId() == Particles::AsphericalShapeProperty && property->size() >= particleIndex)
             shapeProperty = property;
-        else if(property->type() == Particles::OrientationProperty && property->size() >= particleIndex)
+        else if(property->typeId() == Particles::OrientationProperty && property->size() >= particleIndex)
             orientationProperty = property;
-        else if(property->type() == Particles::SuperquadricRoundnessProperty && property->size() >= particleIndex)
+        else if(property->typeId() == Particles::SuperquadricRoundnessProperty && property->size() >= particleIndex)
             roundnessProperty = property;
     }
     if(!posProperty || particleIndex >= posProperty->size())
@@ -1096,7 +1095,11 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const Particles* part
     // Determine radius of selected particle.
     GraphicsFloatType radius = particleRadius(particleIndex, radiusProperty, typeProperty);
 
-    FloatType padding = renderer->viewport()->nonScalingSize(renderer->worldTransform() * pos) * FloatType(1e-1);
+    // Get world transformation matrix of scene node.
+    TimeInterval interval;
+    const AffineTransformation& nodeTM = pipeline->getWorldTransform(frameGraph.time(), interval);
+
+    FloatType padding = frameGraph.nonScalingSize(nodeTM * pos) * FloatType(1e-1);
 
     // Determine the display color of selected particle.
     ColorG color = particleColor(particleIndex, colorProperty, typeProperty, selectionProperty);
@@ -1104,12 +1107,12 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const Particles* part
     color = color * GraphicsFloatType(0.5) + highlightColor * GraphicsFloatType(0.5);
 
     // Determine rendering quality used to render the particles.
-    ParticlePrimitive::RenderingQuality renderQuality = effectiveRenderingQuality(renderer, particles);
+    ParticlePrimitive::RenderingQuality renderQuality = effectiveRenderingQuality(frameGraph.isInteractive(), particles);
 
-    ParticlePrimitive particleBuffer;
-    ParticlePrimitive highlightParticleBuffer;
-    CylinderPrimitive cylinderBuffer;
-    CylinderPrimitive highlightCylinderBuffer;
+    std::unique_ptr<ParticlePrimitive> particleBuffer;
+    std::unique_ptr<ParticlePrimitive> highlightParticleBuffer;
+    std::unique_ptr<CylinderPrimitive> cylinderBuffer;
+    std::unique_ptr<CylinderPrimitive> highlightCylinderBuffer;
     if(shape != Cylinder && shape != Spherocylinder) {
         // Determine effective particle shape and shading mode.
         ParticlePrimitive::ParticleShape primitiveParticleShape = effectiveParticleShape(shape, shapeProperty, orientationProperty, roundnessProperty);
@@ -1140,26 +1143,27 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const Particles* part
             roundnessBuffer[0] = BufferReadAccess<Vector_2<GraphicsFloatType>>(roundnessProperty)[particleIndex];
         }
 
-        particleBuffer.setParticleShape(primitiveParticleShape);
-        particleBuffer.setShadingMode(primitiveShadingMode);
-        particleBuffer.setRenderingQuality(renderQuality);
-        particleBuffer.setUniformColor(color.toDataType<FloatType>());
-        particleBuffer.setPositions(positionBuffer.take());
-        particleBuffer.setUniformRadius(radius);
-        particleBuffer.setAsphericalShapes(asphericalShapeBuffer.take());
-        particleBuffer.setOrientations(orientationBuffer.take());
-        particleBuffer.setRoundness(roundnessBuffer.take());
+        particleBuffer = std::make_unique<ParticlePrimitive>();
+        particleBuffer->setParticleShape(primitiveParticleShape);
+        particleBuffer->setShadingMode(primitiveShadingMode);
+        particleBuffer->setRenderingQuality(renderQuality);
+        particleBuffer->setUniformColor(color.toDataType<FloatType>());
+        particleBuffer->setPositions(positionBuffer.take());
+        particleBuffer->setUniformRadius(radius);
+        particleBuffer->setAsphericalShapes(asphericalShapeBuffer.take());
+        particleBuffer->setOrientations(orientationBuffer.take());
+        particleBuffer->setRoundness(roundnessBuffer.take());
 
-        // Prepare marker geometry buffer.
-        highlightParticleBuffer.setParticleShape(primitiveParticleShape);
-        highlightParticleBuffer.setShadingMode(primitiveShadingMode);
-        highlightParticleBuffer.setRenderingQuality(renderQuality);
-        highlightParticleBuffer.setUniformColor(highlightColor.toDataType<FloatType>());
-        highlightParticleBuffer.setPositions(particleBuffer.positions());
-        highlightParticleBuffer.setUniformRadius(radius + padding);
-        highlightParticleBuffer.setAsphericalShapes(asphericalShapeBufferHighlight.take());
-        highlightParticleBuffer.setOrientations(particleBuffer.orientations());
-        highlightParticleBuffer.setRoundness(particleBuffer.roundness());
+        highlightParticleBuffer = std::make_unique<ParticlePrimitive>();
+        highlightParticleBuffer->setParticleShape(primitiveParticleShape);
+        highlightParticleBuffer->setShadingMode(primitiveShadingMode);
+        highlightParticleBuffer->setRenderingQuality(renderQuality);
+        highlightParticleBuffer->setUniformColor(highlightColor.toDataType<FloatType>());
+        highlightParticleBuffer->setPositions(particleBuffer->positions());
+        highlightParticleBuffer->setUniformRadius(radius + padding);
+        highlightParticleBuffer->setAsphericalShapes(asphericalShapeBufferHighlight.take());
+        highlightParticleBuffer->setOrientations(particleBuffer->orientations());
+        highlightParticleBuffer->setRoundness(particleBuffer->roundness());
     }
     else if(shape == Cylinder || shape == Spherocylinder) {
         GraphicsFloatType radius, length;
@@ -1182,44 +1186,44 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const Particles* part
         BufferFactory<Point3G> positionBufferSpheres(2);
         positionBufferSpheres[0] = positionBuffer1[0] = pos.toDataType<GraphicsFloatType>() - (dir * GraphicsFloatType(0.5));
         positionBufferSpheres[1] = positionBuffer2[0] = pos.toDataType<GraphicsFloatType>() + (dir * GraphicsFloatType(0.5));
-        cylinderBuffer.setShape(CylinderPrimitive::CylinderShape);
-        cylinderBuffer.setShadingMode(CylinderPrimitive::NormalShading);
-        highlightCylinderBuffer.setShape(CylinderPrimitive::CylinderShape);
-        highlightCylinderBuffer.setShadingMode(CylinderPrimitive::NormalShading);
-        cylinderBuffer.setUniformColor(color.toDataType<FloatType>());
-        cylinderBuffer.setUniformWidth(2 * radius);
-        cylinderBuffer.setPositions(positionBuffer1.take(), positionBuffer2.take());
-        highlightCylinderBuffer.setUniformColor(highlightColor.toDataType<FloatType>());
-        highlightCylinderBuffer.setUniformWidth(2 * (radius + padding));
-        highlightCylinderBuffer.setPositions(cylinderBuffer.basePositions(), cylinderBuffer.headPositions());
+        cylinderBuffer = std::make_unique<CylinderPrimitive>();
+        cylinderBuffer->setShape(CylinderPrimitive::CylinderShape);
+        cylinderBuffer->setShadingMode(CylinderPrimitive::NormalShading);
+        highlightCylinderBuffer = std::make_unique<CylinderPrimitive>();
+        highlightCylinderBuffer->setShape(CylinderPrimitive::CylinderShape);
+        highlightCylinderBuffer->setShadingMode(CylinderPrimitive::NormalShading);
+        cylinderBuffer->setUniformColor(color.toDataType<FloatType>());
+        cylinderBuffer->setUniformWidth(2 * radius);
+        cylinderBuffer->setPositions(positionBuffer1.take(), positionBuffer2.take());
+        highlightCylinderBuffer->setUniformColor(highlightColor.toDataType<FloatType>());
+        highlightCylinderBuffer->setUniformWidth(2 * (radius + padding));
+        highlightCylinderBuffer->setPositions(cylinderBuffer->basePositions(), cylinderBuffer->headPositions());
         if(shape == Spherocylinder) {
-            particleBuffer.setParticleShape(ParticlePrimitive::SphericalShape);
-            particleBuffer.setShadingMode(ParticlePrimitive::NormalShading);
-            particleBuffer.setRenderingQuality(ParticlePrimitive::HighQuality);
-            highlightParticleBuffer.setParticleShape(ParticlePrimitive::SphericalShape);
-            highlightParticleBuffer.setShadingMode(ParticlePrimitive::NormalShading);
-            highlightParticleBuffer.setRenderingQuality(ParticlePrimitive::HighQuality);
-            particleBuffer.setPositions(positionBufferSpheres.take());
-            particleBuffer.setUniformRadius(radius);
-            particleBuffer.setUniformColor(color.toDataType<FloatType>());
-            highlightParticleBuffer.setPositions(particleBuffer.positions());
-            highlightParticleBuffer.setUniformRadius(radius + padding);
-            highlightParticleBuffer.setUniformColor(highlightColor.toDataType<FloatType>());
+            particleBuffer = std::make_unique<ParticlePrimitive>();
+            particleBuffer->setParticleShape(ParticlePrimitive::SphericalShape);
+            particleBuffer->setShadingMode(ParticlePrimitive::NormalShading);
+            particleBuffer->setRenderingQuality(ParticlePrimitive::HighQuality);
+            highlightParticleBuffer = std::make_unique<ParticlePrimitive>();
+            highlightParticleBuffer->setParticleShape(ParticlePrimitive::SphericalShape);
+            highlightParticleBuffer->setShadingMode(ParticlePrimitive::NormalShading);
+            highlightParticleBuffer->setRenderingQuality(ParticlePrimitive::HighQuality);
+            particleBuffer->setPositions(positionBufferSpheres.take());
+            particleBuffer->setUniformRadius(radius);
+            particleBuffer->setUniformColor(color.toDataType<FloatType>());
+            highlightParticleBuffer->setPositions(particleBuffer->positions());
+            highlightParticleBuffer->setUniformRadius(radius + padding);
+            highlightParticleBuffer->setUniformColor(highlightColor.toDataType<FloatType>());
         }
     }
 
-    renderer->setHighlightMode(1);
-    if(particleBuffer.positions())
-        renderer->renderParticles(particleBuffer);
-    if(cylinderBuffer.basePositions())
-        renderer->renderCylinders(cylinderBuffer);
-    renderer->setHighlightMode(2);
-    if(highlightParticleBuffer.positions())
-        renderer->renderParticles(highlightParticleBuffer);
-    if(highlightCylinderBuffer.basePositions())
-        renderer->renderCylinders(highlightCylinderBuffer);
-    renderer->setHighlightMode(0);
-#endif
+    if(particleBuffer)
+        frameGraph.addPrimitive(std::move(particleBuffer), nodeTM, 0, Box3{}, FrameGraph::RenderingCommand::HighlightMode1);
+    if(cylinderBuffer)
+        frameGraph.addPrimitive(std::move(cylinderBuffer), nodeTM, 0, Box3{}, FrameGraph::RenderingCommand::HighlightMode1);
+    if(highlightParticleBuffer)
+        frameGraph.addPrimitive(std::move(highlightParticleBuffer), nodeTM, 0, Box3{}, FrameGraph::RenderingCommand::HighlightMode2);
+    if(highlightCylinderBuffer)
+        frameGraph.addPrimitive(std::move(highlightCylinderBuffer), nodeTM, 0, Box3{}, FrameGraph::RenderingCommand::HighlightMode2);
 }
 
 /******************************************************************************

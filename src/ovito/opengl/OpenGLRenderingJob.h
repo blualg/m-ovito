@@ -217,6 +217,9 @@ private:
 	/// Returns the output area in the OpenGL framebuffer (in device pixels).
 	const QSize& framebufferSize() const { return _framebufferSize; }
 
+    /// Activates the special object highlighting rendering mode.
+    void setHighlightMode(int mode);
+
 private:
 
     /// Controls the level of multisampling used to reduce antialiasing effects.
@@ -272,6 +275,9 @@ private:
 
 	/// The output area in the OpenGL framebuffer (in device pixels).
 	QSize _framebufferSize;
+
+    /// The active object highlighting rendering mode.
+    int _highlightRenderingMode = 0;
 
     friend class OpenGLShaderHelper;
     friend class OpenGLRenderingFrameBuffer;

@@ -282,16 +282,15 @@ void ParticleInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewport
         renderSelectionMarker(vp, frameGraph, element);
     }
 
-#if 0 // TODO
     // Render pair-wise connection lines between selected particles.
     if(_applet->_measuringModeAction->isChecked()) {
-        renderer->setWorldTransform(AffineTransformation::Identity());
 
         // Collect world space coordinates of selected particles.
         std::array<Point3G,4> vertices;
         auto outVertex = vertices.begin();
         for(auto& element : _pickedElements) {
-            const PipelineFlowState& flowState = element.pipeline->evaluatePipelineSynchronous(renderer->time(), true);
+            PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
+            const PipelineFlowState flowState = element.pipeline->evaluatePipeline(request).result();
             if(const Particles* particles = flowState.getObject<Particles>()) {
                 // If particle selection is based on ID, find particle with the given ID.
                 size_t particleIndex = element.particleIndex;
@@ -307,7 +306,7 @@ void ParticleInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewport
                 if(BufferReadAccess<Point3> posProperty = particles->getProperty(Particles::PositionProperty)) {
                     if(particleIndex < posProperty.size()) {
                         TimeInterval iv;
-                        const AffineTransformation& nodeTM = element.pipeline->getWorldTransform(renderer->time(), iv);
+                        const AffineTransformation& nodeTM = element.pipeline->getWorldTransform(frameGraph.time(), iv);
                         *outVertex++ = (nodeTM * posProperty[particleIndex]).toDataType<GraphicsFloatType>();
                     }
                 }
@@ -318,6 +317,8 @@ void ParticleInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewport
 
         // Generate pair-wise line elements.
         size_t n = std::distance(vertices.begin(), outVertex);
+        if(n <= 1)
+            return;
         BufferFactory<Point3G> lines(n * (n - 1));
         auto iter = lines.begin();
         for(auto v1 = vertices.begin(); v1 != outVertex; ++v1) {
@@ -329,15 +330,12 @@ void ParticleInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewport
         OVITO_ASSERT(iter == lines.end());
 
         // Render line elements.
-        LinePrimitive linesPrimitive;
-        linesPrimitive.setPositions(lines.take());
-        linesPrimitive.setUniformColor(ViewportSettings::getSettings().viewportColor(ViewportSettings::COLOR_UNSELECTED));
-        linesPrimitive.setLineWidth(4.0 * renderer->devicePixelRatio());
-        renderer->setDepthTestEnabled(false);
-        renderer->renderLines(linesPrimitive);
-        renderer->setDepthTestEnabled(true);
+        std::unique_ptr<LinePrimitive> linesPrimitive = std::make_unique<LinePrimitive>();
+        linesPrimitive->setPositions(lines.take());
+        linesPrimitive->setUniformColor(ViewportSettings::getSettings().viewportColor(ViewportSettings::COLOR_UNSELECTED));
+        linesPrimitive->setLineWidth(4.0 * frameGraph.devicePixelRatio());
+        frameGraph.addPrimitive(std::move(linesPrimitive), AffineTransformation::Identity(), 0, Box3{}, FrameGraph::RenderingCommand::NoDepthTesting);
     }
-#endif
 }
 
 }   // End of namespace

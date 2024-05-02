@@ -93,7 +93,7 @@ public:
     Box3 particleBoundingBox(BufferReadAccess<Point3> positionProperty, const Property* typeProperty, BufferReadAccess<GraphicsFloatType> radiusProperty, BufferReadAccess<Vector3G> shapeProperty, bool includeParticleRadius) const;
 
     /// Render a marker around a particle to highlight it in the viewports.
-    void highlightParticle(size_t particleIndex, const Particles* particles, FrameGraph& frameGraph) const;
+    void highlightParticle(size_t particleIndex, const Particles* particles, FrameGraph& frameGraph, const Pipeline* pipeline) const;
 
     /// Returns the typed particle property used to determine the rendering colors of particles (if no per-particle colors are defined).
     virtual const Property* getParticleTypeColorProperty(const Particles* particles) const;

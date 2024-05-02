@@ -73,6 +73,8 @@ public:
 			NoFlags             = 0,
 			NoDepthTesting      = (1<<0), // Render the primitive without depth testing
 			ExcludeFromVisual   = (1<<1), // Skip the primitive in the visual rendering pass
+			HighlightMode1	    = (1<<2), // Render the primitive in highlight mode 1
+			HighlightMode2	    = (1<<3), // Render the primitive in highlight mode 2
 		};
 		Q_DECLARE_FLAGS(Flags, Flag);
 
@@ -106,6 +108,9 @@ public:
 
 		/// Returns the object picking group to which the primitive belongs.
 		int pickingGroupId() const { return _pickingGroupId; }
+
+		/// Returns the object highlight rendering mode to be used.
+		int highlightMode() const { return _flags.testFlag(HighlightMode1) ? 1 : (_flags.testFlag(HighlightMode2) ? 2 : 0); }
 
 	private:
 

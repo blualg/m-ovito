@@ -376,7 +376,6 @@ PipelineStatus DislocationVis::render(const ConstDataObjectPath& path, const Pip
 ******************************************************************************/
 void DislocationVis::renderOverlayMarker(const DataObject* dataObject, const PipelineFlowState& flowState, int segmentIndex, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
-#if 0 // TODO
     // Get the dislocations.
     const DislocationNetworkObject* dislocationsObj = dynamic_object_cast<DislocationNetworkObject>(dataObject);
     if(!dislocationsObj)
@@ -403,57 +402,37 @@ void DislocationVis::renderOverlayMarker(const DataObject* dataObject, const Pip
             cornerVertices.push_back(v1.toDataType<GraphicsFloatType>());
     });
 
-    // Set up transformation.
-    TimeInterval iv;
-    const AffineTransformation& nodeTM = pipeline->getWorldTransform(time, iv);
-    renderer->setWorldTransform(nodeTM);
     FloatType lineDiameter = std::max(lineWidth() / 2, FloatType(0));
     FloatType headRadius = lineDiameter * (3.0/2.0);
 
-    // Compute bounding box if requested.
-    if(renderer->isBoundingBoxPass()) {
-        Box3G bb;
-        bb.addPoints(baseSegmentPoints);
-        bb.addPoints(headSegmentPoints);
-        renderer->addToLocalBoundingBox(bb.padBox(headRadius).toDataType<FloatType>());
-        return;
-    }
+    std::unique_ptr<CylinderPrimitive> segmentBuffer = std::make_unique<CylinderPrimitive>();
+    segmentBuffer->setShape(CylinderPrimitive::CylinderShape);
+    segmentBuffer->setShadingMode(CylinderPrimitive::FlatShading);
+    segmentBuffer->setUniformWidth(lineDiameter);
+    segmentBuffer->setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
+    segmentBuffer->setUniformColor(Color(1,1,1));
+    frameGraph.addPrimitive(std::move(segmentBuffer), pipeline, 0, Box3{}, FrameGraph::RenderingCommand::NoDepthTesting);
 
-    // Draw the marker on top of everything.
-    renderer->setDepthTestEnabled(false);
-
-    CylinderPrimitive segmentBuffer;
-    segmentBuffer.setShape(CylinderPrimitive::CylinderShape);
-    segmentBuffer.setShadingMode(CylinderPrimitive::FlatShading);
-    segmentBuffer.setUniformWidth(lineDiameter);
-    segmentBuffer.setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
-    segmentBuffer.setUniformColor(Color(1,1,1));
-    renderer->renderCylinders(segmentBuffer);
-
-    ParticlePrimitive cornerBuffer;
-    cornerBuffer.setParticleShape(ParticlePrimitive::SphericalShape);
-    cornerBuffer.setShadingMode(ParticlePrimitive::FlatShading);
-    cornerBuffer.setRenderingQuality(ParticlePrimitive::HighQuality);
-    cornerBuffer.setPositions(cornerVertices.take());
-    cornerBuffer.setUniformColor(Color(1,1,1));
-    cornerBuffer.setUniformRadius(0.5 * lineDiameter);
-    renderer->renderParticles(cornerBuffer);
+    std::unique_ptr<ParticlePrimitive> cornerBuffer = std::make_unique<ParticlePrimitive>();
+    cornerBuffer->setParticleShape(ParticlePrimitive::SphericalShape);
+    cornerBuffer->setShadingMode(ParticlePrimitive::FlatShading);
+    cornerBuffer->setRenderingQuality(ParticlePrimitive::HighQuality);
+    cornerBuffer->setPositions(cornerVertices.take());
+    cornerBuffer->setUniformColor(Color(1,1,1));
+    cornerBuffer->setUniformRadius(0.5 * lineDiameter);
+    frameGraph.addPrimitive(std::move(cornerBuffer), pipeline, 0, Box3{}, FrameGraph::RenderingCommand::NoDepthTesting);
 
     if(!segment->line.empty()) {
         BufferFactory<Point3G> wrappedHeadPos(1);
         wrappedHeadPos[0] = cellObject->wrapPoint(segment->line.front()).toDataType<GraphicsFloatType>();
-        ParticlePrimitive headBuffer;
-        headBuffer.setShadingMode(ParticlePrimitive::FlatShading);
-        headBuffer.setRenderingQuality(ParticlePrimitive::HighQuality);
-        headBuffer.setPositions(wrappedHeadPos.take());
-        headBuffer.setUniformColor(Color(1,1,1));
-        headBuffer.setUniformRadius(headRadius);
-        renderer->renderParticles(headBuffer);
+        std::unique_ptr<ParticlePrimitive> headBuffer = std::make_unique<ParticlePrimitive>();
+        headBuffer->setShadingMode(ParticlePrimitive::FlatShading);
+        headBuffer->setRenderingQuality(ParticlePrimitive::HighQuality);
+        headBuffer->setPositions(wrappedHeadPos.take());
+        headBuffer->setUniformColor(Color(1,1,1));
+        headBuffer->setUniformRadius(headRadius);
+        frameGraph.addPrimitive(std::move(headBuffer), pipeline, 0, Box3{}, FrameGraph::RenderingCommand::NoDepthTesting);
     }
-
-    // Restore old state.
-    renderer->setDepthTestEnabled(true);
-#endif
 }
 
 /******************************************************************************

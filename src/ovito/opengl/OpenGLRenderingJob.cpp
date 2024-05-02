@@ -354,12 +354,15 @@ bool OpenGLRenderingJob::renderFrameGraph(const FrameGraph& frameGraph, FrameGra
         }
 
         // Enable/disable depth testing as needed.
-        if(command.noDepthTesting()) {
+        if(command.noDepthTesting() || command.highlightMode() == 2) {
             OVITO_CHECK_OPENGL(this, glDisable(GL_DEPTH_TEST));
         }
         else {
             OVITO_CHECK_OPENGL(this, glEnable(GL_DEPTH_TEST));
         }
+
+        // Activate special highlight rendering mode.
+        setHighlightMode(command.highlightMode());
 
         // Set up the model-view transformation matrix.
         if(command.modelWorldTM() != AffineTransformation::Zero()) {
@@ -889,14 +892,16 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
     OVITO_REPORT_OPENGL_ERRORS(this);
 }
 
-#if 0  // TODO
 /******************************************************************************
-* Activates the special highlight rendering mode.
+* Activates the special object highlighting rendering mode.
 ******************************************************************************/
-void OpenGLRenderingJob::setHighlightMode(int pass)
+void OpenGLRenderingJob::setHighlightMode(int mode)
 {
-    if(pass == 1) {
-        this->glEnable(GL_DEPTH_TEST);
+    if(_highlightRenderingMode == mode)
+        return;
+
+    _highlightRenderingMode = mode;
+    if(mode == 1) {
         this->glClearStencil(0);
         this->glClear(GL_STENCIL_BUFFER_BIT);
         this->glEnable(GL_STENCIL_TEST);
@@ -911,19 +916,16 @@ void OpenGLRenderingJob::setHighlightMode(int pass)
 #endif
         this->glDepthFunc(GL_LEQUAL);
     }
-    else if(pass == 2) {
-        this->glDisable(GL_DEPTH_TEST);
+    else if(mode == 2) {
         this->glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
         this->glStencilMask(0x1);
         this->glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
     }
     else {
         this->glDepthFunc(GL_LESS);
-        this->glEnable(GL_DEPTH_TEST);
         this->glDisable(GL_STENCIL_TEST);
     }
 }
-#endif
 
 /******************************************************************************
  * Translates an OpenGL error code to a human-readable message string.

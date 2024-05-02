@@ -228,9 +228,9 @@ void DislocationInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewp
 {
     if(!_applet->currentPipeline())
         return;
-#if 0 // TODO
+
     PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
-    const PipelineFlowState& flowState = _applet->currentPipeline()->evaluateRenderingPipeline(request).result();
+    const PipelineFlowState flowState = _applet->currentPipeline()->evaluatePipeline(request).result();
     const DislocationNetworkObject* dislocationObj = flowState.getObject<DislocationNetworkObject>();
     if(!dislocationObj)
         return;
@@ -243,7 +243,6 @@ void DislocationInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewp
         if(segmentIndex >= 0 && segmentIndex < dislocationObj->segments().size())
             vis->renderOverlayMarker(dislocationObj, flowState, segmentIndex, frameGraph, _applet->currentPipeline());
     }
-#endif
 }
 
 }   // End of namespace
