@@ -210,17 +210,16 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
                 break;
             }
             else if(stream.lineStartsWith("ITEM: BOX BOUNDS abc origin")) {
-                // Parse optional boundary condition flags.
+                // Parse general triclinic simulation box.
+                // Format:
+                // ITEM: BOX BOUNDS abc origin [boundary-strings]
+                // avec[0] avec[1] avec[2] origin[0]
+                // bvec[0] bvec[1] bvec[2] origin[1]
+                // cvec[0] cvec[1] cvec[2] origin[2]
                 QStringList tokens = FileImporter::splitString(stream.lineString().sliced(qstrlen("ITEM: BOX BOUNDS abc origin")));
                 if(tokens.size() >= 3) {
                     simulationCell()->setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
                 }
-                // Parse triclinic simulation box.
-                // Format:
-                // ITEM: BOX BOUNDS abc origin boundary-string
-                // avec[0] avec[1] avec[2] origin[0]
-                // bvec[0] bvec[1] bvec[2] origin[1]
-                // cvec[0] cvec[1] cvec[2] origin[2]
                 AffineTransformation simCell;
                 for(int k = 0; k < 3; k++) {
                     if(sscanf(stream.readLine(),

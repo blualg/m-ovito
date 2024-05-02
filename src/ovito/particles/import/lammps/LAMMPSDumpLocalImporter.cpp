@@ -208,6 +208,29 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
                         simBox.minc - Point3::Origin()));
                 break;
             }
+            else if(stream.lineStartsWith("ITEM: BOX BOUNDS abc origin")) {
+                // Parse general triclinic simulation box.
+                // Format:
+                // ITEM: BOX BOUNDS abc origin [boundary-strings]
+                // avec[0] avec[1] avec[2] origin[0]
+                // bvec[0] bvec[1] bvec[2] origin[1]
+                // cvec[0] cvec[1] cvec[2] origin[2]
+                QStringList tokens = FileImporter::splitString(stream.lineString().sliced(qstrlen("ITEM: BOX BOUNDS abc origin")));
+                if(tokens.size() >= 3) {
+                    simulationCell()->setPbcFlags(tokens[0] == "pp", tokens[1] == "pp", tokens[2] == "pp");
+                }
+                AffineTransformation simCell;
+                for(int k = 0; k < 3; k++) {
+                    if(sscanf(stream.readLine(),
+                              FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
+                              &simCell[k][0], &simCell[k][1], &simCell[k][2], &simCell[3][k]) != 4)
+                        throw Exception(tr("Invalid cell vectors in line %1 of LAMMPS dump file: %2")
+                                            .arg(stream.lineNumber())
+                                            .arg(stream.lineString()));
+                }
+                simulationCell()->setCellMatrix(simCell);
+                break;
+            }
             else if(stream.lineStartsWith("ITEM: BOX BOUNDS")) {
                 // Parse optional boundary condition flags.
                 QStringList tokens = FileImporter::splitString(stream.lineString().mid(qstrlen("ITEM: BOX BOUNDS")));

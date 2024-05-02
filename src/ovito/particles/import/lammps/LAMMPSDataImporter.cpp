@@ -140,7 +140,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             if(!simCell) simCell = AffineTransformation();
             if(sscanf(line.c_str(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &simCell.value()[0][0],
                       &simCell.value()[0][1], &simCell.value()[0][2]) != 3)
-                throw Exception(tr("Invalid avec value (line %1): %2").arg(stream.lineNumber()).arg(line.c_str()));
+                throw Exception(tr("Invalid avec values (line %1): %2").arg(stream.lineNumber()).arg(line.c_str()));
         }
         else if(line.find("bvec") != string::npos) {
             if(!simCell) simCell = AffineTransformation();
