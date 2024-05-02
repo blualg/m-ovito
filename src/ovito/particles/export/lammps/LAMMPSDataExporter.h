@@ -53,12 +53,16 @@ class OVITO_PARTICLES_EXPORT LAMMPSDataExporter : public ParticleExporter
 public:
 
     /// Constructor.
-    explicit LAMMPSDataExporter(ObjectInitializationFlags flags) : ParticleExporter(flags),
-        _atomStyle(LAMMPSDataImporter::AtomStyle_Atomic),
-        _omitMassesSection(false),
-        _ignoreParticleIdentifiers(false),
-        _exportTypeNames(false),
-        _generateConsecutiveTypeIds(false) {}
+    explicit LAMMPSDataExporter(ObjectInitializationFlags flags)
+        : ParticleExporter(flags),
+          _atomStyle(LAMMPSDataImporter::AtomStyle_Atomic),
+          _omitMassesSection(false),
+          _ignoreParticleIdentifiers(false),
+          _exportTypeNames(false),
+          _generateConsecutiveTypeIds(false),
+          _restrictedTriclinic(true)
+    {
+    }
 
 protected:
 
@@ -84,6 +88,11 @@ private:
 
     /// Controls whether new consecutive IDs are assigned to particle/bond/... types during export.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, generateConsecutiveTypeIds, setGenerateConsecutiveTypeIds);
+
+    /// Controls the triclinic data file format.
+    /// If true, the triclinic box is restricted (old lammps format).
+    /// If false, the new triclinic box format is used.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, restrictedTriclinic, setRestrictedTriclinic, PROPERTY_FIELD_MEMORIZE);
 };
 
 }   // End of namespace

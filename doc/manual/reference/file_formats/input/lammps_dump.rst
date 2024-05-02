@@ -64,6 +64,8 @@ OVITO provides support for the following dump_modify keywords:
   - The `thermo` keyword tells LAMMPS to include the current thermo data in *yaml* style dump files. OVITO imports
     the thermo values as :ref:`global attributes <usage.global_attributes>`.
 
+  - The `triclinic/general` keyword tells LAMMPS to write the simulation cell in a new `general triclinic format <https://docs.lammps.org/Howto_triclinic.html#general-triclinic-simulation-boxes-in-lammps>`__.
+
 .. _file_formats.input.lammps_dump.property_mapping:
 
 Column-to-property mapping

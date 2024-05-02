@@ -99,10 +99,15 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
     int nangletypes = 0;
     int ndihedraltypes = 0;
     int nimpropertypes = 0;
+
+    // Used for restricted triclinic simulation cells.
     FloatType xlo = 0, xhi = 0;
     FloatType ylo = 0, yhi = 0;
     FloatType zlo = 0, zhi = 0;
     FloatType xy = 0, xz = 0, yz = 0;
+
+    // Used for general triclinic simulation cells.
+    std::optional<AffineTransformation> simCell = std::nullopt;
 
     // Read header
     while(true) {
@@ -131,6 +136,30 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
         else if(line.find("xy") != string::npos && line.find("xz") != string::npos && line.find("yz") != string::npos) {
             if(sscanf(line.c_str(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &xy, &xz, &yz) != 3)
                 throw Exception(tr("Invalid xy/xz/yz values (line %1): %2").arg(stream.lineNumber()).arg(line.c_str()));
+        }
+        else if(line.find("avec") != string::npos) {
+            if(!simCell) simCell = AffineTransformation();
+            if(sscanf(line.c_str(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &simCell.value()[0][0],
+                      &simCell.value()[0][1], &simCell.value()[0][2]) != 3)
+                throw Exception(tr("Invalid avec values (line %1): %2").arg(stream.lineNumber()).arg(line.c_str()));
+        }
+        else if(line.find("bvec") != string::npos) {
+            if(!simCell) simCell = AffineTransformation();
+            if(sscanf(line.c_str(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &simCell.value()[1][0],
+                      &simCell.value()[1][1], &simCell.value()[1][2]) != 3)
+                throw Exception(tr("Invalid bvec values (line %1): %2").arg(stream.lineNumber()).arg(line.c_str()));
+        }
+        else if(line.find("cvec") != string::npos) {
+            if(!simCell) simCell = AffineTransformation();
+            if(sscanf(line.c_str(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &simCell.value()[2][0],
+                      &simCell.value()[2][1], &simCell.value()[2][2]) != 3)
+                throw Exception(tr("Invalid cvec values (line %1): %2").arg(stream.lineNumber()).arg(line.c_str()));
+        }
+        else if(line.find("abc origin") != string::npos) {
+            if(!simCell) simCell = AffineTransformation();
+            if(sscanf(line.c_str(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &simCell.value()[3][0],
+                      &simCell.value()[3][1], &simCell.value()[3][2]) != 3)
+                throw Exception(tr("Invalid abc origin values (line %1): %2").arg(stream.lineNumber()).arg(line.c_str()));
         }
         else if(line.find("atoms") != string::npos) {
             if(sscanf(line.c_str(), "%llu", &natoms) != 1)
@@ -185,15 +214,15 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
         else break;
     }
 
-    if(xhi < xlo || yhi < ylo || zhi < zlo)
-        throw Exception(tr("Invalid simulation cell size in header of LAMMPS data file."));
-
-    // Define the simulation cell geometry.
-    simulationCell()->setCellMatrix(AffineTransformation(
-            Vector3(xhi - xlo, 0, 0),
-            Vector3(xy, yhi - ylo, 0),
-            Vector3(xz, yz, zhi - zlo),
-            Vector3(xlo, ylo, zlo)));
+    if(simCell) {
+        simulationCell()->setCellMatrix(simCell.value());
+    }
+    else {
+        if(xhi < xlo || yhi < ylo || zhi < zlo) throw Exception(tr("Invalid simulation cell size in header of LAMMPS data file."));
+        // Define the simulation cell geometry.
+        simulationCell()->setCellMatrix(
+            AffineTransformation(Vector3(xhi - xlo, 0, 0), Vector3(xy, yhi - ylo, 0), Vector3(xz, yz, zhi - zlo), Vector3(xlo, ylo, zlo)));
+    }
 
     // Skip to following line after first non-blank line.
     while(!stream.eof() && string(stream.line()).find_first_not_of(" \t\n\r") == string::npos) {
