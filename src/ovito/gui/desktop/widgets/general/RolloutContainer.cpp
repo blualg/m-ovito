@@ -355,17 +355,6 @@ void Rollout::resizeEvent(QResizeEvent* event)
 }
 
 /******************************************************************************
-* Paints the border around the rollout contents.
-******************************************************************************/
-void Rollout::paintEvent(QPaintEvent* event)
-{
-    QPainter painter(this);
-    int y = _titleButton->height() / 2;
-    if(height()-y+1 > 0)
-        qDrawShadeRect(&painter, 0, y, width()+1, height()-y+1, palette(), true);
-}
-
-/******************************************************************************
 * Is called when the user presses the help button.
 ******************************************************************************/
 void Rollout::onHelpButton()

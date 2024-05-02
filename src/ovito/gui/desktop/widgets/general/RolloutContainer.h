@@ -188,9 +188,6 @@ protected:
     /// Handles the resize events of the rollout widget.
     virtual void resizeEvent(QResizeEvent* event) override;
 
-    /// Paints the border around the contents widget.
-    virtual void paintEvent(QPaintEvent* event) override;
-
 private:
 
     /// The button that allows to collapse the rollout.
