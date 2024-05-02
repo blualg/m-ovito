@@ -6,6 +6,19 @@ Changelog
 
 .. sidebar::
 
+  * `Download <https://www.ovito.org/download_history/#3.10.6>`__
+
+----------------------------
+Version 3.10.6 (03-May-2024)
+----------------------------
+
+- LAMMPS data and dump files: Added I/O support for general triclinic simulation cells, which will soon be introduced by LAMMPS
+- LAMMPS dump and IMD file export: Use correct vector component names in output file columns for user-defined particle properties
+- |ovito-python| :py:func:`ovito.io.ase.ase_to_ovito` function: filter out non-string metadata keys if present in the ASE `Atoms` object
+- |ovito-python| :py:func:`ovito.io.import_file` function: Use Python's `getpass() <https://docs.python.org/3/library/getpass.html>`__ function to prompt for SSH password without echoing it to the console
+
+.. sidebar::
+
   * `Download <https://www.ovito.org/download_history/#3.10.5>`__
 
 ----------------------------
