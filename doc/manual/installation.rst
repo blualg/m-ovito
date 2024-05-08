@@ -18,7 +18,7 @@ Operating system compatibility:
 
   - 64-bit Windows 10 (21H2 or later), Windows 11 (21H2 or later) -- x86_64 processor architecture
   - Linux: CentOS Linux 8.4+, openSUSE 15.3+, Ubuntu 20.04+, SUSE Linux Enterprise Server 15+, or any compatible distributions running on x86_64 processors
-  - macOS 10.15+ -- arm64 (Apple Silicon) and Intel processor architectures
+  - macOS 11.0+ -- arm64 (Apple Silicon) and Intel processor architectures
 
 .. _installation.instructions:
 
