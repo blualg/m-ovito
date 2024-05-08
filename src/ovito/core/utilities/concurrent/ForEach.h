@@ -110,14 +110,14 @@ template<typename InputRange, class Executor, typename StartIterFunc, typename C
 
         /// Performs the next iteration of the mapping process.
         void iteration_begin(Promise<task_result_type> promise) noexcept {
-            // Report the number of iterations we have performed so far.
-            if constexpr(is_with_progress)
-                this->setProgressValue(std::distance(std::begin(_range), _iterator));
-
             // Did we already reach the end of the input range?
             if(_iterator != std::end(_range) && !this->isCanceled()) {
                 output_future_type future;
                 try {
+                    // Report the number of iterations we have performed so far.
+                    if constexpr(is_with_progress)
+                        this->setProgressValue(std::distance(std::begin(_range), _iterator));
+
                     Task::Scope taskScope(this);
                     // Call the user-provided function with the current loop value and, optionally, the task's result storage
                     if constexpr(!std::is_void_v<task_result_type>) {

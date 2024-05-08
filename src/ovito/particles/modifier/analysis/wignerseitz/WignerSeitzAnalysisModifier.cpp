@@ -66,11 +66,11 @@ Future<PipelineFlowState> WignerSeitzAnalysisModifier::reuseCachedState(const Mo
         }
         else {
             // Replace complete particles set with the reference configuration.
-            output.mutableData()->replaceObject(particles, cachedParticles);
+            output.replaceObject(particles, cachedParticles);
             // Also replace simulation cell with reference cell.
             if(const SimulationCell* cell = output.getObject<SimulationCell>()) {
                 if(const SimulationCell* cachedCell = cachedState.getObject<SimulationCell>())
-                    output.mutableData()->replaceObject(cell, cachedCell);
+                    output.replaceObject(cell, cachedCell);
             }
         }
     }
@@ -291,10 +291,10 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform(PipelineFlo
 
     if(!siteTypes()) {
         // Replace complete particles set with the reference configuration.
-        state.mutableData()->replaceObject(state.expectObject<Particles>(), refParticles);
+        state.replaceObject(state.expectObject<Particles>(), refParticles);
         // Also replace simulation cell with reference cell.
         if(const SimulationCell* cell = state.getObject<SimulationCell>())
-            state.mutableData()->replaceObject(cell, referenceState().getObject<SimulationCell>());
+            state.replaceObject(cell, referenceState().getObject<SimulationCell>());
     }
 
     Particles* particles = state.expectMutableObject<Particles>();

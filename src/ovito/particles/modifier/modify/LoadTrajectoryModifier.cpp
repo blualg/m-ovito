@@ -468,7 +468,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
                 }
             }
             if(existingAttribute)
-                state.mutableData()->replaceObject(existingAttribute, attribute);
+                state.replaceObject(existingAttribute, attribute);
             else
                 state.addObject(attribute);
         }

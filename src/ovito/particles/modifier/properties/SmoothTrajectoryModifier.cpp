@@ -70,6 +70,14 @@ void SmoothTrajectoryModifier::preevaluateModifier(const ModifierEvaluationReque
 {
     // Interpolation results will only be valid for the duration of the current frame.
     validityInterval.intersect(request.time());
+
+    // Indicate that we will do different computations depending on whether the pipeline is evaluated in interactive mode or not.
+    if(smoothingWindowSize() != 1) {
+        if(request.interactiveMode())
+            evaluationTypes = PipelineEvaluationResult::EvaluationType::Interactive;
+        else
+            evaluationTypes = PipelineEvaluationResult::EvaluationType::Noninteractive;
+    }
 }
 
 /******************************************************************************
@@ -147,6 +155,12 @@ Future<PipelineFlowState> SmoothTrajectoryModifier::evaluateModifier(const Modif
             });
     }
     else {
+
+        // In interactive mode, do not perform a long-running computation.
+        if(request.interactiveMode()) {
+            return std::move(state);
+        }
+
         // Perform averaging of several frames. Determine frame interval first.
         int startFrame = currentFrame - (smoothingWindowSize() - 1) / 2;
         int endFrame = currentFrame + smoothingWindowSize() / 2;
